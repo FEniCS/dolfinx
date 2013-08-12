@@ -131,13 +131,17 @@ PETScVector::PETScVector(boost::shared_ptr<Vec> x): _x(x), _use_gpu(false)
 PETScVector::PETScVector(const PETScVector& v)
   : _x(new Vec(0), PETScVectorDeleter()), _use_gpu(false)
 {
+  PetscErrorCode ierr;
+
   dolfin_assert(v._x);
 
   // Create new vector
-  VecDuplicate(*(v._x), _x.get());
+  ierr = VecDuplicate(*(v._x), _x.get());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecDuplicate");
 
   // Copy data
-  VecCopy(*(v._x), *_x);
+  ierr = VecCopy(*(v._x), *_x);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecCopy");
 
   // Copy ghost data
   ghost_global_to_local = v.ghost_global_to_local;
@@ -145,7 +149,10 @@ PETScVector::PETScVector(const PETScVector& v)
   // Create ghost view
   x_ghosted.reset(new Vec(0), PETScVectorDeleter());
   if (!ghost_global_to_local.empty())
-    VecGhostGetLocalForm(*_x, x_ghosted.get());
+  {
+    ierr = VecGhostGetLocalForm(*_x, x_ghosted.get());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostGetLocalForm");
+  }
 }
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
@@ -163,7 +170,8 @@ bool PETScVector::distributed() const
   #else
   VecType petsc_type;
   #endif
-  VecGetType(*_x, &petsc_type);
+  PetscErrorCode ierr = VecGetType(*_x, &petsc_type);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetType");
 
   // Return type
   bool _distributed = false;
@@ -259,7 +267,9 @@ void PETScVector::get_local(std::vector<double>& values) const
   for (std::size_t i = 0; i < local_size; ++i)
     rows[i] += i;
 
-  VecGetValues(*_x, local_size, rows.data(), values.data());
+  PetscErrorCode ierr = VecGetValues(*_x, local_size, rows.data(),
+                                     values.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const std::vector<double>& values)
@@ -282,7 +292,9 @@ void PETScVector::set_local(const std::vector<double>& values)
   for (std::size_t i = 0; i < local_size; ++i)
     rows[i] += i;
 
-  VecSetValues(*_x, local_size, rows.data(), values.data(), INSERT_VALUES);
+  PetscErrorCode ierr = VecSetValues(*_x, local_size, rows.data(),
+                                     values.data(), INSERT_VALUES);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const Array<double>& values)
@@ -305,13 +317,16 @@ void PETScVector::add_local(const Array<double>& values)
   for (std::size_t i = 0; i < local_size; ++i)
     rows[i] += i;
 
-  VecSetValues(*_x, local_size, rows.data(), values.data(), ADD_VALUES);
+  PetscErrorCode ierr = VecSetValues(*_x, local_size, rows.data(),
+                                     values.data(), ADD_VALUES);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, std::size_t m,
 			    const dolfin::la_index* rows) const
 {
   dolfin_assert(_x);
+  PetscErrorCode ierr;
   PetscInt _m = m;
   const dolfin::la_index* _rows = rows;
 
@@ -326,7 +341,10 @@ void PETScVector::get_local(double* block, std::size_t m,
 
   // Use VecGetValues if no ghost points, otherwise check for ghost values
   if (ghost_global_to_local.empty() || m == 0)
-    VecGetValues(*_x, _m, _rows, block);
+  {
+    ierr = VecGetValues(*_x, _m, _rows, block);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetValues");
+  }
   else
   {
     dolfin_assert(x_ghosted);
@@ -352,7 +370,8 @@ void PETScVector::get_local(double* block, std::size_t m,
     }
 
     // Pick values from ghosted vector
-    VecGetValues(*x_ghosted, _m, local_rows.data(), block);
+    ierr = VecGetValues(*x_ghosted, _m, local_rows.data(), block);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetValues");
   }
 }
 //-----------------------------------------------------------------------------
@@ -360,49 +379,54 @@ void PETScVector::set(const double* block, std::size_t m,
                       const dolfin::la_index* rows)
 {
   dolfin_assert(_x);
-
   if (m == 0)
     return;
-
-  VecSetValues(*_x, m, rows, block, INSERT_VALUES);
+  PetscErrorCode ierr = VecSetValues(*_x, m, rows, block, INSERT_VALUES);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, std::size_t m,
                       const dolfin::la_index* rows)
 {
   dolfin_assert(_x);
-
   if (m == 0)
     return;
-
-  VecSetValues(*_x, m, rows, block, ADD_VALUES);
+  PetscErrorCode ierr = VecSetValues(*_x, m, rows, block, ADD_VALUES);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)
 {
   Timer("Apply (vector)");
   dolfin_assert(_x);
-  VecAssemblyBegin(*_x);
-  VecAssemblyEnd(*_x);
+  PetscErrorCode ierr;
+  ierr = VecAssemblyBegin(*_x);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecAssemblyBegin");
+  ierr = VecAssemblyEnd(*_x);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::zero()
 {
   dolfin_assert(_x);
   double a = 0.0;
-  VecSet(*_x, a);
+  PetscErrorCode ierr = VecSet(*_x, a);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const
 {
-    return size() == 0;
+  return size() == 0;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::size() const
 {
   PetscInt n = 0;
   if (_x)
-    VecGetSize(*_x, &n);
+  {
+    PetscErrorCode ierr = VecGetSize(*_x, &n);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetSize");
+  }
   return n;
 }
 //-----------------------------------------------------------------------------
@@ -410,14 +434,18 @@ std::size_t PETScVector::local_size() const
 {
   PetscInt n = 0;
   if (_x)
-    VecGetLocalSize(*_x, &n);
+  {
+    PetscErrorCode ierr = VecGetLocalSize(*_x, &n);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetLocalSize");
+  }
   return n;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> PETScVector::local_range() const
 {
   PetscInt n0, n1;
-  VecGetOwnershipRange(*_x, &n0, &n1);
+  PetscErrorCode ierr = VecGetOwnershipRange(*_x, &n0, &n1);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetOwnershipRange");
   dolfin_assert(n0 <= n1);
   return std::make_pair(n0, n1);
 }
@@ -462,7 +490,8 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
     // Copy data (local operatrion)
     dolfin_assert(v._x);
     dolfin_assert(_x);
-    VecCopy(*(v._x), *_x);
+    PetscErrorCode ierr = VecCopy(*(v._x), *_x);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecCopy");
   }
   return *this;
 }
@@ -470,14 +499,18 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 const PETScVector& PETScVector::operator= (double a)
 {
   dolfin_assert(_x);
-  VecSet(*_x, a);
+  PetscErrorCode ierr = VecSet(*_x, a);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
   return *this;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::update_ghost_values()
 {
-  VecGhostUpdateBegin(*_x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(*_x, INSERT_VALUES, SCATTER_FORWARD);
+  PetscErrorCode ierr;
+  ierr = VecGhostUpdateBegin(*_x, INSERT_VALUES, SCATTER_FORWARD);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
+  ierr = VecGhostUpdateEnd(*_x, INSERT_VALUES, SCATTER_FORWARD);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
@@ -489,7 +522,8 @@ const PETScVector& PETScVector::operator+= (const GenericVector& x)
 const PETScVector& PETScVector::operator+= (double a)
 {
   dolfin_assert(_x);
-  VecShift(*_x, a);
+  PetscErrorCode ierr = VecShift(*_x, a);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecShift");
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -502,24 +536,23 @@ const PETScVector& PETScVector::operator-= (const GenericVector& x)
 const PETScVector& PETScVector::operator-= (double a)
 {
   dolfin_assert(_x);
-  VecShift(*_x, -a);
+  (*this) += -a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator*= (const double a)
 {
   dolfin_assert(_x);
-  VecScale(*_x, a);
+  PetscErrorCode ierr = VecScale(*_x, a);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScale");
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator*= (const GenericVector& y)
 {
   dolfin_assert(_x);
-
   const PETScVector& v = as_type<const PETScVector>(y);
   dolfin_assert(v._x);
-
   if (size() != v.size())
   {
     dolfin_error("PETScVector.cpp",
@@ -527,7 +560,8 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  VecPointwiseMult(*_x, *_x, *v._x);
+  PetscErrorCode ierr = VecPointwiseMult(*_x, *_x, *v._x);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecPointwiseMult");
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -535,21 +569,19 @@ const PETScVector& PETScVector::operator/= (const double a)
 {
   dolfin_assert(_x);
   dolfin_assert(a != 0.0);
-
   const double b = 1.0/a;
-  VecScale(*_x, b);
+  (*this) *= b;
   return *this;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::inner(const GenericVector& y) const
 {
   dolfin_assert(_x);
-
   const PETScVector& _y = as_type<const PETScVector>(y);
   dolfin_assert(_y._x);
-
   double a;
-  VecDot(*(_y._x), *_x, &a);
+  PetscErrorCode ierr = VecDot(*(_y._x), *_x, &a);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecDot");
   return a;
 }
 //-----------------------------------------------------------------------------
@@ -559,7 +591,6 @@ void PETScVector::axpy(double a, const GenericVector& y)
 
   const PETScVector& _y = as_type<const PETScVector>(y);
   dolfin_assert(_y._x);
-
   if (size() != _y.size())
   {
     dolfin_error("PETScVector.cpp",
@@ -567,7 +598,8 @@ void PETScVector::axpy(double a, const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  VecAXPY(*_x, a, *(_y._x));
+  PetscErrorCode ierr = VecAXPY(*_x, a, *(_y._x));
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecAXPY");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::abs()
@@ -587,36 +619,38 @@ double PETScVector::norm(std::string norm_type) const
   }
 
   double value = 0.0;
-  VecNorm(*_x, norm_types.find(norm_type)->second, &value);
+  PetscErrorCode ierr = VecNorm(*_x, norm_types.find(norm_type)->second,
+                                &value);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecNorm");
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::min() const
 {
   dolfin_assert(_x);
-
   double value = 0.0;
   PetscInt position = 0;
-  VecMin(*_x, &position, &value);
+  PetscErrorCode ierr = VecMin(*_x, &position, &value);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecMin");
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::max() const
 {
   dolfin_assert(_x);
-
   double value = 0.0;
   PetscInt position = 0;
-  VecMax(*_x, &position, &value);
+  PetscErrorCode ierr = VecMax(*_x, &position, &value);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecMax");
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::sum() const
 {
   dolfin_assert(_x);
-
   double value = 0.0;
-  VecSum(*_x, &value);
+  PetscErrorCode ierr = VecSum(*_x, &value);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSum");
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -644,7 +678,8 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   {
     // Receive data from process p - i (i steps to the left), send data to
     // process p + i (i steps to the right)
-    const std::size_t source = (process_number - i + num_processes) % num_processes;
+    const std::size_t source
+      = (process_number - i + num_processes) % num_processes;
     const std::size_t dest   = (process_number + i) % num_processes;
 
     // Send and receive data
@@ -665,7 +700,8 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   get_local(&local_values[0], local_rows.size(), &local_rows.set()[0]);
 
   // Compute local sum
-  const double local_sum = std::accumulate(local_values.begin(), local_values.end(), 0.0);
+  const double local_sum = std::accumulate(local_values.begin(),
+                                           local_values.end(), 0.0);
 
   return MPI::sum(local_sum);
 }
@@ -675,8 +711,9 @@ std::string PETScVector::str(bool verbose) const
   if (!_x)
     return "<Uninitialized PETScVector>";
 
-  std::stringstream s;
+  PetscErrorCode ierr;
 
+  std::stringstream s;
   if (verbose)
   {
     // Get vector type
@@ -686,18 +723,28 @@ std::string PETScVector::str(bool verbose) const
     VecType petsc_type;
     #endif
     dolfin_assert(_x);
-    VecGetType(*_x, &petsc_type);
+    ierr = VecGetType(*_x, &petsc_type);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGet");
 
     if (strcmp(petsc_type, VECSEQ) == 0)
-      VecView(*_x, PETSC_VIEWER_STDOUT_SELF);
+    {
+      ierr = VecView(*_x, PETSC_VIEWER_STDOUT_SELF);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecView");
+    }
     else if (strcmp(petsc_type, VECMPI) == 0)
-      VecView(*_x, PETSC_VIEWER_STDOUT_WORLD);
+    {
+      ierr = VecView(*_x, PETSC_VIEWER_STDOUT_WORLD);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecView");
+    }
     #ifdef HAS_PETSC_CUSP
     else if (strcmp(petsc_type, VECSEQCUSP) == 0)
-      VecView(*_x, PETSC_VIEWER_STDOUT_SELF);
+    {
+      ierr = VecView(*_x, PETSC_VIEWER_STDOUT_SELF);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecView");
     // TODO: Uncomment these two lines after implementing MPI Cusp vectors
     //else if (strcmp(petsc_type, VECMPICUSP) == 0)
     //  VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
+    }
     #endif
   }
   else
@@ -706,9 +753,11 @@ std::string PETScVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y, const std::vector<dolfin::la_index>& indices) const
+void PETScVector::gather(GenericVector& y,
+                         const std::vector<dolfin::la_index>& indices) const
 {
   dolfin_assert(_x);
+  PetscErrorCode ierr;
 
   // Down cast to a PETScVector
   PETScVector& _y = as_type<PETScVector>(y);
@@ -719,14 +768,17 @@ void PETScVector::gather(GenericVector& y, const std::vector<dolfin::la_index>& 
   #else
   VecType petsc_type;
   #endif
-  VecGetType(*(_y.vec()), &petsc_type);
+  ierr = VecGetType(*(_y.vec()), &petsc_type);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetType");
 
   #ifndef HAS_PETSC_CUSP
   // If PETSc is configured without Cusp, check only for one sequential type
   if (strcmp(petsc_type, VECSEQ) != 0)
+  {
     dolfin_error("PETScVector.cpp",
                  "gather values for PETSc vector",
                  "Values can only be gathered into local vectors");
+  }
   #else
   // If PETSc is configured with Cusp, check for both sequential types
   if (strcmp(petsc_type, VECSEQ) != 0 && strcmp(petsc_type, VECSEQCUSP) != 0)
@@ -750,22 +802,33 @@ void PETScVector::gather(GenericVector& y, const std::vector<dolfin::la_index>& 
 
   // Create local index sets
   IS from, to;
-  ISCreateGeneral(PETSC_COMM_SELF, n, global_indices.data(), PETSC_COPY_VALUES, &from);
-  ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
+  ierr = ISCreateGeneral(PETSC_COMM_SELF, n, global_indices.data(),
+                         PETSC_COPY_VALUES, &from);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
+  ierr = ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateStride");
 
   // Resize vector if required
   y.resize(n);
 
   // Perform scatter
   VecScatter scatter;
-  VecScatterCreate(*_x, from, *(_y.vec()), to, &scatter);
-  VecScatterBegin(scatter, *_x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
-  VecScatterEnd(scatter, *_x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
+  ierr = VecScatterCreate(*_x, from, *(_y.vec()), to, &scatter);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterCreate");
+  ierr = VecScatterBegin(scatter, *_x, *(_y.vec()), INSERT_VALUES,
+                         SCATTER_FORWARD);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterBegin");
+  ierr = VecScatterEnd(scatter, *_x, *(_y.vec()), INSERT_VALUES,
+                       SCATTER_FORWARD);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterEnd");
 
   // Clean up
-  ISDestroy(&from);
-  ISDestroy(&to);
-  VecScatterDestroy(&scatter);
+  ierr = VecScatterDestroy(&scatter);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterDestroy");
+  ierr = ISDestroy(&from);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
+  ierr = ISDestroy(&to);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const
@@ -774,12 +837,13 @@ void PETScVector::gather(std::vector<double>& x, const std::vector<dolfin::la_in
   PETScVector y("local");
   gather(y, indices);
   dolfin_assert(y.local_size() == x.size());
-
   y.get_local(x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather_on_zero(std::vector<double>& x) const
 {
+  PetscErrorCode ierr;
+
   if (MPI::process_number() == 0)
     x.resize(size());
   else
@@ -787,11 +851,14 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 
   boost::shared_ptr<Vec> vout(new Vec(0), PETScVectorDeleter());
   VecScatter scatter;
-  VecScatterCreateToZero(*_x, &scatter, vout.get());
-
-  VecScatterBegin(scatter, *_x, *vout, INSERT_VALUES, SCATTER_FORWARD);
-  VecScatterEnd(scatter, *_x, *vout, INSERT_VALUES, SCATTER_FORWARD);
-  VecScatterDestroy(&scatter);
+  ierr = VecScatterCreateToZero(*_x, &scatter, vout.get());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterCreateToZero");
+  ierr = VecScatterBegin(scatter, *_x, *vout, INSERT_VALUES, SCATTER_FORWARD);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterBegin");
+  ierr = VecScatterEnd(scatter, *_x, *vout, INSERT_VALUES, SCATTER_FORWARD);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterEnd");
+  ierr = VecScatterDestroy(&scatter);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterDestroy");
 
   // Wrap PETSc vector
   if (MPI::process_number() == 0)
@@ -805,6 +872,7 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices,
                         bool distributed)
 {
+  PetscErrorCode ierr;
   // Create vector
   if (_x && !_x.unique())
   {
@@ -820,17 +888,27 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
   // Initialize vector, either default or MPI vector
   if (!distributed)
   {
-    VecCreate(PETSC_COMM_SELF, _x.get());
+    ierr = VecCreate(PETSC_COMM_SELF, _x.get());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecCreate");
+
     // Set type to be either standard or Cusp sequential vector
     if (!_use_gpu)
-      VecSetType(*_x, VECSEQ);
+    {
+      ierr = VecSetType(*_x, VECSEQ);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetType");
+    }
     #ifdef HAS_PETSC_CUSP
     else
-      VecSetType(*_x, VECSEQCUSP);
+    {
+      ierr = VecSetType(*_x, VECSEQCUSP);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetType");
+    }
     #endif
 
-    VecSetSizes(*_x, local_size, PETSC_DECIDE);
-    VecSetFromOptions(*_x);
+    ierr = VecSetSizes(*_x, local_size, PETSC_DECIDE);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetSizes");
+    ierr = VecSetFromOptions(*_x);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetFromOptions");
   }
   else
   {
@@ -844,8 +922,9 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
     ghost_global_to_local.clear();
 
     // Copy ghost indices
-    VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
-                   ghost_indices.size(), ghost_indices.data(), _x.get());
+    ierr = VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
+                          ghost_indices.size(), ghost_indices.data(), _x.get());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecCreateGhost");
 
     // Build global-to-local map for ghost indices
     for (std::size_t i = 0; i < ghost_indices.size(); ++i)
@@ -856,7 +935,8 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
 
     // Create ghost view
     x_ghosted.reset(new Vec(0), PETScVectorDeleter());
-    VecGhostGetLocalForm(*_x, x_ghosted.get());
+    ierr = VecGhostGetLocalForm(*_x, x_ghosted.get());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostGetLocalForm");
   }
 }
 //-----------------------------------------------------------------------------

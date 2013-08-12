@@ -135,6 +135,7 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
+   os.path.join(demodir, 'undocumented', 'mixed-poisson-sphere',        'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
@@ -158,7 +159,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'python'), \
    os.path.join(demodir, 'undocumented', 'multidomain',                 'cpp')
    ]
-
 
 failed = []
 timing = []
