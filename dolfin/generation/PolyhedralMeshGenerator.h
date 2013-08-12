@@ -50,7 +50,8 @@ namespace dolfin
                          double cell_size, bool detect_sharp_features=true);
 
     /// Create surface mesh from a collection of facets
-    static void generate_surface_mesh(Mesh& mesh, const std::vector<Point>& vertices,
+    static void generate_surface_mesh(Mesh& mesh,
+                                      const std::vector<Point>& vertices,
                          const std::vector<std::vector<std::size_t> >& facets,
                          double cell_size, bool detect_sharp_features=true);
 
