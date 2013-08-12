@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-08-06
+// Last changed: 2013-08-12
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -99,7 +99,7 @@ namespace dolfin
     /// *Arguments*
     ///     tree (_BoundingBoxTree_)
     ///         The bounding box tree.
-    std::vector<unsigned int>
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
     compute_collisions(const BoundingBoxTree& tree) const;
 
     /// Compute all collisions between entities and _Point_.

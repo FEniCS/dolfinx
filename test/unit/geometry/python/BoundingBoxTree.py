@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-06-06
+# Last changed: 2013-08-12
 
 import unittest
 import numpy
@@ -30,9 +30,9 @@ from dolfin import MPI
 
 class BoundingBoxTreeTest(unittest.TestCase):
 
-    #--- compute_collisions ---
+    #--- compute_collisions with point ---
 
-    def test_compute_collisions_1d(self):
+    def test_compute_collisions_point_1d(self):
 
         reference = {1: [4]}
 
@@ -45,7 +45,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
             if MPI.num_processes() == 1:
                 self.assertEqual(sorted(entities), reference[dim])
 
-    def test_compute_collisions_2d(self):
+    def test_compute_collisions_point_2d(self):
 
         reference = {1: [226],
                      2: [136, 137]}
@@ -59,7 +59,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
             if MPI.num_processes() == 1:
                 self.assertEqual(sorted(entities), reference[dim])
 
-    def test_compute_collisions_3d(self):
+    def test_compute_collisions_point_3d(self):
 
         reference = {1: [1364],
                      2: [1967, 1968, 1970, 1972, 1974, 1976],
@@ -73,6 +73,27 @@ class BoundingBoxTreeTest(unittest.TestCase):
             entities = tree.compute_collisions(p)
             if MPI.num_processes() == 1:
                 self.assertEqual(sorted(entities), reference[dim])
+
+    #--- compute_collisions with tree ---
+
+    def test_compute_collisions_tree_1d(self):
+        print "FIXME"
+
+    def test_compute_collisions_tree_2d(self):
+        print "FIXME"
+
+    def test_compute_collisions_tree_3d(self):
+
+        mesh_A = UnitCubeMesh(8, 8, 8)
+        mesh_B = UnitCubeMesh(8, 8, 8)
+
+        #dx = Point(0.5, 0.5, 0.5)
+        #mesh_B.displace(dx)
+
+
+
+
+
 
     #--- compute_entity_collisions ---
 
@@ -242,4 +263,22 @@ if __name__ == "__main__":
     print ""
     print "Testing BoundingBoxTree"
     print "------------------------------------------------"
-    unittest.main()
+
+    print "FIXME: Temporary testing"
+    #unittest.main()
+
+
+    mesh_A = UnitCubeMesh(8, 8, 8)
+    mesh_B = UnitCubeMesh(8, 8, 8)
+
+    dx = Point(0.5, 0.5, 0.5)
+    mesh_B.translate(dx)
+
+    tree_A = BoundingBoxTree()
+    tree_A.build(mesh_A)
+
+    tree_B = BoundingBoxTree()
+    tree_B.build(mesh_B)
+
+    tree_A.compute_collisions(tree_B)
+

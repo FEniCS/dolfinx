@@ -53,7 +53,8 @@ namespace dolfin
     std::vector<unsigned int> compute_collisions(const Point& point) const;
 
     /// Compute all collisions between bounding boxes and _BoundingBoxTree_
-    std::vector<unsigned int> compute_collisions(const GenericBoundingBoxTree& tree) const;
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+    compute_collisions(const GenericBoundingBoxTree& tree) const;
 
     /// Compute all collisions between entities and _Point_
     std::vector<unsigned int> compute_entity_collisions(const Point& point,
@@ -127,11 +128,12 @@ namespace dolfin
 
     /// Compute collisions with tree (recursive)
     static void
-    _compute_collisions(const GenericBoundingBoxTree& other,
-                        unsigned int node_this,
-                        unsigned int node_other,
-                        std::vector<unsigned int>& entities_this,
-                        std::vector<unsigned int>& entities_other);
+    _compute_collisions(const GenericBoundingBoxTree& A,
+                        const GenericBoundingBoxTree& B,
+                        unsigned int node_A,
+                        unsigned int node_B,
+                        std::vector<unsigned int>& entities_A,
+                        std::vector<unsigned int>& entities_B);
 
     /// Compute entity collisions with point (recursive)
     static void
@@ -200,6 +202,18 @@ namespace dolfin
         _bbox_coordinates.push_back(b[i]);
 
       return _bboxes.size() - 1;
+    }
+
+    // Return bounding box for given node
+    inline const BBox& get_bbox(unsigned int node) const
+    {
+      return _bboxes[node];
+    }
+
+    // Return number of bounding boxes
+    inline unsigned int num_bboxes() const
+    {
+      return _bboxes.size();
     }
 
     // Add bounding box and point coordinates
@@ -275,9 +289,16 @@ namespace dolfin
     // Return geometric dimension
     virtual std::size_t gdim() const = 0;
 
-    // Check whether point is in bounding box
+    // Return bounding box coordinates for node
+    virtual const double* get_bbox_coordinates(unsigned int node) const = 0;
+
+    // Check whether point (x) is in bounding box (node)
     virtual bool
     point_in_bbox(const double* x, unsigned int node) const = 0;
+
+    // Check whether bounding box (a) is in bounding box (node)
+    virtual bool
+    bbox_in_bbox(const double* a, unsigned int node) const = 0;
 
     // Compute squared distance between point and bounding box
     virtual double

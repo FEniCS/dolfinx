@@ -78,7 +78,7 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
   _build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(), _gdim);
 
   info("Computed bounding box tree with %d nodes for %d entities.",
-       _bboxes.size(), num_leaves);
+       num_bboxes(), num_leaves);
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::build(const std::vector<Point>& points)
@@ -96,7 +96,7 @@ void GenericBoundingBoxTree::build(const std::vector<Point>& points)
   _build(points, leaf_partition.begin(), leaf_partition.end(), gdim());
 
   info("Computed bounding box tree with %d nodes for %d points.",
-       _bboxes.size(), num_leaves);
+       num_bboxes(), num_leaves);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
@@ -104,25 +104,28 @@ GenericBoundingBoxTree::compute_collisions(const Point& point) const
 {
   // Call recursive find function
   std::vector<unsigned int> entities;
-  _compute_collisions(*this, point, _bboxes.size() - 1, entities);
+  _compute_collisions(*this, point, num_bboxes() - 1, entities);
 
   return entities;
 }
 //-----------------------------------------------------------------------------
-std::vector<unsigned int>
+std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
 GenericBoundingBoxTree::compute_collisions(const GenericBoundingBoxTree& tree) const
 {
-  // Call recursive find function
-  std::vector<unsigned int> entities_this;
-  std::vector<unsigned int> entities_other;
-  _compute_collisions(tree,
-                      _bboxes.size() - 1,
-                      tree._bboxes.size() - 1,
-                      entities_this,
-                      entities_other);
+  // Introduce new variables for clarity
+  const GenericBoundingBoxTree& A(*this);
+  const GenericBoundingBoxTree& B(tree);
 
-  // FIXME: Change return data to return both lists
-  return entities_this;
+  // Initialize empty lists of collisions
+  std::vector<unsigned int> entities_A;
+  std::vector<unsigned int> entities_B;
+
+  // Call recursive find function
+  _compute_collisions(A, B,
+                      A.num_bboxes() - 1, B.num_bboxes() - 1,
+                      entities_A, entities_B);
+
+  return std::make_pair(entities_A, entities_B);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
@@ -139,7 +142,7 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
 
   // Call recursive find function
   std::vector<unsigned int> entities;
-  _compute_entity_collisions(*this, point, _bboxes.size() - 1, entities, mesh);
+  _compute_entity_collisions(*this, point, num_bboxes() - 1, entities, mesh);
 
   return entities;
 }
@@ -148,7 +151,7 @@ unsigned int
 GenericBoundingBoxTree::compute_first_collision(const Point& point) const
 {
   // Call recursive find function
-  return _compute_first_collision(*this, point, _bboxes.size() - 1);
+  return _compute_first_collision(*this, point, num_bboxes() - 1);
 }
 //-----------------------------------------------------------------------------
 unsigned int
@@ -164,7 +167,7 @@ GenericBoundingBoxTree::compute_first_entity_collision(const Point& point,
   }
 
   // Call recursive find function
-  return _compute_first_entity_collision(*this, point, _bboxes.size() - 1, mesh);
+  return _compute_first_entity_collision(*this, point, num_bboxes() - 1, mesh);
 }
 //-----------------------------------------------------------------------------
 std::pair<unsigned int, double>
@@ -191,7 +194,7 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
   double R2 = r*r;
 
   // Call recursive find function
-  _compute_closest_entity(*this, point, _bboxes.size() - 1,
+  _compute_closest_entity(*this, point, num_bboxes() - 1,
                           mesh, closest_entity, R2);
 
   // Sanity check
@@ -221,7 +224,7 @@ GenericBoundingBoxTree::compute_closest_point(const Point& point) const
                                              closest_point);
 
   // Call recursive find function
-  _compute_closest_point(*this, point, _bboxes.size() - 1, closest_point, R2);
+  _compute_closest_point(*this, point, num_bboxes() - 1, closest_point, R2);
 
   std::pair<unsigned int, double> ret(closest_point, sqrt(R2));
   return ret;
@@ -256,8 +259,8 @@ GenericBoundingBoxTree::_build(const std::vector<double>& leaf_bboxes,
     const double* b = leaf_bboxes.data() + 2*gdim*entity_index;
 
     // Store bounding box data
-    bbox.child_0 = _bboxes.size(); // child_0 == node denotes a leaf
-    bbox.child_1 = entity_index;   // index of entity contained in leaf
+    bbox.child_0 = num_bboxes(); // child_0 == node denotes a leaf
+    bbox.child_1 = entity_index; // index of entity contained in leaf
     return add_bbox(bbox, b, gdim);
   }
 
@@ -294,8 +297,8 @@ GenericBoundingBoxTree::_build(const std::vector<Point>& points,
   {
     // Store bounding box data
     const unsigned int point_index = *begin;
-    bbox.child_0 = _bboxes.size(); // child_0 == node denotes a leaf
-    bbox.child_1 = point_index;    // index of entity contained in leaf
+    bbox.child_0 = num_bboxes(); // child_0 == node denotes a leaf
+    bbox.child_1 = point_index;  // index of entity contained in leaf
     return add_point(bbox, points[point_index], gdim);
   }
 
@@ -323,7 +326,7 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& tree,
                                             std::vector<unsigned int>& entities)
 {
   // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
+  const BBox& bbox = tree.get_bbox(node);
 
   // If point is not in bounding box, then don't search further
   if (!tree.point_in_bbox(point.coordinates(), node))
@@ -342,13 +345,44 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& tree,
 }
 //-----------------------------------------------------------------------------
 void
-GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& other,
-                                            unsigned int node_this,
-                                            unsigned int node_other,
-                                            std::vector<unsigned int>& entities_this,
-                                            std::vector<unsigned int>& entities_other)
+GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
+                                            const GenericBoundingBoxTree& B,
+                                            unsigned int node_A,
+                                            unsigned int node_B,
+                                            std::vector<unsigned int>& entities_A,
+                                            std::vector<unsigned int>& entities_B)
 {
-  cout << "calling recursive function" << endl;
+  // Get bounding boxes for current nodes
+  const BBox& bbox_A = A.get_bbox(node_A);
+  const BBox& bbox_B = B.get_bbox(node_B);
+
+  // If bounding boxes don't collide, then don't search further
+  if (!B.bbox_in_bbox(A.get_bbox_coordinates(node_A), node_B))
+    return;
+
+  // If both boxes are leaves (which we know collide), then add them
+  else if (A.is_leaf(bbox_A, node_A) && B.is_leaf(bbox_B, node_B))
+  {
+    entities_A.push_back(node_B);
+    entities_B.push_back(node_A);
+  }
+
+  // Descend largest tree first. Note that nodes are added in reverse order
+  // with the top bounding box at the end so the largest tree (the one with
+  // the the most boxes left to traverse) has the largest node number.
+  else
+  {
+    if (node_A < node_B)
+    {
+      _compute_collisions(A, B, bbox_A.child_0, node_B, entities_A, entities_B);
+      _compute_collisions(A, B, bbox_A.child_1, node_B, entities_A, entities_B);
+    }
+    else
+    {
+      _compute_collisions(A, B, node_A, bbox_B.child_0, entities_A, entities_B);
+      _compute_collisions(A, B, node_A, bbox_B.child_1, entities_A, entities_B);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -359,7 +393,7 @@ GenericBoundingBoxTree::_compute_entity_collisions(const GenericBoundingBoxTree&
                                                    const Mesh& mesh)
 {
   // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
+  const BBox& bbox = tree.get_bbox(node);
 
   // If point is not in bounding box, then don't search further
   if (!tree.point_in_bbox(point.coordinates(), node))
@@ -395,7 +429,7 @@ GenericBoundingBoxTree::_compute_first_collision(const GenericBoundingBoxTree& t
   unsigned int not_found = std::numeric_limits<unsigned int>::max();
 
   // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
+  const BBox& bbox = tree.get_bbox(node);
 
   // If point is not in bounding box, then don't search further
   if (!tree.point_in_bbox(point.coordinates(), node))
@@ -432,7 +466,7 @@ GenericBoundingBoxTree::_compute_first_entity_collision(const GenericBoundingBox
   unsigned int not_found = std::numeric_limits<unsigned int>::max();
 
   // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
+  const BBox& bbox = tree.get_bbox(node);
 
   // If point is not in bounding box, then don't search further
   if (!tree.point_in_bbox(point.coordinates(), node))
@@ -482,7 +516,7 @@ GenericBoundingBoxTree::_compute_closest_entity(const GenericBoundingBoxTree& tr
                                                 double& R2)
 {
   // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
+  const BBox& bbox = tree.get_bbox(node);
 
   // If bounding box is outside radius, then don't search further
   const double r2 = tree.compute_squared_distance_bbox(point.coordinates(), node);
@@ -522,7 +556,7 @@ GenericBoundingBoxTree::_compute_closest_point(const GenericBoundingBoxTree& tre
                                                double& R2)
 {
   // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
+  const BBox& bbox = tree.get_bbox(node);
 
   // If box is leaf, then compute distance and shrink radius
   if (tree.is_leaf(bbox, node))
