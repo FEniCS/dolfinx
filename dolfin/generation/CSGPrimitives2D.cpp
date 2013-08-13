@@ -26,6 +26,10 @@
 
 #include "CSGPrimitives2D.h"
 
+#include <limits>
+#include <algorithm>
+#include <dolfin/log/LogStream.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -150,6 +154,11 @@ Polygon::Polygon(const std::vector<Point>& vertices)
                  "create polygon",
                  "Polygon should have at least three vertices");
   }
+
+  if (!ccw())
+    dolfin_error("CSGPrimitives2D.cpp",
+                 "create polygon",
+                 "Polygonv vertices must be given in counter clockwise order");
 }
 //-----------------------------------------------------------------------------
 std::string Polygon::str(bool verbose) const
@@ -186,16 +195,17 @@ std::string Polygon::str(bool verbose) const
 //-----------------------------------------------------------------------------
 bool Polygon::ccw() const
 {
-  double area = 0.0;
+  double signed_area = 0.0;
   
   Point prev = _vertices.back();
-  for (std::vector<Point>::const_iterator it = _vertices.begin();
-       it != _vertices.end();
+  for (std::vector<Point>::const_iterator it = _vertices.begin(),
+	 v_end = _vertices.end();
+       it != v_end;
        ++it)
   {
-    area += (prev.x()-it->x())*(prev.y()-it->y());
+    signed_area += (prev.x()*it->y())-(it->x()*prev.y());
     prev = *it;
   }
 
-  return area < 0;
+  return signed_area > 0;
 }
