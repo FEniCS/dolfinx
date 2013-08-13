@@ -184,3 +184,18 @@ std::string Polygon::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+bool Polygon::ccw() const
+{
+  double area = 0.0;
+  
+  Point prev = _vertices.back();
+  for (std::vector<Point>::const_iterator it = _vertices.begin();
+       it != _vertices.end();
+       ++it)
+  {
+    area += (prev.x()-it->x())*(prev.y()-it->y());
+    prev = *it;
+  }
+
+  return area < 0;
+}

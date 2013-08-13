@@ -182,6 +182,9 @@ namespace dolfin
     std::string str(bool verbose) const;
     Type getType() const { return CSGGeometry::Polygon; }
 
+    // Check if vertices are counter clockwise oriented
+    bool ccw() const;
+
     /// Return vertices in polygon
     const std::vector<Point>& vertices() const { return _vertices; }
 
