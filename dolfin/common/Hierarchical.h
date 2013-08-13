@@ -71,7 +71,7 @@ namespace dolfin
     ///     bool
     ///         The return value is true iff the object has a parent.
     bool has_parent() const
-    { return _parent; }
+    { return _parent ? true : false; }
 
     /// Check if the object has a child.
     ///
@@ -79,7 +79,7 @@ namespace dolfin
     ///     bool
     ///         The return value is true iff the object has a child.
     bool has_child() const
-    { return _child; }
+    { return _child ? true : false; }
 
     /// Return parent in hierarchy. An error is thrown if the object
     /// has no parent.

@@ -20,8 +20,10 @@ parallel assembly/solve."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Garth N. Wells, 2013
+#
 # First added:  2009-08-17
-# Last changed: 2009-08-17
+# Last changed: 2013-07-06
 
 import sys
 from dolfin import *
@@ -29,11 +31,11 @@ from dolfin import *
 # Relative tolerance for regression test
 tol = 1e-10
 
-def solve(mesh, degree):
+def test_solve(mesh, degree):
     "Solve on given mesh file and degree of function space."
 
     # Create function space
-    V = FunctionSpace(mesh, "CG", degree)
+    V = FunctionSpace(mesh, "Lagrange", degree)
 
     # Define variational problem
     v = TestFunction(V)
@@ -44,12 +46,11 @@ def solve(mesh, degree):
     L = v*f*dx - v*g*ds
 
     # Compute solution
-    print "Degree:", degree
     w = Function(V)
     solve(a == L, w)
 
     # Return norm of solution vector
-    return u.vector().norm("l2")
+    return w.vector().norm("l2")
 
 def print_reference(results):
     "Print nicely formatted values for gluing into code as a reference"
@@ -66,10 +67,10 @@ def print_reference(results):
 def check_results(results, reference, tol):
     "Compare results with reference"
 
-    status = True
+    status = 0
 
-    if not MPI.process_number() == 0:
-        return
+    #if not MPI.process_number() == 0:
+    #    return status
 
     print "Checking results"
     print "----------------"
@@ -82,7 +83,7 @@ def check_results(results, reference, tol):
             if diff < tol:
                 print "OK",
             else:
-                status = False
+                status = 1
                 print "*** ERROR",
             print "(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff)
         else:
@@ -105,11 +106,12 @@ meshes= [(UnitSquareMesh(16, 16), "16x16 unit square"),\
          (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
 degrees = [1, 2, 3, 4]
 
+
 # Iterate over test cases and collect results
 results = []
 for mesh in meshes:
     for degree in degrees:
-        norm = solve(mesh[0], degree)
+        norm = test_solve(mesh[0], degree)
         results.append((mesh[1], degree, norm))
 
 # Uncomment to print results for use as reference

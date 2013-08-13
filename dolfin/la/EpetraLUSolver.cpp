@@ -51,10 +51,10 @@ EpetraLUSolver::methods()
 {
   static std::vector<std::pair<std::string, std::string> > m;
 
-  m.push_back(std::make_pair("default",      "default LU solver"));
-  m.push_back(std::make_pair("umfpack",      "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
-  m.push_back(std::make_pair("mumps",        "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)"));
-  m.push_back(std::make_pair("klu",          "Trilinos KLU"));
+  m.push_back(std::make_pair("default", "default LU solver"));
+  m.push_back(std::make_pair("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+  m.push_back(std::make_pair("mumps", "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)"));
+  m.push_back(std::make_pair("klu", "Trilinos KLU"));
 
   return m;
 }
@@ -273,8 +273,8 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraLUSolver::solve(const GenericLinearOperator& A,
-                                   GenericVector& x,
-                                   const GenericVector& b)
+                                  GenericVector& x,
+                                  const GenericVector& b)
 {
   return solve(as_type<const EpetraMatrix>(require_matrix(A)),
                as_type<EpetraVector>(x),
@@ -282,14 +282,15 @@ std::size_t EpetraLUSolver::solve(const GenericLinearOperator& A,
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
-                                   const EpetraVector& b)
+                                  const EpetraVector& b)
 {
   boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
-std::size_t EpetraLUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
+std::size_t EpetraLUSolver::solve_transpose(GenericVector& x,
+                                            const GenericVector& b)
 {
   dolfin_assert(solver);
   solver->SetUseTranspose(true);
@@ -299,8 +300,8 @@ std::size_t EpetraLUSolver::solve_transpose(GenericVector& x, const GenericVecto
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraLUSolver::solve_transpose(const GenericLinearOperator& A,
-                                   GenericVector& x,
-                                   const GenericVector& b)
+                                            GenericVector& x,
+                                            const GenericVector& b)
 {
   dolfin_assert(solver);
   solver->SetUseTranspose(true);
@@ -309,8 +310,9 @@ std::size_t EpetraLUSolver::solve_transpose(const GenericLinearOperator& A,
   return out;
 }
 //-----------------------------------------------------------------------------
-std::size_t EpetraLUSolver::solve_transpose(const EpetraMatrix& A, EpetraVector& x,
-                                   const EpetraVector& b)
+std::size_t EpetraLUSolver::solve_transpose(const EpetraMatrix& A,
+                                            EpetraVector& x,
+                                            const EpetraVector& b)
 {
   dolfin_assert(solver);
   solver->SetUseTranspose(true);

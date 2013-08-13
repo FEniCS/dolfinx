@@ -17,10 +17,16 @@ download_mesh()
         zsync -q -o $DEMO/$MESH http://fenicsproject.org/pub/data/meshes/$MESH.zsync
     else
         if [ "$OS" = "Darwin" ]; then
-            curl -O http://fenicsproject.org/pub/data/meshes/$MESH
+            output=`curl http://fenicsproject.org/pub/data/meshes/$MESH 2>&1`
         else
-            wget --quiet http://fenicsproject.org/pub/data/meshes/$MESH
+            output=`wget http://fenicsproject.org/pub/data/meshes/$MESH 2>&1`
         fi
+	
+	# If download fails
+	if [ $? -ne 0 ]; then
+            echo "$output" 1>&2
+	    exit 1
+	fi
         mv $MESH $DEMO
     fi
 }
@@ -45,7 +51,6 @@ download_mesh demo/undocumented/tensor-weighted-poisson      unitsquare_32_32_c1
 download_mesh demo/undocumented/stokes-taylor-hood/          dolfin_fine.xml.gz
 download_mesh demo/undocumented/stokes-taylor-hood           dolfin_fine_subdomains.xml.gz
 download_mesh demo/undocumented/stokes-taylor-hood           dolfin_fine.xml.gz
-download_mesh demo/undocumented/meshintersection/2D          rotator.xml.gz
 download_mesh demo/undocumented/elastodynamics               dolfin_fine.xml.gz
 download_mesh demo/undocumented/auto-adaptive-navier-stokes  channel_with_flap.xml.gz
 download_mesh demo/undocumented/stokes-mini                  dolfin_fine.xml.gz

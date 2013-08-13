@@ -118,7 +118,7 @@ namespace dolfin
 
       /// Compute residual norm
       double residual_norm(cholmod_dense* r, cholmod_dense* x,
-			                     cholmod_dense* b);
+                           cholmod_dense* b);
 
       /// Perform one refinement
       void refine_once(cholmod_dense* x, cholmod_dense* r);

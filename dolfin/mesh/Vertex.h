@@ -21,11 +21,11 @@
 #ifndef __VERTEX_H
 #define __VERTEX_H
 
+#include <dolfin/geometry/Point.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
-#include "Point.h"
 
 namespace dolfin
 {

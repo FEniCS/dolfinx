@@ -37,7 +37,8 @@ namespace dolfin
   public:
 
     // Mesh writer
-    static void write_mesh(const Mesh& mesh, std::size_t cell_dim, std::string file,
+    static void write_mesh(const Mesh& mesh, std::size_t cell_dim,
+                           std::string file,
                            bool binary, bool compress);
 
     // Cell data writer
@@ -62,7 +63,8 @@ namespace dolfin
     static std::string base64_cell_data(const Mesh& mesh,
                                         const std::vector<std::size_t>& offset,
                                         const std::vector<double>& values,
-                                        std::size_t dim, std::size_t rank, bool compress);
+                                        std::size_t dim, std::size_t rank,
+                                        bool compress);
 
     // Mesh writer (ascii)
     static void write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
@@ -81,7 +83,8 @@ namespace dolfin
 
     // Compute compressed base64 encoded stream for VTK
     template<typename T>
-    static std::string encode_inline_compressed_base64(const std::vector<T>& data);
+    static std::string encode_inline_compressed_base64(const std::vector<T>&
+                                                       data);
 
   };
 
@@ -119,7 +122,8 @@ namespace dolfin
   //--------------------------------------------------------------------------
   #ifdef HAS_ZLIB
   template<typename T>
-  std::string VTKWriter::encode_inline_compressed_base64(const std::vector<T>& data)
+  std::string VTKWriter::encode_inline_compressed_base64(const std::vector<T>&
+                                                         data)
   {
     std::stringstream stream;
 

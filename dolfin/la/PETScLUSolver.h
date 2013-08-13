@@ -73,22 +73,27 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(GenericVector& x, const GenericVector& b, bool transpose);
+    std::size_t solve(GenericVector& x, const GenericVector& b,
+                      bool transpose);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+    std::size_t solve(const PETScMatrix& A, PETScVector& x,
+                      const PETScVector& b);
 
     /// Solve linear system A^Tx = b
     std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve_transpose(const GenericLinearOperator& A,
+                                GenericVector& x, const GenericVector& b);
 
     /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+    std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x,
+                                const PETScVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -115,7 +120,8 @@ namespace dolfin
     static const std::map<const MatSolverPackage, const bool> _methods_cholesky;
 
     // Available LU solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+    static const std::vector<std::pair<std::string, std::string> >
+      _methods_descr;
 
     // Select LU solver type
     const MatSolverPackage select_solver(std::string& method) const;
