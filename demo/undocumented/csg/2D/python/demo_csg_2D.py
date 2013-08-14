@@ -32,17 +32,17 @@ domain.set_subdomain(2, Rectangle(2., 2., 3., 4.))
 
 
 # Test printing
-info("\nCompact output of 2D geometry:");
-info(domain);
-info("");
-info("\nVerbose output of 2D geometry:");
-info(domain, True);
+info("\nCompact output of 2D geometry:")
+info(domain)
+info("")
+info("\nVerbose output of 2D geometry:")
+info(domain, True)
 
 # Plot geometry
-plot(domain, "2D Geometry (boundary)");
+plot(domain, "2D Geometry (boundary)")
 
 # Generate and plot mesh
-mesh2d = Mesh(domain, 45);
+mesh2d = Mesh(domain, 45)
 plot(mesh2d, "2D mesh")
 
 # Convert subdomains to mesh function for plotting
