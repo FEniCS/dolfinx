@@ -79,7 +79,11 @@ void VTKPlottableMesh::init_pipeline(const Parameters& p)
 {
   dolfin_assert(_geometryFilter);
 
+  #if VTK_MAJOR_VERSION <= 5
   _geometryFilter->SetInput(_grid);
+  #else
+  _geometryFilter->SetInputData(_grid);
+  #endif
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------
@@ -319,7 +323,11 @@ vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
   if (!_meshActor)
   {
     vtkSmartPointer<vtkGeometryFilter> geomfilter = vtkSmartPointer<vtkGeometryFilter>::New();
+    #if VTK_MAJOR_VERSION <= 5
     geomfilter->SetInput(_full_grid);
+    #else
+    geomfilter->SetInputData(_full_grid);
+    #endif
     geomfilter->Update();
 
     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -349,11 +357,22 @@ void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filte
 {
   if (filter)
   {
+    #if VTK_MAJOR_VERSION <= 5
     filter->SetInput(_grid);
     _geometryFilter->SetInput(filter->GetOutput());
+    #else
+    filter->SetInputData(_grid);
+    _geometryFilter->SetInputData(filter->GetOutput());
+    #endif
   }
   else
+  {
+    #if VTK_MAJOR_VERSION <= 5
     _geometryFilter->SetInput(_grid);
+    #else
+    _geometryFilter->SetInputData(_grid);
+    #endif
+  }
 
   _geometryFilter->Update();
 }
@@ -429,9 +448,13 @@ void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata,
     _grid->GetPointData()->SetVectors(values);
 
     // Compute norms of vector data
-    vtkSmartPointer<vtkVectorNorm> norms =
-      vtkSmartPointer<vtkVectorNorm>::New();
+    vtkSmartPointer<vtkVectorNorm>
+      norms =vtkSmartPointer<vtkVectorNorm>::New();
+    #if VTK_MAJOR_VERSION <= 5
     norms->SetInput(_grid);
+    #else
+    norms->SetInputData(_grid);
+    #endif
     norms->SetAttributeModeToUsePointData();
     //NOTE: This update is necessary to actually compute the norms
     norms->Update();
