@@ -343,7 +343,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
     # Return data structures
     return module_info, dolfin_type_def
 
-def write_module_interface_file(module, dependencies, submodule_info, dest_to_dolfin):
+def write_module_interface_file(module, dependencies, submodule_info):
     """
     Write the main interface file for SWIG module
     """
@@ -359,15 +359,13 @@ def write_module_interface_file(module, dependencies, submodule_info, dest_to_do
                   build_swig_import_info(dependencies, submodule_info)
 
     # Filter file dependencies
-    file_dependencies = [dest_to_dolfin + "../../../../" + f \
+    file_dependencies = [os.path.abspath(f) \
                          for f in file_dependencies]
 
-    #print file_dependencies
-    #file_dependencies = []
-
     # Add global SWIG interface files
-    file_dependencies.append("module.i")
-    file_dependencies.extend(f.replace("dolfin/swig", "../..") \
+    file_dependencies.append(os.path.abspath(os.path.join(\
+        swig_dir, "modules", module, "module.i")))
+    file_dependencies.extend(os.path.abspath(f) \
                              for f in glob.glob("dolfin/swig/*.i") + \
                              glob.glob("dolfin/swig/typemaps/*.i"))
 
@@ -395,22 +393,24 @@ def write_module_interface_file(module, dependencies, submodule_info, dest_to_do
         if submod_info["has_pre"]:
             include_lines.append(\
                 "%%include \"dolfin/swig/%s/pre.i\"" % submodule)
-            file_dependencies.append("../../%s/pre.i" % submodule)
+            file_dependencies.append(os.path.abspath(os.path.join(\
+                swig_dir, submodule, "pre.i")))
 
         # Add headers
         headers_includes.extend("#include \"%s\"" % header \
                                 for header in submod_info["headers"])
         include_lines.extend("%%include \"%s\"" % header \
                              for header in submod_info["headers"])
-        file_dependencies.extend(dest_to_dolfin + "../../../../" + f \
-                         for f in submod_info["headers"])
+        file_dependencies = [os.path.abspath(f) \
+                             for f in file_dependencies]
 
         #print submod_info["headers"]
         # Check for post includes
         if submod_info["has_post"]:
             include_lines.append(\
                 "%%include \"dolfin/swig/%s/post.i\"" % submodule)
-            file_dependencies.append("../../%s/post.i" % submodule)
+            file_dependencies.append(os.path.abspath(os.path.join(\
+                swig_dir, submodule, "post.i")))
 
     # Add imports and includes to form
     module_form["imports"] =    "\n".join(import_lines)
@@ -514,23 +514,6 @@ def regenerate_swig_interface(module_to_submodules, excludes, top_destdir):
             abs_destdirs.pop(0)
         else:
             break
-
-    # How do we come from abs_destdir to dolfin_dir
-
-    # abs_destdir is a sub directory of dolfin_dirs
-    if not dolfin_dirs and abs_destdirs:
-
-        dest_to_dolfin = os.sep.join([os.path.pardir]*len(abs_destdirs))+os.sep
-
-    # dolfin_dirs is a sub directory of abs_destdir
-    elif dolfin_dirs and not abs_destdirs:
-        dest_to_dolfin = os.sep.join(dolfin_dirs)+os.sep
-
-    # dolfin_dirs is the same directory as abs_destdir
-    elif not dolfin_dirs and not abs_destdirs:
-        dest_to_dolfin = ""
-    else:
-        raise NotImplemented("Need some love...")
     
     if not os.path.isdir(abs_destdir):
         raise RuntimeError("%s is not a directory." % abs_destdir)
@@ -550,7 +533,7 @@ def regenerate_swig_interface(module_to_submodules, excludes, top_destdir):
     # Iterate over the modules and create a swig interface file
     for module in module_to_submodules:
         write_module_interface_file(module, module_info[module]["dependencies"], \
-                                    submodule_info, dest_to_dolfin)
+                                    submodule_info)
         write_swig_cmakelist_file(module)
 
     # Create a python module with generated type info to be used runtime
