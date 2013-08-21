@@ -649,7 +649,11 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   grid->SetPoints(vtk_points);
 
   vtkSmartPointer<vtkGeometryFilter> extract = vtkSmartPointer<vtkGeometryFilter>::New();
+  #if VTK_MAJOR_VERSION <= 5
   extract->SetInput(grid);
+  #else
+  extract->SetInputData(grid);
+  #endif
 
   vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   mapper->SetInputConnection(extract->GetOutputPort());
