@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-08-12
+# Last changed: 2013-08-22
 
 import unittest
 import numpy
@@ -267,7 +267,6 @@ if __name__ == "__main__":
     print "FIXME: Temporary testing"
     #unittest.main()
 
-
     mesh_A = UnitCubeMesh(8, 8, 8)
     mesh_B = UnitCubeMesh(8, 8, 8)
 
@@ -281,4 +280,3 @@ if __name__ == "__main__":
     tree_B.build(mesh_B)
 
     tree_A.compute_collisions(tree_B)
-

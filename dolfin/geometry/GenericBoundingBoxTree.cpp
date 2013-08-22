@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-08-12
+// Last changed: 2013-08-22
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -360,29 +360,48 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
   if (!B.bbox_in_bbox(A.get_bbox_coordinates(node_A), node_B))
     return;
 
+  // Check whether we've reached a leaf in A or B
+  const bool is_leaf_A = A.is_leaf(bbox_A, node_A);
+  const bool is_leaf_B = B.is_leaf(bbox_B, node_B);
+
   // If both boxes are leaves (which we know collide), then add them
-  else if (A.is_leaf(bbox_A, node_A) && B.is_leaf(bbox_B, node_B))
+  if (is_leaf_A && is_leaf_B)
   {
     entities_A.push_back(node_B);
     entities_B.push_back(node_A);
   }
 
-  // Descend largest tree first. Note that nodes are added in reverse order
-  // with the top bounding box at the end so the largest tree (the one with
-  // the the most boxes left to traverse) has the largest node number.
+  // If we reached the leaf in A, then descend B
+  else if (is_leaf_A)
+  {
+    _compute_collisions(A, B, node_A, bbox_B.child_0, entities_A, entities_B);
+    _compute_collisions(A, B, node_A, bbox_B.child_1, entities_A, entities_B);
+  }
+
+  // If we reached the leaf in B, then descend A
+  else if (is_leaf_B)
+  {
+    _compute_collisions(A, B, bbox_A.child_0, node_B, entities_A, entities_B);
+    _compute_collisions(A, B, bbox_A.child_1, node_B, entities_A, entities_B);
+  }
+
+  // At this point, we know neither is a leaf so descend the largest
+  // tree first. Note that nodes are added in reverse order with the
+  // top bounding box at the end so the largest tree (the one with the
+  // the most boxes left to traverse) has the largest node number.
+  else if (node_A > node_B)
+  {
+    _compute_collisions(A, B, bbox_A.child_0, node_B, entities_A, entities_B);
+    _compute_collisions(A, B, bbox_A.child_1, node_B, entities_A, entities_B);
+  }
   else
   {
-    if (node_A < node_B)
-    {
-      _compute_collisions(A, B, bbox_A.child_0, node_B, entities_A, entities_B);
-      _compute_collisions(A, B, bbox_A.child_1, node_B, entities_A, entities_B);
-    }
-    else
-    {
-      _compute_collisions(A, B, node_A, bbox_B.child_0, entities_A, entities_B);
-      _compute_collisions(A, B, node_A, bbox_B.child_1, entities_A, entities_B);
-    }
+    _compute_collisions(A, B, node_A, bbox_B.child_0, entities_A, entities_B);
+    _compute_collisions(A, B, node_A, bbox_B.child_1, entities_A, entities_B);
   }
+
+  // Note that cases above can be collected in fewer cases but this
+  // way the logic is easier to follow.
 }
 //-----------------------------------------------------------------------------
 void
