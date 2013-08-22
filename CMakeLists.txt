@@ -751,17 +751,17 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
   execute_process(
     COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data 
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
-    RESULT_VARIABLE DOWONLOAD_DEMO_DATA_RESULT
-    OUTPUT_VARIABLE DOWONLOAD_DEMO_DATA_OUTPUT
-    ERROR_VARIABLE DOWONLOAD_DEMO_DATA_OUTPUT
+    RESULT_VARIABLE DOWNLOAD_DEMO_DATA_RESULT
+    OUTPUT_VARIABLE DOWNLOAD_DEMO_DATA_OUTPUT
+    ERROR_VARIABLE DOWNLOAD_DEMO_DATA_OUTPUT
     OUTPUT_QUIET)
-  if (DOWONLOAD_DEMO_DATA_RESULT)
+  if (DOWNLOAD_DEMO_DATA_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
     if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
       file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
     endif()
-    message(FATAL_ERROR "Download failed: \n${DOWONLOAD_DEMO_DATA_OUTPUT}")
+    message(WARNING "Download failed: \n${DOWNLOAD_DEMO_DATA_OUTPUT}")
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
 endif()

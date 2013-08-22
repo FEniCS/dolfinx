@@ -92,8 +92,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : Hierarchical<Function>(*this), _function_space(V), _vector(x),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
-  // We do not check for a subspace since this constructor is used for creating
-  // subfunctions
+  // We do not check for a subspace since this constructor is used for
+  // creating subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
   dolfin_assert(V->dofmap());
@@ -230,7 +230,8 @@ const Function& Function::operator= (const Function& v)
     // Initial new vector (global)
     init_vector();
     dolfin_assert(_function_space->dofmap());
-    dolfin_assert(_vector->size() == _function_space->dofmap()->global_dimension());
+    dolfin_assert(_vector->size()
+                  == _function_space->dofmap()->global_dimension());
 
     // Set values in vector
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);
@@ -252,14 +253,16 @@ const Function& Function::operator= (const Expression& v)
 Function& Function::operator[] (std::size_t i) const
 {
   // Check if sub-Function is in the cache, otherwise create and add to cache
-  boost::ptr_map<std::size_t, Function>::iterator sub_function = sub_functions.find(i);
+  boost::ptr_map<std::size_t, Function>::iterator sub_function
+    = sub_functions.find(i);
   if (sub_function != sub_functions.end())
     return *(sub_function->second);
   else
   {
     // Extract function subspace
     std::vector<std::size_t> component = boost::assign::list_of(i);
-    boost::shared_ptr<const FunctionSpace> sub_space(_function_space->extract_sub_space(component));
+    boost::shared_ptr<const FunctionSpace>
+      sub_space(_function_space->extract_sub_space(component));
 
     // Insert sub-Function into map and return reference
     sub_functions.insert(i, new Function(sub_space, _vector));
@@ -312,11 +315,9 @@ void Function::operator=(const FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  for (std::vector<std::pair<double, const Function*> >::const_iterator \
-	 it=axpy.pairs().begin()+1;
-       it!=axpy.pairs().end(); it++)
+  std::vector<std::pair<double, const Function*> >::const_iterator it;
+  for (it = axpy.pairs().begin()+1; it != axpy.pairs().end(); it++)
     _vector->axpy(it->first, *(it->second->vector()));
-
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace> Function::function_space() const
@@ -334,7 +335,8 @@ boost::shared_ptr<GenericVector> Function::vector()
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
     cout << "Size of vector: " << _vector->size() << endl;
-    cout << "Size of function space: " << _function_space->dofmap()->global_dimension() << endl;
+    cout << "Size of function space: "
+         << _function_space->dofmap()->global_dimension() << endl;
     dolfin_error("Function.cpp",
                  "access vector of degrees of freedom",
                  "Cannot access a non-const vector from a subfunction");
@@ -375,26 +377,28 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   // FIXME: Testing
   int ID = 0;
 
-    unsigned int id = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+  unsigned int id
+    = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
     // If not found, use the closest cell
-    if (id == std::numeric_limits<unsigned int>::max())
+  if (id == std::numeric_limits<unsigned int>::max())
+  {
+    if (allow_extrapolation)
     {
-      if (allow_extrapolation)
-      {
-        id = mesh.bounding_box_tree()->compute_closest_entity(point, mesh).first;
-        cout << "Extrapolating function value at x = " << point << " (not inside domain)." << endl;
-      }
-      else
-      {
-        cout << "Evaluating at x = " << point << endl;
-        dolfin_error("Function.cpp",
-                     "evaluate function at point",
-                     "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
-      }
+      id = mesh.bounding_box_tree()->compute_closest_entity(point, mesh).first;
+      cout << "Extrapolating function value at x = " << point
+           << " (not inside domain)." << endl;
     }
+    else
+    {
+      cout << "Evaluating at x = " << point << endl;
+      dolfin_error("Function.cpp",
+                   "evaluate function at point",
+                   "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
+    }
+  }
 
-    ID = id;
+  ID = id;
 
   // Create cell that contains point
   const Cell cell(mesh, ID);
@@ -404,10 +408,8 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   eval(values, x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values,
-                    const Array<double>& x,
-                    const Cell& dolfin_cell,
-                    const ufc::cell& ufc_cell) const
+void Function::eval(Array<double>& values, const Array<double>& x,
+                    const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
 {
   // Developer note: work arrays/vectors are re-created each time this
   //                 function is called for thread-safety
@@ -437,7 +439,8 @@ void Function::eval(Array<double>& values,
   const int cell_orientation = 0;
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
-    element.evaluate_basis(i, &basis[0], &x[0], &ufc_cell.vertex_coordinates[0],
+    element.evaluate_basis(i, &basis[0], &x[0],
+                           &ufc_cell.vertex_coordinates[0],
                            cell_orientation);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
@@ -510,50 +513,55 @@ void Function::non_matching_eval(Array<double>& values,
   // FIXME: Testing
   int ID = 0;
 
-    // Alternative 1: Find cell that point (x) intersects
-    unsigned int id = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+  // Alternative 1: Find cell that point (x) intersects
+  unsigned int id
+    = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
-    // Check whether we are allowed to extrapolate to evaluate
-    if (id == std::numeric_limits<unsigned int>::max() && !allow_extrapolation)
-    {
-      dolfin_error("Function.cpp",
-                   "evaluate function at point",
-                   "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
-    }
+  // Check whether we are allowed to extrapolate to evaluate
+  if (id == std::numeric_limits<unsigned int>::max() && !allow_extrapolation)
+  {
+    dolfin_error("Function.cpp",
+                 "evaluate function at point",
+                 "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
+  }
 
-    // FIXME: Remove dim == 2 here!
+  // FIXME: Remove dim == 2 here!
 
-    // Alternative 2: Compute closest cell to point (x)
-    if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation && dim == 2)
+  // Alternative 2: Compute closest cell to point (x)
+  if (id == std::numeric_limits<unsigned int>::max()
+      && allow_extrapolation && dim == 2)
+  {
       id = mesh.bounding_box_tree()->compute_closest_entity(point, mesh).first;
+  }
 
-    // Alternative 3: Compute cell that contains barycenter of ufc_cell
-    // NB: This is slightly heuristic, but should work well for
-    // evaluation of points on refined meshes
-    if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation)
+  // Alternative 3: Compute cell that contains barycenter of ufc_cell
+  // NB: This is slightly heuristic, but should work well for
+  // evaluation of points on refined meshes
+  if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation)
+  {
+    // Extract vertices of ufc_cell
+    const double * const * vertices = ufc_cell.coordinates;
+
+    Point barycenter;
+    for (std::size_t i = 0; i <= dim; i++)
     {
-      // Extract vertices of ufc_cell
-      const double * const * vertices = ufc_cell.coordinates;
-
-      Point barycenter;
-      for (std::size_t i = 0; i <= dim; i++)
-      {
-        Point vertex(dim, vertices[i]);
-        barycenter += vertex;
-      }
-      barycenter /= (dim + 1);
-      id = mesh.bounding_box_tree()->compute_first_entity_collision(barycenter, mesh);
+      Point vertex(dim, vertices[i]);
+      barycenter += vertex;
     }
+    barycenter /= (dim + 1);
+    id = mesh.bounding_box_tree()->compute_first_entity_collision(barycenter,
+                                                                  mesh);
+  }
 
-    // Throw error if all alternatives failed
-    if (id == std::numeric_limits<unsigned int>::max())
-    {
-      dolfin_error("Function.cpp",
-                   "evaluate function at point",
-                   "No matching cell found");
-    }
+  // Throw error if all alternatives failed
+  if (id == std::numeric_limits<unsigned int>::max())
+  {
+    dolfin_error("Function.cpp",
+                 "evaluate function at point",
+                 "No matching cell found");
+  }
 
-    ID = id;
+  ID = id;
 
   // Create cell that contains point
   const Cell cell(mesh, ID);
@@ -563,8 +571,7 @@ void Function::non_matching_eval(Array<double>& values,
   eval(values, x, cell, new_ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void Function::restrict(double* w,
-                        const FiniteElement& element,
+void Function::restrict(double* w, const FiniteElement& element,
                         const Cell& dolfin_cell,
                         const ufc::cell& ufc_cell) const
 {
@@ -618,7 +625,8 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     = _function_space->dofmap()->restriction();
 
   // Local data for interpolation on each cell
-  const std::size_t num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
+  const std::size_t num_cell_vertices
+    = mesh.type().num_vertices(mesh.topology().dim());
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
@@ -660,7 +668,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {
         const std::size_t local_index  = vertex.pos()*value_size_loc + i;
-        const std::size_t global_index = i*mesh.num_vertices() + vertex->index();
+        const std::size_t global_index = i*mesh.num_vertices()+vertex->index();
         vertex_values[global_index] = cell_vertex_values[local_index];
       }
     }
@@ -697,11 +705,12 @@ void Function::init_vector()
   const std::size_t N = _function_space->dofmap()->global_dimension();
 
   // Get local range
-  const std::pair<std::size_t, std::size_t> range = _function_space->dofmap()->ownership_range();
+  const std::pair<std::size_t, std::size_t> range
+    = _function_space->dofmap()->ownership_range();
   const std::size_t local_size = range.second - range.first;
 
   // Determine ghost vertices if dof map is distributed
-  std::vector<std::size_t> ghost_indices;
+  std::vector<la_index> ghost_indices;
   if (N > local_size)
     compute_ghost_indices(range, ghost_indices);
 
@@ -718,8 +727,9 @@ void Function::init_vector()
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
-void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
-                                     std::vector<std::size_t>& ghost_indices) const
+void
+Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
+                                std::vector<la_index>& ghost_indices) const
 {
   // Clear data
   ghost_indices.clear();
@@ -748,8 +758,11 @@ void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
       if (dof < n0 || dof >= n1)
       {
         // FIXME: Could we use dolfin::Set here? Or unordered_set?
-        if (std::find(ghost_indices.begin(), ghost_indices.end(), dof) == ghost_indices.end())
+        if (std::find(ghost_indices.begin(), ghost_indices.end(), dof)
+            == ghost_indices.end())
+        {
           ghost_indices.push_back(dof);
+        }
       }
     }
   }

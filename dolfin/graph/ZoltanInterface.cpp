@@ -33,16 +33,10 @@ using namespace dolfin;
 
 #ifdef HAS_TRILINOS
 //-----------------------------------------------------------------------------
-std::size_t ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
+std::size_t
+ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
                                                std::vector<std::size_t>& colors)
 {
-  if (colors.size() != graph.size())
-  {
-    dolfin_error("ZoltanInterface.cpp",
-                 "color mesh using Zoltan",
-                 "Array of colors has wrong size");
-  }
-
   // Create Zoltan graph wrapper
   ZoltanGraphInterface zoltan_graph(graph);
 
@@ -53,7 +47,7 @@ std::size_t ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   Zoltan_Initialize(argc, argv, &version);
 
   // Create Zoltan object
-  Zoltan zoltan;
+  Zoltan zoltan(MPI_COMM_SELF);
 
   // Set parameters
   zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  // global ID is single integer
@@ -74,8 +68,9 @@ std::size_t ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 
   // Call Zoltan function to compute coloring
   int num_id = 1;
-  int rc = zoltan.Color(num_id, graph.size(), &global_ids[0],
-                        reinterpret_cast<int*>(colors.data()));
+  std::vector<int> _colors(graph.size());
+  int rc = zoltan.Color(num_id, graph.size(), global_ids.data(),
+                        _colors.data());
   if (rc != ZOLTAN_OK)
   {
     dolfin_error("ZoltanInterface.cpp",
@@ -83,13 +78,13 @@ std::size_t ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
                  "Call to Zoltan failed");
   }
 
-  // Compute number of colors
-  boost::unordered_set<std::size_t> colors_set;
+  // Copy colors and convert to base zero
+  colors.resize(_colors.size());
   for (std::size_t i = 0; i < colors.size(); ++i)
-  {
-    colors[i] = colors[i] - 1;
-    colors_set.insert(colors[i]);
-  }
+    colors[i] = _colors[i] - 1;
+
+  // Count number of unique colors
+  const std::set<std::size_t> colors_set(colors.begin(), colors.end());
 
   return colors_set.size();
 }

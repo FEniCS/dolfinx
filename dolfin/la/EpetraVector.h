@@ -102,7 +102,7 @@ namespace dolfin
 
     /// Resize vector with given ownership range and with ghost values
     virtual void resize(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<std::size_t>& ghost_indices);
+                        const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -120,12 +120,15 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows);
+    virtual void set(const double* block, std::size_t m,
+                     const dolfin::la_index* rows);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows);
+    virtual void add(const double* block, std::size_t m,
+                     const dolfin::la_index* rows);
 
-    virtual void get_local(double* block, std::size_t m, const dolfin::la_index* rows) const;
+    virtual void get_local(double* block, std::size_t m,
+                           const dolfin::la_index* rows) const;
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;
@@ -137,10 +140,12 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const;
+    virtual void gather(GenericVector& x,
+                        const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const;
+    virtual void gather(std::vector<double>& x,
+                        const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const;
@@ -225,7 +230,8 @@ namespace dolfin
     // Global-to-local map for ghost values
     boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
 
-    // Cache of off-process 'set' values (versus 'add') to be communicated
+    // Cache of off-process 'set' values (versus 'add') to be
+    // communicated
     boost::unordered_map<std::size_t, double> off_process_set_values;
 
     // Local/global vector

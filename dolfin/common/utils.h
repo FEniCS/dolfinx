@@ -73,7 +73,7 @@ namespace dolfin
 
     // Hash the received hash keys
     boost::hash<std::vector<std::size_t> > hash;
-    const std::size_t global_hash = hash(all_hashes);
+    std::size_t global_hash = hash(all_hashes);
 
     // Broadcast hash key to all processes
     MPI::broadcast(global_hash);
@@ -87,8 +87,10 @@ namespace dolfin
     if (std::numeric_limits<T>::is_integer || std::numeric_limits<T>::is_iec559)
       std::memset(arr, 0, n*sizeof(T));
     else
+    {
       // should never happen in practice
       std::fill_n(arr, n, T(0));
+    }
   }
 
   template <class T>

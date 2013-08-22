@@ -1,8 +1,6 @@
-"""This demo illustrates use of the MeshFunction class.
+"""Unit tests for mesh coloring"""
 
-Original implementation: ../cpp/main.cpp by Ola Skavhaug."""
-
-# Copyright (C) 2007 Kristian B. Oelgaard
+# Copyright (C) 2013 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -19,23 +17,25 @@ Original implementation: ../cpp/main.cpp by Ola Skavhaug."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2007-11-15
-# Last changed: 2008-03-31
+# First added:  2013-08-10
+# Last changed:
 
+import unittest
 from dolfin import *
 
-# Read mesh from file
-mesh = Mesh("../unitsquare_2_2.xml.gz")
+class MeshColoring(unittest.TestCase):
 
-# Read mesh function from file
-file_in = File("../unitsquare_2_2_subdomains.xml.gz")
-f = MeshFunction("double", mesh)
-file_in >> f
+    def test_by_entity_cell_coloring(self):
+        """Color mesh cells by connections."""
 
-# Write mesh function to XDMF (requires HDF5)
-if has_hdf5():
-    out = File("meshfunction_out.xdmf");
-    out << f
+        # Get coloring libraries
+        coloring_libraries =  parameters.get_range("graph_coloring_library")
+        for coloring_library in coloring_libraries:
+            parameters["graph_coloring_library"] = coloring_library
+            mesh = UnitCubeMesh(16, 16, 16)
+            mesh.color("vertex")
+            mesh.color("edge")
+            mesh.color("facet")
 
-# Plot mesh function
-plot(f, interactive=True)
+if __name__ == "__main__":
+    unittest.main()
