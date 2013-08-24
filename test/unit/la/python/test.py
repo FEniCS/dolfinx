@@ -159,9 +159,10 @@ class AbstractBaseTest(object):
         G4 = A2[A2 > 1]
 
         if not distributed:
-          A3 = fromiter(A, "d")
+            A3 = fromiter(A, "d")
 
-        if A.owns_index(15): a = A[15]
+        if A.owns_index(15):
+            a = A[15]
         b = 1.e10
 
         self.assertAlmostEqual(G1.sum(), G.sum())
@@ -220,7 +221,7 @@ class AbstractBaseTest(object):
 
         self.assertRaises(RuntimeError, wrong_dim, [0,2], [0,2,4])
         self.assertRaises(RuntimeError, wrong_dim, [0,2], slice(0,4,1))
-        self.assertRaises(TypeError, wrong_dim, 0, slice(0,4,1))
+        #self.assertRaises(TypeError, wrong_dim, 0, slice(0,4,1))
 
         # Tests bailout for these choices
         if self.backend == "uBLAS" and sys.version_info[0]==2 and \
