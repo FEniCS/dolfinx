@@ -161,7 +161,7 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
     Cell cell(mesh, entity_index);
 
     // Check entity
-    if (cell.contains(point))
+    if (cell.collides(point))
       entities.push_back(entity_index);
   }
 
@@ -486,7 +486,7 @@ GenericBoundingBoxTree::_compute_first_entity_collision(const GenericBoundingBox
     Cell cell(mesh, entity_index);
 
     // Check entity
-    if (cell.contains(point))
+    if (cell.collides(point))
       return entity_index;
   }
 

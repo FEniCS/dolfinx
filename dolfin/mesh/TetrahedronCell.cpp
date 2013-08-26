@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-22
+// Last changed: 2013-08-26
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -646,7 +646,7 @@ void TetrahedronCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-bool TetrahedronCell::contains(const Cell& cell, const Point& point) const
+bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
   // See also "Real-Time Collision Detection" by Christer Ericson.

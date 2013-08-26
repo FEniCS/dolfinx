@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
-// Modified by Kristoffer Selim, 2008.
+// Modified by Anders Logg 2008-2013
+// Modified by Kristoffer Selim 2008
 //
 // First added:  2007-12-12
-// Last changed: 2013-05-22
+// Last changed: 2013-08-26
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H
@@ -86,7 +86,7 @@ namespace dolfin
     void order(Cell& cell) const;
 
     /// Check whether given point is contained in cell
-    bool contains(const Cell& cell, const Point& point) const;
+    bool collides(const Cell& cell, const Point& point) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;

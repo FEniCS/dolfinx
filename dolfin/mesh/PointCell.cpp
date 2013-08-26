@@ -19,7 +19,7 @@
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2013-05-22
+// Last changed: 2013-08-26
 
 #include <dolfin/log/log.h>
 #include "Cell.h"
@@ -156,7 +156,7 @@ void PointCell::order(Cell& cell,
                "Ordering of a point cell is not defined");
 }
 //-----------------------------------------------------------------------------
-bool PointCell::contains(const Cell& cell, const Point& point) const
+bool PointCell::collides(const Cell& cell, const Point& point) const
 {
   dolfin_error("PointCell.cpp",
                "check whether point is contained in cell.",

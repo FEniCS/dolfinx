@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-26
+// Last changed: 2013-08-26
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -478,7 +478,7 @@ double TriangleCell::radius_ratio(const Cell& triangle) const
   return 16.0*S*S / (a*b*c*(a+b+c));
 }
 //-----------------------------------------------------------------------------
-bool TriangleCell::contains(const Cell& cell, const Point& point) const
+bool TriangleCell::collides(const Cell& cell, const Point& point) const
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
   // See also "Real-Time Collision Detection" by Christer Ericson.
