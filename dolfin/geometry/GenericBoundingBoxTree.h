@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-08-12
+// Last changed: 2013-08-26
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -134,14 +134,6 @@ namespace dolfin
                         unsigned int node_B,
                         std::vector<unsigned int>& entities_A,
                         std::vector<unsigned int>& entities_B);
-
-    /// Compute entity collisions with point (recursive)
-    static void
-    _compute_entity_collisions(const GenericBoundingBoxTree& tree,
-                               const Point& point,
-                               unsigned int node,
-                               std::vector<unsigned int>& entities,
-                               const Mesh& mesh);
 
     /// Compute first collision (recursive)
     static unsigned int

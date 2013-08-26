@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-08-22
+// Last changed: 2013-08-26
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -148,9 +148,22 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
                  "Point-in-entity is only implemented for cells");
   }
 
-  // Call recursive find function
+  // Call recursive find function to compute bounding box candidates
+  std::vector<unsigned int> candidates;
+  _compute_collisions(*this, point, num_bboxes() - 1, candidates);
+
+  // Check for collisions in list of candidates
   std::vector<unsigned int> entities;
-  _compute_entity_collisions(*this, point, num_bboxes() - 1, entities, mesh);
+  for (std::size_t i = 0; i < candidates.size(); i++)
+  {
+    // Get cell
+    const unsigned int entity_index = candidates[i];
+    Cell cell(mesh, entity_index);
+
+    // Check entity
+    if (cell.contains(point))
+      entities.push_back(entity_index);
+  }
 
   return entities;
 }
@@ -410,41 +423,6 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
 
   // Note that cases above can be collected in fewer cases but this
   // way the logic is easier to follow.
-}
-//-----------------------------------------------------------------------------
-void
-GenericBoundingBoxTree::_compute_entity_collisions(const GenericBoundingBoxTree& tree,
-                                                   const Point& point,
-                                                   unsigned int node,
-                                                   std::vector<unsigned int>& entities,
-                                                   const Mesh& mesh)
-{
-  // Get bounding box for current node
-  const BBox& bbox = tree.get_bbox(node);
-
-  // If point is not in bounding box, then don't search further
-  if (!tree.point_in_bbox(point.coordinates(), node))
-    return;
-
-  // If box is a leaf (which we know contains the point), then check entity
-  else if (tree.is_leaf(bbox, node))
-  {
-    // Get entity (child_1 denotes entity index for leaves)
-    dolfin_assert(tree._tdim == mesh.topology().dim());
-    const unsigned int entity_index = bbox.child_1;
-    Cell cell(mesh, entity_index);
-
-    // Check entity
-    if (cell.contains(point))
-      entities.push_back(entity_index);
-  }
-
-  // Check both children
-  else
-  {
-    _compute_entity_collisions(tree, point, bbox.child_0, entities, mesh);
-    _compute_entity_collisions(tree, point, bbox.child_1, entities, mesh);
-  }
 }
 //-----------------------------------------------------------------------------
 unsigned int
