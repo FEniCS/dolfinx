@@ -125,6 +125,14 @@ GenericBoundingBoxTree::compute_collisions(const GenericBoundingBoxTree& tree) c
                       A.num_bboxes() - 1, B.num_bboxes() - 1,
                       entities_A, entities_B);
 
+  // FIXME: Debugging
+  cout << "Colliding entities in A" << endl;
+  for (std::size_t i = 0; i < entities_A.size(); i++)
+    cout << entities_A[i] << endl;
+  cout << "Colliding entities in A" << endl;
+  for (std::size_t i = 0; i < entities_B.size(); i++)
+    cout << entities_B[i] << endl;
+
   return std::make_pair(entities_A, entities_B);
 }
 //-----------------------------------------------------------------------------

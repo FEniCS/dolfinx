@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-25
-// Last changed: 2013-06-10
+// Last changed: 2013-08-22
 
 //-----------------------------------------------------------------------------
 // User macro for defining in typmaps for std::pair of a pointer to some
