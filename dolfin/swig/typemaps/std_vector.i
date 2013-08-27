@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2013-06-06
+// Last changed: 2013-08-27
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
