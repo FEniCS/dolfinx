@@ -58,7 +58,11 @@ void VTKPlottableGenericFunction1D::init_pipeline(const Parameters& p)
 {
   VTKPlottableGenericFunction::init_pipeline(p);
 
+  #if VTK_MAJOR_VERSION <= 5
   _actor->AddInput(grid());
+  #else
+  _actor->AddDataSetInput(grid());
+  #endif
   _actor->SetXValuesToValue();
 
   _actor->GetProperty()->SetColor(0.0, 0.0, 0.8);
