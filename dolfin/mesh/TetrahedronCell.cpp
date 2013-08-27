@@ -702,6 +702,13 @@ bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
           x1 + x2 + x3 < 1.0 + DOLFIN_EPS);
 }
 //-----------------------------------------------------------------------------
+bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_not_implemented();
+
+  return false;
+}
+//-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
 {
   if (plural)

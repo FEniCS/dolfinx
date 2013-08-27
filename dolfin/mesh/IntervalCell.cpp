@@ -276,6 +276,13 @@ bool IntervalCell::collides(const Cell& cell, const Point& point) const
           (x > x1 - DOLFIN_EPS && x < x0 + DOLFIN_EPS));
 }
 //-----------------------------------------------------------------------------
+bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_not_implemented();
+
+  return false;
+}
+//-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const
 {
   if (plural)

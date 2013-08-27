@@ -98,6 +98,9 @@ namespace dolfin
     /// Check whether given point collides with cell
     bool collides(const Cell& cell, const Point& point) const;
 
+    /// Check whether given entity collides with cell
+    bool collides(const Cell& cell, const MeshEntity& entity) const;
+
     /// Return description of cell type
     std::string description(bool plural) const;
 
@@ -105,6 +108,14 @@ namespace dolfin
 
     // Find local index of edge i according to ordering convention
     std::size_t find_edge(std::size_t i, const Cell& cell) const;
+
+    // Compute signed area of triangle abc
+    inline double signed_area(const Point& a, const Point& b, const Point c) const
+    { return (a.x() - c.x())*(b.y() - c.y()) - (a.y() - c.y())*(b.x() - c.x()); }
+
+    // Check whether edges ab and cd collide
+    bool collides(const Point& a, const Point& b,
+                  const Point& c, const Point& d) const;
 
   };
 

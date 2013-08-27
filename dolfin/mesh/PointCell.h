@@ -88,6 +88,9 @@ namespace dolfin
     /// Check whether given point is contained in cell
     bool collides(const Cell& cell, const Point& point) const;
 
+    /// Check whether given entity collides with cell
+    bool collides(const Cell& cell, const MeshEntity& entity) const;
+
     /// Return description of cell type
     std::string description(bool plural) const;
 

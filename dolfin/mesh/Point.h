@@ -19,7 +19,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2013-08-05
+// Last changed: 2013-08-26
 
 #ifndef __POINT_H
 #define __POINT_H

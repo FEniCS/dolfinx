@@ -133,8 +133,11 @@ namespace dolfin
     bool ordered(const Cell& cell,
                  const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
-    /// Check whether given point collides with
+    /// Check whether given point collides with cell
     virtual bool collides(const Cell& cell, const Point& point) const = 0;
+
+    /// Check whether given entity collides with cell
+    virtual bool collides(const Cell& cell, const MeshEntity& entity) const = 0;
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;

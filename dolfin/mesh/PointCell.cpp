@@ -159,8 +159,19 @@ void PointCell::order(Cell& cell,
 bool PointCell::collides(const Cell& cell, const Point& point) const
 {
   dolfin_error("PointCell.cpp",
-               "check whether point is contained in cell.",
+               "check whether point collides with cell.",
                "Not defined for point cells");
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_error("PointCell.cpp",
+               "check whether entity collides with cell.",
+               "Not defined for point cells");
+
+  dolfin_not_implemented();
 
   return false;
 }

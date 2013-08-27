@@ -287,6 +287,18 @@ namespace dolfin
     bool collides(const Point& point) const
     { return _mesh->type().collides(*this, point); }
 
+    /// Check whether given entity collides with cell.
+    ///
+    /// *Arguments*
+    ///     entity (_MeshEntity_)
+    ///         The cell to be checked.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff entity collides with cell.
+    bool collides(const MeshEntity& entity) const
+    { return _mesh->type().collides(*this, entity); }
+
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
