@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-08-27
+// Last changed: 2013-08-28
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -123,7 +123,8 @@ GenericBoundingBoxTree::compute_collisions(const GenericBoundingBoxTree& tree) c
   // Call recursive find function
   _compute_collisions(A, B,
                       A.num_bboxes() - 1, B.num_bboxes() - 1,
-                      entities_A, entities_B);
+                      entities_A, entities_B,
+                      0, 0);
 
   return std::make_pair(entities_A, entities_B);
 }
@@ -158,6 +159,28 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
   }
 
   return entities;
+}
+//-----------------------------------------------------------------------------
+std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+GenericBoundingBoxTree::compute_entity_collisions(const GenericBoundingBoxTree& tree,
+                                                  const Mesh& mesh_A,
+                                                  const Mesh& mesh_B) const
+{
+  // Introduce new variables for clarity
+  const GenericBoundingBoxTree& A(*this);
+  const GenericBoundingBoxTree& B(tree);
+
+  // Initialize empty lists of collisions
+  std::vector<unsigned int> entities_A;
+  std::vector<unsigned int> entities_B;
+
+  // Call recursive find function
+  _compute_collisions(A, B,
+                      A.num_bboxes() - 1, B.num_bboxes() - 1,
+                      entities_A, entities_B,
+                      &mesh_A, &mesh_B);
+
+  return std::make_pair(entities_A, entities_B);
 }
 //-----------------------------------------------------------------------------
 unsigned int
@@ -363,7 +386,9 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
                                             unsigned int node_A,
                                             unsigned int node_B,
                                             std::vector<unsigned int>& entities_A,
-                                            std::vector<unsigned int>& entities_B)
+                                            std::vector<unsigned int>& entities_B,
+                                            const Mesh* mesh_A,
+                                            const Mesh* mesh_B)
 {
   // Get bounding boxes for current nodes
   const BBox& bbox_A = A.get_bbox(node_A);
@@ -387,15 +412,19 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
   // If we reached the leaf in A, then descend B
   else if (is_leaf_A)
   {
-    _compute_collisions(A, B, node_A, bbox_B.child_0, entities_A, entities_B);
-    _compute_collisions(A, B, node_A, bbox_B.child_1, entities_A, entities_B);
+    _compute_collisions(A, B, node_A, bbox_B.child_0,
+                        entities_A, entities_B, mesh_A, mesh_B);
+    _compute_collisions(A, B, node_A, bbox_B.child_1,
+                        entities_A, entities_B, mesh_A, mesh_B);
   }
 
   // If we reached the leaf in B, then descend A
   else if (is_leaf_B)
   {
-    _compute_collisions(A, B, bbox_A.child_0, node_B, entities_A, entities_B);
-    _compute_collisions(A, B, bbox_A.child_1, node_B, entities_A, entities_B);
+    _compute_collisions(A, B, bbox_A.child_0, node_B,
+                        entities_A, entities_B, mesh_A, mesh_B);
+    _compute_collisions(A, B, bbox_A.child_1, node_B,
+                        entities_A, entities_B, mesh_A, mesh_B);
   }
 
   // At this point, we know neither is a leaf so descend the largest
@@ -404,13 +433,17 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
   // the most boxes left to traverse) has the largest node number.
   else if (node_A > node_B)
   {
-    _compute_collisions(A, B, bbox_A.child_0, node_B, entities_A, entities_B);
-    _compute_collisions(A, B, bbox_A.child_1, node_B, entities_A, entities_B);
+    _compute_collisions(A, B, bbox_A.child_0, node_B,
+                        entities_A, entities_B, mesh_A, mesh_B);
+    _compute_collisions(A, B, bbox_A.child_1, node_B,
+                        entities_A, entities_B, mesh_A, mesh_B);
   }
   else
   {
-    _compute_collisions(A, B, node_A, bbox_B.child_0, entities_A, entities_B);
-    _compute_collisions(A, B, node_A, bbox_B.child_1, entities_A, entities_B);
+    _compute_collisions(A, B, node_A, bbox_B.child_0,
+                        entities_A, entities_B, mesh_A, mesh_B);
+    _compute_collisions(A, B, node_A, bbox_B.child_1,
+                        entities_A, entities_B, mesh_A, mesh_B);
   }
 
   // Note that cases above can be collected in fewer cases but this

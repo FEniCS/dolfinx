@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2013-06-23
+// Last changed: 2013-08-28
 
 #include <boost/scoped_array.hpp>
 
@@ -68,7 +68,7 @@ void PointSource::apply(GenericVector& b)
   dolfin_assert(_V->mesh());
   const Mesh& mesh = *_V->mesh();
   boost::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
-  const unsigned int cell_index = tree->compute_first_entity_collision(_p, mesh);
+  const unsigned int cell_index = tree->compute_first_entity_collision(_p);
 
   // Check that we found the point on at least one processor
   int num_found = 0;

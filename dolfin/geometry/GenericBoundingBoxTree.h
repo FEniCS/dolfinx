@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-08-26
+// Last changed: 2013-08-28
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -50,15 +50,22 @@ namespace dolfin
     void build(const std::vector<Point>& points);
 
     /// Compute all collisions between bounding boxes and _Point_
-    std::vector<unsigned int> compute_collisions(const Point& point) const;
+    std::vector<unsigned int>
+    compute_collisions(const Point& point) const;
 
     /// Compute all collisions between bounding boxes and _BoundingBoxTree_
     std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
     compute_collisions(const GenericBoundingBoxTree& tree) const;
 
     /// Compute all collisions between entities and _Point_
-    std::vector<unsigned int> compute_entity_collisions(const Point& point,
-                                                        const Mesh& mesh) const;
+    std::vector<unsigned int>
+    compute_entity_collisions(const Point& point,
+                              const Mesh& mesh) const;
+
+    /// Compute all collisions between entities and _BoundingBoxTree_
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+    compute_entity_collisions(const GenericBoundingBoxTree& tree,
+                              const Mesh& mesh_A, const Mesh& mesh_B) const;
 
     /// Compute first collision between bounding boxes and _Point_
     unsigned int compute_first_collision(const Point& point) const;
@@ -133,7 +140,9 @@ namespace dolfin
                         unsigned int node_A,
                         unsigned int node_B,
                         std::vector<unsigned int>& entities_A,
-                        std::vector<unsigned int>& entities_B);
+                        std::vector<unsigned int>& entities_B,
+                        const Mesh* mesh_A,
+                        const Mesh* mesh_B);
 
     /// Compute first collision (recursive)
     static unsigned int
