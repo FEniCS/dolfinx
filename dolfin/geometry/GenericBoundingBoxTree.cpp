@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-08-28
+// Last changed: 2013-08-29
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -104,7 +104,7 @@ GenericBoundingBoxTree::compute_collisions(const Point& point) const
 {
   // Call recursive find function
   std::vector<unsigned int> entities;
-  _compute_collisions(*this, point, num_bboxes() - 1, entities);
+  _compute_collisions(*this, point, num_bboxes() - 1, entities, 0);
 
   return entities;
 }
@@ -142,21 +142,8 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
   }
 
   // Call recursive find function to compute bounding box candidates
-  std::vector<unsigned int> candidates;
-  _compute_collisions(*this, point, num_bboxes() - 1, candidates);
-
-  // Check for collisions in list of candidates
   std::vector<unsigned int> entities;
-  for (std::size_t i = 0; i < candidates.size(); i++)
-  {
-    // Get cell
-    const unsigned int entity_index = candidates[i];
-    Cell cell(mesh, entity_index);
-
-    // Check entity
-    if (cell.collides(point))
-      entities.push_back(entity_index);
-  }
+  _compute_collisions(*this, point, num_bboxes() - 1, entities, &mesh);
 
   return entities;
 }
@@ -359,7 +346,8 @@ void
 GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& tree,
                                             const Point& point,
                                             unsigned int node,
-                                            std::vector<unsigned int>& entities)
+                                            std::vector<unsigned int>& entities,
+                                            const Mesh* mesh)
 {
   // Get bounding box for current node
   const BBox& bbox = tree.get_bbox(node);
@@ -370,13 +358,28 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& tree,
 
   // If box is a leaf (which we know contains the point), then add it
   else if (tree.is_leaf(bbox, node))
-    entities.push_back(bbox.child_1); // child_1 denotes entity for leaves
+  {
+    // child_1 denotes entity for leaves
+    const unsigned int entity_index = bbox.child_1;
+
+    // If we have a mesh, check that the candidate is really a collision
+    if (mesh)
+    {
+      // Get cell
+      Cell cell(*mesh, entity_index);
+      if (cell.collides(point))
+        entities.push_back(entity_index);
+    }
+
+    // Otherwise, add the candidate
+    entities.push_back(entity_index);
+  }
 
   // Check both children
   else
   {
-    _compute_collisions(tree, point, bbox.child_0, entities);
-    _compute_collisions(tree, point, bbox.child_1, entities);
+    _compute_collisions(tree, point, bbox.child_0, entities, mesh);
+    _compute_collisions(tree, point, bbox.child_1, entities, mesh);
   }
 }
 //-----------------------------------------------------------------------------
