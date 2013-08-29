@@ -372,7 +372,8 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& tree,
     }
 
     // Otherwise, add the candidate
-    entities.push_back(entity_index);
+    else
+      entities.push_back(entity_index);
   }
 
   // Check both children
@@ -408,8 +409,29 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
   // If both boxes are leaves (which we know collide), then add them
   if (is_leaf_A && is_leaf_B)
   {
-    entities_A.push_back(node_B);
-    entities_B.push_back(node_A);
+    // child_1 denotes entity for leaves
+    const unsigned int entity_index_A = bbox_A.child_1;
+    const unsigned int entity_index_B = bbox_B.child_1;
+
+    // If we have a mesh, check that the candidate is really a collision
+    if (mesh_A)
+    {
+      dolfin_assert(mesh_B);
+      Cell cell_A(*mesh_A, entity_index_A);
+      Cell cell_B(*mesh_B, entity_index_B);
+      if (cell_A.collides(cell_B))
+      {
+        entities_A.push_back(entity_index_A);
+        entities_B.push_back(entity_index_B);
+      }
+    }
+
+    // Otherwise, add the candidate
+    else
+    {
+      entities_A.push_back(entity_index_A);
+      entities_B.push_back(entity_index_B);
+    }
   }
 
   // If we reached the leaf in A, then descend B
