@@ -574,7 +574,7 @@ void DirichletBC::apply(GenericMatrix* A,
     }
 
     // Apply changes
-    A->apply("add");
+    A->apply("insert");
   }
 }
 //-----------------------------------------------------------------------------
