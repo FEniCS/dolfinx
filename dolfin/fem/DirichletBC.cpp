@@ -565,6 +565,7 @@ void DirichletBC::apply(GenericMatrix* A,
       A->ident(size, &dofs[0]);
     else
     {
+      A->zero(size, &dofs[0]);
       for (std::size_t i = 0; i < size; i++)
       {
         std::pair<std::size_t, std::size_t> ij(dofs[i], dofs[i]);
