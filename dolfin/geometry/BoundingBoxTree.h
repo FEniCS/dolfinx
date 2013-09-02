@@ -16,23 +16,23 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-08-28
+// Last changed: 2013-09-02
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
 
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <vector>
 #include <limits>
+#include <vector>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace dolfin
 {
 
   // Forward declarations
-  class Mesh;
   class Point;
   class GenericBoundingBoxTree;
+  class Mesh;
 
   /// This class implements a (distributed) axis aligned bounding box
   /// tree (AABB tree). Bounding box trees can be created from meshes

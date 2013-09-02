@@ -168,8 +168,8 @@ namespace dolfin
       const double* p = points[*it].coordinates();
       bbox[0] = p[0];
       bbox[1] = p[1];
-      bbox[2] = p[2];
-      bbox[3] = p[3];
+      bbox[2] = p[0];
+      bbox[3] = p[1];
 
       // Compute min and max over remaining points
       for (; it != end; ++it)

@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-27
-// Last changed: 2013-05-16
+// Last changed: 2013-06-24
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using
@@ -51,7 +51,7 @@ namespace boost
 //    MAP_TYPE<uint, VALUE_TYPE>& (argout)
 //
 //-----------------------------------------------------------------------------
-%define MAP_SPECIFIC_OUT_TYPEMAPS(MAP_TYPE, KEY_TYPE, VALUE_TYPE, TYPENAME)
+%define MAP_SPECIFIC_OUT_TYPEMAPS(MAP_TYPE, KEY_TYPE, VALUE_TYPE, TYPENAME, NUMPY_TYPE)
 
 %typemap(out) const MAP_TYPE<KEY_TYPE, VALUE_TYPE>&
  (MAP_TYPE<KEY_TYPE, VALUE_TYPE>::const_iterator it,
@@ -89,7 +89,8 @@ namespace boost
 {
   // MAP_TYPE<std::pair<KEY_TYPE, KEY_TYPE>, VALUE_TYPE>& (out)
   $result = PyDict_New();
-  for (it=$1->begin(); it!=$1->end(); ++it){
+  for (it=$1->begin(); it!=$1->end(); ++it)
+  {
     //item0 = SWIG_From_dec(KEY_TYPE)(it->first.first);
     //item1 = SWIG_From_dec(KEY_TYPE)(it->first.second);
     item2 = Py_BuildValue("ii", it->first.first, it->first.second);
@@ -109,7 +110,8 @@ namespace boost
 {
   // MAP_TYPE<KEY_TYPE, std::pair<VALUE_TYPE, VALUE_TYPE> > (out)
   $result = PyDict_New();
-  for (it=$1.begin(); it!=$1.end(); ++it){
+  for (it=$1.begin(); it!=$1.end(); ++it)
+  {
     item0 = SWIG_From_dec(KEY_TYPE)(it->first);
     item1 = Py_BuildValue("ii", it->second.first, it->second.second);
 
@@ -125,9 +127,38 @@ namespace boost
 {
   // const MAP_TYPE<KEY_TYPE, std::vector<VALUE_TYPE> > (out)
   $result = PyDict_New();
-  for (it=$1->begin(); it!=$1->end(); ++it){
+  for (it=$1->begin(); it!=$1->end(); ++it)
+  {
     item0 = SWIG_From_dec(KEY_TYPE)(it->first);
     item1 = %make_numpy_array(1, TYPENAME)(it->second.size(), &it->second[0], false);
+    PyDict_SetItem($result, item0, item1);
+    Py_XDECREF(item0);
+    Py_XDECREF(item1);
+  }
+}
+
+%typemap(out) MAP_TYPE<KEY_TYPE, std::set<VALUE_TYPE> >& \
+ (MAP_TYPE<KEY_TYPE, std::set<VALUE_TYPE> >::const_iterator map_it,
+  std::set<VALUE_TYPE>::const_iterator set_it,
+  PyObject* item0, PyObject* item1)
+{
+  // MAP_TYPE<KEY_TYPE, std::set<VALUE_TYPE> > (out)
+  $result = PyDict_New();
+  for (map_it=$1->begin(); map_it!=$1->end(); ++map_it)
+  {
+    npy_intp size = map_it->second.size();
+    item0 = SWIG_From_dec(KEY_TYPE)(map_it->first);
+    item1 = PyArray_SimpleNew(1, &size, NUMPY_TYPE);
+
+    PyArrayObject *array = reinterpret_cast<PyArrayObject*>(item1);
+    VALUE_TYPE* data = static_cast<VALUE_TYPE*>(PyArray_DATA(array));
+
+    // Fill numpy array
+    unsigned int i=0;
+    for (set_it = map_it->second.begin(); set_it != map_it->second.end(); i++, set_it++)
+      data[i] = *set_it;
+
+    //item1 = %make_numpy_array(1, TYPENAME)(it->second.size(), &it->second[0], false);
     PyDict_SetItem($result, item0, item1);
     Py_XDECREF(item0);
     Py_XDECREF(item1);
@@ -166,10 +197,11 @@ namespace boost
 // KEY_TYPE   : The key type
 // VALUE_TYPE : The value type
 // TYPENAME   : The name of the type (used to construct a NumPy array)
+// NUMPY_TYPE : The NumPy type that is going to be checked for
 //-----------------------------------------------------------------------------
-%define MAP_OUT_TYPEMAPS(KEY_TYPE, VALUE_TYPE, TYPENAME)
-MAP_SPECIFIC_OUT_TYPEMAPS(boost::unordered_map, KEY_TYPE, VALUE_TYPE, TYPENAME)
-MAP_SPECIFIC_OUT_TYPEMAPS(std::map, KEY_TYPE, VALUE_TYPE, TYPENAME)
+%define MAP_OUT_TYPEMAPS(KEY_TYPE, VALUE_TYPE, TYPENAME, NUMPY_TYPE)
+MAP_SPECIFIC_OUT_TYPEMAPS(boost::unordered_map, KEY_TYPE, VALUE_TYPE, TYPENAME, NUMPY_TYPE)
+MAP_SPECIFIC_OUT_TYPEMAPS(std::map, KEY_TYPE, VALUE_TYPE, TYPENAME, NUMPY_TYPE)
 %enddef
 
 //-----------------------------------------------------------------------------
@@ -180,7 +212,7 @@ MAP_SPECIFIC_OUT_TYPEMAPS(std::map, KEY_TYPE, VALUE_TYPE, TYPENAME)
 // NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
 // NOTE: in typemaps
 // NOTE: Well... to get std::size_t up and running we need to use typedefs.
-MAP_OUT_TYPEMAPS(unsigned int, unsigned int, uint)
-MAP_OUT_TYPEMAPS(std::size_t, unsigned int, uint)
-MAP_OUT_TYPEMAPS(std::size_t, double, double)
-MAP_OUT_TYPEMAPS(std::size_t, std::size_t, size_t)
+MAP_OUT_TYPEMAPS(unsigned int, unsigned int, uint, NPY_UINT)
+MAP_OUT_TYPEMAPS(std::size_t, unsigned int, uint, NPY_UINT)
+MAP_OUT_TYPEMAPS(std::size_t, double, double, NPY_DOUBLE)
+MAP_OUT_TYPEMAPS(std::size_t, std::size_t, size_t, NPY_UINTP)

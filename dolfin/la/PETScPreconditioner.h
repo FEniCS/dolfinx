@@ -25,8 +25,8 @@
 
 #ifdef HAS_PETSC
 
-#include <vector>
 #include <string>
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include <petscpc.h>
 
@@ -77,6 +77,13 @@ namespace dolfin
     /// preconditioners, e.g. ML. The input for this function can be
     /// generated using GenericDofMap::tabulate_all_dofs.
     void set_coordinates(const std::vector<double>& x, std::size_t dim);
+
+
+    // FIXME: Document
+    void
+      set_fieldsplit(PETScKrylovSolver& solver,
+                     const std::vector<std::vector<dolfin::la_index> >& fields,
+                     const std::vector<std::string>& split_names);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

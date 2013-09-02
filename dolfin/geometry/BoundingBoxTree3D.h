@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-08-12
+// Last changed: 2013-09-02
 
 #ifndef __BOUNDING_BOX_TREE_3D_H
 #define __BOUNDING_BOX_TREE_3D_H

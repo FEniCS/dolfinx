@@ -23,13 +23,13 @@
 
 #include <vector>
 #include <set>
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
 
   class Mesh;
   class MeshEntity;
-  class Point;
 
   /// Base class for bounding box implementations (envelope-letter
   /// design)

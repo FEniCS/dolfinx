@@ -22,10 +22,10 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
-#include <dolfin/mesh/Point.h>
 #include "log.h"
 #include "LogStream.h"
 

@@ -23,9 +23,9 @@
 // recursion and is more convenient than sending it around.
 #define MAX_DIM 6
 
+#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include "BoundingBoxTree1D.h" // used for internal point search tree

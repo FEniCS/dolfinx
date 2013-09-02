@@ -24,12 +24,12 @@
 
 #include <algorithm>
 
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "CellType.h"
 #include "IntervalCell.h"
 #include "MeshFunction.h"
-#include "Point.h"
 #include "PointCell.h"
 #include "TetrahedronCell.h"
 #include "TriangleCell.h"

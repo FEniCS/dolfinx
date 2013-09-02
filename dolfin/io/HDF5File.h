@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-06-18
+// Last changed: 2013-06-21
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -70,6 +70,13 @@ namespace dolfin
     /// suitable for re-reading
     void write(const Mesh& mesh, const std::size_t cell_dim,
                const std::string name);
+
+    /// Write Function to file in a format suitable for re-reading
+    void write(const Function& u, const std::string name);
+
+    /// Read Function from file and distribute data according to
+    /// the Mesh and dofmap associated with the Function
+    void read(Function& u, const std::string name);
 
     /// Read Mesh from file
     void read(Mesh& mesh, const std::string name) const;
@@ -165,12 +172,6 @@ namespace dolfin
     void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
                     const std::vector<std::size_t> global_size);
-
-    // Reorder values into global order (used by XDMFFile when saving
-    // vertex data)
-    void reorder_values_by_global_indices(const Mesh& mesh,
-                                 std::vector<double>& data,
-                                 std::vector<std::size_t>& global_size) const;
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;

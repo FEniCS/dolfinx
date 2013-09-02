@@ -87,8 +87,10 @@ std::string X3DFile::color_palette(const int palette) const
     for (int i = 0; i < 256; ++i)
     {
       const double lm = 425.0 + 250.0*(double)i/255.0;
-      const double b = 1.8*exp(-pow((lm - 450.0)/((lm>450.0) ? 40.0 : 20.0), 2.0));
-      const double g = 0.9*exp(-pow((lm - 550.0)/((lm>550.0) ? 60 : 40.0), 2.0));
+      const double b
+        = 1.8*exp(-pow((lm - 450.0)/((lm>450.0) ? 40.0 : 20.0), 2.0));
+      const double g
+        = 0.9*exp(-pow((lm - 550.0)/((lm>550.0) ? 60 : 40.0), 2.0));
       double r = 1.0*exp(-pow((lm - 600.0)/((lm>600.0) ? 40.0 : 50.0), 2.0));
       r += 0.3*exp(-pow((lm - 450.0)/((lm>450.0) ? 20.0 : 30.0), 2.0));
       const double tot = (r + g + b);
