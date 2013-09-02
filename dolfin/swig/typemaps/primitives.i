@@ -27,9 +27,16 @@
 // General typemaps for PyDOLFIN
 //=============================================================================
 
+%fragment("limits_header", "header") 
+{
+  // Include the limits header
+  %#include <limits>
+}
+
 // Make sure Python int from std::size_t can be constructed
 // It looks like SWIG_From_size_t is available but not SWIG_From_std_size_t
-%fragment("SWIG_From_std_size_t", "header", fragment=SWIG_From_frag(size_t))
+%fragment("SWIG_From_std_size_t", "header", fragment=SWIG_From_frag(size_t), 
+	  fragment="limits_header")
 {
   SWIGINTERNINLINE PyObject * SWIG_From_std_size_t(std::size_t value)
   {
