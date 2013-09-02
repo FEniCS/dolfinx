@@ -77,7 +77,7 @@ namespace dolfin
     virtual double operator()(const Point& point) const = 0;
 
     /// Signed distance function surface. If f0(p) = 0, the point p is
-    /// possibly on the surface, which case ImplicitSphere::f1 can be
+    /// possibly on the surface, which case ImplicitSurface::f1 can be
     /// called to check.
     virtual double f0(const Point& point) const
     {
