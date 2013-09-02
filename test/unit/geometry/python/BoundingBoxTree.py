@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-08-28
+# Last changed: 2013-09-02
 
 import unittest
 import numpy
@@ -77,23 +77,39 @@ class BoundingBoxTreeTest(unittest.TestCase):
     #--- compute_collisions with tree ---
 
     def test_compute_collisions_tree_1d(self):
+        # Not yet implemented in library
         print "FIXME"
 
     def test_compute_collisions_tree_2d(self):
-        print "FIXME"
+
+        references = [[[20, 21, 22, 23, 28, 29, 30, 31],
+                      [0, 1, 2, 3, 8, 9, 10, 11]],
+                      [[6, 7],
+                       [24, 25]]]
+
+        points = [Point(0.52, 0.51), Point(0.9, -0.9)]
+
+        for i, point in enumerate(points):
+
+            mesh_A = UnitSquareMesh(4, 4)
+            mesh_B = UnitSquareMesh(4, 4)
+
+            mesh_B.translate(point)
+
+            tree_A = BoundingBoxTree()
+            tree_A.build(mesh_A)
+
+            tree_B = BoundingBoxTree()
+            tree_B.build(mesh_B)
+
+            entities_A, entities_B = tree_A.compute_collisions(tree_B)
+
+            self.assertEqual(sorted(entities_A), references[i][0])
+            self.assertEqual(sorted(entities_B), references[i][1])
 
     def test_compute_collisions_tree_3d(self):
-
-        mesh_A = UnitCubeMesh(8, 8, 8)
-        mesh_B = UnitCubeMesh(8, 8, 8)
-
-        #dx = Point(0.5, 0.5, 0.5)
-        #mesh_B.displace(dx)
-
-
-
-
-
+        # Not yet implemented in library
+        print "FIXME"
 
     #--- compute_entity_collisions ---
 
@@ -132,6 +148,43 @@ class BoundingBoxTreeTest(unittest.TestCase):
         entities = tree.compute_entity_collisions(p)
         if MPI.num_processes() == 1:
             self.assertEqual(sorted(entities), reference)
+
+    #--- compute_entity_collisions with tree ---
+
+    def test_compute_entity_collisions_tree_1d(self):
+        # Not yet implemented in library
+        print "FIXME"
+
+    def test_compute_entity_collisions_tree_2d(self):
+
+        references = [[[20, 21, 22, 23, 28, 29, 30, 31],
+                      [0, 1, 2, 3, 8, 9, 10, 11]],
+                      [[6],
+                       [25]]]
+
+        points = [Point(0.52, 0.51), Point(0.9, -0.9)]
+
+        for i, point in enumerate(points):
+
+            mesh_A = UnitSquareMesh(4, 4)
+            mesh_B = UnitSquareMesh(4, 4)
+
+            mesh_B.translate(point)
+
+            tree_A = BoundingBoxTree()
+            tree_A.build(mesh_A)
+
+            tree_B = BoundingBoxTree()
+            tree_B.build(mesh_B)
+
+            entities_A, entities_B = tree_A.compute_entity_collisions(tree_B)
+
+            self.assertEqual(sorted(entities_A), references[i][0])
+            self.assertEqual(sorted(entities_B), references[i][1])
+
+    def test_compute_entity_collisions_tree_3d(self):
+        # Not yet implemented in library
+        print "FIXME"
 
     #--- compute_first_collision ---
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-08-29
+// Last changed: 2013-09-02
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -116,9 +116,10 @@ GenericBoundingBoxTree::compute_collisions(const GenericBoundingBoxTree& tree) c
   const GenericBoundingBoxTree& A(*this);
   const GenericBoundingBoxTree& B(tree);
 
-  // Initialize empty lists of collisions
-  std::vector<unsigned int> entities_A;
-  std::vector<unsigned int> entities_B;
+  // We use sets to store the collisions, since otherwise an entity
+  // may be reported twice (it may collide with more than one entity).
+  std::set<unsigned int> entities_A;
+  std::set<unsigned int> entities_B;
 
   // Call recursive find function
   _compute_collisions(A, B,
@@ -126,7 +127,11 @@ GenericBoundingBoxTree::compute_collisions(const GenericBoundingBoxTree& tree) c
                       entities_A, entities_B,
                       0, 0);
 
-  return std::make_pair(entities_A, entities_B);
+  // Copy from sets to lists (vectors)
+  std::vector<unsigned int> _entities_A(entities_A.begin(), entities_A.end());
+  std::vector<unsigned int> _entities_B(entities_B.begin(), entities_B.end());
+
+  return std::make_pair(_entities_A, _entities_B);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
@@ -157,9 +162,10 @@ GenericBoundingBoxTree::compute_entity_collisions(const GenericBoundingBoxTree& 
   const GenericBoundingBoxTree& A(*this);
   const GenericBoundingBoxTree& B(tree);
 
-  // Initialize empty lists of collisions
-  std::vector<unsigned int> entities_A;
-  std::vector<unsigned int> entities_B;
+  // We use sets to store the collisions, since otherwise an entity
+  // may be reported twice (it may collide with more than one entity).
+  std::set<unsigned int> entities_A;
+  std::set<unsigned int> entities_B;
 
   // Call recursive find function
   _compute_collisions(A, B,
@@ -167,7 +173,11 @@ GenericBoundingBoxTree::compute_entity_collisions(const GenericBoundingBoxTree& 
                       entities_A, entities_B,
                       &mesh_A, &mesh_B);
 
-  return std::make_pair(entities_A, entities_B);
+  // Copy from sets to lists (vectors)
+  std::vector<unsigned int> _entities_A(entities_A.begin(), entities_A.end());
+  std::vector<unsigned int> _entities_B(entities_B.begin(), entities_B.end());
+
+  return std::make_pair(_entities_A, _entities_B);
 }
 //-----------------------------------------------------------------------------
 unsigned int
@@ -389,8 +399,8 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
                                             const GenericBoundingBoxTree& B,
                                             unsigned int node_A,
                                             unsigned int node_B,
-                                            std::vector<unsigned int>& entities_A,
-                                            std::vector<unsigned int>& entities_B,
+                                            std::set<unsigned int>& entities_A,
+                                            std::set<unsigned int>& entities_B,
                                             const Mesh* mesh_A,
                                             const Mesh* mesh_B)
 {
@@ -421,16 +431,16 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
       Cell cell_B(*mesh_B, entity_index_B);
       if (cell_A.collides(cell_B))
       {
-        entities_A.push_back(entity_index_A);
-        entities_B.push_back(entity_index_B);
+        entities_A.insert(entity_index_A);
+        entities_B.insert(entity_index_B);
       }
     }
 
     // Otherwise, add the candidate
     else
     {
-      entities_A.push_back(entity_index_A);
-      entities_B.push_back(entity_index_B);
+      entities_A.insert(entity_index_A);
+      entities_B.insert(entity_index_B);
     }
   }
 
