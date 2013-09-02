@@ -21,7 +21,7 @@ download_mesh()
         else
             output=`wget http://fenicsproject.org/pub/data/meshes/$MESH 2>&1`
         fi
-	
+
 	# If download fails
 	if [ $? -ne 0 ]; then
             echo "$output" 1>&2
@@ -32,8 +32,6 @@ download_mesh()
 }
 
 download_mesh demo/la/eigenvalue                             box_with_dent.xml.gz
-download_mesh demo/undocumented/meshfunction                 unitsquare_2_2.xml.gz
-download_mesh demo/undocumented/meshfunction                 unitsquare_2_2_subdomains.xml.gz
 download_mesh demo/undocumented/mixed-poisson-sphere         sphere_16.xml.gz
 download_mesh demo/undocumented/advection-diffusion          dolfin_fine.xml.gz
 download_mesh demo/undocumented/advection-diffusion          dolfin_fine_velocity.xml.gz
