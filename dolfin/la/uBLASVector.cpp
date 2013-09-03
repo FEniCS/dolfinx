@@ -44,18 +44,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(std::string type): _x(new ublas_vector(0))
+uBLASVector::uBLASVector(std::string type) : _x(new ublas_vector(0))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(std::size_t N, std::string type): _x(new ublas_vector(N))
+uBLASVector::uBLASVector(std::size_t N, std::string type)
+  : _x(new ublas_vector(N))
 {
   // Set all entries to zero
   _x->clear();
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(const uBLASVector& x): _x(new ublas_vector(*(x._x)))
+uBLASVector::uBLASVector(const uBLASVector& x) : _x(new ublas_vector(*(x._x)))
 {
   // Do nothing
 }
@@ -100,7 +101,7 @@ void uBLASVector::resize(std::pair<std::size_t, std::size_t> range)
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::resize(std::pair<std::size_t, std::size_t> range,
-                    const std::vector<std::size_t>& ghost_indices)
+                         const std::vector<la_index>& ghost_indices)
 {
   if (range.first != 0)
   {
@@ -142,7 +143,8 @@ bool uBLASVector::owns_index(std::size_t i) const
     return false;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get_local(double* block, std::size_t m, const dolfin::la_index* rows) const
+void uBLASVector::get_local(double* block, std::size_t m,
+                            const dolfin::la_index* rows) const
 {
   for (std::size_t i = 0; i < m; i++)
     block[i] = (*_x)(rows[i]);
@@ -169,7 +171,8 @@ void uBLASVector::add_local(const Array<double>& values)
     (*_x)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const
+void uBLASVector::gather(GenericVector& x,
+                         const std::vector<dolfin::la_index>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 
@@ -201,13 +204,15 @@ void uBLASVector::gather_on_zero(std::vector<double>& x) const
   get_local(x);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(const double* block, std::size_t m, const dolfin::la_index* rows)
+void uBLASVector::set(const double* block, std::size_t m,
+                      const dolfin::la_index* rows)
 {
   for (std::size_t i = 0; i < m; i++)
     (*_x)(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(const double* block, std::size_t m, const dolfin::la_index* rows)
+void uBLASVector::add(const double* block, std::size_t m,
+                      const dolfin::la_index* rows)
 {
   for (std::size_t i = 0; i < m; i++)
     (*_x)(rows[i]) += block[i];

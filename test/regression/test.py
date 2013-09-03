@@ -115,10 +115,6 @@ if platform.system() == 'Windows':
 not_working_in_parallel = \
   [os.path.join(demodir, 'pde',          'biharmonic',                  'cpp'),    \
    os.path.join(demodir, 'pde',          'biharmonic',                  'python'), \
-   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
-   os.path.join(demodir, 'undocumented', 'ale',                         'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'ale',                         'python'), \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'), \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-poisson',       'cpp'),    \
@@ -131,8 +127,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'eval',                        'python'), \
    os.path.join(demodir, 'undocumented', 'extrapolation',               'cpp'),    \
    os.path.join(demodir, 'undocumented', 'extrapolation',               'python'), \
-   os.path.join(demodir, 'undocumented', 'meshfunction',                'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
@@ -158,7 +152,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'python'), \
    os.path.join(demodir, 'undocumented', 'multidomain',                 'cpp')
    ]
-
 
 failed = []
 timing = []

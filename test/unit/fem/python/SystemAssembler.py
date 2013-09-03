@@ -83,48 +83,47 @@ class TestSystemAssembler(unittest.TestCase):
         a = inner(grad(u), grad(v))*dx
         L = inner(f, v)*dx
 
-        A_rescaled_frobenius_norm = 8.6968070656831244
-        b_rescaled_l2_norm = 4.5702716358238176
+        A_frobenius_norm = 96.847818767384
+        b_l2_norm =  96.564760289080
 
         # Assemble system
-        #A, b = assemble_system(a, L, bc)
-        #self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        #self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+        A, b = assemble_system(a, L, bc)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
         # Create assembler
         assembler = SystemAssembler(a, L, bc)
-        assembler.rescale = True
 
         # Test for assembling A and b via assembler object
         A, b = Matrix(), Vector()
         assembler.assemble(A, b)
-        self.assertAlmostEqual(A.norm("frobenius"), A_rescaled_frobenius_norm, 10)
-        self.assertAlmostEqual(b.norm("l2"), b_rescaled_l2_norm, 10)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
         # Assemble LHS only (first time)
         A = Matrix()
         assembler.assemble(A)
-        self.assertAlmostEqual(A.norm("frobenius"), A_rescaled_frobenius_norm, 10)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
 
         # Assemble LHS only (second time)
         assembler.assemble(A)
-        self.assertAlmostEqual(A.norm("frobenius"), A_rescaled_frobenius_norm, 10)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
 
         # Assemble RHS only (first time)
         b = Vector()
         assembler.assemble(b)
-        self.assertAlmostEqual(b.norm("l2"), b_rescaled_l2_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
         # Assemble RHS only (second time time)
         assembler.assemble(b)
-        self.assertAlmostEqual(b.norm("l2"), b_rescaled_l2_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
         # Do not reset sparsity
         assemble.reset_sparsity = False
         assembler.assemble(A)
-        self.assertAlmostEqual(A.norm("frobenius"), A_rescaled_frobenius_norm, 10)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         assembler.assemble(b)
-        self.assertAlmostEqual(b.norm("l2"), b_rescaled_l2_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
 
     def test_facet_assembly(self):

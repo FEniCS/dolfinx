@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-28
+// Last changed: 2013-08-28
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Cell.h>
@@ -34,7 +34,7 @@ MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
   tree.build(mesh);
 
   // Compute intersection
-  _intersected_cells = tree.compute_entity_collisions(point, mesh);
+  _intersected_cells = tree.compute_entity_collisions(point);
 }
 //-----------------------------------------------------------------------------
 MeshPointIntersection::~MeshPointIntersection()

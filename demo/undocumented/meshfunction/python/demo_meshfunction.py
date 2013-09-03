@@ -32,9 +32,10 @@ file_in = File("../unitsquare_2_2_subdomains.xml.gz")
 f = MeshFunction("double", mesh)
 file_in >> f
 
-# Write mesh function to file
-out = File("meshfunction_out.xml.gz");
-out << f
+# Write mesh function to XDMF (requires HDF5)
+if has_hdf5():
+    out = File("meshfunction_out.xdmf");
+    out << f
 
 # Plot mesh function
 plot(f, interactive=True)

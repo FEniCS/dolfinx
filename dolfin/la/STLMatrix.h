@@ -279,7 +279,8 @@ namespace dolfin
                    "creating compressed column storage data",
                    "Cannot create CSC matrix from STLMatrix with row-wise storage.");
     }
-    compressed_storage(vals, rows, col_ptr, local_to_global_col, block, symmetric);
+    compressed_storage(vals, rows, col_ptr, local_to_global_col, block,
+                       symmetric);
   }
   //---------------------------------------------------------------------------
   template<typename T>
@@ -327,7 +328,8 @@ namespace dolfin
             for (std::size_t b1 = 0; b1 < _block_size; ++b1)
               vals.push_back(_values[local_row + b0][column + b1].second);
         }
-        local_to_global_row.push_back((_local_range.first + local_row)/_block_size);
+        local_to_global_row.push_back((_local_range.first
+                                       + local_row)/_block_size);
         row_ptr.push_back(row_ptr.back()+_values[local_row].size()/_block_size);
       }
     }

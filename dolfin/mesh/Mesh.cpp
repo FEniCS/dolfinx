@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-06-23
+// Last changed: 2013-06-27
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
@@ -314,14 +314,19 @@ dolfin::Mesh Mesh::renumber_by_color() const
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
+void Mesh::translate(const Point& point)
+{
+  MeshTransformation::translate(*this, point);
+}
+//-----------------------------------------------------------------------------
 void Mesh::rotate(double angle, std::size_t axis)
 {
   MeshTransformation::rotate(*this, angle, axis);
 }
 //-----------------------------------------------------------------------------
-void Mesh::rotate(double angle, std::size_t axis, const Point& p)
+void Mesh::rotate(double angle, std::size_t axis, const Point& point)
 {
-  MeshTransformation::rotate(*this, angle, axis, p);
+  MeshTransformation::rotate(*this, angle, axis, point);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)

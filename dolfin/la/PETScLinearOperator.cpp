@@ -128,9 +128,14 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
   }
 
   // Initialize PETSc matrix
+  PetscErrorCode ierr;
   _A.reset(new Mat, PETScMatrixDeleter());
-  MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N, (void*) this, _A.get());
-  MatShellSetOperation(*_A, MATOP_MULT, (void (*)()) usermult);
+  ierr = MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N,
+                        (void*) this, _A.get());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateShell");
+
+  ierr = MatShellSetOperation(*_A, MATOP_MULT, (void (*)()) usermult);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatShellSetOperation");
 }
 //-----------------------------------------------------------------------------
 

@@ -112,7 +112,7 @@ namespace dolfin
 
     /// Resize vector with given ownership range and with ghost values
     virtual void resize(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<std::size_t>& ghost_indices);
+                        const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -232,7 +232,8 @@ namespace dolfin
 
     // Initialise PETSc vector
     void _init(std::pair<std::size_t, std::size_t> range,
-                  const std::vector<std::size_t>& ghost_indices, bool distributed);
+               const std::vector<la_index>& ghost_indices,
+               bool distributed);
 
     // Return true if vector is distributed
     bool distributed() const;

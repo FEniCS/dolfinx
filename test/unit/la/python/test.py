@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2008-09-30
-# Last changed: 2011-04-20
+# Last changed: 2013-08-07
 
 import unittest
 from dolfin import *
@@ -124,104 +124,124 @@ class AbstractBaseTest(object):
         self.assertTrue(isinstance(A2,ndarray))
         self.assertEqual(A2.shape, (n1-n0,))
         if A.owns_index(5): self.assertAlmostEqual(A2[5], A[5])
-        if not distributed: self.assertAlmostEqual(A2.sum(),A.sum())
+        self.assertAlmostEqual(MPI.sum(A2.sum()), A.sum())
 
+        B2 = B.array()
+        # TODO: test strides in parallel also
         if not distributed:
-            B2 = B.array()
             A[1:16:2] = B[1:16:2]
             A2[1:16:2] = B2[1:16:2]
             self.assertAlmostEqual(A2[1], A[1])
 
+
+        ind = [1,3,6,9,15,20,24,28,32,40,50,60,70,100000]
+
+        # Extract owned indices
+        ind = [i for i in ind if v.owns_index(i)]
+        ind1 = array(ind, 'i')
+        ind2 = array(ind, 'I')
+
+        # Build indices with local numbering (for indexing arrays)
+        ind0 = [i-n0 for i in ind]
+        ind3 = list(array(ind0,'I'))
+
+        if len(ind2)>0:
+          A[ind2] = ind2
+        else:
+          A.apply('insert') # workaround to issue 54
+        A2[ind3] = ind2
+
+        G  = A[ind]
+        G1 = A[ind1]
+        G2 = A2[ind0]
+
+        G3 = A[A > 1]
+        G4 = A2[A2 > 1]
+
         if not distributed:
-            ind = [1,3,6,9,15]
-            ind1 = array([1,3,6,9,15])
+            A3 = fromiter(A, "d")
 
-            # These two just to check that one can use numpy arrays and list of uints
-            ind2 = array([1,3,6,9,15],'I')
-            ind3 = list(array([1,3,6,9,15],'I'))
-            A[ind2] = ind2
-            A2[ind3] = ind2
-
-            G  = A[ind]
-            G1 = A[ind1]
-            G2 = A2[ind]
-
-            G3 = A[A > 1]
-            G4 = A2[A2 > 1]
-
-            A3 = fromiter(A,"d")
-
+        if A.owns_index(15):
             a = A[15]
-            b = 1.e10
+        b = 1.e10
 
-            self.assertAlmostEqual(G1.sum(),G.sum())
-            self.assertAlmostEqual(G2.sum(),G.sum())
-            self.assertEqual(len(G3),len(G4))
-            self.assertAlmostEqual(G3.sum(),G4.sum())
-            self.assertEqual(A[-1],A[len(A)-1])
-            self.assertEqual(A[-len(A)],A[0])
-            self.assertEqual(len(ind),len(G))
-            self.assertTrue(all(val==G[i] for i, val in enumerate(G)))
-            self.assertTrue((G==G1).all())
-            self.assertTrue((G<=G1).all())
-            self.assertTrue((G>=G1).all())
-            self.assertFalse((G<G1).any())
-            self.assertFalse((G>G1).any())
-            self.assertTrue(a in A)
-            self.assertTrue(b not in A)
+        self.assertAlmostEqual(G1.sum(), G.sum())
+        self.assertAlmostEqual(G2.sum(), G.sum())
+        self.assertEqual(len(G3), len(G4))
+        self.assertAlmostEqual(G3.sum(), G4.sum())
+        if A.owns_index(len(A)-1): self.assertEqual(A[-1], A[len(A)-1])
+        if A.owns_index(0): self.assertEqual(A[-len(A)], A[0])
+        self.assertEqual(len(ind),len(G))
+        self.assertTrue(all(val==G[i] for i, val in enumerate(G)))
+        self.assertTrue((G==G1).all())
+        self.assertTrue((G<=G1).all())
+        self.assertTrue((G>=G1).all())
+        self.assertFalse((G<G1).any())
+        self.assertFalse((G>G1).any())
+        if A.owns_index(15): self.assertTrue(a in A)
+        self.assertTrue(b not in A)
+        if not distributed:
             self.assertTrue((A3==A2).all())
-            A[:] = A==A
-            self.assertTrue(A.sum()==len(A))
 
+        X = A==A                 # operator== returns array of global size with Falses at not-owned items
+        for i in range(len(X)):  # gather X, because of issue 54
+            X[i] = MPI.max(float(X[i]))
+        A[:] = X
+        self.assertTrue(A.sum()==len(A))
+
+        if not distributed: # issue 54
             A[:] = A2
             self.assertTrue((A==A2).all())
 
-            H  = A.copy()
-            H._assign(0.0)
-            H[ind] = G
+        H  = A.copy()
+        H._assign(0.0)
+        H[ind] = G
 
-            C[:] = 2
-            D._assign(2)
-            self.assertAlmostEqual(C[0],2)
-            self.assertAlmostEqual(C[-1],2)
-            self.assertAlmostEqual(C.sum(),D.sum())
+        C[:] = 2
+        D._assign(2)
+        if C.owns_index(0): self.assertAlmostEqual(C[0], 2)
+        if C.owns_index(len(A)-1): self.assertAlmostEqual(C[-1], 2)
+        self.assertAlmostEqual(C.sum(), D.sum())
 
-            C[ind] = 3
-            self.assertAlmostEqual(C[ind].sum(), 3*len(ind))
+        C[ind] = 3
+        self.assertAlmostEqual(C[ind].sum(), 3*len(ind))
 
-            def wrong_index(ind):
-                A[ind]
+        def wrong_index(ind):
+            A[ind]
 
-            self.assertRaises(RuntimeError,wrong_index,(-len(A)-1))
-            self.assertRaises(RuntimeError,wrong_index,(len(A)+1))
-            self.assertRaises(TypeError,wrong_index,("jada"))
-            self.assertRaises(TypeError,wrong_index,(.5))
-            self.assertRaises(RuntimeError,wrong_index,([-len(A)-1,2]))
-            self.assertRaises(RuntimeError,wrong_index,([len(A),2]))
+        self.assertRaises(RuntimeError, wrong_index, (-len(A)-1))
+        self.assertRaises(RuntimeError, wrong_index, (len(A)+1))
+        self.assertRaises(TypeError, wrong_index, ("jada"))
+        self.assertRaises(TypeError, wrong_index, (.5))
+        self.assertRaises(RuntimeError, wrong_index, ([-len(A)-1, 2]))
+        self.assertRaises(RuntimeError, wrong_index, ([len(A), 2]))
 
-            def wrong_dim(ind0,ind1):
-                A[ind0] = B[ind1]
+        def wrong_dim(ind0, ind1):
+            A[ind0] = B[ind1]
 
-            self.assertRaises(RuntimeError,wrong_dim,[0,2],[0,2,4])
-            self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
-            self.assertRaises(TypeError,wrong_dim,0,slice(0,4,1))
+        self.assertRaises(RuntimeError, wrong_dim, [0,2], [0,2,4])
+        self.assertRaises(RuntimeError, wrong_dim, [0,2], slice(0,4,1))
+        #self.assertRaises(TypeError, wrong_dim, 0, slice(0,4,1))
 
-            # Tests bailout for these choices
-            if self.backend == "uBLAS" and sys.version_info[0]==2 and \
-                   sys.version_info[1]==6:
-                return
+        # Tests bailout for these choices
+        if self.backend == "uBLAS" and sys.version_info[0]==2 and \
+               sys.version_info[1]==6:
+            return
 
-            A *= B
-            A2 *= B2
-            I = A*B
-            I2 = A2*B2
-            self.assertAlmostEqual(A.sum(),A2.sum())
-            self.assertAlmostEqual(I.sum(),I2.sum())
+        A2 = A.array()
+        A *= B
+        A2 *= B2
+        I = A*B
+        I2 = A2*B2
+        self.assertAlmostEqual(A.sum(), MPI.sum(A2.sum()))
+        self.assertAlmostEqual(I.sum(), MPI.sum(I2.sum()))
 
-            def wrong_assign(A, ind):
-                A[ind[::2]] = ind[::2]
+        def wrong_assign(A, ind):
+            A[ind[::2]] = ind[::2]
 
+        if len(ind[::2]) > 1:
             self.assertRaises(RuntimeError, wrong_assign, A, ind2)
+
 
     def test_matrix_vector(self, use_backend=False):
         from numpy import dot, absolute
