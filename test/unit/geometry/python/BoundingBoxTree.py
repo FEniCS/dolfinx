@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-09-02
+# Last changed: 2013-09-03
 
 import unittest
 import numpy
@@ -104,8 +104,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
             entities_A, entities_B = tree_A.compute_collisions(tree_B)
 
-            self.assertEqual(sorted(entities_A), references[i][0])
-            self.assertEqual(sorted(entities_B), references[i][1])
+            if MPI.num_processes() == 1:
+                self.assertEqual(sorted(entities_A), references[i][0])
+                self.assertEqual(sorted(entities_B), references[i][1])
 
     def test_compute_collisions_tree_3d(self):
         # Not yet implemented in library
@@ -194,8 +195,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
             entities_A, entities_B = tree_A.compute_entity_collisions(tree_B)
 
-            self.assertEqual(sorted(entities_A), references[i][0])
-            self.assertEqual(sorted(entities_B), references[i][1])
+            if MPI.num_processes() == 1:
+                self.assertEqual(sorted(entities_A), references[i][0])
+                self.assertEqual(sorted(entities_B), references[i][1])
 
     def test_compute_entity_collisions_tree_3d(self):
         # Not yet implemented in library
