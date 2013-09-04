@@ -294,7 +294,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<dolfin::la_index>
     ///         The dof to vertex map
-    std::vector<dolfin::la_index> dof_to_vertex_map(Mesh& mesh) const;
+    std::vector<dolfin::la_index> dof_to_vertex_map(const Mesh& mesh) const;
 
     /// Return a map between vertices and dofs
     /// (vert_ind*dofs_per_vertex + local_dof = vertex_to_dof_map[dof_ind],
@@ -309,7 +309,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The vertex to dof map
-    std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const;
+    std::vector<std::size_t> vertex_to_dof_map(const Mesh& mesh) const;
 
     /// Create a copy of the dof map
     ///
