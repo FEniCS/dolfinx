@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-27
+// Last changed: 2013-08-12
 
 #ifndef __BOUNDING_BOX_TREE_1D_H
 #define __BOUNDING_BOX_TREE_1D_H
@@ -54,11 +54,24 @@ namespace dolfin
     // Return geometric dimension
     std::size_t gdim() const { return 1; }
 
-    // Check whether point is in bounding box
+    // Return bounding box coordinates for node
+    const double* get_bbox_coordinates(unsigned int node) const
+    {
+      return _bbox_coordinates.data() + 2*node;
+    }
+
+    // Check whether point (x) is in bounding box (node)
     bool point_in_bbox(const double* x, unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 2*node;
-      return b[0] - DOLFIN_EPS < x[0] && x[0] < b[1] + DOLFIN_EPS;
+      return b[0] - DOLFIN_EPS <= x[0] && x[0] <= b[1] + DOLFIN_EPS;
+    }
+
+    // Check whether bounding box (a) is in bounding box (node)
+    bool bbox_in_bbox(const double* a, unsigned int node) const
+    {
+      const double* b = _bbox_coordinates.data() + 4*node;
+      return a[0] <= b[1] + DOLFIN_EPS && b[0] <= a[1] + DOLFIN_EPS;
     }
 
     // Compute squared distance between point and bounding box
