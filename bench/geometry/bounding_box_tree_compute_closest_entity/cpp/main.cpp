@@ -18,7 +18,7 @@
 // This benchmark measures the performance of compute_entity_collisions.
 //
 // First added:  2013-05-23
-// Last changed: 2013-06-25
+// Last changed: 2013-09-04
 
 #include <vector>
 #include <dolfin.h>
@@ -37,14 +37,14 @@ int main(int argc, char* argv[])
   BoundingBoxTree tree;
   tree.build(mesh);
   Point point(-1.0, -1.0, 0.0);
-  tree.compute_closest_entity(point, mesh);
+  tree.compute_closest_entity(point);
   cout << "Built tree, searching for closest point" << endl;
 
   // Call repeatedly
   tic();
   for (int i = 0; i < NUM_REPS; i++)
   {
-    tree.compute_closest_entity(point, mesh);
+    tree.compute_closest_entity(point);
     point.coordinates()[1] += 2.0 / static_cast<double>(NUM_REPS);
   }
   const double t = toc();
