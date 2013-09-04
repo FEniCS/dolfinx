@@ -272,9 +272,9 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
     domain.detect_features();
 
   const Mesh_criteria criteria(CGAL::parameters::facet_angle = 25,
-                               CGAL::parameters::facet_size = 0.7*cell_size,
+                               CGAL::parameters::facet_size = cell_size,
                                CGAL::parameters::cell_radius_edge_ratio = 3.0,
-                               CGAL::parameters::edge_size = 0.5*cell_size,
+                               CGAL::parameters::edge_size = 0.6*cell_size,
                                CGAL::parameters::cell_size = cell_size);
 
   // Generate CGAL mesh

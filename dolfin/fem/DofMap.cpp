@@ -346,7 +346,7 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
   return x;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
+std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
 {
   // Check that we only have dofs living on vertices
   assert(_ufc_dofmap);
@@ -397,7 +397,8 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
     const std::vector<dolfin::la_index>& _cell_dofs = cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local vertex
-    _ufc_dofmap->tabulate_entity_dofs(local_to_local_map.data(), 0, local_vertex_ind);
+    _ufc_dofmap->tabulate_entity_dofs(local_to_local_map.data(), 0,
+                                      local_vertex_ind);
 
     // Fill local dofs for the vertex
     for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)
@@ -411,7 +412,7 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
   return dof_map;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
+std::vector<std::size_t> DofMap::vertex_to_dof_map(const Mesh& mesh) const
 {
   // Get dof to vertex map
   const std::vector<dolfin::la_index> dof_map = dof_to_vertex_map(mesh);

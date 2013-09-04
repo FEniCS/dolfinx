@@ -42,6 +42,7 @@ domain_vertices = [Point(0.0, 0.0),
                    Point(0.0, 0.0)]
 
 # Generate mesh and plot
+print("Generate mesh of polygonal domain . . .")
 PolygonalMeshGenerator.generate(mesh, domain_vertices, 0.25);
 plot(mesh, interactive=True)
 
@@ -59,9 +60,21 @@ face3 = [0, 1, 2]
 faces = [face0, face1, face2, face3]
 
 # Generate 3D mesh and plot
+print("Generate volume mesh of polyhedral domain . . .")
 PolyhedralMeshGenerator.generate(mesh, face_vertices, faces, 0.05)
 plot(mesh, interactive=True)
 
-# Generate 3D mesh from OFF file input (cube)
+# Generate 3D surface mesh and plot
+print("Generate surface mesh of polyhedral domain . . .")
+PolyhedralMeshGenerator.generate_surface_mesh(mesh, face_vertices, faces, 0.05)
+plot(mesh, interactive=True)
+
+# Generate volume mesh from OFF file input (cube)
+print("Generate volume mesh of polyhedral domain from OFF file . . .")
+PolyhedralMeshGenerator.generate(mesh, "../cube.off", 0.05)
+plot(mesh, interactive=True)
+
+# Generate surface mesh from OFF file input (cube)
+print("Generate surface mesh of polyhedral domain from OFF file . . .")
 PolyhedralMeshGenerator.generate(mesh, "../cube.off", 0.05)
 plot(mesh, interactive=True)

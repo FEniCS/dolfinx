@@ -43,6 +43,8 @@ class Domain1 : public SubDomain
 
 int main()
 {
+  cout << "This demo is not presently working." << endl;
+  /*
   // Create mesh
   UnitSquareMesh mesh(8, 8);
 
@@ -86,4 +88,5 @@ int main()
   interactive();
 
   return 0;
+  */
 }
