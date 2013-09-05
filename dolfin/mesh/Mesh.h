@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-06-23
+// Last changed: 2013-06-27
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -415,26 +415,33 @@ namespace dolfin
     /// cell-vertex connectivity exists as part of the mesh.
     Mesh renumber_by_color() const;
 
+    /// Translate mesh according to a given vector.
+    ///
+    /// *Arguments*
+    ///     point (Point)
+    ///         The vector defining the translation.
+    void translate(const Point& point);
+
     /// Rotate mesh around a coordinate axis through center of mass
     /// of all mesh vertices
     ///
     /// *Arguments*
     ///     angle (double)
-    ///         The number of degrees (0-360) of rotation
+    ///         The number of degrees (0-360) of rotation.
     ///     axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh
+    ///         The coordinate axis around which to rotate the mesh.
     void rotate(double angle, std::size_t axis=2);
 
     /// Rotate mesh around a coordinate axis through a given point
     ///
     /// *Arguments*
     ///     angle (double)
-    ///         The number of degrees (0-360) of rotation
+    ///         The number of degrees (0-360) of rotation.
     ///     axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh
+    ///         The coordinate axis around which to rotate the mesh.
     ///     point (_Point_)
-    ///         The point around which to rotate the mesh
-    void rotate(double angle, std::size_t axis, const Point& p);
+    ///         The point around which to rotate the mesh.
+    void rotate(double angle, std::size_t axis, const Point& point);
 
     /// Move coordinates of mesh according to new boundary coordinates.
     ///
@@ -445,7 +452,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshDisplacement
     ///         Displacement encapsulated in Expression subclass
-    ///         MeshDisplacement
+    ///         MeshDisplacement.
     boost::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with
@@ -458,7 +465,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshDisplacement
     ///         Displacement encapsulated in Expression subclass
-    ///         MeshDisplacement
+    ///         MeshDisplacement.
     boost::shared_ptr<MeshDisplacement> move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
