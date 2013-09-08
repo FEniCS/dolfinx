@@ -16,19 +16,20 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-09-02
-# Last changed: 2013-09-02
+# Last changed: 2013-09-05
 
 from dolfin import *
 
 # Some parameters
 L = 10.0
-h = 0.4
+h = 0.1
 M = 64
 N = 32
+num_steps = 1000
 (x_B, y_B) = (0.75*L, 0.5*L)
 (x_C, y_C) = (0.33*L, 0.75*L)
-(dx_B, dy_B) = (h, h)
-(dx_C, dy_C) = (h, h)
+(dx_B, dy_B) = (2*h, h)
+(dx_C, dy_C) = (h, 2*h)
 
 # Create meshes: a box and two circles
 mesh_A = RectangleMesh(0, 0, L, L, M, M)
@@ -51,7 +52,7 @@ tree_B = BoundingBoxTree()
 tree_C = BoundingBoxTree()
 
 # Loop over time steps
-for n in range(2500):
+for n in range(num_steps):
 
     # Make it bounce
     x_B += dx_B; y_B += dy_B
@@ -60,9 +61,6 @@ for n in range(2500):
     if y_B > L - 1.0 or y_B < 1.0: dy_B = -dy_B
     if x_C > L - 1.0 or x_C < 1.0: dx_C = -dx_C
     if y_C > L - 1.0 or y_C < 1.0: dy_C = -dy_C
-    if sqrt((x_B - x_C)**2 + (y_B - y_C)**2) < 1.0:
-        dx_B, dy_B = (0.5*dx_B - 0.5*sqrt(3.0)*dy_B, 0.5*sqrt(3.0)*dx_B + 0.5*dy_B)
-        dx_C, dy_C = (0.5*dx_C - 0.5*sqrt(3.0)*dy_C, 0.5*sqrt(3.0)*dx_C + 0.5*dy_C)
 
     # Translate circles
     mesh_B.translate(Point(dx_B, dy_B))
@@ -87,7 +85,7 @@ for n in range(2500):
         f.set_value(i, 3)
 
     # Plot
-    p = plot(f, wireframe=True)
+    p = plot(f, wireframe=(n > num_steps / 2))
     #p.write_png("collision-detection-%.4d" % n)
 
 interactive()

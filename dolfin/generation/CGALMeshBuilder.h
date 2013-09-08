@@ -37,6 +37,9 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 
+// This file should not be indlued in any header files to avoid
+// polluting DOLFIN with CGAL code.
+
 namespace dolfin
 {
 

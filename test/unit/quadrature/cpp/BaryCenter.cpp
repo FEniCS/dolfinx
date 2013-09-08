@@ -32,11 +32,11 @@
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 
-#ifdef HAS_CGAL
+//#ifdef HAS_CGAL
 
-#include <CGAL/Nef_polyhedron_3.h>
-#include <CGAL/Polyhedron_3.h>
-
+//#include <CGAL/Nef_polyhedron_3.h>
+//#include <CGAL/Polyhedron_3.h>
+/*
 using namespace dolfin;
 
 typedef Nef_polyhedron_3::Aff_transformation_3 Aff_transformation_3;
@@ -617,8 +617,10 @@ class BaryCenter : public CppUnit::TestFixture
 #endif
 
 CPPUNIT_TEST_SUITE_REGISTRATION(BaryCenter);
-
+*/
 int main()
 {
-  DOLFIN_TEST;
+  //DOLFIN_TEST;
+  dolfin::cout << "Test no longer used" << dolfin::endl;
+  return 0;
 }

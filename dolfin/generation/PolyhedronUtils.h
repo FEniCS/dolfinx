@@ -29,8 +29,12 @@
 #include "cgal_csg3d.h"
 #include "self_intersect.h"
 
+// This file should be be included in any other header files to avoid
+// CGAL leaking into the DOLFIN code.
+
 namespace dolfin
 {
+
   class PolyhedronUtils
   {
   public:
