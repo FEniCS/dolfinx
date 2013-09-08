@@ -35,7 +35,7 @@
 
 // The below two files are from the CGAL demos. Path can be changed
 // once they are included with the CGAL code.
-#include "triangulate_polyhedron.h"
+#include "cgal_triangulate_polyhedron.h"
 #include "compute_normal.h"
 
 #include <dolfin/common/MPI.h>

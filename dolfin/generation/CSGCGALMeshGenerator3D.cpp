@@ -35,7 +35,7 @@ using namespace dolfin;
 #ifdef HAS_CGAL
 
 #include "cgal_csg3d.h"
-#include <dolfin/generation/triangulate_polyhedron.h>
+#include <dolfin/generation/cgal_triangulate_polyhedron.h>
 
 //-----------------------------------------------------------------------------
 static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
