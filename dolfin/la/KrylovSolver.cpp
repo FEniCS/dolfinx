@@ -22,6 +22,7 @@
 // Last changed: 2012-08-21
 
 #include <dolfin/common/Timer.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"

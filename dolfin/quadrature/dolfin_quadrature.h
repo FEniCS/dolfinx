@@ -3,6 +3,6 @@
 
 // DOLFIN quadrature interface
 
-#include <dolfin/quadrature/BarycenterQuadrature.h>
+//#include <dolfin/quadrature/BarycenterQuadrature.h>
 
 #endif
