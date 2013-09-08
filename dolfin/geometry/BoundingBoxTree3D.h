@@ -87,7 +87,7 @@ namespace dolfin
     }
 
     // Check whether point (x) is in bounding box (node)
-    bool point_in_bbox(const double* x, const uint node) const
+    bool point_in_bbox(const double* x, const unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 6*node;
       return (b[0] - DOLFIN_EPS <= x[0] && x[0] <= b[3] + DOLFIN_EPS &&
