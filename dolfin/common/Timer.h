@@ -21,11 +21,7 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 
-#include <iostream>
-
-#include <dolfin/parameter/GlobalParameters.h>
-#include <dolfin/log/LogManager.h>
-#include "timing.h"
+#include <string>
 
 namespace dolfin
 {
@@ -51,32 +47,19 @@ namespace dolfin
   public:
 
     /// Create timer
-    Timer(std::string task) : _task(""), t(time()), stopped(false)
-    {
-      const std::string prefix = parameters["timer_prefix"];
-      _task = prefix + task;
-    }
+    Timer(std::string task);
 
     /// Destructor
-    ~Timer()
-    { if (!stopped) stop(); }
+    ~Timer();
 
     /// Start timer
-    void start()
-    { t = time(); stopped = false; }
+    void start();
 
     /// Stop timer
-    double stop()
-    {
-      t = time() - t;
-      LogManager::logger.register_timing(_task, t);
-      stopped = true;
-      return t;
-    }
+    double stop();
 
     /// Return value of timer (or time at start if not stopped)
-    double value() const
-    { return t; }
+    double value() const;
 
   private:
 
