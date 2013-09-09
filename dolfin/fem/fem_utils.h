@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-05
-// Last changed: 2013-09-06
+// Last changed: 2013-09-09
 
 #ifndef __FEM_UTILS_H
 #define __FEM_UTILS_H
@@ -30,7 +30,12 @@ namespace dolfin
 
   class FunctionSpace;
 
-  /// Return a map between dofs and vertex indices
+  /// Return a map between dofs indices and vertex indices
+  /// 
+  /// Only works for FunctionSpace with dofs exclusively on vertices.
+  /// For MixedFunctionSpaces vertex index is offset with the number
+  /// of dofs per vertex. In parallel the returned map only maps local
+  /// (to processor) dofs.
   ///
   /// *Arguments*
   ///     space (_FunctionSpace_)
@@ -41,7 +46,11 @@ namespace dolfin
   ///         The dof to vertex map
   std::vector<dolfin::la_index> dof_to_vertex_map(const FunctionSpace& space);
 
-  /// Return a map between vertex indices and dofs
+  /// Return a map between vertex indices and dofs indices
+  ///
+  /// Only works for FunctionSpace with dofs exclusively on vertices.
+  /// For MixedFunctionSpaces dof index is offset with the number of
+  /// dofs per vertex.
   ///
   /// *Arguments*
   ///     space (_FunctionSpace_)
