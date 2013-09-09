@@ -42,9 +42,9 @@ namespace dolfin
   ///         The FunctionSpace for what the dof to vertex map should be computed for
   ///
   /// *Returns*
-  ///     std::vector<dolfin::la_index>
+  ///     std::vector<std::size_t>
   ///         The dof to vertex map
-  std::vector<dolfin::la_index> dof_to_vertex_map(const FunctionSpace& space);
+  std::vector<std::size_t> dof_to_vertex_map(const FunctionSpace& space);
 
   /// Return a map between vertex indices and dofs indices
   ///
@@ -57,9 +57,9 @@ namespace dolfin
   ///         The FunctionSpace for what the vertex to dof map should be computed for
   ///
   /// *Returns*
-  ///     std::vector<std::size_t>
+  ///     std::vector<dolfin::la_index>
   ///         The vertex to dof map
-  std::vector<std::size_t> vertex_to_dof_map(const FunctionSpace& space);
+  std::vector<dolfin::la_index> vertex_to_dof_map(const FunctionSpace& space);
 
 }
 
