@@ -60,7 +60,6 @@ tests = {
     "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
-    "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
     }
 
