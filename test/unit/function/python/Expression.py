@@ -250,10 +250,10 @@ class Instantiation(unittest.TestCase):
           def wrongDefaultType():
                Expression("a", a="1")
 
-          def wrongParameterNames():
-               Expression("str", str=1.0)
+          def wrongParameterNames0():
+               Expression("long", str=1.0)
 
-          def wrongParameterNames():
+          def wrongParameterNames1():
                Expression("user_parameters", user_parameters=1.0)
 
           self.assertRaises(TypeError, noAttributes)
@@ -264,6 +264,8 @@ class Instantiation(unittest.TestCase):
           self.assertRaises(DeprecationWarning, deprecationWarning)
           self.assertRaises(RuntimeError, noDefaultValues)
           self.assertRaises(TypeError, wrongDefaultType)
+          self.assertRaises(RuntimeError, wrongParameterNames0)
+          self.assertRaises(RuntimeError, wrongParameterNames1)
 
      def test_element_instantiation(self):
           class F0(Expression):
