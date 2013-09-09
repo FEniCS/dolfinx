@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-05
-// Last changed: 2013-09-05
+// Last changed: 2013-09-09
 
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -28,18 +28,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> dolfin::dof_to_vertex_map(const FunctionSpace& space)
+std::vector<std::size_t> dolfin::dof_to_vertex_map(const FunctionSpace& space)
 {
 
   const GenericDofMap& dofmap = *space.dofmap();
 
   // Get dof to vertex map
-  const std::vector<std::size_t> vertex_map = vertex_to_dof_map(space);
+  const std::vector<dolfin::la_index> vertex_map = vertex_to_dof_map(space);
 
   // Create return data structure
   const dolfin::la_index num_dofs = dofmap.ownership_range().second - \
     dofmap.ownership_range().first;
-  std::vector<dolfin::la_index> return_map(num_dofs);
+  std::vector<std::size_t> return_map(num_dofs);
 
   // Invert dof_map
   dolfin::la_index dof;
@@ -57,7 +57,7 @@ std::vector<dolfin::la_index> dolfin::dof_to_vertex_map(const FunctionSpace& spa
 
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> dolfin::vertex_to_dof_map(const FunctionSpace& space)
+std::vector<dolfin::la_index> dolfin::vertex_to_dof_map(const FunctionSpace& space)
 {
 
   // Get the mesh
@@ -85,7 +85,7 @@ std::vector<std::size_t> dolfin::vertex_to_dof_map(const FunctionSpace& space)
   const dolfin::la_index n0 = dofmap.ownership_range().first;
   
   // Create return data structure
-  std::vector<std::size_t> return_map(dofs_per_vertex*mesh.num_entities(0));
+  std::vector<dolfin::la_index> return_map(dofs_per_vertex*mesh.num_entities(0));
   
   // Iterate over vertices
   std::size_t local_vertex_ind = 0;
