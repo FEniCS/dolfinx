@@ -27,7 +27,18 @@ from dolfin import *
 class SubDomainTester(unittest.TestCase):
 
     def test_compiled_subdomains(self):
-        pass
+        def noDefaultValues():
+            CompiledSubDomain("a")
+
+        def wrongDefaultType():
+            CompiledSubDomain("a", a="1")
+                
+        def wrongParameterNames():
+            CompiledSubDomain("long", str=1.0)
+
+        self.assertRaises(RuntimeError, noDefaultValues)
+        self.assertRaises(TypeError, wrongDefaultType)
+        self.assertRaises(RuntimeError, wrongParameterNames)
 
     def test_creation_and_marking(self):
         
@@ -44,8 +55,8 @@ class SubDomainTester(unittest.TestCase):
                                lambda x, on_boundary: x[0] < DOLFIN_EPS),
                             AutoSubDomain(\
                                 lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
-                           (compile_subdomains("x[0] < DOLFIN_EPS"),
-                            compile_subdomains("x[0] > 1.0 - DOLFIN_EPS"))]
+                           (CompiledSubDomain("near(x[0], a)", a = 0.0),
+                            CompiledSubDomain("near(x[0], a)", a = 1.0))]
         
         for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
             dim = ind+1

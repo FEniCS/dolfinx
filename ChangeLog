@@ -1,3 +1,4 @@
+ - Introduce CompiledSubDomain a more robust version of compiled_subdomains, which is now deprecated
  - CMake now takes care of calling the correct generate-foo script if so needed.
  - Feature: Add new built-in computational geometry library (BoundingBoxTree)
  - Feature: Add support for setting name and label to an Expression when constructed

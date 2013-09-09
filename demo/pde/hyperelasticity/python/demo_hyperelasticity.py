@@ -40,8 +40,8 @@ mesh = UnitCubeMesh(24, 16, 16)
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 # Mark boundary subdomians
-left, right = compile_subdomains(["(std::abs(x[0])       < DOLFIN_EPS) && on_boundary",
-                                  "(std::abs(x[0] - 1.0) < DOLFIN_EPS) && on_boundary"])
+left =  CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
+right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
 c = Expression(("0.0", "0.0", "0.0"))
