@@ -40,11 +40,10 @@
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "DofMap.h"
 #include "UFCCell.h"
 #include "DofMapBuilder.h"
-
-#include <dolfin/common/utils.h>
 
 using namespace dolfin;
 

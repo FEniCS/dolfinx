@@ -42,13 +42,12 @@ namespace dolfin
   {
   public:
 
-    /// Generate two vectors, in the range of "vector_range" 
+    /// Generate two vectors, in the range of "vector_range"
     /// of the global DOFs.
     /// global_cells is a list of cells which point to the DOF (non-unique)
     /// and remote_local_dofi is the pertinent local_dof of the cell.
     /// input_cells is a list of cells held on this process, and
     /// input_cell_dofs/x_cell_dofs list their local_dofs.
-
     static void map_gdof_to_cell(const std::vector<std::size_t>& input_cells,
                           const std::vector<dolfin::la_index>& input_cell_dofs,
                           const std::vector<std::size_t>& x_cell_dofs,
