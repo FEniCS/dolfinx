@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-27
+// Last changed: 2013-08-12
 
 #ifndef __BOUNDING_BOX_TREE_2D_H
 #define __BOUNDING_BOX_TREE_2D_H
@@ -67,12 +67,26 @@ namespace dolfin
     // Return geometric dimension
     std::size_t gdim() const { return 2; }
 
-    // Check whether point is in bounding box
+    // Return bounding box coordinates for node
+    const double* get_bbox_coordinates(unsigned int node) const
+    {
+      return _bbox_coordinates.data() + 4*node;
+    }
+
+    // Check whether point (x) is in bounding box (node)
     bool point_in_bbox(const double* x, unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 4*node;
-      return (b[0] - DOLFIN_EPS < x[0] && x[0] < b[2] + DOLFIN_EPS &&
-              b[1] - DOLFIN_EPS < x[1] && x[1] < b[3] + DOLFIN_EPS);
+      return (b[0] - DOLFIN_EPS <= x[0] && x[0] <= b[2] + DOLFIN_EPS &&
+              b[1] - DOLFIN_EPS <= x[1] && x[1] <= b[3] + DOLFIN_EPS);
+    }
+
+    // Check whether bounding box (a) is in bounding box (node)
+    bool bbox_in_bbox(const double* a, unsigned int node) const
+    {
+      const double* b = _bbox_coordinates.data() + 4*node;
+      return (a[0] <= b[2] + DOLFIN_EPS && b[0] <= a[2] + DOLFIN_EPS &&
+              a[1] <= b[3] + DOLFIN_EPS && b[1] <= a[3] + DOLFIN_EPS);
     }
 
     // Compute squared distance between point and bounding box
@@ -154,8 +168,8 @@ namespace dolfin
       const double* p = points[*it].coordinates();
       bbox[0] = p[0];
       bbox[1] = p[1];
-      bbox[2] = p[2];
-      bbox[3] = p[3];
+      bbox[2] = p[0];
+      bbox[3] = p[1];
 
       // Compute min and max over remaining points
       for (; it != end; ++it)

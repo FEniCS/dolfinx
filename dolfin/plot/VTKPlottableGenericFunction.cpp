@@ -147,7 +147,11 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
       // Create the glyph object, set source (the arrow) and input (the grid) and
       // adjust various parameters
       _glyphs->SetSourceConnection(arrow->GetOutputPort());
+      #if VTK_MAJOR_VERSION <= 5
       _glyphs->SetInput(grid());
+      #else
+      _glyphs->SetInputData(grid());
+      #endif
       _glyphs->SetVectorModeToUseVector();
       _glyphs->SetScaleModeToScaleByVector();
       _glyphs->SetColorModeToColorByVector();

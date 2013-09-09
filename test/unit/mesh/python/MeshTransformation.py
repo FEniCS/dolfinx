@@ -18,21 +18,31 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-01-16
-# Last changed: 2012-01-16
+# Last changed: 2013-06-28
 
 import unittest
 from dolfin import *
 
 class MeshTransformation(unittest.TestCase):
 
-    def test_rotation_2d(self):
+    def test_translate_2d(self):
+        mesh = UnitSquareMesh(8, 8)
+        p = Point(1, 2)
+        mesh.translate(p)
+
+    def test_translate_3d(self):
+        mesh = UnitCubeMesh(8, 8, 8)
+        p = Point(1, 2, 3)
+        mesh.translate(p)
+
+    def test_rotate_2d(self):
         mesh = UnitSquareMesh(8, 8)
         p = Point(1, 2)
         mesh.rotate(10)
         mesh.rotate(10, 2)
         mesh.rotate(10, 2, p)
 
-    def test_rotation_3d(self):
+    def test_rotate_3d(self):
         mesh = UnitCubeMesh(8, 8, 8)
         p = Point(1, 2, 3)
         mesh.rotate(30, 0)

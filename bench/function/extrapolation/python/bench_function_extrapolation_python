@@ -20,13 +20,13 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-06-07
-# Last changed: 2010-06-07
+# Last changed: 2013-06-17
 
 from dolfin import *
 from time import time
 
 SIZE = 4
-mesh = UnitCube(SIZE, SIZE, SIZE)
+mesh = UnitCubeMesh(SIZE, SIZE, SIZE)
 
 V = VectorFunctionSpace(mesh, "CG", 2) * FunctionSpace(mesh, "DG", 1)
 W = VectorFunctionSpace(mesh, "CG", 3) * FunctionSpace(mesh, "DG", 2)

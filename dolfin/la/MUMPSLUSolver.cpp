@@ -57,7 +57,8 @@ MUMPSLUSolver::MUMPSLUSolver(const CoordinateMatrix& A)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-MUMPSLUSolver::MUMPSLUSolver(boost::shared_ptr<const CoordinateMatrix> A) : _A(A)
+MUMPSLUSolver::MUMPSLUSolver(boost::shared_ptr<const CoordinateMatrix> A)
+  : _A(A)
 {
   // Set parameter values
   parameters = default_parameters();

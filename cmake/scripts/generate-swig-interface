@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-01-17
-# Last changed: 2012-07-03
+# Last changed: 2013-06-23
 
 # System imports
 import os
@@ -50,7 +50,14 @@ copyright_form_swig = dict(comment = r"//", holder="Johan Hake")
 # reg exp pattern
 _header_pattern = re.compile("#include +<(dolfin/\w+/\w+\.h)>")
 
-swig_path = os.path.abspath(os.path.join("dolfin", "swig"))
+# Get top DOLFIN directory.
+script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
+script_rel_path = script_rel_path or "."
+dolfin_dir = os.path.abspath(os.path.join(script_rel_path, os.pardir, os.pardir))
+
+global swig_dir
+swig_dir = os.path.abspath(os.path.join(dolfin_dir, "dolfin", "swig"))
+org_swig_dir = swig_dir
 
 def extract_module_header_files(submodule, excludes):
     """
@@ -58,7 +65,7 @@ def extract_module_header_files(submodule, excludes):
     """
 
     # Read dolfin submodule include file
-    code = open(os.path.join("dolfin", submodule, \
+    code = open(os.path.join(dolfin_dir, "dolfin", submodule, \
                              "dolfin_%s.h" % submodule)).read()
 
     # Extract all headers
@@ -78,7 +85,7 @@ def generate_submodule_info(module_to_submodules, excludes):
     # Extract original modules from dolfin.h
     # NOTE: We need these, in particular the order
     original_submodules = []
-    f = open(os.path.join("dolfin", "dolfin.h"))
+    f = open(os.path.join(dolfin_dir, "dolfin", "dolfin.h"))
     for line in f:
         if "#include <dolfin/" in line and line[:17] == "#include <dolfin/":
             module = line.split("/")[1]
@@ -86,9 +93,9 @@ def generate_submodule_info(module_to_submodules, excludes):
     f.close()
 
     # Check that the directory structure of the combined modules
-    # corresponds to the above dict
+    # corresponds to the above dict, if not generate them
     module_dirs = []
-    for module_dir in glob.glob(os.path.join(swig_path, "modules","*")):
+    for module_dir in glob.glob(os.path.join(swig_dir, "modules","*")):
         module_dirs.append(module_dir.split(os.path.sep)[-1])
 
     # Some sanity checks
@@ -100,9 +107,7 @@ def generate_submodule_info(module_to_submodules, excludes):
 
     for combined_module, modules in module_to_submodules.items():
         if combined_module not in module_dirs:
-            raise RuntimeError("Found a combined module: '%s' which is not a "\
-                               "subdirectory under the 'modules' directory." % \
-                               combined_module)
+            os.makedirs(os.path.join(swig_dir, "modules", combined_module))
         for module in modules:
             if module not in original_submodules:
                 raise RuntimeError("Found a module: '%s' listed in the '%s' "\
@@ -120,9 +125,9 @@ def generate_submodule_info(module_to_submodules, excludes):
                 submodule_info[submodule] = dict(\
                     module=module,
                     has_pre=os.path.isfile(\
-                        os.path.join(swig_path, submodule, "pre.i")),
+                        os.path.join(org_swig_dir, submodule, "pre.i")),
                     has_post=os.path.isfile(\
-                        os.path.join(swig_path, submodule, "post.i")),
+                        os.path.join(org_swig_dir, submodule, "post.i")),
                     headers=extract_module_header_files(submodule, excludes))
                 break
         else:
@@ -179,7 +184,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
     # Iterate over all SWIG modules
     for module, submodules in module_to_submodules.items():
 
-        print "Parsing headers for SWIG module:", module
+        #print "Parsing headers for SWIG module:", module
         # Iterate over all submodules in each SWIG module
         for submodule in submodules:
 
@@ -354,12 +359,13 @@ def write_module_interface_file(module, dependencies, submodule_info):
                   build_swig_import_info(dependencies, submodule_info)
 
     # Filter file dependencies
-    file_dependencies = [f.replace("dolfin", "../../..") \
+    file_dependencies = [os.path.abspath(f) \
                          for f in file_dependencies]
 
     # Add global SWIG interface files
-    file_dependencies.append("module.i")
-    file_dependencies.extend(f.replace("dolfin/swig", "../..") \
+    file_dependencies.append(os.path.abspath(os.path.join(\
+        swig_dir, "modules", module, "module.i")))
+    file_dependencies.extend(os.path.abspath(f) \
                              for f in glob.glob("dolfin/swig/*.i") + \
                              glob.glob("dolfin/swig/typemaps/*.i"))
 
@@ -387,22 +393,24 @@ def write_module_interface_file(module, dependencies, submodule_info):
         if submod_info["has_pre"]:
             include_lines.append(\
                 "%%include \"dolfin/swig/%s/pre.i\"" % submodule)
-            file_dependencies.append("../../%s/pre.i" % submodule)
+            file_dependencies.append(os.path.abspath(os.path.join(\
+                swig_dir, submodule, "pre.i")))
 
         # Add headers
         headers_includes.extend("#include \"%s\"" % header \
                                 for header in submod_info["headers"])
         include_lines.extend("%%include \"%s\"" % header \
                              for header in submod_info["headers"])
-        file_dependencies.extend(header.replace("dolfin", "../../..")\
-                                 for header in submod_info["headers"])
+        file_dependencies = [os.path.abspath(f) \
+                             for f in file_dependencies]
 
-
+        #print submod_info["headers"]
         # Check for post includes
         if submod_info["has_post"]:
             include_lines.append(\
                 "%%include \"dolfin/swig/%s/post.i\"" % submodule)
-            file_dependencies.append("../../%s/post.i" % submodule)
+            file_dependencies.append(os.path.abspath(os.path.join(\
+                swig_dir, submodule, "post.i")))
 
     # Add imports and includes to form
     module_form["imports"] =    "\n".join(import_lines)
@@ -411,23 +419,39 @@ def write_module_interface_file(module, dependencies, submodule_info):
     module_form["headers"] =    "\n".join(headers_includes)
 
     # Open file
-    module_file = open(os.path.join(swig_path, "modules", module, "module.i"), "w")
+    module_file = open(os.path.join(swig_dir, "modules", module, "module.i"), "w")
     module_file.write(copyright_statement%(copyright_form_swig))
 
     # Write the generated code
     module_file.write(module_template % module_form)
 
     # Write swig interface file dependencies
-    dependency_file = open(os.path.join(swig_path, "modules", module,
+    dependency_file = open(os.path.join(swig_dir, "modules", module,
                                         "dependencies.txt"), "w")
     dependency_file.write(";".join(sorted(file_dependencies)))
+
+def write_swig_cmakelist_file(module):
+    """
+    Generate the CMakeList.txt file for each module
+    """
+    
+    # Write swig interface file dependencies
+    cmakelist_file = open(os.path.join(swig_dir, "modules", module,
+                                       "CMakeLists.txt"), "w")
+
+    swig_cmakelists = """# This file is automatically generated by running
+#
+#     cmake/scripts/generate-swig-interface
+#
+""" + swig_cmakelists_str
+    cmakelist_file.write(swig_cmakelists)
 
 def generate_runtime_config_file(dolfin_type_def, module_to_submodules,
                                  submodule_info):
     # Extract all shared_ptr stored classes and store them in a pyton module
     # and place that under dolfin.compilemodeuls.sharedptrclasses.py
     shared_ptr_classes = re.findall("%shared_ptr\(dolfin::(.+)\)", \
-                                    open(os.path.join(swig_path, \
+                                    open(os.path.join(org_swig_dir, \
                                         "shared_ptr_classes.i")).read())
 
     def repr_ordered_dict(data):
@@ -464,16 +488,40 @@ submodule_info = %s
 ''' % (repr(shared_ptr_classes), repr_ordered_dict(dolfin_type_def),\
        repr_ordered_dict(module_to_submodules), repr_ordered_dict(submodule_info))
 
+    # FIXME: Create this in build directory
     open(os.path.join("site-packages", "dolfin", \
                       "compilemodules", "swigimportinfo.py"), "w").write(\
         runtime_file)
 
-
-def regenerate_swig_interface(module_to_submodules, excludes):
+def regenerate_swig_interface(module_to_submodules, excludes, top_destdir):
     """
     Regenerate the whole swig interface
     """
+    
+    global swig_dir
+    
+    top_destdir = top_destdir or dolfin_dir
+    abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)
 
+    # Check what part of path dolfin_dir has in common abs_destdir:
+    dolfin_dirs = dolfin_dir.split(os.sep)
+    abs_destdirs = abs_destdir.split(os.sep)
+    while dolfin_dirs and abs_destdirs:
+
+        # Check if dolfin and abs_dest dir has the same top directory
+        if dolfin_dirs[0] == abs_destdirs[0]:
+            dolfin_dirs.pop(0)
+            abs_destdirs.pop(0)
+        else:
+            break
+    
+    if not os.path.isdir(abs_destdir):
+        raise RuntimeError("%s is not a directory." % abs_destdir)
+
+    # Change swig_dir for generated files
+    if top_destdir != dolfin_dir:
+        swig_dir = swig_dir.replace(dolfin_dir, top_destdir)
+        
     # Check the submodule order and create a submodule to module mapping
     submodule_info = generate_submodule_info(module_to_submodules, excludes)
 
@@ -486,6 +534,7 @@ def regenerate_swig_interface(module_to_submodules, excludes):
     for module in module_to_submodules:
         write_module_interface_file(module, module_info[module]["dependencies"], \
                                     submodule_info)
+        write_swig_cmakelist_file(module)
 
     # Create a python module with generated type info to be used runtime
     generate_runtime_config_file(dolfin_type_def, module_to_submodules,
@@ -494,12 +543,17 @@ def regenerate_swig_interface(module_to_submodules, excludes):
 
 if __name__ == "__main__":
 
+    if len(sys.argv) not in [1,2]:
+        raise RuntimeError("expected 0 or 1 argument")
+    
+    dest_dir = sys.argv[-1] if len(sys.argv) == 2 else ""
+
     # User defined definition of SWIG modules.
     # NOTE: Order of modules are important, but not order of submodules
     module_to_submodules = OrderedDict([\
         ("common", ["common", "parameter", "log"]),
         ("la", ["la", "nls"]),
-        ("mesh", ["mesh", "intersection", "refinement", \
+        ("mesh", ["mesh", "refinement", \
                   "ale", "graph", "geometry", "generation"]),
         ("function", ["function", "math"]),
         ("fem", ["fem", "quadrature", "adaptivity", "multistage"]),
@@ -509,5 +563,5 @@ if __name__ == "__main__":
     excludes = ["LogStream.h", "IntersectionOperatorImplementation.h" ]
 
     # Regnerate SWIG interface
-    regenerate_swig_interface(module_to_submodules, excludes)
+    regenerate_swig_interface(module_to_submodules, excludes, dest_dir)
 

@@ -16,60 +16,27 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // This benchmark measures the performance of building a BoundingBoxTree (and
-// one call to compute_entities, which is dominated by building). The call to
-// compute_entities is included so that we may compare the timing to CGAL.
+// one call to compute_entities, which is dominated by building).
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-29
+// Last changed: 2013-06-25
 
 #include <vector>
 #include <dolfin.h>
 
 using namespace dolfin;
 
-#define NUM_REPS 5
-#define SIZE 64
-
-void bench_cgal()
-{
-  cout << "Running CGAL bench" << endl;
-
-  // Create mesh and point to search
-  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
-  Point point(0.5, 0.5, 0.5);
-
-  // Compute intersection
-  std::set<std::size_t> cells;
-  mesh.intersected_cells(point, cells);
-}
-
-void bench_dolfin()
-{
-  cout << "Running DOLFIN bench" << endl;
-
-  // Create mesh and point to search
-  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
-  Point point(0.5, 0.5, 0.5);
-
-  // Compute intersection
-  MeshPointIntersection intersection(mesh, point);
-  std::vector<unsigned int> cells = intersection.intersected_cells();
-}
+#define SIZE 128
 
 int main(int argc, char* argv[])
 {
-  // Select which benchmark to run
-  bool run_cgal = argc > 1 && strcasecmp(argv[1], "cgal") == 0;
+  // Create mesh
+  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
 
-  // Run benchmark
+  // Create and build tree
   tic();
-  for (int i = 0; i < NUM_REPS; i++)
-  {
-    if (run_cgal)
-      bench_cgal();
-    else
-      bench_dolfin();
-  }
+  BoundingBoxTree tree;
+  tree.build(mesh);
   info("BENCH %g", toc());
 
   return 0;

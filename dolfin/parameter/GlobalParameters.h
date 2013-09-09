@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2009-07-02
-// Last changed: 2013-04-26
+// Last changed: 2013-06-21
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -51,16 +51,29 @@ namespace dolfin
       Parameters p("dolfin");
 
       // General
-      p.add("timer_prefix", "");                             // Prefix for timer tasks
-      p.add("allow_extrapolation", false);                   // Allow extrapolation in function interpolation
-      p.add("exact_interpolation", true);                    // Use exact or linear interpolation in ODESolution::eval()
+
+      // Prefix for timer tasks
+      p.add("timer_prefix", "");
+
+      // Allow extrapolation in function interpolation
+      p.add("allow_extrapolation", false);
+
+      // Use exact or linear interpolation in ODESolution::eval()
+      p.add("exact_interpolation", true);
 
       // Output
-      p.add("std_out_all_processes", true);                  // Print standard output on all processes
-      p.add("relative_line_width", 0.025);                   // Line width relative to edge length in SVG output
+
+      // Print standard output on all processes
+      p.add("std_out_all_processes", true);
+
+      // Line width relative to edge length in SVG output
+      p.add("relative_line_width", 0.025);
+
 
       // Threaded computation
-      p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
+
+      // Number of threads to run, 0 = run serial version
+      p.add("num_threads", 0);
 
       // DOF reordering when running in serial
       p.add("reorder_dofs_serial", true);
@@ -95,11 +108,11 @@ namespace dolfin
       allowed_partitioning_approaches.insert("PARTITION");
       allowed_partitioning_approaches.insert("REPARTITION");
       allowed_partitioning_approaches.insert("REFINE");
-      
+
       p.add("partitioning_approach",
             "PARTITION",
             allowed_partitioning_approaches);
-      
+
       #ifdef HAS_PARMETIS
       // Repartitioning parameter, determines how strongly to hold on to cells
       // when shifting between processes
@@ -114,7 +127,9 @@ namespace dolfin
       // Graph coloring
       std::set<std::string> allowed_coloring_libraries;
       allowed_coloring_libraries.insert("Boost");
+      #ifdef HAS_TRILINOS
       allowed_coloring_libraries.insert("Zoltan");
+      #endif
       p.add("graph_coloring_library", "Boost", allowed_coloring_libraries);
 
       // Mesh refinement

@@ -12,5 +12,6 @@
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/SpecialFunctions.h>
 #include <dolfin/function/SpecialFacetFunction.h>
+#include <dolfin/function/CCFEMFunctionSpace.h>
 
 #endif

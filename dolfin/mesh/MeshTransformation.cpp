@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Anders Logg
+// Copyright (C) 2012-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-16
-// Last changed: 2012-01-16
+// Last changed: 2013-06-28
 
 #include <cmath>
 
@@ -26,6 +26,24 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+void MeshTransformation::translate(Mesh& mesh, const Point& point)
+{
+  // Get mesh geometry
+  MeshGeometry& geometry = mesh.geometry();
+  const std::size_t gdim = geometry.dim();
+
+  // Get displacement vector coordinates
+  const double* dx = point.coordinates();
+
+  // Displace all points
+  for (std::size_t i = 0; i < geometry.size(); i++)
+  {
+    double* x = geometry.x(i);
+    for (std::size_t j = 0; j < gdim; j++)
+      x[j] += dx[j];
+  }
+}
 //-----------------------------------------------------------------------------
 void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis)
 {

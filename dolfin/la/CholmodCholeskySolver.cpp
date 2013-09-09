@@ -23,6 +23,7 @@
 #include <cstring>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericLinearOperator.h>
+#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/dolfin_log.h>
 #include "LUSolver.h"
@@ -46,7 +47,7 @@ CholmodCholeskySolver::CholmodCholeskySolver()
 }
 //-----------------------------------------------------------------------------
 CholmodCholeskySolver::CholmodCholeskySolver(boost::shared_ptr<const GenericLinearOperator> A)
-                               : _A(A)
+  : _A(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -60,8 +61,8 @@ CholmodCholeskySolver::~CholmodCholeskySolver()
 //=============================================================================
 #ifdef HAS_CHOLMOD
 std::size_t CholmodCholeskySolver::solve(const GenericLinearOperator& A,
-                                          GenericVector& x,
-                                          const GenericVector& b)
+                                         GenericVector& x,
+                                         const GenericVector& b)
 {
   // Factorize matrix
   factorize(A);
@@ -92,12 +93,12 @@ std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 
   // Initialise cholmod data
   // NOTE: Casting away const here
-  cholmod.init((UF_long*) boost::tuples::get<0>(data),(UF_long*) boost::tuples::get<1>(data),
+  cholmod.init((UF_long*) boost::tuples::get<0>(data),
+               (UF_long*) boost::tuples::get<1>(data),
                (double*) boost::tuples::get<2>(data), M, nnz);
 
   // Factorize
-  log(PROGRESS,
-      "Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",
+  log(PROGRESS, "Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",
       M, M);
   cholmod.factorize();
 
@@ -105,7 +106,7 @@ std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 }
 //-----------------------------------------------------------------------------
 std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
-                                                     const GenericVector& b)
+                                                    const GenericVector& b)
 {
   const std::size_t N = b.size();
 
@@ -126,7 +127,8 @@ std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
   // Initialise solution vector and solve
   x.resize(N);
 
-  log(PROGRESS, "Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
+  log(PROGRESS, "Solving factorized linear system of size %d x %d (CHOLMOD).",
+      N, N);
 
   cholmod.factorized_solve(x.data(), b.data());
 
@@ -136,7 +138,7 @@ std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
 #else
 // ============================================================================
 std::size_t CholmodCholeskySolver::solve(const GenericLinearOperator& A,
-                                          GenericVector& x,
+                                         GenericVector& x,
                                           const GenericVector& b)
 {
   warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
@@ -155,7 +157,7 @@ std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 }
 //-----------------------------------------------------------------------------
 std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
-                                                     const GenericVector& b)
+                                                    const GenericVector& b)
 {
   dolfin_error("CholdmodCholeskySolver.cpp",
                "perform factorized solve using CHOLMOD Cholesky solver",
@@ -168,8 +170,8 @@ std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
 // CholmodCholeskySolver::Cholmod implementation
 #ifdef HAS_CHOLMOD
 //==============================================================================
-CholmodCholeskySolver::Cholmod::Cholmod() : N(0), factorized(false), A_chol(0),
-                                            L_chol(0)
+CholmodCholeskySolver::Cholmod::Cholmod()
+  : N(0), factorized(false), A_chol(0), L_chol(0)
 {
   // "Start" cholmod
   cholmod_l_start(&c);
@@ -198,7 +200,7 @@ void CholmodCholeskySolver::Cholmod::clear()
 }
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::init(UF_long* Ap, UF_long* Ai, double* Ax,
-					                                std::size_t M, std::size_t nz)
+                                          std::size_t M, std::size_t nz)
 {
   if (factorized)
     log(DBG, "CholeskySolver already contains a factorized matrix! Clearing and starting over.");
@@ -289,7 +291,7 @@ void CholmodCholeskySolver::Cholmod::factorized_solve(double*x,
 }
 //-----------------------------------------------------------------------------
 cholmod_dense* CholmodCholeskySolver::Cholmod::residual(cholmod_dense* x,
-							                                          cholmod_dense* b)
+                                                        cholmod_dense* b)
 {
   double  one[2] = { 1, 0};
   double mone[2] = {-1, 0};
@@ -302,8 +304,8 @@ cholmod_dense* CholmodCholeskySolver::Cholmod::residual(cholmod_dense* x,
 }
 //-----------------------------------------------------------------------------
 double CholmodCholeskySolver::Cholmod::residual_norm(cholmod_dense* r,
-  						                                       cholmod_dense* x,
-	  					                                       cholmod_dense* b)
+                                                     cholmod_dense* x,
+                                                     cholmod_dense* b)
 {
   double r_norm = cholmod_l_norm_dense(r, 0, &c);
   double x_norm = cholmod_l_norm_dense(x, 0, &c);
@@ -315,7 +317,7 @@ double CholmodCholeskySolver::Cholmod::residual_norm(cholmod_dense* r,
 }
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::refine_once(cholmod_dense* x,
-						                                     cholmod_dense* r)
+                                                 cholmod_dense* r)
 {
   cholmod_dense* r_iter;
   r_iter = cholmod_l_solve(CHOLMOD_A, L_chol, r, &c);

@@ -23,7 +23,7 @@
 # Modified by Jan Blechta 2013
 #
 # First added:  2006-08-08
-# Last changed: 2013-02-22
+# Last changed: 2013-06-24
 
 import unittest
 import numpy
@@ -213,105 +213,6 @@ class PyCCInterface(unittest.TestCase):
 
 
 if MPI.num_processes() == 1:
-    class IntersectionOperator(unittest.TestCase):
-        def testIntersectPoint(self):
-            from numpy import linspace
-            mesh = UnitSquareMesh(10, 10)
-            points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
-            for p in points:
-                if p.x()<0 or p.x()>1:
-                    self.assertTrue(not mesh.intersected_cells(p))
-                else:
-                    self.assertTrue(mesh.intersected_cells(p))
-
-        def testIntersectPoints(self):
-            from numpy import linspace
-            mesh = UnitSquareMesh(10, 10)
-            points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
-            all_intersected_entities = []
-            for p in points:
-                all_intersected_entities.extend(mesh.intersected_cells(p))
-            for i0, i1 in zip(sorted(all_intersected_entities),
-                              sorted(mesh.intersected_cells(points))):
-                self.assertEqual(i0, i1)
-
-        def testIntersectMesh2D(self):
-            pass
-
-        def testIntersectMesh3D(self):
-            pass
-
-        def testIntersectedCellWithSingleCellMesh(self):
-
-            # 2D
-            mesh = UnitTriangleMesh()
-
-            # Point Intersection
-            point = Point(0.3, 0.3)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, 0)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 1)
-            self.assertEqual(cells[0], 0)
-
-            # Entity intersection
-            v = Vertex(mesh, 0)
-            id = mesh.intersected_cells(v)
-            self.assertEqual(id, 0)
-
-            # No intersection
-            point = Point(1.2, 1.2)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, -1)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 0)
-
-            # 3D
-            mesh = UnitTetrahedronMesh()
-
-            # Point intersection
-            point = Point(0.3, 0.3, 0.3)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, 0)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 1)
-            self.assertEqual(cells[0], 0)
-
-            # Entity intersection
-            v = Vertex(mesh, 0)
-            id = mesh.intersected_cells(v)
-            self.assertEqual(id, 0)
-
-            # No intersection
-            point = Point(1.2, 1.2, 1.2)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, -1)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 0)
-
-        def testClosestCellWithSingleCellMesh(self):
-            mesh = UnitTriangleMesh()
-
-            point = Point(0.3, 0.3)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            point = Point(1.2, 1.2)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            mesh = UnitTetrahedronMesh()
-
-            point = Point(0.3, 0.3, 0.3)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            point = Point(1.2, 1.2, 1.2)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-
-if MPI.num_processes() == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):
@@ -386,7 +287,7 @@ class MeshOrientations(unittest.TestCase):
 
     def test_basic_cell_orientations(self):
         "Test that default cell orientations initialize and update as expected."
-        mesh = UnitIntervalMesh(6)
+        mesh = UnitIntervalMesh(12)
         orientations = mesh.cell_orientations()
         self.assertEqual(len(orientations), mesh.num_cells())
         for i in range(mesh.num_cells()):
@@ -397,7 +298,7 @@ class MeshOrientations(unittest.TestCase):
 
     def test_cell_orientations(self):
         "Test that cell orientations update as expected."
-        mesh = UnitIntervalMesh(6)
+        mesh = UnitIntervalMesh(12)
         mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)
@@ -414,6 +315,21 @@ class MeshOrientations(unittest.TestCase):
             mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
             mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
             print mesh.cell_orientations()
+
+class MeshSharedEntities(unittest.TestCase):
+    def test_shared_entities(self):
+        for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
+            if MeshClass not in [UnitSquareMesh]:
+                continue
+            dim = ind+1
+            args = [4]*dim
+            mesh = MeshClass(*args)
+            mesh.init()
+
+            # FIXME: Implement a proper test
+            for shared_dim in range(dim):
+                self.assertTrue(isinstance(mesh.topology().shared_entities(shared_dim), dict))
+                self.assertTrue(isinstance(mesh.topology().global_indices(shared_dim), numpy.ndarray))
 
 if __name__ == "__main__":
     unittest.main()

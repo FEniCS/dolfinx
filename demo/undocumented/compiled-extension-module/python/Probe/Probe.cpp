@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Kent-Andre Mardal, Mikael Mortensen, Johan Hake 
+// Copyright (C) 2013 Kent-Andre Mardal, Mikael Mortensen, Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -17,6 +17,7 @@
 //
 // First added:  2013-04-02
 
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "Probe.h"
 
 using namespace dolfin;
@@ -27,43 +28,44 @@ Probe::Probe(const Array<double>& x, const FunctionSpace& V)
 
   const Mesh& mesh = *V.mesh();
   std::size_t gdim = mesh.geometry().dim();
-  
+
   // Store position of probe
-  for (std::size_t i = 0; i < 3; i++) 
+  for (std::size_t i = 0; i < 3; i++)
     _x[i] = (i < gdim ? x[i] : 0.0);
-  
+
   _element = V.element();
-  
+
   // Compute in tensor (one for scalar function, . . .)
   value_size_loc = 1;
   for (uint i = 0; i < _element->value_rank(); i++)
     value_size_loc *= _element->value_dimension(i);
 
   _probes.resize(value_size_loc);
-  
+
   // Find the cell that contains probe
   const Point point(gdim, x.data());
-  int id = mesh.intersected_cell(point);
-  
-  // If the cell is on this process, then create an instance 
+  boost::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  unsigned int id = tree->compute_first_entity_collision(point);
+
+  // If the cell is on this process, then create an instance
   // of the Probe class. Otherwise raise a dolfin_error.
-  if (id != -1)
+  if (id != std::numeric_limits<unsigned int>::max())
   {
-  
+
     // Create cell that contains point
     dolfin_cell = new Cell(mesh, id);
     ufc_cell = new UFCCell(*dolfin_cell);
 
     // Create work vector for basis
     std::vector<double> basis(value_size_loc);
-    
+
     coefficients.resize(_element->space_dimension());
-        
+
     // Create work vector for basis
     basis_matrix.resize(value_size_loc);
     for (uint i = 0; i < value_size_loc; ++i)
       basis_matrix[i].resize(_element->space_dimension());
-        
+
     for (uint i = 0; i < _element->space_dimension(); ++i)
     {
       _element->evaluate_basis(i, &basis[0], &x[0], *ufc_cell);
@@ -95,7 +97,7 @@ void Probe::eval(const Function& u)
   // Make room for one more evaluation
   for (std::size_t j = 0; j < value_size_loc; j++)
     _probes[j].push_back(0.);
-  
+
   std::size_t n = _probes[0].size()-1;
 
   // Compute linear combination
@@ -109,13 +111,13 @@ void Probe::eval(const Function& u)
 void Probe::erase(std::size_t i)
 {
   for (std::size_t j = 0; j < value_size_loc; j++)
-    _probes[j].erase(_probes[j].begin()+i);  
+    _probes[j].erase(_probes[j].begin()+i);
 }
 //----------------------------------------------------------------------------
 void Probe::clear()
 {
   for (std::size_t j = 0; j < value_size_loc; j++)
-    _probes[j].clear();  
+    _probes[j].clear();
 }
 //----------------------------------------------------------------------------
 std::vector<double> Probe::get_probe(std::size_t i)

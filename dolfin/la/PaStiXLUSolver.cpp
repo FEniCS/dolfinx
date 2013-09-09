@@ -146,29 +146,8 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   A->csc(vals, rows, col_ptr, local_to_global_cols, true, symmetric);
 
   // Copy local-to-global
-  const std::vector<pastix_int_t> local_to_global_cols_ref = local_to_global_cols;
-
-  /*
-  for (std::size_t i = 0; i < vals.size(); ++i)
-    cout << "  " << vals[i];
-  cout << endl;
-
-  cout << "-------------------" << endl;
-  for (std::size_t i = 0; i < rows.size(); ++i)
-    cout << "  " << rows[i];
-  cout << endl;
-
-  cout << "-------------------" << endl;
-  for (std::size_t i = 0; i < col_ptr.size(); ++i)
-    cout << "  " << col_ptr[i];
-  cout << endl;
-
-  cout << "-------------------" << endl;
-  for (std::size_t i = 0; i < local_to_global_cols.size(); ++i)
-    cout << "  " << local_to_global_cols[i];
-  cout << endl;
-  cout << "-------------------" << endl;
-  */
+  const std::vector<pastix_int_t> local_to_global_cols_ref
+    = local_to_global_cols;
 
   // Convert to base 1
   for (std::size_t i = 0;  i < rows.size(); ++i)
@@ -177,17 +156,6 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     col_ptr[i] += 1;
   for (std::size_t i = 0;  i < local_to_global_cols.size(); ++i)
     local_to_global_cols[i] += 1;
-
-  /*
-  //std::size_t num_blocks = A.size(0)/3;
-
-  for (std::size_t i = 0;  i < rows.size(); i += 3)
-    rows[i/3] = rows[i]/3 + 1;
-  for (std::size_t i = 0;  i < col_ptr.size(); i += 3)
-    col_ptr[i/3] = col_ptr[i]/3 + 1;
-  for (std::size_t i = 0;  i < local_to_global_cols.size(); i += 3)
-    local_to_global_cols[i/3] = local_to_global_cols[i]/3 + 1;
-  */
 
   dolfin_assert(local_to_global_cols.size() > 0);
 
@@ -218,9 +186,15 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Number of threads per MPI process
   if (parameters["num_threads"].is_set())
-    iparm[IPARM_THREAD_NBR] = std::max((std::size_t) 1, (std::size_t) parameters["num_threads"]);
+  {
+    iparm[IPARM_THREAD_NBR]
+      = std::max((std::size_t) 1, (std::size_t) parameters["num_threads"]);
+  }
   else
-    iparm[IPARM_THREAD_NBR] = std::max((std::size_t) 1, (std::size_t) dolfin::parameters["num_threads"]);
+  {
+    iparm[IPARM_THREAD_NBR] = std::max((std::size_t) 1,
+                            (std::size_t) dolfin::parameters["num_threads"]);
+  }
 
   // PaStiX threading mode
   if (parameters["thread_mode"].is_set())

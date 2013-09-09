@@ -32,12 +32,13 @@
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 
+using namespace dolfin;
+
+/*
 #ifdef HAS_CGAL
 
 #include <CGAL/Nef_polyhedron_3.h>
 #include <CGAL/Polyhedron_3.h>
-
-using namespace dolfin;
 
 typedef Nef_polyhedron_3::Aff_transformation_3 Aff_transformation_3;
 typedef Nef_polyhedron_3::Plane_3 Plane_3;
@@ -605,6 +606,7 @@ class BaryCenter : public CppUnit::TestFixture
 };
 
 #else
+*/
 
 //No tests if CGAL is not available.
 
@@ -614,11 +616,14 @@ class BaryCenter : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE_END();
 };
 
-#endif
+//#endif
+
 
 CPPUNIT_TEST_SUITE_REGISTRATION(BaryCenter);
 
 int main()
 {
+  dolfin::cout << "Barycenter test does nothing" << dolfin::endl;
   DOLFIN_TEST;
+  return 0;
 }

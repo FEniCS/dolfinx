@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2013-06-06
+# Last changed: 2013-06-23
 
 import sys, os, re
 import platform
@@ -37,9 +37,10 @@ tests = {
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap", \
                            "FiniteElement", "Form", "SystemAssembler",
                        "PeriodicBC", "manifolds"],
-    "multistage":     ["RKSolver", "PointIntegralSolver"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace", \
                            "SpecialFunctions"],
+    "geometry":       ["BoundingBoxTree"],
+    "graph":          ["GraphBuild"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
                            "XMLMeshValueCollection", "XMLVector", \
                            "XMLMeshData", "XMLLocalMeshData", \
@@ -47,18 +48,20 @@ tests = {
     "jit":            ["test"],
     "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \
                            "KrylovSolver", "LinearOperator"],
-    "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "math":           ["test"],
+    "multistage":     ["RKSolver", "PointIntegralSolver"],
+
     "meshconvert":    ["test"],
-    "mesh":           ["Cell", "Edge", "Face", "MeshData", "MeshEditor",
-                       "MeshFunction", "MeshIterator", "MeshMarkers",
-                       "MeshValueCollection", "BoundaryMesh", "Mesh", "SubMesh"],
+    "mesh":           ["Cell", "Edge", "Face", "MeshColoring", \
+                           "MeshData", "MeshEditor", \
+                           "MeshFunction", "MeshIterator", "MeshMarkers",\
+                           "MeshValueCollection", "BoundaryMesh", "Mesh", \
+                           "SubMesh"],
+    "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
     "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
-    "intersection":   ["IntersectionOperator"],
-    "geometry":       ["BoundingBoxTree"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required

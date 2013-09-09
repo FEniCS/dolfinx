@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Anders Logg
+// Copyright (C) 2011-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2013-02-27
+// Last changed: 2013-08-28
 
 #include <boost/scoped_array.hpp>
 
@@ -25,6 +25,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
 #include "PointSource.h"
@@ -66,11 +67,12 @@ void PointSource::apply(GenericVector& b)
   // functions are continuous but may give unexpected results for DG.
   dolfin_assert(_V->mesh());
   const Mesh& mesh = *_V->mesh();
-  const int cell_index = mesh.intersected_cell(_p);
+  boost::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  const unsigned int cell_index = tree->compute_first_entity_collision(_p);
 
   // Check that we found the point on at least one processor
   int num_found = 0;
-  if (cell_index < 0)
+  if (cell_index == std::numeric_limits<unsigned int>::max())
     num_found = MPI::sum(0);
   else
     num_found = MPI::sum(1);
@@ -82,7 +84,7 @@ void PointSource::apply(GenericVector& b)
   }
 
   // Only continue if we found the point
-  if (cell_index < 0)
+  if (cell_index == std::numeric_limits<unsigned int>::max())
   {
     b.apply("add");
     return;

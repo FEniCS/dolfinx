@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Anders Logg
+// Copyright (C) 2012-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-16
-// Last changed: 2012-01-16
+// Last changed: 2013-06-27
 
 #ifndef __MESH_TRANSFORMATION_H
 #define __MESH_TRANSFORMATION_H
@@ -29,36 +29,42 @@ namespace dolfin
   /// This class implements various transformations of the coordinates
   /// of a mesh.
 
-  // FIXME: Consider adding other transformations, such as for example
-  // translation and stretching.
-
   class MeshTransformation
   {
   public:
+
+    /// Translate mesh according to a given vector.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh
+    ///     point (Point)
+    ///         The vector defining the translation.
+    static void translate(Mesh& mesh, const Point& point);
 
     /// Rotate mesh around a coordinate axis through center of mass
     /// of all mesh vertices
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh
+    ///         The mesh.
     ///     angle (double)
-    ///         The number of degrees (0-360) of rotation
+    ///         The number of degrees (0-360) of rotation.
     ///     axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh
+    ///         The coordinate axis around which to rotate the mesh.
     static void rotate(Mesh& mesh, double angle, std::size_t axis);
 
     /// Rotate mesh around a coordinate axis through a given point
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh
+    ///         The mesh.
     ///     angle (double)
-    ///         The number of degrees (0-360) of rotation
+    ///         The number of degrees (0-360) of rotation.
     ///     axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh
+    ///         The coordinate axis around which to rotate the mesh.
     ///     point (_Point_)
-    ///         The point around which to rotate the mesh
+    ///         The point around which to rotate the mesh.
     static void rotate(Mesh& mesh, double angle, std::size_t axis, const Point& p);
 
   };
