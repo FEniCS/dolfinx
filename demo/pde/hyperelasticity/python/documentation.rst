@@ -70,14 +70,14 @@ will be applied are now defined:
 .. code-block:: python
 
     # Mark boundary subdomians
-    left, right = compile_subdomains(["(std::abs(x[0])       < DOLFIN_EPS) && on_boundary",
-                                      "(std::abs(x[0] - 1.0) < DOLFIN_EPS) && on_boundary"])
+    left =  CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
+    right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
 
 The boundary subdomain ``left`` corresponds to the part of the
 boundary on which :math:`x=0` and the boundary subdomain ``right``
 corresponds to the part of the boundary on which :math:`x=1`. Note
-that C++ syntax is used in the :py:func:`compile_subdomains
-<dolfin.compilemodules.subdomains.compile_subdomains>` function since
+that C++ syntax is used in the :py:func:`CompiledSubDomain`
+<dolfin.compilemodules.subdomains.CompiledSubDomain>` function since
 the function will be automatically compiled into C++ code for
 efficiency. The (built-in) variable ``on_boundary`` is true for points
 on the boundary of a domain, and false otherwise.
