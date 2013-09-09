@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-05
-// Last changed: 2013-09-05
+// Last changed: 2013-09-06
 
 #ifndef __FEM_UTILS_H
 #define __FEM_UTILS_H
@@ -33,8 +33,8 @@ namespace dolfin
   /// Return a map between dofs and vertex indices
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
-  ///         The mesh to create the map between
+  ///     space (_FunctionSpace_)
+  ///         The FunctionSpace for what the dof to vertex map should be computed for
   ///
   /// *Returns*
   ///     std::vector<dolfin::la_index>
@@ -44,8 +44,8 @@ namespace dolfin
   /// Return a map between vertex indices and dofs
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
-  ///         The mesh to create the map between
+  ///     space (_FunctionSpace_)
+  ///         The FunctionSpace for what the vertex to dof map should be computed for
   ///
   /// *Returns*
   ///     std::vector<std::size_t>
