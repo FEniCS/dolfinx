@@ -12,22 +12,32 @@ Equation and problem definition:
 --------------------------------------
 
 
-The Poisson equation is the canonical elliptic partial differential equation. For a domain :math:`\Omega \subset \mathbb{R}^n` with boundary :math:`\partial \Omega`, the Poisson equation with particular boundary conditions reads:
+The Poisson equation is the canonical elliptic partial differential
+equation. For a domain :math:`\Omega \subset \mathbb{R}^n` with
+boundary :math:`\partial \Omega`, the Poisson equation with particular
+boundary conditions reads:
 
 .. math::
 
 	- \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
     \nabla u \cdot n &= g \quad {\rm on} \ \partial \Omega.
 
-Here, :math:`f` and :math:`g` are input data and :math:`n` denotes the outward directed boundary normal. Since only Neumann conditions are applied, :math:`u` is only determined up to a constant :math:`c` by the above equations. An addition constraint is thus required, for instance:
+Here, :math:`f` and :math:`g` are input data and :math:`n` denotes the
+outward directed boundary normal. Since only Neumann conditions are
+applied, :math:`u` is only determined up to a constant :math:`c` by
+the above equations. An additional constraint is thus required, for
+instance:
 
 .. math::
 
-	\int u \, {\rm d} x = 0 
+	\int u \, {\rm d} x = 0
 
-This can be accomplished by introducing the constant :math:`c` as an additional unknown (to be sought in :math:`\mathbb{R}`) and the above constraint.
+This can be accomplished by introducing the constant :math:`c` as an
+additional unknown (to be sought in :math:`\mathbb{R}`) and the above
+constraint.
 
-Our variational form reads: Find :math:`(u, c) \in V \times R` such that
+Our variational form reads: Find :math:`(u, c) \in V \times R` such
+that
 
 .. math::
 
@@ -42,22 +52,17 @@ Our variational form reads: Find :math:`(u, c) \in V \times R` such that
 						+ \int_{\Omega} cv \, {\rm d} x
 						+ \int_{\Omega} ud \, {\rm d} x, \\
 	L(v)    &= \int_{\Omega} f v \, {\rm d} x
-    	     	+ \int_{\Gamma_{N}} g v \, {\rm d} s,
+    	     	+ \int_{\Gamma_{N}} g v \, {\rm d} s.
 
-:math:`V` is a suitable function space containing :math:`u` and :math:`v`, and :math:`R` is the space of real numbers.
+:math:`V` is a suitable function space containing :math:`u` and
+:math:`v`, and :math:`R` is the space of real numbers.
 
-The expression :math:`a(\cdot, \cdot)` is the bilinear form and :math:`L(\cdot)` is the linear form.
+The expression :math:`a(\cdot, \cdot)` is the bilinear form and
+:math:`L(\cdot)` is the linear form.
 
-In this demo we shall consider the following definitions of the domain and input functions:
+In this demo we shall consider the following definitions of the domain
+and input functions:
 
-
-	
-* :math:`\Omega = [0, 1] \times [0, 1]` (a unit square) 
-* :math:`g = - \sin(5x)` (normal derivative) 
+* :math:`\Omega = [0, 1] \times [0, 1]` (a unit square)
+* :math:`g = - \sin(5x)` (normal derivative)
 * :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)` (source term)
-
-
-
-
-
-	

@@ -7,10 +7,10 @@ Poisson equation with multiple subdomains
 
 This demo is implemented in a single Python file,
 :download:`demo_subdomains-poisson.py`, which contains both the
-variational forms and the solver. We suggest that you familiarize with
-the :ref:`Poisson demo <demo_pde_poisson_python_documentation>` before
-studying this example, as some of the more standard steps will be
-described in less detail.
+variational forms and the solver. We suggest that you familiarize
+yourself with the :ref:`Poisson demo
+<demo_pde_poisson_python_documentation>` before studying this example,
+as some of the more standard steps will be described in less detail.
 
 .. include:: ../common.txt
 
@@ -19,24 +19,24 @@ Implementation
 
 This description goes through the implementation (in
 :download:`demo_subdomains-poisson.py`) of a solver for the above
-described equations.
+described equation.
 
 In this example, different boundary conditions are prescribed on
 different parts of the boundaries, and different parts of the interior
 have different material properties. This information must be made
 available to the solver.  One way of doing this, is to tag the
-different sub-regions with different (integer) labels, and later
+different subregions with different (integer) labels, and later
 integrate over the specified regions. DOLFIN provides a class
 :py:class:`MeshFunction <dolfin.cpp.MeshFunction>` which is useful for
-these types of operations: instances of this class represents a
-function over mesh entities (such as over cells or over facets). Mesh
-functions can be read from file or, if explicit formulae for the
-domains are known, they can be constructed by way of instances of the
+these types of operations: instances of this class represent functions
+over mesh entities (such as over cells or over facets). Mesh functions
+can be read from file or, if explicit formulae for the domains are
+known, they can be constructed by way of instances of the
 :py:class:`SubDomain <dolfin.cpp.SubDomain>` class. The latter is the
 case here, so we begin by defining the left, right, top and bottom
 boundaries, and the interior obstacle domain using the
 :py:class:`SubDomain <dolfin.cpp.SubDomain>` class and creating
-instances of these classes:
+instances of these classes.
 
 .. code-block:: python
 
@@ -82,7 +82,7 @@ We next define a mesh of the domain:
 
     mesh = UnitSquareMesh(64, 64)
 
-The above sub-domains are defined with the sole purpose of populating
+The above subdomains are defined with the sole purpose of populating
 mesh functions. (For more complicated geometries, the mesh functions
 would typically be provided by other means.) The classes
 :py:class:`CellFunction <dolfin.cpp.CellFunction>` and
@@ -94,7 +94,7 @@ cell of a mesh, while :py:class:`FacetFunction
 <dolfin.cpp.FacetFunction>` represents a function with a value for
 each facet. We define a :py:class:`CellFunction
 <dolfin.cpp.CellFunction>` to indicate which cells that correspond to
-the different interior sub-regions :math:`\Omega_0` and
+the different interior subregions :math:`\Omega_0` and
 :math:`\Omega_1`. Those in the interior rectangle will be tagged by
 `1`, while the remainder is tagged by `0`. We can set all the values
 of a :py:class:`MeshFunction <dolfin.cpp.MeshFunction>` to a given
@@ -172,7 +172,7 @@ representing integration over cells, exterior facets (that is, facets
 on the boundary) and interior facets, respectively. These measures can
 take an additional integer argument.  In fact, ``dx`` defaults to
 ``dx(0)``, ``ds`` defaults to ``ds(0)``, and ``dS`` defaults to
-``dS(0)``. Integration over sub-regions can be specified by measures
+``dS(0)``. Integration over subregions can be specified by measures
 with different integer labels as arguments. However, we also need to
 map the geometry information stored in the mesh functions to these
 measures. The easiest way of accomplishing this is to define new
@@ -187,9 +187,9 @@ measures with the mesh functions as additional input:
 
 We can now define the variational forms corresponding to the
 variational problem above using these measures and the tags for the
-different sub-regions. For simplicity, we define the full form first,
-and then extract the left and right-hand sides using the UFL functions
-:py:func:`lhs` and :py:func:`rhs` afterwards. We can then
+different subregions. For simplicity, we define the full form first,
+and then extract the left- and right-hand sides using the UFL
+functions :py:func:`lhs` and :py:func:`rhs` afterwards. We can then
 :py:func:`solve <dolfin.fem.solving.solve>` as usual:
 
 .. code-block:: python

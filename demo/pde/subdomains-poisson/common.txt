@@ -6,7 +6,7 @@ its boundaries.
 Equation and problem definition
 -------------------------------
 
-For illustration purposes we consider a weighted Poisson equation over
+For illustration purposes, we consider a weighted Poisson equation over
 a unit square: :math:`\Omega = [0,1] \times [0,1]` with mixed boundary
 conditions: find :math:`u` satisfying
 
@@ -14,7 +14,7 @@ conditions: find :math:`u` satisfying
    - \mathrm{div} (a \nabla u) &= 1.0 \quad {\rm in} \ \Omega, \\
                   u &= 5.0 \quad {\rm on} \ \Gamma_{T}, \\
                   u &= 0.0 \quad {\rm on} \ \Gamma_{B}, \\
-                  \nabla u \cdot n &= - 10.0 \, e^{-(y - 0.5)^2}, \quad {\rm on} \ \Gamma_{L}. \\
+                  \nabla u \cdot n &= - 10.0 \, e^{-(y - 0.5)^2} \quad {\rm on} \ \Gamma_{L}. \\
                   \nabla u \cdot n &= 1.0 \quad {\rm on} \ \Gamma_{R}, \\
 
 where :math:`\Gamma_{T}`, :math:`\Gamma_{B}`, :math:`\Gamma_{L}`,
@@ -31,7 +31,7 @@ Variational form
 -------------------------------
 
 We can write the above boundary value problem in the standard linear
-variational form: find :math:`u \in V`
+variational form: find :math:`u \in V` such that
 
 .. math::
 
@@ -44,10 +44,10 @@ and :math:`\Gamma_{B}`, and
 .. math::
 
    a(u, v) &= \int_{\Omega_0} a_0 \nabla u \cdot \nabla v \, {\rm d} x
-            + \int_{\Omega_1} a_1 \nabla u \cdot \nabla v \, {\rm d} x \\
+            + \int_{\Omega_1} a_1 \nabla u \cdot \nabla v \, {\rm d} x, \\
    L(v)      &=  \int_{\Gamma_{L}} g_L v \, {\rm d} s
             + \int_{\Gamma_{R}} g_R v \, {\rm d} s
-            + \int_{\Omega} f \, v \, {\rm d} x
+            + \int_{\Omega} f \, v \, {\rm d} x.
 
 where :math:`f = 1.0`, :math:`g_L = - 10.0 e^{-(y - 0.5)^2}` and
 :math:`g_R = 1.0`.

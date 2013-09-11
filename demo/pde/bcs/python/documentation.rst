@@ -6,7 +6,7 @@
 Set boundary conditions for meshes that include boundary indicators
 ===================================================================
 
-This demo is implemented in a single python file, :download:`demo_bcs.py`, 
+This demo is implemented in a single python file, :download:`demo_bcs.py`,
 which contains both the variational form and the solver.
 
 
@@ -15,9 +15,10 @@ which contains both the variational form and the solver.
 Implementation
 --------------
 
-This description goes through the implementation (in :download:`demo_bcs.py`) of a solver for 
-the above described Poisson equation and how to set boundary conditions 
-for a mesh that include boundary indicators.
+This description goes through the implementation (in
+:download:`demo_bcs.py`) of a solver for the above described Poisson
+equation and how to set boundary conditions for a mesh that includes
+boundary indicators.
 
 First, the :py:mod:`dolfin` module is imported:
 
@@ -25,8 +26,10 @@ First, the :py:mod:`dolfin` module is imported:
 
 	from dolfin import *
 
-Then, we import the mesh and create a finite element function space :math:`V` realtive to this mesh, 
-in this case we create a :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>` ``V`` consisting of continuous piecewise linear polynomials. 
+Then, we import the mesh and create a finite element function space
+:math:`V` relative to this mesh. In this case we create a
+:py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>`
+``V`` consisting of continuous piecewise linear polynomials.
 
 .. code-block:: python
 
@@ -34,12 +37,12 @@ in this case we create a :py:class:`FunctionSpace<dolfin.functions.functionspace
 	mesh = Mesh("../aneurysm.xml.gz")
 	V = FunctionSpace(mesh, "CG", 1)
 
-Now, we define the trial function u and the test function v, both living in the function space ``V``. We also define our variational problem, a and L. u and v are defined using the classes 
-:py:class:`TrialFunction <dolfin.functions.function.TrialFunction>` and 
-:py:class:`TestFunction<dolfin.functions.function.TrialFunction>`, 
+Now, we define the trial function u and the test function v, both living in the function space ``V``. We also define our variational problem, a and L. u and v are defined using the classes
+:py:class:`TrialFunction <dolfin.functions.function.TrialFunction>` and
+:py:class:`TestFunction<dolfin.functions.function.TrialFunction>`,
 respetively, on the :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>` ``V``.
-The source :math:`f` may be defined as a :py:class:`Constant <dolfin.functions.constant.Constant>`. 
-The bilinear and linear forms, ``a`` anf ``L`` respectively, are defined using UFL operators.
+The source :math:`f` may be defined as a :py:class:`Constant <dolfin.functions.constant.Constant>`.
+The bilinear and linear forms, ``a`` and ``L`` respectively, are defined using UFL operators.
 Thus, the definition of the variational problem reads:
 
 .. code-block:: python
@@ -51,8 +54,8 @@ Thus, the definition of the variational problem reads:
 	a = dot(grad(u), grad(v))*dx
 	L = f*v*dx
 
-Before we can solve the problem we must specify the boundary conditions. 
-We begin with specifying the values of the boundary conditions as :py:class:`Constant <dolfin.functions.constant.Constant>`s. 
+Before we can solve the problem we must specify the boundary conditions.
+We begin with specifying the values of the boundary conditions as :py:class:`Constant <dolfin.functions.constant.Constant>`s.
 Then we use the class :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` to define the Dirichlet boundary conditions:
 
 .. code-block:: python
@@ -69,7 +72,7 @@ Then we use the class :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` to de
 	bc2 = DirichletBC(V, u2, 2)
 	bc3 = DirichletBC(V, u3, 3)
 
-:py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three arguments, the first one is our function space ``V``, 
+:py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three arguments, the first one is our function space ``V``,
 the next is the boundary condition value and the third is the subdomain indicator which is information stored in the mesh.
 
 At this point we are ready to create a :py:class:`Function <dolfin.cpp.function.Function>` ``u`` to store the solution and call the solve function with the arguments
@@ -96,5 +99,5 @@ Complete code
 -------------
 
 .. literalinclude:: demo_bcs.py
-   :start-after: # Begin demo	
+   :start-after: # Begin demo
 

@@ -15,7 +15,7 @@ corresponding eigenvectors :math:`x \in \mathbb{R}^n` such that
 
 .. math::
 
-   A x = \lambda x
+   A x = \lambda x.
 
 In the finite element world, the matrix :math:`A` often originates
 from some partial differential operator. For instance, :math:`A` can
@@ -30,7 +30,7 @@ of continuous piecewise linear polynomials defined relative to some
 mesh (Lagrange finite elements). For this example, we will consider a
 3-D mesh of tetrahedra generated elsewhere.
 
-With the above input the eigenfunction will look as follows:
+With the above input the first eigenfunction will look as follows:
 
 .. image:: ../eigenvalue_x.png
     :scale: 75

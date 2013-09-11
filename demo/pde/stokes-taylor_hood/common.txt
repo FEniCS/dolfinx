@@ -1,17 +1,17 @@
 This demo illustrates how to:
 
 * Read mesh and subdomains from file
-* Use MixedFunctionSpace
+* Use mixed function spaces
 
-The mesh and subdomains look as follows
+The mesh and subdomains look as follows:
 
-.. image:: ../plot_mesh.png 
+.. image:: ../plot_mesh.png
 
 .. image:: ../plot_mesh_boundaries.png
 
 and the solution of u and p, respectively:
 
-.. image:: ../plot_u.png 
+.. image:: ../plot_u.png
 
 .. image:: ../plot_p.png
 
@@ -27,19 +27,26 @@ Strong formulation
 
 
 .. note::
-	The sign of the pressure has been flipped from the classical definition. This is done in order to have a symmetric (but not positive-definite) system of equations 		rather than a non-symmetric (but positive-definite) system of equations.
+        The sign of the pressure has been flipped from the classical
+   	definition. This is done in order to have a symmetric (but not
+	positive-definite) system of equations rather than a
+	non-symmetric (but positive-definite) system of equations.
 
-A typical set of boundary conditions on the boundary :math:`\partial \Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
+A typical set of boundary conditions on the boundary :math:`\partial
+\Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
 
 .. math::
 	u &= u_0 \quad {\rm on} \ \Gamma_{D}, \\
-	\nabla u \cdot n + p n &= g \,   \quad {\rm on} \ \Gamma_{N}. \\
+	\nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}. \\
 
 
 Weak formulation
 ^^^^^^^^^^^^^^^^
 
-The Stokes equations can easily be formulated in a mixed variational form; that is, a form where the two variables, the velocity and the pressure, are approximated simultaneously. Using the abstract framework, we have the problem: find :math:`(u, p) \in W` such that
+The Stokes equations can easily be formulated in a mixed variational
+form; that is, a form where the two variables, the velocity and the
+pressure, are approximated simultaneously. Using the abstract
+framework, we have the problem: find :math:`(u, p) \in W` such that
 
 .. math::
 	a((u, p), (v, q)) = L((v, q))
@@ -56,7 +63,8 @@ for all :math:`(v, q) \in W`, where
 				&= \int_{\Omega} f \cdot v \, {\rm d} x
     			+ \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
 
-The space :math:`W` should be a mixed (product) function space :math:`W = V \times Q`, such that :math:`u \in V` and :math:`q \in Q`.
+The space :math:`W` should be a mixed (product) function space
+:math:`W = V \times Q`, such that :math:`u \in V` and :math:`q \in Q`.
 
 Domain and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

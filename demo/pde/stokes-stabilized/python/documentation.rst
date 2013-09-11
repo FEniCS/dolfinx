@@ -2,9 +2,8 @@
 
 .. _demo_pde_stokes-stabilized_python_documentation:
 
-Stokes equations with first order elements
-==========================================
-
+Stokes equations with stabilized first order elements
+=====================================================
 
 .. include:: ../common.txt
 
@@ -16,15 +15,28 @@ First, the :py:mod:`dolfin` module is imported:
 
 	from dolfin import *
 
-In this example, different boundary conditions are prescribed on different parts of the boundaries. This information must be made available to the solver. One way of doing this, is to tag the different sub-regions with different (integer) labels. DOLFIN provides a class :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` which is useful for these types of operations: instances of this class represents a function over mesh entities (such as over cells or over facets). Mesh and mesh functions can be read from file in the following way:
+In this example, different boundary conditions are prescribed on
+different parts of the boundaries. This information must be made
+available to the solver. One way of doing this, is to tag the
+different sub-regions with different (integer) labels. DOLFIN provides
+a class :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` which
+is useful for these types of operations: instances of this class
+represent functions over mesh entities (such as over cells or over
+facets). Mesh and mesh functions can be read from file in the
+following way:
 
 .. code-block:: python
-	
+
 	# Load mesh and subdomains
 	mesh = Mesh("dolfin_fine.xml.gz")
 	sub_domains = MeshFunction("size_t", mesh, "dolfin_fine_subdomains.xml.gz")
 
-Next, we define a :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>` composed of a :py:class:`VectorFunctionSpace <dolfin.functions.functionspace.VectorFunctionSpace>` and a :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`, both of continuous piecewise linears.
+Next, we define a :py:class:`MixedFunctionSpace
+<dolfin.functions.functionspace.MixedFunctionSpace>` composed of a
+:py:class:`VectorFunctionSpace
+<dolfin.functions.functionspace.VectorFunctionSpace>` and a
+:py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`, both of
+continuous piecewise linears.
 
 .. code-block:: python
 
@@ -33,10 +45,12 @@ Next, we define a :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.
 	vector = VectorFunctionSpace(mesh, "CG", 1)
 	system = vector * scalar
 
-Now that we have our mixed function space and marked subdomains defining the boundaries, we create functions for the boundary conditions and define boundary conditions:
+Now that we have our mixed function space and marked subdomains
+defining the boundaries, we create functions for the boundary
+conditions and define boundary conditions:
 
 .. code-block:: python
-	
+
 	# Create functions for boundary conditions
 	noslip = Constant((0, 0))
 	inflow = Expression(("-sin(x[1]*pi)", "0"))
@@ -54,12 +68,24 @@ Now that we have our mixed function space and marked subdomains defining the bou
 	# Collect boundary conditions
 	bcs = [bc0, bc1, bc2]
 
-Here, we have given four arguments to :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. The first specifies the :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. Since we have a :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>`, we write system.sub(0) for the :py:class:`VectorFunctionSpace <dolfin.functions.functionspace.VectorFunctionSpace>`, and system.sub(1) for the :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. The second argument specifies the value on the Dirichlet boundary. The two last ones specifies the marking of the subdomains; sub_domains contains the subdomain markers and the number given as the last argument is the subdomain index.
+Here, we have given four arguments to :py:class:`DirichletBC
+<dolfin.cpp.fem.DirichletBC>`. The first specifies the
+:py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. Since
+we have a :py:class:`MixedFunctionSpace
+<dolfin.functions.functionspace.MixedFunctionSpace>`, we write
+system.sub(0) for the :py:class:`VectorFunctionSpace
+<dolfin.functions.functionspace.VectorFunctionSpace>`, and
+system.sub(1) for the :py:class:`FunctionSpace
+<dolfin.cpp.function.FunctionSpace>`. The second argument specifies
+the value on the Dirichlet boundary. The two last arguments specify the
+marking of the subdomains; sub_domains contains the subdomain markers
+and the number given as the last argument is the subdomain index.
 
-The bilinear and linear forms corresponding to the stabilized weak mixed formulation of the Stokes equations are defined as follows:
+The bilinear and linear forms corresponding to the stabilized weak
+mixed formulation of the Stokes equations are defined as follows:
 
 .. code-block:: python
-	
+
 	# Define variational problem
 	(v, q) = TestFunctions(system)
 	(u, p) = TrialFunctions(system)
@@ -71,10 +97,18 @@ The bilinear and linear forms corresponding to the stabilized weak mixed formula
 	    delta*inner(grad(q), grad(p)))*dx
 	L = inner(v + delta*grad(q), f)*dx
 
-To compute the solution we use the bilinear and linear forms, and the boundary condition, but we also need to create a :py:class:`Function <dolfin.cpp.function.Function>` to store the solution(s). The (full) solution will be stored in w, which we initialize using the MixedFunctionSpace system. The actual computation is performed by calling solve with the arguments a, L and bcs. The separate components u and p of the solution can be extracted by calling the :py:meth:`split <dolfin.functions.function.Function.split>` function. 
+To compute the solution we use the bilinear and linear forms, and the
+boundary condition, but we also need to create a :py:class:`Function
+<dolfin.cpp.function.Function>` to store the solution(s). The (full)
+solution will be stored in ``w``, which we initialize using the
+MixedFunctionSpace system. The actual computation is performed by
+calling solve with the arguments ``a``, ``L`` and ``bcs``. The
+separate components ``u`` and ``p`` of the solution can be extracted
+by calling the :py:meth:`split
+<dolfin.functions.function.Function.split>` function.
 
 .. code-block:: python
-	
+
 	# Compute solution
 	w = Function(system)
 	solve(a == L, w, bcs)
@@ -83,7 +117,7 @@ To compute the solution we use the bilinear and linear forms, and the boundary c
 Finally, we can store to file and plot the solutions.
 
 .. code-block:: python
-	
+
 	# Save solution in VTK format
 	ufile_pvd = File("velocity.pvd")
 	ufile_pvd << u

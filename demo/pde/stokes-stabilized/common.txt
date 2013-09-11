@@ -1,34 +1,40 @@
 
 This demo illustrates how to:
 
-* Solve Stokes equation using a stabilized variational form 
+* Solve the Stokes problem using a stabilized method
 
-and the solution of u and p, respectively:
+The velocity :math:`u` and :math:`p` will look as follows:
 
 .. image:: ../plot_u.png
 
 .. image:: ../plot_p.png
 
-
 Equation and problem definition
 -------------------------------
 
-Strong formulation of the problem
+Strong formulation of the problem:
 
 .. math::
 	- \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega, \\
                 	\nabla \cdot u &= 0 \quad {\rm in} \ \Omega. \\
 
 .. note::
-	The sign of the pressure has been flipped from the classical definition. This is done in order to have a symmetric (but not positive-definite) system of equations 		rather than a non-symmetric (but positive-definite) system of equations.
+	The sign of the pressure has been flipped from the classical
+	definition. This is done in order to have a symmetric (but not
+	positive-definite) system of equations rather than a
+	non-symmetric (but positive-definite) system of equations.
 
-A typical set of boundary conditions on the boundary :math:`\partial \Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
+A typical set of boundary conditions on the boundary :math:`\partial
+\Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
 
 .. math::
 	u &= u_0 \quad {\rm on} \ \Gamma_{D}, \\
 	\nabla u \cdot n + p n &= g   \quad {\rm on} \ \Gamma_{N}. \\
 
-The Stokes equations can easily be formulated in a mixed variational form; that is, a form where the two variables, the velocity and the pressure, are approximated simultaneously. Using the abstract framework, we have the problem: find :math:`(u, p) \in W` such that
+The Stokes equations can easily be formulated in a mixed variational
+form; that is, a form where the two variables, the velocity and the
+pressure, are approximated simultaneously. Using the abstract
+framework, we have the problem: find :math:`(u, p) \in W` such that
 
 .. math::
 	a((u, p), (v, q)) = L((v, q))
@@ -43,9 +49,14 @@ for all :math:`(v, q) \in W`, where
 	L((v, q))
 				&= \int_{\Omega} f \cdot v \, {\rm d} x \, {\rm d} s. \\
 
-The space :math:`W` should be a mixed (product) function space: :math:`W = V \times Q` such that :math:`u \in V` and :math:`q \in Q`. But in this demo we will use first order elements in both velocity and pressure, and thus we will have problems with stability. Therefore we use a stabilized variational form instead. It reads as follows: find :math:`(u, p) \in W` such that
+The space :math:`W` should be a mixed (product) function space:
+:math:`W = V \times Q` such that :math:`u \in V` and :math:`q \in
+Q`. In this demo we will use first order elements in both velocity and
+pressure, which will lead to stability problems. Therefore we use a
+stabilized variational formulation. It reads as follows: find
+:math:`(u, p) \in W` such that
 
-.. math::	
+.. math::
 	a((u, p), (v, q)) = L((v, q))
 
 for all :math:`(v, q) \in W`, where
@@ -58,18 +69,16 @@ for all :math:`(v, q) \in W`, where
                  + \delta \nabla q \cdot \nabla p \, {\rm d} x, \\
 	L((v, q))
 				&= \int_{\Omega} f \cdot v \, {\rm d} x
-    			+ \delta \nabla q \cdot f \, {\rm d} s. \\
-    \delta &= \beta h^2
+    			+ \delta \nabla q \cdot f \, {\rm d} s.
 
-where :math:`\beta` is some number and h is the mesh cell size.
+where :math:`\delta = \beta h^2` and :math:`\beta` is some number and :math:`h` is the mesh cell size.
 
-In this demo, we shall consider the following definitions of the input functions, the domain, and the boundaries:
+In this demo, we shall consider the following definitions of the input
+functions, the domain, and the boundaries:
 
-
-* :math:`(\Omega = [0,1]\times[0, 1]) \backslash {\rm dolphin}` 
+* :math:`(\Omega = [0,1]\times[0, 1]) \backslash {\rm dolphin}`
 * :math:`\Gamma_D =`
 * :math:`\Gamma_N =`
 * :math:`u_0 = (- \sin(\pi x_1), 0.0) \, {\rm for} \, x_0 = 1 \, {\rm and} \, u_0 = (0.0, 0.0)` otherwise
 * :math:`f = (0.0, 0.0)`
 * :math:`g = (0.0, 0.0)`
-

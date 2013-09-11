@@ -2,10 +2,13 @@
 
 .. _demo_pde_tensor-weighted-poisson_python_documentation:
 
-Tensor Weighted Poisson 
+Tensor-weighted Poisson
 =======================
 
-This demo is implemented in two files; one file,  :download:`generate_data.py` , for generating data, and one file, :download:`demo_tensorweighted-poisson.py` , which contains both the vaiational form and the solver. 
+This demo is implemented in two files; one file,
+:download:`generate_data.py` , for generating data, and one file,
+:download:`demo_tensorweighted-poisson.py` , which contains both the
+vaiational form and the solver.
 
 .. include:: ../common.txt
 
@@ -21,24 +24,26 @@ First, the :py:mod:`dolfin` module is imported:
 
 	from dolfin import *
 
-Then, we define a mesh of the domain. As the unit square is a very standard domain, we can use a built-in mesh, 
-provided by the class :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. 
-In order to create a mesh consisting of :math:`32 \times 32` squares with each square divided into two triangles, 
-we do as follows 
+Then, we define a mesh of the domain. We use the built-in mesh,
+provided by the class :py:class:`UnitSquareMesh
+<dolfin.cpp.mesh.UnitSquareMesh>`. In order to create a mesh
+consisting of :math:`32 \times 32` squares with each square divided
+into two triangles, we do as follows:
 
-.. code-block:: python 
-	
+.. code-block:: python
+
 	# Create mesh
 	mesh = UnitSquareMesh(32, 32)
 
-Now, we create mesh functions to store the values of the conductivity matrix as it varies over the domain. 
-Since the matrix is symmetric, we only create mesh functions for the upper triangular part of the matrix. 
-In :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` the first argument specifies the type of the 
-mesh function, here we use "double". 
-Other types allowed are "int", "size_t" and "bool". 
-The two following arguments are optional; the first gives the mesh the 
-:py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` is defined on, and the second the topological 
-dimension of the mesh function.
+Now, we create mesh functions to store the values of the conductivity
+matrix as it varies over the domain.  Since the matrix is symmetric,
+we only create mesh functions for the upper triangular part of the
+matrix. In :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>`
+the first argument specifies the type of the mesh function, here we
+use "double".  Other types allowed are "int", "size_t" and "bool".
+The two following arguments are optional; the first gives the mesh the
+:py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` is defined on,
+and the second the topological dimension of the mesh function.
 
 .. code-block:: python
 
@@ -47,12 +52,14 @@ dimension of the mesh function.
 	c01 = MeshFunction("double", mesh, 2)
 	c11 = MeshFunction("double", mesh, 2)
 
-To set the values of the mesh functions, we go through all the cells in the mesh and check whether 
-the midpoint value of the cell in the x-direction is less than 0.5 or not 
-(in pratice this means that we are checking which half of the unit square the cell is in). 
-Then we set the correct values of the mesh functions, depending on which half we are in.
+To set the values of the mesh functions, we go through all the cells
+in the mesh and check whether the midpoint value of the cell in the
+:math:`x`-direction is less than 0.5 or not (in practice this means
+that we are checking which half of the unit square the cell is
+in). Then we set the correct values of the mesh functions, depending
+on which half we are in.
 
-.. code-block:: python 
+.. code-block:: python
 
 	# Iterate over mesh and set values
 	for cell in cells(mesh):
@@ -65,7 +72,7 @@ Then we set the correct values of the mesh functions, depending on which half we
 			c01[cell] = 0.5
 			c11[cell] = 4.0
 
-Create files to store data and save to file
+Create files to store data and save to file:
 
 .. code-block:: python
 
@@ -80,9 +87,9 @@ Create files to store data and save to file
 	c01_file << c01
 	c11_file << c11
 
-Plot the mesh functions using the plot function. 
+Plot the mesh functions using the ``plot`` function:
 
-.. code-block:: python 
+.. code-block:: python
 
 	# Plot mesh functions
 	plot(c00, title="C00")
@@ -91,12 +98,12 @@ Plot the mesh functions using the plot function.
 
 	interactive()
 
-
 Implementation of tensor-weighted-poisson.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This description goes through the implementation (in :download:`demo_tensorweighted-poisson.py` ) of a solver 
-for the above described Poisson equation step-by-step.
+This description goes through the implementation (in
+:download:`demo_tensorweighted-poisson.py` ) of a solver for the above
+described Poisson equation step-by-step.
 
 
 First, the :py:mod:`dolfin` module is imported:
@@ -105,41 +112,52 @@ First, the :py:mod:`dolfin` module is imported:
 
 	from dolfin import *
 
-We proceed by defining a mesh of the domain and a finite element function space :math:`V` relative to this mesh. 
-We read the mesh file generated by :download:`generate_data.py` and create function space in the following way
+We proceed by defining a mesh of the domain and a finite element
+function space :math:`V` relative to this mesh. We read the mesh file
+generated by :download:`generate_data.py` and create the function
+space in the following way:
 
 .. code-block:: python
-	
+
 	# Read mesh from file and create function space
 	mesh = Mesh("mesh.xml.gz")
 	V = FunctionSpace(mesh, "Lagrange", 1)
 
-The second argument to :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` is the finite element family, 
-while the third argument specifies the polynomial degree. 
-Thus, in this case, our space ``V`` consists of first-order, continuous Lagrange finite element functions 
-(or in order words, continuous piecewise linear polynomials).
+The second argument to :py:class:`FunctionSpace
+<dolfin.cpp.function.FunctionSpace>` is the finite element family,
+while the third argument specifies the polynomial degree.  Thus, in
+this case, our space ``V`` consists of first-order, continuous
+Lagrange finite element functions (or in order words, continuous
+piecewise linear polynomials).
 
-Next, we want to consider the Dirichlet boundary condition. 
-A simple Python function, returning a boolean, can be used to define the subdomain for the Dirichlet boundary condition 
-(:math:`\Gamma_D`). 
-The function should return True for those points inside the subdomain and False for the points outside. 
-In our case, we want to say that the points :math:`(x, y)` such that :math:`x = 0` or :math:`x = 1` 
-are inside on the inside of :math:`\Gamma_D`. 
-(Note that because of rounding-off errors, it is often wise to instead specify :math:`x < \epsilon` or :math:`x > 1 - \epsilon` 
-where :math:`\epsilon` is a small number (such as machine precision).)
+Next, we want to consider the Dirichlet boundary condition.  A simple
+Python function, returning a boolean, can be used to define the
+subdomain for the Dirichlet boundary condition (:math:`\Gamma_D`).
+The function should return True for those points inside the subdomain
+and False for the points outside.  In our case, we want to say that
+the points :math:`(x, y)` such that :math:`x = 0` or :math:`x = 1` are
+inside on the inside of :math:`\Gamma_D`.  (Note that because of
+rounding-off errors, it is often wise to instead specify :math:`x <
+\epsilon` or :math:`x > 1 - \epsilon` where :math:`\epsilon` is a
+small number (such as machine precision).)
 
 .. code-block:: python
-	
+
 	# Define Dirichlet boundary (x = 0 or x = 1)
 	def boundary(x):
 	    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
-Now, the Dirichlet boundary condition can be created using the class :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. 
-A :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>` takes three arguments: the function space the boundary condition applies to, 
-the value of the boundary condition, and the part of the boundary on which the condition applies. 
-In our example, the function space is :math:`V`, the value of the boundary condition :math:`(0.0)` can represented 
-using a :py:class:`Constant <dolfin.functions.constant.Constant>` and the Dirichlet boundary is defined immediately above. 
-The definition of the Dirichlet boundary condition then looks as follows:
+Now, the Dirichlet boundary condition can be created using the class
+:py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`.  A
+:py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>` takes three
+arguments: the function space the boundary condition applies to, the
+value of the boundary condition, and the part of the boundary on which
+the condition applies.  In our example, the function space is
+:math:`V`. The value of the boundary condition :math:`(0.0)` can be
+represented using a :py:class:`Constant
+<dolfin.functions.constant.Constant>` and the Dirichlet boundary is
+defined immediately above. The definition of the Dirichlet boundary
+condition then looks as follows:
 
 .. code-block:: python
 
@@ -147,9 +165,11 @@ The definition of the Dirichlet boundary condition then looks as follows:
 	u0 = Constant(0.0)
 	bc = DirichletBC(V, u0, boundary)
 
-Before we define the conductivity matrix, we create a string containg C++ code for evaluation of the conductivity. 
-Later we will use this string when we create an :py:class:`Expression <dolfin.cpp.function.Expression>` 
-containing the entries of the matrix. 
+Before we define the conductivity matrix, we create a string
+containing C++ code for evaluation of the conductivity. Later we will
+use this string when we create an :py:class:`Expression
+<dolfin.cpp.function.Expression>` containing the entries of the
+matrix.
 
 .. code-block:: python
 
@@ -181,10 +201,14 @@ containing the entries of the matrix.
 	};
 	"""
 
-We define the conductivity matrix by first creating mesh functions from the files we stored in :download:`generate_data.py`. 
-Here, the third argument in :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` is the path to the data files. 
-Then, we define an expression for the entries in the matrix where we give the C++ code as an argument for optimalization. 
-Finally we use the UFL function as_matrix() to create the matrix consisting of the expressions.
+We define the conductivity matrix by first creating mesh functions
+from the files we stored in :download:`generate_data.py`.  Here, the
+third argument in :py:class:`MeshFunction
+<dolfin.cpp.mesh.MeshFunction>` is the path to the data files.  Then,
+we define an expression for the entries in the matrix where we give
+the C++ code as an argument for optimalization. Finally, we use the
+UFL function ``as_matrix`` to create the matrix consisting of the
+expressions.
 
 .. code-block:: python
 
@@ -199,23 +223,28 @@ Finally we use the UFL function as_matrix() to create the matrix consisting of t
 	c.c11 = c11
 	C = as_matrix(((c[0], c[1]), (c[1], c[2])))
 
-Next, we want to express the variational problem. First, we need to specify the trial function :math:`u` and 
-the test function :math:`v`, both living in the function space :math:`V`. 
-We do this by defining a :py:func:`TrialFunction <dolfin.functions.function.TrialFunction>` and a 
-:py:func:`TestFunction <dolfin.functions.function.TestFunction>` on the previously defined 
-:py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` :math:`V`.
+Next, we want to express the variational problem. First, we need to
+specify the trial function :math:`u` and the test function :math:`v`,
+both living in the function space :math:`V`.  We do this by defining a
+:py:func:`TrialFunction <dolfin.functions.function.TrialFunction>` and
+a :py:func:`TestFunction <dolfin.functions.function.TestFunction>` on
+the previously defined :py:class:`FunctionSpace
+<dolfin.cpp.function.FunctionSpace>` :math:`V`.
 
-Further, the source :math:`f` is involved in the variational form, and hence it must be must specified. 
-Since :math:`f` is given by a simple mathematical formula, it can easily be declared using the 
-:py:class:`Expression <dolfin.cpp.function.Expression>` class. 
-Note that the string defining :math:`f` uses C++ syntax since, for efficiency, 
-DOLFIN will generate and compile C++ code for these expressions at run-time.
+Further, the source :math:`f` is involved in the variational form, and
+hence it must be must specified.  Since :math:`f` is given by a simple
+mathematical formula, it can easily be declared using the
+:py:class:`Expression <dolfin.cpp.function.Expression>` class.  Note
+that the string defining :math:`f` uses C++ syntax since, for
+efficiency, DOLFIN will generate and compile C++ code for these
+expressions at run-time.
 
-With these ingredients, we can write down the bilinear form :math:`a` and the linear form :math:`L` (using UFL operators). 
-In summary, this reads
+With these ingredients, we can write down the bilinear form :math:`a`
+and the linear form :math:`L` (using UFL operators).  In summary, this
+reads:
 
 .. code-block:: python
-	
+
 	# Define variational problem
 	u = TrialFunction(V)
 	v = TestFunction(V)
@@ -223,12 +252,15 @@ In summary, this reads
 	a = inner(C*grad(u), grad(v))*dx
 	L = f*v*dx
 
-Now, we have specified the bilinear and linear forms and can consider the solution of the variational problem. 
-First, we need to define a :py:class:`Function <dolfin.cpp.function.Function>` :math:`u` to represent the solution. 
-(Upon initialization, it is simply set to the zero function.) 
-A :py:class:`Function <dolfin.cpp.function.Function>` represents a function living in a finite element function space. 
-Next, we can call the :py:meth:`solve <dolfin.cpp.fem.GenericAdaptiveVariationalSolver.solve>` 
-function with the arguments :math:`a == L`, :math:`u` and :math:`bc` as follows:
+Now, we have specified the bilinear and linear forms and can consider
+the solution of the variational problem.  First, we need to define a
+:py:class:`Function <dolfin.cpp.function.Function>` ``u`` to
+represent the solution. (Upon initialization, it is simply set to the
+zero function.) A :py:class:`Function <dolfin.cpp.function.Function>`
+represents a function living in a finite element function space.
+Next, we can call the :py:meth:`solve
+<dolfin.cpp.fem.GenericAdaptiveVariationalSolver.solve>` function with
+the arguments ``a == L``, ``u`` and ``bc`` as follows:
 
 .. code-block:: python
 
@@ -236,13 +268,16 @@ function with the arguments :math:`a == L`, :math:`u` and :math:`bc` as follows:
 	u = Function(V)
 	solve(a == L, u, bc)
 
-The function :math:`u` will be modified during the call to solve. 
-The default settings for solving a variational problem have been used. 
-However, the solution process can be controlled in much more detail if desired.
+The function ``u`` will be modified during the call to solve. The
+default settings for solving a variational problem have been used.
+However, the solution process can be controlled in much more detail if
+desired.
 
-A :py:class:`Function <dolfin.cpp.function.Function>` can be manipulated in various ways, in particular, 
-it can be plotted and saved to file. Here, we output the solution to a VTK file (using the suffix .pvd) 
-for later visualization and also plot it using the :py:meth:`plot <dolfin.cpp.io.VTKPlotter.plot>` command:
+A :py:class:`Function <dolfin.cpp.function.Function>` can be
+manipulated in various ways, in particular, it can be plotted and
+saved to file. Here, we output the solution to a VTK file (using the
+suffix .pvd) for later visualization and also plot it using the
+:py:meth:`plot <dolfin.cpp.io.VTKPlotter.plot>` command:
 
 .. code-block:: python
 

@@ -1,7 +1,7 @@
 This demo illustrates how to:
 
 * Define Constructive Solid Geometry (CSG)
-* Generate mesh from geometries
+* Generate meshes from geometries
 
 The domain looks as follows:
 
@@ -17,4 +17,5 @@ and the mesh:
 Problem definition
 ------------------
 
-We do not have any equation in this demo. The demo focuses purely on the geometry and how to generate a mesh from it.
+We do not have any equation in this demo. The demo focuses purely on
+the geometry and how to generate a mesh from it.

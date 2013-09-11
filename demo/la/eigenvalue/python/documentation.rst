@@ -5,7 +5,7 @@
 A simple eigenvalue solver
 ==========================
 
-We recommend that you are familiar with demo for the Poisson equation
+We recommend that you are familiar with the demo for the Poisson equation
 before looking at this demo.
 
 .. include:: ../common.txt
@@ -42,7 +42,7 @@ PETSc and SLEPc are available, and exit if not, as follows:
 First, we need to construct the matrix :math:`A`. This will be done in
 three steps: defining the mesh and the function space associated with
 it; constructing the variational form defining the matrix; and then
-assembling this form. The code is shown below
+assembling this form. The code is shown below:
 
 .. code-block:: python
 
@@ -100,7 +100,7 @@ Finally, we want to examine the results. The eigenvalue can easily be
 printed. But, the real part of eigenvector is probably most easily
 visualized by constructing the corresponding eigenfunction. This can
 be done by creating a :py:class:`Function
-<dolfin.functions.function.Function>` in the function space ``V`` 
+<dolfin.functions.function.Function>` in the function space ``V``
 and the associating eigenvector ``rx`` with the Function. Then the
 eigenfunction can be manipulated as any other :py:class:`Function
 <dolfin.functions.function.Function>`, and in particular plotted:
@@ -111,7 +111,7 @@ eigenfunction can be manipulated as any other :py:class:`Function
 
   # Initialize function and assign eigenvector
   u = Function(V)
-  u.vector()[:] = rx 
+  u.vector()[:] = rx
 
   # Plot eigenfunction
   plot(u)

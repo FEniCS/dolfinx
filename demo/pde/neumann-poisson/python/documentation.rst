@@ -5,14 +5,18 @@
 Poisson equation with pure Neumann boundary conditions
 ======================================================
 
-This demo is implemented in a single Python file, :download:`demo_neumann-poisson.py`, which contains both the variational form and the solver.
+This demo is implemented in a single Python file,
+:download:`demo_neumann-poisson.py`, which contains both the
+variational form and the solver.
 
-.. include:: ../common.txt 
+.. include:: ../common.txt
 
 Implementation
 --------------
 
-This description goes through the implementation in :download:`demo_neumann-poisson.py` of a solver for the above described Poisson equation step-by-step.
+This description goes through the implementation in
+:download:`demo_neumann-poisson.py` of a solver for the above
+described Poisson equation step-by-step.
 
 First, the :py:mod:`dolfin` module is imported:
 
@@ -20,18 +24,20 @@ First, the :py:mod:`dolfin` module is imported:
 
     from dolfin import *
 
-We proceed by defining a mesh of the domain. 
-As the unit square is a very standard domain, we can use a built-in mesh provided by the class 
-:py:class:`UnitSquareMesh <dolfin.cpp.UnitSquareMesh>`. 
-In order to create a mesh consisting of :math:`64 \times 64` squares with each square divided into two triangles, we do as follows:
+We proceed by defining a mesh of the domain.  We use a built-in mesh
+provided by the class :py:class:`UnitSquareMesh
+<dolfin.cpp.UnitSquareMesh>`.  In order to create a mesh consisting of
+:math:`64 \times 64` squares with each square divided into two
+triangles, we do as follows:
 
 .. code-block:: python
 
 	# Create mesh
 	mesh = UnitSquareMesh(64, 64)
 
-Next, we need to define the function spaces. 
-We define the two function spaces :math:`V` and :math:`R` separately, before combining these into a mixed function space :math:`W`:
+Next, we need to define the function spaces. We define the two
+function spaces :math:`V` and :math:`R` separately, before combining
+these into a mixed function space :math:`W`:
 
 .. code-block:: python
 
@@ -40,26 +46,32 @@ We define the two function spaces :math:`V` and :math:`R` separately, before com
 	R = FunctionSpace(mesh, "R", 0)
 	W = V * R
 
-The second argument to :py:class:`FunctionSpace <dolfin.functions.functionspace.FunctionSpace>`  
-specifies the type of finite element family, while the third argument specifies the polynomial degree. 
-The UFL user manual contains a list of all available finite element families and more details. 
-The * operator creates a mixed (product) space :math:`W` from the two separate spaces :math:`V` and :math:`R`. 
-Hence,
+The second argument to :py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` specifies the type of
+finite element family, while the third argument specifies the
+polynomial degree.  The UFL user manual contains a list of all
+available finite element families and more details.  The * operator
+creates a mixed (product) space :math:`W` from the two separate spaces
+:math:`V` and :math:`R`.  Hence,
 
 .. math::
 
-	W = \{ (v, d) \ \text{such that} \ v \in V, d \in R \}
+	W = \{ (v, d) \ \text{such that} \ v \in V, d \in R \}.
 
-Now,we want to define the variational problem, but first we need to specify the trial functions 
-(the unknowns) and the test functions. 
-This can be done using :py:class:`TrialFunctions<dolfin.functions.function.TrialFunction>` 
-and :py:class:`TestFunctions <dolfin.functions.function.TestFunction>`.
-It only remains to define the source function :math:`f`, before we define the bilinear and linear forms. 
-It is given by a simple mathematical formula, and can easily be declared using the 
-:py:class:`Expression <dolfin.functions.expression.Expression>` class. 
-Note that the string defining ``f`` uses C++ syntax since, for efficiency, 
-DOLFIN will generate and compile C++ code for these expressions at run-time.
-The following code shows how this is done and defines the variational problem:
+Now, we want to define the variational problem, but first we need to
+specify the trial functions (the unknowns) and the test functions.
+This can be done using
+:py:class:`TrialFunctions<dolfin.functions.function.TrialFunction>`
+and :py:class:`TestFunctions
+<dolfin.functions.function.TestFunction>`.  It only remains to define
+the source function :math:`f`, before we define the bilinear and
+linear forms.  It is given by a simple mathematical formula, and can
+easily be declared using the :py:class:`Expression
+<dolfin.functions.expression.Expression>` class.  Note that the string
+defining ``f`` uses C++ syntax since, for efficiency, DOLFIN will
+generate and compile C++ code for these expressions at run-time.  The
+following code shows how this is done and defines the variational
+problem:
 
 .. code-block:: python
 
@@ -71,17 +83,20 @@ The following code shows how this is done and defines the variational problem:
 	a = (inner(grad(u), grad(v)) + c*v + u*d)*dx
 	L = f*v*dx + g*v*ds
 
-Since we have natural (Neumann) boundary conditions in this problem, we don´t have to implement boundary conditions. 
-This is because Neumann boundary conditions are default in DOLFIN.
+Since we have natural (Neumann) boundary conditions in this problem,
+we don´t have to implement boundary conditions.  This is because
+Neumann boundary conditions are default in DOLFIN.
 
-To compute the solution we use the bilinear form, the linear forms, and the boundary condition, but we also need to create a 
-:py:class:`Function <dolfin.functions.function.Function>` to store the solution(s). 
-The (full) solution will be stored in ``w``, which we initialize using the 
-:py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>` ``W``. 
-The actual computation is performed by calling :py:func:`solve<dolfin.fem.solving.solve>`. 
-The separate components ``u`` and ``c`` of 
-the solution can be extracted by calling the split function. 
-Finally, we plot the solutions to examine the result.
+To compute the solution we use the bilinear form, the linear forms,
+and the boundary condition, but we also need to create a
+:py:class:`Function <dolfin.functions.function.Function>` to store the
+solution(s).  The (full) solution will be stored in ``w``, which we
+initialize using the
+:py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>`
+``W``.  The actual computation is performed by calling
+:py:func:`solve<dolfin.fem.solving.solve>`.  The separate components
+``u`` and ``c`` of the solution can be extracted by calling the split
+function.  Finally, we plot the solutions to examine the result.
 
 .. code-block:: python
 
@@ -98,4 +113,3 @@ Complete code
 
 .. literalinclude:: demo_neumann-poisson.py
    :start-after: # Begin demo
-
