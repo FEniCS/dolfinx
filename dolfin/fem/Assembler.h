@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2007-2008.
-// Modified by Ola Skavhaug, 2008.
-// Modified by Joachim B Haga, 2012.
+// Modified by Garth N. Wells 2007-2008
+// Modified by Ola Skavhaug 2008
+// Modified by Joachim B Haga 2012
 //
 // First added:  2007-01-17
-// Last changed: 2012-10-04
+// Last changed: 2013-09-12
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -55,6 +55,7 @@ namespace dolfin
   {
   public:
 
+    /// Constructor
     Assembler() {}
 
     /// Assemble tensor from given form

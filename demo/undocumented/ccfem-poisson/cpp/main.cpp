@@ -62,12 +62,29 @@ int main()
   Poisson::FunctionSpace V1(circle_1);
   Poisson::FunctionSpace V2(circle_2);
 
+  // Create forms
+  Poisson::BilinearForm a0(V0, V0);
+  Poisson::BilinearForm a1(V1, V1);
+  Poisson::BilinearForm a2(V2, V2);
+
   // Build CCFEM function space
   CCFEMFunctionSpace V;
   V.add(V0);
   V.add(V1);
   V.add(V2);
   V.build();
+
+  // Build CCFEM form
+  CCFEMForm a(V);
+  a.add(a0);
+  a.add(a1);
+  a.add(a2);
+  a.build();
+
+  // Assemble linear system
+  Matrix A;
+  CCFEMAssembler assembler;
+  assembler.assemble(A, a);
 
   return 0;
 }

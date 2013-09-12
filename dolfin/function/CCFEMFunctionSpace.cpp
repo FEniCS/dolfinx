@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-08-06
+// Last changed: 2013-09-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -56,12 +56,13 @@ void CCFEMFunctionSpace::add(const FunctionSpace& function_space)
 //-----------------------------------------------------------------------------
 void CCFEMFunctionSpace::build()
 {
-  log(PROGRESS, "Building CCFEM function space.");
+  begin(PROGRESS, "Building CCFEM function space.");
 
   // Get number of spaces
   const std::size_t num_spaces = _function_spaces.size();
 
   // Compute total dimension
+  begin(PROGRESS, "Computing total dimension.");
   _dim = 0;
   for (std::size_t i = 0; i < num_spaces; i++)
   {
@@ -69,10 +70,11 @@ void CCFEMFunctionSpace::build()
     _dim += d;
     log(PROGRESS, "dim(V_%d) = %d", i, d);
   }
+  end();
   log(PROGRESS, "Total dimension is %d.", _dim);
 
   // Build bounding box trees for all meshes
-  log(PROGRESS, "Building bounding box trees for all meshes.");
+  begin(PROGRESS, "Building bounding box trees for all meshes.");
   _trees.clear();
   for (std::size_t i = 0; i < num_spaces; i++)
   {
@@ -80,8 +82,10 @@ void CCFEMFunctionSpace::build()
     tree->build(*_function_spaces[i]->mesh());
     _trees.push_back(tree);
   }
+  end();
 
   // Compute collisions between all meshes
+  begin(PROGRESS, "Computing collisions between meshes.");
   for (std::size_t i = 0; i < num_spaces; i++)
   {
     for (std::size_t j = i + 1; j < num_spaces; j++)
@@ -90,5 +94,8 @@ void CCFEMFunctionSpace::build()
       _trees[i]->compute_collisions(*_trees[j]);
     }
   }
+  end();
+
+  end();
 }
 //-----------------------------------------------------------------------------
