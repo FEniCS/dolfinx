@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-09-02
+// Last changed: 2013-09-12
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -299,7 +299,7 @@ namespace dolfin
     virtual bool
     point_in_bbox(const double* x, unsigned int node) const = 0;
 
-    // Check whether bounding box (a) is in bounding box (node)
+    // Check whether bounding box (a) collides with bounding box (node)
     virtual bool
     bbox_in_bbox(const double* a, unsigned int node) const = 0;
 
