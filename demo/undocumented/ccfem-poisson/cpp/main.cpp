@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2013-08-05
+// Last changed: 2013-09-12
 //
 // This demo program solves Poisson's equation using a Cut and
 // Composite Finite Element Method (CCFEM) on a domain defined by
@@ -42,6 +42,8 @@ class Source : public Expression
 
 int main()
 {
+  info("THIS DEMO IS WORK IN PROGRESS!");
+
   // Increase log level
   set_log_level(PROGRESS);
 
