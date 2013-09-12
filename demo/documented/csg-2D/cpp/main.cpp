@@ -20,16 +20,19 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-11-12
+// Last changed: 2013-09-12
 
 #include <dolfin.h>
 
 using namespace dolfin;
 
-#ifdef HAS_CGAL
-
 int main()
 {
+#ifndef HAS_CGAL
+  info("DOLFIN must be compiled with CGAL to run this demo.");
+  return 0;
+#endif
+
   // Define 2D geometry
   Rectangle r(0.5, 0.5, 1.5, 1.5);
   Circle c(1, 1, 1);
@@ -52,13 +55,3 @@ int main()
   interactive();
   return 0;
 }
-
-#else
-
-int main()
-{
-  info("DOLFIN must be compiled with CGAL to run this demo.");
-  return 0;
-}
-
-#endif

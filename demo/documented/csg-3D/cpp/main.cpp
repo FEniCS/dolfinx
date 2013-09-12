@@ -20,16 +20,19 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-11-21
+// Last changed: 2013-09-12
 
 #include <dolfin.h>
 
 using namespace dolfin;
 
-#ifdef HAS_CGAL
-
 int main(int argc, char** argv)
 {
+#ifndef HAS_CGAL
+  info("DOLFIN must be compiled with CGAL to run this demo.");
+  return 0;
+#endif
+
   // Define 3D geometry
   Box box(0, 0, 0, 1, 1, 1);
   Sphere sphere(Point(0, 0, 0), 0.3);
@@ -56,13 +59,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-#else
-
-int main()
-{
-  info("DOLFIN must be compiled with CGAL to run this demo.");
-  return 0;
-}
-
-#endif
