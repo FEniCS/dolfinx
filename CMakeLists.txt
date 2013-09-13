@@ -561,8 +561,6 @@ if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
     PATTERN "*.in" EXCLUDE
     )
 
-  get_filename_component(SWIG_BINARY ${SWIG_EXECUTABLE} NAME)
-
   configure_file(${CMAKE_SOURCE_DIR}/site-packages/dolfin/common/globalparameters.py.in
     ${CMAKE_BINARY_DIR}/globalparameters.py @ONLY)
 
