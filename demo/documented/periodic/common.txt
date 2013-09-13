@@ -1,0 +1,50 @@
+This demo illustrates how to:
+
+* Solve a linear partial differential equation
+* Read mesh and subdomains from file
+* Create and apply Dirichlet and periodic boundary conditions
+
+The solution for u in this demo will look as follows:
+
+.. image:: ../plot_u.png
+
+Equation and problem definition
+-------------------------------
+
+The Poisson equation is the canonical elliptic partial differential
+equation. For a domain :math:`\Omega \subset \mathbb{R}^n` with
+boundary :math:`\partial \Omega = \Gamma_{D} \cup \Gamma_{P}`, the
+Poisson equation with particular boundary conditions reads:
+
+.. math::
+	- \nabla \cdot (\nabla u) &= f \quad {\rm in} \ \Omega, \\
+             u &= 0 \quad {\rm on} \ \Gamma_{D}, \\
+             u(0, y) &= u(1, y) \quad {\rm on} \ \Gamma_{P}. \\
+
+Here, :math:`f` is a given source function. The most standard
+variational form of Poisson equation reads: find :math:`u \in V` such
+that
+
+.. math::
+
+	a(u, v) = L(v) \quad \forall \ v \in V,
+
+where :math:`V` is a suitable function space and
+
+.. math::
+
+	a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
+	L(v)    &= \int_{\Omega} f v \, {\rm d} x.
+
+The expression :math:`a(u, v)` is the bilinear form and :math:`L(v)`
+is the linear form. It is assumed that all functions in :math:`V`
+satisfy the Dirichlet boundary conditions (:math:`u = 0 \ {\rm on} \
+\Gamma_{D}`).
+
+In this demo, we shall consider the following definitions of the input
+functions, the domain, and the boundaries:
+
+* :math:`\Omega = [0,1] \times [0,1]` (a unit square)
+* :math:`\Gamma_{D} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}` (Dirichlet boundary)
+* :math:`\Gamma_{P} = \{(0, y) \cup (1, y) \subset \partial \Omega\}` (Periodic boundary)
+* :math:`f = x \sin(5.0 \pi y) + \exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)` (source term)
