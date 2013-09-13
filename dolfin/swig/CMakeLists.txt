@@ -99,6 +99,8 @@ foreach(COMBINED_MODULE_DIR ${COMBINED_MODULES})
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/${COMBINED_MODULE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/${COMBINED_MODULE_DIR})
 endforeach()
 
+
+
 # List of files which should not be installed
 set(NOT_INSTALL )
 

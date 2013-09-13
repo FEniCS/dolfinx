@@ -163,6 +163,9 @@ def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 def in_git(directory, name, git_files, exclude_dirs=[]):
     "Check whether file is version-controlled"
 
+    # Make sure we have the real path (remove symlinks)
+    directory = os.path.realpath(directory)
+
     # Get file full path
     f = os.path.join(directory, name)
 

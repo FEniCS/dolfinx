@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2013-06-21
+// Last changed: 2013-09-02
 
 #include <algorithm>
 #include <map>
@@ -377,21 +377,21 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   // FIXME: Testing
   int ID = 0;
 
+  // Get index of first cell containing point
   unsigned int id
-    = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+    = mesh.bounding_box_tree()->compute_first_entity_collision(point);
 
-    // If not found, use the closest cell
+  // If not found, use the closest cell
   if (id == std::numeric_limits<unsigned int>::max())
   {
     if (allow_extrapolation)
     {
-      id = mesh.bounding_box_tree()->compute_closest_entity(point, mesh).first;
+      id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
       cout << "Extrapolating function value at x = " << point
            << " (not inside domain)." << endl;
     }
     else
     {
-      cout << "Evaluating at x = " << point << endl;
       dolfin_error("Function.cpp",
                    "evaluate function at point",
                    "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
@@ -515,7 +515,7 @@ void Function::non_matching_eval(Array<double>& values,
 
   // Alternative 1: Find cell that point (x) intersects
   unsigned int id
-    = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+    = mesh.bounding_box_tree()->compute_first_entity_collision(point);
 
   // Check whether we are allowed to extrapolate to evaluate
   if (id == std::numeric_limits<unsigned int>::max() && !allow_extrapolation)
@@ -531,7 +531,7 @@ void Function::non_matching_eval(Array<double>& values,
   if (id == std::numeric_limits<unsigned int>::max()
       && allow_extrapolation && dim == 2)
   {
-      id = mesh.bounding_box_tree()->compute_closest_entity(point, mesh).first;
+      id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
   }
 
   // Alternative 3: Compute cell that contains barycenter of ufc_cell
@@ -549,8 +549,7 @@ void Function::non_matching_eval(Array<double>& values,
       barycenter += vertex;
     }
     barycenter /= (dim + 1);
-    id = mesh.bounding_box_tree()->compute_first_entity_collision(barycenter,
-                                                                  mesh);
+    id = mesh.bounding_box_tree()->compute_first_entity_collision(barycenter);
   }
 
   // Throw error if all alternatives failed

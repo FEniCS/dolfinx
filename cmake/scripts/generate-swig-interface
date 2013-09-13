@@ -434,7 +434,7 @@ def write_swig_cmakelist_file(module):
     """
     Generate the CMakeList.txt file for each module
     """
-    
+
     # Write swig interface file dependencies
     cmakelist_file = open(os.path.join(swig_dir, "modules", module,
                                        "CMakeLists.txt"), "w")
@@ -497,9 +497,9 @@ def regenerate_swig_interface(module_to_submodules, excludes, top_destdir):
     """
     Regenerate the whole swig interface
     """
-    
+
     global swig_dir
-    
+
     top_destdir = top_destdir or dolfin_dir
     abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)
 
@@ -514,14 +514,14 @@ def regenerate_swig_interface(module_to_submodules, excludes, top_destdir):
             abs_destdirs.pop(0)
         else:
             break
-    
+
     if not os.path.isdir(abs_destdir):
         raise RuntimeError("%s is not a directory." % abs_destdir)
 
     # Change swig_dir for generated files
     if top_destdir != dolfin_dir:
         swig_dir = swig_dir.replace(dolfin_dir, top_destdir)
-        
+
     # Check the submodule order and create a submodule to module mapping
     submodule_info = generate_submodule_info(module_to_submodules, excludes)
 
@@ -545,7 +545,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) not in [1,2]:
         raise RuntimeError("expected 0 or 1 argument")
-    
+
     dest_dir = sys.argv[-1] if len(sys.argv) == 2 else ""
 
     # User defined definition of SWIG modules.
@@ -556,7 +556,7 @@ if __name__ == "__main__":
         ("mesh", ["mesh", "refinement", \
                   "ale", "graph", "geometry", "generation"]),
         ("function", ["function", "math"]),
-        ("fem", ["fem", "quadrature", "adaptivity", "multistage"]),
+        ("fem", ["fem", "adaptivity", "multistage"]),
         ("io", ["io", "plot"])])
 
     # User defined list of headers to exclude (add more here)
@@ -564,4 +564,3 @@ if __name__ == "__main__":
 
     # Regnerate SWIG interface
     regenerate_swig_interface(module_to_submodules, excludes, dest_dir)
-

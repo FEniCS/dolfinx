@@ -24,7 +24,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-03-04
+// Last changed: 2013-09-05
 
 #include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
@@ -348,6 +348,8 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
 {
+  deprecation("dof_to_vertex_map", "1.3.0", "DofMap::dof_to_vertex_map has been replaced by the free function vertex_to_dof_map.");
+
   // Check that we only have dofs living on vertices
   assert(_ufc_dofmap);
 
@@ -362,7 +364,7 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
   if (vert_per_cell*dofs_per_vertex != _ufc_dofmap->local_dimension())
   {
     dolfin_error("DofMap.cpp",
-                 "tabulating dof to vertex map",
+                 "tabulate dof to vertex map",
                  "Can only tabulate dofs on vertices");
   }
 
@@ -414,6 +416,8 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> DofMap::vertex_to_dof_map(const Mesh& mesh) const
 {
+  deprecation("vertex_to_dof_map", "1.3.0", "DofMap::vertex_to_dof_map has been replaced by the free function dof_to_vertex_map.");
+
   // Get dof to vertex map
   const std::vector<dolfin::la_index> dof_map = dof_to_vertex_map(mesh);
 

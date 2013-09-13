@@ -20,7 +20,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-22
+// Last changed: 2013-08-26
 
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
@@ -92,8 +92,11 @@ namespace dolfin
     void order(Cell& cell,
                const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
-    /// Check whether given point is contained in cell
-    bool contains(const Cell& cell, const Point& point) const;
+    /// Check whether given point collides with cell
+    bool collides(const Cell& cell, const Point& point) const;
+
+    /// Check whether given entity collides with cell
+    bool collides(const Cell& cell, const MeshEntity& entity) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;

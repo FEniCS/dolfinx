@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2013-06-06
+// Last changed: 2013-08-27
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -491,7 +491,7 @@ const std::vector<TYPE>&  ARG_NAME
   $1 = PySequence_Check($input) ? 1 : 0;
 }
 
-%typemap (in, fragment=Py_convert_frag(TYPE_NAME)) const std::vector<std::vector<TYPE> >& ARG_NAME (std::vector<std::vector<TYPE> > tmp_vec, std::vector<TYPE> inner_vec, PyObject* inner_list, PyObject* item, TYPE value, dolfin::uint i, dolfin::uint j)
+%typemap (in, fragment=Py_convert_frag(TYPE_NAME)) const std::vector<std::vector<TYPE> >& ARG_NAME (std::vector<std::vector<TYPE> > tmp_vec, std::vector<TYPE> inner_vec, PyObject* inner_list, PyObject* item, TYPE value, std::size_t i, std::size_t j)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
   //                                    ARG_NAME, TYPE_NAME)
@@ -598,7 +598,7 @@ IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, INT32, , NPY_INT, int, intc)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, , NPY_UINT, uint, uintc)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp, uintp)
 
-// This typemap handles PETSc index typemap. Untested for 46-bit integers
+// This typemap handles PETSc index typemap. Untested for 64-bit integers
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
 
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, coloring_type, std_size_t, -1)
@@ -622,5 +622,4 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(PetscInt, dolfin_index)
 
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)
-
-IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, facets, uint)
+IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, facets, std_size_t)
