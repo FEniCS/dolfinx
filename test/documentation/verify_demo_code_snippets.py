@@ -18,7 +18,7 @@
 # Modified by Marie E. Rognes (meg@simula.no)
 #
 # First added:  2011-05-22
-# Last changed: 2011-05-23
+# Last changed: 2013-09-12
 
 """This utility script will find all *.rst files in the source/demo
 directory and checks that any code snippets highlighted by the .. code-block::
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     # Get all demo categories (fem, la. pde, etc.)
     #categories = [d for d in listdir(curdir) if path.isdir(d)]
     # For now only check la/pde
-    categories = ["la", "pde"]
+    categories = ["documented"]
     #categories = ["pde"]
 
     failed = []
