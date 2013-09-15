@@ -24,6 +24,7 @@
 #include <boost/graph/cuthill_mckee_ordering.hpp>
 #include <boost/graph/properties.hpp>
 
+#include <dolfin/common/Timer.h>
 #include "Graph.h"
 #include "BoostGraphOrdering.h"
 
@@ -33,6 +34,8 @@ using namespace dolfin;
 std::vector<std::size_t>
   BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph, bool reverse)
 {
+  Timer timer("Boost Cuthill-McKee graph ordering");
+
   // Number of vertices
   const std::size_t n = graph.size();
 

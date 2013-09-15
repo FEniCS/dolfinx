@@ -32,6 +32,8 @@
 #include "GraphBuilder.h"
 #include "SCOTCH.h"
 
+#include <dolfin/common/dolfin_common.h>
+
 #ifdef HAS_SCOTCH
 extern "C"
 {
@@ -59,7 +61,8 @@ void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
 
   // Compute partitions
   const std::size_t num_global_vertices = mesh_data.num_global_cells;
-  const std::vector<std::size_t>& global_cell_indices = mesh_data.global_cell_indices;
+  const std::vector<std::size_t>& global_cell_indices
+    = mesh_data.global_cell_indices;
   partition(local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition);
 }
@@ -75,21 +78,17 @@ void SCOTCH::compute_reordering(const Graph& graph,
                                std::vector<std::size_t>& permutation,
                                std::vector<std::size_t>& inverse_permutation)
 {
-  // Remove graph loops
-  Graph _graph = graph;
-  for(std::size_t i = 0; i < _graph.size(); ++i)
-  {
-    _graph[i].set().erase(std::remove(_graph[i].set().begin(), _graph[i].set().end(), i), _graph[i].set().end());
-  }
+  Timer timer("SCOTCH graph ordering");
 
   // Number of local graph vertices (cells)
-  const SCOTCH_Num vertnbr = _graph.size();
+  const SCOTCH_Num vertnbr = graph.size();
 
-  // Data structures for graph input to SCOTCH (add 1 for case that graph size is zero)
+  // Data structures for graph input to SCOTCH (add 1 for case that
+  // graph size is zero)
   std::vector<SCOTCH_Num> verttab;
   verttab.reserve(vertnbr + 1);
   std::vector<SCOTCH_Num> edgetab;
-  edgetab.reserve(10*vertnbr);
+  edgetab.reserve(20*vertnbr);
 
   // Build local graph input for SCOTCH
   // (number of local + ghost graph vertices (cells),
@@ -97,7 +96,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   SCOTCH_Num edgenbr = 0;
   verttab.push_back(0);
   Graph::const_iterator vertex;
-  for(vertex = _graph.begin(); vertex != _graph.end(); ++vertex)
+  for(vertex = graph.begin(); vertex != graph.end(); ++vertex)
   {
     edgenbr += vertex->size();
     verttab.push_back(verttab.back() + vertex->size());
@@ -129,6 +128,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   }
 
   // Check graph data for consistency
+  /*
   #ifdef DEBUG
   if (SCOTCH_graphCheck(&scotch_graph))
   {
@@ -137,16 +137,23 @@ void SCOTCH::compute_reordering(const Graph& graph,
                  "Consistency error in SCOTCH graph");
   }
   #endif
+  */
 
   // Re-ordering strategy
   SCOTCH_Strat strat;
   SCOTCH_stratInit(&strat);
 
+  // Use Gibbs-Poole-Stockmeyer ordering
+  SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATQUALITY, 0, 0);
+  //SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATSPEED, 0, 0);
+  SCOTCH_stratGraphOrder(&strat, "g{pass=5}");
+
   // Vector to hold permutation vectors
   std::vector<SCOTCH_Num> permutation_indices(vertnbr);
   std::vector<SCOTCH_Num> inverse_permutation_indices(vertnbr);
 
-  // Reset SCOTCH random number generator to produce deterministic partitions
+  // Reset SCOTCH random number generator to produce deterministic
+  // partitions
   SCOTCH_randomReset();
 
   // Compute re-ordering
@@ -193,7 +200,8 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   // Number of local graph vertices (cells)
   const SCOTCH_Num vertlocnbr = local_graph.size();
 
-  // Data structures for graph input to SCOTCH (add 1 for case that local graph size is zero)
+  // Data structures for graph input to SCOTCH (add 1 for case that
+  // local graph size is zero)
   std::vector<SCOTCH_Num> vertloctab;
   vertloctab.reserve(local_graph.size() + 1);
   std::vector<SCOTCH_Num> edgeloctab;
@@ -226,8 +234,12 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   // Array containing . . . . (some sanity checks)
   std::vector<std::size_t> procvrttab(num_processes + 1);
   for (std::size_t i = 0; i < num_processes; ++i)
-    procvrttab[i] = std::accumulate(proccnttab.begin(), proccnttab.begin() + i, 0);
-  procvrttab[num_processes] = procvrttab[num_processes - 1] + proccnttab[num_processes - 1];
+  {
+    procvrttab[i] = std::accumulate(proccnttab.begin(),
+                                    proccnttab.begin() + i, 0);
+  }
+  procvrttab[num_processes] = procvrttab[num_processes - 1]
+    + proccnttab[num_processes - 1];
 
   // Sanity check
   for (std::size_t i = 1; i <= proc_num; ++i)
@@ -357,7 +369,8 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
 
   // Copy partition
   cell_partition.resize(_cell_partition.size());
-  std::copy(_cell_partition.begin(), _cell_partition.end(), cell_partition.begin());
+  std::copy(_cell_partition.begin(), _cell_partition.end(),
+            cell_partition.begin());
 }
 //-----------------------------------------------------------------------------
 #else

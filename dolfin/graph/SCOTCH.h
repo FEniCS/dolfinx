@@ -46,18 +46,20 @@ namespace dolfin
     static std::vector<std::size_t> compute_reordering(const Graph& graph);
 
     // Compute graph re-ordering
-    static void compute_reordering(const Graph& graph,
-                                   std::vector<std::size_t>& permutation,
-                                   std::vector<std::size_t>& inverse_permutation);
+    static
+      void compute_reordering(const Graph& graph,
+                              std::vector<std::size_t>& permutation,
+                              std::vector<std::size_t>& inverse_permutation);
 
   private:
 
     // Compute cell partitions from distribted dual graph
-    static void partition(const std::vector<std::set<std::size_t> >& local_graph,
-                          const std::set<std::size_t>& ghost_vertices,
-                          const std::vector<std::size_t>& global_cell_indices,
-                          const std::size_t num_global_vertices,
-                          std::vector<std::size_t>& cell_partition);
+    static
+      void partition(const std::vector<std::set<std::size_t> >& local_graph,
+                     const std::set<std::size_t>& ghost_vertices,
+                     const std::vector<std::size_t>& global_cell_indices,
+                     const std::size_t num_global_vertices,
+                     std::vector<std::size_t>& cell_partition);
 
   };
 
