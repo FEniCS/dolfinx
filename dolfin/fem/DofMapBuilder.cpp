@@ -949,8 +949,28 @@ DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership,
   }
 
   // Reorder nodes locally
-  const std::vector<std::size_t> node_remap
-      = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  // Reorder block graph
+  const std::string ordering_library
+    = dolfin::parameters["dof_ordering_library"];
+  std::vector<std::size_t> node_remap;
+  if (ordering_library == "Boost")
+    node_remap = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  else if (ordering_library == "SCOTCH")
+   node_remap = SCOTCH::compute_gps(graph);
+  else if (ordering_library == "random")
+  {
+    // NOTE: Randomised dof ordering should only be used for testing/benchmarking
+    node_remap.resize(graph.size());
+    for (std::size_t i = 0; i < node_remap.size(); ++i)
+      node_remap[i] = i;
+    std::random_shuffle(node_remap.begin(), node_remap.end());
+  }
+  else
+  {
+    dolfin_error("DofMapBuilder.cpp",
+                 "reorder degrees of freedom",
+                 "The requested ordering library '%s' is unknown", ordering_library.c_str());
+  }
 
   // Map from old to new index for dofs
   boost::unordered_map<std::size_t, std::size_t> old_to_new_node_index;
