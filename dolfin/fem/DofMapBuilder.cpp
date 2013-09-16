@@ -399,11 +399,21 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
           graph[dofs0[i] % num_nodes].insert(dofs1[j] % num_nodes);
   }
 
-  // Reorder block graph (reverse Cuthill-McKee)
-  //const std::vector<std::size_t> block_remap
-  //  = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
-  const std::vector<std::size_t> block_remap
-    = SCOTCH::compute_reordering(graph);
+  // Reorder block graph
+  const std::string ordering_library
+    = dolfin::parameters["dof_ordering_library"];
+  std::vector<std::size_t> block_remap;
+  if (ordering_library == "Boost")
+    block_remap = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  else if (ordering_library == "SCOTCH")
+    block_remap = SCOTCH::compute_gps(graph);
+  else
+  {
+    dolfin_error("DofMapBuilder.cpp",
+                 "reorder degrees of freedom",
+                 "The requested ordering library '%s' is unknown", ordering_library.c_str());
+  }
+
 
   // Re-number dofs for each cell
   std::vector<std::vector<dolfin::la_index> >::iterator cell_map;

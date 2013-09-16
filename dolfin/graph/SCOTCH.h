@@ -23,6 +23,7 @@
 
 #include <cstddef>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "Graph.h"
@@ -42,14 +43,21 @@ namespace dolfin
     static void compute_partition(std::vector<std::size_t>& cell_partition,
                                   const LocalMeshData& mesh_data);
 
+    /// Compute reordering (map[old] -> new) using
+    /// Gibbs-Poole-Stockmeyer re-ordering
+    static std::vector<std::size_t> compute_gps(const Graph& graph,
+                                                std::size_t num_passes=5);
+
     // Compute graph re-ordering
-    static std::vector<std::size_t> compute_reordering(const Graph& graph);
+    static std::vector<std::size_t> compute_reordering(const Graph& graph,
+                                                       std::string scotch_strategy="");
 
     // Compute graph re-ordering
     static
       void compute_reordering(const Graph& graph,
                               std::vector<std::size_t>& permutation,
-                              std::vector<std::size_t>& inverse_permutation);
+                              std::vector<std::size_t>& inverse_permutation,
+                              std::string scotch_strategy="");
 
   private:
 

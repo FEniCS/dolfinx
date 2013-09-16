@@ -24,6 +24,7 @@
 #include <map>
 #include <numeric>
 #include <set>
+#include <boost/lexical_cast.hpp>
 
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
@@ -67,16 +68,26 @@ void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
             num_global_vertices, cell_partition);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> SCOTCH::compute_reordering(const Graph& graph)
+std::vector<std::size_t> SCOTCH::compute_gps(const Graph& graph,
+                                             std::size_t num_passes)
+{
+  std::string strategy = "g{pass= "
+    + boost::lexical_cast<std::string>(num_passes) + "}";
+  return compute_reordering(graph, strategy);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t> SCOTCH::compute_reordering(const Graph& graph,
+                                                    std::string scotch_strategy)
 {
   std::vector<std::size_t> permutation, inverse_permutation;
-  compute_reordering(graph, permutation, inverse_permutation);
+  compute_reordering(graph, permutation, inverse_permutation, scotch_strategy);
   return permutation;
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_reordering(const Graph& graph,
-                               std::vector<std::size_t>& permutation,
-                               std::vector<std::size_t>& inverse_permutation)
+                                std::vector<std::size_t>& permutation,
+                                std::vector<std::size_t>& inverse_permutation,
+                                std::string scotch_strategy)
 {
   Timer timer("SCOTCH graph ordering");
 
@@ -146,7 +157,8 @@ void SCOTCH::compute_reordering(const Graph& graph,
   // Use Gibbs-Poole-Stockmeyer ordering
   SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATQUALITY, 0, 0);
   //SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATSPEED, 0, 0);
-  SCOTCH_stratGraphOrder(&strat, "g{pass=5}");
+  if (!scotch_strategy.empty())
+    SCOTCH_stratGraphOrder(&strat, scotch_strategy.c_str());
 
   // Vector to hold permutation vectors
   std::vector<SCOTCH_Num> permutation_indices(vertnbr);

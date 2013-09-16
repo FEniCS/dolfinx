@@ -69,14 +69,24 @@ namespace dolfin
       // Line width relative to edge length in SVG output
       p.add("relative_line_width", 0.025);
 
-
-      // Threaded computation
-
       // Number of threads to run, 0 = run serial version
       p.add("num_threads", 0);
 
       // DOF reordering when running in serial
       p.add("reorder_dofs_serial", true);
+
+      // Allowed dofs ordering libraries and set default
+      std::set<std::string> allowed_dof_ordering_libraries;
+      allowed_dof_ordering_libraries.insert("Boost");
+      allowed_dof_ordering_libraries.insert("SCOTCH");
+      std::string default_dof_ordering_library = "Boost";
+      #ifdef HAS_SCOTCH
+      default_dof_ordering_library = "SCOTCH";
+      #endif
+
+      // Add dof ordering library
+      p.add("dof_ordering_library", default_dof_ordering_library,
+            allowed_dof_ordering_libraries);
 
       // Print the level of thread support provided by the MPI library
       p.add("print_mpi_thread_support_level", false);
@@ -98,8 +108,7 @@ namespace dolfin
       #endif
 
       // Add mesh/graph partitioner
-      p.add("mesh_partitioner",
-            default_mesh_partitioner,
+      p.add("mesh_partitioner", default_mesh_partitioner,
             allowed_mesh_partitioners);
 
       // Approaches to partitioning (following Zoltan syntax)
@@ -114,8 +123,8 @@ namespace dolfin
             allowed_partitioning_approaches);
 
       #ifdef HAS_PARMETIS
-      // Repartitioning parameter, determines how strongly to hold on to cells
-      // when shifting between processes
+      // Repartitioning parameter, determines how strongly to hold on
+      // to cells when shifting between processes
       p.add("ParMETIS_repartitioning_weight", 1000.0);
       #endif
 
