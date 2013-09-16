@@ -1,4 +1,4 @@
-.. Documentation for the DOLFIN iterative Stokes demo
+.. Documentation for the DOLFIN iterative Stokes demo.
 
 .. _demo_pde_subdomains_poisson_documentation:
 

@@ -1,6 +1,6 @@
-.. Documentation for the bcs demo from DOLFIN.
+.. Documentation for the Stokes mini demo from DOLFIN.
 
-.. _demo_pde_bcs_cpp_documentation:
+.. _demo_pde_stokes-mini_python_documentation:
 
 There is as yet no documentation for the C++ version of this demo.
 Please consider contributing the missing documentation.
