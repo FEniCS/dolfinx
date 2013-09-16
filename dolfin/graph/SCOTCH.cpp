@@ -71,8 +71,10 @@ void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
 std::vector<std::size_t> SCOTCH::compute_gps(const Graph& graph,
                                              std::size_t num_passes)
 {
+  // Create strategy string for Gibbs-Poole-Stockmayer ordering
   std::string strategy = "g{pass= "
     + boost::lexical_cast<std::string>(num_passes) + "}";
+
   return compute_reordering(graph, strategy);
 }
 //-----------------------------------------------------------------------------
@@ -154,8 +156,8 @@ void SCOTCH::compute_reordering(const Graph& graph,
   SCOTCH_Strat strat;
   SCOTCH_stratInit(&strat);
 
-  // Use Gibbs-Poole-Stockmeyer ordering
-  SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATQUALITY, 0, 0);
+  // Set SCOTCH strategy (if provided)
+  //SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATQUALITY, 0, 0);
   //SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATSPEED, 0, 0);
   if (!scotch_strategy.empty())
     SCOTCH_stratGraphOrder(&strat, scotch_strategy.c_str());

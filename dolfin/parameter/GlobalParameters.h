@@ -78,6 +78,7 @@ namespace dolfin
       // Allowed dofs ordering libraries and set default
       std::set<std::string> allowed_dof_ordering_libraries;
       allowed_dof_ordering_libraries.insert("Boost");
+      allowed_dof_ordering_libraries.insert("random");
       allowed_dof_ordering_libraries.insert("SCOTCH");
       std::string default_dof_ordering_library = "Boost";
       #ifdef HAS_SCOTCH

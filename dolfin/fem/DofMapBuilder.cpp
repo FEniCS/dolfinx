@@ -407,13 +407,20 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
     block_remap = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
   else if (ordering_library == "SCOTCH")
     block_remap = SCOTCH::compute_gps(graph);
+  else if (ordering_library == "random")
+  {
+    // NOTE: Randomised dof ordering should only be used for testing/benchmarking
+    block_remap.resize(graph.size());
+    for (std::size_t i = 0; i < block_remap.size(); ++i)
+      block_remap[i] = i;
+    std::random_shuffle(block_remap.begin(), block_remap.end());
+  }
   else
   {
     dolfin_error("DofMapBuilder.cpp",
                  "reorder degrees of freedom",
                  "The requested ordering library '%s' is unknown", ordering_library.c_str());
   }
-
 
   // Re-number dofs for each cell
   std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
