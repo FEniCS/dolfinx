@@ -1,8 +1,6 @@
-.. Documentation for the Nonlinear Poisson demo from DOLFIN.
+.. Documentation for the nonlinear Poisson demo from DOLFIN.
 
 .. _demo_pde_nonlinear-poisson_python_documentation:
-
-
 
 Nonlinear Poisson equation
 ==========================

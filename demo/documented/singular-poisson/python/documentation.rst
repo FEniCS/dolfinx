@@ -1,3 +1,7 @@
+.. Documentation for the singular Poisson demo from DOLFIN.
+
+.. _demo_singular_poisson_cpp_documentation:
+
 Singular Poisson
 ================
 
