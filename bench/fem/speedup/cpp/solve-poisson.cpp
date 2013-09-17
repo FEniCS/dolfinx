@@ -85,7 +85,8 @@ int main(int argc, char* argv[])
     info("TIME (first time): %.5g", t);
 
   // Solve linear system (preconditioner assuming same non-zero pattern)
-  solver.parameters("preconditioner")["same_nonzero_pattern"] = true;
+  if (solver.parameters.has_key("preconditioner"))
+      solver.parameters("preconditioner")["same_nonzero_pattern"] = true;
   u.vector()->zero();
   dolfin::MPI::barrier();
   t = time();
@@ -96,7 +97,8 @@ int main(int argc, char* argv[])
     info("TIME (same nonzero pattern): %.5g", t);
 
   // Solve linear system (re-use preconditioner)
-  solver.parameters("preconditioner")["reuse"] = true;
+  if (solver.parameters.has_key("preconditioner"))
+    solver.parameters("preconditioner")["reuse"] = true;
   u.vector()->zero();
   dolfin::MPI::barrier();
   t = time();
