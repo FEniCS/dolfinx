@@ -2,8 +2,6 @@
 
 .. _demo_pde_mesh-generation_python_documentation:
 
-
-
 Generate mesh
 =============
 

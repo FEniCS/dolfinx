@@ -22,11 +22,12 @@ download_mesh()
             output=`wget http://fenicsproject.org/pub/data/meshes/$MESH 2>&1`
         fi
 
-	# If download fails
-	if [ $? -ne 0 ]; then
+	    # If download fails
+	    if [ $? -ne 0 ]; then
             echo "$output" 1>&2
-	    exit 1
-	fi
+	        exit 1
+	    fi
+
         mv $MESH $DEMO
     fi
 }

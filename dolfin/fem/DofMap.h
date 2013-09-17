@@ -205,7 +205,8 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_map<std::size_t, std::size_t>
     ///         The map from non-local dofs.
-    const boost::unordered_map<std::size_t, unsigned int>& off_process_owner() const;
+    const boost::unordered_map<std::size_t, unsigned int>&
+      off_process_owner() const;
 
     /// Return map from all shared dofs to the sharing processes (not
     /// including the current process) that share it.
@@ -213,7 +214,8 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_map<std::size_t, std::vector<unsigned int> >
     ///         The map from dofs to list of processes
-    const boost::unordered_map<std::size_t, std::vector<unsigned int> >& shared_dofs() const;
+    const boost::unordered_map<std::size_t, std::vector<unsigned int> >&
+      shared_dofs() const;
 
     /// Return set of processes that share dofs with this process
     ///
@@ -231,7 +233,8 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<dolfin::la_index>
     ///         Local-to-global mapping of dofs.
-    const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const
+    const std::vector<dolfin::la_index>&
+      cell_dofs(std::size_t cell_index) const
     {
       dolfin_assert(cell_index < _dofmap.size());
       return _dofmap[cell_index];
@@ -270,7 +273,10 @@ namespace dolfin
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                               const ufc::cell& ufc_cell) const;
 
-    /// Tabulate the coordinates of all dofs on this process
+    /// Tabulate the coordinates of all dofs on this process. This
+    /// function is typically used by preconditioners that require the
+    /// spatial coordinates of dofs, for example for re-partitioning or
+    /// nullspace computations.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -364,7 +370,9 @@ namespace dolfin
     std::vector<dolfin::la_index> dofs(std::size_t r0, std::size_t r1) const;
 
     /// Set dof entries in vector to a specified value. Parallel layout
-    /// of vector must be consistent with dof map range.
+    /// of vector must be consistent with dof map range. This
+    /// function is typically used to construct the null space of a
+    /// matrix operator.
     ///
     /// *Arguments*
     ///     vector (_GenericVector_)
@@ -375,7 +383,9 @@ namespace dolfin
 
     /// Set dof entries in vector to the x[i] coordinate of the dof
     /// spatial coordinate. Parallel layout of vector must be consistent
-    /// with dof map range.
+    /// with dof map range This function is typically used to
+    /// construct the null space of a matrix operator, e.g. rigid
+    /// body rotations.
     ///
     /// *Arguments*
     ///     vector (_GenericVector_)
@@ -447,8 +457,8 @@ namespace dolfin
     // UFC dof map offset
     std::size_t _ufc_offset;
 
-    // Ownership range (dofs in this range are owned by this process). Set
-    // to (0, 0) if dofmap is a view
+    // Ownership range (dofs in this range are owned by this
+    // process). Set to (0, 0) if dofmap is a view
     std::pair<std::size_t, std::size_t> _ownership_range;
 
     // Map from dofs in local dof map are not owned by this process to
@@ -462,8 +472,8 @@ namespace dolfin
     std::set<std::size_t> _neighbours;
 
     // Map from slave to master mesh entities
-    boost::shared_ptr<std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > >
-      slave_master_mesh_entities;
+    boost::shared_ptr<std::map<unsigned int, std::map<unsigned int,
+      std::pair<unsigned int, unsigned int> > > > slave_master_mesh_entities;
   };
 }
 
