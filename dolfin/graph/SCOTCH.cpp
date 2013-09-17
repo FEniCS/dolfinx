@@ -397,6 +397,36 @@ void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
+std::vector<std::size_t> SCOTCH::compute_gps(const Graph& graph,
+                                             std::size_t num_passes)
+{
+  dolfin_error("SCOTCH.cpp",
+               "re-order graph using SCOTCH",
+               "DOLFIN has been configured without support for SCOTCH");
+  return std::vector<std::size_t>();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t>
+SCOTCH::compute_reordering(const Graph& graph,
+                           std::string scotch_strategy)
+{
+  dolfin_error("SCOTCH.cpp",
+               "re-order graph using SCOTCH",
+               "DOLFIN has been configured without support for SCOTCH");
+  return std::vector<std::size_t>();
+}
+//-----------------------------------------------------------------------------
+void SCOTCH::compute_reordering(const Graph& graph,
+                                std::vector<std::size_t>& permutation,
+                                std::vector<std::size_t>& inverse_permutation,
+                                std::string scotch_strategy)
+
+{
+  dolfin_error("SCOTCH.cpp",
+               "re-order graph using SCOTCH",
+               "DOLFIN has been configured without support for SCOTCH");
+}
+//-----------------------------------------------------------------------------
 void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
@@ -405,24 +435,6 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",
-               "DOLFIN has been configured without support for SCOTCH");
-}
-//-----------------------------------------------------------------------------
-std::vector<std::size_t> SCOTCH::compute_reordering(const Graph& graph)
-{
-  dolfin_error("SCOTCH.cpp",
-               "re-order graph using SCOTCH",
-               "DOLFIN has been configured without support for SCOTCH");
-  std::vector<std::size_t> x;
-  return x;
-}
-//-----------------------------------------------------------------------------
-void SCOTCH::compute_reordering(const Graph& graph,
-                                 std::vector<std::size_t>& permutation,
-                                 std::vector<std::size_t>& inverse_permutation)
-{
-  dolfin_error("SCOTCH.cpp",
-               "re-order graph using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
