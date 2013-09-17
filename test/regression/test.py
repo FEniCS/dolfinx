@@ -23,7 +23,7 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2008-04-08
-# Last changed: 2012-11-13
+# Last changed: 2013-09-13
 
 import sys, os, re
 import platform
@@ -113,16 +113,16 @@ if platform.system() == 'Windows':
 
 # List of demos that throw expected errors in parallel
 not_working_in_parallel = \
-  [os.path.join(demodir, 'pde',          'biharmonic',                  'cpp'),    \
-   os.path.join(demodir, 'pde',          'biharmonic',                  'python'), \
+  [os.path.join(demodir, 'documented',   'biharmonic',                  'cpp'),    \
+   os.path.join(demodir, 'documented',   'biharmonic',                  'python'), \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
    os.path.join(demodir, 'undocumented', 'ale',                         'cpp'),    \
    os.path.join(demodir, 'undocumented', 'ale',                         'python'), \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'), \
-   os.path.join(demodir, 'undocumented', 'auto-adaptive-poisson',       'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'auto-adaptive-poisson',       'python'), \
+   os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'cpp'),    \
+   os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'python'), \
    os.path.join(demodir, 'undocumented', 'dg-advection-diffusion',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'dg-advection-diffusion',      'python'), \
    os.path.join(demodir, 'undocumented', 'dg-poisson',                  'cpp'),    \
@@ -135,7 +135,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
-   os.path.join(demodir, 'undocumented', 'mixed-poisson-sphere',        'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
@@ -144,8 +143,8 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'simple',                      'python'), \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
-   os.path.join(demodir, 'undocumented', 'subdomains',                  'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'subdomains',                  'python'), \
+   os.path.join(demodir, 'documented',   'subdomains',                  'cpp'),    \
+   os.path.join(demodir, 'documented',   'subdomains',                  'python'), \
    os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'submesh',                     'python'), \
    os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),    \

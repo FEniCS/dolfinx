@@ -1,0 +1,40 @@
+
+This demo illustrates how to:
+
+* Load a mesh from a file
+* Solve an eigenvalue problem
+* Use a specific linear algebra backend (PETSc)
+* Initialize a finite element function with a coefficient vector
+
+Problem definition
+------------------
+
+Sometimes one wants to solve an eigenvalue problem such as this one:
+find the eigenvalues :math:`\lambda \in \mathbb{R}` and the
+corresponding eigenvectors :math:`x \in \mathbb{R}^n` such that
+
+.. math::
+
+   A x = \lambda x.
+
+In the finite element world, the matrix :math:`A` often originates
+from some partial differential operator. For instance, :math:`A` can
+be the stiffness matrix corresponding to this bilinear form:
+
+.. math::
+
+   a(u, v) = \int_{\Omega} \nabla u \cdot \nabla v \ {\rm d} x.
+
+Here, we will let the space :math:`V` (of dimension :math:`n`) consist
+of continuous piecewise linear polynomials defined relative to some
+mesh (Lagrange finite elements). For this example, we will consider a
+3-D mesh of tetrahedra generated elsewhere.
+
+With the above input the first eigenfunction will look as follows:
+
+.. image:: ../eigenvalue_x.png
+    :scale: 75
+    :align: center
+
+In the following, we show how this eigenvalue problem can be solved.
+

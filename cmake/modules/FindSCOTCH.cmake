@@ -74,7 +74,7 @@ find_library(PTSCOTCH_LIBRARY
   DOC "The PTSCOTCH library"
   )
 
-# Check for ptesmumps  
+# Check for ptesmumps
 find_library(PTESMUMPS_LIBRARY
   NAMES ptesmumps esmumps
   HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
@@ -89,7 +89,6 @@ find_library(PTSCOTCHERR_LIBRARY
   )
 
 #set(SCOTCH_DEBUG 1)
-set(CMAKE_CXX_FLAGS "-DMPICH_IGNORE_CXX_SEEK")
 set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY})
 if (PTESMUMPS_LIBRARY)
   set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES}  ${PTESMUMPS_LIBRARY})
