@@ -25,11 +25,11 @@
 #ifdef HAS_PETSC
 
 #include <petsclog.h>
-
 #include <boost/assign/list_of.hpp>
-#include <dolfin/common/NoDeleter.h>
-#include <dolfin/log/dolfin_log.h>
+
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
@@ -295,6 +295,8 @@ std::size_t PETScKrylovSolver::solve(const GenericLinearOperator& A,
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 {
+  Timer timer("PETSc Krylov solver");
+
   dolfin_assert(_A);
   dolfin_assert(_ksp);
 
