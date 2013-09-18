@@ -2,7 +2,6 @@
 
 .. _demo_pde_built-in_meshes_python_documentation:
 
-
 Built-in meshes
 ====================
 
