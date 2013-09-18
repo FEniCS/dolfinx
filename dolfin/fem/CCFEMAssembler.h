@@ -27,12 +27,13 @@ namespace dolfin
 {
 
   // Forward declarations
+  class GenericTensor;
   class CCFEMForm;
 
   /// This class implements functionality for finite element assembly
   /// over cut and composite finite element (CCFEM) function spaces.
 
-  class CCFEMAssembler : public AssemblerBase
+  class CCFEMAssembler
   {
   public:
 
@@ -47,6 +48,11 @@ namespace dolfin
     ///     a (_Form_)
     ///         The form to assemble the tensor from.
     void assemble(GenericTensor& A, const CCFEMForm& a);
+
+  private:
+
+    // Initialize global tensor
+    void init_global_tensor(GenericTensor& A, const CCFEMForm& a);
 
   };
 

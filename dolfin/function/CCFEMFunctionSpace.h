@@ -47,12 +47,26 @@ namespace dolfin
     /// Destructor
     ~CCFEMFunctionSpace();
 
-    /// Return dimension of CCFEM function space
+    /// Return dimension of the CCFEM function space
     ///
     /// *Returns*
     ///     std::size_t
     ///         The dimension of the CCFEM function space.
     std::size_t dim() const;
+
+    /// Return the number function spaces (parts) of the CCFEM function space
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         The number of function spaces (parts) of the CCFEM function space.
+    std::size_t num_parts() const;
+
+    /// Return function space (part) number i
+    ///
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         Function space (part) number i
+    boost::shared_ptr<const FunctionSpace> part(std::size_t i) const;
 
     /// Add function space (shared pointer version)
     ///

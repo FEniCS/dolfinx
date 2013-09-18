@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-12
+// Last changed: 2013-09-18
 
 #include <dolfin/log/log.h>
 #include "CCFEMAssembler.h"
@@ -28,10 +28,14 @@ void CCFEMAssembler::assemble(GenericTensor& A, const CCFEMForm& a)
 {
   begin(PROGRESS, "Assembling tensor over CCFEM function space.");
 
-
-  info("test");
-
+  // Initialize global tensor
+  init_global_tensor(A, a);
 
   end();
+}
+//-----------------------------------------------------------------------------
+void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
+{
+
 }
 //-----------------------------------------------------------------------------

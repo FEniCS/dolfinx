@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-12
+// Last changed: 2013-09-18
 
 #ifndef __CCFEM_FORM_H
 #define __CCFEM_FORM_H
@@ -50,6 +50,28 @@ namespace dolfin
     /// Destructor
     ~CCFEMForm();
 
+    /// Return rank of form (bilinear form = 2, linear form = 1,
+    /// functional = 0, etc)
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         The rank of the form.
+    std::size_t rank() const;
+
+    /// Return the number of forms (parts) of the CCFEM form
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         The number of forms (parts) of the CCFEM form.
+    std::size_t num_parts() const;
+
+    /// Return form (part) number i
+    ///
+    /// *Returns*
+    ///     _Form_
+    ///         Form (part) number i.
+    boost::shared_ptr<const Form> part(std::size_t i) const;
+
     /// Add form (shared pointer version)
     ///
     /// *Arguments*
@@ -68,6 +90,9 @@ namespace dolfin
     void build();
 
   private:
+
+    // The rank of the form
+    std::size_t _rank;
 
     // The function space
     boost::shared_ptr<const CCFEMFunctionSpace> _function_space;
