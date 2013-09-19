@@ -24,6 +24,7 @@
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalSolver.h>
 #include <dolfin/fem/CCFEMForm.h>
+#include <dolfin/fem/CCFEMDofMap.h>
 #include <dolfin/fem/CCFEMAssembler.h>
 
 // Move up when ready or merge with Assembler.h

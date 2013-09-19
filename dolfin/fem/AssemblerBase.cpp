@@ -21,7 +21,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2007-01-17
-// Last changed: 2013-03-30
+// Last changed: 2013-09-18
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -63,17 +63,19 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     Timer t0("Build sparsity");
 
     // Create layout for initialising tensor
-    boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
+    boost::shared_ptr<TensorLayout> tensor_layout;
+    tensor_layout = A.factory().create_layout(a.rank());
     dolfin_assert(tensor_layout);
 
-    std::vector<std::size_t> global_dimensions(a.rank());
-    std::vector<std::pair<std::size_t, std::size_t> > local_range(a.rank());
+    // Get dimensions
+    std::vector<std::size_t> global_dimensions;
+    std::vector<std::pair<std::size_t, std::size_t> > local_range;
     std::vector<std::size_t> block_sizes;
     for (std::size_t i = 0; i < a.rank(); i++)
     {
       dolfin_assert(dofmaps[i]);
-      global_dimensions[i] = dofmaps[i]->global_dimension();
-      local_range[i]       = dofmaps[i]->ownership_range();
+      global_dimensions.push_back(dofmaps[i]->global_dimension());
+      local_range.push_back(dofmaps[i]->ownership_range());
       block_sizes.push_back(dofmaps[i]->block_size);
     }
 

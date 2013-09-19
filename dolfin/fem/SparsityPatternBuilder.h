@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2007.
-// Modified by Anders Logg, 2008-2009.
+// Modified by Ola Skavhaug 2007.
+// Modified by Anders Logg 2008-2013
 //
 // First added:  2007-05-24
-// Last changed: 2011-02-21
+// Last changed: 2013-09-18
 
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
@@ -34,6 +34,7 @@ namespace dolfin
   class GenericDofMap;
   class GenericSparsityPattern;
   class Mesh;
+  class CCFEMForm;
 
   /// This class provides functions to compute the sparsity pattern.
 
@@ -43,8 +44,16 @@ namespace dolfin
 
     /// Build sparsity pattern for assembly of given form
     static void build(GenericSparsityPattern& sparsity_pattern,
-      const Mesh& mesh, const std::vector<const GenericDofMap*> dofmaps,
-      bool cells, bool interior_facets, bool exterior_facets, bool diagonal);
+                      const Mesh& mesh,
+                      const std::vector<const GenericDofMap*> dofmaps,
+                      bool cells,
+                      bool interior_facets,
+                      bool exterior_facets,
+                      bool diagonal);
+
+    /// Build sparsity pattern for assembly of given CCFEM form
+    static void build_ccfem(GenericSparsityPattern& sparsity_pattern,
+                            const CCFEMForm& form);
 
   };
 

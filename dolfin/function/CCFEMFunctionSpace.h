@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-09-12
+// Last changed: 2013-09-19
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
@@ -30,6 +30,7 @@ namespace dolfin
   // Forward declarations
   class FunctionSpace;
   class BoundingBoxTree;
+  class CCFEMDofMap;
 
   /// This class represents a cut and composite finite element
   /// function space (CCFEM) defined on one or more possibly
@@ -80,21 +81,24 @@ namespace dolfin
     /// *Arguments*
     ///     function_space (_FunctionSpace_)
     ///         The function space.
-    void add(const FunctionSpace& mesh);
+    void add(const FunctionSpace& function_space);
 
     /// Build CCFEM function space
     void build();
 
-  private:
+    /// Clear CCFEM function space
+    void clear();
 
-    // Total dimension (sum of parts)
-    std::size_t _dim;
+  private:
 
     // List of function spaces
     std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
 
     // List of bounding box trees for meshes
     std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
+
+    // CCFEM dofmap
+    boost::shared_ptr<CCFEMDofMap> _dofmap;
 
   };
 

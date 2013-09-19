@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-18
+// Last changed: 2013-09-19
 
 #ifndef __CCFEM_FORM_H
 #define __CCFEM_FORM_H
@@ -41,11 +41,19 @@ namespace dolfin
   {
   public:
 
-    /// Create empty CCFEM variational form (shared pointer version)
+    /// Create empty linear CCFEM variational form (shared pointer version)
     CCFEMForm(boost::shared_ptr<const CCFEMFunctionSpace> function_space);
 
-    /// Create empty CCFEM variational form (reference version)
+    /// Create empty linear CCFEM variational form (reference version)
     CCFEMForm(const CCFEMFunctionSpace& function_space);
+
+    /// Create empty bilinear CCFEM variational form (shared pointer version)
+    CCFEMForm(boost::shared_ptr<const CCFEMFunctionSpace> function_space_0,
+              boost::shared_ptr<const CCFEMFunctionSpace> function_space_1);
+
+    /// Create empty bilinear CCFEM variational form (reference version)
+    CCFEMForm(const CCFEMFunctionSpace& function_space_0,
+              const CCFEMFunctionSpace& function_space_1);
 
     /// Destructor
     ~CCFEMForm();
@@ -72,6 +80,17 @@ namespace dolfin
     ///         Form (part) number i.
     boost::shared_ptr<const Form> part(std::size_t i) const;
 
+    /// Return function space for given argument
+    ///
+    /// *Arguments*
+    ///     i (std::size_t)
+    ///         Index
+    ///
+    /// *Returns*
+    ///     _CCFEMFunctionSpace_
+    ///         Function space shared pointer.
+    boost::shared_ptr<const CCFEMFunctionSpace> function_space(std::size_t i) const;
+
     /// Add form (shared pointer version)
     ///
     /// *Arguments*
@@ -89,15 +108,18 @@ namespace dolfin
     /// Build CCFEM form
     void build();
 
+    /// Clear CCFEM form
+    void clear();
+
   private:
 
     // The rank of the form
     std::size_t _rank;
 
-    // The function space
-    boost::shared_ptr<const CCFEMFunctionSpace> _function_space;
+    // Function spaces (one for each argument)
+    std::vector<boost::shared_ptr<const CCFEMFunctionSpace> > _function_spaces;
 
-    // List of forms
+    // List of forms (one for each part)
     std::vector<boost::shared_ptr<const Form> > _forms;
 
   };

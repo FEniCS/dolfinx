@@ -16,18 +16,19 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-09-18
+// Last changed: 2013-09-19
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/fem/CCFEMDofMap.h>
 #include "FunctionSpace.h"
 #include "CCFEMFunctionSpace.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMFunctionSpace::CCFEMFunctionSpace() : _dim(0)
+CCFEMFunctionSpace::CCFEMFunctionSpace() : _dofmap(new CCFEMDofMap())
 {
   // Do nothing
 }
@@ -39,7 +40,8 @@ CCFEMFunctionSpace::~CCFEMFunctionSpace()
 //-----------------------------------------------------------------------------
 std::size_t CCFEMFunctionSpace::dim() const
 {
-  return _dim;
+  dolfin_assert(_dofmap);
+  return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
 std::size_t CCFEMFunctionSpace::num_parts() const
@@ -71,17 +73,12 @@ void CCFEMFunctionSpace::build()
 {
   begin(PROGRESS, "Building CCFEM function space.");
 
-  // Compute total dimension
-  begin(PROGRESS, "Computing total dimension.");
-  _dim = 0;
+  // Build dofmap
+  dolfin_assert(_dofmap);
+  _dofmap->clear();
   for (std::size_t i = 0; i < num_parts(); i++)
-  {
-    const std::size_t d = _function_spaces[i]->dim();
-    _dim += d;
-    log(PROGRESS, "dim(V_%d) = %d", i, d);
-  }
-  end();
-  log(PROGRESS, "Total dimension is %d.", _dim);
+    _dofmap->add(_function_spaces[i]->dofmap());
+  _dofmap->build(*this);
 
   // Build bounding box trees for all meshes
   begin(PROGRESS, "Building bounding box trees for all meshes.");
@@ -107,5 +104,14 @@ void CCFEMFunctionSpace::build()
   end();
 
   end();
+}
+//-----------------------------------------------------------------------------
+void CCFEMFunctionSpace::clear()
+{
+  dolfin_assert(_dofmap);
+
+  _function_spaces.clear();
+  _trees.clear();
+  _dofmap->clear();
 }
 //-----------------------------------------------------------------------------
