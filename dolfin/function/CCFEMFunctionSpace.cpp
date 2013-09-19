@@ -44,6 +44,12 @@ std::size_t CCFEMFunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<const CCFEMDofMap> CCFEMFunctionSpace::dofmap() const
+{
+  dolfin_assert(_dofmap);
+  return _dofmap;
+}
+//-----------------------------------------------------------------------------
 std::size_t CCFEMFunctionSpace::num_parts() const
 {
   return _function_spaces.size();

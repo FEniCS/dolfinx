@@ -56,6 +56,15 @@ namespace dolfin
     ///         Dofmap (part) number i
     boost::shared_ptr<const GenericDofMap> part(std::size_t i) const;
 
+    /// Set current part. This will make the CCFEM dofmap act as a
+    /// dofmap for the part of the CCFEM function space defined on the
+    /// current part (mesh).
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The number of the part.
+    void set_current_part(std::size_t part) const;
+
     /// Add dofmap (shared pointer version)
     ///
     /// *Arguments*
@@ -205,7 +214,7 @@ namespace dolfin
     std::vector<boost::shared_ptr<const GenericDofMap> > _dofmaps;
 
     // Current part (mesh)
-    std::size_t _current_part;
+    mutable std::size_t _current_part;
 
     // Local-to-global dof map for all parts
     std::vector<std::vector<std::vector<dolfin::la_index> > > _dofmap;

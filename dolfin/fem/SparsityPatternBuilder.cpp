@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2007-05-24
-// Last changed: 2013-09-18
+// Last changed: 2013-09-19
 
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
@@ -27,9 +27,10 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/CCFEMFunctionSpace.h>
 #include "CCFEMForm.h"
-#include "GenericDofMap.h"
+#include "CCFEMDofMap.h"
 #include "SparsityPatternBuilder.h"
 
 #include <dolfin/log/dolfin_log.h>
@@ -189,51 +190,25 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 void SparsityPatternBuilder::build_ccfem(GenericSparsityPattern& sparsity_pattern,
                                          const CCFEMForm& form)
 {
-  // FIXME: This is work in progress. Only building the simplest
-  // possible sparsity pattern for now.
-
-  // Get global dimensions and local range
-  std::vector<std::size_t> global_dimensions;
-  std::vector<std::pair<std::size_t, std::size_t> > local_ranges;
-  std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner;
+  // Build list of dofmaps
+  std::vector<const GenericDofMap*> dofmaps;
   for (std::size_t i = 0; i < form.rank(); i++)
-  {
-    boost::shared_ptr<const CCFEMFunctionSpace> V = form.function_space(i);
-    dolfin_assert(V);
+    dofmaps.push_back(&*form.function_space(i)->dofmap());
 
-    global_dimensions.push_back(V->dim());
-    local_ranges.push_back(std::make_pair(0, V->dim())); // FIXME: not parallel
-    off_process_owner.push_back(0);                      // FIXME: not parallel
-  }
-
-  // Initialize sparsity pattern
-  sparsity_pattern.init(global_dimensions, local_ranges, off_process_owner);
-
-  // Only build for rank >= 2 (matrices and higher order tensors) that
-  // require sparsity details
-  if (form.rank() < 2)
-    return;
-
-
-  /*
-  // Create vector to point to dofs
-  std::vector<const std::vector<dolfin::la_index>* > dofs(rank);
-
-  // Iterate over the parts of the CCFEM function space
+  // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
   {
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      // Tabulate dofs for each dimension and get local dimensions
-      for (std::size_t i = 0; i < rank; ++i)
-        dofs[i] = &dofmaps[i]->cell_dofs(cell->index());
+    // Set current part for each dofmap. Note that these will be the
+    // same dofmaps as in the list created above but accessed here as
+    // CCFEMDofMaps and not GenericDofMaps.
+    for (std::size_t i = 0; i < form.rank(); i++)
+      form.function_space(i)->dofmap()->set_current_part(part);
 
-      // Insert non-zeroes in sparsity pattern
-      sparsity_pattern.insert(dofs);
-      p++;
-    }
+    // Get mesh on current part (assume it's the same for all arguments)
+    const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
+
+    // Build sparsity pattern for part
+    build(sparsity_pattern, mesh, dofmaps, true, false, false, true);
   }
-  */
-
 }
 //-----------------------------------------------------------------------------

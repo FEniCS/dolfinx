@@ -50,6 +50,12 @@ boost::shared_ptr<const GenericDofMap> CCFEMDofMap::part(std::size_t i) const
   return _dofmaps[i];
 }
 //-----------------------------------------------------------------------------
+void CCFEMDofMap::set_current_part(std::size_t part) const
+{
+  dolfin_assert(part < num_parts());
+  _current_part = part; // mutable
+}
+//-----------------------------------------------------------------------------
 void CCFEMDofMap::add(boost::shared_ptr<const GenericDofMap> dofmap)
 {
   _dofmaps.push_back(dofmap);
@@ -193,7 +199,7 @@ CCFEMDofMap::off_process_owner() const
 const std::vector<dolfin::la_index>&
 CCFEMDofMap::cell_dofs(std::size_t cell_index) const
 {
-  dolfin_assert(cell_index < _dofmap.size());
+  dolfin_assert(cell_index < _dofmap[_current_part].size());
   return _dofmap[_current_part][cell_index];
 }
 //-----------------------------------------------------------------------------

@@ -31,6 +31,7 @@ namespace dolfin
   class FunctionSpace;
   class BoundingBoxTree;
   class CCFEMDofMap;
+  class GenericDofMap;
 
   /// This class represents a cut and composite finite element
   /// function space (CCFEM) defined on one or more possibly
@@ -54,6 +55,13 @@ namespace dolfin
     ///     std::size_t
     ///         The dimension of the CCFEM function space.
     std::size_t dim() const;
+
+    /// Return CCFEM dofmap
+    ///
+    /// *Returns*
+    ///     _CCFEMDofMap_
+    ///         The dofmap.
+    boost::shared_ptr<const CCFEMDofMap> dofmap() const;
 
     /// Return the number function spaces (parts) of the CCFEM function space
     ///

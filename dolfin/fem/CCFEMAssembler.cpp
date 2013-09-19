@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-18
+// Last changed: 2013-09-19
 
 #include <dolfin/log/log.h>
 #include <dolfin/la/GenericTensor.h>
@@ -43,6 +43,8 @@ void CCFEMAssembler::assemble(GenericTensor& A, const CCFEMForm& a)
 //-----------------------------------------------------------------------------
 void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
 {
+  log(PROGRESS, "Initializing global tensor.");
+
   // This function initializes the big system matrix corresponding to
   // all dofs (including inactive dofs) on all parts of the CCFEM
   // function space.
