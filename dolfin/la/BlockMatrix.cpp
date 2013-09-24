@@ -83,7 +83,7 @@ void BlockMatrix::zero()
 //-----------------------------------------------------------------------------
 void BlockMatrix::apply(std::string mode)
 {
-  Timer("Apply (matrix)");
+  Timer timer("Apply (BlockMatrix)");
   for (std::size_t i = 0; i < matrices.shape()[0]; i++)
     for (std::size_t j = 0; j < matrices.shape()[1]; j++)
       matrices[i][j]->apply(mode);
