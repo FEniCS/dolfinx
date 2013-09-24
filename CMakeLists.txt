@@ -741,7 +741,7 @@ endif()
 #------------------------------------------------------------------------------
 # Check if data is downloaded
 
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
   # FIXME: What if we do not have internet connection
   message(STATUS "")
   message(STATUS "Download demo and test data. May take some time...")
@@ -756,8 +756,8 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
   if (DOWNLOAD_DEMO_DATA_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
     endif()
     message(WARNING "Download failed: \n${DOWNLOAD_DEMO_DATA_OUTPUT}")
   endif()
