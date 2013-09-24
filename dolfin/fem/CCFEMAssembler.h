@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-12
+// Last changed: 2013-09-24
 
 #ifndef __CCFEM_ASSEMBLER_H
 #define __CCFEM_ASSEMBLER_H
 
 #include "AssemblerBase.h"
+#include "Assembler.h"
 
 namespace dolfin
 {
@@ -38,7 +39,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    CCFEMAssembler() {}
+    CCFEMAssembler();
 
     /// Assemble tensor from given form
     ///
@@ -50,6 +51,9 @@ namespace dolfin
     void assemble(GenericTensor& A, const CCFEMForm& a);
 
   private:
+
+    // Assemble over cells
+    void assemble_cells(GenericTensor& A, const CCFEMForm& a);
 
     // Initialize global tensor
     void init_global_tensor(GenericTensor& A, const CCFEMForm& a);

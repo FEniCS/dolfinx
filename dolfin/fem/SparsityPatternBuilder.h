@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2013
 //
 // First added:  2007-05-24
-// Last changed: 2013-09-18
+// Last changed: 2013-09-24
 
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
@@ -49,7 +49,9 @@ namespace dolfin
                       bool cells,
                       bool interior_facets,
                       bool exterior_facets,
-                      bool diagonal);
+                      bool diagonal,
+                      bool init=true,
+                      bool finalize=true);
 
     /// Build sparsity pattern for assembly of given CCFEM form
     static void build_ccfem(GenericSparsityPattern& sparsity_pattern,

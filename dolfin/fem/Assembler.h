@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2007-01-17
-// Last changed: 2013-09-12
+// Last changed: 2013-09-19
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H

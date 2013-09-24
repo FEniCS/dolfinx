@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2013-09-18
+// Last changed: 2013-09-24
 //
 // This demo program solves Poisson's equation using a Cut and
 // Composite Finite Element Method (CCFEM) on a domain defined by
@@ -45,12 +45,12 @@ int main()
   info("THIS DEMO IS WORK IN PROGRESS!");
 
   // Increase log level
-  set_log_level(PROGRESS);
+  set_log_level(DBG);
 
   // Create meshes
-  UnitSquareMesh square(8, 8);
-  UnitCircleMesh circle_1(8);
-  UnitCircleMesh circle_2(8);
+  UnitSquareMesh square(4, 4);
+  UnitCircleMesh circle_1(3);
+  UnitCircleMesh circle_2(3);
 
   // Displace circle meshes
   Point dx(0.5, 0.5);
@@ -85,6 +85,8 @@ int main()
   Matrix A;
   CCFEMAssembler assembler;
   assembler.assemble(A, a);
+
+  info(A, true);
 
   return 0;
 }

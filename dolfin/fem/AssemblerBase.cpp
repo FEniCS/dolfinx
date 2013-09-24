@@ -21,7 +21,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2007-01-17
-// Last changed: 2013-09-18
+// Last changed: 2013-09-19
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -42,7 +42,6 @@
 #include "GenericDofMap.h"
 #include "SparsityPatternBuilder.h"
 #include "AssemblerBase.h"
-
 
 using namespace dolfin;
 
