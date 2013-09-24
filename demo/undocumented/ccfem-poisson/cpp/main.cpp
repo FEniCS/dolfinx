@@ -62,10 +62,22 @@ int main()
   Poisson::FunctionSpace V1(circle_1);
   Poisson::FunctionSpace V2(circle_2);
 
+  // Some of this stuff may be wrapped or automated later to avoid
+  // needing to explicitly call add() and build()
+
   // Create forms
   Poisson::BilinearForm a0(V0, V0);
   Poisson::BilinearForm a1(V1, V1);
   Poisson::BilinearForm a2(V2, V2);
+  Poisson::LinearForm L0(V0);
+  Poisson::LinearForm L1(V1);
+  Poisson::LinearForm L2(V2);
+
+  // Set coefficients
+  Source f;
+  L0.f = f;
+  L1.f = f;
+  L2.f = f;
 
   // Build CCFEM function space
   CCFEMFunctionSpace V;
@@ -74,19 +86,27 @@ int main()
   V.add(V2);
   V.build();
 
-  // Build CCFEM form
+  // Build CCFEM forms
   CCFEMForm a(V, V);
   a.add(a0);
   a.add(a1);
   a.add(a2);
   a.build();
+  CCFEMForm L(V);
+  L.add(L0);
+  L.add(L1);
+  L.add(L2);
+  L.build();
 
   // Assemble linear system
   Matrix A;
+  Vector b;
   CCFEMAssembler assembler;
   assembler.assemble(A, a);
+  assembler.assemble(b, L);
 
-  info(A, true);
+  //info(A, true);
+  //info(b, true);
 
   return 0;
 }
