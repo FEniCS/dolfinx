@@ -688,7 +688,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 # FIXME: Generate files in Build directory instead, at least for bench, demo and tests
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   message(STATUS "")
   message(STATUS "Generating form files in demo, test, bench and dolfin directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
@@ -702,8 +702,8 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
   if (FORM_GENERATION_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     endif()
 
     message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
@@ -715,7 +715,7 @@ endif()
 # Generate CMakeLists.txt files for tests, bench and demos if not exists
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
   message(STATUS "")
   message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
   message(STATUS "-------------------------------------------------------------------")
@@ -729,8 +729,8 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
   if (CMAKE_GENERATION_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
     endif()
     message(FATAL_ERROR "Generation of CMakeLists.txt files failed: \n${CMAKE_GENERATION_OUTPUT}")
   endif()
