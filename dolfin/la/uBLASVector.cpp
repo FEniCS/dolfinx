@@ -220,7 +220,7 @@ void uBLASVector::add(const double* block, std::size_t m,
 //-----------------------------------------------------------------------------
 void uBLASVector::apply(std::string mode)
 {
-  Timer("Apply (vector)");
+  Timer timer("Apply (uBLAS vector)");
 
   // Do nothing
 }

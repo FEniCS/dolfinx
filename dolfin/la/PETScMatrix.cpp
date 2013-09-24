@@ -481,7 +481,7 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply(std::string mode)
 {
-  Timer("Apply (matrix)");
+  Timer timer("Apply (PETScMatrix)");
 
   dolfin_assert(_A);
   PetscErrorCode ierr;
