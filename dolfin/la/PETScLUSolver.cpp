@@ -29,6 +29,7 @@
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -191,6 +192,8 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
                                  bool transpose)
 {
+  Timer timer("PETSc LU solver");
+
   dolfin_assert(_ksp);
   dolfin_assert(_A);
 

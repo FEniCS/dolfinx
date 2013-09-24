@@ -38,6 +38,7 @@
 #include <AztecOO.h>
 #include <Epetra_LinearProblem.h>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
@@ -88,10 +89,10 @@ Parameters EpetraKrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        std::string preconditioner)
-  : _method(method), _preconditioner(new TrilinosPreconditioner(preconditioner)),
+  : _method(method),
+    _preconditioner(new TrilinosPreconditioner(preconditioner)),
     solver(new AztecOO), relative_residual(0.0),
     absolute_residual(0.0)
-
 {
   parameters = default_parameters();
 
@@ -110,9 +111,9 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        TrilinosPreconditioner& preconditioner)
-  : _method(method),  _preconditioner(reference_to_no_delete_pointer(preconditioner)),
-    solver(new AztecOO), relative_residual(0.0),
-    absolute_residual(0.0)
+  : _method(method),
+    _preconditioner(reference_to_no_delete_pointer(preconditioner)),
+    solver(new AztecOO), relative_residual(0.0), absolute_residual(0.0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -161,13 +162,15 @@ const GenericLinearOperator& EpetraKrylovSolver::get_operator() const
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraKrylovSolver::solve(GenericVector& x,
-                                       const GenericVector& b)
+                                      const GenericVector& b)
 {
   return solve(as_type<EpetraVector>(x), as_type<const EpetraVector>(b));
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 {
+  Timer timer("Epetra Krylov solver");
+
   dolfin_assert(solver);
   dolfin_assert(_A);
   dolfin_assert(_P);
@@ -238,9 +241,12 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
       errorDescription = "unknown error";
 
     std::stringstream message;
-    message << "Epetra (AztecOO) Krylov solver (" << _method << ", " << _preconditioner->name() << ") "
-            << "failed to converge after " << (int)status[AZ_its] << " iterations "
-            << "(" << errorDescription << ", error code " << (int)status[AZ_why] << ")";
+    message << "Epetra (AztecOO) Krylov solver (" << _method << ", "
+            << _preconditioner->name() << ") "
+            << "failed to converge after " << (int)status[AZ_its]
+            << " iterations "
+            << "(" << errorDescription << ", error code "
+            << (int)status[AZ_why] << ")";
 
     if (parameters["error_on_nonconvergence"])
     {
@@ -254,7 +260,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   else
   {
     info("Epetra (AztecOO) Krylov solver (%s, %s) converged in %d iterations.",
-          _method.c_str(), _preconditioner->name().c_str(), solver->NumIters());
+         _method.c_str(), _preconditioner->name().c_str(), solver->NumIters());
   }
 
   // Update residuals
@@ -266,8 +272,8 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraKrylovSolver::solve(const GenericLinearOperator& A,
-                                       GenericVector& x,
-                                       const GenericVector& b)
+                                      GenericVector& x,
+                                      const GenericVector& b)
 {
   return solve(as_type<const EpetraMatrix>(require_matrix(A)),
                as_type<EpetraVector>(x),
@@ -275,7 +281,7 @@ std::size_t EpetraKrylovSolver::solve(const GenericLinearOperator& A,
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
-                                       const EpetraVector& b)
+                                      const EpetraVector& b)
 {
   boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
