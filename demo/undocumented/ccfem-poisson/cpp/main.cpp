@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2013-09-24
+// Last changed: 2013-09-25
 //
 // This demo program solves Poisson's equation using a Cut and
 // Composite Finite Element Method (CCFEM) on a domain defined by
@@ -105,8 +105,13 @@ int main()
   assembler.assemble(A, a);
   assembler.assemble(b, L);
 
-  //info(A, true);
-  //info(b, true);
+  // Compute solution
+  CCFEMFunction u(V);
+  solve(A, *u.vector(), b);
+
+  cout << "A = " << endl; info(A, true);
+  cout << "b = " << endl; info(b, true);
+  cout << "x = " << endl; info(*u.vector(), true);
 
   return 0;
 }

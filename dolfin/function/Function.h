@@ -21,7 +21,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2013-06-21
+// Last changed: 2013-09-25
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-09-19
+// Last changed: 2013-09-25
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H

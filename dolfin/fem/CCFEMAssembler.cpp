@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-24
+// Last changed: 2013-09-25
 
 #include <dolfin/log/log.h>
 #include <dolfin/la/GenericTensor.h>
@@ -154,9 +154,6 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   {
     GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
     SparsityPatternBuilder::build_ccfem(pattern, a);
-
-    // FIXME: debugging
-    cout << tensor_layout->str() << endl;
   }
 
   // Initialize tensor

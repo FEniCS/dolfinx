@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2013-09-02
+// Last changed: 2013-09-25
 
 #include <algorithm>
 #include <map>
