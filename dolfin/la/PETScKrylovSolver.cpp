@@ -326,10 +326,13 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Set some PETSc-specific options
-  set_petsc_options();
+  if (!preconditioner_set)
+  {
+    set_petsc_options();
 
-  // Set operators
-  set_petsc_operators();
+    // Set operators
+    set_petsc_operators();
+  }
 
   // Set (approxinate) null space for preconditioner
   if (_preconditioner)
@@ -337,7 +340,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     dolfin_assert(_P);
     boost::shared_ptr<const MatNullSpace> pc_nullspace
       = _preconditioner->nullspace();
-    if (pc_nullspace)
+
+    if (pc_nullspace && !preconditioner_set)
     {
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
       ierr = MatSetNearNullSpace(*(_P->mat()), *pc_nullspace);
@@ -360,7 +364,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     _preconditioner->set(*this);
     preconditioner_set = true;
   }
-
   // User defined preconditioner
   else if (pc_dolfin && !preconditioner_set)
   {
