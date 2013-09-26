@@ -121,6 +121,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
 
   nonlinear_problem.form(*_A, *_b, x);
+  _solver->set_operator(_A);
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
@@ -130,7 +131,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
     // FIXME: This reset is a hack to handle a deficiency in the
     // Trilinos wrappers
-    _solver->set_operator(_A);
+    //_solver->set_operator(_A);
 
     // Perform linear solve and update total number of Krylov
     // iterations
@@ -176,7 +177,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     if (dolfin::MPI::process_number() == 0)
     {
      info("Newton solver finished in %d iterations and %d linear solver iterations.",
-            newton_iteration, krylov_iterations);
+          newton_iteration, krylov_iterations);
     }
   }
   else
