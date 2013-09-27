@@ -1,3 +1,7 @@
+ - Fix runtime dependency on checking swig version
+ - Deprecate DofMap member methods vertex_to_dof_map and dof_to_vertex_map
+ - Add free functions: vertex_to_dof_map and dof_to_vertex_map, and correct the ordering of the map.
+ - Introduce CompiledSubDomain a more robust version of compiled_subdomains, which is now deprecated
  - CMake now takes care of calling the correct generate-foo script if so needed.
  - Feature: Add new built-in computational geometry library (BoundingBoxTree)
  - Feature: Add support for setting name and label to an Expression when constructed

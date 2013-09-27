@@ -37,6 +37,9 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 
+// This file should not be indlued in any header files to avoid
+// polluting DOLFIN with CGAL code.
+
 namespace dolfin
 {
 
@@ -332,7 +335,7 @@ namespace dolfin
         p[0] /= 3.0; p[1] /= 3.0; p[2] /= 3.0;
 
         // Check if facet should be added. If not, continue
-        if (!surface->on_surface(p))
+        if (surface->f1(p) > 0.0)
           continue;
       }
 
@@ -419,8 +422,8 @@ namespace dolfin
           p[0] /= 3.0; p[1] /= 3.0; p[2] /= 3.0;
 
           // Check if facet should be added. If not, continue
-          if (!surface->on_surface(p))
-          continue;
+          if (surface->f1(p) > 0.0)
+            continue;
         }
 
         // Add vertex if not already added and increment index

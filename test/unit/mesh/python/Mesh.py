@@ -287,7 +287,7 @@ class MeshOrientations(unittest.TestCase):
 
     def test_basic_cell_orientations(self):
         "Test that default cell orientations initialize and update as expected."
-        mesh = UnitIntervalMesh(6)
+        mesh = UnitIntervalMesh(12)
         orientations = mesh.cell_orientations()
         self.assertEqual(len(orientations), mesh.num_cells())
         for i in range(mesh.num_cells()):
@@ -298,7 +298,7 @@ class MeshOrientations(unittest.TestCase):
 
     def test_cell_orientations(self):
         "Test that cell orientations update as expected."
-        mesh = UnitIntervalMesh(6)
+        mesh = UnitIntervalMesh(12)
         mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)

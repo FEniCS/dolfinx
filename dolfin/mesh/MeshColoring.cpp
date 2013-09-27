@@ -53,8 +53,9 @@ const std::vector<std::size_t>& MeshColoring::color_cells(Mesh& mesh,
   return color(mesh, _coloring_type);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& MeshColoring::color(Mesh& mesh,
-                                       const std::vector<std::size_t>& coloring_type)
+const std::vector<std::size_t>&
+MeshColoring::color(Mesh& mesh,
+                    const std::vector<std::size_t>& coloring_type)
 {
   // Convenience typedefs
   typedef std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > ColorData;

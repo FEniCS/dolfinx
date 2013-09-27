@@ -51,7 +51,8 @@ LUSolver::~LUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void LUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+void
+LUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
@@ -86,12 +87,13 @@ std::size_t LUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
   return solver->solve_transpose(x, b);
 }
 //-----------------------------------------------------------------------------
-std::size_t LUSolver::solve_transpose(const GenericLinearOperator& A, GenericVector& x,
-                             const GenericVector& b)
+std::size_t LUSolver::solve_transpose(const GenericLinearOperator& A,
+                                      GenericVector& x,
+                                      const GenericVector& b)
 {
   dolfin_assert(solver);
 
-  Timer timer("LU solver");
+  Timer timer("LU solver (transpose version)");
   solver->parameters.update(parameters);
   return solver->solve_transpose(A, x, b);
 }

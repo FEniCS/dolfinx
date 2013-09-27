@@ -32,6 +32,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
 #include "GenericFunction.h"
 #include "FunctionAXPY.h"
@@ -387,7 +388,7 @@ namespace dolfin
 
     // Get coefficients from the vector(s)
     void compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
-                               std::vector<std::size_t>& ghost_indices) const;
+                               std::vector<la_index>& ghost_indices) const;
 
     // The function space
     boost::shared_ptr<const FunctionSpace> _function_space;

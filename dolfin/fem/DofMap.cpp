@@ -24,7 +24,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-03-04
+// Last changed: 2013-09-05
 
 #include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
@@ -346,8 +346,10 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
   return x;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
+std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
 {
+  deprecation("dof_to_vertex_map", "1.3.0", "DofMap::dof_to_vertex_map has been replaced by the free function vertex_to_dof_map.");
+
   // Check that we only have dofs living on vertices
   assert(_ufc_dofmap);
 
@@ -362,7 +364,7 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
   if (vert_per_cell*dofs_per_vertex != _ufc_dofmap->local_dimension())
   {
     dolfin_error("DofMap.cpp",
-                 "tabulating dof to vertex map",
+                 "tabulate dof to vertex map",
                  "Can only tabulate dofs on vertices");
   }
 
@@ -397,7 +399,8 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
     const std::vector<dolfin::la_index>& _cell_dofs = cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local vertex
-    _ufc_dofmap->tabulate_entity_dofs(local_to_local_map.data(), 0, local_vertex_ind);
+    _ufc_dofmap->tabulate_entity_dofs(local_to_local_map.data(), 0,
+                                      local_vertex_ind);
 
     // Fill local dofs for the vertex
     for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)
@@ -411,8 +414,10 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
   return dof_map;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
+std::vector<std::size_t> DofMap::vertex_to_dof_map(const Mesh& mesh) const
 {
+  deprecation("vertex_to_dof_map", "1.3.0", "DofMap::vertex_to_dof_map has been replaced by the free function dof_to_vertex_map.");
+
   // Get dof to vertex map
   const std::vector<dolfin::la_index> dof_map = dof_to_vertex_map(mesh);
 
@@ -456,10 +461,39 @@ boost::shared_ptr<GenericDofMap>
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericDofMap>
-  DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
+  DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>&
+                   collapsed_map,
                    const Mesh& mesh) const
 {
-  return boost::shared_ptr<GenericDofMap>(new DofMap(collapsed_map, *this, mesh));
+  return boost::shared_ptr<GenericDofMap>(new DofMap(collapsed_map,
+                                                     *this, mesh));
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::la_index> DofMap::dofs(std::size_t r0, std::size_t r1) const
+{
+  // Creat vector to hold dofs
+  std::vector<la_index> _dofs;
+  _dofs.reserve(_dofmap.size()*max_cell_dimension());
+
+  // Insert all dofs into a vector (will contain duplicates)
+  std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
+  for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
+  {
+    for (std::size_t i = 0; i < cell_dofs->size(); ++i)
+    {
+      const std::size_t dof = (*cell_dofs)[i];
+      if (dof >= r0 && dof < r1)
+        _dofs.push_back(dof);
+    }
+  }
+
+  // Sort dofs (required to later remove duplicates)
+  std::sort(_dofs.begin(), _dofs.end());
+
+  // Remove duplicates
+  _dofs.erase(std::unique(_dofs.begin(), _dofs.end() ), _dofs.end());
+
+  return _dofs;
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const

@@ -20,7 +20,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-22
+// Last changed: 2013-09-02
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -263,7 +263,7 @@ void IntervalCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-bool IntervalCell::contains(const Cell& cell, const Point& point) const
+bool IntervalCell::collides(const Cell& cell, const Point& point) const
 {
   // Get coordinates
   const MeshGeometry& geometry = cell.mesh().geometry();
@@ -272,8 +272,15 @@ bool IntervalCell::contains(const Cell& cell, const Point& point) const
   const double x1 = geometry.point(vertices[1])[0];
   const double x = point.x();
 
-  return ((x > x0 - DOLFIN_EPS && x < x1 + DOLFIN_EPS) ||
-          (x > x1 - DOLFIN_EPS && x < x0 + DOLFIN_EPS));
+  return ((x >= x0 - DOLFIN_EPS_LARGE && x <= x1 + DOLFIN_EPS_LARGE) ||
+          (x >= x1 - DOLFIN_EPS_LARGE && x <= x0 + DOLFIN_EPS_LARGE));
+}
+//-----------------------------------------------------------------------------
+bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_not_implemented();
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

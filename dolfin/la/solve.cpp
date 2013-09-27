@@ -39,10 +39,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::size_t dolfin::solve(const GenericLinearOperator& A,
-                           GenericVector& x,
-                           const GenericVector& b,
-                           std::string method,
-                           std::string preconditioner)
+                          GenericVector& x,
+                          const GenericVector& b,
+                          std::string method,
+                          std::string preconditioner)
 {
   Timer timer("Solving linear system");
   LinearSolver solver(method, preconditioner);
@@ -169,8 +169,8 @@ bool dolfin::has_krylov_solver_method(std::string method)
 //-----------------------------------------------------------------------------
 bool dolfin::has_krylov_solver_preconditioner(std::string preconditioner)
 {
-  std::vector<std::pair<std::string, std::string> > preconditioners =
-    DefaultFactory::factory().krylov_solver_preconditioners();
+  std::vector<std::pair<std::string, std::string> > preconditioners
+    = DefaultFactory::factory().krylov_solver_preconditioners();
   for (std::size_t i = 0; i < preconditioners.size(); i++)
     if (preconditioners[i].first == preconditioner)
       return true;
@@ -226,44 +226,41 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
 bool dolfin::has_linear_algebra_backend(std::string backend)
 {
   if (backend == "uBLAS")
-  {
     return true;
-  }
   else if (backend == "PETSc")
   {
-#ifdef HAS_PETSC
+    #ifdef HAS_PETSC
     return true;
-#else
+    #else
     return false;
-#endif
+    #endif
   }
   else if (backend == "PETScCusp")
   {
-#ifdef HAS_PETSC_CUSP
+    #ifdef HAS_PETSC_CUSP
     return true;
-#else
+    #else
     return false;
-#endif
+    #endif
   }
   else if (backend == "Epetra")
   {
-#ifdef HAS_TRILINOS
+    #ifdef HAS_TRILINOS
     return true;
-#else
+    #else
     return false;
-#endif
+    #endif
   }
   else if (backend == "STL")
-  {
     return true;
-  }
+
   return false;
 }
 //-------------------------------------------------------------------------
 void dolfin::list_linear_algebra_backends()
 {
-  std::vector<std::pair<std::string, std::string> > backends =
-    linear_algebra_backends();
+  std::vector<std::pair<std::string, std::string> > backends
+    = linear_algebra_backends();
 
   // Pretty-print list of available linear algebra backends
   Table t("Linear algebra backends", false);
@@ -273,7 +270,8 @@ void dolfin::list_linear_algebra_backends()
   cout << t.str(true) << endl;
 }
 //-------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> > dolfin::linear_algebra_backends()
+std::vector<std::pair<std::string, std::string> >
+dolfin::linear_algebra_backends()
 {
   std::vector<std::pair<std::string, std::string> > backends;
 
@@ -292,19 +290,24 @@ std::vector<std::pair<std::string, std::string> > dolfin::linear_algebra_backend
   #endif
 
   // Add available backends
-  backends.push_back(std::make_pair("uBLAS", "Template based basic linear algebra "
+  backends.push_back(std::make_pair("uBLAS",
+                                    "Template based basic linear algebra "
 				    "from boost" + default_backend["uBLAS"]));
-  backends.push_back(std::make_pair("STL", "Light weight storage backend for Tensors"));
+  backends.push_back(std::make_pair("STL",
+                                  "Light weight storage backend for Tensors"));
 
   #ifdef HAS_PETSC
-  backends.push_back(std::make_pair("PETSc", "Powerful MPI parallel linear algebra"
+  backends.push_back(std::make_pair("PETSc",
+                                    "Powerful MPI parallel linear algebra"
 				    " library" + default_backend["PETSc"]));
   #endif
   #ifdef HAS_PETSC_CUSP
-  backends.push_back(std::make_pair("PETScCusp", "GPU-accelerated build of PETSc"));
+  backends.push_back(std::make_pair("PETScCusp",
+                                    "GPU-accelerated build of PETSc"));
   #endif
   #ifdef HAS_TRILINOS
-  backends.push_back(std::make_pair("Epetra", "Powerful MPI parallel linear algebra"
+  backends.push_back(std::make_pair("Epetra",
+                                    "Powerful MPI parallel linear algebra"
 				    " library" + default_backend["Epetra"]));
   #endif
 

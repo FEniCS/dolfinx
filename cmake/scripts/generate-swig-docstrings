@@ -27,7 +27,7 @@ This script assumes that all functions and classes lives in the dolfin namespace
 # Modified by Anders E. Johansen, 2011.
 #
 # First added:  2010-08-19
-# Last changed: 2011-07-08
+# Last changed: 2013-09-04
 
 import os, shutil, types, sys
 
@@ -191,7 +191,7 @@ def handle_std_vector(cpp_type, classnames):
     """Map std::vector to Python object (numpy.array)."""
 
     # Special case: vector of pairs
-    if "std::pair" in cpp_type:
+    if "std::pair" in cpp_type and not cpp_type.startswith("std::pair"):
         arg1, arg2 = cpp_type.split("<")[2].split(">")[0].split(",")
         pair = "std::pair<%s,%s>" % (arg1, arg2)
         if handle_std_pair(pair, classnames) is not None:
@@ -407,27 +407,27 @@ def generate_docstrings(top_destdir):
     """
     Generate docstring files for each module
     """
-    
+
     from codesnippets import copyright_statement
 
     # Get top DOLFIN directory.
     script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
     script_rel_path = script_rel_path or "."
     dolfin_dir = os.path.abspath(os.path.join(script_rel_path, os.pardir, os.pardir))
-    
+
     top_destdir = top_destdir or dolfin_dir
-    
+
     abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)
 
     if not os.path.isdir(abs_destdir):
         raise RuntimeError("%s is not a directory." % abs_destdir)
-        
+
     # Set copyright form
     copyright_form_swig = dict(comment = r"//", holder="Kristian B. Oelgaard")
-    
+
     # Extract documentation
     documentation, classnames = extract_doc_representation(dolfin_dir)
-    
+
     output("Generating docstrings from intermediate representation module...")
     for module in documentation:
         if not os.path.isdir(os.path.join(abs_destdir, "dolfin", "swig", module)):
@@ -448,8 +448,8 @@ if __name__ == "__main__":
 
     if len(sys.argv) not in [1,2,3]:
         raise RuntimeError("expected 0, 1 or 2 arguments")
-    
+
     dest_dir = sys.argv[1] if len(sys.argv) > 2 else ""
     debug_output = len(sys.argv) > 2 and sys.argv[2] == "DEBUG"
-    
+
     generate_docstrings(dest_dir)

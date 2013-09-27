@@ -193,7 +193,7 @@ class DofMapTest(unittest.TestCase):
         W = MixedFunctionSpace([V, R])
         W = MixedFunctionSpace([R, V])
 
-    def test_vertex_to_dof_map(self):
+    def test_dof_to_vertex_map(self):
 
         # Check for both reordered and UFC ordered dofs
         for reorder_dofs in [True, False]:
@@ -209,7 +209,7 @@ class DofMapTest(unittest.TestCase):
 
             vert_values = self.mesh.coordinates().sum(1)
             func_values = -1*np.ones(len(vert_values))
-            func_values[V.dofmap().vertex_to_dof_map(self.mesh)] = u.vector().array()
+            func_values[dof_to_vertex_map(V)] = u.vector().array()
 
             for v_val, f_val in zip(vert_values, func_values):
                 # Do not compare dofs owned by other process
@@ -225,16 +225,16 @@ class DofMapTest(unittest.TestCase):
             vert_values[::2] = 1
             vert_values[1::2] = 2
 
-            u1.vector().set_local(vert_values[Q.dofmap().vertex_to_dof_map(self.mesh)].copy())
+            u1.vector().set_local(vert_values[dof_to_vertex_map(Q)].copy())
             self.assertAlmostEqual((u0.vector()-u1.vector()).sum(), 0.0)
 
             W = FunctionSpace(self.mesh, "DG", 0)
-            self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
+            self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W))
 
             W = Q*FunctionSpace(self.mesh, "R", 0)
-            self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
+            self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W))
             W = FunctionSpace(self.mesh, "CG", 2)
-            self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
+            self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W))
 
 
     def test_entity_dofs(self):

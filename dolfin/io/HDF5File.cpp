@@ -689,12 +689,10 @@ void HDF5File::read(Function& u, const std::string name)
 
   dolfin_assert(hdf5_file_open);
 
-  // FIXME: This routine is long and involves a lot of MPI,
-  // but it should work for the general case
-  // of reading a function that was written from
-  // a different number of processes.
-  // Memory efficiency could be improved by
-  // limiting the scope of some of the temporary
+  // FIXME: This routine is long and involves a lot of MPI, but it
+  // should work for the general case of reading a function that was
+  // written from a different number of processes.  Memory efficiency
+  // could be improved by limiting the scope of some of the temporary
   // variables
 
   // Check datasets exist
@@ -729,8 +727,8 @@ void HDF5File::read(Function& u, const std::string name)
   }
 
   // Divide cells equally between processes
-  const std::pair<std::size_t, std::size_t> cell_range =
-    MPI::local_range(num_global_cells);
+  const std::pair<std::size_t, std::size_t> cell_range
+    = MPI::local_range(num_global_cells);
 
   // Read cells
   std::vector<std::size_t> input_cells;
@@ -758,7 +756,7 @@ void HDF5File::read(Function& u, const std::string name)
   const std::size_t num_global_dofs = vector_size[0];
   dolfin_assert(num_global_dofs == x.size(0));
   const std::pair<dolfin::la_index, dolfin::la_index>
-    input_vector_range = MPI::local_range(vector_size[0]);  
+    input_vector_range = MPI::local_range(vector_size[0]);
 
   std::vector<double> input_values;
   HDF5Interface::read_dataset(hdf5_file_id, name + "/vector",
@@ -1135,6 +1133,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name) const
   mesh_data.clear();
 
   // --- Topology ---
+
   // Discover size of topology dataset
   std::vector<std::size_t> topology_dim
       = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);

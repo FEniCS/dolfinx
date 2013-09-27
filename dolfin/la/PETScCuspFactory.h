@@ -56,11 +56,13 @@ namespace dolfin
     boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
+    boost::shared_ptr<GenericLUSolver>
+      create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
-                                            std::string preconditioner) const;
+    boost::shared_ptr<GenericLinearSolver>
+      create_krylov_solver(std::string method,
+                           std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >

@@ -561,8 +561,6 @@ if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
     PATTERN "*.in" EXCLUDE
     )
 
-  get_filename_component(SWIG_BINARY ${SWIG_EXECUTABLE} NAME)
-
   configure_file(${CMAKE_SOURCE_DIR}/site-packages/dolfin/common/globalparameters.py.in
     ${CMAKE_BINARY_DIR}/globalparameters.py @ONLY)
 
@@ -690,7 +688,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 # FIXME: Generate files in Build directory instead, at least for bench, demo and tests
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   message(STATUS "")
   message(STATUS "Generating form files in demo, test, bench and dolfin directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
@@ -704,8 +702,8 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
   if (FORM_GENERATION_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     endif()
 
     message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
@@ -717,7 +715,7 @@ endif()
 # Generate CMakeLists.txt files for tests, bench and demos if not exists
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
   message(STATUS "")
   message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
   message(STATUS "-------------------------------------------------------------------")
@@ -731,8 +729,8 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
   if (CMAKE_GENERATION_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
     endif()
     message(FATAL_ERROR "Generation of CMakeLists.txt files failed: \n${CMAKE_GENERATION_OUTPUT}")
   endif()
@@ -743,7 +741,7 @@ endif()
 #------------------------------------------------------------------------------
 # Check if data is downloaded
 
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
   # FIXME: What if we do not have internet connection
   message(STATUS "")
   message(STATUS "Download demo and test data. May take some time...")
@@ -751,17 +749,17 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
   execute_process(
     COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data 
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
-    RESULT_VARIABLE DOWONLOAD_DEMO_DATA_RESULT
-    OUTPUT_VARIABLE DOWONLOAD_DEMO_DATA_OUTPUT
-    ERROR_VARIABLE DOWONLOAD_DEMO_DATA_OUTPUT
+    RESULT_VARIABLE DOWNLOAD_DEMO_DATA_RESULT
+    OUTPUT_VARIABLE DOWNLOAD_DEMO_DATA_OUTPUT
+    ERROR_VARIABLE DOWNLOAD_DEMO_DATA_OUTPUT
     OUTPUT_QUIET)
-  if (DOWONLOAD_DEMO_DATA_RESULT)
+  if (DOWNLOAD_DEMO_DATA_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
     endif()
-    message(FATAL_ERROR "Download failed: \n${DOWONLOAD_DEMO_DATA_OUTPUT}")
+    message(WARNING "Download failed: \n${DOWNLOAD_DEMO_DATA_OUTPUT}")
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
 endif()
