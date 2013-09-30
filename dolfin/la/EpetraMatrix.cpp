@@ -387,7 +387,8 @@ void EpetraMatrix::zero()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::apply(std::string mode)
 {
-  Timer("Apply (matrix)");
+  Timer timer("Apply (EpetraMatrix)");
+
   dolfin_assert(_A);
   int err = 0;
   if (mode == "add")

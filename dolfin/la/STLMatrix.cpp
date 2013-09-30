@@ -213,7 +213,7 @@ void STLMatrix::add(const double* block,
 //-----------------------------------------------------------------------------
 void STLMatrix::apply(std::string mode)
 {
-  Timer("Apply (matrix)");
+  Timer timer("Apply (STLMatrix)");
 
   // Number of processes
   const std::size_t num_processes = MPI::num_processes();
