@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-06-21
+// Last changed: 2013-09-30
 
 #ifdef HAS_HDF5
 
@@ -695,17 +695,37 @@ void HDF5File::read(Function& u, const std::string name)
   // could be improved by limiting the scope of some of the temporary
   // variables
 
+  std::string basename = name;
+  std::string vector_dataset_name = name + "/vector";
+
+  // Check that the name we have been given corresponds to a "group"
+  // If not, then maybe we have been given the vector dataset name
+  // directly, so the group name should be one level up.
+  if (!HDF5Interface::has_group(hdf5_file_id, basename))
+  {
+    basename = name.substr(0, name.rfind("/"));
+    vector_dataset_name = name;
+  }
+  
+  const std::string cells_dataset_name = basename + "/cells";
+  const std::string cell_dofs_dataset_name = basename + "/cell_dofs";
+  const std::string x_cell_dofs_dataset_name = basename + "/x_cell_dofs";
+
   // Check datasets exist
   if (!HDF5Interface::has_dataset(hdf5_file_id, name))
     error("Group with name \"%s\" does not exist", name.c_str());
-  if (!HDF5Interface::has_dataset(hdf5_file_id, name + "/cells"))
-    error("Dataset with name \"%s/cells\" does not exist", name.c_str());
-  if (!HDF5Interface::has_dataset(hdf5_file_id, name + "/cell_dofs"))
-    error("Dataset with name \"%s/cell_dofs\" does not exist", name.c_str());
-  if (!HDF5Interface::has_dataset(hdf5_file_id, name + "/x_cell_dofs"))
-    error("Dataset with name \"%s/x_cell_dofs\" does not exist", name.c_str());
-  if (!HDF5Interface::has_dataset(hdf5_file_id, name + "/vector"))
-    error("Dataset with name \"%s/vector\" does not exist", name.c_str());
+  if (!HDF5Interface::has_dataset(hdf5_file_id, cells_dataset_name))
+    error("Dataset with name \"%s\" does not exist", 
+          cells_dataset_name.c_str());
+  if (!HDF5Interface::has_dataset(hdf5_file_id, cell_dofs_dataset_name))
+    error("Dataset with name \"%s\" does not exist", 
+          cell_dofs_dataset_name.c_str());
+  if (!HDF5Interface::has_dataset(hdf5_file_id, x_cell_dofs_dataset_name))
+    error("Dataset with name \"%s\" does not exist", 
+          x_cell_dofs_dataset_name.c_str());
+  if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
+    error("Dataset with name \"%s\" does not exist", 
+          vector_dataset_name.c_str());
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the Function
@@ -716,7 +736,7 @@ void HDF5File::read(Function& u, const std::string name)
 
   // Get dimension of dataset
   const std::vector<std::size_t> dataset_size =
-    HDF5Interface::get_dataset_size(hdf5_file_id, name + "/cells");
+    HDF5Interface::get_dataset_size(hdf5_file_id, cells_dataset_name);
   const std::size_t num_global_cells = dataset_size[0];
   if (mesh.size_global(mesh.topology().dim())
      != num_global_cells)
@@ -732,19 +752,19 @@ void HDF5File::read(Function& u, const std::string name)
 
   // Read cells
   std::vector<std::size_t> input_cells;
-  HDF5Interface::read_dataset(hdf5_file_id, name + "/cells",
+  HDF5Interface::read_dataset(hdf5_file_id, cells_dataset_name,
                               cell_range, input_cells);
 
   // Overlap reads of DOF indices, to get full range on each process
   std::vector<std::size_t> x_cell_dofs;
-  HDF5Interface::read_dataset(hdf5_file_id, name + "/x_cell_dofs",
+  HDF5Interface::read_dataset(hdf5_file_id, x_cell_dofs_dataset_name,
                               std::make_pair(cell_range.first,
                                              cell_range.second + 1),
                               x_cell_dofs);
 
   // Read cell-DOF maps
   std::vector<dolfin::la_index> input_cell_dofs;
-  HDF5Interface::read_dataset(hdf5_file_id, name + "/cell_dofs",
+  HDF5Interface::read_dataset(hdf5_file_id, cell_dofs_dataset_name,
                               std::make_pair(x_cell_dofs.front(),
                                              x_cell_dofs.back()),
                               input_cell_dofs);
@@ -752,14 +772,14 @@ void HDF5File::read(Function& u, const std::string name)
   GenericVector& x = *u.vector();
 
   const std::vector<std::size_t> vector_size =
-    HDF5Interface::get_dataset_size(hdf5_file_id, name + "/vector");
+    HDF5Interface::get_dataset_size(hdf5_file_id, vector_dataset_name);
   const std::size_t num_global_dofs = vector_size[0];
   dolfin_assert(num_global_dofs == x.size(0));
   const std::pair<dolfin::la_index, dolfin::la_index>
     input_vector_range = MPI::local_range(vector_size[0]);
 
   std::vector<double> input_values;
-  HDF5Interface::read_dataset(hdf5_file_id, name + "/vector",
+  HDF5Interface::read_dataset(hdf5_file_id, vector_dataset_name,
                               input_vector_range,
                               input_values);
 
@@ -1240,5 +1260,56 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
   return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
+void HDF5File::set_attribute(const std::string dataset_name,
+                             const std::string attribute_name,
+                             const double attribute_value)
+{
+  dolfin_assert(hdf5_file_open);
+  
+  if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
+  {
+    dolfin_error("HDF5File.cpp", 
+                 "set attribute on dataset",
+                 "Dataset does not exist");
+  }
+  
+  if(HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
+                                  attribute_name))
+  {
+    HDF5Interface::delete_attribute(hdf5_file_id, dataset_name, 
+                                    attribute_name);
+  }
+  
+  HDF5Interface::add_attribute(hdf5_file_id, dataset_name, 
+                               attribute_name, attribute_value);
+  
+}
+//-----------------------------------------------------------------------------
+double HDF5File::attribute(const std::string dataset_name,
+                           const std::string attribute_name)
+{
+  dolfin_assert(hdf5_file_open);
+  
+  if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
+  {
+    dolfin_error("HDF5File.cpp", 
+                 "get attribute of dataset",
+                 "Dataset does not exist");
+  }
+  
+  if(!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
+                                  attribute_name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "get attribute of dataset",
+                 "Attribute does not exist");
+  }
+
+  double attribute_value;
+  HDF5Interface::get_attribute(hdf5_file_id, dataset_name, 
+                               attribute_name, attribute_value);
+  return attribute_value;
+}
+
 
 #endif

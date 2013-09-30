@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-05-13
+// Last Changed: 2013-09-30
 
 #include <boost/filesystem.hpp>
 
@@ -155,7 +155,16 @@ bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {
-  return has_dataset(hdf5_file_handle, group_name);
+  hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
+  htri_t status = H5Lexists(hdf5_file_handle, group_name.c_str(), lapl_id);
+  dolfin_assert(status >= 0);
+  if(status==0)
+    return false;
+
+  H5O_info_t object_info;
+  H5Oget_info_by_name(hdf5_file_handle, group_name.c_str(), &object_info, lapl_id);
+  
+  return (object_info.type == H5O_TYPE_GROUP);
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
