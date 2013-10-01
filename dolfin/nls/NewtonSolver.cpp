@@ -121,8 +121,12 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
 
   _solver->parameters("preconditioner")["same_nonzero_pattern"] = true;
+  _solver->parameters("preconditioner")["reuse"] = false;
+  std::cout << "*** Forming here" << std::endl;
   nonlinear_problem.form(*_A, *_b, x);
+  std::cout << "*** End Forming here" << std::endl;
   _solver->set_operator(_A);
+  std::cout << "*** End set operator" << std::endl;
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
@@ -134,13 +138,13 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // Trilinos wrappers
     //_solver->set_operator(_A);
 
-    _solver->parameters("preconditioner")["reuse"] = true;
-
     // Perform linear solve and update total number of Krylov
     // iterations
     if (!_dx->empty())
       _dx->zero();
     krylov_iterations += _solver->solve(*_dx, *_b);
+
+    _solver->parameters("preconditioner")["reuse"] = true;
 
     // Update solution
     const double relaxation = parameters["relaxation_parameter"];
@@ -153,6 +157,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     //        this has converged.
     // Compute F
     nonlinear_problem.form(*_A, *_b, x);
+
     nonlinear_problem.F(*_b, x);
 
     // Test for convergence
