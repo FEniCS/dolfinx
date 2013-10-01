@@ -331,8 +331,11 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     set_petsc_options();
 
     // Set operators
-    set_petsc_operators();
+    //set_petsc_operators();
   }
+
+  // Set operators
+  set_petsc_operators();
 
   // Set (approxinate) null space for preconditioner
   if (_preconditioner)

@@ -120,6 +120,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                  convergence_criterion.c_str());
   }
 
+  _solver->parameters("preconditioner")["same_nonzero_pattern"] = true;
   nonlinear_problem.form(*_A, *_b, x);
   _solver->set_operator(_A);
 
@@ -132,6 +133,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // FIXME: This reset is a hack to handle a deficiency in the
     // Trilinos wrappers
     //_solver->set_operator(_A);
+
+    _solver->parameters("preconditioner")["reuse"] = true;
 
     // Perform linear solve and update total number of Krylov
     // iterations
