@@ -257,8 +257,8 @@ else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
 endif()
 
-# Check for required package Armadillo
-find_package(Armadillo 2.4.2 REQUIRED)
+# Check for required package Eigen3
+find_package(Eigen3 3.0.0 REQUIRED)
 
 # Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
@@ -693,7 +693,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   message(STATUS "Generating form files in demo, test, bench and dolfin directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files 
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
     RESULT_VARIABLE FORM_GENERATION_RESULT
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
@@ -720,7 +720,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
   message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
   message(STATUS "-------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles 
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
     RESULT_VARIABLE CMAKE_GENERATION_RESULT
     OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
@@ -747,7 +747,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml
   message(STATUS "Download demo and test data. May take some time...")
   message(STATUS "--------------------------------------------------")
   execute_process(
-    COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data 
+    COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
     RESULT_VARIABLE DOWNLOAD_DEMO_DATA_RESULT
     OUTPUT_VARIABLE DOWNLOAD_DEMO_DATA_OUTPUT
@@ -764,7 +764,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
 endif()
 
-# If data have been generated or downloaded in the demo/bench/test direcories 
+# If data have been generated or downloaded in the demo/bench/test direcories
 # we need to copy them to the build directories
 # FIXME: We should probably just generate them directly in the build directory...
 if (COPY_DEMO_TEST_DEMO_DATA)
