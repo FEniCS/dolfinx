@@ -257,8 +257,8 @@ else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
 endif()
 
-# Check for required package Armadillo
-find_package(Armadillo 2.4.2 REQUIRED)
+# Check for required package Eigen3
+find_package(Eigen3 3.0.0 REQUIRED)
 
 # Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
@@ -688,12 +688,12 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 # FIXME: Generate files in Build directory instead, at least for bench, demo and tests
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   message(STATUS "")
   message(STATUS "Generating form files in demo, test, bench and dolfin directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files 
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
     RESULT_VARIABLE FORM_GENERATION_RESULT
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
@@ -702,8 +702,8 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
   if (FORM_GENERATION_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     endif()
 
     message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
@@ -715,12 +715,12 @@ endif()
 # Generate CMakeLists.txt files for tests, bench and demos if not exists
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
   message(STATUS "")
   message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
   message(STATUS "-------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles 
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
     RESULT_VARIABLE CMAKE_GENERATION_RESULT
     OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
@@ -729,8 +729,8 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
   if (CMAKE_GENERATION_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
     endif()
     message(FATAL_ERROR "Generation of CMakeLists.txt files failed: \n${CMAKE_GENERATION_OUTPUT}")
   endif()
@@ -741,13 +741,13 @@ endif()
 #------------------------------------------------------------------------------
 # Check if data is downloaded
 
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
   # FIXME: What if we do not have internet connection
   message(STATUS "")
   message(STATUS "Download demo and test data. May take some time...")
   message(STATUS "--------------------------------------------------")
   execute_process(
-    COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data 
+    COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
     RESULT_VARIABLE DOWNLOAD_DEMO_DATA_RESULT
     OUTPUT_VARIABLE DOWNLOAD_DEMO_DATA_OUTPUT
@@ -756,15 +756,15 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
   if (DOWNLOAD_DEMO_DATA_RESULT)
 
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
     endif()
     message(WARNING "Download failed: \n${DOWNLOAD_DEMO_DATA_OUTPUT}")
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
 endif()
 
-# If data have been generated or downloaded in the demo/bench/test direcories 
+# If data have been generated or downloaded in the demo/bench/test direcories
 # we need to copy them to the build directories
 # FIXME: We should probably just generate them directly in the build directory...
 if (COPY_DEMO_TEST_DEMO_DATA)

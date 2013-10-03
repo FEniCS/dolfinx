@@ -84,8 +84,9 @@ NewtonSolver::~NewtonSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
-                                                  GenericVector& x)
+std::pair<std::size_t, bool>
+NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
+                    GenericVector& x)
 {
   dolfin_assert(_A);
   dolfin_assert(_b);
@@ -107,15 +108,16 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     newton_converged = converged(*_b, nonlinear_problem);
   else if (convergence_criterion == "incremental")
   {
-    // We need to do at least one Newton step
-    // with the ||dx||-stopping criterion.
+    // We need to do at least one Newton step with the ||dx||-stopping
+    // criterion.
     newton_converged = false;
   }
   else
   {
     dolfin_error("NewtonSolver.cpp",
                  "check for convergence",
-                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
+                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
+                 convergence_criterion.c_str());
   }
 
   nonlinear_problem.form(*_A, *_b, x);
@@ -126,10 +128,12 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     // Compute Jacobian
     nonlinear_problem.J(*_A, x);
 
-    // FIXME: This reset is a hack to handle a deficiency in the Trilinos wrappers
+    // FIXME: This reset is a hack to handle a deficiency in the
+    // Trilinos wrappers
     _solver->set_operator(_A);
 
-    // Perform linear solve and update total number of Krylov iterations
+    // Perform linear solve and update total number of Krylov
+    // iterations
     if (!_dx->empty())
       _dx->zero();
     krylov_iterations += _solver->solve(*_dx, *_b);
@@ -163,7 +167,8 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     else
       dolfin_error("NewtonSolver.cpp",
                    "check for convergence",
-                   "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
+                   "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
+                   convergence_criterion.c_str());
   }
 
   if (newton_converged)

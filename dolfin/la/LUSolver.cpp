@@ -93,7 +93,7 @@ std::size_t LUSolver::solve_transpose(const GenericLinearOperator& A,
 {
   dolfin_assert(solver);
 
-  Timer timer("LU solver");
+  Timer timer("LU solver (transpose version)");
   solver->parameters.update(parameters);
   return solver->solve_transpose(A, x, b);
 }
