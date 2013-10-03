@@ -20,7 +20,7 @@
 // First added:  2010-09-16
 // Last changed: 2011-03-23
 
-#include <armadillo>
+#include <Eigen/Dense>
 #include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/NoDeleter.h>
@@ -288,9 +288,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   // Define matrices for cell-residual problems
   dolfin_assert(V.element());
   const std::size_t N = V.element()->space_dimension();
-  arma::mat A(N, N);
-  arma::mat b(N, 1);
-  arma::vec x(N);
+  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::VectorXd x(N);
 
   // Extract cell_domains etc from right-hand side form
   const MeshFunction<std::size_t>*
@@ -310,14 +309,14 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
                              exterior_facet_domains, interior_facet_domains);
 
     // Solve linear system and convert result
-    x = arma::solve(A, b);
+    x = A.partialPivLu().solve(b);
 
     // Get local-to-global dof map for cell
     const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     dolfin_assert(R_T.vector());
-    R_T.vector()->set(x.memptr(), N, &dofs[0]);
+    R_T.vector()->set(x.data(), N, &dofs[0]);
   }
   end();
 }
@@ -365,9 +364,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for facet-residual problems
-  arma::mat A(N, N);
-  arma::mat b(N, 1);
-  arma::vec x(N);
+  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::VectorXd x(N);
 
   // Variables to be used for the construction of the cone function
   const std::size_t num_cells = mesh.num_cells();
@@ -428,14 +426,15 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       }
 
       // Solve linear system and convert result
-      x = arma::solve(A, b);
+      x = A.partialPivLu().solve(b);
 
       // Get local-to-global dof map for cell
-      const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+      const std::vector<dolfin::la_index>& dofs
+        = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       dolfin_assert(R_dT[local_facet].vector());
-      R_dT[local_facet].vector()->set(x.memptr(), N, &dofs[0]);
+      R_dT[local_facet].vector()->set(x.data(), N, &dofs[0]);
     }
   }
   end();
