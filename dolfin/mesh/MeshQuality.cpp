@@ -71,7 +71,11 @@ MeshQuality::radius_ratio_histogram_data(const Mesh& mesh,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const double ratio = cell->radius_ratio();
-    const std::size_t slot = ratio/interval;
+
+    // Compute 'bin' index, and handle special case that ratio = 1.0
+    const std::size_t slot
+      = std::min(static_cast<std::size_t>(ratio/interval), num_bins -1);
+
     values[slot] += 1.0;
   }
 
