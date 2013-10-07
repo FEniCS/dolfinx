@@ -48,7 +48,8 @@ namespace dolfin
     GlobalSort(const std::vector<std::size_t>& local_to_global_vertex_indices)
         : g(local_to_global_vertex_indices) {}
 
-    bool operator() (const std::size_t& l, const std::size_t& r) { return g[l] < g[r]; }
+    bool operator() (const std::size_t& l, const std::size_t& r)
+    { return g[l] < g[r]; }
 
     const std::vector<std::size_t>& g;
 
@@ -133,8 +134,8 @@ std::string CellType::type2string(Type type)
   return "";
 }
 //-----------------------------------------------------------------------------
-bool CellType::ordered(const Cell& cell,
-                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
+bool CellType::ordered(const Cell& cell, const std::vector<std::size_t>&
+                       local_to_global_vertex_indices) const
 {
   // Get mesh topology
   const MeshTopology& topology = cell.mesh().topology();
@@ -189,19 +190,23 @@ bool CellType::ordered(const Cell& cell,
 }
 //-----------------------------------------------------------------------------
 void CellType::sort_entities(std::size_t num_vertices,
-                            unsigned int* local_vertices,
-                       const std::vector<std::size_t>& local_to_global_vertex_indices)
+                             unsigned int* local_vertices,
+                             const std::vector<std::size_t>&
+                             local_to_global_vertex_indices)
 {
-  // Two cases here, either sort vertices directly (when running in serial)
-  // or sort based on the global indices (when running in parallel)
+  // Two cases here, either sort vertices directly (when running in
+  // serial) or sort based on the global indices (when running in
+  // parallel)
 
-    // Sort on global vertex indices
-    GlobalSort global_sort(local_to_global_vertex_indices);
-    std::sort(local_vertices, local_vertices + num_vertices, global_sort);
+  // Sort on global vertex indices
+  GlobalSort global_sort(local_to_global_vertex_indices);
+  std::sort(local_vertices, local_vertices + num_vertices, global_sort);
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(std::size_t num_vertices, const unsigned int* local_vertices,
-                       const std::vector<std::size_t>& local_to_global_vertex_indices)
+bool CellType::increasing(std::size_t num_vertices,
+                          const unsigned int* local_vertices,
+                          const std::vector<std::size_t>&
+                          local_to_global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
   // or check based on the global indices (when running in parallel)
@@ -214,7 +219,8 @@ bool CellType::increasing(std::size_t num_vertices, const unsigned int* local_ve
 //-----------------------------------------------------------------------------
 bool CellType::increasing(std::size_t n0, const unsigned int* v0,
                           std::size_t n1, const unsigned int* v1,
-                          std::size_t num_vertices, const unsigned int* local_vertices,
+                          std::size_t num_vertices,
+                          const unsigned int* local_vertices,
                const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   dolfin_assert(n0 == n1);
@@ -265,10 +271,16 @@ bool CellType::increasing(std::size_t n0, const unsigned int* v0,
   // Compare lexicographic ordering of w0 and w1
   for (std::size_t i = 0; i < num_non_incident; i++)
   {
-    if (local_to_global_vertex_indices[w0[i]] < local_to_global_vertex_indices[w1[i]])
+    if (local_to_global_vertex_indices[w0[i]]
+        < local_to_global_vertex_indices[w1[i]])
+    {
       return true;
-    else if (local_to_global_vertex_indices[w0[i]] > local_to_global_vertex_indices[w1[i]])
+    }
+    else if (local_to_global_vertex_indices[w0[i]]
+             > local_to_global_vertex_indices[w1[i]])
+    {
       return false;
+    }
   }
 
   return true;
@@ -283,9 +295,8 @@ std::size_t CellType::orientation(const Cell& cell, const Point& up) const
 double CellType::inradius(const Cell& cell) const
 {
   // Check cell type
-  if (_cell_type != interval &&
-      _cell_type != triangle &&
-      _cell_type != tetrahedron)
+  if (_cell_type != interval && _cell_type != triangle
+      && _cell_type != tetrahedron)
   {
     dolfin_error("Cell.h",
                  "compute cell inradius",
@@ -303,11 +314,8 @@ double CellType::inradius(const Cell& cell) const
 
   // Compute total area of facets
   double A = 0;
-  size_t i;
-  for (i = 0; i <= d; i++)
-  {
+  for (std::size_t i = 0; i <= d; i++)
     A += facet_area(cell, i);
-  }
 
   // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
   // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
@@ -319,8 +327,9 @@ double CellType::radius_ratio(const Cell& cell) const
   const double r = inradius(cell);
 
   // Handle degenerate case
-  if (r == 0.0) {return 0.0;}
-
-  return 2.0*dim()*r/diameter(cell);
+  if (r == 0.0)
+    return 0.0;
+  else
+    return 2.0*dim()*r/diameter(cell);
 }
 //-----------------------------------------------------------------------------
