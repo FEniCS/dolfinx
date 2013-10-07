@@ -53,8 +53,8 @@ tests = {
 
     "meshconvert":    ["test"],
     "mesh":           ["Cell", "Edge", "Face", "MeshColoring", \
-                           "MeshData", "MeshEditor", \
-                           "MeshFunction", "MeshIterator", "MeshMarkers",\
+                           "MeshData", "MeshEditor", "MeshFunction", \
+                           "MeshIterator", "MeshMarkers", "MeshQuality", \
                            "MeshValueCollection", "BoundaryMesh", "Mesh", \
                            "SubMesh"],
     "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
