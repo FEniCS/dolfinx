@@ -56,7 +56,9 @@ class SubDomainTester(unittest.TestCase):
                             AutoSubDomain(\
                                 lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
                            (CompiledSubDomain("near(x[0], a)", a = 0.0),
-                            CompiledSubDomain("near(x[0], a)", a = 1.0))]
+                            CompiledSubDomain("near(x[0], a)", a = 1.0)),
+                           (CompiledSubDomain("near(x[0], 0.0)"),
+                            CompiledSubDomain("near(x[0], 1.0)"))]
         
         for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
             dim = ind+1

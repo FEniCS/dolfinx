@@ -23,7 +23,7 @@
 // First added:  2009-06-22
 // Last changed: 2013-08-01
 
-#include <armadillo>
+#include <Eigen/Dense>
 #include <boost/array.hpp>
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/GenericFunction.h>
@@ -815,27 +815,34 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
 {
   dolfin_assert(A);
   dolfin_assert(b);
+  dolfin_assert(global_dofs0.size() == global_dofs1.size());
 
-  // Wrap matrix and vector as Armadillo. Armadillo matrix storgae is
-  // column-major, so all operations are transposed.
-  arma::mat _A(A, global_dofs1.size(), global_dofs0.size(), false, true);
-  arma::rowvec _b(b, global_dofs0.size(), false, true);
+  // Wrap matrix and vector using Eigen
+  Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                           Eigen::RowMajor> >
+    _A(A, global_dofs0.size(), global_dofs1.size());
+  Eigen::Map<Eigen::VectorXd>
+    _b(b, global_dofs1.size());
 
   // Loop over rows
-  for (std::size_t i = 0; i < _A.n_rows; ++i)
+  //for (std::size_t i = 0; i < _A.n_rows; ++i)
+  for (int i = 0; i < _A.cols(); ++i)
   {
     const std::size_t ii = global_dofs1[i];
     DirichletBC::Map::const_iterator bc_value = boundary_values.find(ii);
     if (bc_value != boundary_values.end())
     {
       // Zero row
-      _A.unsafe_col(i).fill(0.0);
+      //_A.unsafe_col(i).fill(0.0);
+      _A.row(i).setZero();
 
       // Modify RHS (subtract (bc_column(A))*bc_val from b)
-      _b -= _A.row(i)*bc_value->second;
+      //_b -= _A.row(i)*bc_value->second;
+      _b -= _A.col(i)*bc_value->second;
 
       // Zero column
-      _A.row(i).fill(0.0);
+      //_A.row(i).fill(0.0);
+      _A.col(i).setZero();
 
       // Place 1 on diagonal and bc on RHS (i th row ).
       _b(i)    = bc_value->second;
