@@ -326,13 +326,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Set some PETSc-specific options
-  if (!preconditioner_set)
-  {
-    set_petsc_options();
-
-    // Set operators
-    //set_petsc_operators();
-  }
+  set_petsc_ksp_options();
 
   // Set operators
   set_petsc_operators();
@@ -542,33 +536,37 @@ void PETScKrylovSolver::set_petsc_operators()
   dolfin_assert(_A);
   dolfin_assert(_P);
 
-  // Get some parameters
-  const bool reuse_precon = parameters("preconditioner")["reuse"];
-  const bool same_pattern
-    = parameters("preconditioner")["same_nonzero_pattern"];
-
-  PetscErrorCode ierr;
+  // Get parameter
+  const std::string mat_structure = parameters("preconditioner")["structure"];
 
   // Set operators with appropriate option
-  if (reuse_precon)
+  PetscErrorCode ierr;
+  if (mat_structure == "same")
   {
     ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(), SAME_PRECONDITIONER);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
-  else if (same_pattern)
+  else if (mat_structure == "same_nonzero_pattern")
   {
     ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(), SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
-  else
+  else if (mat_structure == "different_nonzero_pattern")
   {
     ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(),
                            DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
+  else
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "set PETSc Krylov solver operators",
+                 "Preconditioner re-use paramrter \"%s \" is unknown",
+                 mat_structure.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_petsc_options()
+void PETScKrylovSolver::set_petsc_ksp_options()
 {
   PetscErrorCode ierr;
 

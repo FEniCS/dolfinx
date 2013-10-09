@@ -50,7 +50,6 @@ Parameters NewtonSolver::default_parameters()
   p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
-
   //p.add("reuse_preconditioner", false);
 
   return p;
@@ -120,13 +119,11 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                  convergence_criterion.c_str());
   }
 
-  _solver->parameters("preconditioner")["same_nonzero_pattern"] = true;
-  _solver->parameters("preconditioner")["reuse"] = false;
-  std::cout << "*** Forming here" << std::endl;
   nonlinear_problem.form(*_A, *_b, x);
-  std::cout << "*** End Forming here" << std::endl;
   _solver->set_operator(_A);
-  std::cout << "*** End set operator" << std::endl;
+
+  // Get relaxation parameter
+  const double relaxation = parameters["relaxation_parameter"];
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
@@ -136,7 +133,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
     // FIXME: This reset is a hack to handle a deficiency in the
     // Trilinos wrappers
-    //_solver->set_operator(_A);
+    _solver->set_operator(_A);
 
     // Perform linear solve and update total number of Krylov
     // iterations
@@ -144,10 +141,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
       _dx->zero();
     krylov_iterations += _solver->solve(*_dx, *_b);
 
-    _solver->parameters("preconditioner")["reuse"] = true;
-
     // Update solution
-    const double relaxation = parameters["relaxation_parameter"];
     if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
       x -= (*_dx);
     else
@@ -157,7 +151,6 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     //        this has converged.
     // Compute F
     nonlinear_problem.form(*_A, *_b, x);
-
     nonlinear_problem.F(*_b, x);
 
     // Test for convergence
