@@ -24,7 +24,7 @@ find_library(PASTIX_LIBRARY pastix
 
 set(PASTIX_LIBRARIES ${PASTIX_LIBRARY})
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND NOT APPLE)
   # Check for rt library
   find_library(RT_LIBRARY rt
     DOC "The RT library"
