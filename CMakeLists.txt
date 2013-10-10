@@ -45,20 +45,8 @@ option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 
-#option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
-
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
-
-# FIXME: Discuss which should be enabled by default
-# FIXME: AL: I suggest only the Python wrappers
-# FIXME: GNW: That would lead to most demos failing (no LU solver)
-# FIXME: GNW: I suggest enabling everything, but using QUIET to eliminate
-#             excessive output
-# FIXME: JR: What about adopting the way they do this in Trilinos? Then we
-#            could have options like DOLFIN_ENABLE_ALL_PACKAGES for enabling
-#            everything and DOLFIN_ENABLE_DEFAULT_PACKAGES for enabling only
-#            some default packages.
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
@@ -531,10 +519,10 @@ if (PYTHONINTERP_FOUND)
       set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))")
     endif()
 
+    # Probe Python interpreter
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "${PYTHON_LIB_DISCOVER_STR}"
       OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_MODULE_DIR
       )
-    # Strip off CMAKE_INSTALL_PREFIX (is added later by CMake)
     set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
       CACHE PATH "Python extension module installation directory.")
   endif()
@@ -549,10 +537,10 @@ if (PYTHONINTERP_FOUND)
       set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))")
     endif()
 
+    # Probe Pyton interpreter
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "${PYTHON_LIB_DISCOVER_STR}"
       OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
       )
-
     set(DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
       CACHE PATH "Python module installation directory.")
   endif()
