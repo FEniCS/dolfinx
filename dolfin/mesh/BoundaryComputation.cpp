@@ -18,9 +18,10 @@
 // Modified by Johan Jansson 2006.
 // Modified by Ola Skavhaug 2006.
 // Modified by Niclas Jansson 2009.
+// Modified by Oeyvind Evju, 2013
 //
 // First added:  2006-06-21
-// Last changed: 2013-02-21
+// Last changed: 2013-10-08
 
 #include <dolfin/common/timing.h>
 
@@ -64,6 +65,8 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
                  "Unknown boundary type (%d)", type.c_str());
   }
 
+  const std::size_t this_process = MPI::process_number();
+
   // Open boundary mesh for editing
   const std::size_t D = mesh.topology().dim();
   MeshEditor editor;
@@ -72,14 +75,23 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   // Generate facet - cell connectivity if not generated
   mesh.init(D - 1, D);
 
-  // Temporary array for assignment of indices to vertices on the boundary
-  const std::size_t num_vertices = mesh.num_vertices();
-  std::vector<std::size_t> boundary_vertices(num_vertices, num_vertices);
+  // Temporary arrays for assignment of indices to vertices on the boundary
+  std::map<std::size_t, std::size_t> boundary_vertices;
+
+  // Map of index "owners" (process responsible for assigning global index)
+  std::map< std::size_t, std::size_t > global_index_owner;
+
+  // Shared vertices for full mesh
+  // FIXME: const_cast
+  const std::map<unsigned int, std::set<unsigned int> > &
+    shared_vertices = const_cast<Mesh&>(mesh).topology().shared_entities(0);
 
   // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices
   std::size_t num_boundary_vertices = 0;
+  std::size_t num_owned_vertices = 0;
   std::size_t num_boundary_cells = 0;
+
   MeshFunction<bool> boundary_facet(mesh, D - 1, false);
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
@@ -97,9 +109,37 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
         // Count boundary vertices and assign indices
         for (VertexIterator v(*f); !v.end(); ++v)
         {
-          const std::size_t vertex_index = v->index();
-          if (boundary_vertices[vertex_index] == num_vertices)
-            boundary_vertices[vertex_index] = num_boundary_vertices++;
+          const std::size_t local_mesh_index = v->index();
+
+          if (boundary_vertices.find(local_mesh_index) == boundary_vertices.end())
+          {
+            const std::size_t local_boundary_index = num_boundary_vertices;
+            boundary_vertices[local_mesh_index] = local_boundary_index;
+
+            // Determine "owner" of global_mesh_index
+            std::size_t owner = this_process;
+
+            std::map<unsigned int, std::set<unsigned int> >::const_iterator
+              other_processes_it = shared_vertices.find(local_mesh_index);
+
+            if (other_processes_it != shared_vertices.end() && D > 1)
+            {
+              const std::set<unsigned int> &other_processes = other_processes_it->second;
+              const std::size_t min_process = *std::min_element(other_processes.begin(), other_processes.end());
+              boundary.topology().shared_entities(0)[local_boundary_index] = other_processes;
+
+              // FIXME: More sophisticated ownership determination
+              if (min_process < owner)
+                owner = min_process;
+            }
+            const std::size_t global_mesh_index = mesh.topology().global_indices(0)[local_mesh_index];
+            global_index_owner[global_mesh_index] = owner;
+
+            // Update counts
+            if (owner == this_process)
+              num_owned_vertices++;
+            num_boundary_vertices++;
+          }
         }
 
         // Count boundary cells (facets of the mesh)
@@ -108,28 +148,97 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
     }
   }
 
+  // Initiate boundary topology 
+  boundary.topology().init_global(0, MPI::sum(num_owned_vertices));
+  boundary.topology().init_global(D-1, MPI::sum(num_boundary_cells));
+
   // Specify number of vertices and cells
   editor.init_vertices(num_boundary_vertices);
   editor.init_cells(num_boundary_cells);
 
-  // Create vertices and vertex-vertex map between boundary and parent
+  // Write vertex map
   MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
   if (num_boundary_vertices > 0)
     vertex_map.init(boundary, 0, num_boundary_vertices);
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    const std::size_t vertex_index = boundary_vertices[v->index()];
-    if (vertex_index != mesh.num_vertices())
-    {
-      // Create mapping from boundary vertex to mesh vertex if requested
-      if (!vertex_map.empty())
-        vertex_map[vertex_index] = v->index();
+  std::map<std::size_t, std::size_t>::const_iterator it;
+  for (it=boundary_vertices.begin(); it != boundary_vertices.end(); ++it)
+    vertex_map[it->second] = it->first;
 
-      // Add vertex
-      // FIXME: Get global vertex index
-      editor.add_vertex(vertex_index, v->point());
+  // Get vertex ownership distribution, and find index to start global numbering from
+  std::vector<std::size_t> ownership_distribution(MPI::num_processes());
+  MPI::all_gather(num_owned_vertices, ownership_distribution);
+  std::size_t start_index = 0;
+  for (std::size_t j=0; j<MPI::process_number(); j++)
+    start_index += ownership_distribution[j];
+
+  // Set global indices of owned vertices, request global indices for vertices owned elsewhere
+  std::map<std::size_t, std::size_t> global_indices;
+  std::vector< std::vector<std::size_t> > request_global_indices(MPI::num_processes());
+
+  std::size_t current_index = start_index;
+  for (std::size_t local_boundary_index=0; local_boundary_index<num_boundary_vertices; local_boundary_index++)
+  {
+    const std::size_t local_mesh_index = vertex_map[local_boundary_index];
+    const std::size_t global_mesh_index = mesh.topology().global_indices(0)[local_mesh_index];
+
+    const std::size_t owner = global_index_owner[global_mesh_index];
+    if (owner != this_process)
+      request_global_indices[owner].push_back(global_mesh_index);
+    else
+      global_indices[global_mesh_index] = current_index++;
+  }
+
+  // Send and receive requests from other processes
+  std::vector< std::vector<std::size_t> > global_index_requests(MPI::num_processes());
+  MPI::all_to_all(request_global_indices, global_index_requests);
+
+  // Find response to requests of global indices
+  std::vector< std::vector<std::size_t> > respond_global_indices(MPI::num_processes());  
+  for (std::size_t i=0; i<MPI::num_processes(); i++)
+  {
+    const std::size_t N = global_index_requests[i].size();
+    respond_global_indices[i].resize(N);
+
+    for (std::size_t j=0; j < N; j++)
+      respond_global_indices[i][j] = global_indices[global_index_requests[i][j]];  
+  }
+
+  // Scatter responses back to requesting processes  
+  std::vector< std::vector<std::size_t> > global_index_responses(MPI::num_processes());
+  MPI::all_to_all(respond_global_indices, global_index_responses);
+
+  // Update global_indices
+  for (std::size_t i=0; i<MPI::num_processes(); i++)
+  {
+    const std::size_t N = global_index_responses[i].size();
+    // Check that responses are the same size as the requests made
+    dolfin_assert(global_index_responses[i].size() == request_global_indices[i].size());
+    for (std::size_t j=0; j<N; j++)
+    {
+      const std::size_t global_mesh_index = request_global_indices[i][j];
+      const std::size_t global_boundary_index = global_index_responses[i][j];
+      global_indices[global_mesh_index] = global_boundary_index;
     }
   }
+
+  // Create vertices
+  for (std::size_t local_boundary_index=0; local_boundary_index < num_boundary_vertices; local_boundary_index++)
+  {
+    const std::size_t local_mesh_index = vertex_map[local_boundary_index];
+    const std::size_t global_mesh_index = mesh.topology().global_indices(0)[local_mesh_index];
+    const std::size_t global_boundary_index = global_indices[global_mesh_index];
+
+    Vertex v(mesh, local_mesh_index);
+
+    editor.add_vertex_global(local_boundary_index, global_boundary_index, v.point());
+  }
+
+  // Find global index to start cell numbering from for current process
+  std::vector<std::size_t> cell_distribution(MPI::num_processes());
+  MPI::all_gather(num_boundary_cells, cell_distribution);
+  std::size_t start_cell_index = 0;
+  for (std::size_t i=0; i<MPI::process_number(); i++)
+    start_cell_index += cell_distribution[i];
 
   // Create cells (facets) and map between boundary mesh cells and facets parent
   MeshFunction<std::size_t>& cell_map = boundary.entity_map(D - 1);
@@ -154,7 +263,8 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
         cell_map[current_cell] = f->index();
 
       // Add cell
-      editor.add_cell(current_cell++, cell);
+      editor.add_cell(current_cell, start_cell_index+current_cell, cell);
+      current_cell++;
     }
   }
 
@@ -162,6 +272,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   // ordering from destroying the orientation of facets accomplished
   // by calling reorder() below.
   editor.close(false);
+
 }
 //-----------------------------------------------------------------------------
 void BoundaryComputation::reorder(std::vector<std::size_t>& vertices,
