@@ -270,16 +270,6 @@ if MPI.num_processes() == 1:
             self.assertAlmostEqual(self.mesh3d.rmin(), 0.0)
             self.assertAlmostEqual(self.mesh3d.rmax(), sqrt(3.0)/6.0)
 
-        def test_radius_ratio_min_radius_ratio_max(self):
-            self.assertAlmostEqual(self.mesh1d.radius_ratio_min(), 0.0)
-            self.assertAlmostEqual(self.mesh1d.radius_ratio_max(), 1.0)
-            self.assertAlmostEqual(self.mesh2d.radius_ratio_min(),
-                                     2.0*sqrt(2.0)/(2.0+sqrt(2.0)) )
-            self.assertAlmostEqual(self.mesh2d.radius_ratio_max(), 1.0)
-            self.assertAlmostEqual(self.mesh3d.radius_ratio_min(), 0.0)
-            self.assertAlmostEqual(self.mesh3d.radius_ratio_max(), 1.0)
-
-
 class MeshOrientations(unittest.TestCase):
 
     def setUp(self):
