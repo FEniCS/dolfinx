@@ -186,8 +186,6 @@ if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${MPI_CXX_INCLUDE_PATH})
   set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 
-  # FIXME: Is this linker flag required?
-  #list(APPEND DOLFIN_LINK_FLAGS ${MPI_CXX_LINK_FLAGS})
 endif()
 
 # OpenMP
@@ -422,6 +420,7 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config-version.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
+
 install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
