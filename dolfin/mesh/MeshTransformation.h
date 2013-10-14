@@ -25,6 +25,7 @@ namespace dolfin
 {
 
    class Mesh;
+   class Point;
 
   /// This class implements various transformations of the coordinates
   /// of a mesh.
@@ -65,7 +66,8 @@ namespace dolfin
     ///         The coordinate axis around which to rotate the mesh.
     ///     point (_Point_)
     ///         The point around which to rotate the mesh.
-    static void rotate(Mesh& mesh, double angle, std::size_t axis, const Point& p);
+    static void rotate(Mesh& mesh, double angle, std::size_t axis,
+                       const Point& p);
 
   };
 

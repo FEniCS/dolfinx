@@ -36,5 +36,6 @@
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
+#include <dolfin/mesh/MeshQuality.h>
 
 #endif

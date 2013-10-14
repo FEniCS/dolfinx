@@ -444,26 +444,6 @@ double Mesh::rmax() const
   return r;
 }
 //-----------------------------------------------------------------------------
-double Mesh::radius_ratio_min() const
-{
-  CellIterator cell(*this);
-  double q = cell->radius_ratio();
-  for (; !cell.end(); ++cell)
-    q = std::min(q, cell->radius_ratio());
-
-  return q;
-}
-//-----------------------------------------------------------------------------
-double Mesh::radius_ratio_max() const
-{
-  CellIterator cell(*this);
-  double q = cell->radius_ratio();
-  for (; !cell.end(); ++cell)
-    q = std::max(q, cell->radius_ratio());
-
-  return q;
-}
-//-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const
 {
   // Compute hash based on the Cantor pairing function

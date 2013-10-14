@@ -82,7 +82,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
                                 const Point& p)
 {
   // Compute angle (radians)
-  const double theta = angle / 180.0 * DOLFIN_PI;
+  const double theta = angle/180.0*DOLFIN_PI;
 
   // Get coordinates of point
   const double* c = p.coordinates();
@@ -101,7 +101,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
 
     // Set up rotation matrix
     const double S00 = cos(theta); const double S01 = -sin(theta);
-    const double S10 = sin(theta); const double S11 = cos(theta);
+    const double S10 = sin(theta); const double S11 =  cos(theta);
 
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
@@ -127,7 +127,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
   {
     // Set up 2D rotation matrix
     const double S00 = cos(theta); const double S01 = -sin(theta);
-    const double S10 = sin(theta); const double S11 = cos(theta);
+    const double S10 = sin(theta); const double S11 =  cos(theta);
 
     // Initialize 3D rotation matrix to identity matrix
     double R00 = 1.0; double R01 = 0.0; double R02 = 0.0;
