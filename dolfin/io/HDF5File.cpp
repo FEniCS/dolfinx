@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-09-30
+// Last changed: 2013-10-15
 
 #ifdef HAS_HDF5
 
@@ -71,6 +71,11 @@ HDF5File::HDF5File(const std::string filename, const std::string file_mode,
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
+{
+  close();
+}
+//-----------------------------------------------------------------------------
+void HDF5File::close()
 {
   // Close HDF5 file
   if (hdf5_file_open)
@@ -1139,7 +1144,6 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name) const
                  "Dataset \"%s\" not found", topology_name.c_str());
   }
 
-  // Look for Coordinates dataset - but not used
   const std::string coordinates_name = mesh_name + "/coordinates";
   if (!HDF5Interface::has_dataset(hdf5_file_id, coordinates_name))
   {
@@ -1148,7 +1152,6 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name) const
                  "Dataset \"%s\" not found", coordinates_name.c_str());
   }
 
-  // Structure to store local mesh
   LocalMeshData mesh_data;
   mesh_data.clear();
 
@@ -1285,8 +1288,8 @@ void HDF5File::set_attribute(const std::string dataset_name,
   
 }
 //-----------------------------------------------------------------------------
-double HDF5File::attribute(const std::string dataset_name,
-                           const std::string attribute_name)
+const double HDF5File::attribute(const std::string dataset_name,
+                                 const std::string attribute_name) const
 {
   dolfin_assert(hdf5_file_open);
   
@@ -1311,5 +1314,31 @@ double HDF5File::attribute(const std::string dataset_name,
   return attribute_value;
 }
 
+//---------------------------------------------------------------------------
+template <typename T>
+void HDF5File::write_data(const std::string dataset_name,
+                          const std::vector<T>& data,
+                          const std::vector<std::size_t> global_size)
+{
+  dolfin_assert(hdf5_file_open);
+  dolfin_assert(global_size.size() > 0);
+  
+  // Get number of 'items'
+  std::size_t num_local_items = 1;
+  for (std::size_t i = 1; i < global_size.size(); ++i)
+    num_local_items *= global_size[i];
+  num_local_items = data.size()/num_local_items;
+  
+  // Compute offset
+  const std::size_t offset = MPI::global_offset(num_local_items, true);
+  std::pair<std::size_t, std::size_t> range(offset,
+                                            offset + num_local_items);
+  
+  // Write data to HDF5 file
+  const bool chunking = parameters["chunking"];
+  HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
+                               range, global_size, mpi_io, chunking);
+}
+//---------------------------------------------------------------------------
 
 #endif

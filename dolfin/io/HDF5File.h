@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-09-30
+// Last changed: 2013-10-15
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -47,13 +47,16 @@ namespace dolfin
   {
   public:
 
-    /// Constructor. file_mode should "a" (append), "w" (write) ot "r"
+    /// Constructor. file_mode should "a" (append), "w" (write) or "r"
     /// (read).
     HDF5File(const std::string filename, const std::string file_mode,
              bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();
+
+    /// Close file
+    void close();
 
     /// Write Vector to file in a format suitable for re-reading
     void write(const GenericVector& x, const std::string name);
@@ -137,14 +140,18 @@ namespace dolfin
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
 
-    /// Set an attribute on an existing dataset
+    /// Set a double attribute on an existing dataset
     void set_attribute(const std::string dataset_name,
                        const std::string attribute_name,
                        const double attribute_value);
 
-    /// Get an attribute of an existing dataset
-    double attribute(const std::string dataset_name,
-                     const std::string attribute_name);
+    /// Get a double attribute of an existing dataset
+    const double attribute(const std::string dataset_name,
+                           const std::string attribute_name) const;
+
+    /// Create a (hard) link to a dataset
+    void link(const std::string dataset_name,
+              const std::string link_name);
 
     /// Flush buffered I/O to disk
     void flush();
@@ -190,32 +197,6 @@ namespace dolfin
     const bool mpi_io;
   };
 
-  //---------------------------------------------------------------------------
-  template <typename T>
-  void HDF5File::write_data(const std::string dataset_name,
-                            const std::vector<T>& data,
-                            const std::vector<std::size_t> global_size)
-  {
-    dolfin_assert(hdf5_file_open);
-    dolfin_assert(global_size.size() > 0);
-
-    // Get number of 'items'
-    std::size_t num_local_items = 1;
-    for (std::size_t i = 1; i < global_size.size(); ++i)
-      num_local_items *= global_size[i];
-    num_local_items = data.size()/num_local_items;
-
-    // Compute offset
-    const std::size_t offset = MPI::global_offset(num_local_items, true);
-    std::pair<std::size_t, std::size_t> range(offset,
-                                              offset + num_local_items);
-
-    // Write data to HDF5 file
-    const bool chunking = parameters["chunking"];
-    HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
-                                 range, global_size, mpi_io, chunking);
-  }
-  //---------------------------------------------------------------------------
 
 }
 
