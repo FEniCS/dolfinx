@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Oeyvind Evju 2013
+#
 # First added:  2011-09-21
-# Last changed: 2011-09-21
+# Last changed: 2013-10-11
 
 import unittest
 from dolfin import *
@@ -47,6 +49,13 @@ class Interface(unittest.TestCase):
         self.assertEqual(V, V2)
         self.assertEqual(W, W)
         self.assertEqual(W, W2)
+        
+    def test_boundary(self):
+        bmesh = BoundaryMesh(mesh, "exterior")
+        Vb = FunctionSpace(bmesh, "DG", 0)
+        Wb = VectorFunctionSpace(bmesh, "CG", 1)
+        self.assertEqual(Vb.dim(), 768)
+        self.assertEqual(Wb.dim(), 1158)       
 
     def test_not_equal(self):
         self.assertNotEqual(W, V)

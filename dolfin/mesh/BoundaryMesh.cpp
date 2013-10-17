@@ -30,7 +30,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(const Mesh& mesh, std::string type, bool order) : Mesh()
+BoundaryMesh::BoundaryMesh(const Mesh& mesh, std::string type, bool order)
+  : Mesh()
 {
   // Create boundary mesh
   BoundaryComputation::compute_boundary(mesh, type, *this);

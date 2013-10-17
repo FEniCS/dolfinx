@@ -24,6 +24,8 @@
 #ifndef __EDGE_H
 #define __EDGE_H
 
+#include <boost/shared_ptr.hpp>
+
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
@@ -110,7 +112,13 @@ namespace dolfin
 
     EdgeFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 1) {}
 
+    EdgeFunction(boost::shared_ptr<const Mesh> mesh)
+      : MeshFunction<T>(mesh, 1) {}
+
     EdgeFunction(const Mesh& mesh, const T& value)
+      : MeshFunction<T>(mesh, 1, value) {}
+
+    EdgeFunction(boost::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, 1, value) {}
 
   };
