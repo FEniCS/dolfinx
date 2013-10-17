@@ -24,6 +24,7 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 
+#include <CGAL/version.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
@@ -31,6 +32,10 @@
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/make_mesh_3.h>
+
+#if CGAL_VERSION_NR >= 1040301000
+#include <CGAL/Compact_mesh_cell_base_3.h>
+#endif
 
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/Implicit_mesh_domain_3.h>
@@ -71,11 +76,17 @@ typedef CGAL::Mesh_vertex_base_3<Geom_traits, Mesh_domain,
                                  Tvb3> Vertex_base;
 
 // CGAL 3D triangulation cell typedefs
+#if CGAL_VERSION_NR >= 1040301000
+typedef CGAL::Compact_mesh_cell_base_3<Geom_traits, Mesh_domain> Cb;
+typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits,
+                                                  Cb> Cell_base;
+#else
 typedef CGAL::Triangulation_cell_base_3<Geom_traits> Tcb3_base;
 typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits,
                                             Tcb3_base> Tcb3;
 typedef CGAL::Mesh_cell_base_3<Geom_traits, Mesh_domain,
                                Tcb3> Cell_base;
+#endif
 
 // CGAL 3D triangulation typedefs
 typedef CGAL::Triangulation_data_structure_3<Vertex_base, Cell_base>
