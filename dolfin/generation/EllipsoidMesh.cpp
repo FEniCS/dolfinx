@@ -34,9 +34,10 @@ class EllipsoidSurface : public dolfin::ImplicitSurface
 {
 public:
 
-  EllipsoidSurface(Point center, std::vector<double> dim)
-    : ImplicitSurface(Sphere(center, *std::max_element(dim.begin(), dim.end()) ),
-                        "manifold"), _center(center), _dim(dim) {}
+  EllipsoidSurface(Point center, std::vector<double> dims)
+    : ImplicitSurface(Sphere(center, *std::max_element(dims.begin(),
+                                                       dims.end()) ),
+                      "manifold"), _center(center), _dims(dims) {}
 
   double operator()(const dolfin::Point& p) const
   {
@@ -44,27 +45,26 @@ public:
     for (int i = 0; i < 3; ++i)
     {
       const double x = p[i] - _center[i];
-      d += x*x/(_dim[i]*_dim[i]);
+      d += x*x/(_dims[i]*_dims[i]);
     }
     return d - 1.0;
   }
 
   const Point _center;
-  const std::vector<double> _dim;
+  const std::vector<double> _dims;
 };
 
 //-----------------------------------------------------------------------------
-EllipsoidMesh::EllipsoidMesh(Point center, std::vector<double> dim,
-                             std::size_t r)
+EllipsoidMesh::EllipsoidMesh(Point center, std::vector<double> ellipsoid_dims,
+                             double cell_size)
 {
   Timer timer("Generate ellipsoid mesh");
 
   // Create implicit representation of ellipsoid
-  EllipsoidSurface surface(center, dim);
+  EllipsoidSurface surface(center, ellipsoid_dims);
 
   // Generate mesh
   #ifdef HAS_CGAL
-  double cell_size = 1.0/static_cast<double>(r);
   ImplicitDomainMeshGenerator::generate(*this, surface, cell_size) ;
   #else
   dolfin_error("Generation of ellipsoid meshes requires DOLFIN to be configured with CGAL");

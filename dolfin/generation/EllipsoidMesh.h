@@ -29,13 +29,35 @@ namespace dolfin
 
   class Point;
 
-  /// Tetrahedral mesh an ellipsoid
+  /// Tetrahedral mesh an ellipsoid. CGAL is used to generate the
+  /// mesh.
+
+
 
   class EllipsoidMesh : public Mesh
   {
   public:
 
-    EllipsoidMesh(Point p, std::vector<double> dim, std::size_t r);
+    /// Create an unstructured _Mesh_ of an ellipsoid
+    ///
+    /// *Arguments*
+    ///     center (_Point))
+    ///         Center of the ellipsoid
+    ///     dims (std::vector<double>)
+    ///         Axes lengths
+    ///     cell_size (double)
+    ///         Cell size measure
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         // Create elliposid mesh
+    ///         std::vector<double> dims(3);
+    //          dims[0] = 1.0; dims[1] = 2.0; dims[2] = 1.5;
+    ///         EllipsoidMesh mesh(Point(1.0, 2.0, -1.0), dims, 0.2);
+    ///
+    EllipsoidMesh(Point p, std::vector<double> ellipsoid_dims,
+                  double cell_size);
 
   };
 
@@ -43,8 +65,25 @@ namespace dolfin
   {
   public:
 
-    SphereMesh(Point p, double dim, std::size_t r)
-      : EllipsoidMesh(p, std::vector<double>(3, dim), r) {}
+    /// Create an unstructured _Mesh_ of sphere
+    ///
+    /// *Arguments*
+    ///     center (_Point_)
+    ///         Center of the ellipsoid
+    ///     radius (double)
+    ///         Axes lengths
+    ///     cell_size (double)
+    ///         Cell size measure
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         // Create sphere with center (1.0, 2.0, -1.0) and
+    ///         // radius 3.0. Cell size is 0.2.
+    ///         SphereMesh mesh(Point(1.0, 2.0, -1.0), 3.0, 0.2);
+    ///
+    SphereMesh(Point p, double radius, double cell_size)
+      : EllipsoidMesh(p, std::vector<double>(3, radius), cell_size) {}
 
   };
 
