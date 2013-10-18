@@ -130,10 +130,10 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
   if (MPI::process_number() == 0)
   {
     // Mesh criteria
-    Mesh_criteria criteria(CGAL::parameters::edge_size =cell_size,
-                           CGAL::parameters::facet_angle = 30,
-                           CGAL::parameters::facet_size =cell_size,
-                           CGAL::parameters::cell_size = cell_size);
+    Mesh_criteria criteria(CGAL::parameters::edge_size=cell_size,
+                           CGAL::parameters::facet_angle=30,
+                           CGAL::parameters::facet_size=cell_size,
+                           CGAL::parameters::cell_size=cell_size);
 
     // Build CGAL mesh
     C3t3 c3t3 = build_cgal_triangulation<C3t3>(surface, criteria);
@@ -155,10 +155,10 @@ ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
   if (MPI::process_number() == 0)
   {
     // CGAL mesh paramters
-    Mesh_criteria criteria(CGAL::parameters::edge_size = cell_size,
-                           CGAL::parameters::facet_angle = 30,
-                           CGAL::parameters::facet_size = cell_size,
-                           CGAL::parameters::cell_size = 0.0);
+    Mesh_criteria criteria(CGAL::parameters::edge_size=cell_size,
+                           CGAL::parameters::facet_angle=30,
+                           CGAL::parameters::facet_size=cell_size,
+                           CGAL::parameters::cell_size=0.0);
 
     // Build CGAL mesh
     C3t3 c3t3 = build_cgal_triangulation<C3t3>(surface, criteria);

@@ -8,6 +8,7 @@
 #include <dolfin/generation/PolyhedralMeshGenerator.h>
 #include <dolfin/generation/Triangulate.h>
 #include <dolfin/generation/BoxMesh.h>
+#include <dolfin/generation/EllipsoidMesh.h>
 #include <dolfin/generation/IntervalMesh.h>
 #include <dolfin/generation/Interval.h>
 #include <dolfin/generation/RectangleMesh.h>

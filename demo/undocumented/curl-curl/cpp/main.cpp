@@ -82,8 +82,17 @@ int main()
   };
 
   // Create demo mesh
-  Sphere sphere(Point(0, 0, 0), 1.0);
-  Mesh mesh(sphere, 16);
+  //Sphere sphere(Point(0, 0, 0), 1.0);
+  //Mesh mesh(sphere, 16);
+  //std::vector<double> dim(3);
+  //dim[0] = 2.0; dim[1] = 1.0; dim[2] = 1.0;
+  //EllipsoidMesh mesh(Point(0.0, 0.0, 0.0), dim, 8);
+  SphereMesh mesh(Point(0.0, 0.0, 0.0), 1.0, 8);
+  plot(mesh);
+  interactive();
+
+  File file0("mesh.pvd");
+  file0 << mesh;
 
   // Define functions
   Source dbdt;
