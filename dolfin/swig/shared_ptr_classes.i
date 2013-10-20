@@ -117,6 +117,8 @@
 // mesh
 %shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
 %shared_ptr(dolfin::BoundaryMesh)
+%shared_ptr(dolfin::CircleMesh)
+%shared_ptr(dolfin::EllipseMesh)
 %shared_ptr(dolfin::EllipsoidMesh)
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::Restriction)

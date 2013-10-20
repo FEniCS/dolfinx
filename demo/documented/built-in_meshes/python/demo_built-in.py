@@ -26,7 +26,6 @@
 
 from dolfin import *
 
-
 mesh = UnitIntervalMesh(10)
 print "Plotting a UnitIntervalMesh"
 plot(mesh, title="Unit interval")
@@ -59,13 +58,17 @@ mesh = UnitCircleMesh(20, "right", "rotsumn")
 print "Plotting a UnitCircleMesh"
 plot(mesh, title="Unit circle (rotsum)")
 
-#mesh = UnitCircleMesh(20, "left", "sumn")
-#print "Plotting a UnitCircle"
-#plot(mesh, title="Unit circle (sumn)")
-
 mesh = UnitCircleMesh(20, "right", "maxn")
 print "Plotting a UnitCircleMesh"
 plot(mesh, title="Unit circle (maxn)")
+
+mesh = CircleMesh(Point(0, 0), 1.0, 0.2)
+print "Plotting a UnitCircleMesh"
+plot(mesh, title="Unit circle (maxn)")
+
+mesh = EllipseMesh(Point(0, 0), [3.0, 1.0], 0.2)
+print "Plotting a UnitCircleMesh"
+plot(mesh, title="Ellipse mesh")
 
 mesh = UnitCubeMesh(10, 10, 10)
 print "Plotting a UnitCubeMesh"

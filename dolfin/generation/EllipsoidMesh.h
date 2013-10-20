@@ -29,10 +29,8 @@ namespace dolfin
 
   class Point;
 
-  /// Tetrahedral mesh an ellipsoid. CGAL is used to generate the
+  /// Tetrahedral mesh of an ellipsoid. CGAL is used to generate the
   /// mesh.
-
-
 
   class EllipsoidMesh : public Mesh
   {
@@ -65,7 +63,7 @@ namespace dolfin
   {
   public:
 
-    /// Create an unstructured _Mesh_ of sphere
+    /// Create an unstructured _Mesh_ of a sphere
     ///
     /// *Arguments*
     ///     center (_Point_)
