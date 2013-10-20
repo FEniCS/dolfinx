@@ -6,7 +6,8 @@ Built-in meshes
 ====================
 
 This demo is implemented in a single Python file,
-:download:`demo_built-in.py`, and demonstrates use of the built-in meshes in DOLFIN.
+:download:`demo_built-in.py`, and demonstrates use of the built-in
+meshes in DOLFIN.
 
 .. include:: ../common.txt
 
@@ -17,20 +18,24 @@ First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
 
-	from dolfin import *
+   from dolfin import *
 
-The first mesh we make is a mesh over the unit interval :math:`(0,1)`. :py:class:`UnitIntervalMesh <dolfin.cpp.mesh.UnitIntervalMesh>` takes the number of intervals :math:`(n_x)` as input argument, and the total number of vertices is therefore :math:`(n_x+1)`.
+The first mesh we make is a mesh over the unit interval
+:math:`(0,1)`. :py:class:`UnitIntervalMesh
+<dolfin.cpp.mesh.UnitIntervalMesh>` takes the number of intervals
+:math:`(n_x)` as input argument, and the total number of vertices is
+therefore :math:`(n_x+1)`.
 
 .. code-block:: python
 
-	mesh = UnitIntervalMesh(10)
-	print "Plotting a UnitIntervalMesh"
-	plot(mesh, title="Unit interval")
+   mesh = UnitIntervalMesh(10)
+   print "Plotting a UnitIntervalMesh"
+   plot(mesh, title="Unit interval")
 
 This produces a mesh looking as follows:
 
 .. image:: unitintervalmesh.png
-	:scale: 75 %
+   :scale: 75 %
 
 We then make our first version of a mesh on the unit square
 :math:`[0,1] \times [0,1]`. We must give the number of cells in the
@@ -43,9 +48,9 @@ use the default direction "right".
 
 .. code-block:: python
 
-	mesh = UnitSquareMesh(10, 10)
-	print "Plotting a UnitSquareMesh"
-	plot(mesh, title="Unit square")
+   mesh = UnitSquareMesh(10, 10)
+   print "Plotting a UnitSquareMesh"
+   plot(mesh, title="Unit square")
 
 .. image:: unitsquaremesh.png
 	:scale: 75 %
@@ -56,26 +61,26 @@ has diagonals to both left and right:
 
 .. code-block:: python
 
-	mesh = UnitSquareMesh(10, 10, "left")
-	print "Plotting a UnitSquareMesh"
-	plot(mesh, title="Unit square (left)")
+   mesh = UnitSquareMesh(10, 10, "left")
+   print "Plotting a UnitSquareMesh"
+   plot(mesh, title="Unit square (left)")
 
-	mesh = UnitSquareMesh(10, 10, "crossed")
-	print "Plotting a UnitSquareMesh"
-	plot(mesh, title="Unit square (crossed)")
+   mesh = UnitSquareMesh(10, 10, "crossed")
+   print "Plotting a UnitSquareMesh"
+   plot(mesh, title="Unit square (crossed)")
 
-	mesh = UnitSquareMesh(10, 10, "right/left")
-	print "Plotting a UnitSquareMesh"
-	plot(mesh, title="Unit square (right/left)")
+   mesh = UnitSquareMesh(10, 10, "right/left")
+   print "Plotting a UnitSquareMesh"
+   plot(mesh, title="Unit square (right/left)")
 
 .. image:: unitsquaremesh_left.png
-	:scale: 65 %
+   :scale: 65 %
 
 .. image:: unitsquaremesh_crossed.png
-	:scale: 65 %
+   :scale: 65 %
 
 .. image:: unitsquaremesh_left_right.png
-	:scale: 65 %
+   :scale: 65 %
 
 The class :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>` (
 :math:`x_0,y_0,x_1,y_1,n_x,n_y`, direction) creates a mesh on a
@@ -89,13 +94,13 @@ mesh we use diagonals to both left and right.
 
 .. code-block:: python
 
-	mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
-	print "Plotting a RectangleMesh"
-	plot(mesh, title="Rectangle")
+   mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
+   print "Plotting a RectangleMesh"
+   plot(mesh, title="Rectangle")
 
-	mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
-	print "Plotting a RectangleMesh"
-	plot(mesh, title="Rectangle (right/left)")
+   mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
+   print "Plotting a RectangleMesh"
+   plot(mesh, title="Rectangle (right/left)")
 
 .. image:: rectanglemesh.png
 	:scale: 75 %
@@ -118,33 +123,31 @@ transformations("rotsumn", "maxn", "sumn"). The default one
 
 .. math::
 
-	\text{rotsumn}:&= \frac{(x_r,y_r)}{\sqrt{x_r^2+y_r^2}}\\
-	(x_r,y_r)&=\frac{\sqrt{2}}{2} \begin{bmatrix}
-				\cos(\frac{\pi}{4})&	\sin(\frac{\pi}{4})\\
-				-\sin(\frac{\pi}{4})&   \cos(\frac{\pi}{4})
-				\end{bmatrix} \begin{bmatrix}
-						x \\ y
-							\end{bmatrix}
-
-
+   \text{rotsumn}:&= \frac{(x_r,y_r)}{\sqrt{x_r^2+y_r^2}}\\
+   (x_r,y_r)&=\frac{\sqrt{2}}{2} \begin{bmatrix}
+   \cos(\frac{\pi}{4})&	\sin(\frac{\pi}{4})\\
+   -\sin(\frac{\pi}{4})&   \cos(\frac{\pi}{4})
+   \end{bmatrix} \begin{bmatrix}
+   x \\ y
+   \end{bmatrix}
 
 .. code-block:: python
 
-	mesh = UnitCircleMesh(20, "right", "rotsumn")
-	print "Plotting a UnitCircleMesh"
-	plot(mesh, title="Unit circle (rotsum)")
+   mesh = UnitCircleMesh(20, "right", "rotsumn")
+   print "Plotting a UnitCircleMesh"
+   plot(mesh, title="Unit circle (rotsum)")
 
 .. image:: unitcirclemesh_rotsum.png
-	:scale: 75 %
+   :scale: 75 %
 
 
 The second transformation ("maxn") produced the following mesh:
 
 .. code-block:: python
 
-	mesh = UnitCircleMesh(20, "right", "maxn")
-	print "Plotting a UnitCircleMesh"
-	plot(mesh, title="Unit circle (maxn)")
+   mesh = UnitCircleMesh(20, "right", "maxn")
+   print "Plotting a UnitCircleMesh"
+   plot(mesh, title="Unit circle (maxn)")
 
 .. image:: unitcirclemesh_maxn.png
 	:scale: 75 %
@@ -156,20 +159,18 @@ To make a mesh of the 3D unit cube :math:`[0,1]\times [0,1]\times
 :math:`x`-, :math:`y`- and :math:`z`-direction as the only three
 arguments.
 
-
 .. code-block:: python
 
-	mesh = UnitCubeMesh(10, 10, 10)
-	print "Plotting a UnitCubeMesh"
-	plot(mesh, title="Unit cube")
+   mesh = UnitCubeMesh(10, 10, 10)
+   print "Plotting a UnitCubeMesh"
+   plot(mesh, title="Unit cube")
 
 .. image:: unitcubemesh.png
 	:scale: 75 %
 
-
 Finally we will demonstrate a mesh on a rectangular prism in
-3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>` (
-:math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of
+3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>`
+(:math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of
 the first corner(:math:`x_0,y_0,z_0`) as the three first arguments,
 the coordinates of the opposite corner (:math:`x_1,y_1,z_1`) as the
 next three arguments, while the last three arguments specify the
@@ -178,18 +179,20 @@ number of points in the :math:`x`-, :math:`y`- and
 
 .. code-block:: python
 
-	mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
-	print "Plotting a BoxMesh"
-	plot(mesh, title="Box")
+   mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
+   print "Plotting a BoxMesh"
+   plot(mesh, title="Box")
 
 .. image:: boxmesh.png
-	:scale: 75 %
+   :scale: 75 %
 
-By calling :py:meth:`interactive <dolfin.cpp.io.VTKPlotter.interactive>` we are allowed to resize, move and rotate the plots.
+By calling :py:meth:`interactive
+<dolfin.cpp.io.VTKPlotter.interactive>` we are allowed to resize, move
+and rotate the plots.
 
 .. code-block:: python
 
-	interactive()
+   interactive()
 
 
 Complete code
@@ -197,4 +200,3 @@ Complete code
 
 .. literalinclude:: demo_built-in.py
    :start-after: # Begin demo
-
