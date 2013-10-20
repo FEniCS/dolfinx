@@ -167,18 +167,18 @@ ellipse centered at (0, 0) with 'radii' of 3 and 1 in the :math:`x`- and
 
 .. code-block:: python
 
-    mesh = EllipseMesh(Point(0.0, 0.0), [3.0, 1.0], 0.2)
-    print "Plotting an EllipseMesh"
-    plot(mesh, title="Ellipse mesh (unstructured)")
+   mesh = EllipseMesh(Point(0.0, 0.0), [3.0, 1.0], 0.2)
+   print "Plotting an EllipseMesh"
+   plot(mesh, title="Ellipse mesh (unstructured)")
 
 Using :py:class:`SphereMesh <dolfin.cpp.generation.SphereMesh>` for a sphere
 centered at (0, 0, 0) with radius 1 and cell size 0.2:
 
 .. code-block:: python
 
-    mesh = SphereMesh(Point(0.0, 0.0, 0.0), 1.0, 0.2)
-    print "Plotting a SphereMesh"
-    plot(mesh, title="Sphere mesh (unstructured)")
+   mesh = SphereMesh(Point(0.0, 0.0, 0.0), 1.0, 0.2)
+   print "Plotting a SphereMesh"
+   plot(mesh, title="Sphere mesh (unstructured)")
 
 Using :py:class:`EllipsoidMesh <dolfin.cpp.generation.EllipsoidMesh>` For an
 ellipsoid centered at (0, 0, 0.0), with 'radii' of 3, 1 and 2 in the
@@ -187,9 +187,9 @@ size 0.2:
 
 .. code-block:: python
 
-    mesh = EllipsoidMesh(Point(0, 0, 0), [3.0, 1.0, 2.0], 0.2)
-    print "Plotting an EllipsoidMesh"
-    plot(mesh, title="Ellipsoid mesh (unstructured)")
+   mesh = EllipsoidMesh(Point(0.0, 0.0, 0.0), [3.0, 1.0, 2.0], 0.2)
+   print "Plotting an EllipsoidMesh"
+   plot(mesh, title="Ellipsoid mesh (unstructured)")
 
 To make a mesh of the 3D unit cube :math:`[0,1] \times [0,1] \times
 [0,1]`, we use :py:class:`UnitCubeMesh
