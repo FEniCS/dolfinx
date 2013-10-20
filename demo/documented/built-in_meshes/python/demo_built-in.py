@@ -62,13 +62,14 @@ mesh = UnitCircleMesh(20, "right", "maxn")
 print "Plotting a UnitCircleMesh"
 plot(mesh, title="Unit circle (maxn)")
 
-mesh = CircleMesh(Point(0, 0), 1.0, 0.2)
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (maxn)")
+if has_cgal():
+    mesh = CircleMesh(Point(0, 0), 1.0, 0.2)
+    print "Plotting a UnitCircleMesh"
+    plot(mesh, title="Unit circle (maxn)")
 
-mesh = EllipseMesh(Point(0, 0), [3.0, 1.0], 0.2)
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Ellipse mesh")
+    mesh = EllipseMesh(Point(0, 0), [3.0, 1.0], 0.2)
+    print "Plotting a UnitCircleMesh"
+    plot(mesh, title="Ellipse mesh")
 
 mesh = UnitCubeMesh(10, 10, 10)
 print "Plotting a UnitCubeMesh"
