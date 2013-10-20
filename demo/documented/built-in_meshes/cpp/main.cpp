@@ -76,7 +76,7 @@ int main()
   info("Plotting an EllipseMesh");
   plot(ellipse_mesh, "Ellipse mesh (unstructured)");
 
-  SphereMesh sphere_mesh(Point(0.0, 0.0), 1.0, 0.2);
+  SphereMesh sphere_mesh(Point(0.0, 0.0, 0.0), 1.0, 0.2);
   info("Plotting a SphereMesh");
   plot(sphere_mesh, "Sphere mesh (unstructured)");
 

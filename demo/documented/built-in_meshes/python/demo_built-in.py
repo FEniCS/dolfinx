@@ -63,19 +63,19 @@ print "Plotting a UnitCircleMesh"
 plot(mesh, title="Unit circle (maxn)")
 
 if has_cgal():
-    mesh = CircleMesh(Point(0, 0), 1.0, 0.2)
+    mesh = CircleMesh(Point(0.0, 0.0), 1.0, 0.2)
     print "Plotting a CircleMesh"
     plot(mesh, title="Circle (unstructured)")
 
-    mesh = EllipseMesh(Point(0, 0), [3.0, 1.0], 0.2)
+    mesh = EllipseMesh(Point(0.0, 0.0), [3.0, 1.0], 0.2)
     print "Plotting an EllipseMesh"
     plot(mesh, title="Ellipse mesh (unstructured)")
 
-    mesh = SphereMesh(Point(0, 0), 1.0, 0.2)
+    mesh = SphereMesh(Point(0.0, 0.0, 0.0), 1.0, 0.2)
     print "Plotting a SphereMesh"
     plot(mesh, title="Sphere mesh (unstructured)")
 
-    mesh = EllipsoidMesh(Point(0, 0, 0), [3.0, 1.0, 2.0], 0.2)
+    mesh = EllipsoidMesh(Point(0.0, 0.0, 0.0), [3.0, 1.0, 2.0], 0.2)
     print "Plotting an EllipsoidMesh"
     plot(mesh, title="Ellipsoid mesh (unstructured)")
 
