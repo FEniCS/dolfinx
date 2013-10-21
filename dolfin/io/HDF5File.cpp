@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-19
+// Last changed: 2013-10-21
 
 #ifdef HAS_HDF5
 
@@ -1288,12 +1288,6 @@ void HDF5File::set_attribute(const std::string dataset_name,
   
 }
 //-----------------------------------------------------------------------------
-const std::string attribute(const std::string dataset_name,
-                            const std::string attr)
-{
-}
-//-----------------------------------------------------------------------------
-
 template <typename T>
 void HDF5File::get_attribute(const std::string dataset_name,
                              const std::string attribute_name,
@@ -1316,9 +1310,16 @@ void HDF5File::get_attribute(const std::string dataset_name,
                  "Attribute does not exist");
   }
 
-  double attribute_value;
   HDF5Interface::get_attribute(hdf5_file_id, dataset_name, 
                                attribute_name, attribute_value);
+}
+//-----------------------------------------------------------------------------
+const double HDF5File::attribute(const std::string dataset_name,
+                       const std::string attribute_name) const
+{
+  double value;
+  get_attribute(dataset_name, attribute_name, value);
+  return value;
 }
 
 

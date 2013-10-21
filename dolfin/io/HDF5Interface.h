@@ -110,32 +110,36 @@ namespace dolfin
     static std::vector<std::string> dataset_list(const hid_t hdf5_file_handle,
                                                  const std::string group_name);
 
-    /// Get a named attribute of a dataset
-    /// Attributes may be of type std::string, std::size_t,
-    /// or std::vector<std::size_t>
+
+    /// Get an attribute as a string representation
+    const std::string get_attribute_string(
+                  const hid_t hdf5_file_handle,
+                  const std::string dataset_name,
+                  const std::string attribute_name);
+
+    /// Get a named attribute of a dataset or known type
     template <typename T>
     static void get_attribute(const hid_t hdf5_file_handle,
                               const std::string dataset_name,
                               const std::string attribute_name,
                               T& attribute_value);
 
-    /// Add attribute to dataset
-    /// Attributes may be of type std::string, std::size_t,
-    /// or std::vector<std::size_t>
+    /// Add attribute to dataset or group
     template <typename T>
     static void add_attribute(const hid_t hdf5_file_handle,
                               const std::string dataset_name,
                               const std::string attribute_name,
                               const T& attribute_value);
 
+    /// Delete an attribute from a dataset or group
     static void delete_attribute(const hid_t hdf5_file_handle,
                           const std::string dataset_name,
                           const std::string attribute_name);
 
+    /// Check if an attribute exists on a dataset or group
     static bool has_attribute(const hid_t hdf5_file_handle,
                           const std::string dataset_name,
                           const std::string attribute_name);
-
 
   private:
 

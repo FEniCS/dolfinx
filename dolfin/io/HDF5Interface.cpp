@@ -18,9 +18,10 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-09-30
+// Last Changed: 2013-10-21
 
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
@@ -107,6 +108,84 @@ void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
 {
   herr_t status = H5Fflush(hdf5_file_handle, H5F_SCOPE_GLOBAL);
   dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
+const std::string HDF5Interface::get_attribute_string(
+                  const hid_t hdf5_file_handle,
+                  const std::string dataset_name,
+                  const std::string attribute_name)
+{
+  herr_t status;
+
+  // Open dataset or group by name
+  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(),
+                                H5P_DEFAULT);
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Open attribute by name and get its type
+  const hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
+  dolfin_assert(attr_id != HDF5_FAIL);
+  const hid_t attr_type = H5Aget_type(attr_id);
+  dolfin_assert(attr_type != HDF5_FAIL);
+
+  std::string attribute_string;
+
+  // Determine type of attribute
+  const hid_t h5class = H5Tget_class(attr_type);
+
+  // Get size of space, will determine if it is a vector or not
+  const hid_t dataspace = H5Aget_space(attr_id);
+  dolfin_assert(dataspace != HDF5_FAIL);
+  hsize_t cur_size[10];
+  hsize_t max_size[10];
+  const int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
+  dolfin_assert(ndims == 1);
+
+  if (h5class == H5T_NATIVE_DOUBLE)
+  {
+    if(ndims == 1)
+    {
+      double attribute_value;
+      get_attribute_value(attr_type, attr_id, attribute_value);
+      attribute_string = boost::lexical_cast<std::string>(attribute_value);
+    }
+    else
+    {
+      attribute_string = "[";
+      std::vector<double> attribute_value;
+      get_attribute_value(attr_type, attr_id, attribute_value);
+      for(std::vector<double>::iterator aval = attribute_value.begin();
+          aval != attribute_value.end(); ++aval)
+        attribute_string += " " + boost::lexical_cast<std::string>(*aval);
+
+      attribute_string += " ]";
+    }
+    
+  }
+  else if (h5class == H5T_STRING)
+  {
+    get_attribute_value(attr_type, attr_id, attribute_string);
+  }
+  else
+  {
+    dolfin_error("HDF5Interface.cpp",
+                 "get attribute",
+                 "Unsupported type");
+  }
+  
+  // Close attribute type
+  status = H5Tclose(attr_type);
+  dolfin_assert(status != HDF5_FAIL);
+  
+  // Close attribute
+  status = H5Aclose(attr_id);
+  dolfin_assert(status != HDF5_FAIL);
+  
+  // Close dataset or group
+  status = H5Oclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return attribute_string;
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,

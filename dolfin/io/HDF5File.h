@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-10-15
+// Last changed: 2013-10-21
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -187,6 +187,12 @@ namespace dolfin
     void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
                     const std::vector<std::size_t> global_size);
+
+    // Get an attribute of some type
+    template <typename T>
+    void get_attribute(const std::string dataset_name,
+                       const std::string attribute_name,
+                       T& attribute_value) const;
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
