@@ -65,7 +65,6 @@ namespace dolfin
     void read(GenericVector& x, const std::string dataset_name,
               const bool use_partition_from_file = true) const;
 
-
     /// Write Mesh to file in a format suitable for re-reading
     void write(const Mesh& mesh, const std::string name);
 
@@ -197,6 +196,33 @@ namespace dolfin
     const bool mpi_io;
   };
 
+  //---------------------------------------------------------------------------
+  // needs to go here, because of use in XDMFFile.cpp
+  template <typename T>
+  void HDF5File::write_data(const std::string dataset_name,
+                            const std::vector<T>& data,
+                            const std::vector<std::size_t> global_size)
+  {
+    dolfin_assert(hdf5_file_open);
+    dolfin_assert(global_size.size() > 0);
+    
+    // Get number of 'items'
+    std::size_t num_local_items = 1;
+    for (std::size_t i = 1; i < global_size.size(); ++i)
+      num_local_items *= global_size[i];
+    num_local_items = data.size()/num_local_items;
+    
+    // Compute offset
+    const std::size_t offset = MPI::global_offset(num_local_items, true);
+    std::pair<std::size_t, std::size_t> range(offset,
+                                              offset + num_local_items);
+    
+    // Write data to HDF5 file
+    const bool chunking = parameters["chunking"];
+    HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
+                                 range, global_size, mpi_io, chunking);
+  }
+  //---------------------------------------------------------------------------
 
 }
 

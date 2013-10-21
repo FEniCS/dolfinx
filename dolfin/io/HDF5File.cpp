@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-15
+// Last changed: 2013-10-19
 
 #ifdef HAS_HDF5
 
@@ -1288,8 +1288,16 @@ void HDF5File::set_attribute(const std::string dataset_name,
   
 }
 //-----------------------------------------------------------------------------
-const double HDF5File::attribute(const std::string dataset_name,
-                                 const std::string attribute_name) const
+const std::string attribute(const std::string dataset_name,
+                            const std::string attr)
+{
+}
+//-----------------------------------------------------------------------------
+
+template <typename T>
+void HDF5File::get_attribute(const std::string dataset_name,
+                             const std::string attribute_name,
+                             T& attribute_value) const
 {
   dolfin_assert(hdf5_file_open);
   
@@ -1311,34 +1319,7 @@ const double HDF5File::attribute(const std::string dataset_name,
   double attribute_value;
   HDF5Interface::get_attribute(hdf5_file_id, dataset_name, 
                                attribute_name, attribute_value);
-  return attribute_value;
 }
 
-//---------------------------------------------------------------------------
-template <typename T>
-void HDF5File::write_data(const std::string dataset_name,
-                          const std::vector<T>& data,
-                          const std::vector<std::size_t> global_size)
-{
-  dolfin_assert(hdf5_file_open);
-  dolfin_assert(global_size.size() > 0);
-  
-  // Get number of 'items'
-  std::size_t num_local_items = 1;
-  for (std::size_t i = 1; i < global_size.size(); ++i)
-    num_local_items *= global_size[i];
-  num_local_items = data.size()/num_local_items;
-  
-  // Compute offset
-  const std::size_t offset = MPI::global_offset(num_local_items, true);
-  std::pair<std::size_t, std::size_t> range(offset,
-                                            offset + num_local_items);
-  
-  // Write data to HDF5 file
-  const bool chunking = parameters["chunking"];
-  HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
-                               range, global_size, mpi_io, chunking);
-}
-//---------------------------------------------------------------------------
 
 #endif
