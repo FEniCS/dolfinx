@@ -1314,12 +1314,28 @@ void HDF5File::get_attribute(const std::string dataset_name,
                                attribute_name, attribute_value);
 }
 //-----------------------------------------------------------------------------
-const double HDF5File::attribute(const std::string dataset_name,
-                       const std::string attribute_name) const
+const std::string HDF5File::attribute(const std::string dataset_name,
+                                      const std::string attribute_name) const
 {
-  double value;
-  get_attribute(dataset_name, attribute_name, value);
-  return value;
+  dolfin_assert(hdf5_file_open);
+  
+  if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
+  {
+    dolfin_error("HDF5File.cpp", 
+                 "get attribute of dataset",
+                 "Dataset does not exist");
+  }
+  
+  if(!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
+                                  attribute_name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "get attribute of dataset",
+                 "Attribute does not exist");
+  }
+
+  return HDF5Interface::get_attribute_string(hdf5_file_id, 
+                              dataset_name, attribute_name);
 }
 
 

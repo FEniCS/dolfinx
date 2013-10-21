@@ -112,7 +112,7 @@ namespace dolfin
 
 
     /// Get an attribute as a string representation
-    const std::string get_attribute_string(
+    static const std::string get_attribute_string(
                   const hid_t hdf5_file_handle,
                   const std::string dataset_name,
                   const std::string attribute_name);

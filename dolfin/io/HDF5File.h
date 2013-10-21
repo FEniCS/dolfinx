@@ -144,13 +144,9 @@ namespace dolfin
                        const std::string attribute_name,
                        const double attribute_value);
 
-    /// Get a double attribute of an existing dataset
-    const double attribute(const std::string dataset_name,
-                           const std::string attribute_name) const;
-
-    /// Create a (hard) link to a dataset
-    void link(const std::string dataset_name,
-              const std::string link_name);
+    // Get an existing attribute of an existing dataset
+    const std::string attribute(const std::string dataset_name,
+                          const std::string attribute_name) const;
 
     /// Flush buffered I/O to disk
     void flush();
