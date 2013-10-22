@@ -22,7 +22,7 @@
 // Modified by Martin Alnaes 2013
 //
 // First added:  2007-01-17
-// Last changed: 2013-01-18
+// Last changed: 2013-09-19
 
 #include <boost/scoped_ptr.hpp>
 

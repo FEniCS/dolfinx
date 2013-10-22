@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2013-08-05
+// Last changed: 2013-09-25
 //
 // This demo program solves Poisson's equation using a Cut and
 // Composite Finite Element Method (CCFEM) on a domain defined by
@@ -42,13 +42,15 @@ class Source : public Expression
 
 int main()
 {
+  info("THIS DEMO IS WORK IN PROGRESS!");
+
   // Increase log level
-  set_log_level(PROGRESS);
+  set_log_level(DBG);
 
   // Create meshes
-  UnitSquareMesh square(8, 8);
-  UnitCircleMesh circle_1(8);
-  UnitCircleMesh circle_2(8);
+  UnitSquareMesh square(4, 4);
+  UnitCircleMesh circle_1(3);
+  UnitCircleMesh circle_2(3);
 
   // Displace circle meshes
   Point dx(0.5, 0.5);
@@ -60,12 +62,56 @@ int main()
   Poisson::FunctionSpace V1(circle_1);
   Poisson::FunctionSpace V2(circle_2);
 
+  // Some of this stuff may be wrapped or automated later to avoid
+  // needing to explicitly call add() and build()
+
+  // Create forms
+  Poisson::BilinearForm a0(V0, V0);
+  Poisson::BilinearForm a1(V1, V1);
+  Poisson::BilinearForm a2(V2, V2);
+  Poisson::LinearForm L0(V0);
+  Poisson::LinearForm L1(V1);
+  Poisson::LinearForm L2(V2);
+
+  // Set coefficients
+  Source f;
+  L0.f = f;
+  L1.f = f;
+  L2.f = f;
+
   // Build CCFEM function space
   CCFEMFunctionSpace V;
   V.add(V0);
   V.add(V1);
   V.add(V2);
   V.build();
+
+  // Build CCFEM forms
+  CCFEMForm a(V, V);
+  a.add(a0);
+  a.add(a1);
+  a.add(a2);
+  a.build();
+  CCFEMForm L(V);
+  L.add(L0);
+  L.add(L1);
+  L.add(L2);
+  L.build();
+
+  // Assemble linear system
+  Matrix A;
+  Vector b;
+  CCFEMAssembler assembler;
+  assembler.assemble(A, a);
+  assembler.assemble(b, L);
+
+  // Compute solution
+  CCFEMFunction u(V);
+  solve(A, *u.vector(), b);
+
+  cout << "A = " << endl; info(A, true);
+  cout << "b = " << endl; info(b, true);
+  cout << "x = " << endl; info(*u.vector(), true);
 
   return 0;
 }
