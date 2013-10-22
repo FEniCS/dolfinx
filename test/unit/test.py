@@ -38,6 +38,7 @@ tests = {
                        "PeriodicBC", "manifolds"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace", \
                            "SpecialFunctions"],
+    "generation":     ["MeshGeneration"],
     "geometry":       ["BoundingBoxTree"],
     "graph":          ["GraphBuild"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
