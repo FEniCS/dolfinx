@@ -1,14 +1,21 @@
-""" Eddy currents phenomena in low conducting body can be
-described using electric vector potential and curl-curl operator:
+"""Eddy currents phenomena in low conducting body can be described
+using electric vector potential and curl-curl operator:
+
    \nabla \times \nabla \times T = - \frac{\partial B}{\partial t}
+
 Electric vector potential defined as:
+
    \nabla \times T = J
 
 Boundary condition:
+
    J_n = 0,
+
    T_t=T_w=0, \frac{\partial T_n}{\partial n} = 0
+
 which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge)
 elements.
+
 """
 
 # Copyright (C) 2009 Bartosz Sawicki
@@ -39,9 +46,8 @@ if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
-# Create mesh
-sphere = Sphere(Point(0, 0, 0), 1.0)
-mesh = Mesh(sphere, 16)
+# Create sphere mesh
+mesh = SphereMesh(Point(0.0, 0.0, 0.0), 1.0, 0.1)
 
 # Define function spaces
 P1 = VectorFunctionSpace(mesh, "CG", 1)
