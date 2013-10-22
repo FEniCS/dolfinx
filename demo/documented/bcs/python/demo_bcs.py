@@ -50,6 +50,10 @@ bc1 = DirichletBC(V, u1, 1)
 bc2 = DirichletBC(V, u2, 2)
 bc3 = DirichletBC(V, u3, 3)
 
+# Set PETSc MUMPS paramter (this is required to prevent a memory error
+# in some cases when using MUMPS LU solver).
+PETScOptions.set("mat_mumps_icntl_14", 40.0)
+
 # Compute solution
 u = Function(V)
 solve(a == L, u, [bc0, bc1, bc2, bc3])
