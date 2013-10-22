@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-10-21
+// Last changed: 2013-10-22
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -144,6 +144,16 @@ namespace dolfin
                        const std::string attribute_name,
                        const double attribute_value);
 
+    /// Set a vector double attribute on an existing dataset
+    void set_attribute(const std::string dataset_name,
+                       const std::string attribute_name,
+                       const std::vector<double>& attribute_value);
+
+    /// Set a string attribute on an existing dataset
+    void set_attribute(const std::string dataset_name,
+                       const std::string attribute_name,
+                       const std::string attribute_value);
+
     // Get an existing attribute of an existing dataset
     const std::string attribute(const std::string dataset_name,
                           const std::string attribute_name) const;
@@ -186,9 +196,15 @@ namespace dolfin
 
     // Get an attribute of some type
     template <typename T>
-    void get_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       T& attribute_value) const;
+    void get_attribute_value(const std::string dataset_name,
+                             const std::string attribute_name,
+                             T& attribute_value) const;
+
+    // Set an attribute of some type
+    template <typename T>
+    void set_attribute_value(const std::string dataset_name,
+                             const std::string attribute_name,
+                             const T& attribute_value);
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;

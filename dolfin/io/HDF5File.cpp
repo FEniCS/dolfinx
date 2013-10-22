@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-21
+// Last changed: 2013-10-22
 
 #ifdef HAS_HDF5
 
@@ -1263,9 +1263,10 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
   return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::set_attribute(const std::string dataset_name,
+template <typename T>
+void HDF5File::set_attribute_value(const std::string dataset_name,
                              const std::string attribute_name,
-                             const double attribute_value)
+                             const T& attribute_value)
 {
   dolfin_assert(hdf5_file_open);
   
@@ -1289,7 +1290,7 @@ void HDF5File::set_attribute(const std::string dataset_name,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void HDF5File::get_attribute(const std::string dataset_name,
+void HDF5File::get_attribute_value(const std::string dataset_name,
                              const std::string attribute_name,
                              T& attribute_value) const
 {
@@ -1312,6 +1313,27 @@ void HDF5File::get_attribute(const std::string dataset_name,
 
   HDF5Interface::get_attribute(hdf5_file_id, dataset_name, 
                                attribute_name, attribute_value);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::set_attribute(const std::string dataset_name,
+                             const std::string attribute_name,
+                             const std::string attribute_value)
+{
+  set_attribute_value(dataset_name, attribute_name, attribute_value);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::set_attribute(const std::string dataset_name,
+                             const std::string attribute_name,
+                             const double attribute_value)
+{
+  set_attribute_value(dataset_name, attribute_name, attribute_value);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::set_attribute(const std::string dataset_name,
+                             const std::string attribute_name,
+                             const std::vector<double>& attribute_value)
+{
+  set_attribute_value(dataset_name, attribute_name, attribute_value);
 }
 //-----------------------------------------------------------------------------
 const std::string HDF5File::attribute(const std::string dataset_name,
@@ -1337,6 +1359,6 @@ const std::string HDF5File::attribute(const std::string dataset_name,
   return HDF5Interface::get_attribute_string(hdf5_file_id, 
                               dataset_name, attribute_name);
 }
-
+//-----------------------------------------------------------------------------
 
 #endif

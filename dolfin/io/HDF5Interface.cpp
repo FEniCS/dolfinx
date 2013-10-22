@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-10-21
+// Last Changed: 2013-10-22
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -139,11 +139,10 @@ const std::string HDF5Interface::get_attribute_string(
   hsize_t cur_size[10];
   hsize_t max_size[10];
   const int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
-  dolfin_assert(ndims == 1);
 
-  if (h5class == H5T_NATIVE_DOUBLE)
+  if (h5class == H5Tget_class(H5T_NATIVE_DOUBLE))
   {
-    if(ndims == 1)
+    if(ndims == 0)
     {
       double attribute_value;
       get_attribute_value(attr_type, attr_id, attribute_value);
@@ -151,14 +150,15 @@ const std::string HDF5Interface::get_attribute_string(
     }
     else
     {
-      attribute_string = "[";
+      attribute_string = " ";
       std::vector<double> attribute_value;
       get_attribute_value(attr_type, attr_id, attribute_value);
       for(std::vector<double>::iterator aval = attribute_value.begin();
           aval != attribute_value.end(); ++aval)
-        attribute_string += " " + boost::lexical_cast<std::string>(*aval);
+        attribute_string +=  boost::lexical_cast<std::string>(*aval) + ",";
 
-      attribute_string += " ]";
+      // erase last character (comma or space if empty vector)
+      attribute_string.erase(attribute_string.size() - 1);
     }
     
   }
