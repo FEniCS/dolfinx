@@ -31,6 +31,7 @@
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/Variable.h"
+#include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -42,6 +43,7 @@ namespace dolfin
   class Mesh;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
+  class HDF5Attribute;
 
   class HDF5File : public Variable
   {
@@ -155,8 +157,8 @@ namespace dolfin
                        const std::string attribute_value);
 
     // Get an existing attribute of an existing dataset
-    const std::string attribute(const std::string dataset_name,
-                          const std::string attribute_name) const;
+    HDF5Attribute attribute(const std::string dataset_name,
+                            const std::string attribute_name);
 
     /// Flush buffered I/O to disk
     void flush();

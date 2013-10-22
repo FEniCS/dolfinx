@@ -50,6 +50,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
+#include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
 #include "HDF5File.h"
@@ -1336,29 +1337,32 @@ void HDF5File::set_attribute(const std::string dataset_name,
   set_attribute_value(dataset_name, attribute_name, attribute_value);
 }
 //-----------------------------------------------------------------------------
-const std::string HDF5File::attribute(const std::string dataset_name,
-                                      const std::string attribute_name) const
+HDF5Attribute HDF5File::attribute(const std::string dataset_name,
+                                  const std::string attribute_name)
 {
   dolfin_assert(hdf5_file_open);
+  return HDF5Attribute(hdf5_file_id, dataset_name, attribute_name);
   
-  if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
-  {
-    dolfin_error("HDF5File.cpp", 
-                 "get attribute of dataset",
-                 "Dataset does not exist");
-  }
   
-  if(!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
-                                  attribute_name))
-  {
-    dolfin_error("HDF5File.cpp",
-                 "get attribute of dataset",
-                 "Attribute does not exist");
-  }
+//   if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
+//   {
+//     dolfin_error("HDF5File.cpp", 
+//                  "get attribute of dataset",
+//                  "Dataset does not exist");
+//   }
+  
+//   if(!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
+//                                   attribute_name))
+//   {
+//     dolfin_error("HDF5File.cpp",
+//                  "get attribute of dataset",
+//                  "Attribute does not exist");
+//   }
 
-  return HDF5Interface::get_attribute_string(hdf5_file_id, 
-                              dataset_name, attribute_name);
+//   return HDF5Interface::get_attribute_string(hdf5_file_id, 
+//                               dataset_name, attribute_name);
 }
+
 //-----------------------------------------------------------------------------
 
 #endif
