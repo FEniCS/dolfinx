@@ -23,7 +23,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-11-25
-// Last changed: 2013-04-18
+// Last changed: 2013-10-22
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -81,6 +81,7 @@
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
 %shared_ptr(dolfin::GenericDofMap)
 %shared_ptr(dolfin::DofMap)
+%shared_ptr(dolfin::CCFEMDofMap)
 %shared_ptr(dolfin::Form)
 %shared_ptr(dolfin::FiniteElement)
 %shared_ptr(dolfin::BasisFunction)

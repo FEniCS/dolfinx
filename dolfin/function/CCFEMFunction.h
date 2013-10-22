@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2013-09-25
+// Last changed: 2013-10-22
 
 #ifndef __CCFEM_FUNCTION_H
 #define __CCFEM_FUNCTION_H
 
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 namespace dolfin
 {
@@ -29,6 +30,7 @@ namespace dolfin
   // Forward declacations
   class CCFEMFunctionSpace;
   class GenericVector;
+  class Function;
 
   /// This class represents a function on a cut and composite finite
   /// element function space (CCFEM) defined on one or more possibly
@@ -62,6 +64,13 @@ namespace dolfin
     /// Destructor
     virtual ~CCFEMFunction();
 
+    /// Return function (part) number i
+    ///
+    /// *Returns*
+    ///     _Function_
+    ///         Function (part) number i
+    const Function& part(std::size_t i) const;
+
     /// Return vector of expansion coefficients (non-const version)
     ///
     /// *Returns*
@@ -86,6 +95,9 @@ namespace dolfin
 
     // The vector of expansion coefficients (local)
     boost::shared_ptr<GenericVector> _vector;
+
+    // Collection of functions for parts which share data
+    mutable boost::ptr_map<std::size_t, Function> _function_parts;
 
   };
 

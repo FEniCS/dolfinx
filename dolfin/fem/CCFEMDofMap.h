@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2013-09-19
+// Last changed: 2013-10-22
 
 #ifndef __CCFEM_DOF_MAP_H
 #define __CCFEM_DOF_MAP_H
@@ -41,6 +41,9 @@ namespace dolfin
 
     // Copy constructor
     CCFEMDofMap(const CCFEMDofMap& dofmap);
+
+    /// Destructor
+    ~CCFEMDofMap();
 
     /// Return the number dofmaps (parts) of the CCFEM dofmap
     ///
