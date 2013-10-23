@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-22
+// Last changed: 2013-10-23
 
 #ifdef HAS_HDF5
 
@@ -1337,12 +1337,10 @@ void HDF5File::set_attribute(const std::string dataset_name,
   set_attribute_value(dataset_name, attribute_name, attribute_value);
 }
 //-----------------------------------------------------------------------------
-HDF5Attribute HDF5File::attribute(const std::string dataset_name,
-                                  const std::string attribute_name)
+HDF5Attribute HDF5File::attribute(const std::string dataset_name)
 {
   dolfin_assert(hdf5_file_open);
-  return HDF5Attribute(hdf5_file_id, dataset_name, attribute_name);
-  
+  return HDF5Attribute(hdf5_file_id, dataset_name);
   
 //   if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
 //   {

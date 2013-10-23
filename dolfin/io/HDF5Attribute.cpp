@@ -17,19 +17,24 @@
 //
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-22
+// Last changed: 2013-10-23
 
 #ifdef HAS_HDF5
+
+#include<boost/lexical_cast.hpp>
+
+#include<dolfin/common/Array.h>
 
 #include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 template <typename T>
-void HDF5Attribute::set_value(T& attribute_value)
+void HDF5Attribute::set_value(const std::string attribute_name, 
+                              const T& attribute_value)
 {
-
   if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
   {
     dolfin_error("HDF5File.cpp", 
@@ -47,49 +52,85 @@ void HDF5Attribute::set_value(T& attribute_value)
   HDF5Interface::add_attribute(hdf5_file_id, dataset_name, 
                                attribute_name, attribute_value);
 }
-
-
-const HDF5Attribute HDF5Attribute::operator=(double& rhs)
+//-----------------------------------------------------------------------------
+template <typename T>
+void HDF5Attribute::get_value(const std::string attribute_name, 
+                              T& attribute_value) const
 {
-  set_value(rhs);
-  return *this;
+  HDF5Interface::get_attribute(hdf5_file_id, dataset_name, attribute_name,
+                               attribute_value);
 }
-
-const HDF5Attribute HDF5Attribute::operator=(std::vector<double>& rhs)
+//-----------------------------------------------------------------------------
+void HDF5Attribute::set(const std::string attribute_name, 
+                        const double value)
 {
-  set_value(rhs);
-  return *this;
+  set_value(attribute_name, value);
 }
-
-const HDF5Attribute HDF5Attribute::operator=(std::string& rhs)
+//-----------------------------------------------------------------------------
+void HDF5Attribute::set(const std::string attribute_name, 
+                        const Array<double>& value)
 {
-  set_value(rhs);
-  return *this;
+  std::vector<double> value_vec(value.data(), value.data() + value.size());
+  set_value(attribute_name, value_vec);
 }
-
-std::string HDF5Attribute::str()
+//-----------------------------------------------------------------------------
+void HDF5Attribute::set(const std::string attribute_name, 
+                        const std::string value)
 {
-  
-  if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
+  set_value(attribute_name, value);
+}
+//-----------------------------------------------------------------------------
+void HDF5Attribute::get(const std::string attribute_name, double& value) const
+{
+  get_value(attribute_name, value);
+}
+//-----------------------------------------------------------------------------
+void HDF5Attribute::get(const std::string attribute_name, std::vector<double>& value) const
+{
+  get_value(attribute_name, value);
+}
+//-----------------------------------------------------------------------------
+void HDF5Attribute::get(const std::string attribute_name, std::string& value) const
+{
+  const std::string attribute_type = type(attribute_name);
+  if(attribute_type == "string")
+    get_value(attribute_name, value);
+  else if(attribute_type == "float")
   {
-    dolfin_error("HDF5Attribute.cpp", 
-                 "get attribute of dataset",
-                 "Dataset does not exist");
+    double float_value;
+    get_value(attribute_name, float_value);
+    value = boost::lexical_cast<std::string>(float_value);
+  }
+  else if(attribute_type == "vector")
+  {
+    std::vector<double> vector_value;
+    get_value(attribute_name, vector_value);
+    value = "";
+    const unsigned int nlast = vector_value.size() - 1;
+    for(unsigned int i = 0; i < nlast; ++i)
+    {
+      value += boost::lexical_cast<std::string>(vector_value[i]) + ", ";
+    }
+    value += boost::lexical_cast<std::string>(vector_value[nlast]);
+  }
+  else
+  {
+    value = "Unsupported";
   }
   
-  if(!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
-                                  attribute_name))
-  {
-    dolfin_error("HDF5Attribute.cpp",
-                 "get attribute of dataset",
-                 "Attribute does not exist");
-  }
-
-  return HDF5Interface::get_attribute_string(hdf5_file_id, 
-                              dataset_name, attribute_name);
-  
 }
-
-
+//-----------------------------------------------------------------------------
+const std::string HDF5Attribute::str(const std::string attribute_name) const
+{
+  std::string str_result;
+  get(attribute_name, str_result);
+  return str_result;
+}
+//-----------------------------------------------------------------------------
+const std::string HDF5Attribute::type(const std::string attribute_name) const
+{
+  return HDF5Interface::get_attribute_type(hdf5_file_id, dataset_name, attribute_name);
+}
+//-----------------------------------------------------------------------------
 
 #endif

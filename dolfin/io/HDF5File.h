@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-10-22
+// Last changed: 2013-10-23
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -156,9 +156,8 @@ namespace dolfin
                        const std::string attribute_name,
                        const std::string attribute_value);
 
-    // Get an existing attribute of an existing dataset
-    HDF5Attribute attribute(const std::string dataset_name,
-                            const std::string attribute_name);
+    // Get an attribute of an existing dataset
+    HDF5Attribute attribute(const std::string dataset_name);
 
     /// Flush buffered I/O to disk
     void flush();

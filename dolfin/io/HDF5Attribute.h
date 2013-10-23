@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-10-16
-// Last changed: 2013-10-22
+// Last changed: 2013-10-23
 
 #ifndef __DOLFIN_HDF5ATTRIBUTE_H
 #define __DOLFIN_HDF5ATTRIBUTE_H
@@ -26,10 +26,13 @@
 #include <string>
 #include <vector>
 
+#include<dolfin/common/Array.h>
+
 #include "HDF5Interface.h"
 
 namespace dolfin
 {
+
 
   class HDF5Attribute 
   {
@@ -37,20 +40,10 @@ namespace dolfin
 
     /// Constructor
     HDF5Attribute(hid_t hdf5_file_id,
-                std::string dataset_name,
-                std::string attribute_name) 
+                  std::string dataset_name)
     : hdf5_file_id(hdf5_file_id),
-      dataset_name(dataset_name),
-      attribute_name(attribute_name)
+      dataset_name(dataset_name)
     {
-    }
-
-    // Copy Constructor
-    HDF5Attribute(const HDF5Attribute& hattr)
-    {
-      hdf5_file_id = hattr.hdf5_file_id;
-      dataset_name = hattr.dataset_name;
-      attribute_name = hattr.attribute_name;
     }
 
     /// Destructor
@@ -58,28 +51,45 @@ namespace dolfin
     {
     }
     
-    /// Set the value of the attribute in the HDF5 file
-    const HDF5Attribute operator=(double& rhs);
+    /// Set the value of a double attribute in the HDF5 file
+    void set(const std::string attribute_name, const double value);
 
-    /// Set the value of the attribute in the HDF5 file
-    const HDF5Attribute operator=(std::vector<double>& rhs);
+    /// Set the value of an array of float attribute in the HDF5 file
+    void set(const std::string attribute_name, const Array<double>& value);
 
-    /// Set the value of the attribute in the HDF5 file
-    const HDF5Attribute operator=(std::string& rhs);
+    /// Set the value of a string attribute in the HDF5 file
+    void set(const std::string attribute_name, const std::string value);
+
+    /// Set the value of a double attribute in the HDF5 file
+    void get(const std::string attribute_name, double& value) const;
+
+    /// Get the value of a vector double attribute in the HDF5 file
+    void get(const std::string attribute_name, 
+             std::vector<double>& value) const;
+
+    /// Get the value of an attribute in the HDF5 file as a string
+    void get(const std::string attribute_name, std::string& value) const;
 
     /// Get the value of the attribute in the HDF5 file
     /// as a string representation
-    std::string str();
+    const std::string str(const std::string attribute_name) const;
+
+    /// Get the type of the attribute "string", "float", "vector"
+    /// or "unsupported"
+    const std::string type(const std::string attribute_name) const;
 
   private:
 
     hid_t hdf5_file_id;
     std::string dataset_name;
-    std::string attribute_name;
 
     // Set the value of an attribute in the HDF5 file
     template <typename T>
-    void set_value(T& value);
+    void set_value(const std::string attribute_name, const T& value);
+
+    // Get the value of an attribute in the HDF5 file
+    template <typename T>
+    void get_value(const std::string attribute_name, T& value) const;
 
   };
 }

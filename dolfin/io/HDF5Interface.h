@@ -112,14 +112,13 @@ namespace dolfin
     static std::vector<std::string> dataset_list(const hid_t hdf5_file_handle,
                                                  const std::string group_name);
 
-
-    /// Get an attribute as a string representation
-    static const std::string get_attribute_string(
+    /// Get type of attribute
+    static const std::string get_attribute_type(
                   const hid_t hdf5_file_handle,
                   const std::string dataset_name,
                   const std::string attribute_name);
 
-    /// Get a named attribute of a dataset or known type
+    /// Get a named attribute of a dataset of known type
     template <typename T>
     static void get_attribute(const hid_t hdf5_file_handle,
                               const std::string dataset_name,

@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-10-22
+// Last Changed: 2013-10-23
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -110,7 +110,7 @@ void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-const std::string HDF5Interface::get_attribute_string(
+const std::string HDF5Interface::get_attribute_type(
                   const hid_t hdf5_file_handle,
                   const std::string dataset_name,
                   const std::string attribute_name)
@@ -128,8 +128,6 @@ const std::string HDF5Interface::get_attribute_string(
   const hid_t attr_type = H5Aget_type(attr_id);
   dolfin_assert(attr_type != HDF5_FAIL);
 
-  std::string attribute_string;
-
   // Determine type of attribute
   const hid_t h5class = H5Tget_class(attr_type);
 
@@ -140,38 +138,16 @@ const std::string HDF5Interface::get_attribute_string(
   hsize_t max_size[10];
   const int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
 
-  if (h5class == H5Tget_class(H5T_NATIVE_DOUBLE))
-  {
-    if(ndims == 0)
-    {
-      double attribute_value;
-      get_attribute_value(attr_type, attr_id, attribute_value);
-      attribute_string = boost::lexical_cast<std::string>(attribute_value);
-    }
-    else
-    {
-      attribute_string = " ";
-      std::vector<double> attribute_value;
-      get_attribute_value(attr_type, attr_id, attribute_value);
-      for(std::vector<double>::iterator aval = attribute_value.begin();
-          aval != attribute_value.end(); ++aval)
-        attribute_string +=  boost::lexical_cast<std::string>(*aval) + ",";
+  std::string attribute_type_description;
 
-      // erase last character (comma or space if empty vector)
-      attribute_string.erase(attribute_string.size() - 1);
-    }
-    
-  }
+  if(h5class == H5T_FLOAT && ndims == 0)
+    attribute_type_description = "float";
+  else if(h5class == H5T_FLOAT)
+    attribute_type_description = "vector";
   else if (h5class == H5T_STRING)
-  {
-    get_attribute_value(attr_type, attr_id, attribute_string);
-  }
+    attribute_type_description = "string";
   else
-  {
-    dolfin_error("HDF5Interface.cpp",
-                 "get attribute",
-                 "Unsupported type");
-  }
+    attribute_type_description = "unsupported";
   
   // Close attribute type
   status = H5Tclose(attr_type);
@@ -185,7 +161,7 @@ const std::string HDF5Interface::get_attribute_string(
   status = H5Oclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return attribute_string;
+  return attribute_type_description;
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,

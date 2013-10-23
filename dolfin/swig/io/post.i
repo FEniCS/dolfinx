@@ -31,3 +31,25 @@
 %template(__lshift__) dolfin::File::operator<< <MeshValueCollection<bool> >;
 %template(__lshift__) dolfin::File::operator<< <Parameters>;
 %template(__lshift__) dolfin::File::operator<< <Function>;
+
+%extend dolfin::HDF5Attribute {
+  void __setitem__(std::string key, double value) 
+  { $self->set(key, value); }
+  void __setitem__(std::string key, std::string value) 
+  { $self->set(key, value); }
+  void __setitem__(std::string key, const dolfin::Array<double>& value) 
+  { $self->set(key, value); }
+
+%pythoncode %{
+def __getitem__(self, key):
+    attr_type = self.type(key)
+    if attr_type=="string":
+        return self.str(key)
+    elif attr_type=="float":
+        return float(self.str(key))
+    elif attr_type=="vector":
+        return [float(x) for x in self.str(key).split(",")]
+%}
+
+}
+
