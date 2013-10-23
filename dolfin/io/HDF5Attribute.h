@@ -38,6 +38,8 @@ namespace dolfin
   {
   public:
 
+    // FIXME: Check validity of file and dataset
+
     /// Constructor
     HDF5Attribute(hid_t hdf5_file_id,
                   std::string dataset_name)

@@ -37,7 +37,7 @@ void HDF5Attribute::set_value(const std::string attribute_name,
 {
   if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
   {
-    dolfin_error("HDF5File.cpp", 
+    dolfin_error("HDF5Attribute.cpp", 
                  "set attribute on dataset",
                  "Dataset does not exist");
   }
@@ -57,6 +57,20 @@ template <typename T>
 void HDF5Attribute::get_value(const std::string attribute_name, 
                               T& attribute_value) const
 {
+  if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
+  {
+    dolfin_error("HDF5Attribute.cpp", 
+                 "get attribute of dataset",
+                 "Dataset does not exist");
+  }
+  if(!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
+                                   attribute_name))
+  {
+    dolfin_error("HDF5Attribute.cpp", 
+                 "get attribute of dataset",
+                 "Attribute does not exist");
+  }
+
   HDF5Interface::get_attribute(hdf5_file_id, dataset_name, attribute_name,
                                attribute_value);
 }
