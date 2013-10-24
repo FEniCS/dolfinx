@@ -1264,103 +1264,11 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
   return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
-template <typename T>
-void HDF5File::set_attribute_value(const std::string dataset_name,
-                             const std::string attribute_name,
-                             const T& attribute_value)
-{
-  dolfin_assert(hdf5_file_open);
-  
-  if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
-  {
-    dolfin_error("HDF5File.cpp", 
-                 "set attribute on dataset",
-                 "Dataset does not exist");
-  }
-  
-  if(HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
-                                  attribute_name))
-  {
-    HDF5Interface::delete_attribute(hdf5_file_id, dataset_name, 
-                                    attribute_name);
-  }
-  
-  HDF5Interface::add_attribute(hdf5_file_id, dataset_name, 
-                               attribute_name, attribute_value);
-  
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-void HDF5File::get_attribute_value(const std::string dataset_name,
-                             const std::string attribute_name,
-                             T& attribute_value) const
-{
-  dolfin_assert(hdf5_file_open);
-  
-  if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
-  {
-    dolfin_error("HDF5File.cpp", 
-                 "get attribute of dataset",
-                 "Dataset does not exist");
-  }
-  
-  if(!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
-                                  attribute_name))
-  {
-    dolfin_error("HDF5File.cpp",
-                 "get attribute of dataset",
-                 "Attribute does not exist");
-  }
-
-  HDF5Interface::get_attribute(hdf5_file_id, dataset_name, 
-                               attribute_name, attribute_value);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::set_attribute(const std::string dataset_name,
-                             const std::string attribute_name,
-                             const std::string attribute_value)
-{
-  set_attribute_value(dataset_name, attribute_name, attribute_value);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::set_attribute(const std::string dataset_name,
-                             const std::string attribute_name,
-                             const double attribute_value)
-{
-  set_attribute_value(dataset_name, attribute_name, attribute_value);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::set_attribute(const std::string dataset_name,
-                             const std::string attribute_name,
-                             const std::vector<double>& attribute_value)
-{
-  set_attribute_value(dataset_name, attribute_name, attribute_value);
-}
-//-----------------------------------------------------------------------------
-HDF5Attribute HDF5File::attribute(const std::string dataset_name)
+HDF5Attribute HDF5File::attributes(const std::string dataset_name)
 {
   dolfin_assert(hdf5_file_open);
   return HDF5Attribute(hdf5_file_id, dataset_name);
-  
-//   if(!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
-//   {
-//     dolfin_error("HDF5File.cpp", 
-//                  "get attribute of dataset",
-//                  "Dataset does not exist");
-//   }
-  
-//   if(!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
-//                                   attribute_name))
-//   {
-//     dolfin_error("HDF5File.cpp",
-//                  "get attribute of dataset",
-//                  "Attribute does not exist");
-//   }
-
-//   return HDF5Interface::get_attribute_string(hdf5_file_id, 
-//                               dataset_name, attribute_name);
 }
-
 //-----------------------------------------------------------------------------
 
 #endif

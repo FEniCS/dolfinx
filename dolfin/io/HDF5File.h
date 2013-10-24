@@ -141,23 +141,8 @@ namespace dolfin
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
 
-    /// Set a double attribute on an existing dataset
-    void set_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       const double attribute_value);
-
-    /// Set a vector double attribute on an existing dataset
-    void set_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       const std::vector<double>& attribute_value);
-
-    /// Set a string attribute on an existing dataset
-    void set_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       const std::string attribute_value);
-
-    // Get an attribute of an existing dataset
-    HDF5Attribute attribute(const std::string dataset_name);
+    // Get/set attributes of an existing dataset
+    HDF5Attribute attributes(const std::string dataset_name);
 
     /// Flush buffered I/O to disk
     void flush();
@@ -194,18 +179,6 @@ namespace dolfin
     void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
                     const std::vector<std::size_t> global_size);
-
-    // Get an attribute of some type
-    template <typename T>
-    void get_attribute_value(const std::string dataset_name,
-                             const std::string attribute_name,
-                             T& attribute_value) const;
-
-    // Set an attribute of some type
-    template <typename T>
-    void set_attribute_value(const std::string dataset_name,
-                             const std::string attribute_name,
-                             const T& attribute_value);
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
