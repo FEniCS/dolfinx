@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-10-23
+// Last changed: 2013-10-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -77,6 +77,9 @@ namespace dolfin
 
     /// Write Function to file in a format suitable for re-reading
     void write(const Function& u, const std::string name);
+
+    /// Write Function to file with a timestamp
+    void write(const Function& u, const std::string name, double timestamp);
 
     /// Read Function from file and distribute data according to
     /// the Mesh and dofmap associated with the Function

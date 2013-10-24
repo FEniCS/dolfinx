@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-10-16
-// Last changed: 2013-10-23
+// Last changed: 2013-10-24
 
 #ifndef __DOLFIN_HDF5ATTRIBUTE_H
 #define __DOLFIN_HDF5ATTRIBUTE_H
@@ -33,6 +33,8 @@
 namespace dolfin
 {
 
+  /// HDF5Attribute gives access to the attributes of a dataset
+  /// via set() and get() methods
 
   class HDF5Attribute 
   {
@@ -57,7 +59,7 @@ namespace dolfin
     void set(const std::string attribute_name, const double value);
 
     /// Set the value of an array of float attribute in the HDF5 file
-    void set(const std::string attribute_name, const Array<double>& value);
+    void set(const std::string attribute_name, const std::vector<double>& value);
 
     /// Set the value of a string attribute in the HDF5 file
     void set(const std::string attribute_name, const std::string value);
@@ -69,6 +71,13 @@ namespace dolfin
     void get(const std::string attribute_name, 
              std::vector<double>& value) const;
 
+    /// Set the value of a double attribute in the HDF5 file
+    void get(const std::string attribute_name, std::size_t& value) const;
+
+    /// Get the value of a vector double attribute in the HDF5 file
+    void get(const std::string attribute_name, 
+             std::vector<std::size_t>& value) const;
+
     /// Get the value of an attribute in the HDF5 file as a string
     void get(const std::string attribute_name, std::string& value) const;
 
@@ -76,9 +85,12 @@ namespace dolfin
     /// as a string representation
     const std::string str(const std::string attribute_name) const;
 
-    /// Get the type of the attribute "string", "float", "vector"
-    /// or "unsupported"
+    /// Get the type of the attribute "string", "float", "int"
+    /// "vectorfloat", "vectorint" or "unsupported"
     const std::string type(const std::string attribute_name) const;
+
+    /// Get the names of all the attributes on this dataset
+    const std::string str() const;
 
   private:
 
@@ -93,6 +105,10 @@ namespace dolfin
     template <typename T>
     void get_value(const std::string attribute_name, T& value) const;
 
+    template <typename T>
+    const std::string vector_to_string(
+                      const std::vector<T>& vector_value) const;
+    
   };
 }
 

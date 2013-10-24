@@ -142,7 +142,16 @@ namespace dolfin
                           const std::string dataset_name,
                           const std::string attribute_name);
 
+    // List attributes of dataset or group
+    static const std::vector<std::string> list_attributes(const hid_t hdf5_file_handle,
+                                                          const std::string dataset_name);
+    
   private:
+
+    static herr_t attribute_iteration_function(hid_t loc_id,
+                                            const char* name,
+                                            const H5A_info_t* info,
+                                            void* str);
 
     template <typename T>
     static void add_attribute_value(const hid_t dset_id,

@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-10-23
+// Last Changed: 2013-10-24
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -142,8 +142,12 @@ const std::string HDF5Interface::get_attribute_type(
 
   if(h5class == H5T_FLOAT && ndims == 0)
     attribute_type_description = "float";
+  else if(h5class == H5T_INTEGER && ndims == 0)
+    attribute_type_description = "int";
   else if(h5class == H5T_FLOAT)
-    attribute_type_description = "vector";
+    attribute_type_description = "vectorfloat";
+  else if(h5class == H5T_INTEGER)
+    attribute_type_description = "vectorint";
   else if (h5class == H5T_STRING)
     attribute_type_description = "string";
   else
@@ -182,6 +186,35 @@ void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
   // Close dataset or group
   status = H5Oclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
+herr_t HDF5Interface::attribute_iteration_function(hid_t loc_id,
+                                                 const char* name,
+                                                 const H5A_info_t* info,
+                                                 void *str)
+{
+  std::vector<std::string>* s = (std::vector<std::string>*)str;
+  std::string attr_name(name);
+  s->push_back(name);
+  return 0;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::string> HDF5Interface::list_attributes(const hid_t hdf5_file_handle,
+                                                              const std::string dataset_name)
+{
+  // Open dataset or group by name
+  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(),
+                                H5P_DEFAULT);
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  hsize_t n = 0;
+
+  std::vector<std::string> out_string;  
+  herr_t status = H5Aiterate2(dset_id, H5_INDEX_NAME,
+                  H5_ITER_INC, &n, attribute_iteration_function, (void *)&out_string);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return out_string;
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,

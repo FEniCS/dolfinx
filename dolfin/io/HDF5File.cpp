@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-23
+// Last changed: 2013-10-24
 
 #ifdef HAS_HDF5
 
@@ -635,6 +635,32 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
 
 }
 //-----------------------------------------------------------------------------
+void HDF5File::write(const Function& u, 
+                     const std::string name, double timestamp)
+{
+  if(!HDF5Interface::has_dataset(hdf5_file_id, name))
+  {
+    write(u, name);
+    std::vector<double> vectime(1, timestamp);
+    attributes(name).set("series", vectime);
+  }
+  else
+  {
+    HDF5Attribute attr = attributes(name);
+    std::vector<double> vectime;
+    attr.get("series", vectime);
+
+    unsigned int nvec = vectime.size();
+    std::string vecname = name 
+      + "vectorA" + boost::lexical_cast<std::string>(nvec);
+
+    vectime.push_back(timestamp);
+    attr.set("series", vectime);
+
+    write(*u.vector(), vecname);
+  }
+}
+//-----------------------------------------------------------------------------
 void HDF5File::write(const Function& u, const std::string name)
 {
   Timer t0("HDF5: write Function");
@@ -686,7 +712,6 @@ void HDF5File::write(const Function& u, const std::string name)
 
   // Save vector
   write(*u.vector(), name + "/vector");
-
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(Function& u, const std::string name)

@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-23
+// Last changed: 2013-10-24
 
 #ifdef HAS_HDF5
 
@@ -30,6 +30,21 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+template <typename T>
+const std::string HDF5Attribute::vector_to_string(
+                  const std::vector<T>& vector_value) const
+{
+  std::string value;
+  value = "";
+  const unsigned int nlast = vector_value.size() - 1;
+  for(unsigned int i = 0; i < nlast; ++i)
+  {
+    value += boost::lexical_cast<std::string>(vector_value[i]) + ", ";
+  }
+  value += boost::lexical_cast<std::string>(vector_value[nlast]);  
+  return value;
+}
 //-----------------------------------------------------------------------------
 template <typename T>
 void HDF5Attribute::set_value(const std::string attribute_name, 
@@ -82,10 +97,10 @@ void HDF5Attribute::set(const std::string attribute_name,
 }
 //-----------------------------------------------------------------------------
 void HDF5Attribute::set(const std::string attribute_name, 
-                        const Array<double>& value)
+                        const std::vector<double>& value)
 {
-  std::vector<double> value_vec(value.data(), value.data() + value.size());
-  set_value(attribute_name, value_vec);
+  //  std::vector<double> value_vec(value.data(), value.data() + value.size());
+  set_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
 void HDF5Attribute::set(const std::string attribute_name, 
@@ -99,7 +114,17 @@ void HDF5Attribute::get(const std::string attribute_name, double& value) const
   get_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
+void HDF5Attribute::get(const std::string attribute_name, std::size_t& value) const
+{
+  get_value(attribute_name, value);
+}
+//-----------------------------------------------------------------------------
 void HDF5Attribute::get(const std::string attribute_name, std::vector<double>& value) const
+{
+  get_value(attribute_name, value);
+}
+//-----------------------------------------------------------------------------
+void HDF5Attribute::get(const std::string attribute_name, std::vector<std::size_t>& value) const
 {
   get_value(attribute_name, value);
 }
@@ -115,17 +140,23 @@ void HDF5Attribute::get(const std::string attribute_name, std::string& value) co
     get_value(attribute_name, float_value);
     value = boost::lexical_cast<std::string>(float_value);
   }
-  else if(attribute_type == "vector")
+  else if(attribute_type == "int")
+  {
+    std::size_t int_value;
+    get_value(attribute_name, int_value);
+    value = boost::lexical_cast<std::string>(int_value);
+  }
+  else if(attribute_type == "vectorfloat")
   {
     std::vector<double> vector_value;
     get_value(attribute_name, vector_value);
-    value = "";
-    const unsigned int nlast = vector_value.size() - 1;
-    for(unsigned int i = 0; i < nlast; ++i)
-    {
-      value += boost::lexical_cast<std::string>(vector_value[i]) + ", ";
-    }
-    value += boost::lexical_cast<std::string>(vector_value[nlast]);
+    value = vector_to_string(vector_value);
+  }
+  else if(attribute_type == "vectorint")
+  {
+    std::vector<std::size_t> vector_value;
+    get_value(attribute_name, vector_value);
+    value = vector_to_string(vector_value);
   }
   else
   {
@@ -138,6 +169,17 @@ const std::string HDF5Attribute::str(const std::string attribute_name) const
 {
   std::string str_result;
   get(attribute_name, str_result);
+  return str_result;
+}
+//-----------------------------------------------------------------------------
+const std::string HDF5Attribute::str() const
+{
+  std::string str_result;
+  std::vector<std::string> attrs = HDF5Interface::list_attributes(hdf5_file_id, dataset_name);
+  for(std::vector<std::string>::iterator s = attrs.begin(); s != attrs.end(); ++s)
+  {
+    str_result += *s + " ";
+  }
   return str_result;
 }
 //-----------------------------------------------------------------------------
