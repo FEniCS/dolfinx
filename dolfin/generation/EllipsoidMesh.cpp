@@ -67,7 +67,9 @@ EllipsoidMesh::EllipsoidMesh(Point center, std::vector<double> ellipsoid_dims,
   #ifdef HAS_CGAL
   ImplicitDomainMeshGenerator::generate(*this, surface, cell_size) ;
   #else
-  dolfin_error("Generation of ellipsoid meshes requires DOLFIN to be configured with CGAL");
+  dolfin_error("EllipsoidMesh.cpp",
+	       "generate ellipsoid mesh",
+	       "Generation of ellipsoid meshes requires DOLFIN to be configured with CGAL");
   #endif
 }
 //-----------------------------------------------------------------------------
