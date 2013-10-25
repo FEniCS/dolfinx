@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-10-16
-// Last changed: 2013-10-24
+// Last changed: 2013-10-25
 
 #ifndef __DOLFIN_HDF5ATTRIBUTE_H
 #define __DOLFIN_HDF5ATTRIBUTE_H
@@ -43,10 +43,8 @@ namespace dolfin
     // FIXME: Check validity of file and dataset
 
     /// Constructor
-    HDF5Attribute(hid_t hdf5_file_id,
-                  std::string dataset_name)
-    : hdf5_file_id(hdf5_file_id),
-      dataset_name(dataset_name)
+    HDF5Attribute(hid_t hdf5_file_id, std::string dataset_name)
+      : hdf5_file_id(hdf5_file_id), dataset_name(dataset_name)
     {
     }
 
@@ -58,8 +56,16 @@ namespace dolfin
     /// Set the value of a double attribute in the HDF5 file
     void set(const std::string attribute_name, const double value);
 
+    /// Set the value of a double attribute in the HDF5 file
+    void set(const std::string attribute_name, const std::size_t value);
+
     /// Set the value of an array of float attribute in the HDF5 file
-    void set(const std::string attribute_name, const std::vector<double>& value);
+    void set(const std::string attribute_name, 
+             const std::vector<double>& value);
+
+    /// Set the value of an array of float attribute in the HDF5 file
+    void set(const std::string attribute_name, 
+             const std::vector<std::size_t>& value);
 
     /// Set the value of a string attribute in the HDF5 file
     void set(const std::string attribute_name, const std::string value);
@@ -87,7 +93,7 @@ namespace dolfin
 
     /// Get the type of the attribute "string", "float", "int"
     /// "vectorfloat", "vectorint" or "unsupported"
-    const std::string type(const std::string attribute_name) const;
+    const std::string type_str(const std::string attribute_name) const;
 
     /// Get the names of all the attributes on this dataset
     const std::string str() const;

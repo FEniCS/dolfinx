@@ -35,14 +35,18 @@
 %extend dolfin::HDF5Attribute {
   void __setitem__(std::string key, double value) 
   { $self->set(key, value); }
+  void __setitem__(std::string key, std::size_t value) 
+  { $self->set(key, value); }
   void __setitem__(std::string key, std::string value) 
   { $self->set(key, value); }
   void __setitem__(std::string key, const std::vector<double>& value) 
   { $self->set(key, value); }
+  //  void __setitem__(std::string key, const std::vector<std::size_t>& value) 
+  //  { $self->set(key, value); }
 
 %pythoncode %{
 def __getitem__(self, key):
-    attr_type = self.type(key)
+    attr_type = self.type_str(key)
     if attr_type=="string":
         return self.str(key)
     elif attr_type=="float":

@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-24
+// Last changed: 2013-10-25
 
 #ifdef HAS_HDF5
 
@@ -97,9 +97,20 @@ void HDF5Attribute::set(const std::string attribute_name,
 }
 //-----------------------------------------------------------------------------
 void HDF5Attribute::set(const std::string attribute_name, 
+                        const std::size_t value)
+{
+  set_value(attribute_name, value);
+}
+//-----------------------------------------------------------------------------
+void HDF5Attribute::set(const std::string attribute_name, 
                         const std::vector<double>& value)
 {
-  //  std::vector<double> value_vec(value.data(), value.data() + value.size());
+  set_value(attribute_name, value);
+}
+//-----------------------------------------------------------------------------
+void HDF5Attribute::set(const std::string attribute_name, 
+                        const std::vector<std::size_t>& value)
+{
   set_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
@@ -109,29 +120,34 @@ void HDF5Attribute::set(const std::string attribute_name,
   set_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
-void HDF5Attribute::get(const std::string attribute_name, double& value) const
+void HDF5Attribute::get(const std::string attribute_name, 
+                        double& value) const
 {
   get_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
-void HDF5Attribute::get(const std::string attribute_name, std::size_t& value) const
+void HDF5Attribute::get(const std::string attribute_name, 
+                        std::size_t& value) const
 {
   get_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
-void HDF5Attribute::get(const std::string attribute_name, std::vector<double>& value) const
+void HDF5Attribute::get(const std::string attribute_name, 
+                        std::vector<double>& value) const
 {
   get_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
-void HDF5Attribute::get(const std::string attribute_name, std::vector<std::size_t>& value) const
+void HDF5Attribute::get(const std::string attribute_name, 
+                        std::vector<std::size_t>& value) const
 {
   get_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
-void HDF5Attribute::get(const std::string attribute_name, std::string& value) const
+void HDF5Attribute::get(const std::string attribute_name, 
+                        std::string& value) const
 {
-  const std::string attribute_type = type(attribute_name);
+  const std::string attribute_type = type_str(attribute_name);
   if(attribute_type == "string")
     get_value(attribute_name, value);
   else if(attribute_type == "float")
@@ -175,17 +191,21 @@ const std::string HDF5Attribute::str(const std::string attribute_name) const
 const std::string HDF5Attribute::str() const
 {
   std::string str_result;
-  std::vector<std::string> attrs = HDF5Interface::list_attributes(hdf5_file_id, dataset_name);
-  for(std::vector<std::string>::iterator s = attrs.begin(); s != attrs.end(); ++s)
+  std::vector<std::string> attrs 
+    = HDF5Interface::list_attributes(hdf5_file_id, dataset_name);
+  for(std::vector<std::string>::iterator s = attrs.begin(); 
+      s != attrs.end(); ++s)
   {
     str_result += *s + " ";
   }
   return str_result;
 }
 //-----------------------------------------------------------------------------
-const std::string HDF5Attribute::type(const std::string attribute_name) const
+const std::string HDF5Attribute::type_str(
+                  const std::string attribute_name) const
 {
-  return HDF5Interface::get_attribute_type(hdf5_file_id, dataset_name, attribute_name);
+  return HDF5Interface::get_attribute_type(hdf5_file_id, 
+                                           dataset_name, attribute_name);
 }
 //-----------------------------------------------------------------------------
 
