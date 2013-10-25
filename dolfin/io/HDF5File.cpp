@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-24
+// Last changed: 2013-10-25
 
 #ifdef HAS_HDF5
 
@@ -652,7 +652,7 @@ void HDF5File::write(const Function& u,
 
     unsigned int nvec = vectime.size();
     std::string vecname = name 
-      + "vectorA" + boost::lexical_cast<std::string>(nvec);
+      + "/vector_" + boost::lexical_cast<std::string>(nvec);
 
     vectime.push_back(timestamp);
     attr.set("series", vectime);
