@@ -375,7 +375,7 @@ const std::vector<std::size_t>&
 Mesh::color(std::vector<std::size_t> coloring_type) const
 {
   // Find color data
-  std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+  std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator
     coloring_data = this->topology().coloring.find(coloring_type);
 
