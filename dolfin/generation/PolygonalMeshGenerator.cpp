@@ -73,7 +73,7 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
     // Create polygon
     Polygon_2 polygon(cgal_points.begin(), cgal_points.end());
 
-    // Generate mesh
+    // Generate mesh::vet
     generate(mesh, polygon, cell_size);
   }
 

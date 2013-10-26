@@ -38,8 +38,13 @@ MeshTopology::MeshTopology()
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
+  : coloring(topology.coloring), num_entities(topology.num_entities),
+    global_num_entities(topology.global_num_entities), 
+    _global_indices(topology._global_indices),
+    _shared_entities(topology._shared_entities),
+    connectivity(topology.connectivity)
 {
-  *this = topology;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshTopology::~MeshTopology()
@@ -47,7 +52,7 @@ MeshTopology::~MeshTopology()
   clear();
 }
 //-----------------------------------------------------------------------------
-const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
+MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
 {
   // Clear old data if any
   clear();
