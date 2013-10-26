@@ -52,7 +52,8 @@ bc3 = DirichletBC(V, u3, 3)
 
 # Set PETSc MUMPS paramter (this is required to prevent a memory error
 # in some cases when using MUMPS LU solver).
-PETScOptions.set("mat_mumps_icntl_14", 40.0)
+if has_petsc():
+    PETScOptions.set("mat_mumps_icntl_14", 40.0)
 
 # Compute solution
 u = Function(V)
