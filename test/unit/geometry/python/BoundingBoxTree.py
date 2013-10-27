@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-10-22
+# Last changed: 2013-10-23
 
 import unittest
 import numpy
@@ -382,6 +382,4 @@ if __name__ == "__main__":
     print ""
     print "Testing BoundingBoxTree"
     print "------------------------------------------------"
-
-    print "FIXME: Temporary testing"
     unittest.main()

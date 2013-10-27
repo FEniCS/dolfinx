@@ -16,10 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-09-12
+// Last changed: 2013-10-25
 
 #ifndef __BOUNDING_BOX_TREE_2D_H
 #define __BOUNDING_BOX_TREE_2D_H
+
+
+#include <boost/range/algorithm/nth_element.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -139,7 +142,7 @@ namespace dolfin
       bbox[3] = b[3];
 
       // Compute min and max over remaining boxes
-      for (; it != end; ++it)
+      for (++it; it != end; ++it)
       {
         const double* b = leaf_bboxes.data() + 4*(*it);
         if (b[0] < bbox[0]) bbox[0] = b[0];

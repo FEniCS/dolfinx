@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-09-12
+// Last changed: 2013-10-24
 
 #ifndef __BOUNDING_BOX_TREE_3D_H
 #define __BOUNDING_BOX_TREE_3D_H
@@ -206,7 +206,7 @@ namespace dolfin
       bbox[5] = p[2];
 
       // Compute min and max over remaining points
-      for (; it != end; ++it)
+      for (++it; it != end; ++it)
       {
         const double* p = points[*it].coordinates();
         if (p[0] < bbox[0]) bbox[0] = p[0];
