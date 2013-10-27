@@ -41,6 +41,15 @@ bool dolfin::has_mpi()
 #endif
 }
 //-------------------------------------------------------------------------
+bool dolfin::has_petsc()
+{
+#ifdef HAS_PETSC
+  return true;
+#else
+  return false;
+#endif
+}
+//-------------------------------------------------------------------------
 bool dolfin::has_slepc()
 {
 #ifdef HAS_SLEPC
