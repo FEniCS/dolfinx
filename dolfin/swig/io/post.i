@@ -41,8 +41,8 @@
   { $self->set(key, value); }
   void __setitem__(std::string key, const std::vector<double>& value) 
   { $self->set(key, value); }
-  //  void __setitem__(std::string key, const std::vector<std::size_t>& value) 
-  //  { $self->set(key, value); }
+  void __setitem__(std::string key, const std::vector<std::size_t>& value) 
+  { $self->set(key, value); }
 
 %pythoncode %{
 def __getitem__(self, key):

@@ -69,5 +69,19 @@ if has_hdf5():
             for val1, val2 in zip(vec, ans):
                 self.assertEqual(val1, val2)
 
+        def test_read_write_vec_int_attribute(self):
+            import numpy
+            hdf_file = HDF5File("a.h5", "w")
+            x = Vector(123)
+            hdf_file.write(x, "/a_vector")
+            attr = hdf_file.attributes("/a_vector")
+            vec = numpy.array([1,2,3,4,5], dtype=numpy.uintp)
+            attr['val'] = vec
+            ans = attr['val']
+            self.assertEqual(attr.type_str("val"), "vectorint")
+            self.assertEqual(len(vec), len(ans))
+            for val1, val2 in zip(vec, ans):
+                self.assertEqual(val1, val2)
+
 if __name__ == "__main__":
     unittest.main()
