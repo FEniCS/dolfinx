@@ -46,7 +46,6 @@
 %ignore dolfin::SLEPcEigenSolver::get_eigenpair;
 #endif
 
-
 #ifdef HAS_PETSC4PY
 // This must come early.  The petsc4py module defines typemaps which
 // we will later use on %extended classes (in post).  The typemaps

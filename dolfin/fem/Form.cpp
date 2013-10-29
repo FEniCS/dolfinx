@@ -19,7 +19,7 @@
 // Modified by Martin Alnes 2008
 //
 // First added:  2007-12-10
-// Last changed: 2011-11-14
+// Last changed: 2013-07-14
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -143,6 +143,14 @@ const Mesh& Form::mesh() const
   if (_mesh)
     meshes.push_back(_mesh);
 
+  // Extract meshes from markers if any
+  if (_cell_domains)
+    meshes.push_back(_cell_domains->mesh());
+  if (_exterior_facet_domains)
+    meshes.push_back(_exterior_facet_domains->mesh());
+  if (_interior_facet_domains)
+    meshes.push_back(_interior_facet_domains->mesh());
+
   // Extract meshes from coefficients. Note that this is only done
   // when we don't already have a mesh sine it may otherwise conflict
   // with existing meshes (if coefficient is defined on another mesh).
@@ -171,7 +179,7 @@ const Mesh& Form::mesh() const
     {
       dolfin_error("Form.cpp",
                    "extract mesh from form",
-                   "Non-matching meshes for function spaces");
+                   "Non-matching meshes for function spaces and/or measures");
     }
   }
 

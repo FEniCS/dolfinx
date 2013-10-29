@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-08-02
+// Last changed: 2013-09-02
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -461,24 +461,7 @@ void TriangleCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::radius_ratio(const Cell& triangle) const
-{
-  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
-  // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-
-  const double S = volume(triangle);
-
-  // Handle degenerate case
-  if (S == 0.0) {return 0.0;}
-
-  const double a = facet_area(triangle, 0);
-  const double b = facet_area(triangle, 1);
-  const double c = facet_area(triangle, 2);
-
-  return 16.0*S*S / (a*b*c*(a+b+c));
-}
-//-----------------------------------------------------------------------------
-bool TriangleCell::contains(const Cell& cell, const Point& point) const
+bool TriangleCell::collides(const Cell& cell, const Point& point) const
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
   // See also "Real-Time Collision Detection" by Christer Ericson.
@@ -519,6 +502,51 @@ bool TriangleCell::contains(const Cell& cell, const Point& point) const
           x1 + x2 <= 1.0 + DOLFIN_EPS_LARGE);
 }
 //-----------------------------------------------------------------------------
+bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  // This is only implemented for triangle-triangle collisions at this point
+  if (entity.dim() != 2)
+  {
+    dolfin_error("TriangleCell.cpp",
+                 "compute collision with entity",
+                 "Only know how to compute triangle-triangle collisions");
+  }
+
+  // Get the vertices as points
+  const MeshGeometry& geometry_p = cell.mesh().geometry();
+  const unsigned int* vertices_p = cell.entities(0);
+  const Point p0 = geometry_p.point(vertices_p[0]);
+  const Point p1 = geometry_p.point(vertices_p[1]);
+  const Point p2 = geometry_p.point(vertices_p[2]);
+
+  // Get the vertices as points
+  const MeshGeometry& geometry_q = entity.mesh().geometry();
+  const unsigned int* vertices_q = entity.entities(0);
+  const Point q0 = geometry_q.point(vertices_q[0]);
+  const Point q1 = geometry_q.point(vertices_q[1]);
+  const Point q2 = geometry_q.point(vertices_q[2]);
+
+  // First check if triangles are completely overlapping (necessary
+  // since tests below will fail for collinear edges). Note that this
+  // test will also cover a few other cases with coinciding midpoints.
+  const double eps2 = DOLFIN_EPS*DOLFIN_EPS;
+  if (cell.midpoint().squared_distance(entity.midpoint()) < eps2)
+    return true;
+
+  // Check for pairwise collisions between the edges
+  if (collides(p0, p1, q0, q1)) return true;
+  if (collides(p0, p1, q1, q2)) return true;
+  if (collides(p0, p1, q2, q0)) return true;
+  if (collides(p1, p2, q0, q1)) return true;
+  if (collides(p1, p2, q1, q2)) return true;
+  if (collides(p1, p2, q2, q0)) return true;
+  if (collides(p2, p0, q0, q1)) return true;
+  if (collides(p2, p0, q1, q2)) return true;
+  //if (collides(p2, p0, q2, q0)) return true; // optimization, not needed
+
+  return false;
+}
+//-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const
 {
   if (plural)
@@ -548,5 +576,26 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
                "find specified edge in cell",
                "Edge really not found");
   return 0;
+}
+//-----------------------------------------------------------------------------
+bool TriangleCell::collides(const Point& a, const Point& b,
+                            const Point& c, const Point& d) const
+{
+  // Algorithm from Real-time collision detection by Christer Ericson:
+  // Test2DSegmentSegment on page 152, Section 5.1.9.
+
+  // Compute signed areas of abd and abc
+  double abd = signed_area(a, b, d);
+  double abc = signed_area(a, b, c);
+
+  // Return false if not intersecting (or collinear)
+  if (abd*abc >= 0.0)
+    return false;
+
+  // Compute signed area of cda
+  double cda = signed_area(c, d, a);
+
+  // Check whether segments collide
+  return cda*(cda + abc - abd) < 0.0;
 }
 //-----------------------------------------------------------------------------

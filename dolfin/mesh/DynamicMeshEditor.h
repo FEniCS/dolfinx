@@ -46,7 +46,8 @@ namespace dolfin
     ~DynamicMeshEditor();
 
     /// Open mesh of given cell type, topological and geometrical dimension
-    void open(Mesh& mesh, CellType::Type type, std::size_t tdim, std::size_t gdim);
+    void open(Mesh& mesh, CellType::Type type, std::size_t tdim,
+              std::size_t gdim);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim);
@@ -70,10 +71,12 @@ namespace dolfin
     void add_cell(std::size_t c, std::size_t v0, std::size_t v1);
 
     /// Add cell (triangle) with given vertices
-    void add_cell(std::size_t c, std::size_t v0, std::size_t v1, std::size_t v2);
+    void add_cell(std::size_t c,  std::size_t v0, std::size_t v1,
+                  std::size_t v2);
 
     /// Add cell (tetrahedron) with given vertices
-    void add_cell(std::size_t c, std::size_t v0, std::size_t v1, std::size_t v2, std::size_t v3);
+    void add_cell(std::size_t c, std::size_t v0, std::size_t v1,
+                  std::size_t v2, std::size_t v3);
 
     /// Close mesh, finish editing, and order entities locally
     void close(bool order=false);

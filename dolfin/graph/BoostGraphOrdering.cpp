@@ -24,6 +24,7 @@
 #include <boost/graph/cuthill_mckee_ordering.hpp>
 #include <boost/graph/properties.hpp>
 
+#include <dolfin/common/Timer.h>
 #include "Graph.h"
 #include "BoostGraphOrdering.h"
 
@@ -33,6 +34,8 @@ using namespace dolfin;
 std::vector<std::size_t>
   BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph, bool reverse)
 {
+  Timer timer("Boost Cuthill-McKee graph ordering (from dolfin::Graph)");
+
   // Number of vertices
   const std::size_t n = graph.size();
 
@@ -75,6 +78,8 @@ std::vector<std::size_t>
   BoostGraphOrdering::compute_cuthill_mckee(const std::set<std::pair<std::size_t, std::size_t> >& edges,
                                             std::size_t size, bool reverse)
 {
+  Timer timer("Boost Cuthill-McKee graph ordering");
+
   // Typedef for Boost compressed sparse row graph
   typedef boost::compressed_sparse_row_graph<boost::directedS> BoostGraph;
 
@@ -114,6 +119,8 @@ std::vector<std::size_t>
 template<typename T, typename X>
 T BoostGraphOrdering::build_undirected_graph(const X& graph)
 {
+  Timer timer("Build Boost undirected graph");
+
   // Graph size
   const std::size_t n = graph.size();
 
@@ -137,6 +144,8 @@ T BoostGraphOrdering::build_undirected_graph(const X& graph)
 template<typename T, typename X>
 T BoostGraphOrdering::build_directed_graph(const X& graph)
 {
+  Timer timer("Build Boost directed graph");
+
   // Graph size
   const std::size_t n = graph.size();
 
@@ -160,6 +169,8 @@ T BoostGraphOrdering::build_directed_graph(const X& graph)
 template<typename T, typename X>
 T BoostGraphOrdering::build_csr_directed_graph(const X& graph)
 {
+  Timer timer("Build Boost CSR graph");
+
   // Count number of edges
   Graph::const_iterator vertex;
   std::size_t num_edges = 0;

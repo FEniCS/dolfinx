@@ -31,15 +31,16 @@ from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
 # Tests to run
 tests = {
     "ale":            ["HarmonicSmoothing"],
-    "armadillo":      ["test"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap", \
                            "FiniteElement", "Form", "SystemAssembler",
                        "PeriodicBC", "manifolds"],
-    "multistage":     ["RKSolver", "PointIntegralSolver"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace", \
                            "SpecialFunctions"],
+    "generation":     ["MeshGeneration"],
+    "geometry":       ["BoundingBoxTree"],
+    "graph":          ["GraphBuild"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
                            "XMLMeshValueCollection", "XMLVector", \
                            "XMLMeshData", "XMLLocalMeshData", \
@@ -47,17 +48,19 @@ tests = {
     "jit":            ["test"],
     "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \
                            "KrylovSolver", "LinearOperator"],
-    "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "math":           ["test"],
+    "multistage":     ["RKSolver", "PointIntegralSolver"],
+
     "meshconvert":    ["test"],
-    "mesh":           ["Cell", "Edge", "Face", "MeshData", "MeshEditor",
-                       "MeshFunction", "MeshIterator", "MeshMarkers",
-                       "MeshValueCollection", "BoundaryMesh", "Mesh", "SubMesh"],
+    "mesh":           ["Cell", "Edge", "Face", "MeshColoring", \
+                           "MeshData", "MeshEditor", "MeshFunction", \
+                           "MeshIterator", "MeshMarkers", "MeshQuality", \
+                           "MeshValueCollection", "BoundaryMesh", "Mesh", \
+                           "SubMesh"],
+    "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
-    "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
-    "geometry":       ["BoundingBoxTree"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required

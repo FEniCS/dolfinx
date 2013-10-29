@@ -25,14 +25,11 @@ for implementation of ALE methods)."""
 
 from dolfin import *
 
-print "This demo is presently broken. See https://bugs.launchpad.net/dolfin/+bug/1047641"
-exit()
-
 # Create mesh
 mesh = UnitSquareMesh(20, 20)
 
 # Create boundary mesh
-boundary = BoundaryMesh(mesh)
+boundary = BoundaryMesh(mesh, "exterior")
 
 # Move vertices in boundary
 for x in boundary.coordinates():
@@ -44,3 +41,6 @@ mesh.move(boundary)
 
 # Plot mesh
 plot(mesh, interactive=True)
+
+# Write mesh to file
+File("deformed_mesh.pvd") << mesh

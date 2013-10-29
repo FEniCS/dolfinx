@@ -21,10 +21,12 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2013-05-22
+// Last changed: 2013-08-26
 
 #ifndef __CELL_H
 #define __CELL_H
+
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/geometry/Point.h>
 #include "CellType.h"
@@ -262,7 +264,8 @@ namespace dolfin
     bool ordered(const std::vector<std::size_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
 
-    /// Check whether given point is contained in cell
+    /// Check whether given point is contained in cell. This function is
+    /// identical to the function collides(point).
     ///
     /// *Arguments*
     ///     point (_Point_)
@@ -272,7 +275,31 @@ namespace dolfin
     ///     bool
     ///         True iff point is contained in cell.
     bool contains(const Point& point) const
-    { return _mesh->type().contains(*this, point); }
+    { return _mesh->type().collides(*this, point); }
+
+    /// Check whether given point collides with cell.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point to be checked.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff point collides with cell.
+    bool collides(const Point& point) const
+    { return _mesh->type().collides(*this, point); }
+
+    /// Check whether given entity collides with cell.
+    ///
+    /// *Arguments*
+    ///     entity (_MeshEntity_)
+    ///         The cell to be checked.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff entity collides with cell.
+    bool collides(const MeshEntity& entity) const
+    { return _mesh->type().collides(*this, entity); }
 
   };
 
@@ -287,9 +314,14 @@ namespace dolfin
     CellFunction(const Mesh& mesh)
       : MeshFunction<T>(mesh, mesh.topology().dim()) {}
 
+    CellFunction(boost::shared_ptr<const Mesh> mesh)
+      : MeshFunction<T>(mesh, mesh->topology().dim()) {}
+
     CellFunction(const Mesh& mesh, const T& value)
       : MeshFunction<T>(mesh, mesh.topology().dim(), value) {}
 
+    CellFunction(boost::shared_ptr<const Mesh> mesh, const T& value)
+      : MeshFunction<T>(mesh, mesh->topology().dim(), value) {}
   };
 
 }

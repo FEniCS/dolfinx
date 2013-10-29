@@ -68,7 +68,8 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
   _local_range = tensor_layout.local_range(_primary_dim);
   num_codim_entities = tensor_layout.size(primary_codim);
 
-  const std::size_t num_primary_entiries = _local_range.second - _local_range.first;
+  const std::size_t num_primary_entiries = _local_range.second
+    - _local_range.first;
 
   _values.resize(num_primary_entiries);
 
@@ -105,7 +106,8 @@ std::size_t STLMatrix::size(std::size_t dim) const
   }
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> STLMatrix::local_range(std::size_t dim) const
+std::pair<std::size_t, std::size_t>
+STLMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < 2);
   if (_primary_dim == 0)
@@ -133,8 +135,9 @@ void STLMatrix::zero()
       entry->second = 0.0;
 }
 //-----------------------------------------------------------------------------
-void STLMatrix::add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
-                    const dolfin::la_index* cols)
+void STLMatrix::add(const double* block,
+                    std::size_t m, const dolfin::la_index* rows,
+                    std::size_t n, const dolfin::la_index* cols)
 {
   // Perform a simple linear search along each column. Otherwise,
   // append the value (calling push_back).
@@ -210,7 +213,7 @@ void STLMatrix::add(const double* block, std::size_t m, const dolfin::la_index* 
 //-----------------------------------------------------------------------------
 void STLMatrix::apply(std::string mode)
 {
-  Timer("Apply (matrix)");
+  Timer timer("Apply (STLMatrix)");
 
   // Number of processes
   const std::size_t num_processes = MPI::num_processes();
