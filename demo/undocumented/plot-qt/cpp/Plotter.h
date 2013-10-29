@@ -18,8 +18,8 @@
 // First added:  2012-09-14
 // Last changed: 2012-09-18
 
-#ifndef __PLOTTER__H
-#define __PLOTTER_H
+#ifndef __DEMO_PLOTTER_H
+#define __DEMO_PLOTTER_H
 
 #include <QObject>
 #include <QVTKWidget.h>
