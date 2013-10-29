@@ -53,6 +53,12 @@ int main()
   DirichletBC bc3(V, u3, 3);
   std::vector<const DirichletBC*> bcs = boost::assign::list_of(&bc0)(&bc1)(&bc2)(&bc3);
 
+  // Set PETSc MUMPS paramter (this is required to prevent a memory
+  // error in some cases when using MUMPS LU solver).
+  #ifdef HAS_PETSC
+  PETScOptions::set("mat_mumps_icntl_14", 40.0);
+  #endif
+
   // Compute solution
   Function u(V);
   solve(a == L, u, bcs);

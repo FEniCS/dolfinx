@@ -100,7 +100,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   cout << "Close editor" << endl;
 
   // Initialise coloring data
-  typedef std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+  typedef std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator ConstMeshColoringData;
 
   // Get old coloring
@@ -172,7 +172,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   const std::size_t coordinates_size = mesh.geometry().size()*mesh.geometry().dim();
   new_coordinates.resize(coordinates_size);
 
-  typedef std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+  typedef std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator MeshColoringData;
 
   info("Renumbering mesh by cell colors.");

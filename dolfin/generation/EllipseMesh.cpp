@@ -63,7 +63,9 @@ EllipseMesh::EllipseMesh(Point center, std::vector<double> ellipse_dims,
   PolygonalMeshGenerator::generate(*this, polygon, cell_size);
 
   #else
-  dolfin_error("Generation of ellipsoid meshes requires DOLFIN to be configured with CGAL");
+  dolfin_error("EllipseMesh.cpp",
+	       "generate ellipse mesh",
+	       "Generation of ellipse meshes requires DOLFIN to be configured with CGAL");
   #endif
 }
 //-----------------------------------------------------------------------------
