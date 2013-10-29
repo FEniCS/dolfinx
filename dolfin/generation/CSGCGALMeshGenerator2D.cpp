@@ -142,49 +142,6 @@ CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D() {}
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-static void print_edge(CDT::Edge edge)
-{
-  const int i = edge.second;
-  std::cout << "Edge: (" << edge.first->vertex( (i+1)%3 )->point()
-            << "), (" << edge.first->vertex( (i+2)%3 )->point() << ")" << std::endl;
-}
-//-----------------------------------------------------------------------------
-static void print_face(const CDT::Face_handle f)
-{
-    std::cout << "Face:" << std::endl;
-    std::cout << "  " << f->vertex(0)->point() << std::endl;
-    std::cout << "  " << f->vertex(1)->point() << std::endl;
-    std::cout << "  " << f->vertex(2)->point() << std::endl;
-    std::cout << "  " << (f->is_in_domain() ? "In domain" : "Not in domain") << std::endl;
-}
-//-----------------------------------------------------------------------------
-// print the faces of a triangulation
-static void print_triangulation(const CDT &cdt)
-{
-  for (  CDT::Finite_faces_iterator it = cdt.finite_faces_begin();
-         it != cdt.finite_faces_end(); ++it)
-  {
-    print_face(it);
-  }
-}
-//-----------------------------------------------------------------------------
-static void print_constrained_edges(const CDT& cdt)
-{
-  std::cout << "-- Constrained edges" << std::endl;
-
-  for (CDT::Finite_edges_iterator it = cdt.finite_edges_begin();
-       it != cdt.finite_edges_end();
-       it++)
-  {
-      if (cdt.is_constrained(*it))
-        print_edge(*it);
-  }
-
-  std::cout << "--" << std::endl;
-}
-//-----------------------------------------------------------------------------
 void explore_subdomain(CDT &ct,
                         CDT::Face_handle start, 
                         std::list<CDT::Face_handle>& other_domains)
