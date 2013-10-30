@@ -19,87 +19,87 @@
 # First added:  03/09/2012
 # Last changed: 2013-04-04
 
-# Begin demo  
-# Corrado Maurini 
+# Begin demo
+# Corrado Maurini
 #
-# This example solve the bound constrained minimization problem  
+# This example solve the bound constrained minimization problem
 # in the domain (x,y) in [0,Lx]x[0,Ly]
 #
 # min F(u) with  0<=u<=1 and u(0,y)= 0, u(Lx,y) = 1
-# 
-# where F(u) is the quadratic functionaldefined by the form 
+#
+# where F(u) is the quadratic functionaldefined by the form
 #
 # F(u) = 3./4.*(ell/2.*inner(grad(u), grad(u))+ 2./ell*usol)*dx
 #
-# An analytical is available: 
+# An analytical is available:
 # u(x,y) = 0 for 0<x<1-ell,  u(x,y) = (x-(1-ell))^2 for 1-ell<x<Lx
 # and the value of the functional at the solution usol is F(usol)=Ly
-# for any value of ell, with 0<ell<Lx. 
+# for any value of ell, with 0<ell<Lx.
 
 from dolfin import *
 import unittest
 
-try:
-    parameters["linear_algebra_backend"] = "PETSc"
-except RuntimeError:
-    import sys; sys.exit(0)
+if has_petsc():
 
-# Create mesh and define function space
-Lx = 1; Ly = .1
-mesh = RectangleMesh(0,0,Lx,Ly,100,10)
-V = FunctionSpace(mesh, "Lagrange", 1)
+    try:
+        parameters["linear_algebra_backend"] = "PETSc"
+    except RuntimeError:
+        import sys; sys.exit(0)
 
-# Define Dirichlet boundaries
-def left(x,on_boundary):
-    return on_boundary and x[0]==0.
+    # Create mesh and define function space
+    Lx = 1.0; Ly = 0.1
+    mesh = RectangleMesh(0, 0, Lx, Ly, 100, 10)
+    V = FunctionSpace(mesh, "Lagrange", 1)
 
-def rigth(x,on_boundary):
-    return on_boundary and x[0]==1.
-    
-# Define boundary conditions
-zero = Constant(0.0)
-one = Constant(1.0)
-bc_l = DirichletBC(V, zero, left)
-bc_r = DirichletBC(V, one, rigth)
-bc=[bc_l,bc_r]
+    # Define Dirichlet boundaries
+    def left(x,on_boundary):
+        return on_boundary and x[0] == 0.0
 
-# Define variational problem
-usol = Function(V)
-u = TrialFunction(V)
-v = TestFunction(V)
-cv = Constant(3./4.)
-ell = Constant(.5) # This should be smaller than Lx
-F = cv*(ell/2.*inner(grad(usol), grad(usol))*dx + 2./ell*usol*dx)
-# Weak form
-a  = cv*ell*inner(grad(u), grad(v))*dx
-L  = -cv*2*v/ell*dx
+    def right(x,on_boundary):
+        return on_boundary and x[0] == 10.
 
-# Assemble the linear system
-A=PETScMatrix()
-b=PETScVector()
-A, b = assemble_system(a, L, bc)
+    # Define boundary conditions
+    zero = Constant(0.0)
+    one  = Constant(1.0)
+    bc_l = DirichletBC(V, zero, left)
+    bc_r = DirichletBC(V, one, rigth)
+    bc=[bc_l, bc_r]
 
-# Define the upper and lower bounds
-upperbound = interpolate(Constant(1.), V)
-lowerbound = interpolate(Constant(0.), V) 
-xu = upperbound.vector()
-xl = lowerbound.vector() 
+    # Define variational problem
+    usol = Function(V)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    cv = Constant(3.0/4.0)
+    ell = Constant(0.5) # This should be smaller than Lx
+    F = cv*(ell/2.0*inner(grad(usol), grad(usol))*dx + 2.0/ell*usol*dx)
+    # Weak form
+    a  = cv*ell*inner(grad(u), grad(v))*dx
+    L  = -cv*2*v/ell*dx
 
-# Take the PETScVector of the solution function
-xsol=usol.vector()  
+    # Assemble the linear system
+    A, b = assemble_system(a, L, bc)
+
+    # Define the upper and lower bounds
+    upperbound = interpolate(Constant(1.), V)
+    lowerbound = interpolate(Constant(0.), V)
+    xu = upperbound.vector()
+    xl = lowerbound.vector()
+
+    # Take the PETScVector of the solution function
+    xsol = usol.vector()
 
 if has_tao():
-  
+
     class TAOLinearBoundSolverTester(unittest.TestCase):
 
         def test_tao_linear_bound_solver(self):
             "Test TAOLinearBoundSolver"
             solver = TAOLinearBoundSolver("tao_tron","gmres")
             solver.solve(A,xsol,b,xl,xu)
-            
+
             # Test that F(usol) = Ly
             self.assertAlmostEqual(assemble(F), Ly, 5)
-    
+
 if __name__ == "__main__":
 
     # Turn off DOLFIN output
