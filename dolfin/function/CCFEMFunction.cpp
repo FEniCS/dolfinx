@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2013-09-25
+// Last changed: 2013-10-22
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/CCFEMDofMap.h>
+#include "Function.h"
 #include "CCFEMFunctionSpace.h"
 #include "CCFEMFunction.h"
 
@@ -45,6 +46,32 @@ CCFEMFunction::CCFEMFunction(boost::shared_ptr<const CCFEMFunctionSpace> V)
 CCFEMFunction::~CCFEMFunction()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+const Function& CCFEMFunction::part(std::size_t i) const
+{
+  // FIXME
+
+  /*
+  // Check if sub-Function is in the cache, otherwise create and add to cache
+  boost::ptr_map<std::size_t, Function>::iterator sub_function
+    = sub_functions.find(i);
+  if (sub_function != sub_functions.end())
+    return *(sub_function->second);
+  else
+  {
+    // Extract function subspace
+    std::vector<std::size_t> component = boost::assign::list_of(i);
+    boost::shared_ptr<const FunctionSpace>
+      sub_space(_function_space->extract_sub_space(component));
+
+    // Insert sub-Function into map and return reference
+    sub_functions.insert(i, new Function(sub_space, _vector));
+    return *(sub_functions.find(i)->second);
+  }
+  */
+
+  return *(_function_parts.find(0)->second);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> CCFEMFunction::vector()

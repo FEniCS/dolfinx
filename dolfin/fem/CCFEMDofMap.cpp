@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2013-09-19
+// Last changed: 2013-10-22
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
@@ -37,6 +37,11 @@ CCFEMDofMap::CCFEMDofMap(const CCFEMDofMap& dofmap)
   _global_dimension = dofmap._global_dimension;
   _dofmaps = dofmap._dofmaps;
   _current_part = dofmap._current_part;
+}
+//-----------------------------------------------------------------------------
+CCFEMDofMap::~CCFEMDofMap()
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::size_t CCFEMDofMap::num_parts() const
