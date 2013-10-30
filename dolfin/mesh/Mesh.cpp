@@ -375,7 +375,7 @@ const std::vector<std::size_t>&
 Mesh::color(std::vector<std::size_t> coloring_type) const
 {
   // Find color data
-  std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+  std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator
     coloring_data = this->topology().coloring.find(coloring_type);
 
@@ -442,26 +442,6 @@ double Mesh::rmax() const
     r = std::max(r, cell->inradius());
 
   return r;
-}
-//-----------------------------------------------------------------------------
-double Mesh::radius_ratio_min() const
-{
-  CellIterator cell(*this);
-  double q = cell->radius_ratio();
-  for (; !cell.end(); ++cell)
-    q = std::min(q, cell->radius_ratio());
-
-  return q;
-}
-//-----------------------------------------------------------------------------
-double Mesh::radius_ratio_max() const
-{
-  CellIterator cell(*this);
-  double q = cell->radius_ratio();
-  for (; !cell.end(); ++cell)
-    q = std::max(q, cell->radius_ratio());
-
-  return q;
 }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const

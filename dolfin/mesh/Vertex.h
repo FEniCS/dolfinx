@@ -21,6 +21,8 @@
 #ifndef __VERTEX_H
 #define __VERTEX_H
 
+#include <boost/shared_ptr.hpp>
+
 #include <dolfin/geometry/Point.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
@@ -69,8 +71,14 @@ namespace dolfin
 
     VertexFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 0) {}
 
+    VertexFunction(boost::shared_ptr<const Mesh> mesh)
+      : MeshFunction<T>(mesh, 0) {}
+
     VertexFunction(const Mesh& mesh, const T& value)
-        : MeshFunction<T>(mesh, 0, value) {}
+      : MeshFunction<T>(mesh, 0, value) {}
+
+    VertexFunction(boost::shared_ptr<const Mesh> mesh, const T& value)
+      : MeshFunction<T>(mesh, 0, value) {}
 
   };
 

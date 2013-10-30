@@ -45,20 +45,8 @@ option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 
-#option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
-
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
-
-# FIXME: Discuss which should be enabled by default
-# FIXME: AL: I suggest only the Python wrappers
-# FIXME: GNW: That would lead to most demos failing (no LU solver)
-# FIXME: GNW: I suggest enabling everything, but using QUIET to eliminate
-#             excessive output
-# FIXME: JR: What about adopting the way they do this in Trilinos? Then we
-#            could have options like DOLFIN_ENABLE_ALL_PACKAGES for enabling
-#            everything and DOLFIN_ENABLE_DEFAULT_PACKAGES for enabling only
-#            some default packages.
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
@@ -270,7 +258,36 @@ find_package(LibXml2 REQUIRED)
 #       is used to get the installation path for dolfin_utils
 find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
-  find_package(PythonLibs 2)
+
+  # Set variables to help find Python library that is compatible with
+  # interpreter
+  if (PYTHONINTERP_FOUND)
+    # Get Python include path from Python interpretter
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
+                           "import distutils.sysconfig, sys; sys.stdout.write(distutils.sysconfig.get_python_inc())"
+                    OUTPUT_VARIABLE _PYTHON_INCLUDE_PATH
+                    RESULT_VARIABLE _PYTHON_INCLUDE_RESULT)
+
+    # Get Python library path from interpreter
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
+                          "import os, sys, inspect; sys.stdout.write(os.path.split(os.path.split(inspect.getfile(inspect))[0])[0])"
+                    OUTPUT_VARIABLE _PYTHON_LIB_PATH
+                    RESULT_VARIABLE _PYTHON_LIB_RESULT)
+
+    # Set include path, if returned by interpreter
+    if ("${_PYTHON_INCLUDE_RESULT}" STREQUAL "0")
+      set(PYTHON_INCLUDE_DIR ${_PYTHON_INCLUDE_PATH})
+    endif()
+
+    # Add a search path for Python library based on output from
+    # iterpreter
+    if ("${_PYTHON_LIB_RESULT}" STREQUAL "0")
+      set(CMAKE_LIBRARY_PATH ${_PYTHON_LIB_PATH})
+    endif()
+
+    # Find Pythons livs
+    find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT QUIET REQUIRED)
+  endif()
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
@@ -523,26 +540,36 @@ if (PYTHONINTERP_FOUND)
 
   if (NOT DEFINED DOLFIN_INSTALL_PYTHON_MODULE_DIR)
     # Get path for platform-dependent Python modules (since we install a binary libary)
-    execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
+
+    # Python command string to discover module install location
+    if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+      set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True))")
+    else()
+      set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))")
+    endif()
+
+    # Probe Python interpreter
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "${PYTHON_LIB_DISCOVER_STR}"
       OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_MODULE_DIR
       )
-    # Strip off CMAKE_INSTALL_PREFIX (is added later by CMake)
-    string(REGEX REPLACE "${CMAKE_INSTALL_PREFIX}(/|\\\\)([^ ]*)" "\\2"
-      DOLFIN_INSTALL_PYTHON_MODULE_DIR "${DOLFIN_INSTALL_PYTHON_MODULE_DIR}")
     set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
       CACHE PATH "Python extension module installation directory.")
   endif()
 
   if (NOT DEFINED DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR)
     # Get path for pure Python modules
-    execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
+
+    # Python command string to discover module install location
+    if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+      set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False))")
+    else()
+      set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))")
+    endif()
+
+    # Probe Pyton interpreter
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "${PYTHON_LIB_DISCOVER_STR}"
       OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
       )
-    # Strip off CMAKE_INSTALL_PREFIX (is added later by CMake)
-    string(REGEX REPLACE "${CMAKE_INSTALL_PREFIX}(/|\\\\)([^ ]*)" "\\2"
-      DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR "${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}")
     set(DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
       CACHE PATH "Python module installation directory.")
   endif()
@@ -550,7 +577,7 @@ if (PYTHONINTERP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Installation of dolfin Python module
+# Installation of DOLFIN Python module
 
 if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(DIRECTORY

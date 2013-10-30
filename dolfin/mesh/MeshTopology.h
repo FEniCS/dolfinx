@@ -53,7 +53,7 @@ namespace dolfin
     ~MeshTopology();
 
     /// Assignment
-    const MeshTopology& operator= (const MeshTopology& topology);
+    MeshTopology& operator= (const MeshTopology& topology);
 
     /// Return topological dimension
     std::size_t dim() const;
@@ -139,7 +139,7 @@ namespace dolfin
     /// of color 'col'.
     // Developer note: std::vector is used in place of a MeshFunction
     //                 to avoid circular dependencies in the header files
-    std::map<const std::vector<std::size_t>,
+    std::map<std::vector<std::size_t>,
       std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > > coloring;
 
   private:
