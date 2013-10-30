@@ -53,7 +53,8 @@ L = g*v*dx
 # Set PETSc MUMPS paramter (this is required to prevent a memory error
 # when using MUMPS LU solver, which is probably due to the Real
 # space).
-PETScOptions.set("mat_mumps_icntl_14", 40.0)
+if has_petsc():
+    PETScOptions.set("mat_mumps_icntl_14", 40.0)
 
 # Solve problem
 w = Function(W)
