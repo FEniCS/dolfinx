@@ -115,6 +115,8 @@ if platform.system() == 'Windows':
 not_working_in_parallel = \
   [os.path.join(demodir, 'documented',   'biharmonic',                  'cpp'),    \
    os.path.join(demodir, 'documented',   'biharmonic',                  'python'), \
+   os.path.join(demodir, 'documented',   'csg-2D',                      'python'), \
+   os.path.join(demodir, 'documented',   'csg-2D',                      'cpp'), \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
    os.path.join(demodir, 'undocumented', 'ale',                         'cpp'),    \
