@@ -62,7 +62,7 @@ if has_petsc():
     zero = Constant(0.0)
     one  = Constant(1.0)
     bc_l = DirichletBC(V, zero, left)
-    bc_r = DirichletBC(V, one, rigth)
+    bc_r = DirichletBC(V, one, right)
     bc=[bc_l, bc_r]
 
     # Define variational problem
