@@ -326,7 +326,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Set some PETSc-specific options
-  set_petsc_options();
+  set_petsc_ksp_options();
 
   // Set operators
   set_petsc_operators();
@@ -337,7 +337,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     dolfin_assert(_P);
     boost::shared_ptr<const MatNullSpace> pc_nullspace
       = _preconditioner->nullspace();
-    if (pc_nullspace)
+
+    if (pc_nullspace && !preconditioner_set)
     {
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
       ierr = MatSetNearNullSpace(*(_P->mat()), *pc_nullspace);
@@ -360,7 +361,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     _preconditioner->set(*this);
     preconditioner_set = true;
   }
-
   // User defined preconditioner
   else if (pc_dolfin && !preconditioner_set)
   {
@@ -536,33 +536,37 @@ void PETScKrylovSolver::set_petsc_operators()
   dolfin_assert(_A);
   dolfin_assert(_P);
 
-  // Get some parameters
-  const bool reuse_precon = parameters("preconditioner")["reuse"];
-  const bool same_pattern
-    = parameters("preconditioner")["same_nonzero_pattern"];
-
-  PetscErrorCode ierr;
+  // Get parameter
+  const std::string mat_structure = parameters("preconditioner")["structure"];
 
   // Set operators with appropriate option
-  if (reuse_precon)
+  PetscErrorCode ierr;
+  if (mat_structure == "same")
   {
     ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(), SAME_PRECONDITIONER);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
-  else if (same_pattern)
+  else if (mat_structure == "same_nonzero_pattern")
   {
     ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(), SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
-  else
+  else if (mat_structure == "different_nonzero_pattern")
   {
     ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(),
                            DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
+  else
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "set PETSc Krylov solver operators",
+                 "Preconditioner re-use paramrter \"%s \" is unknown",
+                 mat_structure.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_petsc_options()
+void PETScKrylovSolver::set_petsc_ksp_options()
 {
   PetscErrorCode ierr;
 
