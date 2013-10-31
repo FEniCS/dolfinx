@@ -50,7 +50,6 @@ Parameters NewtonSolver::default_parameters()
   p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
-
   //p.add("reuse_preconditioner", false);
 
   return p;
@@ -121,6 +120,10 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
 
   nonlinear_problem.form(*_A, *_b, x);
+  _solver->set_operator(_A);
+
+  // Get relaxation parameter
+  const double relaxation = parameters["relaxation_parameter"];
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
@@ -139,7 +142,6 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     krylov_iterations += _solver->solve(*_dx, *_b);
 
     // Update solution
-    const double relaxation = parameters["relaxation_parameter"];
     if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
       x -= (*_dx);
     else
@@ -176,7 +178,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     if (dolfin::MPI::process_number() == 0)
     {
      info("Newton solver finished in %d iterations and %d linear solver iterations.",
-            newton_iteration, krylov_iterations);
+          newton_iteration, krylov_iterations);
     }
   }
   else
