@@ -507,7 +507,7 @@ void DofMap::set(GenericVector& x, double value) const
     _value.resize(cell_dofs->size(), value);
     x.set(_value.data(), cell_dofs->size(), cell_dofs->data());
   }
-  x.apply("add");
+  x.apply("insert");
 }
 //-----------------------------------------------------------------------------
 void DofMap::set_x(GenericVector& x, double value, std::size_t component,
