@@ -13,6 +13,23 @@ set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
 #------------------------------------------------------------------------------
+# Get GIT changeset, if available
+
+# Check for git
+find_program(GIT_FOUND git)
+
+if (GIT_FOUND)
+  # Get the commit hash of the working branch
+  execute_process(COMMAND git rev-parse HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+else()
+  set(GIT_COMMIT_HASH "unknown")
+endif()
+
+#------------------------------------------------------------------------------
 # General configuration
 
 # Set CMake options, see `cmake --help-policy CMP000x`
@@ -696,7 +713,8 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
         DESTINATION ${DOLFIN_BIN_DIR}
-	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
