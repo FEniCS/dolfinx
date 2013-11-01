@@ -51,7 +51,7 @@ def eps(u):
     return sym(grad(u))
 
 def sigma(epsilon):
-    return  2*mu*epsilon + lmbda*tr(epsilon)*Identity(w.cell().d)
+    return 2*mu*epsilon + lmbda*tr(epsilon)*Identity(w.geometric_dimension())
 
 # Weak formulation
 F = inner(sigma(eps(u)), eps(w))*dx - dot(f, w)*dx

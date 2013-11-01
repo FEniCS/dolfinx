@@ -25,7 +25,8 @@
 # Compile this form with FFC: ffc -l dolfin Biharmonic.ufl
 
 # Elements
-element = FiniteElement("Lagrange", triangle, 2)
+cell = triangle
+element = FiniteElement("Lagrange", cell, 2)
 
 # Trial and test functions
 u = TrialFunction(element)
@@ -33,12 +34,12 @@ v = TestFunction(element)
 f = Coefficient(element)
 
 # Normal component, mesh size and right-hand side
-n  = element.cell().n
-h = 2.0*triangle.circumradius
+n  = FacetNormal(cell)
+h = 2.0*Circumradius(cell)
 h_avg = (h('+') + h('-'))/2
 
 # Parameters
-alpha = Constant(triangle)
+alpha = Constant(cell)
 
 # Bilinear form
 a = inner(div(grad(u)), div(grad(v)))*dx \

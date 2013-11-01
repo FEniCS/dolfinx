@@ -105,7 +105,7 @@ class Assembly(unittest.TestCase):
         u = TrialFunction(V)
 
         # Define normal component, mesh size and right-hand side
-        n = V.cell().n
+        n = FacetNormal(mesh)
         h = CellSize(mesh)
         h_avg = (h('+') + h('-'))/2
         f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
@@ -220,10 +220,10 @@ class Assembly(unittest.TestCase):
 
         # Define some haphazardly chosen cell/facet function
         mesh = UnitSquareMesh(4, 4)
-        domains = CellFunction("size_t", mesh)
-        domains.set_all(0)
-        domains[0] = 1
-        domains[1] = 1
+        subdomains = CellFunction("size_t", mesh)
+        subdomains.set_all(0)
+        subdomains[0] = 1
+        subdomains[1] = 1
 
         boundaries = FacetFunction("size_t", mesh)
         boundaries.set_all(0)
@@ -239,11 +239,22 @@ class Assembly(unittest.TestCase):
         f = interpolate(f, V)
         g = interpolate(g, V)
 
-        dxs = dx[domains]
-        dss = ds[boundaries]
-        M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
+        mesh1 = subdomains.mesh()
+        mesh2 = boundaries.mesh()
+        self.assertEqual(mesh1.id(), mesh2.id())
+        self.assertEqual(mesh1.ufl_domain().label(), mesh2.ufl_domain().label())
 
-        # Check that domains are respected
+        dxs = dx[subdomains]
+        dss = ds[boundaries]
+        self.assertEqual(dxs.domain(), None)
+        self.assertEqual(dss.domain(), None)
+        self.assertEqual(dxs.domain_data(), subdomains)
+        self.assertEqual(dss.domain_data(), boundaries)
+
+        M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
+        self.assertEqual(M.domains(), [mesh.ufl_domain(cell=subdomains, exterior_facet=boundaries)])
+
+        # Check that subdomains are respected
         reference = 7.33040364583
         self.assertAlmostEqual(assemble(M), reference, 10)
 
@@ -430,6 +441,92 @@ class Assembly(unittest.TestCase):
             self.assertAlmostEqual(D.norm("frobenius"), 0.0)
 
             parameters["reorder_dofs_serial"] = reorder_dofs
+
+    def test_ways_to_pass_mesh_to_assembler(self):
+        mesh = UnitSquareMesh(16, 16)
+
+        # Geometry with mesh (ufl.Domain with mesh in domain data)
+        x = SpatialCoordinate(mesh)
+        n = FacetNormal(mesh)
+
+        # Geometry with just cell (no reference to mesh, for backwards compatibility)
+        x2 = SpatialCoordinate(mesh.ufl_cell())
+        n2 = FacetNormal(mesh.ufl_cell())
+
+        # A function equal to x[0] for comparison
+        V = FunctionSpace(mesh, "CG", 1)
+        f = Function(V)
+        f.interpolate(Expression("x[0]"))
+
+        # An expression equal to x[0], with different geometry info:
+        e = Expression("x[0]") # nothing
+        e2 = Expression("x[0]", cell=mesh.ufl_cell()) # cell
+        e3 = Expression("x[0]", element=V.ufl_element()) # ufl element
+        e4 = Expression("x[0]", domain=mesh) # ufl.Domain (this one holds mesh reference)
+
+
+        # Provide mesh in measure:
+        dx2 = Measure("dx", domain=mesh)
+        self.assertAlmostEqual(1.0, assemble(1*dx(mesh)))
+        self.assertAlmostEqual(1.0, assemble(Constant(1.0)*dx(mesh)))
+        self.assertAlmostEqual(1.0, assemble(Constant(1.0)*dx2))
+
+        # Provide mesh in measure and as argument:
+        self.assertAlmostEqual(1.0, assemble(1*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(1.0, assemble(Constant(1.0)*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(1.0, assemble(Constant(1.0)*dx2, mesh=mesh))
+
+        # Try with cell argument to Constant as well:
+        self.assertAlmostEqual(1.0, assemble(Constant(1.0, cell=mesh.ufl_cell())*dx(mesh)))
+        self.assertAlmostEqual(1.0, assemble(Constant(1.0, cell=mesh.ufl_cell())*dx2))
+        self.assertAlmostEqual(1.0, assemble(Constant(1.0, cell=mesh.ufl_cell())*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(1.0, assemble(Constant(1.0, cell=mesh.ufl_cell())*dx2, mesh=mesh))
+
+
+        # Geometric quantities with mesh in domain:
+        self.assertAlmostEqual(0.5, assemble(x[0]*dx))
+        self.assertAlmostEqual(0.5, assemble(x[0]*dx(mesh)))
+        self.assertAlmostEqual(0.5, assemble(x[0]*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(x[0]*dx, mesh=mesh))
+
+        # Geometric quantities without mesh in domain:
+        self.assertAlmostEqual(0.5, assemble(x2[0]*dx(mesh)))
+        self.assertAlmostEqual(0.5, assemble(x2[0]*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(x2[0]*dx, mesh=mesh))
+
+        # Functions with mesh in domain:
+        self.assertAlmostEqual(0.5, assemble(f*dx))
+        self.assertAlmostEqual(0.5, assemble(f*dx(mesh)))
+        self.assertAlmostEqual(0.5, assemble(f*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(f*dx, mesh=mesh))
+
+        # Expressions with and without mesh in domain:
+        self.assertAlmostEqual(0.5, assemble(e*dx(mesh)))
+        self.assertAlmostEqual(0.5, assemble(e*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(e*dx, mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(e2*dx(mesh)))
+        self.assertAlmostEqual(0.5, assemble(e2*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(e2*dx, mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(e3*dx(mesh)))
+        self.assertAlmostEqual(0.5, assemble(e3*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(e3*dx, mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(e4*dx)) # e4 has a domain with mesh reference
+        self.assertAlmostEqual(0.5, assemble(e4*dx(mesh)))
+        self.assertAlmostEqual(0.5, assemble(e4*dx(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.5, assemble(e4*dx, mesh=mesh))
+
+
+        # Geometric quantities with mesh in domain:
+        self.assertAlmostEqual(0.0, assemble(n[0]*ds))
+        self.assertAlmostEqual(0.0, assemble(n[0]*ds(mesh)))
+        self.assertAlmostEqual(0.0, assemble(n[0]*ds(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.0, assemble(n[0]*ds, mesh=mesh))
+
+        # Geometric quantities without mesh in domain:
+        self.assertAlmostEqual(0.0, assemble(n2[0]*ds(mesh)))
+        self.assertAlmostEqual(0.0, assemble(n2[0]*ds(mesh), mesh=mesh))
+        self.assertAlmostEqual(0.0, assemble(n2[0]*ds, mesh=mesh))
+
 
 if __name__ == "__main__":
     print ""

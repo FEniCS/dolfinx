@@ -38,7 +38,7 @@ B = Coefficient(element)        # Body force per unit volume
 T = Coefficient(element)        # Traction force on the boundary
 
 # Kinematics
-I = Identity(element.cell().d)  # Identity tensor
+I = Identity(u.geometric_dimension())  # Identity tensor
 F = I + grad(u)                 # Deformation gradient
 C = F.T*F                       # Right Cauchy-Green tensor
 

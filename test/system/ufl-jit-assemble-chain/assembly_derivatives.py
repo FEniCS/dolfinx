@@ -43,8 +43,7 @@ class IntegrateDerivatives(unittest.TestCase):
         mesh.coordinates()[:] *= (x1 - x0)
         mesh.coordinates()[:] += x0
 
-        cell = mesh.ufl_cell()
-        x = cell.x[0]
+        x = SpatialCoordinate(mesh)[0]
         xs = 0.1+0.8*x/x1 # scaled to be within [0.1,0.9]
 
         # Define list of expressions to test, and configure
@@ -133,7 +132,7 @@ class IntegrateDerivatives(unittest.TestCase):
         debug = 0
         for F, acc in F_list:
             # Apply UFL differentiation
-            f = diff(F, cell.x)[...,0]
+            f = diff(F, SpatialCoordinate(mesh))[...,0]
             if debug:
                 print F
                 print x
@@ -176,11 +175,10 @@ class IntegrateDerivatives(unittest.TestCase):
         n = 10
         mesh = RectangleMesh(0.0, 0.0, 2.0, 3.0, 2*n, 3*n)
 
-        cell = mesh.ufl_cell()
-        x, y = cell.x
+        x, y = SpatialCoordinate(mesh)
         xs = 0.1+0.8*x/2 # scaled to be within [0.1,0.9]
         ys = 0.1+0.8*y/3 # scaled to be within [0.1,0.9]
-        n = cell.n
+        n = FacetNormal(mesh)
 
         # Define list of expressions to test, and configure
         # accuracies these expressions are known to pass with.

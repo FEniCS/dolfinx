@@ -372,9 +372,24 @@ del _meshvaluecollection_doc_string
 %extend dolfin::Mesh {
 %pythoncode
 %{
+def ufl_domain(self, **domain_data):
+    """Returns the ufl Domain corresponding to the mesh."""
+    import ufl
+    label = "dolfin_mesh_with_id_%d" % self.id()
+    domain_data["mesh"] = self
+    return ufl.Domain(cell=self.ufl_cell(),
+                      geometric_dimension=self.geometry().dim(),
+                      topological_dimension=self.topology().dim(),
+                      data=domain_data,
+                      label=label)
+
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
 def ufl_cell(self):
     """
-    Returns the ufl cell of the mesh
+    Returns the ufl cell of the mesh.
 
     The cell corresponds to the topological dimension of the mesh.
     """
