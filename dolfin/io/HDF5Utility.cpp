@@ -338,26 +338,19 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
 std::vector<double>
 HDF5Utility::reorder_vertices_by_global_indices(const Mesh& mesh)
 {
-  std::vector<std::size_t> global_size(2);
-  global_size[0] = MPI::sum(mesh.num_vertices()); //including duplicates
-  global_size[1] = mesh.geometry().dim();
-
+  std::size_t width = mesh.geometry().dim();
   std::vector<double> ordered_coordinates(mesh.coordinates());
-  reorder_values_by_global_indices(mesh, ordered_coordinates, global_size);
+  reorder_values_by_global_indices(mesh, ordered_coordinates, width);
   return ordered_coordinates;
 }
 //---------------------------------------------------------------------------
 void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
                                       std::vector<double>& data,
-                                      std::vector<std::size_t>& global_size)
+                                      const std::size_t width)
 {
   Timer t("HDF5: reorder vertex values");
 
-  dolfin_assert(global_size.size() == 2);
-  dolfin_assert(mesh.num_vertices()*global_size[1] == data.size());
-  dolfin_assert(MPI::sum(mesh.num_vertices()) == global_size[0]);
-
-  const std::size_t width = global_size[1];
+  dolfin_assert(mesh.num_vertices()*width == data.size());
 
   // Get shared vertices
   const std::map<unsigned int, std::set<unsigned int> >& shared_vertices
@@ -397,9 +390,10 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
   // Build buffer of indices and coords to send
   std::vector<std::vector<std::size_t> > send_buffer_index(num_processes);
   std::vector<std::vector<double> > send_buffer_values(num_processes);
+
   // Reference to data to send, reorganised as a 2D boost::multi_array
-  boost::multi_array_ref<double, 2> data_array(data.data(),
-                     boost::extents[mesh.num_vertices()][width]);
+  boost::multi_array_ref<double, 2> 
+    data_array(data.data(), boost::extents[mesh.num_vertices()][width]);
 
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
@@ -439,7 +433,6 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
   }
 
   data.assign(ordered_values.begin(), ordered_values.end());
-  global_size[0] = N;
 }
 //-----------------------------------------------------------------------------
 
