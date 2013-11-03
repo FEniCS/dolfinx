@@ -57,14 +57,6 @@ int main()
   info("Plotting a RectangleMesh");
   plot(rectangle_right_left, "Rectangle (right/left)");
 
-  UnitCircleMesh circle_rotsumn(20, "right", "rotsumn");
-  info("Plotting a UnitCircleMesh");
-  plot(circle_rotsumn, "Unit circle (rotsum)");
-
-  UnitCircleMesh circle_maxn(20, "right", "maxn");
-  info("Plotting a UnitCircleMesh");
-  plot(circle_maxn, "Unit circle (maxn)");
-
   #ifdef HAS_CGAL
   CircleMesh circle_mesh(Point(0.0, 0.0), 1.0, 0.2);
   info("Plotting a CircleMesh");

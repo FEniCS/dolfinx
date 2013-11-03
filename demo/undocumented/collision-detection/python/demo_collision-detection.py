@@ -33,8 +33,8 @@ num_steps = 1000
 
 # Create meshes: a box and two circles
 mesh_A = RectangleMesh(0, 0, L, L, M, M)
-mesh_B = UnitCircleMesh(N)
-mesh_C = UnitCircleMesh(N)
+mesh_B = CircleMesh(Point(0.0, 0.0), 1.0, 1.0/N)
+mesh_C = CircleMesh(Point(0.0, 0.0), 1.0, 1.0/N)
 
 # Displace circles to initial positions
 mesh_B.translate(Point(x_B, y_B))

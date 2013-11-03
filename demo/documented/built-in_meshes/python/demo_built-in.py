@@ -54,14 +54,6 @@ mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
 print "Plotting a RectangleMesh"
 plot(mesh, title="Rectangle (right/left)")
 
-mesh = UnitCircleMesh(20, "right", "rotsumn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (rotsum)")
-
-mesh = UnitCircleMesh(20, "right", "maxn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (maxn)")
-
 if has_cgal():
     mesh = CircleMesh(Point(0.0, 0.0), 1.0, 0.2)
     print "Plotting a CircleMesh"
