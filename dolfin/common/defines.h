@@ -15,16 +15,26 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg, 2011
+// Modified by Garth N. Wells, 2013
 //
 // First added:  2009-09-03
-// Last changed: 2011-10-21
+// Last changed: 2013-11-01
 
 #ifndef __DOLFIN_DEFINES_H
 #define __DOLFIN_DEFINES_H
 
+#include<string>
+
 namespace dolfin
 {
+
+  /// Return DOLFIN version string
+  std::string dolfin_version();
+
+  /// Return git changeset hash (returns "unknown" if changeset is
+  /// not known)
+  std::string git_commit_hash();
 
   /// Return true if DOLFIN is compiled with OpenMP
   bool has_openmp();
