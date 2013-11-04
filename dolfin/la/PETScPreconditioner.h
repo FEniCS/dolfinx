@@ -63,21 +63,20 @@ namespace dolfin
     /// Set the precondtioner type and parameters
     virtual void set(PETScKrylovSolver& solver);
 
-    /// Set the (approximate) null space of the preconditioner operator
+    /// Set the (near) null space of the preconditioner operator
     /// (matrix). This is required for certain preconditioner types,
     /// e.g. smoothed aggregation multigrid
-    void set_nullspace(const VectorSpaceBasis& nullspace);
+    void set_nullspace(const VectorSpaceBasis& near_nullspace);
 
     /// Return the PETSc null space
-    boost::shared_ptr<const MatNullSpace> nullspace() const
-    { return petsc_nullspace; }
+    boost::shared_ptr<const MatNullSpace> near_nullspace() const
+    { return petsc_near_nullspace; }
 
     /// Set the coordinates of the operator (matrix) rows and geometric
     /// dimension d. This is can be used by required for certain
     /// preconditioners, e.g. ML. The input for this function can be
     /// generated using GenericDofMap::tabulate_all_dofs.
     void set_coordinates(const std::vector<double>& x, std::size_t dim);
-
 
     // FIXME: Document
     void
@@ -108,13 +107,13 @@ namespace dolfin
     static const std::vector<std::pair<std::string, std::string> >
       _methods_descr;
 
-    // Null space vectors
-    std::vector<PETScVector> _nullspace;
+    // Near null space vectors
+    std::vector<PETScVector> _near_nullspace;
 
     // PETSc null space. Would like this to be a scoped_ptr, but it
     // doesn't support custom deleters. Change to std::unique_ptr in
     // the future.
-    boost::shared_ptr<MatNullSpace> petsc_nullspace;
+    boost::shared_ptr<MatNullSpace> petsc_near_nullspace;
 
     // Operator row coordinates
     std::vector<double> _coordinates;
