@@ -136,7 +136,7 @@ CellFunction<std::size_t> MeshColoring::cell_colors(const Mesh& mesh,
 {
 
   // Get color data
-  std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+  std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator coloring_data;
   coloring_data = mesh.topology().coloring.find(coloring_type);
 

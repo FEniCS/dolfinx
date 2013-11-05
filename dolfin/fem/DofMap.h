@@ -23,7 +23,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-03-04
+// Last changed: 2013-09-19
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -233,8 +233,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<dolfin::la_index>
     ///         Local-to-global mapping of dofs.
-    const std::vector<dolfin::la_index>&
-      cell_dofs(std::size_t cell_index) const
+    const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const
     {
       dolfin_assert(cell_index < _dofmap.size());
       return _dofmap[cell_index];

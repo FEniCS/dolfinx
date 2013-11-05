@@ -13,6 +13,23 @@ set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
 #------------------------------------------------------------------------------
+# Get GIT changeset, if available
+
+# Check for git
+find_program(GIT_FOUND git)
+
+if (GIT_FOUND)
+  # Get the commit hash of the working branch
+  execute_process(COMMAND git rev-parse HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+else()
+  set(GIT_COMMIT_HASH "unknown")
+endif()
+
+#------------------------------------------------------------------------------
 # General configuration
 
 # Set CMake options, see `cmake --help-policy CMP000x`
@@ -258,7 +275,36 @@ find_package(LibXml2 REQUIRED)
 #       is used to get the installation path for dolfin_utils
 find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
-  find_package(PythonLibs 2)
+
+  # Set variables to help find Python library that is compatible with
+  # interpreter
+  if (PYTHONINTERP_FOUND)
+    # Get Python include path from Python interpretter
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
+                           "import distutils.sysconfig, sys; sys.stdout.write(distutils.sysconfig.get_python_inc())"
+                    OUTPUT_VARIABLE _PYTHON_INCLUDE_PATH
+                    RESULT_VARIABLE _PYTHON_INCLUDE_RESULT)
+
+    # Get Python library path from interpreter
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
+                          "import os, sys, inspect; sys.stdout.write(os.path.split(os.path.split(inspect.getfile(inspect))[0])[0])"
+                    OUTPUT_VARIABLE _PYTHON_LIB_PATH
+                    RESULT_VARIABLE _PYTHON_LIB_RESULT)
+
+    # Set include path, if returned by interpreter
+    if ("${_PYTHON_INCLUDE_RESULT}" STREQUAL "0")
+      set(PYTHON_INCLUDE_DIR ${_PYTHON_INCLUDE_PATH})
+    endif()
+
+    # Add a search path for Python library based on output from
+    # iterpreter
+    if ("${_PYTHON_LIB_RESULT}" STREQUAL "0")
+      set(CMAKE_LIBRARY_PATH ${_PYTHON_LIB_PATH})
+    endif()
+
+    # Find Pythons livs
+    find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT QUIET REQUIRED)
+  endif()
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
@@ -667,7 +713,8 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
         DESTINATION ${DOLFIN_BIN_DIR}
-	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------

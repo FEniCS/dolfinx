@@ -24,7 +24,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-09-05
+// Last changed: 2013-09-19
 
 #include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
@@ -237,12 +237,14 @@ std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<std::size_t, unsigned int>& DofMap::off_process_owner() const
+const boost::unordered_map<std::size_t, unsigned int>&
+DofMap::off_process_owner() const
 {
   return _off_process_owner;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<std::size_t, std::vector<unsigned int> >& DofMap::shared_dofs() const
+const boost::unordered_map<std::size_t, std::vector<unsigned int> >&
+DofMap::shared_dofs() const
 {
   return _shared_dofs;
 }
@@ -471,7 +473,7 @@ boost::shared_ptr<GenericDofMap>
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index> DofMap::dofs(std::size_t r0, std::size_t r1) const
 {
-  // Creat vector to hold dofs
+  // Create vector to hold dofs
   std::vector<la_index> _dofs;
   _dofs.reserve(_dofmap.size()*max_cell_dimension());
 
@@ -505,7 +507,7 @@ void DofMap::set(GenericVector& x, double value) const
     _value.resize(cell_dofs->size(), value);
     x.set(_value.data(), cell_dofs->size(), cell_dofs->data());
   }
-  x.apply("add");
+  x.apply("insert");
 }
 //-----------------------------------------------------------------------------
 void DofMap::set_x(GenericVector& x, double value, std::size_t component,

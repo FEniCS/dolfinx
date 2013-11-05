@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-09-16
+// Last changed: 2013-09-19
 
 #include <cstdlib>
 #include <sstream>
@@ -169,3 +169,4 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
     wrapper(new ExpressionWrapper(expression, mesh));
   return plot_object(wrapper, p, VTKPlotter::to_key(*expression));
 }
+//-----------------------------------------------------------------------------

@@ -81,62 +81,57 @@ void XDMFFile::operator<< (const Function& u)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 {
-
+  // Prepate HDF5 file
   if (hdf5_filemode != "w")
   {
     // Create HDF5 file (truncate)
     hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
     hdf5_filemode = "w";
   }
-
   dolfin_assert(hdf5_file);
 
+  // Access Function, Mesh, dofmap  and time step
   dolfin_assert(ut.first);
   const Function& u = *(ut.first);
-  const double time_step = ut.second;
 
-  // Update any ghost values
-  u.update();
-
-  // Get Mesh object
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
 
-  // Geometric dimension
-  const std::size_t gdim = mesh.geometry().dim();
-
-  // Get DOF map
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
+
+  const double time_step = ut.second;
+
+  // FIXME: Can we avoid this?
+  // Update any ghost values
+  u.update();
+
+  // Geometric and topological dimension
+  const std::size_t gdim = mesh.geometry().dim();
+  const std::size_t tdim = mesh.topology().dim();
 
   // Get some Function and cell information
   const std::size_t value_rank = u.value_rank();
   const std::size_t value_size = u.value_size();
-  const std::size_t cell_dim = mesh.topology().dim();
+
   std::size_t padded_value_size = value_size;
 
   // Test for cell-centred data
   std::size_t cell_based_dim = 1;
   for (std::size_t i = 0; i < value_rank; i++)
-    cell_based_dim *= cell_dim;
+    cell_based_dim *= tdim;
   const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
 
   // Get number of local/global cells/vertices
-
   const std::size_t num_local_cells = mesh.num_cells();
   const std::size_t num_local_vertices = mesh.num_vertices();
-  const std::size_t num_global_cells = MPI::sum(num_local_cells);
-  std::size_t num_total_vertices = MPI::sum(num_local_vertices);
+  const std::size_t num_global_cells = mesh.size_global(tdim);
 
   // Get Function data at vertices/cell centres
   std::vector<double> data_values;
 
-  std::size_t num_local_entities = 0;
-  std::size_t num_total_entities = 0;
   if (vertex_data)
   {
-    num_local_entities = num_local_vertices; // includes duplicates
-    num_total_entities = num_total_vertices;
     u.compute_vertex_values(data_values, mesh);
 
     // Interleave the values for vector or tensor fields and pad 2D
@@ -148,15 +143,15 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       if (value_size == 4)
         padded_value_size = 9;
 
-      std::vector<double> _data_values(padded_value_size*num_local_entities,
+      std::vector<double> _data_values(padded_value_size*num_local_vertices,
                                        0.0);
-      for (std::size_t i = 0; i < num_local_entities; i++)
+      for (std::size_t i = 0; i < num_local_vertices; i++)
       {
         for (std::size_t j = 0; j < value_size; j++)
         {
           std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
           _data_values[i*padded_value_size + j + tensor_2d_offset]
-              = data_values[i + j*num_local_entities];
+              = data_values[i + j*num_local_vertices];
         }
       }
       data_values = _data_values;
@@ -164,8 +159,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   }
   else
   {
-    num_local_entities = num_local_cells;
-    num_total_entities = num_global_cells;
     dolfin_assert(u.function_space()->dofmap());
     dolfin_assert(u.vector());
 
@@ -201,7 +194,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       padded_value_size = 9;
 
     cell_offset = offset.begin();
-    std::vector<double> _data_values(padded_value_size*num_local_entities, 0.0);
+    std::vector<double> _data_values(padded_value_size*num_local_cells, 0.0);
     std::size_t count = 0;
     if (value_rank == 1 && value_size == 2)
     {
@@ -250,22 +243,21 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       hdf5_file->write(mesh, current_mesh_name);
   }
 
-  // Vertex/cell values are saved in the hdf5 group
-  // /VisualisationVector as distinct from /Vector which is used for
-  // solution vectors.
-
-  // Save data values to HDF5 file
-
+  // Remove duplicates for vertex-based data
   std::vector<std::size_t> global_size(2);
-  global_size[0] = num_total_entities;
   global_size[1] = padded_value_size;
-
   if (vertex_data)
   {
-    HDF5Utility::reorder_values_by_global_indices(mesh, data_values, global_size);
-    num_total_vertices = global_size[0];
+    HDF5Utility::reorder_values_by_global_indices(mesh, data_values, 
+                                                  padded_value_size);
+    global_size[0] = mesh.size_global(0);
   }
+  else
+    global_size[0] = mesh.size_global(tdim);
 
+  // Save data values to HDF5 file.  Vertex/cell values are saved in
+  // the hdf5 group /VisualisationVector as distinct from /Vector
+  // which is used for solution vectors.
   const std::string dataset_name = "/VisualisationVector/"
     + boost::lexical_cast<std::string>(counter);
 
@@ -278,9 +270,10 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Write the XML meta description (see http://www.xdmf.org) on
   // process zero
+  const std::size_t num_total_vertices = mesh.size_global(0);
   if (MPI::process_number() == 0)
   {
-    output_xml(time_step, vertex_data, cell_dim, num_global_cells, gdim,
+    output_xml(time_step, vertex_data, tdim, num_global_cells, gdim,
                num_total_vertices, value_rank, padded_value_size,
                u.name(), dataset_name);
   }
@@ -291,14 +284,15 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator>> (Mesh& mesh)
 {
+  // Prepare HDF5 file
   if (hdf5_filemode != "r")
   {
     hdf5_file.reset(new HDF5File(hdf5_filename, "r"));
     hdf5_filemode = "r";
   }
-
   dolfin_assert(hdf5_file);
 
+  // Prepare XML file
   pugi::xml_document xml_doc;
   pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
   if (!result)
@@ -785,35 +779,36 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   // Grid/Attribute (Function value data)
   pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");
   xdmf_values.append_attribute("Name") = name.c_str();
+  
+  if (value_rank == 0)
+    xdmf_values.append_attribute("AttributeType") = "Scalar";
+  else if (value_rank == 1)
+    xdmf_values.append_attribute("AttributeType") = "Vector";
+  else if (value_rank == 2)
+    xdmf_values.append_attribute("AttributeType") = "Tensor";
 
-    if (value_rank == 0)
-      xdmf_values.append_attribute("AttributeType") = "Scalar";
-    else if (value_rank == 1)
-      xdmf_values.append_attribute("AttributeType") = "Vector";
-    else if (value_rank == 2)
-      xdmf_values.append_attribute("AttributeType") = "Tensor";
+  if (vertex_data)
+    xdmf_values.append_attribute("Center") = "Node";
+  else
+    xdmf_values.append_attribute("Center") = "Cell";
+  
+  pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
+  xdmf_data.append_attribute("Format") = "HDF";
+  
+  const std::size_t num_total_entities 
+    = vertex_data ? num_total_vertices : num_global_cells;
 
-    if (vertex_data)
-      xdmf_values.append_attribute("Center") = "Node";
-    else
-      xdmf_values.append_attribute("Center") = "Cell";
+  s = boost::lexical_cast<std::string>(num_total_entities) + " "
+    + boost::lexical_cast<std::string>(padded_value_size);
 
-    pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
-    xdmf_data.append_attribute("Format") = "HDF";
+  xdmf_data.append_attribute("Dimensions") = s.c_str();
 
-    const std::size_t num_total_entities = vertex_data ? num_total_vertices : num_global_cells;
-
-    s = boost::lexical_cast<std::string>(num_total_entities) + " "
-      + boost::lexical_cast<std::string>(padded_value_size);
-
-    xdmf_data.append_attribute("Dimensions") = s.c_str();
-
-    boost::filesystem::path p(hdf5_filename);
-    s = p.filename().string() + ":" + dataset_name;
-    xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
-
-    // Write XML file
-    xml_doc.save_file(_filename.c_str(), "  ");
-  }
+  boost::filesystem::path p(hdf5_filename);
+  s = p.filename().string() + ":" + dataset_name;
+  xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
+  
+  // Write XML file
+  xml_doc.save_file(_filename.c_str(), "  ");
+}
 //----------------------------------------------------------------------------
 #endif
