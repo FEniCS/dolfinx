@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-05-10
-// Last changed: 2013-03-15
+// Last changed: 2013-04-05
 
 #ifndef __CSG_CGAL_MESH_GENERATOR2D_H
 #define __CSG_CGAL_MESH_GENERATOR2D_H
@@ -40,6 +40,7 @@ namespace dolfin
   public :
 
     CSGCGALMeshGenerator2D(const CSGGeometry& geometry);
+    //CSGCGALMeshGenerator2D(const std::vector<boost::shared_ptr<const CSGGeometry> >& subdomains);
 
     ~CSGCGALMeshGenerator2D();
 
@@ -52,16 +53,15 @@ namespace dolfin
       p.add("mesh_resolution", 64);
       p.add("triangle_shape_bound", 0.125);
       p.add("cell_size", 0.25);
+      
+      // shorter edges in the domain will be collapsed before meshing
+      p.add("edge_minimum", 10e-5);
 
       return p;
     }
 
   private:
-
-    #ifdef HAS_CGAL
-    const CSGGeometry& _geometry;
-    #endif
-
+    const CSGGeometry &geometry;
   };
 
 }
