@@ -100,6 +100,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
   // Compute F(u)
   nonlinear_problem.F(*_b, x);
+  nonlinear_problem.form(*_A, *_b, x);
 
   // Check convergence
   bool newton_converged = false;
@@ -119,7 +120,6 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                  convergence_criterion.c_str());
   }
 
-  nonlinear_problem.form(*_A, *_b, x);
   _solver->set_operator(_A);
 
   // Get relaxation parameter
@@ -147,11 +147,12 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     else
       x.axpy(-relaxation, *_dx);
 
-    // FIXME: this step is not needed if residual is based on dx and
+    // FIXME: This step is not needed if residual is based on dx and
     //        this has converged.
+    // FIXME: But, this function call may update internal variable, etc.
     // Compute F
-    nonlinear_problem.form(*_A, *_b, x);
     nonlinear_problem.F(*_b, x);
+    nonlinear_problem.form(*_A, *_b, x);
 
     // Test for convergence
     if (convergence_criterion == "residual")
@@ -167,10 +168,12 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
       ++newton_iteration;
     }
     else
+    {
       dolfin_error("NewtonSolver.cpp",
                    "check for convergence",
                    "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
                    convergence_criterion.c_str());
+    }
   }
 
   if (newton_converged)
