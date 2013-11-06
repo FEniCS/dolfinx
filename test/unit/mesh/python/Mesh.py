@@ -35,7 +35,7 @@ class MeshConstruction(unittest.TestCase):
     def setUp(self):
         if MPI.num_processes() == 1:
             self.interval = UnitIntervalMesh(10)
-        self.circle = UnitCircleMesh(5)
+        self.circle = CircleMesh(Point(0.0, 0.0), 1.0, 0.1)
         self.square = UnitSquareMesh(5, 5)
         self.rectangle = RectangleMesh(0, 0, 2, 2, 5, 5)
         self.cube = UnitCubeMesh(3, 3, 3)
