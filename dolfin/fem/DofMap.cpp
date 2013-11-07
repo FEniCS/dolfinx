@@ -44,7 +44,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
-   : _ufc_dofmap(ufc_dofmap), _global_dimension(0), _ufc_offset(0)
+   : _ufc_dofmap(ufc_dofmap), _is_view(false), _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -55,7 +55,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
                boost::shared_ptr<const SubDomain> constrained_domain)
-  : _ufc_dofmap(ufc_dofmap), _global_dimension(0), _ufc_offset(0)
+  : _ufc_dofmap(ufc_dofmap), _is_view(false), _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -81,8 +81,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                boost::shared_ptr<const Restriction> restriction)
-  : _ufc_dofmap(ufc_dofmap), _restriction(restriction), _global_dimension(0),
-    _ufc_offset(0)
+  : _ufc_dofmap(ufc_dofmap), _restriction(restriction), _is_view(false), 
+    _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
@@ -104,10 +104,9 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
   const std::vector<std::size_t>& component, const Mesh& mesh)
-  : _global_dimension(0), _ufc_offset(0), _ownership_range(0, 0)
+  : _is_view(true), _global_dimension(0), _ufc_offset(0), 
+    _ownership_range(parent_dofmap._ownership_range)
 {
-  // Note: Ownership range is set to zero since dofmap is a view
-
   // Share slave-master map with parent
   this->slave_master_mesh_entities = parent_dofmap.slave_master_mesh_entities;
 
@@ -227,13 +226,6 @@ boost::shared_ptr<const dolfin::Restriction> DofMap::restriction() const
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
 {
-  if (_ownership_range.first == 0 && _ownership_range.second == 0)
-  {
-    dolfin_error("DofMap.cpp",
-                 "access ownership range of degree of freedom mapping",
-                 "Cannot determine ownership range for sub-dofmaps");
-  }
-
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
@@ -305,6 +297,13 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
   const std::size_t gdim = _ufc_dofmap->geometric_dimension();
   dolfin_assert(gdim == mesh.geometry().dim());
 
+  if (_is_view)
+  {
+    dolfin_error("DofMap.cpp",
+                 "tabulate_all_coordinates",
+                 "Cannot tabulate coordinates for a DofMap that is a view.");
+  }
+
   // Local offset
   const std::size_t offset = ownership_range().first;
 
@@ -350,7 +349,16 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
 {
-  deprecation("dof_to_vertex_map", "1.3.0", "DofMap::dof_to_vertex_map has been replaced by the free function vertex_to_dof_map.");
+  deprecation("dof_to_vertex_map", "1.3.0", 
+	      "DofMap::dof_to_vertex_map has been replaced by the free "
+	      "function vertex_to_dof_map.");
+
+  if (_is_view)
+  {
+    dolfin_error("DofMap.cpp",
+                 "tabulate dof to vertex map",
+                 "Cannot tabulate dof_to_vertex map for a DofMap that is a view");
+  }
 
   // Check that we only have dofs living on vertices
   assert(_ufc_dofmap);
@@ -418,7 +426,16 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> DofMap::vertex_to_dof_map(const Mesh& mesh) const
 {
-  deprecation("vertex_to_dof_map", "1.3.0", "DofMap::vertex_to_dof_map has been replaced by the free function dof_to_vertex_map.");
+  deprecation("vertex_to_dof_map", "1.3.0", 
+	      "DofMap::vertex_to_dof_map has been replaced by the "
+	      "free function dof_to_vertex_map.");
+
+  if (_is_view)
+  {
+    dolfin_error("DofMap.cpp",
+                 "tabulate vertex to dof map",
+                 "Cannot tabulate vertex_to_dof map for a DofMap that is a view");
+  }
 
   // Get dof to vertex map
   const std::vector<dolfin::la_index> dof_map = dof_to_vertex_map(mesh);

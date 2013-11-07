@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-05
-// Last changed: 2013-09-09
+// Last changed: 2013-11-07
 
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -32,6 +32,13 @@ std::vector<std::size_t> dolfin::dof_to_vertex_map(const FunctionSpace& space)
 {
 
   const GenericDofMap& dofmap = *space.dofmap();
+
+  if (dofmap.is_view())
+  {
+    dolfin_error("fem_utils.cpp",
+                 "tabulate dof to vertex map",
+                 "Cannot tabulate dof_to_vertex_map for a subspace");
+  }
 
   // Get dof to vertex map
   const std::vector<dolfin::la_index> vertex_map = vertex_to_dof_map(space);
@@ -63,6 +70,13 @@ std::vector<dolfin::la_index> dolfin::vertex_to_dof_map(const FunctionSpace& spa
   // Get the mesh
   const Mesh& mesh = *space.mesh();
   const GenericDofMap& dofmap = *space.dofmap();
+
+  if (dofmap.is_view())
+  {
+    dolfin_error("fem_utils.cpp",
+                 "tabulate vertex to dof map",
+                 "Cannot tabulate vertex_to_dof_map for a subspace");
+  }
 
   // Initialize vertex to cell connections
   const std::size_t top_dim = mesh.topology().dim();
