@@ -35,7 +35,7 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
                  double x1, double y1, double z1,
                  std::size_t nx, std::size_t ny, std::size_t nz) : Mesh()
 {
-  Timer timer("generate unit cube mesh");
+  Timer timer("Generate Box mesh");
 
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())
@@ -51,15 +51,20 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
   const double e = z0;
   const double f = z1;
 
-  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS || std::abs(z0 - z1) < DOLFIN_EPS )
+  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
+      || std::abs(z0 - z1) < DOLFIN_EPS )
+  {
     dolfin_error("BoxMesh.cpp",
                  "create box",
                  "Box seems to have zero width, height or depth. Consider checking your dimensions");
+  }
 
   if ( nx < 1 || ny < 1 || nz < 1 )
+  {
     dolfin_error("BoxMesh.cpp",
                  "create box",
                  "BoxMesh has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
+  }
 
   rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
 

@@ -50,7 +50,6 @@ Parameters NewtonSolver::default_parameters()
   p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
-
   //p.add("reuse_preconditioner", false);
 
   return p;
@@ -84,8 +83,9 @@ NewtonSolver::~NewtonSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
-                                                  GenericVector& x)
+std::pair<std::size_t, bool>
+NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
+                    GenericVector& x)
 {
   dolfin_assert(_A);
   dolfin_assert(_b);
@@ -107,18 +107,23 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     newton_converged = converged(*_b, nonlinear_problem);
   else if (convergence_criterion == "incremental")
   {
-    // We need to do at least one Newton step
-    // with the ||dx||-stopping criterion.
+    // We need to do at least one Newton step with the ||dx||-stopping
+    // criterion.
     newton_converged = false;
   }
   else
   {
     dolfin_error("NewtonSolver.cpp",
                  "check for convergence",
-                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
+                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
+                 convergence_criterion.c_str());
   }
 
   nonlinear_problem.form(*_A, *_b, x);
+  _solver->set_operator(_A);
+
+  // Get relaxation parameter
+  const double relaxation = parameters["relaxation_parameter"];
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
@@ -126,16 +131,17 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     // Compute Jacobian
     nonlinear_problem.J(*_A, x);
 
-    // FIXME: This reset is a hack to handle a deficiency in the Trilinos wrappers
+    // FIXME: This reset is a hack to handle a deficiency in the
+    // Trilinos wrappers
     _solver->set_operator(_A);
 
-    // Perform linear solve and update total number of Krylov iterations
+    // Perform linear solve and update total number of Krylov
+    // iterations
     if (!_dx->empty())
       _dx->zero();
     krylov_iterations += _solver->solve(*_dx, *_b);
 
     // Update solution
-    const double relaxation = parameters["relaxation_parameter"];
     if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
       x -= (*_dx);
     else
@@ -163,7 +169,8 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     else
       dolfin_error("NewtonSolver.cpp",
                    "check for convergence",
-                   "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
+                   "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
+                   convergence_criterion.c_str());
   }
 
   if (newton_converged)
@@ -171,7 +178,7 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     if (dolfin::MPI::process_number() == 0)
     {
      info("Newton solver finished in %d iterations and %d linear solver iterations.",
-            newton_iteration, krylov_iterations);
+          newton_iteration, krylov_iterations);
     }
   }
   else

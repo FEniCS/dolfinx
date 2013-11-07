@@ -21,9 +21,10 @@
 # Modified by Marie E. Rognes 2012
 # Modified by Johannes Ring 2013
 # Modified by Jan Blechta 2013
+# Modified by Oeyvind Evju 2013
 #
 # First added:  2006-08-08
-# Last changed: 2013-06-24
+# Last changed: 2013-10-11
 
 import unittest
 import numpy
@@ -34,7 +35,7 @@ class MeshConstruction(unittest.TestCase):
     def setUp(self):
         if MPI.num_processes() == 1:
             self.interval = UnitIntervalMesh(10)
-        self.circle = UnitCircleMesh(5)
+        self.circle = CircleMesh(Point(0.0, 0.0), 1.0, 0.1)
         self.square = UnitSquareMesh(5, 5)
         self.rectangle = RectangleMesh(0, 0, 2, 2, 5, 5)
         self.cube = UnitCubeMesh(3, 3, 3)
@@ -81,25 +82,22 @@ class MeshRefinement(unittest.TestCase):
         self.assertEqual(mesh.size_global(0), 3135)
         self.assertEqual(mesh.size_global(3), 15120)
 
-# This test does not work in parallel because BoundaryMesh does not
-# compute distributed mesh data
-if MPI.num_processes() == 1:
-    class BoundaryExtraction(unittest.TestCase):
+class BoundaryExtraction(unittest.TestCase):
 
-        def testBoundaryComputation(self):
-            """Compute boundary of mesh."""
+    def testBoundaryComputation(self):
+        """Compute boundary of mesh."""
+        mesh = UnitCubeMesh(2, 2, 2)
+        boundary = BoundaryMesh(mesh, "exterior")
+        self.assertEqual(boundary.size_global(0), 26)
+        self.assertEqual(boundary.size_global(2), 48)
+
+        def testBoundaryBoundary(self):
+            """Compute boundary of boundary."""
             mesh = UnitCubeMesh(2, 2, 2)
-            boundary = BoundaryMesh(mesh, "exterior")
-            self.assertEqual(boundary.num_vertices(), 26)
-            self.assertEqual(boundary.num_cells(), 48)
-
-            def testBoundaryBoundary(self):
-                """Compute boundary of boundary."""
-                mesh = UnitCubeMesh(2, 2, 2)
-                b0 = BoundaryMesh(mesh, "exterior")
-                b1 = BoundaryMesh(b0, "exterior")
-                self.assertEqual(b1.num_vertices(), 0)
-                self.assertEqual(b1.num_cells(), 0)
+            b0 = BoundaryMesh(mesh, "exterior")
+            b1 = BoundaryMesh(b0, "exterior")
+            self.assertEqual(b1.num_vertices(), 0)
+            self.assertEqual(b1.num_cells(), 0)
 
 if MPI.num_processes() == 1:
     class MeshFunctions(unittest.TestCase):
@@ -269,16 +267,6 @@ if MPI.num_processes() == 1:
             self.assertAlmostEqual(self.mesh2d.rmax(), sqrt(6.0)/6.0)
             self.assertAlmostEqual(self.mesh3d.rmin(), 0.0)
             self.assertAlmostEqual(self.mesh3d.rmax(), sqrt(3.0)/6.0)
-
-        def test_radius_ratio_min_radius_ratio_max(self):
-            self.assertAlmostEqual(self.mesh1d.radius_ratio_min(), 0.0)
-            self.assertAlmostEqual(self.mesh1d.radius_ratio_max(), 1.0)
-            self.assertAlmostEqual(self.mesh2d.radius_ratio_min(),
-                                     2.0*sqrt(2.0)/(2.0+sqrt(2.0)) )
-            self.assertAlmostEqual(self.mesh2d.radius_ratio_max(), 1.0)
-            self.assertAlmostEqual(self.mesh3d.radius_ratio_min(), 0.0)
-            self.assertAlmostEqual(self.mesh3d.radius_ratio_max(), 1.0)
-
 
 class MeshOrientations(unittest.TestCase):
 

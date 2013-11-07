@@ -31,7 +31,6 @@ from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
 # Tests to run
 tests = {
     "ale":            ["HarmonicSmoothing"],
-    "armadillo":      ["test"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap", \
@@ -39,6 +38,7 @@ tests = {
                        "PeriodicBC", "manifolds"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace", \
                            "SpecialFunctions"],
+    "generation":     ["MeshGeneration"],
     "geometry":       ["BoundingBoxTree"],
     "graph":          ["GraphBuild"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
@@ -53,8 +53,8 @@ tests = {
 
     "meshconvert":    ["test"],
     "mesh":           ["Cell", "Edge", "Face", "MeshColoring", \
-                           "MeshData", "MeshEditor", \
-                           "MeshFunction", "MeshIterator", "MeshMarkers",\
+                           "MeshData", "MeshEditor", "MeshFunction", \
+                           "MeshIterator", "MeshMarkers", "MeshQuality", \
                            "MeshValueCollection", "BoundaryMesh", "Mesh", \
                            "SubMesh"],
     "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],

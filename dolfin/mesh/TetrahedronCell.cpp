@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2013-09-02
+// Last changed: 2013-09-12
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -695,11 +695,14 @@ bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
   const double x2 = inv_det*(-d12*b1 + d22*b2 - d23*b3);
   const double x3 = inv_det*( d13*b1 - d23*b2 + d33*b3);
 
+  // Tolerance for numeric test (using vector v1)
+  const double dx = std::abs(v1.x());
+  const double dy = std::abs(v1.y());
+  const double dz = std::abs(v1.z());
+  const double eps = DOLFIN_EPS_LARGE*std::max(dx, std::max(dy, dz));
+
   // Check if point is inside cell
-  return (x1 >= -DOLFIN_EPS_LARGE &&
-          x2 >= -DOLFIN_EPS_LARGE &&
-          x3 >= -DOLFIN_EPS_LARGE &&
-          x1 + x2 + x3 <= 1.0 + DOLFIN_EPS_LARGE);
+  return x1 >= -eps && x2 >= -eps && x3 >= -eps && x1 + x2 + x3 <= 1.0 + eps;
 }
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const

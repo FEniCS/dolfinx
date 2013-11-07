@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-09-02
+// Last changed: 2013-10-25
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -461,23 +461,6 @@ void TriangleCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::radius_ratio(const Cell& triangle) const
-{
-  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
-  // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-
-  const double S = volume(triangle);
-
-  // Handle degenerate case
-  if (S == 0.0) {return 0.0;}
-
-  const double a = facet_area(triangle, 0);
-  const double b = facet_area(triangle, 1);
-  const double c = facet_area(triangle, 2);
-
-  return 16.0*S*S / (a*b*c*(a+b+c));
-}
-//-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const Point& point) const
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
@@ -513,10 +496,13 @@ bool TriangleCell::collides(const Cell& cell, const Point& point) const
   const double x1 = inv_det*( a22*b1 - a12*b2);
   const double x2 = inv_det*(-a12*b1 + a11*b2);
 
+  // Tolerance for numeric test (using vector v1)
+  const double dx = std::abs(v1.x());
+  const double dy = std::abs(v1.y());
+  const double eps = DOLFIN_EPS_LARGE*std::max(dx, dy);
+
   // Check if point is inside
-  return (x1 >= -DOLFIN_EPS_LARGE &&
-          x2 >= -DOLFIN_EPS_LARGE &&
-          x1 + x2 <= 1.0 + DOLFIN_EPS_LARGE);
+  return x1 >= -eps && x2 >= -eps && x1 + x2 <= 1.0 + eps;
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
@@ -546,7 +532,7 @@ bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
   // First check if triangles are completely overlapping (necessary
   // since tests below will fail for collinear edges). Note that this
   // test will also cover a few other cases with coinciding midpoints.
-  const double eps2 = DOLFIN_EPS*DOLFIN_EPS;
+  const double eps2 = DOLFIN_EPS_LARGE*DOLFIN_EPS_LARGE*p0.squared_distance(p1);
   if (cell.midpoint().squared_distance(entity.midpoint()) < eps2)
     return true;
 

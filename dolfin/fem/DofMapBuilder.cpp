@@ -409,7 +409,8 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
     block_remap = SCOTCH::compute_gps(graph);
   else if (ordering_library == "random")
   {
-    // NOTE: Randomised dof ordering should only be used for testing/benchmarking
+    // NOTE: Randomised dof ordering should only be used for
+    // testing/benchmarking
     block_remap.resize(graph.size());
     for (std::size_t i = 0; i < block_remap.size(); ++i)
       block_remap[i] = i;
@@ -959,7 +960,8 @@ DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership,
    node_remap = SCOTCH::compute_gps(graph);
   else if (ordering_library == "random")
   {
-    // NOTE: Randomised dof ordering should only be used for testing/benchmarking
+    // NOTE: Randomised dof ordering should only be used for
+    // testing/benchmarking
     node_remap.resize(graph.size());
     for (std::size_t i = 0; i < node_remap.size(); ++i)
       node_remap[i] = i;

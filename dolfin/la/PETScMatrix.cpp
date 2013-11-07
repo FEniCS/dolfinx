@@ -23,7 +23,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2004
-// Last changed: 2012-03-15
+// Last changed: 2013-09-24
 
 #ifdef HAS_PETSC
 
@@ -144,6 +144,11 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     dolfin_assert(tensor_layout.sparsity_pattern());
     std::vector<std::size_t> num_nonzeros(M);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
+
+    // FIXME: Debugging
+    //cout << "Number of nonzeros for PETSc matrix:" << endl;
+    //for (unsigned int i = 0; i < M; i++)
+    //  cout << "i = " << i << ": " << num_nonzeros[i] << endl;
 
     // Create matrix
     ierr = MatCreate(PETSC_COMM_SELF, _A.get());
@@ -481,7 +486,7 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply(std::string mode)
 {
-  Timer("Apply (matrix)");
+  Timer timer("Apply (PETScMatrix)");
 
   dolfin_assert(_A);
   PetscErrorCode ierr;

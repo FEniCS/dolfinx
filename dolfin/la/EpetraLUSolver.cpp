@@ -36,6 +36,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Timer.h>
 #include "GenericLinearOperator.h"
 #include "GenericVector.h"
 #include "EpetraMatrix.h"
@@ -187,6 +188,8 @@ const GenericLinearOperator& EpetraLUSolver::get_operator() const
 //-----------------------------------------------------------------------------
 std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
+  Timer timer("Epetra LU solver");
+
   dolfin_assert(linear_problem);
   dolfin_assert(solver);
 

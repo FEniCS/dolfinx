@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-09-02
+// Last changed: 2013-10-25
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -77,8 +77,9 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
   // Recursively build the bounding box tree from the leaves
   _build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(), _gdim);
 
-  info("Computed bounding box tree with %d nodes for %d entities.",
-       num_bboxes(), num_leaves);
+  log(PROGRESS,
+      "Computed bounding box tree with %d nodes for %d entities.",
+      num_bboxes(), num_leaves);
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::build(const std::vector<Point>& points)

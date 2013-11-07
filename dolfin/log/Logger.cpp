@@ -39,6 +39,7 @@
 #endif
 
 #include <dolfin/common/constants.h>
+#include <dolfin/common/defines.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
@@ -171,6 +172,8 @@ void Logger::dolfin_error(std::string location,
     << "*** " << "Where:   This error was encountered inside " << location << "."
     << std::endl
     << "*** " << "Process: " << MPI::process_number() << std::endl
+    << "*** " << "DOLFIN version: " << dolfin_version()  << std::endl
+    << "*** " << "Git changeset:  " << git_commit_hash() << std::endl
     << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl;

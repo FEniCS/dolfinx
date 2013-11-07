@@ -37,13 +37,17 @@ along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 Contact
 =======
 
-For comments and requests, send an email to the DOLFIN mailing list:
+For comments and requests, send an email to the FEniCS mailing list:
 
-  dolfin@lists.launchpad.net
+  fenics@fenicsproject.org
 
-For questions and bug reports, visit the DOLFIN Launchpad page:
+For questions and bug reports, visit the FEniCS Q&A page:
 
-  http://www.launchpad.net/dolfin
+  http://fenicsproject.org/qa
+
+For bug reports, visit the DOLFIN Bitbucket page:
+
+  http://bitbucket.org/fenics-project/dolfin
 
 
 About

@@ -235,7 +235,7 @@ bool EpetraVector::owns_index(std::size_t i) const
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
 {
-  Timer("Apply (vector)");
+  Timer timer("Apply (EpetraVector)");
   dolfin_assert(_x);
   const int err = _x->PutScalar(0.0);
   if (err != 0)

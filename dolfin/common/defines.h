@@ -15,59 +15,70 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg, 2011
+// Modified by Garth N. Wells, 2013
 //
 // First added:  2009-09-03
-// Last changed: 2011-10-21
+// Last changed: 2013-11-01
 
 #ifndef __DOLFIN_DEFINES_H
 #define __DOLFIN_DEFINES_H
 
-#include <string>
+#include<string>
 
 namespace dolfin
 {
 
-  // Return true if DOLFIN is compiled with OpenMP
+  /// Return DOLFIN version string
+  std::string dolfin_version();
+
+  /// Return git changeset hash (returns "unknown" if changeset is
+  /// not known)
+  std::string git_commit_hash();
+
+  /// Return true if DOLFIN is compiled with OpenMP
   bool has_openmp();
 
-  // Return true if DOLFIN is compiled with MPI
+  /// Return true if DOLFIN is compiled with MPI
   bool has_mpi();
 
-  // Return true if DOLFIN is compiled with SLEPc
+  /// Return true if DOLFIN is compiled with PETSc
+  bool has_petsc();
+
+  /// Return true if DOLFIN is compiled with SLEPc
   bool has_slepc();
-  
-  // Return true if DOLFIN is compiled with TAO
+
+  /// Return true if DOLFIN is compiled with TAO
   bool has_tao();
 
-  // Return true if DOLFIN is compiled with petsc4py
+  /// Return true if DOLFIN is compiled with petsc4py
   bool has_petsc4py();
 
-  // Return true if DOLFIN is compiled with Trilinos
+  /// Return true if DOLFIN is compiled with Trilinos
   bool has_trilinos();
 
-  // Return true if DOLFIN is compiled with Scotch
+  /// Return true if DOLFIN is compiled with Scotch
   bool has_scotch();
 
-  // Return true if DOLFIN is compiled with CGAL
+  /// Return true if DOLFIN is compiled with CGAL
   bool has_cgal();
 
-  // Return true if DOLFIN is compiled with Umfpack
+  /// Return true if DOLFIN is compiled with Umfpack
   bool has_umfpack();
 
-  // Return true if DOLFIN is compiled with Cholmod
+  /// Return true if DOLFIN is compiled with Cholmod
   bool has_cholmod();
 
-  // Return true if DOLFIN is compiled with ParMETIS
+  /// Return true if DOLFIN is compiled with ParMETIS
   bool has_parmetis();
 
-  // Return true if DOLFIN is compiled with ZLIB
+  /// Return true if DOLFIN is compiled with ZLIB
   bool has_zlib();
 
-  // Return true if DOLFIN is compiled with HDF5
+  /// Return true if DOLFIN is compiled with HDF5
   bool has_hdf5();
 
-  // Return true if DOLFIN is compiled with Exodus
+  /// Return true if DOLFIN is compiled with Exodus
   bool has_exodus();
 
 }
