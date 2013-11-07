@@ -87,11 +87,6 @@ namespace dolfin
     static bool has_dataset(const hid_t hdf5_file_handle,
                             const std::string dataset_name);
 
-    /// Link to dataset/group
-    static void link(const hid_t hdf5_file_handle,
-                     const std::string dataset_name,
-                     const std::string link_name);
-
     /// Add group to HDF5 file
     static void add_group(const hid_t hdf5_file_handle,
                           const std::string dataset_name);
