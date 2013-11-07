@@ -14,6 +14,7 @@
 #include <dolfin/function/SpecialFacetFunction.h>
 #include <dolfin/function/CCFEMFunctionSpace.h>
 #include <dolfin/function/FunctionAssigner.h>
+#include <dolfin/function/assign.h>
 #include <dolfin/function/CCFEMFunction.h>
 
 #endif

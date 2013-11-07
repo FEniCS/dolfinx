@@ -236,7 +236,6 @@ class DofMapTest(unittest.TestCase):
             W = FunctionSpace(self.mesh, "CG", 2)
             self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W))
             W = VectorFunctionSpace(self.mesh, "CG", 1)
-            dof_to_vertex_map(W.sub(0))
             self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W.sub(0)))
 
 

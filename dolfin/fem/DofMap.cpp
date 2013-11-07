@@ -107,6 +107,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
   : _is_view(true), _global_dimension(0), _ufc_offset(0), 
     _ownership_range(parent_dofmap._ownership_range)
 {
+
   // Share slave-master map with parent
   this->slave_master_mesh_entities = parent_dofmap.slave_master_mesh_entities;
 
@@ -116,8 +117,8 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
-   :  _ufc_dofmap(dofmap_view._ufc_dofmap), _global_dimension(0),
-      _ufc_offset(0)
+  :  _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false), _global_dimension(0),
+     _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -170,6 +171,7 @@ DofMap::DofMap(const DofMap& dofmap)
   _dofmap = dofmap._dofmap;
   _ufc_dofmap = dofmap._ufc_dofmap;
   ufc_map_to_dofmap = dofmap.ufc_map_to_dofmap;
+  _is_view = dofmap._is_view;
   _global_dimension = dofmap._global_dimension;
   _ufc_offset = dofmap._ufc_offset;
   _ownership_range = dofmap._ownership_range;
