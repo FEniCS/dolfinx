@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-25
+// Last changed: 2013-11-05
 
 #ifdef HAS_HDF5
 
@@ -647,6 +647,13 @@ void HDF5File::write(const Function& u,
   else
   {
     HDF5Attribute attr = attributes(name);
+    if(!attr.exists("series"))
+    {
+      dolfin_error("HDF5File.cpp",
+                   "append to series",
+                   "Function dataset does not contain a 'series' attribute");
+    }
+
     std::vector<double> vectime;
     attr.get("series", vectime);
 
@@ -743,7 +750,7 @@ void HDF5File::read(Function& u, const std::string name)
   const std::string x_cell_dofs_dataset_name = basename + "/x_cell_dofs";
 
   // Check datasets exist
-  if (!HDF5Interface::has_dataset(hdf5_file_id, name))
+  if (!HDF5Interface::has_group(hdf5_file_id, name))
     error("Group with name \"%s\" does not exist", name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, cells_dataset_name))
     error("Dataset with name \"%s\" does not exist", 

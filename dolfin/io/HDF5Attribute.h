@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-10-16
-// Last changed: 2013-10-25
+// Last changed: 2013-11-05
 
 #ifndef __DOLFIN_HDF5ATTRIBUTE_H
 #define __DOLFIN_HDF5ATTRIBUTE_H
@@ -52,6 +52,9 @@ namespace dolfin
     ~HDF5Attribute()
     {
     }
+
+    /// Check for the existence of an attribute on a dataset
+    bool exists(const std::string attribute_name) const;
     
     /// Set the value of a double attribute in the HDF5 file
     void set(const std::string attribute_name, const double value);

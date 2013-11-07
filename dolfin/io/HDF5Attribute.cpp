@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-06-01
-// Last changed: 2013-10-25
+// Last changed: 2013-11-05
 
 #ifdef HAS_HDF5
 
@@ -179,6 +179,12 @@ void HDF5Attribute::get(const std::string attribute_name,
     value = "Unsupported";
   }
   
+}
+//-----------------------------------------------------------------------------
+bool HDF5Attribute::exists(const std::string attribute_name) const
+{
+  return HDF5Interface::has_attribute(hdf5_file_id, dataset_name, 
+                                      attribute_name);
 }
 //-----------------------------------------------------------------------------
 const std::string HDF5Attribute::str(const std::string attribute_name) const
