@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-06
+// Last changed: 2013-09-19
 
 #ifndef __ASSEMBLER_BASE_H
 #define __ASSEMBLER_BASE_H
@@ -44,8 +44,11 @@ namespace dolfin
   public:
 
     // Check form
-    AssemblerBase() : reset_sparsity(true), add_values(false),
-        finalize_tensor(true), keep_diagonal(false) {}
+    AssemblerBase() :
+      reset_sparsity(true),
+      add_values(false),
+      finalize_tensor(true),
+      keep_diagonal(false) {}
 
     /// reset_sparsity (bool)
     ///     Default value is true.

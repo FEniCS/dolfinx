@@ -26,7 +26,6 @@
 
 from dolfin import *
 
-
 mesh = UnitIntervalMesh(10)
 print "Plotting a UnitIntervalMesh"
 plot(mesh, title="Unit interval")
@@ -55,17 +54,22 @@ mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
 print "Plotting a RectangleMesh"
 plot(mesh, title="Rectangle (right/left)")
 
-mesh = UnitCircleMesh(20, "right", "rotsumn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (rotsum)")
+if has_cgal():
+    mesh = CircleMesh(Point(0.0, 0.0), 1.0, 0.2)
+    print "Plotting a CircleMesh"
+    plot(mesh, title="Circle (unstructured)")
 
-#mesh = UnitCircleMesh(20, "left", "sumn")
-#print "Plotting a UnitCircle"
-#plot(mesh, title="Unit circle (sumn)")
+    mesh = EllipseMesh(Point(0.0, 0.0), [3.0, 1.0], 0.2)
+    print "Plotting an EllipseMesh"
+    plot(mesh, title="Ellipse mesh (unstructured)")
 
-mesh = UnitCircleMesh(20, "right", "maxn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (maxn)")
+    mesh = SphereMesh(Point(0.0, 0.0, 0.0), 1.0, 0.2)
+    print "Plotting a SphereMesh"
+    plot(mesh, title="Sphere mesh (unstructured)")
+
+    mesh = EllipsoidMesh(Point(0.0, 0.0, 0.0), [3.0, 1.0, 2.0], 0.2)
+    print "Plotting an EllipsoidMesh"
+    plot(mesh, title="Ellipsoid mesh (unstructured)")
 
 mesh = UnitCubeMesh(10, 10, 10)
 print "Plotting a UnitCubeMesh"

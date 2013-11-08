@@ -151,8 +151,8 @@ namespace dolfin
     // Set PETSc operators
     void set_petsc_operators();
 
-    // Set options
-    void set_petsc_options();
+    // Set options that affect KSP object
+    void set_petsc_ksp_options();
 
     // Report the number of iterations
     void write_report(int num_iterations, KSPConvergedReason reason);

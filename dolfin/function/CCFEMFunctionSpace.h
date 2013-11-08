@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-08-06
+// Last changed: 2013-09-25
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
@@ -30,6 +30,8 @@ namespace dolfin
   // Forward declarations
   class FunctionSpace;
   class BoundingBoxTree;
+  class CCFEMDofMap;
+  class GenericDofMap;
 
   /// This class represents a cut and composite finite element
   /// function space (CCFEM) defined on one or more possibly
@@ -47,12 +49,33 @@ namespace dolfin
     /// Destructor
     ~CCFEMFunctionSpace();
 
-    /// Return dimension of CCFEM function space
+    /// Return dimension of the CCFEM function space
     ///
     /// *Returns*
     ///     std::size_t
     ///         The dimension of the CCFEM function space.
     std::size_t dim() const;
+
+    /// Return CCFEM dofmap
+    ///
+    /// *Returns*
+    ///     _CCFEMDofMap_
+    ///         The dofmap.
+    boost::shared_ptr<const CCFEMDofMap> dofmap() const;
+
+    /// Return the number function spaces (parts) of the CCFEM function space
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         The number of function spaces (parts) of the CCFEM function space.
+    std::size_t num_parts() const;
+
+    /// Return function space (part) number i
+    ///
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         Function space (part) number i
+    boost::shared_ptr<const FunctionSpace> part(std::size_t i) const;
 
     /// Add function space (shared pointer version)
     ///
@@ -66,21 +89,24 @@ namespace dolfin
     /// *Arguments*
     ///     function_space (_FunctionSpace_)
     ///         The function space.
-    void add(const FunctionSpace& mesh);
+    void add(const FunctionSpace& function_space);
 
     /// Build CCFEM function space
     void build();
 
-  private:
+    /// Clear CCFEM function space
+    void clear();
 
-    // Total dimension (sum of parts)
-    std::size_t _dim;
+  private:
 
     // List of function spaces
     std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
 
     // List of bounding box trees for meshes
     std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
+
+    // CCFEM dofmap
+    boost::shared_ptr<CCFEMDofMap> _dofmap;
 
   };
 
