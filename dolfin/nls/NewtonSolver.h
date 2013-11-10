@@ -119,13 +119,14 @@ namespace dolfin
 
     /// Convergence test
     virtual bool converged(const GenericVector& r,
-                           const NonlinearProblem& nonlinear_problem);
+                           const NonlinearProblem& nonlinear_problem,
+                           std::size_t iteration);
 
     /// Current number of Newton iterations
-    std::size_t newton_iteration;
+    std::size_t _newton_iteration;
 
     /// Most recent residual and intitial residual
-    double _residual, residual0;
+    double _residual, _residual0;
 
     /// Solver
     boost::shared_ptr<GenericLinearSolver> _solver;
