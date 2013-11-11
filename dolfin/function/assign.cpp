@@ -20,7 +20,6 @@
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-
 #include "assign.h"
 #include "FunctionAssigner.h"
 
@@ -29,39 +28,37 @@ void dolfin::assign(boost::shared_ptr<Function> receiving_func,
 		    boost::shared_ptr<const Function> assigning_func)
 {
   // Instantiate FunctionAssigner and call assign
-  const FunctionAssigner assigner(receiving_func->function_space(), 
+  const FunctionAssigner assigner(receiving_func->function_space(),
 				  assigning_func->function_space());
   assigner.assign(receiving_func, assigning_func);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assign(boost::shared_ptr<Function> receiving_func,
-		    std::vector<boost::shared_ptr<const Function> > assigning_funcs)
+	      std::vector<boost::shared_ptr<const Function> > assigning_funcs)
 {
-  
+
   // Instantiate FunctionAssigner and call assign
   std::vector<boost::shared_ptr<const FunctionSpace> > assigning_spaces;
-  for (unsigned int i=0; i<assigning_funcs.size(); i++)
+  for (std::size_t i = 0; i < assigning_funcs.size(); i++)
     assigning_spaces.push_back(assigning_funcs[i]->function_space());
 
-  const FunctionAssigner assigner(receiving_func->function_space(), 
+  const FunctionAssigner assigner(receiving_func->function_space(),
 				  assigning_spaces);
   assigner.assign(receiving_func, assigning_funcs);
-  
+
 }
 //-----------------------------------------------------------------------------
-void dolfin::assign(std::vector<boost::shared_ptr<Function> > receiving_funcs, 
+void dolfin::assign(std::vector<boost::shared_ptr<Function> > receiving_funcs,
 		    boost::shared_ptr<const Function> assigning_func)
 {
-
   // Instantiate FunctionAssigner and call assign
   std::vector<boost::shared_ptr<const FunctionSpace> > receiving_spaces;
-  
-  for (unsigned int i=0; i<receiving_funcs.size(); i++)
+
+  for (std::size_t i = 0; i < receiving_funcs.size(); i++)
     receiving_spaces.push_back(receiving_funcs[i]->function_space());
 
-  const FunctionAssigner assigner(receiving_spaces, 
+  const FunctionAssigner assigner(receiving_spaces,
 				  assigning_func->function_space());
   assigner.assign(receiving_funcs, assigning_func);
-  
 }
 //-----------------------------------------------------------------------------
