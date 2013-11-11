@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-20
-// Last changed: 2013-11-08
+// Last changed: 2013-11-11
 
 #include <utility>
 
@@ -57,6 +57,7 @@ FunctionAssigner::FunctionAssigner(std::vector<boost::shared_ptr<const FunctionS
   // Check that the number of assigning subspaces are the same as number
   // of receiving spaces
   const std::size_t N = _receiving_spaces.size();
+  dolfin_assert(_assigning_spaces[0]);
   if (_assigning_spaces[0]->element()->num_sub_elements() != N)
   {
     dolfin_error("FunctionAssigner.cpp",
@@ -88,6 +89,7 @@ FunctionAssigner::FunctionAssigner(boost::shared_ptr<const FunctionSpace> receiv
   // Check that the number of receiving subspaces are the same as number
   // of assigning spaces
   const std::size_t N = assigning_spaces.size();
+  dolfin_assert(_receiving_spaces[0]);
   if (_receiving_spaces[0]->element()->num_sub_elements()!=N)
   {
     dolfin_error("FunctionAssigner.cpp",
@@ -208,9 +210,15 @@ void FunctionAssigner::_assign(std::vector<boost::shared_ptr<Function> > receivi
     // Check that the functions are in the FunctionAssigner spaces
     if (_receiving_spaces.size() == 1)
     {
-      // First check 1-1 assignment
+
+      dolfin_assert(_receiving_spaces[0]);
+
+      // Check 1-1 assignment
       if (_assigning_spaces.size() == 1)
       {
+
+	dolfin_assert(receiving_funcs[0]);
+
 	if (!receiving_funcs[0]->in(*_receiving_spaces[0]))
 	{
 	  dolfin_error("FunctionAssigner.cpp",
@@ -218,15 +226,26 @@ void FunctionAssigner::_assign(std::vector<boost::shared_ptr<Function> > receivi
 		       "The receiving Function is not in the receiving FunctionSpaces");
 	}
       }
-      else if (!receiving_funcs[i]->in(*(*_receiving_spaces[0])[i]))
+
+      // Check N-1 assignment
+      else
       {
-	dolfin_error("FunctionAssigner.cpp",
-		     "assign functions",
-		     "The receiving sub Functions are not in the receiving sub FunctionSpaces");
+
+	dolfin_assert(receiving_funcs[i]);
+	dolfin_assert((*_receiving_spaces[0])[i]);
+
+	if (!receiving_funcs[i]->in(*(*_receiving_spaces[0])[i]))
+	{
+	  dolfin_error("FunctionAssigner.cpp",
+		       "assign functions",
+		       "The receiving sub Functions are not in the receiving sub FunctionSpaces");
+	}
       }
     }
     else
     {
+
+      // Check 1-N assignment
       if (!receiving_funcs[i]->in(*_receiving_spaces[i]))
       {
 	dolfin_error("FunctionAssigner.cpp",
@@ -237,9 +256,15 @@ void FunctionAssigner::_assign(std::vector<boost::shared_ptr<Function> > receivi
 
     if (_assigning_spaces.size() == 1)
     {
-      // First check 1-1 assignment
+
+      dolfin_assert(_assigning_spaces[0]);
+
+      // Check 1-1 assignment
       if (_receiving_spaces.size() == 1)
       {
+
+	dolfin_assert(assigning_funcs[0]);
+
 	if (!assigning_funcs[0]->in(*_assigning_spaces[0]))
 	{
 	  dolfin_error("FunctionAssigner.cpp",
@@ -247,15 +272,29 @@ void FunctionAssigner::_assign(std::vector<boost::shared_ptr<Function> > receivi
 		       "The assigning Function is not in the assigning FunctionSpaces");
 	}
       }
-      else  if (!assigning_funcs[i]->in(*(*_assigning_spaces[0])[i]))
+
+      // Check 1-N assignment
+      else
       {
-	dolfin_error("FunctionAssigner.cpp",
-		     "assign functions",
-		     "The assigning sub Functions are not in the assigning sub FunctionSpaces");
+
+	dolfin_assert(assigning_funcs[i]);
+	dolfin_assert((*_assigning_spaces[0])[i]);
+
+	if (!assigning_funcs[i]->in(*(*_assigning_spaces[0])[i]))
+	{
+	  dolfin_error("FunctionAssigner.cpp",
+		       "assign functions",
+		       "The assigning sub Functions are not in the assigning sub FunctionSpaces");
+	}
       }
     }
     else
     {
+
+      dolfin_assert(assigning_funcs[i]);
+      dolfin_assert(_assigning_spaces[i]);
+
+      // Check N-1 assignment
       if (!assigning_funcs[i]->in(*_assigning_spaces[i]))
       {
 	dolfin_error("FunctionAssigner.cpp",
@@ -267,6 +306,7 @@ void FunctionAssigner::_assign(std::vector<boost::shared_ptr<Function> > receivi
     // Check if the receiving vector is the same
     if (i != 0)
     {
+      dolfin_assert(receiving_funcs[i]->_vector);
       same_receiving_vector
         = (recieving_vector!=receiving_funcs[i]->_vector.get())
 	&& same_receiving_vector;
@@ -314,7 +354,7 @@ const Mesh& FunctionAssigner::_get_mesh() const
   const Mesh& mesh = *_assigning_spaces[0]->mesh();
 
   // Check that function spaces uses the same mesh.
-  for (std::size_t i = 0; i < _assigning_spaces.size(); i++)
+  for (std::size_t i = 1; i < _assigning_spaces.size(); i++)
   {
     // Compare pointers
     dolfin_assert(_assigning_spaces[i]);
@@ -330,8 +370,8 @@ const Mesh& FunctionAssigner::_get_mesh() const
   for (std::size_t i = 0; i < _receiving_spaces.size(); i++)
   {
     // Compare pointers
-    dolfin_assert(_assigning_spaces[i]);
-    dolfin_assert(_assigning_spaces[i]->mesh());
+    dolfin_assert(_receiving_spaces[i]);
+    dolfin_assert(_receiving_spaces[i]->mesh());
     if (&mesh != _receiving_spaces[i]->mesh().get())
     {
       dolfin_error("FunctionAssigner.cpp",

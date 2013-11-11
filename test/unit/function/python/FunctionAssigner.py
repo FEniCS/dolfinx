@@ -37,7 +37,7 @@ WRR = W*RR
 
 class Creation(unittest.TestCase):
     def setUp(self):
-        
+
         self.u0 = Function(V)
         self.u0.vector()[:] = 1.
         self.u1 = Function(V)
@@ -68,7 +68,7 @@ class Creation(unittest.TestCase):
 
         self.qq = Function(QQ)
         self.qq.vector()[:] = 2.
-        
+
         self.qqv = Function(QQV)
         self.qqv.vector()[:] = 3.
 
@@ -78,27 +78,27 @@ class Creation(unittest.TestCase):
         assigner.assign(self.w.sub(0), self.u0)
 
         self.assertEqual(self.w.vector().sum(), 2*4*V.dim()+1*V.dim())
-        
+
         assigner = FunctionAssigner(V, W.sub(2))
         assigner.assign(self.u0, self.w.sub(2))
 
         self.assertEqual(self.u0.vector().sum(), 4*V.dim())
 
+        assign(self.w.sub(2), self.u2)
+        self.assertEqual(self.w.vector().sum(), (4+3+1)*V.dim())
+
+        assign(self.u1, self.w.sub(1))
+        self.assertEqual(self.u1.vector().sum(), 4.0*V.dim())
+
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
         if MPI.num_processes()>1:
             return
-        
+
         assigner = FunctionAssigner(WW.sub(0), W)
         assigner.assign(self.ww.sub(0), self.w)
 
         self.assertEqual(self.ww.vector().sum(), 5*W.dim()+2*4*V.dim()+1*V.dim())
-        
-        assign(self.w.sub(2), self.u2)
-        self.assertEqual(self.w.vector().sum(), (4+3+1)*V.dim())
-        
-        assign(self.u1, self.w.sub(1))
-        self.assertEqual(self.u1.vector().sum(), 4.0*V.dim())
 
         assign(self.wr.sub(0), self.w)
         self.assertEqual(self.wr.vector().sum(), (4+3+1)*V.dim() + 6)
@@ -113,7 +113,7 @@ class Creation(unittest.TestCase):
         self.assertRaises(RuntimeError, lambda : assign(self.qqv.sub(1), self.q))
         self.assertRaises(RuntimeError, lambda : assign(self.wrr.sub(1), self.w))
         self.assertRaises(RuntimeError, lambda : assign(self.wrr.sub(1), self.r))
-        
+
     def test_N_1_assigner(self):
 
         vv = Function(W)
@@ -125,7 +125,7 @@ class Creation(unittest.TestCase):
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
         if MPI.num_processes()>1:
-            return 
+            return
 
         assign(self.qqv, [self.qq, self.u1])
         self.assertEqual(self.qqv.vector().sum(), 2*QQV.dim())
@@ -133,11 +133,11 @@ class Creation(unittest.TestCase):
         assign(self.wrr, [self.w, self.rr])
         self.assertEqual(self.wrr.vector().sum(), self.w.vector().sum() + \
                          self.rr.vector().sum())
-        
+
 
         self.assertRaises(RuntimeError, lambda : assign(self.qqv, \
                                                         [self.qq, self.u1, self.u1]))
-        
+
         self.assertRaises(RuntimeError, lambda : assign(self.wrr, \
                                                         [self.w, self.r, self.r]))
 
@@ -152,7 +152,7 @@ class Creation(unittest.TestCase):
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
         if MPI.num_processes()>1:
-            return 
+            return
 
         assign([self.qq, self.u1], self.qqv)
         self.assertEqual(self.qqv.vector().sum(), self.qq.vector().sum() + \
