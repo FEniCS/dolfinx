@@ -26,8 +26,8 @@ import time
 
 # Create mesh and define function spaces
 mesh = UnitSquareMesh(256, 256)
-V = FunctionSpace(mesh, "Lagarnge", 1)
-VV = VectorFunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "CG", 1)
+VV = VectorFunctionSpace(mesh, "CG", 1)
 
 # Define function
 v0 = Expression("sin(2*pi*x[0])*sin(2*pi*x[1])")
