@@ -34,6 +34,7 @@ using namespace dolfin;
 int main()
 {
 #ifdef HAS_PETSC
+#ifdef HAS_CGAL
     // Sub domain for symmetry condition
     class SymmetryLine : public SubDomain
     {
@@ -154,6 +155,7 @@ int main()
 
   // Make plot windows interactive
   interactive();
+#endif
 #endif
 
  return 0;

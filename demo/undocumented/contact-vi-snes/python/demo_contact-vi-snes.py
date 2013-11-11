@@ -25,17 +25,17 @@ The example considers a heavy hyperelastic circle in a box of the same size"""
 #
 from dolfin import *
 
-# Check that DOLFIN is configured with PETSc
+# Check that DOLFIN is configured with PETSc and CGAL
 if not has_petsc():
     print "DOLFIN must be compiled with PETSc to run this demo."
     exit(0)
 
-# Create mesh (use cgal if available)
-if has_cgal():
-    circle = Circle (0, 0, 1);
-    mesh = Mesh(circle, 30)
-else:
-    mesh = UnitCircleMesh(30)
+if not has_cgal():
+    print "DOLFIN must be compiled with CGAL to run this demo."
+    exit(0)
+
+# Create mesh
+mesh = UnitCircleMesh(30)
 
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
 

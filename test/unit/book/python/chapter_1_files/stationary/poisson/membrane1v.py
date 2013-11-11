@@ -1,6 +1,10 @@
 """As membrane1.py, but with more Viper visualization."""
 from dolfin import *
 
+if not has_cgal():
+    import sys
+    sys.exit(0)
+
 # Set pressure function:
 T = 10.0  # tension
 A = 1.0   # pressure amplitude
@@ -11,6 +15,7 @@ y0 = 0.6*R*sin(theta)
 sigma = 0.025
 #sigma = 50  # large value for verification
 n = 40   # approx no of elements in radial direction
+
 mesh = UnitCircle(n)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
