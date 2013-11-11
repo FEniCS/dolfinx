@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-11-07
-// Last changed: 2013-11-07
+// Last changed: 2013-11-11
 
 #ifndef __DOLFIN_ASSIGN_H
 #define __DOLFIN_ASSIGN_H
@@ -29,12 +29,31 @@ namespace dolfin
   
   class Function;
 
+  /// Assign one function to another. The functions must reside in the
+  /// same type of FunctionSpace. One or both functions can be sub
+  /// functions.
+  ///
+  /// *Arguments*
+  ///     receiving_func (boost::shared_ptr<_Function_>)
+  ///         The recieving function 
+  ///     assigning_func (boost::shared_ptr<_Function_>)
+  ///         The assigning function 
   void assign(boost::shared_ptr<Function> receiving_func,
 	      boost::shared_ptr<const Function> assigning_func);
 
+  /// Assign several functions to sub functions of a mixed receiving
+  /// function. The number of receiving functions must sum up to the
+  /// number of sub functions in the assigning mixed function. The sub
+  /// spaces of the assigning mixed space must be of the same type ans
+  /// size as the receiving spaces.
   void assign(boost::shared_ptr<Function> receiving_func,
 	      std::vector<boost::shared_ptr<const Function> > assigning_funcs);
 
+  /// Assign sub functions of a single mixed function to single
+  /// receiving functions. The number of sub functions in the
+  /// assigning mixed function must sum up to the number of receiving
+  /// functions. The sub spaces of the receiving mixed space must be
+  /// of the same type ans size as the assigning spaces.
   void assign(std::vector<boost::shared_ptr<Function> > receiving_funcs, 
 	      boost::shared_ptr<const Function> assigning_func);
 

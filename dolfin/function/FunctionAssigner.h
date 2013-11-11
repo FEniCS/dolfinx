@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-20
-// Last changed: 2013-11-08
+// Last changed: 2013-11-11
 
 #ifndef __DOLFIN_FUNCTION_ASSIGNER_H
 #define __DOLFIN_FUNCTION_ASSIGNER_H
@@ -41,7 +41,9 @@ namespace dolfin
   {
   public:
 
-    /// Create a FunctionAssigner between two equally sized functions
+    /// Create a FunctionAssigner between functions residing in the
+    /// same type of FunctionSpace. One or both functions can be sub
+    /// functions.
     ///
     /// *Arguments*
     ///     receiving_space (_FunctionSpace_)
@@ -52,10 +54,11 @@ namespace dolfin
 		     boost::shared_ptr<const FunctionSpace> assigning_space);
 
     /// Create a FunctionAssigner between one mixed function
-    /// (assigning) and several scalar or scalar sub functions
-    /// (receiving). The number of receiving components need to sum up
-    /// to the number of sub functions in the assigning mixed
-    /// function.
+    /// (assigning) and several functions (receiving). The number of
+    /// receiving functions must sum up to the number of sub functions
+    /// in the assigning mixed function. The sub spaces of the
+    /// assigning mixed space must be of the same type ans size as the
+    /// receiving spaces.
     ///
     /// *Arguments*
     ///     receiving_spaces (std::vector<_FunctionSpace_>)
@@ -65,10 +68,12 @@ namespace dolfin
     FunctionAssigner(std::vector<boost::shared_ptr<const FunctionSpace> > receiving_spaces,
 		     boost::shared_ptr<const FunctionSpace> assigning_space);
 
-    /// Create a FunctionAssigner between several scalar or scalar sub
-    /// functions (assigning) and one mixed function (receiving). The
-    /// number of assigning components need to sum up to the number of
-    /// sub functions in the receiving mixed function.
+    /// Create a FunctionAssigner between several functions
+    /// (assigning) and one mixed function (receiving). The number of
+    /// sub functions in the assigning mixed function must sum up to
+    /// the number of receiving functions. The sub spaces of the
+    /// receiving mixed space must be of the same type ans size as the
+    /// assigning spaces.
     ///
     /// *Arguments*
     ///     receiving_space (boost::shared_ptr<_FunctionSpace_>)
@@ -88,7 +93,8 @@ namespace dolfin
     void assign(boost::shared_ptr<Function> receiving_func,
 		boost::shared_ptr<const Function> assigning_func) const;
 
-    /// Assign several functions to sub functions of a mixed receiving function
+    /// Assign several functions to sub functions of a mixed receiving
+    /// function
     ///
     /// *Arguments*
     ///     receiving_func (boost::shared_ptr<_Function_>)
@@ -98,7 +104,8 @@ namespace dolfin
     void assign(boost::shared_ptr<Function> receiving_func,
 		std::vector<boost::shared_ptr<const Function> > assigning_funcs) const;
 
-    /// Assign sub functions of a single mixed function to single receiving functions
+    /// Assign sub functions of a single mixed function to single
+    /// receiving functions
     ///
     /// *Arguments*
     ///     receiving_funcs (std::vector<boost::shared_ptr<_Function_> >)
