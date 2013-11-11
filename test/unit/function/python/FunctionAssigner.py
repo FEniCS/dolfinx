@@ -98,7 +98,7 @@ class Creation(unittest.TestCase):
         assigner = FunctionAssigner(WW.sub(0), W)
         assigner.assign(self.ww.sub(0), self.w)
 
-        self.assertEqual(self.ww.vector().sum(), 5*W.dim()+2*4*V.dim()+1*V.dim())
+        self.assertEqual(self.ww.vector().sum(), 5*W.dim()+(4+3+1)*V.dim())
 
         assign(self.wr.sub(0), self.w)
         self.assertEqual(self.wr.vector().sum(), (4+3+1)*V.dim() + 6)
