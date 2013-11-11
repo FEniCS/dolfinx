@@ -26,8 +26,8 @@ import time
 
 # Create mesh and define function spaces
 mesh = UnitSquareMesh(256, 256)
-V = FunctionSpace(mesh, "CG", 1)
-VV = VectorFunctionSpace(mesh, "CG", 1)
+V = FunctionSpace(mesh, "Lagarnge", 1)
+VV = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 # Define function
 v0 = Expression("sin(2*pi*x[0])*sin(2*pi*x[1])")
@@ -46,23 +46,23 @@ u1.interpolate(v1)
 # Compute projection (L2-projection)
 t0 = time.time()
 vv0 = project(as_vector((u0, u1)), V=VV)
-tp = time.time()-t0
+tp = time.time() - t0
 
 # Compute interpolation (evaluating dofs)
 t0 = time.time()
 vv1.interpolate(Expression(("v0", "v1"), v0=v0, v1=v1))
-ti = time.time()-t0
+ti = time.time() - t0
 
 # Assign mixed function from two scalar functions
 t0 = time.time()
 assign(vv2, [u0, u1])
-ta0 = time.time()-t0
+ta0 = time.time() - t0
 
 # Assign mixed function from two scalar functions using FunctionAssigner
 assigner = FunctionAssigner(VV, [V, V])
 t0 = time.time()
 assigner.assign(vv3, [u0, u1])
-ta1 = time.time()-t0
+ta1 = time.time() - t0
 
 # Plot functions
 plot(vv0, title="Projection; time=%.3fs" % tp)
