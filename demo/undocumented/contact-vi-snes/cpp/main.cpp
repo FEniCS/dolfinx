@@ -31,59 +31,49 @@
 
 using namespace dolfin;
 
+// Sub domain for symmetry condition
+class SymmetryLine : public SubDomain
+{
+  bool inside(const Array<double>& x, bool on_boundary) const
+  { return (std::abs(x[0]) < DOLFIN_EPS); }
+};
+
+// Lower bound for displacement
+class LowerBound : public Expression
+{
+public:
+  LowerBound() : Expression(2) {}
+  void eval(Array<double>& values, const Array<double>& x) const
+  {
+    const double xmin = -1.0 - DOLFIN_EPS;
+    const double ymin = -1.0;
+    values[0] = xmin - x[0];
+    values[1] = ymin - x[1];
+  }
+};
+
+// Upper bound for displacement
+class UpperBound : public Expression
+{
+public:
+  UpperBound() : Expression(2) {}
+  void eval(Array<double>& values, const Array<double>& x) const
+  {
+    const double xmax = 1.0 + DOLFIN_EPS;
+    const double ymax = 2.0;
+    values[0] = xmax - x[0];
+    values[1] = ymax - x[1];
+  }
+};
+
 int main()
 {
 #ifdef HAS_PETSC
-#ifdef HAS_CGAL
-    // Sub domain for symmetry condition
-    class SymmetryLine : public SubDomain
-    {
-        bool inside(const Array<double>& x, bool on_boundary) const
-        {
-        return (std::abs(x[0]) < DOLFIN_EPS);
-        }
-    };
-    // Lower bound for displacement
-    class LowerBound : public Expression
-    {
-    public:
-
-      LowerBound() : Expression(2) {}
-
-      void eval(Array<double>& values, const Array<double>& x) const
-      {
-        double xmin = -1.-DOLFIN_EPS;
-        double ymin = -1.;
-        values[0] = xmin-x[0];
-        values[1] = ymin-x[1];
-      }
-
-    };
-
-    // Upper bound for displacement
-    class UpperBound : public Expression
-    {
-    public:
-
-      UpperBound() : Expression(2) {}
-
-      void eval(Array<double>& values, const Array<double>& x) const
-      {
-        double xmax = 1.+DOLFIN_EPS;
-        double ymax = 2.;
-        values[0] = xmax-x[0];
-        values[1] = ymax-x[1];
-      }
-
-    };
 
   // Read mesh and create function space
-#ifdef HAS_CGAL
-  Circle circle(0, 0, 1);
-  Mesh   mesh(circle,30);
-#else
-  UnitCircleMesh mesh(30);
-#endif
+  Mesh mesh("../circle_yplane.xml.gz");
+
+  // Create function space
   HyperElasticity::FunctionSpace V(mesh);
 
   // Create Dirichlet boundary conditions
@@ -104,7 +94,7 @@ int main()
   const double E  = 10.0;
   const double nu = 0.3;
   Constant mu(E/(2*(1 + nu)));
-  Constant lambda(E*nu/((1 + nu)*(1 - 2*nu)));
+  Constant lambda(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
 
   // Create (linear) form defining (nonlinear) variational problem
   HyperElasticity::ResidualForm F(V);
@@ -114,12 +104,12 @@ int main()
   HyperElasticity::JacobianForm J(V, V);
   J.mu = mu; J.lmbda = lambda; J.u = u;
 
-  // Interpolate expression for Upper bound
+  // Interpolate expression for upper bound
   UpperBound umax_exp;
   Function umax(V);
   umax.interpolate(umax_exp);
 
-  // Interpolate expression for Lower bound
+  // Interpolate expression for lower bound
   LowerBound umin_exp;
   Function umin(V);
   umin.interpolate(umin_exp);
@@ -129,23 +119,24 @@ int main()
 
   // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);
-  solver.parameters["nonlinear_solver"]="snes";
-  solver.parameters["linear_solver"]="lu";
-  solver.parameters("snes_solver")["maximum_iterations"]=20;
-  solver.parameters("snes_solver")["report"]=true;
-  solver.parameters("snes_solver")["error_on_nonconvergence"]=false;
-  //info(solver.parameters,true);
+  solver.parameters["nonlinear_solver"] = "snes";
+  solver.parameters["linear_solver"] = "lu";
+  solver.parameters("snes_solver")["maximum_iterations"] = 20;
+  solver.parameters("snes_solver")["report"] = true;
+  solver.parameters("snes_solver")["error_on_nonconvergence"] = false;
 
   // Solve the problems
   std::pair<std::size_t, bool> out;
   out = solver.solve(umin,umax);
 
-  // Check for convergence. Convergence is one modifies the loading and the mesh size.
+  // Check for convergence. Convergence is one modifies the loading
+  // and the mesh size.
   cout << out.second;
   if (out.second != true)
   {
     warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying some parameters or using PETSC 3.2.");
   }
+
   // Save solution in VTK format
   File file("displacement.pvd");
   file << u;
@@ -155,7 +146,7 @@ int main()
 
   // Make plot windows interactive
   interactive();
-#endif
+
 #endif
 
  return 0;
