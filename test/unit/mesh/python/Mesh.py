@@ -35,7 +35,9 @@ class MeshConstruction(unittest.TestCase):
     def setUp(self):
         if MPI.num_processes() == 1:
             self.interval = UnitIntervalMesh(10)
-        self.circle = CircleMesh(Point(0.0, 0.0), 1.0, 0.1)
+
+        if has_cgal():
+            self.circle = CircleMesh(Point(0.0, 0.0), 1.0, 0.1)
         self.square = UnitSquareMesh(5, 5)
         self.rectangle = RectangleMesh(0, 0, 2, 2, 5, 5)
         self.cube = UnitCubeMesh(3, 3, 3)
@@ -45,7 +47,8 @@ class MeshConstruction(unittest.TestCase):
         import ufl
         if MPI.num_processes() == 1:
             self.assertEqual(ufl.interval, self.interval.ufl_cell())
-        self.assertEqual(ufl.triangle, self.circle.ufl_cell())
+        if has_cgal():
+            self.assertEqual(ufl.triangle, self.circle.ufl_cell())
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
         self.assertEqual(ufl.triangle, self.rectangle.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())

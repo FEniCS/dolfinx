@@ -265,7 +265,7 @@ namespace dolfin
   {
     if (dim > 1)
     {
-      dolfin_error("uBLASMatrix.cpp",
+      dolfin_error("uBLASMatrix.h",
                    "access size of uBLAS matrix",
                    "Illegal axis (%d), must be 0 or 1", dim);
     }
@@ -442,6 +442,7 @@ namespace dolfin
     std::vector<std::size_t> _rows(rows, rows + m);
 
     std::size_t counter = 0;
+    bool diagonal_missing = true;
     typename Mat::iterator1 row;    // Iterator over rows
     typename Mat::iterator2 entry;  // Iterator over entries
     for (row = _A.begin1(); row != _A.end1(); ++row)
@@ -453,10 +454,19 @@ namespace dolfin
         for (entry = row.begin(); entry != row.end(); ++entry)
         {
           if (entry.index1() == entry.index2())
+          {
             *entry = 1.0;
+            diagonal_missing = false;
+          }
           else
             *entry = 0.0;
         }
+        if (diagonal_missing)
+          dolfin_error("uBLASMatrix.h",
+                       "set row(s) of matrix to identity",
+                       "Row %d does not contain diagonal entry",
+                       row.index1());
+        diagonal_missing = true;
         ++ counter;
       }
       if (counter == _rows.size())
@@ -472,7 +482,7 @@ namespace dolfin
 
     if (size(1) != xx.size())
     {
-      dolfin_error("uBLASMatrix.cpp",
+      dolfin_error("uBLASMatrix.h",
                    "compute matrix-vector product with uBLAS matrix",
                    "Non-matching dimensions for matrix-vector product");
     }
@@ -485,7 +495,7 @@ namespace dolfin
 
     if (size(0) != yy.size())
     {
-      dolfin_error("uBLASMatrix.cpp",
+      dolfin_error("uBLASMatrix.h",
                    "compute matrix-vector product with uBLAS matrix",
                    "Vector for matrix-vector result has wrong size");
     }
@@ -655,7 +665,7 @@ namespace dolfin
   inline boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int>
   uBLASMatrix<Mat>::data() const
   {
-    dolfin_error("GenericMatrix.h",
+    dolfin_error("uBLASMatrix.h",
                  "return pointers to underlying matrix data",
                  "Not implemented for this uBLAS matrix type");
     return boost::tuples::tuple<const std::size_t*,

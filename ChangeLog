@@ -1,3 +1,6 @@
+ - Feature: Enable assignment of sparse MeshValueCollections to MeshFunctions
+ - Feature: Add free function assign that is used for sub function assignment
+ - Feature: Add class FunctionAssigner that cache dofs for sub function assignment
  - Fix runtime dependency on checking swig version
  - Deprecate DofMap member methods vertex_to_dof_map and dof_to_vertex_map
  - Add free functions: vertex_to_dof_map and dof_to_vertex_map, and correct the ordering of the map.
