@@ -1,6 +1,7 @@
-"""This demo program uses of the interface to SNES solver for variational inequalities
- to solve a contact mechanics problems in FEnics.
-The example considers a heavy hyperelastic circle in a box of the same size"""
+"""This demo program uses of the interface to SNES solver for
+ variational inequalities to solve a contact mechanics problems in
+ FEnics.  The example considers a heavy hyperelastic circle in a box
+ of the same size"""
 # Copyright (C) 2012 Corrado Maurini
 #
 # This file is part of DOLFIN.
@@ -30,12 +31,8 @@ if not has_petsc():
     print "DOLFIN must be compiled with PETSc to run this demo."
     exit(0)
 
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0)
-
 # Create mesh
-mesh = UnitCircleMesh(30)
+mesh = Mesh("../circle_yplane.xml.gz")
 
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
@@ -79,8 +76,10 @@ bc = DirichletBC(V.sub(0), 0., symmetry_line,method="pointwise")
 
 # The displacement u must be such that the current configuration x+u
 # remains in the box [xmin,xmax] x [umin,ymax]
-constraint_u = Expression( ("xmax - x[0]","ymax - x[1]"), xmax=1 + DOLFIN_EPS,  ymax=1.0)
-constraint_l = Expression( ("xmin - x[0]","ymin - x[1]"), xmin=-1 - DOLFIN_EPS, ymin=-1.0)
+constraint_u = Expression(("xmax - x[0]","ymax - x[1]"), \
+                          xmax=1.0+DOLFIN_EPS,  ymax=1.0)
+constraint_l = Expression(("xmin - x[0]","ymin - x[1]"), \
+                          xmin=-1.0-DOLFIN_EPS, ymin=-1.0)
 umin = interpolate(constraint_l, V)
 umax = interpolate(constraint_u, V)
 
