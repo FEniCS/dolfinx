@@ -505,12 +505,12 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
       }
       else
       {
-        #if PETSC_HAVE_MUMPS
-        lu_method = "mumps";
+        #if PETSC_HAVE_SUPERLU_DIST
+        lu_method = "superlu_dist";
         #elif PETSC_HAVE_PASTIX
         lu_method = "pastix";
-        #elif PETSC_HAVE_SUPERLU_DIST
-        lu_method = "superlu_dist";
+        #elif PETSC_HAVE_MUMPS
+        lu_method = "mumps";
         #else
         dolfin_error("PETScSNESSolver.cpp",
                      "solve linear system using PETSc LU solver",
@@ -563,8 +563,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     {
       // Here, x is the model vector from which we make our Vecs that
       // tell PETSc the bounds.
-      Vec ub;
-      Vec lb;
+      Vec ub, lb;
 
       PETScVector dx = x.down_cast<PETScVector>();
       VecDuplicate(*dx.vec(), &ub);
