@@ -116,7 +116,7 @@ namespace dolfin
     ///         True if the dof map is a sub-dof map (a view into
     ///         another map).
     bool is_view() const
-    { return (_ownership_range.first == 0 && _ownership_range.second == 0); }
+    { return _is_view; }
 
     /// True if dof map is restricted
     ///
@@ -447,6 +447,9 @@ namespace dolfin
 
     // Restriction, pointer zero if not restricted
     boost::shared_ptr<const Restriction> _restriction;
+
+    // Flag to determine if the DofMap is a view
+    bool _is_view;
 
     // Global dimension. Note that this may differ from the global
     // dimension of the UFC dofmap if the function space is restricted

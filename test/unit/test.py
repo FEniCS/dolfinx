@@ -37,7 +37,7 @@ tests = {
                            "FiniteElement", "Form", "SystemAssembler",
                        "PeriodicBC", "manifolds"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace", \
-                           "SpecialFunctions"],
+                       "SpecialFunctions", "FunctionAssigner"],
     "generation":     ["MeshGeneration"],
     "geometry":       ["BoundingBoxTree"],
     "graph":          ["GraphBuild"],
