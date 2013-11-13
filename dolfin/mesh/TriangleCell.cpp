@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-10-25
+// Last changed: 2013-11-13
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -243,6 +243,9 @@ double TriangleCell::squared_distance(const Point& point,
   //
   // Note: This function may be optimized to take into account that
   // only 2D vectors and inner products need to be computed.
+  //
+  // Note: Strike that last comment. It is actually very useful that
+  // this function also handles triangles embedded in 3D.
 
   // Check if point is in vertex region outside A
   const Point ab = b - a;
