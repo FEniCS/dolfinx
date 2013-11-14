@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2013-09-12
+// Last changed: 2013-11-14
 
 #include <algorithm>
 #include <dolfin/log/log.h>
