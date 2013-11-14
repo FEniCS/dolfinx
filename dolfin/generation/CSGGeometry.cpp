@@ -67,3 +67,8 @@ void CSGGeometry::set_subdomain(std::size_t i, CSGGeometry& s)
 {
   set_subdomain(i, reference_to_no_delete_pointer(s));
 }
+//-----------------------------------------------------------------------------
+bool CSGGeometry::has_subdomains() const
+{
+  return subdomains.size() > 0;
+}
