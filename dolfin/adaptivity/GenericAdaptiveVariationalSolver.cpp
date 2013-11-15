@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2010-2011
+// Modified by Anders Logg 2010-2013
 //
 // First added:  2010-08-19
-// Last changed: 2011-06-22
+// Last changed: 2013-11-15
 
 #include <sstream>
 #include <stdio.h>
@@ -52,6 +52,16 @@ GenericAdaptiveVariationalSolver::~GenericAdaptiveVariationalSolver()
 void GenericAdaptiveVariationalSolver::solve(const double tol)
 {
   log(INFO, "Solving variational problem adaptively");
+
+  // Check that goal functional has at least one coefficient (last one
+  // is the solution variable u)
+  if (goal->num_coefficients() == 0)
+  {
+    dolfin_error("AdaptiveLinearVariationalSolver.cpp",
+                 "adaptively solve variational problem",
+                 "The goal functional must have at least one coefficient. "
+                 "Check that it has been defined in terms of a Function, not a TrialFunction");
+  }
 
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
