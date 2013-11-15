@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-11-12
+// Last changed: 2013-11-15
 
 #ifdef HAS_VTK
 
@@ -152,14 +152,31 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var,
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   points->SetNumberOfPoints(_mesh->num_vertices());
 
-  // Iterate vertices and add to point array
-  Point point;
-  for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+  if(_mesh->topology().dim() == 1)
   {
-    point = vertex->point();
-    points->SetPoint(vertex->index(), point.x(), point.y(), point.z());
+    // HACK to sort 1D points into ascending order
+    // because vtkXYPlotActor does not recognise
+    // cell connectivity information
+    std::vector<double> pointx;
+    for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+    {
+      const Point point = vertex->point();
+      pointx.push_back(point.x());
+    }
+    std::sort(pointx.begin(), pointx.end());
+    for(std::vector<double>::iterator p=pointx.begin(); p!=pointx.end(); ++p)
+      points->SetPoint(p - pointx.begin(), *p, 0.0, 0.0);
   }
-
+  else
+  {
+    // Iterate vertices and add to point array
+    for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+    {
+      const Point point = vertex->point();
+      points->SetPoint(vertex->index(), point.x(), point.y(), point.z());
+    }
+  }
+  
   // Insert points, vertex labels and cells in VTK unstructured grid
   _full_grid->SetPoints(points);
 

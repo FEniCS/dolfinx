@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-11-12
+// Last changed: 2013-11-15
 
 #ifdef HAS_VTK
 
@@ -233,7 +233,27 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
   else
   {
     std::vector<double> vertex_values;
-    _function->compute_vertex_values(vertex_values, *mesh);
+    _function->compute_vertex_values(vertex_values, *mesh); 
+
+    if(dim() == 1)
+    {
+      // HACK to sort 1D data with x-coordinate
+      // because vtkXYPlotActor does not recognise
+      // cell connectivity information
+      std::vector<std::pair<double, double> > point_value;
+      VertexIterator v(*mesh);
+      for(std::size_t i = 0; i < vertex_values.size(); ++i)
+      {
+        const double xpos = v[i].point().x();
+        point_value.push_back(std::make_pair(xpos, vertex_values[i]));
+      }
+
+      std::sort(point_value.begin(), point_value.end());
+
+      for(std::size_t i = 0; i < vertex_values.size(); ++i)
+        vertex_values[i] = point_value[i].second;
+    }
+
     setPointValues(vertex_values.size(), &vertex_values[0], p);
   }
 }
