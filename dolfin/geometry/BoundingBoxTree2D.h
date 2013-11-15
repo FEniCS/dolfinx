@@ -16,11 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-10-25
+// Last changed: 2013-11-14
 
 #ifndef __BOUNDING_BOX_TREE_2D_H
 #define __BOUNDING_BOX_TREE_2D_H
-
 
 #include <boost/range/algorithm/nth_element.hpp>
 
@@ -205,10 +204,17 @@ namespace dolfin
                      const std::vector<unsigned int>::iterator& middle,
                      const std::vector<unsigned int>::iterator& end)
     {
+#ifdef USE_BOOST_NTH_ELEMENT
+      if (axis == 0)
+        boost::nth_element(std::make_pair(begin, end), middle, less_x(leaf_bboxes));
+      else
+        boost::nth_element(std::make_pair(begin, end), middle, less_y(leaf_bboxes));
+#else
       if (axis == 0)
         std::nth_element(begin, middle, end, less_x(leaf_bboxes));
       else
         std::nth_element(begin, middle, end, less_y(leaf_bboxes));
+#endif
     }
 
   };

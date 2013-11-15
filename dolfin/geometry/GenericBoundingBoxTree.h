@@ -16,10 +16,19 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-10-25
+// Last changed: 2013-11-14
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
+
+// Decide if we should use boost::nth_element in place of
+// std::nth_element as a workaround for a bug in STL introduced in GCC
+// 4.8 (fixed in GCC 4.8.3).
+#define USE_BOOST_NTH_ELEMENT 1
+
+#ifdef USE_BOOST_NTH_ELEMENT
+#include <boost/range/algorithm/nth_element.hpp>
+#endif
 
 #include <vector>
 #include <set>
