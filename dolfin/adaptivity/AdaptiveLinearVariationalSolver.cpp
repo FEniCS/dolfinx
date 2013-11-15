@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2011
 //
 // First added:  2010-08-19
-// Last changed: 2012-11-14
+// Last changed: 2013-11-15
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
@@ -72,6 +72,7 @@ void AdaptiveLinearVariationalSolver::
 init(boost::shared_ptr<LinearVariationalProblem> problem,
      boost::shared_ptr<GoalFunctional> goal)
 {
+  dolfin_assert(goal);
   this->goal = goal;
 
   // Set generic adaptive parameters
