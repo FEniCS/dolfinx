@@ -16,21 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-11-05
+// Last changed: 2013-11-14
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
 // recursion and is more convenient than sending it around.
 #define MAX_DIM 6
-
-// Decide if we should use boost::nth_element in place of
-// std::nth_element as a workaround for a bug in STL introduced in GCC
-// 4.8 (fixed in GCC 4.8.3).
-#define USE_BOOST_NTH_ELEMENT 1
-
-#ifdef USE_BOOST_NTH_ELEMENT
-#include <boost/range/algorithm/nth_element.hpp>
-#endif
 
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>

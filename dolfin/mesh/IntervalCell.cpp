@@ -20,7 +20,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2006-06-05
-// Last changed: 2013-09-02
+// Last changed: 2013-11-13
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -157,18 +157,35 @@ double IntervalCell::diameter(const MeshEntity& interval) const
 //-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell, const Point& point) const
 {
-  // Note: assume that interval is embedded in 1D (only checking x-coordinate)
-  //
-  // Note: slightly inefficient since we compute the square distance and then
-  // take the square root (in Cell::distance), but this is done to match the
-  // implementation for triangles and tetrahedra, and speed is often not a
-  // big issue in 1D.
-
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
   const unsigned int* vertices = cell.entities(0);
   const Point p0 = geometry.point(vertices[0]);
   const Point p1 = geometry.point(vertices[1]);
+
+  // Compute vector
+  const Point v0  = point - p0;
+  const Point v1  = point - p1;
+  const Point v01 = p1 - p0;
+
+  // Check if p0 is closest point (outside of interval)
+  const double a0 = v0.dot(v01);
+  if (a0 < 0.0)
+    return v0.dot(v0);
+
+  // Check if p1 is closest point (outside the interval)
+  const double a1 = - v1.dot(v01);
+  if (a1 < 0.0)
+    return v1.dot(v1);
+
+  // Inside interval, so use Pythagoras to subtract length of projection
+  return std::max(v0.dot(v0) - a0*a0 / v01.dot(v01), 0.0);
+
+  /*
+
+  // Old implementation that only looks at x-coordinate. Faster for 1D
+  // meshes but speed is rarely an issue in 1D so we might as well use
+  // the more general implementation also in 1D.
 
   // Get x-coordinates of point
   const double x = point.x();
@@ -187,6 +204,7 @@ double IntervalCell::squared_distance(const Cell& cell, const Point& point) cons
 
   // Point is inside interval so distance is zero
   return 0.0;
+  */
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const

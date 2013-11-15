@@ -455,6 +455,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Add cells to mesh and build domain marker mesh function
   MeshDomains &domain_markers = mesh.domains();
   std::size_t cell_index = 0;
+  const bool mark_cells = geometry.has_subdomains();
   for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
     // Add cell if it is in the domain
@@ -465,7 +466,9 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
                            cgal_cell->vertex(1)->info(),
                            cgal_cell->vertex(2)->info());
 
-      domain_markers.set_marker(std::make_pair(cell_index, cgal_cell->counter()), 2);
+      if (mark_cells)
+        domain_markers.set_marker(std::make_pair(cell_index, cgal_cell->counter()), 2);
+
       ++cell_index;
     }
   }
