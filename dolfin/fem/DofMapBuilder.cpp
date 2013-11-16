@@ -183,7 +183,7 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
     }
   }
 
-  sub_dofmap._ownership_range = std::make_pair(0, 0);
+  //sub_dofmap._ownership_range = std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,

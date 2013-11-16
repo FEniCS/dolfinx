@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-10-23
+# Last changed: 2013-11-14
 
 import unittest
 import numpy
@@ -360,9 +360,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
     def test_compute_closest_entity_3d(self):
 
-        reference = (4, 1)
+        reference = (0, 0.1)
 
-        p = Point(-1.0, 0.01, 0.01)
+        p = Point(0.1, 0.05, -0.1)
         mesh = UnitCubeMesh(8, 8, 8)
         tree = BoundingBoxTree()
         tree.build(mesh)

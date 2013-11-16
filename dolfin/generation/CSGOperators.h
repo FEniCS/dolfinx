@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Benjamin Kehlet, 2012
+// Modified by Benjamin Kehlet, 2012-2013
 //
 // First added:  2012-04-13
-// Last changed: 2012-11-05
+// Last changed: 2013-06-24
 
 #ifndef __CSG_OPERATORS_H
 #define __CSG_OPERATORS_H
@@ -36,6 +36,10 @@ namespace dolfin
   {
    public:
     virtual bool is_operator() const { return true; }
+    std::size_t dim() const { return dim_;}
+
+   protected :
+    std::size_t dim_;
   };
 
   /// Union of CSG geometries
@@ -46,9 +50,6 @@ namespace dolfin
     /// Create union of two geometries
     CSGUnion(boost::shared_ptr<CSGGeometry> g0,
              boost::shared_ptr<CSGGeometry> g1);
-
-    /// Return dimension of geometry
-    std::size_t dim() const;
 
     /// Informal string representation
     std::string str(bool verbose) const;
@@ -69,9 +70,6 @@ namespace dolfin
     CSGDifference(boost::shared_ptr<CSGGeometry> g0,
              boost::shared_ptr<CSGGeometry> g1);
 
-    /// Return dimension of geometry
-    std::size_t dim() const;
-
     /// Informal string representation
     std::string str(bool verbose) const;
 
@@ -91,9 +89,6 @@ namespace dolfin
     /// Create intersection of two geometries
     CSGIntersection(boost::shared_ptr<CSGGeometry> g0,
                     boost::shared_ptr<CSGGeometry> g1);
-
-    /// Return dimension of geometry
-    std::size_t dim() const;
 
     /// Informal string representation
     std::string str(bool verbose) const;
