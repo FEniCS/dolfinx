@@ -75,7 +75,7 @@ class MeshQualityTest(unittest.TestCase):
 
         # Create mesh, collpase and compute min ratio
         mesh = UnitCubeMesh(12, 12, 12)
-        test = MeshQuality.radius_ratio_matplolib_histogram(mesh, 5)
+        test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
         print test
 
 
