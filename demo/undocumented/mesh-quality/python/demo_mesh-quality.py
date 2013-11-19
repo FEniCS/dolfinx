@@ -24,7 +24,6 @@ from dolfin import *
 
 # Read and show mesh
 mesh = Mesh("../dolfin_fine.xml.gz")
-#plot(mesh)
 
 # Print minimal and maximal radius ratio
 qmin, qmax = MeshQuality.radius_ratio_min_max(mesh)
@@ -34,8 +33,6 @@ print 'Maximal radius ratio:', qmax
 # Show histogram using matplotlib
 hist = MeshQuality.radius_ratio_matplolib_histogram(mesh)
 hist = hist.replace('pylab.show()', 'pylab.show(block=False)')
-#hist = hist.replace('pylab.show()', '')
-print hist
 exec(hist)
 
 # Show mesh
