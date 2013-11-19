@@ -53,7 +53,7 @@ std::pair<double, double> MeshQuality::radius_ratio_min_max(const Mesh& mesh)
   }
 
   qmin = MPI::min(qmin);
-  qmax = MPI::min(qmax);
+  qmax = MPI::max(qmax);
   return std::make_pair(qmin, qmax);
 }
 //-----------------------------------------------------------------------------
