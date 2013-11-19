@@ -31,8 +31,8 @@ if not has_tao():
     print "DOLFIN must be compiled with TAO to run this demo."
     exit(0)
 
-# Create mesh (use cgal if available)
-mesh = UnitCircleMesh(50)
+# Read mesh
+mesh = Mesh("../circle_yplane.xml.gz")
 
 # Create function space
 V = VectorFunctionSpace(mesh, "Lagrange", 1)

@@ -7,6 +7,10 @@ with w = 0 on the boundary.
 from dolfin import *
 import numpy
 
+if not has_cgal():
+    import sys
+    sys.exit(0)
+
 # Set pressure function:
 T = 10.0  # tension
 A = 1.0   # pressure amplitude

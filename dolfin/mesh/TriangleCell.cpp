@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-10-25
+// Last changed: 2013-11-14
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -238,49 +238,56 @@ double TriangleCell::squared_distance(const Point& point,
   // Algorithm from Real-time collision detection by Christer Ericson:
   // ClosestPtPointTriangle on page 141, Section 5.1.5.
   //
+  // Algorithm modified to handle triangles embedded in 3D.
+  //
   // Note: This algorithm actually computes the closest point but we
   // only return the distance to that point.
-  //
-  // Note: This function may be optimized to take into account that
-  // only 2D vectors and inner products need to be computed.
 
-  // Check if point is in vertex region outside A
+  // Compute normal to plane defined by triangle
   const Point ab = b - a;
   const Point ac = c - a;
-  const Point ap = point - a;
+  Point n = ab.cross(ac);
+  n /= n.norm();
+
+  // Subtract projection onto plane
+  const double pn = (point - a).dot(n);
+  const Point p = point - pn*n;
+
+  // Check if point is in vertex region outside A
+  const Point ap = p - a;
   const double d1 = ab.dot(ap);
   const double d2 = ac.dot(ap);
   if (d1 <= 0.0 && d2 <= 0.0)
-    return point.squared_distance(a);
+    return p.squared_distance(a) + pn*pn;
 
   // Check if point is in vertex region outside B
-  const Point bp = point - b;
+  const Point bp = p - b;
   const double d3 = ab.dot(bp);
   const double d4 = ac.dot(bp);
   if (d3 >= 0.0 && d4 <= d3)
-    return point.squared_distance(b);
+    return p.squared_distance(b) + pn*pn;
 
   // Check if point is in edge region of AB and if so compute projection
   const double vc = d1*d4 - d3*d2;
   if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0)
   {
     const double v = d1 / (d1 - d3);
-    return point.squared_distance(a + v*ab);
+    return p.squared_distance(a + v*ab) + pn*pn;
   }
 
   // Check if point is in vertex region outside C
-  const Point cp = point - c;
+  const Point cp = p - c;
   const double d5 = ab.dot(cp);
   const double d6 = ac.dot(cp);
   if (d6 >= 0.0 && d5 <= d6)
-    return point.squared_distance(c);
+    return p.squared_distance(c) + pn*pn;
 
   // Check if point is in edge region of AC and if so compute projection
   const double vb = d5*d2 - d1*d6;
   if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0)
   {
     const double w = d2 / (d2 - d6);
-    return point.squared_distance(a + w*ac);
+    return p.squared_distance(a + w*ac) + pn*pn;
   }
 
   // Check if point is in edge region of BC and if so compute projection
@@ -288,11 +295,11 @@ double TriangleCell::squared_distance(const Point& point,
   if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0)
   {
     const double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-    return point.squared_distance(b + w*(c - b));
+    return p.squared_distance(b + w*(c - b)) + pn*pn;
   }
 
-  // Point is inside triangle so distance is zero
-  return 0.0;
+  // Point is inside triangle so return distance to plane
+  return pn*pn;
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
