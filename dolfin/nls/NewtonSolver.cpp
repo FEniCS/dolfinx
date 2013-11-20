@@ -44,6 +44,8 @@ Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
 
+  p.add("linear_solver",           "default");
+  p.add("preconditioner",          "default");
   p.add("maximum_iterations",      10);
   p.add("relative_tolerance",      1e-9);
   p.add("absolute_tolerance",      1e-10);
@@ -52,8 +54,6 @@ Parameters NewtonSolver::default_parameters()
   p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
-  p.add("linear_solver",           "default");
-  p.add("preconditioner",          "default");
 
   //p.add("reuse_preconditioner", false);
 
@@ -110,7 +110,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   dolfin_assert(_solver);
 
   // Set parameters for linear solver
-  if (solver_type == "direct")
+  if (solver_type == "direct" || solver_type == "lu")
   {
     _solver->update_parameters(parameters("lu_solver"));
   }
