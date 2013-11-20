@@ -346,7 +346,8 @@ solver parameters are set:
 .. code-block:: c++
 
     // Create nonlinear solver and set parameters
-    NewtonSolver newton_solver("lu");
+    NewtonSolver newton_solver;
+    newton_solver.parameters["linear_solver"] = "lu";
     newton_solver.parameters["convergence_criterion"] = "incremental";
     newton_solver.parameters["maximum_iterations"] = 10;
     newton_solver.parameters["relative_tolerance"] = 1e-6;

@@ -19,7 +19,7 @@ equation, which is a time-dependent nonlinear PDE """
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-06-20
-# Last changed: 2012-11-12
+# Last changed: 2013-11-20
 
 # Begin demo
 
@@ -100,7 +100,8 @@ a = derivative(L, u, du)
 
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
-solver = NewtonSolver("lu")
+solver = NewtonSolver()
+solver.parameters["linear_solver"] = "lu";
 solver.parameters["convergence_criterion"] = "incremental"
 solver.parameters["relative_tolerance"] = 1e-6
 
