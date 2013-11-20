@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2004-2013 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2011-10-06
+// Last changed: 2013-11-20
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
@@ -72,12 +72,19 @@ namespace dolfin
       return p;
     }
 
+    /// Update solver parameters (pass parameters down to wrapped implementation)
+    virtual void update_parameters(const Parameters& parameters)
+    {
+      solver->parameters.update(parameters);
+    }
+
   private:
 
     // Friends
     friend class LUSolver;
     friend class KrylovSolver;
     friend class LinearVariationalSolver;
+    friend class NewtonSolver;
 
     // Check whether string is contained in list
     static bool
