@@ -85,9 +85,9 @@ MeshQuality::radius_ratio_histogram_data(const Mesh& mesh,
   return std::make_pair(bins, values);
 }
 //-----------------------------------------------------------------------------
-std::string
-MeshQuality::radius_ratio_matplolib_histogram(const Mesh& mesh,
-                                              std::size_t num_intervals)
+std::string 
+MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
+					       std::size_t num_intervals)
 {
   // Compute data
   std::pair<std::vector<double>, std::vector<double> >

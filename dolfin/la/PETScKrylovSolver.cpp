@@ -256,7 +256,6 @@ void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
 
   // Create null space
   petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
-
   ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE,
                             nullspace.dim(),
                             petsc_vec.data(), petsc_nullspace.get());
@@ -336,7 +335,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   {
     dolfin_assert(_P);
     boost::shared_ptr<const MatNullSpace> pc_nullspace
-      = _preconditioner->nullspace();
+      = _preconditioner->near_nullspace();
 
     if (pc_nullspace && !preconditioner_set)
     {

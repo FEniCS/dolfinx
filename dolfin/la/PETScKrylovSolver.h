@@ -186,8 +186,8 @@ namespace dolfin
     std::vector<PETScVector> _nullspace;
 
     // PETSc null space. Would like this to be a scoped_ptr, but it
-    //doesn't support custom deleters. Change to std::unique_ptr in
-    //the future.
+    // doesn't support custom deleters. Change to std::unique_ptr in
+    // the future.
     boost::shared_ptr<MatNullSpace> petsc_nullspace;
 
     bool preconditioner_set;
