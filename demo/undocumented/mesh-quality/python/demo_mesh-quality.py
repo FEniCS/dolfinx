@@ -1,6 +1,6 @@
 "This demo illustrates basic plotting."
 
-# Copyright (C) 2013 Jan Blechta 
+# Copyright (C) 2013 Jan Blechta
 #
 # This file is part of DOLFIN.
 #
@@ -31,11 +31,10 @@ print 'Minimal radius ratio:', qmin
 print 'Maximal radius ratio:', qmax
 
 # Show histogram using matplotlib
-hist = MeshQuality.radius_ratio_matplolib_histogram(mesh)
+hist = MeshQuality.radius_ratio_matplotlib_histogram(mesh)
 hist = hist.replace('pylab.show()', 'pylab.show(block=False)')
 exec(hist)
 
 # Show mesh
 plot(mesh)
 interactive()
-
