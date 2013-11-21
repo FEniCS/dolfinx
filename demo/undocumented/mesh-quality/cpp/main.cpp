@@ -26,28 +26,37 @@ using namespace dolfin;
 
 int main()
 {
+  // The output needs to be deterministic so that it can be piped to python
+  parameters["std_out_all_processes"] = false;
+
   // Read mesh from file
   Mesh mesh("../dolfin_fine.xml.gz");
 
   // Print minimal and maximal radius ratio
   const std::pair<double, double> qminmax = MeshQuality::radius_ratio_min_max(mesh);
-  std::cout << "# Minimal radius ratio: " << qminmax.first  << std::endl;
-  std::cout << "# Maximal radius ratio: " << qminmax.second << std::endl;
-  std::cout <<                                                 std::endl;
+  if (MPI::process_number() == 0)
+  {
+    std::cout << "# Minimal radius ratio: " << qminmax.first  << std::endl;
+    std::cout << "# Maximal radius ratio: " << qminmax.second << std::endl;
+    std::cout <<                                                 std::endl;
+  }
 
   // Print matplotlib code for generation of histogram
-  const std::string hist = MeshQuality::radius_ratio_matplolib_histogram(mesh);
-  std::cout << "# Execute following commands in python" << std::endl;
-  std::cout << "# to get histogram of radius ratios:"   << std::endl;
-  std::cout <<                                             std::endl;
-  std::cout << "# ------------------------------------" << std::endl;
-  std::cout << "# ------------------------------------" << std::endl;
-  std::cout << hist                                     << std::endl;
-  std::cout << "# ------------------------------------" << std::endl;
-  std::cout << "# ------------------------------------" << std::endl;
-  std::cout << "# or pass output of this program"       << std::endl;
-  std::cout << "# to python, i.e.:"                     << std::endl;
-  std::cout << "# $> ./demo_mesh-quality | python"      << std::endl;
+  const std::string hist = MeshQuality::radius_ratio_matplotlib_histogram(mesh);
+  if (MPI::process_number() == 0)
+  {
+    std::cout << "# Execute following commands in python" << std::endl;
+    std::cout << "# to get histogram of radius ratios:"   << std::endl;
+    std::cout <<                                             std::endl;
+    std::cout << "# ------------------------------------" << std::endl;
+    std::cout << "# ------------------------------------" << std::endl;
+    std::cout << hist                                     << std::endl;
+    std::cout << "# ------------------------------------" << std::endl;
+    std::cout << "# ------------------------------------" << std::endl;
+    std::cout << "# or pass output of this program"       << std::endl;
+    std::cout << "# to python, i.e.:"                     << std::endl;
+    std::cout << "# $> ./demo_mesh-quality | python"      << std::endl;
+  }
 
   // Show mesh
   plot(mesh);
