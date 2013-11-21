@@ -20,7 +20,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2013-11-20
+// Last changed: 2013-11-21
 
 #include <iostream>
 #include <dolfin/common/constants.h>

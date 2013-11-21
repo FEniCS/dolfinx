@@ -19,7 +19,7 @@
 // Modified by Johannes Ring 2013
 //
 // First added:  2012-09-03
-// Last changed: 2013-06-06
+// Last changed: 2013-11-21
 //
 // This demo program uses of the interface to TAO solver for
 // variational inequalities to solve a contact mechanics problems in
@@ -120,7 +120,7 @@ int main()
   // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);
   solver.parameters["nonlinear_solver"] = "snes";
-  solver.parameters["linear_solver"] = "lu";
+  solver.parameters("snes_solver")["linear_solver"] = "lu";
   solver.parameters("snes_solver")["maximum_iterations"] = 20;
   solver.parameters("snes_solver")["report"] = true;
   solver.parameters("snes_solver")["error_on_nonconvergence"] = false;

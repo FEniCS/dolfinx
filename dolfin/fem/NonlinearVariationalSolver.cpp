@@ -19,7 +19,7 @@
 // Modified by Corrado Maurini 2013
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2013-11-20
+// Last changed: 2013-11-21
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -143,7 +143,6 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
       snes_solver = boost::shared_ptr<PETScSNESSolver>(new PETScSNESSolver());
     }
     snes_solver->parameters.update(parameters("snes_solver"));
-    snes_solver->set_linear_solver_parameters(parameters);
 
     // Solve nonlinear problem using PETSc's SNES
     dolfin_assert(u->vector());
