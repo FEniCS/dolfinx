@@ -41,7 +41,7 @@ This is equivalent to solving the variational problem
 # Modified by Harish Narayanan, 2009.
 #
 # First added:  2007-11-14
-# Last changed: 2012-11-12
+# Last changed: 2013-11-20
 # Begin demo
 
 from dolfin import *
