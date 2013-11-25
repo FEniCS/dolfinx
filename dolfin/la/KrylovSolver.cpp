@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2012
 //
 // First added:  2007-07-03
-// Last changed: 2012-08-21
+// Last changed: 2013-11-25
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
