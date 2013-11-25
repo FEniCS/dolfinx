@@ -702,7 +702,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   }
 }
 //-----------------------------------------------------------------------------
-void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& nullspace)
+void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& near_nullspace)
 {
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
   dolfin_error("PETScPreconditioner.cpp",
@@ -710,30 +710,30 @@ void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& nullspace)
                "This is supported by PETSc version > 3.2");
   #else
 
-  // Clear nullspace
-  petsc_nullspace.reset();
-  _nullspace.clear();
+  // Clear near nullspace
+  petsc_near_nullspace.reset();
+  _near_nullspace.clear();
 
   // Copy vectors
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  for (std::size_t i = 0; i < near_nullspace.dim(); ++i)
   {
-    dolfin_assert(nullspace[i]);
-    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+    dolfin_assert(near_nullspace[i]);
+    const PETScVector& x = near_nullspace[i]->down_cast<PETScVector>();
 
     // Copy vector
-    _nullspace.push_back(x);
+    _near_nullspace.push_back(x);
   }
 
   // Get pointers to underlying PETSc objects
-  std::vector<Vec> petsc_vec(nullspace.dim());
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-    petsc_vec[i] = *(_nullspace[i].vec().get());
+  std::vector<Vec> petsc_vec(near_nullspace.dim());
+  for (std::size_t i = 0; i < near_nullspace.dim(); ++i)
+    petsc_vec[i] = *(_near_nullspace[i].vec().get());
 
   // Create null space
-  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
+  petsc_near_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
   PetscErrorCode ierr;
-  ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.dim(),
-                            petsc_vec.data(), petsc_nullspace.get());
+  ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, near_nullspace.dim(),
+                            petsc_vec.data(), petsc_near_nullspace.get());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
   #endif
 }

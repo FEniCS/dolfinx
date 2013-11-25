@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-10-24
+// Last changed: 2013-11-14
 
 #ifndef __BOUNDING_BOX_TREE_1D_H
 #define __BOUNDING_BOX_TREE_1D_H
@@ -163,7 +163,11 @@ namespace dolfin
                      const std::vector<unsigned int>::iterator& middle,
                      const std::vector<unsigned int>::iterator& end)
     {
+#ifdef USE_BOOST_NTH_ELEMENT
+      boost::nth_element(std::make_pair(begin, end), middle, less_x(leaf_bboxes));
+#else
       std::nth_element(begin, middle, end, less_x(leaf_bboxes));
+#endif
     }
 
   };
