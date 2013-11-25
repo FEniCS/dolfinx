@@ -20,7 +20,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2013-11-21
+// Last changed: 2013-11-25
 
 #include <iostream>
 #include <dolfin/common/constants.h>
@@ -111,10 +111,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
   // Set parameters for linear solver
   if (solver_type == "direct" || solver_type == "lu")
-  {
     _solver->update_parameters(parameters("lu_solver"));
-  }
-  else if (solver_type == "iterative")
+  else if (solver_type == "iterative" || solver_type == "gmres")
     _solver->update_parameters(parameters("krylov_solver"));
   else
     warning("Unable to set parameters for linear solver type \"%s\".", solver_type.c_str());

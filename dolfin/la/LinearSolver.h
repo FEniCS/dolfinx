@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2013-11-20
+// Last changed: 2013-11-25
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
@@ -75,7 +75,8 @@ namespace dolfin
     /// Update solver parameters (pass parameters down to wrapped implementation)
     virtual void update_parameters(const Parameters& parameters)
     {
-      solver->parameters.update(parameters);
+      this->parameters.update(parameters);
+      solver->update_parameters(parameters);
     }
 
   private:
