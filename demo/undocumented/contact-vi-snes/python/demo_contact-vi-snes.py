@@ -22,7 +22,7 @@
 # Modified by Corrado Maurini 2013
 #
 # First added:  2012-09-03
-# Last changed: 2013-04-11
+# Last changed: 2013-11-21
 #
 from dolfin import *
 
@@ -85,8 +85,8 @@ umax = interpolate(constraint_u, V)
 
 # Define the solver parameters
 snes_solver_parameters = {"nonlinear_solver": "snes",
-                          "linear_solver"   : "lu",
-                          "snes_solver"     : { "maximum_iterations": 20,
+                          "snes_solver"     : { "linear_solver"   : "lu",
+                                                "maximum_iterations": 20,
                                                 "report": True,
                                                 "error_on_nonconvergence": False,
                                                }}
