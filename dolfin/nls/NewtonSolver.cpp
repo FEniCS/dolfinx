@@ -20,7 +20,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2011-03-29
+// Last changed: 2013-11-25
 
 #include <iostream>
 #include <dolfin/common/constants.h>
@@ -29,6 +29,8 @@
 #include <dolfin/la/LinearSolver.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
+#include <dolfin/la/LUSolver.h>
+#include <dolfin/la/KrylovSolver.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
@@ -42,6 +44,8 @@ Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
 
+  p.add("linear_solver",           "default");
+  p.add("preconditioner",          "default");
   p.add("maximum_iterations",      10);
   p.add("relative_tolerance",      1e-9);
   p.add("absolute_tolerance",      1e-10);
@@ -50,15 +54,18 @@ Parameters NewtonSolver::default_parameters()
   p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
+
   //p.add("reuse_preconditioner", false);
+
+  p.add(LUSolver::default_parameters());
+  p.add(KrylovSolver::default_parameters());
 
   return p;
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
+NewtonSolver::NewtonSolver()
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _solver(new LinearSolver(solver_type, pc_type)),
-    _A(new Matrix), _dx(new Vector), _b(new Vector)
+    _residual0(0.0), _A(new Matrix), _dx(new Vector), _b(new Vector)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -72,6 +79,10 @@ NewtonSolver::NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
 {
   // Set default parameters
   parameters = default_parameters();
+
+  // Store linear solver type
+  parameters["linear_solver"] = "user_defined";
+  parameters["preconditioner"] = "user_defined";
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
@@ -86,11 +97,27 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   dolfin_assert(_A);
   dolfin_assert(_b);
   dolfin_assert(_dx);
-  dolfin_assert(_solver);
 
+  // Extract parameters
   const std::string convergence_criterion = parameters["convergence_criterion"];
   const std::size_t maxiter = parameters["maximum_iterations"];
 
+  // Create linear solver if not already created
+  const std::string solver_type = parameters["linear_solver"];
+  const std::string pc_type = parameters["preconditioner"];
+  if (!_solver)
+    _solver = boost::shared_ptr<LinearSolver>(new LinearSolver(solver_type, pc_type));
+  dolfin_assert(_solver);
+
+  // Set parameters for linear solver
+  if (solver_type == "direct" || solver_type == "lu")
+    _solver->update_parameters(parameters("lu_solver"));
+  else if (solver_type == "iterative" || solver_type == "gmres")
+    _solver->update_parameters(parameters("krylov_solver"));
+  else
+    warning("Unable to set parameters for linear solver type \"%s\".", solver_type.c_str());
+
+  // Reset iteration counts
   std::size_t krylov_iterations = 0;
   _newton_iteration = 0;
 

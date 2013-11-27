@@ -86,8 +86,8 @@ namespace dolfin
 
     /// Create Matplotlib string to plot cell quality histogram
     static std::string
-      radius_ratio_matplolib_histogram(const Mesh& mesh,
-                                       std::size_t num_bins = 50);
+      radius_ratio_matplotlib_histogram(const Mesh& mesh,
+					std::size_t num_bins = 50);
   };
 
 }

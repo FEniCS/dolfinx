@@ -19,7 +19,7 @@
 // Modified by Anders E. Johansen 2011
 //
 // First added:  2005-10-23
-// Last changed: 2011-07-11
+// Last changed: 2013-11-20
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -45,13 +45,10 @@ namespace dolfin
   {
   public:
 
-    /// Create nonlinear solver with default linear solver and default
-    /// linear algebra backend
-    NewtonSolver(std::string solver_type="lu",
-                 std::string pc_type="default");
+    /// Create nonlinear solver
+    NewtonSolver();
 
-    /// Create nonlinear solver using provided linear solver and linear
-    /// algebra backend determined by factory
+    /// Create nonlinear solver using provided linear solver
     ///
     /// *Arguments*
     ///     solver (_GenericLinearSolver_)
