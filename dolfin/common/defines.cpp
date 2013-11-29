@@ -70,15 +70,6 @@ bool dolfin::has_slepc()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_petsc4py()
-{
-#ifdef HAS_PETSC4PY
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
 bool dolfin::has_tao()
 {
 #ifdef HAS_TAO
