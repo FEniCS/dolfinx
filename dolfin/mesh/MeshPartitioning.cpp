@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2012 Niclas Jansson, Ola Skavhaug, Anders Logg
-// and Garth N. Wells
+// Copyright (C) 2008-2013 Niclas Jansson, Ola Skavhaug, Anders Logg
+// Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,10 @@
 // Modified by Kent-Andre Mardal 2011
 // Modified by Anders Logg 2011
 // Modified by Garth N. Wells 2011-2012
+// Modified by Chris Richardson 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-04-20
+// Last changed: 2013-11-29
 
 #include <algorithm>
 #include <iterator>
@@ -275,8 +276,8 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
 
   // Get geometric dimension
   const std::size_t gdim = mesh_data.gdim;
-
-  // Compute which vertices we need
+  
+// Compute which vertices we need
   std::set<std::size_t> needed_vertex_indices;
   boost::multi_array<std::size_t, 2>::const_iterator vertices;
   for (vertices = cell_vertices.begin(); vertices != cell_vertices.end();
@@ -287,7 +288,7 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
 
   // Compute where (process number) the vertices we need are located
   std::vector<std::vector<std::size_t> > send_vertex_indices(num_processes);
-  std::vector<std::vector<std::size_t> > vertex_location(num_processes);
+  //  std::vector<std::vector<std::size_t> > vertex_location(num_processes);
   std::set<std::size_t>::const_iterator required_vertex;
   for (required_vertex = needed_vertex_indices.begin();
        required_vertex != needed_vertex_indices.end(); ++required_vertex)
@@ -296,8 +297,10 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
     const std::size_t location
       = MPI::index_owner(*required_vertex, mesh_data.num_global_vertices);
     send_vertex_indices[location].push_back(*required_vertex);
-    vertex_location[location].push_back(*required_vertex);
+    //    vertex_location[location].push_back(*required_vertex);
   }
+
+  const std::vector<std::vector<std::size_t> >& vertex_location = send_vertex_indices;
 
   // Send required vertices to other processes, and receive back vertices
   // required by other processes.
@@ -325,7 +328,7 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   MPI::all_to_all(send_vertex_coordinates, received_vertex_coordinates);
 
   // Set index counters to first position in receive buffers
-  std::vector<std::size_t> index_counters(num_processes, 0);
+  //  std::vector<std::size_t> index_counters(num_processes, 0);
 
   // Clear data
   vertex_indices.clear();
@@ -342,14 +345,15 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   std::size_t v = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    for (std::size_t i = 0; i < received_vertex_coordinates[p].size();
-         i += gdim)
+    for (std::size_t i = 0;
+         i < received_vertex_coordinates[p].size()/gdim; ++i)
     {
       for (std::size_t j = 0; j < gdim; ++j)
-        vertex_coordinates[v][j] = received_vertex_coordinates[p][i + j];
+        vertex_coordinates[v][j] 
+          = received_vertex_coordinates[p][i*gdim + j];
 
       const std::size_t global_vertex_index
-        = vertex_location[p][index_counters[p]++];
+        = vertex_location[p][i];
       vertex_global_to_local[global_vertex_index] = v;
       vertex_indices[v] = global_vertex_index;
 
