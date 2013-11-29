@@ -1,4 +1,4 @@
-"This demo illustrates basic plotting."
+"This demo illustrates basic inspection of mesh quality."
 
 # Copyright (C) 2013 Jan Blechta
 #
@@ -22,7 +22,7 @@
 
 from dolfin import *
 
-# Read and show mesh
+# Read mesh from file
 mesh = Mesh("../dolfin_fine.xml.gz")
 
 # Print minimal and maximal radius ratio
