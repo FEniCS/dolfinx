@@ -109,7 +109,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                                               const LocalMeshData& local_data)
 {
-  // Compute cell partitioning or use partitioning provides in local_data
+  // Compute cell partitioning or use partitioning provided in local_data
   std::vector<std::size_t> cell_partition;
   if (local_data.cell_partition.empty())
     cell_partition = partition_cells(mesh, local_data);
@@ -427,13 +427,17 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Build sorted array of global boundary vertex indices (global
   // numbering)
-  std::vector<std::size_t> global_vertex_send(boundary_size);
+  std::vector<std::size_t> global_vertex_list(boundary_size);
   for (std::size_t i = 0; i < boundary_size; ++i)
-    global_vertex_send[i] = vertex_indices[boundary_vertex_map[i]];
-  std::sort(global_vertex_send.begin(), global_vertex_send.end());
+    global_vertex_list[i] = vertex_indices[boundary_vertex_map[i]];
+  std::sort(global_vertex_list.begin(), global_vertex_list.end());
 
-  // Receive buffer
-  std::vector<std::size_t> global_vertex_recv;
+  // Send and Receive buffers
+  std::vector<std::vector<std::size_t> > global_vertex_send(num_processes);
+  std::vector<std::vector<std::size_t> > global_vertex_recv(num_processes);
+  for (unsigned int i = 0; i < num_processes; ++i)
+    if(i != process_number)
+      global_vertex_send[i] = global_vertex_list;
 
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes
@@ -441,28 +445,24 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
         = mesh.topology().shared_entities(0);
   shared_vertices.clear();
 
-  // FIXME: Remove computation from inside communication loop
-
+  // Send boundary vertex indices to all other processes
+  MPI::all_to_all(global_vertex_send, global_vertex_recv);
+  
   // Build shared vertex to sharing processes map
-  for (std::size_t i = 1; i < num_processes; ++i)
+  for (std::size_t i = 0; i < num_processes; ++i)
   {
-    // We send data to process p - i (i steps to the left)
-    const int p = (process_number - i + num_processes) % num_processes;
-
-    // We receive data from process p + i (i steps to the right)
-    const int q = (process_number + i) % num_processes;
-
-    // Send and receive
-    MPI::send_recv(global_vertex_send, p, global_vertex_recv, q);
-
+    if (i == process_number) 
+      continue;
+    
     // Compute intersection of global indices
-    std::vector<std::size_t> intersection(std::min(global_vertex_send.size(),
-                                                   global_vertex_recv.size()));
+    std::vector<std::size_t> intersection(std::min(global_vertex_list.size(),
+                                          global_vertex_recv[i].size()));
+
     std::vector<std::size_t>::iterator intersection_end
-      = std::set_intersection(global_vertex_send.begin(),
-                              global_vertex_send.end(),
-                              global_vertex_recv.begin(),
-                              global_vertex_recv.end(),
+      = std::set_intersection(global_vertex_list.begin(),
+                              global_vertex_list.end(),
+                              global_vertex_recv[i].begin(),
+                              global_vertex_recv[i].end(),
                               intersection.begin());
 
     // Fill shared vertices information
@@ -476,7 +476,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
       dolfin_assert(local_index != vertex_global_to_local.end());
 
       // Insert (local index, [proc])
-      shared_vertices[local_index->second].insert(q);
+      shared_vertices[local_index->second].insert(i);
     }
   }
 }
@@ -492,7 +492,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
   if (domain_data.empty())
     return;
 
-  // Initialse mesh domains
+  // Initialise mesh domains
   const std::size_t D = mesh.topology().dim();
   mesh.domains().init(D);
 
@@ -516,14 +516,14 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
                                 std::size_t> >& local_value_data
                                 = dim_data->second;
 
-    // Build mesh value vollection
+    // Build mesh value collection
     build_mesh_value_collection(mesh, local_value_data, mvc);
 
     // Get data from mesh value collection
     const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values
       = mvc.values();
 
-    // Get map from mes domains
+    // Get map from mesh domains
     std::map<std::size_t, std::size_t>& markers = mesh.domains().markers(dim);
 
     std::map<std::pair<std::size_t, std::size_t>,
