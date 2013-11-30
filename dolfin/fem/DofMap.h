@@ -366,7 +366,7 @@ namespace dolfin
                    collapsed_map, const Mesh& mesh) const;
 
     // FIXME: Document this function
-    std::vector<dolfin::la_index> dofs(std::size_t r0, std::size_t r1) const;
+    std::vector<dolfin::la_index> dofs() const;
 
     /// Set dof entries in vector to a specified value. Parallel layout
     /// of vector must be consistent with dof map range. This
