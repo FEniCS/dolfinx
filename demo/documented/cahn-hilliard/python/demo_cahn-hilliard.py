@@ -101,7 +101,7 @@ a = derivative(L, u, du)
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
 solver = NewtonSolver()
-solver.parameters["linear_solver"] = "lu";
+solver.parameters["linear_solver"] = "lu"
 solver.parameters["convergence_criterion"] = "incremental"
 solver.parameters["relative_tolerance"] = 1e-6
 
