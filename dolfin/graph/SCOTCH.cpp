@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-02-10
-// Last changed: 2011-11-14
+// Last changed: 2013-11-30
 
 #include <algorithm>
 #include <map>
@@ -49,7 +49,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
-                               const LocalMeshData& mesh_data)
+                               const LocalMeshData& mesh_data,
+                               std::vector<std::set<std::size_t> >& ghost_procs)
 {
   // FIXME: Use std::set or std::vector?
 
@@ -375,6 +376,46 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
                  "Error during partitioning");
+  }
+
+  std::vector<std::size_t> datatab(local_graph.size() + ghost_vertices.size());
+  std::copy(_cell_partition.begin(), _cell_partition.end(), datatab.begin());
+
+  // Exchange halo with cell_partition data for ghosts
+  // FIXME: check MPI type compatibility with std::size_t 32/64 bit
+  if (SCOTCH_dgraphHalo(&dgrafdat,
+                        (void *)datatab.data(),
+                        MPI_UNSIGNED_LONG))
+  {
+    dolfin_error("SCOTCH.cpp",
+                 "partition mesh using SCOTCH",
+                 "Error during halo exchange");
+  }
+
+  SCOTCH_Num* edge_ghost_tab;
+  SCOTCH_dgraphData(&dgrafdat,
+                    NULL, NULL, NULL, NULL, NULL, NULL, 
+                    NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
+                    &edge_ghost_tab, NULL, (MPI_Comm *)&comm);
+
+
+  //  const std::size_t cell_offset = MPI::global_offset(vertlocnbr, true);  
+  for(unsigned int n=0; n < MPI::num_processes(); ++n)
+  {
+    MPI::barrier();
+    if(MPI::process_number() == n)
+    {
+      std::cout << "local: " << std::endl;
+      for(unsigned int i = 0; i < (unsigned int)vertlocnbr; i++)
+        std::cout << n << ") " << i << " = " << datatab[i] << std::endl;
+      std::cout << "ghosts: " << std::endl;
+      for(unsigned int i = (unsigned int)vertlocnbr; i < datatab.size(); i++)
+        std::cout << n << ") " << i << " = " << datatab[i] << std::endl;
+
+      for(unsigned int i = 0; i < edgeloctab.size(); i++)
+        if(edge_ghost_tab[i] >= vertlocnbr)
+          std::cout << n << "> " << i << " = " << edgeloctab[i] << " " << edge_ghost_tab[i] << std::endl;
+    }
   }
 
   // Clean up SCOTCH objects

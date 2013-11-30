@@ -20,7 +20,7 @@
 // Modified by Kent-Andre Mardal, 2011
 //
 // First added:  2008-12-01
-// Last changed: 2012-12-24
+// Last changed: 2013-11-29
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -75,6 +75,14 @@ namespace dolfin
                const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
 
   private:
+
+    // Work out which cells are on process boundaries
+    static const std::vector<std::size_t> border_cells(
+        Mesh& mesh, 
+        const LocalMeshData& mesh_data,
+        const std::vector<std::size_t>& cell_partition,
+        const std::vector<std::set<std::size_t> >& local_graph,
+        std::set<std::size_t>& ghost_cells);
 
     // Compute cell partitioning for local mesh data. Returns
     // cell->process vector for cells in LocalMeshData

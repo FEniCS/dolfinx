@@ -39,10 +39,12 @@ namespace dolfin
   {
   public:
 
-    // Compute cell partition
+    /// Compute cell partition from local mesh data, also returning
+    /// processes that need ghost copies of cells in ghost_procs
     static void compute_partition(std::vector<std::size_t>& cell_partition,
-                                  const LocalMeshData& mesh_data);
-
+                 const LocalMeshData& mesh_data,
+                 std::vector<std::set<std::size_t> >& ghost_procs);
+    
     /// Compute reordering (map[old] -> new) using
     /// Gibbs-Poole-Stockmeyer re-ordering
     static std::vector<std::size_t> compute_gps(const Graph& graph,
