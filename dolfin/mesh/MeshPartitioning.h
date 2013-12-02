@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2012 Niclas Jansson, Ola Skavhaug, Anders Logg and
-// Garth N. Wells
+// Copyright (C) 2008-2013 Niclas Jansson, Ola Skavhaug, Anders Logg,
+// Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,10 @@
 //
 // Modified by Garth N. Wells, 2010
 // Modified by Kent-Andre Mardal, 2011
+// Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-11-29
+// Last changed: 2013-12-02
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -76,18 +77,9 @@ namespace dolfin
 
   private:
 
-    // Work out which cells are on process boundaries
-    static const std::vector<std::size_t> border_cells(
-        Mesh& mesh, 
-        const LocalMeshData& mesh_data,
-        const std::vector<std::size_t>& cell_partition,
-        const std::vector<std::set<std::size_t> >& local_graph,
-        std::set<std::size_t>& ghost_cells);
-
     // Compute cell partitioning for local mesh data. Returns
     // cell->process vector for cells in LocalMeshData
-    static std::vector<std::size_t> partition_cells(Mesh& mesh,
-                                                    const LocalMeshData& data);
+    static std::vector<std::size_t> partition_cells(const LocalMeshData& data);
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,

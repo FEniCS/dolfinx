@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010-2013 Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed:
+// Last changed: 2013-12-02
 
 #ifndef __SCOTCH_PARTITIONER_H
 #define __SCOTCH_PARTITIONER_H
@@ -42,8 +42,9 @@ namespace dolfin
     /// Compute cell partition from local mesh data, also returning
     /// processes that need ghost copies of cells in ghost_procs
     static void compute_partition(std::vector<std::size_t>& cell_partition,
-                 const LocalMeshData& mesh_data,
-                 std::vector<std::set<std::size_t> >& ghost_procs);
+          std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
+          const LocalMeshData& mesh_data);
+    
     
     /// Compute reordering (map[old] -> new) using
     /// Gibbs-Poole-Stockmeyer re-ordering
@@ -69,7 +70,8 @@ namespace dolfin
                      const std::set<std::size_t>& ghost_vertices,
                      const std::vector<std::size_t>& global_cell_indices,
                      const std::size_t num_global_vertices,
-                     std::vector<std::size_t>& cell_partition);
+                     std::vector<std::size_t>& cell_partition,
+                     std::map<std::size_t, std::vector<std::size_t> >& ghost_procs);
 
   };
 

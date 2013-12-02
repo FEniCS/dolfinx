@@ -22,7 +22,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-11-30
+// Last changed: 2013-12-02
 
 #include <algorithm>
 #include <iterator>
@@ -112,7 +112,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // Compute cell partitioning or use partitioning provided in local_data
   std::vector<std::size_t> cell_partition;
   if (local_data.cell_partition.empty())
-    cell_partition = partition_cells(mesh, local_data);
+    cell_partition = partition_cells(local_data);
   else
   {
     cell_partition = local_data.cell_partition;
@@ -134,17 +134,16 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> MeshPartitioning::partition_cells(Mesh& mesh,
-                                                const LocalMeshData& mesh_data)
+std::vector<std::size_t> MeshPartitioning::partition_cells(const LocalMeshData& mesh_data)
 {
-  // Data structure to hold cell partitions and intercell connectivity data
+  // Data structure to hold cell partitions and ghost cell ownership
   std::vector<std::size_t> cell_partition;
-  std::vector<std::set<std::size_t> > ghost_procs;
+  std::map<std::size_t, std::vector<std::size_t> > ghost_procs;
   
   // Compute cell partition using partitioner from parameter system
   const std::string partitioner = parameters["mesh_partitioner"];
   if (partitioner == "SCOTCH")
-    SCOTCH::compute_partition(cell_partition, mesh_data, ghost_procs);
+    SCOTCH::compute_partition(cell_partition, ghost_procs, mesh_data);
   else if (partitioner == "ParMETIS")
     ParMETIS::compute_partition(cell_partition, mesh_data);
   else if (partitioner == "Zoltan_RCB")
@@ -159,42 +158,6 @@ std::vector<std::size_t> MeshPartitioning::partition_cells(Mesh& mesh,
   }
 
   return cell_partition;
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::size_t> MeshPartitioning::border_cells(
-        Mesh& mesh, const LocalMeshData& mesh_data,
-        const std::vector<std::size_t>& cell_partition,
-        const std::vector<std::set<std::size_t> >& local_graph,
-        std::set<std::size_t>& ghost_cells)
-{
-  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
-  const std::size_t cell_offset = MPI::global_offset(num_local_cells, true);
-  dolfin_assert(num_local_cells == local_graph.size());
-
-  std::vector<std::size_t> border_cells;
-
-  // Look at connections of all cells, to see which cross partition boundaries
-  for(std::size_t i = 0; i < num_local_cells; ++i)
-  {
-    for(std::set<std::size_t>::const_iterator conn = local_graph[i].begin();
-        conn != local_graph[i].end(); ++conn)
-    {
-      if(*conn >= cell_offset && *conn < cell_offset + num_local_cells)
-      {
-        if(cell_partition[i] != cell_partition[*conn])
-        {
-          //border cell
-        }
-      }
-      else
-      {
-        // connecting cell is currently off-process, should be in ghosts...
-        ghost_cells.find(*conn);
-      }
-    }
-  }
-  
-  return border_cells;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
