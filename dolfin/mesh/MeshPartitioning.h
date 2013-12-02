@@ -123,6 +123,11 @@ namespace dolfin
                    const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
                    std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
                    std::size_t num_global_vertices);
+    
+    // Find shared vertices
+    static void build_shared_vertices(Mesh& mesh,
+              const std::vector<std::size_t>& vertex_indices,
+              const std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh,

@@ -168,6 +168,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   distribute_cells(mesh_data, cell_partition, global_cell_indices,
                    cell_vertices);
 
+  // Get ghost cells from neighbouring processes
   std::vector<std::size_t> ghost_global_cell_indices;
   std::vector<std::size_t> ghost_remote_process;
   boost::multi_array<std::size_t, 2> ghost_cell_vertices;
@@ -176,23 +177,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                          ghost_remote_process,
                          ghost_cell_vertices);
 
-  for(unsigned int n = 0; n < MPI::num_processes(); ++n)
-  {
-    MPI::barrier();
-    if(n == MPI::process_number())
-    {
-      for(unsigned int i = 0; i < ghost_global_cell_indices.size(); ++i)
-      {
-        std::cout << n << "> " << ghost_remote_process[i] << " - " 
-                  << ghost_global_cell_indices[i] << std::endl;
-        for(unsigned int j = 0 ; j < ghost_cell_vertices.shape()[1]; ++j)
-          std::cout << " " << ghost_cell_vertices[i][j];
-        std::cout << std::endl;
-      }
-      std::cout << std::endl;
-    }
-  }
-  
   // Distribute vertices
   std::vector<std::size_t> vertex_indices;
   boost::multi_array<double, 2> vertex_coordinates;
@@ -206,6 +190,10 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
              vertex_coordinates, vertex_global_to_local,
              mesh_data.tdim, mesh_data.gdim, mesh_data.num_global_cells,
              mesh_data.num_global_vertices);
+
+  // Discover shared vertices
+  build_shared_vertices(mesh, vertex_indices, vertex_global_to_local);
+  
 }
 //-----------------------------------------------------------------------------
 void  MeshPartitioning::distribute_ghost_cells(const LocalMeshData& mesh_data,
@@ -365,6 +353,18 @@ void  MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
   }
 }
 //-----------------------------------------------------------------------------
+std::set<std::size_t> cell_vertex_set(
+    const boost::multi_array<std::size_t, 2>& cell_vertices)
+{
+  std::set<std::size_t> vertex_set;
+  boost::multi_array<std::size_t, 2>::const_iterator vertices;
+  for (vertices = cell_vertices.begin(); vertices != cell_vertices.end();
+       ++vertices)
+    vertex_set.insert(vertices->begin(), vertices->end());
+
+  return vertex_set;
+}
+//-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
                     const boost::multi_array<std::size_t, 2>& cell_vertices,
                     std::vector<std::size_t>& vertex_indices,
@@ -385,14 +385,8 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   // Get geometric dimension
   const std::size_t gdim = mesh_data.gdim;
   
-// Compute which vertices we need
-  std::set<std::size_t> needed_vertex_indices;
-  boost::multi_array<std::size_t, 2>::const_iterator vertices;
-  for (vertices = cell_vertices.begin(); vertices != cell_vertices.end();
-       ++vertices)
-  {
-    needed_vertex_indices.insert(vertices->begin(), vertices->end());
-  }
+  // Compute which vertices we need
+  std::set<std::size_t> needed_vertex_indices = cell_vertex_set(cell_vertices);
 
   // Compute where (process number) the vertices we need are located
   std::vector<std::vector<std::size_t> > send_vertex_indices(num_processes);
@@ -481,10 +475,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 {
   Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
 
-  // Get number of processes and process number
-  const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
-
   // Open mesh for editing
   mesh.clear();
   MeshEditor editor;
@@ -526,6 +516,15 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Set global number of cells and vertices
   mesh.topology().init_global(0, num_global_vertices);
   mesh.topology().init_global(tdim,  num_global_cells);
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::build_shared_vertices(Mesh& mesh,
+              const std::vector<std::size_t>& vertex_indices,
+              const std::map<std::size_t, std::size_t>& vertex_global_to_local)
+{
+  // Get number of processes and process number
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t process_number = MPI::process_number();
 
   // Construct boundary mesh
   BoundaryMesh bmesh(mesh, "exterior");
