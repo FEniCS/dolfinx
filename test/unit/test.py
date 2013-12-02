@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2013-06-23
+# Last changed: 2013-12-01
 
 import sys, os, re
 import platform
@@ -30,40 +30,38 @@ from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
 
 # Tests to run
 tests = {
-    "ale":            ["HarmonicSmoothing"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
+    "ale":            ["HarmonicSmoothing"],
     "book":           ["chapter_1", "chapter_10"],
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap", \
-                           "FiniteElement", "Form", "SystemAssembler",
-                       "PeriodicBC", "manifolds"],
-    "function":       ["Constant", "Expression", "Function", "FunctionSpace", \
-                       "SpecialFunctions", "FunctionAssigner"],
-    "generation":     ["MeshGeneration"],
-    "geometry":       ["BoundingBoxTree"],
+                       "FiniteElement", "Form", "SystemAssembler",
+                       "LocalSolver", "manifolds"],
+    "function":       ["Constant", "ConstrainedFunctionSpace", \
+                       "Expression", "Function", "FunctionAssigner", \
+                       "FunctionSpace", "SpecialFunctions"],
+    "geometry":       ["BoundingBoxTree", "Intersection"],
     "graph":          ["GraphBuild"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
-                           "XMLMeshValueCollection", "XMLVector", \
-                           "XMLMeshData", "XMLLocalMeshData", \
-                           "XDMF", "HDF5", "Exodus"],
+                       "XMLMeshValueCollection", "XMLVector", \
+                       "XMLMeshData", "XMLLocalMeshData", \
+                       "XDMF", "HDF5", "Exodus", "X3D"],
     "jit":            ["test"],
     "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \
-                           "KrylovSolver", "LinearOperator"],
+                       "KrylovSolver", "LinearOperator"],
     "math":           ["test"],
-    "multistage":     ["RKSolver", "PointIntegralSolver"],
-
-    "meshconvert":    ["test"],
     "mesh":           ["Cell", "Edge", "Face", "MeshColoring", \
-                           "MeshData", "MeshEditor", "MeshFunction", \
-                           "MeshIterator", "MeshMarkers", "MeshQuality", \
-                           "MeshValueCollection", "BoundaryMesh", "Mesh", \
-                           "SubMesh"],
-    "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
+                       "MeshData", "MeshEditor", "MeshFunction", \
+                       "MeshIterator", "MeshMarkers", "MeshQuality", \
+                       "MeshValueCollection", "BoundaryMesh", "Mesh", \
+                       "SubMesh", "MeshTransformation", "SubDomain", \
+                       "PeriodicBoundaryComputation"],
+    "meshconvert":    ["test"],
+    "multistage":     ["RKSolver", "PointIntegralSolver"],
+    "nls":            ["PETScSNESSolver", "TAOLinearBoundSolver"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
-    "refinement":     ["test"],
+    "refinement":     ["refine"],
     }
-
-# FIXME: Graph tests disabled for now since SCOTCH is now required
 
 # Run both C++ and Python tests as default
 only_python = False
@@ -75,10 +73,12 @@ if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
 # Build prefix list
 prefixes = [""]
 if has_mpi() and (has_parmetis() or has_scotch()) and \
-       (has_linear_algebra_backend("Epetra") or has_linear_algebra_backend("PETSc")):
+       (has_linear_algebra_backend("Epetra") or \
+        has_linear_algebra_backend("PETSc")):
     prefixes.append("mpirun -np 3 ")
 else:
-    print "DOLFIN has not been compiled with MPI and/or ParMETIS/SCOTCH. Unit tests will not be run in parallel."
+    print "DOLFIN has not been compiled with MPI and/or ParMETIS/SCOTCH. " \
+          "Unit tests will not be run in parallel."
 
 # Allow to disable parallel testing
 if "DISABLE_PARALLEL_TESTING" in os.environ:
@@ -101,7 +101,7 @@ for prefix in prefixes:
             print "C++:   ",
             if only_python:
                 print "Skipping tests as requested (--only-python)"
-            elif not  os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
+            elif not os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
                 print "This test set does not have a C++ version"
             else:
                 os.chdir(os.path.join(test, "cpp"))
