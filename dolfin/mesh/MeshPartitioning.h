@@ -87,51 +87,55 @@ namespace dolfin
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
-           const std::vector<std::size_t>& cell_partition,
-           const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs);
+         const std::vector<std::size_t>& cell_partition,
+         const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs);
 
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
     // LocalMeshData on this process belongs. We use MPI::distribute to
     // redistribute all cells (the global vertex indices of all cells).
     static void distribute_cells(const LocalMeshData& data,
-                                 const std::vector<std::size_t>& cell_partition,
-                                 std::vector<std::size_t>& cell_local_to_global_indices,
-                                 boost::multi_array<std::size_t, 2>& cell_local_vertices);
+      const std::vector<std::size_t>& cell_partition,
+      std::vector<std::size_t>& cell_local_to_global_indices,
+      boost::multi_array<std::size_t, 2>& cell_local_vertices);
 
     // Distribute ghost cells
     static void distribute_ghost_cells(const LocalMeshData& data,
-             const std::vector<std::size_t>& cell_partition,
-             const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
-             std::vector<std::size_t>& ghost_global_cell_indices,
-             std::vector<std::size_t>& ghost_remote_process,
-             boost::multi_array<std::size_t, 2>& ghost_cell_vertices);
+      const std::vector<std::size_t>& cell_partition,
+      const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
+      std::vector<std::size_t>& ghost_global_cell_indices,
+      std::vector<std::size_t>& ghost_remote_process,
+      boost::multi_array<std::size_t, 2>& ghost_cell_vertices);
 
     // Distribute vertices
     static void distribute_vertices(const LocalMeshData& data,
-                  const boost::multi_array<std::size_t, 2>& cell_local_vertices,
-                  std::vector<std::size_t>& vertex_local_to_global_indices,
-                  std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-                  boost::multi_array<double, 2>& vertex_coordinates);
+      const boost::multi_array<std::size_t, 2>& cell_local_vertices,
+      std::vector<std::size_t>& vertex_local_to_global_indices,
+      std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+      boost::multi_array<double, 2>& vertex_coordinates);
 
     // Build mesh
     static void build_mesh(Mesh& mesh,
-                   const std::vector<std::size_t>& global_cell_indices,
-                   const boost::multi_array<std::size_t, 2>& cell_vertices,
-                   const std::vector<std::size_t>& vertex_indices,
-                   const boost::multi_array<double, 2>& vertex_coordinates,
-                   const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-                   std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
-                   std::size_t num_global_vertices);
+      const std::vector<std::size_t>& global_cell_indices,
+      const boost::multi_array<std::size_t, 2>& cell_vertices,
+      const std::vector<std::size_t>& vertex_indices,
+      const boost::multi_array<double, 2>& vertex_coordinates,
+      const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+      std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
+      std::size_t num_global_vertices);
     
-    // Find shared vertices
+    // Get boundary vertices of local mesh
+    static std::vector<std::size_t> boundary_vertices(Mesh& mesh,
+      const std::vector<std::size_t>& vertex_indices);
+
+    // Find shared vertices on other processes
     static void build_shared_vertices(Mesh& mesh,
-              const std::vector<std::size_t>& vertex_indices,
-              const std::map<std::size_t, std::size_t>& vertex_global_to_local);
+      const std::vector<std::size_t>& boundary_vertex_indices,
+      const std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh,
-                                   const LocalMeshData& local_data);
+      const LocalMeshData& local_data);
 
     // Create and attach distributed MeshDomains from local_data
     // [entry, (cell_index, local_index, value)]

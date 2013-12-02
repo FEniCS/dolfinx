@@ -191,8 +191,12 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
              mesh_data.tdim, mesh_data.gdim, mesh_data.num_global_cells,
              mesh_data.num_global_vertices);
 
-  // Discover shared vertices
-  build_shared_vertices(mesh, vertex_indices, vertex_global_to_local);
+  // Get boundary vertices of local mesh
+  std::vector<std::size_t> boundary_vertex_indices
+    = boundary_vertices(mesh, vertex_indices);
+
+  // Notify other processes
+  build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
   
 }
 //-----------------------------------------------------------------------------
@@ -518,14 +522,9 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   mesh.topology().init_global(tdim,  num_global_cells);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_shared_vertices(Mesh& mesh,
-              const std::vector<std::size_t>& vertex_indices,
-              const std::map<std::size_t, std::size_t>& vertex_global_to_local)
+std::vector<std::size_t> MeshPartitioning::boundary_vertices(Mesh& mesh,
+                        const std::vector<std::size_t>& vertex_indices)
 {
-  // Get number of processes and process number
-  const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
-
   // Construct boundary mesh
   BoundaryMesh bmesh(mesh, "exterior");
 
@@ -538,13 +537,24 @@ void MeshPartitioning::build_shared_vertices(Mesh& mesh,
   for (std::size_t i = 0; i < boundary_size; ++i)
     global_vertex_list[i] = vertex_indices[boundary_vertex_map[i]];
   std::sort(global_vertex_list.begin(), global_vertex_list.end());
+  
+  return global_vertex_list;
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::build_shared_vertices(Mesh& mesh,
+              const std::vector<std::size_t>& boundary_vertex_indices,
+              const std::map<std::size_t, std::size_t>& vertex_global_to_local)
+{
+  // Get number of processes and process number
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t process_number = MPI::process_number();
 
   // Send and Receive buffers
   std::vector<std::vector<std::size_t> > global_vertex_send(num_processes);
   std::vector<std::vector<std::size_t> > global_vertex_recv(num_processes);
   for (unsigned int i = 0; i < num_processes; ++i)
     if(i != process_number)
-      global_vertex_send[i] = global_vertex_list;
+      global_vertex_send[i] = boundary_vertex_indices;
 
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes
@@ -562,12 +572,13 @@ void MeshPartitioning::build_shared_vertices(Mesh& mesh,
       continue;
     
     // Compute intersection of global indices
-    std::vector<std::size_t> intersection(std::min(global_vertex_list.size(),
-                                          global_vertex_recv[i].size()));
+    std::vector<std::size_t> intersection(
+                          std::min(boundary_vertex_indices.size(),
+                                   global_vertex_recv[i].size()));
 
     std::vector<std::size_t>::iterator intersection_end
-      = std::set_intersection(global_vertex_list.begin(),
-                              global_vertex_list.end(),
+      = std::set_intersection(boundary_vertex_indices.begin(),
+                              boundary_vertex_indices.end(),
                               global_vertex_recv[i].begin(),
                               global_vertex_recv[i].end(),
                               intersection.begin());
