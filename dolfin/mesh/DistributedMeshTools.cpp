@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2011-09-17
-// Last changed: 2013-01-29
+// Last changed: 2013-12-03
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/Timer.h"
@@ -948,6 +948,9 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 
   // Initialize entities of dimension d
   mesh.init(D - 1);
+
+  // Initialise local facet-cell connections. 
+  mesh.init(D - 1, D);  
 
   // Build entity(vertex list)-to-local-vertex-index map
   std::map<std::vector<std::size_t>, unsigned int> entities;

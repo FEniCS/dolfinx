@@ -236,10 +236,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // Notify other processes
   build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
 
-  // Initialise facet-cell connections. 
-  // FIXME: why is this needed here?
-  const unsigned int tdim = mesh.topology().dim();
-  mesh.init(tdim - 1, tdim);  
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_ghost_cells(const LocalMeshData& mesh_data,
