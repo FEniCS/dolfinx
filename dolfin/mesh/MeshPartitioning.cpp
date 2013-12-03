@@ -144,6 +144,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // necessary to distinguish between facets on an exterior boundary and
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
+
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -151,6 +152,7 @@ void MeshPartitioning::partition_cells(const LocalMeshData& mesh_data,
               std::vector<std::size_t>& cell_partition,
               std::map<std::size_t, std::vector<std::size_t> >& ghost_procs)
 {
+
   // Compute cell partition using partitioner from parameter system
   const std::string partitioner = parameters["mesh_partitioner"];
   if (partitioner == "SCOTCH")
@@ -173,6 +175,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
           const std::vector<std::size_t>& cell_partition,
           const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs)
 {
+
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
   std::vector<std::size_t> global_cell_indices;
@@ -207,7 +210,10 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 
   std::vector<std::size_t> boundary_vertex_indices;
 
-  if(ghost_procs.size() != 0)
+  // Check for any ghost information and use different method for
+  // shared vertex determination
+  const std::size_t ghost_total = MPI::sum(ghost_procs.size());
+  if(ghost_total != 0)
   {
     // If there is ghost information, use this to get the vertices of
     // shared facets. 
@@ -237,6 +243,13 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
 
 }
+//-----------------------------------------------------------------------------
+//void MeshPartitioning::broadcast_multiply_shared_vertices()
+//{
+  // Because ghost cells only share facets with each other, vertices which
+  // are on more than two processes are likely not to get distributed correctly.
+//  
+//}
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_ghost_cells(const LocalMeshData& mesh_data,
       const std::vector<std::size_t>& cell_partition,
