@@ -34,7 +34,7 @@ int main()
 
   // Print minimal and maximal radius ratio
   const std::pair<double, double> qminmax = MeshQuality::radius_ratio_min_max(mesh);
-  if (MPI::process_number() == 0)
+  if (dolfin::MPI::process_number() == 0)
   {
     std::cout << "# Minimal radius ratio: " << qminmax.first  << std::endl;
     std::cout << "# Maximal radius ratio: " << qminmax.second << std::endl;
@@ -43,7 +43,7 @@ int main()
 
   // Print matplotlib code for generation of histogram
   const std::string hist = MeshQuality::radius_ratio_matplotlib_histogram(mesh);
-  if (MPI::process_number() == 0)
+  if (dolfin::MPI::process_number() == 0)
   {
     std::cout << "# Execute following commands in python" << std::endl;
     std::cout << "# to get histogram of radius ratios:"   << std::endl;
