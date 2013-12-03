@@ -21,7 +21,7 @@
 // Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-02
+// Last changed: 2013-12-03
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -83,7 +83,11 @@ namespace dolfin
     static void partition_cells(const LocalMeshData& mesh_data,
            std::vector<std::size_t>& cell_partition,
            std::map<std::size_t, std::vector<std::size_t> >& ghost_procs);
-    
+
+    // Get the set of common vertices from a boost::multi_array of cell
+    // vertex indices
+    static std::set<std::size_t> cell_vertex_set(
+       const boost::multi_array<std::size_t, 2>& cell_vertices);
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
@@ -99,7 +103,9 @@ namespace dolfin
       std::vector<std::size_t>& cell_local_to_global_indices,
       boost::multi_array<std::size_t, 2>& cell_local_vertices);
 
-    // Distribute ghost cells
+    // Distribute ghost cells. Similar to distribute_cells(), but for
+    // ghost cells. Additionally, send the cell owning process number 
+    // to the remote processes.
     static void distribute_ghost_cells(const LocalMeshData& data,
       const std::vector<std::size_t>& cell_partition,
       const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,

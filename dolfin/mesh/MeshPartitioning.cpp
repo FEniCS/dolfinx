@@ -22,7 +22,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-02
+// Last changed: 2013-12-03
 
 #include <algorithm>
 #include <iterator>
@@ -104,6 +104,18 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
     // Build distributed mesh
     build_distributed_mesh(mesh, local_mesh_data);
   }
+}
+//-----------------------------------------------------------------------------
+std::set<std::size_t> MeshPartitioning::cell_vertex_set(
+    const boost::multi_array<std::size_t, 2>& cell_vertices)
+{
+  std::set<std::size_t> vertex_set;
+  boost::multi_array<std::size_t, 2>::const_iterator vertices;
+  for (vertices = cell_vertices.begin(); vertices != cell_vertices.end();
+       ++vertices)
+    vertex_set.insert(vertices->begin(), vertices->end());
+
+  return vertex_set;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
@@ -192,15 +204,45 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
              mesh_data.num_global_vertices);
 
   // Get boundary vertices of local mesh
-  std::vector<std::size_t> boundary_vertex_indices
-    = boundary_vertices(mesh, vertex_indices);
 
+  std::vector<std::size_t> boundary_vertex_indices;
+
+  if(ghost_procs.size() != 0)
+  {
+    // If there is ghost information, use this to get the vertices of
+    // shared facets. 
+    // FIXME: Still need to communicate to all processes because
+    // of the multiple-shared vertex problem... 
+
+    std::set<std::size_t> ghost_set = cell_vertex_set(ghost_cell_vertices);
+    std::set<std::size_t> main_set = cell_vertex_set(cell_vertices);
+    boundary_vertex_indices.resize(std::min(ghost_set.size(),
+                                            main_set.size()));
+    std::vector<std::size_t>::iterator bset_end 
+      = std::set_intersection(ghost_set.begin(),
+                              ghost_set.end(),
+                              main_set.begin(),
+                              main_set.end(),
+                              boundary_vertex_indices.begin());
+    boundary_vertex_indices.resize(bset_end - boundary_vertex_indices.begin());
+  }
+  else
+  {
+    // Construct the local boundary mesh, and get vertex indices from that
+    boundary_vertex_indices
+      = boundary_vertices(mesh, vertex_indices);
+  }
+    
   // Notify other processes
   build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
-  
+
+  // Initialise facet-cell connections. 
+  // FIXME: why is this needed here?
+  const unsigned int tdim = mesh.topology().dim();
+  mesh.init(tdim - 1, tdim);  
 }
 //-----------------------------------------------------------------------------
-void  MeshPartitioning::distribute_ghost_cells(const LocalMeshData& mesh_data,
+void MeshPartitioning::distribute_ghost_cells(const LocalMeshData& mesh_data,
       const std::vector<std::size_t>& cell_partition,
       const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
       std::vector<std::size_t>& ghost_global_cell_indices,
@@ -355,18 +397,6 @@ void  MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
       ++c;
     }
   }
-}
-//-----------------------------------------------------------------------------
-std::set<std::size_t> cell_vertex_set(
-    const boost::multi_array<std::size_t, 2>& cell_vertices)
-{
-  std::set<std::size_t> vertex_set;
-  boost::multi_array<std::size_t, 2>::const_iterator vertices;
-  for (vertices = cell_vertices.begin(); vertices != cell_vertices.end();
-       ++vertices)
-    vertex_set.insert(vertices->begin(), vertices->end());
-
-  return vertex_set;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
