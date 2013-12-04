@@ -21,7 +21,7 @@
 // Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-03
+// Last changed: 2013-12-04
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -134,10 +134,21 @@ namespace dolfin
     static std::vector<std::size_t> boundary_vertices(Mesh& mesh,
       const std::vector<std::size_t>& vertex_indices);
 
+    // Use ghost cells to get shared boundary vertices
+    static std::vector<std::size_t> ghost_boundary_vertices(
+      const boost::multi_array<std::size_t, 2>& ghost_cell_vertices,
+      const boost::multi_array<std::size_t, 2>& cell_vertices);
+
     // Find shared vertices on other processes
     static void build_shared_vertices(Mesh& mesh,
       const std::vector<std::size_t>& boundary_vertex_indices,
       const std::map<std::size_t, std::size_t>& vertex_global_to_local);
+
+    // Convert ghost cell information to shared vertices in mesh
+    static void ghost_build_shared_vertices(Mesh& mesh,
+     const boost::multi_array<std::size_t, 2>& ghost_cell_vertices,
+     const std::vector<std::size_t>& ghost_remote_process, 
+     const std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh,

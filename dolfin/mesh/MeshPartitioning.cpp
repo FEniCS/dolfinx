@@ -22,7 +22,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-03
+// Last changed: 2013-12-04
 
 #include <algorithm>
 #include <iterator>
@@ -208,48 +208,213 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 
   // Get boundary vertices of local mesh
 
-  std::vector<std::size_t> boundary_vertex_indices;
-
   // Check for any ghost information and use different method for
   // shared vertex determination
   const std::size_t ghost_total = MPI::sum(ghost_procs.size());
   if(ghost_total != 0)
   {
-    // If there is ghost information, use this to get the vertices of
+    // If there is ghost information, use this to get shared vertices from
     // shared facets. 
-    // FIXME: Still need to communicate to all processes because
-    // of the multiple-shared vertex problem... 
+    std::vector<std::size_t> boundary_vertex_indices
+      = ghost_boundary_vertices(ghost_cell_vertices, cell_vertices);
 
-    std::set<std::size_t> ghost_set = cell_vertex_set(ghost_cell_vertices);
-    std::set<std::size_t> main_set = cell_vertex_set(cell_vertices);
-    boundary_vertex_indices.resize(std::min(ghost_set.size(),
-                                            main_set.size()));
-    std::vector<std::size_t>::iterator bset_end 
-      = std::set_intersection(ghost_set.begin(),
-                              ghost_set.end(),
-                              main_set.begin(),
-                              main_set.end(),
-                              boundary_vertex_indices.begin());
-    boundary_vertex_indices.resize(bset_end - boundary_vertex_indices.begin());
+    // Locate processes which hold the shared vertices
+    ghost_build_shared_vertices(mesh, ghost_cell_vertices, ghost_remote_process, 
+                                vertex_global_to_local);
   }
   else
   {
     // Construct the local boundary mesh, and get vertex indices from that
-    boundary_vertex_indices
+    std::vector<std::size_t> boundary_vertex_indices
       = boundary_vertices(mesh, vertex_indices);
-  }
     
-  // Notify other processes
-  build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
+    // Notify other processes
+    build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
+  }
+  
 
 }
 //-----------------------------------------------------------------------------
-//void MeshPartitioning::broadcast_multiply_shared_vertices()
-//{
-  // Because ghost cells only share facets with each other, vertices which
-  // are on more than two processes are likely not to get distributed correctly.
-//  
-//}
+std::vector<std::size_t> MeshPartitioning::ghost_boundary_vertices(
+        const boost::multi_array<std::size_t, 2>& ghost_cell_vertices,
+        const boost::multi_array<std::size_t, 2>& cell_vertices)
+{
+  // Get intersection between all local vertices and ghost vertices
+  // on this process
+
+  std::set<std::size_t> ghost_set = cell_vertex_set(ghost_cell_vertices);
+  std::set<std::size_t> main_set = cell_vertex_set(cell_vertices);
+  std::vector<std::size_t> boundary_vertex_indices(std::min(ghost_set.size(),
+                                            main_set.size()));
+  std::vector<std::size_t>::iterator boundary_set_end 
+    = std::set_intersection(ghost_set.begin(),
+                            ghost_set.end(),
+                            main_set.begin(),
+                            main_set.end(),
+                            boundary_vertex_indices.begin());
+  boundary_vertex_indices.resize(boundary_set_end 
+                                 - boundary_vertex_indices.begin());
+
+  return boundary_vertex_indices;
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::ghost_build_shared_vertices(Mesh& mesh,
+     const boost::multi_array<std::size_t, 2>& ghost_cell_vertices,
+     const std::vector<std::size_t>& ghost_remote_process, 
+     const std::map<std::size_t, std::size_t>& vertex_global_to_local)
+{
+
+  // Map from global vertex index to sharing processes
+  std::map<std::size_t, std::set<unsigned int> > shared_vertices_global;
+
+  // Iterate through boundary ghost cell vertices to get sharing processes
+  // using global indices
+  for(std::size_t i = 0; i < ghost_cell_vertices.size(); ++i)
+    for(std::size_t j=0; j < ghost_cell_vertices[i].size(); ++j)
+    {
+      const std::size_t vindex = ghost_cell_vertices[i][j];
+      // Ensure it is on boundary by enforcing local existence
+      if(vertex_global_to_local.find(vindex) != vertex_global_to_local.end())
+        shared_vertices_global[vindex].insert(ghost_remote_process[i]);
+    }
+
+  // Multiple-shared vertices (i.e. shared by more than two processes)
+  // may not have all process information on all processes, so this needs
+  // to be transmitted to all possible owners.
+  // FIXME: avoid a global broadcast here.
+
+  std::vector<std::size_t> shared_ownership_list;
+
+  const std::size_t num_processes = MPI::num_processes();  
+  const std::size_t process_number = MPI::process_number();  
+  
+  for(std::map<std::size_t, std::set<unsigned int> >::iterator map_it
+    = shared_vertices_global.begin(); map_it != shared_vertices_global.end();
+      ++map_it)
+  {
+    if(map_it->second.size() > 1)
+    {
+      // Multiple-shared vertex on boundary. Need to broadcast to
+      // make sure it is correctly found on all processes
+      shared_ownership_list.push_back(map_it->first);
+      shared_ownership_list.push_back(map_it->second.size());
+      for(std::set<unsigned int>::const_iterator proc = map_it->second.begin();
+          proc != map_it->second.end(); ++proc)
+        shared_ownership_list.push_back(*proc);
+    }
+  }
+
+  // Send same data to all processes
+  std::vector<std::vector<std::size_t> > send_shared_ownership(num_processes,
+                                                        shared_ownership_list);
+  std::vector<std::vector<std::size_t> > recv_shared_ownership(num_processes);
+
+  MPI::all_to_all(send_shared_ownership, recv_shared_ownership);
+
+  // DEBUG
+  // std::stringstream s;
+  // s << process_number << ") " << "received ";
+  // for(unsigned int i=0; i< num_processes; ++i)
+  // {
+  //   s << "(" << i << ") ";
+  //   for(unsigned int j=0; j < recv_shared_ownership[i].size(); ++j)
+  //   {
+  //     s << recv_shared_ownership[i][j] << " ";
+  //   }
+  //   s << " - ";
+  // }
+  // std::cout << s.str() << std::endl;
+
+  // Unpack received data
+  for (unsigned int i = 0; i < num_processes; ++i)
+  {
+    // Ignore data from self
+    if(i == process_number) 
+      continue;
+    
+    const std::vector<std::size_t>& recv_data = recv_shared_ownership[i];
+    std::vector<std::size_t>::const_iterator c = recv_data.begin();
+    while(c != recv_data.end())
+    {
+      const std::size_t global_index = *c++;
+      const unsigned int n_remotes = *c++;
+      
+      std::map<std::size_t, std::set<unsigned int> >::iterator find_it
+        = shared_vertices_global.find(global_index);
+      if (find_it != shared_vertices_global.end())
+      {
+        // Already know about this vertex, may need to add processes...
+        // Add process from which the message came, as well as 
+        // those in the message
+        find_it->second.insert(i);
+        for (unsigned int j = 0; j < n_remotes; ++j)
+        {
+          const unsigned int remote = *c++;
+          if (remote != process_number) // ignore self
+            find_it->second.insert(remote);
+        }
+      }
+      else
+        c += n_remotes;
+    }
+  }
+
+  // Finally convert map from global to local indexing in mesh
+  std::map<unsigned int, std::set<unsigned int> >& shared_vertices
+        = mesh.topology().shared_entities(0);
+  shared_vertices.clear();
+
+  for(std::map<std::size_t, std::set<unsigned int> >::iterator map_it
+        = shared_vertices_global.begin(); map_it != shared_vertices_global.end();
+      ++map_it)
+  {
+    // Get local index
+    std::map<std::size_t, std::size_t>::const_iterator local_index;
+    local_index = vertex_global_to_local.find(map_it->first);
+    dolfin_assert(local_index != vertex_global_to_local.end());
+    shared_vertices[local_index->second] = map_it->second;
+  }
+
+  // // DEBUG OUTPUT
+  // //------------------------------
+  // for(unsigned int n = 0; n < MPI::num_processes(); ++n)
+  // {
+  //   MPI::barrier();
+  //   if(n == MPI::process_number())
+  //   {
+  //     for(std::map<std::size_t, std::set<unsigned int> >::iterator map_it
+  //           = shared_vertices_global.begin(); map_it != shared_vertices_global.end();
+  //         ++map_it)
+  //     {
+  //       std::cout << n << "] " << map_it->first << "G) ";
+  //       for(std::set<unsigned int>::iterator set_it
+  //             = map_it->second.begin(); set_it != map_it->second.end();
+  //           ++set_it)
+  //       {
+  //         std::cout << *set_it << " " ;
+  //       }
+  //       std::cout << std::endl;
+  //     }
+
+  //     for(std::map<unsigned int, std::set<unsigned int> >::iterator map_it
+  //           = shared_vertices.begin(); map_it != shared_vertices.end();
+  //         ++map_it)
+  //     {
+  //       std::cout << n << "] " << map_it->first << "L) ";
+  //       for(std::set<unsigned int>::iterator set_it
+  //             = map_it->second.begin(); set_it != map_it->second.end();
+  //           ++set_it)
+  //       {
+  //         std::cout << *set_it << " " ;
+  //       }
+  //       std::cout << std::endl;
+  //     }
+  //   }
+  // }
+  // //------------------------------
+  
+  
+}
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_ghost_cells(const LocalMeshData& mesh_data,
       const std::vector<std::size_t>& cell_partition,
@@ -262,7 +427,6 @@ void MeshPartitioning::distribute_ghost_cells(const LocalMeshData& mesh_data,
   // Ghost procs map contains local indices (key) which must be sent to 
   // remote processes (vector value)
 
-  // Number of MPI processes
   const std::size_t num_processes = MPI::num_processes();
 
   // Get dimensions of local mesh_data
