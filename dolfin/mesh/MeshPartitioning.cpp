@@ -213,8 +213,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   const std::size_t ghost_total = MPI::sum(ghost_procs.size());
   if(ghost_total != 0)
   {
-    // If there is ghost information, use this to get shared vertices from
-    // shared facets. 
+    // If there is ghost information, use this to get shared vertices 
     std::vector<std::size_t> boundary_vertex_indices
       = ghost_boundary_vertices(ghost_cell_vertices, cell_vertices);
 
@@ -232,7 +231,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
   }
   
-
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> MeshPartitioning::ghost_boundary_vertices(
@@ -305,25 +303,8 @@ void MeshPartitioning::ghost_build_shared_vertices(Mesh& mesh,
   }
 
   // Send same data to all processes
-  std::vector<std::vector<std::size_t> > send_shared_ownership(num_processes,
-                                                        shared_ownership_list);
   std::vector<std::vector<std::size_t> > recv_shared_ownership(num_processes);
-
-  MPI::all_to_all(send_shared_ownership, recv_shared_ownership);
-
-  // DEBUG
-  // std::stringstream s;
-  // s << process_number << ") " << "received ";
-  // for(unsigned int i=0; i< num_processes; ++i)
-  // {
-  //   s << "(" << i << ") ";
-  //   for(unsigned int j=0; j < recv_shared_ownership[i].size(); ++j)
-  //   {
-  //     s << recv_shared_ownership[i][j] << " ";
-  //   }
-  //   s << " - ";
-  // }
-  // std::cout << s.str() << std::endl;
+  MPI::all_gather(shared_ownership_list, recv_shared_ownership);
 
   // Unpack received data
   for (unsigned int i = 0; i < num_processes; ++i)
@@ -373,47 +354,7 @@ void MeshPartitioning::ghost_build_shared_vertices(Mesh& mesh,
     local_index = vertex_global_to_local.find(map_it->first);
     dolfin_assert(local_index != vertex_global_to_local.end());
     shared_vertices[local_index->second] = map_it->second;
-  }
-
-  // // DEBUG OUTPUT
-  // //------------------------------
-  // for(unsigned int n = 0; n < MPI::num_processes(); ++n)
-  // {
-  //   MPI::barrier();
-  //   if(n == MPI::process_number())
-  //   {
-  //     for(std::map<std::size_t, std::set<unsigned int> >::iterator map_it
-  //           = shared_vertices_global.begin(); map_it != shared_vertices_global.end();
-  //         ++map_it)
-  //     {
-  //       std::cout << n << "] " << map_it->first << "G) ";
-  //       for(std::set<unsigned int>::iterator set_it
-  //             = map_it->second.begin(); set_it != map_it->second.end();
-  //           ++set_it)
-  //       {
-  //         std::cout << *set_it << " " ;
-  //       }
-  //       std::cout << std::endl;
-  //     }
-
-  //     for(std::map<unsigned int, std::set<unsigned int> >::iterator map_it
-  //           = shared_vertices.begin(); map_it != shared_vertices.end();
-  //         ++map_it)
-  //     {
-  //       std::cout << n << "] " << map_it->first << "L) ";
-  //       for(std::set<unsigned int>::iterator set_it
-  //             = map_it->second.begin(); set_it != map_it->second.end();
-  //           ++set_it)
-  //       {
-  //         std::cout << *set_it << " " ;
-  //       }
-  //       std::cout << std::endl;
-  //     }
-  //   }
-  // }
-  // //------------------------------
-  
-  
+  }  
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_ghost_cells(const LocalMeshData& mesh_data,
@@ -752,13 +693,6 @@ void MeshPartitioning::build_shared_vertices(Mesh& mesh,
   const std::size_t num_processes = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();
 
-  // Send and Receive buffers
-  std::vector<std::vector<std::size_t> > global_vertex_send(num_processes);
-  std::vector<std::vector<std::size_t> > global_vertex_recv(num_processes);
-  for (unsigned int i = 0; i < num_processes; ++i)
-    if(i != process_number)
-      global_vertex_send[i] = boundary_vertex_indices;
-
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes
   std::map<unsigned int, std::set<unsigned int> >& shared_vertices
@@ -766,7 +700,8 @@ void MeshPartitioning::build_shared_vertices(Mesh& mesh,
   shared_vertices.clear();
 
   // Send boundary vertex indices to all other processes
-  MPI::all_to_all(global_vertex_send, global_vertex_recv);
+  std::vector<std::vector<std::size_t> > global_vertex_recv(num_processes);
+  MPI::all_gather(boundary_vertex_indices, global_vertex_recv);
   
   // Build shared vertex to sharing processes map
   for (std::size_t i = 0; i < num_processes; ++i)
