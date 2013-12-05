@@ -19,7 +19,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2013-04-26
+// Last changed: 2013-12-05
 
 #include <dolfin/log/dolfin_log.h>
 
@@ -77,6 +77,7 @@ namespace dolfin
 }
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
+                                 std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
                                  const LocalMeshData& mesh_data,
                                  std::string mode)
 {
@@ -87,7 +88,7 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
 
   // Partition graph
   if (mode == "partition")
-    partition(cell_partition, g);
+    partition(cell_partition, ghost_procs, g);
   else if (mode == "adaptive_repartition")
     adaptive_repartition(cell_partition, g);
   else if (mode == "refine")
@@ -101,6 +102,7 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
 }
 //-----------------------------------------------------------------------------
 void ParMETIS::partition(std::vector<std::size_t>& cell_partition,
+                         std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
                          ParMETISDualGraph& g)
 {
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
@@ -127,6 +129,97 @@ void ParMETIS::partition(std::vector<std::size_t>& cell_partition,
                                  g.tpwgts.data(), g.ubvec.data(), options,
                                  &g.edgecut, part.data(), &(*comm));
   dolfin_assert(err == METIS_OK);
+
+  // Work out halo cells for current division of dual graph
+  const unsigned int num_processes = MPI::num_processes();
+  const unsigned int process_number = MPI::process_number();
+  const idx_t elm_begin = g.elmdist[process_number];
+  const idx_t elm_end = g.elmdist[process_number + 1];
+  const unsigned int ncells = elm_end - elm_begin;
+
+  std::map<idx_t, std::set<unsigned int> > halo_cell_to_remotes;
+  // local indexing "i"
+  for(unsigned int i = 0; i < ncells; i++)
+  {
+    for(idx_t j = g.xadj[i]; j != g.xadj[i + 1]; ++j)
+    {
+      const idx_t other_cell = g.adjncy[j];
+      if (other_cell < elm_begin || other_cell >= elm_end)
+      {
+        const unsigned int remote = std::upper_bound(g.elmdist.begin(), 
+                                       g.elmdist.end() , 
+                                       other_cell) - g.elmdist.begin() - 1;
+        dolfin_assert(remote < num_processes);
+        if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
+          halo_cell_to_remotes[i] = std::set<unsigned int>();
+        halo_cell_to_remotes[i].insert(remote);
+      }
+    }
+  }
+
+  // Do halo exchange of cell partition data
+  std::vector<std::vector<std::size_t> > send_cell_partition(num_processes);
+  std::vector<std::vector<std::size_t> > recv_cell_partition(num_processes);
+  for(std::map<idx_t, std::set<unsigned int> >::iterator hcell 
+        = halo_cell_to_remotes.begin(); hcell != halo_cell_to_remotes.end();
+      ++hcell)
+  {
+    for(std::set<unsigned int>::iterator proc = hcell->second.begin();
+         proc != hcell->second.end(); ++proc)
+    {
+      dolfin_assert(*proc < num_processes);
+      send_cell_partition[*proc].push_back(hcell->first + elm_begin); // global cell number
+      send_cell_partition[*proc].push_back(part[hcell->first]); //partitioning
+    }
+  }
+
+  // Actual halo exchange
+  MPI::all_to_all(send_cell_partition, recv_cell_partition);
+
+  // Construct a map from all currently foreign cells to their new partition number
+  std::map<std::size_t, unsigned int> cell_ownership;
+  for (unsigned int i = 0; i < num_processes; ++i)
+  {
+    std::vector<std::size_t>& recv_data = recv_cell_partition[i];
+    for (unsigned int j = 0; j != recv_data.size(); j += 2)
+    {
+      const std::size_t global_cell = recv_data[j];
+      const unsigned int cell_owner = recv_data[j+1];
+      cell_ownership[global_cell] = cell_owner;
+    }
+  }
+
+  // Generate mapping for where new boundary cells need to be sent
+  //  std::map<std::size_t, std::vector<std::size_t> > ghost_procs;
+  ghost_procs.clear();
+
+  for(unsigned int i = 0; i < ncells; i++)
+  {
+    const std::size_t proc_this = part[i];
+    for(idx_t j = g.xadj[i]; j != g.xadj[i + 1]; ++j)
+    {
+      const idx_t other_cell = g.adjncy[j];
+      std::size_t proc_other;
+      
+      if (other_cell < elm_begin || other_cell >= elm_end)
+      { // remote cell - should be in map
+        const std::map<std::size_t, unsigned int>::const_iterator 
+          find_other_proc = cell_ownership.find(other_cell);
+        dolfin_assert(find_other_proc != cell_ownership.end());
+        proc_other = find_other_proc->second;
+      }
+      else
+        proc_other = part[other_cell - elm_begin];
+
+      if(proc_this != proc_other)
+      {
+        if(ghost_procs.find(i) == ghost_procs.end())
+          ghost_procs[i] = std::vector<std::size_t>(1, proc_other);
+        else
+          ghost_procs[i].push_back(proc_other);
+      }
+    }
+  }
 
   // Copy cell partition data
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());

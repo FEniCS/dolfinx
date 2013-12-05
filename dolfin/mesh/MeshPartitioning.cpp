@@ -158,7 +158,7 @@ void MeshPartitioning::partition_cells(const LocalMeshData& mesh_data,
   if (partitioner == "SCOTCH")
     SCOTCH::compute_partition(cell_partition, ghost_procs, mesh_data);
   else if (partitioner == "ParMETIS")
-    ParMETIS::compute_partition(cell_partition, mesh_data);
+    ParMETIS::compute_partition(cell_partition, ghost_procs, mesh_data);
   else if (partitioner == "Zoltan_RCB")
     ZoltanPartition::compute_partition_rcb(cell_partition, mesh_data);
   else if (partitioner == "Zoltan_PHG")
@@ -180,7 +180,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
   std::vector<std::size_t> global_cell_indices;
   boost::multi_array<std::size_t, 2> cell_vertices;
-  distribute_cells(mesh_data, cell_partition, global_cell_indices,
+  distribute_cells(mesh_data, cell_partition, 
+                   global_cell_indices,
                    cell_vertices);
 
   // Get ghost cells from neighbouring processes
@@ -188,9 +189,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   std::vector<std::size_t> ghost_remote_process;
   boost::multi_array<std::size_t, 2> ghost_cell_vertices;
   distribute_ghost_cells(mesh_data, cell_partition, 
-                         ghost_procs, ghost_global_cell_indices,
-                         ghost_remote_process,
-                         ghost_cell_vertices);
+                   ghost_procs, ghost_global_cell_indices,
+                   ghost_remote_process,
+                   ghost_cell_vertices);
 
   // Distribute vertices
   std::vector<std::size_t> vertex_indices;
@@ -224,7 +225,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   const std::size_t ghost_total = MPI::sum(ghost_procs.size());
   if(ghost_total != 0)
   {
-    // If there is ghost information, use this to get shared vertices 
+    warning("Using new ghost based method for shared vertices");
+
     std::vector<std::size_t> boundary_vertex_indices
       = ghost_boundary_vertices(ghost_cell_vertices, cell_vertices);
 

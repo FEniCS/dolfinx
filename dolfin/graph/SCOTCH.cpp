@@ -19,7 +19,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2013-12-02
+// Last changed: 2013-12-05
 
 #include <algorithm>
 #include <map>
@@ -408,7 +408,6 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
         = _cell_partition[edge_ghost_tab[j]];
       if(proc_this != proc_other)
       {
- //        std::cout << i << "> " << proc_this << " - " << proc_other << std::endl;
         if(ghost_procs.find(i) == ghost_procs.end())
           ghost_procs[i] = std::vector<std::size_t>(1, proc_other);
         else
