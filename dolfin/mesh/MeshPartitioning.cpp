@@ -22,7 +22,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-04
+// Last changed: 2013-12-05
 
 #include <algorithm>
 #include <iterator>
@@ -196,8 +196,21 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   std::vector<std::size_t> vertex_indices;
   boost::multi_array<double, 2> vertex_coordinates;
   std::map<std::size_t, std::size_t> vertex_global_to_local;
-  distribute_vertices(mesh_data, cell_vertices, vertex_indices,
+  // Compute which vertices we need
+  std::set<std::size_t> vertex_set = cell_vertex_set(cell_vertices);
+  distribute_vertices(mesh_data, vertex_set, vertex_indices,
                       vertex_global_to_local, vertex_coordinates);
+
+  // Find set of ghost-only vertices and get them too...
+  std::set<std::size_t> ghost_vertex_set = cell_vertex_set(ghost_cell_vertices);
+  std::vector<std::size_t> ghost_only_vertex_set(ghost_vertex_set.size());
+  std::vector<std::size_t>::iterator ghost_only_end 
+    = std::set_difference(ghost_vertex_set.begin(), ghost_vertex_set.end(),
+                          vertex_set.begin(), vertex_set.end(),
+                          ghost_only_vertex_set.begin());
+  ghost_only_vertex_set.resize(ghost_only_end - ghost_only_vertex_set.begin());
+  //FIXME: actually get the vertices and store them somewhere
+  
   timer.stop();
 
   // Build mesh
@@ -205,8 +218,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
              vertex_coordinates, vertex_global_to_local,
              mesh_data.tdim, mesh_data.gdim, mesh_data.num_global_cells,
              mesh_data.num_global_vertices);
-
-  // Get boundary vertices of local mesh
 
   // Check for any ghost information and use different method for
   // shared vertex determination
@@ -227,7 +238,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     std::vector<std::size_t> boundary_vertex_indices
       = boundary_vertices(mesh, vertex_indices);
     
-    // Notify other processes
+    // Notify other processes to find shared vertices
     build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
   }
   
@@ -279,7 +290,12 @@ void MeshPartitioning::ghost_build_shared_vertices(Mesh& mesh,
   // Multiple-shared vertices (i.e. shared by more than two processes)
   // may not have all process information on all processes, so this needs
   // to be transmitted to all possible owners.
-  // FIXME: avoid a global broadcast here.
+  // FIXME: avoid a global broadcast here, to enhance scalability.
+  // This can be done as follows:
+  // Send all known shared_vertices_global map entries with 
+  // more than one entry to the MPI::index_owner of the global vertex
+  // which then collates the ownership and reflects 
+  // the results back to the senders.
 
   std::vector<std::size_t> shared_ownership_list;
 
@@ -514,7 +530,7 @@ void  MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
-                    const boost::multi_array<std::size_t, 2>& cell_vertices,
+                    const std::set<std::size_t>& needed_vertex_indices, 
                     std::vector<std::size_t>& vertex_indices,
                     std::map<std::size_t, std::size_t>& vertex_global_to_local,
                     boost::multi_array<double, 2>& vertex_coordinates)
@@ -533,9 +549,6 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   // Get geometric dimension
   const std::size_t gdim = mesh_data.gdim;
   
-  // Compute which vertices we need
-  std::set<std::size_t> needed_vertex_indices = cell_vertex_set(cell_vertices);
-
   // Compute where (process number) the vertices we need are located
   std::vector<std::vector<std::size_t> > send_vertex_indices(num_processes);
   //  std::vector<std::vector<std::size_t> > vertex_location(num_processes);

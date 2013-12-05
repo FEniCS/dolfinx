@@ -21,7 +21,7 @@
 // Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-04
+// Last changed: 2013-12-05
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -115,8 +115,8 @@ namespace dolfin
 
     // Distribute vertices
     static void distribute_vertices(const LocalMeshData& data,
-      const boost::multi_array<std::size_t, 2>& cell_local_vertices,
-      std::vector<std::size_t>& vertex_local_to_global_indices,
+      const std::set<std::size_t>& needed_vertex_indices,
+      std::vector<std::size_t>& vertex_indices,
       std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
       boost::multi_array<double, 2>& vertex_coordinates);
 
