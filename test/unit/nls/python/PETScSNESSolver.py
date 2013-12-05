@@ -17,7 +17,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-10-17
-# Last changed: 2012-10-26
+# Last changed: 2013-11-22
 
 """Solve the Yamabe PDE which arises in the differential geometry of
 general relativity. http://arxiv.org/abs/1107.0360.
@@ -66,19 +66,19 @@ if has_petsc():
     ub = Function(interpolate(Constant(100.),V))
 
     newton_solver_parameters = {"nonlinear_solver": "newton",
-                                "linear_solver": "lu",
-                                "newton_solver": {"maximum_iterations": 100,
-                                                "report": False}}
+                                "newton_solver": {"linear_solver": "lu",
+                                                  "maximum_iterations": 100,
+                                                  "report": False}}
 
     snes_solver_parameters_sign = {"nonlinear_solver": "snes",
-                                   "linear_solver": "lu",
-                                   "snes_solver": {"maximum_iterations": 100,
+                                   "snes_solver": {"linear_solver": "lu",
+                                                   "maximum_iterations": 100,
                                                    "sign": "nonnegative",
                                                    "report": False}}
 
     snes_solver_parameters_bounds = {"nonlinear_solver": "snes",
-                                     "linear_solver": "lu",
-                                     "snes_solver": {"maximum_iterations": 100,
+                                     "snes_solver": {"linear_solver": "lu",
+                                                     "maximum_iterations": 100,
                                                      "sign": "default",
                                                      "report": False}}
 

@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2006-03-02
-// Last changed: 2013-03-13
+// Last changed: 2013-11-20
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -163,7 +163,8 @@ int main(int argc, char* argv[])
   Function& u0 = cahn_hilliard.u0();
 
   // Create nonlinear solver and set parameters
-  NewtonSolver newton_solver("lu");
+  NewtonSolver newton_solver;
+  newton_solver.parameters["linear_solver"] = "lu";
   newton_solver.parameters["convergence_criterion"] = "incremental";
   newton_solver.parameters["maximum_iterations"] = 10;
   newton_solver.parameters["relative_tolerance"] = 1e-6;

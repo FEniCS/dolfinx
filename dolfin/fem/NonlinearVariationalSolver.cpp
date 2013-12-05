@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Marie E. Rognes, 2011.
-// Modified by Corrado Maurini, 2013.
+// Modified by Marie E. Rognes 2011
+// Modified by Corrado Maurini 2013
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2013-03-20
+// Last changed: 2013-11-21
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -123,11 +123,9 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
     }
     // Create Newton solver and set parameters
     if (!newton_solver || reset_jacobian)
-    {
-      // Create Newton solver and set parameters
-      newton_solver = boost::shared_ptr<NewtonSolver>(new NewtonSolver(parameters["linear_solver"],
-                                                          parameters["preconditioner"]));
-    }
+      newton_solver = boost::shared_ptr<NewtonSolver>(new NewtonSolver());
+
+    // Pass parameters to Newton solver
     newton_solver->parameters.update(parameters("newton_solver"));
 
     // Solve nonlinear problem using Newton's method
@@ -145,7 +143,6 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
       snes_solver = boost::shared_ptr<PETScSNESSolver>(new PETScSNESSolver());
     }
     snes_solver->parameters.update(parameters("snes_solver"));
-    snes_solver->set_linear_solver_parameters(parameters);
 
     // Solve nonlinear problem using PETSc's SNES
     dolfin_assert(u->vector());

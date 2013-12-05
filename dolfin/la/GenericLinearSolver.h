@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2009-2012
+// Modified by Anders Logg 2009-2013
 //
 // First added:  2008-08-26
-// Last changed: 2013-02-26
+// Last changed: 2013-12-04
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
@@ -104,6 +104,20 @@ namespace dolfin
                    "solve linear system transpose",
                    "Not supported by current linear algebra backend. Consider using solve_transpose(x, b)");
       return 0;
+    }
+
+    // FIXME: This should not be needed. Need to cleanup linear solver
+    // name jungle: default, lu, iterative, direct, krylov, etc
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    virtual std::string parameter_type() const
+    {
+      return "default";
+    }
+
+    /// Update solver parameters (useful for LinearSolver wrapper)
+    virtual void update_parameters(const Parameters& parameters)
+    {
+      this->parameters.update(parameters);
     }
 
   protected:

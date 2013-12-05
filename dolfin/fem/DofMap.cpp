@@ -491,8 +491,12 @@ boost::shared_ptr<GenericDofMap>
                                                      *this, mesh));
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::dofs(std::size_t r0, std::size_t r1) const
+std::vector<dolfin::la_index> DofMap::dofs() const
 {
+  // Ownership range
+  const std::size_t r0 = _ownership_range.first;
+  const std::size_t r1 = _ownership_range.second;
+
   // Create vector to hold dofs
   std::vector<la_index> _dofs;
   _dofs.reserve(_dofmap.size()*max_cell_dimension());
