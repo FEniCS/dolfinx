@@ -29,6 +29,8 @@ class Issues(unittest.TestCase):
     def test_issue_97(self):
         "Test from Mikael Mortensen (issue #97)"
 
+        if MPI.num_processes() > 1: return
+
         N = 2
         L = 1000
         mesh = BoxMesh(0, 0, 0, L, L, L, N, N, N)
@@ -40,6 +42,8 @@ class Issues(unittest.TestCase):
 
     def test_issue_168(self):
         "Test from Torsten Wendav (issue #168)"
+
+        if MPI.num_processes() > 1: return
 
         mesh = UnitCubeMesh(14, 14, 14)
         V = FunctionSpace(mesh, "Lagrange", 1)
