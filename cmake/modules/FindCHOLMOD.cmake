@@ -89,6 +89,13 @@ find_library(SUITESPARSE_LIBRARY suitesparseconfig
   DOC "The SUITESPARSECONFIG library"
   )
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND NOT APPLE)
+  # Check for rt library
+  find_library(RT_LIBRARY rt
+    DOC "The RT library"
+    )
+endif()
+
 # Collect libraries (order is important)
 if (AMD_FOUND)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARY} ${AMD_LIBRARIES})
@@ -104,6 +111,9 @@ if (CCOLAMD_LIBRARY)
 endif()
 if (SUITESPARSE_LIBRARY)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${SUITESPARSE_LIBRARY})
+endif()
+if (RT_LIBRARY)
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${RT_LIBRARY})
 endif()
 
 if (PARMETIS_FOUND)
