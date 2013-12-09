@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-11-14
+// Last changed: 2013-12-09
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -506,7 +506,7 @@ bool TriangleCell::collides(const Cell& cell, const Point& point) const
   // Tolerance for numeric test (using vector v1)
   const double dx = std::abs(v1.x());
   const double dy = std::abs(v1.y());
-  const double eps = DOLFIN_EPS_LARGE*std::max(dx, dy);
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*std::max(dx, dy));
 
   // Check if point is inside
   return x1 >= -eps && x2 >= -eps && x1 + x2 <= 1.0 + eps;
