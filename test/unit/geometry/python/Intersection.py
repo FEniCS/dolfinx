@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-18
-# Last changed: 2013-09-12
+# Last changed: 2013-12-09
 
 import unittest
 
@@ -61,20 +61,6 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         if MPI.num_processes() == 1:
             self.assertEqual(intersection.intersected_cells(), [816])
-
-    def test_roundoff(self):
-        "Test from Mikael Mortensen (issue #97)"
-
-        N = 2
-        L = 1000
-        mesh = BoxMesh(0, 0, 0, L, L, L, N, N, N)
-
-        V = FunctionSpace(mesh, 'CG', 1)
-        v = interpolate(Expression('x[0]'), V)
-        x = Point(0.5*L, 0.5*L, 0.5*L)
-        vx = v(x)
-
-        print vx
 
 if __name__ == "__main__":
     print ""
