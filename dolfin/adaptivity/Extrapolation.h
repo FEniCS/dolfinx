@@ -67,15 +67,13 @@ namespace dolfin
 
     // Build data structures for unique dofs on patch of given cell
     static void build_unique_dofs(std::set<std::size_t>& unique_dofs,
-                                  std::map<std::size_t, std::map<std::size_t, std::size_t> >& cell2dof2row,
+                        std::map<std::size_t, std::map<std::size_t, std::size_t> >& cell2dof2row,
                                   const Cell& cell0,
-                                  const ufc::cell& c0,
                                   const FunctionSpace& V);
 
     // Compute unique dofs in given cell
     static std::map<std::size_t, std::size_t>
-      compute_unique_dofs(const Cell& cell, const ufc::cell& c,
-                          const FunctionSpace& V,
+      compute_unique_dofs(const Cell& cell, const FunctionSpace& V,
                           std::size_t& row, std::set<std::size_t>& unique_dofs);
 
     // Compute coefficients on given cell

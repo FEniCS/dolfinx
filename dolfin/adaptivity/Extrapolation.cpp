@@ -48,11 +48,6 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   // Using set_local for simplicity here
   not_working_in_parallel("Extrapolation of functions");
 
-  // Too verbose
-  //info("Extrapolating function: %s --> %s",
-  //     v.function_space().element().signature().c_str(),
-  //     w.function_space().element().signature().c_str());
-
   // Check that the meshes are the same
   if (w.function_space()->mesh() != v.function_space()->mesh())
   {
@@ -124,7 +119,7 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
   // Build data structures for keeping track of unique dofs
   std::map<std::size_t, std::map<std::size_t, std::size_t> > cell2dof2row;
   std::set<std::size_t> unique_dofs;
-  build_unique_dofs(unique_dofs, cell2dof2row, cell0, c0, V);
+  build_unique_dofs(unique_dofs, cell2dof2row, cell0, V);
 
   // Compute size of linear system
   dolfin_assert(W.element());
@@ -175,23 +170,19 @@ void
 Extrapolation::build_unique_dofs(std::set<std::size_t>& unique_dofs,
                                  std::map<std::size_t, std::map<std::size_t, std::size_t> >& cell2dof2row,
                                  const Cell& cell0,
-                                 const ufc::cell& c0,
                                  const FunctionSpace& V)
 {
   // Counter for matrix row index
   std::size_t row = 0;
   dolfin_assert(V.mesh());
-  UFCCell c1(*V.mesh());
 
   // Compute unique dofs on center cell
-  cell2dof2row[cell0.index()] = compute_unique_dofs(cell0, c0, V, row,
-                                                    unique_dofs);
+  cell2dof2row[cell0.index()] = compute_unique_dofs(cell0, V, row, unique_dofs);
 
   // Compute unique dofs on neighbouring cells
   for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
   {
-    c1.update(*cell1);
-    cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, c1, V, row,
+    cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, V, row,
                                                        unique_dofs);
   }
 }
@@ -224,18 +215,14 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
     // Iterate over basis functions for W on center cell
     for (std::size_t j = 0; j < W.element()->space_dimension(); ++j)
     {
-
       // Create basis function
       const BasisFunction phi(j, *W.element(), c0);
 
       // Evaluate dof on basis function
       const int cell_orientation = 0;
       const double dof_value
-        = V.element()->evaluate_dof(i,
-                                    phi,
-                                    &c1.vertex_coordinates[0],
-                                    cell_orientation,
-                                    c1);
+        = V.element()->evaluate_dof(i, phi,  c1.vertex_coordinates.data(),
+                                    cell_orientation, c1);
 
       // Insert dof_value into matrix
       A(row, j) = dof_value;
@@ -247,7 +234,7 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
 }
 //-----------------------------------------------------------------------------
 std::map<std::size_t, std::size_t>
-Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
+Extrapolation::compute_unique_dofs(const Cell& cell,
                                    const FunctionSpace& V,
                                    std::size_t& row,
                                    std::set<std::size_t>& unique_dofs)
