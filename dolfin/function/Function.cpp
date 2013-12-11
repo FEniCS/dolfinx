@@ -35,7 +35,6 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
-#include <dolfin/fem/UFC.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/XMLFile.h>
@@ -231,7 +230,8 @@ const Function& Function::operator= (const Function& v)
                   == _function_space->dofmap()->global_dimension());
 
     // Set values in vector
-    this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);
+    this->_vector->set(gathered_values.data(), collapsed_map.size(),
+                       new_rows.data());
     this->_vector->apply("insert");
   }
 
@@ -398,7 +398,8 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
 
   // Create cell that contains point
   const Cell cell(mesh, ID);
-  const UFCCell ufc_cell(cell);
+  ufc::cell ufc_cell;
+  cell.ufc_cell_geometry(ufc_cell);
 
   // Call evaluate function
   eval(values, x, cell, ufc_cell);
@@ -422,7 +423,7 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   std::vector<double> coefficients(element.space_dimension());
 
   // Restrict function to cell
-  restrict(&coefficients[0], element, dolfin_cell, ufc_cell);
+  restrict(coefficients.data(), element, dolfin_cell, ufc_cell);
 
   // Create work vector for basis
   std::vector<double> basis(value_size_loc);
@@ -435,8 +436,8 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   const int cell_orientation = 0;
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
-    element.evaluate_basis(i, &basis[0], &x[0],
-                           &ufc_cell.vertex_coordinates[0],
+    element.evaluate_basis(i, basis.data(), x.data(),
+                           ufc_cell.vertex_coordinates.data(),
                            cell_orientation);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
@@ -561,7 +562,8 @@ void Function::non_matching_eval(Array<double>& values,
 
   // Create cell that contains point
   const Cell cell(mesh, ID);
-  const UFCCell new_ufc_cell(cell);
+  ufc::cell new_ufc_cell;
+  cell.ufc_cell_geometry(new_ufc_cell);
 
   // Call evaluate function
   eval(values, x, cell, new_ufc_cell);
@@ -639,7 +641,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(mesh);
+  ufc::cell ufc_cell;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
@@ -647,15 +649,15 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
       continue;
 
     // Update to current cell
-    ufc_cell.update(*cell);
+    cell->ufc_cell_geometry(ufc_cell);
 
     // Pick values from global vector
-    restrict(&coefficients[0], element, *cell, ufc_cell);
+    restrict(coefficients.data(), element, *cell, ufc_cell);
 
     // Interpolate values at the vertices
     const int cell_orientation = 0;
-    element.interpolate_vertex_values(&cell_vertex_values[0],
-                                      &coefficients[0],
+    element.interpolate_vertex_values(cell_vertex_values.data(),
+                                      coefficients.data(),
                                       cell_orientation,
                                       ufc_cell);
 

@@ -196,7 +196,7 @@ void GenericFunction::restrict_as_ufc_function(double* w,
   const int cell_orientation = 0;
   element.evaluate_dofs(w,
                         *this,
-                        &ufc_cell.vertex_coordinates[0],
+                        ufc_cell.vertex_coordinates.data(),
                         cell_orientation,
                         ufc_cell);
 }

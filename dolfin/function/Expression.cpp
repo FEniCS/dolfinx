@@ -21,10 +21,9 @@
 // Last changed: 2011-11-14
 
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/fem/UFCCell.h>
 #include "Expression.h"
 
 using namespace dolfin;
@@ -117,11 +116,11 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size*mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  UFCCell ufc_cell(mesh);
+  ufc::cell ufc_cell;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update cell data
-    ufc_cell.update(*cell);
+    cell->ufc_cell_geometry(ufc_cell);
 
     // Iterate over cell vertices
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
