@@ -300,6 +300,31 @@ namespace dolfin
     ///         True iff entity collides with cell.
     bool collides(const MeshEntity& entity) const
     { return _mesh->type().collides(*this, entity); }
+    // FIXME: This function is part of a UFC transition
+    /// Fill UFC cell geometric data
+    void ufc_cell_geometry(ufc::cell& ufc_cell, int local_facet=-1) const
+    {
+      const std::size_t gdim = _mesh->geometry().dim();
+      const std::size_t num_vertices = num_entities(0);
+      ufc_cell.vertex_coordinates.resize(num_vertices*gdim);
+
+      const unsigned int* vertices = entities(0);
+      for (std::size_t i = 0; i < num_vertices; i++)
+      {
+        for (std::size_t j = 0; j < gdim; j++)
+        {
+          ufc_cell.vertex_coordinates[i*gdim + j]
+            = _mesh->geometry().x(vertices[i])[j];
+        }
+      }
+      ufc_cell.geometric_dimension = gdim;
+
+      ufc_cell.local_facet = local_facet;
+      ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      ufc_cell.mesh_identifier = mesh_id();
+
+      ufc_cell.index = index();
+    }
 
   };
 
