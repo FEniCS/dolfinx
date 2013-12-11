@@ -32,6 +32,7 @@ using namespace dolfin;
 void
 LocalAssembler::assemble(Eigen::MatrixXd& A,
                          UFC& ufc,
+                         ufc::cell& ufc_cell,
                          const Cell& cell,
                          const MeshFunction<std::size_t>* cell_domains,
                          const MeshFunction<std::size_t>* exterior_facet_domains,
@@ -40,23 +41,31 @@ LocalAssembler::assemble(Eigen::MatrixXd& A,
   // Clear tensor
   A.setZero();
 
+  cell.ufc_cell_geometry(ufc_cell);
+
   // Assemble contributions from cell integral
-  assemble_cell(A, ufc, cell, cell_domains);
+  assemble_cell(A, ufc, ufc_cell, cell, cell_domains);
 
   // Assemble contributions from facet integrals
   for (FacetIterator facet(cell); !facet.end(); ++facet)
   {
+    ufc_cell.local_facet = facet.pos();
     if (facet->num_entities(cell.dim()) == 2)
-      assemble_interior_facet(A, ufc, cell, *facet,
+    {
+      assemble_interior_facet(A, ufc, ufc_cell, cell, *facet,
                               facet.pos(), interior_facet_domains);
+    }
     else
-      assemble_exterior_facet(A, ufc, cell, *facet,
+    {
+      assemble_exterior_facet(A, ufc, ufc_cell, cell, *facet,
                               facet.pos(), exterior_facet_domains);
+    }
   }
 }
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_cell(Eigen::MatrixXd& A,
                                    UFC& ufc,
+                                   const ufc::cell& ufc_cell,
                                    const Cell& cell,
                                    const MeshFunction<std::size_t>* domains)
 {
@@ -76,13 +85,13 @@ void LocalAssembler::assemble_cell(Eigen::MatrixXd& A,
     return;
 
   // Update to current cell
-  ufc.update(cell);
+  ufc.update(cell, ufc_cell);
 
   // Tabulate cell tensor
-  integral->tabulate_tensor(&ufc.A[0],
+  integral->tabulate_tensor(ufc.A.data(),
                             ufc.w(),
-                            &ufc.cell.vertex_coordinates[0],
-                            ufc.cell.orientation);
+                            ufc_cell.vertex_coordinates.data(),
+                            ufc_cell.orientation);
 
   // Stuff a_ufc.A into A
   const std::size_t M = A.rows();
@@ -95,6 +104,7 @@ void LocalAssembler::assemble_cell(Eigen::MatrixXd& A,
 void
 LocalAssembler::assemble_exterior_facet(Eigen::MatrixXd& A,
                                         UFC& ufc,
+                                        const ufc::cell& ufc_cell,
                                         const Cell& cell,
                                         const Facet& facet,
                                         const std::size_t local_facet,
@@ -117,25 +127,26 @@ LocalAssembler::assemble_exterior_facet(Eigen::MatrixXd& A,
     return;
 
   // Update to current cell
-  ufc.update(cell, local_facet);
+  ufc.update(cell, ufc_cell);
 
   // Tabulate exterior facet tensor
-  integral->tabulate_tensor(&ufc.A[0],
+  integral->tabulate_tensor(ufc.A.data(),
                             ufc.w(),
-                            &ufc.cell.vertex_coordinates[0],
+                            ufc_cell.vertex_coordinates.data(),
                             local_facet);
 
   // Stuff a_ufc.A into A
   const std::size_t M = A.rows();
   const std::size_t N = A.cols();
-  for (std::size_t i=0; i < M; i++)
-    for (std::size_t j=0; j < N; j++)
+  for (std::size_t i = 0; i < M; i++)
+    for (std::size_t j = 0; j < N; j++)
       A(i, j) += ufc.A[N*i + j];
 }
 //------------------------------------------------------------------------------
 void
 LocalAssembler::assemble_interior_facet(Eigen::MatrixXd& A,
                                         UFC& ufc,
+                                        const ufc::cell& ufc_cell,
                                         const Cell& cell,
                                         const Facet& facet,
                                         const std::size_t local_facet,
@@ -158,23 +169,27 @@ LocalAssembler::assemble_interior_facet(Eigen::MatrixXd& A,
     return;
 
   // Update to current pair of cells and facets
-  ufc.update(cell, local_facet, cell, local_facet);
+  ufc.update(cell, ufc_cell, cell, ufc_cell);
 
   // Tabulate interior facet tensor on macro element
-  integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(),
-                            &ufc.cell0.vertex_coordinates[0],
-                            &ufc.cell1.vertex_coordinates[0],
+  integral->tabulate_tensor(ufc.macro_A.data(), ufc.macro_w(),
+                            ufc_cell.vertex_coordinates.data(),
+                            ufc_cell.vertex_coordinates.data(),
                             local_facet, local_facet);
 
   // Stuff upper left quadrant (corresponding to this cell) into A
   const std::size_t M = A.rows();
   const std::size_t N = A.cols();
   if (N == 1)
-    for (std::size_t i=0; i < M; i++)
+  {
+    for (std::size_t i = 0; i < M; i++)
       A(i, 0) = ufc.macro_A[i];
+  }
   else
-    for (std::size_t i=0; i < M; i++)
-      for (std::size_t j=0; j < N; j++)
+  {
+    for (std::size_t i = 0; i < M; i++)
+      for (std::size_t j = 0; j < N; j++)
         A(i, j) += ufc.macro_A[2*N*i + j];
+  }
 }
 //------------------------------------------------------------------------------

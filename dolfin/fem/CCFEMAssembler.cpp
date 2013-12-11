@@ -18,12 +18,15 @@
 // First added:  2013-09-12
 // Last changed: 2013-09-25
 
-#include <dolfin/log/log.h>
+#include <dolfin/function/CCFEMFunctionSpace.h>
+
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/TensorLayout.h>
-#include <dolfin/function/CCFEMFunctionSpace.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 
 #include "SparsityPatternBuilder.h"
 #include "UFC.h"
@@ -74,6 +77,7 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Iterate over parts
+  ufc::cell ufc_cell;
   for (std::size_t part = 0; part < a.num_parts(); part++)
   {
     // Get form for current part
@@ -100,19 +104,20 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Update to current cell
-      ufc.update(*cell);
+      cell->ufc_cell_geometry(ufc_cell);
+      ufc.update(*cell, ufc_cell);
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
         dofs[i] = &(dofmaps[i]->cell_dofs(cell->index()));
 
       // Tabulate cell tensor
-      integral->tabulate_tensor(&ufc.A[0], ufc.w(),
-                                &ufc.cell.vertex_coordinates[0],
-                                ufc.cell.orientation);
+      integral->tabulate_tensor(ufc.A.data(), ufc.w(),
+                                ufc_cell.vertex_coordinates.data(),
+                                ufc_cell.orientation);
 
       // Add entries to global tensor
-      A.add(&ufc.A[0], dofs);
+      A.add(ufc.A.data(), dofs);
     }
   }
 }

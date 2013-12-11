@@ -25,6 +25,11 @@
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 
+namespace ufc
+{
+  class cell;
+}
+
 namespace dolfin
 {
 
@@ -43,6 +48,7 @@ namespace dolfin
     static void
       assemble(Eigen::MatrixXd& A,
                UFC& ufc,
+               ufc::cell& ufc_cell,
                const Cell& cell,
                const MeshFunction<std::size_t>* cell_domains,
                const MeshFunction<std::size_t>* exterior_facet_domains,
@@ -51,6 +57,7 @@ namespace dolfin
     ///
     static void assemble_cell(Eigen::MatrixXd& A,
                               UFC& ufc,
+                              const ufc::cell& ufc_cell,
                               const Cell& cell,
                               const MeshFunction<std::size_t>* domains);
 
@@ -58,6 +65,7 @@ namespace dolfin
     static void
       assemble_exterior_facet(Eigen::MatrixXd& A,
                               UFC& ufc,
+                              const ufc::cell& ufc_cell,
                               const Cell& cell,
                               const Facet& facet,
                               const std::size_t local_facet,
@@ -67,6 +75,7 @@ namespace dolfin
     static void
       assemble_interior_facet(Eigen::MatrixXd& A,
                               UFC& ufc,
+                              const ufc::cell& ufc_cell,
                               const Cell& cell,
                               const Facet& facet,
                               const std::size_t local_facet,

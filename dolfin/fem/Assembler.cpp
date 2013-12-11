@@ -146,7 +146,9 @@ void Assembler::assemble_cells(GenericTensor& A,
   bool use_domains = domains && !domains->empty();
 
   // Assemble over cells
-  Progress p(AssemblerBase::progress_message(A.rank(), "cells"), mesh.num_cells());
+  ufc::cell ufc_cell;
+  Progress p(AssemblerBase::progress_message(A.rank(), "cells"),
+             mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
@@ -158,7 +160,8 @@ void Assembler::assemble_cells(GenericTensor& A,
       continue;
 
     // Update to current cell
-    ufc.update(*cell);
+    cell->ufc_cell_geometry(ufc_cell);
+    ufc.update(*cell, ufc_cell);
 
     // Get local-to-global dof maps for cell
     bool empty_dofmap = false;
@@ -173,9 +176,9 @@ void Assembler::assemble_cells(GenericTensor& A,
       continue;
 
     // Tabulate cell tensor
-    integral->tabulate_tensor(&ufc.A[0], ufc.w(),
-                              &ufc.cell.vertex_coordinates[0],
-                              ufc.cell.orientation);
+    integral->tabulate_tensor(ufc.A.data(), ufc.w(),
+                              ufc_cell.vertex_coordinates.data(),
+                              ufc_cell.orientation);
 
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
@@ -216,7 +219,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
   // Exterior facet integral
-  const ufc::exterior_facet_integral* integral = ufc.default_exterior_facet_integral.get();
+  const ufc::exterior_facet_integral* integral
+    = ufc.default_exterior_facet_integral.get();
 
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
@@ -228,6 +232,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   dolfin_assert(mesh.ordered());
 
   // Assemble over exterior facets (the cells of the boundary)
+  ufc::cell ufc_cell;
   Progress p(AssemblerBase::progress_message(A.rank(), "exterior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -254,17 +259,20 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     // Get local index of facet with respect to the cell
     const std::size_t local_facet = mesh_cell.index(*facet);
 
-    // Update to current cell
-    ufc.update(mesh_cell, local_facet);
+    // Update UFC cell
+    mesh_cell.ufc_cell_geometry(ufc_cell, local_facet);
+
+    // Update UFC object
+    ufc.update(mesh_cell, ufc_cell);
 
     // Get local-to-global dof maps for cell
     for (std::size_t i = 0; i < form_rank; ++i)
       dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
 
     // Tabulate exterior facet tensor
-    integral->tabulate_tensor(&ufc.A[0],
+    integral->tabulate_tensor(ufc.A.data(),
                               ufc.w(),
-                              &ufc.cell.vertex_coordinates[0],
+                              ufc_cell.vertex_coordinates.data(),
                               local_facet);
 
     // Add entries to global tensor
@@ -333,6 +341,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   }
 
   // Assemble over interior facets (the facets of the mesh)
+  ufc::cell ufc_cell0, ufc_cell1;
   Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -363,7 +372,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     std::size_t local_facet1 = cell1.index(*facet);
 
     // Update to current pair of cells
-    ufc.update(cell0, local_facet0, cell1, local_facet1);
+    cell0.ufc_cell_geometry(ufc_cell0, local_facet0);
+    cell1.ufc_cell_geometry(ufc_cell1, local_facet1);
+    ufc.update(cell0, ufc_cell0, cell1, ufc_cell1);
 
     // Tabulate dofs for each dimension on macro element
     for (std::size_t i = 0; i < form_rank; i++)
@@ -385,10 +396,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     }
 
     // Tabulate interior facet tensor on macro element
-    integral->tabulate_tensor(&ufc.macro_A[0],
+    integral->tabulate_tensor(ufc.macro_A.data(),
                               ufc.macro_w(),
-                              &ufc.cell0.vertex_coordinates[0],
-                              &ufc.cell1.vertex_coordinates[0],
+                              ufc_cell0.vertex_coordinates.data(),
+                              ufc_cell1.vertex_coordinates.data(),
                               local_facet0,
                               local_facet1);
 

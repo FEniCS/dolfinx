@@ -91,11 +91,13 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
 
   // Assemble over cells
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
+  ufc::cell ufc_cell;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell
-    ufc_a.update(*cell);
-    ufc_L.update(*cell);
+    cell->ufc_cell_geometry(ufc_cell);
+    ufc_a.update(*cell, ufc_cell);
+    ufc_L.update(*cell, ufc_cell);
 
     // Get local-to-global dof maps for cell
     const std::vector<dolfin::la_index>& dofs_a0
@@ -116,12 +118,12 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     // Tabulate A and b on cell
     integral_a->tabulate_tensor(A.data(),
                                 ufc_a.w(),
-                                &ufc_a.cell.vertex_coordinates[0],
-                                ufc_a.cell.orientation);
+                                ufc_cell.vertex_coordinates.data(),
+                                ufc_cell.orientation);
     integral_L->tabulate_tensor(b.data(),
                                 ufc_L.w(),
-                                &ufc_L.cell.vertex_coordinates[0],
-                                ufc_L.cell.orientation);
+                                ufc_cell.vertex_coordinates.data(),
+                                ufc_cell.orientation);
 
     // Solve local problem
     x_local = A.partialPivLu().solve(b);

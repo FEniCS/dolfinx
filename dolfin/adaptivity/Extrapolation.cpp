@@ -30,6 +30,7 @@
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/UFCCell.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>

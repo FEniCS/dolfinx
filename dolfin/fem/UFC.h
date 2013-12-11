@@ -26,7 +26,6 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <ufc.h>
-#include "UFCCell.h"
 
 namespace dolfin
 {
@@ -61,14 +60,11 @@ namespace dolfin
     void init(const Form& form);
 
     /// Update current cell
-    void update(const Cell& cell);
-
-    /// Update current cell and facet
-    void update(const Cell& cell, std::size_t local_facet);
+    void update(const Cell& cell, const ufc::cell& ufc_cell);
 
     /// Update current pair of cells for macro element
-    void update(const Cell& cell0, std::size_t local_facet0,
-                const Cell& cell1, std::size_t local_facet1);
+    void update(const Cell& cell0, const ufc::cell& ufc_cell0,
+                const Cell& cell1, const ufc::cell& ufc_cell1);
 
     /// Pointer to coefficient data. Used to support UFC interface.
     const double* const * w() const
@@ -183,14 +179,6 @@ namespace dolfin
     const ufc::form& form;
 
     // FIXME AL: Check which data is actually used and remove the rest
-    // FIXME AL: Remove UFCCell class
-
-    // Current cell
-    UFCCell cell;
-
-    // Current pair of cells of macro element
-    UFCCell cell0;
-    UFCCell cell1;
 
     // Local tensor
     std::vector<double> A;

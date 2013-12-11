@@ -31,8 +31,8 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
@@ -376,6 +376,7 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
     = exterior_facet_domains && !exterior_facet_domains->empty();
 
   // Iterate over all cells
+  ufc::cell ufc_cell;
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -412,13 +413,14 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
       if (tensor_required)
       {
         // Update to current cell
-        ufc[form]->update(*cell);
+        cell->ufc_cell_geometry(ufc_cell);
+        ufc[form]->update(*cell, ufc_cell);
 
         // Tabulate cell tensor
         cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                               ufc[form]->w(),
-                                     ufc[form]->cell.vertex_coordinates.data(),
-                                     ufc[form]->cell.orientation);
+                                     ufc_cell.vertex_coordinates.data(),
+                                     ufc_cell.orientation);
         for (std::size_t i = 0; i < data.Ae[form].size(); ++i)
           data.Ae[form][i] += ufc[form]->A[i];
       }
@@ -462,15 +464,16 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
           if (tensor_required)
           {
             // Update to current cell
-            ufc[form]->update(*cell, local_facet);
+            cell->ufc_cell_geometry(ufc_cell);
+            ufc[form]->update(*cell, ufc_cell);
 
             // Tabulate exterior facet tensor
             exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
-                                    ufc[form]->w(),
-                                    ufc[form]->cell.vertex_coordinates.data(),
+                                                            ufc[form]->w(),
+                                                            ufc_cell.vertex_coordinates.data(),
                                                             local_facet);
             for (std::size_t i = 0; i < data.Ae[form].size(); i++)
-            data.Ae[form][i] += ufc[form]->A[i];
+              data.Ae[form][i] += ufc[form]->A[i];
           }
         }
       }
@@ -551,6 +554,7 @@ assembler");
   std::vector<std::size_t> num_dofs(2);
 
   // Iterate over facets
+  ufc::cell ufc_cell[2];
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
@@ -566,6 +570,7 @@ assembler");
         cell[c] = Cell(mesh, facet->entities(mesh.topology().dim())[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(*facet);
+        cell[c].ufc_cell_geometry(ufc_cell[c], local_facet[c]);
       }
 
       // Loop over lhs and then rhs facet contributions
@@ -578,7 +583,7 @@ assembler");
         std::fill(ufc[form]->macro_A.begin(), ufc[form]->macro_A.end(), 0.0);
 
         // Update UFC object
-        ufc[form]->update(cell[0], local_facet[0], cell[1], local_facet[1]);
+        ufc[form]->update(cell[0], ufc_cell[0], cell[1], ufc_cell[1]);
 
         // Compute number of dofs in macro dofmap
         std::fill(num_dofs.begin(), num_dofs.begin() + rank, 0);
@@ -631,13 +636,13 @@ assembler");
           }
 
           // Update to current pair of cells
-          ufc[form]->update(cell[0], local_facet[0], cell[1], local_facet[1]);
+          ufc[form]->update(cell[0], ufc_cell[0], cell[1], ufc_cell[1]);
 
           // Integrate over facet
           interior_facet_integral->tabulate_tensor(ufc[form]->macro_A.data(),
                                                    ufc[form]->macro_w(),
-                                     ufc[form]->cell0.vertex_coordinates.data(),
-                                     ufc[form]->cell1.vertex_coordinates.data(),
+                                     ufc_cell[0].vertex_coordinates.data(),
+                                     ufc_cell[1].vertex_coordinates.data(),
                                      local_facet[0], local_facet[1]);
         }
 
@@ -661,11 +666,11 @@ assembler");
             // Compute cell tensor, if required
             if (cell_tensor_required)
             {
-              ufc[form]->update(cell[c]);
+              ufc[form]->update(cell[c], ufc_cell[c]);
               cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                     ufc[form]->w(),
-                                                 ufc[form]->cell.vertex_coordinates.data(),
-                                                 ufc[form]->cell.orientation);
+                                                 ufc_cell[c].vertex_coordinates.data(),
+                                                 ufc_cell[c].orientation);
 
               // FIXME: Can the below two block be consolidated?
               const std::size_t nn = cell_dofs[form][c][0]->size();
@@ -718,6 +723,8 @@ assembler");
       // Get local index of facet with respect to the cell
       const std::size_t local_facet = cell.index(*facet);
 
+      cell.ufc_cell_geometry(ufc_cell[0], local_facet);
+
       // Initialize macro element matrix/vector to zero
       data.zero_cell();
 
@@ -753,11 +760,10 @@ assembler");
         if (facet_tensor_required)
         {
           // Update UFC object
-          ufc[form]->update(cell, local_facet);
-
+          ufc[form]->update(cell, ufc_cell[0]);
           exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                           ufc[form]->w(),
-                                                          ufc[form]->cell.vertex_coordinates.data(),
+                                                          ufc_cell[0].vertex_coordinates.data(),
                                                           local_facet);
           for (std::size_t i = 0; i < data.Ae[form].size(); i++)
             data.Ae[form][i] += ufc[form]->A[i];
@@ -782,11 +788,11 @@ assembler");
           // Compute cell integral, if required
           if (cell_tensor_required)
           {
-            ufc[form]->update(cell);
+            ufc[form]->update(cell, ufc_cell[0]);
             cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                   ufc[form]->w(),
-                                        ufc[form]->cell.vertex_coordinates.data(),
-                                        ufc[form]->cell.orientation);
+                                        ufc_cell[0].vertex_coordinates.data(),
+                                        ufc_cell[0].orientation);
             for (std::size_t i = 0; i < data.Ae[form].size(); i++)
               data.Ae[form][i] += ufc[form]->A[i];
           }

@@ -300,12 +300,13 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     interior_facet_domains = _L_R_T->interior_facet_domains().get();
 
   // Assemble and solve local linear systems
+  ufc::cell ufc_cell;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Assemble local linear system
-    LocalAssembler::assemble(A, ufc_lhs, *cell, cell_domains,
+    LocalAssembler::assemble(A, ufc_lhs, ufc_cell, *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
-    LocalAssembler::assemble(b, ufc_rhs, *cell, cell_domains,
+    LocalAssembler::assemble(b, ufc_rhs, ufc_cell, *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
 
     // Solve linear system and convert result
@@ -390,7 +391,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     dolfin_assert(_cell_cone->vector());
     *(_cell_cone->vector()) = 0.0;
     facet_dofs.clear();
-    const std::size_t local_facet_dof = local_cone_dim - (dim + 1) + local_facet;
+    const std::size_t local_facet_dof = local_cone_dim - (dim + 1)
+      + local_facet;
     dolfin_assert(_cell_cone->function_space());
     dolfin_assert(_cell_cone->function_space()->dofmap());
     const GenericDofMap& cone_dofmap(*(_cell_cone->function_space()->dofmap()));
@@ -407,12 +409,13 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     UFC ufc_rhs(*_L_R_dT);
 
     // Assemble and solve local linear systems
+    ufc::cell ufc_cell;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Assemble linear system
-      LocalAssembler::assemble(A, ufc_lhs, *cell, cell_domains,
+      LocalAssembler::assemble(A, ufc_lhs, ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
-      LocalAssembler::assemble(b, ufc_rhs, *cell, cell_domains,
+      LocalAssembler::assemble(b, ufc_rhs, ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
 
       // Non-singularize local matrix
