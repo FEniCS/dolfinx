@@ -45,7 +45,6 @@ namespace dolfin
 {
 
   class GenericVector;
-  class UFC;
   class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds

@@ -22,9 +22,10 @@
 #define __FINITE_ELEMENT_H
 
 #include <vector>
+#include <ufc.h>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
-#include "UFCCell.h"
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -100,7 +101,8 @@ namespace dolfin
                         int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis(i, values, x, vertex_coordinates, cell_orientation);
+      _ufc_element->evaluate_basis(i, values, x, vertex_coordinates,
+                                   cell_orientation);
     }
 
     // FIXME: This is a temporary (?) shortcut.
@@ -114,7 +116,8 @@ namespace dolfin
                         const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis(i, values, x, &c.vertex_coordinates[0], c.orientation);
+      _ufc_element->evaluate_basis(i, values, x, c.vertex_coordinates.data(),
+                                   c.orientation);
     }
 
     /// Evaluate all basis functions at given point in cell
@@ -124,7 +127,8 @@ namespace dolfin
                             int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_all(values, x, vertex_coordinates, cell_orientation);
+      _ufc_element->evaluate_basis_all(values, x, vertex_coordinates,
+                                       cell_orientation);
     }
 
     // FIXME: This is a temporary (?) shortcut.
@@ -138,7 +142,8 @@ namespace dolfin
                             const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_all(values, x, vertex_coordinates, c.orientation);
+      _ufc_element->evaluate_basis_all(values, x, vertex_coordinates,
+                                       c.orientation);
     }
 
     /// Evaluate order n derivatives of basis function i at given point in cell
@@ -150,14 +155,17 @@ namespace dolfin
                                     int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_derivatives(i, n, values, x, vertex_coordinates, cell_orientation);
+      _ufc_element->evaluate_basis_derivatives(i, n, values, x,
+                                               vertex_coordinates,
+                                               cell_orientation);
     }
 
     // FIXME: This is a temporary (?) shortcut.
     // FIXME: Need to discuss the role of dolfin::FiniteElement vs
     // FIXME: ufc::finite_element.
 
-    /// Evaluate order n derivatives of basis function i at given point in cell
+    /// Evaluate order n derivatives of basis function i at given
+    /// point in cell
     void evaluate_basis_derivatives(unsigned int i,
                                     unsigned int n,
                                     double* values,
@@ -165,10 +173,13 @@ namespace dolfin
                                     const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_derivatives(i, n, values, x, &c.vertex_coordinates[0], c.orientation);
+      _ufc_element->evaluate_basis_derivatives(i, n, values, x,
+                                               c.vertex_coordinates.data(),
+                                               c.orientation);
     }
 
-    /// Evaluate order n derivatives of all basis functions at given point in cell
+    /// Evaluate order n derivatives of all basis functions at given
+    /// point in cell
     void evaluate_basis_derivatives_all(unsigned int n,
                                         double* values,
                                         const double* x,
@@ -176,21 +187,26 @@ namespace dolfin
                                         int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_derivatives_all(n, values, x, vertex_coordinates, cell_orientation);
+      _ufc_element->evaluate_basis_derivatives_all(n, values, x,
+                                                   vertex_coordinates,
+                                                   cell_orientation);
     }
 
     // FIXME: This is a temporary (?) shortcut.
     // FIXME: Need to discuss the role of dolfin::FiniteElement vs
     // FIXME: ufc::finite_element.
 
-    /// Evaluate order n derivatives of all basis functions at given point in cell
+    /// Evaluate order n derivatives of all basis functions at given
+    /// point in cell
     void evaluate_basis_derivatives_all(unsigned int n,
                                         double* values,
                                         const double* x,
                                         const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_derivatives_all(n, values, x, &c.vertex_coordinates[0], c.orientation);
+      _ufc_element->evaluate_basis_derivatives_all(n, values, x,
+                                                   c.vertex_coordinates.data(),
+                                                   c.orientation);
     }
 
     /// Evaluate linear functional for dof i on the function f
@@ -201,7 +217,8 @@ namespace dolfin
                         const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      return _ufc_element->evaluate_dof(i, function, vertex_coordinates, cell_orientation, c);
+      return _ufc_element->evaluate_dof(i, function, vertex_coordinates,
+                                        cell_orientation, c);
     }
 
     // FIXME: This is a temporary (?) shortcut.
@@ -214,11 +231,8 @@ namespace dolfin
                         const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      return _ufc_element->evaluate_dof(i,
-                                        function,
-                                        &c.vertex_coordinates[0],
-                                        0,
-                                        c);
+      return _ufc_element->evaluate_dof(i, function,
+                                        c.vertex_coordinates.data(), 0, c);
     }
 
     /// Evaluate linear functionals for all dofs on the function f
@@ -229,7 +243,8 @@ namespace dolfin
                        const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_dofs(values, f, vertex_coordinates, cell_orientation, c);
+      _ufc_element->evaluate_dofs(values, f, vertex_coordinates,
+                                  cell_orientation, c);
     }
 
     // FIXME: This is a temporary (?) shortcut.
@@ -242,11 +257,8 @@ namespace dolfin
                        const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_dofs(values,
-                                  f,
-                                  &c.vertex_coordinates[0],
-                                  0,
-                                  c);
+      _ufc_element->evaluate_dofs(values, f, c.vertex_coordinates.data(),
+                                  0, c);
     }
 
     /// Interpolate vertex values from dof values
@@ -256,7 +268,9 @@ namespace dolfin
                                    const ufc::cell& cell) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->interpolate_vertex_values(vertex_values, coefficients, &cell.vertex_coordinates[0], cell_orientation, cell);
+      _ufc_element->interpolate_vertex_values(vertex_values, coefficients,
+                                              cell.vertex_coordinates.data(),
+                                              cell_orientation, cell);
     }
 
     /// Map coordinate xhat from reference cell to coordinate x in cell
@@ -291,11 +305,14 @@ namespace dolfin
     { return _hash; }
 
     /// Create a new finite element for sub element i (for a mixed element)
-    boost::shared_ptr<const FiniteElement> create_sub_element(std::size_t i) const
+    boost::shared_ptr<const FiniteElement>
+      create_sub_element(std::size_t i) const
     {
       dolfin_assert(_ufc_element);
-      boost::shared_ptr<const ufc::finite_element>  ufc_element(_ufc_element->create_sub_element(i));
-      boost::shared_ptr<const FiniteElement> element(new const FiniteElement(ufc_element));
+      boost::shared_ptr<const ufc::finite_element>
+        ufc_element(_ufc_element->create_sub_element(i));
+      boost::shared_ptr<const FiniteElement>
+        element(new const FiniteElement(ufc_element));
       return element;
     }
 
@@ -303,18 +320,21 @@ namespace dolfin
     boost::shared_ptr<const FiniteElement> create() const
     {
       dolfin_assert(_ufc_element);
-      boost::shared_ptr<const ufc::finite_element> ufc_element(_ufc_element->create());
+      boost::shared_ptr<const ufc::finite_element>
+        ufc_element(_ufc_element->create());
       return boost::shared_ptr<const FiniteElement>(new FiniteElement(ufc_element));
     }
 
     /// Extract sub finite element for component
-    boost::shared_ptr<const FiniteElement> extract_sub_element(const std::vector<std::size_t>& component) const;
+    boost::shared_ptr<const FiniteElement>
+      extract_sub_element(const std::vector<std::size_t>& component) const;
 
   private:
 
     // Recursively extract sub finite element
-    static boost::shared_ptr<const FiniteElement> extract_sub_element(const FiniteElement& finite_element,
-                                                                      const std::vector<std::size_t>& component);
+    static boost::shared_ptr<const FiniteElement>
+      extract_sub_element(const FiniteElement& finite_element,
+                          const std::vector<std::size_t>& component);
 
     // UFC finite element
     boost::shared_ptr<const ufc::finite_element> _ufc_element;

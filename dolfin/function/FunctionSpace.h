@@ -35,11 +35,11 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/mesh/Cell.h>
 
 namespace dolfin
 {
 
-  class Cell;
   class Function;
   class GenericDofMap;
   class GenericFunction;

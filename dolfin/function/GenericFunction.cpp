@@ -20,6 +20,7 @@
 
 #include <string>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/geometry/Point.h>
 #include "GenericFunction.h"
 
 using namespace dolfin;
