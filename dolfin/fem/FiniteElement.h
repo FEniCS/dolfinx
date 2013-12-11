@@ -94,30 +94,13 @@ namespace dolfin
     }
 
     /// Evaluate basis function i at given point in cell
-    void evaluate_basis(std::size_t i,
-                        double* values,
-                        const double* x,
+    void evaluate_basis(std::size_t i, double* values, const double* x,
                         const double* vertex_coordinates,
                         int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis(i, values, x, vertex_coordinates,
                                    cell_orientation);
-    }
-
-    // FIXME: This is a temporary (?) shortcut.
-    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
-    // FIXME: ufc::finite_element.
-
-    /// Evaluate basis function i at given point in cell
-    void evaluate_basis(std::size_t i,
-                        double* values,
-                        const double* x,
-                        const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis(i, values, x, c.vertex_coordinates.data(),
-                                   c.orientation);
     }
 
     /// Evaluate all basis functions at given point in cell
@@ -129,21 +112,6 @@ namespace dolfin
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis_all(values, x, vertex_coordinates,
                                        cell_orientation);
-    }
-
-    // FIXME: This is a temporary (?) shortcut.
-    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
-    // FIXME: ufc::finite_element.
-
-    /// Evaluate all basis functions at given point in cell
-    void evaluate_basis_all(double* values,
-                            const double* x,
-                            const double* vertex_coordinates,
-                            const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_all(values, x, vertex_coordinates,
-                                       c.orientation);
     }
 
     /// Evaluate order n derivatives of basis function i at given point in cell
@@ -160,24 +128,6 @@ namespace dolfin
                                                cell_orientation);
     }
 
-    // FIXME: This is a temporary (?) shortcut.
-    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
-    // FIXME: ufc::finite_element.
-
-    /// Evaluate order n derivatives of basis function i at given
-    /// point in cell
-    void evaluate_basis_derivatives(unsigned int i,
-                                    unsigned int n,
-                                    double* values,
-                                    const double* x,
-                                    const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_derivatives(i, n, values, x,
-                                               c.vertex_coordinates.data(),
-                                               c.orientation);
-    }
-
     /// Evaluate order n derivatives of all basis functions at given
     /// point in cell
     void evaluate_basis_derivatives_all(unsigned int n,
@@ -190,23 +140,6 @@ namespace dolfin
       _ufc_element->evaluate_basis_derivatives_all(n, values, x,
                                                    vertex_coordinates,
                                                    cell_orientation);
-    }
-
-    // FIXME: This is a temporary (?) shortcut.
-    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
-    // FIXME: ufc::finite_element.
-
-    /// Evaluate order n derivatives of all basis functions at given
-    /// point in cell
-    void evaluate_basis_derivatives_all(unsigned int n,
-                                        double* values,
-                                        const double* x,
-                                        const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_derivatives_all(n, values, x,
-                                                   c.vertex_coordinates.data(),
-                                                   c.orientation);
     }
 
     /// Evaluate linear functional for dof i on the function f
@@ -274,8 +207,7 @@ namespace dolfin
     }
 
     /// Map coordinate xhat from reference cell to coordinate x in cell
-    void map_from_reference_cell(double* x,
-                                 const double* xhat,
+    void map_from_reference_cell(double* x, const double* xhat,
                                  const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
@@ -283,8 +215,7 @@ namespace dolfin
     }
 
     /// Map from coordinate x in cell to coordinate xhat in reference cell
-    void map_to_reference_cell(double* xhat,
-                               const double* x,
+    void map_to_reference_cell(double* xhat, const double* x,
                                const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
