@@ -180,8 +180,7 @@ namespace dolfin
                  const Mesh& mesh) const;
 
     /// Return list of global dof indices on this process
-    std::vector<dolfin::la_index> dofs(std::size_t r0,
-                                               std::size_t r1) const;
+    std::vector<dolfin::la_index> dofs() const;
 
     /// Set dof entries in vector to a specified value. Parallel
     /// layout of vector must be consistent with dof map range. This
