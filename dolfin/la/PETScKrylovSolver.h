@@ -151,8 +151,8 @@ namespace dolfin
     // Set PETSc operators
     void set_petsc_operators();
 
-    // Set options
-    void set_petsc_options();
+    // Set options that affect KSP object
+    void set_petsc_ksp_options();
 
     // Report the number of iterations
     void write_report(int num_iterations, KSPConvergedReason reason);
@@ -186,8 +186,8 @@ namespace dolfin
     std::vector<PETScVector> _nullspace;
 
     // PETSc null space. Would like this to be a scoped_ptr, but it
-    //doesn't support custom deleters. Change to std::unique_ptr in
-    //the future.
+    // doesn't support custom deleters. Change to std::unique_ptr in
+    // the future.
     boost::shared_ptr<MatNullSpace> petsc_nullspace;
 
     bool preconditioner_set;

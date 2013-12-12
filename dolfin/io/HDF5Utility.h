@@ -90,8 +90,8 @@ namespace dolfin
     /// Reorder data values of type double into global index order
     /// Shape of 2D array is given in global_size
     static void reorder_values_by_global_indices(const Mesh& mesh,
-                               std::vector<double>& data,
-                               std::vector<std::size_t>& global_size);
+                                                 std::vector<double>& data,
+                                                 std::size_t width);
 
   };
 

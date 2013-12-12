@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-09-03
+# Last changed: 2013-11-14
 
 import unittest
 import numpy
@@ -340,9 +340,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
     def test_compute_closest_entity_2d(self):
 
-        reference = (0, numpy.sqrt(2.0))
+        reference = (1, 1.0)
 
-        p = Point(-1.0, -1.0)
+        p = Point(-1.0, 0.01)
         mesh = UnitSquareMesh(16, 16)
         tree = BoundingBoxTree()
         tree.build(mesh)
@@ -360,9 +360,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
     def test_compute_closest_entity_3d(self):
 
-        reference = (2, numpy.sqrt(3.0))
+        reference = (0, 0.1)
 
-        p = Point(-1.0, -1.0, -1.0)
+        p = Point(0.1, 0.05, -0.1)
         mesh = UnitCubeMesh(8, 8, 8)
         tree = BoundingBoxTree()
         tree.build(mesh)
@@ -382,6 +382,4 @@ if __name__ == "__main__":
     print ""
     print "Testing BoundingBoxTree"
     print "------------------------------------------------"
-
-    print "FIXME: Temporary testing"
     unittest.main()

@@ -21,7 +21,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-08-16
-// Last changed: 2012-02-29
+// Last changed: 2013-10-15
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (pre)
@@ -159,6 +159,10 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::DofMap::tabulate_coordinates(
 			                              boost::multi_array<double, 2>& coordinates,
 			                              const ufc::cell& cell) const;
+
+%ignore dolfin::CCFEMDofMap::tabulate_coordinates(
+                                    boost::multi_array<double, 2>& coordinates,
+                                    const ufc::cell& cell) const;
 
 %ignore dolfin::GenericDofMap::tabulate_coordinates(
                                     boost::multi_array<double, 2>& coordinates,

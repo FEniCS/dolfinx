@@ -47,5 +47,8 @@
 // Include information about swig version
 %include "dolfin/swig/version.i"
 
+// Include SWIG defines
+%include "dolfin/swig/defines.i"
+
 // Include all forward declarations
 %include "dolfin/swig/forwarddeclarations.i"

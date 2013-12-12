@@ -19,7 +19,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2011-10-19
+// Last changed: 2013-11-25
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -77,6 +77,13 @@ namespace dolfin
 
     /// Default parameter values
     static Parameters default_parameters();
+
+    /// Update solver parameters (pass parameters down to wrapped implementation)
+    virtual void update_parameters(const Parameters& parameters)
+    {
+      this->parameters.update(parameters);
+      solver->parameters.update(parameters);
+    }
 
   private:
 

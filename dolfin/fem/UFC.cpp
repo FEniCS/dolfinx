@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2007-01-17
-// Last changed: 2011-02-21
+// Last changed: 2013-09-24
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -134,7 +134,10 @@ void UFC::update(const Cell& c)
 
   // Restrict coefficients to cell
   for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    dolfin_assert(coefficients[i]);
     coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], c, cell);
+  }
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& c, std::size_t local_facet)
@@ -144,7 +147,10 @@ void UFC::update(const Cell& c, std::size_t local_facet)
 
   // Restrict coefficients to facet
   for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    dolfin_assert(coefficients[i]);
     coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], c, cell);
+  }
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& c0, std::size_t local_facet0,
@@ -157,6 +163,7 @@ void UFC::update(const Cell& c0, std::size_t local_facet0,
   // Restrict coefficients to facet
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
+    dolfin_assert(coefficients[i]);
     const std::size_t offset = coefficient_elements[i].space_dimension();
     coefficients[i]->restrict(&_macro_w[i][0], coefficient_elements[i],
                               c0, cell0);

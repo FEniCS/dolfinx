@@ -40,11 +40,12 @@ This produces a mesh looking as follows:
 We then make our first version of a mesh on the unit square
 :math:`[0,1] \times [0,1]`. We must give the number of cells in the
 horizontal and vertical directions as the first two arguments to
-:py:class:`UnitSquareMesh <dolfin.cpp.generation.UnitSquareMesh>`. There is
-a third optional argument that indicates the direction of the
-diagonals. This can be set to "left", "right", "right/left",
-"left/right", or "crossed". We can also omit this argument and thereby
-use the default direction "right".
+:py:class:`UnitSquareMesh
+<dolfin.cpp.generation.UnitSquareMesh>`. There is a third optional
+argument that indicates the direction of the diagonals. This can be
+set to "left", "right", "right/left", "left/right", or "crossed". We
+can also omit this argument and thereby use the default direction
+"right".
 
 .. code-block:: python
 
@@ -82,8 +83,9 @@ has diagonals to both left and right:
 .. image:: unitsquaremesh_left_right.png
    :scale: 65 %
 
-The class :py:class:`RectangleMesh <dolfin.cpp.generation.RectangleMesh>` (
-:math:`x_0,y_0,x_1,y_1,n_x,n_y`, direction) creates a mesh on a
+The class :py:class:`RectangleMesh
+<dolfin.cpp.generation.RectangleMesh>`
+(:math:`x_0,y_0,x_1,y_1,n_x,n_y`, direction) creates a mesh on a
 rectangle with one corner in :math:`(x_0,y_0)` and the opposite corner
 in :math:`(x_1,y_1)`. :math:`n_x` and :math:`n_y` specify the number
 of cells in the :math:`x`- and :math:`y`-directions, and as above the
@@ -108,52 +110,10 @@ mesh we use diagonals to both left and right.
 .. image:: rectanglemesh_left_right.png
 	:scale: 75 %
 
-To create a mesh on the unit circle we use :py:class:`UnitCircleMesh
-<dolfin.cpp.generation.UnitCircleMesh>`. The first argument specifies the
-resolution of the mesh by setting the number of nodes in the
-semi-circumference. The second argument decides the direction of the
-diagonals ("left", "right", "left/right", or "crossed"). This is
-optional and has the default value "crossed". The third and final
-argument is also an optional argument, and it specifies the
-transformation used to transform the square :math:`(-1,1)\times
-(-1,1)` into the unit circle. There are three possible
-transformations("rotsumn", "maxn", "sumn"). The default one
-("rotsumn") uses a rotational matrix and is defines as follows:
-
-.. math::
-
-   \text{rotsumn}:&= \frac{(x_r,y_r)}{\sqrt{x_r^2+y_r^2}}\\
-   (x_r,y_r)&=\frac{\sqrt{2}}{2} \begin{bmatrix}
-   \cos(\frac{\pi}{4})&	\sin(\frac{\pi}{4})\\
-   -\sin(\frac{\pi}{4})&   \cos(\frac{\pi}{4})
-   \end{bmatrix} \begin{bmatrix}
-   x \\ y
-   \end{bmatrix}
-
-.. code-block:: python
-
-   mesh = UnitCircleMesh(20, "right", "rotsumn")
-   print "Plotting a UnitCircleMesh"
-   plot(mesh, title="Unit circle (rotsum)")
-
-.. image:: unitcirclemesh_rotsum.png
-   :scale: 75 %
-
-The second transformation ("maxn") produced the following mesh:
-
-.. code-block:: python
-
-   mesh = UnitCircleMesh(20, "right", "maxn")
-   print "Plotting a UnitCircleMesh"
-   plot(mesh, title="Unit circle (maxn)")
-
-.. image:: unitcirclemesh_maxn.png
-	:scale: 75 %
-
 Unstructured ellipsoid and ellipse meshes can be created if DOLFIN is
 configured with CGAL.  Using :py:class:`CircleMesh
-<dolfin.cpp.generation.CircleMesh>` For a circle centered at (0, 0) with
-radius 1 and cell size 0.2:
+<dolfin.cpp.generation.CircleMesh>` For a circle centered at (0, 0)
+with radius 1 and cell size 0.2:
 
 .. code-block:: python
 
@@ -161,9 +121,9 @@ radius 1 and cell size 0.2:
     print "Plotting a CircleMesh"
     plot(mesh, title="Circle (unstructured)")
 
-Using :py:class:`EllipseMesh <dolfin.cpp.generation.EllipseMesh>` for an
-ellipse centered at (0, 0) with 'radii' of 3 and 1 in the :math:`x`- and
-:math:`y` directions, respectively, and cell size 0.2:
+Using :py:class:`EllipseMesh <dolfin.cpp.generation.EllipseMesh>` for
+an ellipse centered at (0, 0) with 'radii' of 3 and 1 in the
+:math:`x`- and :math:`y` directions, respectively, and cell size 0.2:
 
 .. code-block:: python
 
@@ -171,8 +131,8 @@ ellipse centered at (0, 0) with 'radii' of 3 and 1 in the :math:`x`- and
    print "Plotting an EllipseMesh"
    plot(mesh, title="Ellipse mesh (unstructured)")
 
-Using :py:class:`SphereMesh <dolfin.cpp.generation.SphereMesh>` for a sphere
-centered at (0, 0, 0) with radius 1 and cell size 0.2:
+Using :py:class:`SphereMesh <dolfin.cpp.generation.SphereMesh>` for a
+sphere centered at (0, 0, 0) with radius 1 and cell size 0.2:
 
 .. code-block:: python
 
@@ -180,10 +140,10 @@ centered at (0, 0, 0) with radius 1 and cell size 0.2:
    print "Plotting a SphereMesh"
    plot(mesh, title="Sphere mesh (unstructured)")
 
-Using :py:class:`EllipsoidMesh <dolfin.cpp.generation.EllipsoidMesh>` For an
-ellipsoid centered at (0, 0, 0.0), with 'radii' of 3, 1 and 2 in the
-:math:`x`-, :math:`y` and :math`z`-directions, respectively, and cell
-size 0.2:
+Using :py:class:`EllipsoidMesh <dolfin.cpp.generation.EllipsoidMesh>`
+For an ellipsoid centered at (0, 0, 0.0), with 'radii' of 3, 1 and 2
+in the :math:`x`-, :math:`y` and :math`z`-directions, respectively,
+and cell size 0.2:
 
 .. code-block:: python
 

@@ -21,7 +21,7 @@ Page numbering starts at 1 and is relative to the chapter (not the book).
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-10-20
-# Last changed: 2011-10-20
+# Last changed: 2013-11-22
 
 import unittest
 from dolfin import *
@@ -643,8 +643,8 @@ class TestPage32(unittest.TestCase):
         u = Function(V)
         problem = NonlinearVariationalProblem(F, u, bcs=bcs, J=J)
         solver = NonlinearVariationalSolver(problem)
-        solver.parameters["linear_solver"] = "gmres"
-        solver.parameters["preconditioner"] = "ilu"
+        solver.parameters["newton_solver"]["linear_solver"] = "gmres"
+        solver.parameters["newton_solver"]["preconditioner"] = "ilu"
         solver.solve()
 
 class TestPage33(unittest.TestCase):
@@ -867,7 +867,8 @@ class TestPage41(unittest.TestCase):
         solver.parameters["absolute_tolerance"] = 1e-6
         solver.parameters["report"] = True
         solver.parameters["gmres"]["restart"] = 50
-        solver.parameters["preconditioner"]["reuse"] = True
+        #solver.parameters["preconditioner"]["reuse"] = True
+        solver.parameters["preconditioner"]["structure"] = "same"
 
 class TestPage42(unittest.TestCase):
 

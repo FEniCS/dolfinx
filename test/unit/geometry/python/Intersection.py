@@ -18,13 +18,13 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-18
-# Last changed: 2013-05-28
+# Last changed: 2013-12-09
 
 import unittest
 
 from dolfin import intersect
-from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
-from dolfin import Point
+from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh
+from dolfin import Point, FunctionSpace, Expression, interpolate
 from dolfin import MPI
 
 class BoundingBoxTreeTest(unittest.TestCase):

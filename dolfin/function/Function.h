@@ -21,7 +21,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2013-06-21
+// Last changed: 2013-10-22
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -65,7 +65,6 @@ namespace dolfin
   /// and :math:`U` is a vector of expansion coefficients for :math:`u_h`.
 
   class Function : public GenericFunction, public Hierarchical<Function>
-
   {
   public:
 
@@ -170,6 +169,9 @@ namespace dolfin
     /// *Arguments*
     ///     i (std::size_t)
     ///         Index of subfunction.
+    /// *Returns*
+    ///     _Function_
+    ///         The subfunction.
     Function& operator[] (std::size_t i) const;
 
     /// Add operator with other function
@@ -376,6 +378,7 @@ namespace dolfin
 
     // Friends
     friend class FunctionSpace;
+    friend class FunctionAssigner;
 
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<std::size_t, Function> sub_functions;

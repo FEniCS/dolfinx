@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2013-09-02
+// Last changed: 2013-10-25
 
 #include <algorithm>
 #include <map>
@@ -188,8 +188,9 @@ const Function& Function::operator= (const Function& v)
 {
   dolfin_assert(v._vector);
 
-  // Make a copy of all the data, or if v is a sub-function, then we collapse
-  // the dof map and copy only the relevant entries from the vector of v.
+  // Make a copy of all the data, or if v is a sub-function, then we
+  // collapse the dof map and copy only the relevant entries from the
+  // vector of v.
   if (v._vector->size() == v._function_space->dim())
   {
     // Copy function space
@@ -206,10 +207,6 @@ const Function& Function::operator= (const Function& v)
     // Create new collapsed FunctionSpace
     boost::unordered_map<std::size_t, std::size_t> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
-
-    // FIXME: This dolfin_assertion doesn't work in parallel
-    //dolfin_assert(collapsed_map.size() == _function_space->dofmap()->global_dimension());
-    //dolfin_assert(collapsed_map.size() == _function_space->dofmap()->local_dimension());
 
     // Get row indices of original and new vectors
     boost::unordered_map<std::size_t, std::size_t>::const_iterator entry;
@@ -252,7 +249,8 @@ const Function& Function::operator= (const Expression& v)
 //-----------------------------------------------------------------------------
 Function& Function::operator[] (std::size_t i) const
 {
-  // Check if sub-Function is in the cache, otherwise create and add to cache
+  // Check if sub-Function is in the cache, otherwise create and add
+  // to cache
   boost::ptr_map<std::size_t, Function>::iterator sub_function
     = sub_functions.find(i);
   if (sub_function != sub_functions.end())
@@ -302,7 +300,7 @@ FunctionAXPY Function::operator/(double scalar) const
 //-----------------------------------------------------------------------------
 void Function::operator=(const FunctionAXPY& axpy)
 {
-  if (axpy.pairs().size()==0)
+  if (axpy.pairs().size() == 0)
   {
     dolfin_error("Function.cpp",
                  "assign function",
@@ -334,9 +332,6 @@ boost::shared_ptr<GenericVector> Function::vector()
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
-    cout << "Size of vector: " << _vector->size() << endl;
-    cout << "Size of function space: "
-         << _function_space->dofmap()->global_dimension() << endl;
     dolfin_error("Function.cpp",
                  "access vector of degrees of freedom",
                  "Cannot access a non-const vector from a subfunction");
@@ -392,6 +387,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     }
     else
     {
+      cout << point << endl;
       dolfin_error("Function.cpp",
                    "evaluate function at point",
                    "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
@@ -507,8 +503,8 @@ void Function::non_matching_eval(Array<double>& values,
   const Mesh& mesh = *_function_space->mesh();
 
   const double* _x = x.data();
-  const std::size_t dim = mesh.geometry().dim();
-  const Point point(dim, _x);
+  const std::size_t gdim = mesh.geometry().dim();
+  const Point point(gdim, _x);
 
   // FIXME: Testing
   int ID = 0;
@@ -520,6 +516,7 @@ void Function::non_matching_eval(Array<double>& values,
   // Check whether we are allowed to extrapolate to evaluate
   if (id == std::numeric_limits<unsigned int>::max() && !allow_extrapolation)
   {
+    cout << point << endl;
     dolfin_error("Function.cpp",
                  "evaluate function at point",
                  "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
@@ -529,7 +526,7 @@ void Function::non_matching_eval(Array<double>& values,
 
   // Alternative 2: Compute closest cell to point (x)
   if (id == std::numeric_limits<unsigned int>::max()
-      && allow_extrapolation && dim == 2)
+      && allow_extrapolation && gdim == 2)
   {
       id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
   }
@@ -543,12 +540,12 @@ void Function::non_matching_eval(Array<double>& values,
     const double * const * vertices = ufc_cell.coordinates;
 
     Point barycenter;
-    for (std::size_t i = 0; i <= dim; i++)
+    for (std::size_t i = 0; i <= gdim; i++)
     {
-      Point vertex(dim, vertices[i]);
+      Point vertex(gdim, vertices[i]);
       barycenter += vertex;
     }
-    barycenter /= (dim + 1);
+    barycenter /= (gdim + 1);
     id = mesh.bounding_box_tree()->compute_first_entity_collision(barycenter);
   }
 
@@ -584,7 +581,8 @@ void Function::restrict(double* w, const FiniteElement& element,
   {
     // Get dofmap for cell
     const GenericDofMap& dofmap = *_function_space->dofmap();
-    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(dolfin_cell.index());
+    const std::vector<dolfin::la_index>& dofs
+      = dofmap.cell_dofs(dolfin_cell.index());
 
     // Pick values from vector(s)
     _vector->get_local(w, dofs.size(), dofs.data());
