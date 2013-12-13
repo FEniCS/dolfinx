@@ -183,6 +183,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   distribute_cells(mesh_data, cell_partition, 
                    global_cell_indices,
                    cell_vertices);
+  std::set<std::size_t> vertex_set = cell_vertex_set(cell_vertices);
 
   // Get ghost cells from neighbouring processes
   std::vector<std::size_t> ghost_global_cell_indices;
@@ -192,13 +193,22 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                    ghost_procs, ghost_global_cell_indices,
                    ghost_remote_process,
                    ghost_cell_vertices);
+  std::set<std::size_t> ghost_vertex_set = cell_vertex_set(ghost_cell_vertices);
+
+  // Find set of ghost-only vertices for later use
+  std::vector<std::size_t> ghost_only_vertex_set(ghost_vertex_set.size());
+  std::vector<std::size_t>::iterator ghost_only_end 
+    = std::set_difference(ghost_vertex_set.begin(), ghost_vertex_set.end(),
+                          vertex_set.begin(), vertex_set.end(),
+                          ghost_only_vertex_set.begin());
+  ghost_only_vertex_set.resize(ghost_only_end - ghost_only_vertex_set.begin());
 
   // Add ghost cells at end of regular cells 
   global_cell_indices.insert(global_cell_indices.end(), 
                              ghost_global_cell_indices.begin(),
                              ghost_global_cell_indices.end());
-  
   const unsigned int num_regular_cells = cell_vertices.size();
+
   cell_vertices.resize(boost::extents
                        [num_regular_cells + ghost_cell_vertices.size()]
                        [mesh_data.num_vertices_per_cell]);
@@ -211,26 +221,12 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   boost::multi_array<double, 2> vertex_coordinates;
   std::map<std::size_t, std::size_t> vertex_global_to_local;
 
-  // Compute which vertices we need
-  std::set<std::size_t> vertex_set = cell_vertex_set(cell_vertices);
+  // Compute which vertices we need - regular and ghost
+  vertex_set.insert(ghost_only_vertex_set.begin(),
+                    ghost_only_vertex_set.end());
   distribute_vertices(mesh_data, vertex_set, vertex_indices,
                       vertex_global_to_local, vertex_coordinates);
-  const unsigned int num_regular_vertices = vertex_coordinates.size();
 
-  // Find set of ghost-only vertices and get them too...
-  std::set<std::size_t> ghost_vertex_set = cell_vertex_set(ghost_cell_vertices);
-  std::vector<std::size_t> ghost_only_vertex_set(ghost_vertex_set.size());
-  std::vector<std::size_t>::iterator ghost_only_end 
-    = std::set_difference(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                          vertex_set.begin(), vertex_set.end(),
-                          ghost_only_vertex_set.begin());
-  ghost_only_vertex_set.resize(ghost_only_end - ghost_only_vertex_set.begin());
-
-  //Get the vertices and store them at the end of the mesh data (!) - may break things
-  const std::set<std::size_t> ghost_set(ghost_only_vertex_set.begin(), ghost_only_vertex_set.end());
-  distribute_vertices(mesh_data, ghost_set, vertex_indices,
-                      vertex_global_to_local, vertex_coordinates);
-  
   timer.stop();
 
   // Build mesh
@@ -264,19 +260,25 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   }
 
   // Attach ghost mask data to Mesh
-  mesh.data().create_array("ghost_mask", 0);
   mesh.data().create_array("ghost_mask", mesh_data.tdim);
-  std::vector<std::size_t>& ghost_vertex_mask = mesh.data().array("ghost_mask", 0);
   std::vector<std::size_t>& ghost_cell_mask = mesh.data().array("ghost_mask", mesh_data.tdim);
   ghost_cell_mask.resize(mesh.num_cells());
   for(unsigned int i = 0; i < mesh.num_cells(); ++i)
     ghost_cell_mask[i] = (i < num_regular_cells)? 0 : 1;
 
+  mesh.data().create_array("ghost_mask", 0);
+  std::vector<std::size_t>& ghost_vertex_mask = mesh.data().array("ghost_mask", 0);
+
   ghost_vertex_mask.resize(mesh.num_vertices());
-  for(unsigned int i = 0; i < mesh.num_vertices(); ++i)
-    ghost_vertex_mask[i] = (i < num_regular_vertices)? 0 : 1;
-  
-  
+  for(VertexIterator v(mesh); !v.end(); ++v)
+  {
+    ghost_vertex_mask[v->index()] = 
+      (std::find(ghost_only_vertex_set.begin(),
+                 ghost_only_vertex_set.end(),
+                 v->global_index()) 
+       == ghost_only_vertex_set.end()) ? 0 : 1;
+  }
+
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> MeshPartitioning::ghost_boundary_vertices(
