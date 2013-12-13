@@ -18,12 +18,14 @@ shared_vertices = M.topology().shared_entities(0).keys()
 
 x,y = M.coordinates().transpose()
 
-cmask_array = M.data().array("ghost_mask", M.topology().dim())
+cell_ownership = M.data().array("ghost_owner", M.topology().dim())
+process_number = MPI.process_number()
 vmask_array = M.data().array("ghost_mask", 0) == 0
 vmask_array_g = M.data().array("ghost_mask", 0) == 1
 
 cells_store=[]
 colors=[]
+cmap=['#ffc0c0', '#c0ffc0', '#ffffc0', '#c0c0ff', '#c0ffff']
 
 idx = 0
 for c in cells(M):
@@ -34,10 +36,7 @@ for c in cells(M):
         yc.append(v.point().y())
     cells_store.append(zip(xc,yc))
     
-    if(cmask_array[idx] == 0):
-        colors.append('#ff0000')
-    else:
-        colors.append('#c0c0ff')
+    colors.append(cmap[cell_ownership[idx]])
     idx += 1
 
 fig, ax = plt.subplots()

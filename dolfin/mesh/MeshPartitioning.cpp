@@ -187,6 +187,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 
   // Get ghost cells from neighbouring processes
   std::vector<std::size_t> ghost_global_cell_indices;
+  // Attach ghost cell ownership to Mesh
   std::vector<std::size_t> ghost_remote_process;
   boost::multi_array<std::size_t, 2> ghost_cell_vertices;
   distribute_ghost_cells(mesh_data, cell_partition, 
@@ -207,8 +208,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   global_cell_indices.insert(global_cell_indices.end(), 
                              ghost_global_cell_indices.begin(),
                              ghost_global_cell_indices.end());
-  const unsigned int num_regular_cells = cell_vertices.size();
 
+  const unsigned int num_regular_cells = cell_vertices.size();
   cell_vertices.resize(boost::extents
                        [num_regular_cells + ghost_cell_vertices.size()]
                        [mesh_data.num_vertices_per_cell]);
@@ -259,16 +260,22 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
   }
 
-  // Attach ghost mask data to Mesh
-  mesh.data().create_array("ghost_mask", mesh_data.tdim);
-  std::vector<std::size_t>& ghost_cell_mask = mesh.data().array("ghost_mask", mesh_data.tdim);
-  ghost_cell_mask.resize(mesh.num_cells());
+  // Attach ghost cell ownership data to Mesh
+  mesh.data().create_array("ghost_owner", mesh_data.tdim);
+  std::vector<std::size_t>& ghost_cell_owner = mesh.data().array("ghost_owner", mesh_data.tdim);
+  ghost_cell_owner.resize(mesh.num_cells());
+  const std::size_t process_number = MPI::process_number();  
   for(unsigned int i = 0; i < mesh.num_cells(); ++i)
-    ghost_cell_mask[i] = (i < num_regular_cells)? 0 : 1;
-
+  {
+    if (i < num_regular_cells)
+      ghost_cell_owner[i] = process_number;
+    else
+      ghost_cell_owner[i] = ghost_remote_process[i - num_regular_cells];
+  }
+  
+  // Attach ghost vertex mask to Mesh
   mesh.data().create_array("ghost_mask", 0);
   std::vector<std::size_t>& ghost_vertex_mask = mesh.data().array("ghost_mask", 0);
-
   ghost_vertex_mask.resize(mesh.num_vertices());
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
