@@ -413,7 +413,7 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
       if (tensor_required)
       {
         // Update to current cell
-        cell->ufc_cell_geometry(ufc_cell);
+        cell->get_cell_data(ufc_cell);
         ufc[form]->update(*cell, ufc_cell);
 
         // Tabulate cell tensor
@@ -464,7 +464,7 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
           if (tensor_required)
           {
             // Update to current cell
-            cell->ufc_cell_geometry(ufc_cell);
+            cell->get_cell_data(ufc_cell);
             ufc[form]->update(*cell, ufc_cell);
 
             // Tabulate exterior facet tensor
@@ -570,7 +570,7 @@ assembler");
         cell[c] = Cell(mesh, facet->entities(mesh.topology().dim())[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(*facet);
-        cell[c].ufc_cell_geometry(ufc_cell[c], local_facet[c]);
+        cell[c].get_cell_data(ufc_cell[c], local_facet[c]);
       }
 
       // Loop over lhs and then rhs facet contributions
@@ -723,7 +723,7 @@ assembler");
       // Get local index of facet with respect to the cell
       const std::size_t local_facet = cell.index(*facet);
 
-      cell.ufc_cell_geometry(ufc_cell[0], local_facet);
+      cell.get_cell_data(ufc_cell[0], local_facet);
 
       // Initialize macro element matrix/vector to zero
       data.zero_cell();

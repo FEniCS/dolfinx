@@ -314,8 +314,8 @@ namespace dolfin
     }
 
     // FIXME: This function is part of a UFC transition
-    /// Fill UFC cell geometric data
-    void ufc_cell_geometry(ufc::cell& ufc_cell, int local_facet=-1) const
+    /// Fill UFC cell with geometry data and miscellaneous data
+    void get_cell_data(ufc::cell& ufc_cell, int local_facet=-1) const
     {
       get_vertex_coordinates(ufc_cell.vertex_coordinates);
 
@@ -324,6 +324,13 @@ namespace dolfin
       ufc_cell.orientation = _mesh->cell_orientations()[index()];
       ufc_cell.mesh_identifier = mesh_id();
       ufc_cell.index = index();
+    }
+
+     // FIXME: This function is part of a UFC transition
+    /// Fill UFC cell with topology data
+    void get_cell_topology(ufc::cell& ufc_cell) const
+    {
+
     }
 
   };

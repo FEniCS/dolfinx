@@ -399,7 +399,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   // Create cell that contains point
   const Cell cell(mesh, ID);
   ufc::cell ufc_cell;
-  cell.ufc_cell_geometry(ufc_cell);
+  cell.get_cell_data(ufc_cell);
 
   // Call evaluate function
   eval(values, x, cell, ufc_cell);
@@ -563,7 +563,7 @@ void Function::non_matching_eval(Array<double>& values,
   // Create cell that contains point
   const Cell cell(mesh, ID);
   ufc::cell new_ufc_cell;
-  cell.ufc_cell_geometry(new_ufc_cell);
+  cell.get_cell_data(new_ufc_cell);
 
   // Call evaluate function
   eval(values, x, cell, new_ufc_cell);
@@ -649,7 +649,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
       continue;
 
     // Update to current cell
-    cell->ufc_cell_geometry(ufc_cell);
+    cell->get_cell_data(ufc_cell);
 
     // Pick values from global vector
     restrict(coefficients.data(), element, *cell, ufc_cell);

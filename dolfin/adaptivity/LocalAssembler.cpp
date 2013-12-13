@@ -41,7 +41,7 @@ LocalAssembler::assemble(Eigen::MatrixXd& A,
   // Clear tensor
   A.setZero();
 
-  cell.ufc_cell_geometry(ufc_cell);
+  cell.get_cell_data(ufc_cell);
 
   // Assemble contributions from cell integral
   assemble_cell(A, ufc, ufc_cell, cell, cell_domains);

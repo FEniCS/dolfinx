@@ -76,9 +76,8 @@ def function_space(self, i):
     boost::multi_array<double, 2> tmparray;
 
     // Tabulate the coordinates
-    //dolfin::UFCCell ufc_cell(cell);
     ufc::cell ufc_cell;
-    cell.ufc_cell_geometry(ufc_cell);
+    cell.get_cell_data(ufc_cell);
     self->tabulate_coordinates(tmparray, ufc_cell);
 
     // Get geometric dimension

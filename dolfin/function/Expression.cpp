@@ -120,13 +120,14 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update cell data
-    cell->ufc_cell_geometry(ufc_cell);
+    cell->get_cell_data(ufc_cell);
 
     // Iterate over cell vertices
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
       // Wrap coordinate data
-      const Array<double> x(mesh.geometry().dim(), const_cast<double*>(vertex->x()));
+      const Array<double> x(mesh.geometry().dim(),
+                            const_cast<double*>(vertex->x()));
 
       // Evaluate at vertex
       eval(local_vertex_values, x, ufc_cell);

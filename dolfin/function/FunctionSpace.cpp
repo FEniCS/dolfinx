@@ -167,7 +167,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
-    cell->ufc_cell_geometry(ufc_cell);
+    cell->get_cell_data(ufc_cell);
 
     // Restrict function to cell
     v.restrict(cell_coefficients.data(), *_element, *cell, ufc_cell);

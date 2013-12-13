@@ -209,7 +209,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
         continue;
 
       // Update to current cell
-      cell.ufc_cell_geometry(ufc_cell);
+      cell.get_cell_data(ufc_cell);
       ufc.update(cell, ufc_cell);
 
       // Get local-to-global dof maps for cell
@@ -346,7 +346,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         cell_integral = ufc.get_cell_integral((*cell_domains)[cell_index]);
 
       // Update to current cell
-      cell.ufc_cell_geometry(ufc_cell);
+      cell.get_cell_data(ufc_cell);
       ufc.update(cell, ufc_cell);
 
       // Get local-to-global dof maps for cell
@@ -576,8 +576,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       const std::size_t local_facet1 = cell1.index(facet);
 
       // Update UFC cells
-      cell0.ufc_cell_geometry(ufc_cell0, local_facet0);
-      cell1.ufc_cell_geometry(ufc_cell1, local_facet1);
+      cell0.get_cell_data(ufc_cell0, local_facet0);
+      cell1.get_cell_data(ufc_cell1, local_facet1);
 
       // Update to current pair of cells
       ufc.update(cell0, ufc_cell0, cell1, ufc_cell1);

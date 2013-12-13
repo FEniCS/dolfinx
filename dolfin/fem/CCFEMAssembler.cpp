@@ -104,7 +104,7 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Update to current cell
-      cell->ufc_cell_geometry(ufc_cell);
+      cell->get_cell_data(ufc_cell);
       ufc.update(*cell, ufc_cell);
 
       // Get local-to-global dof maps for cell

@@ -121,7 +121,7 @@ void PointIntegralSolver::step(double dt)
 
     // Cell containing vertex
     const Cell cell(mesh, _vertex_map[vert_ind].first);
-    cell.ufc_cell_geometry(ufc_cell);
+    cell.get_cell_data(ufc_cell);
 
     // Get all dofs for cell
     // FIXME: Shold we include logics about empty dofmaps?
