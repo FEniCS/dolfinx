@@ -22,7 +22,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-05
+// Last changed: 2013-12-13
 
 #include <algorithm>
 #include <iterator>
@@ -210,7 +210,10 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                           vertex_set.begin(), vertex_set.end(),
                           ghost_only_vertex_set.begin());
   ghost_only_vertex_set.resize(ghost_only_end - ghost_only_vertex_set.begin());
-  //FIXME: actually get the vertices and store them somewhere
+  //Get the vertices and store them at the end of the mesh data (!) - may break things
+  const std::set<std::size_t> ghost_set(ghost_only_vertex_set.begin(), ghost_only_vertex_set.end());
+  distribute_vertices(mesh_data, ghost_set, vertex_indices,
+                      vertex_global_to_local, vertex_coordinates);
   
   timer.stop();
 
@@ -592,22 +595,17 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   std::vector<std::vector<double> > received_vertex_coordinates;
   MPI::all_to_all(send_vertex_coordinates, received_vertex_coordinates);
 
-  // Set index counters to first position in receive buffers
-  //  std::vector<std::size_t> index_counters(num_processes, 0);
-
-  // Clear data
-  vertex_indices.clear();
-  vertex_global_to_local.clear();
-
-  // Count number of local vertices
-  std::size_t num_local_vertices = 0;
+  // Count number of new local vertices
+  std::size_t num_local_vertices = vertex_indices.size();
+  std::size_t v = num_local_vertices;
+  dolfin_assert(num_local_vertices == vertex_coordinates.size());
   for (std::size_t p = 0; p < num_processes; ++p)
     num_local_vertices += received_vertex_coordinates[p].size()/gdim;
 
   // Store coordinates and construct global to local mapping
   vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
   vertex_indices.resize(num_local_vertices);
-  std::size_t v = 0;
+
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     for (std::size_t i = 0;
