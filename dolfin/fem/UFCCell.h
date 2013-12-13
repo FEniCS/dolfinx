@@ -104,18 +104,21 @@ namespace dolfin
       geometric_dimension = mesh.geometry().dim();
 
       // Allocate arrays for local entity indices
-      entity_indices = new std::size_t*[topological_dimension + 1];
+      //entity_indices = new std::size_t*[topological_dimension + 1];
+      entity_indices.resize(topological_dimension + 1);
       for (std::size_t d = 0; d < topological_dimension; d++)
       {
         // Store number of cell entities allocated for (this can change
         // between init() and update() which is why it's stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
-          entity_indices[d] = new std::size_t[cell.num_entities(d)];
-        else
-          entity_indices[d] = 0;
+          //entity_indices[d] = new std::size_t[cell.num_entities(d)];
+          entity_indices[d].resize(cell.num_entities(d));
+        //else
+        //  entity_indices[d] = 0;
       }
-      entity_indices[topological_dimension] = new std::size_t[1];
+      //entity_indices[topological_dimension] = new std::size_t[1];
+      entity_indices[topological_dimension].resize(1);
 
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
@@ -130,13 +133,14 @@ namespace dolfin
     // Clear UFC cell data
     void clear()
     {
-      if (entity_indices)
-      {
-        for (std::size_t d = 0; d <= topological_dimension; d++)
-          delete [] entity_indices[d];
-      }
-      delete [] entity_indices;
-      entity_indices = 0;
+      entity_indices.clear();
+      //if (entity_indices)
+      //{
+      //  for (std::size_t d = 0; d <= topological_dimension; d++)
+      //    delete [] entity_indices[d];
+      //}
+      //delete [] entity_indices;
+      //entity_indices = 0;
 
       delete [] coordinates;
       coordinates = 0;
@@ -179,7 +183,8 @@ namespace dolfin
       {
         if (topology.have_global_indices(d))
         {
-          const std::vector<std::size_t>& global_indices = topology.global_indices(d);
+          const std::vector<std::size_t>& global_indices
+            = topology.global_indices(d);
           for (std::size_t i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = global_indices[cell.entities(d)[i]];
         }
