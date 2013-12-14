@@ -24,13 +24,13 @@
 
 #include <vector>
 #include <Eigen/Dense>
+#include <ufc.h>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/DirichletBC.h>
-#include <dolfin/fem/UFCCell.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
@@ -67,7 +67,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   mesh.init(D, D);
 
   // UFC cell view of center cell
-  UFCCell c0(mesh);
+  ufc::cell c0;
 
   // List of values for each dof of w (multivalued until we average)
   std::vector<std::vector<double> > coefficients;
@@ -78,7 +78,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   for (CellIterator cell0(mesh); !cell0.end(); ++cell0)
   {
     // Update UFC view
-    c0.update(*cell0);
+    cell0->get_cell_data(c0);
 
     // Tabulate dofs for w on cell and store values
     const std::vector<dolfin::la_index>& dofs
@@ -142,13 +142,13 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
   add_cell_equations(A, b, cell0, cell0, c0, c0, V, W, v,
                      cell2dof2row[cell0.index()]);
   dolfin_assert(V.mesh());
-  UFCCell c1(*V.mesh());
+  ufc::cell c1;
   for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
   {
     if (cell2dof2row[cell1->index()].empty())
       continue;
 
-    c1.update(*cell1);
+    cell1->get_cell_data(c1);
     add_cell_equations(A, b, cell0, *cell1, c0, c1, V, W, v,
                        cell2dof2row[cell1->index()]);
   }

@@ -104,24 +104,17 @@ namespace dolfin
       geometric_dimension = mesh.geometry().dim();
 
       // Allocate arrays for local entity indices
-      //entity_indices = new std::size_t*[topological_dimension + 1];
       entity_indices.resize(topological_dimension + 1);
       for (std::size_t d = 0; d < topological_dimension; d++)
       {
-        // Store number of cell entities allocated for (this can change
-        // between init() and update() which is why it's stored)
+        // Store number of cell entities allocated for (this can
+        // change between init() and update() which is why it's
+        // stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
-          //entity_indices[d] = new std::size_t[cell.num_entities(d)];
           entity_indices[d].resize(cell.num_entities(d));
-        //else
-        //  entity_indices[d] = 0;
       }
-      //entity_indices[topological_dimension] = new std::size_t[1];
       entity_indices[topological_dimension].resize(1);
-
-      // Allocate vertex coordinates
-      coordinates = new double*[num_vertices];
 
       // FIXME: Temporary until we remove UFCCell
       vertex_coordinates.resize(num_vertices*geometric_dimension);
@@ -134,16 +127,6 @@ namespace dolfin
     void clear()
     {
       entity_indices.clear();
-      //if (entity_indices)
-      //{
-      //  for (std::size_t d = 0; d <= topological_dimension; d++)
-      //    delete [] entity_indices[d];
-      //}
-      //delete [] entity_indices;
-      //entity_indices = 0;
-
-      delete [] coordinates;
-      coordinates = 0;
 
       vertex_coordinates.clear();
 
@@ -207,11 +190,8 @@ namespace dolfin
       index = cell.index();
 
       // Set vertex coordinates
-      const unsigned int* vertices = cell.entities(0);
-      for (std::size_t i = 0; i < num_vertices; i++)
-        coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
-
       // FIXME: Temporary until we remove UFCCell
+      const unsigned int* vertices = cell.entities(0);
       const std::size_t gdim = cell.mesh().geometry().dim();
       dolfin_assert(vertex_coordinates.size() == num_vertices*gdim);
       for (std::size_t i = 0; i < num_vertices; i++)

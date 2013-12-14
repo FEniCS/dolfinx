@@ -486,6 +486,7 @@ void Function::eval(Array<double>& values,
 
   // Check if UFC cell comes from mesh, otherwise redirect to
   // evaluate on non-matching cell
+  dolfin_assert(ufc_cell.mesh_identifier >= 0);
   if (ufc_cell.mesh_identifier == (int) mesh.id())
   {
     const Cell cell(mesh, ufc_cell.index);
@@ -538,12 +539,13 @@ void Function::non_matching_eval(Array<double>& values,
   if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation)
   {
     // Extract vertices of ufc_cell
-    const double * const * vertices = ufc_cell.coordinates;
+    //const double * const * vertices = ufc_cell.coordinates;
+    const std::vector<double>& vertices = ufc_cell.vertex_coordinates;
 
     Point barycenter;
     for (std::size_t i = 0; i <= gdim; i++)
     {
-      const Point vertex(gdim, vertices[i]);
+      const Point vertex(gdim, &vertices[i*gdim]);
       barycenter += vertex;
     }
     barycenter /= (gdim + 1);
