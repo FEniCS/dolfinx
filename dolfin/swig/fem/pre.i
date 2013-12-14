@@ -161,13 +161,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell
 //-----------------------------------------------------------------------------
-%fragment("dolfin_ufccell_header", "header")
-{
-  // Include the UFCCell header
-  %#include <dolfin/fem/UFCCell.h>
-}
-
-%typemap(in, fragment="dolfin_ufccell_header")
+%typemap(in)
 const ufc::cell& (void *argp, bool dolfin_cell, int res)
 {
   // const ufc::cell& cell Typemap
@@ -176,7 +170,10 @@ const ufc::cell& (void *argp, bool dolfin_cell, int res)
   if (SWIG_IsOK(res))
   {
     dolfin_cell = true;
-    $1 = new dolfin::UFCCell(*reinterpret_cast<dolfin::Cell *>(argp));
+    const dolfin::Cell* tmp_cell = reinterpret_cast<dolfin::Cell *>(argp);
+    $1 = new ufc::cell;
+    tmp_cell->get_cell_data(*($1));
+    tmp_cell->get_cell_topology(*($1));
   }
   else
   {

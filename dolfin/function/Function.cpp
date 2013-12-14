@@ -606,8 +606,8 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
   // Check that the mesh matches. Notice that the hash is only
   // compared if the pointers are not matching.
-  if (&mesh != _function_space->mesh().get() &&
-      mesh.hash() != _function_space->mesh()->hash())
+  if (&mesh != _function_space->mesh().get()
+      && mesh.hash() != _function_space->mesh()->hash())
   {
     dolfin_error("Function.cpp",
                  "interpolate function values at vertices",
