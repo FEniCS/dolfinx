@@ -19,7 +19,6 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/UFCCell.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -57,7 +56,8 @@ Probe::Probe(const Array<double>& x, const FunctionSpace& V)
   {
     // Create cell that contains point
     dolfin_cell.reset(new Cell(mesh, id));
-    ufc_cell.reset(new UFCCell(*dolfin_cell));
+    dolfin_cell->get_cell_data(ufc_cell);
+    dolfin_cell->get_vertex_coordinates(ufc_cell.vertex_coordinates);
 
     // Create work vector for basis
     std::vector<double> basis(value_size_loc);
@@ -72,8 +72,8 @@ Probe::Probe(const Array<double>& x, const FunctionSpace& V)
     for (std::size_t i = 0; i < _element->space_dimension(); ++i)
     {
       _element->evaluate_basis(i, basis.data(), x.data(),
-                               ufc_cell->vertex_coordinates.data(),
-                               ufc_cell->orientation);
+                               ufc_cell.vertex_coordinates.data(),
+                               dolfin_cell->orientation());
       for (std::size_t j = 0; j < value_size_loc; ++j)
         _basis_matrix[j][i] = basis[j];
     }
@@ -95,7 +95,7 @@ std::size_t Probe::number_of_evaluations() const
 void Probe::eval(const Function& u)
 {
   // Restrict function to cell
-  u.restrict(&_coefficients[0], *_element, *dolfin_cell, *ufc_cell);
+  u.restrict(&_coefficients[0], *_element, *dolfin_cell, ufc_cell);
 
   // Make room for one more evaluation
   for (std::size_t j = 0; j < value_size_loc; j++)

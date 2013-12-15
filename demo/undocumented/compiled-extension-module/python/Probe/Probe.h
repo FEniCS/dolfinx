@@ -21,8 +21,8 @@
 #define __PROBE_H
 
 #include <vector>
+#include <ufc.h>
 #include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace dolfin
 {
@@ -72,7 +72,7 @@ namespace dolfin
 
     boost::scoped_ptr<Cell> dolfin_cell;
 
-    boost::shared_ptr<UFCCell> ufc_cell;
+    ufc::cell ufc_cell;
 
     std::size_t value_size_loc;
 
