@@ -898,8 +898,9 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     // Get local index of facet with respect to the cell
     const std::size_t local_facet = cell.index(facet);
 
-    // Create UFC cell object
+    // Create UFC cell object and vertex coordinate holder
     ufc::cell ufc_cell;
+    std::vector<double> vertex_coordinates;
 
     // Loop the vertices associated with the facet
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
@@ -907,6 +908,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       // Loop the cells associated with the vertex
       for (CellIterator c(*vertex); !c.end(); ++c)
       {
+        c->get_vertex_coordinates(vertex_coordinates);
         c->get_cell_data(ufc_cell, local_facet);
 
         bool tabulated = false;
@@ -924,7 +926,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
+            dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
+                                        *c);
             tabulated = true;
           }
 
@@ -991,13 +994,16 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   // Iterate over cells
   Progress p("Computing Dirichlet boundary values, pointwise search",
              mesh.num_cells());
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
+    cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
 
     // Tabulate coordinates of dofs on cell
-    dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
+    dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
+                                *cell);
 
     // Tabulate dofs on cell
     const std::vector<dolfin::la_index>& cell_dofs

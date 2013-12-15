@@ -78,6 +78,7 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
 
   // Iterate over parts
   ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (std::size_t part = 0; part < a.num_parts(); part++)
   {
     // Get form for current part
@@ -104,6 +105,7 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Update to current cell
+      cell->get_vertex_coordinates(vertex_coordinates);
       cell->get_cell_data(ufc_cell);
       ufc.update(*cell, ufc_cell);
 
@@ -113,7 +115,7 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
 
       // Tabulate cell tensor
       integral->tabulate_tensor(ufc.A.data(), ufc.w(),
-                                ufc_cell.vertex_coordinates.data(),
+                                vertex_coordinates.data(),
                                 ufc_cell.orientation);
 
       // Add entries to global tensor

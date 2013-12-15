@@ -273,17 +273,18 @@ void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                  const ufc::cell& ufc_cell) const
+                                  const std::vector<double>& vertex_coordinates,
+                                  const Cell& cell) const
 {
   // FIXME: This is a hack because UFC wants a double pointer for coordinates
   dolfin_assert(_ufc_dofmap);
 
   // Check dimensions
-  if (coordinates.shape()[0] != cell_dimension(ufc_cell.index) ||
+  if (coordinates.shape()[0] != cell_dimension(cell.index()) ||
       coordinates.shape()[1] != _ufc_dofmap->geometric_dimension())
   {
     boost::multi_array<double, 2>::extent_gen extents;
-    const std::size_t cell_dim = cell_dimension(ufc_cell.index);
+    const std::size_t cell_dim = cell_dimension(cell.index());
     coordinates.resize(extents[cell_dim][_ufc_dofmap->geometric_dimension()]);
   }
 
@@ -294,8 +295,7 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
     coords[i] = &(coordinates[i][0]);
 
   // Tabulate coordinates
-  _ufc_dofmap->tabulate_coordinates(coords.data(),
-                                    ufc_cell.vertex_coordinates.data());
+  _ufc_dofmap->tabulate_coordinates(coords.data(), vertex_coordinates.data());
 }
 //-----------------------------------------------------------------------------
 std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
@@ -324,16 +324,18 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
   // Loop over cells and tabulate dofs
   ufc::cell ufc_cell;
   boost::multi_array<double, 2> coordinates;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
+    cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_topology(ufc_cell);
 
     // Get local-to-global map
     const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
-    tabulate_coordinates(coordinates, ufc_cell);
+    tabulate_coordinates(coordinates, vertex_coordinates, *cell);
 
     // Copy dof coordinates into vector
     for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -544,16 +546,18 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
   ufc::cell ufc_cell;
   std::vector<double> x_values;
   boost::multi_array<double, 2> coordinates;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
+    cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
 
     // Get local-to-global map
     const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
 
     // Tabulate dof coordinates
-    tabulate_coordinates(coordinates, ufc_cell);
+    tabulate_coordinates(coordinates, vertex_coordinates, *cell);
     dolfin_assert(coordinates.shape()[0] == dofs.size());
     dolfin_assert(component < coordinates.shape()[1]);
 

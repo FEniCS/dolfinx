@@ -81,21 +81,24 @@ namespace dolfin
       compute_coefficients(std::vector<std::vector<double> >& coefficients,
                            const Function&v, const FunctionSpace& V,
                            const FunctionSpace& W, const Cell& cell0,
+                           const std::vector<double>& vertex_coordinates0,
                            const ufc::cell& c0,
                            const std::vector<dolfin::la_index>& dofs,
                            std::size_t& offset);
 
     // Add equations for current cell
     static void add_cell_equations(Eigen::MatrixXd& A,
-                                   Eigen::VectorXd& b,
-                                   const Cell& cell0,
-                                   const Cell& cell1,
-                                   const ufc::cell& c0,
-                                   const ufc::cell& c1,
-                                   const FunctionSpace& V,
-                                   const FunctionSpace& W,
-                                   const Function& v,
-                                   std::map<std::size_t, std::size_t>& dof2row);
+                                 Eigen::VectorXd& b,
+                                 const Cell& cell0,
+                                 const Cell& cell1,
+                                 const std::vector<double>& vertex_coordinates0,
+                                 const std::vector<double>& vertex_coordinates1,
+                                 const ufc::cell& c0,
+                                 const ufc::cell& c1,
+                                 const FunctionSpace& V,
+                                 const FunctionSpace& W,
+                                 const Function& v,
+                                 std::map<std::size_t, std::size_t>& dof2row);
 
     // Average coefficients
     static void

@@ -66,8 +66,9 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   const std::size_t D = mesh.topology().dim();
   mesh.init(D, D);
 
-  // UFC cell view of center cell
+  // UFC cell view of center cell and vertex coordinate holder
   ufc::cell c0;
+  std::vector<double> vertex_coordinates0;
 
   // List of values for each dof of w (multivalued until we average)
   std::vector<std::vector<double> > coefficients;
@@ -78,6 +79,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   for (CellIterator cell0(mesh); !cell0.end(); ++cell0)
   {
     // Update UFC view
+    cell0->get_vertex_coordinates(vertex_coordinates0);
     cell0->get_cell_data(c0);
 
     // Tabulate dofs for w on cell and store values
@@ -86,7 +88,8 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
 
     // Compute coefficients on this cell
     std::size_t offset = 0;
-    compute_coefficients(coefficients, v, V, W, *cell0, c0, dofs, offset);
+    compute_coefficients(coefficients, v, V, W, *cell0, vertex_coordinates0,
+                         c0, dofs, offset);
   }
 
   // Average coefficients
@@ -99,6 +102,7 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
                                     const FunctionSpace& V,
                                     const FunctionSpace& W,
                                     const Cell& cell0,
+                                    const std::vector<double>& vertex_coordinates0,
                                     const ufc::cell& c0,
                                     const std::vector<dolfin::la_index>& dofs,
                                     std::size_t& offset)
@@ -110,8 +114,8 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
   {
     for (std::size_t k = 0; k < num_sub_spaces; k++)
     {
-      compute_coefficients(coefficients, v[k], *V[k], *W[k], cell0, c0,
-                           dofs, offset);
+      compute_coefficients(coefficients, v[k], *V[k], *W[k], cell0,
+                           vertex_coordinates0, c0, dofs, offset);
     }
     return;
   }
@@ -139,17 +143,22 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
   Eigen::VectorXd b(M);
 
   // Add equations on cell and neighboring cells
-  add_cell_equations(A, b, cell0, cell0, c0, c0, V, W, v,
-                     cell2dof2row[cell0.index()]);
+  add_cell_equations(A, b, cell0, cell0,
+                     vertex_coordinates0, vertex_coordinates0,
+                     c0, c0, V, W, v, cell2dof2row[cell0.index()]);
   dolfin_assert(V.mesh());
   ufc::cell c1;
+  std::vector<double> vertex_coordinates1;
   for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
   {
     if (cell2dof2row[cell1->index()].empty())
       continue;
 
+    cell1->get_vertex_coordinates(vertex_coordinates1);
     cell1->get_cell_data(c1);
-    add_cell_equations(A, b, cell0, *cell1, c0, c1, V, W, v,
+    add_cell_equations(A, b, cell0, *cell1,
+                       vertex_coordinates0, vertex_coordinates1,
+                       c0, c1, V, W, v,
                        cell2dof2row[cell1->index()]);
   }
 
@@ -192,6 +201,8 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
                                   Eigen::VectorXd& b,
                                   const Cell& cell0,
                                   const Cell& cell1,
+                                  const std::vector<double>& vertex_coordinates0,
+                                  const std::vector<double>& vertex_coordinates1,
                                   const ufc::cell& c0,
                                   const ufc::cell& c1,
                                   const FunctionSpace& V,
@@ -221,7 +232,7 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
       // Evaluate dof on basis function
       const int cell_orientation = 0;
       const double dof_value
-        = V.element()->evaluate_dof(i, phi,  c1.vertex_coordinates.data(),
+        = V.element()->evaluate_dof(i, phi,  vertex_coordinates1.data(),
                                     cell_orientation, c1);
 
       // Insert dof_value into matrix

@@ -140,23 +140,19 @@ PROBLEM_RENAMES(NonlinearVariational)
 // a typemap
 //-----------------------------------------------------------------------------
 %ignore dolfin::DofMap::tabulate_coordinates(
-                                    boost::multi_array<double, 2>& coordinates,
-                                    const Cell& cell) const;
+                                boost::multi_array<double, 2>& coordinates,
+                                const std::vector<double>& vertex_coordinates,
+                                const Cell& cell) const;
 
 %ignore dolfin::GenericDofMap::tabulate_coordinates(
-                                    boost::multi_array<double, 2>& coordinates,
-                                    const Cell& cell) const;
-
-%ignore dolfin::DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                             const ufc::cell& cell) const;
+                                boost::multi_array<double, 2>& coordinates,
+                                const std::vector<double>& vertex_coordinates,
+                                const Cell& cell) const;
 
 %ignore dolfin::CCFEMDofMap::tabulate_coordinates(
-                                    boost::multi_array<double, 2>& coordinates,
-                                    const ufc::cell& cell) const;
-
-%ignore dolfin::GenericDofMap::tabulate_coordinates(
-                                    boost::multi_array<double, 2>& coordinates,
-                                    const ufc::cell& cell) const;
+                                boost::multi_array<double, 2>& coordinates,
+                                const std::vector<double>& vertex_coordinates,
+                                const ufc::cell& cell) const;
 
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell

@@ -92,9 +92,11 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   // Assemble over cells
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
   ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell
+    cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
     ufc_a.update(*cell, ufc_cell);
     ufc_L.update(*cell, ufc_cell);
@@ -118,11 +120,11 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     // Tabulate A and b on cell
     integral_a->tabulate_tensor(A.data(),
                                 ufc_a.w(),
-                                ufc_cell.vertex_coordinates.data(),
+                                vertex_coordinates.data(),
                                 ufc_cell.orientation);
     integral_L->tabulate_tensor(b.data(),
                                 ufc_L.w(),
-                                ufc_cell.vertex_coordinates.data(),
+                                vertex_coordinates.data(),
                                 ufc_cell.orientation);
 
     // Solve local problem
