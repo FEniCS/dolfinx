@@ -266,7 +266,7 @@ void PointIntegralSolver::step(double dt)
 	    Timer t_impl_tt_J("Implicit stage: tabulate_tensor (J)");
 	    J_integral.tabulate_tensor(_ufcs[stage][1]->A.data(),
                                        _ufcs[stage][1]->w(),
-				       ufc_cell.vertex_coordinates.data(),
+				       vertex_coordinates.data(),
 				       local_vert);
 	    t_impl_tt_J.stop();
 
@@ -329,9 +329,9 @@ void PointIntegralSolver::step(double dt)
 	  // Tabulate new residual
 	  t_impl_tt_F.start();
 	  F_integral.tabulate_tensor(_ufcs[stage][0]->A.data(),
-                              _ufcs[stage][0]->w(),
-                              ufc_cell.vertex_coordinates.data(),
-			      local_vert);
+                                     _ufcs[stage][0]->w(),
+                                     vertex_coordinates.data(),
+                                     local_vert);
 	  t_impl_tt_F.stop();
 
 	  t_impl_update_F.start();

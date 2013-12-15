@@ -422,13 +422,13 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   // Create work vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
 
-  // FIXME:
+  // Cell vertices (re-allocated inside function for thread safety)
   std::vector<double> vertex_coordinates;
   dolfin_cell.get_vertex_coordinates(vertex_coordinates);
 
   // Restrict function to cell
-  restrict(coefficients.data(), element, dolfin_cell, vertex_coordinates.data(),
-           ufc_cell);
+  restrict(coefficients.data(), element, dolfin_cell,
+           vertex_coordinates.data(), ufc_cell);
 
   // Create work vector for basis
   std::vector<double> basis(value_size_loc);

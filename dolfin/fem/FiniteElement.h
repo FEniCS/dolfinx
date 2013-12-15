@@ -159,6 +159,7 @@ namespace dolfin
     // FIXME: ufc::finite_element.
 
     /// Evaluate linear functional for dof i on the function f
+    /*
     double evaluate_dof(std::size_t i,
                         const ufc::function& function,
                         const ufc::cell& c) const
@@ -167,6 +168,7 @@ namespace dolfin
       return _ufc_element->evaluate_dof(i, function,
                                         c.vertex_coordinates.data(), 0, c);
     }
+    */
 
     /// Evaluate linear functionals for all dofs on the function f
     void evaluate_dofs(double* values,
@@ -185,6 +187,7 @@ namespace dolfin
     // FIXME: ufc::finite_element.
 
     /// Evaluate linear functionals for all dofs on the function f
+    /*
     void evaluate_dofs(double* values,
                        const ufc::function& f,
                        const ufc::cell& c) const
@@ -193,6 +196,7 @@ namespace dolfin
       _ufc_element->evaluate_dofs(values, f, c.vertex_coordinates.data(),
                                   0, c);
     }
+    */
 
     /// Interpolate vertex values from dof values
     void interpolate_vertex_values(double* vertex_values,

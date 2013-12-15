@@ -27,7 +27,6 @@
 // Last changed: 2013-09-19
 
 #include <boost/unordered_map.hpp>
-#include <ufc.h>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -322,14 +321,12 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
   std::vector<double> x(gdim*local_size);
 
   // Loop over cells and tabulate dofs
-  ufc::cell ufc_cell;
   boost::multi_array<double, 2> coordinates;
   std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
     cell->get_vertex_coordinates(vertex_coordinates);
-    cell->get_cell_topology(ufc_cell);
 
     // Get local-to-global map
     const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
@@ -543,7 +540,6 @@ void DofMap::set(GenericVector& x, double value) const
 void DofMap::set_x(GenericVector& x, double value, std::size_t component,
                    const Mesh& mesh) const
 {
-  ufc::cell ufc_cell;
   std::vector<double> x_values;
   boost::multi_array<double, 2> coordinates;
   std::vector<double> vertex_coordinates;
@@ -551,7 +547,6 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
   {
     // Update UFC cell
     cell->get_vertex_coordinates(vertex_coordinates);
-    cell->get_cell_data(ufc_cell);
 
     // Get local-to-global map
     const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());

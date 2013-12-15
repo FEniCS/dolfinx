@@ -302,6 +302,7 @@ namespace dolfin
     { return _mesh->type().collides(*this, entity); }
 
     // FIXME: This function is part of a UFC transition
+    /// Get cell vertex coordinates
     void get_vertex_coordinates(std::vector<double>& coordinates) const
     {
       const std::size_t gdim = _mesh->geometry().dim();
@@ -314,11 +315,9 @@ namespace dolfin
     }
 
     // FIXME: This function is part of a UFC transition
-    /// Fill UFC cell with geometry data and miscellaneous data
+    /// Fill UFC cell with miscellaneous data
     void get_cell_data(ufc::cell& ufc_cell, int local_facet=-1) const
     {
-      get_vertex_coordinates(ufc_cell.vertex_coordinates);
-
       ufc_cell.geometric_dimension = _mesh->geometry().dim();;
       ufc_cell.local_facet = local_facet;
       ufc_cell.orientation = _mesh->cell_orientations()[index()];
@@ -326,7 +325,7 @@ namespace dolfin
       ufc_cell.index = index();
     }
 
-     // FIXME: This function is part of a UFC transition
+    // FIXME: This function is part of a UFC transition
     /// Fill UFC cell with topology data
     void get_cell_topology(ufc::cell& ufc_cell) const
     {

@@ -92,7 +92,7 @@ void LocalAssembler::assemble_cell(Eigen::MatrixXd& A,
   // Tabulate cell tensor
   integral->tabulate_tensor(ufc.A.data(),
                             ufc.w(),
-                            ufc_cell.vertex_coordinates.data(),
+                            vertex_coordinates.data(),
                             ufc_cell.orientation);
 
   // Stuff a_ufc.A into A

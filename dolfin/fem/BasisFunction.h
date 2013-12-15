@@ -52,8 +52,11 @@ namespace dolfin
     ///         The element to create basis function on.
     ///     cell (ufc::cell)
     ///         The cell.
-    BasisFunction(std::size_t index, const FiniteElement& element, const ufc::cell& cell)
-      : _index(index), _element(element), _cell(cell) {}
+    BasisFunction(std::size_t index, const FiniteElement& element,
+                  const std::vector<double>& vertex_coordinates,
+                  const ufc::cell& cell)
+      : _index(index), _element(element),
+      _vertex_coordinates(vertex_coordinates), _cell(cell) {}
 
     /// Destructor
     ~BasisFunction() {}
@@ -68,7 +71,8 @@ namespace dolfin
     void eval(double* values, const double* x) const
     {
       // Note: assuming cell_orientation = 0
-      _element.evaluate_basis(_index, values, x, &_cell.vertex_coordinates[0], 0);
+      _element.evaluate_basis(_index, values, x, _vertex_coordinates.data(),
+                              0);
     }
 
     /// Evaluate all order n derivatives at given point
@@ -83,7 +87,8 @@ namespace dolfin
     void eval_derivatives(double* values, const double* x, std::size_t n) const
     {
       // Note: assuming cell_orientation = 0
-      _element.evaluate_basis_derivatives(_index, n, values, x, &_cell.vertex_coordinates[0], 0);
+      _element.evaluate_basis_derivatives(_index, n, values, x,
+                                          _vertex_coordinates.data(), 0);
     }
 
     //--- Implementation of ufc::function interface ---
@@ -104,13 +109,16 @@ namespace dolfin
 
   private:
 
-    /// The index
+    // The index
     std::size_t _index;
 
-    /// The finite element
+    // The finite element
     const FiniteElement& _element;
 
-    /// The (UFC) cell
+    // Cell vertex coordinates
+    const std::vector<double> _vertex_coordinates;
+
+    // The (UFC) cell
     const ufc::cell& _cell;
 
   };
