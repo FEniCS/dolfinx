@@ -48,6 +48,7 @@ namespace dolfin
     static void
       assemble(Eigen::MatrixXd& A,
                UFC& ufc,
+               const std::vector<double>& vertex_coordinates,
                ufc::cell& ufc_cell,
                const Cell& cell,
                const MeshFunction<std::size_t>* cell_domains,
@@ -57,6 +58,7 @@ namespace dolfin
     ///
     static void assemble_cell(Eigen::MatrixXd& A,
                               UFC& ufc,
+                              const std::vector<double>& vertex_coordinates,
                               const ufc::cell& ufc_cell,
                               const Cell& cell,
                               const MeshFunction<std::size_t>* domains);
@@ -65,6 +67,7 @@ namespace dolfin
     static void
       assemble_exterior_facet(Eigen::MatrixXd& A,
                               UFC& ufc,
+                              const std::vector<double>& vertex_coordinates,
                               const ufc::cell& ufc_cell,
                               const Cell& cell,
                               const Facet& facet,
@@ -75,6 +78,7 @@ namespace dolfin
     static void
       assemble_interior_facet(Eigen::MatrixXd& A,
                               UFC& ufc,
+                              const std::vector<double>& vertex_coordinates,
                               const ufc::cell& ufc_cell,
                               const Cell& cell,
                               const Facet& facet,

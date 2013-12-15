@@ -301,12 +301,18 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Assemble and solve local linear systems
   ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Get cell vertices
+    cell->get_vertex_coordinates(vertex_coordinates);
+
     // Assemble local linear system
-    LocalAssembler::assemble(A, ufc_lhs, ufc_cell, *cell, cell_domains,
+    LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+                             ufc_cell, *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
-    LocalAssembler::assemble(b, ufc_rhs, ufc_cell, *cell, cell_domains,
+    LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates, ufc_cell,
+                             *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
 
     // Solve linear system and convert result
@@ -410,12 +416,18 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
     // Assemble and solve local linear systems
     ufc::cell ufc_cell;
+    std::vector<double> vertex_coordinates;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
+      // Get cell vertex_coordinates
+      cell->get_vertex_coordinates(vertex_coordinates);
+
       // Assemble linear system
-      LocalAssembler::assemble(A, ufc_lhs, ufc_cell, *cell, cell_domains,
+      LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+                               ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
-      LocalAssembler::assemble(b, ufc_rhs, ufc_cell, *cell, cell_domains,
+      LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates,
+                               ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
 
       // Non-singularize local matrix

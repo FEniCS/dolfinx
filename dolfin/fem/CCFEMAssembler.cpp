@@ -107,7 +107,7 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
       // Update to current cell
       cell->get_vertex_coordinates(vertex_coordinates);
       cell->get_cell_data(ufc_cell);
-      ufc.update(*cell, ufc_cell);
+      ufc.update(*cell, vertex_coordinates, ufc_cell);
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)

@@ -115,12 +115,14 @@ void PointIntegralSolver::step(double dt)
   t_step_stage.stop();
 
   ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (std::size_t vert_ind = 0; vert_ind < mesh.num_vertices(); ++vert_ind)
   {
     Timer t_vert("Step: update vert");
 
     // Cell containing vertex
     const Cell cell(mesh, _vertex_map[vert_ind].first);
+    cell.get_vertex_coordinates(vertex_coordinates);
     cell.get_cell_data(ufc_cell);
 
     // Get all dofs for cell
@@ -157,14 +159,14 @@ void PointIntegralSolver::step(double dt)
 
 	// Update to current cell
 	Timer t_expl_update("Explicit stage: update_cell");
-	_ufcs[stage][0]->update(cell, ufc_cell);
+	_ufcs[stage][0]->update(cell, vertex_coordinates, ufc_cell);
 	t_expl_update.stop();
 
 	// Tabulate cell tensor
 	Timer t_expl_tt("Explicit stage: tabulate_tensor");
 	integral.tabulate_tensor(_ufcs[stage][0]->A.data(),
                                  _ufcs[stage][0]->w(),
-				 ufc_cell.vertex_coordinates.data(),
+				 vertex_coordinates.data(),
 				 local_vert);
 	t_expl_tt.stop();
 
@@ -228,15 +230,15 @@ void PointIntegralSolver::step(double dt)
 	// Update to current cell. This only need to be done once for
 	// each stage and vertex
 	Timer t_impl_update("Implicit stage: update_cell");
-	_ufcs[stage][0]->update(cell, ufc_cell);
-	_ufcs[stage][1]->update(cell, ufc_cell);
+	_ufcs[stage][0]->update(cell, vertex_coordinates, ufc_cell);
+	_ufcs[stage][1]->update(cell, vertex_coordinates, ufc_cell);
 	t_impl_update.stop();
 
 	// Tabulate an initial residual solution
 	Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
 	F_integral.tabulate_tensor(_ufcs[stage][0]->A.data(),
                                    _ufcs[stage][0]->w(),
-				   ufc_cell.vertex_coordinates.data(),
+				   vertex_coordinates.data(),
 				   local_vert);
 	t_impl_tt_F.stop();
 

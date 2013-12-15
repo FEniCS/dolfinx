@@ -788,6 +788,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
   // Create UFC cell
   ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
 
   // Iterate over marked
   dolfin_assert(_function_space->element());
@@ -823,13 +824,15 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     const Cell cell(mesh, cell_index);
 
     // Get local index of facet with respect to the cell
-    const size_t facet_local_index  = cell.index(facet);
+    const size_t facet_local_index = cell.index(facet);
 
     // Update UFC cell geometry data
+    cell.get_vertex_coordinates(vertex_coordinates);
     cell.get_cell_data(ufc_cell, facet_local_index);
 
     // Restrict coefficient to cell
-    _g->restrict(data.w.data(), *_function_space->element(), cell, ufc_cell);
+    _g->restrict(data.w.data(), *_function_space->element(), cell,
+                 vertex_coordinates.data(), ufc_cell);
 
     // Tabulate dofs on cell
     const std::vector<dolfin::la_index>& cell_dofs
@@ -947,7 +950,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           if (!interpolated)
           {
             _g->restrict(data.w.data(), *_function_space->element(), cell,
-                         ufc_cell);
+                         vertex_coordinates.data(), ufc_cell);
             interpolated = true;
           }
 
@@ -1036,7 +1039,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
         // Restrict coefficient to cell
         _g->restrict(data.w.data(), *_function_space->element(), *cell,
-                     ufc_cell);
+                     vertex_coordinates.data(), ufc_cell);
       }
 
       // Set boundary value

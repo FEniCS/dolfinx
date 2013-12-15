@@ -180,7 +180,8 @@ void GenericFunction::evaluate(double* values,
 
   // Wrap data
   Array<double> _values(value_size(), values);
-  const Array<double> x(cell.geometric_dimension, const_cast<double*>(coordinates));
+  const Array<double>
+    x(cell.geometric_dimension, const_cast<double*>(coordinates));
 
   // Redirect to eval
   eval(_values, x, cell);
@@ -189,16 +190,14 @@ void GenericFunction::evaluate(double* values,
 void GenericFunction::restrict_as_ufc_function(double* w,
                                                const FiniteElement& element,
                                                const Cell& dolfin_cell,
+                                               const double* vertex_coordinates,
                                                const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
 
   // Evaluate dofs to get the expansion coefficients
   const int cell_orientation = 0;
-  element.evaluate_dofs(w,
-                        *this,
-                        ufc_cell.vertex_coordinates.data(),
-                        cell_orientation,
+  element.evaluate_dofs(w, *this, vertex_coordinates, cell_orientation,
                         ufc_cell);
 }
 //-----------------------------------------------------------------------------

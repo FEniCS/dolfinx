@@ -164,13 +164,16 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
 
   // Iterate over mesh and interpolate on each cell
   ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
+    cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
 
     // Restrict function to cell
-    v.restrict(cell_coefficients.data(), *_element, *cell, ufc_cell);
+    v.restrict(cell_coefficients.data(), *_element, *cell,
+               vertex_coordinates.data(), ufc_cell);
 
     // Tabulate dofs
     const std::vector<dolfin::la_index>& cell_dofs

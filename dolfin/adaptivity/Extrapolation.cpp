@@ -213,7 +213,7 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
   // Extract coefficents for v on patch cell
   dolfin_assert(V.element());
   std::vector<double> dof_values(V.element()->space_dimension());
-  v.restrict(&dof_values[0], *V.element(), cell1, c1);
+  v.restrict(&dof_values[0], *V.element(), cell1, vertex_coordinates1.data(), c1);
 
   // Iterate over given local dofs for V on patch cell
   dolfin_assert(W.element());

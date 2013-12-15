@@ -422,8 +422,13 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   // Create work vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
 
+  // FIXME:
+  std::vector<double> vertex_coordinates;
+  dolfin_cell.get_vertex_coordinates(vertex_coordinates);
+
   // Restrict function to cell
-  restrict(coefficients.data(), element, dolfin_cell, ufc_cell);
+  restrict(coefficients.data(), element, dolfin_cell, vertex_coordinates.data(),
+           ufc_cell);
 
   // Create work vector for basis
   std::vector<double> basis(value_size_loc);
@@ -437,7 +442,7 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, basis.data(), x.data(),
-                           ufc_cell.vertex_coordinates.data(),
+                           vertex_coordinates.data(),
                            cell_orientation);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
@@ -573,6 +578,7 @@ void Function::non_matching_eval(Array<double>& values,
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,
                         const Cell& dolfin_cell,
+                        const double* vertex_coordinates,
                         const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
@@ -594,7 +600,8 @@ void Function::restrict(double* w, const FiniteElement& element,
   else
   {
     // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell);
+    restrict_as_ufc_function(w, element, dolfin_cell, vertex_coordinates,
+                             ufc_cell);
   }
 }
 //-----------------------------------------------------------------------------
@@ -644,6 +651,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
@@ -651,10 +659,12 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
       continue;
 
     // Update to current cell
+    cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
 
     // Pick values from global vector
-    restrict(coefficients.data(), element, *cell, ufc_cell);
+    restrict(coefficients.data(), element, *cell, vertex_coordinates.data(),
+             ufc_cell);
 
     // Interpolate values at the vertices
     const int cell_orientation = 0;
