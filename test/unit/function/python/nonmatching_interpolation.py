@@ -24,16 +24,20 @@ import unittest
 import numpy
 from dolfin import *
 
-class Quadratic(Expression):
+class Quadratic2D(Expression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + 1.0
 
+class Quadratic3D(Expression):
+    def eval(self, values, x):
+        values[0] = x[0]*x[0] + x[1]*x[1] + x[2]*x[2] + 1.0
+
 class NonmatchingFunctionInterpolationTest(unittest.TestCase):
 
-    def test_functional(self):
+    def test_functional2D(self):
         """Test integration of function interpolated in non-matching meshes"""
 
-        f = Quadratic()
+        f = Quadratic2D()
 
         # Interpolate quadratic function on course mesh
         mesh0 = UnitSquareMesh(8, 8)
@@ -41,16 +45,44 @@ class NonmatchingFunctionInterpolationTest(unittest.TestCase):
         u0 = Function(V0)
         u0.interpolate(f)
 
-        # Interpolate FE function on finer mesh
-        mesh1 = UnitSquareMesh(31, 31)
-        V1 = FunctionSpace(mesh1, "Lagrange", 2)
-        u1 = Function(V1)
-        u1.interpolate(u0)
+        if MPI.num_processes() == 1:
+            # Interpolate FE function on finer mesh
+            mesh1 = UnitSquareMesh(31, 31)
+            V1 = FunctionSpace(mesh1, "Lagrange", 2)
+            u1 = Function(V1)
+            u1.interpolate(u0)
+            self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
-        self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
+            mesh1 = UnitSquareMesh(30, 30)
+            V1 = FunctionSpace(mesh1, "Lagrange", 2)
+            u1 = Function(V1)
+            u1.interpolate(u0)
+            self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
+
+    def test_functional3D(self):
+        """Test integration of function interpolated in non-matching meshes"""
+
+        f = Quadratic3D()
+
+        # Interpolate quadratic function on course mesh
+        mesh0 = UnitCubeMesh(4, 4, 4)
+        V0 = FunctionSpace(mesh0, "Lagrange", 2)
+        u0 = Function(V0)
+        u0.interpolate(f)
+
+        if MPI.num_processes() == 1:
+            # Interpolate FE function on finer mesh
+            mesh1 = UnitCubeMesh(11, 11, 11)
+            V1 = FunctionSpace(mesh1, "Lagrange", 2)
+            u1 = Function(V1)
+            u1.interpolate(u0)
+            self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
+
+            mesh1 = UnitCubeMesh(10, 11, 10)
+            V1 = FunctionSpace(mesh1, "Lagrange", 2)
+            u1 = Function(V1)
+            u1.interpolate(u0)
+            self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing function evaluation on non-matching grids"
-    print "------------------------------------------------"
     unittest.main()
