@@ -53,10 +53,9 @@ namespace dolfin
     ///     cell (ufc::cell)
     ///         The cell.
     BasisFunction(std::size_t index, const FiniteElement& element,
-                  const std::vector<double>& vertex_coordinates,
-                  const ufc::cell& cell)
+                  const std::vector<double>& vertex_coordinates)
       : _index(index), _element(element),
-      _vertex_coordinates(vertex_coordinates), _cell(cell) {}
+      _vertex_coordinates(vertex_coordinates) {}
 
     /// Destructor
     ~BasisFunction() {}
@@ -117,9 +116,6 @@ namespace dolfin
 
     // Cell vertex coordinates
     const std::vector<double> _vertex_coordinates;
-
-    // The (UFC) cell
-    const ufc::cell& _cell;
 
   };
 

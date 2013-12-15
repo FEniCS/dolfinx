@@ -228,7 +228,7 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
     for (std::size_t j = 0; j < W.element()->space_dimension(); ++j)
     {
       // Create basis function
-      const BasisFunction phi(j, *W.element(), vertex_coordinates0, c0);
+      const BasisFunction phi(j, *W.element(), vertex_coordinates0);
 
       // Evaluate dof on basis function
       const int cell_orientation = 0;
