@@ -197,12 +197,13 @@ namespace dolfin
     /// Interpolate vertex values from dof values
     void interpolate_vertex_values(double* vertex_values,
                                    double* coefficients,
+                                   const double* vertex_coordinates,
                                    int cell_orientation,
                                    const ufc::cell& cell) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->interpolate_vertex_values(vertex_values, coefficients,
-                                              cell.vertex_coordinates.data(),
+                                              vertex_coordinates,
                                               cell_orientation, cell);
     }
 

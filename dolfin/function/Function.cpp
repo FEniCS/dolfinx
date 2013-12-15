@@ -523,39 +523,14 @@ void Function::non_matching_eval(Array<double>& values,
   // Check whether we are allowed to extrapolate to evaluate
   if (id == std::numeric_limits<unsigned int>::max() && !allow_extrapolation)
   {
-    cout << point << endl;
     dolfin_error("Function.cpp",
                  "evaluate function at point",
                  "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
   }
 
-  // FIXME: Remove dim == 2 here!
-
   // Alternative 2: Compute closest cell to point (x)
-  if (id == std::numeric_limits<unsigned int>::max()
-      && allow_extrapolation && gdim == 2)
-  {
-      id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
-  }
-
-  // Alternative 3: Compute cell that contains barycenter of ufc_cell
-  // NB: This is slightly heuristic, but should work well for
-  // evaluation of points on refined meshes
   if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation)
-  {
-    // Extract vertices of ufc_cell
-    //const double * const * vertices = ufc_cell.coordinates;
-    const std::vector<double>& vertices = ufc_cell.vertex_coordinates;
-
-    Point barycenter;
-    for (std::size_t i = 0; i <= gdim; i++)
-    {
-      const Point vertex(gdim, &vertices[i*gdim]);
-      barycenter += vertex;
-    }
-    barycenter /= (gdim + 1);
-    id = mesh.bounding_box_tree()->compute_first_entity_collision(barycenter);
-  }
+    id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
 
   // Throw error if all alternatives failed
   if (id == std::numeric_limits<unsigned int>::max())
@@ -670,6 +645,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     const int cell_orientation = 0;
     element.interpolate_vertex_values(cell_vertex_values.data(),
                                       coefficients.data(),
+                                      vertex_coordinates.data(),
                                       cell_orientation,
                                       ufc_cell);
 
