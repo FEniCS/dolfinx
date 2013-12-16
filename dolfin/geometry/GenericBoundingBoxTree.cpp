@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-11-14
+// Last changed: 2013-11-30
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -724,19 +724,6 @@ GenericBoundingBoxTree::sort_points(std::size_t axis,
                                     const std::vector<unsigned int>::iterator& middle,
                                     const std::vector<unsigned int>::iterator& end)
 {
-#ifdef USE_BOOST_NTH_ELEMENT
-  switch (axis)
-  {
-  case 0:
-    boost::nth_element(std::make_pair(begin, end), middle, less_x_point(points));
-    break;
-  case 1:
-    boost::nth_element(std::make_pair(begin, end), middle, less_y_point(points));
-    break;
-  default:
-    boost::nth_element(std::make_pair(begin, end), middle, less_z_point(points));
-  }
-#else
   switch (axis)
   {
   case 0:
@@ -748,6 +735,5 @@ GenericBoundingBoxTree::sort_points(std::size_t axis,
   default:
     std::nth_element(begin, middle, end, less_z_point(points));
   }
-#endif
 }
 //-----------------------------------------------------------------------------
