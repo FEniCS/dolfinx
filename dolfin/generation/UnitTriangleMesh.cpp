@@ -30,7 +30,7 @@ using namespace dolfin;
 UnitTriangleMesh::UnitTriangleMesh() : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver())
+  if (MPI::is_receiver(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
     return;
@@ -60,7 +60,7 @@ UnitTriangleMesh::UnitTriangleMesh() : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster())
+  if (MPI::is_broadcaster(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
     return;

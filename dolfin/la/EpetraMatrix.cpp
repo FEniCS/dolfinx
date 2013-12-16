@@ -447,8 +447,8 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   typedef boost::unordered_set<std::size_t> MySet;
 
   // Number of MPI processes
-  const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
+  const std::size_t num_processes = _A->Comm().NumProc();
+  const std::size_t process_number = _A->Comm().MyPID();
 
   // Build lists of local and nonlocal rows
   MySet local_rows;
@@ -476,7 +476,7 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
     }
 
     std::vector<std::vector<std::size_t> > received_data;
-    MPI::all_to_all(send_data, received_data);
+    MPI::all_to_all(MPI_COMM_WORLD, send_data, received_data);
 
     // Unpack data
     for (std::size_t p = 0; p < num_processes; ++p)

@@ -323,7 +323,7 @@ void GenericFile::read()
 void GenericFile::write()
 {
   // pvd files should only be cleared by one process
-  if (_filetype == "VTK" && MPI::process_number() > 0)
+  if (_filetype == "VTK" && MPI::process_number(MPI_COMM_WORLD) > 0)
     opened_write = true;
 
   // Open file

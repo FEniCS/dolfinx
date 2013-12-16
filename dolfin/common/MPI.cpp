@@ -49,6 +49,7 @@ MPI_Info& dolfin::MPIInfo::operator*()
 //-----------------------------------------------------------------------------
 
 
+/*
 //-----------------------------------------------------------------------------
 dolfin::MPICommunicator::MPICommunicator()
 {
@@ -64,6 +65,7 @@ MPI_Comm& dolfin::MPICommunicator::operator*()
 {
   return communicator;
 }
+*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void dolfin::MPINonblocking::wait_all()
@@ -76,44 +78,43 @@ void dolfin::MPINonblocking::wait_all()
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::process_number()
+unsigned int dolfin::MPI::process_number(const MPI_Comm& mpi_comm)
 {
   SubSystemsManager::init_mpi();
   int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(mpi_comm, &rank);
   return rank;
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::num_processes()
+unsigned int dolfin::MPI::num_processes(const MPI_Comm& mpi_comm)
 {
   SubSystemsManager::init_mpi();
   int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_size(mpi_comm, &size);
   return size;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::is_broadcaster()
+bool dolfin::MPI::is_broadcaster(const MPI_Comm& mpi_comm)
 {
   // Always broadcast from processor number 0
-  return num_processes() > 1 && process_number() == 0;
+  return num_processes(mpi_comm) > 1 && process_number(mpi_comm) == 0;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::is_receiver()
+bool dolfin::MPI::is_receiver(const MPI_Comm& mpi_comm)
 {
   // Always receive on processors with numbers > 0
-  return num_processes() > 1 && process_number() > 0;
+  return num_processes(mpi_comm) > 1 && process_number(mpi_comm) > 0;
 }
 //-----------------------------------------------------------------------------
-void dolfin::MPI::barrier()
+void dolfin::MPI::barrier(const MPI_Comm& mpi_comm)
 {
-  MPICommunicator comm;
-  MPI_Barrier(*comm);
+  MPI_Barrier(mpi_comm);
 }
 //-----------------------------------------------------------------------------
-std::size_t dolfin::MPI::global_offset(std::size_t range, bool exclusive)
+std::size_t dolfin::MPI::global_offset(const MPI_Comm& mpi_comm,
+                                       std::size_t range, bool exclusive)
 {
-  MPICommunicator mpi_comm;
-  boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+  boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_duplicate);
 
   // Compute inclusive or exclusive partial reduction
   std::size_t offset = boost::mpi::scan(comm, range, std::plus<std::size_t>());
@@ -123,15 +124,17 @@ std::size_t dolfin::MPI::global_offset(std::size_t range, bool exclusive)
   return offset;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> dolfin::MPI::local_range(std::size_t N)
+std::pair<std::size_t, std::size_t>
+dolfin::MPI::local_range(const MPI_Comm& mpi_comm, std::size_t N)
 {
-  return local_range(process_number(), N);
+  return local_range(mpi_comm, process_number(mpi_comm), N);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> dolfin::MPI::local_range(unsigned int process,
-                                                             std::size_t N)
+std::pair<std::size_t, std::size_t>
+dolfin::MPI::local_range(const MPI_Comm& mpi_comm, unsigned int process,
+                         std::size_t N)
 {
-  return local_range(process, N, num_processes());
+  return local_range(process, N, num_processes(mpi_comm));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> dolfin::MPI::local_range(unsigned int process,
@@ -158,12 +161,13 @@ std::pair<std::size_t, std::size_t> dolfin::MPI::local_range(unsigned int proces
   return range;
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::index_owner(std::size_t index, std::size_t N)
+unsigned int dolfin::MPI::index_owner(const MPI_Comm& mpi_comm,
+                                      std::size_t index, std::size_t N)
 {
   dolfin_assert(index < N);
 
   // Get number of processes
-  const unsigned int _num_processes = num_processes();
+  const unsigned int _num_processes = num_processes(mpi_comm);
 
   // Compute number of items per process and remainder
   const std::size_t n = N / _num_processes;

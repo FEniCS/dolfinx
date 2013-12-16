@@ -334,11 +334,13 @@ void XMLLocalMeshSAX::read_vertices(const xmlChar* name, const xmlChar** attrs,
                                     std::size_t num_attributes)
 {
   // Parse the number of global vertices
-  const std::size_t num_global_vertices = SAX2AttributeParser::parse<unsigned int>(name, attrs, "size", num_attributes);
+  const std::size_t num_global_vertices
+    = SAX2AttributeParser::parse<unsigned int>(name, attrs, "size",
+                                               num_attributes);
   _mesh_data.num_global_vertices = num_global_vertices;
 
   // Compute vertex range
-  vertex_range = MPI::local_range(num_global_vertices);
+  vertex_range = MPI::local_range(MPI_COMM_WORLD, num_global_vertices);
 
   // Reserve space for local-to-global vertex map and vertex coordinates
   _mesh_data.vertex_indices.reserve(num_local_vertices());
@@ -373,7 +375,7 @@ void XMLLocalMeshSAX::read_cells(const xmlChar* name, const xmlChar** attrs,
   _mesh_data.num_global_cells = num_global_cells;
 
   // Compute cell range
-  cell_range = MPI::local_range(num_global_cells);
+  cell_range = MPI::local_range(MPI_COMM_WORLD, num_global_cells);
 
   // Allocate space for cells
   _mesh_data.cell_vertices.resize(boost::extents[num_local_cells()][_mesh_data.tdim + 1]);
@@ -490,7 +492,7 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
   const std::size_t size = SAX2AttributeParser::parse<unsigned int>(name, attrs, "size", num_attributes);
 
   // Compute domain value range
-  domain_value_range = MPI::local_range(size);
+  domain_value_range = MPI::local_range(MPI_COMM_WORLD, size);
   domain_dim = dim;
 
   if (type != "uint")

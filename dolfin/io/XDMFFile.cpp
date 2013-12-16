@@ -249,7 +249,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[1] = padded_value_size;
   if (vertex_data)
   {
-    HDF5Utility::reorder_values_by_global_indices(mesh, data_values, 
+    HDF5Utility::reorder_values_by_global_indices(mesh, data_values,
                                                   padded_value_size);
     global_size[0] = mesh.size_global(0);
   }
@@ -272,7 +272,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write the XML meta description (see http://www.xdmf.org) on
   // process zero
   const std::size_t num_total_vertices = mesh.size_global(0);
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(mesh.mpi_comm()) == 0)
   {
     output_xml(time_step, vertex_data, tdim, num_global_cells, gdim,
                num_total_vertices, value_rank, padded_value_size,
@@ -394,7 +394,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
   const std::string mesh_coords_name = group_name + "/coordinates";
 
   // Write the XML meta description on process zero
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(mesh.mpi_comm()) == 0)
   {
     // Create XML document
     pugi::xml_document xml_doc;
@@ -475,7 +475,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Write the XML meta description (see http://www.xdmf.org) on
   // process zero
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(mesh.mpi_comm()) == 0)
   {
     output_xml((double)counter, false,
                cell_dim, mesh.size_global(cell_dim),
@@ -780,7 +780,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   // Grid/Attribute (Function value data)
   pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");
   xdmf_values.append_attribute("Name") = name.c_str();
-  
+
   if (value_rank == 0)
     xdmf_values.append_attribute("AttributeType") = "Scalar";
   else if (value_rank == 1)
@@ -792,11 +792,11 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
     xdmf_values.append_attribute("Center") = "Node";
   else
     xdmf_values.append_attribute("Center") = "Cell";
-  
+
   pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
   xdmf_data.append_attribute("Format") = "HDF";
-  
-  const std::size_t num_total_entities 
+
+  const std::size_t num_total_entities
     = vertex_data ? num_total_vertices : num_global_cells;
 
   s = boost::lexical_cast<std::string>(num_total_entities) + " "
@@ -807,7 +807,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   boost::filesystem::path p(hdf5_filename);
   s = p.filename().string() + ":" + dataset_name;
   xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
-  
+
   // Write XML file
   xml_doc.save_file(_filename.c_str(), "  ");
 }

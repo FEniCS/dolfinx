@@ -34,10 +34,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
-                     std::size_t nx, std::size_t ny, std::string diagonal) : Mesh()
+                             std::size_t nx, std::size_t ny,
+                             std::string diagonal) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_receiver(this->mpi_comm()))
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
   // Check options
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
@@ -119,7 +124,8 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   std::size_t cell = 0;
   if (diagonal == "crossed")
   {
-    std::vector<std::vector<std::size_t> > cells(4, std::vector<std::size_t>(3));
+    std::vector<std::vector<std::size_t> >
+      cells(4, std::vector<std::size_t>(3));
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       for (std::size_t ix = 0; ix < nx; ix++)
@@ -146,7 +152,8 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left" || diagonal == "left/right")
   {
     std::string local_diagonal = diagonal;
-    std::vector<std::vector<std::size_t> > cells(2, std::vector<std::size_t>(3));
+    std::vector<std::vector<std::size_t> >
+      cells(2, std::vector<std::size_t>(3));
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       // Set up alternating diagonal
@@ -197,7 +204,7 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster())
+  if (MPI::is_broadcaster(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
     return;

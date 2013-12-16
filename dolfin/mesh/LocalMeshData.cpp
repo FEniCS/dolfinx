@@ -32,25 +32,27 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LocalMeshData::LocalMeshData() : num_global_vertices(0), num_global_cells(0),
-                                 num_vertices_per_cell(0), gdim(0), tdim(0)
+LocalMeshData::LocalMeshData(const MPI_Comm& mpi_comm)
+  : num_global_vertices(0), num_global_cells(0),
+    num_vertices_per_cell(0), gdim(0), tdim(0), _mpi_comm(mpi_comm)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-LocalMeshData::LocalMeshData(const Mesh& mesh) : num_global_vertices(0),
-               num_global_cells(0), num_vertices_per_cell(0), gdim(0), tdim(0)
+LocalMeshData::LocalMeshData(const Mesh& mesh)
+  : num_global_vertices(0), num_global_cells(0), num_vertices_per_cell(0),
+    gdim(0), tdim(0), _mpi_comm(mesh.mpi_comm())
 {
   Timer timer("build LocalMeshData");
 
   // Extract data on main process and split among processes
-  if (MPI::is_broadcaster())
+  if (MPI::is_broadcaster(mesh.mpi_comm()))
   {
     extract_mesh_data(mesh);
-    broadcast_mesh_data();
+    broadcast_mesh_data(mesh.mpi_comm());
   }
   else
-    receive_mesh_data();
+    receive_mesh_data(mesh.mpi_comm());
 }
 //-----------------------------------------------------------------------------
 LocalMeshData::~LocalMeshData()
@@ -97,8 +99,7 @@ std::string LocalMeshData::str(bool verbose) const
   }
   else
   {
-    s << "<LocalMeshData on process "
-      << MPI::process_number() << " with "
+    s << "<LocalMeshData with "
       << vertex_coordinates.size() << " vertices (out of "
       << num_global_vertices << ") and "
       << cell_vertices.shape()[0] << " cells (out of "
@@ -169,10 +170,10 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   cout << "Number of global cells: "    << num_global_cells << endl;
 }
 //-----------------------------------------------------------------------------
-void LocalMeshData::broadcast_mesh_data()
+void LocalMeshData::broadcast_mesh_data(const MPI_Comm& mpi_comm)
 {
   // Get number of processes
-  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t num_processes = MPI::num_processes(mpi_comm);
 
   // Broadcast simple scalar data
   {
@@ -182,7 +183,7 @@ void LocalMeshData::broadcast_mesh_data()
     values.push_back(num_global_vertices);
     values.push_back(num_global_cells);
     values.push_back(num_vertices_per_cell);
-    MPI::broadcast(values);
+    MPI::broadcast(mpi_comm, values);
   }
 
   // Broadcast coordinates for vertices
@@ -191,7 +192,7 @@ void LocalMeshData::broadcast_mesh_data()
     for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::pair<std::size_t, std::size_t> local_range
-          = MPI::local_range(p, num_global_vertices);
+        = MPI::local_range(mpi_comm, p, num_global_vertices);
       log(TRACE, "Sending %d vertices to process %d, range is (%d, %d)",
           local_range.second - local_range.first, p, local_range.first, local_range.second);
 
@@ -204,7 +205,7 @@ void LocalMeshData::broadcast_mesh_data()
       }
     }
     std::vector<double> values;
-    MPI::scatter(send_values, values);
+    MPI::scatter(mpi_comm, send_values, values);
     unpack_vertex_coordinates(values);
   }
 
@@ -213,12 +214,13 @@ void LocalMeshData::broadcast_mesh_data()
     std::vector<std::vector<std::size_t> > send_values(num_processes);
     for (std::size_t p = 0; p < num_processes; p++)
     {
-      const std::pair<std::size_t, std::size_t> local_range = MPI::local_range(p, num_global_vertices);
+      const std::pair<std::size_t, std::size_t> local_range
+        = MPI::local_range(mpi_comm, p, num_global_vertices);
       send_values[p].reserve(local_range.second - local_range.first);
       for (std::size_t i = local_range.first; i < local_range.second; i++)
         send_values[p].push_back(vertex_indices[i]);
     }
-    MPI::scatter(send_values, vertex_indices);
+    MPI::scatter(mpi_comm, send_values, vertex_indices);
   }
 
   dolfin_debug("check");
@@ -227,7 +229,8 @@ void LocalMeshData::broadcast_mesh_data()
     std::vector<std::vector<std::size_t> > send_values(num_processes);
     for (std::size_t p = 0; p < num_processes; p++)
     {
-      const std::pair<std::size_t, std::size_t> local_range = MPI::local_range(p, num_global_cells);
+      const std::pair<std::size_t, std::size_t> local_range
+        = MPI::local_range(mpi_comm, p, num_global_cells);
       log(TRACE, "Sending %d cells to process %d, range is (%d, %d)",
           local_range.second - local_range.first, p, local_range.first, local_range.second);
       const std::size_t range = local_range.second - local_range.first;
@@ -240,18 +243,18 @@ void LocalMeshData::broadcast_mesh_data()
       }
     }
     std::vector<std::size_t> values;
-    MPI::scatter(send_values, values);
+    MPI::scatter(mpi_comm, send_values, values);
     unpack_cell_vertices(values);
   }
 }
 //-----------------------------------------------------------------------------
-void LocalMeshData::receive_mesh_data()
+void LocalMeshData::receive_mesh_data(const MPI_Comm& mpi_comm)
 {
   dolfin_debug("check");
   // Receive simple scalar data
   {
     std::vector<std::size_t> values;
-    MPI::broadcast(values);
+    MPI::broadcast(mpi_comm, values);
     dolfin_assert(values.size() == 5);
     gdim = values[0];
     tdim = values[1];
@@ -265,7 +268,7 @@ void LocalMeshData::receive_mesh_data()
   {
     std::vector<std::vector<double> > send_values;
     std::vector<double> values;
-    MPI::scatter(send_values, values);
+    MPI::scatter(mpi_comm, send_values, values);
     unpack_vertex_coordinates(values);
   }
 
@@ -273,7 +276,7 @@ void LocalMeshData::receive_mesh_data()
   // Receive global vertex indices
   {
     std::vector<std::vector<std::size_t> > send_values;
-    MPI::scatter(send_values, vertex_indices);
+    MPI::scatter(mpi_comm, send_values, vertex_indices);
   }
 
   dolfin_debug("check");
@@ -281,7 +284,7 @@ void LocalMeshData::receive_mesh_data()
   {
     std::vector<std::vector<std::size_t> > send_values;
     std::vector<std::size_t> values;
-    MPI::scatter(send_values, values);
+    MPI::scatter(mpi_comm, send_values, values);
     unpack_cell_vertices(values);
   }
 }

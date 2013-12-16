@@ -171,7 +171,7 @@ void Logger::dolfin_error(std::string location,
     << "*** " << "Reason:  " << reason << "." << std::endl
     << "*** " << "Where:   This error was encountered inside " << location << "."
     << std::endl
-    << "*** " << "Process: " << MPI::process_number() << std::endl
+    << "*** " << "Process: " << MPI::process_number(MPI_COMM_WORLD) << std::endl
     << "*** " << std::endl
     << "*** " << "DOLFIN version: " << dolfin_version()  << std::endl
     << "*** " << "Git changeset:  " << git_commit_hash() << std::endl
@@ -402,8 +402,8 @@ void Logger::write(int log_level, std::string msg) const
   // Get data from MPI (only first time)
   if (num_processes == 0)
   {
-    num_processes = MPI::num_processes();
-    process_number = MPI::process_number();
+    num_processes = MPI::num_processes(MPI_COMM_WORLD);
+    process_number = MPI::process_number(MPI_COMM_WORLD);
   }
 
   // Check if we want output on root process only

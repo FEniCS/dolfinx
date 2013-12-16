@@ -29,8 +29,8 @@
 #include <utility>
 #include <vector>
 
-#include "dolfin/common/MPI.h"
-#include "dolfin/common/Variable.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -179,6 +179,9 @@ namespace dolfin
 
     // Parallel mode
     const bool mpi_io;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
   };
 
   //---------------------------------------------------------------------------
@@ -197,7 +200,8 @@ namespace dolfin
     num_local_items = data.size()/num_local_items;
 
     // Compute offset
-    const std::size_t offset = MPI::global_offset(num_local_items, true);
+    const std::size_t offset = MPI::global_offset(_mpi_comm, num_local_items,
+                                                  true);
     std::pair<std::size_t, std::size_t> range(offset,
                                               offset + num_local_items);
 

@@ -35,7 +35,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-hid_t HDF5Interface::open_file(const std::string filename, const std::string mode,
+hid_t HDF5Interface::open_file(const std::string filename,
+                               const std::string mode,
                                const bool use_mpi_io)
 {
   // Set parallel access with communicator
@@ -43,10 +44,11 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
   if (use_mpi_io)
   {
     #ifdef HAS_MPI
-    MPICommunicator comm;
-    MPIInfo info;
-    herr_t status = H5Pset_fapl_mpio(plist_id, *comm, *info);
+    MPI_Info info;
+    MPI_Info_create(&info);
+    herr_t status = H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, info);
     dolfin_assert(status != HDF5_FAIL);
+    MPI_Info_free(&info);
     #else
     dolfin_error("HDF5Interface.cpp",
                  "create HDF5 file",

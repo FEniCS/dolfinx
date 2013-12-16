@@ -176,13 +176,14 @@ void VTKFile::write_function(const Function& u, double time)
   results_write(u, vtu_filename);
 
   // Parallel-specfic files
-  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
+  if (MPI::num_processes(MPI_COMM_WORLD) > 1
+      && MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
     pvtu_write(u, pvtu_filename);
     pvd_file_write(counter, time, pvtu_filename);
   }
-  else if (MPI::num_processes() == 1)
+  else if (MPI::num_processes(MPI_COMM_WORLD) == 1)
     pvd_file_write(counter, time, vtu_filename);
 
   // Finalise and write pvd files
@@ -204,13 +205,14 @@ void VTKFile::write_mesh(const Mesh& mesh, double time)
                         compress);
 
   // Parallel-specific files
-  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
+  if (MPI::num_processes(MPI_COMM_WORLD) > 1
+      && MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
     pvtu_write_mesh(pvtu_filename);
     pvd_file_write(counter, time, pvtu_filename);
   }
-  else if (MPI::num_processes() == 1)
+  else if (MPI::num_processes(MPI_COMM_WORLD) == 1)
     pvd_file_write(counter, time, vtu_filename);
 
   // Finalise
@@ -223,8 +225,8 @@ void VTKFile::write_mesh(const Mesh& mesh, double time)
 std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const
 {
   // Get vtu file name and clear file
-  std::string vtu_filename = vtu_name(MPI::process_number(),
-                                      MPI::num_processes(),
+  std::string vtu_filename = vtu_name(MPI::process_number(MPI_COMM_WORLD),
+                                      MPI::num_processes(MPI_COMM_WORLD),
                                       counter,
                                       ".vtu");
   clear_file(vtu_filename);
@@ -538,10 +540,11 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     = (unsigned int) num_components;
 
   // Write vtu file list
-  for(std::size_t i = 0; i < MPI::num_processes(); i++)
+  for(std::size_t i = 0; i < MPI::num_processes(MPI_COMM_WORLD); i++)
   {
-    const std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(),
-                                                       counter, ".vtu"));
+    const std::string tmp_string
+      = strip_path(vtu_name(i, MPI::num_processes(MPI_COMM_WORLD),
+                            counter, ".vtu"));
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
@@ -563,10 +566,11 @@ void VTKFile::pvtu_write_mesh(const std::string fname) const
   pvtu_write_mesh(grid_node);
 
   // Write vtu file list
-  for(std::size_t i = 0; i < MPI::num_processes(); i++)
+  for(std::size_t i = 0; i < MPI::num_processes(MPI_COMM_WORLD); i++)
   {
-    const std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(),
-                                                       counter, ".vtu"));
+    const std::string tmp_string
+      = strip_path(vtu_name(i, MPI::num_processes(MPI_COMM_WORLD),
+                            counter, ".vtu"));
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
@@ -724,13 +728,14 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   fp.close();
 
   // Parallel-specfic files
-  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
+  if (MPI::num_processes(MPI_COMM_WORLD) > 1
+      && MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
     pvtu_write_function(1, 0, "cell", meshfunction.name(), pvtu_filename);
     pvd_file_write(counter, time, pvtu_filename);
   }
-  else if (MPI::num_processes() == 1)
+  else if (MPI::num_processes(MPI_COMM_WORLD) == 1)
     pvd_file_write(counter, time, vtu_filename);
 
   // Write pvd files

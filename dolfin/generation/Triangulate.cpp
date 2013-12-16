@@ -60,7 +60,7 @@ void Triangulate::triangulate(Mesh& mesh, const std::vector<Point>& vertices,
                               std::size_t gdim)
 {
   // Check that we are not running in parallel
-  if (MPI::num_processes() > 1)
+  if (MPI::num_processes(mesh.mpi_comm()) > 1)
   {
     dolfin_error("Triangulate.cpp",
                  "triangulate points using CGAL",

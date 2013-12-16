@@ -35,9 +35,10 @@
 #include <utility>
 #include <boost/shared_ptr.hpp>
 
+#include <dolfin/ale/MeshDisplacement.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
-#include <dolfin/ale/MeshDisplacement.h>
+#include <dolfin/common/MPI.h>
 #include "MeshData.h"
 #include "MeshDomains.h"
 #include "MeshGeometry.h"
@@ -640,6 +641,10 @@ namespace dolfin
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
 
+
+    const MPI_Comm& mpi_comm() const
+    { return _mpi_comm; }
+
   private:
 
     // Friends
@@ -673,6 +678,9 @@ namespace dolfin
 
     // Orientation of cells relative to a global direction
     std::vector<int> _cell_orientations;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 }

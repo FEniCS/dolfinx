@@ -72,7 +72,7 @@ PETScVector::PETScVector(std::string type, bool use_gpu)
   // Trivial range
   const std::pair<std::size_t, std::size_t> range(0, 0);
 
-  if (type == "global" && dolfin::MPI::num_processes() > 1)
+  if (type == "global" && dolfin::MPI::num_processes(PETSC_COMM_WORLD) > 1)
     _init(range, ghost_indices, true);
   else
     _init(range, ghost_indices, false);
@@ -96,7 +96,8 @@ PETScVector::PETScVector(std::size_t N, std::string type, bool use_gpu)
   if (type == "global")
   {
     // Compute a local range
-    const std::pair<std::size_t, std::size_t> range = MPI::local_range(N);
+    const std::pair<std::size_t, std::size_t> range
+      = MPI::local_range(MPI_COMM_WORLD, N);
 
     if (range.first == 0 && range.second == N)
       _init(range, ghost_indices, false);
@@ -220,7 +221,8 @@ void PETScVector::resize(std::size_t N)
   // Create vector
   if (_distributed)
   {
-    const std::pair<std::size_t, std::size_t> range = MPI::local_range(N);
+    const std::pair<std::size_t, std::size_t> range
+      = MPI::local_range(MPI_COMM_WORLD, N);
     resize(range);
   }
   else
@@ -672,8 +674,8 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   }
 
   // Send nonlocal rows indices to other processes
-  const std::size_t num_processes  = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
+  const std::size_t num_processes  = MPI::num_processes(MPI_COMM_WORLD);
+  const std::size_t process_number = MPI::process_number(MPI_COMM_WORLD);
   for (std::size_t i = 1; i < num_processes; ++i)
   {
     // Receive data from process p - i (i steps to the left), send data to
@@ -684,7 +686,7 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
 
     // Send and receive data
     std::vector<std::size_t> received_nonlocal_rows;
-    MPI::send_recv(send_nonlocal_rows.set(), dest,
+    MPI::send_recv(MPI_COMM_WORLD, send_nonlocal_rows.set(), dest,
                    received_nonlocal_rows, source);
 
     // Add rows which reside on this process
@@ -703,7 +705,7 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   const double local_sum = std::accumulate(local_values.begin(),
                                            local_values.end(), 0.0);
 
-  return MPI::sum(local_sum);
+  return MPI::sum(MPI_COMM_WORLD, local_sum);
 }
 //-----------------------------------------------------------------------------
 std::string PETScVector::str(bool verbose) const
@@ -844,7 +846,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 {
   PetscErrorCode ierr;
 
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(MPI_COMM_WORLD) == 0)
     x.resize(size());
   else
     x.resize(0);
@@ -861,7 +863,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterDestroy");
 
   // Wrap PETSc vector
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     PETScVector _vout(vout);
     _vout.get_local(x);

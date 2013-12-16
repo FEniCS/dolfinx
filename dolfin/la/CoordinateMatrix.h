@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -62,6 +63,9 @@ namespace dolfin
     { return _base_one; }
 
   private:
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     // Row and column indices
     std::vector<std::size_t> _rows;

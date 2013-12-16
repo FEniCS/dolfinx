@@ -212,10 +212,7 @@ void PETScSNESSolver::init(const std::string& method)
   }
 
   _snes.reset(new SNES, PETScSNESDeleter());
-  if (MPI::num_processes() > 1)
-    SNESCreate(PETSC_COMM_WORLD, _snes.get());
-  else
-    SNESCreate(PETSC_COMM_SELF, _snes.get());
+  SNESCreate(PETSC_COMM_WORLD, _snes.get());
 
   // Set solver type
   if (method != "default")
@@ -382,10 +379,16 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   SNESGetIterationNumber(*_snes, &its);
   SNESGetConvergedReason(*_snes, &reason);
 
-  if (reason > 0 && parameters["report"] && dolfin::MPI::process_number() == 0)
+  const MPI_Comm comm = PetscObjectComm((PetscObject)*_snes);
+  if (reason > 0 && parameters["report"]
+    && dolfin::MPI::process_number(comm) == 0)
+  {
     info("PETSc SNES solver converged in %d iterations with convergence reason %s.", its, SNESConvergedReasons[reason]);
-  else if (reason < 0 && dolfin::MPI::process_number() == 0)
+  }
+  else if (reason < 0 && dolfin::MPI::process_number(comm) == 0)
+  {
     warning("PETSc SNES solver diverged in %d iterations with divergence reason %s.", its, SNESConvergedReasons[reason]);
+  }
 
   if (parameters["error_on_nonconvergence"] && reason < 0)
   {
@@ -459,6 +462,8 @@ void PETScSNESSolver::set_linear_solver_parameters()
   SNESGetKSP(*_snes, &ksp);
   KSPGetPC(ksp, &pc);
 
+  const MPI_Comm comm = PetscObjectComm((PetscObject)*_snes);
+
   if (parameters["report"])
     KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
 
@@ -495,7 +500,7 @@ void PETScSNESSolver::set_linear_solver_parameters()
     }
     else
     {
-      if (MPI::num_processes() == 1)
+      if (MPI::num_processes(comm) == 1)
       {
         #if PETSC_HAVE_UMFPACK
         lu_method = "umfpack";
@@ -549,7 +554,9 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     const std::string method = parameters["method"];
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
     if (dolfin::MPI::process_number() == 0)
+    {
       warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
+    }
 
     if (method != "vi" && method != "default")
     {

@@ -136,20 +136,7 @@ std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
   boost::hash<std::vector<unsigned int> > uhash;
-  const std::size_t local_hash = uhash(_connections);
-
-  // Gather all hash keys
-  std::vector<std::size_t> all_hashes;
-  MPI::gather(local_hash, all_hashes);
-
-  // Hash the received hash keys
-  boost::hash<std::vector<size_t> > sizet_hash;
-  std::size_t global_hash = sizet_hash(all_hashes);
-
-  // Broadcast hash key
-  MPI::broadcast(global_hash);
-
-  return global_hash;
+  return uhash(_connections);
 }
 //-----------------------------------------------------------------------------
 std::string MeshConnectivity::str(bool verbose) const

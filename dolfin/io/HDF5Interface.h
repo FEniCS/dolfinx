@@ -188,7 +188,7 @@ namespace dolfin
                    "std::size_t is not the same size as long or int");
     return 0;
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::write_dataset(const hid_t file_handle,
                                            const std::string dataset_name,
@@ -223,7 +223,7 @@ namespace dolfin
     const std::vector<hsize_t> dimsf(global_size.begin(), global_size.end());
 
     // Check sizes
-    dolfin_assert(MPI::sum(count[0]) == global_size[0]);
+    //dolfin_assert(MPI::sum(count[0]) == global_size[0]);
 
     // Generic status report
     herr_t status;

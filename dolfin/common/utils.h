@@ -40,7 +40,7 @@ namespace dolfin
 
   /// Return string representation of int
   template <class T>
-  std::string to_string(T x)
+    std::string to_string(T x)
   {
     std::stringstream s;
     s << x;
@@ -62,27 +62,27 @@ namespace dolfin
   /// on each process, and the hash of the std::vector of all local hash
   /// keys is returned. This function is collective.
   template <class T>
-  std::size_t hash_global(const T& x)
+    std::size_t hash_global(const MPI_Comm& mpi_comm, const T& x)
   {
     // Compute local hash
     std::size_t local_hash = hash_local(x);
 
     // Gather hash keys on root process
     std::vector<std::size_t> all_hashes;
-    MPI::gather(local_hash, all_hashes);
+    MPI::gather(mpi_comm, local_hash, all_hashes);
 
     // Hash the received hash keys
     boost::hash<std::vector<std::size_t> > hash;
     std::size_t global_hash = hash(all_hashes);
 
     // Broadcast hash key to all processes
-    MPI::broadcast(global_hash);
+    MPI::broadcast(mpi_comm, global_hash);
     return global_hash;
   }
 
   /// Fast zero-fill of numeric vectors/blocks.
   template <class T>
-  void zerofill(T* arr, std::size_t n)
+    void zerofill(T* arr, std::size_t n)
   {
     if (std::numeric_limits<T>::is_integer || std::numeric_limits<T>::is_iec559)
       std::memset(arr, 0, n*sizeof(T));
@@ -94,7 +94,7 @@ namespace dolfin
   }
 
   template <class T>
-  void zerofill(std::vector<T>& vec)
+    void zerofill(std::vector<T>& vec)
   { zerofill(&vec[0], vec.size()); }
 
 }

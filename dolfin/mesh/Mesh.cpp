@@ -59,7 +59,8 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
                _cell_type(0),
                _ordered(false),
-               _cell_orientations(0)
+               _cell_orientations(0),
+               _mpi_comm(MPI_COMM_WORLD)
 {
   // Do nothing
 }
@@ -68,7 +69,8 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
                                _cell_type(0),
                                _ordered(false),
-                               _cell_orientations(0)
+                               _cell_orientations(0),
+                               _mpi_comm(MPI_COMM_WORLD)
 {
   *this = mesh;
 }
@@ -77,19 +79,20 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
                                    _cell_type(0),
                                    _ordered(false),
-                                   _cell_orientations(0)
+                                   _cell_orientations(0),
+                                   _mpi_comm(MPI_COMM_WORLD)
 {
   File file(filename);
   file >> *this;
   _cell_orientations.resize(this->num_cells(), -1);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(LocalMeshData& local_mesh_data)
-                                 : Variable("mesh", "DOLFIN mesh"),
-                                   Hierarchical<Mesh>(*this),
-                                   _cell_type(0),
-                                   _ordered(false),
-                                   _cell_orientations(0)
+Mesh::Mesh(LocalMeshData& local_mesh_data) : Variable("mesh", "DOLFIN mesh"),
+                                             Hierarchical<Mesh>(*this),
+                                             _cell_type(0),
+                                             _ordered(false),
+                                             _cell_orientations(0),
+                                             _mpi_comm(MPI_COMM_WORLD)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
@@ -99,15 +102,15 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
     Hierarchical<Mesh>(*this),
     _cell_type(0),
     _ordered(false),
-    _cell_orientations(0)
-
+    _cell_orientations(0),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   // Build mesh on process 0
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(_mpi_comm) == 0)
     CSGMeshGenerator::generate(*this, geometry, resolution);
 
   // Build distributed mesh
-  if (MPI::num_processes() > 1)
+  if (MPI::num_processes(_mpi_comm) > 1)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
@@ -117,16 +120,17 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
     Hierarchical<Mesh>(*this),
     _cell_type(0),
     _ordered(false),
-    _cell_orientations(0)
+    _cell_orientations(0),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   assert(geometry);
 
   // Build mesh on process 0
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(_mpi_comm) == 0)
     CSGMeshGenerator::generate(*this, *geometry, resolution);
 
   // Build distributed mesh
-  if (MPI::num_processes() > 1)
+  if (MPI::num_processes(_mpi_comm) > 1)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
@@ -446,10 +450,16 @@ double Mesh::rmax() const
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const
 {
+  // Get local hashes
+  const std::size_t kt_local = _topology.hash();
+  const std::size_t kg_local = _geometry.hash();
+
+  // Compute global hash
+  const std::size_t kt = hash_global(_mpi_comm, kt_local);
+  const std::size_t kg = hash_global(_mpi_comm, kg_local);
+
   // Compute hash based on the Cantor pairing function
-  const std::size_t k1 = _topology.hash();
-  const std::size_t k2 = _geometry.hash();
-  return (k1 + k2)*(k1 + k2 + 1)/2 + k2;
+  return (kt + kg)*(kt + kg + 1)/2 + kg;
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const

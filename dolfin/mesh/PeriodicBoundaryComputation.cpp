@@ -74,6 +74,9 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
                                                       const SubDomain& sub_domain,
                                                       const std::size_t dim)
 {
+  // MPI communication
+  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+
   // Get geometric and topological dimensions
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
@@ -176,10 +179,10 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 
   // Communicate bounding boxes for master entities
   std::vector<std::vector<double> > bounding_boxes;
-  MPI::all_gather(x_min_max, bounding_boxes);
+  MPI::all_gather(mpi_comm, x_min_max, bounding_boxes);
 
   // Number of MPI processes
-  std::size_t num_processes = MPI::num_processes();
+  std::size_t num_processes = MPI::num_processes(mpi_comm);
 
   // Build send buffer of mapped slave midpoint coordinate to
   // processes that may own the master entity
@@ -190,11 +193,13 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
     for (std::size_t p = 0; p < num_processes; ++p)
     {
       // Slave mapped coordinates from process p
-      std::vector<double>& slave_mapped_coords_send_p = slave_mapped_coords_send[p];
+      std::vector<double>& slave_mapped_coords_send_p
+        = slave_mapped_coords_send[p];
 
       // Check if mapped slave falls within master entity bounding box
       // on process p
-      if (in_bounding_box(slave_mapped_coords[i], bounding_boxes[p], sub_domain.map_tolerance))
+      if (in_bounding_box(slave_mapped_coords[i], bounding_boxes[p],
+                          sub_domain.map_tolerance))
       {
         sent_slave_indices[p].push_back(slave_entities[i]);
         slave_mapped_coords_send_p.insert(slave_mapped_coords_send_p.end(),
@@ -207,7 +212,8 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   // Send slave midpoints to possible owners of correspoding master
   // entity
   std::vector<std::vector<double> > slave_mapped_coords_recv;
-  MPI::all_to_all(slave_mapped_coords_send, slave_mapped_coords_recv);
+  MPI::all_to_all(mpi_comm,  slave_mapped_coords_send,
+                  slave_mapped_coords_recv);
   dolfin_assert(slave_mapped_coords_recv.size() == num_processes);
 
   // Check if this process owns the master facet for a received (mapped)
@@ -216,7 +222,8 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   std::vector<std::vector<unsigned int> > master_local_entity(num_processes);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::vector<double>& slave_mapped_coords_p = slave_mapped_coords_recv[p];
+    const std::vector<double>& slave_mapped_coords_p
+      = slave_mapped_coords_recv[p];
     for (std::size_t i = 0; i < slave_mapped_coords_p.size(); i += gdim)
     {
       // Unpack received mapped slave midpoint coordinate
@@ -239,15 +246,18 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 
   // Send local index of master entity back to owner of slave entity
   std::vector<std::vector<unsigned int> > master_entity_local_index_recv;
-  MPI::all_to_all(master_local_entity,  master_entity_local_index_recv);
+  MPI::all_to_all(mpi_comm, master_local_entity,
+                  master_entity_local_index_recv);
 
   // Build map from slave facets on this process to master facet (local
   // facet index, process owner)
-  std::map<unsigned int, std::pair<unsigned int, unsigned int> > slave_to_master_entity;
+  std::map<unsigned int, std::pair<unsigned int, unsigned int> >
+    slave_to_master_entity;
   std::size_t num_local_slave_entities = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::vector<unsigned int> master_entity_index_p = master_entity_local_index_recv[p];
+    const std::vector<unsigned int> master_entity_index_p
+      = master_entity_local_index_recv[p];
     const std::vector<unsigned int> sent_slaves_p = sent_slave_indices[p];
     dolfin_assert(master_entity_index_p.size() == sent_slaves_p.size());
 
@@ -266,9 +276,9 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 }
 //-----------------------------------------------------------------------------
 MeshFunction<std::size_t>
-  PeriodicBoundaryComputation::masters_slaves(boost::shared_ptr<const Mesh> mesh,
-                                              const SubDomain& sub_domain,
-                                              const std::size_t dim)
+PeriodicBoundaryComputation::masters_slaves(boost::shared_ptr<const Mesh> mesh,
+                                            const SubDomain& sub_domain,
+                                            const std::size_t dim)
 {
   dolfin_assert(mesh);
 
@@ -280,8 +290,10 @@ MeshFunction<std::size_t>
     slaves = compute_periodic_pairs(*mesh, sub_domain, dim);
 
   // Mark master and slaves, and pack off-process masters to send
-  std::vector<std::vector<std::size_t> > master_dofs_send(MPI::num_processes());
-  std::map<unsigned int, std::pair<unsigned int, unsigned int> >::const_iterator slave;
+  std::vector<std::vector<std::size_t> >
+    master_dofs_send(MPI::num_processes(mesh->mpi_comm()));
+  std::map<unsigned int,
+           std::pair<unsigned int, unsigned int> >::const_iterator slave;
   for (slave = slaves.begin(); slave != slaves.end(); ++slave)
   {
     // Set slave
@@ -294,13 +306,15 @@ MeshFunction<std::size_t>
 
   // Send/receive master entities
   std::vector<std::vector<std::size_t> > master_dofs_recv;
-  MPI::all_to_all(master_dofs_send, master_dofs_recv);
+  MPI::all_to_all(mesh->mpi_comm(), master_dofs_send, master_dofs_recv);
 
   // Build list of sharing processes
-  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
+  boost::unordered_map<unsigned int,
+std::vector<std::pair<unsigned int, unsigned int> > >
     shared_entities_map = DistributedMeshTools::compute_shared_entities(*mesh, dim);
   boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator e;
-  std::vector<std::vector<std::pair<unsigned int, unsigned int> > > shared_entities(mesh->num_entities(dim));
+  std::vector<std::vector<std::pair<unsigned int, unsigned int> > >
+    shared_entities(mesh->num_entities(dim));
   for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
   {
     dolfin_assert(e->first < shared_entities.size());
@@ -309,7 +323,7 @@ MeshFunction<std::size_t>
 
   // Mark and pack master to send to all sharing proceses
   master_dofs_send.clear();
-  master_dofs_send.resize(MPI::num_processes());
+  master_dofs_send.resize(MPI::num_processes(mesh->mpi_comm()));
   for (std::size_t p = 0; p < master_dofs_recv.size(); ++p)
   {
     for (std::size_t i = 0; i < master_dofs_recv[p].size(); ++i)
@@ -321,7 +335,8 @@ MeshFunction<std::size_t>
       mf[local_index] = 1;
 
       // Pack to send to sharing processes
-      const std::vector<std::pair<unsigned int, unsigned int> > sharing = shared_entities[local_index] ;
+      const std::vector<std::pair<unsigned int, unsigned int> > sharing
+        = shared_entities[local_index] ;
       for (std::size_t j = 0; j < sharing.size(); ++j)
       {
         dolfin_assert(sharing[j].first < master_dofs_send.size());
@@ -331,21 +346,20 @@ MeshFunction<std::size_t>
   }
 
   // Send/receive master entities
-  MPI::all_to_all(master_dofs_send, master_dofs_recv);
+  MPI::all_to_all(mesh->mpi_comm(), master_dofs_send, master_dofs_recv);
 
   // Mark master entities in mesh function
   for (std::size_t i = 0; i < master_dofs_recv.size(); ++i)
-  {
     for (std::size_t j = 0; j < master_dofs_recv[i].size(); ++j)
       mf[master_dofs_recv[i][j]] = 1;
-  }
 
   return mf;
 }
 //-----------------------------------------------------------------------------
-bool PeriodicBoundaryComputation::in_bounding_box(const std::vector<double>& point,
-                                                  const std::vector<double>& bounding_box,
-                                                  const double tol)
+bool
+PeriodicBoundaryComputation::in_bounding_box(const std::vector<double>& point,
+                                       const std::vector<double>& bounding_box,
+                                       const double tol)
 {
   // Return false if bounding box is empty
   if (bounding_box.empty())
@@ -356,7 +370,7 @@ bool PeriodicBoundaryComputation::in_bounding_box(const std::vector<double>& poi
   for (std::size_t i = 0; i < gdim; ++i)
   {
     if (!(point[i] >= (bounding_box[i] - tol)
-      && point[i] <= (bounding_box[gdim + i] + tol)))
+          && point[i] <= (bounding_box[gdim + i] + tol)))
     {
       return false;
     }

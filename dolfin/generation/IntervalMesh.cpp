@@ -33,7 +33,7 @@ using namespace dolfin;
 IntervalMesh::IntervalMesh(std::size_t nx, double a, double b) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver())
+  if (MPI::is_receiver(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
     return;
@@ -73,7 +73,8 @@ IntervalMesh::IntervalMesh(std::size_t nx, double a, double b) : Mesh()
   // Create main vertices:
   for (std::size_t ix = 0; ix <= nx; ix++)
   {
-    const std::vector<double> x(1, a + (static_cast<double>(ix)*(b - a)/static_cast<double>(nx)));
+    const std::vector<double>
+      x(1, a + (static_cast<double>(ix)*(b - a)/static_cast<double>(nx)));
     editor.add_vertex(ix, x);
   }
 
@@ -89,7 +90,7 @@ IntervalMesh::IntervalMesh(std::size_t nx, double a, double b) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster())
+  if (MPI::is_broadcaster(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
     return;

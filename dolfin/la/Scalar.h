@@ -73,7 +73,8 @@ namespace dolfin
     }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
+    virtual std::pair<std::size_t, std::size_t>
+      local_range(std::size_t dim) const
     {
       dolfin_error("Scalar.h",
                    "get local range of scalar",
@@ -82,29 +83,34 @@ namespace dolfin
     }
 
     /// Get block of values
-    void get(double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows) const
+    void get(double* block, const dolfin::la_index* num_rows,
+             const dolfin::la_index * const * rows) const
     { block[0] = _value; }
 
     /// Set block of values
-    void set(const double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows)
+    void set(const double* block, const dolfin::la_index* num_rows,
+             const dolfin::la_index * const * rows)
     { _value = block[0]; }
 
     /// Add block of values
-    void add(const double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows)
+    void add(const double* block, const dolfin::la_index* num_rows,
+             const dolfin::la_index * const * rows)
     {
       dolfin_assert(block);
       _value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    void add(const double* block,
+             const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
       dolfin_assert(block);
       _value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<std::vector<dolfin::la_index> >& rows)
+    void add(const double* block,
+             const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
       _value += block[0];
@@ -116,7 +122,10 @@ namespace dolfin
 
     /// Finalize assembly of tensor
     void apply(std::string mode)
-    { _value = MPI::sum(_value); }
+    {
+      dolfin::error("Need to fix Scalar::apply");
+      //_value = MPI::sum(_value);
+    }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const

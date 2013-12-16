@@ -107,8 +107,8 @@ namespace dolfin
       return !_global_indices[dim].empty();
     }
 
-    /// Return map from shared entities (local index) to processes that
-    /// share the entity
+    /// Return map from shared entities (local index) to processes
+    /// that share the entity
     std::map<unsigned int, std::set<unsigned int> >&
       shared_entities(unsigned int dim);
 

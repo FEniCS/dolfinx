@@ -102,6 +102,8 @@ boost::shared_ptr<GenericVector> EpetraVector::copy() const
 //-----------------------------------------------------------------------------
 void EpetraVector::resize(std::size_t N)
 {
+  dolfin::error("EpetraVector::resize needs updating for MPI comm");
+
   if (_x && this->size() == N)
     return;
 
@@ -110,8 +112,8 @@ void EpetraVector::resize(std::size_t N)
 
   if (_type == "global")
   {
-    const std::pair<std::size_t, std::size_t> range = MPI::local_range(N);
-    resize(range, ghost_indices);
+    //const std::pair<std::size_t, std::size_t> range = MPI::local_range(N);
+    //resize(range, ghost_indices);
   }
   else if (_type == "local")
   {
@@ -255,7 +257,10 @@ void EpetraVector::apply(std::string mode)
   // This would be simpler if we required that only local values (on
   // this process) can be set
   int err = 0;
-  if (MPI::sum(off_process_set_values.size()) > 0)
+  int num_my_off_process = off_process_set_values.size();
+  int num_off_proc = 0;
+  _x->Comm().SumAll(&num_my_off_process, &num_off_proc, 1);
+  if (num_off_proc  > 0)
   {
     // Create communicator
     EpetraFactory& f = EpetraFactory::instance();
@@ -521,9 +526,9 @@ void EpetraVector::gather(std::vector<double>& x,
 void EpetraVector::gather_on_zero(std::vector<double>& x) const
 {
   // FIXME: Is there an Epetra function for this?
-
+  dolfin_assert(_x);
   std::vector<dolfin::la_index> indices;
-  if (MPI::process_number() == 0)
+  if (_x->Comm().NumProc() == 0)
   {
     indices.resize(size());
     for (std::size_t i = 0; i < size(); ++i)
@@ -821,6 +826,10 @@ double EpetraVector::sum() const
 //-----------------------------------------------------------------------------
 double EpetraVector::sum(const Array<std::size_t>& rows) const
 {
+  dolfin::error("EpetraVector::sum need updating for MPI comm");
+  return 0.0;
+
+  /*
   dolfin_assert(_x);
   const std::size_t n0 = local_range().first;
   const std::size_t n1 = local_range().second;
@@ -837,8 +846,8 @@ double EpetraVector::sum(const Array<std::size_t>& rows) const
   }
 
   // Send nonlocal row indices to other processes
-  const std::size_t num_processes  = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
+  const std::size_t num_processes = _x->Comm().NumProc();
+  const std::size_t process_number = _x->Comm().MyPID();
   for (std::size_t i = 1; i < num_processes; ++i)
   {
     // Receive data from process p - i (i steps to the left), send data to
@@ -869,6 +878,7 @@ double EpetraVector::sum(const Array<std::size_t>& rows) const
   _x->Comm().SumAll(&local_sum, &global_sum, 1);
 
   return global_sum;
+  */
 }
 //-----------------------------------------------------------------------------
 #endif

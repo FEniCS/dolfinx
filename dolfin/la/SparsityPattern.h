@@ -52,7 +52,8 @@ namespace dolfin
     SparsityPattern(std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(const std::vector<std::size_t>& dims,
+    SparsityPattern(const MPI_Comm& mpi_comm,
+                    const std::vector<std::size_t>& dims,
                     const std::vector<std::pair<std::size_t,
                     std::size_t> >& ownership_range,
                     const std::vector<const boost::unordered_map<std::size_t,
@@ -60,7 +61,8 @@ namespace dolfin
                     std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(const std::vector<std::size_t>& dims,
+    void init(const MPI_Comm& mpi_comm,
+              const std::vector<std::size_t>& dims,
               const std::vector<std::pair<std::size_t,
               std::size_t> >& ownership_range,
               const std::vector<const boost::unordered_map<std::size_t,
@@ -121,8 +123,8 @@ namespace dolfin
     // Print some useful information
     void info_statistics() const;
 
-    // Indicate if sparsity pattern is distributed
-    bool distributed;
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     // Ownership range for each dimension
     std::vector<std::pair<std::size_t, std::size_t> > _local_range;

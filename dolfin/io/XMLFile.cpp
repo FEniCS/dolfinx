@@ -73,7 +73,7 @@ XMLFile::~XMLFile()
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& input_mesh)
 {
-  if (MPI::num_processes() == 1)
+  if (MPI::num_processes(input_mesh.mpi_comm()) == 1)
   {
     // Create XML doc and get DOLFIN node
     pugi::xml_document xml_doc;
@@ -87,7 +87,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
   {
     // Read local mesh data
     Timer t("XML: readSAX");
-    LocalMeshData local_mesh_data;
+    LocalMeshData local_mesh_data(MPI_COMM_WORLD);
     XMLLocalMeshSAX xml_object(local_mesh_data, _filename);
     xml_object.read();
     t.stop();
@@ -99,7 +99,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
 {
-  if (MPI::num_processes() > 1)
+  if (MPI::num_processes(output_mesh.mpi_comm()) > 1)
   {
     dolfin_error("XMLFile.cpp",
                  "write mesh to XML file in parallel",
@@ -132,17 +132,17 @@ void XMLFile::operator>> (GenericVector& input)
 
   // Read vector size
   std::size_t size = 0;
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     load_xml_doc(xml_doc);
     dolfin_node = get_dolfin_xml_node(xml_doc);
     size = XMLVector::read_size(dolfin_node);
   }
-  MPI::broadcast(size);
+  MPI::broadcast(MPI_COMM_WORLD, size);
 
   // Resize if necessary
   const std::size_t input_vector_size = input.size();
-  const std::size_t num_proc = MPI::num_processes();
+  const std::size_t num_proc = MPI::num_processes(MPI_COMM_WORLD);
   if (num_proc > 1 && input_vector_size != size)
   {
     warning("Resizing parallel vector. Default partitioning will be used. \
@@ -152,7 +152,7 @@ To control distribution, initialize vector size before reading from file.");
     input.resize(size);
 
   // Read vector on root process
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     dolfin_assert(dolfin_node);
     XMLVector::read(input, dolfin_node);
@@ -178,7 +178,7 @@ void XMLFile::operator<< (const GenericVector& output)
 {
   // Open file on process 0 for distributed objects and on all processes
   // for local objects
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -205,7 +205,7 @@ void XMLFile::operator>> (Parameters& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Parameters& output)
 {
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -219,7 +219,7 @@ void XMLFile::operator>>(Function& input)
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
   pugi::xml_node dolfin_node(0);
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     load_xml_doc(xml_doc);
     dolfin_node = get_dolfin_xml_node(xml_doc);
@@ -231,7 +231,7 @@ void XMLFile::operator>>(Function& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Function& output)
 {
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -249,7 +249,7 @@ template<typename T>
 void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                  const std::string type) const
 {
-  if (MPI::num_processes() == 1)
+  if (MPI::num_processes(MPI_COMM_WORLD) == 1)
   {
     pugi::xml_document xml_doc;
     load_xml_doc(xml_doc);
@@ -262,18 +262,18 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
     // other procs
     std::size_t dim = 0;
     MeshValueCollection<T> mvc(t.mesh());
-    if (MPI::process_number() == 0)
+    if (MPI::process_number(MPI_COMM_WORLD) == 0)
     {
       pugi::xml_document xml_doc;
       load_xml_doc(xml_doc);
       pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
       XMLMeshFunction::read(mvc, type, dolfin_node);
       dim = mvc.dim();
-      MPI::broadcast(dim);
+      MPI::broadcast(MPI_COMM_WORLD, dim);
     }
     else
     {
-      MPI::broadcast(dim);
+      MPI::broadcast(MPI_COMM_WORLD, dim);
       mvc.init(dim);
     }
 
@@ -307,7 +307,7 @@ template<typename T>
 void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
                                          const std::string type) const
 {
-  if (MPI::num_processes() == 1)
+  if (MPI::num_processes(MPI_COMM_WORLD) == 1)
   {
     pugi::xml_document xml_doc;
     load_xml_doc(xml_doc);
@@ -318,19 +318,19 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
   {
     // Read file on process 0
     MeshValueCollection<T> tmp_collection(t.mesh());
-    if (MPI::process_number() == 0)
+    if (MPI::process_number(MPI_COMM_WORLD) == 0)
     {
       pugi::xml_document xml_doc;
       load_xml_doc(xml_doc);
       const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
       XMLMeshValueCollection::read(tmp_collection, type, dolfin_node);
       std::size_t dim = (tmp_collection.dim());
-      MPI::broadcast(dim);
+      MPI::broadcast(MPI_COMM_WORLD, dim);
     }
     else
     {
       std::size_t dim = 0;
-      MPI::broadcast(dim);
+      MPI::broadcast(MPI_COMM_WORLD, dim);
       tmp_collection.init(dim);
     }
 

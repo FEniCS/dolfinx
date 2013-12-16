@@ -230,12 +230,12 @@ void DirichletBC::gather(Map& boundary_values) const
   typedef shared_dof_type::const_iterator shared_dof_iterator;
   typedef std::vector<unsigned int>::const_iterator proc_iterator;
 
+  // Get dofmap
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const shared_dof_type& shared_dofs = dofmap.shared_dofs();
 
   // Create list of boundary values to send to each processor
-
   map_type proc_map;
   for (Map::const_iterator bv = boundary_values.begin();
        bv != boundary_values.end(); ++bv)
@@ -256,7 +256,9 @@ void DirichletBC::gather(Map& boundary_values) const
 
   // Distribute the lists between neighbours
   map_type received_bvs;
-  MPI::distribute(dofmap.neighbours(), proc_map, received_bvs);
+  dolfin_assert(_function_space->mesh());
+  MPI::distribute(_function_space->mesh()->mpi_comm(),
+                  dofmap.neighbours(), proc_map, received_bvs);
 
   // Add the received boundary values to the local boundary values
 
@@ -635,11 +637,11 @@ void DirichletBC::check() const
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_facets() const
+void DirichletBC::init_facets(const MPI_Comm& mpi_comm) const
 {
   Timer timer("DirichletBC init facets");
 
-  if (MPI::max(_facets.size()) > 0)
+  if (MPI::max(mpi_comm, _facets.size()) > 0)
     return;
 
   if (_user_sub_domain)
@@ -758,21 +760,23 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   dolfin_assert(_function_space);
   dolfin_assert(_g);
 
+  // Get mesh and dofmap
+  dolfin_assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
+
   // Extract the list of facets where the BC should be applied
-  init_facets();
+  init_facets(mesh.mpi_comm());
 
   // Special case
   if (_facets.empty())
   {
-    if (MPI::num_processes() == 1)
+    if (MPI::num_processes(mesh.mpi_comm()) == 1)
       warning("Found no facets matching domain for boundary condition.");
     return;
   }
 
-  // Get mesh and dofmap
-  dolfin_assert(_function_space->mesh());
+  // Get dofmap
   dolfin_assert(_function_space->dofmap());
-  const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Create UFC cell object
@@ -856,21 +860,23 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   dolfin_assert(_function_space->element());
   dolfin_assert(_g);
 
+  // Get mesh
+  dolfin_assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
+
   // Extract the list of facets where the BC *might* be applied
-  init_facets();
+  init_facets(mesh.mpi_comm());
 
   // Special case
   if (_facets.empty())
   {
-    if (MPI::num_processes() == 1)
+    if (MPI::num_processes(mesh.mpi_comm()) == 1)
       warning("Found no facets matching domain for boundary condition.");
     return;
   }
 
-  // Get mesh and dofmap
-  dolfin_assert(_function_space->mesh());
+  // Get dofmap
   dolfin_assert(_function_space->dofmap());
-  const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Initialize facets, needed for geometric search

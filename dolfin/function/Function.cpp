@@ -681,8 +681,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values)
 //-----------------------------------------------------------------------------
 void Function::update() const
 {
-  if (MPI::num_processes() > 1)
-    _vector->update_ghost_values();
+  _vector->update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()

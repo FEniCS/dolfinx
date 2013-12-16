@@ -57,8 +57,9 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    STLMatrix(std::size_t primary_dim=0) : _primary_dim(primary_dim),
-      _block_size(1), _local_range(0, 0), num_codim_entities(0) {}
+  STLMatrix(std::size_t primary_dim=0) : _mpi_comm(MPI_COMM_SELF),
+      _primary_dim(primary_dim), _block_size(1), _local_range(0, 0),
+      num_codim_entities(0) {}
 
     /// Destructor
     virtual ~STLMatrix() {}
@@ -213,6 +214,9 @@ namespace dolfin
     std::size_t local_nnz() const;
 
   private:
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     /// Return matrix in compressed format
     template<typename T>

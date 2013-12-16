@@ -73,7 +73,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                    slave_master_entities, restriction);
 
   // Check if dofmap is distributed
-  const bool distributed = MPI::num_processes() > 1;
+  const bool distributed = MPI::num_processes(mesh.mpi_comm()) > 1;
 
   // Determine and set dof block size
   dolfin_assert(dofmap._ufc_dofmap);
@@ -187,11 +187,17 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
- const std::map<unsigned int, std::pair<unsigned int, unsigned int> >& slave_to_master_vertices,
+ const std::map<unsigned int,
+std::pair<unsigned int, unsigned int> >& slave_to_master_vertices,
  std::vector<std::size_t>& modified_global_indices)
 {
-  // Get vertex sharing information (local index, [(sharing process p, local index on p)])
-  const boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
+  // MPI communicator
+  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+
+  // Get vertex sharing information (local index, [(sharing process p,
+  // local index on p)])
+  const boost::unordered_map<unsigned int, std::
+                             vector<std::pair<unsigned int, unsigned int> > >
     shared_vertices = DistributedMeshTools::compute_shared_entities(mesh, 0);
 
    // Mark shared vertices
@@ -217,10 +223,11 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   }
 
   // MPI process number
-  const std::size_t proc_num = MPI::process_number();
+  const std::size_t proc_num = MPI::process_number(mesh.mpi_comm());
 
   // Communication data structures
-  std::vector<std::vector<std::size_t> > new_shared_vertex_indices(MPI::num_processes());
+  std::vector<std::vector<std::size_t> >
+    new_shared_vertex_indices(MPI::num_processes(mesh.mpi_comm()));
 
   // Compute modified global vertex indices
   std::size_t new_index = 0;
@@ -277,7 +284,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   }
 
   // Send number of owned entities to compute offeset
-  std::size_t offset = MPI::global_offset(new_index, true);
+  std::size_t offset = MPI::global_offset(mpi_comm, new_index, true);
 
   // Add process offset to modified indices
   for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
@@ -290,7 +297,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 
   // Send/receive new indices for shared vertices
   std::vector<std::vector<std::size_t> > received_vertex_data;
-  MPI::all_to_all(new_shared_vertex_indices, received_vertex_data);
+  MPI::all_to_all(mesh.mpi_comm(), new_shared_vertex_indices,
+                  received_vertex_data);
 
   // Set index for shared vertices that have been numbered by another process
   for (std::size_t p = 0; p < received_vertex_data.size(); ++p)
@@ -309,9 +317,9 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 
   // Request master vertex index from master owner
   std::vector<std::vector<std::size_t> >
-    master_send_buffer(MPI::num_processes());
+    master_send_buffer(MPI::num_processes(mpi_comm));
   std::vector<std::vector<std::size_t> >
-    local_slave_index(MPI::num_processes());
+    local_slave_index(MPI::num_processes(mpi_comm));
   std::map<unsigned int,
            std::pair<unsigned int, unsigned int> >::const_iterator master;
   for (master = slave_to_master_vertices.begin();
@@ -328,11 +336,12 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 
   // Send/receive master local indices for slave vertices
   std::vector<std::vector<std::size_t> > received_slave_vertex_indices;
-  MPI::all_to_all(master_send_buffer, received_slave_vertex_indices);
+  MPI::all_to_all(mpi_comm, master_send_buffer,
+                  received_slave_vertex_indices);
 
   // Send back new master vertex index
   std::vector<std::vector<std::size_t> >
-    master_vertex_indices(MPI::num_processes());
+    master_vertex_indices(MPI::num_processes(mpi_comm));
   for (std::size_t p = 0; p < received_slave_vertex_indices.size(); ++p)
   {
     const std::vector<std::size_t>& local_master_indices
@@ -347,7 +356,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 
   // Send/receive new global master indices for slave vertices
   std::vector<std::vector<std::size_t> > received_new_slave_vertex_indices;
-  MPI::all_to_all(master_vertex_indices, received_new_slave_vertex_indices);
+  MPI::all_to_all(mpi_comm, master_vertex_indices,
+                  received_new_slave_vertex_indices);
 
   // Set index for slave vertices
   for (std::size_t p = 0; p < received_new_slave_vertex_indices.size(); ++p)
@@ -367,7 +377,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 
   // Send new indices to process that share a vertex but were not
   // responsible for re-numbering
-  return MPI::sum(new_index);
+  return MPI::sum(mpi_comm, new_index);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
@@ -651,6 +661,8 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
 {
   log(TRACE, "Determining dof ownership for parallel dof map");
 
+  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+
   const std::size_t N = dofmap.global_dimension();
   dolfin_assert(N % block_size == 0);
   const std::size_t num_nodes = N/block_size;
@@ -679,7 +691,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
   BoundaryMesh boundary(mesh, "local");
 
   // Create a random number generator for ownership 'voting'
-  boost::mt19937 engine(MPI::process_number());
+  boost::mt19937 engine(MPI::process_number(mpi_comm));
   boost::uniform_int<> distribution(0, 100000000);
   boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
     rng(engine, distribution);
@@ -743,15 +755,15 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
   //        will avoid interleaving communication and computation.
 
   // Decide ownership of shared nodes
-  const std::size_t num_prococesses = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
+  const std::size_t num_prococesses = MPI::num_processes(mpi_comm);
+  const std::size_t process_number = MPI::process_number(mpi_comm);
   std::vector<std::size_t> recv_buffer;
   for (std::size_t k = 1; k < num_prococesses; ++k)
   {
     const std::size_t src
       = (process_number - k + num_prococesses) % num_prococesses;
     const std::size_t dest = (process_number + k) % num_prococesses;
-    MPI::send_recv(send_buffer, dest, recv_buffer, src);
+    MPI::send_recv(mpi_comm, send_buffer, dest, recv_buffer, src);
 
     for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
     {
@@ -842,13 +854,15 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
     // Global dimension for restricted space needs to be computed here
     // since it is not know by the UFC dof map.
     const std::size_t _owned_dim = owned_nodes.size();
-    const std::size_t _global_dimension = block_size*MPI::sum(_owned_dim);
+    const std::size_t _global_dimension = block_size*MPI::sum(mpi_comm,
+                                                              _owned_dim);
     dofmap._global_dimension = _global_dimension;
   }
   else
   {
     const std::size_t _owned_dim = owned_nodes.size();
-    dolfin_assert(block_size*MPI::sum(_owned_dim) == dofmap.global_dimension());
+    dolfin_assert(block_size*MPI::sum(mpi_comm, _owned_dim)
+                  == dofmap.global_dimension());
   }
 
   log(TRACE, "Finished determining dof ownership for parallel dof map");
@@ -864,6 +878,9 @@ DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership,
                                  std::size_t block_size)
 {
   log(TRACE, "Renumber dofs for parallel dof map");
+
+  // MPI communicator
+  const MPI_Comm& mpi_comm = mesh.mpi_comm();
 
   const std::size_t N = dofmap.global_dimension();
   dolfin_assert(N % block_size == 0);
@@ -888,8 +905,8 @@ DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership,
   dolfin_assert(old_dofmap.size() == mesh.num_cells());
 
   // Compute offset for owned and non-shared nodes
-  const std::size_t process_offset = MPI::global_offset(owned_nodes.size(),
-                                                        true);
+  const std::size_t process_offset
+    = MPI::global_offset(mpi_comm, owned_nodes.size(), true);
 
   // Clear some data
   dofmap._off_process_owner.clear();
@@ -1011,15 +1028,15 @@ DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership,
   //        will avoid interleaving communication and computation.
 
   // Exchange new node numbers for nodes that are shared
-  const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
+  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t process_number = MPI::process_number(mpi_comm);
   std::vector<std::size_t> recv_buffer;
   for (std::size_t k = 1; k < num_processes; ++k)
   {
     const std::size_t src
       = (process_number - k + num_processes) % num_processes;
     const std::size_t dest = (process_number + k) % num_processes;
-    MPI::send_recv(send_buffer, dest, recv_buffer, src);
+    MPI::send_recv(mpi_comm, send_buffer, dest, recv_buffer, src);
 
     // Add dofs renumbered by another process to the old-to-new map
     for (std::size_t i = 0; i < recv_buffer.size(); i += 2)

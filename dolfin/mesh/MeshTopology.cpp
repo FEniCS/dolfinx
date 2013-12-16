@@ -32,14 +32,12 @@ using namespace dolfin;
 MeshTopology::MeshTopology()
 
 {
-  // Make shared vertices empty when in serial
-  if (MPI::num_processes() == 1)
-    shared_entities(0);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
   : coloring(topology.coloring), num_entities(topology.num_entities),
-    global_num_entities(topology.global_num_entities), 
+    global_num_entities(topology.global_num_entities),
     _global_indices(topology._global_indices),
     _shared_entities(topology._shared_entities),
     connectivity(topology.connectivity)
@@ -136,7 +134,7 @@ void MeshTopology::init(std::size_t dim, std::size_t local_size)
   dolfin_assert(dim < num_entities.size());
   num_entities[dim] = local_size;
 
-  if (MPI::num_processes() == 1)
+  if (MPI::num_processes(MPI_COMM_WORLD) == 1)
     init_global(dim, local_size);
 }
 //-----------------------------------------------------------------------------

@@ -77,6 +77,9 @@ void GenericMatrix::ident_zeros()
 //-----------------------------------------------------------------------------
 void GenericMatrix::compress()
 {
+  dolfin::error("GenericMatrix::compress needs fixing for MPI communicator");
+
+  /*
   Timer timer("Compress matrix");
 
   // Create new layout
@@ -103,9 +106,11 @@ void GenericMatrix::compress()
   local_range[0] = this->local_range(0);
   local_range[1] = this->local_range(0);
 
-  // With the row-by-row algorithm used here there is no need for inserting non_local
-  // rows and as such we can simply use a dummy for off_process_owner
-  std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(2);
+  // With the row-by-row algorithm used here there is no need for
+  // inserting non_local rows and as such we can simply use a dummy
+  // for off_process_owner
+  std::vector<const boost::unordered_map<std::size_t, unsigned int>* >
+    off_process_owner(2);
   const boost::unordered_map<std::size_t, unsigned int> dummy;
   off_process_owner[0] = &dummy;
   off_process_owner[1] = &dummy;
@@ -173,5 +178,6 @@ void GenericMatrix::compress()
   }
 
   apply("insert");
+  */
 }
 //-----------------------------------------------------------------------------
