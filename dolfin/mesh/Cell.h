@@ -182,7 +182,7 @@ namespace dolfin
     /// *Returns*
     ///     double
     ///         The squared distance to the point.
-    double squared_distance(const Point& point)
+    double squared_distance(const Point& point) const
     { return _mesh->type().squared_distance(*this, point); }
 
     /// Compute distance to given point.
@@ -193,7 +193,7 @@ namespace dolfin
     /// *Returns*
     ///     double
     ///         The distance to the point.
-    inline double distance(const Point& point)
+    double distance(const Point& point) const
     {
       return sqrt(squared_distance(point));
     }
@@ -247,7 +247,7 @@ namespace dolfin
     /// Order entities locally
     ///
     /// *Arguments*
-    ///     global_vertex_indices (_MeshFunction_ <std::size_t>)
+    ///     global_vertex_indices (_std::vector<std::size_t>_)
     ///         The global vertex indices.
     void order(const std::vector<std::size_t>& local_to_global_vertex_indices)
     { _mesh->type().order(*this, local_to_global_vertex_indices); }
@@ -255,7 +255,7 @@ namespace dolfin
     /// Check if entities are ordered
     ///
     /// *Arguments*
-    ///     global_vertex_indices (_MeshFunction_ <std::size_t>)
+    ///     global_vertex_indices (_std::vector<std::size_t>)
     ///         The global vertex indices.
     ///
     /// *Returns*
