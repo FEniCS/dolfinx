@@ -22,7 +22,7 @@
 // Modified by Martin Alnaes, 2013
 //
 // First added:  2008-08-12
-// Last changed: 2013-01-08
+// Last changed: 2013-12-16
 
 #include <ufc.h>
 #include <boost/random.hpp>
@@ -550,6 +550,14 @@ void DofMapBuilder::build_ufc_dofmap(DofMap& dofmap,
   UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    if (MPI::num_processes() != 1)
+    {
+      // Skip ghost cells
+      const std::vector<std::size_t>& ghost_owner = mesh.data().array("ghost_owner", D);
+      if (ghost_owner[cell->index()] != MPI::process_number())
+        continue;
+    }
+    
     // Skip cells not included in restriction
     if (restriction && !restriction->contains(*cell))
       continue;
@@ -676,7 +684,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
   std::vector<std::size_t> send_buffer;
 
   // Extract the interior boundary
-  BoundaryMesh boundary(mesh, "local");
+  //  BoundaryMesh boundary(mesh, "local");
 
   // Create a random number generator for ownership 'voting'
   boost::mt19937 engine(MPI::process_number());
@@ -686,28 +694,49 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
 
   // Build set of dofs on process boundary (first assuming that all are
   // owned by this process)
-  const MeshFunction<std::size_t>& cell_map
-    = boundary.entity_map(boundary.topology().dim());
-  if (!cell_map.empty())
+  //  const MeshFunction<std::size_t>& cell_map
+  //    = boundary.entity_map(boundary.topology().dim());
+  //  if (!cell_map.empty())
+  //  {
+  //    for (CellIterator _f(boundary); !_f.end(); ++_f)
+  //    {
+  //      // Get boundary facet
+  //      Facet f(mesh, cell_map[*_f]);
+
+  //      // Get cell to which facet belongs (pick first)
+  //      Cell c(mesh, f.entities(mesh.topology().dim())[0]);
+
+  const unsigned int D = mesh.topology().dim();
+  const std::vector<std::size_t>& ghost_owner = mesh.data().array("ghost_owner", D);
+  
+  for (FacetIterator f(mesh); !f.end(); ++f)
   {
-    for (CellIterator _f(boundary); !_f.end(); ++_f)
+    if(f->num_entities(D) == 2)
     {
-      // Get boundary facet
-      Facet f(mesh, cell_map[*_f]);
+      CellIterator c(*f);
+      
+      const std::size_t g0 = ghost_owner[c->index()];
+      ++c;
+      const std::size_t g1 = ghost_owner[c->index()];
 
-      // Get cell to which facet belongs (pick first)
-      Cell c(mesh, f.entities(mesh.topology().dim())[0]);
-
+      const unsigned int process_number = MPI::process_number();
+      if(g0 == process_number && g1 == process_number)
+        continue;
+      if(g0 != process_number && g1 != process_number)
+        continue;
+      if(g0 == process_number)
+        --c;
+      
       // Skip cells not included in restriction
-      if (restriction && !restriction->contains(c))
+      if (restriction && !restriction->contains(*c))
         continue;
 
       // Tabulate dofs on cell
       const std::vector<dolfin::la_index>& cell_dofs
-        = dofmap.cell_dofs(c.index());
+        = dofmap.cell_dofs(c->index());
 
       // Tabulate which dofs are on the facet
-      dofmap.tabulate_facet_dofs(facet_dofs, c.index(f));
+      dofmap.tabulate_facet_dofs(facet_dofs, c->index(*f));
 
       // Insert shared nodes into set and assign a 'vote'
       dolfin_assert(dofmap.num_facet_dofs() % block_size == 0);
