@@ -88,6 +88,82 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   const std::map<unsigned int, std::set<unsigned int> > &
     shared_vertices = const_cast<Mesh&>(mesh).topology().shared_entities(0);
 
+  // Shared vertices for boundary mesh
+  std::map<unsigned int, std::set<unsigned int> > shared_boundary_vertices;
+  if (exterior)
+  {
+    // Extract shared vertices if vertex is identified as part of globally
+    // exterior facet.
+    std::vector<std::size_t> boundary_global_indices;
+    for (std::map<unsigned int, std::set<unsigned int> >::const_iterator
+        sv_it=shared_vertices.begin(); sv_it != shared_vertices.end(); ++sv_it)
+    {
+      std::size_t local_mesh_index = sv_it->first;
+      Vertex v(mesh, local_mesh_index);
+
+      for (FacetIterator f(v); !f.end(); ++f)
+      {
+        if (f->num_global_entities(D) == 1)
+        {
+          const std::size_t global_mesh_index
+            = mesh.topology().global_indices(0)[local_mesh_index];
+          shared_boundary_vertices[local_mesh_index] = sv_it->second;
+          boundary_global_indices.push_back(global_mesh_index);
+          break;
+        }
+      }
+    }
+
+    // Distribute all shared boundary vertices
+    std::vector<std::vector<std::size_t> > boundary_global_indices_all;
+    MPI::all_gather(boundary_global_indices, boundary_global_indices_all);
+
+    // Identify and clean up discrepancies between shared vertices of full mesh
+    // and shared vertices of boundary mesh
+    for (std::map<unsigned int, std::set<unsigned int> >::iterator
+      sbv_it = shared_boundary_vertices.begin(); sbv_it != shared_boundary_vertices.end(); )
+    {
+      std::size_t local_mesh_index = sbv_it->first;
+      const std::size_t global_mesh_index
+                = mesh.topology().global_indices(0)[local_mesh_index];
+
+      // Check if this vertex is identified as boundary vertex on other processes
+      // sharing this vertex
+      std::set<unsigned int> &other_processes = sbv_it->second;
+      for (std::set<unsigned int>::iterator op_it=other_processes.begin();
+            op_it != other_processes.end(); )
+      {
+        // Check if vertex is identified as boundary vertex on process *op_it
+        bool is_boundary_vertex = std::find(boundary_global_indices_all[*op_it].begin(),
+                                            boundary_global_indices_all[*op_it].end(),
+                                            global_mesh_index) != boundary_global_indices_all[*op_it].end();
+
+        // Erase item if this is not identified as a boundary vertex on process *op_it,
+        // and increment iterator
+        if (!is_boundary_vertex)
+          // Erase item while carefully avoiding invalidating the iterator:
+          // First increment it to get the next, valid iterator, and then
+          // erase what it pointed to from other_processes
+          other_processes.erase(op_it++);
+        else
+          ++op_it;
+      }
+
+      // Erase item from map if no other processes identify this vertex
+      // as a boundary vertex, and increment iterator
+      if (other_processes.size() == 0)
+        // Erase carefully as above
+        shared_boundary_vertices.erase(sbv_it++);
+      else
+        ++sbv_it;
+    }
+  }
+  else
+  {
+    // If interior boundary, shared vertices are the same
+    shared_boundary_vertices = shared_vertices;
+  }
+  
   // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices
   std::size_t num_boundary_vertices = 0;
@@ -123,8 +199,8 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
             std::size_t owner = my_rank;
 
             std::map<unsigned int, std::set<unsigned int> >::const_iterator
-              other_processes_it = shared_vertices.find(local_mesh_index);
-            if (other_processes_it != shared_vertices.end() && D > 1)
+              other_processes_it = shared_boundary_vertices.find(local_mesh_index);
+            if (other_processes_it != shared_boundary_vertices.end() && D > 1)
             {
               const std::set<unsigned int>& other_processes
                 = other_processes_it->second;

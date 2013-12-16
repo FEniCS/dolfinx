@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 20013 Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -15,19 +15,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2008-04-22
-// Last changed: 2013-12-09
-//
-// This file provides values for common constants.
+// First added:  2013-11-29
+// Last changed: 2013-11-29
 
-#ifndef __DOLFIN_CONSTANTS_H
-#define __DOLFIN_CONSTANTS_H
+//-----------------------------------------------------------------------------
+// Include code for SWIG related defines
+//-----------------------------------------------------------------------------
 
-#define DOLFIN_EPS           3.0e-16
-#define DOLFIN_EPS_LARGE     1e-14
-#define DOLFIN_SQRT_EPS      1.0e-8
-#define DOLFIN_PI            3.141592653589793238462
-#define DOLFIN_LINELENGTH    256
-#define DOLFIN_TERM_WIDTH    80
+%inline %{
+namespace dolfin {
 
+  bool has_petsc4py()
+  {
+#ifdef HAS_PETSC4PY
+    return true;
+#else
+    return false;
 #endif
+  }
+}
+%}

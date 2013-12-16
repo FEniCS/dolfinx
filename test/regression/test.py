@@ -23,7 +23,7 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2008-04-08
-# Last changed: 2013-09-13
+# Last changed: 2013-12-02
 
 import sys, os, re
 import platform
@@ -36,8 +36,8 @@ from dolfin import has_mpi, has_parmetis, has_scotch
 def get_executable_name(demo, lang) :
   """Extract name of executable (without extension) from path.
      Name should be on the form demo_dir1_dir2 where dir1 and dir2 are
-     directories under demo/[undocumented,pde,la] and lang (cpp or py) should
-     be excluded.
+     directories under demo/[undocumented,documented] and lang (cpp or py)
+     should be excluded.
   """
   directories = demo.split(os.path.sep)
 
@@ -86,41 +86,13 @@ for s in cppslow:
         cppdemos.remove(s)
         cppdemos.append(s)
 
-# Remove demos that need command-line arguments
-pyremoves  = [os.path.join(demodir,  'undocumented', 'quadrature', 'python')]
-cppremoves = [os.path.join(demodir,  'undocumented', 'quadrature', 'cpp')]
-
-# Remove demos that crash
-pyremoves.append(os.path.join(demodir,  'undocumented', 'python'))
-# Add these back when mesh generation from csg is working in 3D
-pyremoves.append(os.path.join(demodir,  'undocumented', 'csg', '3D', 'python'))
-cppremoves.append(os.path.join(demodir, 'undocumented', 'csg', '3D', 'cpp'))
-
-for demo in pyremoves:
-    if demo in pydemos:
-        pydemos.remove(demo)
-
-for demo in cppremoves:
-    if demo in cppdemos:
-        cppdemos.remove(demo)
-
-# Remove C++ coloring demo on Windows until #797640 is fixed
-if platform.system() == 'Windows':
-    winremove = [os.path.join(demodir, 'undocumented', 'coloring', 'cpp')]
-    for demo in winremove:
-        if demo in cppdemos:
-            cppdemos.remove(demo)
-
 # List of demos that throw expected errors in parallel
 not_working_in_parallel = \
   [os.path.join(demodir, 'documented',   'biharmonic',                  'cpp'),    \
    os.path.join(demodir, 'documented',   'biharmonic',                  'python'), \
    os.path.join(demodir, 'documented',   'csg-2D',                      'python'), \
    os.path.join(demodir, 'documented',   'csg-2D',                      'cpp'), \
-   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
-   os.path.join(demodir, 'undocumented', 'ale',                         'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'ale',                         'python'), \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'), \
    os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'cpp'),    \
@@ -133,17 +105,11 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'eval',                        'python'), \
    os.path.join(demodir, 'undocumented', 'extrapolation',               'cpp'),    \
    os.path.join(demodir, 'undocumented', 'extrapolation',               'python'), \
-   os.path.join(demodir, 'undocumented', 'meshfunction',                'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
-   os.path.join(demodir, 'undocumented', 'simple',                      'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'simple',                      'python'), \
-   os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
    os.path.join(demodir, 'documented',   'subdomains',                  'cpp'),    \
    os.path.join(demodir, 'documented',   'subdomains',                  'python'), \
@@ -158,7 +124,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'cpp'),    \
    os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'python'), \
    os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'python'), \
-   os.path.join(demodir, 'undocumented', 'multidomain',                 'cpp')
    ]
 
 failed = []
