@@ -39,7 +39,8 @@ elif not (has_parmetis() or has_scotch()):
 num_processes = 3
 
 # Run solver.py
-output = subprocess.check_output(['mpirun', '-np', str(num_processes), 'python', 'solver.py'])
+output = subprocess.check_output(['mpirun', '-np', str(num_processes),
+                                  sys.executable, 'solver.py'])
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     print output
 

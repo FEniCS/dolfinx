@@ -35,7 +35,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":
 failed = []
 
 # Command to run
-command = ["python", "test.py"] + sys.argv[1:]
+command = [sys.executable, "test.py"] + sys.argv[1:]
 
 # Run tests
 for test in tests:
