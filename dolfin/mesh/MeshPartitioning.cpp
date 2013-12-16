@@ -22,7 +22,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-13
+// Last changed: 2013-12-16
 
 #include <algorithm>
 #include <iterator>
@@ -243,19 +243,16 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   {
     warning("Using new ghost based method for shared vertices");
 
-    std::vector<std::size_t> boundary_vertex_indices
-      = ghost_boundary_vertices(ghost_cell_vertices, cell_vertices);
-
     // Locate processes which hold the shared vertices
+    // This now includes all vertices of ghost cells
     ghost_build_shared_vertices(mesh, ghost_cell_vertices, ghost_remote_process, 
                                 vertex_global_to_local);
   }
   else
   {
-    // Construct the local boundary mesh, and get vertex indices from that
-    std::vector<std::size_t> boundary_vertex_indices
-      = boundary_vertices(mesh, vertex_indices);
-    
+    // Use BoundaryMesh of local mesh to get possible shared vertices
+    std::vector<std::size_t> boundary_vertex_indices 
+      = boundary_vertices(mesh, vertex_indices);    
     // Notify other processes to find shared vertices
     build_shared_vertices(mesh, boundary_vertex_indices, vertex_global_to_local);
   }
@@ -286,29 +283,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
        == ghost_only_vertex_set.end()) ? 0 : 1;
   }
 
-}
-//-----------------------------------------------------------------------------
-std::vector<std::size_t> MeshPartitioning::ghost_boundary_vertices(
-        const boost::multi_array<std::size_t, 2>& ghost_cell_vertices,
-        const boost::multi_array<std::size_t, 2>& cell_vertices)
-{
-  // Get intersection between all local vertices and ghost vertices
-  // on this process
-
-  std::set<std::size_t> ghost_set = cell_vertex_set(ghost_cell_vertices);
-  std::set<std::size_t> main_set = cell_vertex_set(cell_vertices);
-  std::vector<std::size_t> boundary_vertex_indices(std::min(ghost_set.size(),
-                                            main_set.size()));
-  std::vector<std::size_t>::iterator boundary_set_end 
-    = std::set_intersection(ghost_set.begin(),
-                            ghost_set.end(),
-                            main_set.begin(),
-                            main_set.end(),
-                            boundary_vertex_indices.begin());
-  boundary_vertex_indices.resize(boundary_set_end 
-                                 - boundary_vertex_indices.begin());
-
-  return boundary_vertex_indices;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::ghost_build_shared_vertices(Mesh& mesh,

@@ -25,7 +25,7 @@ vmask_array_g = M.data().array("ghost_mask", 0) == 1
 
 cells_store=[]
 colors=[]
-cmap=['#ffc0c0', '#c0ffc0', '#ffffc0', '#c0c0ff', '#c0ffff']
+cmap=['#ffc0c0', '#c0ffc0', '#ffffc0', '#c0c0ff', '#c0ffff', '#808080', '#408080','#404040']
 
 idx = 0
 for c in cells(M):
