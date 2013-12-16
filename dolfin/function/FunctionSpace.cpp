@@ -24,20 +24,15 @@
 // First added:  2008-09-11
 // Last changed: 2011-05-15
 
+#include <vector>
 #include <dolfin/common/utils.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/fem/UFCCell.h>
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 #include "GenericFunction.h"
-#include "Function.h"
 #include "FunctionSpace.h"
 
 using namespace dolfin;
@@ -168,22 +163,26 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   std::vector<double> cell_coefficients(_dofmap->max_cell_dimension());
 
   // Iterate over mesh and interpolate on each cell
-  UFCCell ufc_cell(*_mesh);
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
-    ufc_cell.update(*cell);
+    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_cell_data(ufc_cell);
 
     // Restrict function to cell
-    v.restrict(&cell_coefficients[0], *_element, *cell, ufc_cell);
+    v.restrict(cell_coefficients.data(), *_element, *cell,
+               vertex_coordinates.data(), ufc_cell);
 
     // Tabulate dofs
-    const std::vector<dolfin::la_index>& cell_dofs = _dofmap->cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& cell_dofs
+      = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
-    expansion_coefficients.set(&cell_coefficients[0],
+    expansion_coefficients.set(cell_coefficients.data(),
                                _dofmap->cell_dimension(cell->index()),
-                               &cell_dofs[0]);
+                               cell_dofs.data());
   }
 
   // Finalise changes
@@ -205,20 +204,24 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
   dolfin_assert(_dofmap);
 
   // Check if sub space is already in the cache
-  std::map<std::vector<std::size_t>, boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
+  std::map<std::vector<std::size_t>,
+           boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
   subspace = subspaces.find(component);
   if (subspace != subspaces.end())
     return subspace->second;
   else
   {
     // Extract sub element
-    boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
+    boost::shared_ptr<const FiniteElement>
+      element(_element->extract_sub_element(component));
 
     // Extract sub dofmap
-    boost::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
+    boost::shared_ptr<GenericDofMap>
+      dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
 
     // Create new sub space
-    boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
+    boost::shared_ptr<FunctionSpace>
+      new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
     // Set component
     new_sub_space->_component.resize(component.size());
@@ -226,7 +229,9 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
       new_sub_space->_component[i] = component[i];
 
     // Insert new sub space into cache
-    subspaces.insert(std::pair<std::vector<std::size_t>, boost::shared_ptr<FunctionSpace> >(component, new_sub_space));
+    subspaces.insert(std::pair<std::vector<std::size_t>,
+                     boost::shared_ptr<FunctionSpace> >(component,
+                                                        new_sub_space));
 
     return new_sub_space;
   }
@@ -254,7 +259,8 @@ FunctionSpace::collapse(boost::unordered_map<std::size_t, std::size_t>& collapse
   boost::shared_ptr<GenericDofMap> collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
 
   // Create new FunctionsSpace and return
-  boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, collapsed_dofmap));
+  boost::shared_ptr<FunctionSpace>
+    collapsed_sub_space(new FunctionSpace(_mesh, _element, collapsed_dofmap));
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
@@ -286,7 +292,8 @@ void FunctionSpace::print_dofmap() const
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    const std::vector<dolfin::la_index>& dofs = _dofmap->cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs
+      = _dofmap->cell_dofs(cell->index());
     cout << cell->index() << ":";
     for (std::size_t i = 0; i < dofs.size(); i++)
       cout << " " << static_cast<std::size_t>(dofs[i]);

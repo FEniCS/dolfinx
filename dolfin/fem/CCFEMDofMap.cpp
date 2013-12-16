@@ -237,11 +237,14 @@ CCFEMDofMap::vertex_to_dof_map(const Mesh& mesh) const
   return _dofmaps[_current_part]->vertex_to_dof_map(mesh);
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                       const ufc::cell& ufc_cell) const
+void
+CCFEMDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                                  const std::vector<double>& vertex_coordinates,
+                                  const Cell& cell) const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
-  return _dofmaps[_current_part]->tabulate_coordinates(coordinates, ufc_cell);
+  _dofmaps[_current_part]->tabulate_coordinates(coordinates, vertex_coordinates,
+                                                cell);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>

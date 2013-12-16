@@ -29,13 +29,12 @@
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/adaptivity/Extrapolation.h>
-#include <dolfin/common/utils.h>
-#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/common/utils.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
-#include <dolfin/fem/UFC.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/XMLFile.h>
@@ -231,7 +230,8 @@ const Function& Function::operator= (const Function& v)
                   == _function_space->dofmap()->global_dimension());
 
     // Set values in vector
-    this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);
+    this->_vector->set(gathered_values.data(), collapsed_map.size(),
+                       new_rows.data());
     this->_vector->apply("insert");
   }
 
@@ -398,7 +398,8 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
 
   // Create cell that contains point
   const Cell cell(mesh, ID);
-  const UFCCell ufc_cell(cell);
+  ufc::cell ufc_cell;
+  cell.get_cell_data(ufc_cell);
 
   // Call evaluate function
   eval(values, x, cell, ufc_cell);
@@ -421,8 +422,13 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   // Create work vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
 
+  // Cell vertices (re-allocated inside function for thread safety)
+  std::vector<double> vertex_coordinates;
+  dolfin_cell.get_vertex_coordinates(vertex_coordinates);
+
   // Restrict function to cell
-  restrict(&coefficients[0], element, dolfin_cell, ufc_cell);
+  restrict(coefficients.data(), element, dolfin_cell,
+           vertex_coordinates.data(), ufc_cell);
 
   // Create work vector for basis
   std::vector<double> basis(value_size_loc);
@@ -435,8 +441,8 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   const int cell_orientation = 0;
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
-    element.evaluate_basis(i, &basis[0], &x[0],
-                           &ufc_cell.vertex_coordinates[0],
+    element.evaluate_basis(i, basis.data(), x.data(),
+                           vertex_coordinates.data(),
                            cell_orientation);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
@@ -485,6 +491,7 @@ void Function::eval(Array<double>& values,
 
   // Check if UFC cell comes from mesh, otherwise redirect to
   // evaluate on non-matching cell
+  dolfin_assert(ufc_cell.mesh_identifier >= 0);
   if (ufc_cell.mesh_identifier == (int) mesh.id())
   {
     const Cell cell(mesh, ufc_cell.index);
@@ -516,38 +523,14 @@ void Function::non_matching_eval(Array<double>& values,
   // Check whether we are allowed to extrapolate to evaluate
   if (id == std::numeric_limits<unsigned int>::max() && !allow_extrapolation)
   {
-    cout << point << endl;
     dolfin_error("Function.cpp",
                  "evaluate function at point",
                  "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
   }
 
-  // FIXME: Remove dim == 2 here!
-
   // Alternative 2: Compute closest cell to point (x)
-  if (id == std::numeric_limits<unsigned int>::max()
-      && allow_extrapolation && gdim == 2)
-  {
-      id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
-  }
-
-  // Alternative 3: Compute cell that contains barycenter of ufc_cell
-  // NB: This is slightly heuristic, but should work well for
-  // evaluation of points on refined meshes
   if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation)
-  {
-    // Extract vertices of ufc_cell
-    const double * const * vertices = ufc_cell.coordinates;
-
-    Point barycenter;
-    for (std::size_t i = 0; i <= gdim; i++)
-    {
-      Point vertex(gdim, vertices[i]);
-      barycenter += vertex;
-    }
-    barycenter /= (gdim + 1);
-    id = mesh.bounding_box_tree()->compute_first_entity_collision(barycenter);
-  }
+    id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
 
   // Throw error if all alternatives failed
   if (id == std::numeric_limits<unsigned int>::max())
@@ -561,7 +544,8 @@ void Function::non_matching_eval(Array<double>& values,
 
   // Create cell that contains point
   const Cell cell(mesh, ID);
-  const UFCCell new_ufc_cell(cell);
+  ufc::cell new_ufc_cell;
+  cell.get_cell_data(new_ufc_cell);
 
   // Call evaluate function
   eval(values, x, cell, new_ufc_cell);
@@ -569,6 +553,7 @@ void Function::non_matching_eval(Array<double>& values,
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,
                         const Cell& dolfin_cell,
+                        const double* vertex_coordinates,
                         const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
@@ -590,7 +575,8 @@ void Function::restrict(double* w, const FiniteElement& element,
   else
   {
     // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell);
+    restrict_as_ufc_function(w, element, dolfin_cell, vertex_coordinates,
+                             ufc_cell);
   }
 }
 //-----------------------------------------------------------------------------
@@ -602,8 +588,8 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
   // Check that the mesh matches. Notice that the hash is only
   // compared if the pointers are not matching.
-  if (&mesh != _function_space->mesh().get() &&
-      mesh.hash() != _function_space->mesh()->hash())
+  if (&mesh != _function_space->mesh().get()
+      && mesh.hash() != _function_space->mesh()->hash())
   {
     dolfin_error("Function.cpp",
                  "interpolate function values at vertices",
@@ -639,7 +625,8 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(mesh);
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
@@ -647,15 +634,18 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
       continue;
 
     // Update to current cell
-    ufc_cell.update(*cell);
+    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_cell_data(ufc_cell);
 
     // Pick values from global vector
-    restrict(&coefficients[0], element, *cell, ufc_cell);
+    restrict(coefficients.data(), element, *cell, vertex_coordinates.data(),
+             ufc_cell);
 
     // Interpolate values at the vertices
     const int cell_orientation = 0;
-    element.interpolate_vertex_values(&cell_vertex_values[0],
-                                      &coefficients[0],
+    element.interpolate_vertex_values(cell_vertex_values.data(),
+                                      coefficients.data(),
+                                      vertex_coordinates.data(),
                                       cell_orientation,
                                       ufc_cell);
 
