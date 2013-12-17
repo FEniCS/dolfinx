@@ -43,7 +43,6 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMap.h"
-#include "UFCCell.h"
 #include "DofMapBuilder.h"
 
 using namespace dolfin;
@@ -190,7 +189,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
  const std::map<unsigned int, std::pair<unsigned int, unsigned int> >& slave_to_master_vertices,
  std::vector<std::size_t>& modified_global_indices)
 {
-  // Get vertex sharing information (local index, [(sharing process p, local index on p)])
+  // Get vertex sharing information (local index, [(sharing process p,
+  // local index on p)])
   const boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
     shared_vertices = DistributedMeshTools::compute_shared_entities(mesh, 0);
 
@@ -220,7 +220,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   const std::size_t proc_num = MPI::process_number();
 
   // Communication data structures
-  std::vector<std::vector<std::size_t> > new_shared_vertex_indices(MPI::num_processes());
+  std::vector<std::vector<std::size_t> >
+    new_shared_vertex_indices(MPI::num_processes());
 
   // Compute modified global vertex indices
   std::size_t new_index = 0;
@@ -292,7 +293,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   std::vector<std::vector<std::size_t> > received_vertex_data;
   MPI::all_to_all(new_shared_vertex_indices, received_vertex_data);
 
-  // Set index for shared vertices that have been numbered by another process
+  // Set index for shared vertices that have been numbered by another
+  // process
   for (std::size_t p = 0; p < received_vertex_data.size(); ++p)
   {
     const std::vector<std::size_t>& received_vertex_data_p
@@ -546,21 +548,24 @@ void DofMapBuilder::build_ufc_dofmap(DofMap& dofmap,
   // Get standard local element dimension
   const std::size_t local_dim = dofmap._ufc_dofmap->local_dimension();
 
+  // Creat UFC cell and allocate memory
+  ufc::cell ufc_cell;
+  ufc_cell.entity_indices.resize(D + 1);
+
   // Build dofmap from ufc::dofmap
-  UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
     if (restriction && !restriction->contains(*cell))
       continue;
 
-    // Update UFC cell data
     ufc_cell.orientation = cell->mesh().cell_orientations()[cell->index()];
     for (std::size_t d = 0; d < D; ++d)
     {
       if (!global_entity_indices[d].empty())
       {
-        for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
+        ufc_cell.entity_indices[d].resize(cell->num_entities(d));
+        for (std::size_t i = 0; i < cell->num_entities(d); ++i)
         {
           ufc_cell.entity_indices[d][i]
             = global_entity_indices[d][cell->entities(d)[i]];
@@ -569,6 +574,7 @@ void DofMapBuilder::build_ufc_dofmap(DofMap& dofmap,
     }
 
     // FIXME: Check the below two for local vs global
+    ufc_cell.entity_indices[D].resize(1);
     ufc_cell.entity_indices[D][0] = cell->index();
     ufc_cell.index = cell->index();
 

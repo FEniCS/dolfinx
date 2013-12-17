@@ -25,7 +25,7 @@ tests = ["verify_demo_code_snippets.py"]
 
 failed = []
 for test in tests:
-    command = "python %s" % test
+    command = "%s %s" % (sys.executable, test)
     fail, output = get_status_output(command)
 
     if fail:
