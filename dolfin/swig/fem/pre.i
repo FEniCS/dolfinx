@@ -139,39 +139,26 @@ PROBLEM_RENAMES(NonlinearVariational)
 // Ignore dolfin::Cell versions of signatures as these now are handled by
 // a typemap
 //-----------------------------------------------------------------------------
-%ignore dolfin::FiniteElement::evaluate_basis(std::size_t i,
-                                              double* values,
-                                              const double* x,
-                                              const Cell& cell) const;
-
-%ignore dolfin::FiniteElement::evaluate_basis_all(double* values,
-                                                  const double* coordinates,
-                                                  const Cell& cell) const;
-
 %ignore dolfin::DofMap::tabulate_coordinates(
-                                    boost::multi_array<double, 2>& coordinates,
-                                    const Cell& cell) const;
+                                boost::multi_array<double, 2>& coordinates,
+                                const std::vector<double>& vertex_coordinates,
+                                const Cell& cell) const;
 
 %ignore dolfin::GenericDofMap::tabulate_coordinates(
-                                    boost::multi_array<double, 2>& coordinates,
-                                    const Cell& cell) const;
-
-%ignore dolfin::DofMap::tabulate_coordinates(
-			                              boost::multi_array<double, 2>& coordinates,
-			                              const ufc::cell& cell) const;
+                                boost::multi_array<double, 2>& coordinates,
+                                const std::vector<double>& vertex_coordinates,
+                                const Cell& cell) const;
 
 %ignore dolfin::CCFEMDofMap::tabulate_coordinates(
-                                    boost::multi_array<double, 2>& coordinates,
-                                    const ufc::cell& cell) const;
-
-%ignore dolfin::GenericDofMap::tabulate_coordinates(
-                                    boost::multi_array<double, 2>& coordinates,
-                                    const ufc::cell& cell) const;
+                                boost::multi_array<double, 2>& coordinates,
+                                const std::vector<double>& vertex_coordinates,
+                                const ufc::cell& cell) const;
 
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell
 //-----------------------------------------------------------------------------
-%typemap(in) const ufc::cell& (void *argp, bool dolfin_cell, int res)
+%typemap(in)
+const ufc::cell& (void *argp, bool dolfin_cell, int res)
 {
   // const ufc::cell& cell Typemap
   // First try dolfin::Cell
@@ -179,9 +166,11 @@ PROBLEM_RENAMES(NonlinearVariational)
   if (SWIG_IsOK(res))
   {
     dolfin_cell = true;
-    $1 = new dolfin::UFCCell(*reinterpret_cast<dolfin::Cell *>(argp));
+    const dolfin::Cell* tmp_cell = reinterpret_cast<dolfin::Cell *>(argp);
+    $1 = new ufc::cell;
+    tmp_cell->get_cell_data(*($1));
+    tmp_cell->get_cell_topology(*($1));
   }
-
   else
   {
     dolfin_cell = false;
@@ -215,7 +204,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 %define IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(TYPE)
 
 //-----------------------------------------------------------------------------
-// The std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Type*> > > 
+// The std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Type*> > >
 // typecheck
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_POINTER) std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > >
@@ -224,7 +213,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 }
 
 //-----------------------------------------------------------------------------
-// The std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Type*> > > 
+// The std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Type*> > >
 // typemap
 //-----------------------------------------------------------------------------
    %typemap (in) std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > > (std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > >  tmp_vec_0, std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> >  tmp_vec_1, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
@@ -250,7 +239,7 @@ PROBLEM_RENAMES(NonlinearVariational)
     // Check list items are list
     if (!PyList_Check(py_item_0))
       SWIG_exception(SWIG_TypeError, "list of lists of TYPE expected");
-    
+
     // Size of second list
     int size_1 = PyList_Size(py_item_0);
     tmp_vec_1.reserve(size_1);
@@ -265,9 +254,9 @@ PROBLEM_RENAMES(NonlinearVariational)
 
       // Try convert it
       res = SWIG_ConvertPtrAndOwn(py_item_1, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-      
+
       if (!SWIG_IsOK(res))
-	SWIG_exception(SWIG_TypeError, "expected a list of list of TYPE (Bad conversion)");  
+	SWIG_exception(SWIG_TypeError, "expected a list of list of TYPE (Bad conversion)");
 
       tempshared = *(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
       tmp_vec_1.push_back(tempshared);
@@ -304,4 +293,3 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
 //#ifdef IOMODULE // Conditional template instiantiation for IO module
 //%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
 //#endif
-

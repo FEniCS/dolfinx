@@ -301,6 +301,67 @@ namespace dolfin
     bool collides(const MeshEntity& entity) const
     { return _mesh->type().collides(*this, entity); }
 
+    // FIXME: This function is part of a UFC transition
+    /// Get cell vertex coordinates
+    void get_vertex_coordinates(std::vector<double>& coordinates) const
+    {
+      const std::size_t gdim = _mesh->geometry().dim();
+      const std::size_t num_vertices = this->num_entities(0);
+      const unsigned int* vertices = this->entities(0);
+      coordinates.resize(num_vertices*gdim);
+      for (std::size_t i = 0; i < num_vertices; i++)
+        for (std::size_t j = 0; j < gdim; j++)
+          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+    }
+
+    // FIXME: This function is part of a UFC transition
+    /// Fill UFC cell with miscellaneous data
+    void get_cell_data(ufc::cell& ufc_cell, int local_facet=-1) const
+    {
+      ufc_cell.geometric_dimension = _mesh->geometry().dim();;
+      ufc_cell.local_facet = local_facet;
+      ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      ufc_cell.mesh_identifier = mesh_id();
+      ufc_cell.index = index();
+    }
+
+    // FIXME: This function is part of a UFC transition
+    /// Fill UFC cell with topology data
+    void get_cell_topology(ufc::cell& ufc_cell) const
+    {
+      const MeshTopology& topology = _mesh->topology();
+
+      const std::size_t tdim = topology.dim();
+      ufc_cell.topological_dimension = tdim;
+      ufc_cell.orientation = _mesh->cell_orientations()[index()];
+
+      ufc_cell.entity_indices.resize(tdim + 1);
+      for (std::size_t d = 0; d < tdim; d++)
+      {
+        ufc_cell.entity_indices[d].resize(num_entities(d));
+        if (topology.have_global_indices(d))
+        {
+          const std::vector<std::size_t>& global_indices
+            = topology.global_indices(d);
+          for (std::size_t i = 0; i < num_entities(d); ++i)
+            ufc_cell.entity_indices[d][i] = global_indices[entities(d)[i]];
+        }
+        else
+        {
+          for (std::size_t i = 0; i < num_entities(d); ++i)
+            ufc_cell.entity_indices[d][i] = entities(d)[i];
+        }
+      }
+      ufc_cell.entity_indices[tdim].resize(1);
+
+      ufc_cell.entity_indices[tdim][0] = index();
+
+      // FIXME: Using the local cell index is inconsistent with UFC, but
+      //        necessary to make DOLFIN run
+      // Local cell index
+      ufc_cell.index = ufc_cell.entity_indices[tdim][0];
+    }
+
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
