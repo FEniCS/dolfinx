@@ -152,7 +152,8 @@ namespace dolfin
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const ufc::cell& ufc_cell) const;
+                              const std::vector<double>& vertex_coordinates,
+                              const Cell& cell) const;
 
     /// Tabulate the coordinates of all dofs owned by this
     /// process. This function is typically used by preconditioners
@@ -180,8 +181,7 @@ namespace dolfin
                  const Mesh& mesh) const;
 
     /// Return list of global dof indices on this process
-    std::vector<dolfin::la_index> dofs(std::size_t r0,
-                                               std::size_t r1) const;
+    std::vector<dolfin::la_index> dofs() const;
 
     /// Set dof entries in vector to a specified value. Parallel
     /// layout of vector must be consistent with dof map range. This

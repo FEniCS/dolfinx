@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-04-22
-// Last changed: 2013-08-02
+// Last changed: 2013-12-09
 //
 // This file provides values for common constants.
 

@@ -45,7 +45,6 @@ namespace dolfin
 {
 
   class GenericVector;
-  class UFC;
   class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
@@ -267,10 +266,13 @@ namespace dolfin
     /// *Arguments*
     ///     coordinates (boost::multi_array<double, 2>)
     ///         The coordinates of all dofs on a cell.
-    ///     ufc_cell (ufc::cell)
+    ///     vertex_coordinates (std::vector<double>)
+    ///         The cell vertex coordinates
+    ///     cell (Cell)
     ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const ufc::cell& ufc_cell) const;
+                              const std::vector<double>& vertex_coordinates,
+                              const Cell& cell) const;
 
     /// Tabulate the coordinates of all dofs on this process. This
     /// function is typically used by preconditioners that require the
@@ -366,7 +368,7 @@ namespace dolfin
                    collapsed_map, const Mesh& mesh) const;
 
     // FIXME: Document this function
-    std::vector<dolfin::la_index> dofs(std::size_t r0, std::size_t r1) const;
+    std::vector<dolfin::la_index> dofs() const;
 
     /// Set dof entries in vector to a specified value. Parallel layout
     /// of vector must be consistent with dof map range. This

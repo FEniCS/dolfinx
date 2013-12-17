@@ -237,11 +237,14 @@ CCFEMDofMap::vertex_to_dof_map(const Mesh& mesh) const
   return _dofmaps[_current_part]->vertex_to_dof_map(mesh);
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                       const ufc::cell& ufc_cell) const
+void
+CCFEMDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                                  const std::vector<double>& vertex_coordinates,
+                                  const Cell& cell) const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
-  return _dofmaps[_current_part]->tabulate_coordinates(coordinates, ufc_cell);
+  _dofmaps[_current_part]->tabulate_coordinates(coordinates, vertex_coordinates,
+                                                cell);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -279,8 +282,7 @@ CCFEMDofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_
   return copy(); // need to return something
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> CCFEMDofMap::dofs(std::size_t r0,
-                                                std::size_t r1) const
+std::vector<dolfin::la_index> CCFEMDofMap::dofs() const
 {
   dolfin_not_implemented();
   return std::vector<dolfin::la_index>();

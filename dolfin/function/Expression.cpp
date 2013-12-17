@@ -21,10 +21,9 @@
 // Last changed: 2011-11-14
 
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/fem/UFCCell.h>
 #include "Expression.h"
 
 using namespace dolfin;
@@ -100,10 +99,12 @@ std::size_t Expression::value_dimension(std::size_t i) const
 void Expression::restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
+                          const double* vertex_coordinates,
                           const ufc::cell& ufc_cell) const
 {
   // Restrict as UFC function (by calling eval)
-  restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell);
+  restrict_as_ufc_function(w, element, dolfin_cell, vertex_coordinates,
+                           ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,
@@ -117,17 +118,18 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size*mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  UFCCell ufc_cell(mesh);
+  ufc::cell ufc_cell;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update cell data
-    ufc_cell.update(*cell);
+    cell->get_cell_data(ufc_cell);
 
     // Iterate over cell vertices
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
       // Wrap coordinate data
-      const Array<double> x(mesh.geometry().dim(), const_cast<double*>(vertex->x()));
+      const Array<double> x(mesh.geometry().dim(),
+                            const_cast<double*>(vertex->x()));
 
       // Evaluate at vertex
       eval(local_vertex_values, x, ufc_cell);
