@@ -38,7 +38,8 @@ tests = {
                        "LocalSolver", "manifolds"],
     "function":       ["Constant", "ConstrainedFunctionSpace", \
                        "Expression", "Function", "FunctionAssigner", \
-                       "FunctionSpace", "SpecialFunctions"],
+                       "FunctionSpace", "SpecialFunctions", \
+                       "nonmatching_interpolation"],
     "geometry":       ["BoundingBoxTree", "Intersection", "Issues"],
     "graph":          ["GraphBuild"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
@@ -122,8 +123,8 @@ for prefix in prefixes:
             print "Python:",
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
                 os.chdir(os.path.join(test,"python"))
-                status, output = get_status_output("%spython .%s%s.py" % \
-                                   (prefix, os.path.sep, subtest))
+                status, output = get_status_output("%s%s .%s%s.py" % \
+                                   (prefix, sys.executable, os.path.sep, subtest))
                 os.chdir(os.path.join(os.pardir, os.pardir))
                 if status == 0 and "OK" in output:
                     print "OK",

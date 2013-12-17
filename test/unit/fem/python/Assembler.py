@@ -157,7 +157,9 @@ class Assembly(unittest.TestCase):
             parameters["num_threads"] = 0
 
     def test_subdomain_and_fulldomain_assembly_meshdomains(self):
-        "Test assembly over subdomains AND the full domain with markers stored as part of the mesh."
+        """Test assembly over subdomains AND the full domain with markers
+        stored as part of the mesh.
+        """
 
         # Create a mesh of the unit cube
         mesh = UnitCubeMesh(4, 4, 4)

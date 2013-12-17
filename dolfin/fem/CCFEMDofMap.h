@@ -152,7 +152,8 @@ namespace dolfin
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const ufc::cell& ufc_cell) const;
+                              const std::vector<double>& vertex_coordinates,
+                              const Cell& cell) const;
 
     /// Tabulate the coordinates of all dofs owned by this
     /// process. This function is typically used by preconditioners
