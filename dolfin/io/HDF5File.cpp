@@ -274,7 +274,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     write_data(topology_dataset, topological_data, global_size);
 
     // For cells, write the global cell index
-    if(cell_dim == mesh.topology().dim())
+    if (cell_dim == mesh.topology().dim())
     {
       const std::string cell_index_dataset = name + "/cell_indices";
       global_size.pop_back();
@@ -630,15 +630,13 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   // Write values to HDF5
   std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
-
   write_data(name + "/values", data_values, global_size);
-
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const Function& u, 
-                     const std::string name, double timestamp)
+void HDF5File::write(const Function& u,  const std::string name,
+                     double timestamp)
 {
-  if(!HDF5Interface::has_dataset(hdf5_file_id, name))
+  if (!HDF5Interface::has_dataset(hdf5_file_id, name))
   {
     write(u, name);
     std::vector<double> vectime(1, timestamp);
@@ -647,7 +645,7 @@ void HDF5File::write(const Function& u,
   else
   {
     HDF5Attribute attr = attributes(name);
-    if(!attr.exists("series"))
+    if (!attr.exists("series"))
     {
       dolfin_error("HDF5File.cpp",
                    "append to series",
@@ -657,8 +655,8 @@ void HDF5File::write(const Function& u,
     std::vector<double> vectime;
     attr.get("series", vectime);
 
-    unsigned int nvec = vectime.size();
-    std::string vecname = name 
+    std::size_t nvec = vectime.size();
+    std::string vecname = name
       + "/vector_" + boost::lexical_cast<std::string>(nvec);
 
     vectime.push_back(timestamp);
@@ -744,7 +742,7 @@ void HDF5File::read(Function& u, const std::string name)
     basename = name.substr(0, name.rfind("/"));
     vector_dataset_name = name;
   }
-  
+
   const std::string cells_dataset_name = basename + "/cells";
   const std::string cell_dofs_dataset_name = basename + "/cell_dofs";
   const std::string x_cell_dofs_dataset_name = basename + "/x_cell_dofs";
@@ -753,16 +751,16 @@ void HDF5File::read(Function& u, const std::string name)
   if (!HDF5Interface::has_group(hdf5_file_id, name))
     error("Group with name \"%s\" does not exist", name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, cells_dataset_name))
-    error("Dataset with name \"%s\" does not exist", 
+    error("Dataset with name \"%s\" does not exist",
           cells_dataset_name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, cell_dofs_dataset_name))
-    error("Dataset with name \"%s\" does not exist", 
+    error("Dataset with name \"%s\" does not exist",
           cell_dofs_dataset_name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, x_cell_dofs_dataset_name))
-    error("Dataset with name \"%s\" does not exist", 
+    error("Dataset with name \"%s\" does not exist",
           x_cell_dofs_dataset_name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
-    error("Dataset with name \"%s\" does not exist", 
+    error("Dataset with name \"%s\" does not exist",
           vector_dataset_name.c_str());
 
   // Get existing mesh and dofmap - these should be pre-existing
@@ -1235,7 +1233,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name) const
   // Look for cell indices in dataset, and use if available
   mesh_data.global_cell_indices.reserve(num_local_cells);
   const std::string cell_indices_name = mesh_name + "/cell_indices";
-  if(HDF5Interface::has_dataset(hdf5_file_id, cell_indices_name))
+  if (HDF5Interface::has_dataset(hdf5_file_id, cell_indices_name))
   {
     HDF5Interface::read_dataset(hdf5_file_id, cell_indices_name,
                                 cell_range, mesh_data.global_cell_indices);

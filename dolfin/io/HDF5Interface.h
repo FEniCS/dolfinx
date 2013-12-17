@@ -36,8 +36,8 @@ namespace dolfin
   class HDF5File;
 
   /// This class wraps HDF5 function calls. HDF5 function calls should
-  /// only appear in a member function of this class and not elsewhere in
-  /// the library.
+  /// only appear in a member function of this class and not elsewhere
+  /// in the library.
 
   class HDF5Interface
   {
@@ -93,25 +93,26 @@ namespace dolfin
 
     /// Get dataset rank
     static std::size_t dataset_rank(const hid_t hdf5_file_handle,
-                             const std::string dataset_name);
+                                    const std::string dataset_name);
 
     /// Return number of data sets in a group
     static std::size_t num_datasets_in_group(const hid_t hdf5_file_handle,
-                                      const std::string group_name);
+                                             const std::string group_name);
 
     /// Get dataset size (size of each dimension)
-    static std::vector<std::size_t> get_dataset_size(const hid_t hdf5_file_handle,
-                                                      const std::string dataset_name);
+    static std::vector<std::size_t>
+      get_dataset_size(const hid_t hdf5_file_handle,
+                       const std::string dataset_name);
 
     /// Return list all datasets in named group of file
     static std::vector<std::string> dataset_list(const hid_t hdf5_file_handle,
                                                  const std::string group_name);
 
     /// Get type of attribute
-    static const std::string get_attribute_type(
-                  const hid_t hdf5_file_handle,
-                  const std::string dataset_name,
-                  const std::string attribute_name);
+    static const std::string
+      get_attribute_type(const hid_t hdf5_file_handle,
+                         const std::string dataset_name,
+                         const std::string attribute_name);
 
     /// Get a named attribute of a dataset of known type
     template <typename T>
@@ -129,48 +130,49 @@ namespace dolfin
 
     /// Delete an attribute from a dataset or group
     static void delete_attribute(const hid_t hdf5_file_handle,
-                          const std::string dataset_name,
-                          const std::string attribute_name);
+                                 const std::string dataset_name,
+                                 const std::string attribute_name);
 
     /// Check if an attribute exists on a dataset or group
     static bool has_attribute(const hid_t hdf5_file_handle,
-                          const std::string dataset_name,
-                          const std::string attribute_name);
+                              const std::string dataset_name,
+                              const std::string attribute_name);
 
     // List attributes of dataset or group
-    static const std::vector<std::string> list_attributes(const hid_t hdf5_file_handle,
-                                                          const std::string dataset_name);
-    
+    static const std::vector<std::string>
+      list_attributes(const hid_t hdf5_file_handle,
+                      const std::string dataset_name);
+
   private:
 
     static herr_t attribute_iteration_function(hid_t loc_id,
-                                            const char* name,
-                                            const H5A_info_t* info,
-                                            void* str);
+                                               const char* name,
+                                               const H5A_info_t* info,
+                                               void* str);
 
     template <typename T>
-    static void add_attribute_value(const hid_t dset_id,
-      const std::string attribute_name,
-      const T& attribute_value);
+      static void add_attribute_value(const hid_t dset_id,
+                                      const std::string attribute_name,
+                                      const T& attribute_value);
 
     template <typename T>
-    static void add_attribute_value(const hid_t dset_id,
-      const std::string attribute_name,
-      const std::vector<T>& attribute_value);
-    
-    template <typename T>
-    static void get_attribute_value(const hid_t attr_type,
-      const hid_t attr_id,
-      T& attribute_value);
+      static void add_attribute_value(const hid_t dset_id,
+                                      const std::string attribute_name,
+                                      const std::vector<T>& attribute_value);
 
     template <typename T>
-    static void get_attribute_value(const hid_t attr_type,
-      const hid_t attr_id,
-      std::vector<T>& attribute_value);
+      static void get_attribute_value(const hid_t attr_type,
+                                      const hid_t attr_id,
+                                      T& attribute_value);
+
+    template <typename T>
+      static void get_attribute_value(const hid_t attr_type,
+                                      const hid_t attr_id,
+                                      std::vector<T>& attribute_value);
 
     // Return HDF5 data type
     template <typename T>
-    static hid_t hdf5_type()
+      static hid_t hdf5_type()
     {
       dolfin_error("HDF5Interface.cpp",
                    "get HDF5 primitive data type",

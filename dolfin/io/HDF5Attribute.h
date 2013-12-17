@@ -27,7 +27,6 @@
 #include <vector>
 
 #include<dolfin/common/Array.h>
-
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -36,26 +35,22 @@ namespace dolfin
   /// HDF5Attribute gives access to the attributes of a dataset
   /// via set() and get() methods
 
-  class HDF5Attribute 
+  class HDF5Attribute
   {
   public:
 
     // FIXME: Check validity of file and dataset
 
     /// Constructor
-    HDF5Attribute(hid_t hdf5_file_id, std::string dataset_name)
-      : hdf5_file_id(hdf5_file_id), dataset_name(dataset_name)
-    {
-    }
+    HDF5Attribute(const hid_t hdf5_file_id, std::string dataset_name)
+      : hdf5_file_id(hdf5_file_id), dataset_name(dataset_name) {}
 
     /// Destructor
-    ~HDF5Attribute()
-    {
-    }
+    ~HDF5Attribute() {}
 
     /// Check for the existence of an attribute on a dataset
     bool exists(const std::string attribute_name) const;
-    
+
     /// Set the value of a double attribute in the HDF5 file
     void set(const std::string attribute_name, const double value);
 
@@ -63,11 +58,11 @@ namespace dolfin
     void set(const std::string attribute_name, const std::size_t value);
 
     /// Set the value of an array of float attribute in the HDF5 file
-    void set(const std::string attribute_name, 
+    void set(const std::string attribute_name,
              const std::vector<double>& value);
 
     /// Set the value of an array of float attribute in the HDF5 file
-    void set(const std::string attribute_name, 
+    void set(const std::string attribute_name,
              const std::vector<std::size_t>& value);
 
     /// Set the value of a string attribute in the HDF5 file
@@ -77,14 +72,14 @@ namespace dolfin
     void get(const std::string attribute_name, double& value) const;
 
     /// Get the value of a vector double attribute in the HDF5 file
-    void get(const std::string attribute_name, 
+    void get(const std::string attribute_name,
              std::vector<double>& value) const;
 
     /// Set the value of a double attribute in the HDF5 file
     void get(const std::string attribute_name, std::size_t& value) const;
 
     /// Get the value of a vector double attribute in the HDF5 file
-    void get(const std::string attribute_name, 
+    void get(const std::string attribute_name,
              std::vector<std::size_t>& value) const;
 
     /// Get the value of an attribute in the HDF5 file as a string
@@ -103,8 +98,8 @@ namespace dolfin
 
   private:
 
-    hid_t hdf5_file_id;
-    std::string dataset_name;
+    const hid_t hdf5_file_id;
+    const std::string dataset_name;
 
     // Set the value of an attribute in the HDF5 file
     template <typename T>
@@ -115,9 +110,9 @@ namespace dolfin
     void get_value(const std::string attribute_name, T& value) const;
 
     template <typename T>
-    const std::string vector_to_string(
-                      const std::vector<T>& vector_value) const;
-    
+    const std::string
+      vector_to_string(const std::vector<T>& vector_value) const;
+
   };
 }
 
