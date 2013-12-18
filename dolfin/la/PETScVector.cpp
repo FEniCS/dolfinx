@@ -508,11 +508,16 @@ const PETScVector& PETScVector::operator= (double a)
 //-----------------------------------------------------------------------------
 void PETScVector::update_ghost_values()
 {
-  PetscErrorCode ierr;
-  ierr = VecGhostUpdateBegin(*_x, INSERT_VALUES, SCATTER_FORWARD);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
-  ierr = VecGhostUpdateEnd(*_x, INSERT_VALUES, SCATTER_FORWARD);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
+  if (dolfin::MPI::num_processes() > 1)
+  #endif
+  {
+    PetscErrorCode ierr;
+    ierr = VecGhostUpdateBegin(*_x, INSERT_VALUES, SCATTER_FORWARD);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
+    ierr = VecGhostUpdateEnd(*_x, INSERT_VALUES, SCATTER_FORWARD);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
+  }
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)

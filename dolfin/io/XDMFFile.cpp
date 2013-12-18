@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-06-21
+// Last changed: 2013-10-15
 
 #ifdef HAS_HDF5
 
@@ -43,7 +43,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include "HDF5File.h"
-#include "HDF5Interface.h"
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
 
