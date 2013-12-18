@@ -68,3 +68,4 @@ download_mesh test/unit/fem/python                           aneurysm.xml.gz
 download_mesh test/unit/io                                   snake.xml.gz
 download_mesh test/unit/nls/python                           doughnut.xml.gz
 download_mesh test/unit/mesh                                 boxes.xml.gz
+download_mesh test/unit/meshconvert/python/data              abaqus_facet.inp
