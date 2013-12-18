@@ -436,6 +436,8 @@ if (DOLFIN_ENABLE_TRILINOS)
         # Loop over libs and get full path
         foreach (lib ${${package}_LIBRARIES})
           find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${${package}_LIBRARY_DIRS} NO_DEFAULT_PATH)
+          # Also search the default paths
+          find_library(TRILINOS_LIB_${lib} ${lib})
           if (TRILINOS_LIB_${lib})
             list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
           endif()

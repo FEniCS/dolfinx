@@ -43,11 +43,19 @@ if (MPI_CXX_FOUND)
 
   find_library(PARMETIS_LIBRARY parmetis
     HINTS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib ${PETSC_DIR}/lib
+    NO_DEFAULT_PATH
+    DOC "Directory where the ParMETIS library is located"
+  )
+  find_library(PARMETIS_LIBRARY parmetis
     DOC "Directory where the ParMETIS library is located"
   )
 
   find_library(METIS_LIBRARY metis
     HINTS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib ${PETSC_DIR}/lib
+    NO_DEFAULT_PATH
+    DOC "Directory where the METIS library is located"
+  )
+  find_library(METIS_LIBRARY metis
     DOC "Directory where the METIS library is located"
   )
 
