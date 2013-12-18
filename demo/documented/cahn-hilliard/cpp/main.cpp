@@ -42,7 +42,7 @@ public:
 
   InitialConditions(const Mesh& mesh) : Expression(mesh.topology().dim())
   {
-    dolfin::seed(2 + dolfin::MPI::process_number());
+    dolfin::seed(2 + dolfin::MPI::process_number(mesh.mpi_comm()));
   }
 
   void eval(Array<double>& values, const Array<double>& x) const
