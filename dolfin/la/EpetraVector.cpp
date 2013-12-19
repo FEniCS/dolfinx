@@ -541,9 +541,9 @@ void EpetraVector::gather_on_zero(std::vector<double>& x) const
   // FIXME: Is there an Epetra function for this?
   dolfin_assert(_x);
   std::vector<dolfin::la_index> indices;
-  if (_x->Comm().NumProc() == 0)
+  if (_x->Comm().MyPID() == 0)
   {
-    indices.resize(size());
+    indices.resize(this->size());
     for (std::size_t i = 0; i < size(); ++i)
       indices[i] = i;
   }
@@ -839,10 +839,6 @@ double EpetraVector::sum() const
 //-----------------------------------------------------------------------------
 double EpetraVector::sum(const Array<std::size_t>& rows) const
 {
-  dolfin::error("EpetraVector::sum need updating for MPI comm");
-  return 0.0;
-
-  /*
   dolfin_assert(_x);
   const std::size_t n0 = local_range().first;
   const std::size_t n1 = local_range().second;
@@ -871,7 +867,8 @@ double EpetraVector::sum(const Array<std::size_t>& rows) const
 
     // Send and receive data
     std::vector<std::size_t> received_nonlocal_rows;
-    MPI::send_recv(nonlocal_rows.set(), dest, received_nonlocal_rows, source);
+    MPI::send_recv(MPI_COMM_WORLD, nonlocal_rows.set(), dest,
+                   received_nonlocal_rows, source);
 
     // Add rows which reside on this process
     for (std::size_t j = 0; j < received_nonlocal_rows.size(); ++j)
@@ -891,7 +888,6 @@ double EpetraVector::sum(const Array<std::size_t>& rows) const
   _x->Comm().SumAll(&local_sum, &global_sum, 1);
 
   return global_sum;
-  */
 }
 //-----------------------------------------------------------------------------
 #endif
