@@ -205,6 +205,42 @@ class AbaqusTest(_ConverterTest):
 #        convert(fname, """*MATERIAL, NAME=MAT
 #*SOLID SECTION, ELSET=NONE, MATERIAL=MAT""", error=True)
 
+    def test_facet_success(self):
+        """ Test facet export.
+        """
+        dim = 3
+        nb_facets = 29287  # The total number of facets in the mesh
+        marker_counter = {0: 26689,
+                          1: 180,
+                          2: 518,
+                          3: 518,
+                          4: 30,
+                          5: 30,
+                          6: 1210,
+                          7: 112,
+                          8: 0}
+        handler = self.__convert("abaqus_facet.inp")
+        self.assert_(handler.vertices_ended)
+        self.assert_(handler.cells_ended)
+
+        self.assert_("facet_region" in handler.functions.keys())
+        cell_type = DataHandler.CellType_Triangle
+        function_dim, sz, entries, ended = handler.functions["facet_region"]
+
+        # the dimension of the meshfunction should be dim-1
+        self.assertEqual(function_dim, dim - 1)
+        # There should be size facets in the mesh function
+        self.assertEqual(len(entries), nb_facets)
+        self.assertEqual(sz, nb_facets)
+
+
+        # Check that the right number of facets are marked
+        for marker, count in marker_counter.iteritems():
+            self.assert_(len([i for i in entries if i == marker]) == count)
+
+        self.assert_(ended)
+        self.assert_(handler.closed)
+
     def __convert(self, fname):
         handler = _TestHandler(DataHandler.CellType_Tetrahedron, 3, self)
         if not os.path.isabs(fname):
