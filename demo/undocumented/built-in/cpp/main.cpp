@@ -26,12 +26,9 @@ using namespace dolfin;
 
 int main()
 {
-  if (dolfin::MPI::num_processes(MPI_COMM_WORLD) == 1)
-  {
-    UnitIntervalMesh interval(10);
-    info("Plotting a UnitIntervalMesh");
-    plot(interval, "Unit interval");
-  }
+  UnitIntervalMesh interval(20);
+  info("Plotting a UnitIntervalMesh");
+  plot(interval, "Unit interval");
 
   UnitSquareMesh square_default(10, 10);
   info("Plotting a UnitSquareMesh");
