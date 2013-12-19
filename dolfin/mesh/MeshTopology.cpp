@@ -33,6 +33,9 @@ MeshTopology::MeshTopology()
 
 {
   // Do nothing
+  // Make shared vertices empty when in serial
+  if (MPI::num_processes(MPI_COMM_WORLD) == 1)
+    shared_entities(0);
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)

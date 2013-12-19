@@ -32,6 +32,11 @@
 #ifdef HAS_MPI
 
 //-----------------------------------------------------------------------------
+MPI_Comm dolfin::MPI::mpi_comm_world()
+{
+  return MPI_COMM_WORLD;
+}
+//-----------------------------------------------------------------------------
 dolfin::MPIInfo::MPIInfo()
 {
   MPI_Info_create(&info);
@@ -47,25 +52,27 @@ MPI_Info& dolfin::MPIInfo::operator*()
   return info;
 }
 //-----------------------------------------------------------------------------
-
-
-/*
 //-----------------------------------------------------------------------------
-dolfin::MPICommunicator::MPICommunicator()
+dolfin::MPICommWrapper::MPICommWrapper()
 {
-  MPI_Comm_dup(MPI_COMM_WORLD, &communicator);
+  SubSystemsManager::init_mpi();
+  MPI_Comm_dup(MPI_COMM_WORLD, &_comm);
 }
 //-----------------------------------------------------------------------------
-dolfin::MPICommunicator::~MPICommunicator()
+dolfin::MPICommWrapper::~MPICommWrapper()
 {
-  MPI_Comm_free(&communicator);
+  MPI_Comm_free(&_comm);
 }
 //-----------------------------------------------------------------------------
-MPI_Comm& dolfin::MPICommunicator::operator*()
+MPI_Comm& dolfin::MPICommWrapper::comm()
 {
-  return communicator;
+  return _comm;
 }
-*/
+//-----------------------------------------------------------------------------
+MPI_Comm& dolfin::MPICommWrapper::operator*()
+{
+  return _comm;
+}
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void dolfin::MPINonblocking::wait_all()

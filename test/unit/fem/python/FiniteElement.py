@@ -73,7 +73,8 @@ class FiniteElementTest(unittest.TestCase):
         "Testing evaluate_dofs vs tabulated coordinates."
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes() > 1:
+        comm = MPICommWrapper()
+        if MPI.num_processes(comm.comm()) > 1:
             return
 
         n = 4

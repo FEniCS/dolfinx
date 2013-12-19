@@ -344,10 +344,6 @@ class Instantiation(unittest.TestCase):
           tf = Function(V)
           tf.vector()[:] = 1.0
 
-          # PETSc 3.2 fails if update_ghost_values are called in serial
-          if MPI.num_processes() > 1:
-               tf.vector().update_ghost_values()
-
           e0 = Expression(["2*t", "-t"], t=tc)
           e1 = Expression(["2*t", "-t"], t=1.0)
           e2 = Expression("t", t=te)

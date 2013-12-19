@@ -30,6 +30,7 @@
 #include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericTensor.h"
+#include "TensorLayout.h"
 
 namespace dolfin
 {
@@ -44,7 +45,7 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), _value(0.0) {}
+  Scalar() : GenericTensor(), _value(0.0), _mpi_comm(MPI_COMM_NULL) {}
 
     /// Destructor
     virtual ~Scalar() {}
@@ -57,7 +58,10 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     void init(const TensorLayout& tensor_layout)
-    { _value = 0.0; }
+    {
+      _value = 0.0;
+      _mpi_comm = tensor_layout.mpi_comm();
+    }
 
     /// Return tensor rank (number of dimensions)
     std::size_t rank() const
@@ -122,10 +126,7 @@ namespace dolfin
 
     /// Finalize assembly of tensor
     void apply(std::string mode)
-    {
-      dolfin::error("Need to fix Scalar::apply");
-      //_value = MPI::sum(_value);
-    }
+    { _value = MPI::sum(_mpi_comm, _value); }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const
@@ -171,6 +172,9 @@ namespace dolfin
 
     // Value of scalar
     double _value;
+
+    // MPI communicator
+     MPI_Comm _mpi_comm;
 
   };
 

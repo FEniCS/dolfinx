@@ -102,8 +102,6 @@ boost::shared_ptr<GenericVector> EpetraVector::copy() const
 //-----------------------------------------------------------------------------
 void EpetraVector::resize(std::size_t N)
 {
-  dolfin::error("EpetraVector::resize needs updating for MPI comm");
-
   if (_x && this->size() == N)
     return;
 
@@ -112,8 +110,23 @@ void EpetraVector::resize(std::size_t N)
 
   if (_type == "global")
   {
-    //const std::pair<std::size_t, std::size_t> range = MPI::local_range(N);
-    //resize(range, ghost_indices);
+    // Get MPI communivator
+    MPI_Comm mpi_comm = MPI_COMM_WORLD;
+    if (_x)
+    {
+      #ifdef HAS_MPI
+      // Get Epetra MPI communicator (downcast)
+      const Epetra_MpiComm* epetra_mpi_comm
+        = dynamic_cast<const Epetra_MpiComm*>(&(_x->Map().Comm()));
+      dolfin_assert(epetra_mpi_comm);
+      mpi_comm = epetra_mpi_comm->Comm();
+      #else
+       mpi_comm = MPI_COMM_SELF;
+      #endif
+    }
+    const std::pair<std::size_t, std::size_t> range
+      = MPI::local_range(mpi_comm, N);
+    resize(range, ghost_indices);
   }
   else if (_type == "local")
   {
