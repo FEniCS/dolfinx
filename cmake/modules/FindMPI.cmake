@@ -387,9 +387,14 @@ function (interrogate_mpi_compiler lang try_libs)
         # to link against in an MPI program
         foreach(LIB ${MPI_LIBNAMES})
           string(REGEX REPLACE "^ ?-l" "" LIB ${LIB})
-          # MPI_LIB is cached by find_library, but we don't want that.  Clear it first.
+          # MPI_LIB is cached by find_library, but we don't want that.
+          # Clear it first.
           set(MPI_LIB "MPI_LIB-NOTFOUND" CACHE FILEPATH "Cleared" FORCE)
-          find_library(MPI_LIB NAMES ${LIB} HINTS ${MPI_LINK_PATH})
+          find_library(MPI_LIB NAMES ${LIB}
+                       HINTS ${MPI_LINK_PATH}
+                       NO_DEFAULT_PATH
+                       )
+          find_library(MPI_LIB NAMES ${LIB})
 
           if (MPI_LIB)
             list(APPEND MPI_LIBRARIES_WORK ${MPI_LIB})
@@ -427,7 +432,12 @@ function (interrogate_mpi_compiler lang try_libs)
       find_library(MPI_LIB
         NAMES         mpi mpich mpich2 msmpi
         HINTS         ${_MPI_BASE_DIR} ${_MPI_PREFIX_PATH}
-        PATH_SUFFIXES lib lib/${MS_MPI_ARCH_DIR} Lib Lib/${MS_MPI_ARCH_DIR})
+        PATH_SUFFIXES lib lib/${MS_MPI_ARCH_DIR} Lib Lib/${MS_MPI_ARCH_DIR}
+        NO_DEFAULT_PATH
+        )
+      find_library(MPI_LIB
+        NAMES         mpi mpich mpich2 msmpi
+        )
       set(MPI_LIBRARIES_WORK ${MPI_LIB})
 
       # Right now, we only know about the extra libs for C++.
@@ -439,7 +449,12 @@ function (interrogate_mpi_compiler lang try_libs)
         find_library(MPI_LIB
           NAMES         mpi++ mpicxx cxx mpi_cxx
           HINTS         ${_MPI_BASE_DIR} ${_MPI_PREFIX_PATH}
-          PATH_SUFFIXES lib)
+          PATH_SUFFIXES lib
+          NO_DEFAULT_PATH
+          )
+        find_library(MPI_LIB
+          NAMES         mpi++ mpicxx cxx mpi_cxx
+          )
         if (MPI_LIBRARIES_WORK AND MPI_LIB)
           list(APPEND MPI_LIBRARIES_WORK ${MPI_LIB})
         endif()

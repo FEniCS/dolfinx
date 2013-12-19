@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2013-08-27
+// Last changed: 2013-10-28
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -238,7 +238,7 @@ PyObject* list_item)
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY)  \
 const std::vector<TYPE>&  ARG_NAME
 {
-  $1 = PyArray_Check($input) ? 1 : 0;
+  $1 = PyArray_Check($input) ? PyArray_TYPE(reinterpret_cast<PyArrayObject*>($input)) == NUMPY_TYPE : 0;
 }
 
 // The typemap
