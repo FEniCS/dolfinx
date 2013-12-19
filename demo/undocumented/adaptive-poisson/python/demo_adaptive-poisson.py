@@ -90,7 +90,7 @@ for level in xrange(MAX_ITER):
     # Mark cells for refinement
     cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
     gamma_0 = sorted(gamma, reverse=True)[int(len(gamma)*REFINE_RATIO)]
-    gamma_0 = MPI.max(gamma_0)
+    gamma_0 = MPI.max(mesh.mpi_comm(), gamma_0)
     for c in cells(mesh):
         cell_markers[c] = gamma[c.index()] > gamma_0
 
