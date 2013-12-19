@@ -25,11 +25,15 @@ import numpy
 
 from dolfin import *
 
+# MPI_COMM_WORLD wrapper
+comm = MPICommWrapper()
+
 class IntervalTest(unittest.TestCase):
 
     def test_collides_point(self):
 
-        if MPI.num_processes() > 1: return
+        if MPI.num_processes(comm.comm()) > 1:
+            return
 
         mesh = UnitIntervalMesh(1)
         cell = Cell(mesh, 0)
@@ -39,7 +43,7 @@ class IntervalTest(unittest.TestCase):
 
     def test_distance(self):
 
-        if MPI.num_processes() > 1: return
+        if MPI.num_processes(comm.comm()) > 1: return
 
         mesh = UnitIntervalMesh(1)
         cell = Cell(mesh, 0)
@@ -51,7 +55,7 @@ class TriangleTest(unittest.TestCase):
 
     def test_collides_point(self):
 
-        if MPI.num_processes() > 1: return
+        if MPI.num_processes(comm.comm()) > 1: return
 
         mesh = UnitSquareMesh(1, 1)
         cell = Cell(mesh, 0)
@@ -61,7 +65,7 @@ class TriangleTest(unittest.TestCase):
 
     def test_collides_cell(self):
 
-        if MPI.num_processes() > 1: return
+        if MPI.num_processes(comm.comm()) > 1: return
 
         m0 = UnitSquareMesh(8, 8)
         c0 = Cell(m0, 0)
@@ -83,7 +87,7 @@ class TriangleTest(unittest.TestCase):
 
     def test_distance(self):
 
-        if MPI.num_processes() > 1: return
+        if MPI.num_processes(comm.comm()) > 1: return
 
         mesh = UnitSquareMesh(1, 1)
         cell = Cell(mesh, 1)
@@ -96,7 +100,7 @@ class TetrahedronTest(unittest.TestCase):
 
     def test_collides_point(self):
 
-        if MPI.num_processes() > 1: return
+        if MPI.num_processes(comm.comm()) > 1: return
 
         mesh = UnitCubeMesh(1, 1, 1)
         cell = Cell(mesh, 0)
@@ -106,12 +110,13 @@ class TetrahedronTest(unittest.TestCase):
 
     def test_distance(self):
 
-        if MPI.num_processes() > 1: return
+        if MPI.num_processes(comm.comm()) > 1: return
 
         mesh = UnitCubeMesh(1, 1, 1)
         cell = Cell(mesh, 5)
 
-        self.assertAlmostEqual(cell.distance(Point(-1.0, -1.0, -1.0)), numpy.sqrt(3))
+        self.assertAlmostEqual(cell.distance(Point(-1.0, -1.0, -1.0)), \
+                               numpy.sqrt(3))
         self.assertAlmostEqual(cell.distance(Point(-1.0, 0.5, 0.5)), 1)
         self.assertAlmostEqual(cell.distance(Point(0.5, 0.5, 0.5)), 0.0)
 

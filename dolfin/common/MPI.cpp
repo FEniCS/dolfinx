@@ -144,9 +144,10 @@ dolfin::MPI::local_range(const MPI_Comm& mpi_comm, unsigned int process,
   return local_range(process, N, num_processes(mpi_comm));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> dolfin::MPI::local_range(unsigned int process,
-                                                             std::size_t N,
-                                                             unsigned int num_processes)
+std::pair<std::size_t, std::size_t>
+dolfin::MPI::local_range(unsigned int process,
+                         std::size_t N,
+                         unsigned int num_processes)
 {
   // Compute number of items per process and remainder
   const std::size_t n = N / num_processes;
@@ -237,8 +238,9 @@ std::pair<std::size_t, std::size_t> dolfin::MPI::local_range(std::size_t N)
   return std::make_pair(0, N);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> dolfin::MPI::local_range(unsigned int process,
-                                                             std::size_t N)
+std::pair<std::size_t, std::size_t>
+dolfin::MPI::local_range(unsigned int process,
+                         std::size_t N)
 {
   if (process != 0 || num_processes() > 1)
   {

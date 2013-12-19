@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericTensor.h"
@@ -45,7 +46,8 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-  Scalar() : GenericTensor(), _value(0.0), _mpi_comm(MPI_COMM_NULL) {}
+    Scalar() : GenericTensor(), _value(0.0), _mpi_comm(MPI_COMM_WORLD)
+    { SubSystemsManager::init_mpi(); }
 
     /// Destructor
     virtual ~Scalar() {}
@@ -127,6 +129,10 @@ namespace dolfin
     /// Finalize assembly of tensor
     void apply(std::string mode)
     { _value = MPI::sum(_mpi_comm, _value); }
+
+    /// Return MPI communicator
+    const MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const

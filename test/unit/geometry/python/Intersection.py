@@ -37,7 +37,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        if MPI.num_processes() == 1:
+        if MPI.num_processes(mesh.mpi_comm()) == 1:
             self.assertEqual(intersection.intersected_cells(), [1])
 
     def test_mesh_point_2d(self):
@@ -48,7 +48,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        if MPI.num_processes() == 1:
+        if MPI.num_processes(mesh.mpi_comm()) == 1:
             self.assertEqual(intersection.intersected_cells(), [98])
 
     def test_mesh_point_3d(self):
@@ -59,7 +59,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        if MPI.num_processes() == 1:
+        if MPI.num_processes(mesh.mpi_comm()) == 1:
             self.assertEqual(intersection.intersected_cells(), [816])
 
 if __name__ == "__main__":
