@@ -344,6 +344,9 @@ class Instantiation(unittest.TestCase):
           tf = Function(V)
           tf.vector()[:] = 1.0
 
+          # Update ghost values
+          tf.update()
+
           e0 = Expression(["2*t", "-t"], t=tc)
           e1 = Expression(["2*t", "-t"], t=1.0)
           e2 = Expression("t", t=te)

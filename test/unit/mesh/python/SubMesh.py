@@ -23,8 +23,11 @@
 import unittest
 from dolfin import *
 
+# MPI_COMM_WORLD wrapper
+comm = MPICommWrapper()
+
 # FIXME: The following test breaks in parallel
-if MPI.num_processes() == 1:
+if MPI.num_processes(comm.comm()) == 1:
     class SubMeshTester(unittest.TestCase):
 
         def test_creation(self):

@@ -141,13 +141,13 @@ std::pair<std::size_t, std::size_t>
 dolfin::MPI::local_range(const MPI_Comm& mpi_comm, unsigned int process,
                          std::size_t N)
 {
-  return local_range(process, N, num_processes(mpi_comm));
+  return compute_local_range(process, N, num_processes(mpi_comm));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-dolfin::MPI::local_range(unsigned int process,
-                         std::size_t N,
-                         unsigned int num_processes)
+dolfin::MPI::compute_local_range(unsigned int process,
+                                 std::size_t N,
+                                 unsigned int num_processes)
 {
   // Compute number of items per process and remainder
   const std::size_t n = N / num_processes;

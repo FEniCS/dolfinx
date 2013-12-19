@@ -28,14 +28,14 @@ from dolfin import *
 class XMLMesh(unittest.TestCase):
 
     def test_save_plain_mesh2D(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitSquareMesh(8, 8)
+        mesh = UnitSquareMesh(8, 8)
+        if MPI.num_processes(mesh.mpi_comm()) == 1:
             f = File("unit_square.xml")
             f << mesh
 
     def test_save_plain_mesh3D(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitCubeMesh(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
+        if MPI.num_processes(mesh.mpi_comm()) == 1:
             f = File("unit_cube.xml")
             f << mesh
 
@@ -95,7 +95,7 @@ class XMLMesh(unittest.TestCase):
         s1.mark_cells(output_mesh, 1)
 
         # Write to file
-        if (MPI.num_processes() == 1):
+        if (MPI.num_processes(output_mesh.mpi_comm()) == 1):
             output_file = File("XMLMesh_test_mesh_domains_io.xml")
             output_file << output_mesh
 
@@ -117,8 +117,9 @@ class XMLMesh(unittest.TestCase):
 class LocalMeshDataXML_IO(unittest.TestCase):
 
     def testRead(self):
+        comm = MPICommWrapper()
         file = File("../snake.xml.gz")
-        localdata = cpp.LocalMeshData()
+        localdata = cpp.LocalMeshData(comm.comm())
         file >> localdata
 
 if __name__ == "__main__":

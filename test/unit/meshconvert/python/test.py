@@ -31,6 +31,7 @@ import tempfile
 from dolfin_utils.meshconvert import meshconvert
 from dolfin_utils.meshconvert.meshconvert import DataHandler
 
+
 class TestCase(_TestCase):
     def _get_tempfname(self, suffix=None):
         fd, fname = tempfile.mkstemp(suffix=suffix)
@@ -350,8 +351,11 @@ class GmshTest(_ConverterTest):
 class TriangleTester(_TestCase):
     def test_convert_triangle(self): # Disabled because it fails, see FIXME below
         # test no. 1
-        from dolfin import Mesh, MPI
-        if MPI.num_processes() != 1:
+        from dolfin import Mesh, MPI, MPICommWrapper
+
+        # MPI_COMM_WORLD wrapper
+        comm = MPICommWrapper()
+        if MPI.num_processes(comm.comm()) != 1:
             return
         fname = os.path.join("data", "triangle")
         dfname = fname+".xml"
@@ -372,7 +376,7 @@ class TriangleTester(_TestCase):
         from dolfin import MPI, Mesh, MeshFunction, \
                            edges, Edge, faces, Face, \
                            SubsetIterator, facets, CellFunction
-        if MPI.num_processes() != 1:
+        if MPI.num_processes(comm.comm()) != 1:
             return
         fname = os.path.join("data", "test_Triangle_3")
         dfname = fname+".xml"
@@ -438,8 +442,9 @@ class TriangleTester(_TestCase):
 
 class DiffPackTester(_TestCase):
     def test_convert_diffpack(self):
-        from dolfin import Mesh, MPI, MeshFunction
-        if MPI.num_processes() != 1:
+        from dolfin import Mesh, MPI, MeshFunction, MPICommWrapper
+        comm = MPICommWrapper()
+        if MPI.num_processes(comm.comm()) != 1:
             return
         fname = os.path.join("data", "diffpack_tet")
         dfname = fname+".xml"
@@ -458,7 +463,7 @@ class DiffPackTester(_TestCase):
         for marker, num in [(3, 9), (6, 9), (7, 3), (8, 1)]:
 
             mf_name = mf_basename % marker
-            mf = MeshFunction("uint", mesh, mf_name)
+            mf = MeshFunction("size_t", mesh, mf_name)
             self.assertEqual(sum(mf.array()==marker), num)
             os.unlink(mf_name)
 

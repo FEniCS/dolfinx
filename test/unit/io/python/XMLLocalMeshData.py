@@ -28,8 +28,9 @@ from dolfin import *
 class LocalMeshDataXML_IO(unittest.TestCase):
 
     def testRead(self):
+        comm = MPICommWrapper()
         file = File("../snake.xml.gz")
-        localdata = cpp.LocalMeshData()
+        localdata = cpp.LocalMeshData(comm.comm())
         file >> localdata
 
 if __name__ == "__main__":

@@ -28,8 +28,11 @@ class XMLMeshValueCollection(unittest.TestCase):
     def test_insertion_extraction_io(self):
         "Test input/output via << and >>."
 
+        # Create mesh
+        mesh = UnitCubeMesh(5, 5, 5)
+
         # Not working yet in parallel
-        if (MPI.num_processes() == 1):
+        if (MPI.num_processes(mesh.mpi_comm()) == 1):
 
             # Create mesh value collection and add some data
             mesh = UnitCubeMesh(5, 5, 5)
@@ -68,7 +71,7 @@ class XMLMeshValueCollection(unittest.TestCase):
         input_values = MeshValueCollection("size_t", mesh, "xml_value_collection_ref.xml")
 
         # Check that size is correct
-        self.assertEqual(MPI.sum(input_values.size()), 6)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), input_values.size()), 6)
 
 if __name__ == "__main__":
     unittest.main()

@@ -58,13 +58,14 @@ class ErrorControlTest(unittest.TestCase):
         ec = generate_error_control(problem, M)
 
         # Store created stuff
+        self.mesh = mesh
         self.problem = problem
         self.u = u
         self.ec = ec
 
     def test_error_estimation(self):
 
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve variational problem once
@@ -80,7 +81,7 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_error_indicators(self):
 
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve variational problem once
@@ -97,7 +98,7 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_adaptive_solve(self):
 
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve problem adaptively

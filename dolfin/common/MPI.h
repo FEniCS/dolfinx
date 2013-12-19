@@ -318,8 +318,8 @@ namespace dolfin
     /// Return local range for given process, splitting [0, N - 1] into
     /// num_processes portions of almost equal size
     static std::pair<std::size_t, std::size_t>
-        local_range(unsigned int process, std::size_t N,
-                    unsigned int num_processes);
+      compute_local_range(unsigned int process, std::size_t N,
+                          unsigned int num_processes);
 
     /// Return which process owns index (inverse of local_range)
     static unsigned int index_owner(const MPI_Comm& mpi_comm,

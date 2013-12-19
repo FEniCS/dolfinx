@@ -30,12 +30,14 @@ import unittest
 import numpy
 from dolfin import *
 
+# MPI_COMM_WORLD wrapper
+comm = MPICommWrapper()
+
 class MeshConstruction(unittest.TestCase):
 
     def setUp(self):
-        if MPI.num_processes() == 1:
-            self.interval = UnitIntervalMesh(10)
 
+        self.interval = UnitIntervalMesh(10)
         if has_cgal():
             self.circle = CircleMesh(Point(0.0, 0.0), 1.0, 0.1)
         self.square = UnitSquareMesh(5, 5)
@@ -45,8 +47,7 @@ class MeshConstruction(unittest.TestCase):
 
     def testUFLCell(self):
         import ufl
-        if MPI.num_processes() == 1:
-            self.assertEqual(ufl.interval, self.interval.ufl_cell())
+        self.assertEqual(ufl.interval, self.interval.ufl_cell())
         if has_cgal():
             self.assertEqual(ufl.triangle, self.circle.ufl_cell())
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
@@ -54,7 +55,7 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
 
-if MPI.num_processes() == 1:
+if MPI.num_processes(comm.comm()) == 1:
     class SimpleShapes(unittest.TestCase):
 
         def testUnitSquareMesh(self):
@@ -102,7 +103,7 @@ class BoundaryExtraction(unittest.TestCase):
             self.assertEqual(b1.num_vertices(), 0)
             self.assertEqual(b1.num_cells(), 0)
 
-if MPI.num_processes() == 1:
+if MPI.num_processes(comm.comm()) == 1:
     class MeshFunctions(unittest.TestCase):
 
         def setUp(self):
@@ -159,7 +160,7 @@ if MPI.num_processes() == 1:
 
 
 # FIXME: Mesh IO tests should be in io test directory
-if MPI.num_processes() == 1:
+if MPI.num_processes(comm.comm()) == 1:
     class InputOutput(unittest.TestCase):
 
         def testMeshXML2D(self):
@@ -194,6 +195,7 @@ if MPI.num_processes() == 1:
             file >> g
             for v in vertices(mesh):
                 self.assertEqual(f[v], g[v])
+
 class PyCCInterface(unittest.TestCase):
 
     def testGetGeometricalDimension(self):
@@ -201,7 +203,7 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquareMesh(5, 5)
         self.assertEqual(mesh.geometry().dim(), 2)
 
-    if MPI.num_processes() == 1:
+    if MPI.num_processes(comm.comm()) == 1:
         def testGetCoordinates(self):
             """Get coordinates of vertices"""
             mesh = UnitSquareMesh(5, 5)
@@ -210,10 +212,10 @@ class PyCCInterface(unittest.TestCase):
         def testGetCells(self):
             """Get cells of mesh"""
             mesh = UnitSquareMesh(5, 5)
-            self.assertEqual(MPI.sum(len(mesh.cells())), 50)
+            self.assertEqual(MPI.sum(mesh.mpi_comm(), len(mesh.cells())), 50)
 
 
-if MPI.num_processes() == 1:
+if MPI.num_processes(comm.comm()) == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):
@@ -294,7 +296,7 @@ class MeshOrientations(unittest.TestCase):
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)
 
-        if MPI.num_processes() == 1:
+        if MPI.num_processes(mesh.mpi_comm()) == 1:
             mesh = UnitSquareMesh(2, 2)
             mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
             reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))

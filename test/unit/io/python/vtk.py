@@ -31,7 +31,6 @@ mesh_function_types = ["size_t", "int", "double", "bool"]
 class VTK_MeshFunction_Output(unittest.TestCase):
     """Test output of MeshFunctions to VTK files"""
     def test_save_1d_meshfunctions(self):
-        #if MPI.num_processes() == 1:
         mesh = UnitIntervalMesh(32)
         for F in mesh_functions:
             if F in [FaceFunction, EdgeFunction]: continue
@@ -103,8 +102,8 @@ class VTK_Point_Function_Output(unittest.TestCase):
     """Test output of point-based Functions to VTK files"""
 
     def test_save_1d_scalar(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitIntervalMesh(32)
+        mesh = UnitIntervalMesh(32)
+        if MPI.num_processes(mesh.mpi_comm()) == 1:
             u = Function(FunctionSpace(mesh, "Lagrange", 2))
             u.vector()[:] = 1.0
             File("u.pvd") << u

@@ -25,6 +25,8 @@
 import unittest
 from dolfin import *
 
+comm = MPICommWrapper()
+
 class AbstractBaseTest(object):
     count = 0
     backend = "default"
@@ -100,7 +102,7 @@ class AbstractBaseTest(object):
 
     def test_resize_range(self):
         n = 301
-        local_range = MPI.local_range(n)
+        local_range = MPI.local_range(comm.comm(), n)
         v0 = Vector()
         v0.resize(local_range)
         self.assertEqual(v0.local_range(), local_range)
@@ -112,7 +114,7 @@ class AbstractBaseTest(object):
 
     def test_local_size(self):
         n = 301
-        local_range = MPI.local_range(n)
+        local_range = MPI.local_range(comm.comm(), n)
         v0 = Vector()
         v0.resize(local_range)
         self.assertEqual(v0.local_size(), local_range[1] - local_range[0])
@@ -293,15 +295,15 @@ class AbstractBaseTest(object):
 
     def test_vector_assignment_length(self):
         # Test that assigning with diffrent parallel layouts fails
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(comm.comm()) > 1:
             m = 301
-            local_range0 = MPI.local_range(m)
+            local_range0 = MPI.local_range(comm.comm(), m)
             print "local range", local_range0[0], local_range0[1]
 
             # Shift parallel partitiong but preserve global size
-            if MPI.process_number() == 0:
+            if MPI.process_number(comm.comm()) == 0:
                 local_range1 = (local_range0[0], local_range0[1] + 1)
-            elif MPI.process_number() == MPI.num_processes() - 1:
+            elif MPI.process_number(comm.comm()) == MPI.num_processes(comm.comm()) - 1:
                 local_range1 = (local_range0[0] + 1, local_range0[1])
             else:
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
@@ -348,7 +350,7 @@ class DataNotWorkingTester:
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-if MPI.num_processes() == 1:
+if MPI.num_processes(comm.comm()) == 1:
     class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
@@ -358,15 +360,18 @@ if MPI.num_processes() == 1:
         sub_backend = "Dense"
 
     if has_linear_algebra_backend("PETScCusp"):
-        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, \
+                              unittest.TestCase):
             backend    = "PETScCusp"
 
 if has_linear_algebra_backend("PETSc"):
-    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+    class PETScTester(DataNotWorkingTester, AbstractBaseTest, \
+                      unittest.TestCase):
         backend    = "PETSc"
 
 if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
+                       unittest.TestCase):
         backend    = "Epetra"
 
 # If we have PETSc or Epetra STL Vector gets typedefed to one of these and
