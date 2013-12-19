@@ -51,6 +51,7 @@ MAX_ITER = 20        # Maximal number of iterations
 mesh = UnitSquareMesh(4, 4)
 source_str = "exp(-100.0*(pow(x[0], 2) + pow(x[1], 2)))"
 source = eval("lambda x: " + source_str)
+
 # Adaptive algorithm
 for level in xrange(MAX_ITER):
 
@@ -78,7 +79,7 @@ for level in xrange(MAX_ITER):
 
     # Compute error estimate
     E = sum([g*g for g in gamma])
-    E = sqrt(MPI.sum(E))
+    E = sqrt(MPI.sum(mesh.mpi_comm(), E))
     print "Level %d: E = %g (TOL = %g)" % (level, E, TOL)
 
     # Check convergence

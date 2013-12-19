@@ -40,9 +40,9 @@ class InitialConditions : public Expression
 {
 public:
 
-  InitialConditions(const Mesh& mesh) : Expression(mesh.topology().dim())
+  InitialConditions() : Expression(2)
   {
-    dolfin::seed(2 + dolfin::MPI::process_number(mesh.mpi_comm()));
+    dolfin::seed(2 + dolfin::MPI::process_number(MPI_COMM_WORLD));
   }
 
   void eval(Array<double>& values, const Array<double>& x) const
@@ -127,7 +127,7 @@ class CahnHilliardEquation : public NonlinearProblem
       L.reset(_L);
 
       // Set solution to intitial condition
-      InitialConditions u_initial(mesh);
+      InitialConditions u_initial;
       *_u = u_initial;
     }
 
