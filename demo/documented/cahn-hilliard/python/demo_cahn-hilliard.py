@@ -29,8 +29,7 @@ from dolfin import *
 # Class representing the intial conditions
 class InitialConditions(Expression):
     def __init__(self):
-        comm = MPICommWrapper()
-        random.seed(2 + MPI.process_number(comm.comm()))
+        random.seed(2 + MPI.process_number(mpi_comm_world()))
     def eval(self, values, x):
         values[0] = 0.63 + 0.02*(0.5 - random.random())
         values[1] = 0.0

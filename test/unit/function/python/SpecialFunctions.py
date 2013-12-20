@@ -26,8 +26,7 @@ from dolfin import *
 class SpecialFunctions(unittest.TestCase):
 
     def testFacetArea(self):
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) == 1:
+        if MPI.num_processes(mpi_comm_world()) == 1:
             references = [(UnitIntervalMesh(1), 2, 2),\
                           (UnitSquareMesh(1,1), 4, 4),\
                           (UnitCubeMesh(1,1,1), 6, 3)]

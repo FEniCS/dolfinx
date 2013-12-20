@@ -395,8 +395,7 @@ class Assembly(unittest.TestCase):
     def test_reference_assembly(self):
         "Test assembly against a reference solution"
 
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) == 1:
+        if MPI.num_processes(mpi_comm_world()) == 1:
 
             # NOTE: This test is not robust as it relies on specific
             #       DOF order, which cannot be guaranteed

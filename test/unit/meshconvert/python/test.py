@@ -383,11 +383,10 @@ class GmshTest(_ConverterTest):
 class TriangleTester(_TestCase):
     def test_convert_triangle(self): # Disabled because it fails, see FIXME below
         # test no. 1
-        from dolfin import Mesh, MPI, MPICommWrapper
+        from dolfin import Mesh, MPI, mpi_comm_world
 
         # MPI_COMM_WORLD wrapper
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) != 1:
+        if MPI.num_processes(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "triangle")
         dfname = fname+".xml"
@@ -407,8 +406,8 @@ class TriangleTester(_TestCase):
         # test no. 2
         from dolfin import MPI, Mesh, MeshFunction, \
                            edges, Edge, faces, Face, \
-                           SubsetIterator, facets, CellFunction
-        if MPI.num_processes(comm.comm()) != 1:
+                           SubsetIterator, facets, CellFunction, mpi_comm_world
+        if MPI.num_processes(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "test_Triangle_3")
         dfname = fname+".xml"
@@ -474,9 +473,8 @@ class TriangleTester(_TestCase):
 
 class DiffPackTester(_TestCase):
     def test_convert_diffpack(self):
-        from dolfin import Mesh, MPI, MeshFunction, MPICommWrapper
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) != 1:
+        from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
+        if MPI.num_processes(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "diffpack_tet")
         dfname = fname+".xml"

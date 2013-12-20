@@ -31,11 +31,7 @@ class PeriodicBoundary(SubDomain):
         y[0] = x[0] - 1.0
         y[1] = x[1]
 
-
-# MPI_COMM_WORLD wrapper
-comm = MPICommWrapper()
-
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
 
     # Create instance of PeriodicBoundaryComputation
     periodic_boundary = PeriodicBoundary()

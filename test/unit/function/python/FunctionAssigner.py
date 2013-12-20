@@ -92,8 +92,7 @@ class Creation(unittest.TestCase):
 
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mesh.mpi_comm()) > 1:
             return
 
         assigner = FunctionAssigner(WW.sub(0), W)
@@ -126,8 +125,7 @@ class Creation(unittest.TestCase):
 
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mesh.mpi_comm()) > 1:
             return
 
         assign(self.qqv, [self.qq, self.u1])
@@ -154,8 +152,7 @@ class Creation(unittest.TestCase):
 
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mesh.mpi_comm()) > 1:
             return
 
         assign([self.qq, self.u1], self.qqv)

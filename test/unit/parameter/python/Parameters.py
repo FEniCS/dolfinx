@@ -23,16 +23,13 @@
 import unittest
 from dolfin import *
 
-# MPI_COMM_WORLD wrapper
-comm = MPICommWrapper()
-
 class InputOutput(unittest.TestCase):
 
     def test_simple(self):
 
         # Not working in parallel, even if only process 0 writes and
         # others wait for a barrier. Skipping this in parallel for now.
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         # Create some parameters
@@ -62,7 +59,7 @@ class InputOutput(unittest.TestCase):
 
         # Not working in parallel, even if only process 0 writes and
         # others wait for a barrier. Skipping this in parallel for now.
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         # Create some parameters
@@ -92,7 +89,7 @@ class InputOutput(unittest.TestCase):
 
         # Not working in parallel, even if only process 0 writes and
         # others wait for a barrier. Skipping this in parallel for now.
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         # Create some nested parameters
@@ -131,7 +128,7 @@ class InputOutput(unittest.TestCase):
 
         # Not working in parallel, even if only process 0 writes and
         # others wait for a barrier. Skipping this in parallel for now.
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         file = File("test_parameters.xml")

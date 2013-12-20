@@ -298,8 +298,7 @@ class DataNotWorkingTester:
         A = as_backend_type(A)
         self.assertRaises(RuntimeError, A.data)
 
-comm = MPICommWrapper()
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"

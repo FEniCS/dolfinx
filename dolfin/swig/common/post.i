@@ -91,7 +91,7 @@ def __getitem__(self, index):
     if index >= self.size():
         raise IndexError("index out of range")
     return self._getitem(index)
-    
+
 def __setitem__(self, index, value):
     if not isinstance(index, int):
         raise TypeError("expected an int as index argument")

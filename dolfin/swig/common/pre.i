@@ -27,6 +27,23 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
+// MPI communicator wrappers (deliberately very lightweight)
+//-----------------------------------------------------------------------------
+#ifdef HAS_MPI
+typedef struct {
+} MPI_Comm;
+#endif
+
+// Lightweight wrappers for MPI_COMM_WORLD and MPI_COMM_SELF
+%inline %{
+  MPI_Comm mpi_comm_world()
+  { return MPI_COMM_WORLD; }
+
+  MPI_Comm mpi_comm_self()
+  { return MPI_COMM_SELF; }
+%}
+
+//-----------------------------------------------------------------------------
 // Global modifications to the Array interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::Array::operator=;

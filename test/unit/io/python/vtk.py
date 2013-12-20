@@ -103,15 +103,14 @@ class VTK_Point_Function_Output(unittest.TestCase):
 
     def test_save_1d_scalar(self):
         mesh = UnitIntervalMesh(32)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
-            u = Function(FunctionSpace(mesh, "Lagrange", 2))
-            u.vector()[:] = 1.0
-            File("u.pvd") << u
-            f = File("u.pvd")
-            f << (u, 0.)
-            f << (u, 1.)
-            for file_option in file_options:
-                File("u.pvd", file_option) << u
+        u = Function(FunctionSpace(mesh, "Lagrange", 2))
+        u.vector()[:] = 1.0
+        File("u.pvd") << u
+        f = File("u.pvd")
+        f << (u, 0.)
+        f << (u, 1.)
+        for file_option in file_options:
+            File("u.pvd", file_option) << u
 
     def test_save_2d_scalar(self):
         mesh = UnitSquareMesh(16, 16)

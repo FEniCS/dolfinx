@@ -25,8 +25,6 @@
 import unittest
 from dolfin import *
 
-comm = MPICommWrapper()
-
 class AbstractBaseTest(object):
     count = 0
     backend = "default"
@@ -102,7 +100,7 @@ class AbstractBaseTest(object):
 
     def test_resize_range(self):
         n = 301
-        local_range = MPI.local_range(comm.comm(), n)
+        local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
         v0.resize(local_range)
         self.assertEqual(v0.local_range(), local_range)
@@ -114,7 +112,7 @@ class AbstractBaseTest(object):
 
     def test_local_size(self):
         n = 301
-        local_range = MPI.local_range(comm.comm(), n)
+        local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
         v0.resize(local_range)
         self.assertEqual(v0.local_size(), local_range[1] - local_range[0])
@@ -295,15 +293,15 @@ class AbstractBaseTest(object):
 
     def test_vector_assignment_length(self):
         # Test that assigning with diffrent parallel layouts fails
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             m = 301
-            local_range0 = MPI.local_range(comm.comm(), m)
+            local_range0 = MPI.local_range(mpi_comm_world(), m)
             print "local range", local_range0[0], local_range0[1]
 
             # Shift parallel partitiong but preserve global size
-            if MPI.process_number(comm.comm()) == 0:
+            if MPI.process_number(mpi_comm_world()) == 0:
                 local_range1 = (local_range0[0], local_range0[1] + 1)
-            elif MPI.process_number(comm.comm()) == MPI.num_processes(comm.comm()) - 1:
+            elif MPI.process_number(mpi_comm_world()) == MPI.num_processes(mpi_comm_world()) - 1:
                 local_range1 = (local_range0[0] + 1, local_range0[1])
             else:
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
@@ -350,7 +348,7 @@ class DataNotWorkingTester:
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"

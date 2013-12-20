@@ -43,29 +43,6 @@ namespace dolfin
 
   #ifdef HAS_MPI
 
-  class MPICommWrapper
-  {
-
-  public:
-
-    /// Create communicator (copy of MPI_COMM_WORLD)
-    MPICommWrapper();
-
-    /// Destructor
-    ~MPICommWrapper();
-
-    /// Return underlying communicator
-    MPI_Comm& comm();
-
-    /// Dereference operator
-    MPI_Comm& operator*();
-
-  private:
-
-    MPI_Comm _comm;
-
-  };
-
   class MPIInfo
   {
   public:
@@ -128,8 +105,6 @@ namespace dolfin
   class MPI
   {
   public:
-
-    static MPI_Comm mpi_comm_world();
 
     /// Return process number
     static unsigned int process_number(const MPI_Comm& mpi_comm);

@@ -32,11 +32,6 @@
 #ifdef HAS_MPI
 
 //-----------------------------------------------------------------------------
-MPI_Comm dolfin::MPI::mpi_comm_world()
-{
-  return MPI_COMM_WORLD;
-}
-//-----------------------------------------------------------------------------
 dolfin::MPIInfo::MPIInfo()
 {
   MPI_Info_create(&info);
@@ -50,28 +45,6 @@ dolfin::MPIInfo::~MPIInfo()
 MPI_Info& dolfin::MPIInfo::operator*()
 {
   return info;
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-dolfin::MPICommWrapper::MPICommWrapper()
-{
-  SubSystemsManager::init_mpi();
-  MPI_Comm_dup(MPI_COMM_WORLD, &_comm);
-}
-//-----------------------------------------------------------------------------
-dolfin::MPICommWrapper::~MPICommWrapper()
-{
-  MPI_Comm_free(&_comm);
-}
-//-----------------------------------------------------------------------------
-MPI_Comm& dolfin::MPICommWrapper::comm()
-{
-  return _comm;
-}
-//-----------------------------------------------------------------------------
-MPI_Comm& dolfin::MPICommWrapper::operator*()
-{
-  return _comm;
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -121,7 +94,7 @@ void dolfin::MPI::barrier(const MPI_Comm& mpi_comm)
 std::size_t dolfin::MPI::global_offset(const MPI_Comm& mpi_comm,
                                        std::size_t range, bool exclusive)
 {
-  boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_duplicate);
+  boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
 
   // Compute inclusive or exclusive partial reduction
   std::size_t offset = boost::mpi::scan(comm, range, std::plus<std::size_t>());

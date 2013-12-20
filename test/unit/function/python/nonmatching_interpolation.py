@@ -45,8 +45,7 @@ class NonmatchingFunctionInterpolationTest(unittest.TestCase):
         u0 = Function(V0)
         u0.interpolate(f)
 
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) == 1:
+        if MPI.num_processes(mesh0.mpi_comm()) == 1:
             # Interpolate FE function on finer mesh
             mesh1 = UnitSquareMesh(31, 31)
             V1 = FunctionSpace(mesh1, "Lagrange", 2)
@@ -71,8 +70,7 @@ class NonmatchingFunctionInterpolationTest(unittest.TestCase):
         u0 = Function(V0)
         u0.interpolate(f)
 
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) == 1:
+        if MPI.num_processes(mesh0.mpi_comm()) == 1:
             # Interpolate FE function on finer mesh
             mesh1 = UnitCubeMesh(11, 11, 11)
             V1 = FunctionSpace(mesh1, "Lagrange", 2)

@@ -73,10 +73,7 @@ class AbstractBaseTest(object):
         from numpy import ndarray, linspace, array, fromiter
         from numpy import int,int0,int16,int32,int64
         from numpy import uint,uint0,uint16,uint32,uint64
-        v,w = self.assemble_vectors()
-
-        # FIXME: This should be removed
-        comm = MPICommWrapper()
+        v, w = self.assemble_vectors()
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
@@ -125,9 +122,9 @@ class AbstractBaseTest(object):
 
         A2 = A.array()
         self.assertTrue(isinstance(A2,ndarray))
-        self.assertEqual(A2.shape, (n1-n0,))
+        self.assertEqual(A2.shape, (n1 - n0,))
         if A.owns_index(5): self.assertAlmostEqual(A2[5], A[5])
-        self.assertAlmostEqual(MPI.sum(comm.comm(), A2.sum()), A.sum())
+        self.assertAlmostEqual(MPI.sum(A.mpi_comm(), A2.sum()), A.sum())
 
         B2 = B.array()
         # TODO: test strides in parallel also
@@ -189,7 +186,7 @@ class AbstractBaseTest(object):
         # not-owned items
         X = A==A
         for i in range(len(X)):  # gather X, because of issue 54
-            X[i] = MPI.max(comm.comm(), float(X[i]))
+            X[i] = MPI.max(A.mpi_comm(), float(X[i]))
         A[:] = X
         self.assertTrue(A.sum()==len(A))
 
@@ -237,8 +234,8 @@ class AbstractBaseTest(object):
         A2 *= B2
         I = A*B
         I2 = A2*B2
-        self.assertAlmostEqual(A.sum(), MPI.sum(comm.comm(), A2.sum()))
-        self.assertAlmostEqual(I.sum(), MPI.sum(comm.comm(), I2.sum()))
+        self.assertAlmostEqual(A.sum(), MPI.sum(A.mpi_comm(), A2.sum()))
+        self.assertAlmostEqual(I.sum(), MPI.sum(A.mpi_comm(), I2.sum()))
 
         def wrong_assign(A, ind):
             A[ind[::2]] = ind[::2]
@@ -349,8 +346,7 @@ if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
                        unittest.TestCase):
         backend    = "Epetra"
-comm = MPICommWrapper()
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"

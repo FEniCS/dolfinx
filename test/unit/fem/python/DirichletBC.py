@@ -105,8 +105,7 @@ class DirichletBCTest(unittest.TestCase):
     def test_bc_for_piola_on_manifolds(self):
         "Testing DirichletBC for piolas over standard domains vs manifolds."
 
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             # SubMesh not working in parallel (the rest should)
             return
 

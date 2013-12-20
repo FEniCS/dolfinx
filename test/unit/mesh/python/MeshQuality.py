@@ -78,8 +78,7 @@ class MeshQualityTest(unittest.TestCase):
         test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
         print test
 
-comm = MPICommWrapper()
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):

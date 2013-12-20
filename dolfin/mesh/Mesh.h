@@ -642,7 +642,7 @@ namespace dolfin
     void init_cell_orientations(const Expression& global_normal);
 
 
-    const MPI_Comm& mpi_comm() const
+    const MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
   private:

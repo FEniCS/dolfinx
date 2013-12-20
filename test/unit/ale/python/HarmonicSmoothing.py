@@ -22,8 +22,8 @@
 
 import unittest
 from dolfin import UnitSquareMesh, BoundaryMesh, Expression, \
-                   CellFunction, SubMesh, Constant, MPI, MeshQuality, \
-                   MPICommWrapper
+                   CellFunction, SubMesh, Constant, MPI, MeshQuality,\
+                   mpi_comm_world
 
 class HarmonicSmoothingTest(unittest.TestCase):
 
@@ -60,8 +60,7 @@ class HarmonicSmoothingTest(unittest.TestCase):
         rmin = MeshQuality.radius_ratio_min_max(mesh)[0]
         self.assertTrue(rmin > magic_number)
 
-comm = MPICommWrapper()
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
 
     class ALETest(unittest.TestCase):
 

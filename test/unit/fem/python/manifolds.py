@@ -170,8 +170,7 @@ class ManifoldSolving(unittest.TestCase):
         radians about each of the z and x axes."""
 
         # Boundary mesh not working in parallel
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         u_2D = poisson_2d()
@@ -191,8 +190,7 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         unaffected by rotations."""
 
         # Boundary mesh not working in parallel
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         self.basemesh = rotate_2d_mesh(0.0)
@@ -216,8 +214,7 @@ class ManifoldBasisEvaluation(unittest.TestCase):
     def basis_test(self, family, degree, piola=False):
 
         # Boundary mesh not working in parallel
-        comm = MPICommWrapper()
-        if MPI.num_processes(comm.comm()) > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         parameters["form_compiler"]["no-evaluate_basis_derivatives"] = False

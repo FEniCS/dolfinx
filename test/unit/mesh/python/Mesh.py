@@ -30,9 +30,6 @@ import unittest
 import numpy
 from dolfin import *
 
-# MPI_COMM_WORLD wrapper
-comm = MPICommWrapper()
-
 class MeshConstruction(unittest.TestCase):
 
     def setUp(self):
@@ -55,7 +52,7 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
 
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class SimpleShapes(unittest.TestCase):
 
         def testUnitSquareMesh(self):
@@ -103,7 +100,7 @@ class BoundaryExtraction(unittest.TestCase):
             self.assertEqual(b1.num_vertices(), 0)
             self.assertEqual(b1.num_cells(), 0)
 
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class MeshFunctions(unittest.TestCase):
 
         def setUp(self):
@@ -160,7 +157,7 @@ if MPI.num_processes(comm.comm()) == 1:
 
 
 # FIXME: Mesh IO tests should be in io test directory
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class InputOutput(unittest.TestCase):
 
         def testMeshXML2D(self):
@@ -203,7 +200,7 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquareMesh(5, 5)
         self.assertEqual(mesh.geometry().dim(), 2)
 
-    if MPI.num_processes(comm.comm()) == 1:
+    if MPI.num_processes(mpi_comm_world()) == 1:
         def testGetCoordinates(self):
             """Get coordinates of vertices"""
             mesh = UnitSquareMesh(5, 5)
@@ -215,7 +212,7 @@ class PyCCInterface(unittest.TestCase):
             self.assertEqual(MPI.sum(mesh.mpi_comm(), len(mesh.cells())), 50)
 
 
-if MPI.num_processes(comm.comm()) == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):

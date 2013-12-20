@@ -44,8 +44,7 @@ def create_data(A=None):
 
 def skip_in_parallel():
     "Skip test in parallel"
-    comm = MPICommWrapper()
-    if MPI.num_processes(comm.comm()) > 1:
+    if MPI.num_processes(mpi_comm_world()) > 1:
         print "FIXME: This unit test does not work in parallel, skipping"
         return True
     return False
