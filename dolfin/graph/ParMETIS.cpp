@@ -76,7 +76,7 @@ namespace dolfin
   };
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::compute_partition(const MPI_Comm& mpi_comm,
+void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                  std::vector<std::size_t>& cell_partition,
                                  const LocalMeshData& mesh_data,
                                  std::string mode)
@@ -108,7 +108,7 @@ void ParMETIS::compute_partition(const MPI_Comm& mpi_comm,
   MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::partition(MPI_Comm& mpi_comm,
+void ParMETIS::partition(MPI_Comm mpi_comm,
                          std::vector<std::size_t>& cell_partition,
                          ParMETISDualGraph& g)
 {
@@ -140,7 +140,7 @@ void ParMETIS::partition(MPI_Comm& mpi_comm,
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::adaptive_repartition(MPI_Comm& mpi_comm,
+void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
                                     std::vector<std::size_t>& cell_partition,
                                     ParMETISDualGraph& g)
 {
@@ -178,7 +178,7 @@ void ParMETIS::adaptive_repartition(MPI_Comm& mpi_comm,
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::refine(MPI_Comm& mpi_comm,
+void ParMETIS::refine(MPI_Comm mpi_comm,
                       std::vector<std::size_t>& cell_partition,
                       ParMETISDualGraph& g)
 {
@@ -300,7 +300,8 @@ ParMETISDualGraph::~ParMETISDualGraph()
 }
 //-----------------------------------------------------------------------------
 #else
-void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
+void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
+                                 std::vector<std::size_t>& cell_partition,
                                  const LocalMeshData& data,
                                  std::string mode)
 {

@@ -47,7 +47,7 @@ namespace dolfin
     /// that have already been partitioned or are already well
     /// partitioned, it can be advantageous to use
     /// "adaptive_repartition" or "refine".
-    static void compute_partition(const MPI_Comm& mpi_comm,
+    static void compute_partition(const MPI_Comm mpi_comm,
                                   std::vector<std::size_t>& cell_partition,
                                   const LocalMeshData& mesh_data,
                                   std::string mode="partition");
@@ -56,17 +56,17 @@ namespace dolfin
 
 #ifdef HAS_PARMETIS
     // Standard ParMETIS partition
-    static void partition(MPI_Comm& mpi_comm,
+    static void partition(MPI_Comm mpi_comm,
                           std::vector<std::size_t>& cell_partition,
                           ParMETISDualGraph& g);
 
     // ParMETIS adaptive repartition
-    static void adaptive_repartition(MPI_Comm& mpi_comm,
+    static void adaptive_repartition(MPI_Comm mpi_comm,
                                      std::vector<std::size_t>& cell_partition,
                                      ParMETISDualGraph& g);
 
     // ParMETIS refine repartition
-    static void refine(MPI_Comm& mpi_comm,
+    static void refine(MPI_Comm mpi_comm,
                        std::vector<std::size_t>& cell_partition,
                        ParMETISDualGraph& g);
 #endif

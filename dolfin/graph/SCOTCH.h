@@ -41,7 +41,7 @@ namespace dolfin
   public:
 
     // Compute cell partition
-    static void compute_partition(const MPI_Comm& mpi_comm,
+    static void compute_partition(const MPI_Comm mpi_comm,
                                   std::vector<std::size_t>& cell_partition,
                                   const LocalMeshData& mesh_data);
 
@@ -66,7 +66,7 @@ namespace dolfin
 
     // Compute cell partitions from distribted dual graph
     static
-      void partition(const MPI_Comm& mpi_comm,
+      void partition(const MPI_Comm mpi_comm,
                      const std::vector<std::set<std::size_t> >& local_graph,
                      const std::set<std::size_t>& ghost_vertices,
                      const std::vector<std::size_t>& global_cell_indices,

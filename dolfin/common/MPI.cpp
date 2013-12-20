@@ -56,22 +56,31 @@ void dolfin::MPINonblocking::wait_all()
     reqs.clear();
   }
 }
+#endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 unsigned int dolfin::MPI::process_number(const MPI_Comm& mpi_comm)
 {
+#ifdef HAS_MPI
   SubSystemsManager::init_mpi();
   int rank;
   MPI_Comm_rank(mpi_comm, &rank);
   return rank;
+#else
+  return 0;
+#endif
 }
 //-----------------------------------------------------------------------------
 unsigned int dolfin::MPI::num_processes(const MPI_Comm& mpi_comm)
 {
+#ifdef HAS_MPI
   SubSystemsManager::init_mpi();
   int size;
   MPI_Comm_size(mpi_comm, &size);
   return size;
+#else
+  return 1;
+#endif
 }
 //-----------------------------------------------------------------------------
 bool dolfin::MPI::is_broadcaster(const MPI_Comm& mpi_comm)
@@ -88,20 +97,24 @@ bool dolfin::MPI::is_receiver(const MPI_Comm& mpi_comm)
 //-----------------------------------------------------------------------------
 void dolfin::MPI::barrier(const MPI_Comm& mpi_comm)
 {
+#ifdef HAS_MPI
   MPI_Barrier(mpi_comm);
+#endif
 }
 //-----------------------------------------------------------------------------
 std::size_t dolfin::MPI::global_offset(const MPI_Comm& mpi_comm,
                                        std::size_t range, bool exclusive)
 {
-  boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
-
+#ifdef HAS_MPI
   // Compute inclusive or exclusive partial reduction
+  boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
   std::size_t offset = boost::mpi::scan(comm, range, std::plus<std::size_t>());
   if (exclusive)
     offset -= range;
-
   return offset;
+#else
+  return 0;
+#endif
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
@@ -163,7 +176,7 @@ unsigned int dolfin::MPI::index_owner(const MPI_Comm& mpi_comm,
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-#else
+#ifndef HAS_MPI
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void dolfin::MPINonblocking::wait_all()
@@ -171,76 +184,6 @@ void dolfin::MPINonblocking::wait_all()
   dolfin_error("MPI.h",
                "call MPINonblocking::wait_all",
                "DOLFIN has been configured without MPI support");
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::process_number()
-{
-  return 0;
-}
-//-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::num_processes()
-{
-  return 1;
-}
-//-----------------------------------------------------------------------------
-bool dolfin::MPI::is_broadcaster()
-{
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool dolfin::MPI::is_receiver()
-{
-  return false;
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::barrier()
-{
-  dolfin_error("MPI.cpp",
-               "call MPI::barrier",
-               "Your DOLFIN installation has been built without MPI support");
-}
-//-----------------------------------------------------------------------------
-std::size_t dolfin::MPI::global_offset(std::size_t range, bool exclusive)
-{
-  return 0;
-}
-//-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> dolfin::MPI::local_range(std::size_t N)
-{
-  return std::make_pair(0, N);
-}
-//-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
-dolfin::MPI::local_range(unsigned int process,
-                         std::size_t N)
-{
-  if (process != 0 || num_processes() > 1)
-  {
-    dolfin_error("MPI.cpp",
-                 "access local range for process",
-                 "DOLFIN has not been configured with MPI support");
-  }
-  return std::make_pair(0, N);
-}
-//-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
-  dolfin::MPI::local_range(unsigned int process, std::size_t N,
-                           unsigned int num_processes)
-{
-  if (process != 0 || num_processes > 1)
-  {
-    dolfin_error("MPI.cpp",
-                 "access local range for process",
-                 "DOLFIN has not been configured with MPI support");
-  }
-  return std::make_pair(0, N);
-}
-//-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::index_owner(std::size_t i, std::size_t N)
-{
-  dolfin_assert(i < N);
-  return 0;
 }
 //-----------------------------------------------------------------------------
 #endif

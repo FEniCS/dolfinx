@@ -38,6 +38,13 @@
 
 #include <dolfin/log/dolfin_log.h>
 
+#ifndef HAS_MPI
+typedef int MPI_Comm;
+#define MPI_COMM_WORLD 2
+#define MPI_COMM_SELF 1
+#define MPI_COMM_NULL 0
+#endif
+
 namespace dolfin
 {
 

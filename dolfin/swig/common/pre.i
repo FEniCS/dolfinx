@@ -29,10 +29,11 @@
 //-----------------------------------------------------------------------------
 // MPI communicator wrappers (deliberately very lightweight)
 //-----------------------------------------------------------------------------
-#ifdef HAS_MPI
+/*
+//#ifdef HAS_MPI
 typedef struct {
 } MPI_Comm;
-#endif
+//#endif
 
 // Lightweight wrappers for MPI_COMM_WORLD and MPI_COMM_SELF
 %inline %{
@@ -42,6 +43,7 @@ typedef struct {
   MPI_Comm mpi_comm_self()
   { return MPI_COMM_SELF; }
 %}
+*/
 
 //-----------------------------------------------------------------------------
 // Global modifications to the Array interface

@@ -20,6 +20,24 @@
 // Last changed: 2012-03-28
 
 //-----------------------------------------------------------------------------
+// MPI communicator wrappers (deliberately very lightweight)
+//-----------------------------------------------------------------------------
+//#ifdef HAS_MPI
+typedef struct {
+} MPI_Comm;
+//#endif
+
+// Lightweight wrappers for MPI_COMM_WORLD and MPI_COMM_SELF
+%inline %{
+  MPI_Comm mpi_comm_world()
+  { return MPI_COMM_WORLD; }
+
+  MPI_Comm mpi_comm_self()
+  { return MPI_COMM_SELF; }
+%}
+
+
+//-----------------------------------------------------------------------------
 // Instantiate some DOLFIN MPI templates
 //-----------------------------------------------------------------------------
 

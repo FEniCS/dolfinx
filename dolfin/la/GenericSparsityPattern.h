@@ -30,6 +30,7 @@
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin

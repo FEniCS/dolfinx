@@ -48,7 +48,7 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(const MPI_Comm& mpi_comm,
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                std::vector<std::size_t>& cell_partition,
                                const LocalMeshData& mesh_data)
 {
@@ -194,7 +194,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
             inverse_permutation_indices.end(), inverse_permutation.begin());
 }
 //-----------------------------------------------------------------------------
-void SCOTCH::partition(const MPI_Comm& mpi_comm,
+void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::vector<std::set<std::size_t> >& local_graph,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
@@ -389,7 +389,8 @@ void SCOTCH::partition(const MPI_Comm& mpi_comm,
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
+                               std::vector<std::size_t>& cell_partition,
                                const LocalMeshData& mesh_data)
 {
   dolfin_error("SCOTCH.cpp",
@@ -427,7 +428,8 @@ void SCOTCH::compute_reordering(const Graph& graph,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
+void SCOTCH::partition(const MPI_Comm mpi_comm,
+                       const std::vector<std::set<std::size_t> >& local_graph,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
                        std::size_t num_global_vertices,
