@@ -38,20 +38,22 @@ SparsityPattern::SparsityPattern(std::size_t primary_dim)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(const MPI_Comm& mpi_comm,
-                                 const std::vector<std::size_t>& dims,
+SparsityPattern::SparsityPattern(
+  const MPI_Comm mpi_comm,
+  const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
   const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner,
-                                 std::size_t primary_dim)
+  std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
   init(mpi_comm, dims, local_range, off_process_owner);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(const MPI_Comm& mpi_comm,
-                           const std::vector<std::size_t>& dims,
+void SparsityPattern::init(
+  const MPI_Comm mpi_comm,
+  const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-                           const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner)
+  const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);

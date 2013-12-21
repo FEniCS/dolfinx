@@ -162,10 +162,10 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       const std::size_t process_num = MPI::process_number(_mpi_comm);
       const std::pair<std::size_t, std::size_t>
         local_range(partitions[process_num], partitions[process_num + 1]);
-      x.resize(local_range);
+      x.resize(_mpi_comm, local_range);
     }
     else
-      x.resize(data_size[0]);
+      x.resize(_mpi_comm, data_size[0]);
   }
   else if (x.size() != data_size[0])
   {

@@ -172,7 +172,7 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
 {
   HDF5File hdf5_file(_name, "r");
   const std::size_t zero = 0;
-  vector.resize(1,&zero);
+  vector.resize(MPI_COMM_WORLD, 1, &zero);
 
   // Interpolate value
   if (interpolate)

@@ -214,7 +214,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
-  Vector x(indicators.mesh()->num_cells());
+  Vector x(MPI_COMM_WORLD, indicators.mesh()->num_cells());
   assemble(x, *_eta_T);
 
   // Take absolute value of indicators

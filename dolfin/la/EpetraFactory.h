@@ -54,10 +54,10 @@ namespace dolfin
     /// --- GenericLinearAlgebraFactory interface
 
     /// Create empty matrix
-    boost::shared_ptr<GenericMatrix> create_matrix() const;
+    boost::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const;
 
     /// Create empty vector (global)
-    boost::shared_ptr<GenericVector> create_vector() const;
+    boost::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const;
 
     /// Create empty vector (local)
     boost::shared_ptr<GenericVector> create_local_vector() const;
@@ -66,15 +66,16 @@ namespace dolfin
     boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
 
     /// Create empty linear operator
-    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
+    boost::shared_ptr<GenericLinearOperator>
+      create_linear_operator(MPI_Comm comm) const;
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
+    boost::shared_ptr<GenericLUSolver>
+      create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
     boost::shared_ptr<GenericLinearSolver>
-      create_krylov_solver(std::string method,
-                           std::string preconditioner) const;
+      create_krylov_solver(std::string method, std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >
@@ -82,11 +83,11 @@ namespace dolfin
 
     /// Return a list of available Krylov solver methods
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const;
+      krylov_solver_methods() const;
 
     /// Return a list of available preconditioners
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const;
+      krylov_solver_preconditioners() const;
 
     /// --- EpetraFactory interface
 

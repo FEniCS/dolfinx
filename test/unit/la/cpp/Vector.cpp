@@ -69,7 +69,7 @@ public:
 
   void _test_operators()
   {
-    Vector v(10), u(10);
+    Vector v(MPI_COMM_WORLD, 10), u(MPI_COMM_WORLD, 10);
     v = 0.0;
     u = 0.0;
     CPPUNIT_ASSERT(v.sum() == 0.0);

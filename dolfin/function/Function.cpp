@@ -615,7 +615,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding vertex values
-  vertex_values.resize(value_size_loc*(mesh.num_vertices()));
+  vertex_values.resize(mesh.mpi_comm(), value_size_loc*(mesh.num_vertices()));
 
   // Create vector to hold cell vertex values
   std::vector<double> cell_vertex_values(value_size_loc*num_cell_vertices);
@@ -709,7 +709,8 @@ void Function::init_vector()
   dolfin_assert(_vector);
 
   // Initialize vector of dofs
-  _vector->resize(range, ghost_indices);
+  dolfin_assert(_function_space->mesh());
+  _vector->resize(_function_space->mesh()->mpi_comm(), range, ghost_indices);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

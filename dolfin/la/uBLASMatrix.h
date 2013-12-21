@@ -337,7 +337,7 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::resize(GenericVector& z, std::size_t dim) const
   {
-    z.resize(size(dim));
+    z.resize(mpi_comm(), size(dim));
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
@@ -371,7 +371,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::lump(uBLASVector& m) const
   {
     const std::size_t n = size(1);
-    m.resize(n);
+    m.resize(MPI_COMM_SELF, n);
     m.zero();
     ublas::scalar_vector<double> one(n, 1.0);
     ublas::axpy_prod(_A, one, m.vec(), true);

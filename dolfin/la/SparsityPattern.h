@@ -52,7 +52,7 @@ namespace dolfin
     SparsityPattern(std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(const MPI_Comm& mpi_comm,
+    SparsityPattern(const MPI_Comm mpi_comm,
                     const std::vector<std::size_t>& dims,
                     const std::vector<std::pair<std::size_t,
                     std::size_t> >& ownership_range,
@@ -61,7 +61,7 @@ namespace dolfin
                     std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(const MPI_Comm& mpi_comm,
+    void init(const MPI_Comm mpi_comm,
               const std::vector<std::size_t>& dims,
               const std::vector<std::pair<std::size_t,
               std::size_t> >& ownership_range,
@@ -105,6 +105,10 @@ namespace dolfin
 
     /// Finalize sparsity pattern
     void apply();
+
+    // Return MPI communicator
+    const MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

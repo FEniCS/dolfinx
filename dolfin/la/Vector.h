@@ -53,11 +53,11 @@ namespace dolfin
     }
 
     /// Create vector of size N
-    explicit Vector(std::size_t N)
+    Vector(MPI_Comm comm, std::size_t N)
     {
       DefaultFactory factory;
       vector = factory.create_vector();
-      vector->resize(N);
+      vector->resize(comm, N);
     }
 
     /// Copy constructor
@@ -94,17 +94,17 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Resize vector to size N
-    virtual void resize(std::size_t N)
-    { vector->resize(N); }
+    virtual void resize(MPI_Comm comm, std::size_t N)
+    { vector->resize(comm, N); }
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range)
-    { vector->resize(range); }
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range)
+    { vector->resize(comm, range); }
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices)
-    { vector->resize(range, ghost_indices); }
+    { vector->resize(comm, range, ghost_indices); }
 
     /// Return true if vector is empty
     virtual bool empty() const

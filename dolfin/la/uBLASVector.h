@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericVector.h"
@@ -55,10 +56,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit uBLASVector(std::string type="global");
+    uBLASVector();
 
     /// Create vector of size N
-    uBLASVector(std::size_t N, std::string type="global");
+    uBLASVector(std::size_t N);
 
     /// Copy constructor
     uBLASVector(const uBLASVector& x);
@@ -90,13 +91,15 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
-    virtual void resize(std::size_t N);
+    virtual void resize(MPI_Comm comm, std::size_t N);
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range);
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range);
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty

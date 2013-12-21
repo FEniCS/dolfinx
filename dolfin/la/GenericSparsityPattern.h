@@ -54,7 +54,7 @@ namespace dolfin
 
     /// Initialize sparsity pattern for a generic tensor
     virtual void
-      init(const MPI_Comm& mpi_comm,
+      init(const MPI_Comm mpi_comm,
            const std::vector<std::size_t>& dims,
            const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
            const std::vector<const boost::unordered_map<std::size_t,
@@ -112,6 +112,9 @@ namespace dolfin
 
     /// Finalize sparsity pattern
     virtual void apply() = 0;
+
+    /// Return MPI communicator
+    virtual const MPI_Comm mpi_comm() const = 0;
 
   private:
 

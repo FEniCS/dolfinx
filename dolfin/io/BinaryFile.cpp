@@ -53,7 +53,7 @@ void BinaryFile::operator>> (std::vector<double>& values)
   open_read();
 
   const std::size_t n = read_uint();
-  values.resize(n);
+  values.resize(MPI_COMM_WORLD, n);
   read_array(n, &values[0]);
 
   close_read();
@@ -67,7 +67,7 @@ void BinaryFile::operator>> (GenericVector& vector)
   std::vector<double> values(n);
   read_array(n, values.data());
 
-  vector.resize(n);
+  vector.resize(MPI_COMM_WORLD, n);
   vector.set_local(values);
 
   close_read();

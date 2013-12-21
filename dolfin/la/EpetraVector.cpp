@@ -60,7 +60,7 @@ EpetraVector::EpetraVector(std::string type) : _type(type)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(std::size_t N, std::string type) : _type(type)
+EpetraVector::EpetraVector(MPI_Comm, std::size_t N) : _type(type)
 {
   // Create Epetra vector
   resize(N);
@@ -108,37 +108,12 @@ void EpetraVector::resize(std::size_t N)
   // Create empty ghost vertices vector
   std::vector<la_index> ghost_indices;
 
-  if (_type == "global")
-  {
-    // Get MPI communivator
-    MPI_Comm mpi_comm = MPI_COMM_WORLD;
-    if (_x)
-    {
-      #ifdef HAS_MPI
-      // Get Epetra MPI communicator (downcast)
-      const Epetra_MpiComm* epetra_mpi_comm
-        = dynamic_cast<const Epetra_MpiComm*>(&(_x->Map().Comm()));
-      dolfin_assert(epetra_mpi_comm);
-      mpi_comm = epetra_mpi_comm->Comm();
-      #else
-       mpi_comm = MPI_COMM_SELF;
-      #endif
-    }
-    const std::pair<std::size_t, std::size_t> range
-      = MPI::local_range(mpi_comm, N);
-    resize(range, ghost_indices);
-  }
-  else if (_type == "local")
-  {
-    const std::pair<std::size_t, std::size_t> range(0, N);
-    resize(range, ghost_indices);
-  }
-  else
-  {
-    dolfin_error("EpetraVector.cpp",
-                 "resize Epetra vector",
-                 "Unknown vector type (\"%s\")", _type.c_str());
-  }
+  // Compute local ownership range
+  const std::pair<std::size_t, std::size_t> range
+    = MPI::local_range(this->mpi_comm(), N);
+
+  // Resize vector
+  resize(range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::resize(std::pair<std::size_t, std::size_t> range)

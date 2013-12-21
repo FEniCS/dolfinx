@@ -71,10 +71,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit PETScVector(std::string type="global", bool use_gpu=false);
+    explicit PETScVector(bool use_gpu=false);
 
     /// Create vector of size N
-    PETScVector(std::size_t N, std::string type="global", bool use_gpu=false);
+    PETScVector(MPI_Comm comm, std::size_t N, bool use_gpu=false);
 
     /// Create vector
     PETScVector(const GenericSparsityPattern& sparsity_pattern);
@@ -108,13 +108,13 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to global size N
-    virtual void resize(std::size_t N);
+    virtual void resize(MPI_Comm comm, std::size_t N);
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range);
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range);
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
@@ -234,9 +234,8 @@ namespace dolfin
   private:
 
     // Initialise PETSc vector
-    void _init(std::pair<std::size_t, std::size_t> range,
-               const std::vector<la_index>& ghost_indices,
-               bool distributed);
+    void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+               const std::vector<la_index>& ghost_indices);
 
     // Return true if vector is distributed
     bool distributed() const;
