@@ -30,14 +30,14 @@ if has_hdf5():
         """Test input/output of Vector to HDF5 files"""
 
         def test_save_vector(self):
-            x = Vector(305)
+            x = Vector(mpi_comm_world(),305)
             x[:] = 1.0
             vector_file = HDF5File("x.h5", "w")
             vector_file.write(x, "/my_vector")
 
         def test_save_and_read_vector(self):
             # Write to file
-            x = Vector(305)
+            x = Vector(mpi_comm_world(), 305)
             x[:] = 1.2
             vector_file = HDF5File("vector.h5", "w")
             vector_file.write(x, "/my_vector")
@@ -54,7 +54,7 @@ if has_hdf5():
 
         def test_save_and_read_meshfunction_2D(self):
             # Write to file
-            mesh = UnitSquareMesh(20,20)
+            mesh = UnitSquareMesh(20, 20)
             mf_file = HDF5File("meshfn-2d.h5", "w")
 
             # save meshfuns to compare when reading back
@@ -126,7 +126,7 @@ if has_hdf5():
 
 
     class HDF5_Function(unittest.TestCase):
-        
+
         def test_save_and_read_function(self):
             mesh = UnitSquareMesh(10,10)
             Q = FunctionSpace(mesh, "CG", 3)

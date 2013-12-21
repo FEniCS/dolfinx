@@ -79,7 +79,7 @@ boost::shared_ptr<GenericVector> uBLASVector::copy() const
 //-----------------------------------------------------------------------------
 void uBLASVector::resize(MPI_Comm comm, std::size_t N)
 {
-  if (MPI::num_processes(comm))
+  if (MPI::num_processes(comm) > 1)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
@@ -98,7 +98,7 @@ void uBLASVector::resize(MPI_Comm comm, std::size_t N)
 void uBLASVector::resize(MPI_Comm comm,
                          std::pair<std::size_t, std::size_t> range)
 {
-  if (MPI::num_processes(comm))
+  if (MPI::num_processes(comm) > 1)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
@@ -112,7 +112,7 @@ void uBLASVector::resize(MPI_Comm comm,
                          std::pair<std::size_t, std::size_t> range,
                          const std::vector<la_index>& ghost_indices)
 {
-  if (MPI::num_processes(comm))
+  if (MPI::num_processes(comm) > 1)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",

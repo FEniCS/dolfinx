@@ -323,14 +323,14 @@ class AbstractBaseTest(object):
 class DataNotWorkingTester:
     def test_matrix_data(self):
         A,B = self.assemble_matrices()
-        self.assertRaises(RuntimeError,A.data)
+        self.assertRaises(RuntimeError, A.data)
 
         A = as_backend_type(A)
-        self.assertRaises(RuntimeError,A.data)
+        self.assertRaises(RuntimeError, A.data)
 
     def test_vector_data(self):
         v,w = self.assemble_vectors()
-        self.assertRaises(RuntimeError,v.data)
+        self.assertRaises(RuntimeError, v.data)
 
         v = as_backend_type(v)
         def no_attribute():

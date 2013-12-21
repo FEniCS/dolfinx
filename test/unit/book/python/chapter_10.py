@@ -63,7 +63,7 @@ class TestPage5(unittest.TestCase):
 
     def test_box_1(self):
         if skip_in_parallel(): return
-        x = Vector(100)
+        x = Vector(mpi_comm_world(), 100)
 
     def test_box_2(self):
         if skip_in_parallel(): return
@@ -1049,8 +1049,8 @@ class TestPage51(unittest.TestCase):
 
     def test_box_2(self):
         if skip_in_parallel(): return
-        b = Vector(10)
-        c = Vector(10)
+        b = Vector(mpi_comm_world(), 10)
+        c = Vector(mpi_comm_world(), 10)
         b_copy = b[:]
         b[:] = c
         b[b < 0] = 0
@@ -1059,7 +1059,7 @@ class TestPage51(unittest.TestCase):
     def test_box_3(self):
         if skip_in_parallel(): return
         from numpy import array
-        b = Vector(20)
+        b = Vector(mpi_comm_world(), 20)
         b1 = b[[0, 4, 7, 10]]
         b2 = b[array((0, 4, 7, 10))]
 

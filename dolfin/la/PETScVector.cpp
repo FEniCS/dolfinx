@@ -169,13 +169,6 @@ boost::shared_ptr<GenericVector> PETScVector::copy() const
 //-----------------------------------------------------------------------------
 void PETScVector::resize(MPI_Comm comm, std::size_t N)
 {
-  if (!_x)
-  {
-    dolfin_error("PETScVector.cpp",
-                 "resize PETSc vector",
-                 "Vector has not been initialized");
-  }
-
   const std::pair<std::size_t, std::size_t> range
     = MPI::local_range(comm, N);
   resize(comm, range);
@@ -713,27 +706,13 @@ std::string PETScVector::str(bool verbose) const
 void PETScVector::gather(GenericVector& y,
                          const std::vector<dolfin::la_index>& indices) const
 {
+  std::cout << "PETSc gather" << std::endl;
   dolfin_assert(_x);
   PetscErrorCode ierr;
+  std::cout << "End PETSc assert" << std::endl;
 
   // Down cast to a PETScVector
   PETScVector& _y = as_type<PETScVector>(y);
-
-  // Check that y is a local vector
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-  const VecType petsc_type;
-  #else
-  VecType petsc_type;
-  #endif
-  ierr = VecGetType(*(_y.vec()), &petsc_type);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetType");
-
-  if (MPI::num_processes(y.mpi_comm()) > 1)
-  {
-    dolfin_error("PETScVector.cpp",
-                 "gather values for PETSc vector",
-                 "Values can only be gathered into local vectors");
-  }
 
   // Prepare data for index sets (global indices)
   std::vector<PetscInt> global_indices(indices.begin(), indices.end());
@@ -747,18 +726,22 @@ void PETScVector::gather(GenericVector& y,
     global_indices.resize(1);
 
   // Create local index sets
+  std::cout << "Create stuff" << std::endl;
   IS from, to;
   ierr = ISCreateGeneral(PETSC_COMM_SELF, n, global_indices.data(),
                          PETSC_COPY_VALUES, &from);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
   ierr = ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateStride");
+  std::cout << "End Create stuff" << std::endl;
 
-  // Resize vector if required
+  // Resize vector and make local
+  std::cout << "Resize y" << std::endl;
   y.resize(MPI_COMM_SELF, n);
 
   // Perform scatter
   VecScatter scatter;
+  std::cout << "Scatter" << std::endl;
   ierr = VecScatterCreate(*_x, from, *(_y.vec()), to, &scatter);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterCreate");
   ierr = VecScatterBegin(scatter, *_x, *(_y.vec()), INSERT_VALUES,
@@ -775,6 +758,8 @@ void PETScVector::gather(GenericVector& y,
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
   ierr = ISDestroy(&to);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
+
+  std::cout << "End gather " << y.size() << std::endl;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(std::vector<double>& x,

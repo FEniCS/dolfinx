@@ -112,13 +112,13 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const = 0;
 
     /// Resize vector to global size N
-    virtual void resize(MPI_Comm, std::size_t N) = 0;
+    virtual void resize(MPI_Comm comm, std::size_t N) = 0;
 
     /// Resize vector with given ownership range
-    virtual void resize(MPI_Comm, std::pair<std::size_t, std::size_t> range) = 0;
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range) = 0;
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(MPI_Comm, std::pair<std::size_t, std::size_t> range,
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices) = 0;
 
     /// Return true if empty
