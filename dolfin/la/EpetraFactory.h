@@ -54,20 +54,16 @@ namespace dolfin
     /// --- GenericLinearAlgebraFactory interface
 
     /// Create empty matrix
-    boost::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const;
+    boost::shared_ptr<GenericMatrix> create_matrix() const;
 
-    /// Create empty vector (global)
-    boost::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const;
-
-    /// Create empty vector (local)
-    boost::shared_ptr<GenericVector> create_local_vector() const;
+    /// Create empty vector
+    boost::shared_ptr<GenericVector> create_vector() const;
 
     /// Create empty tensor layout
     boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
 
     /// Create empty linear operator
-    boost::shared_ptr<GenericLinearOperator>
-      create_linear_operator(MPI_Comm comm) const;
+    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver>

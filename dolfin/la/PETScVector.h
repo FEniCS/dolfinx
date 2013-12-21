@@ -71,7 +71,8 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit PETScVector(bool use_gpu=false);
+    //explicit PETScVector(bool use_gpu=false);
+    explicit PETScVector();
 
     /// Create vector of size N
     PETScVector(MPI_Comm comm, std::size_t N, bool use_gpu=false);

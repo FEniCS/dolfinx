@@ -47,7 +47,8 @@ const std::map<std::string, NormType> PETScVector::norm_types
   ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(bool use_gpu) : _use_gpu(use_gpu)
+//PETScVector::PETScVector(bool use_gpu) : _use_gpu(use_gpu)
+PETScVector::PETScVector() : _use_gpu(false)
 {
 #ifndef HAS_PETSC_CUSP
   if (_use_gpu)
@@ -776,10 +777,11 @@ void PETScVector::gather(GenericVector& y,
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const
+void PETScVector::gather(std::vector<double>& x,
+                         const std::vector<dolfin::la_index>& indices) const
 {
   x.resize(indices.size());
-  PETScVector y("local");
+  PETScVector y;
   gather(y, indices);
   dolfin_assert(y.local_size() == x.size());
   y.get_local(x);

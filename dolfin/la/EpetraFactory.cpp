@@ -61,13 +61,7 @@ boost::shared_ptr<GenericMatrix> EpetraFactory::create_matrix() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> EpetraFactory::create_vector() const
 {
-  boost::shared_ptr<GenericVector> x(new EpetraVector("global"));
-  return x;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> EpetraFactory::create_local_vector() const
-{
-  boost::shared_ptr<GenericVector> x(new EpetraVector("local"));
+  boost::shared_ptr<GenericVector> x(new EpetraVector);
   return x;
 }
 //-----------------------------------------------------------------------------
