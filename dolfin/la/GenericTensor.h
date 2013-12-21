@@ -92,15 +92,8 @@ namespace dolfin
     virtual void apply(std::string mode) = 0;
 
     /// Return MPI communicator
-    //virtual const MPI_Comm& mpi_comm() const = 0;
-    virtual const MPI_Comm mpi_comm() const
-    {
-      //dolfin::error("GenericTensor::mpi_comm() not implemented");
-      //MPI_Comm* comm(new MPI_Comm);
-      //return *comm;
-      MPI_Comm comm = MPI_COMM_WORLD;
-      return comm;
-    }
+    virtual const MPI_Comm mpi_comm() const = 0;
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
 

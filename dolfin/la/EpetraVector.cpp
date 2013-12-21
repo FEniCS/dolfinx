@@ -341,6 +341,23 @@ void EpetraVector::apply(std::string mode)
   off_process_set_values.clear();
 }
 //-----------------------------------------------------------------------------
+const MPI_Comm EpetraVector::mpi_comm() const
+{
+  dolfin_assert(_x);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+#ifdef HAS_MPI
+  // Get Epetra MPI communicator (downcast)
+  const Epetra_MpiComm* epetra_mpi_comm
+    = dynamic_cast<const Epetra_MpiComm*>(&(_x->Map().Comm()));
+  dolfin_assert(epetra_mpi_comm);
+  mpi_comm = epetra_mpi_comm->Comm();
+#else
+  mpi_comm = MPI_COMM_SELF;
+#endif
+
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 std::string EpetraVector::str(bool verbose) const
 {
   if (!_x)

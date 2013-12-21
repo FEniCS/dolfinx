@@ -414,6 +414,23 @@ void EpetraMatrix::apply(std::string mode)
   }
 }
 //-----------------------------------------------------------------------------
+const MPI_Comm EpetraMatrix::mpi_comm() const
+{
+  dolfin_assert(_A);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+#ifdef HAS_MPI
+  // Get Epetra MPI communicator (downcast)
+  const Epetra_MpiComm* epetra_mpi_comm
+    = dynamic_cast<const Epetra_MpiComm*>(&(_x->Map().Comm()));
+  dolfin_assert(epetra_mpi_comm);
+  mpi_comm = epetra_mpi_comm->Comm();
+#else
+  mpi_comm = MPI_COMM_SELF;
+#endif
+
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 std::string EpetraMatrix::str(bool verbose) const
 {
   if (!_A)

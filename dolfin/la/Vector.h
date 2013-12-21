@@ -83,6 +83,10 @@ namespace dolfin
     virtual void apply(std::string mode)
     { vector->apply(mode); }
 
+    /// Return MPI communicator
+    virtual const MPI_Comm mpi_comm() const
+    { return vector->mpi_comm(); }
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const
     { return "<Vector wrapper of " + vector->str(verbose) + ">"; }
