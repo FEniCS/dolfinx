@@ -405,6 +405,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     for (std::size_t k = 0; k < num_cells; k++)
       facet_dofs.push_back(cone_dofmap.cell_dofs(k)[local_facet_dof]);
     _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
+    _cell_cone->vector()->apply("insert");
 
     // Attach cell cone to _a_R_dT and _L_R_dT
     _a_R_dT->set_coefficient(0, _cell_cone);
