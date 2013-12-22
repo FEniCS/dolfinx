@@ -622,8 +622,8 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   }
 
   // Send nonlocal rows indices to other processes
-  const std::size_t num_processes  = MPI::num_processes(MPI_COMM_WORLD);
-  const std::size_t process_number = MPI::process_number(MPI_COMM_WORLD);
+  const std::size_t num_processes  = MPI::num_processes(mpi_comm());
+  const std::size_t process_number = MPI::process_number(mpi_comm());
   for (std::size_t i = 1; i < num_processes; ++i)
   {
     // Receive data from process p - i (i steps to the left), send data to
@@ -634,7 +634,7 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
 
     // Send and receive data
     std::vector<std::size_t> received_nonlocal_rows;
-    MPI::send_recv(MPI_COMM_WORLD, send_nonlocal_rows.set(), dest,
+    MPI::send_recv(mpi_comm(), send_nonlocal_rows.set(), dest,
                    received_nonlocal_rows, source);
 
     // Add rows which reside on this process
@@ -653,7 +653,7 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   const double local_sum = std::accumulate(local_values.begin(),
                                            local_values.end(), 0.0);
 
-  return MPI::sum(MPI_COMM_WORLD, local_sum);
+  return MPI::sum(mpi_comm(), local_sum);
 }
 //-----------------------------------------------------------------------------
 std::string PETScVector::str(bool verbose) const
@@ -706,10 +706,8 @@ std::string PETScVector::str(bool verbose) const
 void PETScVector::gather(GenericVector& y,
                          const std::vector<dolfin::la_index>& indices) const
 {
-  std::cout << "PETSc gather" << std::endl;
   dolfin_assert(_x);
   PetscErrorCode ierr;
-  std::cout << "End PETSc assert" << std::endl;
 
   // Down cast to a PETScVector
   PETScVector& _y = as_type<PETScVector>(y);
@@ -726,22 +724,18 @@ void PETScVector::gather(GenericVector& y,
     global_indices.resize(1);
 
   // Create local index sets
-  std::cout << "Create stuff" << std::endl;
   IS from, to;
   ierr = ISCreateGeneral(PETSC_COMM_SELF, n, global_indices.data(),
                          PETSC_COPY_VALUES, &from);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
   ierr = ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateStride");
-  std::cout << "End Create stuff" << std::endl;
 
   // Resize vector and make local
-  std::cout << "Resize y" << std::endl;
   y.resize(MPI_COMM_SELF, n);
 
   // Perform scatter
   VecScatter scatter;
-  std::cout << "Scatter" << std::endl;
   ierr = VecScatterCreate(*_x, from, *(_y.vec()), to, &scatter);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterCreate");
   ierr = VecScatterBegin(scatter, *_x, *(_y.vec()), INSERT_VALUES,
@@ -758,8 +752,6 @@ void PETScVector::gather(GenericVector& y,
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
   ierr = ISDestroy(&to);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
-
-  std::cout << "End gather " << y.size() << std::endl;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(std::vector<double>& x,
@@ -776,7 +768,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 {
   PetscErrorCode ierr;
 
-  if (MPI::process_number(MPI_COMM_WORLD) == 0)
+  if (MPI::process_number(mpi_comm()) == 0)
     x.resize(size());
   else
     x.resize(0);
@@ -793,7 +785,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterDestroy");
 
   // Wrap PETSc vector
-  if (MPI::process_number(MPI_COMM_WORLD) == 0)
+  if (MPI::process_number(mpi_comm()) == 0)
   {
     PETScVector _vout(vout);
     _vout.get_local(x);
@@ -831,7 +823,7 @@ void PETScVector::_init(MPI_Comm comm,
   dolfin_assert(range.second >= range.first);
 
   // Copy ghost indices
-  ierr = VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
+  ierr = VecCreateGhost(comm, local_size, PETSC_DECIDE,
                         ghost_indices.size(), ghost_indices.data(), _x.get());
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecCreateGhost");
 

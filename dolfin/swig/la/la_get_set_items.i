@@ -112,7 +112,6 @@ PyObject* _compare_vector_with_vector(dolfin::GenericVector* self,
                                       dolfin::GenericVector* other,
                                       DolfinCompareType cmp_type)
 {
-
   if (self->local_size() != other->local_size())
     throw std::runtime_error("non matching dimensions");
 
@@ -197,9 +196,11 @@ _get_vector_sub_vector(const dolfin::GenericVector* self,
   std::size_t m;
 
   // Get the correct Indices
-  if ( (inds = indice_chooser(op, self->size())) == 0 )
+  if ((inds = indice_chooser(op, self->size())) == 0)
+  {
     throw std::runtime_error("index must be either a slice, a list or a "\
 			     "Numpy array of integer");
+  }
 
   // Fill the return vector
   try
@@ -226,17 +227,17 @@ _get_vector_sub_vector(const dolfin::GenericVector* self,
 
   std::vector<double> values(m);
   self->get_local(values.data(), m, indices);
+
   return_vec->set(values.data(), m, range);
   return_vec->apply("insert");
 
   delete inds;
   return return_vec;
-
 }
 
 // Set items using a GenericVector
 void _set_vector_items_vector(dolfin::GenericVector* self, PyObject* op,
-			      dolfin::GenericVector& other )
+			      dolfin::GenericVector& other)
 {
   // Get the correct Indices
   Indices* inds;
