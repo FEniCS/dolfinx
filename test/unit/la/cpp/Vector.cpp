@@ -38,7 +38,7 @@ public:
 
     // uBLAS
     parameters["linear_algebra_backend"] = "uBLAS";
-    _test_operators();
+    _test_operators(MPI_COMM_SELF);
 
     // FIXME: Outcommented STL backend to circumvent infinite loops as
     // FIXME: seen on one buildbot
@@ -49,27 +49,20 @@ public:
     // PETSc
     #ifdef HAS_PETSC
     parameters["linear_algebra_backend"] = "PETSc";
-    _test_operators();
+    _test_operators(MPI_COMM_WORLD);
     #endif
 
     // Epetra
     #ifdef HAS_EPETRA
     parameters["linear_algebra_backend"] = "Epetra";
-    _test_operators();
+    _test_operators(MPI_COMM_WORLD);
     #endif
-
-    // MTL4
-    #ifdef HAS_MTL4
-    parameters["linear_algebra_backend"] = "MTL4";
-    _test_operators();
-    #endif
-
 
   }
 
-  void _test_operators()
+  void _test_operators(MPI_Comm comm)
   {
-    Vector v(MPI_COMM_WORLD, 10), u(MPI_COMM_WORLD, 10);
+    Vector v(comm, 10), u(comm, 10);
     v = 0.0;
     u = 0.0;
     CPPUNIT_ASSERT(v.sum() == 0.0);

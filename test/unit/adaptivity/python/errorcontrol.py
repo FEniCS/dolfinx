@@ -89,7 +89,7 @@ class ErrorControlTest(unittest.TestCase):
         solver.solve()
 
         # Compute error indicators
-        indicators = Vector(self.u.function_space().mesh().num_cells())
+        indicators = Vector(self.mesh.mpi_comm(), self.u.function_space().mesh().num_cells())
         indicators[0] = 1.0
         #self.ec.compute_indicators(indicators, self.u) #
 
