@@ -35,10 +35,6 @@
 #include "TensorLayout.h"
 #include "GenericLinearAlgebraFactory.h"
 
-// Forwad declarations
-class Epetra_MpiComm;
-class Epetra_SerialComm;
-
 namespace dolfin
 {
 
@@ -87,12 +83,6 @@ namespace dolfin
 
     /// --- EpetraFactory interface
 
-    // Return Epetra Communicator
-    Epetra_SerialComm& get_serial_comm();
-
-    // Return Epetra Communicator
-    Epetra_MpiComm& get_mpi_comm();
-
     // Return singleton instance
     static EpetraFactory& instance()
     { return factory; }
@@ -104,12 +94,6 @@ namespace dolfin
 
     // Singleton instance
     static EpetraFactory factory;
-
-    // Communicator
-    boost::scoped_ptr<Epetra_SerialComm> serial_comm;
-
-    // Communicator
-    boost::scoped_ptr<Epetra_MpiComm> mpi_comm;
 
   };
 

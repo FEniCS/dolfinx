@@ -61,10 +61,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    EpetraVector(std::string type="global");
+    EpetraVector();
 
     /// Create vector of size N
-    explicit EpetraVector(std::size_t N, std::string type="global");
+    EpetraVector(MPI_Comm comm, std::size_t N);
 
     /// Copy constructor
     EpetraVector(const EpetraVector& x);
@@ -87,7 +87,7 @@ namespace dolfin
     virtual void apply(std::string mode);
 
     /// Return MPI communicator
-    virtual const MPI_Comm mpi_comm() const = 0;
+    virtual const MPI_Comm mpi_comm() const;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -98,13 +98,13 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
-    virtual void resize(std::size_t N);
+    virtual void resize(MPI_Comm comm, std::size_t N);
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range);
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range);
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
@@ -236,9 +236,6 @@ namespace dolfin
     // Cache of off-process 'set' values (versus 'add') to be
     // communicated
     boost::unordered_map<std::size_t, double> off_process_set_values;
-
-    // Local/global vector
-    const std::string _type;
 
   };
 
