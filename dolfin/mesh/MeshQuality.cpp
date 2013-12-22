@@ -99,7 +99,6 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
   // Create Matplotlib string
   std::stringstream matplotlib;
   matplotlib << "def plot_histogram():" << std::endl;
-  matplotlib << "    import pylab" <<  std::endl;
   std::stringstream bins, values;
   bins   << "    bins = [" << data.first[0];
   values << "    values = [" << data.second[0];
