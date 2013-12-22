@@ -86,7 +86,7 @@ class TimeSeriesTest(unittest.TestCase):
 
         name = "TimeSeries_test_subdirectory/foo"
         series0 = TimeSeries(name)
-        x0 = Vector(10)
+        x0 = Vector(mpi_comm_world(), 10)
 
         # Test storage of only one time point for the mesh
         series0.store(m0, 0.1)
