@@ -209,16 +209,12 @@ class AbaqusTest(_ConverterTest):
         """ Test facet export.
         """
         dim = 3
-        nb_facets = 29287  # The total number of facets in the mesh
-        marker_counter = {0: 26689,
-                          1: 180,
-                          2: 518,
-                          3: 518,
-                          4: 30,
-                          5: 30,
-                          6: 1210,
-                          7: 112,
-                          8: 0}
+        nb_facets = 1170  # The total number of facets in the mesh
+        marker_counter = {0: 990,
+                          1: 42,
+                          2: 42,
+                          3: 96,
+                          4: 0}
         handler = self.__convert("abaqus_facet.inp")
         self.assert_(handler.vertices_ended)
         self.assert_(handler.cells_ended)
