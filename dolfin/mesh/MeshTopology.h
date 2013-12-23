@@ -73,13 +73,9 @@ namespace dolfin
     /// Initialize topology of given maximum dimension
     void init(std::size_t dim);
 
-    /// Set number of local entities (local_size) for given topological
-    /// dimension
-    void init(std::size_t dim, std::size_t local_size);
-
-    /// Set number of global entities (global_size) for given topological
-    /// dimension
-    void init_global(std::size_t dim, std::size_t global_size);
+    /// Set number of local entities (local_size) and global entities
+    /// (global_size) for given topological dimension dim
+    void init(std::size_t dim, std::size_t local_size, std::size_t global_size);
 
     /// Initialize storage for global entity numbering for entities of
     /// dimension dim

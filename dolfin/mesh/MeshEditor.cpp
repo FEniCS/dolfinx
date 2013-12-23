@@ -120,7 +120,7 @@ void MeshEditor::init_vertices(std::size_t num_vertices)
 
   // Initialize mesh data
   _num_vertices = num_vertices;
-  _mesh->_topology.init(0,    num_vertices);
+  _mesh->_topology.init(0, num_vertices, num_vertices);
   _mesh->_topology.init_global_indices(0, num_vertices);
   _mesh->_geometry.init(_gdim, num_vertices);
 }
@@ -137,7 +137,7 @@ void MeshEditor::init_cells(std::size_t num_cells)
 
   // Initialize mesh data
   _num_cells = num_cells;
-  _mesh->_topology.init(_tdim, num_cells);
+  _mesh->_topology.init(_tdim, num_cells, num_cells);
   _mesh->_topology.init_global_indices(_tdim, num_cells);
   _mesh->_topology(_tdim, 0).init(_num_cells, _mesh->type().num_vertices(_tdim));
 }

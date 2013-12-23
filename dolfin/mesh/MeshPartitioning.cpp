@@ -421,9 +421,9 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // (based on local numbers).
   editor.close();
 
-  // Set global number of cells and vertices
-  mesh.topology().init_global(0, num_global_vertices);
-  mesh.topology().init_global(tdim,  num_global_cells);
+  // Set locla and global number of cells and vertices
+  mesh.topology().init(0, vertex_coordinates.size(), num_global_vertices);
+  mesh.topology().init(tdim, cell_global_vertices.size(), num_global_cells);
 
   // Construct boundary mesh
   BoundaryMesh bmesh(mesh, "exterior");

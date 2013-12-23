@@ -132,17 +132,12 @@ void MeshTopology::init(std::size_t dim)
       connectivity[d0].push_back(MeshConnectivity(d0, d1));
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init(std::size_t dim, std::size_t local_size)
+void MeshTopology::init(std::size_t dim, std::size_t local_size,
+                        std::size_t global_size)
 {
   dolfin_assert(dim < num_entities.size());
   num_entities[dim] = local_size;
 
-  if (MPI::num_processes(MPI_COMM_WORLD) == 1)
-    init_global(dim, local_size);
-}
-//-----------------------------------------------------------------------------
-void MeshTopology::init_global(std::size_t dim, std::size_t global_size)
-{
   dolfin_assert(dim < global_num_entities.size());
   global_num_entities[dim] = global_size;
 }

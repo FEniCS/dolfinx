@@ -51,7 +51,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
     mesh.init(d);
 
     // Set global entity numbers in mesh
-    _mesh.topology().init_global(d, mesh.num_entities(d));
+    _mesh.topology().init(d, mesh.num_entities(d), mesh.num_entities(d));
     _mesh.topology().init_global_indices(d, mesh.num_entities(d));
     for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
       _mesh.topology().set_global_index(d, e->index(), e->index());
@@ -71,7 +71,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
                                                           shared_entities, d);
 
   // Set global entity numbers in mesh
-  _mesh.topology().init_global(d, num_global_entities);
+  _mesh.topology().init(d, mesh.num_entities(d), num_global_entities);
   _mesh.topology().init_global_indices(d, global_entity_indices.size());
   for (std::size_t i = 0; i < global_entity_indices.size(); ++i)
     _mesh.topology().set_global_index(d, i, global_entity_indices[i]);
