@@ -371,7 +371,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::lump(uBLASVector& m) const
   {
     const std::size_t n = size(1);
-    m.resize(MPI_COMM_SELF, n);
+    m.resize(mpi_comm(), n);
     m.zero();
     ublas::scalar_vector<double> one(n, 1.0);
     ublas::axpy_prod(_A, one, m.vec(), true);

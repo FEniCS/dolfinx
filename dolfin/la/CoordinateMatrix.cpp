@@ -28,7 +28,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
                                    bool base_one)
-  : _mpi_comm(MPI_COMM_WORLD), _symmetric(symmetric), _base_one(base_one)
+  : _mpi_comm(A.mpi_comm()), _symmetric(symmetric), _base_one(base_one)
 {
   _size[0] = A.size(0);
   _size[1] = A.size(1);

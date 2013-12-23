@@ -59,6 +59,9 @@ namespace dolfin
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
+    const MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
     bool base_one() const
     { return _base_one; }
 
