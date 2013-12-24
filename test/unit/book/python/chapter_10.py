@@ -254,8 +254,8 @@ class TestPage12(unittest.TestCase):
         mesh = Mesh();
         editor = MeshEditor();
         editor.open(mesh, 2, 2)
-        editor.init_vertices(4)
-        editor.init_cells(2)
+        editor.init_vertices(4, 4)
+        editor.init_cells(2, 2)
         editor.add_vertex(0, 0.0, 0.0)
         editor.add_vertex(1, 1.0, 0.0)
         editor.add_vertex(2, 1.0, 1.0)

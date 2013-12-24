@@ -76,7 +76,7 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
   std::vector<double> x(3);
 
   // Create vertices
-  editor.init_vertices((nx + 1)*(ny + 1)*(nz + 1));
+  editor.init_vertices((nx + 1)*(ny + 1)*(nz + 1), (nx + 1)*(ny + 1)*(nz + 1));
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; iz++)
   {
@@ -94,7 +94,7 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
   }
 
   // Create tetrahedra
-  editor.init_cells(6*nx*ny*nz);
+  editor.init_cells(6*nx*ny*nz, 6*nx*ny*nz);
   std::size_t cell = 0;
   std::vector<std::vector<std::size_t> > cells(6, std::vector<std::size_t>(4));
   for (std::size_t iz = 0; iz < nz; iz++)

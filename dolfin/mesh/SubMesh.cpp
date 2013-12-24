@@ -129,7 +129,7 @@ void SubMesh::init(const Mesh& mesh,
   std::vector<std::size_t> parent_to_submesh_cell_indices(mesh.num_cells(), 0);
 
   // Add sub-mesh cells
-  editor.init_cells(submesh_cells.size());
+  editor.init_cells(submesh_cells.size(), submesh_cells.size());
   std::size_t current_cell = 0;
   std::size_t current_vertex = 0;
   for (std::set<std::size_t>::iterator cell_it = submesh_cells.begin();
@@ -181,7 +181,8 @@ void SubMesh::init(const Mesh& mesh,
   parent_vertex_indices.resize(parent_to_submesh_vertex_indices.size());
 
   // Initialise mesh editor
-  editor.init_vertices(parent_to_submesh_vertex_indices.size());
+  editor.init_vertices(parent_to_submesh_vertex_indices.size(),
+                       parent_to_submesh_vertex_indices.size());
 
   // Add vertices
   for (std::map<std::size_t, std::size_t>::iterator it

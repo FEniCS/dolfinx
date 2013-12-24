@@ -80,13 +80,13 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   // Create vertices and cells:
   if (diagonal == "crossed")
   {
-    editor.init_vertices((nx + 1)*(ny + 1) + nx*ny);
-    editor.init_cells(4*nx*ny);
+    editor.init_vertices((nx + 1)*(ny + 1) + nx*ny, (nx + 1)*(ny + 1) + nx*ny);
+    editor.init_cells(4*nx*ny, 4*nx*ny);
   }
   else
   {
-    editor.init_vertices((nx + 1)*(ny + 1));
-    editor.init_cells(2*nx*ny);
+    editor.init_vertices((nx + 1)*(ny + 1), (nx + 1)*(ny + 1));
+    editor.init_cells(2*nx*ny, 2*nx*ny);
   }
 
   // Storage for vertices

@@ -242,14 +242,18 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   }
 
   // Initiate boundary topology
+  /*
   boundary.topology().init(0, num_boundary_vertices,
                            MPI::sum(mesh.mpi_comm(), num_owned_vertices));
   boundary.topology().init(D - 1, num_boundary_cells,
                            MPI::sum(mesh.mpi_comm(), num_boundary_cells));
+  */
 
   // Specify number of vertices and cells
-  editor.init_vertices(num_boundary_vertices);
-  editor.init_cells(num_boundary_cells);
+  editor.init_vertices(num_boundary_vertices, MPI::sum(mesh.mpi_comm(),
+                                                       num_owned_vertices));
+  editor.init_cells(num_boundary_cells, MPI::sum(mesh.mpi_comm(),
+                                                 num_boundary_cells));
 
   // Write vertex map
   MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);

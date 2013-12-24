@@ -41,7 +41,7 @@ UnitTriangleMesh::UnitTriangleMesh() : Mesh()
   editor.open(*this, CellType::triangle, 2, 2);
 
   // Create vertices
-  editor.init_vertices(3);
+  editor.init_vertices(3, 3);
   std::vector<double> x(2);
   x[0] = 0.0; x[1] = 0.0;
   editor.add_vertex(0, x);
@@ -51,7 +51,7 @@ UnitTriangleMesh::UnitTriangleMesh() : Mesh()
   editor.add_vertex(2, x);
 
   // Create cells
-  editor.init_cells(1);
+  editor.init_cells(1, 1);
   std::vector<std::size_t> cell_data(3);
   cell_data[0] = 0; cell_data[1] = 1; cell_data[2] = 2;
   editor.add_cell(0, cell_data);

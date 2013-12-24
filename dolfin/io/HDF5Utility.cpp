@@ -312,16 +312,18 @@ void HDF5Utility::cell_owners_in_range(std::vector<std::pair<std::size_t,
 //-----------------------------------------------------------------------------
 void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
 {
+  // NOTE: This function is only used when running in serial
+
   // Create mesh for editing
   MeshEditor editor;
   dolfin_assert(mesh_data.tdim != 0);
   std::string cell_type_str
     = CellType::type2string((CellType::Type)mesh_data.tdim);
-
   editor.open(mesh, cell_type_str, mesh_data.tdim, mesh_data.gdim);
-  editor.init_vertices(mesh_data.num_global_vertices);
 
   // Iterate over vertices and add to mesh
+  editor.init_vertices(mesh_data.num_global_vertices,
+                       mesh_data.num_global_vertices);
   for (std::size_t i = 0; i < mesh_data.num_global_vertices; ++i)
   {
     const std::size_t index = mesh_data.vertex_indices[i];
@@ -331,9 +333,10 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
     editor.add_vertex(index, p);
   }
 
-  editor.init_cells(mesh_data.num_global_cells);
-
   // Iterate over cells and add to mesh
+  editor.init_cells(mesh_data.num_global_cells,
+                    mesh_data.num_global_cells);
+
   for (std::size_t i = 0; i < mesh_data.num_global_cells; ++i)
   {
     const std::size_t index = mesh_data.global_cell_indices[i];

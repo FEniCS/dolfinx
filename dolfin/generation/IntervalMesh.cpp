@@ -67,8 +67,8 @@ IntervalMesh::IntervalMesh(std::size_t nx, double a, double b) : Mesh()
   editor.open(*this, CellType::interval, 1, 1);
 
   // Create vertices and cells:
-  editor.init_vertices((nx+1));
-  editor.init_cells(nx);
+  editor.init_vertices((nx+1), (nx+1));
+  editor.init_cells(nx, nx);
 
   // Create main vertices:
   for (std::size_t ix = 0; ix <= nx; ix++)

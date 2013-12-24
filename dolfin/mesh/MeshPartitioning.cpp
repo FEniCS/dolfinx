@@ -389,7 +389,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   editor.open(mesh, tdim, gdim);
 
   // Add vertices
-  editor.init_vertices(vertex_coordinates.size());
+  editor.init_vertices(vertex_coordinates.size(), num_global_vertices);
   Point point(gdim);
   dolfin_assert(vertex_indices.size() == vertex_coordinates.size());
   for (std::size_t i = 0; i < vertex_coordinates.size(); ++i)
@@ -400,7 +400,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   }
 
   // Add cells
-  editor.init_cells(cell_global_vertices.size());
+  editor.init_cells(cell_global_vertices.size(), num_global_cells);
   const std::size_t num_cell_vertices = tdim + 1;
   std::vector<std::size_t> cell(num_cell_vertices);
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
@@ -420,10 +420,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // vertex map or otherwise the ordering in mesh.close() will be wrong
   // (based on local numbers).
   editor.close();
-
-  // Set locla and global number of cells and vertices
-  mesh.topology().init(0, vertex_coordinates.size(), num_global_vertices);
-  mesh.topology().init(tdim, cell_global_vertices.size(), num_global_cells);
 
   // Construct boundary mesh
   BoundaryMesh bmesh(mesh, "exterior");

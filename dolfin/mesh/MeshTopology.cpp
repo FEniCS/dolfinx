@@ -145,17 +145,20 @@ void MeshTopology::init(std::size_t dim, std::size_t local_size,
 void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
 {
   dolfin_assert(dim < _global_indices.size());
-  _global_indices[dim] = std::vector<std::size_t>(size, std::numeric_limits<std::size_t>::max());
+  _global_indices[dim]
+    = std::vector<std::size_t>(size, std::numeric_limits<std::size_t>::max());
 }
 //-----------------------------------------------------------------------------
-dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::size_t d1)
+dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
+                                                    std::size_t d1)
 {
   dolfin_assert(d0 < connectivity.size());
   dolfin_assert(d1 < connectivity[d0].size());
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::size_t d1) const
+const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
+                                                          std::size_t d1) const
 {
   dolfin_assert(d0 < connectivity.size());
   dolfin_assert(d1 < connectivity[d0].size());
@@ -163,14 +166,14 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::s
 }
 //-----------------------------------------------------------------------------
 std::map<unsigned int, std::set<unsigned int> >&
-  MeshTopology::shared_entities(unsigned int dim)
+MeshTopology::shared_entities(unsigned int dim)
 {
   dolfin_assert(dim < this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 const std::map<unsigned int, std::set<unsigned int> >&
-  MeshTopology::shared_entities(unsigned int dim) const
+MeshTopology::shared_entities(unsigned int dim) const
 {
   std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >::const_iterator e;
   e = _shared_entities.find(dim);
