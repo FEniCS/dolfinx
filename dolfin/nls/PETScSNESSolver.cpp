@@ -553,10 +553,10 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
   if (is_vi())
   {
     dolfin_assert(_snes);
-    const MPI_Comm comm = PetscObjectComm((PetscObject)*_snes);
     const std::string sign   = parameters["sign"];
     const std::string method = parameters["method"];
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
+    const MPI_Comm comm = PetscObjectComm((PetscObject)*_snes);
     if (dolfin::MPI::process_number(comm) == 0)
     {
       warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
