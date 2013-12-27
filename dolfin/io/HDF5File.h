@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-06-21
+// Last changed: 2013-10-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -31,6 +31,7 @@
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/Variable.h"
+#include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -42,12 +43,13 @@ namespace dolfin
   class Mesh;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
+  class HDF5Attribute;
 
   class HDF5File : public Variable
   {
   public:
 
-    /// Constructor. file_mode should "a" (append), "w" (write) ot "r"
+    /// Constructor. file_mode should "a" (append), "w" (write) or "r"
     /// (read).
     HDF5File(const std::string filename, const std::string file_mode,
              bool use_mpiio=true);
@@ -55,13 +57,15 @@ namespace dolfin
     /// Destructor
     ~HDF5File();
 
+    /// Close file
+    void close();
+
     /// Write Vector to file in a format suitable for re-reading
     void write(const GenericVector& x, const std::string name);
 
     /// Read vector from file
     void read(GenericVector& x, const std::string dataset_name,
               const bool use_partition_from_file = true) const;
-
 
     /// Write Mesh to file in a format suitable for re-reading
     void write(const Mesh& mesh, const std::string name);
@@ -73,6 +77,9 @@ namespace dolfin
 
     /// Write Function to file in a format suitable for re-reading
     void write(const Function& u, const std::string name);
+
+    /// Write Function to file with a timestamp
+    void write(const Function& u, const std::string name, double timestamp);
 
     /// Read Function from file and distribute data according to
     /// the Mesh and dofmap associated with the Function
@@ -137,6 +144,9 @@ namespace dolfin
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
 
+    // Get/set attributes of an existing dataset
+    HDF5Attribute attributes(const std::string dataset_name);
+
     /// Flush buffered I/O to disk
     void flush();
 
@@ -182,6 +192,7 @@ namespace dolfin
   };
 
   //---------------------------------------------------------------------------
+  // Needs to go here, because of use in XDMFFile.cpp
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
