@@ -78,11 +78,13 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
     _mesh.topology().set_global_index(d, i, global_entity_indices[i]);
 }
 //-----------------------------------------------------------------------------
-std::size_t DistributedMeshTools::number_entities(const Mesh& mesh,
-                                                  const std::map<unsigned int, std::pair<unsigned int, unsigned int> >& slave_entities,
-    std::vector<std::size_t>& global_entity_indices,
-    std::map<unsigned int, std::set<unsigned int> >& shared_entities,
-    std::size_t d)
+std::size_t DistributedMeshTools::number_entities(
+  const Mesh& mesh,
+  const std::map<unsigned int, std::pair<unsigned int,
+  unsigned int> >& slave_entities,
+  std::vector<std::size_t>& global_entity_indices,
+  std::map<unsigned int, std::set<unsigned int> >& shared_entities,
+  std::size_t d)
 {
   // Developer note: This function should use global_vertex_indices for
   // the global mesh indices and *not* access these through the mesh. In
@@ -123,7 +125,7 @@ std::size_t DistributedMeshTools::number_entities(const Mesh& mesh,
   const std::size_t num_processes = MPI::num_processes(mpi_comm);
   const std::size_t process_number = MPI::process_number(mpi_comm);
 
-  // Initialize entities of dimension d
+  // Initialize entities of dimension d locally
   mesh.init(d);
 
   // Build list of slave entities to exclude from ownership computation

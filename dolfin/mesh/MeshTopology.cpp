@@ -21,7 +21,6 @@
 #include <numeric>
 #include <sstream>
 #include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
 #include <dolfin/common/utils.h>
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
@@ -33,9 +32,6 @@ MeshTopology::MeshTopology()
 
 {
   // Do nothing
-  // Make shared vertices empty when in serial
-  if (MPI::num_processes(MPI_COMM_WORLD) == 1)
-    shared_entities(0);
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
@@ -140,6 +136,11 @@ void MeshTopology::init(std::size_t dim, std::size_t local_size,
 
   dolfin_assert(dim < global_num_entities.size());
   global_num_entities[dim] = global_size;
+
+  // FIXME: Remove this when ghost/halo cells are supported
+  // If mesh is local, make shared vertices empty
+  if (dim == 0 && (local_size == global_size))
+    shared_entities(0);
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
@@ -168,14 +169,15 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
 std::map<unsigned int, std::set<unsigned int> >&
 MeshTopology::shared_entities(unsigned int dim)
 {
-  dolfin_assert(dim < this->dim());
+  dolfin_assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 const std::map<unsigned int, std::set<unsigned int> >&
 MeshTopology::shared_entities(unsigned int dim) const
 {
-  std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >::const_iterator e;
+  std::map<unsigned int, std::map<unsigned int,
+                                  std::set<unsigned int> > >::const_iterator e;
   e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
