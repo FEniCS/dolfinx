@@ -58,16 +58,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(const std::string filename, const std::string file_mode,
-                   bool use_mpiio)
-  : hdf5_file_open(false), hdf5_file_id(0),
-    mpi_io(MPI::num_processes(MPI_COMM_WORLD) > 1 && use_mpiio ? true : false),
-    _mpi_comm(MPI_COMM_WORLD)
+HDF5File::HDF5File(MPI_Comm  comm, const std::string filename,
+                   const std::string file_mode)
+  : hdf5_file_open(false), hdf5_file_id(0), _mpi_comm(comm)
 {
   // HDF5 chunking
   parameters.add("chunking", false);
 
   // Open HDF5 file
+  const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
   hdf5_file_id = HDF5Interface::open_file(filename, file_mode, mpi_io);
   hdf5_file_open = true;
 }
@@ -103,6 +102,7 @@ void HDF5File::write(const GenericVector& x, const std::string dataset_name)
   std::pair<std::size_t, std::size_t> local_range = x.local_range();
   const bool chunking = parameters["chunking"];
   const std::vector<std::size_t> global_size(1, x.size());
+  const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
   HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
                                local_range, global_size, mpi_io, chunking);
 
@@ -212,7 +212,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     global_size[0] = MPI::sum(_mpi_comm, vertex_coords.size()/gdim);
     global_size[1] = gdim;
     dolfin_assert(global_size[0] == mesh.size_global(0));
-    write_data(coord_dataset, vertex_coords, global_size);
+    const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
+    write_data(coord_dataset, vertex_coords, global_size, mpi_io);
   }
 
   // ---------- Topology
@@ -273,7 +274,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
                               topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
     dolfin_assert(global_size[0] == mesh.size_global(cell_dim));
-    write_data(topology_dataset, topological_data, global_size);
+    const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
+    write_data(topology_dataset, topological_data, global_size, mpi_io);
 
     // For cells, write the global cell index
     if (cell_dim == mesh.topology().dim())
@@ -282,7 +284,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       global_size.pop_back();
       const std::vector<std::size_t>& cells =
         mesh.topology().global_indices(mesh.topology().dim());
-      write_data(cell_index_dataset, cells, global_size);
+      const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
+      write_data(cell_index_dataset, cells, global_size, mpi_io);
     }
 
     // Add cell type attribute
@@ -635,7 +638,8 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   // Write values to HDF5
   std::vector<std::size_t>
     global_size(1, MPI::sum(_mpi_comm, data_values.size()));
-  write_data(name + "/values", data_values, global_size);
+  const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
+  write_data(name + "/values", data_values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Function& u,  const std::string name,
@@ -706,20 +710,22 @@ void HDF5File::write(const Function& u, const std::string name)
                  x_cell_dofs.begin(),
                  std::bind2nd(std::plus<std::size_t>(), offset));
 
+  const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
+
   // Save DOFs on each cell
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
                                                    cell_dofs.size()));
-  write_data(name + "/cell_dofs", cell_dofs, global_size);
+  write_data(name + "/cell_dofs", cell_dofs, global_size, mpi_io);
   if (MPI::process_number(_mpi_comm) == MPI::num_processes(_mpi_comm) - 1)
     x_cell_dofs.push_back(global_size[0]);
   global_size[0] = mesh.size_global(mesh.topology().dim()) + 1;
-  write_data(name + "/x_cell_dofs", x_cell_dofs, global_size);
+  write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
 
   // Save cell ordering
   const std::vector<std::size_t>& cells =
     mesh.topology().global_indices(mesh.topology().dim());
   global_size[0] = mesh.size_global(mesh.topology().dim());
-  write_data(name + "/cells", cells, global_size);
+  write_data(name + "/cells", cells, global_size, mpi_io);
 
   // Save vector
   write(*u.vector(), name + "/vector");
@@ -996,9 +1002,10 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
 
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
                                                    data_values.size()));
-  write_data(name + "/values", data_values, global_size);
-  write_data(name + "/entities", entities, global_size);
-  write_data(name + "/cells", cells, global_size);
+  const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
+  write_data(name + "/values", data_values, global_size, mpi_io);
+  write_data(name + "/entities", entities, global_size, mpi_io);
+  write_data(name + "/cells", cells, global_size, mpi_io);
 
   HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
                                mesh_values.dim());

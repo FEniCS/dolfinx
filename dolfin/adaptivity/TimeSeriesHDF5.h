@@ -25,6 +25,7 @@
 
 #include <string>
 #include <vector>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -130,10 +131,10 @@ namespace dolfin
   private:
 
     template <typename T>
-    void store_object(const T& object, double t,
-                      std::vector<double>& times,
-                      std::string series_name,
-                      std::string group_name);
+      void store_object(MPI_Comm comm, const T& object, double t,
+                        std::vector<double>& times,
+                        std::string series_name,
+                        std::string group_name);
 
     // Check if values are strictly increasing
     static bool monotone(const std::vector<double>& times);
