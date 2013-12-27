@@ -23,7 +23,6 @@
 
 #include <boost/functional/hash.hpp>
 
-#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "MeshGeometry.h"
 

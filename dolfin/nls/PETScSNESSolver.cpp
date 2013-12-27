@@ -383,11 +383,13 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   if (reason > 0 && parameters["report"]
     && dolfin::MPI::process_number(comm) == 0)
   {
-    info("PETSc SNES solver converged in %d iterations with convergence reason %s.", its, SNESConvergedReasons[reason]);
+    info("PETSc SNES solver converged in %d iterations with convergence reason %s.",
+         its, SNESConvergedReasons[reason]);
   }
   else if (reason < 0 && dolfin::MPI::process_number(comm) == 0)
   {
-    warning("PETSc SNES solver diverged in %d iterations with divergence reason %s.", its, SNESConvergedReasons[reason]);
+    warning("PETSc SNES solver diverged in %d iterations with divergence reason %s.",
+            its, SNESConvergedReasons[reason]);
   }
 
   if (parameters["error_on_nonconvergence"] && reason < 0)
@@ -550,10 +552,12 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
 {
   if (is_vi())
   {
+    dolfin_assert(_snes);
+    const MPI_Comm comm = PetscObjectComm((PetscObject)*_snes);
     const std::string sign   = parameters["sign"];
     const std::string method = parameters["method"];
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
-    if (dolfin::MPI::process_number() == 0)
+    if (dolfin::MPI::process_number(comm) == 0)
     {
       warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
     }
