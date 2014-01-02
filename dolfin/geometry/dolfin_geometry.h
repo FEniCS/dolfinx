@@ -9,6 +9,7 @@
 #include <dolfin/geometry/GenericBoundingBoxTree.h>
 #include <dolfin/geometry/BoundingBoxTree3D.h>
 #include <dolfin/geometry/MeshPointIntersection.h>
+#include <dolfin/geometry/IntersectionTriangulation.h>
 #include <dolfin/geometry/intersect.h>
 
 #endif

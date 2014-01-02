@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-12-09
+// Last changed: 2014-01-02
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -557,6 +557,68 @@ bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
   return false;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::vector<Point> >
+TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
+{
+  // This algorithm computes the (convex) polygon resulting from the
+  // intersection of two triangles. It then triangulates the polygon
+  // by trivially drawing an edge from a random (= the first) vertex
+  // to all other vertices.
+
+  // Get geometry and vertex data
+  const MeshGeometry& geometry_0 = c0.mesh().geometry();
+  const MeshGeometry& geometry_1 = c1.mesh().geometry();
+  const unsigned int* vertices_0 = c0.entities(0);
+  const unsigned int* vertices_1 = c1.entities(0);
+
+  // Create empty list of vertices in polygon
+  std::vector<Point> polygon;
+
+  // Iterate over vertices in c0
+  for (std::size_t i0 = 0; i0 < 3; i0++)
+  {
+    // Get coordinates for edge in c0
+    const std::size_t j0 = i0 + 1 % 3;
+    const Point p0 = geometry_0.point(vertices_0[i0]);
+    const Point q0 = geometry_0.point(vertices_0[j0]);
+
+    // Add first vertex of c0 edge if it is inside c1
+    if (collides(c1, p0))
+      polygon.push_back(p0);
+
+    // Check intersection between edge p0 - q0 and each edge of c1
+    std::vector<Point> edge_collisions;
+    for (std::size_t i1 = 0; i1 < 3; i1++)
+    {
+      // Get coordinates for edge in c1
+      const std::size_t j1 = i1 + 1 % 3;
+      const Point p1 = geometry_1.point(vertices_1[i1]);
+      const Point q1 = geometry_1.point(vertices_1[j1]);
+
+      // Add collision with edge if any
+      if (collides(p0, q0, p1, q1))
+        edge_collisions.push_back(edge_collision(p0, q0, p1, q1));
+    }
+  }
+
+  // FIXME: Need to sort edge collisions here
+
+  // Triangulate polygon by connecting the first vertex of the polygon
+  // with the remaining pairs of vertices in sequence
+  assert(polygon.size() >= 3);
+  std::vector<std::vector<Point> > triangulation(polygon.size() - 2);
+  for (std::size_t i = 2; i < polygon.size(); i++)
+  {
+    std::vector<Point> triangle(3);
+    triangle[0] = polygon[0];
+    triangle[1] = polygon[i - 1];
+    triangle[2] = polygon[i];
+    triangulation.push_back(triangle);
+  }
+
+  return triangulation;
+}
+//-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const
 {
   if (plural)
@@ -595,17 +657,42 @@ bool TriangleCell::collides(const Point& a, const Point& b,
   // Test2DSegmentSegment on page 152, Section 5.1.9.
 
   // Compute signed areas of abd and abc
-  double abd = signed_area(a, b, d);
-  double abc = signed_area(a, b, c);
+  const double abd = signed_area(a, b, d);
+  const double abc = signed_area(a, b, c);
 
   // Return false if not intersecting (or collinear)
   if (abd*abc >= 0.0)
     return false;
 
   // Compute signed area of cda
-  double cda = signed_area(c, d, a);
+  const double cda = signed_area(c, d, a);
 
   // Check whether segments collide
   return cda*(cda + abc - abd) < 0.0;
+}
+//-----------------------------------------------------------------------------
+Point TriangleCell::edge_collision(const Point& a, const Point& b,
+                                   const Point& c, const Point& d) const
+{
+  // Compute vectors
+  const Point v0 = b - a;
+  const Point v1 = c - d; // Note negative sign here!
+
+  // Compute determinant
+  const double det = v0.x()*v1.y() - v0.y()*v1.x();
+  if (det < DOLFIN_EPS)
+  {
+    dolfin_error("TriangleCell.cpp",
+                 "compute edge collision",
+                 "Edges are parallel to within machine precision");
+  }
+
+  // Solve for distance from the point a using Cramer's rule
+  const double alpha = v1.y()*(c.x() - a.x()) - v1.x()*(c.y() - a.y());
+
+  // Compute point of intersection
+  const Point p = a + alpha*v0;
+
+  return p;
 }
 //-----------------------------------------------------------------------------

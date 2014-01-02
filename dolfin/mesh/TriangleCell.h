@@ -19,7 +19,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-08-26
+// Last changed: 2014-01-02
 
 #ifndef __TRIANGLE_CELL_H
 #define __TRIANGLE_CELL_H
@@ -100,6 +100,10 @@ namespace dolfin
     /// Check whether given entity collides with cell
     bool collides(const Cell& cell, const MeshEntity& entity) const;
 
+    /// Compute triangulation of intersection of two cells
+    std::vector<std::vector<Point> >
+    triangulate_intersection(const Cell& c0, const Cell& c1) const;
+
     /// Return description of cell type
     std::string description(bool plural) const;
 
@@ -115,6 +119,13 @@ namespace dolfin
     // Check whether edges ab and cd collide
     bool collides(const Point& a, const Point& b,
                   const Point& c, const Point& d) const;
+
+    // Compute collision (intersection point) between edges ab and cd.
+    // This function assumes that the two edges collide and solve for
+    // the intersection point between the extended line segments. An
+    // error is thrown if the edges are parallel.
+    Point edge_collision(const Point& a, const Point& b,
+                         const Point& c, const Point& d) const;
 
   };
 
