@@ -20,7 +20,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2006-06-05
-// Last changed: 2013-12-09
+// Last changed: 2014-01-03
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -294,6 +294,14 @@ bool IntervalCell::collides(const Cell& cell, const Point& point) const
 
   return ((x >= x0 - eps && x <= x1 + eps) ||
           (x >= x1 - eps && x <= x0 + eps));
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<Point> >
+IntervalCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
+{
+  dolfin_not_implemented();
+  std::vector<std::vector<Point> > triangulation;
+  return triangulation;
 }
 //-----------------------------------------------------------------------------
 bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const

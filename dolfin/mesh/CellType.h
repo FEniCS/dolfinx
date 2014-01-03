@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Kristoffer Selim, 2008.
-// Modified by Andre Massing, 2009-2010.
+// Modified by Kristoffer Selim 2008
+// Modified by Andre Massing 2009-2010
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-08-26
+// Last changed: 2014-01-03
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -138,6 +138,10 @@ namespace dolfin
 
     /// Check whether given entity collides with cell
     virtual bool collides(const Cell& cell, const MeshEntity& entity) const = 0;
+
+    /// Compute triangulation of intersection of two cells
+    virtual std::vector<std::vector<Point> >
+    triangulate_intersection(const Cell& c0, const Cell& c1) const = 0;
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;

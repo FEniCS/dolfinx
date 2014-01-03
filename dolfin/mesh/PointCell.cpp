@@ -19,7 +19,7 @@
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2013-08-26
+// Last changed: 2014-01-03
 
 #include <dolfin/log/log.h>
 #include "Cell.h"
@@ -159,7 +159,7 @@ void PointCell::order(Cell& cell,
 bool PointCell::collides(const Cell& cell, const Point& point) const
 {
   dolfin_error("PointCell.cpp",
-               "check whether point collides with cell.",
+               "check whether point collides with cell",
                "Not defined for point cells");
 
   return false;
@@ -168,12 +168,21 @@ bool PointCell::collides(const Cell& cell, const Point& point) const
 bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
   dolfin_error("PointCell.cpp",
-               "check whether entity collides with cell.",
+               "check whether entity collides with cell",
                "Not defined for point cells");
 
-  dolfin_not_implemented();
-
   return false;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<Point> >
+PointCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
+{
+  dolfin_error("PointCell.cpp",
+               "triangulate intersection",
+               "Not defined for point cells");
+
+  std::vector<std::vector<Point> > triangulation;
+  return triangulation;
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const

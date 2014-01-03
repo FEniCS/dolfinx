@@ -21,7 +21,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2013-08-26
+// Last changed: 2014-01-03
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -277,7 +277,7 @@ namespace dolfin
     bool contains(const Point& point) const
     { return _mesh->type().collides(*this, point); }
 
-    /// Check whether given point collides with cell.
+    /// Check whether given point collides with cell
     ///
     /// *Arguments*
     ///     point (_Point_)
@@ -289,7 +289,7 @@ namespace dolfin
     bool collides(const Point& point) const
     { return _mesh->type().collides(*this, point); }
 
-    /// Check whether given entity collides with cell.
+    /// Check whether given entity collides with cell
     ///
     /// *Arguments*
     ///     entity (_MeshEntity_)
@@ -300,6 +300,19 @@ namespace dolfin
     ///         True iff entity collides with cell.
     bool collides(const MeshEntity& entity) const
     { return _mesh->type().collides(*this, entity); }
+
+    /// Compute triangulation of intersection with given cell
+    ///
+    /// *Arguments*
+    ///     cell (_Cell_)
+    ///         The cell with which to intersect.
+    ///
+    /// *Returns*
+    ///     std::vector<std::vector<Point> >
+    ///         A list of simplices represented as lists of points.
+    std::vector<std::vector<Point> >
+    triangulate_intersection(const Cell& cell) const
+    { return _mesh->type().triangulate_intersection(*this, cell); }
 
     // FIXME: This function is part of a UFC transition
     /// Get cell vertex coordinates
