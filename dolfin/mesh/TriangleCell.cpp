@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-02
+// Last changed: 2014-01-03
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -599,9 +599,46 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
       if (collides(p0, q0, p1, q1))
         edge_collisions.push_back(edge_collision(p0, q0, p1, q1));
     }
-  }
 
-  // FIXME: Need to sort edge collisions here
+    // Sort edge collisions (by distance to p0)
+    if (edge_collisions.size() >= 2)
+    {
+      double d0 = p0.squared_distance(edge_collisions[0]);
+      double d1 = p0.squared_distance(edge_collisions[1]);
+      if (edge_collisions.size() == 3)
+      {
+        // Sort list of size 3
+        double d2 = p0.squared_distance(edge_collisions[2]);
+
+        // Find first element
+        if (d1 <= d0 && d1 <= d2)
+        {
+          std::swap(edge_collisions[0], edge_collisions[1]);
+          std::swap(d0, d1);
+        }
+        else if (d2 <= d0 && d2 <= d1)
+        {
+          std::swap(edge_collisions[0], edge_collisions[2]);
+          std::swap(d0, d2);
+        }
+
+        // Swap last two elements if necessary
+        if (d1 > d2)
+          std::swap(edge_collisions[1], edge_collisions[2]);
+      }
+      else if (d0 > d1)
+      {
+        // Sort list of size 2 (1 case)
+        Point tmp = edge_collisions[0];
+        edge_collisions[0] = edge_collisions[1];
+        edge_collisions[1] = tmp;
+      }
+    }
+
+    // Add edge collisions
+    for (std::size_t i = 0; i < edge_collisions.size(); i++)
+      polygon.push_back(edge_collisions[i]);
+  }
 
   // Triangulate polygon by connecting the first vertex of the polygon
   // with the remaining pairs of vertices in sequence
