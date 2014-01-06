@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-03
+// Last changed: 2014-01-06
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -557,7 +557,7 @@ bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
   return false;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<Point> >
+std::vector<double>
 TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
   // This algorithm computes the (convex) polygon resulting from the
@@ -640,17 +640,24 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
       polygon.push_back(edge_collisions[i]);
   }
 
+  // Initialize triangulation data
+  assert(polygon.size() >= 3);
+  std::vector<double> triangulation;
+  triangulation.reserve((polygon.size() - 2)*3*2);
+
   // Triangulate polygon by connecting the first vertex of the polygon
   // with the remaining pairs of vertices in sequence
-  assert(polygon.size() >= 3);
-  std::vector<std::vector<Point> > triangulation(polygon.size() - 2);
   for (std::size_t i = 2; i < polygon.size(); i++)
   {
-    std::vector<Point> triangle(3);
-    triangle[0] = polygon[0];
-    triangle[1] = polygon[i - 1];
-    triangle[2] = polygon[i];
-    triangulation.push_back(triangle);
+    const Point& p0 = polygon[0];
+    const Point& p1 = polygon[i - 1];
+    const Point& p2 = polygon[i];
+    triangulation.push_back(p0.x());
+    triangulation.push_back(p0.y());
+    triangulation.push_back(p1.x());
+    triangulation.push_back(p1.y());
+    triangulation.push_back(p2.x());
+    triangulation.push_back(p2.y());
   }
 
   return triangulation;

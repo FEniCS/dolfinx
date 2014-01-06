@@ -21,7 +21,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2014-01-03
+// Last changed: 2014-01-06
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -308,9 +308,11 @@ namespace dolfin
     ///         The cell with which to intersect.
     ///
     /// *Returns*
-    ///     std::vector<std::vector<Point> >
-    ///         A list of simplices represented as lists of points.
-    std::vector<std::vector<Point> >
+    ///     std::vector<double>
+    ///         A flattened array of simplices of dimension
+    ///         num_simplices x num_vertices x gdim =
+    ///         num_simplices x (tdim + 1) x gdim
+    std::vector<double>
     triangulate_intersection(const Cell& cell) const
     { return _mesh->type().triangulate_intersection(*this, cell); }
 

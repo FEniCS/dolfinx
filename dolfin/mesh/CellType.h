@@ -20,7 +20,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-03
+// Last changed: 2014-01-06
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -140,7 +140,7 @@ namespace dolfin
     virtual bool collides(const Cell& cell, const MeshEntity& entity) const = 0;
 
     /// Compute triangulation of intersection of two cells
-    virtual std::vector<std::vector<Point> >
+    virtual std::vector<double>
     triangulate_intersection(const Cell& c0, const Cell& c1) const = 0;
 
     /// Return description of cell type

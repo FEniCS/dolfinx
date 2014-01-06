@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-03
+// Last changed: 2014-01-06
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -712,11 +712,11 @@ bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
   return false;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<Point> >
+std::vector<double>
 TetrahedronCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
   dolfin_not_implemented();
-  std::vector<std::vector<Point> > triangulation;
+  std::vector<double> triangulation;
   return triangulation;
 }
 //-----------------------------------------------------------------------------

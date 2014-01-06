@@ -19,7 +19,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2007-12-12
-// Last changed: 2014-01-03
+// Last changed: 2014-01-06
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H
@@ -92,7 +92,7 @@ namespace dolfin
     bool collides(const Cell& cell, const MeshEntity& entity) const;
 
     /// Compute triangulation of intersection of two cells
-    virtual std::vector<std::vector<Point> >
+    virtual std::vector<double>
     triangulate_intersection(const Cell& c0, const Cell& c1) const;
 
     /// Return description of cell type

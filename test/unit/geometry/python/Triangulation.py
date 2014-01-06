@@ -20,7 +20,7 @@ tested here."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-01-03
-# Last changed: 2014-01-03
+# Last changed: 2014-01-06
 
 import unittest
 
@@ -45,9 +45,9 @@ class Triangulation(unittest.TestCase):
         c11 = Cell(mesh_1, 1)
 
         # Compute triangulations
-        c00.triangulate_intersection(c00)
-        c00.triangulate_intersection(c01)
-        c00.triangulate_intersection(c10)
+        print c00.triangulate_intersection(c00)
+        #c00.triangulate_intersection(c01)
+        #c00.triangulate_intersection(c10)
 
 if __name__ == "__main__":
     print ""
