@@ -562,8 +562,11 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
   // This algorithm computes the (convex) polygon resulting from the
   // intersection of two triangles. It then triangulates the polygon
-  // by trivially drawing an edge from a random (= the first) vertex
-  // to all other vertices.
+  // by trivially drawing an edge from one vertex to all other
+  // vertices. The polygon is computed by first identifying all
+  // vertex-cell collisions and then all edge-edge collisions. The
+  // points are then sorted using a simplified Graham scan (simplified
+  // since we know the polygon is convex).
 
   // Get geometry and vertex data
   const MeshGeometry& geometry_0 = c0.mesh().geometry();
@@ -571,101 +574,86 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
   const unsigned int* vertices_0 = c0.entities(0);
   const unsigned int* vertices_1 = c1.entities(0);
 
-  // Create empty list of vertices in polygon
-  std::vector<Point> polygon;
+  // Create empty list of collision points
+  std::vector<Point> points;
 
-  // Iterate over vertices in c0
+  // Find all vertex-cell collisions
+  for (std::size_t i = 0; i < 3; i++)
+  {
+    const Point p0 = geometry_0.point(vertices_0[i]);
+    const Point p1 = geometry_1.point(vertices_1[i]);
+    if (collides(c1, p0))
+      points.push_back(p0);
+    if (collides(c0, p1))
+      points.push_back(p1);
+  }
+
+  cout << points.size() << endl;
+
+  // Find all edge-edge collisions
   for (std::size_t i0 = 0; i0 < 3; i0++)
   {
-    // Get coordinates for edge in c0
     const std::size_t j0 = (i0 + 1) % 3;
     const Point p0 = geometry_0.point(vertices_0[i0]);
     const Point q0 = geometry_0.point(vertices_0[j0]);
-
-    cout << "Checking point: " << p0 << endl;
-
-
-    // Add first vertex of c0 edge if it is inside c1
-    if (collides(c1, p0))
-    {
-      cout << "  Found point inside: " << p0 << endl;
-      polygon.push_back(p0);
-    }
-
-    // Check intersection between edge p0 - q0 and each edge of c1
-    std::vector<Point> edge_collisions;
     for (std::size_t i1 = 0; i1 < 3; i1++)
     {
-      // Get coordinates for edge in c1
       const std::size_t j1 = (i1 + 1) % 3;
       const Point p1 = geometry_1.point(vertices_1[i1]);
       const Point q1 = geometry_1.point(vertices_1[j1]);
-
-      // Add collision with edge if any
       if (collides(p0, q0, p1, q1))
-        edge_collisions.push_back(edge_collision(p0, q0, p1, q1));
-    }
-
-    cout << "  Found " << edge_collisions.size() << " edge collisions" << endl;
-
-    // Sort edge collisions (by distance to p0)
-    if (edge_collisions.size() >= 2)
-    {
-      double d0 = p0.squared_distance(edge_collisions[0]);
-      double d1 = p0.squared_distance(edge_collisions[1]);
-      if (edge_collisions.size() == 3)
-      {
-        // Sort list of size 3
-        double d2 = p0.squared_distance(edge_collisions[2]);
-
-        // Find first element
-        if (d1 <= d0 && d1 <= d2)
-        {
-          std::swap(edge_collisions[0], edge_collisions[1]);
-          std::swap(d0, d1);
-        }
-        else if (d2 <= d0 && d2 <= d1)
-        {
-          std::swap(edge_collisions[0], edge_collisions[2]);
-          std::swap(d0, d2);
-        }
-
-        // Swap last two elements if necessary
-        if (d1 > d2)
-          std::swap(edge_collisions[1], edge_collisions[2]);
-      }
-      else if (d0 > d1)
-      {
-        // Sort list of size 2 (1 case)
-        Point tmp = edge_collisions[0];
-        edge_collisions[0] = edge_collisions[1];
-        edge_collisions[1] = tmp;
-      }
-    }
-
-    // Add edge collisions
-    for (std::size_t i = 0; i < edge_collisions.size(); i++)
-    {
-      cout << "  Found edge collision: " << edge_collisions[i] << endl;
-      polygon.push_back(edge_collisions[i]);
+        points.push_back(edge_collision(p0, q0, p1, q1));
     }
   }
 
-  // Initialize empty triangulation data
-  std::vector<double> triangulation;
+  cout << points.size() << endl;
 
-  // Check if polygon is empty
-  if (polygon.size() < 3)
+  // Special case: no points found
+  std::vector<double> triangulation;
+  if (points.size() < 3)
     return triangulation;
 
-  // Triangulate polygon by connecting the first vertex of the polygon
-  // with the remaining pairs of vertices in sequence
-  triangulation.reserve((polygon.size() - 2)*3*2);
-  for (std::size_t i = 2; i < polygon.size(); i++)
+  // Find left-most point (smallest x-coordinate)
+  std::size_t i_min = 0;
+  double x_min = points[0].x();
+  for (std::size_t i = 1; i < points.size(); i++)
   {
-    const Point& p0 = polygon[0];
-    const Point& p1 = polygon[i - 1];
-    const Point& p2 = polygon[i];
+    const double x = points[i].x();
+    if (x < x_min)
+    {
+      x_min = x;
+      i_min = i;
+    }
+  }
+
+  // Compute signed squared cos of angle with (0, 1) from i_min to all points
+  std::vector<std::pair<double, std::size_t> > order;
+  for (std::size_t i = 0; i < points.size(); i++)
+  {
+    // Skip left-most point used as origin
+    if (i == i_min)
+      continue;
+
+    // Compute vector to point
+    const Point v = points[i] - points[i_min];
+
+    // Compute square cos of angle
+    const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
+
+    // Store for sorting
+    order.push_back(std::make_pair(cos2, i));
+  }
+
+  // Sort points based on angle
+  std::sort(order.begin(), order.end());
+
+  // Triangulate polygon by connecting i_min with the ordered points
+  triangulation.reserve((points.size() - 2)*3*2);
+  const Point& p0 = points[i_min];
+  for (std::size_t i = 0; i < points.size() - 2; i++)
+  {
+    const Point& p1 = points[order[i].second];
+    const Point& p2 = points[order[i + 1].second];
     triangulation.push_back(p0.x());
     triangulation.push_back(p0.y());
     triangulation.push_back(p1.x());

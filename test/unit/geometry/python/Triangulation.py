@@ -33,7 +33,7 @@ def plot_triangulation_2d(triangulation):
     num_triangles = len(triangulation) / 6
     for i in range(len(triangulation) / 6):
         x0, y0, x1, y1, x2, y2 = triangulation[6*i:6*(i+1)]
-        pylab.plot([x0, x1, x2, x0], [y0, y1, y2, y0])
+        pylab.plot([x0, x1, x2, x0], [y0, y1, y2, y0], 'r')
 
 def plot_cell_2d(cell):
     x = [v.point().x() for v in vertices(cell)]
