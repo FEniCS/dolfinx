@@ -20,25 +20,29 @@ tested here."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-01-03
-# Last changed: 2014-01-06
+# Last changed: 2014-01-07
 
 import unittest
 from dolfin import UnitSquareMesh, Cell, Point, vertices
 
-# For debugging and testing triangulation
-plot=True
-if plot: import pylab
-
-def plot_triangulation_2d(triangulation):
+def plot_triangulation_2d(triangulation, pylab):
     num_triangles = len(triangulation) / 6
     for i in range(len(triangulation) / 6):
         x0, y0, x1, y1, x2, y2 = triangulation[6*i:6*(i+1)]
         pylab.plot([x0, x1, x2, x0], [y0, y1, y2, y0], 'r')
 
-def plot_cell_2d(cell):
+def plot_cell_2d(cell, pylab):
     x = [v.point().x() for v in vertices(cell)]
     y = [v.point().y() for v in vertices(cell)]
     pylab.plot(x + [x[0]], y + [y[0]])
+
+def plot_intersection_triangulation_2d(c0, c1):
+    import pylab
+    plot_cell_2d(c0, pylab)
+    plot_cell_2d(c1, pylab)
+    T = c0.triangulate_intersection(c1)
+    plot_triangulation_2d(T, pylab)
+    pylab.show()
 
 class Triangulation(unittest.TestCase):
 
@@ -59,19 +63,13 @@ class Triangulation(unittest.TestCase):
         c11 = Cell(mesh_1, 1)
 
         # Compute triangulations
-        #print c00.triangulate_intersection(c00)
-        #print c00.triangulate_intersection(c01)
-        T = c01.triangulate_intersection(c10)
+        cells = [c00, c01, c10, c11]
+        for c0 in cells:
+            for c1 in cells:
+                c0.triangulate_intersection(c1)
 
-        print len(T)
-        print len(T) / 6
-        print T
-
-        plot_cell_2d(c01)
-        plot_cell_2d(c10)
-        plot_triangulation_2d(T)
-
-        pylab.show()
+        # For debugging and testing
+        plot_intersection_triangulation_2d(c01, c10)
 
 if __name__ == "__main__":
     print ""

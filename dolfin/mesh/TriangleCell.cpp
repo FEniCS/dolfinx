@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-06
+// Last changed: 2014-01-07
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -588,8 +588,6 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
       points.push_back(p1);
   }
 
-  cout << points.size() << endl;
-
   // Find all edge-edge collisions
   for (std::size_t i0 = 0; i0 < 3; i0++)
   {
@@ -605,8 +603,6 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
         points.push_back(edge_collision(p0, q0, p1, q1));
     }
   }
-
-  cout << points.size() << endl;
 
   // Special case: no points found
   std::vector<double> triangulation;
@@ -625,6 +621,8 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
       i_min = i;
     }
   }
+
+  // FIXME: Possibly remove duplicate points here
 
   // Compute signed squared cos of angle with (0, 1) from i_min to all points
   std::vector<std::pair<double, std::size_t> > order;
@@ -720,9 +718,6 @@ bool TriangleCell::collides(const Point& a, const Point& b,
 Point TriangleCell::edge_collision(const Point& a, const Point& b,
                                    const Point& c, const Point& d) const
 {
-  //cout << "edge 0: " << a << " - " << b << endl;
-  //cout << "edge 1: " << c << " - " << d << endl;
-
   // Compute vectors
   const Point v0 = b - a;
   const Point v1 = c - d; // Note negative sign here!
