@@ -219,42 +219,46 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
 
-  if (NOT VTK_LIBRARIES)
-    # FIXME: Check which of these we actually need.
-    set(VTK_LIBRARIES
-      vtkCommon
-      vtkFiltering
-      vtkImaging
-      vtkGraphics
-      vtkGenericFiltering
-      vtkIO
-      vtkRendering
-      vtkVolumeRendering
-      vtkHybrid
-      vtkWidgets
-      vtkParallel
-      vtkInfovis
-      vtkGeovis
-      vtkViews
-      vtkCharts
-      )
-  endif()
-
-  # Loop over libs and get full path
-  foreach (lib ${VTK_LIBRARIES})
-    find_library(VTK_LIB_${lib} NAMES ${lib}-6.0 ${lib}
-      HINTS ${VTK_INSTALL_PREFIX} ${VTK_LIBRARY_DIRS})
-    if (VTK_LIB_${lib})
-      list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_${lib}})
+  if ("${VTK_VERSION}" VERSION_LESS "6.0")
+    if (NOT VTK_LIBRARIES)
+      # FIXME: Check which of these we actually need.
+      set(VTK_LIBRARIES vtkCommon vtkFiltering vtkImaging vtkGraphics
+	vtkGenericFiltering vtkIO vtkRendering vtkVolumeRendering
+	vtkHybrid vtkWidgets vtkParallel vtkInfovis vtkGeovis
+	vtkViews vtkCharts
+	)
     endif()
-  endforeach()
 
-  # Check if the QVTK library is found
-  if (DOLFIN_ENABLE_QT AND QT_FOUND)
-    find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
-    if (VTK_LIB_QVTK)
+    # Loop over libs and get full path
+    foreach (lib ${VTK_LIBRARIES})
+      find_library(VTK_LIB_${lib} NAMES ${lib}-6.0 ${lib}
+	HINTS ${VTK_INSTALL_PREFIX} ${VTK_LIBRARY_DIRS})
+      if (VTK_LIB_${lib})
+	list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_${lib}})
+      endif()
+    endforeach()
+
+    # Check if the QVTK library is found
+    if (DOLFIN_ENABLE_QT AND QT_FOUND)
+      find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
+      if (VTK_LIB_QVTK)
+	list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QVTK")
+	list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
+      else()
+	message(STATUS "QVTK not found, disabling QT for plotting")
+      endif()
+    endif()
+
+  else()
+    # In VTK 6, the find_package() in ../CMakeLists.txt already initializes
+    # all available vtk libraries. So we just link them all, too.
+
+    foreach (lib ${VTK_LIBRARIES})
+      list(APPEND DOLFIN_VTK_LIBRARIES ${lib})
+    endforeach()
+
+    if (TARGET vtkViewsQt)
       list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QVTK")
-      list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
     else()
       message(STATUS "QVTK not found, disabling QT for plotting")
     endif()
