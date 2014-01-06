@@ -578,20 +578,26 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
   for (std::size_t i0 = 0; i0 < 3; i0++)
   {
     // Get coordinates for edge in c0
-    const std::size_t j0 = i0 + 1 % 3;
+    const std::size_t j0 = (i0 + 1) % 3;
     const Point p0 = geometry_0.point(vertices_0[i0]);
     const Point q0 = geometry_0.point(vertices_0[j0]);
 
+    cout << "Checking point: " << p0 << endl;
+
+
     // Add first vertex of c0 edge if it is inside c1
     if (collides(c1, p0))
+    {
+      cout << "  Found point inside: " << p0 << endl;
       polygon.push_back(p0);
+    }
 
     // Check intersection between edge p0 - q0 and each edge of c1
     std::vector<Point> edge_collisions;
     for (std::size_t i1 = 0; i1 < 3; i1++)
     {
       // Get coordinates for edge in c1
-      const std::size_t j1 = i1 + 1 % 3;
+      const std::size_t j1 = (i1 + 1) % 3;
       const Point p1 = geometry_1.point(vertices_1[i1]);
       const Point q1 = geometry_1.point(vertices_1[j1]);
 
@@ -599,6 +605,8 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
       if (collides(p0, q0, p1, q1))
         edge_collisions.push_back(edge_collision(p0, q0, p1, q1));
     }
+
+    cout << "  Found " << edge_collisions.size() << " edge collisions" << endl;
 
     // Sort edge collisions (by distance to p0)
     if (edge_collisions.size() >= 2)
@@ -637,16 +645,22 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 
     // Add edge collisions
     for (std::size_t i = 0; i < edge_collisions.size(); i++)
+    {
+      cout << "  Found edge collision: " << edge_collisions[i] << endl;
       polygon.push_back(edge_collisions[i]);
+    }
   }
 
-  // Initialize triangulation data
-  assert(polygon.size() >= 3);
+  // Initialize empty triangulation data
   std::vector<double> triangulation;
-  triangulation.reserve((polygon.size() - 2)*3*2);
+
+  // Check if polygon is empty
+  if (polygon.size() < 3)
+    return triangulation;
 
   // Triangulate polygon by connecting the first vertex of the polygon
   // with the remaining pairs of vertices in sequence
+  triangulation.reserve((polygon.size() - 2)*3*2);
   for (std::size_t i = 2; i < polygon.size(); i++)
   {
     const Point& p0 = polygon[0];
@@ -718,13 +732,16 @@ bool TriangleCell::collides(const Point& a, const Point& b,
 Point TriangleCell::edge_collision(const Point& a, const Point& b,
                                    const Point& c, const Point& d) const
 {
+  //cout << "edge 0: " << a << " - " << b << endl;
+  //cout << "edge 1: " << c << " - " << d << endl;
+
   // Compute vectors
   const Point v0 = b - a;
   const Point v1 = c - d; // Note negative sign here!
 
   // Compute determinant
   const double det = v0.x()*v1.y() - v0.y()*v1.x();
-  if (det < DOLFIN_EPS)
+  if (std::abs(det) < DOLFIN_EPS)
   {
     dolfin_error("TriangleCell.cpp",
                  "compute edge collision",
@@ -732,7 +749,7 @@ Point TriangleCell::edge_collision(const Point& a, const Point& b,
   }
 
   // Solve for distance from the point a using Cramer's rule
-  const double alpha = v1.y()*(c.x() - a.x()) - v1.x()*(c.y() - a.y());
+  const double alpha = (v1.y()*(c.x() - a.x()) - v1.x()*(c.y() - a.y())) / det;
 
   // Compute point of intersection
   const Point p = a + alpha*v0;

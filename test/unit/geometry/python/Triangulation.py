@@ -23,8 +23,22 @@ tested here."""
 # Last changed: 2014-01-06
 
 import unittest
+from dolfin import UnitSquareMesh, Cell, Point, vertices
 
-from dolfin import UnitSquareMesh, Cell, Point
+# For debugging and testing triangulation
+plot=True
+if plot: import pylab
+
+def plot_triangulation_2d(triangulation):
+    num_triangles = len(triangulation) / 6
+    for i in range(len(triangulation) / 6):
+        x0, y0, x1, y1, x2, y2 = triangulation[6*i:6*(i+1)]
+        pylab.plot([x0, x1, x2, x0], [y0, y1, y2, y0])
+
+def plot_cell_2d(cell):
+    x = [v.point().x() for v in vertices(cell)]
+    y = [v.point().y() for v in vertices(cell)]
+    pylab.plot(x + [x[0]], y + [y[0]])
 
 class Triangulation(unittest.TestCase):
 
@@ -45,9 +59,19 @@ class Triangulation(unittest.TestCase):
         c11 = Cell(mesh_1, 1)
 
         # Compute triangulations
-        print c00.triangulate_intersection(c00)
-        #c00.triangulate_intersection(c01)
-        #c00.triangulate_intersection(c10)
+        #print c00.triangulate_intersection(c00)
+        #print c00.triangulate_intersection(c01)
+        T = c01.triangulate_intersection(c10)
+
+        print len(T)
+        print len(T) / 6
+        print T
+
+        plot_cell_2d(c01)
+        plot_cell_2d(c10)
+        plot_triangulation_2d(T)
+
+        pylab.show()
 
 if __name__ == "__main__":
     print ""
