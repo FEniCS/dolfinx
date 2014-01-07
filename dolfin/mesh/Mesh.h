@@ -116,9 +116,11 @@ namespace dolfin
     /// Create a distributed mesh from local (per process) data.
     ///
     /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         MPI communicator for the mesh.
     ///     local_mesh_data (_LocalMeshData_)
     ///         Data from which to build the mesh.
-    explicit Mesh(LocalMeshData& local_mesh_data);
+    Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///

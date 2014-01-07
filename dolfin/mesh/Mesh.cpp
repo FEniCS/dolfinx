@@ -60,7 +60,7 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                _cell_type(0),
                _ordered(false),
                _cell_orientations(0),
-               _mpi_comm(MPI_COMM_WORLD)
+               _mpi_comm(MPI_COMM_NULL)
 {
   // Do nothing
 }
@@ -87,12 +87,10 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
   _cell_orientations.resize(this->num_cells(), -1);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(LocalMeshData& local_mesh_data) : Variable("mesh", "DOLFIN mesh"),
-                                             Hierarchical<Mesh>(*this),
-                                             _cell_type(0),
-                                             _ordered(false),
-                                             _cell_orientations(0),
-                                             _mpi_comm(MPI_COMM_WORLD)
+Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
+  : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
+    _cell_type(0), _ordered(false), _cell_orientations(0),
+    _mpi_comm(comm)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
