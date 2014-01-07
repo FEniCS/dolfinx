@@ -55,13 +55,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename) : GenericFile(filename, "XML")
+XMLFile::XMLFile(MPI_Comm mpi_comm, const std::string filename)
+  : GenericFile(filename, "XML"), _mpi_comm(mpi_comm)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLFile::XMLFile(std::ostream& s) : GenericFile("", "XML"),
-  outstream(&s, NoDeleter())
+                                    outstream(&s, NoDeleter()),
+                                    _mpi_comm(MPI_COMM_SELF)
 {
   // Do nothing
 }
@@ -87,8 +89,8 @@ void XMLFile::operator>> (Mesh& input_mesh)
   {
     // Read local mesh data
     Timer t("XML: readSAX");
-    LocalMeshData local_mesh_data(MPI_COMM_WORLD);
-    XMLLocalMeshSAX xml_object(local_mesh_data, _filename);
+    LocalMeshData local_mesh_data(_mpi_comm);
+    XMLLocalMeshSAX xml_object(_mpi_comm, local_mesh_data, _filename);
     xml_object.read();
     t.stop();
 
@@ -114,7 +116,7 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
 {
-  XMLLocalMeshSAX xml_object(input_data, _filename);
+  XMLLocalMeshSAX xml_object(_mpi_comm, input_data, _filename);
   xml_object.read();
 }
 //-----------------------------------------------------------------------------
@@ -132,27 +134,27 @@ void XMLFile::operator>> (GenericVector& input)
 
   // Read vector size
   std::size_t size = 0;
-  if (MPI::process_number(MPI_COMM_WORLD) == 0)
+  if (MPI::process_number(_mpi_comm) == 0)
   {
     load_xml_doc(xml_doc);
     dolfin_node = get_dolfin_xml_node(xml_doc);
     size = XMLVector::read_size(dolfin_node);
   }
-  MPI::broadcast(MPI_COMM_WORLD, size);
+  MPI::broadcast(_mpi_comm, size);
 
   // Resize if necessary
   const std::size_t input_vector_size = input.size();
-  const std::size_t num_proc = MPI::num_processes(MPI_COMM_WORLD);
+  const std::size_t num_proc = MPI::num_processes(_mpi_comm);
   if (num_proc > 1 && input_vector_size != size)
   {
     warning("Resizing parallel vector. Default partitioning will be used. \
 To control distribution, initialize vector size before reading from file.");
   }
   if (input.size() != size)
-    input.resize(MPI_COMM_WORLD, size);
+    input.resize(_mpi_comm, size);
 
   // Read vector on root process
-  if (MPI::process_number(MPI_COMM_WORLD) == 0)
+  if (MPI::process_number(_mpi_comm) == 0)
   {
     dolfin_assert(dolfin_node);
     XMLVector::read(input, dolfin_node);
@@ -178,7 +180,7 @@ void XMLFile::operator<< (const GenericVector& output)
 {
   // Open file on process 0 for distributed objects and on all processes
   // for local objects
-  if (MPI::process_number(MPI_COMM_WORLD) == 0)
+  if (MPI::process_number(_mpi_comm) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -205,7 +207,7 @@ void XMLFile::operator>> (Parameters& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Parameters& output)
 {
-  if (MPI::process_number(MPI_COMM_WORLD) == 0)
+  if (MPI::process_number(_mpi_comm) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -219,7 +221,7 @@ void XMLFile::operator>>(Function& input)
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
   pugi::xml_node dolfin_node(0);
-  if (MPI::process_number(MPI_COMM_WORLD) == 0)
+  if (MPI::process_number(_mpi_comm) == 0)
   {
     load_xml_doc(xml_doc);
     dolfin_node = get_dolfin_xml_node(xml_doc);
@@ -231,7 +233,7 @@ void XMLFile::operator>>(Function& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Function& output)
 {
-  if (MPI::process_number(MPI_COMM_WORLD) == 0)
+  if (MPI::process_number(_mpi_comm) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -249,7 +251,7 @@ template<typename T>
 void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                  const std::string type) const
 {
-  if (MPI::num_processes(MPI_COMM_WORLD) == 1)
+  if (MPI::num_processes(_mpi_comm) == 1)
   {
     pugi::xml_document xml_doc;
     load_xml_doc(xml_doc);
@@ -262,18 +264,18 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
     // other procs
     std::size_t dim = 0;
     MeshValueCollection<T> mvc(t.mesh());
-    if (MPI::process_number(MPI_COMM_WORLD) == 0)
+    if (MPI::process_number(_mpi_comm) == 0)
     {
       pugi::xml_document xml_doc;
       load_xml_doc(xml_doc);
       pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
       XMLMeshFunction::read(mvc, type, dolfin_node);
       dim = mvc.dim();
-      MPI::broadcast(MPI_COMM_WORLD, dim);
+      MPI::broadcast(_mpi_comm, dim);
     }
     else
     {
-      MPI::broadcast(MPI_COMM_WORLD, dim);
+      MPI::broadcast(_mpi_comm, dim);
       mvc.init(dim);
     }
 
@@ -307,7 +309,7 @@ template<typename T>
 void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
                                          const std::string type) const
 {
-  if (MPI::num_processes(MPI_COMM_WORLD) == 1)
+  if (MPI::num_processes(_mpi_comm) == 1)
   {
     pugi::xml_document xml_doc;
     load_xml_doc(xml_doc);
@@ -318,19 +320,19 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
   {
     // Read file on process 0
     MeshValueCollection<T> tmp_collection(t.mesh());
-    if (MPI::process_number(MPI_COMM_WORLD) == 0)
+    if (MPI::process_number(_mpi_comm) == 0)
     {
       pugi::xml_document xml_doc;
       load_xml_doc(xml_doc);
       const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
       XMLMeshValueCollection::read(tmp_collection, type, dolfin_node);
       std::size_t dim = (tmp_collection.dim());
-      MPI::broadcast(MPI_COMM_WORLD, dim);
+      MPI::broadcast(_mpi_comm, dim);
     }
     else
     {
       std::size_t dim = 0;
-      MPI::broadcast(MPI_COMM_WORLD, dim);
+      MPI::broadcast(_mpi_comm, dim);
       tmp_collection.init(dim);
     }
 

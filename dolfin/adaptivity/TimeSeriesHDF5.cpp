@@ -28,6 +28,7 @@
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/HDF5Interface.h>
@@ -39,10 +40,9 @@
 
 using namespace dolfin;
 
-
 //-----------------------------------------------------------------------------
-TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"),
-  _cleared(false)
+TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
+  : _name(name + ".h5"), _cleared(false)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -50,7 +50,8 @@ TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"),
   if (File::exists(_name))
   {
     // Read from file
-    const hid_t hdf5_file_id = HDF5Interface::open_file(_name, "r", true);
+    const hid_t hdf5_file_id = HDF5Interface::open_file(mpi_comm, _name, "r",
+                                                        true);
 
     if(HDF5Interface::has_group(hdf5_file_id, "/Vector") &&
        HDF5Interface::has_attribute(hdf5_file_id, "/Vector", "times"))

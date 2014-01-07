@@ -115,7 +115,7 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
 {
   // Gather entries from process i on process 0
   std::vector<double> x;
-  if (MPI::num_processes(MPI_COMM_WORLD) > 1)
+  if (MPI::num_processes(vector.mpi_comm()) > 1)
     vector.gather_on_zero(x);
   else
     vector.get_local(x);

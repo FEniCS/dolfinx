@@ -45,8 +45,8 @@ namespace dolfin
   public:
 
     /// Open HDF5 and return file descriptor
-    static hid_t open_file(const std::string filename, const std::string mode,
-                           const bool use_mpi_io);
+    static hid_t open_file(MPI_Comm mpi_comm, const std::string filename,
+                           const std::string mode, const bool use_mpi_io);
 
     /// Close HDF5 file
     static void close_file(const hid_t hdf5_file_handle);
@@ -182,17 +182,14 @@ namespace dolfin
 
   };
 
-  //-----------------------------------------------------------------------------
-  template <>
-  inline hid_t HDF5Interface::hdf5_type<double>()
+  //---------------------------------------------------------------------------
+  template <> inline hid_t HDF5Interface::hdf5_type<double>()
   { return H5T_NATIVE_DOUBLE; }
-  //-----------------------------------------------------------------------------
-  template <>
-  inline hid_t HDF5Interface::hdf5_type<int>()
+  //---------------------------------------------------------------------------
+  template <> inline hid_t HDF5Interface::hdf5_type<int>()
   { return H5T_NATIVE_INT; }
-  //-----------------------------------------------------------------------------
-  template <>
-  inline hid_t HDF5Interface::hdf5_type<std::size_t>()
+  //---------------------------------------------------------------------------
+  template <> inline hid_t HDF5Interface::hdf5_type<std::size_t>()
   {
     if (sizeof(std::size_t) == sizeof(unsigned long))
       return H5T_NATIVE_ULONG;
@@ -206,12 +203,13 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  inline void HDF5Interface::write_dataset(const hid_t file_handle,
-                                           const std::string dataset_name,
-                                           const std::vector<T>& data,
-                                           const std::pair<std::size_t, std::size_t> range,
-                                           const std::vector<std::size_t> global_size,
-                                           bool use_mpi_io, bool use_chunking)
+  inline void
+    HDF5Interface::write_dataset(const hid_t file_handle,
+                                 const std::string dataset_name,
+                                 const std::vector<T>& data,
+                                 const std::pair<std::size_t,std::size_t> range,
+                                 const std::vector<std::size_t> global_size,
+                                 bool use_mpi_io, bool use_chunking)
   {
     // Data rank
     const std::size_t rank = global_size.size();
@@ -286,8 +284,8 @@ namespace dolfin
 
     // Create a file dataspace within the global space - a hyperslab
     const hid_t filespace1 = H5Dget_space(dset_id);
-    status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(), NULL,
-                                 count.data(), NULL);
+    status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(),
+                                 NULL, count.data(), NULL);
     dolfin_assert(status != HDF5_FAIL);
 
     // Set parallel access
@@ -319,15 +317,17 @@ namespace dolfin
     status = H5Pclose(plist_id);
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template <typename T>
-  inline void HDF5Interface::read_dataset(const hid_t file_handle,
-                                          const std::string dataset_name,
-                                          const std::pair<std::size_t, std::size_t> range,
-                                          std::vector<T>& data)
+  inline void
+    HDF5Interface::read_dataset(const hid_t file_handle,
+                                const std::string dataset_name,
+                                const std::pair<std::size_t, std::size_t> range,
+                                std::vector<T>& data)
   {
     // Open the dataset
-    const hid_t dset_id = H5Dopen2(file_handle, dataset_name.c_str(), H5P_DEFAULT);
+    const hid_t dset_id = H5Dopen2(file_handle, dataset_name.c_str(),
+                                   H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Open dataspace
@@ -385,12 +385,12 @@ namespace dolfin
     status = H5Dclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
-                                  const std::string dataset_name,
-                                  const std::string attribute_name,
-                                  T& attribute_value)
+                                           const std::string dataset_name,
+                                           const std::string attribute_name,
+                                           T& attribute_value)
   {
     herr_t status;
 
@@ -420,7 +420,7 @@ namespace dolfin
     status = H5Oclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
   }
-  //---------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::add_attribute(const hid_t hdf5_file_handle,
                                            const std::string dataset_name,
@@ -429,7 +429,8 @@ namespace dolfin
   {
 
     // Open named dataset or group
-    hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
+    hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(),
+                            H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Check if attribute already exists and delete if so
@@ -448,16 +449,18 @@ namespace dolfin
     herr_t status = H5Oclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   // Specialised member functions (must be inlined to avoid link errors)
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
-  // Template for simple types (e.g. size_t, double, int etc.) and vectors of these
+  // Template for simple types (e.g. size_t, double, int etc.) and
+  // vectors of these
   // Specialization below for string
   template<typename T>
-  inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
-                                                 const std::string attribute_name,
-                                                 const T& attribute_value)
+  inline void
+    HDF5Interface::add_attribute_value(const hid_t dset_id,
+                                       const std::string attribute_name,
+                                       const T& attribute_value)
   {
     // Create a scalar dataspace
     hid_t dataspace_id = H5Screate(H5S_SCALAR);
@@ -479,7 +482,7 @@ namespace dolfin
     status = H5Aclose(attribute_id);
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template<typename T>
   inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
                                         const std::string attribute_name,
@@ -507,7 +510,7 @@ namespace dolfin
     status = H5Aclose(attribute_id);
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template<>
   inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
                                           const std::string attribute_name,
@@ -536,7 +539,7 @@ namespace dolfin
     status = H5Aclose(attribute_id);
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
   template<typename T>
   inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
                                                  const hid_t attr_id,
@@ -551,11 +554,12 @@ namespace dolfin
     herr_t status = H5Aread(attr_id, h5type, &attribute_value);
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template<typename T>
-  inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
-                                          const hid_t attr_id,
-                                          std::vector<T>& attribute_value)
+    inline void
+    HDF5Interface::get_attribute_value(const hid_t attr_type,
+                                       const hid_t attr_id,
+                                       std::vector<T>& attribute_value)
   {
     const hid_t h5type = hdf5_type<T>();
 
@@ -577,11 +581,11 @@ namespace dolfin
     herr_t status = H5Aread(attr_id, h5type, attribute_value.data());
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template<>
   inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
-                                          const hid_t attr_id,
-                                          std::string& attribute_value)
+                                                 const hid_t attr_id,
+                                                 std::string& attribute_value)
   {
     // Check this attribute is a string
     dolfin_assert(H5Tget_class(attr_type) == H5T_STRING);
@@ -602,7 +606,7 @@ namespace dolfin
 
     attribute_value.assign(attribute_data.data());
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
 }
 

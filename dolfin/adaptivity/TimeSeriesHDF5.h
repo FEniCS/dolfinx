@@ -55,7 +55,7 @@ namespace dolfin
     /// *Arguments*
     ///     name (std::string)
     ///         The time series name
-    TimeSeriesHDF5(std::string name);
+    TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name);
 
     /// Destructor
     ~TimeSeriesHDF5();
@@ -141,9 +141,9 @@ namespace dolfin
 
     // Find index closest to given time
     static std::size_t find_closest_index(double t,
-                                   const std::vector<double>& times,
-                                   std::string series_name,
-                                   std::string type_name);
+                                          const std::vector<double>& times,
+                                          std::string series_name,
+                                          std::string type_name);
 
     // Find index pair closest to given time
     static std::pair<std::size_t, std::size_t>

@@ -230,7 +230,7 @@ namespace dolfin
     /// Write object to file
     template<typename T> void operator<<(const T& t)
     {
-      file->write();
+      file->write(MPI::process_number(_mpi_comm));
       *file << t;
     }
 
@@ -253,6 +253,17 @@ namespace dolfin
     static void create_parent_path(std::string filename);
 
   private:
+
+    // Initialise GenericFile (using file extension to determine type)
+    void init(MPI_Comm comm, const std::string filename, std::string encoding);
+
+    // Initialise GenericFile  (with specified type)
+    void init(MPI_Comm comm, const std::string filename, Type type,
+              std::string encoding);
+
+    // FIXME: Remove when GenericFile::write is cleaned up
+    // MPI communicator
+    const MPI_Comm _mpi_comm;
 
     // Pointer to implementation (envelope-letter design)
     boost::scoped_ptr<GenericFile> file;

@@ -60,9 +60,6 @@ namespace dolfin
   public:
 
     /// Constructor
-    explicit XDMFFile(const std::string filename);
-
-    /// Constructor
     XDMFFile(MPI_Comm comm, const std::string filename);
 
     /// Destructor

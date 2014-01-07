@@ -320,10 +320,10 @@ void GenericFile::read()
   opened_read = true;
 }
 //-----------------------------------------------------------------------------
-void GenericFile::write()
+void GenericFile::write(std::size_t process_number)
 {
   // pvd files should only be cleared by one process
-  if (_filetype == "VTK" && MPI::process_number(MPI_COMM_WORLD) > 0)
+  if (_filetype == "VTK" && process_number > 0)
     opened_write = true;
 
   // Open file

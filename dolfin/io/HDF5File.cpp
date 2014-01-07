@@ -58,7 +58,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(MPI_Comm  comm, const std::string filename,
+HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
                    const std::string file_mode)
   : hdf5_file_open(false), hdf5_file_id(0), _mpi_comm(comm)
 {
@@ -67,7 +67,8 @@ HDF5File::HDF5File(MPI_Comm  comm, const std::string filename,
 
   // Open HDF5 file
   const bool mpi_io = MPI::num_processes(_mpi_comm) > 1 ? true : false;
-  hdf5_file_id = HDF5Interface::open_file(filename, file_mode, mpi_io);
+  hdf5_file_id = HDF5Interface::open_file(_mpi_comm, filename, file_mode,
+                                          mpi_io);
   hdf5_file_open = true;
 }
 //-----------------------------------------------------------------------------

@@ -50,26 +50,6 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-XDMFFile::XDMFFile(const std::string filename)
-  : GenericFile(filename, "XDMF"), _mpi_comm(MPI_COMM_WORLD)
-{
-  // Make name for HDF5 file (used to store data)
-  boost::filesystem::path p(filename);
-  p.replace_extension(".h5");
-  hdf5_filename = p.string();
-
-  // File mode will be set when reading or writing
-  hdf5_filemode = "";
-
-  // Rewrite the mesh at every time step in a time series. Should be
-  // turned off if the mesh remains constant.
-  parameters.add("rewrite_function_mesh", true);
-
-  // Flush datasets to disk at each timestep. Allows inspection of the
-  // HDF5 file whilst running, at some performance cost.
-  parameters.add("flush_output", false);
-}
-//----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   : GenericFile(filename, "XDMF"), _mpi_comm(comm)
 {
