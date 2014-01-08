@@ -21,9 +21,9 @@
 import numpy
 from dolfin import *
 
-# Function for creating a mesh from a triangulation (for
-# visualization). Note that this function completely disregards common
-# vertices and creates a completely disconnected mesh.
+# Creating a mesh from a triangulation (for visualization). Note that
+# this function completely disregards common vertices and creates a
+# completely disconnected mesh.
 def triangulation_to_mesh_2d(triangulation):
     editor = MeshEditor()
     mesh = Mesh()
@@ -69,6 +69,10 @@ for n in range(num_steps):
 
     # Plot triangulation
     plotter.plot(triangulation)
+    #plotter.write_png("collision-triangulation-%.4d" % n)
 
 # Hold plot
 interactive()
+
+# Generate movie using
+# ffmpeg -r 25 -b 1800 -i collision-triangulation-%04d.png collision-triangulation.mp4
