@@ -231,8 +231,7 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
 
     # Loop over libs and get full path
     foreach (lib ${VTK_LIBRARIES})
-      find_library(VTK_LIB_${lib} NAMES ${lib}-6.0 ${lib}
-	HINTS ${VTK_INSTALL_PREFIX} ${VTK_LIBRARY_DIRS})
+      find_library(VTK_LIB_${lib} HINTS ${VTK_INSTALL_PREFIX} ${VTK_LIBRARY_DIRS})
       if (VTK_LIB_${lib})
 	list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_${lib}})
       endif()
