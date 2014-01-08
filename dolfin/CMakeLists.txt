@@ -225,7 +225,7 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
 
   # Check if the QVTK library is found
   if (DOLFIN_ENABLE_QT AND QT_FOUND)
-    if ("${VTK_VERSION}" VERSION_LESS "6.0")
+    if ("${VTK_MAJOR_VERSION}" STREQUAL "5")
       find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
       if (VTK_LIB_QVTK)
 	list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
@@ -388,6 +388,16 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
+
+# Filter out libraries that are not required in linking, and that make trouble
+# (because of mangled names)
+if ("${VTK_MAJOR_VERSION}" STREQUAL "6")
+  foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
+    if (NOT "${_lib}" MATCHES "^[Vv][Tt][Kk]" AND NOT "${_lib}" STREQUAL "verdict")
+      list(APPEND DOLFIN_3RD_PARTY_LIBRARIES "${_lib}")
+    endif()
+  endforeach()
+endif()
 
 # Set library location
 get_target_property(DOLFIN_LIBRARY_LOCATION dolfin LOCATION)
