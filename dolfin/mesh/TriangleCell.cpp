@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-07
+// Last changed: 2014-01-08
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -712,7 +712,7 @@ bool TriangleCell::collides(const Point& a, const Point& b,
   const double cda = signed_area(c, d, a);
 
   // Check whether segments collide
-  return cda*(cda + abc - abd) < 0.0;
+  return cda*(cda + abc - abd) < -DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
 Point TriangleCell::edge_collision(const Point& a, const Point& b,
