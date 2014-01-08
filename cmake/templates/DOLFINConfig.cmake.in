@@ -4,6 +4,12 @@
 
 # FIXME: Check that naming conforms to CMake standards
 
+# VTK6 hack: Library names are missing a suffix, so we import the VTK name-mangling macros.
+# VTK_MAJOR_VERSION is only defined if DOLFIN_ENABLE_VTK was set in the first place.
+if ("@VTK_MAJOR_VERSION@" STREQUAL "6")
+  find_package(VTK NO_MODULE HINTS @VTK_DIR@ $ENV{VTK_DIR})
+endif()
+
 # Compilers
 set(DOLFIN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
 
