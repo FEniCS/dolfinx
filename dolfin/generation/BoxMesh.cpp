@@ -33,7 +33,24 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 BoxMesh::BoxMesh(double x0, double y0, double z0,
                  double x1, double y1, double z1,
-                 std::size_t nx, std::size_t ny, std::size_t nz) : Mesh()
+                 std::size_t nx, std::size_t ny, std::size_t nz)
+  : Mesh(MPI_COMM_WORLD)
+{
+  build(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+}
+//-----------------------------------------------------------------------------
+BoxMesh::BoxMesh(MPI_Comm comm,
+                 double x0, double y0, double z0,
+                 double x1, double y1, double z1,
+                 std::size_t nx, std::size_t ny, std::size_t nz)
+  : Mesh(comm)
+{
+  build(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+}
+//-----------------------------------------------------------------------------
+void BoxMesh::build(double x0, double y0, double z0,
+                    double x1, double y1, double z1,
+                    std::size_t nx, std::size_t ny, std::size_t nz)
 {
   Timer timer("Generate Box mesh");
 

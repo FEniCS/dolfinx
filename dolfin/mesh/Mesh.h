@@ -99,6 +99,9 @@ namespace dolfin
     /// Create empty mesh
     Mesh();
 
+    /// Create empty mesh
+    Mesh(MPI_Comm comm);
+
     /// Copy constructor.
     ///
     /// *Arguments*
@@ -112,6 +115,15 @@ namespace dolfin
     ///     filename (std::string)
     ///         Name of file to load.
     explicit Mesh(std::string filename);
+
+    /// Create mesh from data file.
+    ///
+    /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         The MPI communicator
+    ///     filename (std::string)
+    ///         Name of file to load.
+    Mesh(MPI_Comm comm, std::string filename);
 
     /// Create a distributed mesh from local (per process) data.
     ///

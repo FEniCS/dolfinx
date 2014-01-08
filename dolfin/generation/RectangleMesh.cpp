@@ -35,7 +35,22 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
                              std::size_t nx, std::size_t ny,
-                             std::string diagonal) : Mesh()
+                             std::string diagonal) : Mesh(MPI_COMM_WORLD)
+{
+  build(x0, y0, x1, y1, nx, ny, diagonal);
+}
+//-----------------------------------------------------------------------------
+RectangleMesh::RectangleMesh(MPI_Comm comm,
+                             double x0, double y0, double x1, double y1,
+                             std::size_t nx, std::size_t ny,
+                             std::string diagonal) : Mesh(comm)
+{
+  build(x0, y0, x1, y1, nx, ny, diagonal);
+}
+//-----------------------------------------------------------------------------
+void RectangleMesh::build(double x0, double y0, double x1, double y1,
+                          std::size_t nx, std::size_t ny,
+                          std::string diagonal)
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver(this->mpi_comm()))

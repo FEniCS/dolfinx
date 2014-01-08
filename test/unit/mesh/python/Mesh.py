@@ -52,20 +52,43 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
 
-if MPI.num_processes(mpi_comm_world()) == 1:
-    class SimpleShapes(unittest.TestCase):
+class SimpleShapes(unittest.TestCase):
 
-        def testUnitSquareMesh(self):
-            """Create mesh of unit square."""
-            mesh = UnitSquareMesh(5, 7)
-            self.assertEqual(mesh.num_vertices(), 48)
-            self.assertEqual(mesh.num_cells(), 70)
+    def testUnitSquareMesh(self):
+        """Create mesh of unit square."""
+        mesh = UnitSquareMesh(5, 7)
+        self.assertEqual(mesh.size_global(0), 48)
+        self.assertEqual(mesh.size_global(2), 70)
 
-        def testUnitCubeMesh(self):
-            """Create mesh of unit cube."""
-            mesh = UnitCubeMesh(5, 7, 9)
-            self.assertEqual(mesh.num_vertices(), 480)
-            self.assertEqual(mesh.num_cells(), 1890)
+    def testUnitSquareMeshDistributed(self):
+        """Create mesh of unit square."""
+        mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
+        self.assertEqual(mesh.size_global(0), 48)
+        self.assertEqual(mesh.size_global(2), 70)
+
+    def testUnitSquareMeshLocal(self):
+        """Create mesh of unit square."""
+        mesh = UnitSquareMesh(mpi_comm_self(), 5, 7)
+        self.assertEqual(mesh.num_vertices(), 48)
+        self.assertEqual(mesh.num_cells(), 70)
+
+    def testUnitCubeMesh(self):
+        """Create mesh of unit cube."""
+        mesh = UnitCubeMesh(5, 7, 9)
+        self.assertEqual(mesh.size_global(0), 480)
+        self.assertEqual(mesh.size_global(3), 1890)
+
+    def testUnitCubeMeshDistributed(self):
+        """Create mesh of unit cube."""
+        mesh = UnitCubeMesh(mpi_comm_world(), 5, 7, 9)
+        self.assertEqual(mesh.size_global(0), 480)
+        self.assertEqual(mesh.size_global(3), 1890)
+
+    def testUnitCubeMeshDistributedLocal(self):
+        """Create mesh of unit cube."""
+        mesh = UnitCubeMesh(mpi_comm_self(), 5, 7, 9)
+        self.assertEqual(mesh.num_vertices(), 480)
+        self.assertEqual(mesh.num_cells(), 1890)
 
 class MeshRefinement(unittest.TestCase):
 
@@ -178,7 +201,7 @@ if MPI.num_processes(mpi_comm_world()) == 1:
             file >> mesh_in
             self.assertEqual(mesh_in.num_vertices(), 64)
 
-        def testMeshFunction(self):
+        def xtestMeshFunction(self):
             """Write and read mesh function to/from file"""
             mesh = UnitSquareMesh(1, 1)
             f = MeshFunction('int', mesh, 0)

@@ -60,7 +60,17 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                _cell_type(0),
                _ordered(false),
                _cell_orientations(0),
-               _mpi_comm(MPI_COMM_NULL)
+               _mpi_comm(MPI_COMM_WORLD)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
+               Hierarchical<Mesh>(*this),
+               _cell_type(0),
+               _ordered(false),
+               _cell_orientations(0),
+               _mpi_comm(comm)
 {
   // Do nothing
 }
@@ -82,7 +92,16 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    _cell_orientations(0),
                                    _mpi_comm(MPI_COMM_WORLD)
 {
-  File file(filename);
+  File file(_mpi_comm, filename);
+  file >> *this;
+  _cell_orientations.resize(this->num_cells(), -1);
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(MPI_Comm comm, std::string filename)
+  : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
+    _cell_type(0), _ordered(false), _cell_orientations(0), _mpi_comm(comm)
+{
+  File file(_mpi_comm, filename);
   file >> *this;
   _cell_orientations.resize(this->num_cells(), -1);
 }
