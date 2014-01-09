@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-04-27
-// Last changed: 2013-04-02
+// Last changed: 2013-08-07
 
 // Enum for comparison functions
 enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, dolfin_neq};
@@ -55,9 +55,10 @@ PyObject* _compare_vector_with_value(dolfin::GenericVector* self, double value, 
 {
   std::size_t i;
   npy_intp size = self->size();
+  const std::size_t n0 = self->local_range().first;
 
   // Create the Numpy array
-  PyArrayObject* return_array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NPY_BOOL));
+  PyArrayObject* return_array = (PyArrayObject*)PyArray_ZEROS(1, &size, NPY_BOOL, 0);
 
   // Get the data array
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
@@ -68,28 +69,34 @@ PyObject* _compare_vector_with_value(dolfin::GenericVector* self, double value, 
   switch (cmp_type)
   {
   case dolfin_gt:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (values[i] > value) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (values[i] > value)
+        bool_data[i+n0] = 1;
     break;
   case dolfin_ge:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (values[i] >= value) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (values[i] >= value)
+        bool_data[i+n0] = 1;
     break;
   case dolfin_lt:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (values[i] < value) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (values[i] < value)
+        bool_data[i+n0] = 1;
     break;
   case dolfin_le:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (values[i] <= value) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (values[i] <= value)
+        bool_data[i+n0] = 1;
     break;
   case dolfin_eq:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (values[i] == value) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (values[i] == value)
+        bool_data[i+n0] = 1;
     break;
   case dolfin_neq:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (values[i] != value) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (values[i] != value)
+        bool_data[i+n0] = 1;
     break;
   default:
     throw std::runtime_error("invalid compare type");
@@ -103,14 +110,15 @@ PyObject* _compare_vector_with_value(dolfin::GenericVector* self, double value, 
 PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::GenericVector* other, DolfinCompareType cmp_type )
 {
 
-  if (self->size() != other->size())
+  if (self->local_size() != other->local_size())
     throw std::runtime_error("non matching dimensions");
 
   std::size_t i;
   npy_intp size = self->size();
+  const std::size_t n0 = self->local_range().first;
 
   // Create the Numpy array
-  PyArrayObject* return_array = (PyArrayObject*)PyArray_SimpleNew(1, &size, NPY_BOOL);
+  PyArrayObject* return_array = (PyArrayObject*)PyArray_ZEROS(1, &size, NPY_BOOL, 0);
 
   // Get the data array
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
@@ -122,28 +130,34 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
   switch (cmp_type)
   {
   case dolfin_gt:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (self_values[i] > other_values[i]) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (self_values[i] > other_values[i])
+        bool_data[i+n0] = 1;
     break;
   case dolfin_ge:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (self_values[i] >= other_values[i]) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (self_values[i] >= other_values[i])
+        bool_data[i+n0] = 1;
     break;
   case dolfin_lt:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (self_values[i] < other_values[i]) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (self_values[i] < other_values[i])
+        bool_data[i+n0] = 1;
     break;
   case dolfin_le:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (self_values[i] <= other_values[i]) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (self_values[i] <= other_values[i])
+        bool_data[i+n0] = 1;
     break;
   case dolfin_eq:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (self_values[i] == other_values[i]) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (self_values[i] == other_values[i])
+        bool_data[i+n0] = 1;
     break;
   case dolfin_neq:
-    for ( i = 0; i < self->size(); i++)
-      bool_data[i] = (self_values[i] != other_values[i]) ? 1 : 0;
+    for ( i = 0; i < self->local_size(); i++)
+      if (self_values[i] != other_values[i])
+        bool_data[i+n0] = 1;
     break;
   default:
     throw std::runtime_error("invalid compare type");
@@ -198,7 +212,7 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector(
   m = inds->size();
 
   // Create a default Vector
-  return_vec = self->factory().create_vector();
+  return_vec = self->factory().create_local_vector();
 
   // Resize the vector to the size of the indices
   return_vec->resize(m);
@@ -331,16 +345,17 @@ void _set_vector_items_value(dolfin::GenericVector* self, PyObject* op, double v
   {
 
     // If the index is an integer
-    if( op != Py_None and PyInteger_Check(op))
-      self->setitem(Indices::check_index(static_cast<int>(PyInt_AsLong(op)), self->size()), value);
-    else
+    int index;
+    // FIXME: Add a Py_convert_dolfin_la_index
+    if(!Py_convert_int(op, index))
       throw std::runtime_error("index must be either an integer, a slice, a list or a Numpy array of integer");
+
+    self->setitem(Indices::check_index(index, self->size()), value);
   }
   // The op is a Indices
   else
   {
     dolfin::la_index* indices;
-    std::size_t i;
     // Fill the vector using the slice
     try {
       indices = inds->indices();

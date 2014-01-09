@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-27
+// Last changed: 2013-11-30
 
 #ifndef __BOUNDING_BOX_TREE_2D_H
 #define __BOUNDING_BOX_TREE_2D_H
@@ -67,12 +67,30 @@ namespace dolfin
     // Return geometric dimension
     std::size_t gdim() const { return 2; }
 
-    // Check whether point is in bounding box
+    // Return bounding box coordinates for node
+    const double* get_bbox_coordinates(unsigned int node) const
+    {
+      return _bbox_coordinates.data() + 4*node;
+    }
+
+    // Check whether point (x) is in bounding box (node)
     bool point_in_bbox(const double* x, unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 4*node;
-      return (b[0] - DOLFIN_EPS < x[0] && x[0] < b[2] + DOLFIN_EPS &&
-              b[1] - DOLFIN_EPS < x[1] && x[1] < b[3] + DOLFIN_EPS);
+      const double eps0 = DOLFIN_EPS_LARGE*(b[2] - b[0]);
+      const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
+      return (b[0] - eps0 <= x[0] && x[0] <= b[2] + eps0 &&
+              b[1] - eps1 <= x[1] && x[1] <= b[3] + eps1);
+    }
+
+    // Check whether bounding box (a) collides with bounding box (node)
+    bool bbox_in_bbox(const double* a, unsigned int node) const
+    {
+      const double* b = _bbox_coordinates.data() + 4*node;
+      const double eps0 = DOLFIN_EPS_LARGE*(b[2] - b[0]);
+      const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
+      return (b[0] - eps0 <= a[2] && a[0] <= b[2] + eps0 &&
+              b[1] - eps1 <= a[3] && a[1] <= b[3] + eps1);
     }
 
     // Compute squared distance between point and bounding box
@@ -121,7 +139,7 @@ namespace dolfin
       bbox[3] = b[3];
 
       // Compute min and max over remaining boxes
-      for (; it != end; ++it)
+      for (++it; it != end; ++it)
       {
         const double* b = leaf_bboxes.data() + 4*(*it);
         if (b[0] < bbox[0]) bbox[0] = b[0];
@@ -154,8 +172,8 @@ namespace dolfin
       const double* p = points[*it].coordinates();
       bbox[0] = p[0];
       bbox[1] = p[1];
-      bbox[2] = p[2];
-      bbox[3] = p[3];
+      bbox[2] = p[0];
+      bbox[3] = p[1];
 
       // Compute min and max over remaining points
       for (; it != end; ++it)

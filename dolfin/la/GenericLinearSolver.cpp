@@ -18,7 +18,9 @@
 // First added:  2013-02-26
 // Last changed:
 
+#include "GenericLinearOperator.h"
 #include "GenericLinearSolver.h"
+#include "GenericMatrix.h"
 
 using namespace dolfin;
 

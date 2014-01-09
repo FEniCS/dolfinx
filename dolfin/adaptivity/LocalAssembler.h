@@ -22,12 +22,12 @@
 #define __LOCAL_ASSEMBLER_H
 
 #include <vector>
-
+#include <Eigen/Dense>
 #include <dolfin/common/types.h>
 
-namespace arma
+namespace ufc
 {
-  template<typename T> class Mat;
+  class cell;
 }
 
 namespace dolfin
@@ -45,34 +45,45 @@ namespace dolfin
   public:
 
     ///
-    static void assemble(arma::Mat<double>& A,
-                         UFC& ufc,
-                         const Cell& cell,
-                         const MeshFunction<std::size_t>* cell_domains,
-                         const MeshFunction<std::size_t>* exterior_facet_domains,
-                         const MeshFunction<std::size_t>* interior_facet_domains);
+    static void
+      assemble(Eigen::MatrixXd& A,
+               UFC& ufc,
+               const std::vector<double>& vertex_coordinates,
+               ufc::cell& ufc_cell,
+               const Cell& cell,
+               const MeshFunction<std::size_t>* cell_domains,
+               const MeshFunction<std::size_t>* exterior_facet_domains,
+               const MeshFunction<std::size_t>* interior_facet_domains);
 
     ///
-    static void assemble_cell(arma::Mat<double>& A,
+    static void assemble_cell(Eigen::MatrixXd& A,
                               UFC& ufc,
+                              const std::vector<double>& vertex_coordinates,
+                              const ufc::cell& ufc_cell,
                               const Cell& cell,
                               const MeshFunction<std::size_t>* domains);
 
     ///
-    static void assemble_exterior_facet(arma::Mat<double>& A,
-                                        UFC& ufc,
-                                        const Cell& cell,
-                                        const Facet& facet,
-                                        const std::size_t local_facet,
-                                        const MeshFunction<std::size_t>* domains);
+    static void
+      assemble_exterior_facet(Eigen::MatrixXd& A,
+                              UFC& ufc,
+                              const std::vector<double>& vertex_coordinates,
+                              const ufc::cell& ufc_cell,
+                              const Cell& cell,
+                              const Facet& facet,
+                              const std::size_t local_facet,
+                              const MeshFunction<std::size_t>* domains);
 
     ///
-    static void assemble_interior_facet(arma::Mat<double>& A,
-                                        UFC& ufc,
-                                        const Cell& cell,
-                                        const Facet& facet,
-                                        const std::size_t local_facet,
-                                        const MeshFunction<std::size_t>* domains);
+    static void
+      assemble_interior_facet(Eigen::MatrixXd& A,
+                              UFC& ufc,
+                              const std::vector<double>& vertex_coordinates,
+                              const ufc::cell& ufc_cell,
+                              const Cell& cell,
+                              const Facet& facet,
+                              const std::size_t local_facet,
+                              const MeshFunction<std::size_t>* domains);
   };
 
 }

@@ -30,9 +30,6 @@ using namespace dolfin;
 
 int main()
 {
-  cout <<"This demo is presently broken. See https://bugs.launchpad.net/dolfin/+bug/1047641" << endl;
-  return 0;
-
   // Create mesh
   UnitSquareMesh mesh(20, 20);
 
@@ -54,6 +51,10 @@ int main()
   // Plot mesh
   plot(mesh);
   interactive();
+
+  // Write mesh to file
+  File file("mesh_deformed.pvd");
+  file << mesh;
 
   return 0;
 }

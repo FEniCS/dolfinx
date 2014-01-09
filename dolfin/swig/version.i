@@ -15,21 +15,21 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2013
+//
 // First added:  2006-02-06
-// Last changed: 2011-03-14
+// Last changed: 2013-11-01
 
 //-----------------------------------------------------------------------------
-// Include code to generate a __swigversion__ and a __dolfinversion__ 
-// attributes, from defines during compile time, to the cpp module
+// Include code to generate a __swigversion__ attributes, from defines during
+// compile time, to the cpp module
 //-----------------------------------------------------------------------------
 %inline %{
 int dolfin_swigversion() { return  SWIGVERSION; }
-std::string dolfin_version() {return DOLFIN_VERSION;}
 %}
 
 %pythoncode %{
 tmp = hex(dolfin_swigversion())
 __swigversion__ = "%d.%d.%d"%(tuple(map(int, [tmp[-5], tmp[-3], tmp[-2:]])))
-__dolfinversion__ = dolfin_version()
-del tmp, dolfin_swigversion, dolfin_version
+del tmp, dolfin_swigversion
 %}

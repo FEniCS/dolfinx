@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2013-05-22
+// Last changed: 2013-06-23
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -27,13 +27,8 @@
 #include <cmath>
 #include <iostream>
 
-#ifdef HAS_CGAL
-#include <CGAL/Bbox_3.h>
-#endif
-
-#include <dolfin/intersection/PrimitiveIntersector.h>
+#include <dolfin/geometry/Point.h>
 #include "Mesh.h"
-#include "Point.h"
 
 namespace dolfin
 {
@@ -86,7 +81,10 @@ namespace dolfin
     ///     bool
     ///         True if the two mesh entities are equal.
     bool operator==(const MeshEntity& e) const
-    { return (_mesh == e._mesh && _dim == e._dim && _local_index == e._local_index); }
+    {
+      return (_mesh == e._mesh && _dim == e._dim
+              && _local_index == e._local_index);
+    }
 
     /// Comparision Operator
     ///
@@ -134,7 +132,8 @@ namespace dolfin
     std::size_t global_index() const
     { return _mesh->topology().global_indices(_dim)[_local_index]; }
 
-    /// Return local number of incident mesh entities of given topological dimension
+    /// Return local number of incident mesh entities of given
+    /// topological dimension
     ///
     /// *Arguments*
     ///     dim (std::size_t)
@@ -142,11 +141,13 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The number of local incident MeshEntity objects of given dimension.
+    /// The number of local incident MeshEntity objects of given
+    /// dimension.
     std::size_t num_entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim).size(_local_index); }
 
-    /// Return global number of incident mesh entities of given topological dimension
+    /// Return global number of incident mesh entities of given
+    /// topological dimension
     ///
     /// *Arguments*
     ///     dim (std::size_t)
@@ -154,7 +155,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The number of global incident MeshEntity objects of given dimension.
+    ///         The number of global incident MeshEntity objects of given
+    ///         dimension.
     std::size_t num_global_entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim).size_global(_local_index); }
 
@@ -190,56 +192,6 @@ namespace dolfin
     ///         True if the given entity is incident
     bool incident(const MeshEntity& entity) const;
 
-    /// Check if given point intersects (using inexact but fast
-    /// numerics)
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         The point.
-    ///
-    /// *Returns*
-    ///     bool
-    ///         True if the given point intersects.
-    bool intersects(const Point& point) const
-    { return PrimitiveIntersector::do_intersect(*this, point); }
-
-    /// Check if given entity intersects (using inexact but fast
-    /// numerics)
-    ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
-    ///         The mesh entity.
-    ///
-    /// *Returns*
-    ///     bool
-    ///         True if the given entity intersects.
-    bool intersects(const MeshEntity& entity) const
-    { return PrimitiveIntersector::do_intersect(*this, entity); }
-
-    /// Check if given point intersects (using exact numerics)
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         The point.
-    ///
-    /// *Returns*
-    ///     bool
-    ///         True if the given point intersects.
-    bool intersects_exactly(const Point& point) const
-    { return PrimitiveIntersector::do_intersect_exact(*this, point); }
-
-    /// Check if given entity intersects (using exact numerics)
-    ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
-    ///         The mesh entity.
-    ///
-    /// *Returns*
-    ///     bool
-    ///         True if the given entity intersects.
-    bool intersects_exactly(const MeshEntity& entity) const
-    { return PrimitiveIntersector::do_intersect_exact(*this, entity); }
-
     /// Compute local index of given incident entity (error if not
     /// found)
     ///
@@ -258,13 +210,6 @@ namespace dolfin
     ///     _Point_
     ///         The midpoint of the cell.
     Point midpoint() const;
-
-    #ifdef HAS_CGAL
-    /// Returns a 3D bounding box of the mesh entity. For lower
-    /// dimension it may be a degenerated box.
-    template <typename K>
-    CGAL::Bbox_3 bbox() const;
-    #endif
 
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)

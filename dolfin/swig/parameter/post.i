@@ -166,6 +166,12 @@ def set_range(self, key, *arg):
         raise KeyError, "no parameter with name '%s'"%key
     self._get_parameter(key).set_range(*arg)
 
+def get_range(self, key):
+    "Get the range for the given parameter"
+    if key not in self._get_parameter_keys():
+        raise KeyError, "no parameter with name '%s'"%key
+    return self._get_parameter(key).get_range()
+
 def __getitem__(self, key):
     "Return the parameter corresponding to the given key"
     if key in self._get_parameter_keys():
@@ -309,7 +315,7 @@ Parameters.__init__ = __new_Parameter_init__
 %}
 
 // Expose the global variable parameters for the Python interface
-// NOTE: Because parameters are stored using shared_ptr we need to 
+// NOTE: Because parameters are stored using shared_ptr we need to
 //       wrap the global parameters as a shared_ptr
 %fragment("NoDelete");
 %inline %{

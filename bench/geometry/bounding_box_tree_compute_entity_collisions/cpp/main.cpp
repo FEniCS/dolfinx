@@ -18,84 +18,37 @@
 // This benchmark measures the performance of compute_entity_collisions.
 //
 // First added:  2013-05-23
-// Last changed: 2013-05-30
+// Last changed: 2013-09-04
 
 #include <vector>
 #include <dolfin.h>
 
 using namespace dolfin;
 
-#define NUM_REPS 1000000
+#define NUM_REPS 5000000
 #define SIZE 64
-
-double bench_cgal(const Mesh& mesh)
-{
-  cout << "Running CGAL bench" << endl;
-
-  // First call
-  std::set<std::size_t> cells;
-  Point point(0.0, 0.0, 0.0);
-  mesh.intersected_cells(point, cells);
-
-  // Call repeatedly
-  tic();
-  for (int i = 0; i < NUM_REPS; i++)
-  {
-    std::set<std::size_t> cells;
-    point.coordinates()[0] += 1.0 / static_cast<double>(NUM_REPS);
-    point.coordinates()[1] += 1.0 / static_cast<double>(NUM_REPS);
-    point.coordinates()[2] += 1.0 / static_cast<double>(NUM_REPS);
-    mesh.intersected_cells(point, cells);
-
-    //for (std::set<std::size_t>::iterator it = cells.begin(); it != cells.end(); ++it)
-    //  std::cout << " " << *it;
-    //std::cout << std::endl;
- }
-
-  return toc();
-}
-
-double bench_dolfin(const Mesh& mesh)
-{
-  cout << "Running DOLFIN bench" << endl;
-
-  // First call
-  BoundingBoxTree tree;
-  tree.build(mesh);
-  Point point(0.0, 0.0, 0.0);
-  tree.compute_entity_collisions(point, mesh);
-
-  // Call repeatedly
-  tic();
-  for (int i = 0; i < NUM_REPS; i++)
-  {
-    point.coordinates()[0] += 1.0 / static_cast<double>(NUM_REPS);
-    point.coordinates()[1] += 1.0 / static_cast<double>(NUM_REPS);
-    point.coordinates()[2] += 1.0 / static_cast<double>(NUM_REPS);
-    std::vector<unsigned int> entities = tree.compute_entity_collisions(point, mesh);
-
-    //for (unsigned int j = 0; j < entities.size(); j++)
-    //  std::cout << " " << entities[j];
-    //std::cout << std::endl;
-  }
-
-  return toc();
-}
 
 int main(int argc, char* argv[])
 {
   // Create mesh
   UnitCubeMesh mesh(SIZE, SIZE, SIZE);
 
-  // Select which benchmark to run
-  bool run_cgal = argc > 1 && strcasecmp(argv[1], "cgal") == 0;
+  // First call
+  BoundingBoxTree tree;
+  tree.build(mesh);
+  Point point(0.0, 0.0, 0.0);
+  tree.compute_entity_collisions(point);
 
-  // Run benchmark
-  double t = 0.0;
-  if (run_cgal)
-    t = bench_cgal(mesh);
-  else
-    t = bench_dolfin(mesh);
+  // Call repeatedly
+  tic();
+  for (int i = 0; i < NUM_REPS; i++)
+  {
+    point.coordinates()[0] += 1.0 / static_cast<double>(NUM_REPS);
+    point.coordinates()[1] += 1.0 / static_cast<double>(NUM_REPS);
+    point.coordinates()[2] += 1.0 / static_cast<double>(NUM_REPS);
+    std::vector<unsigned int> entities = tree.compute_entity_collisions(point);
+  }
+  const double t = toc();
 
   // Report result
   info("BENCH %g", t);

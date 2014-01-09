@@ -1,0 +1,21 @@
+This demo illustrates how to:
+
+* Define Constructive Solid Geometry (CSG)
+* Generate meshes from geometries
+
+The domain looks as follows:
+
+.. image:: ../csg3D_boundary.png
+	:scale: 75 %
+
+and the mesh:
+
+.. image:: ../csg3D_mesh.png
+	:scale: 75 %
+
+
+Problem definition
+------------------
+
+We do not have any equation in this demo. The demo focuses purely on
+the geometry and how to generate a mesh from it.

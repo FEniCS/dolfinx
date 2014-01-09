@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-22
+// Last changed: 2013-12-09
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -646,7 +646,7 @@ void TetrahedronCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-bool TetrahedronCell::contains(const Cell& cell, const Point& point) const
+bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
   // See also "Real-Time Collision Detection" by Christer Ericson.
@@ -695,11 +695,21 @@ bool TetrahedronCell::contains(const Cell& cell, const Point& point) const
   const double x2 = inv_det*(-d12*b1 + d22*b2 - d23*b3);
   const double x3 = inv_det*( d13*b1 - d23*b2 + d33*b3);
 
+  // Tolerance for numeric test (using vector v1)
+  const double dx = std::abs(v1.x());
+  const double dy = std::abs(v1.y());
+  const double dz = std::abs(v1.z());
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*std::max(dx, std::max(dy, dz)));
+
   // Check if point is inside cell
-  return (x1 > -DOLFIN_EPS &&
-          x2 > -DOLFIN_EPS &&
-          x3 > -DOLFIN_EPS &&
-          x1 + x2 + x3 < 1.0 + DOLFIN_EPS);
+  return x1 >= -eps && x2 >= -eps && x3 >= -eps && x1 + x2 + x3 <= 1.0 + eps;
+}
+//-----------------------------------------------------------------------------
+bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_not_implemented();
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const

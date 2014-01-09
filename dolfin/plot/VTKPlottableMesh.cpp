@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-11-12
+// Last changed: 2013-11-15
 
 #ifdef HAS_VTK
 
@@ -40,7 +40,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkVectorNorm.h>
 
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+#if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4))
 #include <vtkLabeledDataMapper.h>
 #include <vtkPointSetToLabelHierarchy.h>
 #endif
@@ -79,7 +79,11 @@ void VTKPlottableMesh::init_pipeline(const Parameters& p)
 {
   dolfin_assert(_geometryFilter);
 
+  #if VTK_MAJOR_VERSION <= 5
   _geometryFilter->SetInput(_grid);
+  #else
+  _geometryFilter->SetInputData(_grid);
+  #endif
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------
@@ -148,14 +152,31 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var,
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   points->SetNumberOfPoints(_mesh->num_vertices());
 
-  // Iterate vertices and add to point array
-  Point point;
-  for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+  if(_mesh->topology().dim() == 1)
   {
-    point = vertex->point();
-    points->SetPoint(vertex->index(), point.x(), point.y(), point.z());
+    // HACK to sort 1D points into ascending order
+    // because vtkXYPlotActor does not recognise
+    // cell connectivity information
+    std::vector<double> pointx;
+    for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+    {
+      const Point point = vertex->point();
+      pointx.push_back(point.x());
+    }
+    std::sort(pointx.begin(), pointx.end());
+    for(std::vector<double>::iterator p=pointx.begin(); p!=pointx.end(); ++p)
+      points->SetPoint(p - pointx.begin(), *p, 0.0, 0.0);
   }
-
+  else
+  {
+    // Iterate vertices and add to point array
+    for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+    {
+      const Point point = vertex->point();
+      points->SetPoint(vertex->index(), point.x(), point.y(), point.z());
+    }
+  }
+  
   // Insert points, vertex labels and cells in VTK unstructured grid
   _full_grid->SetPoints(points);
 
@@ -250,7 +271,7 @@ void VTKPlottableMesh::build_id_filter()
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
-  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+#if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4))
   // Return actor if already created
   if (!_vertexLabelActor)
   {
@@ -285,7 +306,7 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPoi
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
-  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+  #if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4))
   if (!_cellLabelActor)
   {
     build_id_filter();
@@ -319,7 +340,11 @@ vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
   if (!_meshActor)
   {
     vtkSmartPointer<vtkGeometryFilter> geomfilter = vtkSmartPointer<vtkGeometryFilter>::New();
+    #if VTK_MAJOR_VERSION <= 5
     geomfilter->SetInput(_full_grid);
+    #else
+    geomfilter->SetInputData(_full_grid);
+    #endif
     geomfilter->Update();
 
     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -349,11 +374,22 @@ void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filte
 {
   if (filter)
   {
+    #if VTK_MAJOR_VERSION <= 5
     filter->SetInput(_grid);
     _geometryFilter->SetInput(filter->GetOutput());
+    #else
+    filter->SetInputData(_grid);
+    _geometryFilter->SetInputData(filter->GetOutput());
+    #endif
   }
   else
+  {
+    #if VTK_MAJOR_VERSION <= 5
     _geometryFilter->SetInput(_grid);
+    #else
+    _geometryFilter->SetInputData(_grid);
+    #endif
+  }
 
   _geometryFilter->Update();
 }
@@ -429,9 +465,13 @@ void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata,
     _grid->GetPointData()->SetVectors(values);
 
     // Compute norms of vector data
-    vtkSmartPointer<vtkVectorNorm> norms =
-      vtkSmartPointer<vtkVectorNorm>::New();
+    vtkSmartPointer<vtkVectorNorm>
+      norms =vtkSmartPointer<vtkVectorNorm>::New();
+    #if VTK_MAJOR_VERSION <= 5
     norms->SetInput(_grid);
+    #else
+    norms->SetInputData(_grid);
+    #endif
     norms->SetAttributeModeToUsePointData();
     //NOTE: This update is necessary to actually compute the norms
     norms->Update();

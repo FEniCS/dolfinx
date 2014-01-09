@@ -49,6 +49,10 @@ find_path(CPPUNIT_INCLUDE_DIRS cppunit/Test.h
 # Check for library
 find_library(CPPUNIT_LIBRARIES cppunit
   HINTS ${PC_CPPUNIT_LIBDIR} ${CPPUNIT_DIR}/lib $ENV{CPPUNIT_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The CPPUNIT library"
+  )
+find_library(CPPUNIT_LIBRARIES cppunit
   DOC "The CPPUNIT library"
   )
 

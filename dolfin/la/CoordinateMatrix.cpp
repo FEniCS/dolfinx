@@ -27,8 +27,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
-                                   bool base_one) : _symmetric(symmetric),
-                                   _base_one(base_one)
+                                   bool base_one)
+  : _symmetric(symmetric), _base_one(base_one)
 {
   _size[0] = A.size(0);
   _size[1] = A.size(1);
@@ -88,7 +88,10 @@ CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
 double CoordinateMatrix::norm(std::string norm_type) const
 {
   if (norm_type != "frobenius")
-    error("Do not know to comput %s norm for CoordinateMatrix", norm_type.c_str());
+  {
+    error("Do not know to comput %s norm for CoordinateMatrix",
+          norm_type.c_str());
+  }
 
   double _norm = 0.0;
   if (!_symmetric)

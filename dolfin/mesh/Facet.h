@@ -23,6 +23,8 @@
 #ifndef __FACET_H
 #define __FACET_H
 
+#include <boost/shared_ptr.hpp>
+
 #include <utility>
 #include <vector>
 #include "Cell.h"
@@ -41,7 +43,8 @@ namespace dolfin
   public:
 
     /// Constructor
-    Facet(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, mesh.topology().dim() - 1, index) {}
+    Facet(const Mesh& mesh, std::size_t index)
+      : MeshEntity(mesh, mesh.topology().dim() - 1, index) {}
 
     /// Destructor
     ~Facet() {}
@@ -53,8 +56,9 @@ namespace dolfin
     Point normal() const;
 
     /// Return true if facet is an exterior facet (relative to global mesh,
-    /// so this function will return false for facets on partition boundaries)
-    /// Facet connectivity must be initialized before calling this function.
+    /// so this function will return false for facets on partition
+    /// boundaries). Facet connectivity must be initialized before
+    /// calling this function.
     bool exterior() const;
 
     // FIXME: This function should take care of the case where adjacent cells
@@ -70,8 +74,8 @@ namespace dolfin
 
   };
 
-
-  /// A FacetIterator is a MeshEntityIterator of topological codimension 1.
+  /// A FacetIterator is a MeshEntityIterator of topological
+  /// codimension 1.
   typedef MeshEntityIteratorBase<Facet> FacetIterator;
 
   /// A FacetFunction is a MeshFunction of topological codimension 1.
@@ -82,8 +86,14 @@ namespace dolfin
     FacetFunction(const Mesh& mesh)
       : MeshFunction<T>(mesh, mesh.topology().dim() - 1) {}
 
+    FacetFunction(boost::shared_ptr<const Mesh> mesh)
+      : MeshFunction<T>(mesh, mesh->topology().dim() - 1) {}
+
     FacetFunction(const Mesh& mesh, const T& value)
       : MeshFunction<T>(mesh, mesh.topology().dim() - 1, value) {}
+
+    //FacetFunction(boost:shared_ptr<const Mesh> mesh, const T& value)
+    //  : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {}
   };
 
 }
