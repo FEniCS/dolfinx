@@ -42,7 +42,8 @@ MeshConnectivity::~MeshConnectivity()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& connectivity)
+const MeshConnectivity&
+MeshConnectivity::operator= (const MeshConnectivity& connectivity)
 {
   // Clear old data if any
   clear();
@@ -63,7 +64,8 @@ void MeshConnectivity::clear()
   index_to_position.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::init(std::size_t num_entities, std::size_t num_connections)
+void MeshConnectivity::init(std::size_t num_entities,
+                            std::size_t num_connections)
 {
   // Clear old data if any
   clear();
@@ -106,14 +108,17 @@ void MeshConnectivity::set(std::size_t entity, std::size_t connection,
                            std::size_t pos)
 {
   dolfin_assert((entity + 1) < index_to_position.size());
-  dolfin_assert(pos < index_to_position[entity + 1] - index_to_position[entity]);
+  dolfin_assert(pos < index_to_position[entity + 1]
+                - index_to_position[entity]);
   _connections[index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(std::size_t entity, const std::vector<std::size_t>& connections)
+void MeshConnectivity::set(std::size_t entity,
+                           const std::vector<std::size_t>& connections)
 {
   dolfin_assert((entity + 1) < index_to_position.size());
-  dolfin_assert(connections.size() == index_to_position[entity + 1] - index_to_position[entity]);
+  dolfin_assert(connections.size()
+                == index_to_position[entity + 1] - index_to_position[entity]);
 
   // Copy data
   std::copy(connections.begin(), connections.end(),
@@ -136,20 +141,7 @@ std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
   boost::hash<std::vector<unsigned int> > uhash;
-  const std::size_t local_hash = uhash(_connections);
-
-  // Gather all hash keys
-  std::vector<std::size_t> all_hashes;
-  MPI::gather(local_hash, all_hashes);
-
-  // Hash the received hash keys
-  boost::hash<std::vector<size_t> > sizet_hash;
-  std::size_t global_hash = sizet_hash(all_hashes);
-
-  // Broadcast hash key
-  MPI::broadcast(global_hash);
-
-  return global_hash;
+  return uhash(_connections);
 }
 //-----------------------------------------------------------------------------
 std::string MeshConnectivity::str(bool verbose) const
@@ -163,8 +155,11 @@ std::string MeshConnectivity::str(bool verbose) const
     for (std::size_t e = 0; e < index_to_position.size() - 1; e++)
     {
       s << "  " << e << ":";
-      for (std::size_t i = index_to_position[e]; i < index_to_position[e + 1]; i++)
+      for (std::size_t i = index_to_position[e]; i < index_to_position[e + 1];
+           i++)
+      {
         s << " " << _connections[i];
+      }
       s << std::endl;
     }
   }

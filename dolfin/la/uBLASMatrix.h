@@ -99,6 +99,10 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
 
+    /// Return MPI communicator
+    virtual const MPI_Comm mpi_comm() const
+    { return MPI_COMM_SELF; }
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
@@ -333,7 +337,7 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::resize(GenericVector& z, std::size_t dim) const
   {
-    z.resize(size(dim));
+    z.resize(mpi_comm(), size(dim));
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
@@ -367,7 +371,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::lump(uBLASVector& m) const
   {
     const std::size_t n = size(1);
-    m.resize(n);
+    m.resize(mpi_comm(), n);
     m.zero();
     ublas::scalar_vector<double> one(n, 1.0);
     ublas::axpy_prod(_A, one, m.vec(), true);

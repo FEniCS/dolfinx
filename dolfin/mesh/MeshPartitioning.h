@@ -21,7 +21,7 @@
 // Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2013-12-16
+// Last changed: 2014-01-09
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -63,8 +63,9 @@ namespace dolfin
 
     /// Build a partitioned mesh based from a local mesh on process 0
     /// with supplied destination processes for each cell
-    static void build_distributed_mesh(Mesh& mesh,
-                                       const std::vector<std::size_t>& cell_partition);
+    static void
+      build_distributed_mesh(Mesh& mesh,
+                             const std::vector<std::size_t>& cell_partition);
 
     /// Build a partitioned mesh from local mesh data that is
     /// distributed across processes
@@ -72,15 +73,18 @@ namespace dolfin
 
     /// Build a MeshValueCollection based on LocalMeshValueCollection
     template<typename T>
-    static void build_distributed_value_collection(MeshValueCollection<T>& values,
-               const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
+      static void
+      build_distributed_value_collection(MeshValueCollection<T>& values,
+                                const LocalMeshValueCollection<T>& local_data,
+                                const Mesh& mesh);
 
   private:
 
     // Compute cell partitioning for local mesh data. Returns
     // cell->process vector for cells in LocalMeshData
     // and a map from local index->processes to which ghost cells must be sent
-    static void partition_cells(const LocalMeshData& mesh_data,
+    static void partition_cells(const MPI_Comm& mpi_comm, 
+                                const LocalMeshData& mesh_data,
            std::vector<std::size_t>& cell_partition,
            std::map<std::size_t, std::vector<std::size_t> >& ghost_procs);
 
@@ -98,7 +102,8 @@ namespace dolfin
     // (which tells us to which process each of the local cells stored in
     // LocalMeshData on this process belongs. We use MPI::distribute to
     // redistribute all cells (the global vertex indices of all cells).
-    static void distribute_cells(const LocalMeshData& data,
+    static void distribute_cells(const MPI_Comm& mpi_comm,
+                                 const LocalMeshData& data,
       const std::vector<std::size_t>& cell_partition,
       std::vector<std::size_t>& cell_local_to_global_indices,
       boost::multi_array<std::size_t, 2>& cell_local_vertices);
@@ -106,7 +111,8 @@ namespace dolfin
     // Distribute ghost cells. Similar to distribute_cells(), but for
     // ghost cells. Additionally, send the cell owning process number 
     // to the remote processes.
-    static void distribute_ghost_cells(const LocalMeshData& data,
+    static void distribute_ghost_cells(const MPI_Comm& mpi_comm,
+                                       const LocalMeshData& data,
       const std::vector<std::size_t>& cell_partition,
       const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
       std::vector<std::size_t>& ghost_global_cell_indices,
@@ -114,7 +120,8 @@ namespace dolfin
       boost::multi_array<std::size_t, 2>& ghost_cell_vertices);
 
     // Distribute vertices
-    static void distribute_vertices(const LocalMeshData& data,
+    static void distribute_vertices(const MPI_Comm& mpi_comm,
+                                    const LocalMeshData& data,
       const std::set<std::size_t>& needed_vertex_indices,
       std::vector<std::size_t>& vertex_indices,
       std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
@@ -175,6 +182,9 @@ namespace dolfin
     const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T> >& local_value_data,
     MeshValueCollection& mesh_values)
   {
+    // Get MPI communicator
+    const MPI_Comm& mpi_comm = mesh.mpi_comm();
+
     // Get topological dimensions
     const std::size_t D = mesh.topology().dim();
     const std::size_t dim = mesh_values.dim();
@@ -243,7 +253,7 @@ namespace dolfin
                                                           D, mesh);
 
     // Number of MPI processes
-    const std::size_t num_processes = MPI::num_processes();
+    const std::size_t num_processes = MPI::num_processes(mpi_comm);
 
     // Pack data to send to appropriate process
     std::vector<std::vector<std::size_t> > send_data0(num_processes);
@@ -294,8 +304,8 @@ namespace dolfin
     // Send/receive data
     std::vector<std::vector<std::size_t> > received_data0;
     std::vector<std::vector<T> > received_data1;
-    MPI::all_to_all(send_data0, received_data0);
-    MPI::all_to_all(send_data1, received_data1);
+    MPI::all_to_all(mpi_comm, send_data0, received_data0);
+    MPI::all_to_all(mpi_comm, send_data1, received_data1);
 
     // Add received data to mesh domain
     for (std::size_t p = 0; p < num_processes; ++p)

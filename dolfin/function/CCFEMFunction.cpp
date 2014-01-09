@@ -111,7 +111,7 @@ void CCFEMFunction::init_vector()
   dolfin_assert(_vector);
 
   // Initialize vector of dofs
-  _vector->resize(range, ghost_indices);
+  _vector->resize(MPI_COMM_WORLD, range, ghost_indices);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

@@ -46,7 +46,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 {
   Timer t0("Parallel-refine 3D");
 
-  if (MPI::num_processes()==1)
+  if (MPI::num_processes(mesh.mpi_comm())==1)
   {
     dolfin_error("ParallelRefinement3D.cpp",
                  "refine mesh",
@@ -87,16 +87,12 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   const MeshFunction<bool>& refinement_marker,
                                   bool redistribute)
 {
+  // Topological dimension
   const std::size_t tdim = mesh.topology().dim();
 
-  //  boost::shared_ptr<std::vector<std::size_t> > mesh_in_array
-  //     = mesh.data().array("experimental_data");
 
-  // process information about previous refinement, if any
-  //  if(mesh_in_array != 0)
-  //  {
-  //
-  //  }
+  // MPI communicator
+  const MPI_Comm& mpi_comm = mesh.mpi_comm();
 
   warning("ParallelRefinement3D does not take care of mesh quality.\n Multiple levels of refinement may generate bad quality tetrahedra.");
 
@@ -154,7 +150,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         }
       }
     }
-    update_count = MPI::sum(update_count);
+    update_count = MPI::sum(mpi_comm, update_count);
   }
 
   // All cells now have either 0, 1, 2, 3* or 6 edges marked.

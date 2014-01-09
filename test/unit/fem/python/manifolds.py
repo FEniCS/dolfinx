@@ -31,6 +31,7 @@ from dolfin import *
 from itertools import izip
 
 import numpy
+
 # Subdomain to extract bottom boundary.
 class BottomEdge(SubDomain):
     def inside(self, x, on_boundary):
@@ -77,6 +78,7 @@ class Rotation(object):
         return numpy.dot(point, self.mat.T)
 
 def poisson_2d():
+
     # Create mesh and define function space
     mesh = UnitSquareMesh(32, 32)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -104,8 +106,9 @@ def poisson_2d():
     return u
 
 def poisson_manifold():
+
     # Create mesh
-    cubemesh = UnitCubeMesh(32,32,2)
+    cubemesh = UnitCubeMesh(32, 32, 2)
 
     boundarymesh = BoundaryMesh(cubemesh, "exterior")
 
@@ -145,7 +148,8 @@ def poisson_manifold():
     return u
 
 def rotate_2d_mesh(theta):
-    """Unit square mesh in 2D rotated through theta about the x and z axes."""
+    """Unit square mesh in 2D rotated through theta about the x and z
+    axes."""
 
     cubemesh = UnitCubeMesh(1,1,1)
     boundarymesh = BoundaryMesh(cubemesh, "exterior")
@@ -166,7 +170,7 @@ class ManifoldSolving(unittest.TestCase):
         radians about each of the z and x axes."""
 
         # Boundary mesh not working in parallel
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         u_2D = poisson_2d()
@@ -183,12 +187,10 @@ class ManifoldBasisEvaluation(unittest.TestCase):
 
     def test_basis_evaluation_2D_in_3D(self):
         """This test checks that basis functions and their derivatives are
-        unaffected by rotations.
-
-        """
+        unaffected by rotations."""
 
         # Boundary mesh not working in parallel
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         self.basemesh = rotate_2d_mesh(0.0)
@@ -212,7 +214,7 @@ class ManifoldBasisEvaluation(unittest.TestCase):
     def basis_test(self, family, degree, piola=False):
 
         # Boundary mesh not working in parallel
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             return
 
         parameters["form_compiler"]["no-evaluate_basis_derivatives"] = False

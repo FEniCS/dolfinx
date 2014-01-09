@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2013-12-02
+// Last changed: 2014-01-09
 
 #ifndef __SCOTCH_PARTITIONER_H
 #define __SCOTCH_PARTITIONER_H
@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include <dolfin/common/MPI.h>
 #include "Graph.h"
 
 namespace dolfin
@@ -41,10 +42,10 @@ namespace dolfin
 
     /// Compute cell partition from local mesh data, also returning
     /// processes that need ghost copies of cells in ghost_procs
-    static void compute_partition(std::vector<std::size_t>& cell_partition,
+    static void compute_partition(const MPI_Comm mpi_comm,
+          std::vector<std::size_t>& cell_partition,
           std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
           const LocalMeshData& mesh_data);
-    
     
     /// Compute reordering (map[old] -> new) using
     /// Gibbs-Poole-Stockmeyer re-ordering
@@ -52,8 +53,9 @@ namespace dolfin
                                                 std::size_t num_passes=5);
 
     // Compute graph re-ordering
-    static std::vector<std::size_t> compute_reordering(const Graph& graph,
-                                                       std::string scotch_strategy="");
+    static std::vector<std::size_t>
+      compute_reordering(const Graph& graph,
+                         std::string scotch_strategy="");
 
     // Compute graph re-ordering
     static
@@ -66,7 +68,8 @@ namespace dolfin
 
     // Compute cell partitions from distribted dual graph
     static
-      void partition(const std::vector<std::set<std::size_t> >& local_graph,
+      void partition(const MPI_Comm mpi_comm,
+                     const std::vector<std::set<std::size_t> >& local_graph,
                      const std::set<std::size_t>& ghost_vertices,
                      const std::vector<std::size_t>& global_cell_indices,
                      const std::size_t num_global_vertices,

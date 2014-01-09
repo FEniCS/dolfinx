@@ -22,6 +22,7 @@
 #define __DOLFIN_ZOLTAN_PARTITION_H
 
 #include <vector>
+#include <dolfin/common/MPI.h>
 
 #ifdef HAS_TRILINOS
 #include <zoltan_cpp.h>
@@ -40,12 +41,14 @@ namespace dolfin
   public:
 
     /// Calculate partitioning using Parallel HyperGraph (Zoltan PHG)
-    static void compute_partition_phg(std::vector<std::size_t>& cell_partition,
+    static void compute_partition_phg(const MPI_Comm& mpi_comm,
+                                      std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 
-    /// Calculate partitioning using recursive block bisection 
+    /// Calculate partitioning using recursive block bisection
     /// (Zoltan RCB - geometric partitioner)
-    static void compute_partition_rcb(std::vector<std::size_t>& cell_partition,
+    static void compute_partition_rcb(const MPI_Comm& mpi_comm,
+                                      std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 
   private:
@@ -81,7 +84,8 @@ namespace dolfin
 
 
     static void get_all_geom(void *data,
-                             int num_gid_entries, int num_lid_entries, int num_obj,
+                             int num_gid_entries, int num_lid_entries,
+                             int num_obj,
                              ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                              int num_dim, double *geom_vec, int *ierr);
 

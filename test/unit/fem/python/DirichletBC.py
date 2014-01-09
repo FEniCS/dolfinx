@@ -63,7 +63,7 @@ class DirichletBCTest(unittest.TestCase):
         bc1.apply(A1)
 
         self.assertAlmostEqual(A1.norm("frobenius"), A0.norm("frobenius"))
-        
+
     def test_get_values(self):
         mesh = UnitSquareMesh(8, 8)
         dofs = numpy.zeros(3, dtype="I")
@@ -105,7 +105,7 @@ class DirichletBCTest(unittest.TestCase):
     def test_bc_for_piola_on_manifolds(self):
         "Testing DirichletBC for piolas over standard domains vs manifolds."
 
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             # SubMesh not working in parallel (the rest should)
             return
 

@@ -27,6 +27,7 @@
 
 #include <dolfin/common/MPI.h>
 
+#include <Epetra_Comm.h>
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsMatrix.h>
@@ -187,7 +188,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 
   // Write a message
   const bool report = parameters["report"];
-  if (report && dolfin::MPI::process_number() == 0)
+  if (report && _A->mat()->Comm().MyPID() == 0)
     info("Solving linear system of size %d x %d (Epetra Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
