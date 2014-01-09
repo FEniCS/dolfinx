@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-11-05
+// Last changed: 2014-01-09
 
 #ifdef HAS_HDF5
 
@@ -182,6 +182,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
 
   // Set data
   x.set_local(data);
+  x.apply("insert");
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, const std::string name)
@@ -898,6 +899,7 @@ void HDF5File::read(Function& u, const std::string name)
   }
 
   x.set_local(vector_values);
+  x.apply("insert");
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const MeshValueCollection<std::size_t>& mesh_values,
