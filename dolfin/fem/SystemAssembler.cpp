@@ -298,20 +298,6 @@ problems is untested");
     // Facet-wise assembly is not working in parallel
     not_working_in_parallel("System assembly over interior facets");
 
-    // Facet-wise assembly does not support subdomains
-    for (std::size_t form = 0; form < 2; ++form)
-    {
-      if (ufc[form]->form.num_cell_domains() > 0 ||
-          ufc[form]->form.num_exterior_facet_domains() > 0 ||
-          ufc[form]->form.num_interior_facet_domains() > 0)
-      {
-        dolfin_error("SystemAssembler.cpp",
-                     "assemble system",
-                     "System assembler does not support forms containing "
-                     "integrals over subdomains");
-      }
-    }
-
     // Assemble facet-wise (including cell assembly)
     facet_wise_assembly(tensors, ufc, data, boundary_values,
                         cell_domains, exterior_facet_domains,
@@ -661,6 +647,13 @@ assembler");
         {
           if (local_facet[c] == 0)
           {
+            // Get cell integrals for sub domain (if any)
+            if (cell_domains && !cell_domains->empty())
+            {
+              const std::size_t domain = (*cell_domains)[cell[c]];
+              cell_integrals[form] = ufc[form]->get_cell_integral(domain);
+            }
+
             // Check if facet tensor is required
             bool cell_tensor_required = tensors[form] && cell_integrals[form];
             if (rank == 2)
@@ -760,6 +753,14 @@ assembler");
         exterior_facet_integrals[form]
           = ufc[form]->default_exterior_facet_integral.get();
 
+        // Get exterior facet integrals for sub domain (if any)
+        if (exterior_facet_domains && !exterior_facet_domains->empty())
+        {
+          const std::size_t domain = (*exterior_facet_domains)[*facet];
+          exterior_facet_integrals[form]
+            = ufc[form]->get_exterior_facet_integral(domain);
+        }
+
         // Check if facet tensor is required
         bool facet_tensor_required
           = (tensors[form] && exterior_facet_integrals[form]);
@@ -790,6 +791,13 @@ assembler");
         if (local_facet == 0)
         {
           cell_integrals[form] = ufc[form]->default_cell_integral.get();
+
+          // Get cell integrals for sub domain (if any)
+          if (cell_domains && !cell_domains->empty())
+          {
+            const std::size_t domain = (*cell_domains)[cell];
+            cell_integrals[form] = ufc[form]->get_cell_integral(domain);
+          }
 
           // Check if facet tensor is required
           bool cell_tensor_required = tensors[form] && cell_integrals[form];
