@@ -31,7 +31,6 @@ namespace dolfin
   class FiniteElement;
   class Function;
   class FunctionSpace;
-  class UFCCell;
   template<typename T> class Array;
 
   class Probe
