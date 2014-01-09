@@ -36,10 +36,13 @@ if (QT_FOUND)
 endif()
 
 # VTK
-find_package(VTK)
+find_package(VTK NO_MODULE)
 if (VTK_FOUND)
   include(${VTK_USE_FILE})
-  find_library(QVTK_FOUND QVTK HINTS ${VTK_LIBRARY_DIRS})
+  if ("${VTK_MAJOR_VERSION}" STREQUAL "5")
+    find_library(lib_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
+    list(APPEND VTK_LIBRARIES "${lib_QVTK}")
+  endif()
 endif()
 
 # If built stand-alone (in demo directory), DOLFIN_ENABLE_FOO are not set. We

@@ -262,7 +262,9 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   #  message(STATUS "vtkExodusIIWriter not found, disabling Exodus file writing")
   #endif()
 
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
+  # Append to EXTRA libraries, so they are not linked with demos (this fails
+  # with VTK6 unless the vtk macros are also installed).
+  list(APPEND DOLFIN_EXTRA_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------------------
@@ -290,8 +292,7 @@ set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 string(STRIP DOLFIN_TARGET_LINK_LIBRARIES "${DOLFIN_TARGET_LINK_LIBRARIES}")
 
 # Add DOLFIN target libraries
-target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
-
+target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES} ${DOLFIN_EXTRA_TARGET_LINK_LIBRARIES})
 #------------------------------------------------------------------------------
 # SWIG
 
@@ -388,16 +389,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
-
-# Filter out libraries that are not required in linking, and that make trouble
-# (because of mangled names)
-if ("${VTK_MAJOR_VERSION}" STREQUAL "6")
-  foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
-    if (NOT "${_lib}" MATCHES "^[Vv][Tt][Kk]" AND NOT "${_lib}" STREQUAL "verdict")
-      list(APPEND DOLFIN_3RD_PARTY_LIBRARIES "${_lib}")
-    endif()
-  endforeach()
-endif()
 
 # Set library location
 get_target_property(DOLFIN_LIBRARY_LOCATION dolfin LOCATION)
