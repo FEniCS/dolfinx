@@ -594,18 +594,27 @@ assembler");
         for (std::size_t dim = 0; dim < rank; ++dim)
           macro_dofs[form][dim].resize(num_dofs[dim]);
 
-        // Cell integrals
-        cell_integrals[form] = ufc[form]->default_cell_integral.get();
+        // Facet integral
+        ufc::interior_facet_integral* interior_facet_integral
+          = ufc[form]->default_interior_facet_integral.get();
+
+        // Get integral for sub domain (if any)
+        if (interior_facet_domains && !interior_facet_domains->empty())
+        {
+          const std::size_t domain = (*interior_facet_domains)[*facet];
+          interior_facet_integral
+            = ufc[form]->get_interior_facet_integral(domain);
+        }
 
         // Check if facet tensor is required
-        bool facet_tensor_required = tensors[form] && ufc[form]->form.has_interior_facet_integrals();
+        bool facet_tensor_required = tensors[form] && interior_facet_integral;
         if (rank == 2)
         {
           for (std::size_t c =0; c < 2; ++c)
           {
             dolfin_assert(cell_dofs[form][c][1]);
             facet_tensor_required = cell_matrix_required(tensors[form],
-                                                        ufc[form]->default_interior_facet_integral.get(),
+                                                        interior_facet_integral,
                                                         boundary_values,
                                                         *cell_dofs[form][c][1]);
             if (facet_tensor_required)
@@ -616,18 +625,6 @@ assembler");
         // Compute facet contribution to tensor, if required
         if (facet_tensor_required)
         {
-          // Facet integral
-          ufc::interior_facet_integral* interior_facet_integral
-            = ufc[form]->default_interior_facet_integral.get();
-
-          // Get integral for sub domain (if any)
-          if (interior_facet_domains && !interior_facet_domains->empty())
-          {
-            const std::size_t domain = (*interior_facet_domains)[*facet];
-            interior_facet_integral
-              = ufc[form]->get_interior_facet_integral(domain);
-          }
-
           // Update to current pair of cells
           ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
                             cell[1], vertex_coordinates[1], ufc_cell[1]);
@@ -647,6 +644,9 @@ assembler");
         {
           if (local_facet[c] == 0)
           {
+            // Cell integrals
+            cell_integrals[form] = ufc[form]->default_cell_integral.get();
+
             // Get cell integrals for sub domain (if any)
             if (cell_domains && !cell_domains->empty())
             {
