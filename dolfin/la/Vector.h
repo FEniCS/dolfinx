@@ -98,7 +98,8 @@ namespace dolfin
     { vector->resize(range); }
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range, const std::vector<std::size_t>& ghost_indices)
+    virtual void resize(std::pair<std::size_t, std::size_t> range,
+                        const std::vector<la_index>& ghost_indices)
     { vector->resize(range, ghost_indices); }
 
     /// Return true if vector is empty
@@ -122,15 +123,18 @@ namespace dolfin
     { return vector->owns_index(i); }
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, std::size_t m, const dolfin::la_index* rows) const
+    virtual void get_local(double* block, std::size_t m,
+                           const dolfin::la_index* rows) const
     { vector->get_local(block,m,rows); }
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows)
+    virtual void set(const double* block, std::size_t m,
+                     const dolfin::la_index* rows)
     { vector->set(block, m, rows); }
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows)
+    virtual void add(const double* block, std::size_t m,
+                     const dolfin::la_index* rows)
     { vector->add(block, m, rows); }
 
     /// Get all values on local process
@@ -146,11 +150,13 @@ namespace dolfin
     { vector->add_local(values); }
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const
+    virtual void gather(GenericVector& x,
+                        const std::vector<dolfin::la_index>& indices) const
     { vector->gather(x, indices); }
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const
+    virtual void gather(std::vector<double>& x,
+                        const std::vector<dolfin::la_index>& indices) const
     { vector->gather(x, indices); }
 
     /// Gather all entries into x on process 0

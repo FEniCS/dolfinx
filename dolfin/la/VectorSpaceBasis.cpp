@@ -24,21 +24,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VectorSpaceBasis::VectorSpaceBasis(std::vector<boost::shared_ptr<
-                                     const GenericVector> > basis,
-                                   const bool check)
+VectorSpaceBasis::VectorSpaceBasis(const std::vector<boost::shared_ptr<
+                                     GenericVector> > basis)
   : _basis(basis)
 {
-  // Check that basis vectors are orthonormal
-  if (check)
-  {
-    if (!is_orthonormal())
-    {
-      dolfin_error("VectorSpaceBasis.cpp",
-                   "verify orthonormality",
-                   "Input vector space basis is not orthonormal");
-    }
-  }
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 bool VectorSpaceBasis::is_orthonormal() const
@@ -59,6 +49,26 @@ bool VectorSpaceBasis::is_orthonormal() const
   return true;
 }
 //-----------------------------------------------------------------------------
+bool VectorSpaceBasis::is_orthogonal() const
+{
+  for (std::size_t i = 0; i < _basis.size(); i++)
+  {
+    for (std::size_t j = i; j < _basis.size(); j++)
+    {
+      dolfin_assert(_basis[i]);
+      dolfin_assert(_basis[j]);
+      if (i != j)
+      {
+        const double dot_ij = _basis[i]->inner(*_basis[j]);
+        if (abs(dot_ij) > DOLFIN_EPS)
+          return false;
+      }
+    }
+  }
+
+  return true;
+}
+//-----------------------------------------------------------------------------
 void VectorSpaceBasis::orthogonalize(GenericVector& x) const
 {
   for (std::size_t i = 0; i < _basis.size(); i++)
@@ -69,7 +79,7 @@ void VectorSpaceBasis::orthogonalize(GenericVector& x) const
   }
 }
 //-----------------------------------------------------------------------------
-const std::size_t VectorSpaceBasis::size() const
+std::size_t VectorSpaceBasis::dim() const
 {
   return _basis.size();
 }

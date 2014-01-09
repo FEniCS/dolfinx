@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug 2007
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2013
 //
 // First added:  2007-05-24
-// Last changed: 2011-11-14
+// Last changed: 2013-09-24
 
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
@@ -27,7 +27,10 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include "GenericDofMap.h"
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/CCFEMFunctionSpace.h>
+#include "CCFEMForm.h"
+#include "CCFEMDofMap.h"
 #include "SparsityPatternBuilder.h"
 
 #include <dolfin/log/dolfin_log.h>
@@ -36,9 +39,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
-                   const Mesh& mesh,
-                   const std::vector<const GenericDofMap*> dofmaps,
-                   bool cells, bool interior_facets, bool exterior_facets, bool diagonal)
+                                   const Mesh& mesh,
+                                   const std::vector<const GenericDofMap*> dofmaps,
+                                   bool cells,
+                                   bool interior_facets,
+                                   bool exterior_facets,
+                                   bool diagonal,
+                                   bool init,
+                                   bool finalize)
 {
   const std::size_t rank = dofmaps.size();
 
@@ -54,7 +62,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   }
 
   // Initialise sparsity pattern
-  sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
+  if (init)
+    sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
   // require sparsity details
@@ -178,6 +187,37 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   }
 
   // Finalize sparsity pattern (communicate off-process terms)
-  sparsity_pattern.apply();
+  if (finalize)
+    sparsity_pattern.apply();
+}
+//-----------------------------------------------------------------------------
+void SparsityPatternBuilder::build_ccfem(GenericSparsityPattern& sparsity_pattern,
+                                         const CCFEMForm& form)
+{
+  // Build list of dofmaps
+  std::vector<const GenericDofMap*> dofmaps;
+  for (std::size_t i = 0; i < form.rank(); i++)
+    dofmaps.push_back(&*form.function_space(i)->dofmap());
+
+  // Iterate over each part
+  for (std::size_t part = 0; part < form.num_parts(); part++)
+  {
+    // Set current part for each dofmap. Note that these will be the
+    // same dofmaps as in the list created above but accessed here as
+    // CCFEMDofMaps and not GenericDofMaps.
+    for (std::size_t i = 0; i < form.rank(); i++)
+      form.function_space(i)->dofmap()->set_current_part(part);
+
+    // Get mesh on current part (assume it's the same for all arguments)
+    const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
+
+    // Check whether to initialize or finalize sparsity pattern
+    const bool init = part == 0;
+    const bool finalize = part == form.num_parts() - 1;
+
+    // Build sparsity pattern for part
+    build(sparsity_pattern, mesh, dofmaps, true, false, false, true,
+          init, finalize);
+  }
 }
 //-----------------------------------------------------------------------------

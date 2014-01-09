@@ -149,7 +149,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         b = assemble(inner(bu, bv)*dx).array().sum()
         self.assertAlmostEqual(a, b)
 
-        bottom = compile_subdomains("near(x[1], 0.0)")
+        bottom = CompiledSubDomain("near(x[1], 0.0)")
         foo = abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
                            exterior_facet_domains=bottom).array()).sum()
         BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
@@ -175,7 +175,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         b = assemble(inner(bu, bv)*dx).array().sum()
         self.assertAlmostEqual(a, b)
 
-        bottom = compile_subdomains("near(x[1], 0.0)")
+        bottom = CompiledSubDomain("near(x[1], 0.0)")
         foo = abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
                            exterior_facet_domains=bottom).array()).sum()
         BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
@@ -194,7 +194,7 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
 
         # Set-up meshes
         n = 16
-        plane = compile_subdomains("near(x[1], 1.0)")
+        plane = CompiledSubDomain("near(x[1], 1.0)")
         self.square = UnitSquareMesh(n, n)
         self.square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), plane)
 
@@ -293,14 +293,14 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
 
         m = 3
         self.m = m
-        plane = compile_subdomains("near(x[1], 0.0)")
+        plane = CompiledSubDomain("near(x[1], 0.0)")
         self.mesh1 = BoundaryMesh(UnitSquareMesh(m, m), "exterior")
         self.bottom1 = SubMesh(self.mesh1, plane)
 
         self.mesh2 = BoundaryMesh(UnitCubeMesh(m, m, m), "exterior")
         self.bottom2 = SubMesh(self.mesh2, plane)
 
-        line = compile_subdomains("near(x[0], 0.0)")
+        line = CompiledSubDomain("near(x[0], 0.0)")
         self.mesh3 = BoundaryMesh(SubMesh(self.mesh2, plane), "exterior")
         self.bottom3 = SubMesh(self.mesh3, line)
 

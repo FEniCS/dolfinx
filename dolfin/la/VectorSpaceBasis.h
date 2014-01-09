@@ -37,8 +37,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    VectorSpaceBasis(std::vector<boost::shared_ptr<const GenericVector> > basis,
-                     const bool check=true);
+    VectorSpaceBasis(const std::vector<boost::shared_ptr<GenericVector> > basis);
 
     /// Destructor
     ~VectorSpaceBasis() {}
@@ -46,19 +45,22 @@ namespace dolfin
     /// Test if basis is orthonormal
     bool is_orthonormal() const;
 
-    /// Orthogonalize
+    /// Test if basis is orthogonal
+    bool is_orthogonal() const;
+
+    /// Orthogonalize x with respect to basis
     void orthogonalize(GenericVector& x) const;
 
-    /// Size
-    const std::size_t size() const;
+    /// Dimension of the basis
+    std::size_t dim() const;
 
-    /// Get a particular vector out
+    /// Get a particular basis vector
     boost::shared_ptr<const GenericVector> operator[] (std::size_t i) const;
 
   private:
 
     // Basis vectors
-    std::vector<boost::shared_ptr<const GenericVector> > _basis;
+    const std::vector<boost::shared_ptr<GenericVector> > _basis;
 
   };
 }

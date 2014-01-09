@@ -31,7 +31,6 @@
 #include <vtkGlyph3D.h>
 
 #include <dolfin/common/Variable.h>
-
 #include "VTKPlottableMesh.h"
 
 namespace dolfin
@@ -45,7 +44,6 @@ namespace dolfin
   class GenericVTKPlottable;
   class Mesh;
   class Parameters;
-  class VTKPlottableMesh;
 
   /// Data wrapper class for plotting generic functions, including
   /// instances of the Function and Expression classes.
@@ -71,8 +69,11 @@ namespace dolfin
     {
       std::string mode = p["mode"];
       Parameter& elevate = p["elevate"];
-      if (dim() < 3 && value_rank() == 0 && mode != "color" && !elevate.is_set())
+      if (dim() < 3 && value_rank() == 0 && mode != "color"
+          && !elevate.is_set())
+      {
         elevate = -65.0;
+      }
     }
 
     /// Initialize the parts of the pipeline that this class controls
@@ -82,8 +83,8 @@ namespace dolfin
     void update(boost::shared_ptr<const Variable> var, const Parameters& p,
                 int framecounter);
 
-    /// Check if the plotter is compatible with a given variable (same-rank
-    /// function on same mesh for example)
+    /// Check if the plotter is compatible with a given variable
+    /// (same-rank function on same mesh for example)
     bool is_compatible(const Variable& var) const;
 
     /// Update the scalar range of the plottable data
@@ -122,9 +123,13 @@ namespace dolfin
 
   };
 
-  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const Function>);
-  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper>);
-  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const Expression>, boost::shared_ptr<const Mesh>);
+  VTKPlottableGenericFunction*
+    CreateVTKPlottable(boost::shared_ptr<const Function>);
+  VTKPlottableGenericFunction*
+    CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper>);
+  VTKPlottableGenericFunction*
+    CreateVTKPlottable(boost::shared_ptr<const Expression>,
+                       boost::shared_ptr<const Mesh>);
 
 }
 

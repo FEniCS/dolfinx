@@ -19,15 +19,17 @@
 // Modified by Anders Logg 2008-2012
 //
 // First added:  2007-07-03
-// Last changed: 2012-08-21
+// Last changed: 2013-11-25
 
 #include <dolfin/common/Timer.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "DefaultFactory.h"
 #include "LinearSolver.h"
+#include "VectorSpaceBasis.h"
 #include "KrylovSolver.h"
 
 using namespace dolfin;
@@ -46,7 +48,8 @@ Parameters KrylovSolver::default_parameters()
   p.add("error_on_nonconvergence", true);
   p.add("nonzero_initial_guess",   false);
 
-  // FIXME: This should be removed, see https://bugs.launchpad.net/dolfin/+bug/988494
+  // FIXME: This should be removed, see
+  // https://bugs.launchpad.net/dolfin/+bug/988494
   p.add("use_petsc_cusp_hack", false);
 
   // GMRES options
@@ -56,10 +59,16 @@ Parameters KrylovSolver::default_parameters()
 
   // General preconditioner options
   Parameters p_pc("preconditioner");
-  p_pc.add("shift_nonzero",        0.0);
-  p_pc.add("reuse",                false);
-  p_pc.add("same_nonzero_pattern", false);
-  p_pc.add("report",               false);
+  p_pc.add("shift_nonzero", 0.0);
+
+  // Re-use options
+  std::set<std::string> structure_options;
+  structure_options.insert("same");
+  structure_options.insert("same_nonzero_pattern");
+  structure_options.insert("different_nonzero_pattern");
+  p_pc.add("structure", "different_nonzero_pattern", structure_options);
+
+  p_pc.add("report", false);
 
   // ILU preconditioner options
   Parameters p_pc_ilu("ilu");
@@ -86,8 +95,7 @@ KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(boost::shared_ptr<const GenericLinearOperator> A,
-                           std::string method,
-                           std::string preconditioner)
+                           std::string method, std::string preconditioner)
 {
   // Initialize solver
   init(method, preconditioner);
@@ -121,11 +129,6 @@ void KrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
   solver->set_nullspace(nullspace);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
-{
-  solver->set_transpose_nullspace(transpose_nullspace);
-}
-//-----------------------------------------------------------------------------
 std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
@@ -136,8 +139,9 @@ std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-std::size_t KrylovSolver::solve(const GenericLinearOperator& A, GenericVector& x,
-                                 const GenericVector& b)
+std::size_t KrylovSolver::solve(const GenericLinearOperator& A,
+                                GenericVector& x,
+                                const GenericVector& b)
 {
   dolfin_assert(solver);
   //check_dimensions(A, x, b);

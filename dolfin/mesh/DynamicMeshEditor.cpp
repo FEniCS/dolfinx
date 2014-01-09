@@ -18,10 +18,10 @@
 // First added:  2008-09-22
 // Last changed: 2012-09-27
 
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
 #include "Mesh.h"
-#include "Point.h"
 #include "MeshEditor.h"
 #include "DynamicMeshEditor.h"
 

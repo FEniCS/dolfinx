@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-27
+// Last changed: 2013-11-30
 
 #ifndef __BOUNDING_BOX_TREE_3D_H
 #define __BOUNDING_BOX_TREE_3D_H
@@ -80,13 +80,34 @@ namespace dolfin
     // Return geometric dimension
     std::size_t gdim() const { return 3; }
 
-    // Check whether point is in bounding box
-    bool point_in_bbox(const double* x, unsigned int node) const
+    // Return bounding box coordinates for node
+    const double* get_bbox_coordinates(unsigned int node) const
+    {
+      return _bbox_coordinates.data() + 6*node;
+    }
+
+    // Check whether point (x) is in bounding box (node)
+    bool point_in_bbox(const double* x, const unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 6*node;
-      return (b[0] - DOLFIN_EPS < x[0] && x[0] < b[3] + DOLFIN_EPS &&
-              b[1] - DOLFIN_EPS < x[1] && x[1] < b[4] + DOLFIN_EPS &&
-              b[2] - DOLFIN_EPS < x[2] && x[2] < b[5] + DOLFIN_EPS);
+      const double eps0 = DOLFIN_EPS_LARGE*(b[3] - b[0]);
+      const double eps1 = DOLFIN_EPS_LARGE*(b[4] - b[1]);
+      const double eps2 = DOLFIN_EPS_LARGE*(b[5] - b[2]);
+      return (b[0] - eps0 <= x[0] && x[0] <= b[3] + eps0 &&
+              b[1] - eps1 <= x[1] && x[1] <= b[4] + eps1 &&
+              b[2] - eps2 <= x[2] && x[2] <= b[5] + eps2);
+    }
+
+    // Check whether bounding box (a) collides with bounding box (node)
+    bool bbox_in_bbox(const double* a, unsigned int node) const
+    {
+      const double* b = _bbox_coordinates.data() + 6*node;
+      const double eps0 = DOLFIN_EPS_LARGE*(b[3] - b[0]);
+      const double eps1 = DOLFIN_EPS_LARGE*(b[4] - b[1]);
+      const double eps2 = DOLFIN_EPS_LARGE*(b[5] - b[2]);
+      return (b[0] - eps0 <= a[3] && a[0] <= b[3] + eps0 &&
+              b[1] - eps1 <= a[4] && a[1] <= b[4] + eps1 &&
+              b[2] - eps2 <= a[5] && a[2] <= b[5] + eps2);
     }
 
     // Compute squared distance between point and bounding box
@@ -185,7 +206,7 @@ namespace dolfin
       bbox[5] = p[2];
 
       // Compute min and max over remaining points
-      for (; it != end; ++it)
+      for (++it; it != end; ++it)
       {
         const double* p = points[*it].coordinates();
         if (p[0] < bbox[0]) bbox[0] = p[0];

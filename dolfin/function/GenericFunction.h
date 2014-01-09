@@ -75,6 +75,7 @@ namespace dolfin
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
+                          const double* vertex_coordinates,
                           const ufc::cell& ufc_cell) const = 0;
 
     /// Compute values at all mesh vertices
@@ -130,6 +131,7 @@ namespace dolfin
     void restrict_as_ufc_function(double* w,
                                   const FiniteElement& element,
                                   const Cell& dolfin_cell,
+                                  const double* vertex_coordinates,
                                   const ufc::cell& ufc_cell) const;
 
   };

@@ -16,19 +16,20 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-28
+// Last changed: 2013-11-30
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
 
 #include <vector>
+#include <set>
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
 
   class Mesh;
   class MeshEntity;
-  class Point;
 
   /// Base class for bounding box implementations (envelope-letter
   /// design)
@@ -49,25 +50,36 @@ namespace dolfin
     /// Build bounding box tree for point cloud
     void build(const std::vector<Point>& points);
 
-    /// Compute all collisions between bounding boxes and given _Point_
-    std::vector<unsigned int> compute_collisions(const Point& point) const;
+    /// Compute all collisions between bounding boxes and _Point_
+    std::vector<unsigned int>
+    compute_collisions(const Point& point) const;
 
-    /// Compute all collisions between entities and given _Point_
-    std::vector<unsigned int> compute_entity_collisions(const Point& point,
-                                                        const Mesh& mesh) const;
+    /// Compute all collisions between bounding boxes and _BoundingBoxTree_
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+    compute_collisions(const GenericBoundingBoxTree& tree) const;
 
-    /// Compute first collision between bounding boxes and given _Point_
+    /// Compute all collisions between entities and _Point_
+    std::vector<unsigned int>
+    compute_entity_collisions(const Point& point,
+                              const Mesh& mesh) const;
+
+    /// Compute all collisions between entities and _BoundingBoxTree_
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+    compute_entity_collisions(const GenericBoundingBoxTree& tree,
+                              const Mesh& mesh_A, const Mesh& mesh_B) const;
+
+    /// Compute first collision between bounding boxes and _Point_
     unsigned int compute_first_collision(const Point& point) const;
 
-    /// Compute first collision between entities and given _Point_
+    /// Compute first collision between entities and _Point_
     unsigned int compute_first_entity_collision(const Point& point,
                                               const Mesh& mesh) const;
 
-    /// Compute closest entity and distance to given _Point_
+    /// Compute closest entity and distance to _Point_
     std::pair<unsigned int, double> compute_closest_entity(const Point& point,
                                                            const Mesh& mesh) const;
 
-    /// Compute closest point and distance to given _Point_
+    /// Compute closest point and distance to _Point_
     std::pair<unsigned int, double> compute_closest_point(const Point& point) const;
 
   protected:
@@ -96,53 +108,77 @@ namespace dolfin
     // Clear existing data if any
     void clear();
 
+    //--- Recursive build functions ---
+
     // Build bounding box tree for entities (recursive)
-    unsigned int build(const std::vector<double>& leaf_bboxes,
-                       const std::vector<unsigned int>::iterator& begin,
-                       const std::vector<unsigned int>::iterator& end,
-                       std::size_t gdim);
+    unsigned int _build(const std::vector<double>& leaf_bboxes,
+                        const std::vector<unsigned int>::iterator& begin,
+                        const std::vector<unsigned int>::iterator& end,
+                        std::size_t gdim);
 
     // Build bounding box tree for points (recursive)
-    unsigned int build(const std::vector<Point>& points,
-                       const std::vector<unsigned int>::iterator& begin,
-                       const std::vector<unsigned int>::iterator& end,
-                       std::size_t gdim);
+    unsigned int _build(const std::vector<Point>& points,
+                        const std::vector<unsigned int>::iterator& begin,
+                        const std::vector<unsigned int>::iterator& end,
+                        std::size_t gdim);
+
+    //--- Recursive search functions ---
+
+    // Note that these functions are made static for consistency as
+    // some of them need to deal with more than tree.
+
+    /// Compute collisions with point (recursive)
+    static void
+    _compute_collisions(const GenericBoundingBoxTree& tree,
+                        const Point& point,
+                        unsigned int node,
+                        std::vector<unsigned int>& entities,
+                        const Mesh* mesh);
+
+    /// Compute collisions with tree (recursive)
+    static void
+    _compute_collisions(const GenericBoundingBoxTree& A,
+                        const GenericBoundingBoxTree& B,
+                        unsigned int node_A,
+                        unsigned int node_B,
+                        std::set<unsigned int>& entities_A,
+                        std::set<unsigned int>& entities_B,
+                        const Mesh* mesh_A,
+                        const Mesh* mesh_B);
+
+    /// Compute first collision (recursive)
+    static unsigned int
+    _compute_first_collision(const GenericBoundingBoxTree& tree,
+                             const Point& point,
+                             unsigned int node);
+
+    /// Compute first entity collision (recursive)
+    static unsigned int
+    _compute_first_entity_collision(const GenericBoundingBoxTree& tree,
+                                    const Point& point,
+                                    unsigned int node,
+                                    const Mesh& mesh);
+
+    /// Compute closest entity (recursive)
+    static void _compute_closest_entity(const GenericBoundingBoxTree& tree,
+                                        const Point& point,
+                                        unsigned int node,
+                                        const Mesh& mesh,
+                                        unsigned int& closest_entity,
+                                        double& R2);
+
+    /// Compute closest point (recursive)
+    static void
+    _compute_closest_point(const GenericBoundingBoxTree& tree,
+                           const Point& point,
+                           unsigned int node,
+                           unsigned int& closest_point,
+                           double& R2);
+
+    //--- Utility functions ---
 
     // Compute point search tree if not already done
     void build_point_search_tree(const Mesh& mesh) const;
-
-    /// Compute collisions (recursive)
-    void compute_collisions(const Point& point,
-                            unsigned int node,
-                            std::vector<unsigned int>& entities) const;
-
-    /// Compute entity collisions (recursive)
-    void compute_entity_collisions(const Point& point,
-                                   unsigned int node,
-                                   std::vector<unsigned int>& entities,
-                                   const Mesh& mesh) const;
-
-    /// Compute first collision (recursive)
-    unsigned int compute_first_collision(const Point& point,
-                                         unsigned int node) const;
-
-    /// Compute first entity collision (recursive)
-    unsigned int compute_first_entity_collision(const Point& point,
-                                                unsigned int node,
-                                                const Mesh& mesh) const;
-
-    /// Compute closest entity (recursive)
-    void compute_closest_entity(const Point& point,
-                                unsigned int node,
-                                const Mesh& mesh,
-                                unsigned int& closest_entity,
-                                double& R2) const;
-
-    /// Compute closest point (recursive)
-    void compute_closest_point(const Point& point,
-                               unsigned int node,
-                               unsigned int& closest_point,
-                               double& R2) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,
@@ -171,6 +207,18 @@ namespace dolfin
       return _bboxes.size() - 1;
     }
 
+    // Return bounding box for given node
+    inline const BBox& get_bbox(unsigned int node) const
+    {
+      return _bboxes[node];
+    }
+
+    // Return number of bounding boxes
+    inline unsigned int num_bboxes() const
+    {
+      return _bboxes.size();
+    }
+
     // Add bounding box and point coordinates
     inline unsigned int add_point(const BBox& bbox,
                                   const Point& point,
@@ -190,7 +238,7 @@ namespace dolfin
     }
 
     // Check whether bounding box is a leaf node
-    bool is_leaf(const BBox& bbox, unsigned int node) const
+    inline bool is_leaf(const BBox& bbox, unsigned int node) const
     {
       // Leaf nodes are marked by setting child_0 equal to the node itself
       return bbox.child_0 == node;
@@ -244,9 +292,16 @@ namespace dolfin
     // Return geometric dimension
     virtual std::size_t gdim() const = 0;
 
-    // Check whether point is in bounding box
+    // Return bounding box coordinates for node
+    virtual const double* get_bbox_coordinates(unsigned int node) const = 0;
+
+    // Check whether point (x) is in bounding box (node)
     virtual bool
     point_in_bbox(const double* x, unsigned int node) const = 0;
+
+    // Check whether bounding box (a) collides with bounding box (node)
+    virtual bool
+    bbox_in_bbox(const double* a, unsigned int node) const = 0;
 
     // Compute squared distance between point and bounding box
     virtual double

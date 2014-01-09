@@ -71,6 +71,7 @@ if MPI.num_processes() == 1:
             inner = SubMesh(mesh, 1)
             outer = SubMesh(mesh, 2)
 
+            # Test dict interface
             D = mesh.topology().dim() - 1
             parent_facets = mesh.domains().markers(D)
             inner_facets = inner.domains().markers(D)
@@ -90,21 +91,17 @@ if MPI.num_processes() == 1:
                 self.assertEqual(sum_outer, sum_inner)
                 self.assertEqual(sum_outer, sum_parent)
 
-                #self.assertEqual((inner_facets.array()==value).sum(),
-                #                 (outer_facets.array()==value).sum())
-                #self.assertEqual((parent_facets.array()==value).sum(),
-                #                 (outer_facets.array()==value).sum())
-
-            #parent_facets = mesh.domains().facet_domains()
-            #inner_facets = inner.domains().facet_domains()
-            #outer_facets = outer.domains().facet_domains()
+            # Test Meshfunction interface
+            parent_facets = MeshFunction("size_t", mesh, D, mesh.domains())
+            inner_facets = MeshFunction("size_t", inner, D, inner.domains())
+            outer_facets = MeshFunction("size_t", outer, D, outer.domains())
 
             # Check we have the same number of value-marked facets
-            #for value in [5, 10, 15]:
-            #    self.assertEqual((inner_facets.array()==value).sum(),
-            #                     (outer_facets.array()==value).sum())
-            #    self.assertEqual((parent_facets.array()==value).sum(),
-            #                     (outer_facets.array()==value).sum())
+            for value in [5, 10, 15]:
+                self.assertEqual((inner_facets.array()==value).sum(),
+                                 (outer_facets.array()==value).sum())
+                self.assertEqual((parent_facets.array()==value).sum(),
+                                 (outer_facets.array()==value).sum())
 
 if __name__ == "__main__":
     unittest.main()

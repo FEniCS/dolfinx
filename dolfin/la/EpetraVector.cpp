@@ -106,7 +106,7 @@ void EpetraVector::resize(std::size_t N)
     return;
 
   // Create empty ghost vertices vector
-  std::vector<std::size_t> ghost_indices;
+  std::vector<la_index> ghost_indices;
 
   if (_type == "global")
   {
@@ -128,12 +128,12 @@ void EpetraVector::resize(std::size_t N)
 //-----------------------------------------------------------------------------
 void EpetraVector::resize(std::pair<std::size_t, std::size_t> range)
 {
-  std::vector<std::size_t> ghost_indices;
+  std::vector<la_index> ghost_indices;
   resize(range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::resize(std::pair<std::size_t, std::size_t> range,
-                          const std::vector<std::size_t>& ghost_indices)
+                          const std::vector<la_index>& ghost_indices)
 {
   if (_x && !_x.unique())
   {
@@ -167,7 +167,8 @@ void EpetraVector::resize(std::pair<std::size_t, std::size_t> range,
     }
 
     // Create map
-    epetra_map.reset(new Epetra_BlockMap((dolfin::la_index) -1, local_size, 1, 0, serial_comm));
+    epetra_map.reset(new Epetra_BlockMap((dolfin::la_index) -1, local_size,
+                                         1, 0, serial_comm));
   }
   else
   {
@@ -183,7 +184,10 @@ void EpetraVector::resize(std::pair<std::size_t, std::size_t> range,
 
     // Build global-to-local map for ghost indices
     for (std::size_t i = 0; i < ghost_indices.size(); ++i)
-      ghost_global_to_local.insert(std::pair<std::size_t, std::size_t>(ghost_indices[i], i));
+    {
+      ghost_global_to_local.insert(std::pair<std::size_t,
+                                             std::size_t>(ghost_indices[i], i));
+    }
   }
 
   // Create vector
@@ -191,7 +195,8 @@ void EpetraVector::resize(std::pair<std::size_t, std::size_t> range,
 
   // Create local ghost vector
   const dolfin::la_index num_ghost_entries = ghost_indices.size();
-  const std::vector<dolfin::la_index> ghost_entries(ghost_indices.begin(), ghost_indices.end());
+  const std::vector<dolfin::la_index> ghost_entries(ghost_indices.begin(),
+                                                    ghost_indices.end());
   Epetra_BlockMap ghost_map(num_ghost_entries, num_ghost_entries,
                             ghost_entries.data(), 1, 0, serial_comm);
   x_ghost.reset(new Epetra_Vector(ghost_map));
@@ -217,7 +222,8 @@ std::pair<std::size_t, std::size_t> EpetraVector::local_range() const
   dolfin_assert(_x);
   dolfin_assert(_x->Map().LinearMap());
   const Epetra_BlockMap& map = _x->Map();
-  return std::make_pair<std::size_t, std::size_t>(map.MinMyGID(), map.MaxMyGID() + 1);
+  return std::make_pair<std::size_t, std::size_t>(map.MinMyGID(),
+                                                  map.MaxMyGID() + 1);
 }
 //-----------------------------------------------------------------------------
 bool EpetraVector::owns_index(std::size_t i) const
@@ -229,7 +235,7 @@ bool EpetraVector::owns_index(std::size_t i) const
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
 {
-  Timer("Apply (vector)");
+  Timer timer("Apply (EpetraVector)");
   dolfin_assert(_x);
   const int err = _x->PutScalar(0.0);
   if (err != 0)
@@ -261,7 +267,8 @@ void EpetraVector::apply(std::string mode)
     std::vector<double> non_local_values;
     non_local_values.reserve(off_process_set_values.size());
     boost::unordered_map<std::size_t, double>::const_iterator entry;
-    for (entry = off_process_set_values.begin(); entry != off_process_set_values.end(); ++entry)
+    for (entry = off_process_set_values.begin();
+         entry != off_process_set_values.end(); ++entry)
     {
       non_local_indices.push_back(entry->first);
       non_local_values.push_back(entry->second);
@@ -448,12 +455,13 @@ void EpetraVector::get_local(double* block, std::size_t m,
         block[i] = (*_x)[0][rows[i] - n0];
       else
       {
-        // FIXME: Check if look-up in std::map is faster than Epetra_BlockMap::LID
-        // Get local index
+        // FIXME: Check if look-up in std::map is faster than
+        // Epetra_BlockMap::LID Get local index
         const dolfin::la_index local_index = ghost_map.LID(rows[i]);
         dolfin_assert(local_index != -1);
 
-        //boost::unordered_map<std::size_t, std::size_t>::const_iterator _local_index = ghost_global_to_local.find(rows[i]);
+        //boost::unordered_map<std::size_t, std::size_t>::const_iterator
+        //  _local_index = ghost_global_to_local.find(rows[i]);
         //dolfin_assert(_local_index != ghost_global_to_local.end());
         //const int local_index = _local_index->second;
 
@@ -620,7 +628,8 @@ void EpetraVector::update_ghost_values()
 {
   dolfin_assert(_x);
   dolfin_assert(x_ghost);
-  dolfin_assert(x_ghost->MyLength() == (dolfin::la_index) ghost_global_to_local.size());
+  dolfin_assert(x_ghost->MyLength()
+                == (dolfin::la_index) ghost_global_to_local.size());
 
   // Create importer
   Epetra_Import importer(x_ghost->Map(), _x->Map());
@@ -834,7 +843,8 @@ double EpetraVector::sum(const Array<std::size_t>& rows) const
   {
     // Receive data from process p - i (i steps to the left), send data to
     // process p + i (i steps to the right)
-    const std::size_t source = (process_number - i + num_processes) % num_processes;
+    const std::size_t source
+      = (process_number - i + num_processes) % num_processes;
     const std::size_t dest   = (process_number + i) % num_processes;
 
     // Send and receive data

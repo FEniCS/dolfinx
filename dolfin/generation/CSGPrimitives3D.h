@@ -24,8 +24,9 @@
 #ifndef __CSG_PRIMITIVES_3D_H
 #define __CSG_PRIMITIVES_3D_H
 
+#include <cstddef>
+#include <dolfin/geometry/Point.h>
 #include "CSGPrimitive.h"
-#include <dolfin/mesh/Point.h>
 
 namespace dolfin
 {
@@ -126,7 +127,8 @@ namespace dolfin
     ///     slices (std::size_t)
     ///         number of faces on the side when generating a
     ///         polyhedral approximation.
-    Cone(Point top, Point bottom, double top_radius, double bottom_radius, std::size_t slices=32);
+    Cone(Point top, Point bottom, double top_radius, double bottom_radius,
+         std::size_t slices=32);
 
     /// Informal string representation
     std::string str(bool verbose) const;
@@ -159,7 +161,8 @@ namespace dolfin
     ///     slices (std::size_t)
     ///         number of faces on the side when generating a
     ///         polyhedral approximation.
-    Cylinder(Point top, Point bottom, double r, std::size_t slices=32) : Cone(top, bottom, r, r, slices) {}
+    Cylinder(Point top, Point bottom, double r, std::size_t slices=32)
+      : Cone(top, bottom, r, r, slices) {}
   };
 
   /// This class describes a Tetrahedron which can be used to build

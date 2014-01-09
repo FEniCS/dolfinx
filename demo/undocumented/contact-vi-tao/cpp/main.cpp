@@ -1,74 +1,70 @@
 // Copyright (C) 2012 Corrado Maurini
-// 
+//
 // This file is part of DOLFIN.
-// 
+//
 // DOLFIN is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 // Modified by Corrado Maurini 2013
-// 
+//
 // First added:  2012-09-03
 // Last changed: 2013-04-15
 //
-// This demo program uses of the interface to TAO solver for variational inequalities 
-// to solve a contact mechanics problem in FEnics. 
-// The example considers a heavy elastic circle in a box of the same diameter
+// This demo program uses of the interface to TAO solver for
+// variational inequalities to solve a contact mechanics problem in
+// FEnics.  The example considers a heavy elastic circle in a box of
+// the same diameter
 
 #include <dolfin.h>
 #include "Elasticity.h"
 
 using namespace dolfin;
 
+// Lower bound for displacement
+class LowerBound : public Expression
+{
+public:
+  LowerBound() : Expression(2) {}
+  void eval(Array<double>& values, const Array<double>& x) const
+  {
+    const double xmin = -1.0 - DOLFIN_EPS;
+    const double ymin = -1.0;
+    values[0] = xmin - x[0];
+    values[1] = ymin - x[1];
+  }
+};
+
+// Upper bound for displacement
+class UpperBound : public Expression
+{
+public:
+  UpperBound() : Expression(2) {}
+  void eval(Array<double>& values, const Array<double>& x) const
+  {
+    const double xmax = 1.0 + DOLFIN_EPS;
+    const double ymax = 1.0;
+    values[0] = xmax-x[0];
+    values[1] = ymax-x[1];
+  }
+};
+
 int main()
 {
   #ifdef HAS_TAO
-    
-  // Lower bound for displacement
-  class LowerBound : public Expression
-  {
-  public:
-    
-    LowerBound() : Expression(2) {}
-    
-    void eval(Array<double>& values, const Array<double>& x) const
-    {
-      double xmin = -1.-DOLFIN_EPS;
-      double ymin = -1.;
-      values[0] = xmin-x[0];
-      values[1] = ymin-x[1];
-    }
-    
-  };
-    
-  // Upper bound for displacement
-  class UpperBound : public Expression
-  {
-  public:
-    
-    UpperBound() : Expression(2) {}
+  // Read mesh
+  Mesh mesh("../circle_yplane.xml.gz");
 
-    void eval(Array<double>& values, const Array<double>& x) const
-    {
-      double xmax = 1.+DOLFIN_EPS;
-      double ymax = 1.;
-      values[0] = xmax-x[0];
-      values[1] = ymax-x[1];
-    }
-    
-  };
-
-  // Read mesh and create function space
-  UnitCircleMesh mesh(50);
+  // Create function space
   Elasticity::FunctionSpace V(mesh);
 
   // Create right-hand side
@@ -88,43 +84,42 @@ int main()
   Function usol(V);
   Function Ulower(V); // Create a function
   Function Uupper(V); // Create a function
-  
+
   // Assemble the matrix and vector for linear elasticity
   PETScMatrix A;
   PETScVector b;
   assemble(A, a);
   assemble(b, L);
-    
-  // Interpolate expression for Upper bound 
+
+  // Interpolate expression for Upper bound
   UpperBound xu_exp;
   Function xu_f(V);
   xu_f.interpolate(xu_exp);
- 
-  // Interpolate expression for Upper bound 
+
+  // Interpolate expression for Upper bound
   LowerBound xl_exp;
   Function xl_f(V);
-  xl_f.interpolate(xl_exp);  
-    
+  xl_f.interpolate(xl_exp);
+
   // Create the PetscVector associated to the functions
   PETScVector& x  = (*usol.vector()).down_cast<PETScVector>(); // Solution
   PETScVector& xl = (*xl_f.vector()).down_cast<PETScVector>(); // Lower bound
   PETScVector& xu = (*xu_f.vector()).down_cast<PETScVector>(); // Upper bound
 
-  // Solve the problem with the TAO Solver 
+  // Solve the problem with the TAO Solver
   TAOLinearBoundSolver TAOSolver("tao_tron","tfqmr");
-  
+
   // Set some parameters
   TAOSolver.parameters["monitor_convergence"]=true;
   TAOSolver.parameters["report"]=true;
   TAOSolver.parameters("krylov_solver")["monitor_convergence"]=false;
-  
-  // Solve the problem 
+
+  // Solve the problem
   TAOSolver.solve(A, x, b, xl, xu);
-  
-  
+
   // Plot solution
   plot(usol, "Displacement", "displacement");
-  
+
   // Make plot windows interactive
   interactive();
 
@@ -133,6 +128,6 @@ int main()
   cout << "This demo requires DOLFIN to be configured with TAO" << endl;
 
   #endif
-  
+
  return 0;
 }

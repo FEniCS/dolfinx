@@ -53,8 +53,9 @@ const std::vector<std::size_t>& MeshColoring::color_cells(Mesh& mesh,
   return color(mesh, _coloring_type);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& MeshColoring::color(Mesh& mesh,
-                                       const std::vector<std::size_t>& coloring_type)
+const std::vector<std::size_t>&
+MeshColoring::color(Mesh& mesh,
+                    const std::vector<std::size_t>& coloring_type)
 {
   // Convenience typedefs
   typedef std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > ColorData;
@@ -135,7 +136,7 @@ CellFunction<std::size_t> MeshColoring::cell_colors(const Mesh& mesh,
 {
 
   // Get color data
-  std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+  std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator coloring_data;
   coloring_data = mesh.topology().coloring.find(coloring_type);
 

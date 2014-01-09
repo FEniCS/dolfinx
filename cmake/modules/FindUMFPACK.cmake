@@ -24,6 +24,10 @@ mark_as_advanced(UMFPACK_INCLUDE_DIRS)
 # Check for UMFPACK library
 find_library(UMFPACK_LIBRARY umfpack
   PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The UMFPACK library"
+  )
+find_library(UMFPACK_LIBRARY umfpack
   DOC "The UMFPACK library"
   )
 mark_as_advanced(UMFPACK_LIBRARY)
@@ -32,10 +36,25 @@ mark_as_advanced(UMFPACK_LIBRARY)
 if (APPLE)
   find_library(SUITESPARSE_LIBRARY SuiteSparse
     PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib
+    NO_DEFAULT_PATH
+    DOC "The SUITESPARSE library"
+  )
+  find_library(SUITESPARSE_LIBRARY SuiteSparse
     DOC "The SUITESPARSE library"
   )
   mark_as_advanced(SUITESPARSE_LIBRARY)
 endif()
+
+# Check for SUITESPARSECONFIG library
+find_library(SUITESPARSECONFIG_LIBRARY suitesparseconfig
+  PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The SUITESPARSE library"
+  )
+find_library(SUITESPARSECONFIG_LIBRARY suitesparseconfig
+  DOC "The SUITESPARSE library"
+  )
+mark_as_advanced(SUITESPARSECONFIG_LIBRARY)
 
 # Collect libraries
 if (AMD_FOUND)
@@ -50,6 +69,9 @@ endif()
 
 if (SUITESPARSE_LIBRARY)
   set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${SUITESPARSE_LIBRARY})
+endif()
+if (SUITESPARSECONFIG_LIBRARY)
+  set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${SUITESPARSECONFIG_LIBRARY})
 endif()
 
 find_program(GFORTRAN_EXECUTABLE gfortran)
@@ -107,4 +129,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(UMFPACK
   "UMFPACK could not be found. Be sure to set UMFPACK_DIR."
-  UMFPACK_INCLUDE_DIRS UMFPACK_LIBRARIES AMD_LIBRARIES BLAS_LIBRARIES UMFPACK_TEST_RUNS)
+  UMFPACK_LIBRARIES UMFPACK_INCLUDE_DIRS AMD_LIBRARIES BLAS_LIBRARIES UMFPACK_TEST_RUNS)

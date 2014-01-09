@@ -53,11 +53,17 @@ class DirichletBCTest(unittest.TestCase):
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         v, u = TestFunction(V), TrialFunction(V)
-        A = assemble(v*u*dx)
-        bc = DirichletBC(V, BoundaryFunction(), Boundary())
 
-        bc.apply(A)
+        A0 = assemble(v*u*dx)
+        bc0 = DirichletBC(V, BoundaryFunction(), Boundary())
+        bc0.apply(A0)
 
+        bc1 = DirichletBC(V, Expression("1.0"), CompiledSubDomain("on_boundary"))
+        A1 = assemble(v*u*dx)
+        bc1.apply(A1)
+
+        self.assertAlmostEqual(A1.norm("frobenius"), A0.norm("frobenius"))
+        
     def test_get_values(self):
         mesh = UnitSquareMesh(8, 8)
         dofs = numpy.zeros(3, dtype="I")
@@ -104,7 +110,7 @@ class DirichletBCTest(unittest.TestCase):
             return
 
         n = 4
-        side = compile_subdomains("near(x[2], 0.0)")
+        side = CompiledSubDomain("near(x[2], 0.0)")
 
         mesh = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), side)
         square = UnitSquareMesh(n, n)

@@ -75,9 +75,12 @@ def function_space(self, i):
     // Initialize the boost::multi_array structure
     boost::multi_array<double, 2> tmparray;
 
+    // Get cell vertex coordinates
+    std::vector<double> vertex_coordinates;
+    cell.get_vertex_coordinates(vertex_coordinates);
+
     // Tabulate the coordinates
-    dolfin::UFCCell ufc_cell(cell);
-    self->tabulate_coordinates(tmparray, ufc_cell);
+    self->tabulate_coordinates(tmparray, vertex_coordinates, cell);
 
     // Get geometric dimension
     std::size_t gdim = tmparray.shape()[1];

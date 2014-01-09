@@ -51,7 +51,8 @@ namespace dolfin
                      "%s", e.what());
       }
 
-      // Return something to keep the compiler happy, code will not be reached
+      // Return something to keep the compiler happy, code will not be
+      // reached
       return dynamic_cast<const T&>(*instance());
     }
 
@@ -82,7 +83,8 @@ namespace dolfin
       // Try to down cast shared pointer
       boost::shared_ptr<X> _A = boost::dynamic_pointer_cast<X>(A);
 
-      // If down cast fails, try to get shared ptr instance to unwrapped object
+      // If down cast fails, try to get shared ptr instance to
+      // unwrapped object
       if (!_A)
       {
         // Try to get instance to unwrapped object and cast
@@ -141,7 +143,8 @@ namespace dolfin
   // and compiler and Boost updates should be tested.
   #if defined __INTEL_COMPILER
   template<class T, class U>
-  boost::shared_ptr<T> dolfin_dynamic_pointer_cast(boost::shared_ptr<U> const & r )
+  boost::shared_ptr<T>
+    dolfin_dynamic_pointer_cast(boost::shared_ptr<U> const & r )
   {
       // Below give error with icpc 13.0.1 20121010
       //(void) dynamic_cast< T* >( static_cast< U* >( 0 ) );

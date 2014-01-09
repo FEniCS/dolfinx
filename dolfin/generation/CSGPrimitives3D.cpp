@@ -58,9 +58,7 @@ std::string Sphere::str(bool verbose) const
       << "with radius " << r << ">";
   }
   else
-  {
     s << "Sphere(" << c << ", " << r << ")";
-  }
 
   return s.str();
 }
@@ -125,11 +123,13 @@ std::string Cone::str(bool verbose) const
   if (verbose)
   {
     s << "<Cone with top at " << _top << ", top radius " << _top_radius
-      << " and bottom at " << _bottom << ", bottom radius " << _bottom_radius << ", with " << _slices << " slices>";
+      << " and bottom at " << _bottom << ", bottom radius "
+      << _bottom_radius << ", with " << _slices << " slices>";
   }
   else
   {
-    s << "Cone( " << _top << ", " << _bottom << ", " << _top_radius << ", " << _bottom_radius << " )";
+    s << "Cone( " << _top << ", " << _bottom << ", " << _top_radius
+      << ", " << _bottom_radius << " )";
   }
 
   return s.str();
@@ -144,10 +144,15 @@ std::string Tetrahedron::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
-    s << "<Tetrahedron with point at " << _x0 << ", " << _x1 << ", " << _x2 << ", " << _x3 << ">";
+  {
+    s << "<Tetrahedron with point at " << _x0 << ", " << _x1 << ", "
+      << _x2 << ", " << _x3 << ">";
+  }
   else
-    s << "Tetrahedron( " << _x0 << ", " << _x1 << ", " << _x2 << ", " << _x3 << ")";
-
+  {
+    s << "Tetrahedron( " << _x0 << ", " << _x1 << ", " << _x2 << ", "
+      << _x3 << ")";
+  }
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -160,3 +165,4 @@ std::string Surface3D::str(bool verbose) const
 {
   return std::string("Surface3D from file ") + _filename;
 }
+//-----------------------------------------------------------------------------

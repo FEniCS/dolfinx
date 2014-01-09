@@ -23,7 +23,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-03-04
+// Last changed: 2013-09-19
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -45,7 +45,6 @@ namespace dolfin
 {
 
   class GenericVector;
-  class UFC;
   class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
@@ -93,7 +92,8 @@ namespace dolfin
   private:
 
     // Create a sub-dofmap (a view) from parent_dofmap
-    DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
+    DofMap(const DofMap& parent_dofmap,
+           const std::vector<std::size_t>& component,
            const Mesh& mesh);
 
     // Create a collapsed dofmap from parent_dofmap
@@ -115,7 +115,7 @@ namespace dolfin
     ///         True if the dof map is a sub-dof map (a view into
     ///         another map).
     bool is_view() const
-    { return (_ownership_range.first == 0 && _ownership_range.second == 0); }
+    { return _is_view; }
 
     /// True if dof map is restricted
     ///
@@ -204,7 +204,8 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_map<std::size_t, std::size_t>
     ///         The map from non-local dofs.
-    const boost::unordered_map<std::size_t, unsigned int>& off_process_owner() const;
+    const boost::unordered_map<std::size_t, unsigned int>&
+      off_process_owner() const;
 
     /// Return map from all shared dofs to the sharing processes (not
     /// including the current process) that share it.
@@ -212,7 +213,8 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_map<std::size_t, std::vector<unsigned int> >
     ///         The map from dofs to list of processes
-    const boost::unordered_map<std::size_t, std::vector<unsigned int> >& shared_dofs() const;
+    const boost::unordered_map<std::size_t, std::vector<unsigned int> >&
+      shared_dofs() const;
 
     /// Return set of processes that share dofs with this process
     ///
@@ -264,12 +266,18 @@ namespace dolfin
     /// *Arguments*
     ///     coordinates (boost::multi_array<double, 2>)
     ///         The coordinates of all dofs on a cell.
-    ///     ufc_cell (ufc::cell)
+    ///     vertex_coordinates (std::vector<double>)
+    ///         The cell vertex coordinates
+    ///     cell (Cell)
     ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const ufc::cell& ufc_cell) const;
+                              const std::vector<double>& vertex_coordinates,
+                              const Cell& cell) const;
 
-    /// Tabulate the coordinates of all dofs on this process
+    /// Tabulate the coordinates of all dofs on this process. This
+    /// function is typically used by preconditioners that require the
+    /// spatial coordinates of dofs, for example for re-partitioning or
+    /// nullspace computations.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -293,7 +301,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<dolfin::la_index>
     ///         The dof to vertex map
-    std::vector<dolfin::la_index> dof_to_vertex_map(Mesh& mesh) const;
+    std::vector<dolfin::la_index> dof_to_vertex_map(const Mesh& mesh) const;
 
     /// Return a map between vertices and dofs
     /// (vert_ind*dofs_per_vertex + local_dof = vertex_to_dof_map[dof_ind],
@@ -308,7 +316,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The vertex to dof map
-    std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const;
+    std::vector<std::size_t> vertex_to_dof_map(const Mesh& mesh) const;
 
     /// Create a copy of the dof map
     ///
@@ -356,11 +364,16 @@ namespace dolfin
     ///     DofMap
     ///         The collapsed dofmap.
     boost::shared_ptr<GenericDofMap>
-          collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
-                   const Mesh& mesh) const;
+          collapse(boost::unordered_map<std::size_t, std::size_t>&
+                   collapsed_map, const Mesh& mesh) const;
+
+    // FIXME: Document this function
+    std::vector<dolfin::la_index> dofs() const;
 
     /// Set dof entries in vector to a specified value. Parallel layout
-    /// of vector must be consistent with dof map range.
+    /// of vector must be consistent with dof map range. This
+    /// function is typically used to construct the null space of a
+    /// matrix operator.
     ///
     /// *Arguments*
     ///     vector (_GenericVector_)
@@ -371,7 +384,9 @@ namespace dolfin
 
     /// Set dof entries in vector to the x[i] coordinate of the dof
     /// spatial coordinate. Parallel layout of vector must be consistent
-    /// with dof map range.
+    /// with dof map range This function is typically used to
+    /// construct the null space of a matrix operator, e.g. rigid
+    /// body rotations.
     ///
     /// *Arguments*
     ///     vector (_GenericVector_)
@@ -435,6 +450,9 @@ namespace dolfin
     // Restriction, pointer zero if not restricted
     boost::shared_ptr<const Restriction> _restriction;
 
+    // Flag to determine if the DofMap is a view
+    bool _is_view;
+
     // Global dimension. Note that this may differ from the global
     // dimension of the UFC dofmap if the function space is restricted
     // or periodic.
@@ -443,8 +461,8 @@ namespace dolfin
     // UFC dof map offset
     std::size_t _ufc_offset;
 
-    // Ownership range (dofs in this range are owned by this process). Set
-    // to (0, 0) if dofmap is a view
+    // Ownership range (dofs in this range are owned by this
+    // process). Set to (0, 0) if dofmap is a view
     std::pair<std::size_t, std::size_t> _ownership_range;
 
     // Map from dofs in local dof map are not owned by this process to
@@ -458,8 +476,8 @@ namespace dolfin
     std::set<std::size_t> _neighbours;
 
     // Map from slave to master mesh entities
-    boost::shared_ptr<std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > >
-      slave_master_mesh_entities;
+    boost::shared_ptr<std::map<unsigned int, std::map<unsigned int,
+      std::pair<unsigned int, unsigned int> > > > slave_master_mesh_entities;
   };
 }
 

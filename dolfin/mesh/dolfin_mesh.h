@@ -13,7 +13,6 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshEntityIteratorBase.h>
 #include <dolfin/mesh/SubsetIterator.h>
-#include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
@@ -37,5 +36,6 @@
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
+#include <dolfin/mesh/MeshQuality.h>
 
 #endif
