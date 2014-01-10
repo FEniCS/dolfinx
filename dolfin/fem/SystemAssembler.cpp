@@ -729,6 +729,16 @@ assembler");
           {
             if (local_facet[c] == 0)
             {
+              // Cell integrals
+              cell_integrals[form] = ufc[form]->default_cell_integral.get();
+
+              // Get cell integrals for sub domain (if any)
+              if (cell_domains && !cell_domains->empty())
+              {
+                const std::size_t domain = (*cell_domains)[cell[c]];
+                cell_integrals[form] = ufc[form]->get_cell_integral(domain);
+              }
+
               // Check if cell tensor was assembled - not necessary but saves inserting 0s
               bool cell_tensor_required
                 = cell_matrix_required(tensors[form],
