@@ -25,6 +25,16 @@ import os
 # Forms that need special options
 special = {"CahnHilliard2D.ufl":       "-fsplit",
            "CahnHilliard3D.ufl":       "-fsplit",
+           "Poisson2D_1.ufl":         "-fsplit",
+           "Poisson2D_2.ufl":         "-fsplit",
+           "Poisson2D_3.ufl":         "-fsplit",
+           "Poisson2D_4.ufl":         "-fsplit",
+           "Poisson2D_5.ufl":         "-fsplit",
+           "Poisson3D_1.ufl":         "-fsplit",
+           "Poisson3D_2.ufl":         "-fsplit",
+           "Poisson3D_3.ufl":         "-fsplit",
+           "Poisson3D_4.ufl":         "-fsplit",
+           "Poisson3D_5.ufl":         "-fsplit",
            "AdaptivePoisson.ufl":      "-e",
            "AdaptiveNavierStokes.ufl": "-e"}
 

@@ -21,7 +21,7 @@
 // Modified by Kent-Andre Mardal 2008
 //
 // First added:  2007-07-03
-// Last changed: 2012-08-20
+// Last changed: 2013-11-25
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
@@ -63,10 +63,12 @@ namespace dolfin
     std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
 
     /// Solve linear system
-    std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve_transpose(const GenericLinearOperator& A,
+                                GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -78,6 +80,13 @@ namespace dolfin
       p.add("same_nonzero_pattern", false);
       p.add("reuse_factorization", false);
       return p;
+    }
+
+    /// Update solver parameters (pass parameters down to wrapped implementation)
+    virtual void update_parameters(const Parameters& parameters)
+    {
+      this->parameters.update(parameters);
+      solver->parameters.update(parameters);
     }
 
   private:

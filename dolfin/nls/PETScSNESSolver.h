@@ -19,7 +19,7 @@
 // Modified by Corrado Maurini, 2013.
 //
 // First added:  2012-10-13
-// Last changed: 2013-03-20
+// Last changed: 2013-11-21
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -96,9 +96,6 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
-    /// Update the linear solver with the Parameters for a linear solver
-    void set_linear_solver_parameters(Parameters ksp_parameters);
-
     Parameters parameters;
 
     /// Return PETSc SNES pointer
@@ -112,6 +109,9 @@ namespace dolfin
 
     /// Initialize SNES solver
     void init(const std::string& method);
+
+    /// Update the linear solver parameters
+    void set_linear_solver_parameters();
 
     /// Available solvers
     static const std::map<std::string,

@@ -1,0 +1,55 @@
+This demo illustrates how to:
+
+* Use meshes with boundary indicators
+* Solve the Poisson equation with Dirichlet boundary values
+
+
+The solution for :math:`u` in this demo will look as follows:
+
+.. image:: ../demo_bcs.png
+    :scale: 75 %
+
+Equation and the problem definition
+-----------------------------------
+We will use the Poisson equation as a model problem when we demonstrate
+how to set boundary conditions for an imported mesh that includes boundary indicators.
+The Poisson equation is the canonical elliptic partial differential equation.
+For a domain :math:`\Omega \subset \mathbb{R}^3` with boundary :math:`\partial \Omega = \cup_{i = 0}^3 \Gamma_{D, i}`,
+the Poisson equation with particular boundary conditions reads:
+
+.. math::
+	- \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
+             u &= u_0 \quad {\rm on} \ \Gamma_{D, 0}, \\
+             u &= u_1 \quad {\rm on} \ \Gamma_{D, 1}, \\
+             u &= u_2 \quad {\rm on} \ \Gamma_{D, 2}, \\
+             u &= u_3 \quad {\rm on} \ \Gamma_{D, 3}. \\
+
+Here, :math:`f` is some given input data and :math:`u_0`, :math:`u_1`, :math:`u_2` and :math:`u_3`
+are the prescribed values of :math:`u` at the boundaries.
+The variational form of the Poisson equation reads: find :math:`u \in V` such that
+
+.. math::
+	a(u, v) = L(v) \quad \forall \ v \in V,
+
+where :math:`V` is a suitable function space and
+
+.. math::
+	a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
+	L(v)    &= \int_{\Omega} f v \, {\rm d} x.
+
+The expression :math:`a(u, v)` is the bilinear form and :math:`L(v)` is the linear form.
+It is assumed that all functions in :math:`V` satisfy the Dirichlet boundary conditions.
+
+In this demo we shall consider the domain :math:`\Omega` to be a model
+of blood vessels with an aneurysm.  It has one inlet vessel and two
+outlet vessels.  We define noslip boundary conditions on the walls of
+the vessels and aneurysm, that is :math:`u = u_0 = 0.0`.  We let
+:math:`u = u_1 = 1.0` be the Dirichlet condition on the inlet, the
+outlets will have the prescribed values :math:`u = u_2 = 2.0` and
+:math:`u = u_3 = 3.0`.  In summary, we have:
+
+* :math:`u = u_0 = 0.0 \text{ on } \Gamma_{D, 0}`  (noslip boundary)
+* :math:`u = u_1 = 1.0 \text{ on } \Gamma_{D, 1}`  (inlet)
+* :math:`u = u_2 = 2.0 \text{ on } \Gamma_{D, 2}`  (outlet 1)
+* :math:`u = u_3 = 3.0 \text{ on } \Gamma_{D, 3}`  (outlet 2)
+* :math:`f = 0.0`  (source term)

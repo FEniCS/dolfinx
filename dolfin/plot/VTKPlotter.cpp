@@ -462,7 +462,7 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
   case CONTROL + SHIFT + 's':
     // shift/control may be mouse-interaction modifiers
     {
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
+#if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6))
       vtkCamera* camera = vtk_pipeline->get_camera();
       foreach (VTKPlotter *other, *active_plotters)
       {
@@ -649,7 +649,11 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   grid->SetPoints(vtk_points);
 
   vtkSmartPointer<vtkGeometryFilter> extract = vtkSmartPointer<vtkGeometryFilter>::New();
+  #if VTK_MAJOR_VERSION <= 5
   extract->SetInput(grid);
+  #else
+  extract->SetInputData(grid);
+  #endif
 
   vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   mapper->SetInputConnection(extract->GetOutputPort());

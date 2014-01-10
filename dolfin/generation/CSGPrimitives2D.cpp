@@ -26,6 +26,10 @@
 
 #include "CSGPrimitives2D.h"
 
+#include <limits>
+#include <algorithm>
+#include <dolfin/log/LogStream.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -69,7 +73,8 @@ std::string Circle::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // Ellipse
 //-----------------------------------------------------------------------------
-Ellipse::Ellipse(double x0, double x1, double a, double b, std::size_t fragments)
+Ellipse::Ellipse(double x0, double x1, double a, double b,
+                 std::size_t fragments)
   : _x0(x0), _x1(x1), _a(a), _b(b), _fragments(fragments)
 {
   if (_a < DOLFIN_EPS || _b < DOLFIN_EPS)
@@ -149,6 +154,11 @@ Polygon::Polygon(const std::vector<Point>& vertices)
                  "create polygon",
                  "Polygon should have at least three vertices");
   }
+
+  if (!ccw())
+    dolfin_error("CSGPrimitives2D.cpp",
+                 "create polygon",
+                 "Polygonv vertices must be given in counter clockwise order");
 }
 //-----------------------------------------------------------------------------
 std::string Polygon::str(bool verbose) const
@@ -183,3 +193,19 @@ std::string Polygon::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+bool Polygon::ccw() const
+{
+  double signed_area = 0.0;
+  
+  Point prev = _vertices.back();
+  for (std::vector<Point>::const_iterator it = _vertices.begin(),
+	 v_end = _vertices.end();
+       it != v_end;
+       ++it)
+  {
+    signed_area += (prev.x()*it->y())-(it->x()*prev.y());
+    prev = *it;
+  }
+
+  return signed_area > 0;
+}

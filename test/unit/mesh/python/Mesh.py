@@ -21,9 +21,10 @@
 # Modified by Marie E. Rognes 2012
 # Modified by Johannes Ring 2013
 # Modified by Jan Blechta 2013
+# Modified by Oeyvind Evju 2013
 #
 # First added:  2006-08-08
-# Last changed: 2013-02-22
+# Last changed: 2013-10-11
 
 import unittest
 import numpy
@@ -34,7 +35,9 @@ class MeshConstruction(unittest.TestCase):
     def setUp(self):
         if MPI.num_processes() == 1:
             self.interval = UnitIntervalMesh(10)
-        self.circle = UnitCircleMesh(5)
+
+        if has_cgal():
+            self.circle = CircleMesh(Point(0.0, 0.0), 1.0, 0.1)
         self.square = UnitSquareMesh(5, 5)
         self.rectangle = RectangleMesh(0, 0, 2, 2, 5, 5)
         self.cube = UnitCubeMesh(3, 3, 3)
@@ -44,7 +47,8 @@ class MeshConstruction(unittest.TestCase):
         import ufl
         if MPI.num_processes() == 1:
             self.assertEqual(ufl.interval, self.interval.ufl_cell())
-        self.assertEqual(ufl.triangle, self.circle.ufl_cell())
+        if has_cgal():
+            self.assertEqual(ufl.triangle, self.circle.ufl_cell())
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
         self.assertEqual(ufl.triangle, self.rectangle.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
@@ -81,25 +85,22 @@ class MeshRefinement(unittest.TestCase):
         self.assertEqual(mesh.size_global(0), 3135)
         self.assertEqual(mesh.size_global(3), 15120)
 
-# This test does not work in parallel because BoundaryMesh does not
-# compute distributed mesh data
-if MPI.num_processes() == 1:
-    class BoundaryExtraction(unittest.TestCase):
+class BoundaryExtraction(unittest.TestCase):
 
-        def testBoundaryComputation(self):
-            """Compute boundary of mesh."""
+    def testBoundaryComputation(self):
+        """Compute boundary of mesh."""
+        mesh = UnitCubeMesh(2, 2, 2)
+        boundary = BoundaryMesh(mesh, "exterior")
+        self.assertEqual(boundary.size_global(0), 26)
+        self.assertEqual(boundary.size_global(2), 48)
+
+        def testBoundaryBoundary(self):
+            """Compute boundary of boundary."""
             mesh = UnitCubeMesh(2, 2, 2)
-            boundary = BoundaryMesh(mesh, "exterior")
-            self.assertEqual(boundary.num_vertices(), 26)
-            self.assertEqual(boundary.num_cells(), 48)
-
-            def testBoundaryBoundary(self):
-                """Compute boundary of boundary."""
-                mesh = UnitCubeMesh(2, 2, 2)
-                b0 = BoundaryMesh(mesh, "exterior")
-                b1 = BoundaryMesh(b0, "exterior")
-                self.assertEqual(b1.num_vertices(), 0)
-                self.assertEqual(b1.num_cells(), 0)
+            b0 = BoundaryMesh(mesh, "exterior")
+            b1 = BoundaryMesh(b0, "exterior")
+            self.assertEqual(b1.num_vertices(), 0)
+            self.assertEqual(b1.num_cells(), 0)
 
 if MPI.num_processes() == 1:
     class MeshFunctions(unittest.TestCase):
@@ -213,105 +214,6 @@ class PyCCInterface(unittest.TestCase):
 
 
 if MPI.num_processes() == 1:
-    class IntersectionOperator(unittest.TestCase):
-        def testIntersectPoint(self):
-            from numpy import linspace
-            mesh = UnitSquareMesh(10, 10)
-            points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
-            for p in points:
-                if p.x()<0 or p.x()>1:
-                    self.assertTrue(not mesh.intersected_cells(p))
-                else:
-                    self.assertTrue(mesh.intersected_cells(p))
-
-        def testIntersectPoints(self):
-            from numpy import linspace
-            mesh = UnitSquareMesh(10, 10)
-            points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
-            all_intersected_entities = []
-            for p in points:
-                all_intersected_entities.extend(mesh.intersected_cells(p))
-            for i0, i1 in zip(sorted(all_intersected_entities),
-                              sorted(mesh.intersected_cells(points))):
-                self.assertEqual(i0, i1)
-
-        def testIntersectMesh2D(self):
-            pass
-
-        def testIntersectMesh3D(self):
-            pass
-
-        def testIntersectedCellWithSingleCellMesh(self):
-
-            # 2D
-            mesh = UnitTriangleMesh()
-
-            # Point Intersection
-            point = Point(0.3, 0.3)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, 0)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 1)
-            self.assertEqual(cells[0], 0)
-
-            # Entity intersection
-            v = Vertex(mesh, 0)
-            id = mesh.intersected_cells(v)
-            self.assertEqual(id, 0)
-
-            # No intersection
-            point = Point(1.2, 1.2)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, -1)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 0)
-
-            # 3D
-            mesh = UnitTetrahedronMesh()
-
-            # Point intersection
-            point = Point(0.3, 0.3, 0.3)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, 0)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 1)
-            self.assertEqual(cells[0], 0)
-
-            # Entity intersection
-            v = Vertex(mesh, 0)
-            id = mesh.intersected_cells(v)
-            self.assertEqual(id, 0)
-
-            # No intersection
-            point = Point(1.2, 1.2, 1.2)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, -1)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 0)
-
-        def testClosestCellWithSingleCellMesh(self):
-            mesh = UnitTriangleMesh()
-
-            point = Point(0.3, 0.3)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            point = Point(1.2, 1.2)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            mesh = UnitTetrahedronMesh()
-
-            point = Point(0.3, 0.3, 0.3)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            point = Point(1.2, 1.2, 1.2)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-
-if MPI.num_processes() == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):
@@ -369,16 +271,6 @@ if MPI.num_processes() == 1:
             self.assertAlmostEqual(self.mesh3d.rmin(), 0.0)
             self.assertAlmostEqual(self.mesh3d.rmax(), sqrt(3.0)/6.0)
 
-        def test_radius_ratio_min_radius_ratio_max(self):
-            self.assertAlmostEqual(self.mesh1d.radius_ratio_min(), 0.0)
-            self.assertAlmostEqual(self.mesh1d.radius_ratio_max(), 1.0)
-            self.assertAlmostEqual(self.mesh2d.radius_ratio_min(),
-                                     2.0*sqrt(2.0)/(2.0+sqrt(2.0)) )
-            self.assertAlmostEqual(self.mesh2d.radius_ratio_max(), 1.0)
-            self.assertAlmostEqual(self.mesh3d.radius_ratio_min(), 0.0)
-            self.assertAlmostEqual(self.mesh3d.radius_ratio_max(), 1.0)
-
-
 class MeshOrientations(unittest.TestCase):
 
     def setUp(self):
@@ -386,7 +278,7 @@ class MeshOrientations(unittest.TestCase):
 
     def test_basic_cell_orientations(self):
         "Test that default cell orientations initialize and update as expected."
-        mesh = UnitIntervalMesh(6)
+        mesh = UnitIntervalMesh(12)
         orientations = mesh.cell_orientations()
         self.assertEqual(len(orientations), mesh.num_cells())
         for i in range(mesh.num_cells()):
@@ -397,7 +289,7 @@ class MeshOrientations(unittest.TestCase):
 
     def test_cell_orientations(self):
         "Test that cell orientations update as expected."
-        mesh = UnitIntervalMesh(6)
+        mesh = UnitIntervalMesh(12)
         mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)
@@ -414,6 +306,21 @@ class MeshOrientations(unittest.TestCase):
             mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
             mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
             print mesh.cell_orientations()
+
+class MeshSharedEntities(unittest.TestCase):
+    def test_shared_entities(self):
+        for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
+            if MeshClass not in [UnitSquareMesh]:
+                continue
+            dim = ind+1
+            args = [4]*dim
+            mesh = MeshClass(*args)
+            mesh.init()
+
+            # FIXME: Implement a proper test
+            for shared_dim in range(dim):
+                self.assertTrue(isinstance(mesh.topology().shared_entities(shared_dim), dict))
+                self.assertTrue(isinstance(mesh.topology().global_indices(shared_dim), numpy.ndarray))
 
 if __name__ == "__main__":
     unittest.main()

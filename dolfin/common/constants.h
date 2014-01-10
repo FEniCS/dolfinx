@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-04-22
-// Last changed: 2011-02-01
+// Last changed: 2013-12-09
 //
 // This file provides values for common constants.
 
@@ -24,6 +24,7 @@
 #define __DOLFIN_CONSTANTS_H
 
 #define DOLFIN_EPS           3.0e-16
+#define DOLFIN_EPS_LARGE     1e-14
 #define DOLFIN_SQRT_EPS      1.0e-8
 #define DOLFIN_PI            3.141592653589793238462
 #define DOLFIN_LINELENGTH    256

@@ -20,7 +20,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-22
+// Last changed: 2013-08-26
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -133,8 +133,11 @@ namespace dolfin
     bool ordered(const Cell& cell,
                  const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
-    /// Check whether given point is contained in cell
-    virtual bool contains(const Cell& cell, const Point& point) const = 0;
+    /// Check whether given point collides with cell
+    virtual bool collides(const Cell& cell, const Point& point) const = 0;
+
+    /// Check whether given entity collides with cell
+    virtual bool collides(const Cell& cell, const MeshEntity& entity) const = 0;
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;

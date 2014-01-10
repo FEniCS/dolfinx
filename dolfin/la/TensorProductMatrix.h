@@ -30,7 +30,6 @@ namespace dolfin
   // Forward declarations
   class TensorProductVector;
 
-
   /// A _TensorProductMatrix_ is a matrix expressed as a tensor
   /// product (outer product) of a list of matrices:
   ///

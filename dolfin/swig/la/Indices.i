@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-04-27
-// Last changed: 2013-04-02
+// Last changed: 2013-06-10
 
 class Indices
 {
@@ -175,12 +175,13 @@ public:
     if (!(op=PyList_GetItem(_list, i)))
       throw std::runtime_error("invalid index");
 
-    // Check for int
-    if (!PyInteger_Check(op))
-      throw std::runtime_error("invalid index, must be int");
+    int index;
+    // FIXME: Add a Py_convert_dolfin_la_index
+    if(!Py_convert_int(op, index))
+      throw std::runtime_error("index must be either an integer, a slice, a list or a Numpy array of integer");
 
     // Return checked index
-    return check_index(PyArray_PyIntAsInt(op));
+    return check_index(index);
   }
 
   // Check bounds of index by calling static function in base class

@@ -26,12 +26,12 @@
 #ifdef HAS_CGAL
 
 #include <vector>
-#include <dolfin/mesh/Point.h>
 
 namespace dolfin
 {
 
   class Mesh;
+  class Point;
 
   /// Polygonal mesh generator that uses CGAL
 

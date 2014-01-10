@@ -90,8 +90,6 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 // Misc ignores
 //-----------------------------------------------------------------------------
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, std::size_t, std::size_t);
-%ignore dolfin::Point::operator=;
-%ignore dolfin::Point::operator[];
 %ignore dolfin::Mesh::operator=;
 %ignore dolfin::MeshData::operator=;
 %ignore dolfin::MeshFunction::operator=;
@@ -99,6 +97,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::MeshValueCollection::operator=;
 %ignore dolfin::MeshGeometry::operator=;
 %ignore dolfin::MeshTopology::operator=;
+%ignore dolfin::MeshTopology::shared_entities(unsigned int) const;
 %ignore dolfin::MeshValueCollection::operator=;
 %ignore dolfin::MeshConnectivity::operator=;
 %ignore dolfin::MeshConnectivity::set;
@@ -253,6 +252,12 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t, const TYPE&);
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const std::string);
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
+
+%ignore dolfin::CellFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
+%ignore dolfin::FacetFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
+%ignore dolfin::FaceFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
+%ignore dolfin::EdgeFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
+%ignore dolfin::VertexFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
 
 %ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t);
 %ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t, const T&);

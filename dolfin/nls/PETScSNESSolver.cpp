@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Corrado Maurini, 2013.
+// Modified by Corrado Maurini 2013
+// Modified by Anders Logg 2013
 //
 // First added:  2012-10-13
-// Last changed: 2013-03-20
+// Last changed: 2013-11-21
 
 #ifdef HAS_PETSC
 
@@ -239,6 +240,9 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                        const GenericVector&  lb,
                        const GenericVector&  ub)
 {
+  // Set linear solver parameters
+  set_linear_solver_parameters();
+
   // Check size of the bound vectors
   if (lb.size() != ub.size())
   {
@@ -275,6 +279,9 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   PetscInt its;
   SNESConvergedReason reason;
   struct snes_ctx_t snes_ctx;
+
+  // Set linear solver parameters
+  set_linear_solver_parameters();
 
   // Compute F(u)
   nonlinear_problem.form(A, f, x);
@@ -444,7 +451,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
+void PETScSNESSolver::set_linear_solver_parameters()
 {
   KSP ksp;
   PC pc;
@@ -455,8 +462,8 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
   if (parameters["report"])
     KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
 
-  const std::string linear_solver  = ksp_parameters["linear_solver"];
-  const std::string preconditioner = ksp_parameters["preconditioner"];
+  const std::string linear_solver  = parameters["linear_solver"];
+  const std::string preconditioner = parameters["preconditioner"];
 
   if (linear_solver == "default")
   {
@@ -505,12 +512,12 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
       }
       else
       {
-        #if PETSC_HAVE_MUMPS
-        lu_method = "mumps";
+        #if PETSC_HAVE_SUPERLU_DIST
+        lu_method = "superlu_dist";
         #elif PETSC_HAVE_PASTIX
         lu_method = "pastix";
-        #elif PETSC_HAVE_SUPERLU_DIST
-        lu_method = "superlu_dist";
+        #elif PETSC_HAVE_MUMPS
+        lu_method = "mumps";
         #else
         dolfin_error("PETScSNESSolver.cpp",
                      "solve linear system using PETSc LU solver",
@@ -563,8 +570,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     {
       // Here, x is the model vector from which we make our Vecs that
       // tell PETSc the bounds.
-      Vec ub;
-      Vec lb;
+      Vec ub, lb;
 
       PETScVector dx = x.down_cast<PETScVector>();
       VecDuplicate(*dx.vec(), &ub);

@@ -182,8 +182,10 @@ class ManifoldSolving(unittest.TestCase):
 class ManifoldBasisEvaluation(unittest.TestCase):
 
     def test_basis_evaluation_2D_in_3D(self):
-        """This test checks that basis functions and their
-        derivatives are unaffected by rotations."""
+        """This test checks that basis functions and their derivatives are
+        unaffected by rotations.
+
+        """
 
         # Boundary mesh not working in parallel
         if MPI.num_processes() > 1:
@@ -195,16 +197,16 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         self.rotation = Rotation(numpy.pi/4, numpy.pi/4)
 
         for i in range(4):
-            self.basis_test("CG", i+1)
+            self.basis_test("CG", i + 1)
         for i in range(5):
             self.basis_test("DG", i)
 
         for i in range(4):
-            self.basis_test("RT", i+1, piola=True)
+            self.basis_test("RT", i + 1, piola=True)
         for i in range(4):
-            self.basis_test("BDM", i+1, piola=True)
+            self.basis_test("BDM", i + 1, piola=True)
         for i in range(4):
-            self.basis_test("N1curl", i+1, piola=True)
+            self.basis_test("N1curl", i + 1, piola=True)
         self.basis_test("BDFM", 2, piola=True)
 
     def basis_test(self, family, degree, piola=False):
@@ -230,21 +232,30 @@ class ManifoldBasisEvaluation(unittest.TestCase):
             values_rot = numpy.zeros(f_rot.element().value_dimension(0))
             derivs_rot = numpy.zeros(f_rot.element().value_dimension(0)*3)
 
+            # Get cell vertices
+            vertex_coordinates_base = cell_base.get_vertex_coordinates()
+            vertex_coordinates_rot  = cell_rot.get_vertex_coordinates()
+
             for i in range(f_base.element().space_dimension()):
                 for point in points:
                     f_base.element().evaluate_basis(i, values_base,
-                                                    point, cell_base)
+                                                    point,
+                                                    vertex_coordinates_base,
+                                                    cell_base.orientation())
 
                     f_base.element().evaluate_basis_derivatives(i, 1, derivs_base,
-                                                                point, cell_base)
+                                                                point, vertex_coordinates_base,
+                                                                cell_base.orientation())
 
                     f_rot.element().evaluate_basis(i, values_rot,
                                                    self.rotation.rotate_point(point),
-                                                   cell_rot)
+                                                   vertex_coordinates_rot,
+                                                   cell_rot.orientation())
 
                     f_base.element().evaluate_basis_derivatives(i, 1, derivs_rot,
                                                                 self.rotation.rotate_point(point),
-                                                                cell_rot)
+                                                                vertex_coordinates_rot,
+                                                                cell_rot.orientation())
 
                     if piola:
                         values_cmp = self.rotation.rotate_point(values_base)

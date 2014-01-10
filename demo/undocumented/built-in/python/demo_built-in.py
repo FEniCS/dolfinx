@@ -54,17 +54,18 @@ mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
 print "Plotting a RectangleMesh"
 plot(mesh, title="Rectangle (right/left)")
 
-mesh = UnitCircleMesh(20, "right", "rotsumn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (rotsum)")
+if has_cgal():
+    mesh = UnitCircleMesh(20, "right", "rotsumn")
+    print "Plotting a UnitCircleMesh"
+    plot(mesh, title="Unit circle (rotsum)")
 
-#mesh = UnitCircleMesh(20, "left", "sumn")
-#print "Plotting a UnitCircle"
-#plot(mesh, title="Unit circle (sumn)")
+    #mesh = UnitCircleMesh(20, "left", "sumn")
+    #print "Plotting a UnitCircle"
+    #plot(mesh, title="Unit circle (sumn)")
 
-mesh = UnitCircleMesh(20, "right", "maxn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (maxn)")
+    mesh = UnitCircleMesh(20, "right", "maxn")
+    print "Plotting a UnitCircleMesh"
+    plot(mesh, title="Unit circle (maxn)")
 
 mesh = UnitCubeMesh(10, 10, 10)
 print "Plotting a UnitCubeMesh"

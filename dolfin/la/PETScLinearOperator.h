@@ -40,7 +40,8 @@ namespace dolfin
   // defined in terms of the action (matrix-vector product) of a
   // linear operator.
 
-  class PETScLinearOperator : public PETScBaseMatrix, public GenericLinearOperator
+  class PETScLinearOperator : public PETScBaseMatrix,
+    public GenericLinearOperator
   {
   public:
 
@@ -69,7 +70,7 @@ namespace dolfin
   protected:
 
     // Initialization
-    void init_layout(const GenericVector& x, 
+    void init_layout(const GenericVector& x,
 		     const GenericVector& y,
 		     GenericLinearOperator* wrapper);
 
