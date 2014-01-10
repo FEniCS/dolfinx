@@ -62,7 +62,7 @@ namespace dolfin
   /// on each process, and the hash of the std::vector of all local hash
   /// keys is returned. This function is collective.
   template <class T>
-    std::size_t hash_global(const MPI_Comm& mpi_comm, const T& x)
+    std::size_t hash_global(const MPI_Comm mpi_comm, const T& x)
   {
     // Compute local hash
     std::size_t local_hash = hash_local(x);

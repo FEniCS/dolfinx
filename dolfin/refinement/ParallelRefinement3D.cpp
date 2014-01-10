@@ -92,7 +92,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 
 
   // MPI communicator
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   warning("ParallelRefinement3D does not take care of mesh quality.\n Multiple levels of refinement may generate bad quality tetrahedra.");
 

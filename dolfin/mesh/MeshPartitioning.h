@@ -93,7 +93,7 @@ namespace dolfin
     // LocalMeshData on this process belongs. We use MPI::distribute to
     // redistribute all cells (the global vertex indices of all cells).
     static void
-      distribute_cells(const MPI_Comm& mpi_comm,
+      distribute_cells(const MPI_Comm mpi_comm,
                        const LocalMeshData& data,
                        const std::vector<std::size_t>& cell_partition,
                        std::vector<std::size_t>& cell_local_to_global_indices,
@@ -101,7 +101,7 @@ namespace dolfin
 
     // Distribute vertices
     static void
-      distribute_vertices(const MPI_Comm& mpi_comm,
+      distribute_vertices(const MPI_Comm mpi_comm,
                           const LocalMeshData& data,
             const boost::multi_array<std::size_t, 2>& cell_local_vertices,
             std::vector<std::size_t>& vertex_local_to_global_indices,
@@ -150,7 +150,7 @@ namespace dolfin
     MeshValueCollection& mesh_values)
   {
     // Get MPI communicator
-    const MPI_Comm& mpi_comm = mesh.mpi_comm();
+    const MPI_Comm mpi_comm = mesh.mpi_comm();
 
     // Get topological dimensions
     const std::size_t D = mesh.topology().dim();

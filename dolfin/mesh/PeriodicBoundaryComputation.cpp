@@ -75,7 +75,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
                                                       const std::size_t dim)
 {
   // MPI communication
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get geometric and topological dimensions
   const std::size_t gdim = mesh.geometry().dim();

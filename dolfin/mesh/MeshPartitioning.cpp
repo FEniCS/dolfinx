@@ -191,7 +191,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
              mesh_data.num_global_vertices);
 }
 //-----------------------------------------------------------------------------
-void  MeshPartitioning::distribute_cells(const MPI_Comm& mpi_comm,
+void  MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
                                          const LocalMeshData& mesh_data,
                             const std::vector<std::size_t>& cell_partition,
                             std::vector<std::size_t>& global_cell_indices,
@@ -264,7 +264,7 @@ void  MeshPartitioning::distribute_cells(const MPI_Comm& mpi_comm,
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_vertices(const MPI_Comm& mpi_comm,
+void MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
                     const LocalMeshData& mesh_data,
                     const boost::multi_array<std::size_t, 2>& cell_vertices,
                     std::vector<std::size_t>& vertex_indices,

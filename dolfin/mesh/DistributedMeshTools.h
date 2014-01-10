@@ -114,7 +114,7 @@ namespace dolfin
     //  [2]: not owned but shared (will be numbered by another process,
     //       and number communicated to this processes)
     static void compute_entity_ownership(
-      const MPI_Comm& mpi_comm,
+      const MPI_Comm mpi_comm,
       const std::map<std::vector<std::size_t>, unsigned int>& entities,
       const std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local,
       const std::vector<std::size_t>& global_vertex_indices,
@@ -125,7 +125,7 @@ namespace dolfin
     // Build preliminary 'guess' of shared entities. This function does
     // not involve any inter-process communication.
     static void compute_preliminary_entity_ownership(
-      const MPI_Comm& mpi_comm,
+      const MPI_Comm mpi_comm,
       const std::map<std::size_t, std::set<unsigned int> >& shared_vertices,
       const std::map<Entity, unsigned int>& entities,
       std::vector<std::size_t>& owned_entities,
@@ -133,7 +133,7 @@ namespace dolfin
 
     // Communicate with other processes to finalise entity ownership
     static void
-      compute_final_entity_ownership(const MPI_Comm& mpi_comm,
+      compute_final_entity_ownership(const MPI_Comm mpi_comm,
                                      std::vector<std::size_t>& owned_entities,
                                      boost::array<std::map<Entity,
                                      EntityData>, 2>& entity_ownership);
@@ -144,7 +144,7 @@ namespace dolfin
 
     // Compute and return (number of global entities, process offset)
     static std::pair<std::size_t, std::size_t>
-      compute_num_global_entities(const MPI_Comm& mpi_comm,
+      compute_num_global_entities(const MPI_Comm mpi_comm,
                                   std::size_t num_local_entities,
                                   std::size_t num_processes,
                                   std::size_t process_number);

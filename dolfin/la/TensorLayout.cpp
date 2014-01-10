@@ -34,7 +34,7 @@ TensorLayout::TensorLayout(std::size_t pdim, bool sparsity_pattern)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(const MPI_Comm& mpi_comm,
+TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
                            const std::vector<std::size_t>& dims,
                            std::size_t pdim, std::size_t bs,
                            const std::vector<std::pair<std::size_t,
@@ -54,7 +54,7 @@ TensorLayout::TensorLayout(const MPI_Comm& mpi_comm,
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-void TensorLayout::init(const MPI_Comm& mpi_comm,
+void TensorLayout::init(const MPI_Comm mpi_comm,
                         const std::vector<std::size_t>& dims, std::size_t bs,
   const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range)
 {

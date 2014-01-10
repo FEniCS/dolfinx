@@ -140,7 +140,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   bool redistribute)
 {
   // MPI communicator
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   if (MPI::num_processes(mpi_comm) == 1)
   {
