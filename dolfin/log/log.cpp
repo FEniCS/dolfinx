@@ -201,7 +201,6 @@ void dolfin::not_working_in_parallel(std::string what)
 {
   if (MPI::num_processes(MPI_COMM_WORLD) > 1)
   {
-    //MPI::barrier();
     dolfin_error("log.cpp",
                  "perform operation in parallel",
                  "%s is not yet working in parallel.\n"
