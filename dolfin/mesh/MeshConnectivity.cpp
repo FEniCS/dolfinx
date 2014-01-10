@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Mikael Mortensen 2014
+//
 // First added:  2006-05-09
-// Last changed: 2010-11-25
+// Last changed: 2014-01-09
 
 #include <boost/functional/hash.hpp>
 #include <dolfin/log/log.h>
@@ -59,8 +61,8 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
 //-----------------------------------------------------------------------------
 void MeshConnectivity::clear()
 {
-  _connections.clear();
-  index_to_position.clear();
+  std::vector<unsigned int>().swap(_connections);
+  std::vector<unsigned int>().swap(index_to_position);  
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(std::size_t num_entities, std::size_t num_connections)
