@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "2")
+set(DOLFIN_VERSION_MINOR "3")
 set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
@@ -253,10 +253,10 @@ endif()
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 2.2.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 2.3.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 2.2.0.\n"
+    "compatible with requested version 2.3.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -436,6 +436,8 @@ if (DOLFIN_ENABLE_TRILINOS)
         # Loop over libs and get full path
         foreach (lib ${${package}_LIBRARIES})
           find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${${package}_LIBRARY_DIRS} NO_DEFAULT_PATH)
+          # Also search the default paths
+          find_library(TRILINOS_LIB_${lib} ${lib})
           if (TRILINOS_LIB_${lib})
             list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
           endif()
@@ -483,7 +485,7 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR})
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.2")
@@ -491,6 +493,10 @@ if (DOLFIN_ENABLE_VTK)
       message(WARNING "Unable to find VTK (>= 5.2)")
     else()
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
+      if ("${VTK_VERSION}" VERSION_EQUAL "6.0" OR "${VTK_VERSION}" VERSION_GREATER "6.0")
+	message(STATUS "VTK 6.0 and above is not yet supported. VTK disabled.")
+        set(VTK_FOUND FALSE)
+     endif()
     endif()
   endif()
 endif()

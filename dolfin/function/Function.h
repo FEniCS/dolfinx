@@ -352,6 +352,7 @@ namespace dolfin
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
+                          const double* vertex_coordinates,
                           const ufc::cell& ufc_cell) const;
 
     /// Compute values at all mesh vertices
@@ -378,6 +379,7 @@ namespace dolfin
 
     // Friends
     friend class FunctionSpace;
+    friend class FunctionAssigner;
 
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<std::size_t, Function> sub_functions;

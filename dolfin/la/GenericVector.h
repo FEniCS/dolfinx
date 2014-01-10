@@ -247,12 +247,7 @@ namespace dolfin
     }
 
     /// Update ghost values
-    virtual void update_ghost_values()
-    {
-      dolfin_error("GenericVector.h",
-                   "update ghost values",
-                   "Not implemented by current linear algebra backend");
-    }
+    virtual void update_ghost_values() {}
 
     //--- Convenience functions ---
 

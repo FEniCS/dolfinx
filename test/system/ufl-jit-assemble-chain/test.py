@@ -25,7 +25,7 @@ tests = ["assembly_derivatives.py", "form_operations.py"]
 
 failed = []
 for test in tests:
-    command = "python %s" % test
+    command = "%s %s" % (sys.executable,test)
     print
     print "Running tests: %s" % test
     print "----------------------------------------------------------------------"

@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2013-09-12
+// Last changed: 2013-12-09
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -699,7 +699,7 @@ bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
   const double dx = std::abs(v1.x());
   const double dy = std::abs(v1.y());
   const double dz = std::abs(v1.z());
-  const double eps = DOLFIN_EPS_LARGE*std::max(dx, std::max(dy, dz));
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*std::max(dx, std::max(dy, dz)));
 
   // Check if point is inside cell
   return x1 >= -eps && x2 >= -eps && x3 >= -eps && x1 + x2 + x3 <= 1.0 + eps;

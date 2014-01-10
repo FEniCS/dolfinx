@@ -1,3 +1,7 @@
+1.3.0 [2014-01-07]
+ - Feature: Enable assignment of sparse MeshValueCollections to MeshFunctions
+ - Feature: Add free function assign that is used for sub function assignment
+ - Feature: Add class FunctionAssigner that cache dofs for sub function assignment
  - Fix runtime dependency on checking swig version
  - Deprecate DofMap member methods vertex_to_dof_map and dof_to_vertex_map
  - Add free functions: vertex_to_dof_map and dof_to_vertex_map, and correct the ordering of the map.
@@ -34,7 +38,7 @@
  - Feature: Add support for passing a Constant as default value to a CompiledExpression
  - Fix bug in dimension check for 1-D ALE
  - Remove some redundant graph code
- - Improvements in speed of parallel dual grapj builder
+ - Improvements in speed of parallel dual graph builder
  - Fix bug in XMDF output for cell-based Functions
  - Fixes for latest version of clang compiler
  - LocalSolver class added to efficiently solve cell-wise problems

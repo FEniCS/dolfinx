@@ -62,32 +62,59 @@ find_path(CHOLMOD_INCLUDE_DIRS cholmod.h
 # Check for CHOLMOD library
 find_library(CHOLMOD_LIBRARY cholmod
   HINTS ${CHOLMOD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The CHOLMOD library"
+  )
+find_library(CHOLMOD_LIBRARY cholmod
   DOC "The CHOLMOD library"
   )
 
 # Check for CAMD library
 find_library(CAMD_LIBRARY camd
   HINTS ${CHOLMOD_DIR}/lib ${CAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CAMD_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The CAMD library"
+  )
+find_library(CAMD_LIBRARY camd
   DOC "The CAMD library"
   )
 
 # Check for COLAMD library
 find_library(COLAMD_LIBRARY colamd
   HINTS ${CHOLMOD_DIR}/lib ${COLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{COLAMD_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The COLAMD library"
+  )
+find_library(COLAMD_LIBRARY colamd
   DOC "The COLAMD library"
   )
 
 # Check for CCOLAMD library
 find_library(CCOLAMD_LIBRARY ccolamd
   HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The CCOLAMD library"
+  )
+find_library(CCOLAMD_LIBRARY ccolamd
   DOC "The CCOLAMD library"
   )
 
 # Check for SUITESPARSECONFIG library
 find_library(SUITESPARSE_LIBRARY suitesparseconfig
   HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
+  NO_DEFAULT_PATH
   DOC "The SUITESPARSECONFIG library"
   )
+find_library(SUITESPARSE_LIBRARY suitesparseconfig
+  DOC "The SUITESPARSECONFIG library"
+  )
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND NOT APPLE)
+  # Check for rt library
+  find_library(RT_LIBRARY rt
+    DOC "The RT library"
+    )
+endif()
 
 # Collect libraries (order is important)
 if (AMD_FOUND)
@@ -104,6 +131,9 @@ if (CCOLAMD_LIBRARY)
 endif()
 if (SUITESPARSE_LIBRARY)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${SUITESPARSE_LIBRARY})
+endif()
+if (RT_LIBRARY)
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${RT_LIBRARY})
 endif()
 
 if (PARMETIS_FOUND)

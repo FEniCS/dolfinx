@@ -42,7 +42,7 @@
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
 %rename(_function_space) dolfin::Function::function_space;
-%rename(_sub) dolfin::Function::operator[];
+%rename(sub) dolfin::Function::operator[];
 %rename(_assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;
 
@@ -101,7 +101,7 @@
 %feature("nodirector") dolfin::Expression::compute_vertex_values;
 
 //-----------------------------------------------------------------------------
-// Macro for defining an in typemap for a const std::vector<std::pair<double, TYPE*> >& 
+// Macro for defining an in typemap for a const std::vector<std::pair<double, TYPE*> >&
 // The typemaps takes a list of tuples of floats and TYPE
 //
 // TYPE       : The Pointer type
@@ -117,8 +117,8 @@
 // Run the macros for the combination of const and no const of
 // {const} std::vector<std::pair<double, {const} dolfin::TYPE *> >
 //-----------------------------------------------------------------------------
-CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,const)	   
-CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)	   
+CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,const)
+CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
 
 %enddef
 
@@ -145,11 +145,11 @@ CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
    SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared,
    dolfin::TYPE* arg)
 {
-  
+
   // CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE, CONST)
   if (!PyList_Check($input))
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
-  
+
   int size = PyList_Size($input);
   int res = 0;
   PyObject * py_item = 0;
@@ -161,7 +161,7 @@ CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
   {
     // Get python object
     py_item = PyList_GetItem($input, i);
-    
+
     // Check that it is a tuple with size 2 and first item is a float
     if (!PyTuple_Check(py_item) || PyTuple_Size(py_item) != 2 || \
 	!PyFloat_Check(PyTuple_GetItem(py_item, 0)))
@@ -169,11 +169,11 @@ CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
 
     // Get double value
     value = PyFloat_AsDouble(PyTuple_GetItem(py_item, 0));
-    
+
     // Try convert the second tuple argument
     res = SWIG_ConvertPtr(PyTuple_GetItem(py_item, 1), \
 			  &itemp, $descriptor(dolfin::TYPE *), 0);
-    
+
     if (SWIG_IsOK(res))
     {
       // We have the pointer and the value, push them back!
@@ -193,7 +193,7 @@ CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
           tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
 	  tmp_vec.push_back(std::make_pair(value, tempshared.get()));
         }
-	
+
         // If we need to release memory
         if (newmem & SWIG_CAST_NEW_MEMORY)
           delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);

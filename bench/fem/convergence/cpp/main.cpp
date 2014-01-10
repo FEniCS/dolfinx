@@ -19,16 +19,16 @@
 // Last changed: 2011-09-21
 
 #include <dolfin.h>
-#include "forms/Poisson2D_1.h"
-#include "forms/Poisson2D_2.h"
-#include "forms/Poisson2D_3.h"
-#include "forms/Poisson2D_4.h"
-#include "forms/Poisson2D_5.h"
-#include "forms/Poisson3D_1.h"
-#include "forms/Poisson3D_2.h"
-#include "forms/Poisson3D_3.h"
-#include "forms/Poisson3D_4.h"
-#include "forms/Poisson3D_5.h"
+#include "Poisson2D_1.h"
+#include "Poisson2D_2.h"
+#include "Poisson2D_3.h"
+#include "Poisson2D_4.h"
+#include "Poisson2D_5.h"
+#include "Poisson3D_1.h"
+#include "Poisson3D_2.h"
+#include "Poisson3D_3.h"
+#include "Poisson3D_4.h"
+#include "Poisson3D_5.h"
 
 using namespace dolfin;
 
@@ -36,9 +36,7 @@ using namespace dolfin;
 class DirichletBoundary : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return on_boundary;
-  }
+  { return on_boundary; }
 };
 
 // Right-hand side, 2D

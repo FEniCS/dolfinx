@@ -16,13 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-10-25
+// Last changed: 2013-11-30
 
 #ifndef __BOUNDING_BOX_TREE_2D_H
 #define __BOUNDING_BOX_TREE_2D_H
-
-
-#include <boost/range/algorithm/nth_element.hpp>
 
 #include <algorithm>
 #include <vector>

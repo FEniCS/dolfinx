@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Benjamin Kehlet, 2012
+// Modified by Benjamin Kehlet, 2012-2013
 //
 // First added:  2012-04-11
-// Last changed: 2012-11-05
+// Last changed: 2013-06-24
 
 #ifndef __CSG_PRIMITIVE_H
 #define __CSG_PRIMITIVE_H
@@ -34,6 +34,7 @@ namespace dolfin
   {
   public:
     virtual bool is_operator() const { return false; }
+    virtual std::size_t dim() const = 0;
   };
 
 }
