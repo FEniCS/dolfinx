@@ -720,9 +720,49 @@ assembler");
       // Add entries to global tensor
       for (std::size_t form = 0; form < 2; ++form)
       {
-        if (tensors[form])
+        bool add_macro_element = true;
+        if (form==0) // bilinear form
+          add_macro_element = ufc[0]->form.has_interior_facet_integrals();
+
+        if (tensors[form] && add_macro_element)
+        {
           tensors[form]->add(ufc[form]->macro_A.data(), macro_dofs[form]);
-      }
+        }
+        else if (tensors[form] && !add_macro_element) // only true for the bilinear form
+        {
+          // the sparsity pattern may not support the macro element
+          // so instead extract back out the diagonal cell blocks and add them individually
+          for (std::size_t c = 0; c < num_cells; ++c)
+          {
+            if (local_facet[c] == 0)
+            {
+              // Check if cell tensor was assembled - not necessary but saves inserting 0s
+              bool cell_tensor_required
+                = cell_matrix_required(tensors[form],
+                                       cell_integrals[form],
+                                       boundary_values,
+                                       *cell_dofs[form][c][1]);
+
+              // Compute cell tensor, if required
+              if (cell_tensor_required)
+              {
+                data.zero_cell();
+                const std::size_t nn = cell_dofs[form][c][0]->size();
+                const std::size_t mm = cell_dofs[form][c][1]->size();
+                for (std::size_t i = 0; i < mm; i++)
+                {
+                  for (std::size_t j = 0; j < nn; j++)
+                  {
+                    data.Ae[form][i*nn + j] 
+                       = ufc[form]->macro_A[2*nn*mm*c + num_cells*i*nn + nn*c +j];
+                  }
+                }
+                tensors[form]->add(data.Ae[form].data(), cell_dofs[form][c]);
+              }
+            }
+          } // End loop over cells sharing facet (c)
+        }
+      } // End loop over form (form)
     }
     else // Exterior facet
     {
