@@ -94,16 +94,16 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   // Initialize local array of entities
   const std::size_t m = cell_type.num_entities(dim);
   const std::size_t n = cell_type.num_vertices(dim);
-  std::vector<std::vector<std::size_t> > entities(m, std::vector<std::size_t>(n, 0));
+  std::vector<std::vector<unsigned int> > entities(m, std::vector<unsigned int>(n, 0));
 
   // List of entity e indices connected to cell
-  std::vector<std::vector<std::size_t> > connectivity_ce(mesh.num_cells());
+  std::vector<std::vector<unsigned int> > connectivity_ce(mesh.num_cells());
 
   // List of vertces indices connected to entity e
-  std::vector<std::vector<std::size_t> > connectivity_ev;
+  std::vector<std::vector<unsigned int> > connectivity_ev;
 
   // List entities e (std::size_t index, std::vector<std::size_t> vertex_list) connected to each cell
-  std::vector<std::vector<std::pair<std::size_t, std::vector<std::size_t> > > > ce_list(mesh.num_cells());
+  std::vector<std::vector<std::pair<unsigned int, std::vector<unsigned int> > > > ce_list(mesh.num_cells());
 
   std::size_t current_entity = 0;
   std::size_t max_ce_connections = 1;
@@ -124,7 +124,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     cell_type.create_entities(entities, dim, vertices);
 
     // Iterate over the given list of entities
-    std::vector<std::vector<std::size_t> >::iterator entity;
+    std::vector<std::vector<unsigned int> >::iterator entity;
     for (entity = entities.begin(); entity != entities.end(); ++entity)
     {
       // Sort entities (so that we can use equality testing later)
@@ -140,9 +140,9 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
           continue;
 
         // Entities connected to c0
-        const std::vector<std::pair<std::size_t, std::vector<std::size_t> > >& c0_list = ce_list[c0_index];
+        const std::vector<std::pair<unsigned int, std::vector<unsigned int> > >& c0_list = ce_list[c0_index];
 
-        std::vector<std::pair<std::size_t, std::vector<std::size_t> > >::const_iterator other_entity;
+        std::vector<std::pair<unsigned int, std::vector<unsigned int> > >::const_iterator other_entity;
         for (other_entity = c0_list.begin(); other_entity != c0_list.end(); ++other_entity)
         {
           // Note: Comparison relies on container being ordered
