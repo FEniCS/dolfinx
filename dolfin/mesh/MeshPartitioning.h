@@ -144,6 +144,11 @@ namespace dolfin
     // Get topological dimensions
     const std::size_t D = mesh.topology().dim();
     const std::size_t dim = mesh_values.dim();
+    mesh.init(dim);
+
+    // This is required for old-style mesh data that uses (cell index,
+    // local entity index)
+    mesh.init(dim, D);
 
     // Clear MeshValueCollection values
     mesh_values.clear();
@@ -247,7 +252,6 @@ namespace dolfin
             {
               const std::size_t proc = process_data->first;
               const std::size_t local_cell_entity = process_data->second;
-
               send_data0[proc].push_back(local_cell_entity);
               send_data0[proc].push_back(local_entity_index);
               send_data1[proc].push_back(domain_value);
