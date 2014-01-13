@@ -33,6 +33,8 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <petscmat.h>
+#include <petscsys.h>
+
 #include "GenericMatrix.h"
 #include "PETScBaseMatrix.h"
 

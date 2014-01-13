@@ -34,6 +34,7 @@
 #include <utility>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <petscsys.h>
 #include <petscvec.h>
 
 #include <dolfin/log/dolfin_log.h>
