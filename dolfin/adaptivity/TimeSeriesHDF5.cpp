@@ -42,7 +42,7 @@ using namespace dolfin;
 
 // Template function for storing objects
 template <typename T>
-void TimeSeriesHDF5::store_object(const T& object, double t,
+void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
                                   std::vector<double>& times,
                                   std::string series_name,
                                   std::string group_name)
@@ -56,7 +56,7 @@ void TimeSeriesHDF5::store_object(const T& object, double t,
     mode = "a";
 
   // Get file handle for low level operations
-  HDF5File hdf5_file(series_name, mode);
+  HDF5File hdf5_file(comm, series_name, mode);
   const hid_t fid = hdf5_file.hdf5_file_id;
 
   // Find existing datasets (should be equal to number of times)
@@ -73,7 +73,7 @@ void TimeSeriesHDF5::store_object(const T& object, double t,
 
   // Check that time values are strictly increasing
   const std::size_t n = times.size();
-  if (n >= 2 and (times[n - 1] - times[n - 2])*(t - times[n - 1]) < 0.0)
+  if (n >= 2 && (times[n - 1] - times[n - 2])*(t - times[n - 1]) < 0.0)
   {
     dolfin_error("TimeSeries.cpp",
                  "store object to time series",
@@ -97,7 +97,8 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
   if (File::exists(_name))
   {
     // Read from file
-    const hid_t hdf5_file_id = HDF5Interface::open_file(mpi_comm, _name, "r",
+    const hid_t hdf5_file_id
+      = HDF5Interface::open_file(mpi_comm, _name, "r", true);
     if (HDF5Interface::has_group(hdf5_file_id, "/Vector"))
     {
       const unsigned int nvecs
@@ -169,7 +170,6 @@ void TimeSeriesHDF5::store(const GenericVector& vector, double t)
 
   // Store object
   store_object(vector.mpi_comm(), vector, t, _vector_times, _name, "/Vector");
-
 }
 //-----------------------------------------------------------------------------
 void TimeSeriesHDF5::store(const Mesh& mesh, double t)
@@ -311,53 +311,6 @@ std::string TimeSeriesHDF5::str(bool verbose) const
   }
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
-                                  std::vector<double>& times,
-                                  std::string series_name,
-                                  std::string group_name)
-{
-  // Write object
-
-  // Check for pre-existing file to append to
-  std::string mode = "w";
-  if(File::exists(series_name) &&
-     (_vector_times.size() > 0 || _mesh_times.size() > 0))
-    mode = "a";
-
-  // Get file handle for low level operations
-  HDF5File hdf5_file(comm, series_name, mode);
-  const hid_t fid = hdf5_file.hdf5_file_id;
-
-  // Find existing datasets (should be equal to number of times)
-  std::size_t nobjs = 0;
-  if(HDF5Interface::has_group(fid, group_name))
-    nobjs = HDF5Interface::num_datasets_in_group(fid, group_name);
-
-  dolfin_assert(nobjs == times.size());
-
-  // Write new dataset (mesh or vector)
-  std::string dataset_name = group_name + "/"
-    + boost::lexical_cast<std::string>(nobjs);
-  hdf5_file.write(object, dataset_name);
-
-  // Check that time values are strictly increasing
-  const std::size_t n = times.size();
-  if (n >= 2 and (times[n - 1] - times[n - 2])*(t - times[n - 1]) < 0.0)
-  {
-    dolfin_error("TimeSeries.cpp",
-                 "store object to time series",
-                 "Sample points must be strictly monotone (t_0 = %g, t_1 = %g, t_2 = %g)",
-                 times[n - 2], times[n - 1], t);
-  }
-
-  // Add time
-  times.push_back(t);
-
-  // Store times
-  HDF5Interface::add_attribute(fid, group_name, "times", times);
 }
 //-----------------------------------------------------------------------------
 bool TimeSeriesHDF5::monotone(const std::vector<double>& times)
