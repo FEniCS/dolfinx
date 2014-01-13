@@ -452,7 +452,7 @@ const PETScVector& PETScVector::operator= (double a)
 void PETScVector::update_ghost_values()
 {
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-  if (dolfin::MPI::num_processes() > 1)
+  if (dolfin::MPI::num_processes(mpi_comm()) > 1)
   #endif
   {
     PetscErrorCode ierr;
