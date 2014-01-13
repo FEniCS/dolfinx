@@ -183,10 +183,12 @@ void explore_subdomain(CDT &ct,
 // Set the member in_domain and counter for all faces in the cdt
 void explore_subdomains(CDT& cdt,
                         const CSGCGALDomain2D& total_domain,
-                        const std::vector<std::pair<std::size_t, CSGCGALDomain2D> > &subdomain_geometries)
+                        const std::vector<std::pair<std::size_t,
+                        CSGCGALDomain2D> > &subdomain_geometries)
 {
   // Set counter to -1 for all faces
-  for (CDT::Finite_faces_iterator it = cdt.finite_faces_begin(); it != cdt.finite_faces_end(); ++it)
+  for (CDT::Finite_faces_iterator it = cdt.finite_faces_begin();
+       it != cdt.finite_faces_end(); ++it)
   {
     it->set_counter(-1);
     it->set_in_domain(false);
@@ -232,8 +234,8 @@ void explore_subdomains(CDT& cdt,
   }
 }
 //-----------------------------------------------------------------------------
-  // Insert edges from polygon as constraints in the triangulation
-void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry, double threshold)
+void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry,
+                   double threshold)
 {
 
   // Insert the outer boundaries of the domain
@@ -304,7 +306,8 @@ double shortest_constrained_edge(const CDT &cdt)
     CDT::Point p1 = f->vertex( (i+1)%3 )->point();
     CDT::Point p2 = f->vertex( (i+2)%3 )->point();
 
-    min_length = std::min(CGAL::to_double((p1-p2).squared_length()), min_length);
+    min_length = std::min(CGAL::to_double((p1-p2).squared_length()),
+                          min_length);
   }
 
   return min_length;
@@ -334,7 +337,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   if (!geometry.subdomains.empty())
     log(TRACE, "Processing subdomains");
 
-  for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend(); ++it)
+  for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend();
+       ++it)
   {
     const std::size_t current_index = it->first;
     boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
@@ -456,7 +460,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   MeshDomains &domain_markers = mesh.domains();
   std::size_t cell_index = 0;
   const bool mark_cells = geometry.has_subdomains();
-  for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
+  for (cgal_cell = cdt.finite_faces_begin();
+       cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
     // Add cell if it is in the domain
     if (cgal_cell->is_in_domain())
@@ -467,8 +472,10 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
                            cgal_cell->vertex(2)->info());
 
       if (mark_cells)
-        domain_markers.set_marker(std::make_pair(cell_index, cgal_cell->counter()), 2);
-
+      {
+        domain_markers.set_marker(std::make_pair(cell_index,
+                                                 cgal_cell->counter()), 2);
+      }
       ++cell_index;
     }
   }
@@ -482,6 +489,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 namespace dolfin
 {
   CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
+    : geometry(geometry)
   {
     dolfin_error("CSGCGALMeshGenerator2D.cpp",
                  "Create mesh generator",

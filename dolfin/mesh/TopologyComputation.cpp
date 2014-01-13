@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg
+// Copyright (C) 2006-2014 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,14 +18,16 @@
 // Modified by Garth N. Wells 2012.
 //
 // First added:  2006-06-02
-// Last changed: 2012-02-14
+// Last changed: 2014-01-12
 
 #include <algorithm>
 #include <vector>
+#include <boost/unordered_map.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
+#include "Cell.h"
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
@@ -38,21 +40,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
-  // Generating an entity of topological dimension dim is equivalent
-  // to generating the connectivity dim - 0 (connections to vertices)
-  // and the connectivity mesh.topology().dim() - dim (connections from cells).
-  //
-  // We generate entities by iterating over all cells and generating a
-  // new entity only on its first occurence. Entities also contained
-  // in a previously visited cell are not generated. The new entities
-  // are computed in three steps:
-  //
-  //   1. Iterate over cells and count new entities
-  //
-  //   2. Allocate memory / prepare data structures
-  //
-  //   3. Iterate over cells and add new entities
-
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
   MeshConnectivity& ce = topology(topology.dim(), dim);
@@ -79,13 +66,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
                  "Connectivity for topological dimension %d exists but entities are missing", dim);
   }
 
-  //info("Computing mesh entities of topological dimension %d.", dim);
-
-  // Compute connectivity dim - dim if not already computed
-  compute_connectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
 
   // Start timer
-  //info("Creating mesh entities of dimension %d.", dim);
   Timer timer("compute entities dim = " + to_string(dim));
 
   // Get cell type
@@ -94,86 +76,62 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   // Initialize local array of entities
   const std::size_t m = cell_type.num_entities(dim);
   const std::size_t n = cell_type.num_vertices(dim);
-  std::vector<std::vector<std::size_t> > entities(m, std::vector<std::size_t>(n, 0));
+  std::vector<std::vector<unsigned int> > e_vertices(m, std::vector<unsigned int>(n, 0));
 
   // List of entity e indices connected to cell
-  std::vector<std::vector<std::size_t> > connectivity_ce(mesh.num_cells());
+  std::vector<std::vector<unsigned int> > connectivity_ce(mesh.num_cells());
 
   // List of vertces indices connected to entity e
-  std::vector<std::vector<std::size_t> > connectivity_ev;
-
-  // List entities e (std::size_t index, std::vector<std::size_t> vertex_list) connected to each cell
-  std::vector<std::vector<std::pair<std::size_t, std::vector<std::size_t> > > > ce_list(mesh.num_cells());
+  std::vector<std::vector<unsigned int> > connectivity_ev;
 
   std::size_t current_entity = 0;
   std::size_t max_ce_connections = 1;
-  for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
+  boost::unordered_map<std::vector<unsigned int>, unsigned int> evertices_to_index;
+  evertices_to_index.reserve(mesh.num_cells()*mesh.type().num_entities(dim));
+  for (CellIterator c(mesh); !c.end(); ++c)
   {
     // Cell index
-    const std::size_t c_index = c->index();
+    const std::size_t cell_index = c->index();
 
     // Reserve space to reduce dynamic allocations
-    connectivity_ce[c_index].reserve(max_ce_connections);
-    ce_list[c_index].reserve(max_ce_connections);
+    connectivity_ce[cell_index].reserve(max_ce_connections);
 
     // Get vertices from cell
     const unsigned int* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     // Create entities
-    cell_type.create_entities(entities, dim, vertices);
+    cell_type.create_entities(e_vertices, dim, vertices);
 
     // Iterate over the given list of entities
-    std::vector<std::vector<std::size_t> >::iterator entity;
-    for (entity = entities.begin(); entity != entities.end(); ++entity)
+    std::vector<std::vector<unsigned int> >::iterator entity;
+    for (entity = e_vertices.begin(); entity != e_vertices.end(); ++entity)
     {
-      // Sort entities (so that we can use equality testing later)
+      // Sort entities (to use as map key)
       std::sort(entity->begin(), entity->end());
 
-      // Iterate over connected cells and look for entity
-      for (MeshEntityIterator c0(*c, mesh.topology().dim()); !c0.end(); ++c0)
+      // Insert into map
+      std::pair<boost::unordered_map<std::vector<unsigned int>, unsigned>::iterator, bool>
+        it = evertices_to_index.insert(std::make_pair(*entity, current_entity));
+
+      // Entity index
+      std::size_t e_index = it.first->second;
+
+      // Add entity index to cell - e connectivity
+      connectivity_ce[cell_index].push_back(e_index);
+
+      // If new key was inserted, increment entity counter
+      if (it.second)
       {
-        const std::size_t c0_index = c0->index();
+        // Add list of new entity vertices
+        connectivity_ev.push_back(*entity);
 
-        // Check only previously visited cells
-        if (c0_index >= c_index)
-          continue;
+        // Update max vector size (used to reserve space for performance);
+        max_ce_connections = std::max(max_ce_connections, connectivity_ce[cell_index].size());
 
-        // Entities connected to c0
-        const std::vector<std::pair<std::size_t, std::vector<std::size_t> > >& c0_list = ce_list[c0_index];
-
-        std::vector<std::pair<std::size_t, std::vector<std::size_t> > >::const_iterator other_entity;
-        for (other_entity = c0_list.begin(); other_entity != c0_list.end(); ++other_entity)
-        {
-          // Note: Comparison relies on container being ordered
-          if (other_entity->second == *entity)
-          {
-            // Entity already exists, so pick the index
-            connectivity_ce[c_index].push_back(other_entity->first);
-
-            goto found;
-          }
-        }
+        // Increase counter
+        current_entity++;
       }
-
-      // Add (index, list of vertices) pair to ce_list for cell
-      ce_list[c_index].push_back(std::make_pair(current_entity, *entity));
-
-      // Add new entity index to cell - e connectivity
-      connectivity_ce[c_index].push_back(current_entity);
-
-      // Add list of new entity vertices
-      connectivity_ev.push_back(*entity);
-
-      // Update max vector size (used to reserve space for performance);
-      max_ce_connections = std::max(max_ce_connections, connectivity_ce[c_index].size());
-
-      // Increase counter
-      current_entity++;
-
-      // Entity found, don't need to create
-      found:
-      ;
     }
   }
 
@@ -184,7 +142,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   ce.set(connectivity_ce);
   ev.set(connectivity_ev);
 
-  return connectivity_ev.size();
+  return current_entity;
 }
 //-----------------------------------------------------------------------------
 void TopologyComputation::compute_connectivity(Mesh& mesh,
@@ -213,8 +171,6 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   if (!connectivity.empty())
     return;
 
-  //info("Computing mesh connectivity %d - %d.", d0, d1);
-
   // Compute entities if they don't exist
   if (topology.size(d0) == 0)
     compute_entities(mesh, d0);
@@ -230,17 +186,16 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
     return;
 
   // Start timer
-  //info("Computing mesh connectivity %d - %d.", d0, d1);
   Timer timer("compute connectivity " + to_string(d0) + " - " + to_string(d1));
 
   // Decide how to compute the connectivity
   if (d0 == 0 && d1 == 0)
   {
     std::vector<std::vector<std::size_t> >
-      connectivity00(topology.size(0), std::vector<std::size_t>(1));
-    for (MeshEntityIterator v(mesh, 0); !v.end(); ++v)
+      connectivity00(topology.size(d0), std::vector<std::size_t>(1));
+    for (MeshEntityIterator v(mesh, d0); !v.end(); ++v)
       connectivity00[v->index()][0] = v->index();
-    topology(0, 0).set(connectivity00);
+    topology(d0, d0).set(connectivity00);
   }
   else if (d0 < d1)
   {
@@ -264,8 +219,9 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
     compute_from_intersection(mesh, d0, d1, d);
   }
 }
-//----------------------------------------------------------------------------
-void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0, std::size_t d1)
+//--------------------------------------------------------------------------
+void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
+                                                 std::size_t d1)
 {
   // The transpose is computed in three steps:
   //
@@ -307,7 +263,9 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0, std
 }
 //----------------------------------------------------------------------------
 void TopologyComputation::compute_from_intersection(Mesh& mesh,
-                                                    std::size_t d0, std::size_t d1, std::size_t d)
+                                                    std::size_t d0,
+                                                    std::size_t d1,
+                                                    std::size_t d)
 {
   log(TRACE, "Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
       d0, d1, d0, d, d1);
@@ -336,13 +294,13 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
     // Reserve space
     entities.reserve(max_size);
 
-    // Sorted list of e0 vertex indices (necessary to test for presence
-    // of one list in another)
+    // Sorted list of e0 vertex indices (necessary to test for
+    // presence of one list in another)
     std::vector<std::size_t> _e0(e0->entities(0), e0->entities(0) + e0->num_entities(0));
     std::sort(_e0.begin(), _e0.end());
 
-    // Initialise e1_visited to false for all neighbours of e0. The loop
-    // structure mirrors the one below.
+    // Initialise e1_visited to false for all neighbours of e0. The
+    // loop structure mirrors the one below.
     for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
       for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
         e1_visited[e1->index()] = false;
@@ -360,7 +318,8 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
 
         if (d0 == d1)
         {
-          // An entity is not a neighbor to itself (duplicate index entries removed at end)
+          // An entity is not a neighbor to itself (duplicate index
+          // entries removed at end)
           if (e0->index() != e1->index())
             entities.push_back(e1->index());
         }
