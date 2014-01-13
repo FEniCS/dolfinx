@@ -482,7 +482,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 namespace dolfin
 {
   CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
-  //: geometry(geometry)
+    : geometry(geometry)
   {
     dolfin_error("CSGCGALMeshGenerator2D.cpp",
                  "Create mesh generator",
