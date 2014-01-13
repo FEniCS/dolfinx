@@ -63,7 +63,7 @@ class DirichletBCTest(unittest.TestCase):
         bc1.apply(A1)
 
         self.assertAlmostEqual(A1.norm("frobenius"), A0.norm("frobenius"))
-        
+
     def test_get_values(self):
         mesh = UnitSquareMesh(8, 8)
         dofs = numpy.zeros(3, dtype="I")
@@ -92,14 +92,11 @@ class DirichletBCTest(unittest.TestCase):
         bc1 = DirichletBC(V, u1, 1)
         bc2 = DirichletBC(V, u2, 2)
         bc3 = DirichletBC(V, u3, 3)
-
         bcs = [bc1, bc2, bc3]
 
         L = f*v*dx
-
         b = assemble(L)
         [bc.apply(b) for bc in bcs]
-
         self.assertAlmostEqual(norm(b), 16.55294535724685)
 
     def test_bc_for_piola_on_manifolds(self):
