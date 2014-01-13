@@ -25,9 +25,11 @@
 
 #include <vector>
 #include <string>
-#include <hdf5.h>
 
+// Note: dolfin/common/MPI.h is included before hdf5.h to avoid the
+// MPICH_IGNORE_CXX_SEEK issue
 #include <dolfin/common/MPI.h>
+#include <hdf5.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin

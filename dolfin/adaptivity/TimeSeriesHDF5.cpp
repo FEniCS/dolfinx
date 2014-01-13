@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-10
-// Last changed: 2013-05-09
+// Last changed: 2014-01-13
 
 #ifdef HAS_HDF5
 
@@ -50,37 +50,55 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
   if (File::exists(_name))
   {
     // Read from file
-    const hid_t hdf5_file_id = HDF5Interface::open_file(mpi_comm, _name, "r",
-                                                        true);
-
-    if(HDF5Interface::has_group(hdf5_file_id, "/Vector") &&
-       HDF5Interface::has_attribute(hdf5_file_id, "/Vector", "times"))
-      {
-        HDF5Interface::get_attribute(hdf5_file_id, "/Vector", "times",
-                                     _vector_times);
-        log(PROGRESS, "Found %d vector sample(s) in time series.",
-            _vector_times.size());
-        if (!monotone(_vector_times))
-        {
-          dolfin_error("TimeSeriesHDF5.cpp",
-                       "read time series from file",
-                       "Sample points for vector data are not strictly monotone in series \"%s\"",
-                       name.c_str());
-        }
-      }
-
-    if(HDF5Interface::has_group(hdf5_file_id, "/Mesh") &&
-       HDF5Interface::has_attribute(hdf5_file_id, "/Mesh", "times"))
+      const hid_t hdf5_file_id = HDF5Interface::open_file(mpi_comm, 
+                                                          _name, "r", true);
+    
+    if (HDF5Interface::has_group(hdf5_file_id, "/Vector"))
     {
-      HDF5Interface::get_attribute(hdf5_file_id, "/Mesh", "times",
-                                   _mesh_times);
+      const unsigned int nvecs 
+        = HDF5Interface::num_datasets_in_group(hdf5_file_id, "/Vector");
+      _vector_times.clear();
+      for (unsigned int i = 0; i != nvecs; ++i)
+      {
+        const std::string dataset_name 
+          = "/Vector/" + boost::lexical_cast<std::string>(i);
+        double t;
+        HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "time", t);
+        _vector_times.push_back(t);
+      }
+      
+      log(PROGRESS, "Found %d vector sample(s) in time series.",
+          _vector_times.size());
+      if (!monotone(_vector_times))
+      {
+        dolfin_error("TimeSeriesHDF5.cpp",
+       "read time series from file",
+       "Sample points for vector data are not strictly monotone in series \"%s\"",
+                     name.c_str());
+      }
+    }
+    
+    if (HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
+    {
+      const unsigned int nmesh
+        = HDF5Interface::num_datasets_in_group(hdf5_file_id, "/Mesh");
+      _mesh_times.clear();
+      for (unsigned int i = 0; i != nmesh; ++i)
+      {
+        const std::string dataset_name 
+          = "/Mesh/" + boost::lexical_cast<std::string>(i);
+        double t;
+        HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "time", t);
+        _mesh_times.push_back(t);
+      }
+      
       log(PROGRESS, "Found %d mesh sample(s) in time series.",
           _mesh_times.size());
       if (!monotone(_mesh_times))
       {
         dolfin_error("TimeSeries.cpp",
-                     "read time series from file",
-                     "Sample points for mesh data are not strictly monotone in series \"%s\"",
+       "read time series from file",
+       "Sample points for mesh data are not strictly monotone in series \"%s\"",
                      name.c_str());
       }
     }
@@ -251,7 +269,8 @@ std::string TimeSeriesHDF5::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
+void TimeSeriesHDF5::store_object(MPI_Comm mpi_comm, 
+                                  const T& object, double t,
                                   std::vector<double>& times,
                                   std::string series_name,
                                   std::string group_name)
@@ -265,7 +284,7 @@ void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
     mode = "a";
 
   // Get file handle for low level operations
-  HDF5File hdf5_file(comm, series_name, mode);
+  HDF5File hdf5_file(mpi_comm, series_name, mode);
   const hid_t fid = hdf5_file.hdf5_file_id;
 
   // Find existing datasets (should be equal to number of times)
@@ -293,8 +312,8 @@ void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
   // Add time
   times.push_back(t);
 
-  // Store times
-  HDF5Interface::add_attribute(fid, group_name, "times", times);
+  // Store time
+  HDF5Interface::add_attribute(fid, dataset_name, "time", t);
 }
 //-----------------------------------------------------------------------------
 bool TimeSeriesHDF5::monotone(const std::vector<double>& times)
