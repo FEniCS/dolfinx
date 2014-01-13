@@ -60,7 +60,7 @@ namespace dolfin
     }
 
   private:
-    //const CSGGeometry &geometry;
+    const CSGGeometry &geometry;
   };
 
 }
