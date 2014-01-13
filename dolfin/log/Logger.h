@@ -148,10 +148,6 @@ namespace dolfin
     // List of timings for tasks, map from string to (num_timings, total_time)
     std::map<std::string, std::pair<std::size_t, double> > _timings;
 
-    // MPI data (initialized to 0)
-    mutable std::size_t num_processes;
-    mutable std::size_t process_number;
-
     // Thread used for monitoring memory usage
     boost::scoped_ptr<boost::thread> _thread_monitor_memory_usage;
 

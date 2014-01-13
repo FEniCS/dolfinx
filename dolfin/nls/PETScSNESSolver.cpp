@@ -26,6 +26,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <petscsys.h>
 
 #include "PETScSNESSolver.h"
 #include <boost/assign/list_of.hpp>
