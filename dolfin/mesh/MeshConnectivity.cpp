@@ -20,6 +20,7 @@
 // First added:  2006-05-09
 // Last changed: 2014-01-09
 
+#include <sstream>
 #include <boost/functional/hash.hpp>
 #include <dolfin/log/log.h>
 #include "MeshConnectivity.h"
@@ -63,7 +64,7 @@ MeshConnectivity::operator= (const MeshConnectivity& connectivity)
 void MeshConnectivity::clear()
 {
   std::vector<unsigned int>().swap(_connections);
-  std::vector<unsigned int>().swap(index_to_position);  
+  std::vector<unsigned int>().swap(index_to_position);
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(std::size_t num_entities,
@@ -153,7 +154,6 @@ std::string MeshConnectivity::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-
     for (std::size_t e = 0; e < index_to_position.size() - 1; e++)
     {
       s << "  " << e << ":";
@@ -168,7 +168,7 @@ std::string MeshConnectivity::str(bool verbose) const
   else
   {
     s << "<MeshConnectivity " << _d0 << " -- " << _d1 << " of size "
-          << _connections.size() << ">";
+      << _connections.size() << ">";
   }
 
   return s.str();
