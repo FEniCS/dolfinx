@@ -62,7 +62,7 @@ namespace dolfin
   private:
 
     #ifdef HAS_CGAL
-    const CSGGeometry &geometry;
+    const CSGGeometry& geometry;
     #endif
 
   };
