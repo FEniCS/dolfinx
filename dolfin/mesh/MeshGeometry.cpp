@@ -21,6 +21,7 @@
 // First added:  2006-05-19
 // Last changed: 2010-04-29
 
+#include <sstream>
 #include <boost/functional/hash.hpp>
 
 #include <dolfin/log/log.h>
