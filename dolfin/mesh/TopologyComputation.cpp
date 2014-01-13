@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <vector>
 #include <boost/unordered_map.hpp>
+#include <boost/version.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
@@ -76,7 +77,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   // Initialize local array of entities
   const std::size_t m = cell_type.num_entities(dim);
   const std::size_t n = cell_type.num_vertices(dim);
-  std::vector<std::vector<unsigned int> > e_vertices(m, std::vector<unsigned int>(n, 0));
+  std::vector<std::vector<unsigned int> >
+    e_vertices(m, std::vector<unsigned int>(n, 0));
 
   // List of entity e indices connected to cell
   std::vector<std::vector<unsigned int> > connectivity_ce(mesh.num_cells());
@@ -86,8 +88,21 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 
   std::size_t current_entity = 0;
   std::size_t max_ce_connections = 1;
-  boost::unordered_map<std::vector<unsigned int>, unsigned int> evertices_to_index;
-  evertices_to_index.reserve(mesh.num_cells()*mesh.type().num_entities(dim));
+  boost::unordered_map<std::vector<unsigned int>, unsigned int>
+    evertices_to_index;
+
+  // Rehash/reserve map for efficiency
+  const std::size_t max_elements
+    = mesh.num_cells()*mesh.type().num_entities(dim)/2;
+  #if BOOST_VERSION < 105000
+  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+  evertices_to_index.rehash(max_elements/evertices_to_index.max_load_factor()
+                            + 1);
+  #else
+  evertices_to_index.reserve(max_elements);
+  #endif
+
+  // Loop over cells
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     // Cell index
@@ -127,7 +142,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
         connectivity_ev.push_back(*entity);
 
         // Update max vector size (used to reserve space for performance);
-        max_ce_connections = std::max(max_ce_connections, connectivity_ce[cell_index].size());
+        max_ce_connections = std::max(max_ce_connections,
+                                      connectivity_ce[cell_index].size());
 
         // Increase counter
         current_entity++;
