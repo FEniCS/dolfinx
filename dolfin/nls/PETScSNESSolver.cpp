@@ -27,20 +27,19 @@
 #include <string>
 #include <utility>
 #include <petscsys.h>
-
-#include "PETScSNESSolver.h"
 #include <boost/assign/list_of.hpp>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScKrylovSolver.h>
-#include <dolfin/la/PETScLUSolver.h>
-#include <dolfin/la/PETScPreconditioner.h>
-#include "NonlinearProblem.h"
 #include <dolfin/common/timing.h>
 #include <dolfin/common/Timer.h>
-
+#include <dolfin/la/PETScKrylovSolver.h>
+#include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScLUSolver.h>
+#include <dolfin/la/PETScPreconditioner.h>
+#include <dolfin/la/PETScVector.h>
+#include "NonlinearProblem.h"
+#include "PETScSNESSolver.h"
 
 using namespace dolfin;
 
@@ -68,7 +67,7 @@ struct snes_ctx_t
 };
 
 #if PETSC_VERSION_RELEASE
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2 // PETSc 3.2
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
   // Mapping from method string to PETSc
   const std::map<std::string, std::pair<std::string, const SNESType> >
   PETScSNESSolver::_methods
@@ -268,8 +267,8 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
-PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
-                       GenericVector& x)
+  PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+                         GenericVector& x)
 {
   Timer timer("SNES solver");
   PETScVector f;
@@ -380,7 +379,8 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   SNESGetIterationNumber(*_snes, &its);
   SNESGetConvergedReason(*_snes, &reason);
 
-  const MPI_Comm comm = PetscObjectComm((PetscObject)*_snes);
+  MPI_Comm comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)*_snes, &comm);
   if (reason > 0 && parameters["report"]
     && dolfin::MPI::process_number(comm) == 0)
   {
@@ -465,7 +465,8 @@ void PETScSNESSolver::set_linear_solver_parameters()
   SNESGetKSP(*_snes, &ksp);
   KSPGetPC(ksp, &pc);
 
-  const MPI_Comm comm = PetscObjectComm((PetscObject)*_snes);
+  MPI_Comm comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)*_snes, &comm);
 
   if (parameters["report"])
     KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
@@ -557,7 +558,8 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     const std::string sign   = parameters["sign"];
     const std::string method = parameters["method"];
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
-    const MPI_Comm comm = PetscObjectComm((PetscObject)*_snes);
+    MPI_Comm comm = MPI_COMM_NULL;
+    PetscObjectGetComm((PetscObject)*_snes, &comm);
     if (dolfin::MPI::process_number(comm) == 0)
     {
       warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
