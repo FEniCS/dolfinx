@@ -286,6 +286,49 @@ class TestSystemAssembler(unittest.TestCase):
         error = norm(x.vector(), 'linf')
         self.assertAlmostEqual(error, 0.0)
 
+    def test_facet_assembly_cellwise_insertion(self):
+
+        if MPI.num_processes() > 1:
+            print "FIXME: This unit test does not work in parallel, skipping"
+            return
+
+        mesh = UnitIntervalMesh(10)
+
+        c_f = FunctionSpace(mesh, "DG", 0)
+        v = Constant((-1.0,))
+        dt = Constant(1.0)
+
+        c_t = TestFunction(c_f)
+        c_a = TrialFunction(c_f)
+
+        n = c_f.cell().n
+        vn = dot(v, n)
+        vout = 0.5*(vn + abs(vn))
+
+        # forms:
+        # a has no facet integrals
+        a = c_t*c_a*dx
+        # L has facet integrals so we end up in facet wise assembly
+        L = c_t('+')*vout('+')*dt('+')*dS + c_t('-')*vout('-')*dt('-')*dS  + c_t*vout*dt*ds
+        # but have to use cell wise insertion because the sparsity pattern doesn't support
+        # the macro element
+
+        A = Matrix()
+        b = Vector()
+
+        assembler = SystemAssembler(a, L)
+        assembler.assemble(A, b)
+
+        x = Function(c_f)
+        x.vector()[:] = 30.0
+        x.update()
+        solve(A, x.vector(), b)
+    
+        x.vector()[:] -= 10.0
+        x.update()
+        error = norm(x.vector(), 'linf')
+        self.assertAlmostEqual(error, 0.0)
+
 
 if __name__ == "__main__":
     print ""
