@@ -62,8 +62,9 @@ namespace dolfin
 
     /// Build a partitioned mesh based from a local mesh on process 0
     /// with supplied destination processes for each cell
-    static void build_distributed_mesh(Mesh& mesh,
-                                       const std::vector<std::size_t>& cell_partition);
+    static void
+      build_distributed_mesh(Mesh& mesh,
+                             const std::vector<std::size_t>& cell_partition);
 
     /// Build a partitioned mesh from local mesh data that is
     /// distributed across processes
@@ -71,8 +72,10 @@ namespace dolfin
 
     /// Build a MeshValueCollection based on LocalMeshValueCollection
     template<typename T>
-    static void build_distributed_value_collection(MeshValueCollection<T>& values,
-               const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
+      static void
+      build_distributed_value_collection(MeshValueCollection<T>& values,
+                                const LocalMeshValueCollection<T>& local_data,
+                                const Mesh& mesh);
 
   private:
 
@@ -89,27 +92,32 @@ namespace dolfin
     // (which tells us to which process each of the local cells stored in
     // LocalMeshData on this process belongs. We use MPI::distribute to
     // redistribute all cells (the global vertex indices of all cells).
-    static void distribute_cells(const LocalMeshData& data,
-                                 const std::vector<std::size_t>& cell_partition,
-                                 std::vector<std::size_t>& cell_local_to_global_indices,
-                                 boost::multi_array<std::size_t, 2>& cell_local_vertices);
+    static void
+      distribute_cells(const MPI_Comm mpi_comm,
+                       const LocalMeshData& data,
+                       const std::vector<std::size_t>& cell_partition,
+                       std::vector<std::size_t>& cell_local_to_global_indices,
+                       boost::multi_array<std::size_t, 2>& cell_local_vertices);
 
     // Distribute vertices
-    static void distribute_vertices(const LocalMeshData& data,
-                  const boost::multi_array<std::size_t, 2>& cell_local_vertices,
-                  std::vector<std::size_t>& vertex_local_to_global_indices,
-                  std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-                  boost::multi_array<double, 2>& vertex_coordinates);
+    static void
+      distribute_vertices(const MPI_Comm mpi_comm,
+                          const LocalMeshData& data,
+            const boost::multi_array<std::size_t, 2>& cell_local_vertices,
+            std::vector<std::size_t>& vertex_local_to_global_indices,
+            std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+            boost::multi_array<double, 2>& vertex_coordinates);
 
     // Build mesh
-    static void build_mesh(Mesh& mesh,
-                   const std::vector<std::size_t>& global_cell_indices,
-                   const boost::multi_array<std::size_t, 2>& cell_vertices,
-                   const std::vector<std::size_t>& vertex_indices,
-                   const boost::multi_array<double, 2>& vertex_coordinates,
-                   const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-                   std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
-                   std::size_t num_global_vertices);
+    static void
+      build_mesh(Mesh& mesh,
+                 const std::vector<std::size_t>& global_cell_indices,
+                 const boost::multi_array<std::size_t, 2>& cell_vertices,
+                 const std::vector<std::size_t>& vertex_indices,
+                 const boost::multi_array<double, 2>& vertex_coordinates,
+                 const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+                 std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
+                 std::size_t num_global_vertices);
 
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh,
@@ -141,6 +149,9 @@ namespace dolfin
     const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T> >& local_value_data,
     MeshValueCollection& mesh_values)
   {
+    // Get MPI communicator
+    const MPI_Comm mpi_comm = mesh.mpi_comm();
+
     // Get topological dimensions
     const std::size_t D = mesh.topology().dim();
     const std::size_t dim = mesh_values.dim();
@@ -214,7 +225,7 @@ namespace dolfin
                                                           D, mesh);
 
     // Number of MPI processes
-    const std::size_t num_processes = MPI::num_processes();
+    const std::size_t num_processes = MPI::num_processes(mpi_comm);
 
     // Pack data to send to appropriate process
     std::vector<std::vector<std::size_t> > send_data0(num_processes);
@@ -264,8 +275,8 @@ namespace dolfin
     // Send/receive data
     std::vector<std::vector<std::size_t> > received_data0;
     std::vector<std::vector<T> > received_data1;
-    MPI::all_to_all(send_data0, received_data0);
-    MPI::all_to_all(send_data1, received_data1);
+    MPI::all_to_all(mpi_comm, send_data0, received_data0);
+    MPI::all_to_all(mpi_comm, send_data1, received_data1);
 
     // Add received data to mesh domain
     for (std::size_t p = 0; p < num_processes; ++p)

@@ -30,7 +30,7 @@ if has_hdf5():
 
         def test_read_write_str_attribute(self):
             hdf_file = HDF5File("a.h5", "w")
-            x = Vector(123)
+            x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
             attr['name'] = 'Vector'
@@ -39,16 +39,16 @@ if has_hdf5():
 
         def test_read_write_float_attribute(self):
             hdf_file = HDF5File("a.h5", "w")
-            x = Vector(123)
+            x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
-            attr['val'] = -9.2554            
+            attr['val'] = -9.2554
             self.assertEqual(attr.type_str("val"), "float")
             self.assertEqual(attr['val'], -9.2554)
 
         def test_read_write_int_attribute(self):
             hdf_file = HDF5File("a.h5", "w")
-            x = Vector(123)
+            x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
             attr['val'] = 1
@@ -58,7 +58,7 @@ if has_hdf5():
         def test_read_write_vec_float_attribute(self):
             import numpy
             hdf_file = HDF5File("a.h5", "w")
-            x = Vector(123)
+            x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
             vec = numpy.array([1,2,3,4.5], dtype='float')
@@ -72,7 +72,7 @@ if has_hdf5():
         def test_read_write_vec_int_attribute(self):
             import numpy
             hdf_file = HDF5File("a.h5", "w")
-            x = Vector(123)
+            x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
             vec = numpy.array([1,2,3,4,5], dtype=numpy.uintp)

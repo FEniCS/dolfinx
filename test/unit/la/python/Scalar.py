@@ -30,7 +30,8 @@ class ScalarTest(unittest.TestCase):
         b = 1.0
         a.assign(b)
         a.apply("add")
-        self.assertAlmostEqual(a.getval(), b*MPI.num_processes())
+        self.assertAlmostEqual(a.getval(),
+                               b*MPI.num_processes(a.mpi_comm()))
 
 if __name__ == "__main__":
 

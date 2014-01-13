@@ -34,7 +34,8 @@ public:
   { clear(); }
 
   // Clear any created array
-  void clear(){
+  void clear()
+  {
     if (_indices)
       delete[] _indices;
     if (_range)
@@ -56,7 +57,7 @@ public:
 
   dolfin::la_index* range()
   {
-    // Construct the array if not excisting
+    // Construct the array if not existing
     if (!_range)
     {
       _range = new dolfin::la_index[size()];
@@ -77,8 +78,8 @@ public:
   static std::size_t check_index(int index, unsigned int vector_size)
   {
     // Check bounds
-    if (index >= static_cast<int>(vector_size) ||
-         index < -static_cast<int>(vector_size) )
+    if (index >= static_cast<int>(vector_size)
+        || index < -static_cast<int>(vector_size))
       throw std::runtime_error("index out of range");
 
     // If a negative index is provided swap it
@@ -109,7 +110,7 @@ public:
       throw std::runtime_error("expected slice");
     Py_ssize_t stop, start, step, index_size;
 
-    if ( PySlice_GetIndicesEx((PySliceObject*)op, vector_size, &start, &stop, &step, &index_size) < 0 )
+    if (PySlice_GetIndicesEx((PySliceObject*)op, vector_size, &start, &stop, &step, &index_size) < 0)
       throw std::runtime_error("invalid slice");
     _step  = step;
     _start = start;
@@ -206,7 +207,7 @@ public:
   {
     if ( op == Py_None || !PyArray_Check(op))
       throw std::runtime_error("expected numpy array of integers");
-    
+
     PyArrayObject* array_op = reinterpret_cast<PyArrayObject*>(op);
     if (!PyTypeNum_ISINTEGER(PyArray_TYPE(array_op)))
       throw std::runtime_error("expected numpy array of integers");
@@ -273,7 +274,7 @@ public:
 
     if (!PyArray_ISBOOL(npy_op))
       throw std::runtime_error("expected numpy array of boolean");
-      
+
     // An initial check of the length of the array
     if (PyArray_NDIM(npy_op)!=1)
       throw std::runtime_error("provide an 1D array");

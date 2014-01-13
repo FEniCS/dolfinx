@@ -79,7 +79,7 @@ class Solving(unittest.TestCase):
 
         A = assemble(a)
         b = assemble(L)
-        x = Vector(len(b))
+        x = Vector()
 
         def wrong_solve_0():
             solve(A, x, b, **kwargs)

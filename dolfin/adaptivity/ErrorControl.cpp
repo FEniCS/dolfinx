@@ -214,7 +214,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
-  Vector x(indicators.mesh()->num_cells());
+  Vector x(indicators.mesh()->mpi_comm(), indicators.mesh()->num_cells());
   assemble(x, *_eta_T);
 
   // Take absolute value of indicators
@@ -405,6 +405,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     for (std::size_t k = 0; k < num_cells; k++)
       facet_dofs.push_back(cone_dofmap.cell_dofs(k)[local_facet_dof]);
     _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
+    _cell_cone->vector()->apply("insert");
 
     // Attach cell cone to _a_R_dT and _L_R_dT
     _a_R_dT->set_coefficient(0, _cell_cone);

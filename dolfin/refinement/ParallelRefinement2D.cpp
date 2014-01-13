@@ -70,7 +70,7 @@ void ParallelRefinement2D::generate_reference_edges(const Mesh& mesh,
 void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   bool redistribute)
 {
-  if (MPI::num_processes()==1)
+  if (MPI::num_processes(mesh.mpi_comm()) == 1)
   {
     dolfin_error("ParallelRefinement2D.cpp",
                  "refine mesh",
@@ -139,7 +139,10 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   const MeshFunction<bool>& refinement_marker,
                                   bool redistribute)
 {
-  if (MPI::num_processes()==1)
+  // MPI communicator
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+
+  if (MPI::num_processes(mpi_comm) == 1)
   {
     dolfin_error("ParallelRefinement2D.cpp",
                  "refine mesh",
@@ -196,7 +199,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
         update_count++;
       }
     }
-    update_count = MPI::sum(update_count);
+    update_count = MPI::sum(mpi_comm, update_count);
   }
 
   // Generate new vertices from marked edges, and assign global vertex

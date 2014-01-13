@@ -32,8 +32,8 @@ class MeshEditorTest(unittest.TestCase):
         mesh = Mesh()
         editor = MeshEditor()
         editor.open(mesh, 2, 2)
-        editor.init_vertices(3)
-        editor.init_cells(1)
+        editor.init_vertices(3, 3)
+        editor.init_cells(1, 1)
 
         # Add vertices
         editor.add_vertex(0, 0.0, 0.0)

@@ -33,15 +33,32 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 BoxMesh::BoxMesh(double x0, double y0, double z0,
                  double x1, double y1, double z1,
-                 std::size_t nx, std::size_t ny, std::size_t nz) : Mesh()
+                 std::size_t nx, std::size_t ny, std::size_t nz)
+  : Mesh(MPI_COMM_WORLD)
+{
+  build(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+}
+//-----------------------------------------------------------------------------
+BoxMesh::BoxMesh(MPI_Comm comm,
+                 double x0, double y0, double z0,
+                 double x1, double y1, double z1,
+                 std::size_t nx, std::size_t ny, std::size_t nz)
+  : Mesh(comm)
+{
+  build(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+}
+//-----------------------------------------------------------------------------
+void BoxMesh::build(double x0, double y0, double z0,
+                    double x1, double y1, double z1,
+                    std::size_t nx, std::size_t ny, std::size_t nz)
 {
   Timer timer("Generate Box mesh");
 
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver())
+  if (MPI::is_receiver(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
-  return;
+    return;
   }
 
   const double a = x0;
@@ -76,7 +93,7 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
   std::vector<double> x(3);
 
   // Create vertices
-  editor.init_vertices((nx + 1)*(ny + 1)*(nz + 1));
+  editor.init_vertices((nx + 1)*(ny + 1)*(nz + 1), (nx + 1)*(ny + 1)*(nz + 1));
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; iz++)
   {
@@ -94,7 +111,7 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
   }
 
   // Create tetrahedra
-  editor.init_cells(6*nx*ny*nz);
+  editor.init_cells(6*nx*ny*nz, 6*nx*ny*nz);
   std::size_t cell = 0;
   std::vector<std::vector<std::size_t> > cells(6, std::vector<std::size_t>(4));
   for (std::size_t iz = 0; iz < nz; iz++)
@@ -132,7 +149,7 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster())
+  if (MPI::is_broadcaster(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
     return;

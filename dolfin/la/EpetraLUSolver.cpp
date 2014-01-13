@@ -194,7 +194,7 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   dolfin_assert(solver);
 
   // Write a message
-  if (parameters["report"] && dolfin::MPI::process_number() == 0)
+  if (parameters["report"] && dolfin::MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     if (solver->UseTranspose())
     {
