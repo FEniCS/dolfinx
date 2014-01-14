@@ -62,7 +62,7 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
 void MeshConnectivity::clear()
 {
   std::vector<unsigned int>().swap(_connections);
-  std::vector<unsigned int>().swap(index_to_position);  
+  std::vector<unsigned int>().swap(index_to_position);
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(std::size_t num_entities, std::size_t num_connections)

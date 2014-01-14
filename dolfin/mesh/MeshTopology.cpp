@@ -39,7 +39,7 @@ MeshTopology::MeshTopology()
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
   : coloring(topology.coloring), num_entities(topology.num_entities),
-    global_num_entities(topology.global_num_entities), 
+    global_num_entities(topology.global_num_entities),
     _global_indices(topology._global_indices),
     _shared_entities(topology._shared_entities),
     connectivity(topology.connectivity)
@@ -215,7 +215,7 @@ std::string MeshTopology::str(bool verbose) const
       s << "    " << d0;
       for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
-        if ( !connectivity[d0][d1].empty() )
+        if (!connectivity[d0][d1].empty())
           s << " x";
         else
           s << " -";
@@ -228,9 +228,9 @@ std::string MeshTopology::str(bool verbose) const
     {
       for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
-        if ( connectivity[d0][d1].empty() )
+        if (connectivity[d0][d1].empty())
           continue;
-        s << indent(connectivity[d0][d1].str(true));
+        s << indent(connectivity[d0][d1].str(false));
         s << std::endl;
       }
     }

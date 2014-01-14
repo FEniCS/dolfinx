@@ -85,30 +85,34 @@ namespace dolfin
     /// dimension dim
     void init_global_indices(std::size_t dim, std::size_t size);
 
-    /// Set global index for entity of dimension dim and with local index
-    void set_global_index(std::size_t dim, std::size_t local_index, std::size_t global_index)
+    /// Set global index for entity of dimension dim and with local
+    /// index
+    void set_global_index(std::size_t dim, std::size_t local_index,
+                          std::size_t global_index)
     {
       dolfin_assert(dim < _global_indices.size());
       dolfin_assert(local_index < _global_indices[dim].size());
       _global_indices[dim][local_index] = global_index;
     }
 
-    /// Get local-to-global index map for entities of topological dimension d
+    /// Get local-to-global index map for entities of topological
+    /// dimension d
     const std::vector<std::size_t>& global_indices(std::size_t d) const
     {
       dolfin_assert(d < _global_indices.size());
       return _global_indices[d];
     }
 
-    /// Check if global indices are available for entiries of dimension dim
+    /// Check if global indices are available for entiries of
+    /// dimension dim
     bool have_global_indices(std::size_t dim) const
     {
       dolfin_assert(dim < _global_indices.size());
       return !_global_indices[dim].empty();
     }
 
-    /// Return map from shared entities (local index) to processes that
-    /// share the entity
+    /// Return map from shared entities (local index) to processes
+    /// that share the entity
     std::map<unsigned int, std::set<unsigned int> >&
       shared_entities(unsigned int dim);
 
@@ -121,7 +125,8 @@ namespace dolfin
     dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1);
 
     /// Return connectivity for given pair of topological dimensions
-    const dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1) const;
+    const dolfin::MeshConnectivity& operator() (std::size_t d0,
+                                                std::size_t d1) const;
 
     /// Return hash based on the hash of cell-vertex connectivity
     size_t hash() const;
@@ -158,7 +163,8 @@ namespace dolfin
 
     // For entities of a given dimension d , maps each shared entity
     // (local index) to a list of the processes sharing the vertex
-    std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > > _shared_entities;
+    std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >
+      _shared_entities;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;
