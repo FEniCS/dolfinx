@@ -95,7 +95,6 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   const std::size_t max_elements
     = mesh.num_cells()*mesh.type().num_entities(dim)/2;
   #if BOOST_VERSION < 105000
-  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
   evertices_to_index.rehash(max_elements/evertices_to_index.max_load_factor()
                             + 1);
   #else
@@ -126,7 +125,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
       std::sort(entity->begin(), entity->end());
 
       // Insert into map
-      std::pair<boost::unordered_map<std::vector<unsigned int>, unsigned>::iterator, bool>
+      std::pair<boost::unordered_map<std::vector<unsigned int>, unsigned int>::iterator, bool>
         it = evertices_to_index.insert(std::make_pair(*entity, current_entity));
 
       // Entity index
@@ -302,6 +301,10 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
 
   // Iterate over all entities of dimension d0
   std::size_t max_size = 1;
+  const std::size_t e0_num_entities = mesh.type().num_vertices(d0);
+  const std::size_t e1_num_entities = mesh.type().num_vertices(d1);
+  std::vector<std::size_t> _e0(e0_num_entities);
+  std::vector<std::size_t> _e1(e1_num_entities);
   for (MeshEntityIterator e0(mesh, d0); !e0.end(); ++e0)
   {
     // Get set of connected entities for current entity
@@ -312,7 +315,7 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
 
     // Sorted list of e0 vertex indices (necessary to test for
     // presence of one list in another)
-    std::vector<std::size_t> _e0(e0->entities(0), e0->entities(0) + e0->num_entities(0));
+    std::copy(e0->entities(0), e0->entities(0) + e0_num_entities, _e0.begin());
     std::sort(_e0.begin(), _e0.end());
 
     // Initialise e1_visited to false for all neighbours of e0. The
@@ -342,7 +345,8 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
         else
         {
           // Sorted list of e1 vertex indices
-          std::vector<std::size_t> _e1(e1->entities(0), e1->entities(0) + e1->num_entities(0));
+          std::copy(e1->entities(0), e1->entities(0) + e1_num_entities,
+                    _e1.begin());
           std::sort(_e1.begin(), _e1.end());
 
           // Entity e1 must be completely contained in e0

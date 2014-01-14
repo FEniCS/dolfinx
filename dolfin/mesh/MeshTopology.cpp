@@ -216,7 +216,7 @@ std::string MeshTopology::str(bool verbose) const
       s << "    " << d0;
       for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
-        if ( !connectivity[d0][d1].empty() )
+        if (!connectivity[d0][d1].empty())
           s << " x";
         else
           s << " -";
@@ -229,9 +229,9 @@ std::string MeshTopology::str(bool verbose) const
     {
       for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
-        if ( connectivity[d0][d1].empty() )
+        if (connectivity[d0][d1].empty())
           continue;
-        s << indent(connectivity[d0][d1].str(true));
+        s << indent(connectivity[d0][d1].str(false));
         s << std::endl;
       }
     }
