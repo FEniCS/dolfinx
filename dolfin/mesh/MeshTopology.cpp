@@ -230,7 +230,7 @@ std::string MeshTopology::str(bool verbose) const
       {
         if (connectivity[d0][d1].empty())
           continue;
-        s << indent(connectivity[d0][d1].str(false));
+        s << indent(connectivity[d0][d1].str(true));
         s << std::endl;
       }
     }
