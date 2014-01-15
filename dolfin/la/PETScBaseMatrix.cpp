@@ -86,15 +86,15 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
   _z.reset();
 
   // Create new PETSc vector
-  boost::shared_ptr<Vec> x(new Vec(0), PETScVectorDeleter());
+  Vec x;
   if (dim == 0)
   {
-    ierr = MatGetVecs(*_A, PETSC_NULL, x.get());
+    ierr = MatGetVecs(*_A, PETSC_NULL, &x);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
   }
   else if (dim == 1)
   {
-    ierr = MatGetVecs(*_A, x.get(), PETSC_NULL);
+    ierr = MatGetVecs(*_A, &x, PETSC_NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
   }
   else

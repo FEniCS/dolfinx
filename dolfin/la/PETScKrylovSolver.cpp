@@ -248,7 +248,7 @@ void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
   std::vector<Vec> petsc_vec(nullspace.dim());
   for (std::size_t i = 0; i < nullspace.dim(); ++i)
   {
-    petsc_vec[i] = *(_nullspace[i].vec().get());
+    petsc_vec[i] = _nullspace[i].vec();
     PetscReal val = 0.0;
     ierr = VecNormalize(petsc_vec[i], &val);
     if (ierr != 0) petsc_error(ierr, __FILE__, "VecNormalize");
@@ -409,14 +409,14 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     if (profile_performance)
     {
       PetscLogBegin();
-      ierr = KSPSolve(*_ksp, *b.vec(), *x.vec());
+      ierr = KSPSolve(*_ksp, b.vec(), x.vec());
       if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
       PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
     }
   }
   else
   {
-    ierr =  KSPSolve(*_ksp, *b.vec(), *x.vec());
+    ierr =  KSPSolve(*_ksp, b.vec(), x.vec());
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
   }
 

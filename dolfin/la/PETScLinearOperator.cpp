@@ -40,10 +40,8 @@ namespace dolfin
   int usermult(Mat A, Vec x, Vec y)
   {
     // Wrap PETSc Vec as dolfin::PETScVector
-    boost::shared_ptr<Vec> _x(&x, NoDeleter());
-    boost::shared_ptr<Vec> _y(&y, NoDeleter());
-    PETScVector __x(_x);
-    PETScVector __y(_y);
+    PETScVector _x(x);
+    PETScVector _y(y);
 
     // Extract pointer to PETScLinearOperator
     void* ctx = 0;
@@ -54,7 +52,7 @@ namespace dolfin
     dolfin_assert(_A);
     GenericLinearOperator* wrapper = _A->wrapper();
     dolfin_assert(wrapper);
-    wrapper->mult(__x, __y);
+    wrapper->mult(_x, _y);
 
     return 0;
   }

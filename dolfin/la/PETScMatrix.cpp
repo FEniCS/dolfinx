@@ -432,7 +432,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
                  "Vector for matrix-vector result has wrong size");
   }
 
-  PetscErrorCode ierr = MatMult(*_A, *xx.vec(), *yy.vec());
+  PetscErrorCode ierr = MatMult(*_A, xx.vec(), yy.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMult");
 }
 //-----------------------------------------------------------------------------
@@ -461,7 +461,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
                  "Vector for transpose matrix-vector result has wrong size");
   }
 
-  PetscErrorCode ierr = MatMultTranspose(*_A, *xx.vec(), *yy.vec());
+  PetscErrorCode ierr = MatMultTranspose(*_A, xx.vec(), yy.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMultTranspose");
 }
 //-----------------------------------------------------------------------------

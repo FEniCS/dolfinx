@@ -288,7 +288,7 @@ std::pair<std::size_t, bool>
   snes_ctx.nonlinear_problem = &nonlinear_problem;
   snes_ctx.dx = &x.down_cast<PETScVector>();
 
-  SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
+  SNESSetFunction(*_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
   SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian,
                   &snes_ctx);
 
@@ -374,7 +374,7 @@ std::pair<std::size_t, bool>
   if (parameters["report"])
     SNESView(*_snes, PETSC_VIEWER_STDOUT_WORLD);
 
-  SNESSolve(*_snes, PETSC_NULL, *snes_ctx.dx->vec());
+  SNESSolve(*_snes, PETSC_NULL, snes_ctx.dx->vec());
 
   SNESGetIterationNumber(*_snes, &its);
   SNESGetConvergedReason(*_snes, &reason);
@@ -413,17 +413,15 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   PETScMatrix A;
   PETScVector df;
 
-  // Cast from the PETSc Vec type to dolfin's PETScVector
-  boost::shared_ptr<Vec> vptr(&x, NoDeleter());
-  PETScVector x_wrap(vptr);
-
+  // Wrap the PETSc Vec as DOLFIN PETScVector
+  PETScVector x_wrap(x);
   *dx = x_wrap;
 
   // Compute F(u)
   nonlinear_problem->form(A, df, *dx);
   nonlinear_problem->F(df, *dx);
 
-  VecCopy(*df.vec(), f);
+  VecCopy(df.vec(), f);
 
   return 0;
 }
@@ -438,9 +436,8 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
   PETScVector f;
   PETScMatrix dA;
 
-  // Cast from the PETSc Vec type to dolfin's PETScVector
-  boost::shared_ptr<Vec> vptr(&x, NoDeleter());
-  PETScVector x_wrap(vptr);
+  // Wrap the PETSc Vec as DOLFIN PETScVector
+  PETScVector x_wrap(x);
 
   *dx = x_wrap;
 
@@ -587,8 +584,8 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       Vec ub, lb;
 
       PETScVector dx = x.down_cast<PETScVector>();
-      VecDuplicate(*dx.vec(), &ub);
-      VecDuplicate(*dx.vec(), &lb);
+      VecDuplicate(dx.vec(), &ub);
+      VecDuplicate(dx.vec(), &lb);
       if (sign == "nonnegative")
       {
         VecSet(lb, 0.0);
@@ -614,7 +611,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     {
       const PETScVector* lb = this->lb.get();
       const PETScVector* ub = this->ub.get();
-      SNESVISetVariableBounds(*_snes, *(lb->vec()).get(), *(ub->vec()).get());
+      SNESVISetVariableBounds(*_snes, lb->vec(), ub->vec());
     }
   }
 }

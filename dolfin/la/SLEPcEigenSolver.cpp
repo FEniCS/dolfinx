@@ -226,7 +226,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
     dolfin_assert(r.vec());
     dolfin_assert(c.vec());
-    EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
+    EPSGetEigenpair(eps, ii, &lr, &lc, r.vec(), c.vec());
   }
   else
   {
@@ -245,7 +245,8 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
 {
-  EPSSetDeflationSpace(eps, 1, deflation_space.vec().get());
+  Vec x = deflation_space.vec();
+  EPSSetDeflationSpace(eps, 1, &x);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()

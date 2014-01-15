@@ -727,7 +727,7 @@ void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& near_nullspace)
   // Get pointers to underlying PETSc objects
   std::vector<Vec> petsc_vec(near_nullspace.dim());
   for (std::size_t i = 0; i < near_nullspace.dim(); ++i)
-    petsc_vec[i] = *(_near_nullspace[i].vec().get());
+    petsc_vec[i] = _near_nullspace[i].vec();
 
   // Create null space
   petsc_near_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());

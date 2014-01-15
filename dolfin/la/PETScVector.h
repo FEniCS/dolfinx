@@ -45,17 +45,6 @@
 namespace dolfin
 {
 
-  class PETScVectorDeleter
-  {
-  public:
-    void operator() (Vec* x)
-    {
-      if (*x)
-        VecDestroy(x);
-      delete x;
-    }
-  };
-
   class GenericSparsityPattern;
   template<typename T> class Array;
 
@@ -72,20 +61,19 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    //explicit PETScVector(bool use_gpu=false);
-    explicit PETScVector();
+    PETScVector();
 
     /// Create vector of size N
     PETScVector(MPI_Comm comm, std::size_t N, bool use_gpu=false);
 
     /// Create vector
-    PETScVector(const GenericSparsityPattern& sparsity_pattern);
+    explicit PETScVector(const GenericSparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     PETScVector(const PETScVector& x);
 
-    /// Create vector from given PETSc Vec pointer
-    explicit PETScVector(boost::shared_ptr<Vec> x);
+    /// Create vector wrapper of PETSc Vec pointer
+    explicit PETScVector(Vec x);
 
     /// Destructor
     virtual ~PETScVector();
@@ -113,10 +101,12 @@ namespace dolfin
     virtual void resize(MPI_Comm comm, std::size_t N);
 
     /// Resize vector with given ownership range
-    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range);
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range);
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
@@ -135,13 +125,16 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const;
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, std::size_t m, const dolfin::la_index* rows) const;
+    virtual void get_local(double* block, std::size_t m,
+                           const dolfin::la_index* rows) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows);
+    virtual void set(const double* block, std::size_t m,
+                     const dolfin::la_index* rows);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows);
+    virtual void add(const double* block, std::size_t m,
+                     const dolfin::la_index* rows);
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;
@@ -153,10 +146,12 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather vector entries into a local vector
-    virtual void gather(GenericVector& y, const std::vector<dolfin::la_index>& indices) const;
+    virtual void gather(GenericVector& y,
+                        const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const;
+    virtual void gather(std::vector<double>& x,
+                        const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const;
@@ -224,8 +219,8 @@ namespace dolfin
 
     //--- Special PETSc functions ---
 
-    /// Return shared_ptr to PETSc Vec object
-    boost::shared_ptr<Vec> vec() const;
+    /// Return pointer to PETSc Vec object
+    Vec vec() const;
 
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
@@ -243,10 +238,10 @@ namespace dolfin
     bool distributed() const;
 
     // PETSc Vec pointer
-    boost::shared_ptr<Vec> _x;
+    Vec _x;
 
     // PETSc Vec pointer (local ghosted)
-    mutable boost::shared_ptr<Vec> x_ghosted;
+    mutable Vec x_ghosted;
 
     // Global-to-local map for ghost values
     boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
@@ -254,7 +249,7 @@ namespace dolfin
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
 
-    // PETSc vector architechture
+    // PETSc vector architecture
     const bool _use_gpu;
 
   };
