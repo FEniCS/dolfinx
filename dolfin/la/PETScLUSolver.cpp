@@ -248,14 +248,16 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
   }
 
   // Solve linear system
+  const Vec b_petsc = _b.vec();
+  Vec x_petsc = _x.vec();
   if (!transpose)
   {
-    ierr = KSPSolve(*_ksp, _b.vec(), _x.vec());
+    ierr = KSPSolve(*_ksp, b_petsc, x_petsc);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
   }
   else
   {
-    ierr = KSPSolveTranspose(*_ksp, _b.vec(), _x.vec());
+    ierr = KSPSolveTranspose(*_ksp, b_petsc, x_petsc);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolveTranspose");
   }
 

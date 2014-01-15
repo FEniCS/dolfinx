@@ -803,19 +803,22 @@ void PETScVector::_init(MPI_Comm comm,
 {
   PetscErrorCode ierr;
 
-
   // Create vector
   if (_x)
   {
-    // Get reference count
+    // FIXME: Can't use reference counting below because PETSc
+    // objects, e.g. KSPSolve, incrent the reference count
+    // Get reference count to check that vector isn't shared
+    /*
     int ref_count = 0;
     PetscObjectGetReference((PetscObject)_x, &ref_count);
-    if (ref_count > 1)
+     if (ref_count > 1)
     {
       dolfin_error("PETScVector.cpp",
                    "initialize PETSc vector",
                    "More than one object points to the underlying PETSc object");
     }
+    */
     VecDestroy(&_x);
   }
 
@@ -861,10 +864,19 @@ Vec PETScVector::vec() const
 //-----------------------------------------------------------------------------
 void PETScVector::reset()
 {
-  PetscObjectDereference((PetscObject)_x);
-  _x = NULL;
-  PetscObjectDereference((PetscObject)x_ghosted);
-  x_ghosted = NULL;
+  if (_x)
+  {
+    //PetscObjectDereference((PetscObject)_x);
+    VecDestroy(&_x);
+    _x = NULL;
+  }
+
+  if (x_ghosted)
+  {
+    VecDestroy(&x_ghosted);
+    x_ghosted = NULL;
+  }
+
   ghost_global_to_local.clear();
 }
 //-----------------------------------------------------------------------------

@@ -86,7 +86,7 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
   _z.reset();
 
   // Create new PETSc vector
-  Vec x;
+  Vec x = NULL;
   if (dim == 0)
   {
     ierr = MatGetVecs(*_A, PETSC_NULL, &x);
