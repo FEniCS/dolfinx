@@ -14,7 +14,7 @@ from dolfin import *
 import numpy
 
 # Create mesh and define function space
-mesh = UnitSquare(2, 1)
+mesh = UnitSquareMesh(2, 1)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
 # Define Dirichlet conditions for x=0 boundary
@@ -36,7 +36,7 @@ class RightBoundary(SubDomain):
     def inside(self, x, on_boundary):
         tol = 1E-14   # tolerance for coordinate comparisons
         return on_boundary and abs(x[0] - 1) < tol
- 
+
 Gamma_1 = DirichletBC(V, u_R, RightBoundary())
 
 bcs = [Gamma_0, Gamma_1]
@@ -107,6 +107,5 @@ print 'Max error:', numpy.abs(u_e_array - u_array).max()
 center = (0.5, 0.5)
 print 'numerical u at the center point:', u(center)
 print 'exact     u at the center point:', u_exact(center)
-    
-#interactive()
 
+#interactive()
