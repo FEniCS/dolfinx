@@ -47,8 +47,10 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::pair<std::size_t, double> >::iterator map_iterator;
-typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator const_map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::iterator
+map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator
+const_map_iterator;
 
 // Function for monitoring memory usage, called by thread
 #ifdef __linux__
@@ -96,8 +98,8 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 
 //-----------------------------------------------------------------------------
 Logger::Logger() : _active(true), _log_level(INFO), indentation_level(0),
-  logstream(&std::cout), num_processes(0), process_number(0),
-  _maximum_memory_usage(-1)
+                   logstream(&std::cout), num_processes(0), process_number(0),
+                   _maximum_memory_usage(-1)
 {
   // Do nothing
 }
@@ -197,7 +199,11 @@ void Logger::deprecation(std::string feature,
     << "-------------------------------------------------------------------------"
     << std::endl;
 
+  #ifdef DOLFIN_DEPRECATION_ERROR
+  error(s.str());
+  #else
   write(WARNING, s.str());
+  #endif
 }
 //-----------------------------------------------------------------------------
 void Logger::begin(std::string msg, int log_level)

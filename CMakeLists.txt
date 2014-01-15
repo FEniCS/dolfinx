@@ -61,7 +61,7 @@ option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
-
+option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
@@ -92,6 +92,13 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
 endforeach()
+
+#------------------------------------------------------------------------------
+# General compiler defintions
+
+if (DOLFIN_DEPRECATION_ERROR)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_DEPRECATION_ERROR")
+endif()
 
 #------------------------------------------------------------------------------
 # Package-specific options
