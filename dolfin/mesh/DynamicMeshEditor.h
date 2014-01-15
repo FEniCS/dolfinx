@@ -47,10 +47,12 @@ namespace dolfin
 
     /// Open mesh of given cell type, topological and geometrical dimension
     void open(Mesh& mesh, CellType::Type type, std::size_t tdim,
-              std::size_t gdim);
+              std::size_t gdim, std::size_t num_global_vertices,
+              std::size_t num_global_cells);
 
     /// Open mesh of given cell type, topological and geometrical dimension
-    void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim);
+    void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim,
+              std::size_t num_global_vertices, std::size_t num_global_cells);
 
     /// Add vertex v at given point p
     void add_vertex(std::size_t v, const Point& p);
@@ -97,6 +99,9 @@ namespace dolfin
 
     // Cell type
     CellType* _cell_type;
+
+    // Number of global vertices and cells
+    std::size_t _num_global_vertices, _num_global_cells;
 
     // Dynamic storage for vertex coordinates
     std::vector<double> vertex_coordinates;

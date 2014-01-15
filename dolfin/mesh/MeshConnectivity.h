@@ -22,7 +22,6 @@
 #define __MESH_CONNECTIVITY_H
 
 #include <vector>
-#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin

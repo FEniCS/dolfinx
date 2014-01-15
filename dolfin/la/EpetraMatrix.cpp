@@ -119,9 +119,14 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   _pattern.num_local_nonzeros(num_nonzeros);
 
   // Create row map
-  EpetraFactory& f = EpetraFactory::instance();
-  Epetra_MpiComm comm = f.get_mpi_comm();
-  Epetra_Map row_map((dolfin::la_index) tensor_layout.size(0), (dolfin::la_index) num_local_rows, 0, comm);
+  #ifdef HAS_MPI
+  Epetra_MpiComm epetra_comm(tensor_layout.mpi_comm());
+  #else
+  Epetra_SerialComm epetra_comm;
+  #endif
+
+  Epetra_Map row_map((dolfin::la_index) tensor_layout.size(0),
+                     (dolfin::la_index) num_local_rows, 0, epetra_comm);
 
   // For rectangular matrices with more columns than rows, the columns
   // which are larger than those in row_map are marked as nonlocal
@@ -132,7 +137,7 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
     = tensor_layout.local_range(1);
   const int num_local_cols = colrange.second - colrange.first;
   Epetra_Map domain_map((dolfin::la_index) tensor_layout.size(1),
-                        num_local_cols, 0, comm);
+                        num_local_cols, 0, epetra_comm);
 
   // Create Epetra_FECrsGraph
   const std::vector<int> _num_nonzeros(num_nonzeros.begin(),
@@ -414,6 +419,23 @@ void EpetraMatrix::apply(std::string mode)
   }
 }
 //-----------------------------------------------------------------------------
+const MPI_Comm EpetraMatrix::mpi_comm() const
+{
+  dolfin_assert(_A);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+#ifdef HAS_MPI
+  // Get Epetra MPI communicator (downcast)
+  const Epetra_MpiComm* epetra_mpi_comm
+    = dynamic_cast<const Epetra_MpiComm*>(&(_A->Map().Comm()));
+  dolfin_assert(epetra_mpi_comm);
+  mpi_comm = epetra_mpi_comm->Comm();
+#else
+  mpi_comm = MPI_COMM_SELF;
+#endif
+
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 std::string EpetraMatrix::str(bool verbose) const
 {
   if (!_A)
@@ -447,8 +469,8 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   typedef boost::unordered_set<std::size_t> MySet;
 
   // Number of MPI processes
-  const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
+  const std::size_t num_processes = _A->Comm().NumProc();
+  const std::size_t process_number = _A->Comm().MyPID();
 
   // Build lists of local and nonlocal rows
   MySet local_rows;
@@ -476,7 +498,7 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
     }
 
     std::vector<std::vector<std::size_t> > received_data;
-    MPI::all_to_all(send_data, received_data);
+    MPI::all_to_all(mpi_comm(), send_data, received_data);
 
     // Unpack data
     for (std::size_t p = 0; p < num_processes; ++p)

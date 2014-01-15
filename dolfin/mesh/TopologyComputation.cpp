@@ -151,7 +151,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   }
 
   // Initialise connectivity data structure
-  topology.init(dim, current_entity);
+  topology.init(dim, connectivity_ev.size(), connectivity_ev.size());
 
   // Copy connectivity data into static MeshTopology data structures
   ce.set(connectivity_ce);

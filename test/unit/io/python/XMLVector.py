@@ -29,14 +29,14 @@ class XML_vector_io(unittest.TestCase):
     def test_save_vector(self):
         if has_linear_algebra_backend("PETSc"):
             # Create vector and write file
-            x = PETScVector(197)
+            x = PETScVector(mpi_comm_world(), 197)
             x[:] = 1.0
             f = File("x.xml")
             f << x
 
         if has_linear_algebra_backend("Epetra"):
             # Create vector and write file
-            x = EpetraVector(197)
+            x = EpetraVector(mpi_comm_world(), 197)
             x[:] = 1.0
             f = File("x.xml")
             f << x
@@ -44,7 +44,7 @@ class XML_vector_io(unittest.TestCase):
     def test_save_gzipped_vector(self):
         if has_linear_algebra_backend("PETSc"):
             # Create vector and write file
-            x = PETScVector(197)
+            x = PETScVector(mpi_comm_world(), 197)
             x[:] = 1.0
             f = File("x.xml.gz")
             f << x
@@ -53,7 +53,7 @@ class XML_vector_io(unittest.TestCase):
     def test_read_vector(self):
         if has_linear_algebra_backend("PETSc"):
             # Create vector and write file
-            x = PETScVector(197)
+            x = PETScVector(mpi_comm_world(), 197)
             x[:] = 1.0
             f = File("x.xml")
             f << x
@@ -67,7 +67,7 @@ class XML_vector_io(unittest.TestCase):
 
         if has_linear_algebra_backend("Epetra"):
             # Create vector and write file
-            x = EpetraVector(197)
+            x = EpetraVector(mpi_comm_world(), 197)
             x[:] = 1.0
             f = File("x.xml")
             f << x
@@ -81,7 +81,7 @@ class XML_vector_io(unittest.TestCase):
     def test_read_gzipped_vector(self):
         if has_linear_algebra_backend("PETSc"):
             # Create vector and write file
-            x = PETScVector(197)
+            x = PETScVector(mpi_comm_world(), 197)
             x[:] = 1.0
             f = File("x.xml")
             f << x
@@ -94,7 +94,7 @@ class XML_vector_io(unittest.TestCase):
 
     def test_save_read_vector(self):
         size = 512
-        x = Vector(size)
+        x = Vector(mpi_comm_world(), size)
         x[:] = 1.0
 
         out_file = File("test_vector_xml.xml")

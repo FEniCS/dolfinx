@@ -87,7 +87,8 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     }
 
     // Initialise tensor layout
-    tensor_layout->init(global_dimensions, block_size, local_range);
+    tensor_layout->init(a.mesh().mpi_comm(), global_dimensions, block_size,
+                        local_range);
 
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())

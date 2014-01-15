@@ -34,7 +34,7 @@ while t < 1.0:
 
     # Refine mesh and resize vector
     mesh = refine(mesh);
-    x.resize(mesh.num_vertices());
+    x.resize(mesh.mpi_comm(), mesh.num_vertices());
 
     # Set some vector values
     x[:] = ones(x.size())

@@ -27,9 +27,11 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericTensor.h"
+#include "TensorLayout.h"
 
 namespace dolfin
 {
@@ -44,7 +46,8 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), _value(0.0) {}
+    Scalar() : GenericTensor(), _value(0.0), _mpi_comm(MPI_COMM_WORLD)
+    { SubSystemsManager::init_mpi(); }
 
     /// Destructor
     virtual ~Scalar() {}
@@ -57,7 +60,10 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     void init(const TensorLayout& tensor_layout)
-    { _value = 0.0; }
+    {
+      _value = 0.0;
+      _mpi_comm = tensor_layout.mpi_comm();
+    }
 
     /// Return tensor rank (number of dimensions)
     std::size_t rank() const
@@ -73,7 +79,8 @@ namespace dolfin
     }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
+    virtual std::pair<std::size_t, std::size_t>
+      local_range(std::size_t dim) const
     {
       dolfin_error("Scalar.h",
                    "get local range of scalar",
@@ -82,29 +89,34 @@ namespace dolfin
     }
 
     /// Get block of values
-    void get(double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows) const
+    void get(double* block, const dolfin::la_index* num_rows,
+             const dolfin::la_index * const * rows) const
     { block[0] = _value; }
 
     /// Set block of values
-    void set(const double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows)
+    void set(const double* block, const dolfin::la_index* num_rows,
+             const dolfin::la_index * const * rows)
     { _value = block[0]; }
 
     /// Add block of values
-    void add(const double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows)
+    void add(const double* block, const dolfin::la_index* num_rows,
+             const dolfin::la_index * const * rows)
     {
       dolfin_assert(block);
       _value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    void add(const double* block,
+             const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
       dolfin_assert(block);
       _value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<std::vector<dolfin::la_index> >& rows)
+    void add(const double* block,
+             const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
       _value += block[0];
@@ -116,7 +128,11 @@ namespace dolfin
 
     /// Finalize assembly of tensor
     void apply(std::string mode)
-    { _value = MPI::sum(_value); }
+    { _value = MPI::sum(_mpi_comm, _value); }
+
+    /// Return MPI communicator
+    const MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const
@@ -162,6 +178,9 @@ namespace dolfin
 
     // Value of scalar
     double _value;
+
+    // MPI communicator
+     MPI_Comm _mpi_comm;
 
   };
 

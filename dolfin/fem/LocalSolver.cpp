@@ -79,7 +79,7 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
 
   // Initialise vector
   std::pair<std::size_t, std::size_t> local_range = dofmap_L->ownership_range();
-  x.resize(local_range);
+  x.resize(mesh.mpi_comm(), local_range);
 
   // Cell integrals
   ufc::cell_integral* integral_a = ufc_a.default_cell_integral.get();
