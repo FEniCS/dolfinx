@@ -490,7 +490,7 @@ class DiffPackTester(_TestCase):
         for marker, num in [(3, 9), (6, 9), (7, 3), (8, 1)]:
 
             mf_name = mf_basename % marker
-            mf = MeshFunction("uint", mesh, mf_name)
+            mf = MeshFunction("size_t", mesh, mf_name)
             self.assertEqual(sum(mf.array()==marker), num)
             os.unlink(mf_name)
 
