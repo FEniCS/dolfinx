@@ -25,10 +25,9 @@
 
 from dolfin import *
 
-if MPI.num_processes() == 1:
-    mesh = UnitIntervalMesh(10)
-    print "Plotting a UnitIntervalMesh"
-    plot(mesh, title="Unit interval")
+mesh = UnitIntervalMesh(10)
+print "Plotting a UnitIntervalMesh"
+plot(mesh, title="Unit interval")
 
 mesh = UnitSquareMesh(10, 10)
 print "Plotting a UnitSquareMesh"

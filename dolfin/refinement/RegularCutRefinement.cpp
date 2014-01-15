@@ -259,8 +259,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   const std::size_t num_vertices = mesh.num_vertices() + marked_edges.size();
   MeshEditor editor;
   editor.open(refined_mesh, mesh.topology().dim(), mesh.geometry().dim());
-  editor.init_vertices(num_vertices);
-  editor.init_cells(num_cells);
+  editor.init_vertices(num_vertices, num_vertices);
+  editor.init_cells(num_cells, num_cells);
 
   // Set vertex coordinates
   std::size_t current_vertex = 0;

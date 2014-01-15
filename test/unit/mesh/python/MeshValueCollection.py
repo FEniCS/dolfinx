@@ -128,7 +128,7 @@ class MeshValueCollections(unittest.TestCase):
         info(str(values))
         info(str(values.sum()))
 
-        self.assertEqual(MPI.sum(values.sum()*1.0), 140.)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), values.sum()*1.0), 140.)
 
     def test_mesh_function_assign_2D_facets(self):
         mesh = UnitSquareMesh(3, 3)

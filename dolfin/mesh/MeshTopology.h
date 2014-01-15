@@ -29,15 +29,16 @@
 namespace dolfin
 {
 
-  /// MeshTopology stores the topology of a mesh, consisting of mesh entities
-  /// and connectivity (incidence relations for the mesh entities). Note that
-  /// the mesh entities don't need to be stored, only the number of entities
-  /// and the connectivity. Any numbering scheme for the mesh entities is
-  /// stored separately in a MeshFunction over the entities.
+  /// MeshTopology stores the topology of a mesh, consisting of mesh
+  /// entities and connectivity (incidence relations for the mesh
+  /// entities). Note that the mesh entities don't need to be stored,
+  /// only the number of entities and the connectivity. Any numbering
+  /// scheme for the mesh entities is stored separately in a
+  /// MeshFunction over the entities.
   ///
-  /// A mesh entity e may be identified globally as a pair e = (dim, i), where
-  /// dim is the topological dimension and i is the index of the entity within
-  /// that topological dimension.
+  /// A mesh entity e may be identified globally as a pair e = (dim,
+  /// i), where dim is the topological dimension and i is the index of
+  /// the entity within that topological dimension.
 
   class MeshTopology
   {
@@ -73,13 +74,9 @@ namespace dolfin
     /// Initialize topology of given maximum dimension
     void init(std::size_t dim);
 
-    /// Set number of local entities (local_size) for given topological
-    /// dimension
-    void init(std::size_t dim, std::size_t local_size);
-
-    /// Set number of global entities (global_size) for given topological
-    /// dimension
-    void init_global(std::size_t dim, std::size_t global_size);
+    /// Set number of local entities (local_size) and global entities
+    /// (global_size) for given topological dimension dim
+    void init(std::size_t dim, std::size_t local_size, std::size_t global_size);
 
     /// Initialize storage for global entity numbering for entities of
     /// dimension dim
@@ -145,7 +142,8 @@ namespace dolfin
     // Developer note: std::vector is used in place of a MeshFunction
     //                 to avoid circular dependencies in the header files
     std::map<std::vector<std::size_t>,
-      std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > > coloring;
+      std::pair<std::vector<std::size_t>,
+      std::vector<std::vector<std::size_t> > > > coloring;
 
   private:
 

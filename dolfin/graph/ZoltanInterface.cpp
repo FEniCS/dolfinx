@@ -46,7 +46,7 @@ ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   char** argv = NULL;
   Zoltan_Initialize(argc, argv, &version);
 
-  // Create Zoltan object
+  // Create Zoltan object (local)
   Zoltan zoltan(MPI_COMM_SELF);
 
   // Set parameters
@@ -91,7 +91,7 @@ ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 //-----------------------------------------------------------------------------
 #else
 std::size_t ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-							    std::vector<std::size_t>& colors)
+                                                           std::vector<std::size_t>& colors)
 {
   dolfin_error("ZoltanInterface.cpp",
                "color mesh using Zoltan",

@@ -44,7 +44,7 @@ def create_data(A=None):
 
 def skip_in_parallel():
     "Skip test in parallel"
-    if MPI.num_processes() > 1:
+    if MPI.num_processes(mpi_comm_world()) > 1:
         print "FIXME: This unit test does not work in parallel, skipping"
         return True
     return False
@@ -63,7 +63,7 @@ class TestPage5(unittest.TestCase):
 
     def test_box_1(self):
         if skip_in_parallel(): return
-        x = Vector(100)
+        x = Vector(mpi_comm_world(), 100)
 
     def test_box_2(self):
         if skip_in_parallel(): return
@@ -254,8 +254,8 @@ class TestPage12(unittest.TestCase):
         mesh = Mesh();
         editor = MeshEditor();
         editor.open(mesh, 2, 2)
-        editor.init_vertices(4)
-        editor.init_cells(2)
+        editor.init_vertices(4, 4)
+        editor.init_cells(2, 2)
         editor.add_vertex(0, 0.0, 0.0)
         editor.add_vertex(1, 1.0, 0.0)
         editor.add_vertex(2, 1.0, 1.0)
@@ -322,7 +322,7 @@ class TestPage16(unittest.TestCase):
             if p.x() > 0.5:
                 sub_domains[cell] = 1
 
-        boundary_markers = FacetFunction("uint", mesh)
+        boundary_markers = FacetFunction("size_t", mesh)
         boundary_markers.set_all(0)
         for facet in facets(mesh):
             p = facet.midpoint()
@@ -1049,8 +1049,8 @@ class TestPage51(unittest.TestCase):
 
     def test_box_2(self):
         if skip_in_parallel(): return
-        b = Vector(10)
-        c = Vector(10)
+        b = Vector(mpi_comm_world(), 10)
+        c = Vector(mpi_comm_world(), 10)
         b_copy = b[:]
         b[:] = c
         b[b < 0] = 0
@@ -1059,7 +1059,7 @@ class TestPage51(unittest.TestCase):
     def test_box_3(self):
         if skip_in_parallel(): return
         from numpy import array
-        b = Vector(20)
+        b = Vector(mpi_comm_world(), 20)
         b1 = b[[0, 4, 7, 10]]
         b2 = b[array((0, 4, 7, 10))]
 

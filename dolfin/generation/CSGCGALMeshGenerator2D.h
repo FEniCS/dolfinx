@@ -60,7 +60,11 @@ namespace dolfin
     }
 
   private:
-    const CSGGeometry &geometry;
+
+    #ifdef HAS_CGAL
+    const CSGGeometry& geometry;
+    #endif
+
   };
 
 }

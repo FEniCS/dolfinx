@@ -51,12 +51,12 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Resize tensor with given dimensions
-    virtual void resize(std::size_t rank, const std::size_t* dims)
-    { dolfin_assert(rank == 1); resize(dims[0]); }
+    virtual void resize(MPI_Comm comm, std::size_t rank, const std::size_t* dims)
+    { dolfin_assert(rank == 1); resize(comm, dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout)
-    { resize(tensor_layout.local_range(0)); zero(); }
+    { resize(tensor_layout.mpi_comm(), tensor_layout.local_range(0)); zero(); }
 
     /// Return tensor rank (number of dimensions)
     virtual std::size_t rank() const
@@ -112,13 +112,13 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const = 0;
 
     /// Resize vector to global size N
-    virtual void resize(std::size_t N) = 0;
+    virtual void resize(MPI_Comm comm, std::size_t N) = 0;
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range) = 0;
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range) = 0;
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices) = 0;
 
     /// Return true if empty

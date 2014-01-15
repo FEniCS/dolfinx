@@ -23,7 +23,7 @@
 # Last changed: 2013-10-11
 
 import unittest
-import numpy    
+import numpy
 from dolfin import *
 
 class BoundaryMeshConstruction(unittest.TestCase):
@@ -33,7 +33,7 @@ class BoundaryMeshConstruction(unittest.TestCase):
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh(mesh, "exterior")
-        self.assertEqual(MPI.sum(bmesh1.num_cells()), 2)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()), 2)
         self.assertEqual(bmesh1.size_global(0), 2)
         self.assertEqual(bmesh1.topology().dim(), 0)
 
@@ -42,7 +42,7 @@ class BoundaryMeshConstruction(unittest.TestCase):
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh(mesh, "exterior")
-        self.assertEqual(MPI.sum(bmesh1.num_cells()), 4*8)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()), 4*8)
         self.assertEqual(bmesh1.size_global(1), 4*8)
         self.assertEqual(bmesh1.topology().dim(), 1)
 
@@ -51,7 +51,7 @@ class BoundaryMeshConstruction(unittest.TestCase):
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh(mesh, "exterior")
-        self.assertEqual(MPI.sum(bmesh1.num_cells()), 6*8*8*2)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()), 6*8*8*2)
         self.assertEqual(bmesh1.size_global(2), 6*8*8*2)
         self.assertEqual(bmesh1.topology().dim(), 2)
 
