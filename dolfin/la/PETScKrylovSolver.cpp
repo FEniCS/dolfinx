@@ -316,13 +316,12 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   if (_preconditioner)
   {
     dolfin_assert(_P);
-    boost::shared_ptr<const MatNullSpace> pc_nullspace
-      = _preconditioner->near_nullspace();
+    const MatNullSpace pc_nullspace = _preconditioner->near_nullspace();
 
     if (pc_nullspace && !preconditioner_set)
     {
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
-      ierr = MatSetNearNullSpace(_P->mat(), *pc_nullspace);
+      ierr = MatSetNearNullSpace(_P->mat(), pc_nullspace);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetNearNullSpace");
       #else
       dolfin_error("PETScMatrix.cpp",
