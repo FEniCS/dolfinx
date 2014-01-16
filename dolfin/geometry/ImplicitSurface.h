@@ -62,20 +62,6 @@ namespace dolfin
     /// Destructor
     virtual ~ImplicitSurface();
 
-    /// Return value of isosurfacce function. This function is
-    /// overloaed by the user. For closed volumes, the function should
-    /// evaluate to < 0 on the interior.
-    ///
-    /// *Arguments*
-    ///     point (Point)
-    ///         The point at which to evaluate the isosurface function.
-    ///         or "non_manifold".
-    ///
-    /// *Returns*
-    ///     double
-    ///         Isosurface function value.
-    virtual double operator()(const Point& point) const = 0;
-
     /// Signed distance function surface. If f0(p) = 0, the point p is
     /// possibly on the surface, which case ImplicitSurface::f1 can be
     /// called to check.
