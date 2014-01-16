@@ -492,6 +492,31 @@ void PETScSNESSolver::set_linear_solver_parameters()
       dolfin_assert(it != PETScPreconditioner::_methods.end());
       PCSetType(pc, it->second);
     }
+
+    Parameters krylov_parameters = parameters("krylov_solver");
+
+    // GMRES restart parameter
+    KSPGMRESSetRestart(ksp,krylov_parameters("gmres")["restart"]);
+
+    // Non-zero initial guess
+    const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
+    if (nonzero_guess)
+    {
+      KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+    }
+    else
+    {
+      KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+    }
+
+    if (krylov_parameters["monitor_convergence"])
+      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
+
+    // Set tolerances
+    KSPSetTolerances(ksp, krylov_parameters["relative_tolerance"],
+         krylov_parameters["absolute_tolerance"],
+         krylov_parameters["divergence_limit"],
+         krylov_parameters["maximum_iterations"]);
   }
   else if (linear_solver == "lu"
            || PETScLUSolver::_methods.count(linear_solver) != 0)
