@@ -42,12 +42,14 @@ class CahnHilliardEquation(NonlinearProblem):
         NonlinearProblem.__init__(self)
         self.L = L
         self.a = a
-        self.reset_sparsity = True
+        self.reset_sparsity_b = True
+        self.reset_sparsity_A = True
     def F(self, b, x):
-        assemble(self.L, tensor=b)
+        assemble(self.L, tensor=b, reset_sparsity=self.reset_sparsity_b)
+        self.reset_sparsity_b = False
     def J(self, A, x):
-        assemble(self.a, tensor=A, reset_sparsity=self.reset_sparsity)
-        self.reset_sparsity = False
+        assemble(self.a, tensor=A, reset_sparsity=self.reset_sparsity_A)
+        self.reset_sparsity_A = False
 
 # Model parameters
 lmbda  = 1.0e-02  # surface parameter

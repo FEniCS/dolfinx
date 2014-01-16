@@ -59,9 +59,9 @@ class CahnHilliardEquation : public NonlinearProblem
   public:
 
     // Constructor
-    CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
+  CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
                          const Constant& theta, const Constant& lambda)
-                       : reset_Jacobian(true)
+      : reset_b(true), reset_A(true)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
@@ -83,7 +83,10 @@ class CahnHilliardEquation : public NonlinearProblem
     void F(GenericVector& b, const GenericVector& x)
     {
       // Assemble RHS (Neumann boundary conditions)
-      assemble(b, *L);
+      Assembler assembler;
+      assembler.reset_sparsity = reset_b;
+      assembler.assemble(b, *L);
+      reset_b = false;
     }
 
     // User defined assemble of Jacobian
@@ -91,9 +94,9 @@ class CahnHilliardEquation : public NonlinearProblem
     {
       // Assemble system
       Assembler assembler;
-      assembler.reset_sparsity = reset_Jacobian;
+      assembler.reset_sparsity = reset_A;
       assembler.assemble(A, *a);
-      reset_Jacobian = false;
+      reset_A = false;
     }
 
     // Return solution function
@@ -136,7 +139,8 @@ class CahnHilliardEquation : public NonlinearProblem
     boost::scoped_ptr<Form> L;
     boost::scoped_ptr<Function> _u;
     boost::scoped_ptr<Function> _u0;
-    bool reset_Jacobian;
+    bool reset_b;
+    bool reset_A;
 };
 
 
