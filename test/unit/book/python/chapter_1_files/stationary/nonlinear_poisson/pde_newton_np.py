@@ -19,7 +19,7 @@ import numpy, sys
 degree = int(sys.argv[1])
 divisions = [int(arg) for arg in sys.argv[2:]]
 d = len(divisions)
-domain_type = [UnitInterval, UnitSquare, UnitCube]
+domain_type = [UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]
 mesh = domain_type[d-1](*divisions)
 V = FunctionSpace(mesh, 'Lagrange', degree)
 

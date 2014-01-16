@@ -19,7 +19,7 @@ import numpy, sys
 degree = int(sys.argv[1])
 divisions = [int(arg) for arg in sys.argv[2:]]
 d = len(divisions)
-domain_type = [UnitInterval, UnitSquare, UnitCube]
+domain_type = [UnitIntervalMesh, UnitSquareMesh, UnitCube]
 mesh = domain_type[d-1](*divisions)
 V = FunctionSpace(mesh, 'Lagrange', degree)
 
@@ -44,7 +44,7 @@ L = f*v*dx
 A, b = assemble_system(a, L, bcs)
 u_k = Function(V)
 solve(A, u_k.vector(), b, 'lu')
-    
+
 
 # Note that all Dirichlet conditions must be zero for
 # the correction function in a Newton-type method
