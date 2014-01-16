@@ -43,21 +43,6 @@
 
 using namespace dolfin;
 
-// Utility function
-namespace dolfin
-{
-  class PETScSNESDeleter
-  {
-  public:
-    void operator() (SNES* _snes)
-    {
-      if (_snes)
-        SNESDestroy(_snes);
-      delete _snes;
-    }
-  };
-}
-
 struct snes_ctx_t
 {
   NonlinearProblem* nonlinear_problem;
@@ -180,7 +165,7 @@ Parameters PETScSNESSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScSNESSolver::PETScSNESSolver(std::string nls_type)
+PETScSNESSolver::PETScSNESSolver(std::string nls_type) : _snes(NULL)
 {
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
@@ -198,21 +183,24 @@ PETScSNESSolver::PETScSNESSolver(std::string nls_type)
 //-----------------------------------------------------------------------------
 PETScSNESSolver::~PETScSNESSolver()
 {
-  // Do nothing
+  // Decrease reference count (PETSc will destroy object once
+  // reference counts reached zero)
+  if (_snes)
+    PetscObjectDereference((PetscObject)_snes);
 }
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::init(const std::string& method)
 {
-  // Check that nobody else shares this solver
-  if (_snes && !_snes.unique())
+  if (_snes)
   {
-    dolfin_error("PETScSNESSolver.cpp",
-                 "initialize PETSc SNES solver",
-                 "More than one object points to the underlying PETSc object");
+    // Decrease reference count
+    PetscObjectDereference((PetscObject)_snes);
+    _snes = NULL;
   }
 
-  _snes.reset(new SNES, PETScSNESDeleter());
-  SNESCreate(PETSC_COMM_WORLD, _snes.get());
+  // Create SNES object
+  SNESCreate(PETSC_COMM_WORLD, &_snes);
+  PetscObjectReference((PetscObject)_snes);
 
   // Set solver type
   if (method != "default")
@@ -221,11 +209,11 @@ void PETScSNESSolver::init(const std::string& method)
                                     const SNESType> >::const_iterator it;
     it = _methods.find(method);
     dolfin_assert(it != _methods.end());
-    SNESSetType(*_snes, it->second.second);
+    SNESSetType(_snes, it->second.second);
   }
 
   // Set some options
-  SNESSetFromOptions(*_snes);
+  SNESSetFromOptions(_snes);
 
   // Set to default to not having explicit bounds
   has_explicit_bounds = false;
@@ -288,13 +276,13 @@ std::pair<std::size_t, bool>
   snes_ctx.nonlinear_problem = &nonlinear_problem;
   snes_ctx.dx = &x.down_cast<PETScVector>();
 
-  SNESSetFunction(*_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
-  SNESSetJacobian(*_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
+  SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
+  SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
                   &snes_ctx);
 
   // Set some options from the parameters
   if (parameters["report"])
-    SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
+    SNESMonitorSet(_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
 
   // Set the bounds, if any
   set_bounds(x);
@@ -306,8 +294,8 @@ std::pair<std::size_t, bool>
                                     const SNESType> >::const_iterator it;
     it = _methods.find(std::string(parameters["method"]));
     dolfin_assert(it != _methods.end());
-    SNESSetType(*_snes, it->second.second);
-    SNESSetFromOptions(*_snes);
+    SNESSetType(_snes, it->second.second);
+    SNESSetFromOptions(_snes);
   // If
   //      a) the user has set bounds (is_vi())
   // AND  b) the user has not set a solver (method == default)
@@ -326,22 +314,22 @@ std::pair<std::size_t, bool>
     it = _methods.find("vinewtonssls");
     #endif
     dolfin_assert(it != _methods.end());
-    SNESSetType(*_snes, it->second.second);
-    SNESSetFromOptions(*_snes);
+    SNESSetType(_snes, it->second.second);
+    SNESSetFromOptions(_snes);
   }
 
   // The line search business changed completely from PETSc 3.2 to 3.3.
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
   if (parameters["report"])
-    SNESLineSearchSetMonitor(*_snes, PETSC_TRUE);
+    SNESLineSearchSetMonitor(_snes, PETSC_TRUE);
 
   const std::string line_search = std::string(parameters["line_search"]);
   if (line_search == "basic")
-    SNESLineSearchSet(*_snes, SNESLineSearchNo, PETSC_NULL);
+    SNESLineSearchSet(_snes, SNESLineSearchNo, PETSC_NULL);
   else if (line_search == "quadratic")
-    SNESLineSearchSet(*_snes, SNESLineSearchQuadratic, PETSC_NULL);
+    SNESLineSearchSet(_snes, SNESLineSearchQuadratic, PETSC_NULL);
   else if (line_search == "cubic")
-    SNESLineSearchSet(*_snes, SNESLineSearchCubic, PETSC_NULL);
+    SNESLineSearchSet(_snes, SNESLineSearchCubic, PETSC_NULL);
   else
   {
     dolfin_error("PETScSNESSolver.cpp",
@@ -352,9 +340,9 @@ std::pair<std::size_t, bool>
   SNESLineSearch linesearch;
 
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 4
-  SNESGetSNESLineSearch(*_snes, &linesearch);
+  SNESGetSNESLineSearch(_snes, &linesearch);
   #else
-  SNESGetLineSearch(*_snes, &linesearch);
+  SNESGetLineSearch(_snes, &linesearch);
   #endif
 
   if (parameters["report"])
@@ -366,21 +354,21 @@ std::pair<std::size_t, bool>
   // Tolerances
   const int max_iters = parameters["maximum_iterations"];
   const int max_residual_evals = parameters["maximum_residual_evaluations"];
-  SNESSetTolerances(*_snes, parameters["absolute_tolerance"],
+  SNESSetTolerances(_snes, parameters["absolute_tolerance"],
                     parameters["relative_tolerance"],
                     parameters["solution_tolerance"],
                     max_iters, max_residual_evals);
 
   if (parameters["report"])
-    SNESView(*_snes, PETSC_VIEWER_STDOUT_WORLD);
+    SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
 
-  SNESSolve(*_snes, PETSC_NULL, snes_ctx.dx->vec());
+  SNESSolve(_snes, PETSC_NULL, snes_ctx.dx->vec());
 
-  SNESGetIterationNumber(*_snes, &its);
-  SNESGetConvergedReason(*_snes, &reason);
+  SNESGetIterationNumber(_snes, &its);
+  SNESGetConvergedReason(_snes, &reason);
 
   MPI_Comm comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)*_snes, &comm);
+  PetscObjectGetComm((PetscObject)_snes, &comm);
   if (reason > 0 && parameters["report"]
     && dolfin::MPI::process_number(comm) == 0)
   {
@@ -457,11 +445,11 @@ void PETScSNESSolver::set_linear_solver_parameters()
   KSP ksp;
   PC pc;
 
-  SNESGetKSP(*_snes, &ksp);
+  SNESGetKSP(_snes, &ksp);
   KSPGetPC(ksp, &pc);
 
   MPI_Comm comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)*_snes, &comm);
+  PetscObjectGetComm((PetscObject)_snes, &comm);
 
   if (parameters["report"])
     KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
@@ -554,7 +542,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     const std::string method = parameters["method"];
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
     MPI_Comm comm = MPI_COMM_NULL;
-    PetscObjectGetComm((PetscObject)*_snes, &comm);
+    PetscObjectGetComm((PetscObject)_snes, &comm);
     if (dolfin::MPI::process_number(comm) == 0)
     {
       warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
@@ -601,7 +589,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
                      "Unknown bound type \"%s\"", sign.c_str());
       }
 
-      SNESVISetVariableBounds(*_snes, lb, ub);
+      SNESVISetVariableBounds(_snes, lb, ub);
       VecDestroy(&ub);
       VecDestroy(&lb);
     }
@@ -609,7 +597,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     {
       const PETScVector* lb = this->lb.get();
       const PETScVector* ub = this->ub.get();
-      SNESVISetVariableBounds(*_snes, lb->vec(), ub->vec());
+      SNESVISetVariableBounds(_snes, lb->vec(), ub->vec());
     }
   }
 }

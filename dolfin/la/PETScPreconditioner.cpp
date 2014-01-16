@@ -212,7 +212,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
 
   // Get PETSc PC pointer
   PC pc;
-  ierr = KSPGetPC(*(solver.ksp()), &pc);
+  ierr = KSPGetPC(solver.ksp(), &pc);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
 
   // Treat special cases  first
@@ -758,7 +758,7 @@ void PETScPreconditioner::set_fieldsplit(PETScKrylovSolver& solver,
   // Get PETSc PC pointer
   PC pc;
   dolfin_assert(solver.ksp());
-  ierr = KSPGetPC(*(solver.ksp()), &pc);
+  ierr = KSPGetPC(solver.ksp(), &pc);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
 
   // Add split for each field
