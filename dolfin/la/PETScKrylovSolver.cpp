@@ -314,7 +314,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 
   // Write a message
   const bool report = parameters["report"];
-  if (report && dolfin::MPI::process_number() == 0)
+  if (report && dolfin::MPI::process_number(PETSC_COMM_WORLD) == 0)
     info("Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
@@ -397,7 +397,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Solve linear system
-  if (MPI::process_number() == 0)
+  if (MPI::process_number(PETSC_COMM_WORLD) == 0)
   {
     log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
         _A->size(0), _A->size(1));
@@ -452,7 +452,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Report results
-  if (report && dolfin::MPI::process_number() == 0)
+  if (report && dolfin::MPI::process_number(PETSC_COMM_WORLD) == 0)
     write_report(num_iterations, reason);
 
   return num_iterations;
@@ -507,16 +507,8 @@ void PETScKrylovSolver::init(const std::string& method)
   _ksp.reset(new KSP, PETScKSPDeleter());
 
   // Set up solver environment
-  if (MPI::num_processes() > 1)
-  {
-    ierr = KSPCreate(PETSC_COMM_WORLD, _ksp.get());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-  }
-  else
-  {
-    ierr = KSPCreate(PETSC_COMM_SELF, _ksp.get());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-  }
+  ierr = KSPCreate(PETSC_COMM_WORLD, _ksp.get());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
 
   // Set some options
   ierr = KSPSetFromOptions(*_ksp);

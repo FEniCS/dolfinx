@@ -38,7 +38,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh, 
+boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
                                             const BoundaryMesh& new_boundary)
 {
   // Now this works regardless of reorder_dofs_serial value
@@ -163,9 +163,8 @@ boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
     // Solve system
     solve(A, *x, b, "cg", prec);
 
-    // PETScVector::update_ghost_values() segfaults in serial - is it a BUG?
-    if (MPI::num_processes() > 1)
-      x->update_ghost_values();
+    // Update_ghost_values()
+    x->update_ghost_values();
 
     // Get displacement
     std::vector<double> _displacement(num_vertices);

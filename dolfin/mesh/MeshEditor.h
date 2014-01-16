@@ -92,8 +92,10 @@ namespace dolfin
     /// Specify number of vertices
     ///
     /// *Arguments*
-    ///     num_vertices (std::size_t)
-    ///         The number of vertices.
+    ///     num_local_vertices (std::size_t)
+    ///         The number of vertices on this process.
+    ///     num_global_vertices (std::size_t)
+    ///         The number of vertices in distributed mesh.
     ///
     /// *Example*
     ///     .. code-block:: c++
@@ -101,15 +103,18 @@ namespace dolfin
     ///         Mesh mesh;
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
-    ///         editor.init_vertices(4);
+    ///         editor.init_vertices(4, 8);
     ///
-    void init_vertices(std::size_t num_vertices);
+    void init_vertices(std::size_t num_local_vertices,
+                       std::size_t num_global_vertices);
 
     /// Specify number of cells
     ///
     /// *Arguments*
-    ///     num_cells (std::size_t)
-    ///         The number of cells.
+    ///     num_local_cells (std::size_t)
+    ///         The number of local cells.
+    ///     num_global_cells (std::size_t)
+    ///         The number of cells in distributed mesh.
     ///
     /// *Example*
     ///     .. code-block:: c++
@@ -117,9 +122,9 @@ namespace dolfin
     ///         Mesh mesh;
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
-    ///         editor.init_cells(2);
+    ///         editor.init_cells(2, 6);
     ///
-    void init_cells(std::size_t num_cells);
+    void init_cells(std::size_t num_local_cells, std::size_t num_global_cells);
 
     /// Add vertex v at given point p
     ///

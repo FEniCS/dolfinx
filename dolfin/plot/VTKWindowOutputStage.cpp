@@ -298,6 +298,7 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters& p)
   _actor->GetProperty()->SetPointSize(4);   // should be parameter?
 
   // Set window stuff
+  _scalarBar->SetTitle(""); // To avoid uninitialized-warning in VTK 6
   _scalarBar->SetTextPositionToPrecedeScalarBar();
 
   // Set the look of scalar bar labels

@@ -264,7 +264,7 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
 
   // Resize x if required
   if (A->size(1) != x.size())
-    x.resize(A->size(1));
+    x.resize(MPI_COMM_SELF, A->size(1));
 
   if (!symbolic)
   {

@@ -24,6 +24,7 @@
 #define __UNIT_CUBE_MESH_H
 
 #include <cstddef>
+#include <dolfin/common/MPI.h>
 #include "BoxMesh.h"
 
 namespace dolfin
@@ -56,6 +57,9 @@ namespace dolfin
     ///
     UnitCubeMesh(std::size_t nx, std::size_t ny, std::size_t nz)
         : BoxMesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz) {}
+
+    UnitCubeMesh(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz)
+      : BoxMesh(comm, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz) {}
 
   };
 

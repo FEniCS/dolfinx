@@ -337,7 +337,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   // Choose appropriate 'default' solver
   if (method == "default")
   {
-    if (MPI::num_processes() == 1)
+    if (MPI::num_processes(MPI_COMM_WORLD) == 1)
     {
       #if PETSC_HAVE_UMFPACK
       method = "umfpack";
@@ -398,7 +398,7 @@ void PETScLUSolver::init_solver(std::string& method)
   PetscErrorCode ierr;
 
   // Create solver
-  if (MPI::num_processes() > 1)
+  if (MPI::num_processes(MPI_COMM_WORLD) > 1)
   {
     ierr = KSPCreate(PETSC_COMM_WORLD, _ksp.get());
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
@@ -491,7 +491,7 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
   // Get parameter
   const bool report = parameters["report"];
 
-  if (report && dolfin::MPI::process_number() == 0)
+  if (report && dolfin::MPI::process_number(MPI_COMM_WORLD) == 0)
   {
     log(PROGRESS,"Solving linear system of size %d x %d (PETSc LU solver, %s).",
         A.size(0), A.size(1), solver_type);

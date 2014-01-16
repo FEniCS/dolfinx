@@ -63,7 +63,8 @@ namespace dolfin
     /// Print error message, prefer this to the above generic error message
     void dolfin_error(std::string location,
                       std::string task,
-                      std::string reason) const;
+                      std::string reason,
+                      int mpi_rank=-1) const;
 
     /// Issue deprecation warning for removed feature
     void deprecation(std::string feature,
@@ -100,18 +101,21 @@ namespace dolfin
     /// Register timing (for later summary)
     void register_timing(std::string task, double elapsed_time);
 
-    /// Return a summary of timings and tasks as a Table, optionally clearing
-    /// stored timings
+    /// Return a summary of timings and tasks as a Table, optionally
+    /// clearing stored timings
     Table timings(bool reset=false);
 
-    /// Print summary of timings and tasks, optionally clearing stored timings
+    /// Print summary of timings and tasks, optionally clearing stored
+    /// timings
     void list_timings(bool reset=false);
 
-    /// Return timing (average) for given task, optionally clearing timing for task
+    /// Return timing (average) for given task, optionally clearing
+    /// timing for task
     double timing(std::string task, bool reset=false);
 
     /// Monitor memory usage. Call this function at the start of a
-    /// program to continuously monitor the memory usage of the process.
+    /// program to continuously monitor the memory usage of the
+    /// process.
     void monitor_memory_usage();
 
     /// Helper function for reporting memory usage
@@ -127,7 +131,7 @@ namespace dolfin
   private:
 
     // Write message
-    void write(int log_level, std::string msg) const;
+    void write(int log_level, std::string msg, int rank) const;
 
     // True iff logging is active
     bool _active;
@@ -143,10 +147,6 @@ namespace dolfin
 
     // List of timings for tasks, map from string to (num_timings, total_time)
     std::map<std::string, std::pair<std::size_t, double> > _timings;
-
-    // MPI data (initialized to 0)
-    mutable std::size_t num_processes;
-    mutable std::size_t process_number;
 
     // Thread used for monitoring memory usage
     boost::scoped_ptr<boost::thread> _thread_monitor_memory_usage;

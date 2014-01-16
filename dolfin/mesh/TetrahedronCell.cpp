@@ -99,13 +99,19 @@ std::size_t TetrahedronCell::orientation(const Cell& cell) const
   return (n.dot(p03) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------
-void TetrahedronCell::create_entities(std::vector<std::vector<std::size_t> >& e,
-                                      std::size_t dim, const unsigned int* v) const
+void
+TetrahedronCell::create_entities(std::vector<std::vector<unsigned int> >& e,
+                                 std::size_t dim, const unsigned int* v) const
 {
   // We only need to know how to create edges and faces
   switch (dim)
   {
   case 1:
+    // Resize data structure
+    e.resize(6);
+    for (int i = 0; i < 6; ++i)
+      e[i] .resize(2);
+
     // Create the six edges
     e[0][0] = v[2]; e[0][1] = v[3];
     e[1][0] = v[1]; e[1][1] = v[3];
@@ -115,6 +121,11 @@ void TetrahedronCell::create_entities(std::vector<std::vector<std::size_t> >& e,
     e[5][0] = v[0]; e[5][1] = v[1];
     break;
   case 2:
+    // Resize data structure
+    e.resize(4);
+    for (int i = 0; i < 4; ++i)
+      e[i] .resize(3);
+
     // Create the four faces
     e[0][0] = v[1]; e[0][1] = v[2]; e[0][2] = v[3];
     e[1][0] = v[0]; e[1][1] = v[2]; e[1][2] = v[3];
