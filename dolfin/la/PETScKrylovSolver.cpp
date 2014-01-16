@@ -43,20 +43,6 @@
 
 using namespace dolfin;
 
-namespace dolfin
-{
-  class PETScMatNullSpaceDeleter
-  {
-  public:
-    void operator() (MatNullSpace* ns)
-    {
-      if (*ns)
-        MatNullSpaceDestroy(ns);
-      delete ns;
-    }
-  };
-}
-
 // Mapping from method string to PETSc
 const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
   = boost::assign::map_list_of("default",  "")
@@ -191,9 +177,10 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp)
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::~PETScKrylovSolver()
 {
-  // Decrement reference count
   if (_ksp)
-    PetscObjectDereference((PetscObject)_ksp);
+    KSPDestroy(&_ksp);
+  if (petsc_nullspace)
+    MatNullSpaceDestroy(&petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
@@ -242,20 +229,21 @@ void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
   {
     petsc_vec[i] = _nullspace[i].vec();
     PetscReal val = 0.0;
-    ierr = VecNormalize(petsc_vec[i], &val);
+    ierr = VecNormalize(_nullspace[i].vec(), &val);
     if (ierr != 0) petsc_error(ierr, __FILE__, "VecNormalize");
   }
 
   // Create null space
-  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
+  if (petsc_nullspace)
+    MatNullSpaceDestroy(&petsc_nullspace);
   ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE,
                             nullspace.dim(),
-                            petsc_vec.data(), petsc_nullspace.get());
+                            petsc_vec.data(), &petsc_nullspace);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
 
   // Set null space
   dolfin_assert(_ksp);
-  ierr = KSPSetNullSpace(_ksp, *petsc_nullspace);
+  ierr = KSPSetNullSpace(_ksp, petsc_nullspace);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetNullSpace");
 }
 //-----------------------------------------------------------------------------

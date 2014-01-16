@@ -122,19 +122,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   const GenericSparsityPattern& sparsity_pattern
     = *tensor_layout.sparsity_pattern();
 
-  // Create matrix (any old matrix is destroyed)
+  // Create matrix
   if (_A)
   {
-    // Get reference count to PETSc matrix A
-    //int ref_count = 0;
-    //PetscObjectGetReference((PetscObject)_A, &ref_count);
-    //if (ref_count > 1)
-    // {
-    //  dolfin_error("PETScMatrix.cpp",
-    //               "initialize PETSc matrix",
-    //               "More than one object points to the underlying PETSc object");
-    //}
-    PetscObjectDereference((PetscObject)_A);
+    MatDestroy(&_A);
     _A = NULL;
   }
 

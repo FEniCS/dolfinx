@@ -30,7 +30,6 @@
 
 #include <map>
 #include <petscksp.h>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
@@ -185,10 +184,8 @@ namespace dolfin
     // Null space vectors
     std::vector<PETScVector> _nullspace;
 
-    // PETSc null space. Would like this to be a scoped_ptr, but it
-    // doesn't support custom deleters. Change to std::unique_ptr in
-    // the future.
-    boost::shared_ptr<MatNullSpace> petsc_nullspace;
+    // PETSc null space
+    MatNullSpace petsc_nullspace;
 
     bool preconditioner_set;
 

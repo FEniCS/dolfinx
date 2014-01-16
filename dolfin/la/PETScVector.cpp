@@ -119,12 +119,8 @@ PETScVector::PETScVector(const PETScVector& v) : _x(NULL), x_ghosted(NULL),
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
 {
-  // Decrease reference count (PETSc will destroy object once
-  // reference counts reached zero)
   if (_x)
-    PetscObjectDereference((PetscObject)_x);
-
-  // Destroy ghost vector
+    VecDestroy(&_x);
   if (x_ghosted)
     VecDestroy(&x_ghosted);
 }
@@ -802,25 +798,8 @@ void PETScVector::_init(MPI_Comm comm,
                         const std::vector<la_index>& ghost_indices)
 {
   PetscErrorCode ierr;
-
-  // Create vector
   if (_x)
-  {
-    // FIXME: Can't use reference counting below because PETSc
-    // objects, e.g. KSPSolve, incrent the reference count
-    // Get reference count to check that vector isn't shared
-    /*
-    int ref_count = 0;
-    PetscObjectGetReference((PetscObject)_x, &ref_count);
-     if (ref_count > 1)
-    {
-      dolfin_error("PETScVector.cpp",
-                   "initialize PETSc vector",
-                   "More than one object points to the underlying PETSc object");
-    }
-    */
     VecDestroy(&_x);
-  }
 
   // GPU support does not work in parallel
   if (_use_gpu && MPI::num_processes(comm))
@@ -866,7 +845,6 @@ void PETScVector::reset()
 {
   if (_x)
   {
-    //PetscObjectDereference((PetscObject)_x);
     VecDestroy(&_x);
     _x = NULL;
   }

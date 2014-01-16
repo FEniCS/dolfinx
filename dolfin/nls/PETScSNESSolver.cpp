@@ -183,20 +183,14 @@ PETScSNESSolver::PETScSNESSolver(std::string nls_type) : _snes(NULL)
 //-----------------------------------------------------------------------------
 PETScSNESSolver::~PETScSNESSolver()
 {
-  // Decrease reference count (PETSc will destroy object once
-  // reference counts reached zero)
   if (_snes)
-    PetscObjectDereference((PetscObject)_snes);
+    SNESDestroy(&_snes);
 }
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::init(const std::string& method)
 {
   if (_snes)
-  {
-    // Decrease reference count
-    PetscObjectDereference((PetscObject)_snes);
-    _snes = NULL;
-  }
+    SNESDestroy(&_snes);
 
   // Create SNES object
   SNESCreate(PETSC_COMM_WORLD, &_snes);
