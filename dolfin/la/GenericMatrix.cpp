@@ -93,7 +93,8 @@ void GenericMatrix::compress()
   }
 
   // Access sparsity pattern
-  GenericSparsityPattern& new_sparsity_pattern = *(new_layout->sparsity_pattern());
+  GenericSparsityPattern& new_sparsity_pattern
+    = *(new_layout->sparsity_pattern());
 
   // Retrieve global and local matrix info
   std::vector<std::size_t> global_dimensions(2);
@@ -103,9 +104,11 @@ void GenericMatrix::compress()
   local_range[0] = this->local_range(0);
   local_range[1] = this->local_range(0);
 
-  // With the row-by-row algorithm used here there is no need for inserting non_local
-  // rows and as such we can simply use a dummy for off_process_owner
-  std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(2);
+  // With the row-by-row algorithm used here there is no need for
+  // inserting non_local rows and as such we can simply use a dummy
+  // for off_process_owner
+  std::vector<const boost::unordered_map<std::size_t, unsigned int>* >
+    off_process_owner(2);
   const boost::unordered_map<std::size_t, unsigned int> dummy;
   off_process_owner[0] = &dummy;
   off_process_owner[1] = &dummy;
@@ -113,10 +116,11 @@ void GenericMatrix::compress()
   const std::size_t m = row_range.second - row_range.first;
 
   // Initialize layout
-  new_layout->init(global_dimensions, 1, local_range);
+  new_layout->init(MPI_COMM_WORLD, global_dimensions, 1, local_range);
 
   // Initialize sparsity pattern
-  new_sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
+  new_sparsity_pattern.init(MPI_COMM_WORLD, global_dimensions, local_range,
+                            off_process_owner);
 
   // Declare some variables used to extract matrix information
   std::vector<std::size_t> columns;
@@ -134,7 +138,8 @@ void GenericMatrix::compress()
   // Iterate over rows
   for (std::size_t i = 0; i < m; i++)
   {
-    // Get row and locate nonzeros. Store non-zero values and columns for later
+    // Get row and locate nonzeros. Store non-zero values and columns
+    // for later
     const std::size_t global_row = i + row_range.first;
     getrow(global_row, columns, values);
     std::size_t count = 0;

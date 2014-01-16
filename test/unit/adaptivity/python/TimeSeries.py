@@ -39,13 +39,12 @@ class TimeSeriesTest(unittest.TestCase):
 
     def _test_retrieve(self, compressed=False, all_connectivities=False):
 
-        if MPI.num_processes() > 1:
-            return
-
         times = [t/10.0 for t in range(1, 11)]
 
         mesh_size = (2, 2, 2)
         mesh = UnitCubeMesh(*mesh_size)
+        if MPI.num_processes(mesh.mpi_comm()) > 1:
+            return
         mesh.init()
         V = FunctionSpace(mesh, "CG", 2)
 
@@ -81,14 +80,13 @@ class TimeSeriesTest(unittest.TestCase):
     def test_subdirectory(self):
         "Test that retrieve/store works with nonexisting subdirectory"
 
-        if MPI.num_processes() > 1:
+        m0 = UnitSquareMesh(3, 3)
+        if MPI.num_processes(m0.mpi_comm()) > 1:
             return
 
         name = "TimeSeries_test_subdirectory/foo"
-
         series0 = TimeSeries(name)
-        m0 = UnitSquareMesh(3, 3)
-        x0 = Vector(10)
+        x0 = Vector(mpi_comm_world(), 10)
 
         # Test storage of only one time point for the mesh
         series0.store(m0, 0.1)
