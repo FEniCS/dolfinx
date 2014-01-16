@@ -111,10 +111,10 @@ void SLEPcEigenSolver::solve(std::size_t n)
   if (_B)
   {
     dolfin_assert(_B->size(0) == _B->size(1) && _B->size(0) == _A->size(0));
-    EPSSetOperators(eps, *_A->mat(), *_B->mat());
+    EPSSetOperators(eps, _A->mat(), _B->mat());
   }
   else
-    EPSSetOperators(eps, *_A->mat(), PETSC_NULL);
+    EPSSetOperators(eps, _A->mat(), PETSC_NULL);
 
   // Set number of eigenpairs to compute
   dolfin_assert(n <= _A->size(0));

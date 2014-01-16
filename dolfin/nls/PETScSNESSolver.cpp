@@ -289,7 +289,7 @@ std::pair<std::size_t, bool>
   snes_ctx.dx = &x.down_cast<PETScVector>();
 
   SNESSetFunction(*_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
-  SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian,
+  SNESSetJacobian(*_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
                   &snes_ctx);
 
   // Set some options from the parameters
@@ -444,11 +444,9 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
   nonlinear_problem->form(dA, f, *dx);
   nonlinear_problem->J(dA, *dx);
 
-  MatCopy(*dA.mat(), *A, SAME_NONZERO_PATTERN);
+  MatCopy(dA.mat(), *A, SAME_NONZERO_PATTERN);
   if (B != A)
-  {
-    MatCopy(*dA.mat(), *B, SAME_NONZERO_PATTERN);
-  }
+    MatCopy(dA.mat(), *B, SAME_NONZERO_PATTERN);
   *flag = SAME_NONZERO_PATTERN;
 
   return 0;

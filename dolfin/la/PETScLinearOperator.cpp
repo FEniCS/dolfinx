@@ -127,12 +127,21 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
 
   // Initialize PETSc matrix
   PetscErrorCode ierr;
-  _A.reset(new Mat, PETScMatrixDeleter());
+  if (_A)
+  {
+    PetscObjectDereference((PetscObject)_A);
+    _A = NULL;
+  }
+
+  // Create shell matrix
   ierr = MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N,
-                        (void*) this, _A.get());
+                        (void*) this, &_A);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateShell");
 
-  ierr = MatShellSetOperation(*_A, MATOP_MULT, (void (*)()) usermult);
+  // Incrase reference count
+  PetscObjectReference((PetscObject)_A);
+
+  ierr = MatShellSetOperation(_A, MATOP_MULT, (void (*)()) usermult);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatShellSetOperation");
 }
 //-----------------------------------------------------------------------------

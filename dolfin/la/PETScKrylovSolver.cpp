@@ -340,7 +340,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     if (pc_nullspace && !preconditioner_set)
     {
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
-      ierr = MatSetNearNullSpace(*(_P->mat()), *pc_nullspace);
+      ierr = MatSetNearNullSpace(_P->mat(), *pc_nullspace);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetNearNullSpace");
       #else
       dolfin_error("PETScMatrix.cpp",
@@ -534,17 +534,17 @@ void PETScKrylovSolver::set_petsc_operators()
   PetscErrorCode ierr;
   if (mat_structure == "same")
   {
-    ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(), SAME_PRECONDITIONER);
+    ierr = KSPSetOperators(*_ksp, _A->mat(), _P->mat(), SAME_PRECONDITIONER);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
   else if (mat_structure == "same_nonzero_pattern")
   {
-    ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(), SAME_NONZERO_PATTERN);
+    ierr = KSPSetOperators(*_ksp, _A->mat(), _P->mat(), SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
   else if (mat_structure == "different_nonzero_pattern")
   {
-    ierr = KSPSetOperators(*_ksp, *_A->mat(), *_P->mat(),
+    ierr = KSPSetOperators(*_ksp, _A->mat(), _P->mat(),
                            DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }

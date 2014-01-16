@@ -462,17 +462,17 @@ void PETScLUSolver::set_petsc_operators()
   // Set operators with appropriate preconditioner option
   if (reuse_fact)
   {
-    ierr = KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(), SAME_PRECONDITIONER);
+    ierr = KSPSetOperators(*_ksp, _A->mat(), _A->mat(), SAME_PRECONDITIONER);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
   else if (same_pattern)
   {
-    ierr = KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(), SAME_NONZERO_PATTERN);
+    ierr = KSPSetOperators(*_ksp, _A->mat(), _A->mat(), SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
   else
   {
-    ierr = KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(),
+    ierr = KSPSetOperators(*_ksp, _A->mat(), _A->mat(),
                            DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }

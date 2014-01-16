@@ -90,7 +90,7 @@ PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
 PETScVector::PETScVector(Vec x): _x(x), x_ghosted(NULL), _use_gpu(false)
 {
   // Increase reference count
-  PetscObjectReference((PetscObject)x);
+  PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const PETScVector& v) : _x(NULL), x_ghosted(NULL),
