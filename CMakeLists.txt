@@ -297,14 +297,15 @@ if (DOLFIN_ENABLE_PYTHON)
     endif()
 
     # Add a search path for Python library based on output from
-    # iterpreter
+    # interpreter
+    set(CMAKE_LIBRARY_PATH_SAVE ${CMAKE_LIBRARY_PATH})
     if ("${_PYTHON_LIB_RESULT}" STREQUAL "0")
       set(CMAKE_LIBRARY_PATH ${_PYTHON_LIB_PATH})
     endif()
 
     # Find Pythons libs
     find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT QUIET REQUIRED)
-    set(CMAKE_LIBRARY_PATH "")
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH_SAVE})
   endif()
 
   # If Python is found, check for NumPy and SWIG
