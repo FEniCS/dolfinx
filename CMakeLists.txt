@@ -302,8 +302,9 @@ if (DOLFIN_ENABLE_PYTHON)
       set(CMAKE_LIBRARY_PATH ${_PYTHON_LIB_PATH})
     endif()
 
-    # Find Pythons livs
+    # Find Pythons libs
     find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT QUIET REQUIRED)
+    set(CMAKE_LIBRARY_PATH "")
   endif()
 
   # If Python is found, check for NumPy and SWIG
