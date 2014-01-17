@@ -29,6 +29,7 @@
 #include <typeinfo>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "LinearAlgebraObject.h"
 
@@ -89,6 +90,9 @@ namespace dolfin
 
     /// Finalize assembly of tensor
     virtual void apply(std::string mode) = 0;
+
+    /// Return MPI communicator
+    virtual const MPI_Comm mpi_comm() const = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;

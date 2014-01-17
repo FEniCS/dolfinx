@@ -40,6 +40,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -442,7 +443,7 @@ namespace dolfin
     void check() const;
 
     // Initialize facets (from sub domain, mesh, etc)
-    void init_facets() const;
+    void init_facets(const MPI_Comm mpi_comm) const;
 
     // Initialize sub domain markers from sub domain
     void

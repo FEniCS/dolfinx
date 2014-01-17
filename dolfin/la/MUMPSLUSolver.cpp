@@ -120,7 +120,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(18) = 3;
 
   // Parallel/serial analysis (0=auto, 1=serial, 2=parallel)
-  if (MPI::num_processes() > 1)
+  if (MPI::num_processes(_A->mpi_comm()) > 1)
     data.ICNTL(28) = 2;
   else
     data.ICNTL(28) = 0;
@@ -144,8 +144,8 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.nz_loc = rows.size();
 
   // Pass matrix data to MUMPS. Trust MUMPS not to change it
-  data.irn_loc = const_cast<int*>(reinterpret_cast<const int*>(&rows[0]));
-  data.jcn_loc = const_cast<int*>(reinterpret_cast<const int*>(&cols[0]));
+  data.irn_loc = const_cast<int*>(reinterpret_cast<const int*>(rows.data()));
+  data.jcn_loc = const_cast<int*>(reinterpret_cast<const int*>(cols.data()));
   data.a_loc   = const_cast<double*>(&vals[0]);
 
   // Analyse and factorize
@@ -171,7 +171,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Attach solution data to MUMPS object
   data.lsol_loc = local_x_size;
-  data.sol_loc  = &x_local_vals[0];
+  data.sol_loc  = x_local_vals.data();
   data.isol_loc = x_local_indices.data();
 
   // Solve problem

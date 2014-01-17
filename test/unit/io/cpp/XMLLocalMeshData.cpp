@@ -39,7 +39,7 @@ public:
   {
     // Create undirected graph with edges added out of order (should pass)
     File file("../snake.xml.gz");
-    LocalMeshData localdata;
+    LocalMeshData localdata(MPI_COMM_WORLD);
     file >> localdata;
   }
 };

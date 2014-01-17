@@ -49,17 +49,10 @@ namespace dolfin
       return A;
     }
 
-    /// Create empty vector (global)
+    /// Create empty vector
     boost::shared_ptr<GenericVector> create_vector() const
     {
-      boost::shared_ptr<GenericVector> x(new STLVector("global"));
-      return x;
-    }
-
-    /// Create empty vector (local)
-    boost::shared_ptr<GenericVector> create_local_vector() const
-    {
-      boost::shared_ptr<GenericVector> x(new STLVector("local"));
+      boost::shared_ptr<GenericVector> x(new STLVector);
       return x;
     }
 

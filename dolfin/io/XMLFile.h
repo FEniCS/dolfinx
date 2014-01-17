@@ -29,6 +29,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+#include <dolfin/common/MPI.h>
 #include "GenericFile.h"
 
 namespace pugi
@@ -54,7 +55,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    XMLFile(const std::string filename);
+    XMLFile(MPI_Comm mpi_comm, const std::string filename);
 
     /// Constructor from a stream
     XMLFile(std::ostream& s);
@@ -71,7 +72,8 @@ namespace dolfin
 
     // Vector
     void operator>> (GenericVector& input);
-    void read_vector(std::vector<double>& input, std::vector<dolfin::la_index>& indices);
+    void read_vector(std::vector<double>& input,
+                     std::vector<dolfin::la_index>& indices);
     void operator<< (const GenericVector& output);
 
     // Parameters
@@ -162,6 +164,9 @@ namespace dolfin
     static pugi::xml_node write_dolfin(pugi::xml_document& doc);
 
     boost::shared_ptr<std::ostream> outstream;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 

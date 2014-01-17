@@ -291,6 +291,9 @@ namespace dolfin
     // Has init been called
     bool _initialized;
 
+    // Rescales ranges and glyphs
+    void rescale();
+
     // Set the title parameter from the name and label of the Variable to plot
     void set_title_from(const Variable &variable);
 

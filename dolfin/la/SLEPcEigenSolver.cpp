@@ -45,10 +45,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
@@ -62,10 +59,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
@@ -77,10 +71,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
@@ -96,10 +87,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()

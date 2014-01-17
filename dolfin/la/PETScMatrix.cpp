@@ -519,6 +519,14 @@ void PETScMatrix::apply(std::string mode)
   }
 }
 //-----------------------------------------------------------------------------
+const MPI_Comm PETScMatrix::mpi_comm() const
+{
+  dolfin_assert(_A);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)(*_A), &mpi_comm);
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
   dolfin_assert(_A);
@@ -619,7 +627,7 @@ std::string PETScMatrix::str(bool verbose) const
     // FIXME: Maybe this could be an option?
     dolfin_assert(_A);
     PetscErrorCode ierr;
-    if (MPI::num_processes() > 1)
+    if (MPI::num_processes(MPI_COMM_WORLD) > 1)
     {
       ierr = MatView(*_A, PETSC_VIEWER_STDOUT_WORLD);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatView");

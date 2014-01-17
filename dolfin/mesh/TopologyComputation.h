@@ -46,11 +46,11 @@ namespace dolfin
 
   private:
 
-    /// Compute connectivity from transpose
+    // Compute connectivity from transpose
     static void compute_from_transpose(Mesh& mesh, std::size_t d0,
                                        std::size_t d1);
 
-    /// Compute connectivity from intersection
+    // Compute connectivity from intersection
     static void compute_from_intersection(Mesh& mesh, std::size_t d0,
                                           std::size_t d1, std::size_t d);
 

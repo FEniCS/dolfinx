@@ -55,12 +55,12 @@ class AbstractBaseTest(object):
 
     def test_create_vector(self):
         n = 301
-        v1 = Vector(n)
+        v1 = Vector(mpi_comm_world(), n)
         self.assertEqual(v1.size(), n)
 
     def test_copy_vector(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v1 = Vector(v0)
         self.assertEqual(v0.size(), n)
         del v0
@@ -68,7 +68,7 @@ class AbstractBaseTest(object):
 
     def test_assign_and_copy_vector(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = 1.0
         self.assertEqual(v0.sum(), n)
         v1 = Vector(v0)
@@ -76,50 +76,50 @@ class AbstractBaseTest(object):
         self.assertEqual(v1.sum(), n)
 
     def test_zero(self):
-        v0 = Vector(301)
+        v0 = Vector(mpi_comm_world(), 301)
         v0.zero()
         self.assertEqual(v0.sum(), 0.0)
 
     def test_apply(self):
-        v0 = Vector(301)
+        v0 = Vector(mpi_comm_world(), 301)
         v0.apply("insert")
         v0.apply("add")
 
     def test_str(self):
-        v0 = Vector(13)
+        v0 = Vector(mpi_comm_world(), 13)
         tmp = v0.str(False)
         tmp = v0.str(True)
 
     def test_resize(self):
         m, n = 301, 409
         v0 = Vector()
-        v0.resize(m)
+        v0.resize(mpi_comm_world(), m)
         self.assertEqual(v0.size(), m)
-        v0.resize(n)
+        v0.resize(mpi_comm_world(), n)
         self.assertEqual(v0.size(), n)
 
     def test_resize_range(self):
         n = 301
-        local_range = MPI.local_range(n)
+        local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
-        v0.resize(local_range)
+        v0.resize(mpi_comm_world(), local_range)
         self.assertEqual(v0.local_range(), local_range)
 
     def test_size(self):
         n = 301
-        v0 = Vector(301)
+        v0 = Vector(mpi_comm_world(), 301)
         self.assertEqual(v0.size(), n)
 
     def test_local_size(self):
         n = 301
-        local_range = MPI.local_range(n)
+        local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
-        v0.resize(local_range)
+        v0.resize(mpi_comm_world(), local_range)
         self.assertEqual(v0.local_size(), local_range[1] - local_range[0])
 
     def test_owns_index(self):
         m, n = 301, 25
-        v0 = Vector(m)
+        v0 = Vector(mpi_comm_world(), m)
         local_range = v0.local_range()
         in_range = local_range[0] <= n < local_range[1]
         self.assertEqual(v0.owns_index(n), in_range)
@@ -133,13 +133,13 @@ class AbstractBaseTest(object):
     def test_get_local(self):
         from numpy import empty
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         data = v0.get_local()
 
     def test_set_local(self):
         from numpy import zeros
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         data = zeros((v0.local_size()), dtype='d')
         v0.set_local(data)
         data = zeros((v0.local_size()*2), dtype='d')
@@ -147,7 +147,7 @@ class AbstractBaseTest(object):
     def test_add_local(self):
         from numpy import zeros
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         data = zeros((v0.local_size()), dtype='d')
         v0.add_local(data)
         data = zeros((v0.local_size()*2), dtype='d')
@@ -157,7 +157,7 @@ class AbstractBaseTest(object):
 
     def test_axpy(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = 1.0
         v1 = Vector(v0)
         v0.axpy(2.0, v1)
@@ -165,47 +165,47 @@ class AbstractBaseTest(object):
 
     def test_abs(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v0.abs()
         self.assertEqual(v0.sum(), n)
 
     def test_inner(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = 2.0
-        v1 = Vector(n)
+        v1 = Vector(mpi_comm_world(), n)
         v1[:] = 3.0
         self.assertEqual(v0.inner(v1), 6*n)
 
     def test_norm(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = -2.0
         self.assertEqual(v0.norm("l1"), 2.0*n)
         self.assertEqual(v0.norm("l2"), sqrt(4.0*n))
         self.assertEqual(v0.norm("linf"), 2.0)
 
     def test_min(self):
-        v0 = Vector(301)
+        v0 = Vector(mpi_comm_world(), 301)
         v0[:] = 2.0
         self.assertEqual(v0.min(), 2.0)
 
     def test_max(self):
-        v0 = Vector(301)
+        v0 = Vector(mpi_comm_world(),301)
         v0[:] = -2.0
         self.assertEqual(v0.max(), -2.0)
 
     def test_sum(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = -2.0
         self.assertEqual(v0.sum(), -2.0*n)
 
     def test_sum_entries(self):
         from numpy import zeros
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = -2.0
         entries = zeros(5, dtype='uintp')
         self.assertEqual(v0.sum(entries), -2.0)
@@ -218,15 +218,15 @@ class AbstractBaseTest(object):
 
     def test_scalar_mult(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v0 *= 2.0
         self.assertEqual(v0.sum(), -2.0*n)
 
     def test_vector_element_mult(self):
         n = 301
-        v0 = Vector(n)
-        v1 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
+        v1 = Vector(mpi_comm_world(), n)
         v0[:] = -2.0
         v1[:] =  3.0
         v0 *= v1
@@ -234,15 +234,15 @@ class AbstractBaseTest(object):
 
     def test_scalar_divide(self):
         n = 301
-        v0 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v0 /= -2.0
         self.assertEqual(v0.sum(), 0.5*n)
 
     def test_vector_add(self):
         n = 301
-        v0 = Vector(n)
-        v1 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
+        v1 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v1[:] =  2.0
         v0 += v1
@@ -252,8 +252,8 @@ class AbstractBaseTest(object):
         #if self.backend == "Epetra":
         #    return
         n = 301
-        v0 = Vector(n)
-        v1 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
+        v1 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v0 += 2.0
         self.assertEqual(v0.sum(), n)
@@ -266,8 +266,8 @@ class AbstractBaseTest(object):
 
     def test_vector_subtract(self):
         n = 301
-        v0 = Vector(n)
-        v1 = Vector(n)
+        v0 = Vector(mpi_comm_world(), n)
+        v1 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v1[:] =  2.0
         v0 -= v1
@@ -275,8 +275,8 @@ class AbstractBaseTest(object):
 
     def test_vector_assignment(self):
         m, n = 301, 345
-        v0 = Vector(m)
-        v1 = Vector(n)
+        v0 = Vector(mpi_comm_world(), m)
+        v1 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v1[:] =  2.0
         v0 = v1
@@ -285,36 +285,36 @@ class AbstractBaseTest(object):
     def test_vector_assignment_length(self):
         # Test that assigning vectors of different lengths fails
         m, n = 301, 345
-        v0 = Vector(m)
-        v1 = Vector(n)
+        v0 = Vector(mpi_comm_world(), m)
+        v1 = Vector(mpi_comm_world(), n)
         def wrong_assignment(v0, v1):
             v0[:] = v1
         self.assertRaises(RuntimeError, wrong_assignment, v0, v1)
 
     def test_vector_assignment_length(self):
         # Test that assigning with diffrent parallel layouts fails
-        if MPI.num_processes() > 1:
+        if MPI.num_processes(mpi_comm_world()) > 1:
             m = 301
-            local_range0 = MPI.local_range(m)
+            local_range0 = MPI.local_range(mpi_comm_world(), m)
             print "local range", local_range0[0], local_range0[1]
 
             # Shift parallel partitiong but preserve global size
-            if MPI.process_number() == 0:
+            if MPI.process_number(mpi_comm_world()) == 0:
                 local_range1 = (local_range0[0], local_range0[1] + 1)
-            elif MPI.process_number() == MPI.num_processes() - 1:
+            elif MPI.process_number(mpi_comm_world()) == MPI.num_processes(mpi_comm_world()) - 1:
                 local_range1 = (local_range0[0] + 1, local_range0[1])
             else:
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
 
             v0 = Vector()
-            v0.resize(local_range0)
+            v0.resize(mpi_comm_world(), local_range0)
             v1 = Vector()
-            v1.resize(local_range1)
+            v1.resize(mpi_comm_world(), local_range1)
             self.assertEqual(v0.size(), v1.size())
 
             def wrong_assignment(v0, v1):
                 v0[:] = v1
-            self.assertRaises(RuntimeError, wrong_assignment, v0, v1)
+                self.assertRaises(RuntimeError, wrong_assignment, v0, v1)
 
 
 # A DataTester class that test the acces of the raw data through pointers
@@ -322,7 +322,7 @@ class AbstractBaseTest(object):
 class DataTester:
     def test_vector_data(self):
         # Test for ordinary Vector
-        v = Vector(301)
+        v = Vector(mpi_comm_world(), 301)
         array = v.array()
         data = v.data()
         self.assertTrue((data == array).all())
@@ -340,7 +340,7 @@ class DataTester:
 
 class DataNotWorkingTester:
     def test_vector_data(self):
-        v = Vector(301)
+        v = Vector(mpi_comm_world(), 301)
         self.assertRaises(RuntimeError, v.data)
 
         v = as_backend_type(v)
@@ -348,7 +348,7 @@ class DataNotWorkingTester:
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-if MPI.num_processes() == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
@@ -358,15 +358,18 @@ if MPI.num_processes() == 1:
         sub_backend = "Dense"
 
     if has_linear_algebra_backend("PETScCusp"):
-        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, \
+                              unittest.TestCase):
             backend    = "PETScCusp"
 
 if has_linear_algebra_backend("PETSc"):
-    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+    class PETScTester(DataNotWorkingTester, AbstractBaseTest, \
+                      unittest.TestCase):
         backend    = "PETSc"
 
 if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
+                       unittest.TestCase):
         backend    = "Epetra"
 
 # If we have PETSc or Epetra STL Vector gets typedefed to one of these and

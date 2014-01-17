@@ -21,6 +21,8 @@
 #ifndef __RECTANGLE_MESH_H
 #define __RECTANGLE_MESH_H
 
+#include <string>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -61,6 +63,17 @@ namespace dolfin
     RectangleMesh(double x0, double y0, double x1, double y1,
                   std::size_t nx, std::size_t ny,
                   std::string diagonal="right");
+
+    RectangleMesh(MPI_Comm comm, double x0, double y0, double x1, double y1,
+                  std::size_t nx, std::size_t ny,
+                  std::string diagonal="right");
+
+  private:
+
+    // Build mesh
+    void build(double x0, double y0, double x1, double y1,
+               std::size_t nx, std::size_t ny,
+               std::string diagonal="right");
 
   };
 
