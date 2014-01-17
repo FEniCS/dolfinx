@@ -36,6 +36,25 @@ W2 = g.function_space()
 
 class Interface(unittest.TestCase):
 
+    def test_python_interface(self):
+        # Test Python interface of cpp generated FunctionSpace
+        self.assertTrue(isinstance(V, FunctionSpaceBase))
+        self.assertTrue(isinstance(W, FunctionSpaceBase))
+        self.assertTrue(isinstance(V2, FunctionSpaceBase))
+        self.assertTrue(isinstance(W2, FunctionSpaceBase))
+
+        self.assertEqual(V.cell(), V2.cell())
+        self.assertEqual(W.cell(), W2.cell())
+        self.assertEqual(V.dolfin_element().signature(), V2.dolfin_element().signature())
+        self.assertEqual(W.dolfin_element().signature(), W2.dolfin_element().signature())
+        self.assertEqual(V.ufl_element(), V2.ufl_element())
+        self.assertEqual(W.ufl_element(), W2.ufl_element())
+        self.assertEqual(W.id(), W2.id())
+        self.assertEqual(V.id(), V2.id())
+
+        Q2 = W2*V2
+        self.assertEqual(Q2.dim(), Q.dim())
+
     def test_component(self):
         self.assertFalse(W.component())
         self.assertFalse(V.component())
