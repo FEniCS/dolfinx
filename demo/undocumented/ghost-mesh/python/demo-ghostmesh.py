@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 import matplotlib as mpl
 
-if(MPI.num_processes() == 1):
+if(MPI.num_processes(mpi_comm_world()) == 1):
     print "Only works with MPI"
     quit()
 
@@ -19,7 +19,7 @@ shared_vertices = M.topology().shared_entities(0).keys()
 x,y = M.coordinates().transpose()
 
 cell_ownership = M.data().array("ghost_owner", M.topology().dim())
-process_number = MPI.process_number()
+process_number = MPI.process_number(M.mpi_comm())
 vmask_array = M.data().array("ghost_mask", 0) == 0
 vmask_array_g = M.data().array("ghost_mask", 0) == 1
 
