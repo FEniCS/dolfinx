@@ -1,19 +1,31 @@
+ - Remove random access function from MeshEntityIteratior (fixes #178)
+ - Add support for VTK 6 (fixes #149)
+ - Use MPI communicator in interfaces. Permits the creation of distributed and
+	local objects, e.g. Meshes.
+ - Reduce memory usage and increase speed of mesh topology computation
 1.3.0 [2014-01-07]
  - Feature: Enable assignment of sparse MeshValueCollections to MeshFunctions
  - Feature: Add free function assign that is used for sub function assignment
- - Feature: Add class FunctionAssigner that cache dofs for sub function assignment
+ - Feature: Add class FunctionAssigner that cache dofs for sub function
+	assignment
  - Fix runtime dependency on checking swig version
  - Deprecate DofMap member methods vertex_to_dof_map and dof_to_vertex_map
- - Add free functions: vertex_to_dof_map and dof_to_vertex_map, and correct the ordering of the map.
- - Introduce CompiledSubDomain a more robust version of compiled_subdomains, which is now deprecated
+ - Add free functions: vertex_to_dof_map and dof_to_vertex_map, and correct the
+	ordering of the map.
+ - Introduce CompiledSubDomain a more robust version of compiled_subdomains,
+	which is now deprecated
  - CMake now takes care of calling the correct generate-foo script if so needed.
  - Feature: Add new built-in computational geometry library (BoundingBoxTree)
- - Feature: Add support for setting name and label to an Expression when constructed
- - Feature: Add support for passing a scalar GenericFunction as default value to a CompiledExpression
+ - Feature: Add support for setting name and label to an Expression when
+	constructed
+ - Feature: Add support for passing a scalar GenericFunction as default value
+	to a CompiledExpression
  - Feature: Add support for distance queries for 3-D meshes
- - Feature: Add PointIntegralSolver, which uses the MultiStageSchemes to solve local ODEs at Vertices
+ - Feature: Add PointIntegralSolver, which uses the MultiStageSchemes to solve
+	local ODEs at Vertices
  - Feature: Add RKSolver and MultiStageScheme for general time integral solvers
- - Feature: Add support for assigning a Function with linear combinations of Functions, which lives in the same FunctionSpace
+ - Feature: Add support for assigning a Function with linear combinations of
+	Functions, which lives in the same FunctionSpace
  - Added Python wrapper for SystemAssembler
  - Added a demo using compiled_extension_module with separate source files
  - Fixes for NumPy 1.7
@@ -32,40 +44,50 @@
  - Add timed VTK output for Mesh and MeshFunction in addtion to Functions
  - Expose ufc::dofmap::tabulate_entity_dofs to GenericDofMap interface
  - Expose ufc::dofmap::num_entity_dofs to GenericDofMap interface
- - Allow setting of row dof coordinates in preconditioners (only works with PETSc backed for now)
+ - Allow setting of row dof coordinates in preconditioners (only works with
+	PETSc backed for now)
  - Expose more PETSc/ML parameters
  - Improve speed to tabulating coordinates in some DofMap functions
- - Feature: Add support for passing a Constant as default value to a CompiledExpression
+ - Feature: Add support for passing a Constant as default value to a
+	CompiledExpression
  - Fix bug in dimension check for 1-D ALE
  - Remove some redundant graph code
- - Improvements in speed of parallel dual grapj builder
+ - Improvements in speed of parallel dual graph builder
  - Fix bug in XMDF output for cell-based Functions
  - Fixes for latest version of clang compiler
  - LocalSolver class added to efficiently solve cell-wise problems
- - New implementation of periodic boundary conditions. Now incorporated into the dofmap
+ - New implementation of periodic boundary conditions. Now incorporated into
+	the dofmap
  - Optional arguments to assemblers removed
  - SymmetricAssembler removed
  - Domains for assemblers can now only be attached to forms
- - SubMesh can now be constructed without a CellFunction argument, if the MeshDomain contains marked celldomains.
+ - SubMesh can now be constructed without a CellFunction argument, if the
+	MeshDomain contains marked celldomains.
  - MeshDomains are propagated to a SubMesh during construction
- - Simplify generation of a MeshFunction from MeshDomains: No need to call mesh_function with mesh
+ - Simplify generation of a MeshFunction from MeshDomains: No need to call
+	mesh_function with mesh
  - Rename dolfin-config.cmake to DOLFINConfig.cmake
  - Use CMake to configure JIT compilation of extension modules
- - Feature: Add vertex_to_dof_map to DofMap, which map vertex indices to dolfin dofs
- - Feature: Add support for solving on m dimensional meshes embedded in n >= m dimensions
+ - Feature: Add vertex_to_dof_map to DofMap, which map vertex indices to
+	dolfin dofs
+ - Feature: Add support for solving on m dimensional meshes embedded in n >= m
+	dimensions
 1.1.0 [2013-01-08]
  - Add support for solving singular problems with Krylov solvers (PETSc only)
- - Add new typedef dolfin::la_index for consistent indexing with linear algebra backends.
+ - Add new typedef dolfin::la_index for consistent indexing with linear algebra
+	backends.
  - Change default unsigned integer type to std::size_t
  - Add support to attaching operator null space to preconditioner
    (required for smoothed aggregation AMG)
  - Add basic interface to the PETSc AMG preconditioner
- - Make SCOTCH default graph partitioner (GNU-compatible free license, unlike ParMETIS)
+ - Make SCOTCH default graph partitioner (GNU-compatible free license, unlike
+	ParMETIS)
  - Add scalable construction of mesh dual graph for mesh partitioning
  - Improve performance of mesh building in parallel
  - Add mesh output to SVG
  - Add support for Facet and cell markers to mesh converted from Diffpack
- - Add support for Facet and cell markers/attributes to mesh converted from Triangle
+ - Add support for Facet and cell markers/attributes to mesh converted from
+	Triangle
  - Change interface for auto-adaptive solvers: these now take the goal
    functional as a constructor argument
  - Add memory usage monitor: monitor_memory_usage()

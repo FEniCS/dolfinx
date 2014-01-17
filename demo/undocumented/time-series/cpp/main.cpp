@@ -41,7 +41,7 @@ int main()
   {
     // Refine mesh and resize vector
     mesh = refine(mesh);
-    x.resize(mesh.num_vertices());
+    x.resize(mesh.mpi_comm(), mesh.num_vertices());
 
     // Set some vector values
     std::vector<double> values(x.local_size());

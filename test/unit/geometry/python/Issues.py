@@ -29,11 +29,12 @@ class Issues(unittest.TestCase):
     def test_issue_97(self):
         "Test from Mikael Mortensen (issue #97)"
 
-        if MPI.num_processes() > 1: return
-
         N = 2
         L = 1000
         mesh = BoxMesh(0, 0, 0, L, L, L, N, N, N)
+
+        if MPI.num_processes(mesh.mpi_comm()) > 1:
+            return
 
         V = FunctionSpace(mesh, 'CG', 1)
         v = interpolate(Expression('x[0]'), V)
@@ -43,9 +44,9 @@ class Issues(unittest.TestCase):
     def test_issue_168(self):
         "Test from Torsten Wendav (issue #168)"
 
-        if MPI.num_processes() > 1: return
-
         mesh = UnitCubeMesh(14, 14, 14)
+        if MPI.num_processes(mesh.mpi_comm()) > 1:
+            return
         V = FunctionSpace(mesh, "Lagrange", 1)
         v = Function(V)
         x = (0.75, 0.25, 0.125)

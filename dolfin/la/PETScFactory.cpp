@@ -43,13 +43,7 @@ boost::shared_ptr<GenericMatrix> PETScFactory::create_matrix() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> PETScFactory:: create_vector() const
 {
-  boost::shared_ptr<GenericVector> x(new PETScVector("global"));
-  return x;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> PETScFactory:: create_local_vector() const
-{
-  boost::shared_ptr<GenericVector> x(new PETScVector("local"));
+  boost::shared_ptr<GenericVector> x(new PETScVector);
   return x;
 }
 //-----------------------------------------------------------------------------

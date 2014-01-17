@@ -30,9 +30,9 @@ class XMLMeshFunction(unittest.TestCase):
     def test_io_size_t(self):
         "Test input/output for size_t"
 
-        if (MPI.num_processes() == 1):
-            # Write some data
-            mesh = UnitSquareMesh(5, 5)
+        # Write some data
+        mesh = UnitSquareMesh(5, 5)
+        if (MPI.num_processes(mesh.mpi_comm()) == 1):
             f = MeshFunction("size_t", mesh, 1)
             f.set_all(0)
             f[2] = 3
@@ -54,9 +54,9 @@ class XMLMeshFunction(unittest.TestCase):
     def test_io_int(self):
         "Test input/output for int"
 
-        if (MPI.num_processes() == 1):
-            # Write some data
-            mesh = UnitSquareMesh(5, 5)
+        # Write some data
+        mesh = UnitSquareMesh(5, 5)
+        if (MPI.num_processes(mesh.mpi_comm()) == 1):
             f = MeshFunction("int", mesh, 1)
             f.set_all(0)
             f[2] = -3
@@ -78,9 +78,9 @@ class XMLMeshFunction(unittest.TestCase):
     def test_io_double(self):
         "Test input/output for double"
 
-        if (MPI.num_processes() == 1):
-            # Write some data
-            mesh = UnitSquareMesh(5, 5)
+        # Write some data
+        mesh = UnitSquareMesh(5, 5)
+        if (MPI.num_processes(mesh.mpi_comm()) == 1):
             f = MeshFunction("double", mesh, 1)
             f.set_all(0.0)
             f[2] = 3.14
@@ -102,9 +102,9 @@ class XMLMeshFunction(unittest.TestCase):
     def test_io_bool(self):
         "Test input/output for bool"
 
-        if (MPI.num_processes() == 1):
+        mesh = UnitSquareMesh(5, 5)
+        if (MPI.num_processes(mesh.mpi_comm()) == 1):
             # Write some data
-            mesh = UnitSquareMesh(5, 5)
             f = MeshFunction("bool", mesh, 1)
             f.set_all(False)
             f[2] = True

@@ -26,6 +26,7 @@
 
 #include <utility>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -114,28 +115,31 @@ namespace dolfin
 
   private:
 
-    /// Convergence test
+    // Convergence test
     virtual bool converged(const GenericVector& r,
                            const NonlinearProblem& nonlinear_problem,
                            std::size_t iteration);
 
-    /// Current number of Newton iterations
+    // Current number of Newton iterations
     std::size_t _newton_iteration;
 
-    /// Most recent residual and intitial residual
+    // Most recent residual and intitial residual
     double _residual, _residual0;
 
-    /// Solver
+    // Solver
     boost::shared_ptr<GenericLinearSolver> _solver;
 
-    /// Jacobian matrix
+    // Jacobian matrix
     boost::shared_ptr<GenericMatrix> _A;
 
-    /// Solution vector
+    // Solution vector
     boost::shared_ptr<GenericVector> _dx;
 
-    /// Resdiual vector
+    // Resdiual vector
     boost::shared_ptr<GenericVector> _b;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 

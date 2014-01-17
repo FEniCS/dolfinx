@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
   parameters.parse(argc, argv);
 
-  Vector x(SIZE);
+  Vector x(MPI_COMM_WORLD, SIZE);
   x.zero();
 
   double sum = 0.0;

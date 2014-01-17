@@ -27,7 +27,6 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
-#include "dolfin/common/MPI.h"
 #include "dolfin/common/SubSystemsManager.h"
 #include "SparsityPattern.h"
 #include "EpetraLUSolver.h"
@@ -61,13 +60,7 @@ boost::shared_ptr<GenericMatrix> EpetraFactory::create_matrix() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> EpetraFactory::create_vector() const
 {
-  boost::shared_ptr<GenericVector> x(new EpetraVector("global"));
-  return x;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> EpetraFactory::create_local_vector() const
-{
-  boost::shared_ptr<GenericVector> x(new EpetraVector("local"));
+  boost::shared_ptr<GenericVector> x(new EpetraVector);
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -115,27 +108,6 @@ std::vector<std::pair<std::string, std::string> >
   EpetraFactory::krylov_solver_preconditioners() const
 {
   return EpetraKrylovSolver::preconditioners();
-}
-//-----------------------------------------------------------------------------
-Epetra_SerialComm& EpetraFactory::get_serial_comm()
-{
-  if (!serial_comm)
-  {
-    serial_comm.reset(new Epetra_SerialComm());
-    dolfin_assert(serial_comm);
-  }
-  return *serial_comm;
-}
-//-----------------------------------------------------------------------------
-Epetra_MpiComm& EpetraFactory::get_mpi_comm()
-{
-  if (!mpi_comm)
-  {
-    SubSystemsManager::init_mpi();
-    mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
-    dolfin_assert(mpi_comm);
-  }
-  return *mpi_comm;
 }
 //-----------------------------------------------------------------------------
 #endif

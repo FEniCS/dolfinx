@@ -32,7 +32,6 @@
 #include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include "XMLMesh.h"
 #include "XMLMeshValueCollection.h"

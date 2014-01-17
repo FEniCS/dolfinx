@@ -61,13 +61,6 @@ namespace dolfin
       return x;
     }
 
-    /// Create empty vector (local)
-    boost::shared_ptr<GenericVector> create_local_vector() const
-    {
-      boost::shared_ptr<GenericVector> x(new uBLASVector);
-      return x;
-    }
-
     /// Create empty tensor layout
     boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
     {

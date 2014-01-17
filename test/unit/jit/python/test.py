@@ -62,7 +62,7 @@ class JIT(unittest.TestCase):
             ext_module = compile_extension_module(\
                 code, module_name=module_name,\
                 additional_system_headers=["petscvec.h"])
-            vec = PETScVector(10)
+            vec = PETScVector(mpi_comm_world(), 10)
             np_vec = vec.array()
             np_vec[:] = arange(len(np_vec))
             vec.set_local(np_vec)

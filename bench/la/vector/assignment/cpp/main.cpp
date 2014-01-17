@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
   parameters.parse(argc, argv);
 
-  Vector x(SIZE);
+  Vector x(MPI_COMM_WORLD, SIZE);
 
   for (unsigned int i = 0; i < NUM_REPS; i++)
     for (unsigned int j = 0; j < SIZE; j++)
