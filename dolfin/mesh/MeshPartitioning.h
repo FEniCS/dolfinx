@@ -124,7 +124,7 @@ namespace dolfin
     // Distribute vertices
     static void 
       distribute_vertices(const MPI_Comm mpi_comm,
-        const LocalMeshData& data,
+        const LocalMeshData& mesh_data,
         const std::set<std::size_t>& needed_vertex_indices,
         std::vector<std::size_t>& vertex_indices,
         std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
