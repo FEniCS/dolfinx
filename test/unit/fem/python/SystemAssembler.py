@@ -128,11 +128,12 @@ class TestSystemAssembler(unittest.TestCase):
 
     def test_facet_assembly(self):
 
-        if MPI.num_processes() > 1:
+        mesh = UnitSquareMesh(24, 24)
+
+        if MPI.num_processes(mesh.mpi_comm()) > 1:
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
-        mesh = UnitSquareMesh(24, 24)
         V = FunctionSpace(mesh, "DG", 1)
 
         # Define test and trial functions

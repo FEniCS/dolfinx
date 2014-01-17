@@ -75,7 +75,7 @@ std::size_t PointCell::orientation(const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+void PointCell::create_entities(std::vector<std::vector<unsigned int> >& e,
                                 std::size_t dim,
                                 const unsigned int* v) const
 {

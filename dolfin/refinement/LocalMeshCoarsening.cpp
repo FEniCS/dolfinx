@@ -338,8 +338,9 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   }
 
   // Specify number of vertices and cells
-  editor.init_vertices(num_vertices - 1);
-  editor.init_cells(num_cells - num_cells_to_remove);
+  editor.init_vertices(num_vertices - 1, num_vertices - 1);
+  editor.init_cells(num_cells - num_cells_to_remove,
+                    num_cells - num_cells_to_remove);
 
   cout << "Number of cells in old mesh: " << num_cells << "; to remove: " <<
     num_cells_to_remove << endl;

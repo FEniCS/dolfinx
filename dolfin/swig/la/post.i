@@ -408,11 +408,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     (*self)*=a;
   }
 
-  PyObject* _data() {
-
+  PyObject* _data()
+  {
     PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-						 boost::tuples::get<0>(self->data()),
-						 false);
+						  boost::tuples::get<0>(self->data()),
+						  false);
     PyObject* cols = %make_numpy_array(1, size_t)(boost::tuples::get<3>(self->data()),
 						 boost::tuples::get<1>(self->data()),
 						 false);
@@ -603,8 +603,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             if vec_size != self.size(1):
                 raise ValueError("Provide a NumPy array with length %d"%self.size(1))
             vec_type = _matrix_vector_mul_map[get_tensor_type(self)][0]
-            vec  = vec_type(vec_size)
+            vec = vec_type()
+            vec.resize(self.mpi_comm(), vec_size)
             vec.set_local(other)
+            vec.apply("insert")
             result_vec = vec.copy()
             self.mult(vec, result_vec)
             #ret = other.copy()

@@ -53,7 +53,7 @@ def run_path(path, args):
 
 def skip_in_parallel():
     "Skip test in parallel"
-    if MPI.num_processes() > 1:
+    if MPI.num_processes(mpi_comm_world()) > 1:
         print "FIXME: This unit test does not work in parallel, skipping"
         return True
     return False

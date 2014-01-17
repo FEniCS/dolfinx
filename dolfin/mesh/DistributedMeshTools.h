@@ -28,6 +28,7 @@
 #include <vector>
 #include <boost/array.hpp>
 #include <boost/unordered_map.hpp>
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -46,35 +47,40 @@ namespace dolfin
 
     /// Create global entity indices for entities of dimension d for
     /// given global vertex indices.
-    static std::size_t number_entities(const Mesh& mesh,
-            const std::map<unsigned int, std::pair<unsigned int, unsigned int> >& slave_entities,
-            std::vector<std::size_t>& global_entity_indices,
-            std::map<unsigned int, std::set<unsigned int> >& shared_entities,
-            std::size_t d);
+    static std::size_t number_entities(
+      const Mesh& mesh,
+      const std::map<unsigned int, std::pair<unsigned int,
+      unsigned int> >& slave_entities,
+      std::vector<std::size_t>& global_entity_indices,
+      std::map<unsigned int, std::set<unsigned int> >& shared_entities,
+      std::size_t d);
 
-    // Compute number of cells connected to each facet (globally). Facets
-    // on internal boundaries will be connected to two cells (with the
-    // cells residing on neighboring processes)
+    // Compute number of cells connected to each facet
+    // (globally). Facets on internal boundaries will be connected to
+    // two cells (with the cells residing on neighboring processes)
     static void init_facet_cell_connections(Mesh& mesh);
 
-    /// Find processes that own or share mesh entities (using
-    /// entity global indices). Returns
-    /// (global_dof, set(process_num, local_index)). Exclusively local
-    /// entities will not appear in the map. Works only for vertices and
-    /// cells
-    static std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
-    locate_off_process_entities(const std::vector<std::size_t>& entity_indices,
-                                std::size_t dim, const Mesh& mesh);
+    /// Find processes that own or share mesh entities (using entity
+    /// global indices). Returns (global_dof, set(process_num,
+    /// local_index)). Exclusively local entities will not appear in
+    /// the map. Works only for vertices and cells
+    static
+      std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
+      locate_off_process_entities(const std::vector<std::size_t>&
+                                  entity_indices,
+                                  std::size_t dim, const Mesh& mesh);
 
     /// Compute map from local index of shared entity to list
     /// of sharing process and local index,
     /// i.e. (local index, [(sharing process p, local index on p)])
-    static boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
+    static boost::unordered_map<unsigned int,
+      std::vector<std::pair<unsigned int, unsigned int> > >
       compute_shared_entities(const Mesh& mesh, std::size_t d);
 
   private:
 
-    // Data structure for a mesh entity (list of vertices, using global indices)
+    // Data structure for a mesh entity (list of vertices, using
+    // global indices)
     typedef std::vector<std::size_t> Entity;
 
     // Data structure to mesh entity data
@@ -107,7 +113,9 @@ namespace dolfin
     //       communicated to other processes)
     //  [2]: not owned but shared (will be numbered by another process,
     //       and number communicated to this processes)
-    static void compute_entity_ownership(const std::map<std::vector<std::size_t>, unsigned int>& entities,
+    static void compute_entity_ownership(
+      const MPI_Comm mpi_comm,
+      const std::map<std::vector<std::size_t>, unsigned int>& entities,
       const std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local,
       const std::vector<std::size_t>& global_vertex_indices,
       std::size_t d,
@@ -117,22 +125,27 @@ namespace dolfin
     // Build preliminary 'guess' of shared entities. This function does
     // not involve any inter-process communication.
     static void compute_preliminary_entity_ownership(
-          const std::map<std::size_t, std::set<unsigned int> >& shared_vertices,
-          const std::map<Entity, unsigned int>& entities,
-          std::vector<std::size_t>& owned_entities,
-          boost::array<std::map<Entity, EntityData>, 2>& entity_ownership);
+      const MPI_Comm mpi_comm,
+      const std::map<std::size_t, std::set<unsigned int> >& shared_vertices,
+      const std::map<Entity, unsigned int>& entities,
+      std::vector<std::size_t>& owned_entities,
+      boost::array<std::map<Entity, EntityData>, 2>& entity_ownership);
 
     // Communicate with other processes to finalise entity ownership
-    static void compute_final_entity_ownership(std::vector<std::size_t>& owned_entities,
-      boost::array<std::map<Entity, EntityData>, 2>& entity_ownership);
+    static void
+      compute_final_entity_ownership(const MPI_Comm mpi_comm,
+                                     std::vector<std::size_t>& owned_entities,
+                                     boost::array<std::map<Entity,
+                                     EntityData>, 2>& entity_ownership);
 
     // Check if all entity vertices are the shared vertices in overlap
     static bool is_shared(const std::vector<std::size_t>& entity_vertices,
-               const std::map<std::size_t, std::set<unsigned int> >& shared_vertices);
+                const std::map<std::size_t, std::set<unsigned int> >& shared_vertices);
 
     // Compute and return (number of global entities, process offset)
     static std::pair<std::size_t, std::size_t>
-      compute_num_global_entities(std::size_t num_local_entities,
+      compute_num_global_entities(const MPI_Comm mpi_comm,
+                                  std::size_t num_local_entities,
                                   std::size_t num_processes,
                                   std::size_t process_number);
 
