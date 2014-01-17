@@ -109,7 +109,7 @@ namespace dolfin
     void set_ksp( const std::string ksp_type = "default");
 
     // Return TAO solver pointer
-    boost::shared_ptr<TaoSolver> tao() const;
+    TaoSolver tao() const;
 
     /// Return a list of available Tao solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -178,7 +178,7 @@ namespace dolfin
     boost::shared_ptr<PETScPreconditioner> preconditioner;
 
     // Tao solver pointer
-    boost::shared_ptr<TaoSolver> _tao;
+    TaoSolver _tao;
 
     // Operator (the matrix) and the vector
     boost::shared_ptr<const PETScMatrix> A;
