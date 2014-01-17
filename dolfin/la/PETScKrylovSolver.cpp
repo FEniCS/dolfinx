@@ -312,7 +312,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Set operators
   set_petsc_operators();
 
-  // Set (approxinate) null space for preconditioner
+  // Set near null space for preconditioner
   if (_preconditioner)
   {
     dolfin_assert(_P);
@@ -478,18 +478,11 @@ void PETScKrylovSolver::init(const std::string& method)
   PetscErrorCode ierr;
 
   if (_ksp)
-  {
-    // Decrement reference count
-    PetscObjectDereference((PetscObject)_ksp);
-    _ksp = NULL;
-  }
+    KSPDestroy(&_ksp);
 
   // Set up solver environment
   ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-
-  // Increment reference count
-  PetscObjectReference((PetscObject)_ksp);
 
   // Set some options
   ierr = KSPSetFromOptions(_ksp);
