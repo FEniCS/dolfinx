@@ -224,8 +224,6 @@ void PETScSNESSolver::init(const std::string& method)
     SNESSetType(*_snes, it->second.second);
   }
 
-  // Set some options
-  SNESSetFromOptions(*_snes);
 
   // Set to default to not having explicit bounds
   has_explicit_bounds = false;
@@ -307,7 +305,6 @@ std::pair<std::size_t, bool>
     it = _methods.find(std::string(parameters["method"]));
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
-    SNESSetFromOptions(*_snes);
   // If
   //      a) the user has set bounds (is_vi())
   // AND  b) the user has not set a solver (method == default)
@@ -327,7 +324,6 @@ std::pair<std::size_t, bool>
     #endif
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
-    SNESSetFromOptions(*_snes);
   }
 
   // The line search business changed completely from PETSc 3.2 to 3.3.
@@ -371,8 +367,22 @@ std::pair<std::size_t, bool>
                     parameters["solution_tolerance"],
                     max_iters, max_residual_evals);
 
+  // Set some options
+  SNESSetFromOptions(*_snes);
   if (parameters["report"])
+  {
+    KSP ksp;
+    PC pc;
+
+    SNESGetKSP(*_snes, &ksp);
+    KSPGetPC(ksp, &pc);
+
+    KSPSetUp(ksp);
+    PCSetUp(pc);
+    //SNESSetUp(*_snes); // crashes with non-trunk petsc, bug reported
+
     SNESView(*_snes, PETSC_VIEWER_STDOUT_WORLD);
+  }
 
   SNESSolve(*_snes, PETSC_NULL, *snes_ctx.dx->vec());
 
