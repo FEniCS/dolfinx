@@ -443,7 +443,7 @@ namespace dolfin
     void check() const;
 
     // Initialize facets (from sub domain, mesh, etc)
-    void init_facets(const MPI_Comm& mpi_comm) const;
+    void init_facets(const MPI_Comm mpi_comm) const;
 
     // Initialize sub domain markers from sub domain
     void

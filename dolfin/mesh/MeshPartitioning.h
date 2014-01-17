@@ -21,7 +21,7 @@
 // Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2014-01-09
+// Last changed: 2014-01-17
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -102,30 +102,33 @@ namespace dolfin
     // (which tells us to which process each of the local cells stored in
     // LocalMeshData on this process belongs. We use MPI::distribute to
     // redistribute all cells (the global vertex indices of all cells).
-    static void distribute_cells(const MPI_Comm& mpi_comm,
-                                 const LocalMeshData& data,
-      const std::vector<std::size_t>& cell_partition,
-      std::vector<std::size_t>& cell_local_to_global_indices,
-      boost::multi_array<std::size_t, 2>& cell_local_vertices);
+    static void 
+      distribute_cells(const MPI_Comm mpi_comm,
+        const LocalMeshData& data,
+        const std::vector<std::size_t>& cell_partition,
+        std::vector<std::size_t>& cell_local_to_global_indices,
+        boost::multi_array<std::size_t, 2>& cell_local_vertices);
 
     // Distribute ghost cells. Similar to distribute_cells(), but for
     // ghost cells. Additionally, send the cell owning process number 
     // to the remote processes.
-    static void distribute_ghost_cells(const MPI_Comm& mpi_comm,
-                                       const LocalMeshData& data,
-      const std::vector<std::size_t>& cell_partition,
-      const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
-      std::vector<std::size_t>& ghost_global_cell_indices,
-      std::vector<std::size_t>& ghost_remote_process,
-      boost::multi_array<std::size_t, 2>& ghost_cell_vertices);
+    static void 
+      distribute_ghost_cells(const MPI_Comm mpi_comm,
+        const LocalMeshData& data,
+        const std::vector<std::size_t>& cell_partition,
+        const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
+        std::vector<std::size_t>& ghost_global_cell_indices,
+        std::vector<std::size_t>& ghost_remote_process,
+        boost::multi_array<std::size_t, 2>& ghost_cell_vertices);
 
     // Distribute vertices
-    static void distribute_vertices(const MPI_Comm& mpi_comm,
-                                    const LocalMeshData& data,
-      const std::set<std::size_t>& needed_vertex_indices,
-      std::vector<std::size_t>& vertex_indices,
-      std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-      boost::multi_array<double, 2>& vertex_coordinates);
+    static void 
+      distribute_vertices(const MPI_Comm mpi_comm,
+        const LocalMeshData& data,
+        const std::set<std::size_t>& needed_vertex_indices,
+        std::vector<std::size_t>& vertex_indices,
+        std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+        boost::multi_array<double, 2>& vertex_coordinates);
 
     // Build mesh
     static void build_mesh(Mesh& mesh,
@@ -183,7 +186,7 @@ namespace dolfin
     MeshValueCollection& mesh_values)
   {
     // Get MPI communicator
-    const MPI_Comm& mpi_comm = mesh.mpi_comm();
+    const MPI_Comm mpi_comm = mesh.mpi_comm();
 
     // Get topological dimensions
     const std::size_t D = mesh.topology().dim();

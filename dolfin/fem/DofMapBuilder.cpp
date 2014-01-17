@@ -194,7 +194,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   std::vector<std::size_t>& modified_global_indices)
 {
   // MPI communicator
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get vertex sharing information (local index, [(sharing process p,
   // local index on p)])
@@ -678,7 +678,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
 {
   log(TRACE, "Determining dof ownership for parallel dof map");
 
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   const std::size_t N = dofmap.global_dimension();
   dolfin_assert(N % block_size == 0);
@@ -920,7 +920,7 @@ void DofMapBuilder::parallel_renumber(
   log(TRACE, "Renumber dofs for parallel dof map");
 
   // MPI communicator
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   const std::size_t N = dofmap.global_dimension();
   dolfin_assert(N % block_size == 0);

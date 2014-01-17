@@ -46,7 +46,7 @@ namespace dolfin
     TensorLayout(std::size_t primary_dim, bool sparsity_pattern);
 
     /// Create a tensor layout
-    TensorLayout(const MPI_Comm& mpi_comm,
+    TensorLayout(const MPI_Comm mpi_comm,
                  const std::vector<std::size_t>& dims, std::size_t primary_dim,
                  std::size_t block_size,
                  const std::vector<std::pair<std::size_t,
@@ -54,7 +54,7 @@ namespace dolfin
                  bool sparsity_pattern);
 
     /// Initialize tensor layout
-    void init(const MPI_Comm& mpi_comm,
+    void init(const MPI_Comm mpi_comm,
               const std::vector<std::size_t>& dims, std::size_t block_size,
               const std::vector<std::pair<std::size_t,
               std::size_t> >& ownership_range);
@@ -87,7 +87,7 @@ namespace dolfin
     /// ordered dofmao
     std::size_t block_size;
 
-    const MPI_Comm& mpi_comm() const
+    const MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
   private:

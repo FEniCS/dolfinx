@@ -119,7 +119,7 @@ std::size_t DistributedMeshTools::number_entities(
   }
 
   // MPI communicator
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get number of processes and process number
   const std::size_t num_processes = MPI::num_processes(mpi_comm);
@@ -428,7 +428,7 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
   //dolfin_assert(!my_entities.empty());
 
   // Prepare data structures for send/receive
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
   const std::size_t num_proc = MPI::num_processes(mpi_comm);
   const std::size_t proc_num = MPI::process_number(mpi_comm);
   const std::size_t max_recv = MPI::max(mpi_comm, my_entities.size());
@@ -504,7 +504,7 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
   DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
   // MPI communicator
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Return empty set if running in serial
   if (MPI::num_processes(mpi_comm) == 1)
@@ -660,7 +660,7 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
 }
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::compute_entity_ownership(
-  const MPI_Comm& mpi_comm,
+  const MPI_Comm mpi_comm,
   const std::map<std::vector<std::size_t>, unsigned int>& entities,
   const std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local,
   const std::vector<std::size_t>& global_vertex_indices,
@@ -699,7 +699,7 @@ void DistributedMeshTools::compute_entity_ownership(
 }
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::compute_preliminary_entity_ownership(
-  const MPI_Comm& mpi_comm,
+  const MPI_Comm mpi_comm,
   const std::map<std::size_t, std::set<unsigned int> >& shared_vertices,
   const std::map<Entity, unsigned int>& entities,
   std::vector<std::size_t>& owned_entities,
@@ -784,7 +784,7 @@ void DistributedMeshTools::compute_preliminary_entity_ownership(
 }
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::compute_final_entity_ownership(
-  const MPI_Comm& mpi_comm,
+  const MPI_Comm mpi_comm,
   std::vector<std::size_t>& owned_entities,
   boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
@@ -989,7 +989,7 @@ bool DistributedMeshTools::is_shared(const Entity& entity,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-DistributedMeshTools::compute_num_global_entities(const MPI_Comm& mpi_comm,
+DistributedMeshTools::compute_num_global_entities(const MPI_Comm mpi_comm,
                                                   std::size_t num_local_entities,
                                                   std::size_t num_processes,
                                                   std::size_t process_number)

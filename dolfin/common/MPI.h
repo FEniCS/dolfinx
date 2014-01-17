@@ -81,16 +81,13 @@ namespace dolfin
 
     /// Non-blocking send and receive
     template<typename T>
-      void send_recv(const MPI_Comm& mpi_comm, const T& send_value,
-                     unsigned int dest,
-                     T& recv_value, unsigned int source);
+      void send_recv(const MPI_Comm comm, const T& send_value,
+                     unsigned int dest, T& recv_value, unsigned int source);
 
     /// Non-blocking send and receive with tag
     template<typename T>
-      void send_recv(const MPI_Comm& mpi_comm,
-                     const T& send_value,
-                     unsigned int dest_tag,
-                     unsigned int dest,
+      void send_recv(const MPI_Comm comm, const T& send_value,
+                     unsigned int dest_tag, unsigned int dest,
                      T& recv_value, unsigned int source_tag,
                      unsigned int source);
 
@@ -100,7 +97,6 @@ namespace dolfin
   private:
 
     #ifdef HAS_MPI
-    //MPICommunicator mpi_comm;
     std::vector<boost::mpi::request> reqs;
     #endif
 
@@ -114,32 +110,32 @@ namespace dolfin
   public:
 
     /// Return process number
-    static unsigned int process_number(const MPI_Comm& mpi_comm);
+    static unsigned int process_number(const MPI_Comm comm);
 
     /// Return number of processes
-    static unsigned int num_processes(const MPI_Comm& mpi_comm);
+    static unsigned int num_processes(const MPI_Comm comm);
 
     /// Determine whether we should broadcast (based on current parallel
     /// policy)
-    static bool is_broadcaster(const MPI_Comm& mpi_comm);
+    static bool is_broadcaster(const MPI_Comm comm);
 
     /// Determine whether we should receive (based on current parallel
     /// policy)
-    static bool is_receiver(const MPI_Comm& mpi_comm);
+    static bool is_receiver(const MPI_Comm comm);
 
     /// Set a barrier (synchronization point)
-    static void barrier(const MPI_Comm& mpi_comm);
+    static void barrier(const MPI_Comm comm);
 
     /// Send in_values[p0] to process p0 and receive values from
     /// process p1 in out_values[p1]
     template<typename T>
-      static void all_to_all(const MPI_Comm& mpi_comm,
+      static void all_to_all(const MPI_Comm comm,
                              std::vector<std::vector<T> >& in_values,
                              std::vector<std::vector<T> >& out_values)
     {
       #ifdef HAS_MPI
-      boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
-      boost::mpi::all_to_all(comm, in_values, out_values);
+      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+      boost::mpi::all_to_all(_comm, in_values, out_values);
       #else
       dolfin_assert(in_values.size() == 1);
       out_values = in_values;
@@ -152,31 +148,31 @@ namespace dolfin
     /// that each process' group includes exactly the processes that
     /// has it in their groups, otherwise it will deadlock.
     template<typename T, typename S>
-      static void distribute(const MPI_Comm& mpi_comm,
+      static void distribute(const MPI_Comm comm,
                              const std::set<S> group,
                              const std::map<S, T>& in_values_per_dest,
                              std::map<S, T>& out_values_per_src);
 
     /// Broadcast value from broadcaster process to all processes
     template<typename T>
-      static void broadcast(const MPI_Comm& mpi_comm, T& value,
+      static void broadcast(const MPI_Comm comm, T& value,
                             unsigned int broadcaster=0)
     {
       #ifdef HAS_MPI
-      boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
-      boost::mpi::broadcast(comm, value, broadcaster);
+      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+      boost::mpi::broadcast(_comm, value, broadcaster);
       #endif
     }
 
     /// Scatter in_values[i] to process i
     template<typename T>
-      static void scatter(const MPI_Comm& mpi_comm,
+      static void scatter(const MPI_Comm comm,
                           const std::vector<T>& in_values,
                           T& out_value, unsigned int sending_process=0)
     {
       #ifdef HAS_MPI
-      boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
-      boost::mpi::scatter(comm, in_values, out_value, sending_process);
+      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+      boost::mpi::scatter(_comm, in_values, out_value, sending_process);
       #else
       dolfin_assert(sending_process == 0);
       dolfin_assert(in_values.size() == 1);
@@ -186,13 +182,13 @@ namespace dolfin
 
     /// Gather values on one process (wrapper for boost::mpi::gather)
     template<typename T>
-      static void gather(const MPI_Comm& mpi_comm, const T& in_value,
+      static void gather(const MPI_Comm comm, const T& in_value,
                          std::vector<T>& out_values,
                          unsigned int receiving_process=0)
     {
       #ifdef HAS_MPI
-      boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
-      boost::mpi::gather(comm, in_value, out_values, receiving_process);
+      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+      boost::mpi::gather(_comm, in_value, out_values, receiving_process);
       #else
       out_values.clear();
       out_values.push_back(in_value);
@@ -202,12 +198,12 @@ namespace dolfin
     /// Gather values, one from each process (wrapper for
     /// boost::mpi::all_gather)
     template<typename T>
-      static void all_gather(const MPI_Comm& mpi_comm, const T& in_value,
+      static void all_gather(const MPI_Comm comm, const T& in_value,
                              std::vector<T>& out_values)
     {
       #ifdef HAS_MPI
-      boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
-      boost::mpi::all_gather(comm, in_value, out_values);
+      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+      boost::mpi::all_gather(_comm, in_value, out_values);
       #else
       out_values.clear();
       out_values.push_back(in_value);
@@ -215,30 +211,30 @@ namespace dolfin
     }
 
     /// Return global max value
-    template<typename T> static T max(const MPI_Comm& mpi_comm, const T& value)
+    template<typename T> static T max(const MPI_Comm comm, const T& value)
     {
       #ifdef HAS_MPI
-      return all_reduce(mpi_comm, value, boost::mpi::maximum<T>());
+      return all_reduce(comm, value, boost::mpi::maximum<T>());
       #else
       return value;
       #endif
     }
 
     /// Return global min value
-    template<typename T> static T min(const MPI_Comm& mpi_comm, const T& value)
+    template<typename T> static T min(const MPI_Comm comm, const T& value)
     {
       #ifdef HAS_MPI
-      return all_reduce(mpi_comm, value, boost::mpi::minimum<T>());
+      return all_reduce(comm, value, boost::mpi::minimum<T>());
       #else
       return value;
       #endif
     }
 
     /// Sum values and return sum
-    template<typename T> static T sum(const MPI_Comm& mpi_comm, const T& value)
+    template<typename T> static T sum(const MPI_Comm comm, const T& value)
     {
       #ifdef HAS_MPI
-      return all_reduce(mpi_comm, value, std::plus<T>());
+      return all_reduce(comm, value, std::plus<T>());
       #else
       return value;
       #endif
@@ -246,12 +242,12 @@ namespace dolfin
 
     /// All reduce
     template<typename T, typename X> static
-      T all_reduce(const MPI_Comm& mpi_comm, const T& value, X op)
+      T all_reduce(const MPI_Comm comm, const T& value, X op)
     {
       #ifdef HAS_MPI
-      boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
+      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
       T out;
-      boost::mpi::all_reduce(comm, value, out, op);
+      boost::mpi::all_reduce(_comm, value, out, op);
       return out;
       #else
       dolfin_error("MPI.h",
@@ -263,7 +259,7 @@ namespace dolfin
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with
     /// MPI_SUM as reduction op)
-    static std::size_t global_offset(const MPI_Comm& mpi_comm,
+    static std::size_t global_offset(const MPI_Comm comm,
                                      std::size_t range, bool exclusive);
 
     /// Send-receive data. Note that if the number of posted
@@ -272,13 +268,13 @@ namespace dolfin
     /// duplicating the communicator requires participation from all
     /// processes.
     template<typename T>
-      static void send_recv(const MPI_Comm& mpi_comm,
+      static void send_recv(const MPI_Comm comm,
                             const T& send_value, unsigned int dest,
                             T& recv_value, unsigned int source)
     {
       #ifdef HAS_MPI
       MPINonblocking mpi;
-      mpi.send_recv(mpi_comm, send_value, dest, recv_value, source);
+      mpi.send_recv(comm, send_value, dest, recv_value, source);
       #else
       dolfin_error("MPI.h",
                    "call MPI::send_recv",
@@ -289,12 +285,12 @@ namespace dolfin
     /// Return local range for local process, splitting [0, N - 1] into
     /// num_processes() portions of almost equal size
     static std::pair<std::size_t, std::size_t>
-      local_range(const MPI_Comm& mpi_comm, std::size_t N);
+      local_range(const MPI_Comm comm, std::size_t N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// num_processes() portions of almost equal size
     static std::pair<std::size_t, std::size_t>
-      local_range(const MPI_Comm& mpi_comm, unsigned int process,
+      local_range(const MPI_Comm comm, unsigned int process,
                   std::size_t N);
 
     /// Return local range for given process, splitting [0, N - 1] into
@@ -304,7 +300,7 @@ namespace dolfin
                           unsigned int num_processes);
 
     /// Return which process owns index (inverse of local_range)
-    static unsigned int index_owner(const MPI_Comm& mpi_comm,
+    static unsigned int index_owner(const MPI_Comm comm,
                                     std::size_t index, std::size_t N);
 
   private:
@@ -340,7 +336,7 @@ namespace dolfin
 
   //---------------------------------------------------------------------------
   template<typename T, typename S>
-    void dolfin::MPI::distribute(const MPI_Comm& mpi_comm,
+    void dolfin::MPI::distribute(const MPI_Comm comm,
                                  const std::set<S> processes_group,
                                  const std::map<S, T>& in_values_per_dest,
                                  std::map<S, T>& out_values_per_src)
@@ -361,12 +357,12 @@ namespace dolfin
       map_const_iterator values = in_values_per_dest.find(*dest);
       if (values != in_values_per_dest.end())
       {
-        mpi.send_recv(mpi_comm, values->second, *dest,
+        mpi.send_recv(comm, values->second, *dest,
                       out_values_per_src[*dest], *dest);
       }
       else
       {
-        mpi.send_recv(mpi_comm, no_data, *dest, out_values_per_src[*dest],
+        mpi.send_recv(comm, no_data, *dest, out_values_per_src[*dest],
                       *dest);
       }
     }
@@ -388,17 +384,17 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template<typename T>
-    void dolfin::MPINonblocking::send_recv(const MPI_Comm& mpi_comm,
+    void dolfin::MPINonblocking::send_recv(const MPI_Comm comm,
                                            const T& send_value,
                                            unsigned int dest,
                                            T& recv_value, unsigned int source)
   {
-    MPINonblocking::send_recv(mpi_comm, send_value, 0, dest, recv_value, 0,
+    MPINonblocking::send_recv(comm, send_value, 0, dest, recv_value, 0,
                               source);
   }
   //---------------------------------------------------------------------------
   template<typename T>
-    void dolfin::MPINonblocking::send_recv(const MPI_Comm& mpi_comm,
+    void dolfin::MPINonblocking::send_recv(const MPI_Comm comm,
                                            const T& send_value,
                                            unsigned int dest_tag,
                                            unsigned int dest,
@@ -407,9 +403,9 @@ namespace dolfin
                                            unsigned int source)
   {
     #ifdef HAS_MPI
-    boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
-    reqs.push_back(comm.isend(dest, dest_tag, send_value));
-    reqs.push_back(comm.irecv(source, source_tag, recv_value));
+    boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+    reqs.push_back(_comm.isend(dest, dest_tag, send_value));
+    reqs.push_back(_comm.irecv(source, source_tag, recv_value));
     #else
     dolfin_error("MPI.h",
                   "call MPINonblocking::send_recv",

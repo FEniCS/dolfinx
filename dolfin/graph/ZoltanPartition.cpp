@@ -35,7 +35,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void
-ZoltanPartition::compute_partition_phg(const MPI_Comm& mpi_comm,
+ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
                                        std::vector<std::size_t>& cell_partition,
                                        const LocalMeshData& mesh_data)
 {
@@ -132,7 +132,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm& mpi_comm,
 }
 //-----------------------------------------------------------------------------
 void
-ZoltanPartition::compute_partition_rcb(const MPI_Comm& mpi_comm,
+ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
                                        std::vector<std::size_t>& cell_partition,
                                        const LocalMeshData& mesh_data)
 {
@@ -234,7 +234,7 @@ void ZoltanPartition::get_object_list(void *data,
   dolfin_assert(local_mesh_data);
 
   // Get MPI communicator
-  const MPI_Comm& mpi_comm = local_mesh_data->mpi_comm();
+  const MPI_Comm mpi_comm = local_mesh_data->mpi_comm();
 
   dolfin_assert(num_gid_entries == 1);
   dolfin_assert(num_lid_entries == 0);
@@ -288,7 +288,7 @@ void ZoltanPartition::get_all_edges(void* data,
     = (std::vector<std::set<std::size_t> >*)data;
 
   // MPI communicate
-  const MPI_Comm& mpi_comm = local_graph->mpi_comm();
+  const MPI_Comm mpi_comm = local_graph->mpi_comm();
 
   std::vector<std::size_t> offsets;
   std::size_t local_offset = MPI::global_offset(mpi_comm, local_graph->size(),
@@ -334,7 +334,7 @@ void ZoltanPartition::get_all_geom(void *data,
   dolfin_assert(local_mesh_data);
 
   // Get MPI communicator
-  const MPI_Comm& mpi_comm = local_mesh_data->mpi_comm();
+  const MPI_Comm mpi_comm = local_mesh_data->mpi_comm();
 
   dolfin_assert(num_gid_entries == 1);
   dolfin_assert(num_lid_entries == 0);
@@ -445,7 +445,7 @@ void ZoltanPartition::get_all_geom(void *data,
 }
 //-----------------------------------------------------------------------------
 #else
-void ZoltanPartition::compute_partition_phg(const MPI_Comm& mpi_comm,
+void ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
                                             std::vector<std::size_t>& cell_partition,
                                             const LocalMeshData& mesh_data)
 {
@@ -454,7 +454,7 @@ void ZoltanPartition::compute_partition_phg(const MPI_Comm& mpi_comm,
                "DOLFIN has been configured without support for Zoltan from Trilinos");
 }
 //-----------------------------------------------------------------------------
-void ZoltanPartition::compute_partition_rcb(const MPI_Comm& mpi_comm,
+void ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
                                             std::vector<std::size_t>& cell_partition,
                                             const LocalMeshData& mesh_data)
 {

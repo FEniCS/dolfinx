@@ -41,13 +41,13 @@ namespace dolfin
   public:
 
     /// Calculate partitioning using Parallel HyperGraph (Zoltan PHG)
-    static void compute_partition_phg(const MPI_Comm& mpi_comm,
+    static void compute_partition_phg(const MPI_Comm mpi_comm,
                                       std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 
     /// Calculate partitioning using recursive block bisection
     /// (Zoltan RCB - geometric partitioner)
-    static void compute_partition_rcb(const MPI_Comm& mpi_comm,
+    static void compute_partition_rcb(const MPI_Comm mpi_comm,
                                       std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 

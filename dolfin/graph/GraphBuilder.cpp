@@ -151,7 +151,7 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const MPI_Comm& mpi_comm,
+void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
                                       const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
@@ -167,7 +167,7 @@ void GraphBuilder::compute_dual_graph(const MPI_Comm& mpi_comm,
   #endif
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_local_dual_graph(const MPI_Comm& mpi_comm,
+void GraphBuilder::compute_local_dual_graph(const MPI_Comm mpi_comm,
                                             const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             FacetCellMap& facet_cell_map)
@@ -241,7 +241,7 @@ void GraphBuilder::compute_local_dual_graph(const MPI_Comm& mpi_comm,
   }
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm& mpi_comm,
+void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
                                                const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             FacetCellMap& facet_cell_map,

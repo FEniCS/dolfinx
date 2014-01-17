@@ -32,7 +32,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LocalMeshData::LocalMeshData(const MPI_Comm& mpi_comm)
+LocalMeshData::LocalMeshData(const MPI_Comm mpi_comm)
   : num_global_vertices(0), num_global_cells(0),
     num_vertices_per_cell(0), gdim(0), tdim(0), _mpi_comm(mpi_comm)
 {
@@ -170,7 +170,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   cout << "Number of global cells: "    << num_global_cells << endl;
 }
 //-----------------------------------------------------------------------------
-void LocalMeshData::broadcast_mesh_data(const MPI_Comm& mpi_comm)
+void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
 {
   // Get number of processes
   const std::size_t num_processes = MPI::num_processes(mpi_comm);
@@ -248,7 +248,7 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm& mpi_comm)
   }
 }
 //-----------------------------------------------------------------------------
-void LocalMeshData::receive_mesh_data(const MPI_Comm& mpi_comm)
+void LocalMeshData::receive_mesh_data(const MPI_Comm mpi_comm)
 {
   dolfin_debug("check");
   // Receive simple scalar data

@@ -60,7 +60,7 @@ namespace dolfin
   public:
 
     /// Create empty local mesh data
-    LocalMeshData(const MPI_Comm& mpi_comm);
+    LocalMeshData(const MPI_Comm mpi_comm);
 
     /// Create local mesh data for given mesh
     LocalMeshData(const Mesh& mesh);
@@ -79,10 +79,10 @@ namespace dolfin
 
     // Broadcast mesh data from main process (used when Mesh is created
     // on one process)
-    void broadcast_mesh_data(const MPI_Comm& mpi_comm);
+    void broadcast_mesh_data(const MPI_Comm mpi_comm);
 
     // Receive mesh data from main process
-    void receive_mesh_data(const MPI_Comm& mpi_comm);
+    void receive_mesh_data(const MPI_Comm mpi_comm);
 
     // Unpack received vertex coordinates
     void unpack_vertex_coordinates(const std::vector<double>& values);
@@ -126,7 +126,7 @@ namespace dolfin
         domain_data;
 
     // Return MPI communicator
-    const MPI_Comm& mpi_comm() const
+    const MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
   private:

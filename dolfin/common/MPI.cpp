@@ -59,56 +59,56 @@ void dolfin::MPINonblocking::wait_all()
 #endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::process_number(const MPI_Comm& mpi_comm)
+unsigned int dolfin::MPI::process_number(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
   int rank;
-  MPI_Comm_rank(mpi_comm, &rank);
+  MPI_Comm_rank(comm, &rank);
   return rank;
 #else
   return 0;
 #endif
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::num_processes(const MPI_Comm& mpi_comm)
+unsigned int dolfin::MPI::num_processes(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
   int size;
-  MPI_Comm_size(mpi_comm, &size);
+  MPI_Comm_size(comm, &size);
   return size;
 #else
   return 1;
 #endif
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::is_broadcaster(const MPI_Comm& mpi_comm)
+bool dolfin::MPI::is_broadcaster(const MPI_Comm comm)
 {
   // Always broadcast from processor number 0
-  return num_processes(mpi_comm) > 1 && process_number(mpi_comm) == 0;
+  return num_processes(comm) > 1 && process_number(comm) == 0;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::is_receiver(const MPI_Comm& mpi_comm)
+bool dolfin::MPI::is_receiver(const MPI_Comm comm)
 {
   // Always receive on processors with numbers > 0
-  return num_processes(mpi_comm) > 1 && process_number(mpi_comm) > 0;
+  return num_processes(comm) > 1 && process_number(comm) > 0;
 }
 //-----------------------------------------------------------------------------
-void dolfin::MPI::barrier(const MPI_Comm& mpi_comm)
+void dolfin::MPI::barrier(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
-  MPI_Barrier(mpi_comm);
+  MPI_Barrier(comm);
 #endif
 }
 //-----------------------------------------------------------------------------
-std::size_t dolfin::MPI::global_offset(const MPI_Comm& mpi_comm,
+std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
                                        std::size_t range, bool exclusive)
 {
 #ifdef HAS_MPI
   // Compute inclusive or exclusive partial reduction
-  boost::mpi::communicator comm(mpi_comm, boost::mpi::comm_attach);
-  std::size_t offset = boost::mpi::scan(comm, range, std::plus<std::size_t>());
+  boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+  std::size_t offset = boost::mpi::scan(_comm, range, std::plus<std::size_t>());
   if (exclusive)
     offset -= range;
   return offset;
@@ -118,16 +118,16 @@ std::size_t dolfin::MPI::global_offset(const MPI_Comm& mpi_comm,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-dolfin::MPI::local_range(const MPI_Comm& mpi_comm, std::size_t N)
+dolfin::MPI::local_range(const MPI_Comm comm, std::size_t N)
 {
-  return local_range(mpi_comm, process_number(mpi_comm), N);
+  return local_range(comm, process_number(comm), N);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-dolfin::MPI::local_range(const MPI_Comm& mpi_comm, unsigned int process,
+dolfin::MPI::local_range(const MPI_Comm comm, unsigned int process,
                          std::size_t N)
 {
-  return compute_local_range(process, N, num_processes(mpi_comm));
+  return compute_local_range(process, N, num_processes(comm));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
@@ -155,13 +155,13 @@ dolfin::MPI::compute_local_range(unsigned int process,
   return range;
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::index_owner(const MPI_Comm& mpi_comm,
+unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
                                       std::size_t index, std::size_t N)
 {
   dolfin_assert(index < N);
 
   // Get number of processes
-  const unsigned int _num_processes = num_processes(mpi_comm);
+  const unsigned int _num_processes = num_processes(comm);
 
   // Compute number of items per process and remainder
   const std::size_t n = N / _num_processes;

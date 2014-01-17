@@ -193,7 +193,7 @@ std::vector<std::pair<std::size_t, std::size_t> >
 HDF5Utility::cell_owners(const Mesh& mesh, const std::vector<std::size_t> cells)
 {
   // MPI communicator
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   const std::size_t num_processes = MPI::num_processes(mpi_comm);
   const std::size_t num_global_cells
@@ -367,7 +367,7 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
   dolfin_assert(mesh.num_vertices()*width == data.size());
 
   // MPI communicator
-  const MPI_Comm& mpi_comm = mesh.mpi_comm();
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get shared vertices
   const std::map<unsigned int, std::set<unsigned int> >& shared_vertices

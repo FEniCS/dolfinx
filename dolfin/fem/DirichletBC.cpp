@@ -637,7 +637,7 @@ void DirichletBC::check() const
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_facets(const MPI_Comm& mpi_comm) const
+void DirichletBC::init_facets(const MPI_Comm mpi_comm) const
 {
   Timer timer("DirichletBC init facets");
 
