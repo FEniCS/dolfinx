@@ -46,29 +46,6 @@
 %ignore dolfin::SLEPcEigenSolver::get_eigenpair;
 #endif
 
-#ifdef HAS_PETSC4PY
-// This must come early.  The petsc4py module defines typemaps which
-// we will later use on %extended classes (in post).  The typemaps
-// must be in scope when swig sees the original class, not the
-// extended definition.
-%include "petsc4py/petsc4py.i"
-// Remove typemaps that check for nullity of pointer and object itself.
-// we only care about the former.
-%define %petsc4py_objreft(Type)
-
-%typemap(check,noblock=1) Type *OUTPUT
-{
-  if ($1 == PETSC_NULL)
-    %argument_nullref("$type", $symname, $argnum);
- }
-%apply Type *OUTPUT { Type & }
-%enddef
-
-%petsc4py_objreft(Mat)
-%petsc4py_objreft(Vec)
-%petsc4py_objreft(KSP)
-%petsc4py_objreft(SNES)
-#endif
 //-----------------------------------------------------------------------------
 // Fix problem with missing uBLAS namespace
 //-----------------------------------------------------------------------------
