@@ -122,12 +122,16 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   const GenericSparsityPattern& sparsity_pattern
     = *tensor_layout.sparsity_pattern();
 
-  // Create matrix
+  // FIXME: Should we throw an error if reference count is greater than one?
+  // Get reference count
+  //if (_A)
+  //{
+  //  int ref_count = 0;
+  //  PetscObjectGetReference((PetscObject)_A, &ref_count);
+  //}
+
   if (_A)
-  {
     MatDestroy(&_A);
-    _A = NULL;
-  }
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
