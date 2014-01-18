@@ -37,19 +37,6 @@
 namespace dolfin
 {
 
-  /*
-  class PETScMatrixDeleter
-  {
-  public:
-    void operator() (Mat* A)
-    {
-      if (*A)
-        MatDestroy(A);
-      delete A;
-    }
-  };
-  */
-
   class GenericVector;
 
   /// This class is a base class for matrices that can be used in

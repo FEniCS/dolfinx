@@ -143,9 +143,8 @@ PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
 {
-  // Decrement reference count
   if (_ksp)
-    PetscObjectDereference((PetscObject)_ksp);
+    KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
@@ -374,11 +373,7 @@ void PETScLUSolver::init_solver(std::string& method)
 
   // Destroy old solver environment if necessary
   if (_ksp)
-  {
-    // Decrease reference count
-    PetscObjectDereference((PetscObject)_ksp);
-    _ksp = NULL;
-  }
+    KSPDestroy(&_ksp);
 
   PetscErrorCode ierr;
 
@@ -393,9 +388,6 @@ void PETScLUSolver::init_solver(std::string& method)
     ierr = KSPCreate(PETSC_COMM_SELF, &_ksp);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
   }
-
-  // Increment reference count
-  PetscObjectReference((PetscObject)_ksp);
 
   // Make solver preconditioner only
   ierr = KSPSetType(_ksp, KSPPREONLY);

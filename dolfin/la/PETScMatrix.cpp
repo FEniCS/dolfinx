@@ -140,7 +140,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Create matrix
     ierr = MatCreate(PETSC_COMM_SELF, &_A);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
-    PetscObjectReference((PetscObject)_A);
 
     // Set size
     ierr = MatSetSizes(_A, M, N, M, N);
@@ -212,7 +211,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Create matrix
     ierr = MatCreate(PETSC_COMM_WORLD, &_A);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
-    PetscObjectReference((PetscObject)_A);
 
     // Set size
     ierr = MatSetSizes(_A, m, n, M, N);

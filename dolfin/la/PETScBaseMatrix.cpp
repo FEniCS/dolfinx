@@ -30,8 +30,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScBaseMatrix::PETScBaseMatrix(Mat A) : _A(A)
 {
-  //dolfin_assert(A);
-
   // Increase reference count
   if (_A)
     PetscObjectReference((PetscObject)_A);
@@ -42,7 +40,7 @@ PETScBaseMatrix::~PETScBaseMatrix()
   // Decrease reference count (PETSc will destroy object once
   // reference counts reached zero)
   if (_A)
-    PetscObjectDereference((PetscObject)_A);
+    MatDestroy(&_A);
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScBaseMatrix::size(std::size_t dim) const
