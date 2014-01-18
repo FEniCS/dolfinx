@@ -87,8 +87,8 @@ TAOLinearBoundSolver::preconditioners()
 TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method,
                                            const std::string ksp_type,
                                            const std::string pc_type)
-  : preconditioner(new PETScPreconditioner(pc_type)), preconditioner_set(false),
-    _tao(NULL)
+  : _tao(NULL), preconditioner(new PETScPreconditioner(pc_type)),
+    preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -111,7 +111,7 @@ TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method,
 TAOLinearBoundSolver::~TAOLinearBoundSolver()
 {
   if (_tao)
-    TaoDestroy(&_tao)l
+    TaoDestroy(&_tao);
 }
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
@@ -315,7 +315,7 @@ void TAOLinearBoundSolver::init(const std::string& method)
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::set_ksp_options()
 {
-  dolfin_assert(_tau);
+  dolfin_assert(_tao);
   KSP ksp;
   TaoGetKSP(_tao, &ksp);
   if (ksp)
@@ -344,7 +344,7 @@ void TAOLinearBoundSolver::set_ksp_options()
     // Set preconditioner
     if (preconditioner && !preconditioner_set)
     {
-      PETScKrylovSolver dolfin_ksp(reference_to_no_delete_pointer(ksp));
+      PETScKrylovSolver dolfin_ksp(ksp);
       preconditioner->set(dolfin_ksp);
       preconditioner_set = true;
     }
@@ -397,7 +397,8 @@ TAOLinearBoundSolver::__TAOFormHessianQuadraticProblem(TaoSolver tao,
    dolfin_assert(A);
 
    // Set the hessian to the matrix A (quadratic problem)
-   H = &(A->mat());
+   Mat Atmp = A->mat();
+   H = &Atmp;
    return 0;
 }
 //-------------------------------------------------------------------------------------------

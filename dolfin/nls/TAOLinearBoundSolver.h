@@ -174,11 +174,11 @@ namespace dolfin
     // Initialize TAO solver
     void init(const std::string& method);
 
-    // Petsc preconditioner
-    boost::shared_ptr<PETScPreconditioner> preconditioner;
-
     // Tao solver pointer
     TaoSolver _tao;
+
+    // Petsc preconditioner
+    boost::shared_ptr<PETScPreconditioner> preconditioner;
 
     // Operator (the matrix) and the vector
     boost::shared_ptr<const PETScMatrix> A;
