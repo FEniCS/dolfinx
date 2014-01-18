@@ -215,8 +215,8 @@ void PETScSNESSolver::init(const std::string& method)
 std::pair<std::size_t, bool>
 PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                        GenericVector& x,
-                       const GenericVector&  lb,
-                       const GenericVector&  ub)
+                       const GenericVector& lb,
+                       const GenericVector& ub)
 {
   // Set linear solver parameters
   set_linear_solver_parameters();
@@ -244,12 +244,12 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   this->ub = _ub;
   has_explicit_bounds = true;
 
-  return solve(nonlinear_problem, x);
+  return this->solve(nonlinear_problem, x);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
-  PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
-                         GenericVector& x)
+PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+                       GenericVector& x)
 {
   Timer timer("SNES solver");
   PETScVector f;
@@ -362,8 +362,7 @@ std::pair<std::size_t, bool>
 
   MPI_Comm comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_snes, &comm);
-  if (reason > 0 && parameters["report"]
-    && dolfin::MPI::process_number(comm) == 0)
+  if (reason > 0 && parameters["report"] && dolfin::MPI::process_number(comm) == 0)
   {
     info("PETSc SNES solver converged in %d iterations with convergence reason %s.",
          its, SNESConvergedReasons[reason]);
@@ -407,27 +406,32 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
+PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
                                              MatStructure* flag, void* ctx)
 {
+  // Interface does not presently support a preconditioner that
+  // differs from operator A
+  if (*A != *P)
+  {
+    dolfin_error("PETScSNESSolver.cpp",
+                 "for Jacobian",
+                 "Matrix object incompatibility. The Jacobian matrix must not be reset when using PETSc SNES.");
+  }
+
+  // Get nonlinear problem object
   struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
   NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
-  PETScVector* dx = snes_ctx.dx;
 
-  PETScVector f;
-  PETScMatrix dA;
-
-  // Wrap the PETSc Vec as DOLFIN PETScVector
+  // Wrap the PETSc objects
+  PETScMatrix A_wrap(*P);
   PETScVector x_wrap(x);
 
-  *dx = x_wrap;
+  // Form Jacobian
+  PETScVector f;
+  nonlinear_problem->form(A_wrap, f, x_wrap);
+  nonlinear_problem->J(A_wrap, x_wrap);
 
-  nonlinear_problem->form(dA, f, *dx);
-  nonlinear_problem->J(dA, *dx);
 
-  MatCopy(dA.mat(), *A, SAME_NONZERO_PATTERN);
-  if (B != A)
-    MatCopy(dA.mat(), *B, SAME_NONZERO_PATTERN);
   *flag = SAME_NONZERO_PATTERN;
 
   return 0;
@@ -597,19 +601,16 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
 //-----------------------------------------------------------------------------
 bool PETScSNESSolver::is_vi() const
 {
-  if (std::string(parameters["sign"]) != "default"
-      && this->has_explicit_bounds == true)
+  const std::string sign = parameters["sign"];
+  if (sign != "default" && this->has_explicit_bounds == true)
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "set variational inequality bounds",
                  "Both the sign parameter and the explicit bounds are set");
     return false;
   }
-  else if (std::string(parameters["sign"]) != "default"
-           || this->has_explicit_bounds == true)
-  {
+  else if (sign != "default" || this->has_explicit_bounds == true)
     return true;
-  }
   else
     return false;
 }
