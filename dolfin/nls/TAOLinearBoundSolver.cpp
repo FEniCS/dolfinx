@@ -165,8 +165,8 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x,
   TaoSetVariableBounds(_tao, xl.vec(), xu.vec());
 
   // Set the user function, gradient, hessian evaluation routines and data structures
-  TaoSetObjectiveAndGradientRoutine(_tao, __TAOFormFunctionGradientQuadraticProblem,this);
-  TaoSetHessianRoutine(_tao, A->mat(), A->mat(), __TAOFormHessianQuadraticProblem,this);
+  TaoSetObjectiveAndGradientRoutine(_tao, __TAOFormFunctionGradientQuadraticProblem, this);
+  TaoSetHessianRoutine(_tao, A->mat(), A->mat(), __TAOFormHessianQuadraticProblem, this);
 
   // Set parameters from local parameters, including ksp parameters
   read_parameters();
@@ -228,6 +228,8 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x,
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::set_solver(const std::string& method)
 {
+  dolfin_assert(_tao);
+
   // Do nothing if default type is specified
   if (method == "default")
     TaoSetType(_tao, "tao_tron");
@@ -256,6 +258,7 @@ void TAOLinearBoundSolver::set_ksp(std::string ksp_type)
   // Set ksp type
   if (ksp_type != "default")
   {
+    dolfin_assert(_tao);
     KSP ksp;
     TaoGetKSP(_tao, &ksp);
     if (ksp)
@@ -285,6 +288,8 @@ boost::shared_ptr<const PETScVector> TAOLinearBoundSolver::get_vector() const
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::read_parameters()
 {
+  dolfin_assert(_tao);
+
   // Set tolerances
   TaoSetTolerances(_tao, parameters["function_absolute_tol"],
 		   parameters["function_relative_tol"],
@@ -404,6 +409,8 @@ TAOLinearBoundSolver::__TAOFormHessianQuadraticProblem(TaoSolver tao,
 //-------------------------------------------------------------------------------------------
 PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(TaoSolver tao, void *ctx)
 {
+  dolfin_assert(tao);
+
   PetscInt its;
   PetscReal f, gnorm, cnorm, xdiff;
   TaoSolverTerminationReason reason;

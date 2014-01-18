@@ -186,14 +186,16 @@ namespace dolfin
 
     bool preconditioner_set;
 
-    /// Computes the value of the objective function and its gradient.
-    static PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(
-		   TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
-
-    /// Computes the hessian of the quadratic objective function
+    // Computes the value of the objective function and its gradient.
     static PetscErrorCode
-      __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre,
-                                       MatStructure *flg,   void *ptr);
+      __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X,
+                                                PetscReal *ener, Vec G,
+                                                void *ptr);
+
+    // Computes the hessian of the quadratic objective function
+    static PetscErrorCode
+      __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X, Mat *H, Mat *Hpre,
+                                       MatStructure *flg, void *ptr);
 
     //-------------------------------------------------------------------------
     //  Monitor the state of the solution at each iteration. The
