@@ -194,7 +194,6 @@ void PETScSNESSolver::init(const std::string& method)
 
   // Create SNES object
   SNESCreate(PETSC_COMM_WORLD, &_snes);
-  PetscObjectReference((PetscObject)_snes);
 
   // Set solver type
   if (method != "default")

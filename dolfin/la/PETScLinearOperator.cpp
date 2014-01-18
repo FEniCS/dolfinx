@@ -128,10 +128,7 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
   // Initialize PETSc matrix
   PetscErrorCode ierr;
   if (_A)
-  {
-    PetscObjectDereference((PetscObject)_A);
-    _A = NULL;
-  }
+    MatDestroy(&_A);
 
   // Create shell matrix
   ierr = MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N,
