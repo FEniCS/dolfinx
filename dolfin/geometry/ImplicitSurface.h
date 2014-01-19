@@ -65,11 +65,7 @@ namespace dolfin
     /// Signed distance function surface. If f0(p) = 0, the point p is
     /// possibly on the surface, which case ImplicitSurface::f1 can be
     /// called to check.
-    virtual double f0(const Point& point) const
-    {
-      error("ImplicitSurface::signed_distance has not been provided");
-      return 0.0;
-    }
+    virtual double f0(const Point& point) const = 0;
 
     /// For a point for which f0 \approx 0, return <= is point is on
     /// is on the surface.  Can be used for creating open surfaces by
