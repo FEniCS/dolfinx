@@ -52,9 +52,9 @@ class JIT(unittest.TestCase):
 
           void PETSc_exp(boost::shared_ptr<dolfin::PETScVector> vec)
           {
-            boost::shared_ptr<Vec> x = vec->vec();
+            Vec x = vec->vec();
             assert(x);
-            VecExp(*x);
+            VecExp(x);
           }
         }
         """
