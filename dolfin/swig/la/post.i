@@ -805,43 +805,38 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 // we see a petsc4py object on the python side.
 
 %feature("docstring") dolfin::PETScBaseMatrix::mat "Return petsc4py representation of PETSc Mat";
-%extend dolfin::PETScBaseMatrix {
-    void mat(Mat &A) {
-        Mat *p = self->mat().get();
-        A = *p;
-    }
+%extend dolfin::PETScBaseMatrix
+{
+  void mat(Mat &A)
+  { A = self->mat(); }
 }
 
 %feature("docstring") dolfin::PETScVector::vec "Return petsc4py representation of PETSc Vec";
-%extend dolfin::PETScVector {
-    void vec(Vec &v) {
-        Vec *p = self->vec().get();
-        v = *p;
-    }
+%extend dolfin::PETScVector
+{
+  void vec(Vec&v)
+  { v = self->vec(); }
 }
 
 %feature("docstring") dolfin::PETScKrylovSolver::ksp "Return petsc4py representation of PETSc KSP solver";
-%extend dolfin::PETScKrylovSolver {
-    void ksp(KSP &ksp) {
-        KSP *p = self->ksp().get();
-        ksp = *p;
-    }
+%extend dolfin::PETScKrylovSolver
+{
+  void ksp(KSP& ksp)
+  { ksp = self->ksp(); }
 }
 
 %feature("docstring") dolfin::PETScLUSolver::ksp "Return petsc4py representation of PETSc LU solver";
-%extend dolfin::PETScLUSolver {
-    void ksp(KSP &ksp) {
-        KSP *p = self->ksp().get();
-        ksp = *p;
-    }
+%extend dolfin::PETScLUSolver
+{
+  void ksp(KSP& ksp)
+  { ksp = self->ksp(); }
 }
 
 %feature("docstring") dolfin::PETScSNESSolver::snes "Return petsc4py representation of PETSc SNES solver";
-%extend dolfin::PETScSNESSolver {
-    void snes(SNES &snes) {
-        SNES *p = self->snes().get();
-        snes = *p;
-    }
+%extend dolfin::PETScSNESSolver
+{
+  void snes(SNES& snes)
+  { snes = self->snes(); }
 }
 
 #else

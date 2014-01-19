@@ -59,8 +59,8 @@ namespace dolfin
     /// Create empty matrix
     PETScMatrix(bool use_gpu=false);
 
-    /// Create matrix from given PETSc Mat pointer
-    explicit PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu=false);
+    /// Create a wrapper around a PETSc Mat pointer
+    explicit PETScMatrix(Mat A);
 
     /// Copy constructor
     PETScMatrix(const PETScMatrix& A);
