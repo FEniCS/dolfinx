@@ -75,7 +75,7 @@ XMLFile::~XMLFile()
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& input_mesh)
 {
-  if (MPI::num_processes(input_mesh.mpi_comm()) == 1)
+  if (MPI::size(input_mesh.mpi_comm()) == 1)
   {
     // Create XML doc and get DOLFIN node
     pugi::xml_document xml_doc;
@@ -101,7 +101,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
 {
-  if (MPI::num_processes(output_mesh.mpi_comm()) > 1)
+  if (MPI::size(output_mesh.mpi_comm()) > 1)
   {
     dolfin_error("XMLFile.cpp",
                  "write mesh to XML file in parallel",
@@ -144,7 +144,7 @@ void XMLFile::operator>> (GenericVector& input)
 
   // Resize if necessary
   const std::size_t input_vector_size = input.size();
-  const std::size_t num_proc = MPI::num_processes(_mpi_comm);
+  const std::size_t num_proc = MPI::size(_mpi_comm);
   if (num_proc > 1 && input_vector_size != size)
   {
     warning("Resizing parallel vector. Default partitioning will be used. \
@@ -251,7 +251,7 @@ template<typename T>
 void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                  const std::string type) const
 {
-  if (MPI::num_processes(_mpi_comm) == 1)
+  if (MPI::size(_mpi_comm) == 1)
   {
     pugi::xml_document xml_doc;
     load_xml_doc(xml_doc);
@@ -309,7 +309,7 @@ template<typename T>
 void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
                                          const std::string type) const
 {
-  if (MPI::num_processes(_mpi_comm) == 1)
+  if (MPI::size(_mpi_comm) == 1)
   {
     pugi::xml_document xml_doc;
     load_xml_doc(xml_doc);

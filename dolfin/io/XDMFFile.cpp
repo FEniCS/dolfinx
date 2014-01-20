@@ -263,7 +263,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const std::string dataset_name = "/VisualisationVector/"
     + boost::lexical_cast<std::string>(counter);
 
-  const bool mpi_io = MPI::num_processes(mesh.mpi_comm()) > 1 ? true : false;
+  const bool mpi_io = MPI::size(mesh.mpi_comm()) > 1 ? true : false;
   hdf5_file->write_data(dataset_name, data_values, global_size, mpi_io);
 
   // Flush file. Improves chances of recovering data if

@@ -484,7 +484,7 @@ void PETScSNESSolver::set_linear_solver_parameters()
     }
     else
     {
-      if (MPI::num_processes(comm) == 1)
+      if (MPI::size(comm) == 1)
       {
         #if PETSC_HAVE_UMFPACK
         lu_method = "umfpack";

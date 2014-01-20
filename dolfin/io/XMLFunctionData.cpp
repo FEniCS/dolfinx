@@ -157,7 +157,7 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
 
   std::vector<double> x;
   dolfin_assert(u.vector());
-  if (MPI::num_processes(mesh.mpi_comm()) > 1)
+  if (MPI::size(mesh.mpi_comm()) > 1)
     u.vector()->gather_on_zero(x);
   else
     u.vector()->get_local(x);
@@ -203,7 +203,7 @@ void XMLFunctionData::build_global_to_cell_dof(std::vector<std::vector<std::pair
   std::vector<std::vector<std::vector<dolfin::la_index > > > gathered_dofmap;
   std::vector<std::vector<dolfin::la_index > > local_dofmap(mesh.num_cells());
 
-  if (MPI::num_processes(mesh.mpi_comm()) > 1)
+  if (MPI::size(mesh.mpi_comm()) > 1)
   {
     // Check that local-to-global cell numbering is available
     const std::size_t D = mesh.topology().dim();
@@ -271,7 +271,7 @@ XMLFunctionData::build_dof_map(std::vector<std::vector<dolfin::la_index> >&
 
   std::vector<std::vector<std::vector<dolfin::la_index> > > gathered_dofmap;
   std::vector<std::vector<dolfin::la_index> > local_dofmap(mesh.num_cells());
-  if (MPI::num_processes(mesh.mpi_comm()) > 1)
+  if (MPI::size(mesh.mpi_comm()) > 1)
   {
     // Check that local-to-global cell numbering is available
     const std::size_t D = mesh.topology().dim();

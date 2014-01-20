@@ -176,7 +176,7 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   const std::vector<double> xpos = mesh_min_max(mesh);
 
   // Get MPI details
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
   const std::size_t process_number = MPI::rank(mesh.mpi_comm());
 
   // Create pugi xml document
@@ -409,7 +409,7 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
   }
 
   // Number of MPI processes
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
 
   // Gather up on zero
   std::vector<std::string> gathered_output;
@@ -440,7 +440,7 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
                                           true);
 
   const std::size_t process_number = MPI::rank(mesh.mpi_comm());
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 

@@ -67,7 +67,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
 
   // Get my MPI process rank and number of MPI processes
   const std::size_t my_rank = MPI::rank(mesh.mpi_comm());
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
 
   // Open boundary mesh for editing
   const std::size_t D = mesh.topology().dim();

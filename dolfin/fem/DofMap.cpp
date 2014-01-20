@@ -587,7 +587,7 @@ std::string DofMap::str(bool verbose) const
 
   // Prefix with process number if running in parallel
   std::stringstream prefix;
-  //if (MPI::num_processes() > 1)
+  //if (MPI::size() > 1)
   //  prefix << "Process " << MPI::rank() << ": ";
 
   std::stringstream s;

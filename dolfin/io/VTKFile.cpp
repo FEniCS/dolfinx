@@ -179,7 +179,7 @@ void VTKFile::write_function(const Function& u, double time)
   results_write(u, vtu_filename);
 
   // Parallel-specfic files
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
   if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
@@ -211,7 +211,7 @@ void VTKFile::write_mesh(const Mesh& mesh, double time)
                         compress);
 
   // Parallel-specific files
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
   if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
@@ -235,7 +235,7 @@ std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const
 
   // Get vtu file name and clear file
   std::string vtu_filename = vtu_name(MPI::rank(mpi_comm),
-                                      MPI::num_processes(mpi_comm),
+                                      MPI::size(mpi_comm),
                                       counter, ".vtu");
   clear_file(vtu_filename);
 
@@ -613,7 +613,7 @@ void VTKFile::pvtu_write(const Function& u, const std::string fname) const
   if (u.function_space()->dofmap()->max_cell_dimension() == cell_based_dim)
     data_type = "cell";
 
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
   pvtu_write_function(dim, rank, data_type, u.name(), fname, num_processes);
 }
 //----------------------------------------------------------------------------
@@ -740,7 +740,7 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   fp.close();
 
   // Parallel-specfic files
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
   const std::size_t process_number = MPI::rank(mesh.mpi_comm());
   if (num_processes > 1 && process_number == 0)
   {
