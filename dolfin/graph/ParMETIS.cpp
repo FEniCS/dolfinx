@@ -185,7 +185,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS Refine)");
 
   // Get some MPI data
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
 
   // Options for ParMETIS
   int options[4];

@@ -309,7 +309,7 @@ void SparsityPattern::apply()
     primary_codim = 0;
 
   const std::size_t num_processes = MPI::num_processes(_mpi_comm);
-  const std::size_t proc_number = MPI::process_number(_mpi_comm);
+  const std::size_t proc_number = MPI::rank(_mpi_comm);
 
   // Print some useful information
   if (get_log_level() <= DBG)

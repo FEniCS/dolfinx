@@ -126,7 +126,7 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
                                            const ImplicitSurface& surface,
                                            double cell_size)
 {
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Mesh criteria
     Mesh_criteria criteria(CGAL::parameters::edge_size=cell_size,
@@ -151,7 +151,7 @@ ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
                                               double cell_size)
 
 {
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // CGAL mesh paramters
     Mesh_criteria criteria(CGAL::parameters::edge_size=cell_size,

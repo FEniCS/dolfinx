@@ -171,7 +171,7 @@ int main()
   if (dolfin::MPI::num_processes(mesh.mpi_comm()) > 1)
   {
     CellFunction<std::size_t>
-      partitions(mesh, dolfin::MPI::process_number(mesh.mpi_comm()));
+      partitions(mesh, dolfin::MPI::rank(mesh.mpi_comm()));
     File file("partitions.pvd");
     file << partitions;
   }

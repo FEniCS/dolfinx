@@ -374,7 +374,7 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
     = mesh.topology().shared_entities(0);
 
   // My process rank
-  const unsigned int my_rank = MPI::process_number(mpi_comm);
+  const unsigned int my_rank = MPI::rank(mpi_comm);
 
   // Number of processes
   const unsigned int num_processes = MPI::num_processes(mpi_comm);

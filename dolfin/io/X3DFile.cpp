@@ -177,13 +177,13 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
 
   // Get MPI details
   const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
-  const std::size_t process_number = MPI::process_number(mesh.mpi_comm());
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
 
   // Create pugi xml document
   pugi::xml_document xml_doc;
 
   // Write XML header
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
     output_xml_header(xml_doc, xpos);
 
   // Make a set of the indices we wish to use. In 3D, we are ignoring
@@ -313,7 +313,7 @@ void X3DFile::write_function(const Function& u)
   write_values(xml_doc, mesh, surface_vertices, data_values);
 
   // Save XML file
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
     xml_doc.save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
@@ -341,7 +341,7 @@ void X3DFile::write_mesh(const Mesh& mesh)
   const std::vector<std::size_t> vecindex = vertex_index(mesh);
   write_vertices(xml_doc, mesh, vecindex);
 
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
     xml_doc.save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
@@ -414,7 +414,7 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
   // Gather up on zero
   std::vector<std::string> gathered_output;
   MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     pugi::xml_node indexed_face_set = xml_doc.child("X3D")
       .child("Scene").child("Shape").child(facet_type.c_str());
@@ -439,7 +439,7 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
   std::size_t offset = MPI::global_offset(mesh.mpi_comm(), vecindex.size(),
                                           true);
 
-  const std::size_t process_number = MPI::process_number(mesh.mpi_comm());
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
   const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();

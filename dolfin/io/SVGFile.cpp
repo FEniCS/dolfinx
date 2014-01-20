@@ -49,7 +49,7 @@ void SVGFile::operator<< (const Mesh& mesh)
   std::ostringstream _filename;
   _filename << prefix;
   if (MPI::num_processes(mesh.mpi_comm()) > 1)
-    _filename << "_p" << MPI::process_number(mesh.mpi_comm());
+    _filename << "_p" << MPI::rank(mesh.mpi_comm());
   _filename << ".svg";
 
   // Open file
