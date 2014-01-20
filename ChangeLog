@@ -1,4 +1,5 @@
- - Remove random access function from MeshEntityIteratior (fixes #178)
+ - Use PETSc built-in reference counting to manage lifetime of wrapped PETSc objects
+ - Remove random access function from MeshEntityIterator (fixes #178)
  - Add support for VTK 6 (fixes #149)
  - Use MPI communicator in interfaces. Permits the creation of distributed and
 	local objects, e.g. Meshes.

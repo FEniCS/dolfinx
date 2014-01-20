@@ -8,7 +8,7 @@ import numpy
 
 # Create mesh and define function space
 nx = ny = 2
-mesh = UnitSquare(nx, ny)
+mesh = UnitSquareMesh(nx, ny)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
 # Define boundary conditions
@@ -57,4 +57,3 @@ while t <= T:
 
     t += dt
     u_1.assign(u)
-

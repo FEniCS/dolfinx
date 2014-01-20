@@ -37,17 +37,6 @@
 namespace dolfin
 {
 
-  class PETScMatrixDeleter
-  {
-  public:
-    void operator() (Mat* A)
-    {
-      if (*A)
-        MatDestroy(A);
-      delete A;
-    }
-  };
-
   class GenericVector;
 
   /// This class is a base class for matrices that can be used in
@@ -58,10 +47,13 @@ namespace dolfin
   public:
 
     /// Constructor
-    PETScBaseMatrix() {}
+  PETScBaseMatrix() : _A(NULL) {}
 
     /// Constructor
-    PETScBaseMatrix(boost::shared_ptr<Mat> A) : _A(A) {}
+    PETScBaseMatrix(Mat A);
+
+    /// Destructor
+    ~PETScBaseMatrix();
 
     /// Return number of rows (dim = 0) or columns (dim = 1)
     std::size_t size(std::size_t dim) const;
@@ -79,7 +71,7 @@ namespace dolfin
     void resize(GenericVector& z, std::size_t dim) const;
 
     /// Return PETSc Mat pointer
-    boost::shared_ptr<Mat> mat() const
+    Mat mat() const
     { return _A; }
 
     /// Return informal string representation (pretty-print)
@@ -88,7 +80,7 @@ namespace dolfin
   protected:
 
     // PETSc Mat pointer
-    boost::shared_ptr<Mat> _A;
+    Mat _A;
 
   };
 

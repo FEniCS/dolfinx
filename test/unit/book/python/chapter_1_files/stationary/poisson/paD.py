@@ -16,7 +16,7 @@ import numpy, sys
 degree = int(sys.argv[1])
 divisions = [int(arg) for arg in sys.argv[2:]]
 d = len(divisions)
-domain_type = [UnitInterval, UnitSquare, UnitCube]
+domain_type = [UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]
 mesh = domain_type[d-1](*divisions)
 V = FunctionSpace(mesh, 'Lagrange', degree)
 
@@ -51,4 +51,3 @@ u_exact = Expression('x[0]*x[0]')
 u_e = interpolate(u_exact, V)
 print 'Max error:', \
       numpy.abs(u_e.vector().array() - u.vector().array()).max()
-
