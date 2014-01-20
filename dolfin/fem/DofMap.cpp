@@ -355,7 +355,7 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
 {
-  deprecation("dof_to_vertex_map", "1.3.0",
+  deprecation("dof_to_vertex_map", "1.3.0", "1.4",
 	      "DofMap::dof_to_vertex_map has been replaced by the free "
 	      "function vertex_to_dof_map.");
 
@@ -432,7 +432,7 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(const Mesh& mesh) const
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> DofMap::vertex_to_dof_map(const Mesh& mesh) const
 {
-  deprecation("vertex_to_dof_map", "1.3.0",
+  deprecation("vertex_to_dof_map", "1.3.0", "1.4",
 	      "DofMap::vertex_to_dof_map has been replaced by the "
 	      "free function dof_to_vertex_map.");
 
