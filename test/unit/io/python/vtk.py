@@ -136,7 +136,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
 
     # FFC fails for vector spaces in 1D
     #def test_save_1d_vector(self):
-    #    if MPI.num_processes() == 1:
+    #    if MPI.size() == 1:
     #        mesh = UnitIntervalMesh(32)
     #        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     #        u.vector()[:] = 1.0
@@ -168,7 +168,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
 
     # FFC fails for tensor spaces in 1D
     #def test_save_1d_tensor(self):
-    #    if MPI.num_processes() == 1:
+    #    if MPI.size() == 1:
     #        mesh = UnitIntervalMesh(32)
     #        u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     #        u.vector()[:] = 1.0

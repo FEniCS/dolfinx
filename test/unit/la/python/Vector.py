@@ -293,7 +293,7 @@ class AbstractBaseTest(object):
 
     def test_vector_assignment_length(self):
         # Test that assigning with diffrent parallel layouts fails
-        if MPI.num_processes(mpi_comm_world()) > 1:
+        if MPI.size(mpi_comm_world()) > 1:
             m = 301
             local_range0 = MPI.local_range(mpi_comm_world(), m)
             print "local range", local_range0[0], local_range0[1]
@@ -301,7 +301,7 @@ class AbstractBaseTest(object):
             # Shift parallel partitiong but preserve global size
             if MPI.rank(mpi_comm_world()) == 0:
                 local_range1 = (local_range0[0], local_range0[1] + 1)
-            elif MPI.rank(mpi_comm_world()) == MPI.num_processes(mpi_comm_world()) - 1:
+            elif MPI.rank(mpi_comm_world()) == MPI.size(mpi_comm_world()) - 1:
                 local_range1 = (local_range0[0] + 1, local_range0[1])
             else:
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
@@ -348,7 +348,7 @@ class DataNotWorkingTester:
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-if MPI.num_processes(mpi_comm_world()) == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
