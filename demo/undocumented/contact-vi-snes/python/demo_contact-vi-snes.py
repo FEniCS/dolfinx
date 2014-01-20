@@ -96,6 +96,7 @@ problem = NonlinearVariationalProblem(F, u, bc, J=J)
 
 # Set up the non-linear solver
 solver  = NonlinearVariationalSolver(problem)
+solver.parameters["reset_jacobian"] = False
 solver.parameters.update(snes_solver_parameters)
 info(solver.parameters, True)
 

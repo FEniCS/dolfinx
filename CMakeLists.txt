@@ -61,7 +61,7 @@ option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
-
+option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
@@ -92,6 +92,13 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
 endforeach()
+
+#------------------------------------------------------------------------------
+# General compiler defintions
+
+if (DOLFIN_DEPRECATION_ERROR)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_DEPRECATION_ERROR")
+endif()
 
 #------------------------------------------------------------------------------
 # Package-specific options
@@ -297,13 +304,15 @@ if (DOLFIN_ENABLE_PYTHON)
     endif()
 
     # Add a search path for Python library based on output from
-    # iterpreter
+    # interpreter
+    set(CMAKE_LIBRARY_PATH_SAVE ${CMAKE_LIBRARY_PATH})
     if ("${_PYTHON_LIB_RESULT}" STREQUAL "0")
       set(CMAKE_LIBRARY_PATH ${_PYTHON_LIB_PATH})
     endif()
 
-    # Find Pythons livs
+    # Find Pythons libs
     find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT QUIET REQUIRED)
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH_SAVE})
   endif()
 
   # If Python is found, check for NumPy and SWIG
@@ -493,10 +502,6 @@ if (DOLFIN_ENABLE_VTK)
       message(WARNING "Unable to find VTK (>= 5.2)")
     else()
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
-      if ("${VTK_VERSION}" VERSION_EQUAL "6.0" OR "${VTK_VERSION}" VERSION_GREATER "6.0")
-	message(STATUS "VTK 6.0 and above is not yet supported. VTK disabled.")
-        set(VTK_FOUND FALSE)
-     endif()
     endif()
   endif()
 endif()

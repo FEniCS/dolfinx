@@ -73,7 +73,7 @@ class AbstractBaseTest(object):
         from numpy import ndarray, linspace, array, fromiter
         from numpy import int,int0,int16,int32,int64
         from numpy import uint,uint0,uint16,uint32,uint64
-        v,w = self.assemble_vectors()
+        v, w = self.assemble_vectors()
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
@@ -122,9 +122,9 @@ class AbstractBaseTest(object):
 
         A2 = A.array()
         self.assertTrue(isinstance(A2,ndarray))
-        self.assertEqual(A2.shape, (n1-n0,))
+        self.assertEqual(A2.shape, (n1 - n0,))
         if A.owns_index(5): self.assertAlmostEqual(A2[5], A[5])
-        self.assertAlmostEqual(MPI.sum(A2.sum()), A.sum())
+        self.assertAlmostEqual(MPI.sum(A.mpi_comm(), A2.sum()), A.sum())
 
         B2 = B.array()
         # TODO: test strides in parallel also
@@ -132,7 +132,6 @@ class AbstractBaseTest(object):
             A[1:16:2] = B[1:16:2]
             A2[1:16:2] = B2[1:16:2]
             self.assertAlmostEqual(A2[1], A[1])
-
 
         ind = [1,3,6,9,15,20,24,28,32,40,50,60,70,100000]
 
@@ -183,9 +182,11 @@ class AbstractBaseTest(object):
         if not distributed:
             self.assertTrue((A3==A2).all())
 
-        X = A==A                 # operator== returns array of global size with Falses at not-owned items
+        # operator== returns array of global size with Falses at
+        # not-owned items
+        X = A==A
         for i in range(len(X)):  # gather X, because of issue 54
-            X[i] = MPI.max(float(X[i]))
+            X[i] = MPI.max(A.mpi_comm(), float(X[i]))
         A[:] = X
         self.assertTrue(A.sum()==len(A))
 
@@ -233,8 +234,8 @@ class AbstractBaseTest(object):
         A2 *= B2
         I = A*B
         I2 = A2*B2
-        self.assertAlmostEqual(A.sum(), MPI.sum(A2.sum()))
-        self.assertAlmostEqual(I.sum(), MPI.sum(I2.sum()))
+        self.assertAlmostEqual(A.sum(), MPI.sum(A.mpi_comm(), A2.sum()))
+        self.assertAlmostEqual(I.sum(), MPI.sum(A.mpi_comm(), I2.sum()))
 
         def wrong_assign(A, ind):
             A[ind[::2]] = ind[::2]
@@ -311,8 +312,10 @@ class AbstractBaseTest(object):
             u_numpy = dot(A_numpy,v_numpy)
             u_numpy2 = A*v_numpy
 
-            self.assertTrue(absolute(u.array() - u_numpy).sum() < DOLFIN_EPS*len(v))
-            self.assertTrue(absolute(u_numpy2 - u_numpy).sum() < DOLFIN_EPS*len(v))
+            self.assertTrue(absolute(u.array() - u_numpy).sum() \
+                            < DOLFIN_EPS*len(v))
+            self.assertTrue(absolute(u_numpy2 - u_numpy).sum() \
+                            < DOLFIN_EPS*len(v))
 
     def test_matrix_vector_with_backend(self):
         self.test_matrix_vector(True)
@@ -320,14 +323,14 @@ class AbstractBaseTest(object):
 class DataNotWorkingTester:
     def test_matrix_data(self):
         A,B = self.assemble_matrices()
-        self.assertRaises(RuntimeError,A.data)
+        self.assertRaises(RuntimeError, A.data)
 
         A = as_backend_type(A)
-        self.assertRaises(RuntimeError,A.data)
+        self.assertRaises(RuntimeError, A.data)
 
     def test_vector_data(self):
         v,w = self.assemble_vectors()
-        self.assertRaises(RuntimeError,v.data)
+        self.assertRaises(RuntimeError, v.data)
 
         v = as_backend_type(v)
         def no_attribute():
@@ -335,14 +338,15 @@ class DataNotWorkingTester:
         self.assertRaises(AttributeError,no_attribute)
 
 if has_linear_algebra_backend("PETSc"):
-    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+    class PETScTester(DataNotWorkingTester, AbstractBaseTest, \
+                      unittest.TestCase):
         backend    = "PETSc"
 
 if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
+                       unittest.TestCase):
         backend    = "Epetra"
-
-if MPI.num_processes() == 1:
+if MPI.num_processes(mpi_comm_world()) == 1:
     class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
@@ -352,7 +356,8 @@ if MPI.num_processes() == 1:
         sub_backend = "Dense"
 
     if has_linear_algebra_backend("PETScCusp"):
-        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, \
+                              unittest.TestCase):
             backend    = "PETScCusp"
 
 if __name__ == "__main__":

@@ -490,9 +490,8 @@ namespace dolfin
     }
 
     const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
-    std::pair<typename std::map<std::pair<std::size_t,
-      std::size_t>, T>::iterator, bool> it;
-    it = _values.insert(std::make_pair(pos, value));
+    std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool>
+      it = _values.insert(std::make_pair(pos, value));
 
     // If an item with same key already exists the value has not been
     // set and we need to update it

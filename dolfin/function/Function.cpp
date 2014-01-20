@@ -709,7 +709,8 @@ void Function::init_vector()
   dolfin_assert(_vector);
 
   // Initialize vector of dofs
-  _vector->resize(range, ghost_indices);
+  dolfin_assert(_function_space->mesh());
+  _vector->resize(_function_space->mesh()->mpi_comm(), range, ghost_indices);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

@@ -29,7 +29,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DynamicMeshEditor::DynamicMeshEditor() : _mesh(0), _tdim(0), _gdim(0),
-                                         _cell_type(0)
+                                         _cell_type(0),
+                                         _num_global_vertices(0),
+                                         _num_global_cells(0)
 {
   // Do nothing
 }
@@ -40,7 +42,8 @@ DynamicMeshEditor::~DynamicMeshEditor()
 }
 //-----------------------------------------------------------------------------
 void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
-                             std::size_t gdim)
+                             std::size_t gdim, std::size_t num_global_vertices,
+                             std::size_t num_global_cells)
 {
   // Clear old data
   mesh.clear();
@@ -51,19 +54,34 @@ void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
   _gdim = gdim;
   _tdim = tdim;
   _cell_type = CellType::create(type);
+  _num_global_vertices = num_global_vertices;
+  _num_global_cells    = num_global_cells;
 }
 //-----------------------------------------------------------------------------
 void DynamicMeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
-                             std::size_t gdim)
+                             std::size_t gdim, std::size_t num_global_vertices,
+                             std::size_t num_global_cells)
 {
   if (type == "point")
-    open(mesh, CellType::point, tdim, gdim);
+  {
+    open(mesh, CellType::point, tdim, gdim, num_global_vertices,
+         num_global_cells);
+  }
   else if (type == "interval")
-    open(mesh, CellType::interval, tdim, gdim);
+  {
+    open(mesh, CellType::interval, tdim, gdim, num_global_vertices,
+         num_global_cells);
+  }
   else if (type == "triangle")
-    open(mesh, CellType::triangle, tdim, gdim);
+  {
+    open(mesh, CellType::triangle, tdim, gdim, num_global_vertices,
+         num_global_cells);
+  }
   else if (type == "tetrahedron")
-    open(mesh, CellType::tetrahedron, tdim, gdim);
+  {
+    open(mesh, CellType::tetrahedron, tdim, gdim, num_global_vertices,
+         num_global_cells);
+  }
   else
   {
     dolfin_error("DynamicMeshEditor.cpp",
@@ -168,12 +186,12 @@ void DynamicMeshEditor::close(bool order)
 
   // Set number of vertices
   const std::size_t num_vertices = vertex_coordinates.size()/_gdim;
-  editor.init_vertices(num_vertices);
+  editor.init_vertices(num_vertices, _num_global_vertices);
 
   // Set number of cells
   const std::size_t vertices_per_cell = _cell_type->num_vertices(_gdim);
   const std::size_t num_cells = cell_vertices.size()/vertices_per_cell;
-  editor.init_cells(num_cells);
+  editor.init_cells(num_cells, _num_global_cells);
 
   // Add vertices
   std::vector<double> p(_gdim);

@@ -76,8 +76,9 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
   const std::size_t num_cells = mesh.size(mesh.topology().dim());
 
   // Specify number of vertices and cells
-  editor.init_vertices(num_vertices + num_edges);
-  editor.init_cells(ipow(2, mesh.topology().dim())*num_cells);
+  editor.init_vertices(num_vertices + num_edges, num_vertices + num_edges);
+  editor.init_cells(ipow(2, mesh.topology().dim())*num_cells,
+                    ipow(2, mesh.topology().dim())*num_cells);
 
   // Add old vertices
   std::size_t vertex = 0;

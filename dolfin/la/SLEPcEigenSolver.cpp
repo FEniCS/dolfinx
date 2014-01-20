@@ -45,10 +45,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
@@ -62,10 +59,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
@@ -77,10 +71,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
@@ -96,10 +87,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
@@ -123,10 +111,10 @@ void SLEPcEigenSolver::solve(std::size_t n)
   if (_B)
   {
     dolfin_assert(_B->size(0) == _B->size(1) && _B->size(0) == _A->size(0));
-    EPSSetOperators(eps, *_A->mat(), *_B->mat());
+    EPSSetOperators(eps, _A->mat(), _B->mat());
   }
   else
-    EPSSetOperators(eps, *_A->mat(), PETSC_NULL);
+    EPSSetOperators(eps, _A->mat(), PETSC_NULL);
 
   // Set number of eigenpairs to compute
   dolfin_assert(n <= _A->size(0));
@@ -238,7 +226,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
     dolfin_assert(r.vec());
     dolfin_assert(c.vec());
-    EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
+    EPSGetEigenpair(eps, ii, &lr, &lc, r.vec(), c.vec());
   }
   else
   {
@@ -257,7 +245,8 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
 {
-  EPSSetDeflationSpace(eps, 1, deflation_space.vec().get());
+  Vec x = deflation_space.vec();
+  EPSSetDeflationSpace(eps, 1, &x);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()

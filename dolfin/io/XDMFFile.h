@@ -29,8 +29,8 @@
 #include <utility>
 #include <boost/scoped_ptr.hpp>
 
-#include "dolfin/common/Variable.h"
-
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
 #include "GenericFile.h"
 
 namespace pugi
@@ -60,7 +60,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    explicit XDMFFile(const std::string filename);
+    XDMFFile(MPI_Comm comm, const std::string filename);
 
     /// Destructor
     ~XDMFFile();
@@ -91,6 +91,9 @@ namespace dolfin
     void operator>> (MeshFunction<double>& meshfunction);
 
   private:
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;

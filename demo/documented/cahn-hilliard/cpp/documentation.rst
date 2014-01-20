@@ -134,9 +134,9 @@ to :math:`c` and the second value (``[1]``) corresponds to
    {
    public:
 
-     InitialConditions(const Mesh& mesh) : Expression(mesh.topology().dim())
+     InitialConditions() : Expression(2)
      {
-        dolfin::seed(2 + dolfin::MPI::process_number());
+        dolfin::seed(2 + dolfin::MPI::process_number(MPI_COMM_WORLD));
      }
 
      void eval(Array<double>& values, const Array<double>& x) const
@@ -176,7 +176,7 @@ function ``init``:
     // Constructor
     CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
                          const Constant& theta, const Constant& lambda)
-                       : reset_Jacobian(true)
+                       : reset_b(true), reset_A(true)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
@@ -203,7 +203,10 @@ assembly of the form ``L``:
       void F(GenericVector& b, const GenericVector& x)
       {
         // Assemble RHS (Neumann boundary conditions)
-        assemble(b, *L);
+        Assembler assembler;
+        assembler.reset_sparsity = reset_b;
+        assembler.assemble(b, *L);
+        reset_b = false;
       }
 
 The function ``J`` computes the Jacobian matrix, which corresponds to
@@ -221,9 +224,9 @@ operation.
       {
         // Assemble system
         Assembler assembler;
-        assembler.reset_sparsity = reset_Jacobian;
+        assembler.reset_sparsity = reset_A;
         assembler.assemble(A, *a);
-        reset_Jacobian = false;
+        reset_A = false;
       }
 
 The following two functions are helper functions which allow access to
@@ -279,7 +282,7 @@ initial condition (by interpolation).
       L.reset(_L);
 
       // Set solution to intitial condition
-      InitialConditions u_initial(mesh);
+      InitialConditions u_initial;
       *_u = u_initial;
     }
 
@@ -293,7 +296,8 @@ computing the residual vector and the Jacobian matrix as private data:
       boost::scoped_ptr<Form> L;
       boost::scoped_ptr<Function> _u;
       boost::scoped_ptr<Function> _u0;
-      bool reset_Jacobian;
+      bool reset_b;
+      bool reset_A;
   };
 
 The main program is started, and declared such that it can accept

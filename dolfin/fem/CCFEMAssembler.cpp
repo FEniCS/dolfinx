@@ -154,7 +154,8 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   const std::size_t block_size = 1;
 
   // Initialise tensor layout
-  tensor_layout->init(global_dimensions, block_size, local_ranges);
+  tensor_layout->init(MPI_COMM_WORLD,
+                      global_dimensions, block_size, local_ranges);
 
   // Build sparsity pattern if required
   if (tensor_layout->sparsity_pattern())

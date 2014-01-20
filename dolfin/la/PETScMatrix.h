@@ -33,6 +33,8 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <petscmat.h>
+#include <petscsys.h>
+
 #include "GenericMatrix.h"
 #include "PETScBaseMatrix.h"
 
@@ -57,8 +59,8 @@ namespace dolfin
     /// Create empty matrix
     PETScMatrix(bool use_gpu=false);
 
-    /// Create matrix from given PETSc Mat pointer
-    explicit PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu=false);
+    /// Create a wrapper around a PETSc Mat pointer
+    explicit PETScMatrix(Mat A);
 
     /// Copy constructor
     PETScMatrix(const PETScMatrix& A);
@@ -89,6 +91,9 @@ namespace dolfin
     ///   insert - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
     ///   flush  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
     virtual void apply(std::string mode);
+
+    /// Return MPI communicator
+    const MPI_Comm  mpi_comm() const;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
