@@ -16,7 +16,7 @@ sigma = 0.025
 #sigma = 50  # large value for verification
 n = 40   # approx no of elements in radial direction
 
-mesh = UnitCircle(n)
+mesh = CircleMesh(Point(0.0, 0.0), 1.0, 1.0/n)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
 # Define boundary condition w=0

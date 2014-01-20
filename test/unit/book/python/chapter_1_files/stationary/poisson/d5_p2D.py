@@ -11,8 +11,8 @@ from dolfin import *
 import numpy
 
 # Create mesh and define function space
-#mesh = UnitSquare(8, 8)
-mesh = UnitSquare(2, 2)
+#mesh = UnitSquareMesh(8, 8)
+mesh = UnitSquareMesh(2, 2)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
 
