@@ -107,7 +107,7 @@ std::size_t ParallelRefinement::marked_edge_count(const MeshEntity& cell) const
 //-----------------------------------------------------------------------------
 void ParallelRefinement::update_logical_edgefunction()
 {
-  const std::size_t num_processes = MPI::num_processes(_mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(_mesh.mpi_comm());
 
   // Create a list of edges on this process that are 'true' and copy
   // to remote sharing processes
@@ -149,7 +149,7 @@ void ParallelRefinement::create_new_vertices()
 {
   // Take marked_edges and use to create new vertices
 
-  const std::size_t num_processes = MPI::num_processes(_mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(_mesh.mpi_comm());
   const std::size_t process_number = MPI::rank(_mesh.mpi_comm());
 
   // Tally up unshared marked edges, and shared marked edges which are
@@ -288,7 +288,7 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
                                                    global_indices.end())) + 1;
 
   // Send unwanted values off process
-  const std::size_t num_processes = MPI::num_processes(_mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(_mesh.mpi_comm());
   std::vector<std::vector<std::pair<std::size_t, std::vector<double> > > >
     values_to_send(num_processes);
 

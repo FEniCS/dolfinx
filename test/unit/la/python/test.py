@@ -346,7 +346,7 @@ if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
                        unittest.TestCase):
         backend    = "Epetra"
-if MPI.num_processes(mpi_comm_world()) == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"

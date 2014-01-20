@@ -168,7 +168,7 @@ int main()
   file_stress << stress;
 
   // Save colored mesh paritions in VTK format if running in parallel
-  if (dolfin::MPI::num_processes(mesh.mpi_comm()) > 1)
+  if (dolfin::MPI::size(mesh.mpi_comm()) > 1)
   {
     CellFunction<std::size_t>
       partitions(mesh, dolfin::MPI::rank(mesh.mpi_comm()));

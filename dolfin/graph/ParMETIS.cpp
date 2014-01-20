@@ -224,7 +224,7 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
                                      const LocalMeshData& mesh_data)
 {
   // Get number of processes and process number
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Get dimensions of local mesh_data
   const std::size_t num_local_cells = mesh_data.cell_vertices.size();

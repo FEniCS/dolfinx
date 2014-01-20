@@ -98,7 +98,7 @@ solve(a == L, u, bcs, solver_parameters={"symmetric": True})
 File("elasticity.pvd", "compressed") << u
 
 # Save colored mesh partitions in VTK format if running in parallel
-if MPI.num_processes(mesh.mpi_comm()) > 1:
+if MPI.size(mesh.mpi_comm()) > 1:
     File("partitions.pvd") << CellFunction("size_t", mesh, \
                                            MPI.rank(mesh.mpi_comm()))
 

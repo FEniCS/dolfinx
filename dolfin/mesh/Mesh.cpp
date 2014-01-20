@@ -127,7 +127,7 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
     CSGMeshGenerator::generate(*this, geometry, resolution);
 
   // Build distributed mesh
-  if (MPI::num_processes(_mpi_comm) > 1)
+  if (MPI::size(_mpi_comm) > 1)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
     CSGMeshGenerator::generate(*this, *geometry, resolution);
 
   // Build distributed mesh
-  if (MPI::num_processes(_mpi_comm) > 1)
+  if (MPI::size(_mpi_comm) > 1)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------

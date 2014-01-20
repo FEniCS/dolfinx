@@ -201,7 +201,7 @@ void dolfin::monitor_memory_usage()
 //-----------------------------------------------------------------------------
 void dolfin::not_working_in_parallel(std::string what)
 {
-  if (MPI::num_processes(MPI_COMM_WORLD) > 1)
+  if (MPI::size(MPI_COMM_WORLD) > 1)
   {
     dolfin_error("log.cpp",
                  "perform operation in parallel",

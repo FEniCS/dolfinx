@@ -48,7 +48,7 @@ void SVGFile::operator<< (const Mesh& mesh)
   prefix.assign(_filename, 0, _filename.find_last_of("."));
   std::ostringstream _filename;
   _filename << prefix;
-  if (MPI::num_processes(mesh.mpi_comm()) > 1)
+  if (MPI::size(mesh.mpi_comm()) > 1)
     _filename << "_p" << MPI::rank(mesh.mpi_comm());
   _filename << ".svg";
 

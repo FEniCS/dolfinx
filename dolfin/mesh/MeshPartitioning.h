@@ -225,7 +225,7 @@ namespace dolfin
                                                           D, mesh);
 
     // Number of MPI processes
-    const std::size_t num_processes = MPI::num_processes(mpi_comm);
+    const std::size_t num_processes = MPI::size(mpi_comm);
 
     // Pack data to send to appropriate process
     std::vector<std::vector<std::size_t> > send_data0(num_processes);

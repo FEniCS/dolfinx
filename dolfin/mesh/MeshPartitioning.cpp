@@ -79,7 +79,7 @@ template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 {
-  if (MPI::num_processes(mesh.mpi_comm()) > 1)
+  if (MPI::size(mesh.mpi_comm()) > 1)
   {
     // Create and distribute local mesh data
     LocalMeshData local_mesh_data(mesh);
@@ -92,7 +92,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                             const std::vector<std::size_t>& cell_destinations)
 {
-  if (MPI::num_processes(mesh.mpi_comm()) > 1)
+  if (MPI::size(mesh.mpi_comm()) > 1)
   {
     // Create and distribute local mesh data
     LocalMeshData local_mesh_data(mesh);
@@ -118,7 +118,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
     dolfin_assert(cell_partition.size()
                   == local_data.global_cell_indices.size());
     dolfin_assert(*std::max_element(cell_partition.begin(), cell_partition.end())
-                  < MPI::num_processes(mesh.mpi_comm()));
+                  < MPI::size(mesh.mpi_comm()));
   }
 
   // Build mesh from local mesh data and provided cell partition
@@ -203,7 +203,7 @@ void  MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
   // redistribute all cells (the global vertex indices of all cells).
 
   // Number of MPI processes
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Get dimensions of local mesh_data
   const std::size_t num_local_cells = mesh_data.cell_vertices.size();
@@ -280,7 +280,7 @@ void MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
   // its vertices.
 
   // Get number of processes
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Get geometric dimension
   const std::size_t gdim = mesh_data.gdim;
@@ -380,7 +380,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
 
   // Get number of processes and process number
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
   const std::size_t process_number = MPI::rank(mesh.mpi_comm());
 
   // Open mesh for editing

@@ -135,7 +135,7 @@ void SparsityPattern::insert(const std::vector<const std::vector<dolfin::la_inde
                  _local_range[primary_codim].second);
 
   // Check local range
-  if (MPI::num_processes(_mpi_comm) == 1)
+  if (MPI::size(_mpi_comm) == 1)
   {
     // Sequential mode, do simple insertion
     std::vector<dolfin::la_index>::const_iterator i_index;
@@ -308,7 +308,7 @@ void SparsityPattern::apply()
   else
     primary_codim = 0;
 
-  const std::size_t num_processes = MPI::num_processes(_mpi_comm);
+  const std::size_t num_processes = MPI::size(_mpi_comm);
   const std::size_t proc_number = MPI::rank(_mpi_comm);
 
   // Print some useful information
@@ -316,7 +316,7 @@ void SparsityPattern::apply()
     info_statistics();
 
   // Communicate non-local blocks if any
-  if (MPI::num_processes(_mpi_comm) > 1)
+  if (MPI::size(_mpi_comm) > 1)
   {
     // Figure out correct process for each non-local entry
     dolfin_assert(non_local.size() % 2 == 0);
