@@ -160,7 +160,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       partitions.push_back(data_size[0]);
 
       // Initialise vector
-      const std::size_t process_num = MPI::process_number(_mpi_comm);
+      const std::size_t process_num = MPI::rank(_mpi_comm);
       const std::pair<std::size_t, std::size_t>
         local_range(partitions[process_num], partitions[process_num + 1]);
       x.resize(_mpi_comm, local_range);
@@ -241,7 +241,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       // we can get shared_entities
       DistributedMeshTools::number_entities(mesh, cell_dim);
 
-      const std::size_t my_rank = MPI::process_number(_mpi_comm);
+      const std::size_t my_rank = MPI::rank(_mpi_comm);
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
@@ -495,7 +495,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   std::vector<std::vector<std::size_t> > send_requests(num_processes);
   std::vector<std::vector<std::size_t> > receive_requests(num_processes);
 
-  const std::size_t process_number = MPI::process_number(_mpi_comm);
+  const std::size_t process_number = MPI::rank(_mpi_comm);
 
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
   {
@@ -616,7 +616,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     data_values.reserve(mesh.size(cell_dim));
 
     // Drop duplicate data
-    const std::size_t my_rank = MPI::process_number(_mpi_comm);
+    const std::size_t my_rank = MPI::rank(_mpi_comm);
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
@@ -718,7 +718,7 @@ void HDF5File::write(const Function& u, const std::string name)
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
                                                    cell_dofs.size()));
   write_data(name + "/cell_dofs", cell_dofs, global_size, mpi_io);
-  if (MPI::process_number(_mpi_comm) == MPI::num_processes(_mpi_comm) - 1)
+  if (MPI::rank(_mpi_comm) == MPI::num_processes(_mpi_comm) - 1)
     x_cell_dofs.push_back(global_size[0]);
   global_size[0] = mesh.size_global(mesh.topology().dim()) + 1;
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
@@ -1232,7 +1232,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name) const
   if (MPI::num_processes(_mpi_comm) == partitions.size())
   {
     partitions.push_back(num_global_cells);
-    const std::size_t proc = MPI::process_number(_mpi_comm);
+    const std::size_t proc = MPI::rank(_mpi_comm);
     cell_range = std::make_pair(partitions[proc], partitions[proc + 1]);
   }
   else

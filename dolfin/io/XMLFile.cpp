@@ -134,7 +134,7 @@ void XMLFile::operator>> (GenericVector& input)
 
   // Read vector size
   std::size_t size = 0;
-  if (MPI::process_number(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm) == 0)
   {
     load_xml_doc(xml_doc);
     dolfin_node = get_dolfin_xml_node(xml_doc);
@@ -154,7 +154,7 @@ To control distribution, initialize vector size before reading from file.");
     input.resize(_mpi_comm, size);
 
   // Read vector on root process
-  if (MPI::process_number(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm) == 0)
   {
     dolfin_assert(dolfin_node);
     XMLVector::read(input, dolfin_node);
@@ -180,7 +180,7 @@ void XMLFile::operator<< (const GenericVector& output)
 {
   // Open file on process 0 for distributed objects and on all processes
   // for local objects
-  if (MPI::process_number(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -207,7 +207,7 @@ void XMLFile::operator>> (Parameters& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Parameters& output)
 {
-  if (MPI::process_number(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -221,7 +221,7 @@ void XMLFile::operator>>(Function& input)
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
   pugi::xml_node dolfin_node(0);
-  if (MPI::process_number(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm) == 0)
   {
     load_xml_doc(xml_doc);
     dolfin_node = get_dolfin_xml_node(xml_doc);
@@ -233,7 +233,7 @@ void XMLFile::operator>>(Function& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Function& output)
 {
-  if (MPI::process_number(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm) == 0)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
@@ -264,7 +264,7 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
     // other procs
     std::size_t dim = 0;
     MeshValueCollection<T> mvc(t.mesh());
-    if (MPI::process_number(_mpi_comm) == 0)
+    if (MPI::rank(_mpi_comm) == 0)
     {
       pugi::xml_document xml_doc;
       load_xml_doc(xml_doc);
@@ -320,7 +320,7 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
   {
     // Read file on process 0
     MeshValueCollection<T> tmp_collection(t.mesh());
-    if (MPI::process_number(_mpi_comm) == 0)
+    if (MPI::rank(_mpi_comm) == 0)
     {
       pugi::xml_document xml_doc;
       load_xml_doc(xml_doc);

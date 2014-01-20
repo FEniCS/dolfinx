@@ -624,7 +624,7 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
 
   // Send nonlocal rows indices to other processes
   const std::size_t num_processes  = MPI::num_processes(mpi_comm());
-  const std::size_t process_number = MPI::process_number(mpi_comm());
+  const std::size_t process_number = MPI::rank(mpi_comm());
   for (std::size_t i = 1; i < num_processes; ++i)
   {
     // Receive data from process p - i (i steps to the left), send data to
@@ -769,7 +769,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 {
   PetscErrorCode ierr;
 
-  if (MPI::process_number(mpi_comm()) == 0)
+  if (MPI::rank(mpi_comm()) == 0)
     x.resize(size());
   else
     x.resize(0);
@@ -786,7 +786,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterDestroy");
 
   // Wrap PETSc vector
-  if (MPI::process_number(mpi_comm()) == 0)
+  if (MPI::rank(mpi_comm()) == 0)
   {
     PETScVector _vout(vout);
     _vout.get_local(x);

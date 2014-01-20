@@ -217,7 +217,7 @@ void  MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
                    "distribute cells",
                    "Mismatch in number of cell vertices (%d != %d) on process %d",
                    mesh_data.cell_vertices[0].size(), num_cell_vertices,
-                   MPI::process_number(mpi_comm));
+                   MPI::rank(mpi_comm));
     }
   }
 
@@ -381,7 +381,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Get number of processes and process number
   const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
-  const std::size_t process_number = MPI::process_number(mesh.mpi_comm());
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
 
   // Open mesh for editing
   mesh.clear();

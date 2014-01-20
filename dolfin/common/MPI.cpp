@@ -59,7 +59,24 @@ void dolfin::MPINonblocking::wait_all()
 #endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::process_number(const MPI_Comm comm)
+unsigned int dolfin::MPI::process_number()
+{
+  deprecation("MPI::process_number",
+              "1.4", "1.5",
+              "MPI::rank() has been replaced by MPI::rank(MPI_Comm).");
+
+
+#ifdef HAS_MPI
+  SubSystemsManager::init_mpi();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  return rank;
+#else
+  return 0;
+#endif
+}
+//-----------------------------------------------------------------------------
+unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
@@ -86,13 +103,13 @@ unsigned int dolfin::MPI::num_processes(const MPI_Comm comm)
 bool dolfin::MPI::is_broadcaster(const MPI_Comm comm)
 {
   // Always broadcast from processor number 0
-  return num_processes(comm) > 1 && process_number(comm) == 0;
+  return num_processes(comm) > 1 && rank(comm) == 0;
 }
 //-----------------------------------------------------------------------------
 bool dolfin::MPI::is_receiver(const MPI_Comm comm)
 {
   // Always receive on processors with numbers > 0
-  return num_processes(comm) > 1 && process_number(comm) > 0;
+  return num_processes(comm) > 1 && rank(comm) > 0;
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::barrier(const MPI_Comm comm)
@@ -120,7 +137,7 @@ std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
 std::pair<std::size_t, std::size_t>
 dolfin::MPI::local_range(const MPI_Comm comm, std::size_t N)
 {
-  return local_range(comm, process_number(comm), N);
+  return local_range(comm, rank(comm), N);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>

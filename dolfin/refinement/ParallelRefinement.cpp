@@ -150,7 +150,7 @@ void ParallelRefinement::create_new_vertices()
   // Take marked_edges and use to create new vertices
 
   const std::size_t num_processes = MPI::num_processes(_mesh.mpi_comm());
-  const std::size_t process_number = MPI::process_number(_mesh.mpi_comm());
+  const std::size_t process_number = MPI::rank(_mesh.mpi_comm());
 
   // Tally up unshared marked edges, and shared marked edges which are
   // owned on this process.  Index them sequentially from zero.
@@ -373,7 +373,7 @@ void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
   {
     // Set owning process rank to this process rank
     mesh_data.cell_partition.assign(mesh_data.global_cell_indices.size(),
-                                    MPI::process_number(_mesh.mpi_comm()));
+                                    MPI::rank(_mesh.mpi_comm()));
   }
 
   MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);

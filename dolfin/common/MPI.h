@@ -103,20 +103,25 @@ namespace dolfin
   };
 
   /// This class provides utility functions for easy communication
-  /// with MPI.
+  /// with MPI and handles cases when DOLFIN is not configured with
+  /// MPI.
 
   class MPI
   {
   public:
 
-    /// Return process number
-    static unsigned int process_number(const MPI_Comm comm);
+    /// Return process rank (uses MPI_COMM_WORLD). This function is
+    /// deprecated.
+    static unsigned int process_number();
+
+    /// Return process rank
+    static unsigned int rank(const MPI_Comm comm);
 
     /// Return number of processes
     static unsigned int num_processes(const MPI_Comm comm);
 
-    /// Determine whether we should broadcast (based on current parallel
-    /// policy)
+    /// Determine whether we should broadcast (based on current
+    /// parallel policy)
     static bool is_broadcaster(const MPI_Comm comm);
 
     /// Determine whether we should receive (based on current parallel

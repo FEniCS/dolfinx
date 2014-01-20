@@ -225,7 +225,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   }
 
   // MPI process number
-  const std::size_t proc_num = MPI::process_number(mesh.mpi_comm());
+  const std::size_t proc_num = MPI::rank(mesh.mpi_comm());
 
   // Communication data structures
   std::vector<std::vector<std::size_t> >
@@ -700,7 +700,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
   BoundaryMesh boundary(mesh, "local");
 
   // Create a random number generator for ownership 'voting'
-  boost::mt19937 engine(MPI::process_number(mpi_comm));
+  boost::mt19937 engine(MPI::rank(mpi_comm));
   boost::uniform_int<> distribution(0, 100000000);
   boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
     rng(engine, distribution);
@@ -766,7 +766,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
 
   // Decide ownership of shared nodes
   const std::size_t num_prococesses = MPI::num_processes(mpi_comm);
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
   std::vector<std::size_t> recv_buffer;
   for (std::size_t k = 1; k < num_prococesses; ++k)
   {
@@ -1042,7 +1042,7 @@ void DofMapBuilder::parallel_renumber(
 
   // Exchange new node numbers for nodes that are shared
   const std::size_t num_processes = MPI::num_processes(mpi_comm);
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
   std::vector<std::size_t> recv_buffer;
   for (std::size_t k = 1; k < num_processes; ++k)
   {

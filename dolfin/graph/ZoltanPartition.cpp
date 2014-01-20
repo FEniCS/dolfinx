@@ -108,7 +108,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   dolfin_assert(num_gids == 1);
   dolfin_assert(num_lids == 0);
 
-  std::size_t proc = MPI::process_number(mpi_comm);
+  std::size_t proc = MPI::rank(mpi_comm);
 
   if (rc != ZOLTAN_OK)
   {
@@ -191,7 +191,7 @@ ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
 
 
   // Get my process rank
-  const std::size_t my_rank = MPI::process_number(mpi_comm);
+  const std::size_t my_rank = MPI::rank(mpi_comm);
 
   if (rc != ZOLTAN_OK)
   {

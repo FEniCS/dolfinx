@@ -274,7 +274,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write the XML meta description (see http://www.xdmf.org) on
   // process zero
   const std::size_t num_total_vertices = mesh.size_global(0);
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     output_xml(time_step, vertex_data, tdim, num_global_cells, gdim,
                num_total_vertices, value_rank, padded_value_size,
@@ -396,7 +396,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
   const std::string mesh_coords_name = group_name + "/coordinates";
 
   // Write the XML meta description on process zero
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create XML document
     pugi::xml_document xml_doc;
@@ -478,7 +478,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Write the XML meta description (see http://www.xdmf.org) on
   // process zero
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     output_xml((double)counter, false,
                cell_dim, mesh.size_global(cell_dim),

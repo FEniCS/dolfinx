@@ -61,7 +61,7 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
 
   const std::size_t num_dofs = V.dim();
 
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Check that we have a XML function data
     const pugi::xml_node xml_function_data_node
@@ -113,7 +113,7 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
   build_dof_map(dof_map, V);
 
   // Map old-to-current vector positions
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     for (std::size_t i = 0; i < num_dofs; ++i)
     {
@@ -167,7 +167,7 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
     global_dof_to_cell_dof;
   build_global_to_cell_dof(global_dof_to_cell_dof, V);
 
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Add vector node
     pugi::xml_node function_node = xml_node.append_child("function_data");
@@ -233,7 +233,7 @@ void XMLFunctionData::build_global_to_cell_dof(std::vector<std::vector<std::pair
   MPI::gather(mesh.mpi_comm(), local_dofmap, gathered_dofmap);
 
   // Build global dof - (global cell, local dof) map on root process
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     global_dof_to_cell_dof.resize(dofmap.global_dimension());
 
@@ -301,7 +301,7 @@ XMLFunctionData::build_dof_map(std::vector<std::vector<dolfin::la_index> >&
   MPI::gather(mesh.mpi_comm(), local_dofmap, gathered_dofmap);
 
   // Build global dofmap on root process
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     dof_map.resize(num_cells);
 

@@ -99,8 +99,8 @@ File("elasticity.pvd", "compressed") << u
 
 # Save colored mesh partitions in VTK format if running in parallel
 if MPI.num_processes(mesh.mpi_comm()) > 1:
-    File("partitions.pvd") << CellFunction("uint", mesh, \
-                                           MPI.process_number(mesh.mpi_comm()))
+    File("partitions.pvd") << CellFunction("size_t", mesh, \
+                                           MPI.rank(mesh.mpi_comm()))
 
 # Project and write stress field to post-processing file
 W = TensorFunctionSpace(mesh, "Discontinuous Lagrange", 0)
