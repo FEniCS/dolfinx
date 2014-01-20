@@ -102,8 +102,7 @@ typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
 
 using namespace dolfin;
 
-// Lightweight class for wrapping callback to
-// ImplicitSurface::operator()
+// Lightweight class for wrapping callback to ImplicitSurface::f0()
 class ImplicitSurfaceWrapper
 {
 public:
@@ -113,7 +112,7 @@ public:
   double f(const Point_3& p)
   {
     _p[0] = p[0]; _p[1] = p[1]; _p[2] = p[2];
-    return _surface(_p);
+    return _surface.f0(_p);
   }
 
 private:
@@ -172,8 +171,9 @@ ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 template<typename X, typename Y>
-X ImplicitDomainMeshGenerator::build_cgal_triangulation(const ImplicitSurface& surface,
-                                                        const Y& mesh_criteria)
+X ImplicitDomainMeshGenerator::build_cgal_triangulation(
+  const ImplicitSurface& surface,
+  const Y& mesh_criteria)
 {
   // Wrap implicit surface
   ImplicitSurfaceWrapper surface_wrapper(surface);
