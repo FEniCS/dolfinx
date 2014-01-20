@@ -73,6 +73,14 @@ namespace dolfin
     virtual double f1(const Point& point) const
     { return -1.0; }
 
+    // Return true is point is on surface (within tolerance). Note:
+    // The CGAL surface mesh generator will usually fail for open
+    // surface. To handle this case, f0 can describe a closed surface,
+    // and this function can be overloaded to 'filter' the mesh of the
+    // closed surface.
+    virtual bool on_surface(const Point& point, double tol=1.0e-2) const
+    { return std::abs(f0(point)) < tol && f1(point) < 0.0; }
+
     /// Bounding sphere
     const Sphere sphere;
 
