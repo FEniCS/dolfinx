@@ -770,7 +770,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   // Special case
   if (_facets.empty())
   {
-    if (MPI::num_processes(mesh.mpi_comm()) == 1)
+    if (MPI::size(mesh.mpi_comm()) == 1)
       warning("Found no facets matching domain for boundary condition.");
     return;
   }
@@ -873,7 +873,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   // Special case
   if (_facets.empty())
   {
-    if (MPI::num_processes(mesh.mpi_comm()) == 1)
+    if (MPI::size(mesh.mpi_comm()) == 1)
       warning("Found no facets matching domain for boundary condition.");
     return;
   }

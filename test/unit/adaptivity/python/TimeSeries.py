@@ -25,7 +25,7 @@ import unittest
 #from unittest import skipIf # Awaiting Python 2.7
 from dolfin import *
 
-#@skipIf("Skipping TimeSeries test in parallel", MPI.num_processes() > 1)
+#@skipIf("Skipping TimeSeries test in parallel", MPI.size() > 1)
 class TimeSeriesTest(unittest.TestCase):
 
     def test_retrieve_compressed(self):
@@ -43,7 +43,7 @@ class TimeSeriesTest(unittest.TestCase):
 
         mesh_size = (2, 2, 2)
         mesh = UnitCubeMesh(*mesh_size)
-        if MPI.num_processes(mesh.mpi_comm()) > 1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             return
         mesh.init()
         V = FunctionSpace(mesh, "CG", 2)
@@ -81,7 +81,7 @@ class TimeSeriesTest(unittest.TestCase):
         "Test that retrieve/store works with nonexisting subdirectory"
 
         m0 = UnitSquareMesh(3, 3)
-        if MPI.num_processes(m0.mpi_comm()) > 1:
+        if MPI.size(m0.mpi_comm()) > 1:
             return
 
         name = "TimeSeries_test_subdirectory/foo"

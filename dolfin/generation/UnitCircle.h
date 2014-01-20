@@ -48,7 +48,7 @@ namespace dolfin
                std::string transformation="rotsumn")
       : UnitCircleMesh(n, diagonal, transformation)
     {
-      deprecation("UnitCircle", "1.1.0",
+      deprecation("UnitCircle", "1.1.0", "1.4",
                   "The class UnitCircle has been replaced by UnitCircleMesh.");
     }
 

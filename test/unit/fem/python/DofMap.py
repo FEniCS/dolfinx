@@ -283,7 +283,7 @@ class DofMapTest(unittest.TestCase):
 
     def test_mpi_dofmap_stats(self):
 
-        if MPI.num_processes(self.mesh.mpi_comm()) > 1:
+        if MPI.size(self.mesh.mpi_comm()) > 1:
 
             V = FunctionSpace(self.mesh, "CG", 1)
             self.assertTrue(len(V.dofmap().shared_dofs())>0)

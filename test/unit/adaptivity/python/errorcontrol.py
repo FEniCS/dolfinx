@@ -27,7 +27,7 @@ from ufl.algorithms import replace
 from dolfin import *
 from dolfin.fem.adaptivesolving import *
 
-#@skipIf("Skipping error control test in parallel", MPI.num_processes() > 1)
+#@skipIf("Skipping error control test in parallel", MPI.size() > 1)
 class ErrorControlTest(unittest.TestCase):
 
     def setUp(self):
@@ -65,7 +65,7 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_error_estimation(self):
 
-        if MPI.num_processes(self.mesh.mpi_comm()) > 1:
+        if MPI.size(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve variational problem once
@@ -81,7 +81,7 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_error_indicators(self):
 
-        if MPI.num_processes(self.mesh.mpi_comm()) > 1:
+        if MPI.size(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve variational problem once
@@ -98,7 +98,7 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_adaptive_solve(self):
 
-        if MPI.num_processes(self.mesh.mpi_comm()) > 1:
+        if MPI.size(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve problem adaptively

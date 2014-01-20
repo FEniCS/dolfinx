@@ -453,7 +453,7 @@ const PETScVector& PETScVector::operator= (double a)
 void PETScVector::update_ghost_values()
 {
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-  if (dolfin::MPI::num_processes(mpi_comm()) > 1)
+  if (dolfin::MPI::size(mpi_comm()) > 1)
   #endif
   {
     PetscErrorCode ierr;
@@ -623,8 +623,8 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   }
 
   // Send nonlocal rows indices to other processes
-  const std::size_t num_processes  = MPI::num_processes(mpi_comm());
-  const std::size_t process_number = MPI::process_number(mpi_comm());
+  const std::size_t num_processes  = MPI::size(mpi_comm());
+  const std::size_t process_number = MPI::rank(mpi_comm());
   for (std::size_t i = 1; i < num_processes; ++i)
   {
     // Receive data from process p - i (i steps to the left), send data to
@@ -769,7 +769,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 {
   PetscErrorCode ierr;
 
-  if (MPI::process_number(mpi_comm()) == 0)
+  if (MPI::rank(mpi_comm()) == 0)
     x.resize(size());
   else
     x.resize(0);
@@ -786,7 +786,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecScatterDestroy");
 
   // Wrap PETSc vector
-  if (MPI::process_number(mpi_comm()) == 0)
+  if (MPI::rank(mpi_comm()) == 0)
   {
     PETScVector _vout(vout);
     _vout.get_local(x);
@@ -802,7 +802,7 @@ void PETScVector::_init(MPI_Comm comm,
     VecDestroy(&_x);
 
   // GPU support does not work in parallel
-  if (_use_gpu && MPI::num_processes(comm))
+  if (_use_gpu && MPI::size(comm))
   {
     not_working_in_parallel("Due to limitations in PETSc, "
                             "distributed PETSc Cusp vectors");

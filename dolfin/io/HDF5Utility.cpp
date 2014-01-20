@@ -54,7 +54,7 @@ void HDF5Utility::map_gdof_to_cell(
   // and make mapping from global DOF index back to the cell and local index.
   // Some overwriting will occur if multiple cells refer to the same DOF
 
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
   std::vector<dolfin::la_index> all_vec_range;
   MPI::gather(mpi_comm, vector_range.second, all_vec_range);
   MPI::broadcast(mpi_comm, all_vec_range);
@@ -130,7 +130,7 @@ void HDF5Utility::get_global_dof(
   const GenericDofMap& dofmap,
   std::vector<dolfin::la_index>& global_dof)
 {
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
   std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
     send_cell_dofs(num_processes);
   std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
@@ -195,7 +195,7 @@ HDF5Utility::cell_owners(const Mesh& mesh, const std::vector<std::size_t> cells)
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
   const std::size_t num_global_cells
     = mesh.size_global(mesh.topology().dim());
   const std::pair<std::size_t, std::size_t> cell_range
@@ -269,7 +269,7 @@ void HDF5Utility::cell_owners_in_range(std::vector<std::pair<std::size_t,
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   const std::size_t n_global_cells = mesh.size_global(mesh.topology().dim());
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Communicate global ownership of cells to matching process
   const std::pair<std::size_t, std::size_t> range
@@ -374,10 +374,10 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
     = mesh.topology().shared_entities(0);
 
   // My process rank
-  const unsigned int my_rank = MPI::process_number(mpi_comm);
+  const unsigned int my_rank = MPI::rank(mpi_comm);
 
   // Number of processes
-  const unsigned int num_processes = MPI::num_processes(mpi_comm);
+  const unsigned int num_processes = MPI::size(mpi_comm);
 
   // Build list of vertex data to send. Only send shared vertex if I'm the
   // lowest rank process
