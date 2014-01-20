@@ -335,7 +335,7 @@ namespace dolfin
         p[0] /= 3.0; p[1] /= 3.0; p[2] /= 3.0;
 
         // Check if facet should be added. If not, continue
-        if (surface->f1(p) > 0.0)
+        if (!surface->on_surface(p))
           continue;
       }
 
@@ -422,7 +422,7 @@ namespace dolfin
           p[0] /= 3.0; p[1] /= 3.0; p[2] /= 3.0;
 
           // Check if facet should be added. If not, continue
-          if (surface->f1(p) > 0.0)
+          if (!surface->on_surface(p))
             continue;
         }
 
