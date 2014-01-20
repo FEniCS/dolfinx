@@ -99,7 +99,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return PETSc KSP pointer
-    boost::shared_ptr<KSP> ksp() const;
+    KSP ksp() const;
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -142,7 +142,7 @@ namespace dolfin
     void pre_report(const PETScMatrix& A) const;
 
     /// PETSc solver pointer
-    boost::shared_ptr<KSP> _ksp;
+    KSP _ksp;
 
     // Operator (the matrix)
     boost::shared_ptr<const PETScMatrix> _A;

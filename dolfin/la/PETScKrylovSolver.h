@@ -30,7 +30,6 @@
 
 #include <map>
 #include <petscksp.h>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
@@ -82,8 +81,8 @@ namespace dolfin
     PETScKrylovSolver(std::string method,
 		    boost::shared_ptr<PETScUserPreconditioner> preconditioner);
 
-    /// Create solver from given PETSc KSP pointer
-    explicit PETScKrylovSolver(boost::shared_ptr<KSP> ksp);
+    /// Create solver wrapper of a PETSc KSP object
+    explicit PETScKrylovSolver(KSP ksp);
 
     /// Destructor
     ~PETScKrylovSolver();
@@ -127,7 +126,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return PETSc KSP pointer
-    boost::shared_ptr<KSP> ksp() const;
+    KSP ksp() const;
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -167,11 +166,11 @@ namespace dolfin
     static const std::vector<std::pair<std::string, std::string> >
       _methods_descr;
 
+    // PETSc solver pointer
+    KSP _ksp;
+
     // DOLFIN-defined PETScUserPreconditioner
     PETScUserPreconditioner* pc_dolfin;
-
-    // PETSc solver pointer
-    boost::shared_ptr<KSP> _ksp;
 
     // Preconditioner
     boost::shared_ptr<PETScPreconditioner> _preconditioner;
@@ -185,10 +184,8 @@ namespace dolfin
     // Null space vectors
     std::vector<PETScVector> _nullspace;
 
-    // PETSc null space. Would like this to be a scoped_ptr, but it
-    // doesn't support custom deleters. Change to std::unique_ptr in
-    // the future.
-    boost::shared_ptr<MatNullSpace> petsc_nullspace;
+    // PETSc null space
+    MatNullSpace petsc_nullspace;
 
     bool preconditioner_set;
 

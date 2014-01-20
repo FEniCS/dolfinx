@@ -65,12 +65,22 @@ class SimpleShapes(unittest.TestCase):
         mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
         self.assertEqual(mesh.size_global(0), 48)
         self.assertEqual(mesh.size_global(2), 70)
-
+        if has_petsc4py():
+            import petsc4py
+            self.assertTrue(isinstance(mpi_comm_world(), petsc4py.PETSc.Comm))
+            self.assertTrue(isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm))
+            self.assertEqual(mesh.mpi_comm(), mpi_comm_world())
+            
     def testUnitSquareMeshLocal(self):
         """Create mesh of unit square."""
         mesh = UnitSquareMesh(mpi_comm_self(), 5, 7)
         self.assertEqual(mesh.num_vertices(), 48)
         self.assertEqual(mesh.num_cells(), 70)
+        if has_petsc4py():
+            import petsc4py
+            self.assertTrue(isinstance(mpi_comm_self(), petsc4py.PETSc.Comm))
+            self.assertTrue(isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm))
+            self.assertEqual(mesh.mpi_comm(), mpi_comm_self())
 
     def testUnitCubeMesh(self):
         """Create mesh of unit cube."""
