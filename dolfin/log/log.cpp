@@ -135,11 +135,13 @@ void dolfin::dolfin_error(std::string location,
 }
 //-----------------------------------------------------------------------------
 void dolfin::deprecation(std::string feature,
-                         std::string version,
+                         std::string version_deprecated,
+                         std::string version_remove,
                          std::string message, ...)
 {
   read(buffer.get(), message);
-  LogManager::logger.deprecation(feature, version, buffer.get());
+  LogManager::logger.deprecation(feature, version_deprecated, version_remove,
+                                 buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::log(int log_level, std::string msg, ...)

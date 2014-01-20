@@ -191,7 +191,8 @@ void Logger::dolfin_error(std::string location,
 }
 //-----------------------------------------------------------------------------
 void Logger::deprecation(std::string feature,
-                         std::string version,
+                         std::string version_deprecated,
+                         std::string version_remove,
                          std::string message) const
 {
   std::stringstream s;
@@ -199,7 +200,9 @@ void Logger::deprecation(std::string feature,
     << "-------------------------------------------------------------------------"
     << std::endl
     << "*** Warning: " << feature << " has been deprecated in DOLFIN version "
-    << version << "." << std::endl
+    << version_deprecated << "." << std::endl
+    << "*** It will be removed from version " << version_remove << "."
+    << std::endl
     << "*** " << message << std::endl
     << "*** "
     << "-------------------------------------------------------------------------"

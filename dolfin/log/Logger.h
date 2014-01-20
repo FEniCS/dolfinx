@@ -68,7 +68,8 @@ namespace dolfin
 
     /// Issue deprecation warning for removed feature
     void deprecation(std::string feature,
-                     std::string version,
+                     std::string version_deprecated,
+                     std::string version_remove,
                      std::string message) const;
 
     /// Begin task (increase indentation level)
