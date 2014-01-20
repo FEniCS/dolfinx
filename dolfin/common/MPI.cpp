@@ -75,7 +75,6 @@ unsigned int dolfin::MPI::process_number()
 #endif
 }
 //-----------------------------------------------------------------------------
-/*
 unsigned int dolfin::MPI::num_processes()
 {
   deprecation("MPI::num_processes",
@@ -91,7 +90,6 @@ unsigned int dolfin::MPI::num_processes()
   return 1;
 #endif
 }
-*/
 //-----------------------------------------------------------------------------
 unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 {

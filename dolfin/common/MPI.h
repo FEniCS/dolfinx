@@ -110,13 +110,14 @@ namespace dolfin
   {
   public:
 
-    /// Return process rank (uses MPI_COMM_WORLD). This function is
-    /// deprecated. Use dolfin::MPI::rank.
+    /// Return process rank (uses MPI_COMM_WORLD)
+    /// Warning: This function is deprecated. Use dolfin::MPI::rank
     static unsigned int process_number();
 
-    /// Return number of processes for MPI_COMM_WORLD. This function
+    /// Return number of processes for MPI_COMM_WORLD.
     /// is deprecated. Use dolfin::MPI::size.
-    //static unsigned int num_processes();
+    /// Warning: This function is deprecated. Use dolfin::MPI::size.
+    static unsigned int num_processes();
 
     /// Return process rank for the communicator
     static unsigned int rank(const MPI_Comm comm);
