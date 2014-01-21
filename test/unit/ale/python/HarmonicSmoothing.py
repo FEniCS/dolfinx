@@ -60,7 +60,8 @@ class HarmonicSmoothingTest(unittest.TestCase):
         rmin = MeshQuality.radius_ratio_min_max(mesh)[0]
         self.assertTrue(rmin > magic_number)
 
-if MPI.num_processes(mpi_comm_world()) == 1:
+
+if MPI.size(mpi_comm_world()) == 1:
 
     class ALETest(unittest.TestCase):
 

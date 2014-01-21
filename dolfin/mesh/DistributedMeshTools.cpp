@@ -46,7 +46,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
   // Const-cast to allow data to be attached
   Mesh& _mesh = const_cast<Mesh&>(mesh);
 
-  if (MPI::num_processes(mesh.mpi_comm()) == 1)
+  if (MPI::size(mesh.mpi_comm()) == 1)
   {
     mesh.init(d);
 
@@ -122,8 +122,8 @@ std::size_t DistributedMeshTools::number_entities(
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get number of processes and process number
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
 
   // Initialize entities of dimension d locally
   mesh.init(d);
@@ -265,7 +265,7 @@ std::size_t DistributedMeshTools::number_entities(
       if (recv_entity == unowned_shared_entities.end())
       {
         std::stringstream msg;
-        msg << "Process " << MPI::process_number(mpi_comm)
+        msg << "Process " << MPI::rank(mpi_comm)
             << " received illegal entity given by ";
         msg << " with global index " << global_index;
         msg << " from process " << p;
@@ -284,9 +284,9 @@ std::size_t DistributedMeshTools::number_entities(
   // Get slave indices from master
   {
     std::vector<std::vector<std::size_t> >
-      slave_send_buffer(MPI::num_processes(mpi_comm));
+      slave_send_buffer(MPI::size(mpi_comm));
     std::vector<std::vector<std::size_t> >
-      local_slave_index(MPI::num_processes(mpi_comm));
+      local_slave_index(MPI::size(mpi_comm));
     for (s = slave_entities.begin(); s != slave_entities.end(); ++s)
     {
       // Local index on remote process
@@ -429,8 +429,8 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
 
   // Prepare data structures for send/receive
   const MPI_Comm mpi_comm = mesh.mpi_comm();
-  const std::size_t num_proc = MPI::num_processes(mpi_comm);
-  const std::size_t proc_num = MPI::process_number(mpi_comm);
+  const std::size_t num_proc = MPI::size(mpi_comm);
+  const std::size_t proc_num = MPI::rank(mpi_comm);
   const std::size_t max_recv = MPI::max(mpi_comm, my_entities.size());
   std::vector<std::size_t> off_process_entities(max_recv);
 
@@ -507,12 +507,12 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Return empty set if running in serial
-  if (MPI::num_processes(mpi_comm) == 1)
+  if (MPI::size(mpi_comm) == 1)
   {
     return boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >();
   }
 
-  const unsigned int my_rank = MPI::process_number(mpi_comm);
+  const unsigned int my_rank = MPI::rank(mpi_comm);
 
   // Initialize entities of dimension d
   mesh.init(d);
@@ -715,7 +715,7 @@ void DistributedMeshTools::compute_preliminary_entity_ownership(
   unowned_shared_entities.clear();
 
   // Get my process number
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
 
   // Iterate over all local entities
   std::map<std::vector<std::size_t>,  unsigned int>::const_iterator it;
@@ -793,8 +793,8 @@ void DistributedMeshTools::compute_final_entity_ownership(
   std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
 
   // Get MPI number of processes and process number
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
 
   // Communicate common entities, starting with the entities we think
   // are shared but not owned

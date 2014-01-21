@@ -123,11 +123,11 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
     _mpi_comm(MPI_COMM_WORLD)
 {
   // Build mesh on process 0
-  if (MPI::process_number(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm) == 0)
     CSGMeshGenerator::generate(*this, geometry, resolution);
 
   // Build distributed mesh
-  if (MPI::num_processes(_mpi_comm) > 1)
+  if (MPI::size(_mpi_comm) > 1)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
@@ -143,11 +143,11 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
   assert(geometry);
 
   // Build mesh on process 0
-  if (MPI::process_number(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm) == 0)
     CSGMeshGenerator::generate(*this, *geometry, resolution);
 
   // Build distributed mesh
-  if (MPI::num_processes(_mpi_comm) > 1)
+  if (MPI::size(_mpi_comm) > 1)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------

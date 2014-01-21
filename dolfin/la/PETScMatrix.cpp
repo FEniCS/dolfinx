@@ -625,7 +625,7 @@ std::string PETScMatrix::str(bool verbose) const
     // FIXME: Maybe this could be an option?
     dolfin_assert(_A);
     PetscErrorCode ierr;
-    if (MPI::num_processes(MPI_COMM_WORLD) > 1)
+    if (MPI::size(MPI_COMM_WORLD) > 1)
     {
       ierr = MatView(_A, PETSC_VIEWER_STDOUT_WORLD);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatView");

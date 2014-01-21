@@ -46,7 +46,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 {
   Timer t0("Parallel-refine 3D");
 
-  if (MPI::num_processes(mesh.mpi_comm())==1)
+  if (MPI::size(mesh.mpi_comm())==1)
   {
     dolfin_error("ParallelRefinement3D.cpp",
                  "refine mesh",

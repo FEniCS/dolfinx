@@ -83,7 +83,7 @@ public:
 	continue;
 
       // Skip testing uBLAS in parallel
-      if (dolfin::MPI::num_processes(MPI_COMM_WORLD) > 1
+      if (dolfin::MPI::size(MPI_COMM_WORLD) > 1
           && backends[i] == "uBLAS")
       {
 	info("Not running uBLAS test in parallel");

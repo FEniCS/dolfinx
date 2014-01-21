@@ -130,7 +130,7 @@ class TestSystemAssembler(unittest.TestCase):
 
         mesh = UnitSquareMesh(24, 24)
 
-        if MPI.num_processes(mesh.mpi_comm()) > 1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 

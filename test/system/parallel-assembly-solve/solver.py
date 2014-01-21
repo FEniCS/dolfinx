@@ -69,9 +69,6 @@ def check_results(results, reference, tol):
 
     status = 0
 
-    #if not MPI.process_number() == 0:
-    #    return status
-
     print "Checking results"
     print "----------------"
 

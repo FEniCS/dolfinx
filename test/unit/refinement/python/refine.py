@@ -27,7 +27,9 @@ class MeshRefinement(unittest.TestCase):
 
     def test_uniform_refine1D(self):
             mesh = UnitIntervalMesh(20)
-            if (MPI.num_processes(mesh.mpi_comm()) == 1):
+
+            # Distributed refinment in 1D is not supported
+            if (MPI.size(mesh.mpi_comm()) == 1):
                 mesh2 = refine(mesh)
                 self.assertAlmostEqual(mesh.hmax(), 0.05)
                 self.assertAlmostEqual(mesh2.hmax(), 0.025)

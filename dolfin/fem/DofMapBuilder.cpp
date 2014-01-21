@@ -74,7 +74,7 @@ void DofMapBuilder::build(
                    slave_master_entities, restriction);
 
   // Check if dofmap is distributed
-  const bool distributed = MPI::num_processes(mesh.mpi_comm()) > 1;
+  const bool distributed = MPI::size(mesh.mpi_comm()) > 1;
 
   // Determine and set dof block size
   dolfin_assert(dofmap._ufc_dofmap);
@@ -225,11 +225,11 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   }
 
   // MPI process number
-  const std::size_t proc_num = MPI::process_number(mesh.mpi_comm());
+  const std::size_t proc_num = MPI::rank(mesh.mpi_comm());
 
   // Communication data structures
   std::vector<std::vector<std::size_t> >
-    new_shared_vertex_indices(MPI::num_processes(mesh.mpi_comm()));
+    new_shared_vertex_indices(MPI::size(mesh.mpi_comm()));
 
   // Compute modified global vertex indices
   std::size_t new_index = 0;
@@ -320,9 +320,9 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
 
   // Request master vertex index from master owner
   std::vector<std::vector<std::size_t> >
-    master_send_buffer(MPI::num_processes(mpi_comm));
+    master_send_buffer(MPI::size(mpi_comm));
   std::vector<std::vector<std::size_t> >
-    local_slave_index(MPI::num_processes(mpi_comm));
+    local_slave_index(MPI::size(mpi_comm));
   std::map<unsigned int,
            std::pair<unsigned int, unsigned int> >::const_iterator master;
   for (master = slave_to_master_vertices.begin();
@@ -344,7 +344,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
 
   // Send back new master vertex index
   std::vector<std::vector<std::size_t> >
-    master_vertex_indices(MPI::num_processes(mpi_comm));
+    master_vertex_indices(MPI::size(mpi_comm));
   for (std::size_t p = 0; p < received_slave_vertex_indices.size(); ++p)
   {
     const std::vector<std::size_t>& local_master_indices
@@ -708,7 +708,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
   //  BoundaryMesh boundary(mesh, "local");
 
   // Create a random number generator for ownership 'voting'
-  boost::mt19937 engine(MPI::process_number(mpi_comm));
+  boost::mt19937 engine(MPI::rank(mpi_comm));
   boost::uniform_int<> distribution(0, 100000000);
   boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
     rng(engine, distribution);
@@ -794,8 +794,8 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
   //        will avoid interleaving communication and computation.
 
   // Decide ownership of shared nodes
-  const std::size_t num_prococesses = MPI::num_processes(mpi_comm);
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t num_prococesses = MPI::size(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
   std::vector<std::size_t> recv_buffer;
   for (std::size_t k = 1; k < num_prococesses; ++k)
   {
@@ -1070,8 +1070,8 @@ void DofMapBuilder::parallel_renumber(
   //        will avoid interleaving communication and computation.
 
   // Exchange new node numbers for nodes that are shared
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
   std::vector<std::size_t> recv_buffer;
   for (std::size_t k = 1; k < num_processes; ++k)
   {
