@@ -57,7 +57,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
   for (std::size_t i = 0; i < a.rank(); ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
-  if (reset_sparsity)
+  if (A.size(0) == 0 || reset_sparsity)
   {
     Timer t0("Build sparsity");
 
@@ -201,7 +201,8 @@ void AssemblerBase::check(const Form& a)
     }
 
     // auto_ptr deletes its object when it exits its scope
-    boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
+    boost::scoped_ptr<ufc::finite_element>
+      fe(a.ufc_form()->create_finite_element(i + a.rank()));
 
     // Checks out-commented since they only work for Functions, not Expressions
     const std::size_t r = coefficients[i]->value_rank();
@@ -231,21 +232,25 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   // Check that the cell dimension matches the mesh dimension
   if (a.rank() + a.ufc_form()->num_coefficients() > 0)
   {
-    boost::scoped_ptr<ufc::finite_element> element(a.ufc_form()->create_finite_element(0));
+    boost::scoped_ptr<ufc::finite_element>
+      element(a.ufc_form()->create_finite_element(0));
     dolfin_assert(element);
-    if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
+    if (mesh.type().cell_type() == CellType::interval
+        && element->cell_shape() != ufc::interval)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (intervals) does not match cell type of form");
     }
-    if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
+    if (mesh.type().cell_type() == CellType::triangle
+        && element->cell_shape() != ufc::triangle)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (triangles) does not match cell type of form");
     }
-    if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
+    if (mesh.type().cell_type() == CellType::tetrahedron
+        && element->cell_shape() != ufc::tetrahedron)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
