@@ -359,8 +359,6 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
 
     KSPSetUp(ksp);
     PCSetUp(pc);
-    //SNESSetUp(_snes); // crashes with non-trunk petsc, bug reported
-
     SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
   }
 
@@ -440,7 +438,6 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
   nonlinear_problem->form(A_wrap, f, x_wrap);
   nonlinear_problem->J(A_wrap, x_wrap);
 
-
   *flag = SAME_NONZERO_PATTERN;
 
   return 0;
@@ -490,13 +487,9 @@ void PETScSNESSolver::set_linear_solver_parameters()
     // Non-zero initial guess
     const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
     if (nonzero_guess)
-    {
       KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-    }
     else
-    {
       KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
-    }
 
     if (krylov_parameters["monitor_convergence"])
       KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
