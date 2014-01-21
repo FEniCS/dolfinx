@@ -72,9 +72,14 @@ namespace dolfin
     /// Return size of given dimension
     std::size_t size(std::size_t dim) const
     {
-      dolfin_error("Scalar.h",
-                   "get size of scalar",
-                   "The size() function is not available for scalars");
+      if (dim == 0)
+        return 1;
+      else
+      {
+        dolfin_error("Scalar.h",
+                     "get size of scalar",
+                     "The size() function is not available for scalars");
+      }
       return 0;
     }
 
