@@ -252,11 +252,14 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                        GenericVector& x)
 {
   Timer timer("SNES solver");
-  PETScVector f;
   PETScMatrix A;
+  PETScVector f;
   PetscInt its;
   SNESConvergedReason reason;
   struct snes_ctx_t snes_ctx;
+
+  // Downcast solution vector
+  PETScVector& _x = x.down_cast<PETScVector>();
 
   // Set linear solver parameters
   set_linear_solver_parameters();
@@ -268,7 +271,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
 
   // Attach data to snes_ctx object
   snes_ctx.nonlinear_problem = &nonlinear_problem;
-  snes_ctx.x = &x.down_cast<PETScVector>();
+  snes_ctx.x = &_x;
 
   // Set functions for computing residual and Jacaobian
   SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
@@ -280,7 +283,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     SNESMonitorSet(_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
 
   // Set the bounds, if any
-  set_bounds(x);
+  set_bounds(_x);
 
   // Set the method
   if (std::string(parameters["method"]) != "default")
@@ -357,7 +360,8 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   if (parameters["report"])
     SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
 
-  SNESSolve(_snes, PETSC_NULL, snes_ctx.x->vec());
+  //SNESSolve(_snes, PETSC_NULL, snes_ctx.x->vec());
+  SNESSolve(_snes, PETSC_NULL, _x.vec());
 
   SNESGetIterationNumber(_snes, &its);
   SNESGetConvergedReason(_snes, &reason);
@@ -392,16 +396,20 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
   PETScVector* _x = snes_ctx.x;
 
-  PETScMatrix A;
-  PETScVector _f(f);
-
   // Wrap the PETSc Vec as DOLFIN PETScVector
+  PETScVector f_wrap(f);
   PETScVector x_wrap(x);
+
+  // Update current solution that is associated with nonlinear
+  // problem. This is required because x is not the solution vector
+  // that was passed to PETSc. PETSc updates the solution vector at
+  // the end of solve. We should find a better solution.
   *_x = x_wrap;
 
   // Compute F(u)
-  nonlinear_problem->form(A, _f, *_x);
-  nonlinear_problem->F(_f, *_x);
+  PETScMatrix A;
+  nonlinear_problem->form(A, f_wrap, x_wrap);
+  nonlinear_problem->F(f_wrap, x_wrap);
 
   return 0;
 }
@@ -430,7 +438,6 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
   PETScVector f;
   nonlinear_problem->form(A_wrap, f, x_wrap);
   nonlinear_problem->J(A_wrap, x_wrap);
-
 
   *flag = SAME_NONZERO_PATTERN;
 
@@ -530,20 +537,19 @@ void PETScSNESSolver::set_linear_solver_parameters()
   }
 }
 //-----------------------------------------------------------------------------
-void PETScSNESSolver::set_bounds(GenericVector& x)
+void PETScSNESSolver::set_bounds(PETScVector& x)
 {
   if (is_vi())
   {
     dolfin_assert(_snes);
     const std::string sign   = parameters["sign"];
     const std::string method = parameters["method"];
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
+
+   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
     MPI_Comm comm = MPI_COMM_NULL;
     PetscObjectGetComm((PetscObject)_snes, &comm);
     if (dolfin::MPI::rank(comm) == 0)
-    {
       warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
-    }
 
     if (method != "vi" && method != "default")
     {
@@ -587,8 +593,8 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       }
 
       SNESVISetVariableBounds(_snes, lb, ub);
-      VecDestroy(&ub);
       VecDestroy(&lb);
+      VecDestroy(&ub);
     }
     else if (has_explicit_bounds == true)
     {
