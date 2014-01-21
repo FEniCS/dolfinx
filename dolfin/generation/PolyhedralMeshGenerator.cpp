@@ -159,7 +159,7 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
                                        bool detect_sharp_features)
 {
   // Generate CGAL mesh on root process
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create empty CGAL polyhedron
     Polyhedron p;
@@ -188,7 +188,7 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
                         double cell_size, bool detect_sharp_features)
 {
   // Generate CGAL mesh on root process
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create empty CGAL polyhedron
     Polyhedron p;
@@ -211,7 +211,7 @@ void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
                          double cell_size, bool detect_sharp_features)
 {
   // Generate CGAL mesh on root process
-  if (MPI::process_number(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create empty CGAL polyhedron
     Polyhedron p;
@@ -233,7 +233,7 @@ void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
                                                     double cell_size,
                                                     bool detect_sharp_features)
 {
-  if (MPI::num_processes(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create empty CGAL polyhedron
     Polyhedron p;

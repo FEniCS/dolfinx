@@ -32,7 +32,7 @@ class XMLMeshFunction(unittest.TestCase):
 
         # Write some data
         mesh = UnitSquareMesh(5, 5)
-        if (MPI.num_processes(mesh.mpi_comm()) == 1):
+        if (MPI.size(mesh.mpi_comm()) == 1):
             f = MeshFunction("size_t", mesh, 1)
             f.set_all(0)
             f[2] = 3
@@ -56,7 +56,7 @@ class XMLMeshFunction(unittest.TestCase):
 
         # Write some data
         mesh = UnitSquareMesh(5, 5)
-        if (MPI.num_processes(mesh.mpi_comm()) == 1):
+        if (MPI.size(mesh.mpi_comm()) == 1):
             f = MeshFunction("int", mesh, 1)
             f.set_all(0)
             f[2] = -3
@@ -80,7 +80,7 @@ class XMLMeshFunction(unittest.TestCase):
 
         # Write some data
         mesh = UnitSquareMesh(5, 5)
-        if (MPI.num_processes(mesh.mpi_comm()) == 1):
+        if (MPI.size(mesh.mpi_comm()) == 1):
             f = MeshFunction("double", mesh, 1)
             f.set_all(0.0)
             f[2] = 3.14
@@ -103,7 +103,7 @@ class XMLMeshFunction(unittest.TestCase):
         "Test input/output for bool"
 
         mesh = UnitSquareMesh(5, 5)
-        if (MPI.num_processes(mesh.mpi_comm()) == 1):
+        if (MPI.size(mesh.mpi_comm()) == 1):
             # Write some data
             f = MeshFunction("bool", mesh, 1)
             f.set_all(False)

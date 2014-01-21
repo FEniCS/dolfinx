@@ -13,9 +13,8 @@ from dolfin import *
 import numpy
 
 # Create mesh and define function space
-mesh = UnitSquare(3, 2)
+mesh = UnitSquareMesh(3, 2)
 V = FunctionSpace(mesh, 'Lagrange', 1)
-
 
 # Define Dirichlet boundary conditions
 u0 = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]')
@@ -66,5 +65,5 @@ print 'Max error:', numpy.abs(u_e_array - u_array).max()
 center = (0.5, 0.5)
 print 'numerical u at the center point:', u(center)
 print 'exact     u at the center point:', u0(center)
-    
+
 #interactive()

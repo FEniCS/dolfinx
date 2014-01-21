@@ -49,8 +49,10 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::pair<std::size_t, double> >::iterator map_iterator;
-typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator const_map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::iterator
+map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator
+const_map_iterator;
 
 // Function for monitoring memory usage, called by thread
 #ifdef __linux__
@@ -98,7 +100,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 
 //-----------------------------------------------------------------------------
 Logger::Logger() : _active(true), _log_level(INFO), indentation_level(0),
-  logstream(&std::cout), _maximum_memory_usage(-1)
+                   logstream(&std::cout), _maximum_memory_usage(-1)
 {
   // Do nothing
 }
@@ -189,7 +191,8 @@ void Logger::dolfin_error(std::string location,
 }
 //-----------------------------------------------------------------------------
 void Logger::deprecation(std::string feature,
-                         std::string version,
+                         std::string version_deprecated,
+                         std::string version_remove,
                          std::string message) const
 {
   std::stringstream s;
@@ -197,13 +200,19 @@ void Logger::deprecation(std::string feature,
     << "-------------------------------------------------------------------------"
     << std::endl
     << "*** Warning: " << feature << " has been deprecated in DOLFIN version "
-    << version << "." << std::endl
+    << version_deprecated << "." << std::endl
+    << "*** It will be removed from version " << version_remove << "."
+    << std::endl
     << "*** " << message << std::endl
     << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl;
 
+  #ifdef DOLFIN_DEPRECATION_ERROR
+  error(s.str());
+  #else
   write(WARNING, s.str(), -1);
+  #endif
 }
 //-----------------------------------------------------------------------------
 void Logger::begin(std::string msg, int log_level)

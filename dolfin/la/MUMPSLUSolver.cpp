@@ -120,7 +120,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(18) = 3;
 
   // Parallel/serial analysis (0=auto, 1=serial, 2=parallel)
-  if (MPI::num_processes(_A->mpi_comm()) > 1)
+  if (MPI::size(_A->mpi_comm()) > 1)
     data.ICNTL(28) = 2;
   else
     data.ICNTL(28) = 0;

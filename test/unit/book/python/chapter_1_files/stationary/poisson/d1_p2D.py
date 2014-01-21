@@ -10,7 +10,7 @@ u0 = u = 1 + x^2 + 2y^2, f = -6.
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(6, 4)
+mesh = UnitSquareMesh(6, 4)
 #mesh = UnitCube(6, 4, 5)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 

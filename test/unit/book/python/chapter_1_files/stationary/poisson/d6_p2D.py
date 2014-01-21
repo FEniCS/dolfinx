@@ -9,7 +9,7 @@ import sys
 
 def compute(nx, ny, degree):
     # Create mesh and define function space
-    mesh = UnitSquare(nx, ny)
+    mesh = UnitSquareMesh(nx, ny)
     V = FunctionSpace(mesh, 'Lagrange', degree=degree)
 
     # Define boundary conditions
