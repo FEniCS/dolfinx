@@ -135,7 +135,7 @@ int main()
   assemble_system(*A, b, a, L, bcs);
 
   // Create Krylov solver with specified method and preconditioner
-  KrylovSolver solver("tfqmr", "amg");
+  KrylovSolver solver("minres", "amg");
 
   // Set operator (A) and precondtioner matrix (P)
   solver.set_operators(A, P);
