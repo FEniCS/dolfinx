@@ -26,7 +26,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/function/Function.h>
-#include "assemble.h"
 #include "Assembler.h"
 #include "Form.h"
 #include "NonlinearVariationalProblem.h"
@@ -51,26 +50,31 @@ NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> proble
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const Function& lb,
-                                                               const Function& ub)
+std::pair<std::size_t, bool>
+NonlinearVariationalSolver::solve(const Function& lb,
+                                  const Function& ub)
 {
   return solve(lb.vector(), ub.vector());
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr<const Function> lb,
-                                       boost::shared_ptr<const Function> ub)
+std::pair<std::size_t, bool>
+NonlinearVariationalSolver::solve(boost::shared_ptr<const Function> lb,
+                                  boost::shared_ptr<const Function> ub)
 {
   return solve(*lb,*ub);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const GenericVector& lb,
-                                                               const GenericVector& ub)
+std::pair<std::size_t, bool>
+NonlinearVariationalSolver::solve(const GenericVector& lb,
+                                  const GenericVector& ub)
 {
-  return solve(reference_to_no_delete_pointer(lb),reference_to_no_delete_pointer(ub));
+  return solve(reference_to_no_delete_pointer(lb),
+               reference_to_no_delete_pointer(ub));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr<const GenericVector> lb,
-                                       boost::shared_ptr<const GenericVector> ub)
+std::pair<std::size_t, bool>
+NonlinearVariationalSolver::solve(boost::shared_ptr<const GenericVector> lb,
+                                  boost::shared_ptr<const GenericVector> ub)
 {
   // Set bounds and solve
   this->_problem->set_bounds(lb,ub);
@@ -107,8 +111,9 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
   // Create nonlinear problem
   if (!nonlinear_problem || reset_jacobian)
   {
-    nonlinear_problem = boost::shared_ptr<NonlinearDiscreteProblem>(new NonlinearDiscreteProblem(_problem,
-                                             reference_to_no_delete_pointer(*this)));
+    nonlinear_problem = boost::shared_ptr<NonlinearDiscreteProblem>(
+      new NonlinearDiscreteProblem(_problem,
+                                   reference_to_no_delete_pointer(*this)));
   }
 
   std::pair<std::size_t, bool> ret;
@@ -149,12 +154,12 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
     dolfin_assert(nonlinear_problem);
     if (_problem->has_lower_bound() && _problem->has_upper_bound())
     {
-    ret = snes_solver->solve(*nonlinear_problem, *u->vector(), *_problem->lower_bound(), *_problem->upper_bound());
+      ret = snes_solver->solve(*nonlinear_problem, *u->vector(),
+                               *_problem->lower_bound(),
+                               *_problem->upper_bound());
     }
     else
-    {
-    ret = snes_solver->solve(*nonlinear_problem, *u->vector());
-    }
+      ret = snes_solver->solve(*nonlinear_problem, *u->vector());
   }
 #endif
   else
@@ -195,7 +200,9 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
 
   // Assemble right-hand side
   dolfin_assert(F);
-  assemble(b, *F);
+  Assembler assembler;
+  assembler.reset_sparsity = false;
+  assembler.assemble(b, *F);
 
   // Apply boundary conditions
   for (std::size_t i = 0; i < bcs.size(); i++)
@@ -221,13 +228,14 @@ void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
 
   // Check if Jacobian matrix sparsity pattern should be reset
   dolfin_assert(_solver);
-  const bool reset_jacobian = _solver->parameters["reset_jacobian"];
-  bool reset_sparsity = reset_jacobian || !jacobian_initialized;
+  //const bool reset_jacobian = _solver->parameters["reset_jacobian"];
+  //bool reset_sparsity = reset_jacobian || !jacobian_initialized;
 
   // Assemble left-hand side
   dolfin_assert(J);
   Assembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
+  //assembler.reset_sparsity = reset_sparsity;
+  assembler.reset_sparsity = false;
   assembler.assemble(A, *J);
 
   // Remember that Jacobian has been initialized
