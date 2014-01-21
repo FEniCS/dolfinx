@@ -173,7 +173,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
 void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
 {
   // Get number of processes
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Broadcast simple scalar data
   {

@@ -249,7 +249,7 @@ subdomains in SystemAssembler. Taking subdomains from bilinear form");
   for (std::size_t i = 0; i < _bcs.size(); ++i)
   {
     _bcs[i]->get_boundary_values(boundary_values);
-    if (MPI::num_processes(mesh.mpi_comm()) > 1 && _bcs[i]->method()
+    if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method()
         != "pointwise")
     {
       _bcs[i]->gather(boundary_values);
@@ -260,7 +260,7 @@ subdomains in SystemAssembler. Taking subdomains from bilinear form");
   // problems
   if (x0)
   {
-    if (MPI::num_processes(mesh.mpi_comm()) > 1)
+    if (MPI::size(mesh.mpi_comm()) > 1)
     {
       warning("Parallel symmetric assembly over interior facets for nonlinear \
 problems is untested");

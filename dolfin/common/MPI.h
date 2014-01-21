@@ -103,20 +103,31 @@ namespace dolfin
   };
 
   /// This class provides utility functions for easy communication
-  /// with MPI.
+  /// with MPI and handles cases when DOLFIN is not configured with
+  /// MPI.
 
   class MPI
   {
   public:
 
-    /// Return process number
-    static unsigned int process_number(const MPI_Comm comm);
+    /// Return process rank (uses MPI_COMM_WORLD)
+    /// Warning: This function is deprecated. Use dolfin::MPI::rank
+    static unsigned int process_number();
 
-    /// Return number of processes
-    static unsigned int num_processes(const MPI_Comm comm);
+    /// Return number of processes for MPI_COMM_WORLD.
+    /// is deprecated. Use dolfin::MPI::size.
+    /// Warning: This function is deprecated. Use dolfin::MPI::size.
+    static unsigned int num_processes();
 
-    /// Determine whether we should broadcast (based on current parallel
-    /// policy)
+    /// Return process rank for the communicator
+    static unsigned int rank(const MPI_Comm comm);
+
+    /// Return size of the group (number of processes) associated with
+    /// the communicator
+    static unsigned int size(const MPI_Comm comm);
+
+    /// Determine whether we should broadcast (based on current
+    /// parallel policy)
     static bool is_broadcaster(const MPI_Comm comm);
 
     /// Determine whether we should receive (based on current parallel
@@ -283,21 +294,21 @@ namespace dolfin
     }
 
     /// Return local range for local process, splitting [0, N - 1] into
-    /// num_processes() portions of almost equal size
+    /// size() portions of almost equal size
     static std::pair<std::size_t, std::size_t>
       local_range(const MPI_Comm comm, std::size_t N);
 
     /// Return local range for given process, splitting [0, N - 1] into
-    /// num_processes() portions of almost equal size
+    /// size() portions of almost equal size
     static std::pair<std::size_t, std::size_t>
       local_range(const MPI_Comm comm, unsigned int process,
                   std::size_t N);
 
     /// Return local range for given process, splitting [0, N - 1] into
-    /// num_processes portions of almost equal size
+    /// size() portions of almost equal size
     static std::pair<std::size_t, std::size_t>
       compute_local_range(unsigned int process, std::size_t N,
-                          unsigned int num_processes);
+                          unsigned int size);
 
     /// Return which process owns index (inverse of local_range)
     static unsigned int index_owner(const MPI_Comm comm,

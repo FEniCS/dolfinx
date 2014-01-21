@@ -185,7 +185,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS Refine)");
 
   // Get some MPI data
-  const std::size_t process_number = MPI::process_number(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
 
   // Options for ParMETIS
   int options[4];
@@ -224,7 +224,7 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
                                      const LocalMeshData& mesh_data)
 {
   // Get number of processes and process number
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Get dimensions of local mesh_data
   const std::size_t num_local_cells = mesh_data.cell_vertices.size();

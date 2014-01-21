@@ -57,7 +57,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         self.cube = UnitCubeMesh(2, 2, 2)
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.cube.mpi_comm()) > 1:
+        if MPI.size(self.cube.mpi_comm()) > 1:
             return
 
         # 1D in 2D spaces
@@ -76,7 +76,7 @@ class FormTestsOverManifolds(unittest.TestCase):
     def test_assemble_functional(self):
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.cube.mpi_comm()) > 1:
+        if MPI.size(self.cube.mpi_comm()) > 1:
             return
 
         u = Function(self.V1)
@@ -102,7 +102,7 @@ class FormTestsOverManifolds(unittest.TestCase):
     def test_assemble_linear(self):
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.cube.mpi_comm()) > 1:
+        if MPI.size(self.cube.mpi_comm()) > 1:
             return
 
         u = Function(self.V1)
@@ -136,7 +136,7 @@ class FormTestsOverManifolds(unittest.TestCase):
     def test_assemble_bilinear_1D_2D(self):
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.cube.mpi_comm()) > 1:
+        if MPI.size(self.cube.mpi_comm()) > 1:
             return
 
         V = FunctionSpace(self.square, 'CG', 1)
@@ -162,7 +162,7 @@ class FormTestsOverManifolds(unittest.TestCase):
     def test_assemble_bilinear_2D_3D(self):
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.cube.mpi_comm()) > 1:
+        if MPI.size(self.cube.mpi_comm()) > 1:
             return
 
         V = FunctionSpace(self.cube, 'CG', 1)
@@ -195,7 +195,7 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         self.square = UnitSquareMesh(n, n)
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.square.mpi_comm()) > 1:
+        if MPI.size(self.square.mpi_comm()) > 1:
             return
 
         self.square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), plane)
@@ -216,7 +216,7 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
     def test_basic_rt(self):
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.square.mpi_comm()) > 1:
+        if MPI.size(self.square.mpi_comm()) > 1:
             return
 
         f2 = Expression(("2.0", "1.0"))
@@ -260,7 +260,7 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
     def test_mixed_poisson_solve(self):
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.square.mpi_comm()) > 1:
+        if MPI.size(self.square.mpi_comm()) > 1:
             return
 
         f = Constant(1.0)
@@ -294,7 +294,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         self.mesh2 = BoundaryMesh(UnitCubeMesh(m, m, m), "exterior")
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
         plane = CompiledSubDomain("near(x[1], 0.0)")
@@ -309,7 +309,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
     def test_normals_2D_1D(self):
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
         "Testing assembly of normals for 1D meshes embedded in 2D"
@@ -328,7 +328,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of normals for 1D meshes embedded in 3D"
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
         n = ufl.Cell("interval", geometric_dimension=3).n
@@ -346,7 +346,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of normals for 2D meshes embedded in 3D"
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
         n = ufl.Cell("triangle", geometric_dimension=3).n
@@ -364,7 +364,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of volume for embedded meshes"
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
         volume = ufl.Cell("interval", geometric_dimension=2).volume
@@ -386,7 +386,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of circumradius for embedded meshes"
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
         r = ufl.Cell("interval", geometric_dimension=2).circumradius
@@ -411,7 +411,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of facet area for embedded meshes"
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
         area = ufl.Cell("interval", geometric_dimension=2).facet_area

@@ -59,7 +59,39 @@ void dolfin::MPINonblocking::wait_all()
 #endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::process_number(const MPI_Comm comm)
+unsigned int dolfin::MPI::process_number()
+{
+  deprecation("MPI::process_number",
+              "1.4", "1.5",
+              "MPI::process_number() has been replaced by MPI::rank(MPI_Comm).");
+
+#ifdef HAS_MPI
+  SubSystemsManager::init_mpi();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  return rank;
+#else
+  return 0;
+#endif
+}
+//-----------------------------------------------------------------------------
+unsigned int dolfin::MPI::num_processes()
+{
+  deprecation("MPI::num_processes",
+              "1.4", "1.5",
+              "MPI::num_processes() has been replaced by MPI::size(MPI_Comm).");
+
+#ifdef HAS_MPI
+  SubSystemsManager::init_mpi();
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  return size;
+#else
+  return 1;
+#endif
+}
+//-----------------------------------------------------------------------------
+unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
@@ -71,7 +103,7 @@ unsigned int dolfin::MPI::process_number(const MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::num_processes(const MPI_Comm comm)
+unsigned int dolfin::MPI::size(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
@@ -86,13 +118,13 @@ unsigned int dolfin::MPI::num_processes(const MPI_Comm comm)
 bool dolfin::MPI::is_broadcaster(const MPI_Comm comm)
 {
   // Always broadcast from processor number 0
-  return num_processes(comm) > 1 && process_number(comm) == 0;
+  return size(comm) > 1 && rank(comm) == 0;
 }
 //-----------------------------------------------------------------------------
 bool dolfin::MPI::is_receiver(const MPI_Comm comm)
 {
   // Always receive on processors with numbers > 0
-  return num_processes(comm) > 1 && process_number(comm) > 0;
+  return size(comm) > 1 && rank(comm) > 0;
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::barrier(const MPI_Comm comm)
@@ -120,24 +152,24 @@ std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
 std::pair<std::size_t, std::size_t>
 dolfin::MPI::local_range(const MPI_Comm comm, std::size_t N)
 {
-  return local_range(comm, process_number(comm), N);
+  return local_range(comm, rank(comm), N);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
 dolfin::MPI::local_range(const MPI_Comm comm, unsigned int process,
                          std::size_t N)
 {
-  return compute_local_range(process, N, num_processes(comm));
+  return compute_local_range(process, N, size(comm));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
 dolfin::MPI::compute_local_range(unsigned int process,
                                  std::size_t N,
-                                 unsigned int num_processes)
+                                 unsigned int size)
 {
   // Compute number of items per process and remainder
-  const std::size_t n = N / num_processes;
-  const std::size_t r = N % num_processes;
+  const std::size_t n = N / size;
+  const std::size_t r = N % size;
 
   // Compute local range
   std::pair<std::size_t, std::size_t> range;
@@ -161,11 +193,11 @@ unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
   dolfin_assert(index < N);
 
   // Get number of processes
-  const unsigned int _num_processes = num_processes(comm);
+  const unsigned int _size = size(comm);
 
   // Compute number of items per process and remainder
-  const std::size_t n = N / _num_processes;
-  const std::size_t r = N % _num_processes;
+  const std::size_t n = N / _size;
+  const std::size_t r = N % _size;
 
   // First r processes own n + 1 indices
   if (index < r * (n + 1))

@@ -42,7 +42,7 @@ public:
 
   InitialConditions() : Expression(2)
   {
-    dolfin::seed(2 + dolfin::MPI::process_number(MPI_COMM_WORLD));
+    dolfin::seed(2 + dolfin::MPI::rank(MPI_COMM_WORLD));
   }
 
   void eval(Array<double>& values, const Array<double>& x) const
