@@ -39,7 +39,7 @@ public:
                                                        dims.end()) ),
                       "manifold"), _center(center), _dims(dims) {}
 
-  double operator()(const dolfin::Point& p) const
+  double f0(const dolfin::Point& p) const
   {
     double d = 0.0;
     for (int i = 0; i < 3; ++i)

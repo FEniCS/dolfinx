@@ -117,7 +117,7 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
   // Get local range
   std::size_t m_local = M;
   std::size_t n_local = N;
-  if (MPI::num_processes(MPI_COMM_WORLD) > 1)
+  if (MPI::size(MPI_COMM_WORLD) > 1)
   {
     std::pair<std::size_t, std::size_t> local_range_x = x.local_range();
     std::pair<std::size_t, std::size_t> local_range_y = y.local_range();

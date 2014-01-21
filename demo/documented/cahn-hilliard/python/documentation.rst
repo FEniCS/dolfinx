@@ -34,7 +34,7 @@ created:
     # Class representing the intial conditions
     class InitialConditions(Expression):
         def __init__(self):
-            random.seed(2 + MPI.process_number(mpi_comm_world()))
+            random.seed(2 + MPI.rank(mpi_comm_world()))
         def eval(self, values, x):
             values[0] = 0.63 + 0.02*(0.5 - random.random())
             values[1] = 0.0
@@ -45,8 +45,8 @@ It is a subclass of :py:class:`Expression
 <dolfin.functions.expression.Expression>`. In the constructor
 (``__init__``), the random number generator is seeded. If the program
 is run in parallel, the random number generator is seeded using the
-process number to ensure a different sequence of numbers on each
-process.  The function ``eval`` returns values for a function of
+rank (process number) to ensure a different sequence of numbers on
+each process.  The function ``eval`` returns values for a function of
 dimension two.  For the first component of the function, a randomized
 value is returned.  The method ``value_shape`` declares that the
 :py:class:`Expression <dolfin.functions.expression.Expression>` is

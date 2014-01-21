@@ -207,10 +207,10 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   const int baseval = 0;
 
   // Number of processes
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // This process number
-  const std::size_t proc_num = MPI::process_number(mpi_comm);
+  const std::size_t proc_num = MPI::rank(mpi_comm);
 
   // Local data ---------------------------------
 

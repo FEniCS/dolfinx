@@ -44,7 +44,7 @@ class RKSolverTest(unittest.TestCase):
         cpp.set_log_level(cpp.WARNING)
         mesh = UnitSquareMesh(4, 4)
 
-        if cpp.MPI.num_processes(mesh.mpi_comm()) > 1:
+        if cpp.MPI.size(mesh.mpi_comm()) > 1:
             return
 
         V = FunctionSpace(mesh, "R", 0)
@@ -76,7 +76,7 @@ class RKSolverTest(unittest.TestCase):
         cpp.set_log_level(cpp.WARNING)
         mesh = UnitSquareMesh(4, 4)
 
-        if cpp.MPI.num_processes(mesh.mpi_comm()) > 1:
+        if cpp.MPI.size(mesh.mpi_comm()) > 1:
             return
 
         V = VectorFunctionSpace(mesh, "R", 0, dim=2)

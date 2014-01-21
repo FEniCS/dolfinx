@@ -63,7 +63,7 @@ class TestLinearOperator(unittest.TestCase):
             mesh = UnitSquareMesh(8, 8)
 
             # Skip testing uBLAS in parallel
-            if MPI.num_processes(mesh.mpi_comm()) > 1 and backend == "uBLAS":
+            if MPI.size(mesh.mpi_comm()) > 1 and backend == "uBLAS":
                 print "Not running uBLAS test in parallel"
                 continue
 

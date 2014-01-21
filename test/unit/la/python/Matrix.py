@@ -122,7 +122,7 @@ class AbstractBaseTest(object):
 
         # Test to NumPy array
         print "***************"
-        if MPI.num_processes(A.mpi_comm()) == 1:
+        if MPI.size(A.mpi_comm()) == 1:
             print "-------------"
             A2 = A.array()
             self.assertTrue(isinstance(A2,ndarray))
@@ -298,7 +298,7 @@ class DataNotWorkingTester:
         A = as_backend_type(A)
         self.assertRaises(RuntimeError, A.data)
 
-if MPI.num_processes(mpi_comm_world()) == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
