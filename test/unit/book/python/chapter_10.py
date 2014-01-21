@@ -44,7 +44,7 @@ def create_data(A=None):
 
 def skip_in_parallel():
     "Skip test in parallel"
-    if MPI.num_processes(mpi_comm_world()) > 1:
+    if MPI.size(mpi_comm_world()) > 1:
         print "FIXME: This unit test does not work in parallel, skipping"
         return True
     return False
@@ -245,7 +245,7 @@ class TestPage11(unittest.TestCase):
     def test_box_3(self):
         if skip_in_parallel(): return
         unit_square = UnitSquareMesh(16, 16)
-        unit_cube = UnitCube(16, 16, 16)
+        unit_cube = UnitCubeMesh(16, 16, 16)
 
 class TestPage12(unittest.TestCase):
 
@@ -416,7 +416,7 @@ class TestPage22(unittest.TestCase):
 
     def test_box_2(self):
         if skip_in_parallel(): return
-        mesh = UnitCube(2, 2, 2)
+        mesh = UnitCubeMesh(2, 2, 2)
 
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = Function(V)

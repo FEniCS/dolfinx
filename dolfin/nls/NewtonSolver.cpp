@@ -196,7 +196,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
   if (newton_converged)
   {
-    if (dolfin::MPI::process_number(_mpi_comm) == 0)
+    if (dolfin::MPI::rank(_mpi_comm) == 0)
     {
      info("Newton solver finished in %d iterations and %d linear solver iterations.",
           _newton_iteration, krylov_iterations);
@@ -257,7 +257,7 @@ bool NewtonSolver::converged(const GenericVector& r,
   const double relative_residual = _residual/_residual0;
 
   // Output iteration number and residual
-  if (report && dolfin::MPI::process_number(_mpi_comm) == 0)
+  if (report && dolfin::MPI::rank(_mpi_comm) == 0)
   {
     info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
          newton_iteration, _residual, atol, relative_residual, rtol);

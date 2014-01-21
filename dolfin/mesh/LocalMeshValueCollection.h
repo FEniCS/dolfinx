@@ -91,7 +91,7 @@ namespace dolfin
     if (MPI::is_broadcaster(_mpi_comm))
     {
       // Get number of processes
-      const std::size_t num_processes = MPI::num_processes(_mpi_comm);
+      const std::size_t num_processes = MPI::size(_mpi_comm);
       send_indices.resize(num_processes);
       send_v.resize(num_processes);
 

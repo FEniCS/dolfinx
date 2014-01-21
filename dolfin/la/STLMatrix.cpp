@@ -225,7 +225,7 @@ void STLMatrix::apply(std::string mode)
   Timer timer("Apply (STLMatrix)");
 
   // Number of processes
-  const std::size_t num_processes = MPI::num_processes(_mpi_comm);
+  const std::size_t num_processes = MPI::size(_mpi_comm);
 
   // Data to send
   std::vector<std::vector<std::size_t> > send_non_local_rows(num_processes);

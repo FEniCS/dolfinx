@@ -55,7 +55,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
         # Assemble A and b multi-threaded
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(a).norm("frobenius"),
                                    A_frobenius_norm, 10)
@@ -85,7 +85,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
         # Assemble A and b multi-threaded
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(a).norm("frobenius"),
                                    A_frobenius_norm, 10)
@@ -97,7 +97,7 @@ class Assembly(unittest.TestCase):
         mesh = UnitSquareMesh(24, 24)
         V = FunctionSpace(mesh, "DG", 1)
 
-        if MPI.num_processes(mesh.mpi_comm()) > 1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
@@ -132,7 +132,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
         # Assemble A and b (multi-threaded)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(a).norm("frobenius"),
                                    A_frobenius_norm, 10)
@@ -151,7 +151,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(M1, mesh=mesh), 4.0)
 
         # Assemble A and b (multi-threaded)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(M0, mesh=mesh), 1.0)
             #self.assertAlmostEqual(assemble(M1, mesh=mesh), 4.0)
@@ -218,7 +218,7 @@ class Assembly(unittest.TestCase):
         mesh = UnitSquareMesh(4, 4)
 
         # Skip in parallel
-        if MPI.num_processes(mesh.mpi_comm()) > 1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             return
 
         # Define some haphazardly chosen cell/facet function
@@ -250,7 +250,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(M), reference, 10)
 
         # Assemble form (multi-threaded)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(M), reference, 10)
             parameters["num_threads"] = 0
@@ -263,7 +263,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(value2, reference2, 10)
 
         # Assemble form (multi-threaded)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(M, exterior_facet_domains=new_boundaries),\
                                    reference2, 10)
@@ -273,7 +273,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(M), reference, 10)
 
         # Assemble form  (multi-threaded)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(M), reference, 10)
             parameters["num_threads"] = 0
@@ -290,7 +290,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
 
         # Assemble form  (multi-threaded)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
             parameters["num_threads"] = 0
@@ -339,7 +339,7 @@ class Assembly(unittest.TestCase):
         old_mesh = UnitCubeMesh(4, 4, 4)
 
         # Coloring and renumbering not supported in parallel
-        if MPI.num_processes(old_mesh.mpi_comm()) != 1:
+        if MPI.size(old_mesh.mpi_comm()) != 1:
             return
 
         # Create mesh, then color and renumber
@@ -386,7 +386,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(a).norm("frobenius"),
                                A_frobenius_norm, 10)
 
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(a).norm("frobenius"),
                                    A_frobenius_norm, 10)
@@ -395,7 +395,7 @@ class Assembly(unittest.TestCase):
     def test_reference_assembly(self):
         "Test assembly against a reference solution"
 
-        if MPI.num_processes(mpi_comm_world()) == 1:
+        if MPI.size(mpi_comm_world()) == 1:
 
             # NOTE: This test is not robust as it relies on specific
             #       DOF order, which cannot be guaranteed

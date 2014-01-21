@@ -65,12 +65,22 @@ class SimpleShapes(unittest.TestCase):
         mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
         self.assertEqual(mesh.size_global(0), 48)
         self.assertEqual(mesh.size_global(2), 70)
+        if has_petsc4py():
+            import petsc4py
+            self.assertTrue(isinstance(mpi_comm_world(), petsc4py.PETSc.Comm))
+            self.assertTrue(isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm))
+            self.assertEqual(mesh.mpi_comm(), mpi_comm_world())
 
     def testUnitSquareMeshLocal(self):
         """Create mesh of unit square."""
         mesh = UnitSquareMesh(mpi_comm_self(), 5, 7)
         self.assertEqual(mesh.num_vertices(), 48)
         self.assertEqual(mesh.num_cells(), 70)
+        if has_petsc4py():
+            import petsc4py
+            self.assertTrue(isinstance(mpi_comm_self(), petsc4py.PETSc.Comm))
+            self.assertTrue(isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm))
+            self.assertEqual(mesh.mpi_comm(), mpi_comm_self())
 
     def testUnitCubeMesh(self):
         """Create mesh of unit cube."""
@@ -123,7 +133,7 @@ class BoundaryExtraction(unittest.TestCase):
             self.assertEqual(b1.num_vertices(), 0)
             self.assertEqual(b1.num_cells(), 0)
 
-if MPI.num_processes(mpi_comm_world()) == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class MeshFunctions(unittest.TestCase):
 
         def setUp(self):
@@ -180,7 +190,7 @@ if MPI.num_processes(mpi_comm_world()) == 1:
 
 
 # FIXME: Mesh IO tests should be in io test directory
-if MPI.num_processes(mpi_comm_world()) == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class InputOutput(unittest.TestCase):
 
         def testMeshXML2D(self):
@@ -223,7 +233,7 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquareMesh(5, 5)
         self.assertEqual(mesh.geometry().dim(), 2)
 
-    if MPI.num_processes(mpi_comm_world()) == 1:
+    if MPI.size(mpi_comm_world()) == 1:
         def testGetCoordinates(self):
             """Get coordinates of vertices"""
             mesh = UnitSquareMesh(5, 5)
@@ -235,7 +245,7 @@ class PyCCInterface(unittest.TestCase):
             self.assertEqual(MPI.sum(mesh.mpi_comm(), len(mesh.cells())), 50)
 
 
-if MPI.num_processes(mpi_comm_world()) == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):
@@ -316,7 +326,7 @@ class MeshOrientations(unittest.TestCase):
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)
 
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             mesh = UnitSquareMesh(2, 2)
             mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
             reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))

@@ -32,7 +32,7 @@ class XMLMeshValueCollection(unittest.TestCase):
         mesh = UnitCubeMesh(5, 5, 5)
 
         # Not working yet in parallel
-        if (MPI.num_processes(mesh.mpi_comm()) == 1):
+        if (MPI.size(mesh.mpi_comm()) == 1):
 
             # Create mesh value collection and add some data
             mesh = UnitCubeMesh(5, 5, 5)

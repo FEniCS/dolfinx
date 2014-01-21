@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
   t = time() - t;
 
   // Report timing
-  if (dolfin::MPI::process_number(comm) == 0)
+  if (dolfin::MPI::rank(comm) == 0)
     info("TIME (first assembly): %.5g", t);
 
   // Re-assemble matrix
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   t = time() - t;
 
   // Report timing
-  if (dolfin::MPI::process_number(comm) == 0)
+  if (dolfin::MPI::rank(comm) == 0)
     info("TIME (second assembly): %.5g", t);
 
   return 0;

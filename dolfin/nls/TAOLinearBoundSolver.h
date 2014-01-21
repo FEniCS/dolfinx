@@ -109,7 +109,7 @@ namespace dolfin
     void set_ksp( const std::string ksp_type = "default");
 
     // Return TAO solver pointer
-    boost::shared_ptr<TaoSolver> tao() const;
+    TaoSolver tao() const;
 
     /// Return a list of available Tao solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -174,11 +174,11 @@ namespace dolfin
     // Initialize TAO solver
     void init(const std::string& method);
 
+    // Tao solver pointer
+    TaoSolver _tao;
+
     // Petsc preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;
-
-    // Tao solver pointer
-    boost::shared_ptr<TaoSolver> _tao;
 
     // Operator (the matrix) and the vector
     boost::shared_ptr<const PETScMatrix> A;
@@ -186,14 +186,16 @@ namespace dolfin
 
     bool preconditioner_set;
 
-    /// Computes the value of the objective function and its gradient.
-    static PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(
-		   TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
-
-    /// Computes the hessian of the quadratic objective function
+    // Computes the value of the objective function and its gradient.
     static PetscErrorCode
-      __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre,
-                                       MatStructure *flg,   void *ptr);
+      __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X,
+                                                PetscReal *ener, Vec G,
+                                                void *ptr);
+
+    // Computes the hessian of the quadratic objective function
+    static PetscErrorCode
+      __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X, Mat *H, Mat *Hpre,
+                                       MatStructure *flg, void *ptr);
 
     //-------------------------------------------------------------------------
     //  Monitor the state of the solution at each iteration. The
