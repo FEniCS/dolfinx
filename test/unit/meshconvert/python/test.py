@@ -386,7 +386,7 @@ class TriangleTester(_TestCase):
         from dolfin import Mesh, MPI, mpi_comm_world
 
         # MPI_COMM_WORLD wrapper
-        if MPI.num_processes(mpi_comm_world()) != 1:
+        if MPI.size(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "triangle")
         dfname = fname+".xml"
@@ -407,7 +407,7 @@ class TriangleTester(_TestCase):
         from dolfin import MPI, Mesh, MeshFunction, \
                            edges, Edge, faces, Face, \
                            SubsetIterator, facets, CellFunction, mpi_comm_world
-        if MPI.num_processes(mpi_comm_world()) != 1:
+        if MPI.size(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "test_Triangle_3")
         dfname = fname+".xml"
@@ -474,7 +474,7 @@ class TriangleTester(_TestCase):
 class DiffPackTester(_TestCase):
     def test_convert_diffpack(self):
         from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
-        if MPI.num_processes(mpi_comm_world()) != 1:
+        if MPI.size(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "diffpack_tet")
         dfname = fname+".xml"

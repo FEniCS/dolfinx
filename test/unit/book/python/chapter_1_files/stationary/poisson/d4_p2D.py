@@ -12,7 +12,7 @@ from dolfin import *
 import numpy
 
 # Create mesh and define function space
-mesh = UnitSquare(3, 3)
+mesh = UnitSquareMesh(3, 3)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
 # Define boundary conditions

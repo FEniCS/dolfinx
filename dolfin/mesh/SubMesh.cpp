@@ -190,7 +190,7 @@ void SubMesh::init(const Mesh& mesh,
        it != parent_to_submesh_vertex_indices.end(); ++it)
   {
     Vertex vertex(mesh, it->first);
-    if (MPI::num_processes(mesh.mpi_comm()) > 1)
+    if (MPI::size(mesh.mpi_comm()) > 1)
       error("SubMesh::init not working in parallel");
 
     // FIXME: Get global vertex index

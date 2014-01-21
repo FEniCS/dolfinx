@@ -61,7 +61,7 @@ namespace dolfin
                std::string diagonal="right")
       : UnitSquareMesh(nx, ny, diagonal)
     {
-      deprecation("UnitSquare", "1.1.0",
+      deprecation("UnitSquare", "1.1.0", "1.4",
                   "The class UnitSquare has been replaced by UnitSquareMesh.");
     }
 

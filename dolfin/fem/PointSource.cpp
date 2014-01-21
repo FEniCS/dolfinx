@@ -76,7 +76,7 @@ void PointSource::apply(GenericVector& b)
     num_found = MPI::sum(mesh.mpi_comm(), 0);
   else
     num_found = MPI::sum(mesh.mpi_comm(), 1);
-  if (MPI::process_number(mesh.mpi_comm()) == 0 && num_found == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
   {
     dolfin_error("PointSource.cpp",
                  "apply point source to vector",

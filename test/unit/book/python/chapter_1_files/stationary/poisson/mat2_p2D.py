@@ -6,7 +6,7 @@ from dolfin import *
 import sys, math, numpy
 
 nx = 4;  ny = 6
-mesh = UnitSquare(nx, ny)
+mesh = UnitSquareMesh(nx, ny)
 
 # Define a MeshFunction over two subdomains
 subdomains = MeshFunction('size_t', mesh, 2)

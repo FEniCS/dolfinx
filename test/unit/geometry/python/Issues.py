@@ -33,7 +33,7 @@ class Issues(unittest.TestCase):
         L = 1000
         mesh = BoxMesh(0, 0, 0, L, L, L, N, N, N)
 
-        if MPI.num_processes(mesh.mpi_comm()) > 1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             return
 
         V = FunctionSpace(mesh, 'CG', 1)
@@ -45,7 +45,7 @@ class Issues(unittest.TestCase):
         "Test from Torsten Wendav (issue #168)"
 
         mesh = UnitCubeMesh(14, 14, 14)
-        if MPI.num_processes(mesh.mpi_comm()) > 1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             return
         V = FunctionSpace(mesh, "Lagrange", 1)
         v = Function(V)
