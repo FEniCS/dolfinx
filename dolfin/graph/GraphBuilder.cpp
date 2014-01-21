@@ -268,7 +268,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
   // Get offset for this process
   const std::size_t offset = MPI::global_offset(mpi_comm, num_local_cells,
                                                 true);
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::size_t> > send_buffer(num_processes);

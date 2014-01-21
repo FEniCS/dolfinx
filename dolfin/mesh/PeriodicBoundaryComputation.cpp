@@ -182,7 +182,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   MPI::all_gather(mpi_comm, x_min_max, bounding_boxes);
 
   // Number of MPI processes
-  std::size_t num_processes = MPI::num_processes(mpi_comm);
+  std::size_t num_processes = MPI::size(mpi_comm);
 
   // Build send buffer of mapped slave midpoint coordinate to
   // processes that may own the master entity
@@ -291,7 +291,7 @@ PeriodicBoundaryComputation::masters_slaves(boost::shared_ptr<const Mesh> mesh,
 
   // Mark master and slaves, and pack off-process masters to send
   std::vector<std::vector<std::size_t> >
-    master_dofs_send(MPI::num_processes(mesh->mpi_comm()));
+    master_dofs_send(MPI::size(mesh->mpi_comm()));
   std::map<unsigned int,
            std::pair<unsigned int, unsigned int> >::const_iterator slave;
   for (slave = slaves.begin(); slave != slaves.end(); ++slave)
@@ -323,7 +323,7 @@ std::vector<std::pair<unsigned int, unsigned int> > >
 
   // Mark and pack master to send to all sharing proceses
   master_dofs_send.clear();
-  master_dofs_send.resize(MPI::num_processes(mesh->mpi_comm()));
+  master_dofs_send.resize(MPI::size(mesh->mpi_comm()));
   for (std::size_t p = 0; p < master_dofs_recv.size(); ++p)
   {
     for (std::size_t i = 0; i < master_dofs_recv[p].size(); ++i)

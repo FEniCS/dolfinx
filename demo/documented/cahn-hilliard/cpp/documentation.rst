@@ -121,10 +121,10 @@ namespace is used:
 
 The class ``InitialConditions`` defines the initial conditions for the
 solver.  In the constructor, the random number generator is seeded
-using the process number so that different processes will generate
-different sequences when running in parallel. The ``eval`` function
-evaluates the initial condition. The first value (``[0]``) corresponds
-to :math:`c` and the second value (``[1]``) corresponds to
+using the rank (process number) so that different processes will
+generate different sequences when running in parallel. The ``eval``
+function evaluates the initial condition. The first value (``[0]``)
+corresponds to :math:`c` and the second value (``[1]``) corresponds to
 :math:`\mu`:
 
 .. code-block:: c++
@@ -136,7 +136,7 @@ to :math:`c` and the second value (``[1]``) corresponds to
 
      InitialConditions() : Expression(2)
      {
-        dolfin::seed(2 + dolfin::MPI::process_number(MPI_COMM_WORLD));
+        dolfin::seed(2 + dolfin::MPI::rank(MPI_COMM_WORLD));
      }
 
      void eval(Array<double>& values, const Array<double>& x) const

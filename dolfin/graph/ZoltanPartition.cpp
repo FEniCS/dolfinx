@@ -63,7 +63,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
   zoltan.Set_Param("NUM_GLOBAL_PARTS",
-              boost::lexical_cast<std::string>(MPI::num_processes(mpi_comm)));
+              boost::lexical_cast<std::string>(MPI::size(mpi_comm)));
 
   zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
   zoltan.Set_Param("LB_METHOD", "GRAPH");
@@ -108,7 +108,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   dolfin_assert(num_gids == 1);
   dolfin_assert(num_lids == 0);
 
-  std::size_t proc = MPI::process_number(mpi_comm);
+  std::size_t proc = MPI::rank(mpi_comm);
 
   if (rc != ZOLTAN_OK)
   {
@@ -155,7 +155,7 @@ ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
   zoltan.Set_Param("NUM_GLOBAL_PARTS",
-               boost::lexical_cast<std::string>(MPI::num_processes(mpi_comm)));
+               boost::lexical_cast<std::string>(MPI::size(mpi_comm)));
 
   zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
   zoltan.Set_Param("LB_METHOD", "RCB");
@@ -191,7 +191,7 @@ ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
 
 
   // Get my process rank
-  const std::size_t my_rank = MPI::process_number(mpi_comm);
+  const std::size_t my_rank = MPI::rank(mpi_comm);
 
   if (rc != ZOLTAN_OK)
   {
@@ -368,7 +368,7 @@ void ZoltanPartition::get_all_geom(void *data,
                             local_mesh_data->vertex_coordinates[i].end());
   }
 
-  std::size_t num_processes = MPI::num_processes(mpi_comm);
+  std::size_t num_processes = MPI::size(mpi_comm);
   std::vector<std::vector<std::size_t> >send_buffer(num_processes);
   std::vector<std::vector<std::size_t> >receive_buffer(num_processes);
 

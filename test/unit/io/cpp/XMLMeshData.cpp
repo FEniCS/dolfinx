@@ -36,7 +36,7 @@ public:
   {
     // XML mesh output is not supported in parallel. Add test for
     // parallel with HDF5 when ready.
-    if (dolfin::MPI::num_processes(MPI_COMM_WORLD) == 1)
+    if (dolfin::MPI::size(MPI_COMM_WORLD) == 1)
     {
       const std::size_t value = 10;
       {

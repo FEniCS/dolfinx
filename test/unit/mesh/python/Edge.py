@@ -34,7 +34,7 @@ class EdgeFunctions(unittest.TestCase):
         length = 0.0
         for e in edges(square):
             length += e.length()
-        if MPI.num_processes(square.mpi_comm()) == 1:
+        if MPI.size(square.mpi_comm()) == 1:
             self.assertAlmostEqual(length, 19.07106781186544708362)
 
     def test3DEdgeLength(self):
@@ -42,7 +42,7 @@ class EdgeFunctions(unittest.TestCase):
         length = 0.0
         for e in edges(cube):
             length += e.length()
-        if MPI.num_processes(cube.mpi_comm()) == 1:
+        if MPI.size(cube.mpi_comm()) == 1:
             self.assertAlmostEqual(length, 278.58049080280125053832)
 
     def testEdgeDot(self):

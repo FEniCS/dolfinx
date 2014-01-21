@@ -302,7 +302,7 @@ class Interpolate(unittest.TestCase):
         f0 = Function(V)
         self.assertRaises(RuntimeError, f0.__call__, (0., 0, -1))
 
-        if MPI.num_processes(mpi_comm_world()) == 1:
+        if MPI.size(mpi_comm_world()) == 1:
             mesh1 = UnitSquareMesh(3, 3)
             V1 = FunctionSpace(mesh1, "CG", 1)
 
@@ -344,7 +344,7 @@ class Interpolate(unittest.TestCase):
 
         # Interpolation not working in parallel yet (need number of
         # global vertices in tests)
-        if MPI.num_processes(mpi_comm_world()) == 1:
+        if MPI.size(mpi_comm_world()) == 1:
             # Scalar interpolation
             f0 = F0()
             f = Function(V)

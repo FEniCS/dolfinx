@@ -30,11 +30,11 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 UnitCircleMesh::UnitCircleMesh(std::size_t n, std::string diagonal,
-                                 std::string transformation) 
+                                 std::string transformation)
   : CircleMesh(Point(0.0, 0.0), 1.0, 1.0/n)
 {
   deprecation("UnitCircleMesh",
-              "1.3",
-              "UnitCircleMesh is deprecated. Calling CircleMesh to create unstructured mesh instead");
+              "1.3", "1.4",
+              "UnitCircleMesh has been replaced by CircleMesh.");
 }
 //-----------------------------------------------------------------------------

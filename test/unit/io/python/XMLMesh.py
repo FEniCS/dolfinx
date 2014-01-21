@@ -29,13 +29,13 @@ class XMLMesh(unittest.TestCase):
 
     def test_save_plain_mesh2D(self):
         mesh = UnitSquareMesh(8, 8)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             f = File("unit_square.xml")
             f << mesh
 
     def test_save_plain_mesh3D(self):
         mesh = UnitCubeMesh(8, 8, 8)
-        if MPI.num_processes(mesh.mpi_comm()) == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             f = File("unit_cube.xml")
             f << mesh
 
@@ -95,7 +95,7 @@ class XMLMesh(unittest.TestCase):
         s1.mark_cells(output_mesh, 1)
 
         # Write to file
-        if (MPI.num_processes(output_mesh.mpi_comm()) == 1):
+        if (MPI.size(output_mesh.mpi_comm()) == 1):
             output_file = File("XMLMesh_test_mesh_domains_io.xml")
             output_file << output_mesh
 
