@@ -46,7 +46,7 @@ using namespace dolfin;
 struct snes_ctx_t
 {
   NonlinearProblem* nonlinear_problem;
-  PETScVector* dx;
+  PETScVector* x;
   const PETScVector* xl;
   const PETScVector* xu;
 };
@@ -266,9 +266,11 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
 
+  // Attach data to snes_ctx object
   snes_ctx.nonlinear_problem = &nonlinear_problem;
-  snes_ctx.dx = &x.down_cast<PETScVector>();
+  snes_ctx.x = &x.down_cast<PETScVector>();
 
+  // Set functions for computing residual and Jacaobian
   SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
   SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
                   &snes_ctx);
@@ -355,7 +357,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   if (parameters["report"])
     SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
 
-  SNESSolve(_snes, PETSC_NULL, snes_ctx.dx->vec());
+  SNESSolve(_snes, PETSC_NULL, snes_ctx.x->vec());
 
   SNESGetIterationNumber(_snes, &its);
   SNESGetConvergedReason(_snes, &reason);
@@ -388,20 +390,18 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 {
   struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
   NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
-  PETScVector* dx = snes_ctx.dx;
+  PETScVector* _x = snes_ctx.x;
 
   PETScMatrix A;
-  PETScVector df;
+  PETScVector _f(f);
 
   // Wrap the PETSc Vec as DOLFIN PETScVector
   PETScVector x_wrap(x);
-  *dx = x_wrap;
+  *_x = x_wrap;
 
   // Compute F(u)
-  nonlinear_problem->form(A, df, *dx);
-  nonlinear_problem->F(df, *dx);
-
-  VecCopy(df.vec(), f);
+  nonlinear_problem->form(A, _f, *_x);
+  nonlinear_problem->F(_f, *_x);
 
   return 0;
 }
@@ -566,9 +566,9 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       // tell PETSc the bounds.
       Vec ub, lb;
 
-      PETScVector dx = x.down_cast<PETScVector>();
-      VecDuplicate(dx.vec(), &ub);
-      VecDuplicate(dx.vec(), &lb);
+      PETScVector _x = x.down_cast<PETScVector>();
+      VecDuplicate(_x.vec(), &ub);
+      VecDuplicate(_x.vec(), &lb);
       if (sign == "nonnegative")
       {
         VecSet(lb, 0.0);
