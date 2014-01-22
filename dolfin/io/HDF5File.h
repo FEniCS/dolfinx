@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-10-24
+// Last changed: 2014-01-22
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -86,7 +86,8 @@ namespace dolfin
     void read(Function& u, const std::string name);
 
     /// Read Mesh from file
-    void read(Mesh& mesh, const std::string name) const;
+    void read(Mesh& mesh, const std::string name,
+              bool restore_partitioning=true) const;
 
     /// Write MeshFunction to file in a format suitable for re-reading
     void write(const MeshFunction<std::size_t>& meshfunction,
