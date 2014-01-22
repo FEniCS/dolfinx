@@ -36,8 +36,10 @@
 #include <Epetra_RowMatrix.h>
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
-#include <AztecOO.h>
 #include <Epetra_LinearProblem.h>
+#include <BelosLinearProblem.hpp>
+#include <BelosEpetraAdapter.hpp>
+#include <BelosSolverFactory.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/dolfin_log.h>
@@ -53,20 +55,25 @@ using namespace dolfin;
 
 // List of available solvers
 const std::map<std::string, int> EpetraKrylovSolver::_methods
-  = boost::assign::map_list_of("default",  AZ_gmres)
-                              ("cg",       AZ_cg)
-                              ("gmres",    AZ_gmres)
-                              ("tfqmr",    AZ_tfqmr)
-                              ("bicgstab", AZ_bicgstab);
+  = boost::assign::map_list_of("default", Belos::details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES)
+                              ("cg",      Belos::details::SOLVER_TYPE_PSEUDO_BLOCK_CG)
+                              ("gmres",   Belos::details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES)
+                              ("minres",  Belos::details::SOLVER_TYPE_MINRES)
+                              ("rcg",     Belos::details::SOLVER_TYPE_RCG)
+                              ("gcrodr",  Belos::details::SOLVER_TYPE_GCRODR)
+                              ("lsqr",    Belos::details::SOLVER_TYPE_LSQR);
 
 // List of available solvers descriptions
 const std::vector<std::pair<std::string, std::string> >
 EpetraKrylovSolver::_methods_descr = boost::assign::pair_list_of
-    ("default",    "default Krylov method")
-    ("cg",         "Conjugate gradient method")
-    ("gmres",      "Generalized minimal residual method")
-    ("tfqmr",      "Transpose-free quasi-minimal residual method")
-    ("bicgstab",   "Biconjugate gradient stabilized method");
+    ("default", "default Krylov method")
+    ("cg",      "Conjugate gradient method")
+    ("gmres",   "Generalized minimal residual method")
+    ("minres",  "Minimal residual method")
+    ("rcg",     "Recycling conjugate gradient method")
+    ("gcrodr",  "Block recycling GMRES method")
+    ("lsqr",    "Least-squared QR method")
+    ;
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 EpetraKrylovSolver::methods()
@@ -92,8 +99,8 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        std::string preconditioner)
   : _method(method),
     _preconditioner(new TrilinosPreconditioner(preconditioner)),
-    solver(new AztecOO), relative_residual(0.0),
-    absolute_residual(0.0)
+    _relative_residual(0.0),
+    _absolute_residual(0.0)
 {
   parameters = default_parameters();
 
@@ -104,17 +111,13 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                  "create Epetra Krylov solver",
                  "Unknown Krylov method \"%s\"", method.c_str());
   }
-
-  // Set solver type
-  solver->SetAztecOption(AZ_solver, _methods.find(method)->second);
-  solver->SetAztecOption(AZ_kspace, parameters("gmres")["restart"]);
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        TrilinosPreconditioner& preconditioner)
   : _method(method),
     _preconditioner(reference_to_no_delete_pointer(preconditioner)),
-    solver(new AztecOO), relative_residual(0.0), absolute_residual(0.0)
+     _relative_residual(0.0), _absolute_residual(0.0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -126,10 +129,6 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                  "create Epetra Krylov solver",
                  "Unknown Krylov method \"%s\"", method.c_str());
   }
-
-  // Set solver type
-  solver->SetAztecOption(AZ_solver, _methods.find(method)->second);
-  solver->SetAztecOption(AZ_kspace, parameters("gmres")["restart"]);
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::~EpetraKrylovSolver()
@@ -201,54 +200,50 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     x.zero();
 
   // Create linear problem
-  Epetra_LinearProblem linear_problem(_A->mat().get(), x.vec().get(),
-                                      b.vec().get());
-  // Set-up linear solver
-  solver->SetProblem(linear_problem);
+  Belos::LinearProblem<ST,MV,OP> linear_problem(Teuchos::rcpFromRef(*_A->mat()),
+                                                Teuchos::rcpFromRef(*x.vec()),
+                                                Teuchos::rcpFromRef(*b.vec())
+                                                );
+  const int ierr = linear_problem.setProblem();
+  dolfin_assert(ierr == 0);
 
+  Teuchos::ParameterList belosList;
   // Set output level
   if (parameters["monitor_convergence"])
   {
-    const std::size_t interval = parameters["monitor_interval"];
-    solver->SetAztecOption(AZ_output, interval);
+    belosList.set("Verbosity", Belos::Errors + Belos::Warnings);
+    belosList.set("Output Frequency", (int)parameters["monitor_interval"]);
   }
-  else
-    solver->SetAztecOption(AZ_output, AZ_none);
 
+  belosList.set("Convergence Tolerance", (double)parameters["parameters_tolerance"]);
+  belosList.set("Maximum Iterations", (int)parameters["maximum_iterations"]);
+
+  // TODO treat the preconditioner correctly
+  // Set preconditioner
   dolfin_assert(_P);
-  _preconditioner->set(*this, *_P);
+  _preconditioner->set(linear_problem, *_P);
 
-  // Set covergence check method
-  solver->SetAztecOption(AZ_conv, AZ_rhs);
+  // Set-up linear solver
+  Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver =
+      Belos::SolverFactory<ST,MV,OP>().create(_method,
+                                              Teuchos::rcp(&belosList, false)
+                                              );
 
   // Start solve
-  solver->Iterate(static_cast<int>(parameters["maximum_iterations"]),
-                  parameters["relative_tolerance"]);
+  Belos::ReturnType ret = solver->solve();
 
-  // Check solve status
-  const double* status = solver->GetAztecStatus();
-  if ((int) status[AZ_why] != AZ_normal)
+  if (ret == Belos::Converged)
   {
-    std::string errorDescription;
-    if( status[AZ_why] == AZ_maxits )
-      errorDescription = "maximum iters reached";
-    else if( status[AZ_why] == AZ_loss )
-      errorDescription = "loss of accuracy";
-    else if( status[AZ_why] == AZ_ill_cond  )
-      errorDescription = "ill-conditioned";
-    else if( status[AZ_why] == AZ_breakdown )
-      errorDescription = "breakdown";
-    else
-      errorDescription = "unknown error";
-
+    info("Epetra (Belos) Krylov solver (%s, %s) converged in %d iterations.",
+         _method.c_str(), _preconditioner->name().c_str(), solver->getNumIters());
+  }
+  else if (ret == Belos::Unconverged)
+  {
     std::stringstream message;
-    message << "Epetra (AztecOO) Krylov solver (" << _method << ", "
+    message << "Epetra (Belos) Krylov solver (" << _method << ", "
             << _preconditioner->name() << ") "
-            << "failed to converge after " << (int)status[AZ_its]
-            << " iterations "
-            << "(" << errorDescription << ", error code "
-            << (int)status[AZ_why] << ")";
-
+            << "failed to converge after " << solver->getNumIters()
+            << " iterations ";
     if (parameters["error_on_nonconvergence"])
     {
       dolfin_error("EpetraKrylovSolver.cpp",
@@ -260,16 +255,18 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   }
   else
   {
-    info("Epetra (AztecOO) Krylov solver (%s, %s) converged in %d iterations.",
-         _method.c_str(), _preconditioner->name().c_str(), solver->NumIters());
+    dolfin_error("EpetraKrylovSolver.cpp",
+                 "solve linear system using Epetra Krylov solver",
+                 "illegal Belos return code");
   }
 
+  // TODO
   // Update residuals
-  absolute_residual = solver->TrueResidual();
-  relative_residual = solver->ScaledResidual();
+  //_absolute_residual = solver->TrueResidual();
+  //_relative_residual = solver->ScaledResidual();
 
   // Return number of iterations
-  return solver->NumIters();
+  return solver->getNumIters();
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraKrylovSolver::solve(const GenericLinearOperator& A,
@@ -291,10 +288,14 @@ std::size_t EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 //-----------------------------------------------------------------------------
 double EpetraKrylovSolver::residual(const std::string residual_type) const
 {
+  dolfin_error("EpetraKrylovSolver.cpp",
+               "compute residual of Epetra Krylov solver",
+               "Not yet implemented");
+
   if (residual_type == "relative")
-    return relative_residual;
+    return _relative_residual;
   else if (residual_type == "absolute")
-    return absolute_residual;
+    return _absolute_residual;
   else
   {
     dolfin_error("EpetraKrylovSolver.cpp",
@@ -308,11 +309,6 @@ std::string EpetraKrylovSolver::str(bool verbose) const
 {
   dolfin_not_implemented();
   return std::string();
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<AztecOO> EpetraKrylovSolver::aztecoo() const
-{
-  return solver;
 }
 //-----------------------------------------------------------------------------
 #endif
