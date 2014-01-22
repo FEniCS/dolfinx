@@ -79,7 +79,7 @@ namespace dolfin
     virtual void apply(std::string mode);
 
     /// Return MPI communicator
-    virtual const MPI_Comm mpi_comm() const
+    virtual MPI_Comm mpi_comm() const
     { return MPI_COMM_SELF; }
 
     /// Return informal string representation (pretty-print)

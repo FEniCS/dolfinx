@@ -114,7 +114,7 @@ namespace dolfin
     virtual void apply() = 0;
 
     /// Return MPI communicator
-    virtual const MPI_Comm mpi_comm() const = 0;
+    virtual MPI_Comm mpi_comm() const = 0;
 
   private:
 
