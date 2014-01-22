@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-25
-// Last changed: 2013-03-12
+// Last changed: 2013-08-27
 
 //-----------------------------------------------------------------------------
 // User macro for defining in typmaps for std::pair of a pointer to some
@@ -156,7 +156,7 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
 //-----------------------------------------------------------------------------
 // In typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
-     %typecheck(SWIG_TYPECHECK_POINTER) std::pair<std::size_t, std::size_t>
+%typecheck(SWIG_TYPECHECK_POINTER) std::pair<std::size_t, std::size_t>
 {
   $1 = PyTuple_Check($input) ? 1 : 0;
 }
@@ -172,27 +172,11 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
   PyObject* py_second = PyTuple_GetItem($input, 1);
 
   // Check and get first tuple value
-  if (PyInteger_Check(py_first))
-  {
-    tmp = static_cast<long>(PyInt_AsLong(py_first));
-    if (tmp>=0)
-      tmp_pair.first = static_cast<std::size_t>(tmp);
-    else
-      SWIG_exception(SWIG_TypeError, "expected positive 'int' as the first tuple argument ");
-  }
-  else
+  if (!Py_convert_std_size_t(py_first, tmp_pair.first))
     SWIG_exception(SWIG_TypeError, "expected positive 'int' as the first tuple argument ");
 
   // Check and get second tuple value
-  if (PyInteger_Check(py_second))
-  {
-    tmp = static_cast<long>(PyInt_AsLong(py_second));
-    if (tmp>=0)
-       tmp_pair.second = static_cast<unsigned int>(tmp);
-    else
-      SWIG_exception(SWIG_TypeError, "expected positive 'int' as the second tuple argument ");
-  }
-  else
+  if (!Py_convert_std_size_t(py_second, tmp_pair.second))
     SWIG_exception(SWIG_TypeError, "expected positive 'int' as the second tuple argument ");
 
   // Assign input variable
@@ -220,6 +204,7 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
   // Assign input variable
   $1 = tmp_pair;
 }
+
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
@@ -242,4 +227,29 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
 %typemap(out) std::pair<double, double>
 {
   $result = Py_BuildValue("dd", $1.first, $1.second);
+}
+%typemap(out) std::pair<unsigned int, double>
+{
+  $result = Py_BuildValue("id", $1.first, $1.second);
+}
+
+//-----------------------------------------------------------------------------
+// Out typemap for std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+// If we need should need it for other types, we can make it into a macro later.
+//-----------------------------------------------------------------------------
+%typemap(out) std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+{
+  npy_intp n0 = $1.first.size();
+  npy_intp n1 = $1.second.size();
+
+  PyArrayObject *x0 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n0, NPY_UINT));
+  PyArrayObject *x1 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n1, NPY_UINT));
+
+  unsigned int* data0 = static_cast<unsigned int*>(PyArray_DATA(x0));
+  unsigned int* data1 = static_cast<unsigned int*>(PyArray_DATA(x1));
+
+  std::copy($1.first.begin(),  $1.first.end(),  data0);
+  std::copy($1.second.begin(), $1.second.end(), data1);
+
+  $result = Py_BuildValue("OO", x0, x1);
 }

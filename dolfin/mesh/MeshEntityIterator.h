@@ -18,7 +18,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2006-05-09
-// Last changed: 2011-11-08
+// Last changed: 2013-04-23
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -83,7 +83,8 @@ namespace dolfin
         pos_end = mesh.init(dim);
     }
 
-    /// Create iterator for entities of given dimension connected to given entity
+    /// Create iterator for entities of given dimension connected to
+    /// given entity
     MeshEntityIterator(const MeshEntity& entity, std::size_t dim)
       : _entity(entity.mesh(), dim, 0), _pos(0), index(0)
     {
@@ -109,7 +110,8 @@ namespace dolfin
 
     /// Copy constructor
     MeshEntityIterator(const MeshEntityIterator& it)
-      : _entity(it._entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {}
+      : _entity(it._entity), _pos(it._pos), pos_end(it.pos_end),
+      index(it.index) {}
 
     /// Destructor
     virtual ~MeshEntityIterator() {}
@@ -132,13 +134,13 @@ namespace dolfin
     std::size_t pos() const
     { return _pos; }
 
-    /// Comparison operator.
+    /// Comparison operator
     bool operator==(const MeshEntityIterator& it) const
     {
-      // Use const_cast to use operator* inside comparison, which automatically
-      // updates the entity index corresponding to pos *before* comparison (since
-      // update of entity delays until request for entity)
-
+      // Use const_cast to use operator* inside comparison, which
+      // automatically updates the entity index corresponding to pos
+      // *before* comparison (since update of entity delays until
+      // request for entity)
       return ((const_cast<MeshEntityIterator *>(this))->operator*()
             == (const_cast<MeshEntityIterator *>(&it))->operator*()
             && _pos == it._pos && index == it.index);
@@ -156,18 +158,14 @@ namespace dolfin
     MeshEntity* operator->()
     { _entity._local_index = (index ? index[_pos] : _pos); return &_entity; }
 
-    /// Random access operator
-    MeshEntity& operator[] (std::size_t pos)
-    { _pos = pos; return *operator->();}
-
     /// Check if iterator has reached the end
     bool end() const
     { return _pos >= pos_end; }
 
-    /// Provide a safeguard iterator pointing beyond the end of an iteration
-    /// process, either iterating over the mesh /or incident entities. Added to
-    /// be bit more like STL iterators, since many algorithms rely on a kind of
-    /// beyond iterator.
+    /// Provide a safeguard iterator pointing beyond the end of an
+    /// iteration process, either iterating over the mesh /or incident
+    /// entities. Added to be bit more like STL iterators, since many
+    /// algorithms rely on a kind of beyond iterator.
     MeshEntityIterator end_iterator()
     {
       MeshEntityIterator
@@ -183,7 +181,7 @@ namespace dolfin
 
   private:
 
-    /// Set pos to end position. To create a kind of mesh.end() iterator.
+    // Set pos to end position. To create a kind of mesh.end() iterator.
     void set_end()
     { _pos = pos_end; }
 

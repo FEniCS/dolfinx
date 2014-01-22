@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Kristian Oelgaard, 2007.
-// Modified by Kristoffer Selim, 2008.
-// Modified by Marie E. Rognes, 2011.
+// Modified by Kristian Oelgaard 2007
+// Modified by Kristoffer Selim 2008
+// Modified by Marie E. Rognes 2011
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-14
+// Last changed: 2013-12-09
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -78,7 +78,7 @@ std::size_t IntervalCell::orientation(const Cell& cell) const
   return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+void IntervalCell::create_entities(std::vector<std::vector<unsigned int> >& e,
                                    std::size_t dim, const unsigned int* v) const
 {
   // We don't need to create any entities
@@ -155,6 +155,58 @@ double IntervalCell::diameter(const MeshEntity& interval) const
   return volume(interval);
 }
 //-----------------------------------------------------------------------------
+double IntervalCell::squared_distance(const Cell& cell, const Point& point) const
+{
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const Point p0 = geometry.point(vertices[0]);
+  const Point p1 = geometry.point(vertices[1]);
+
+  // Compute vector
+  const Point v0  = point - p0;
+  const Point v1  = point - p1;
+  const Point v01 = p1 - p0;
+
+  // Check if p0 is closest point (outside of interval)
+  const double a0 = v0.dot(v01);
+  if (a0 < 0.0)
+    return v0.dot(v0);
+
+  // Check if p1 is closest point (outside the interval)
+  const double a1 = - v1.dot(v01);
+  if (a1 < 0.0)
+    return v1.dot(v1);
+
+  // Inside interval, so use Pythagoras to subtract length of projection
+  return std::max(v0.dot(v0) - a0*a0 / v01.dot(v01), 0.0);
+
+  /*
+
+  // Old implementation that only looks at x-coordinate. Faster for 1D
+  // meshes but speed is rarely an issue in 1D so we might as well use
+  // the more general implementation also in 1D.
+
+  // Get x-coordinates of point
+  const double x = point.x();
+  const double x0 = p0.x();
+  const double x1 = p1.x();
+
+  // Compute min and max
+  const double a = std::min(x0, x1);
+  const double b = std::max(x0, x1);
+
+  // Check if point is left of a
+  if (x < a) return (x - a)*(x - a);
+
+  // Check if point is right of b
+  if (x > b) return (x - b)*(x - b);
+
+  // Point is inside interval so distance is zero
+  return 0.0;
+  */
+}
+//-----------------------------------------------------------------------------
 double IntervalCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
 {
   return normal(cell, facet)[i];
@@ -227,6 +279,28 @@ void IntervalCell::order(Cell& cell,
     unsigned int* cell_vertices = const_cast<unsigned int*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);
   }
+}
+//-----------------------------------------------------------------------------
+bool IntervalCell::collides(const Cell& cell, const Point& point) const
+{
+  // Get coordinates
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const double x0 = geometry.point(vertices[0])[0];
+  const double x1 = geometry.point(vertices[1])[0];
+  const double x = point.x();
+  const double dx = std::abs(x1 - x0);
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
+
+  return ((x >= x0 - eps && x <= x1 + eps) ||
+          (x >= x1 - eps && x <= x0 + eps));
+}
+//-----------------------------------------------------------------------------
+bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_not_implemented();
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

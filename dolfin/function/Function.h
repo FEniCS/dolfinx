@@ -21,7 +21,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2012-10-02
+// Last changed: 2013-10-22
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -32,6 +32,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
 #include "GenericFunction.h"
 #include "FunctionAXPY.h"
@@ -64,7 +65,6 @@ namespace dolfin
   /// and :math:`U` is a vector of expansion coefficients for :math:`u_h`.
 
   class Function : public GenericFunction, public Hierarchical<Function>
-
   {
   public:
 
@@ -169,6 +169,9 @@ namespace dolfin
     /// *Arguments*
     ///     i (std::size_t)
     ///         Index of subfunction.
+    /// *Returns*
+    ///     _Function_
+    ///         The subfunction.
     Function& operator[] (std::size_t i) const;
 
     /// Add operator with other function
@@ -199,20 +202,20 @@ namespace dolfin
     ///         Return a linear combination of Functions
     FunctionAXPY operator-(const FunctionAXPY& axpy) const;
 
-    /// Scale operator 
+    /// Scale operator
     ///
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
     FunctionAXPY operator*(double scalar) const;
 
-    /// Scale operator 
+    /// Scale operator
     ///
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
     FunctionAXPY operator/(double scalar) const;
-    
+
     /// Return shared pointer to function space
     ///
     /// *Returns*
@@ -349,6 +352,7 @@ namespace dolfin
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
+                          const double* vertex_coordinates,
                           const ufc::cell& ufc_cell) const;
 
     /// Compute values at all mesh vertices
@@ -375,6 +379,7 @@ namespace dolfin
 
     // Friends
     friend class FunctionSpace;
+    friend class FunctionAssigner;
 
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<std::size_t, Function> sub_functions;
@@ -387,7 +392,7 @@ namespace dolfin
 
     // Get coefficients from the vector(s)
     void compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
-                               std::vector<std::size_t>& ghost_indices) const;
+                               std::vector<la_index>& ghost_indices) const;
 
     // The function space
     boost::shared_ptr<const FunctionSpace> _function_space;

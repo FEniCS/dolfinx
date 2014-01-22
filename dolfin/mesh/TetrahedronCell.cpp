@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johan Hoffman, 2006.
-// Modified by Garth N. Wells, 2006.
-// Modified by Kristian Oelgaard, 2006.
-// Modified by Kristoffer Selim, 2008.
+// Modified by Johan Hoffman 2006
+// Modified by Garth N. Wells 2006
+// Modified by Kristian Oelgaard 2006
+// Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-21
+// Last changed: 2013-12-09
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -30,6 +30,7 @@
 #include "MeshEditor.h"
 #include "MeshGeometry.h"
 #include "Vertex.h"
+#include "TriangleCell.h"
 #include "TetrahedronCell.h"
 
 using namespace dolfin;
@@ -98,13 +99,19 @@ std::size_t TetrahedronCell::orientation(const Cell& cell) const
   return (n.dot(p03) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------
-void TetrahedronCell::create_entities(std::vector<std::vector<std::size_t> >& e,
-                                      std::size_t dim, const unsigned int* v) const
+void
+TetrahedronCell::create_entities(std::vector<std::vector<unsigned int> >& e,
+                                 std::size_t dim, const unsigned int* v) const
 {
   // We only need to know how to create edges and faces
   switch (dim)
   {
   case 1:
+    // Resize data structure
+    e.resize(6);
+    for (int i = 0; i < 6; ++i)
+      e[i] .resize(2);
+
     // Create the six edges
     e[0][0] = v[2]; e[0][1] = v[3];
     e[1][0] = v[1]; e[1][1] = v[3];
@@ -114,6 +121,11 @@ void TetrahedronCell::create_entities(std::vector<std::vector<std::size_t> >& e,
     e[5][0] = v[0]; e[5][1] = v[1];
     break;
   case 2:
+    // Resize data structure
+    e.resize(4);
+    for (int i = 0; i < 4; ++i)
+      e[i] .resize(3);
+
     // Create the four faces
     e[0][0] = v[1]; e[0][1] = v[2]; e[0][2] = v[3];
     e[1][0] = v[0]; e[1][1] = v[2]; e[1][2] = v[3];
@@ -352,6 +364,48 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
   return area/(3.0*volume(tetrahedron));
+}
+//-----------------------------------------------------------------------------
+double TetrahedronCell::squared_distance(const Cell& cell, const Point& point) const
+{
+  // Algorithm from Real-time collision detection by Christer Ericson:
+  // ClosestPtPointTetrahedron on page 143, Section 5.1.6.
+  //
+  // Note: This algorithm actually computes the closest point but we
+  // only return the distance to that point.
+
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const Point a = geometry.point(vertices[0]);
+  const Point b = geometry.point(vertices[1]);
+  const Point c = geometry.point(vertices[2]);
+  const Point d = geometry.point(vertices[3]);
+
+  // Initialize squared distance
+  double r2 = std::numeric_limits<double>::max();
+
+  // Check face ABC
+  if (point_outside_of_plane(point, a, b, c, d))
+    r2 = std::min(r2, TriangleCell::squared_distance(point, a, b, c));
+
+  // Check face ACD
+  if (point_outside_of_plane(point, a, c, d, b))
+    r2 = std::min(r2, TriangleCell::squared_distance(point, a, c, d));
+
+  // Check face ADB
+  if (point_outside_of_plane(point, a, d, b, c))
+    r2 = std::min(r2, TriangleCell::squared_distance(point, a, d, b));
+
+  // Check facet BDC
+  if (point_outside_of_plane(point, b, d, c, a))
+    r2 = std::min(r2, TriangleCell::squared_distance(point, b, d, c));
+
+  // Point is inside tetrahedron so distance is zero
+  if (r2 == std::numeric_limits<double>::max())
+    r2 = 0.0;
+
+  return r2;
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
@@ -603,6 +657,72 @@ void TetrahedronCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
+bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
+{
+  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+  // See also "Real-Time Collision Detection" by Christer Ericson.
+  //
+  // We express AP as a linear combination of the vectors AB, AC and
+  // AD. Point is inside triangle iff AP is a convex combination.
+
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+  Point p2 = geometry.point(vertices[2]);
+  Point p3 = geometry.point(vertices[3]);
+
+  // Compute vectors
+  Point v1 = p1 - p0;
+  Point v2 = p2 - p0;
+  Point v3 = p3 - p0;
+  Point v = point - p0;
+
+  // Compute entries of linear system
+  const double a11 = v1.dot(v1);
+  const double a12 = v1.dot(v2);
+  const double a13 = v1.dot(v3);
+  const double a22 = v2.dot(v2);
+  const double a23 = v2.dot(v3);
+  const double a33 = v3.dot(v3);
+  const double b1 = v.dot(v1);
+  const double b2 = v.dot(v2);
+  const double b3 = v.dot(v3);
+
+  // Compute subdeterminants
+  const double d11 = a22*a33 - a23*a23;
+  const double d12 = a12*a33 - a23*a13;
+  const double d13 = a12*a23 - a22*a13;
+  const double d22 = a11*a33 - a13*a13;
+  const double d23 = a11*a23 - a12*a13;
+  const double d33 = a11*a22 - a12*a12;
+
+  // Compute inverse of determinant determinant
+  const double inv_det = 1.0 / (a11*d11 - a12*d12 + a13*d13);
+
+  // Solve linear system
+  const double x1 = inv_det*( d11*b1 - d12*b2 + d13*b3);
+  const double x2 = inv_det*(-d12*b1 + d22*b2 - d23*b3);
+  const double x3 = inv_det*( d13*b1 - d23*b2 + d33*b3);
+
+  // Tolerance for numeric test (using vector v1)
+  const double dx = std::abs(v1.x());
+  const double dy = std::abs(v1.y());
+  const double dz = std::abs(v1.z());
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*std::max(dx, std::max(dy, dz)));
+
+  // Check if point is inside cell
+  return x1 >= -eps && x2 >= -eps && x3 >= -eps && x1 + x2 + x3 <= 1.0 + eps;
+}
+//-----------------------------------------------------------------------------
+bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_not_implemented();
+
+  return false;
+}
+//-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
 {
   if (plural)
@@ -637,5 +757,21 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
                "find specified edge in cell",
                "Edge really not found");
   return 0;
+}
+//-----------------------------------------------------------------------------
+bool TetrahedronCell::point_outside_of_plane(const Point& point,
+                                             const Point& a,
+                                             const Point& b,
+                                             const Point& c,
+                                             const Point& d) const
+{
+  // Algorithm from Real-time collision detection by Christer Ericson:
+  // PointOutsideOfPlane on page 144, Section 5.1.6.
+
+  const Point v = (b - a).cross(c - a);
+  const double signp = v.dot(point - a);
+  const double signd = v.dot(d - a);
+
+  return signp * signd < 0.0;
 }
 //-----------------------------------------------------------------------------

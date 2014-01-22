@@ -111,8 +111,8 @@ del _subdomain_mark_doc_string
 // Macro for declaring MeshFunctions
 //-----------------------------------------------------------------------------
 %define DECLARE_MESHFUNCTION(TYPE, TYPENAME)
-%feature("docstring") dolfin::MeshFunction::__getitem__ "Missing docstring";
-%feature("docstring") dolfin::MeshFunction::__setitem__ "Missing docstring";
+%feature("docstring") dolfin::MeshFunction::_getitem "Missing docstring";
+%feature("docstring") dolfin::MeshFunction::_setitem "Missing docstring";
 
 // Extend MeshFunction interface for get and set items
 %extend dolfin::MeshFunction<TYPE>
@@ -133,16 +133,38 @@ def array(self):
     return data
 
 def __getitem__(self, index):
-    try:
-        return self._getitem(index)
-    except RuntimeError:
-        raise IndexError("Index out of bound")
+    if not isinstance(index, (int, MeshEntity)):
+        raise TypeError("expected an int or a MeshEntity as index argument")
+
+    if isinstance(index, MeshEntity):
+        entity = index
+        assert entity.mesh().id() == self.mesh().id(), "MeshEntity and MeshFunction do not share the same mesh"
+        assert entity.dim() == self.dim(), "MeshEntity and MeshFunction do not share the same topological dimensions"
+
+        index = entity.index()
+
+    while index < 0:
+        index += self.size()
+    if index >= self.size():
+        raise IndexError("index out of range")
+    return self._getitem(index)
 
 def __setitem__(self, index, value):
-    try:
-        self._setitem(index, value)
-    except RuntimeError:
-        raise IndexError("Index out of bound")
+    if not isinstance(index, (int, MeshEntity)):
+        raise TypeError("expected an int or a MeshEntity as index argument")
+
+    if isinstance(index, MeshEntity):
+        entity = index
+        assert entity.mesh().id() == self.mesh().id(), "MeshEntity and MeshFunction do not share the same mesh"
+        assert entity.dim() == self.dim(), "MeshEntity and MeshFunction do not share the same topological dimensions"
+
+        index = entity.index()
+
+    while index < 0:
+        index += self.size()
+    if index >= self.size():
+        raise IndexError("index out of range")
+    self._setitem(index, value)
 
 def __len__(self):
     return self.size()
@@ -343,16 +365,6 @@ class MeshValueCollection(object):
 
 del _meshvaluecollection_doc_string
 %}
-
-//-----------------------------------------------------------------------------
-// Extend Point interface with Python selectors
-//-----------------------------------------------------------------------------
-%feature("docstring") dolfin::Point::__getitem__ "Missing docstring";
-%feature("docstring") dolfin::Point::__setitem__ "Missing docstring";
-%extend dolfin::Point {
-  double __getitem__(int i) { return (*self)[i]; }
-  void __setitem__(int i, double val) { (*self)[i] = val; }
-}
 
 //-----------------------------------------------------------------------------
 // Extend Mesh interface with ufl cell method

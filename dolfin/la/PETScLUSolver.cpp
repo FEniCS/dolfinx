@@ -29,6 +29,7 @@
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -39,26 +40,10 @@
 
 using namespace dolfin;
 
-// Utility function
-namespace dolfin
-{
-  class PETScKSPDeleter
-  {
-  public:
-    void operator() (KSP* ksp)
-    {
-      if (ksp)
-        KSPDestroy(ksp);
-      delete ksp;
-    }
-  };
-}
-
 #define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
 #define MAT_SOLVER_PETSC        MATSOLVERPETSC
-#define MAT_SOLVER_SPOOLES      MATSOLVERSPOOLES
 #define MAT_SOLVER_SUPERLU_DIST MATSOLVERSUPERLU_DIST
 #define MAT_SOLVER_SUPERLU      MATSOLVERSUPERLU
 
@@ -74,9 +59,6 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
                               #if PETSC_HAVE_PASTIX
                               ("pastix",       MAT_SOLVER_PASTIX)
                               #endif
-                              #if PETSC_HAVE_SPOOLES
-                              ("spooles",      MAT_SOLVER_SPOOLES)
-                              #endif
                               #if PETSC_HAVE_SUPERLU
                               ("superlu",      MAT_SOLVER_SUPERLU)
                               #endif
@@ -85,27 +67,34 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
                               #endif
                               ("petsc",        MAT_SOLVER_PETSC);
 //-----------------------------------------------------------------------------
-const std::vector<std::pair<std::string, std::string> > PETScLUSolver::_methods_descr
+const std::map<const MatSolverPackage, const bool>
+PETScLUSolver::_methods_cholesky
+= boost::assign::map_list_of(MAT_SOLVER_UMFPACK,      false)
+                              (MAT_SOLVER_MUMPS,        true)
+                              (MAT_SOLVER_PASTIX,       true)
+                              (MAT_SOLVER_SUPERLU,      false)
+                              (MAT_SOLVER_SUPERLU_DIST, false)
+                              (MAT_SOLVER_PETSC,        true);
+//-----------------------------------------------------------------------------
+const std::vector<std::pair<std::string, std::string> >
+PETScLUSolver::_methods_descr
   = boost::assign::pair_list_of("default", "default LU solver")
-                               #if PETSC_HAVE_UMFPACK
-                               ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)")
-                               #endif
-                               #if PETSC_HAVE_MUMPS
-                               ("mumps", "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)")
-                               #endif
-                               #if PETSC_HAVE_PASTIX
-                               ("pastix", "PaStiX (Parallel Sparse matriX package)")
-                               #endif
-                               #if PETSC_HAVE_SPOOLES
-                               ("spooles", "SPOOLES (SParse Object Oriented Linear Equations Solver)")
-                               #endif
-                               #if PETSC_HAVE_SUPERLU
-                               ("superlu", "SuperLU")
-                               #endif
-                               #if PETSC_HAVE_SUPERLU_DIST
-                               ("superlu_dist", "Parallel SuperLU")
-                               #endif
-                               ("petsc", "PETSc builtin LU solver");
+    #if PETSC_HAVE_UMFPACK
+    ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)")
+    #endif
+    #if PETSC_HAVE_MUMPS
+    ("mumps", "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)")
+    #endif
+    #if PETSC_HAVE_PASTIX
+    ("pastix", "PaStiX (Parallel Sparse matriX package)")
+    #endif
+    #if PETSC_HAVE_SUPERLU
+    ("superlu", "SuperLU")
+    #endif
+    #if PETSC_HAVE_SUPERLU_DIST
+    ("superlu_dist", "Parallel SuperLU")
+    #endif
+    ("petsc", "PETSc builtin LU solver");
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
@@ -125,7 +114,7 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::string method)
+PETScLUSolver::PETScLUSolver(std::string method) : _ksp(NULL)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -135,7 +124,7 @@ PETScLUSolver::PETScLUSolver(std::string method)
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
-                             std::string method) : _A(A)
+                             std::string method) : _ksp(NULL), _A(A)
 {
   // Check dimensions
   if (A->size(0) != A->size(1))
@@ -154,7 +143,8 @@ PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
 {
-  // Do nothing
+  if (_ksp)
+    KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
@@ -185,10 +175,15 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   return solve(x, b, false);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b, bool transpose)
+std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
+                                 bool transpose)
 {
+  Timer timer("PETSc LU solver");
+
   dolfin_assert(_ksp);
   dolfin_assert(_A);
+
+  PetscErrorCode ierr;
 
   // Downcast matrix and vectors
   const PETScVector& _b = as_type<const PETScVector>(b);
@@ -212,45 +207,52 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b, bool 
   // Write a pre-solve message
   pre_report(*_A);
 
-  // Get package used to solve sytem
+  // Get package used to solve system
   PC pc;
-  KSPGetPC(*_ksp, &pc);
-  const MatSolverPackage solver_package;
-  PCFactorGetMatSolverPackage(pc, &solver_package);
+  ierr = KSPGetPC(_ksp, &pc);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+
+  configure_ksp(_solver_package);
 
   // Set number of threads if using PaStiX
-  if (strcmp(solver_package, MATSOLVERPASTIX) == 0)
+  if (strcmp(_solver_package, MATSOLVERPASTIX) == 0)
   {
     if (parameters["num_threads"].is_set())
     {
       // Use number of threads specified for LU solver
-      PetscOptionsSetValue("-mat_pastix_threadnbr",
+      ierr = PetscOptionsSetValue("-mat_pastix_threadnbr",
                            parameters["num_threads"].value_str().c_str());
+      if (ierr != 0) petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
     }
     else
     {
       // Use global number of threads
-      PetscOptionsSetValue("-mat_pastix_threadnbr",
-                           dolfin::parameters["num_threads"].value_str().c_str());
+      ierr = PetscOptionsSetValue("-mat_pastix_threadnbr",
+                        dolfin::parameters["num_threads"].value_str().c_str());
+      if (ierr != 0) petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
     }
   }
 
   // Solve linear system
+  const Vec b_petsc = _b.vec();
+  Vec x_petsc = _x.vec();
   if (!transpose)
   {
-    KSPSolve(*_ksp, *_b.vec(), *_x.vec());
+    ierr = KSPSolve(_ksp, b_petsc, x_petsc);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
   }
   else
   {
-    KSPSolveTranspose(*_ksp, *_b.vec(), *_x.vec());
+    ierr = KSPSolveTranspose(_ksp, b_petsc, x_petsc);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolveTranspose");
   }
 
   return 1;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
-                                  GenericVector& x,
-                                  const GenericVector& b)
+                                 GenericVector& x,
+                                 const GenericVector& b)
 {
   return solve(as_type<const PETScMatrix>(require_matrix(A)),
                as_type<PETScVector>(x),
@@ -258,26 +260,31 @@ std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
-                                  const PETScVector& b)
+                                 const PETScVector& b)
 {
   boost::shared_ptr<const PETScMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
+std::size_t PETScLUSolver::solve_transpose(GenericVector& x,
+                                           const GenericVector& b)
 {
 return solve(x, b, true);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b)
+std::size_t PETScLUSolver::solve_transpose(const GenericLinearOperator& A,
+                                           GenericVector& x,
+                                           const GenericVector& b)
 {
   return solve_transpose(as_type<const PETScMatrix>(require_matrix(A)),
-               as_type<PETScVector>(x),
-               as_type<const PETScVector>(b));
+                         as_type<PETScVector>(x),
+                         as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A, PETScVector& x, const PETScVector& b)
+std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A,
+                                           PETScVector& x,
+                                           const PETScVector& b)
 {
   boost::shared_ptr<const PETScMatrix> _A(&A, NoDeleter());
   set_operator(_A);
@@ -291,7 +298,8 @@ std::string PETScLUSolver::str(bool verbose) const
   if (verbose)
   {
     warning("Verbose output for PETScLUSolver not implemented, calling PETSc KSPView directly.");
-    KSPView(*_ksp, PETSC_VIEWER_STDOUT_WORLD);
+    PetscErrorCode ierr = KSPView(_ksp, PETSC_VIEWER_STDOUT_WORLD);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPView");
   }
   else
     s << "<PETScLUSolver>";
@@ -299,7 +307,7 @@ std::string PETScLUSolver::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<KSP> PETScLUSolver::ksp() const
+KSP PETScLUSolver::ksp() const
 {
   return _ksp;
 }
@@ -317,7 +325,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   // Choose appropriate 'default' solver
   if (method == "default")
   {
-    if (MPI::num_processes() == 1)
+    if (MPI::size(MPI_COMM_WORLD) == 1)
     {
       #if PETSC_HAVE_UMFPACK
       method = "umfpack";
@@ -327,8 +335,8 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
       method = "pastix";
       #elif PETSC_HAVE_SUPERLU
       method = "superlu";
-      #elif PETSC_HAVE_SPOOLES
-      method = "spooles";
+      #elif PETSC_HAVE_SUPERLU_DIST
+      method = "superlu_dist";
       #else
       method = "petsc";
       warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
@@ -336,18 +344,16 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
     }
     else
     {
-      #if PETSC_HAVE_MUMPS
+      #if PETSC_HAVE_SUPERLU_DIST
+      method = "superlu_dist";
+      #elif PETSC_HAVE_MUMPS
       method = "mumps";
       #elif PETSC_HAVE_PASTIX
       method = "pastix";
-      #elif PETSC_HAVE_SPOOLES
-      method = "spooles";
-      #elif PETSC_HAVE_SUPERLU_DIST
-      method = "superlu_dist";
       #else
       dolfin_error("PETScLUSolver.cpp",
                    "solve linear system using PETSc LU solver",
-                   "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SPOOLES");
+                   "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
       #endif
     }
   }
@@ -355,48 +361,77 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   return _methods.find(method)->second;
 }
 //-----------------------------------------------------------------------------
+bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package) const
+{
+  return _methods_cholesky.find(package)->second;
+}
+//-----------------------------------------------------------------------------
 void PETScLUSolver::init_solver(std::string& method)
 {
   // Select solver
-  const MatSolverPackage solver_package = select_solver(method);
+  _solver_package = select_solver(method);
 
   // Destroy old solver environment if necessary
   if (_ksp)
-  {
-    if (!_ksp.unique())
-    {
-      dolfin_error("PETScLUSolver.cpp",
-                   "initialize PETSc LU solver",
-                   "More than one object points to the underlying PETSc object");
-    }
-  }
-  _ksp.reset(new KSP, PETScKSPDeleter());
+    KSPDestroy(&_ksp);
+
+  PetscErrorCode ierr;
 
   // Create solver
-  if (MPI::num_processes() > 1)
-    KSPCreate(PETSC_COMM_WORLD, _ksp.get());
+  if (MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+  }
   else
-    KSPCreate(PETSC_COMM_SELF, _ksp.get());
+  {
+    ierr = KSPCreate(PETSC_COMM_SELF, &_ksp);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+  }
 
   // Make solver preconditioner only
-  KSPSetType(*_ksp, KSPPREONLY);
+  ierr = KSPSetType(_ksp, KSPPREONLY);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+}
+//-----------------------------------------------------------------------------
+void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)
+{
+  PetscErrorCode ierr;
 
-  // Set preconditioner to LU factorization
   PC pc;
-  KSPGetPC(*_ksp, &pc);
-  PCSetType(pc, PCLU);
+  ierr = KSPGetPC(_ksp, &pc);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+
+  // Set preconditioner to LU factorization/Cholesky as appropriate
+
+  const bool symmetric = parameters["symmetric"];
+  if (symmetric && solver_has_cholesky(solver_package))
+  {
+    ierr = PCSetType(pc, PCCHOLESKY);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
+  }
+  else
+  {
+    ierr = PCSetType(pc, PCLU);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
+  }
 
   // Set solver package
-  PCFactorSetMatSolverPackage(pc, solver_package);
+  ierr = PCFactorSetMatSolverPackage(pc, solver_package);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
 
   // Allow matrices with zero diagonals to be solved
-  PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
-  PCFactorSetShiftAmount(pc, PETSC_DECIDE);
+  ierr = PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftType");
+  ierr = PCFactorSetShiftAmount(pc, PETSC_DECIDE);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftAmount");
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_petsc_operators()
 {
   dolfin_assert(_A->mat());
+
+  PetscErrorCode ierr;
 
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
@@ -404,26 +439,41 @@ void PETScLUSolver::set_petsc_operators()
 
   // Set operators with appropriate preconditioner option
   if (reuse_fact)
-    KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(), SAME_PRECONDITIONER);
+  {
+    ierr = KSPSetOperators(_ksp, _A->mat(), _A->mat(), SAME_PRECONDITIONER);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
   else if (same_pattern)
-    KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(), SAME_NONZERO_PATTERN);
+  {
+    ierr = KSPSetOperators(_ksp, _A->mat(), _A->mat(), SAME_NONZERO_PATTERN);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
   else
-    KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(), DIFFERENT_NONZERO_PATTERN);
+  {
+    ierr = KSPSetOperators(_ksp, _A->mat(), _A->mat(),
+                           DIFFERENT_NONZERO_PATTERN);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::pre_report(const PETScMatrix& A) const
 {
+  PetscErrorCode ierr;
+
   const MatSolverPackage solver_type;
   PC pc;
-  KSPGetPC(*_ksp, &pc);
-  PCFactorGetMatSolverPackage(pc, &solver_type);
+  ierr = KSPGetPC(_ksp, &pc);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+
+  ierr = PCFactorGetMatSolverPackage(pc, &solver_type);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorGetMatSolverPackage");
 
   // Get parameter
   const bool report = parameters["report"];
 
-  if (report && dolfin::MPI::process_number() == 0)
+  if (report && dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
   {
-    log(PROGRESS, "Solving linear system of size %d x %d (PETSc LU solver, %s).",
+    log(PROGRESS,"Solving linear system of size %d x %d (PETSc LU solver, %s).",
         A.size(0), A.size(1), solver_type);
   }
 }

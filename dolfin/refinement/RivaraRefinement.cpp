@@ -169,7 +169,8 @@ void RivaraRefinement::DMesh::import_mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
-     std::vector<int>& new2old_cell, std::vector<int>& new2old_facet)
+                                          std::vector<int>& new2old_cell,
+                                          std::vector<int>& new2old_facet)
 {
   number();
 
@@ -179,8 +180,8 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
   MeshEditor editor;
   editor.open(mesh, cell_type->cell_type(), tdim, gdim);
 
-  editor.init_vertices(vertices.size());
-  editor.init_cells(cells.size());
+  editor.init_vertices(vertices.size(), vertices.size());
+  editor.init_cells(cells.size(), cells.size());
 
   // Add vertices
   std::size_t current_vertex = 0;
@@ -339,7 +340,8 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
 }
 //-----------------------------------------------------------------------------
 RivaraRefinement::DCell* RivaraRefinement::DMesh::opposite(DCell* dcell,
-                  DVertex* v1, DVertex* v2)
+                                                           DVertex* v1,
+                                                           DVertex* v2)
 {
   for (std::list<DCell*>::iterator it = v1->cells.begin();
       it != v1->cells.end(); ++it)
@@ -409,7 +411,8 @@ void RivaraRefinement::DMesh::bisect_marked(std::vector<bool> marked_ids)
 }
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
-                       DCell* c1, std::size_t ii, std::size_t jj, DVertex* mv)
+                                               DCell* c1, std::size_t ii,
+                                               std::size_t jj, DVertex* mv)
 {
   // Initialize local facets
   std::vector<int> facets0(tdim + 1);

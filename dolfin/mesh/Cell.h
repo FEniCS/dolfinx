@@ -21,17 +21,19 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2013-02-21
+// Last changed: 2013-08-26
 
 #ifndef __CELL_H
 #define __CELL_H
 
+#include <boost/shared_ptr.hpp>
+
+#include <dolfin/geometry/Point.h>
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
-#include "Point.h"
 
 namespace dolfin
 {
@@ -140,7 +142,7 @@ namespace dolfin
     {
       // We would need facet areas
       _mesh->init(_mesh->type().dim() - 1);
-      
+
       return _mesh->type().inradius(*this);
     }
 
@@ -168,8 +170,32 @@ namespace dolfin
     {
       // We would need facet areas
       _mesh->init(_mesh->type().dim() - 1);
-      
+
       return _mesh->type().radius_ratio(*this);
+    }
+
+    /// Compute squared distance to given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    /// *Returns*
+    ///     double
+    ///         The squared distance to the point.
+    double squared_distance(const Point& point) const
+    { return _mesh->type().squared_distance(*this, point); }
+
+    /// Compute distance to given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    /// *Returns*
+    ///     double
+    ///         The distance to the point.
+    double distance(const Point& point) const
+    {
+      return sqrt(squared_distance(point));
     }
 
     /// Compute component i of normal of given facet with respect to the cell
@@ -221,7 +247,7 @@ namespace dolfin
     /// Order entities locally
     ///
     /// *Arguments*
-    ///     global_vertex_indices (_MeshFunction_ <std::size_t>)
+    ///     global_vertex_indices (_std::vector<std::size_t>_)
     ///         The global vertex indices.
     void order(const std::vector<std::size_t>& local_to_global_vertex_indices)
     { _mesh->type().order(*this, local_to_global_vertex_indices); }
@@ -229,14 +255,112 @@ namespace dolfin
     /// Check if entities are ordered
     ///
     /// *Arguments*
-    ///     global_vertex_indices (_MeshFunction_ <std::size_t>)
+    ///     global_vertex_indices (_std::vector<std::size_t>)
     ///         The global vertex indices.
     ///
     /// *Returns*
     ///     bool
-    ///         True if ordered.
+    ///         True iff ordered.
     bool ordered(const std::vector<std::size_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
+
+    /// Check whether given point is contained in cell. This function is
+    /// identical to the function collides(point).
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point to be checked.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff point is contained in cell.
+    bool contains(const Point& point) const
+    { return _mesh->type().collides(*this, point); }
+
+    /// Check whether given point collides with cell.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point to be checked.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff point collides with cell.
+    bool collides(const Point& point) const
+    { return _mesh->type().collides(*this, point); }
+
+    /// Check whether given entity collides with cell.
+    ///
+    /// *Arguments*
+    ///     entity (_MeshEntity_)
+    ///         The cell to be checked.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff entity collides with cell.
+    bool collides(const MeshEntity& entity) const
+    { return _mesh->type().collides(*this, entity); }
+
+    // FIXME: This function is part of a UFC transition
+    /// Get cell vertex coordinates
+    void get_vertex_coordinates(std::vector<double>& coordinates) const
+    {
+      const std::size_t gdim = _mesh->geometry().dim();
+      const std::size_t num_vertices = this->num_entities(0);
+      const unsigned int* vertices = this->entities(0);
+      coordinates.resize(num_vertices*gdim);
+      for (std::size_t i = 0; i < num_vertices; i++)
+        for (std::size_t j = 0; j < gdim; j++)
+          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+    }
+
+    // FIXME: This function is part of a UFC transition
+    /// Fill UFC cell with miscellaneous data
+    void get_cell_data(ufc::cell& ufc_cell, int local_facet=-1) const
+    {
+      ufc_cell.geometric_dimension = _mesh->geometry().dim();;
+      ufc_cell.local_facet = local_facet;
+      ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      ufc_cell.mesh_identifier = mesh_id();
+      ufc_cell.index = index();
+    }
+
+    // FIXME: This function is part of a UFC transition
+    /// Fill UFC cell with topology data
+    void get_cell_topology(ufc::cell& ufc_cell) const
+    {
+      const MeshTopology& topology = _mesh->topology();
+
+      const std::size_t tdim = topology.dim();
+      ufc_cell.topological_dimension = tdim;
+      ufc_cell.orientation = _mesh->cell_orientations()[index()];
+
+      ufc_cell.entity_indices.resize(tdim + 1);
+      for (std::size_t d = 0; d < tdim; d++)
+      {
+        ufc_cell.entity_indices[d].resize(num_entities(d));
+        if (topology.have_global_indices(d))
+        {
+          const std::vector<std::size_t>& global_indices
+            = topology.global_indices(d);
+          for (std::size_t i = 0; i < num_entities(d); ++i)
+            ufc_cell.entity_indices[d][i] = global_indices[entities(d)[i]];
+        }
+        else
+        {
+          for (std::size_t i = 0; i < num_entities(d); ++i)
+            ufc_cell.entity_indices[d][i] = entities(d)[i];
+        }
+      }
+      ufc_cell.entity_indices[tdim].resize(1);
+
+      ufc_cell.entity_indices[tdim][0] = index();
+
+      // FIXME: Using the local cell index is inconsistent with UFC, but
+      //        necessary to make DOLFIN run
+      // Local cell index
+      ufc_cell.index = ufc_cell.entity_indices[tdim][0];
+    }
 
   };
 
@@ -251,9 +375,14 @@ namespace dolfin
     CellFunction(const Mesh& mesh)
       : MeshFunction<T>(mesh, mesh.topology().dim()) {}
 
+    CellFunction(boost::shared_ptr<const Mesh> mesh)
+      : MeshFunction<T>(mesh, mesh->topology().dim()) {}
+
     CellFunction(const Mesh& mesh, const T& value)
       : MeshFunction<T>(mesh, mesh.topology().dim(), value) {}
 
+    CellFunction(boost::shared_ptr<const Mesh> mesh, const T& value)
+      : MeshFunction<T>(mesh, mesh->topology().dim(), value) {}
   };
 
 }

@@ -52,18 +52,25 @@ namespace dolfin
     SparsityPattern(std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(const std::vector<std::size_t>& dims,
-                    const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
-                    const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner,
+    SparsityPattern(const MPI_Comm mpi_comm,
+                    const std::vector<std::size_t>& dims,
+                    const std::vector<std::pair<std::size_t,
+                    std::size_t> >& ownership_range,
+                    const std::vector<const boost::unordered_map<std::size_t,
+                    unsigned int>* > off_process_owner,
                     std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(const std::vector<std::size_t>& dims,
-              const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
-              const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner);
+    void init(const MPI_Comm mpi_comm,
+              const std::vector<std::size_t>& dims,
+              const std::vector<std::pair<std::size_t,
+              std::size_t> >& ownership_range,
+              const std::vector<const boost::unordered_map<std::size_t,
+              unsigned int>* > off_process_owner);
 
     /// Insert non-zero entries
-    void insert(const std::vector<const std::vector<dolfin::la_index>* >& entries);
+    void
+      insert(const std::vector<const std::vector<dolfin::la_index>* >& entries);
 
     /// Add edges (vertex = [index, owning process])
     void add_edges(const std::pair<dolfin::la_index, std::size_t>& vertex,
@@ -86,16 +93,22 @@ namespace dolfin
     /// Fill array with number of nonzeros for off-diagonal block in
     /// local_range for dimension 0. For matrices, fill array with number
     /// of nonzeros per local row for off-diagonal block
-    void num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
+    void
+      num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
     /// Fill vector with number of nonzeros in local_range for dimension 0
     void num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const;
 
     /// Fill vector with edges for given vertex
-    void get_edges(std::size_t vertex, std::vector<dolfin::la_index>& edges) const;
+    void get_edges(std::size_t vertex,
+                   std::vector<dolfin::la_index>& edges) const;
 
     /// Finalize sparsity pattern
     void apply();
+
+    // Return MPI communicator
+    const MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -106,15 +119,16 @@ namespace dolfin
 
     /// Return underlying sparsity pattern (off-diagional). Options are
     /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<std::size_t> > off_diagonal_pattern(Type type) const;
+    std::vector<std::vector<std::size_t> >
+      off_diagonal_pattern(Type type) const;
 
   private:
 
     // Print some useful information
     void info_statistics() const;
 
-    // Indicate if sparsity pattern is distributed
-    bool distributed;
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     // Ownership range for each dimension
     std::vector<std::pair<std::size_t, std::size_t> > _local_range;
@@ -127,7 +141,8 @@ namespace dolfin
     std::vector<std::size_t> non_local;
 
     // Map from non-local vertex to owning process index
-    std::vector<boost::unordered_map<std::size_t, unsigned int> > _off_process_owner;
+    std::vector<boost::unordered_map<std::size_t, unsigned int> >
+      _off_process_owner;
 
   };
 

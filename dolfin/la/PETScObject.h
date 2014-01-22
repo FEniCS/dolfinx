@@ -21,7 +21,9 @@
 #ifndef __PETSC_OBJECT_H
 #define __PETSC_OBJECT_H
 
+#include <string>
 #include <dolfin/common/SubSystemsManager.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -34,9 +36,21 @@ namespace dolfin
   {
   public:
 
+    /// Constructor. Ensures that PETSc has been initialised.
     PETScObject() { SubSystemsManager::init_petsc(); }
 
+    /// Destructor
     virtual ~PETScObject() {}
+
+    /// Print error message for PETSc calls that return an error
+    static void petsc_error(int error_code,
+                            std::string filename,
+                            std::string petsc_function)
+    {
+      dolfin_error(filename,
+               "successfully call PETSc function '" + petsc_function + "'",
+                "PETSc error code is: %d", error_code);
+    }
 
   };
 

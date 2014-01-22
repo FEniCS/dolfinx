@@ -28,14 +28,14 @@ from dolfin import *
 class XMLMesh(unittest.TestCase):
 
     def test_save_plain_mesh2D(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitSquareMesh(8, 8)
+        mesh = UnitSquareMesh(8, 8)
+        if MPI.size(mesh.mpi_comm()) == 1:
             f = File("unit_square.xml")
             f << mesh
 
     def test_save_plain_mesh3D(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitCubeMesh(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
+        if MPI.size(mesh.mpi_comm()) == 1:
             f = File("unit_cube.xml")
             f << mesh
 
@@ -95,7 +95,7 @@ class XMLMesh(unittest.TestCase):
         s1.mark_cells(output_mesh, 1)
 
         # Write to file
-        if (MPI.num_processes() == 1):
+        if (MPI.size(output_mesh.mpi_comm()) == 1):
             output_file = File("XMLMesh_test_mesh_domains_io.xml")
             output_file << output_mesh
 
@@ -105,20 +105,20 @@ class XMLMesh(unittest.TestCase):
             input_file >> input_mesh
 
             # Get some data and check that it matches
-            self.assertEqual(input_mesh.domains().markers(0).size(),
-                             output_mesh.domains().markers(0).size());
-            self.assertEqual(input_mesh.domains().markers(1).size(),
-                             output_mesh.domains().markers(1).size());
-            self.assertEqual(input_mesh.domains().markers(2).size(),
-                             output_mesh.domains().markers(2).size());
-            self.assertEqual(input_mesh.domains().markers(3).size(),
-                             output_mesh.domains().markers(3).size());
+            self.assertEqual(len(input_mesh.domains().markers(0)),
+                             len(output_mesh.domains().markers(0)));
+            self.assertEqual(len(input_mesh.domains().markers(1)),
+                             len(output_mesh.domains().markers(1)));
+            self.assertEqual(len(input_mesh.domains().markers(2)),
+                             len(output_mesh.domains().markers(2)));
+            self.assertEqual(len(input_mesh.domains().markers(3)),
+                             len(output_mesh.domains().markers(3)));
 
 class LocalMeshDataXML_IO(unittest.TestCase):
 
     def testRead(self):
         file = File("../snake.xml.gz")
-        localdata = cpp.LocalMeshData()
+        localdata = cpp.LocalMeshData(mpi_comm_world())
         file >> localdata
 
 if __name__ == "__main__":

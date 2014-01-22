@@ -24,6 +24,7 @@
 #define __BOX_H
 
 #include <cstddef>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -66,10 +67,20 @@ namespace dolfin
     ///
     ///         // Mesh with 6 cells in each direction on the
     ///         // set [-1,2] x [-1,2] x [-1,2].
-    ///         Box mesh(-1, -1, -1, 2, 2, 2, 6, 6, 6);
+    ///         BoxMesh mesh(-1, -1, -1, 2, 2, 2, 6, 6, 6);
     ///
     BoxMesh(double x0, double y0, double z0, double x1, double y1, double z1,
             std::size_t nx, std::size_t ny, std::size_t nz);
+
+    BoxMesh(MPI_Comm comm,
+            double x0, double y0, double z0, double x1, double y1, double z1,
+            std::size_t nx, std::size_t ny, std::size_t nz);
+
+  private:
+
+    // Build mesh
+    void build(double x0, double y0, double z0, double x1, double y1, double z1,
+               std::size_t nx, std::size_t ny, std::size_t nz);
 
   };
 

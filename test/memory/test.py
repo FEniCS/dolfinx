@@ -27,7 +27,7 @@
 
 import sys, os, re
 import platform
-from commands import getstatusoutput
+from instant import get_status_output
 
 if "--only-python" in sys.argv:
     print "Skipping C++ only memory tests"
@@ -96,7 +96,7 @@ dolfin_supp = os.path.join(os.path.abspath(os.getcwd()), 'dolfin_valgrind.supp')
 vg_comm = 'valgrind --error-exitcode=9 --tool=memcheck --leak-check=full --show-reachable=yes --suppressions=%s' % dolfin_supp
 
 def run_and_analyse(path, run_str, prog_type, no_reachable_check = False):
-    output = getstatusoutput("cd %s && %s %s" % (path, vg_comm, run_str))
+    output = get_status_output("cd %s && %s %s" % (path, vg_comm, run_str))
     if "No such file or directory" in "".join([str(l) for l in output]):
         print "*** FAILED: Unable to run demo"
         return [(demo, "C++", output[1])]

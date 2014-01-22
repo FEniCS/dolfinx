@@ -25,8 +25,7 @@
 #define __CSG_PRIMITIVES_2D_H
 
 #include <vector>
-#include <dolfin/mesh/Point.h>
-
+#include <dolfin/geometry/Point.h>
 #include "CSGPrimitive.h"
 
 namespace dolfin
@@ -152,10 +151,10 @@ namespace dolfin
     Type getType() const { return CSGGeometry::Rectangle; }
 
     /// Return first corner
-    Point first_corner() const { return Point(_x0, _y0); }
+    Point first_corner() const { return Point(_x0, _x1); }
 
     /// Return second corner
-    Point second_corner() const { return Point(_x1, _y1); }
+    Point second_corner() const { return Point(_y0, _y1); }
 
   private:
 
@@ -174,13 +173,17 @@ namespace dolfin
     /// *Arguments*
     ///     vertices (std::vector<_Point_>)
     ///         A vector of _Point_ objects.
-    ///         The points must be given in clockwise order
-    ///         and the polygon can not self intersect.
+    ///         The points must be given in counter-clockwise order
+    ///         (without repeating the first/last vertex) and the polygon
+    //          must not self intersect.
     Polygon(const std::vector<Point>& vertices);
 
     /// Informal string representation
     std::string str(bool verbose) const;
     Type getType() const { return CSGGeometry::Polygon; }
+
+    // Check if vertices are counter clockwise oriented
+    bool ccw() const;
 
     /// Return vertices in polygon
     const std::vector<Point>& vertices() const { return _vertices; }

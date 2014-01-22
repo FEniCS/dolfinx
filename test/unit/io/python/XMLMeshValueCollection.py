@@ -28,12 +28,15 @@ class XMLMeshValueCollection(unittest.TestCase):
     def test_insertion_extraction_io(self):
         "Test input/output via << and >>."
 
+        # Create mesh
+        mesh = UnitCubeMesh(5, 5, 5)
+
         # Not working yet in parallel
-        if (MPI.num_processes() == 1):
+        if (MPI.size(mesh.mpi_comm()) == 1):
 
             # Create mesh value collection and add some data
             mesh = UnitCubeMesh(5, 5, 5)
-            output_values = MeshValueCollection("size_t", 2)
+            output_values = MeshValueCollection("size_t", mesh, 2)
             output_values.set_value(1,  1, 1);
             output_values.set_value(2,  1, 3);
             output_values.set_value(5,  1, 8);
@@ -45,16 +48,17 @@ class XMLMeshValueCollection(unittest.TestCase):
             output_values.rename(name, "a MeshValueCollection")
 
             # Write to file
-            output_file = File("XMLMeshValueCollection_test_io.xml")
+            output_file = File("xml_mesh_value_collection_test_io.xml")
             output_file << output_values
 
             # Read from file
-            input_file = File("XMLMeshValueCollection_test_io.xml")
-            input_values = MeshValueCollection("size_t", 2)
+            input_file = File("xml_mesh_value_collection_test_io.xml")
+            input_values = MeshValueCollection("size_t", mesh)
             input_file >> input_values
 
             # Get some data and check that it matches
             self.assertEqual(input_values.size(), output_values.size())
+            self.assertEqual(input_values.dim(), output_values.dim())
             self.assertEqual(input_values.name(), name)
 
     def test_constructor_input(self):
@@ -64,10 +68,10 @@ class XMLMeshValueCollection(unittest.TestCase):
         mesh = UnitCubeMesh(5, 5, 5)
 
         # Read from file
-        input_values = MeshValueCollection("size_t", mesh, "xml_value_collection_ref.xml", 2)
+        input_values = MeshValueCollection("size_t", mesh, "xml_value_collection_ref.xml")
 
         # Check that size is correct
-        self.assertEqual(MPI.sum(input_values.size()), 6)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), input_values.size()), 6)
 
 if __name__ == "__main__":
     unittest.main()

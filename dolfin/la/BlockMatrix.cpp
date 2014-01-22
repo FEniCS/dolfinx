@@ -35,7 +35,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BlockMatrix::BlockMatrix(std::size_t m, std::size_t n) : matrices(boost::extents[m][n])
+BlockMatrix::BlockMatrix(std::size_t m, std::size_t n)
+  : matrices(boost::extents[m][n])
 {
   for (std::size_t i = 0; i < m; i++)
     for (std::size_t j = 0; j < n; j++)
@@ -47,21 +48,24 @@ BlockMatrix::~BlockMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BlockMatrix::set_block(std::size_t i, std::size_t j, boost::shared_ptr<GenericMatrix> m)
+void BlockMatrix::set_block(std::size_t i, std::size_t j,
+                            boost::shared_ptr<GenericMatrix> m)
 {
   dolfin_assert(i < matrices.shape()[0]);
   dolfin_assert(j < matrices.shape()[1]);
   matrices[i][j] = m;
 }
 //-----------------------------------------------------------------------------
-const boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(std::size_t i, std::size_t j) const
+const boost::shared_ptr<GenericMatrix>
+BlockMatrix::get_block(std::size_t i, std::size_t j) const
 {
   dolfin_assert(i < matrices.shape()[0]);
   dolfin_assert(j < matrices.shape()[1]);
   return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(std::size_t i, std::size_t j)
+boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(std::size_t i,
+                                                        std::size_t j)
 {
   dolfin_assert(i < matrices.shape()[0]);
   dolfin_assert(j < matrices.shape()[1]);
@@ -76,14 +80,14 @@ std::size_t BlockMatrix::size(std::size_t dim) const
 //-----------------------------------------------------------------------------
 void BlockMatrix::zero()
 {
-  for(std::size_t i = 0; i < matrices.shape()[0]; i++)
-    for(std::size_t j = 0; j < matrices.shape()[1]; j++)
+  for (std::size_t i = 0; i < matrices.shape()[0]; i++)
+    for (std::size_t j = 0; j < matrices.shape()[1]; j++)
       matrices[i][j]->zero();
 }
 //-----------------------------------------------------------------------------
 void BlockMatrix::apply(std::string mode)
 {
-  Timer("Apply (matrix)");
+  Timer timer("Apply (BlockMatrix)");
   for (std::size_t i = 0; i < matrices.shape()[0]; i++)
     for (std::size_t j = 0; j < matrices.shape()[1]; j++)
       matrices[i][j]->apply(mode);
@@ -100,13 +104,17 @@ std::string BlockMatrix::str(bool verbose) const
     {
       for (std::size_t j = 0; i < matrices.shape()[1]; j++)
       {
-        s << "  BlockMatrix (" << i << ", " << j << ")" << std::endl << std::endl;
+        s << "  BlockMatrix (" << i << ", " << j << ")" << std::endl
+          << std::endl;
         s << indent(indent(matrices[i][j]->str(true))) << std::endl;
       }
     }
   }
   else
-    s << "<BlockMatrix containing " << matrices.shape()[0] << " x " << matrices.shape()[1] << " blocks>";
+  {
+    s << "<BlockMatrix containing " << matrices.shape()[0] << " x "
+      << matrices.shape()[1] << " blocks>";
+  }
 
   return s.str();
 }
@@ -139,7 +147,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     _y.zero();
 
     // Resize z_tmp and zero
-    z_tmp->resize(_y.size());
+    z_tmp->resize(_y.mpi_comm(), _y.size());
     _A.resize(*z_tmp, 0);
 
     // Loop over block columns

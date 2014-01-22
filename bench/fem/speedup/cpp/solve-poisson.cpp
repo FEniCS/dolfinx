@@ -47,6 +47,9 @@ int main(int argc, char* argv[])
   UnitCubeMesh mesh(n, n, n);
   Poisson::FunctionSpace V(mesh);
 
+  // MPI communicator
+  const MPI_Comm comm = mesh.mpi_comm();
+
   // Define boundary condition
   Constant u0(0.0);
   DomainBoundary boundary;
@@ -76,34 +79,36 @@ int main(int argc, char* argv[])
   bc.apply(A, b);
 
   // Solve linear system
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   double t = time();
   solver.solve(A, *u.vector(), b);
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   t = time() - t;
-  if (dolfin::MPI::process_number() == 0)
+  if (dolfin::MPI::rank(comm) == 0)
     info("TIME (first time): %.5g", t);
 
   // Solve linear system (preconditioner assuming same non-zero pattern)
-  solver.parameters("preconditioner")["same_nonzero_pattern"] = true;
+  if (solver.parameters.has_key("preconditioner"))
+      solver.parameters("preconditioner")["same_nonzero_pattern"] = true;
   u.vector()->zero();
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   t = time();
   solver.solve(A, *u.vector(), b);
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   t = time() - t;
-  if (dolfin::MPI::process_number() == 0)
+  if (dolfin::MPI::rank(comm) == 0)
     info("TIME (same nonzero pattern): %.5g", t);
 
   // Solve linear system (re-use preconditioner)
-  solver.parameters("preconditioner")["reuse"] = true;
+  if (solver.parameters.has_key("preconditioner"))
+    solver.parameters("preconditioner")["reuse"] = true;
   u.vector()->zero();
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   t = time();
   solver.solve(A, *u.vector(), b);
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   t = time() - t;
-  if (dolfin::MPI::process_number() == 0)
+  if (dolfin::MPI::rank(comm) == 0)
     info("TIME (re-use preconditioner): %.5g", t);
 
   #else

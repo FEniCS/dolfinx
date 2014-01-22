@@ -21,7 +21,6 @@
 #include <numeric>
 #include <sstream>
 #include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
 #include <dolfin/common/utils.h>
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
@@ -32,14 +31,17 @@ using namespace dolfin;
 MeshTopology::MeshTopology()
 
 {
-  // Make shared vertices empty when in serial
-  if (MPI::num_processes() == 1)
-    shared_entities(0);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
+  : coloring(topology.coloring), num_entities(topology.num_entities),
+    global_num_entities(topology.global_num_entities),
+    _global_indices(topology._global_indices),
+    _shared_entities(topology._shared_entities),
+    connectivity(topology.connectivity)
 {
-  *this = topology;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshTopology::~MeshTopology()
@@ -47,17 +49,22 @@ MeshTopology::~MeshTopology()
   clear();
 }
 //-----------------------------------------------------------------------------
-const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
+MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
 {
   // Clear old data if any
   clear();
 
   // Copy data
+
+  // Public data
+  coloring = topology.coloring;
+
+  // Private data
   num_entities = topology.num_entities;
   global_num_entities = topology.global_num_entities;
-  connectivity = topology.connectivity;
   _global_indices = topology._global_indices;
-  coloring = topology.coloring;
+  _shared_entities = topology._shared_entities;
+  connectivity = topology.connectivity;
 
   return *this;
 }
@@ -121,35 +128,38 @@ void MeshTopology::init(std::size_t dim)
       connectivity[d0].push_back(MeshConnectivity(d0, d1));
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init(std::size_t dim, std::size_t local_size)
+void MeshTopology::init(std::size_t dim, std::size_t local_size,
+                        std::size_t global_size)
 {
   dolfin_assert(dim < num_entities.size());
   num_entities[dim] = local_size;
 
-  if (MPI::num_processes() == 1)
-    init_global(dim, local_size);
-}
-//-----------------------------------------------------------------------------
-void MeshTopology::init_global(std::size_t dim, std::size_t global_size)
-{
   dolfin_assert(dim < global_num_entities.size());
   global_num_entities[dim] = global_size;
+
+  // FIXME: Remove this when ghost/halo cells are supported
+  // If mesh is local, make shared vertices empty
+  if (dim == 0 && (local_size == global_size))
+    shared_entities(0);
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
 {
   dolfin_assert(dim < _global_indices.size());
-  _global_indices[dim] = std::vector<std::size_t>(size, std::numeric_limits<std::size_t>::max());
+  _global_indices[dim]
+    = std::vector<std::size_t>(size, std::numeric_limits<std::size_t>::max());
 }
 //-----------------------------------------------------------------------------
-dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::size_t d1)
+dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
+                                                    std::size_t d1)
 {
   dolfin_assert(d0 < connectivity.size());
   dolfin_assert(d1 < connectivity[d0].size());
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::size_t d1) const
+const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
+                                                          std::size_t d1) const
 {
   dolfin_assert(d0 < connectivity.size());
   dolfin_assert(d1 < connectivity[d0].size());
@@ -157,16 +167,17 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::s
 }
 //-----------------------------------------------------------------------------
 std::map<unsigned int, std::set<unsigned int> >&
-  MeshTopology::shared_entities(unsigned int dim)
+MeshTopology::shared_entities(unsigned int dim)
 {
-  dolfin_assert(dim < this->dim());
+  dolfin_assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 const std::map<unsigned int, std::set<unsigned int> >&
-  MeshTopology::shared_entities(unsigned int dim) const
+MeshTopology::shared_entities(unsigned int dim) const
 {
-  std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >::const_iterator e;
+  std::map<unsigned int, std::map<unsigned int,
+                                  std::set<unsigned int> > >::const_iterator e;
   e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
@@ -205,7 +216,7 @@ std::string MeshTopology::str(bool verbose) const
       s << "    " << d0;
       for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
-        if ( !connectivity[d0][d1].empty() )
+        if (!connectivity[d0][d1].empty())
           s << " x";
         else
           s << " -";
@@ -218,7 +229,7 @@ std::string MeshTopology::str(bool verbose) const
     {
       for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
-        if ( connectivity[d0][d1].empty() )
+        if (connectivity[d0][d1].empty())
           continue;
         s << indent(connectivity[d0][d1].str(true));
         s << std::endl;

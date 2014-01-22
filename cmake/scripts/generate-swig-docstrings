@@ -27,7 +27,7 @@ This script assumes that all functions and classes lives in the dolfin namespace
 # Modified by Anders E. Johansen, 2011.
 #
 # First added:  2010-08-19
-# Last changed: 2011-07-08
+# Last changed: 2013-09-04
 
 import os, shutil, types, sys
 
@@ -38,6 +38,13 @@ sys.path.append(doc_dir)
 from dolfin_utils.documentation import extract_doc_representation
 from dolfin_utils.documentation import indent, add_links
 from codeexamples import codesnippets
+
+debug_output = False
+
+def output(out):
+    global debug_output
+    if debug_output:
+        print out
 
 docstring = '%%feature("docstring")  %s "\n%s\n";\n\n'
 
@@ -53,8 +60,10 @@ cpp_to_python = {
 "unsigned int": "int",
 "uint": "int",
 "dolfin::uint": "int",
-"uint*": "numpy.array(int)",
-"dolfin::uint*": "numpy.array(int)",
+"std::size_t": "int",
+"uint*": "numpy.array(uint)",
+"dolfin::uint*": "numpy.array(uint)",
+"std::size_t*": "numpy.array(uintp)",
 
 "double": "float",
 "double*": "numpy.array(float)",
@@ -111,9 +120,9 @@ def replace_example(text, classname, signature):
     # Check if we have example code in the dictionary
     examplecode = ".. note::\n\n    No example code available for this function."
     if not classname in codesnippets:
-        print " "*6 + "No example code for class: '%s'" % classname
+        output(" "*6 + "No example code for class: '%s'" % classname)
     elif not signature in codesnippets[classname]:
-        print " "*6 + "No example code for (class, function): ('%s', '%s')" % (classname, signature)
+        output(" "*6 + "No example code for (class, function): ('%s', '%s')" % (classname, signature))
     else:
         examplecode = codesnippets[classname][signature]
 
@@ -153,7 +162,7 @@ def handle_std_pair(cpp_type, classnames):
 
     args = cpp_type.split(">")[0].split("<")[1].split(",")
     if (len(args) != 2):
-        print "No typemap handler implemented for %s" % cpp_type
+        output("No typemap handler implemented for %s" % cpp_type)
         return cpp_type
 
     arg1, arg2 = args
@@ -163,14 +172,14 @@ def handle_std_pair(cpp_type, classnames):
     if arg1 in cpp_to_python:
         arg1 = cpp_to_python[arg1]
         if not arg2 in cpp_to_python:
-            print "No type map for '%s'!" % cpp_type
+            output("No type map for '%s'!" % cpp_type)
             return cpp_type
         arg2 = cpp_to_python[arg2]
         return "(%s, %s)" % (arg1, arg2)
 
     elif arg1[0] == "_" and arg1[-1] == "_" and arg1[1:-1] in classnames:
         if not arg2 in cpp_to_python:
-            print "No type map for '%s'!" % cpp_type
+            output("No type map for '%s'!" % cpp_type)
             return cpp_type
         arg2 = cpp_to_python[arg2]
         return "Swig Object< std::pair<%s, %s> >" % (arg1, arg2)
@@ -182,7 +191,7 @@ def handle_std_vector(cpp_type, classnames):
     """Map std::vector to Python object (numpy.array)."""
 
     # Special case: vector of pairs
-    if "std::pair" in cpp_type:
+    if "std::pair" in cpp_type and not cpp_type.startswith("std::pair"):
         arg1, arg2 = cpp_type.split("<")[2].split(">")[0].split(",")
         pair = "std::pair<%s,%s>" % (arg1, arg2)
         if handle_std_pair(pair, classnames) is not None:
@@ -211,7 +220,7 @@ def map_cpp_type(cpp_type, classnames):
         if pobject is not None:
             return pobject
         else:
-            print "No type map for '%s'!" % cpp_type
+            output("No type map for '%s'!" % cpp_type)
             return cpp_type
 
     # Special handling of std::pair
@@ -220,14 +229,14 @@ def map_cpp_type(cpp_type, classnames):
         if pobject is not None:
             return pobject
         else:
-            print "No type map for '%s'!" % cpp_type
+            output("No type map for '%s'!" % cpp_type)
             return cpp_type
 
     # dolfin::Array --> numpy.array (primitives only)
     elif "_Array_" in cpp_type:
         arg = cpp_type.split("<")[1].split(">")[0].strip()
         if not arg in cpp_to_python:
-            print "No type map for '%s'!" % arg
+            output("No type map for '%s'!" % arg)
             return "numpy.array(%s)" % arg
         return "numpy.array(%s)" % cpp_to_python[arg]
 
@@ -235,7 +244,7 @@ def map_cpp_type(cpp_type, classnames):
     elif "std::set" in cpp_type:
         arg = cpp_type.split("<")[1].split(">")[0].strip()
         if not arg in cpp_to_python:
-            print "No type map for '%s'!" % cpp_type
+            output("No type map for '%s'!" % cpp_type)
             return cpp_type
         return "set of %s" % cpp_to_python[arg]
 
@@ -249,10 +258,10 @@ def map_cpp_type(cpp_type, classnames):
         for arg in args:
             if arg in classnames:
                 return "_" + arg + "_"
-        print "No type map for '%s'!" % cpp_type
+        output("No type map for '%s'!" % cpp_type)
 
     else:
-        print "No type map for '%s'!" % cpp_type
+        output("No type map for '%s'!" % cpp_type)
 
     return cpp_type
 
@@ -394,37 +403,53 @@ def write_docstrings(output_file, module, header, docs, classnames):
                 func_doc = modify_doc(func_doc, classnames, classname, signature)
                 output_file.write(docstring % (func_name, func_doc))
 
-def generate_docstrings():
+def generate_docstrings(top_destdir):
     """
     Generate docstring files for each module
     """
-    
+
     from codesnippets import copyright_statement
+
+    # Get top DOLFIN directory.
+    script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
+    script_rel_path = script_rel_path or "."
+    dolfin_dir = os.path.abspath(os.path.join(script_rel_path, os.pardir, os.pardir))
+
+    top_destdir = top_destdir or dolfin_dir
+
+    abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)
+
+    if not os.path.isdir(abs_destdir):
+        raise RuntimeError("%s is not a directory." % abs_destdir)
 
     # Set copyright form
     copyright_form_swig = dict(comment = r"//", holder="Kristian B. Oelgaard")
-    
-    # Get top DOLFIN directory.
-    dolfin_dir = os.path.abspath(".")
 
     # Extract documentation
     documentation, classnames = extract_doc_representation(dolfin_dir)
-    
-    print "Generating docstrings from intermediate representation module..."
+
+    output("Generating docstrings from intermediate representation module...")
     for module in documentation:
-        if not os.path.isdir(os.path.join(dolfin_dir, "dolfin", "swig", module)):
-            os.mkdir(os.path.join(dolfin_dir, "dolfin", "swig", module))
-        output_file = open(os.path.join(dolfin_dir, "dolfin", "swig", \
+        if not os.path.isdir(os.path.join(abs_destdir, "dolfin", "swig", module)):
+            os.mkdir(os.path.join(abs_destdir, "dolfin", "swig", module))
+        output_file = open(os.path.join(abs_destdir, "dolfin", "swig", \
                                         module, "docstrings.i"), "w")
         output_file.write(copyright_statement%(copyright_form_swig))
         output_file.write("// Autogenerated docstrings file, extracted from the DOLFIN source C++ files.\n\n")
 
-        print " "*2 + module
+        output(" "*2 + module)
         for header, docs in documentation[module]:
-            print " "*4 + header
+            output(" "*4 + header)
             write_docstrings(output_file, module, header, docs, classnames)
 
         output_file.close()
 
 if __name__ == "__main__":
-    generate_docstrings()
+
+    if len(sys.argv) not in [1,2,3]:
+        raise RuntimeError("expected 0, 1 or 2 arguments")
+
+    dest_dir = sys.argv[1] if len(sys.argv) > 2 else ""
+    debug_output = len(sys.argv) > 2 and sys.argv[2] == "DEBUG"
+
+    generate_docstrings(dest_dir)

@@ -20,7 +20,7 @@
 // First added:  2010-09-16
 // Last changed: 2011-03-23
 
-#include <armadillo>
+#include <Eigen/Dense>
 #include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/NoDeleter.h>
@@ -214,7 +214,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
-  Vector x(indicators.mesh().num_cells());
+  Vector x(indicators.mesh()->mpi_comm(), indicators.mesh()->num_cells());
   assemble(x, *_eta_T);
 
   // Take absolute value of indicators
@@ -224,7 +224,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   dolfin_assert(_eta_T->function_space(0));
   dolfin_assert(_eta_T->function_space(0)->dofmap());
   const GenericDofMap& dofmap(*_eta_T->function_space(0)->dofmap());
-  const Mesh& mesh(indicators.mesh());
+  const Mesh& mesh= *indicators.mesh();
 
   // Convert DG_0 vector to mesh function over cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -288,9 +288,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   // Define matrices for cell-residual problems
   dolfin_assert(V.element());
   const std::size_t N = V.element()->space_dimension();
-  arma::mat A(N, N);
-  arma::mat b(N, 1);
-  arma::vec x(N);
+  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::VectorXd x(N);
 
   // Extract cell_domains etc from right-hand side form
   const MeshFunction<std::size_t>*
@@ -301,23 +300,30 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     interior_facet_domains = _L_R_T->interior_facet_domains().get();
 
   // Assemble and solve local linear systems
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Get cell vertices
+    cell->get_vertex_coordinates(vertex_coordinates);
+
     // Assemble local linear system
-    LocalAssembler::assemble(A, ufc_lhs, *cell, cell_domains,
+    LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+                             ufc_cell, *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
-    LocalAssembler::assemble(b, ufc_rhs, *cell, cell_domains,
+    LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates, ufc_cell,
+                             *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
 
     // Solve linear system and convert result
-    x = arma::solve(A, b);
+    x = A.partialPivLu().solve(b);
 
     // Get local-to-global dof map for cell
     const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     dolfin_assert(R_T.vector());
-    R_T.vector()->set(x.memptr(), N, &dofs[0]);
+    R_T.vector()->set(x.data(), N, &dofs[0]);
   }
   end();
 }
@@ -365,9 +371,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for facet-residual problems
-  arma::mat A(N, N);
-  arma::mat b(N, 1);
-  arma::vec x(N);
+  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::VectorXd x(N);
 
   // Variables to be used for the construction of the cone function
   const std::size_t num_cells = mesh.num_cells();
@@ -392,13 +397,15 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     dolfin_assert(_cell_cone->vector());
     *(_cell_cone->vector()) = 0.0;
     facet_dofs.clear();
-    const std::size_t local_facet_dof = local_cone_dim - (dim + 1) + local_facet;
+    const std::size_t local_facet_dof = local_cone_dim - (dim + 1)
+      + local_facet;
     dolfin_assert(_cell_cone->function_space());
     dolfin_assert(_cell_cone->function_space()->dofmap());
     const GenericDofMap& cone_dofmap(*(_cell_cone->function_space()->dofmap()));
     for (std::size_t k = 0; k < num_cells; k++)
       facet_dofs.push_back(cone_dofmap.cell_dofs(k)[local_facet_dof]);
     _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
+    _cell_cone->vector()->apply("insert");
 
     // Attach cell cone to _a_R_dT and _L_R_dT
     _a_R_dT->set_coefficient(0, _cell_cone);
@@ -409,12 +416,19 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     UFC ufc_rhs(*_L_R_dT);
 
     // Assemble and solve local linear systems
+    ufc::cell ufc_cell;
+    std::vector<double> vertex_coordinates;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
+      // Get cell vertex_coordinates
+      cell->get_vertex_coordinates(vertex_coordinates);
+
       // Assemble linear system
-      LocalAssembler::assemble(A, ufc_lhs, *cell, cell_domains,
+      LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+                               ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
-      LocalAssembler::assemble(b, ufc_rhs, *cell, cell_domains,
+      LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates,
+                               ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
 
       // Non-singularize local matrix
@@ -428,14 +442,15 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       }
 
       // Solve linear system and convert result
-      x = arma::solve(A, b);
+      x = A.partialPivLu().solve(b);
 
       // Get local-to-global dof map for cell
-      const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+      const std::vector<dolfin::la_index>& dofs
+        = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       dolfin_assert(R_dT[local_facet].vector());
-      R_dT[local_facet].vector()->set(x.memptr(), N, &dofs[0]);
+      R_dT[local_facet].vector()->set(x.data(), N, &dofs[0]);
     }
   }
   end();

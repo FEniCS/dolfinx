@@ -51,12 +51,12 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Resize tensor with given dimensions
-    virtual void resize(std::size_t rank, const std::size_t* dims)
-    { dolfin_assert(rank == 1); resize(dims[0]); }
+    virtual void resize(MPI_Comm comm, std::size_t rank, const std::size_t* dims)
+    { dolfin_assert(rank == 1); resize(comm, dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout)
-    { resize(tensor_layout.local_range(0)); zero(); }
+    { resize(tensor_layout.mpi_comm(), tensor_layout.local_range(0)); zero(); }
 
     /// Return tensor rank (number of dimensions)
     virtual std::size_t rank() const
@@ -67,7 +67,8 @@ namespace dolfin
     { dolfin_assert(dim == 0); return size(); }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
+    virtual std::pair<std::size_t, std::size_t>
+      local_range(std::size_t dim) const
     { dolfin_assert(dim == 0); return local_range(); }
 
     /// Get block of values
@@ -86,11 +87,14 @@ namespace dolfin
     { add(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    virtual void add(const double* block, const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    virtual void
+      add(const double* block,
+          const std::vector<const std::vector<dolfin::la_index>* >& rows)
     { add(block, rows[0]->size(), &(*rows[0])[0]); }
 
     /// Add block of values
-    virtual void add(const double* block, const std::vector<std::vector<dolfin::la_index> >& rows)
+    virtual void add(const double* block,
+                     const std::vector<std::vector<dolfin::la_index> >& rows)
     { add(block, rows[0].size(), &(rows[0])[0]); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -108,14 +112,14 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const = 0;
 
     /// Resize vector to global size N
-    virtual void resize(std::size_t N) = 0;
+    virtual void resize(MPI_Comm comm, std::size_t N) = 0;
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range) = 0;
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range) = 0;
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<std::size_t>& ghost_indices) = 0;
+    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+                        const std::vector<la_index>& ghost_indices) = 0;
 
     /// Return true if empty
     virtual bool empty() const = 0;
@@ -133,20 +137,24 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const = 0;
 
     /// Get block of values (values may live on any process)
-    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows) const
+    virtual void get(double* block, std::size_t m,
+                     const dolfin::la_index* rows) const
     {
       warning("GenericVector::get is redirected to GenericVector::get_local. Use GenericVector::gather for get off-process entries. GenericVector::get will be removed.");
       get_local(block, m, rows);
     }
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, std::size_t m, const dolfin::la_index* rows) const = 0;
+    virtual void get_local(double* block, std::size_t m,
+                           const dolfin::la_index* rows) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows) = 0;
+    virtual void set(const double* block, std::size_t m,
+                     const dolfin::la_index* rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows) = 0;
+    virtual void add(const double* block, std::size_t m,
+                     const dolfin::la_index* rows) = 0;
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const = 0;
@@ -158,10 +166,12 @@ namespace dolfin
     virtual void add_local(const Array<double>& values) = 0;
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const = 0;
+    virtual void gather(GenericVector& x,
+                        const std::vector<dolfin::la_index>& indices) const = 0;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const = 0;
+    virtual void gather(std::vector<double>& x,
+                        const std::vector<dolfin::la_index>& indices) const = 0;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const = 0;
@@ -187,7 +197,8 @@ namespace dolfin
     /// Return sum of vector
     virtual double sum() const = 0;
 
-    /// Return sum of selected rows in vector. Repeated entries are only summed once.
+    /// Return sum of selected rows in vector. Repeated entries are
+    /// only summed once.
     virtual double sum(const Array<std::size_t>& rows) const = 0;
 
     /// Multiply vector by given number
@@ -236,12 +247,7 @@ namespace dolfin
     }
 
     /// Update ghost values
-    virtual void update_ghost_values()
-    {
-      dolfin_error("GenericVector.h",
-                   "update ghost values",
-                   "Not implemented by current linear algebra backend");
-    }
+    virtual void update_ghost_values() {}
 
     //--- Convenience functions ---
 
@@ -253,8 +259,8 @@ namespace dolfin
     virtual double getitem(dolfin::la_index i) const
     { double value(0); get_local(&value, 1, &i); return value; }
 
-    /// Set given entry to value. apply("insert") should be called before using
-    /// using the object.
+    /// Set given entry to value. apply("insert") should be called
+    /// before using using the object.
     virtual void setitem(dolfin::la_index i, double value)
     { set(&value, 1, &i); }
 

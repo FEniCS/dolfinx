@@ -37,7 +37,8 @@ namespace dolfin
   class GenericVector;
 
   /// Solve linear system Ax = b
-  std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b,
+  std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                    const GenericVector& b,
                     std::string method = "lu",
                     std::string preconditioner = "none");
 
@@ -53,7 +54,8 @@ namespace dolfin
   /// List available Krylov methods for current linear algebra backend
   void list_krylov_solver_methods();
 
-  /// List available preconditioners for current linear algebra backend
+  /// List available preconditioners for current linear algebra
+  /// backend
   void list_krylov_solver_preconditioners();
 
   // Return true if a specific linear algebra backend is supported
@@ -63,34 +65,40 @@ namespace dolfin
   /// available
   bool has_lu_solver_method(std::string method);
 
-  /// Return true if Krylov method for the current linear algebra backend is
-  /// available
+  /// Return true if Krylov method for the current linear algebra
+  /// backend is available
   bool has_krylov_solver_method(std::string method);
 
-  /// Return true if Preconditioner for the current linear algebra backend is
-  /// available
+  /// Return true if Preconditioner for the current linear algebra
+  /// backend is available
   bool has_krylov_solver_preconditioner(std::string preconditioner);
 
   /// Return available linear algebra backends
   std::vector<std::pair<std::string, std::string> > linear_algebra_backends();
 
-  /// Return a list of available solver methods for current linear algebra backend
+  /// Return a list of available solver methods for current linear
+  /// algebra backend
   std::vector<std::pair<std::string, std::string> > linear_solver_methods();
 
-  /// Return a list of available LU methods for current linear algebra backend
+  /// Return a list of available LU methods for current linear algebra
+  /// backend
   std::vector<std::pair<std::string, std::string> > lu_solver_methods();
 
-  /// Return a list of available Krylov methods for current linear algebra backend
+  /// Return a list of available Krylov methods for current linear
+  /// algebra backend
   std::vector<std::pair<std::string, std::string> > krylov_solver_methods();
 
-  /// Return a list of available preconditioners for current linear algebra backend
-  std::vector<std::pair<std::string, std::string> > krylov_solver_preconditioners();
+  /// Return a list of available preconditioners for current linear
+  /// algebra backend
+  std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners();
 
   /// Compute residual ||Ax - b||
   double residual(const GenericLinearOperator& A, const GenericVector& x,
                   const GenericVector& b);
 
-  /// Compute norm of vector. Valid norm types are "l2", "l1" and "linf".
+  /// Compute norm of vector. Valid norm types are "l2", "l1" and
+  /// "linf".
   double norm(const GenericVector& x, std::string norm_type="l2");
 
   /// Normalize vector according to given normalization type

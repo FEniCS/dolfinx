@@ -48,11 +48,8 @@ namespace dolfin
     /// Create empty matrix
     boost::shared_ptr<GenericMatrix> create_matrix() const;
 
-    /// Create empty vector (global)
+    /// Create empty vector
     boost::shared_ptr<GenericVector> create_vector() const;
-
-    /// Create empty vector (local)
-    boost::shared_ptr<GenericVector> create_local_vector() const;
 
     /// Create empty tensor layout
     boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;

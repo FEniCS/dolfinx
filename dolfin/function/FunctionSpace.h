@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2008-09-11
-// Last changed: 2012-11-02
+// Last changed: 2013-09-19
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -34,19 +34,17 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/mesh/Cell.h>
 
 namespace dolfin
 {
 
-  class Mesh;
-  class Cell;
-  class GenericDofMap;
   class Function;
+  class GenericDofMap;
   class GenericFunction;
   class GenericVector;
-  template <typename T> class MeshFunction;
+  class Mesh;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -271,7 +269,8 @@ namespace dolfin
     std::vector<std::size_t> _component;
 
     // Cache of sub spaces
-    mutable std::map<std::vector<std::size_t>, boost::shared_ptr<FunctionSpace> > subspaces;
+    mutable std::map<std::vector<std::size_t>,
+      boost::shared_ptr<FunctionSpace> > subspaces;
 
   };
 

@@ -20,7 +20,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-02-20
+// Last changed: 2013-08-26
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -88,7 +88,7 @@ namespace dolfin
     std::size_t orientation(const Cell& cell, const Point& up) const;
 
     /// Create entities e of given topological dimension from vertices v
-    virtual void create_entities(std::vector<std::vector<std::size_t> >& e,
+    virtual void create_entities(std::vector<std::vector<unsigned int> >& e,
                                  std::size_t dim, const unsigned int* v) const = 0;
 
     /// Refine cell uniformly
@@ -106,6 +106,9 @@ namespace dolfin
 
     /// Compute dim*inradius/circumradius for given cell
     virtual double radius_ratio(const Cell& cell) const;
+
+    /// Compute squared distance to given point
+    virtual double squared_distance(const Cell& cell, const Point& point) const = 0;
 
     /// Compute component i of normal of given facet with respect to the cell
     virtual double normal(const Cell& cell, std::size_t facet, std::size_t i) const = 0;
@@ -129,6 +132,12 @@ namespace dolfin
     /// Check if entities are ordered
     bool ordered(const Cell& cell,
                  const std::vector<std::size_t>& local_to_global_vertex_indices) const;
+
+    /// Check whether given point collides with cell
+    virtual bool collides(const Cell& cell, const Point& point) const = 0;
+
+    /// Check whether given entity collides with cell
+    virtual bool collides(const Cell& cell, const MeshEntity& entity) const = 0;
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;

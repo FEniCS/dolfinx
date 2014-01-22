@@ -25,6 +25,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -32,23 +33,44 @@ namespace dolfin
   // Forward declarations
   class LocalMeshData;
 
+  class ParMETISDualGraph;
+
   /// This class proivdes an interface to ParMETIS
 
   class ParMETIS
   {
   public:
 
-    /// Compute cell partition using ParMETIS -
-    /// choose method based on parameter "partitioning_algorithm" which can be PARTITION or REPARTITION
-    static void compute_partition(std::vector<std::size_t>& cell_partition,
-                                  const LocalMeshData& mesh_data);
+    /// Compute cell partition using ParMETIS. The mode argument
+    /// determines which ParMETIS function is called. It can be one of
+    /// "partition", "adaptive_repartition" or "refine". For meshes
+    /// that have already been partitioned or are already well
+    /// partitioned, it can be advantageous to use
+    /// "adaptive_repartition" or "refine".
+    static void compute_partition(const MPI_Comm mpi_comm,
+                                  std::vector<std::size_t>& cell_partition,
+                                  const LocalMeshData& mesh_data,
+                                  std::string mode="partition");
+
   private:
-    // Recompute cell partition based on existing division
-    static void repartition(std::vector<std::size_t>& cell_partition,
-                                    const LocalMeshData& mesh_data);
-    // Compute cell partition ab initio
-    static void partition(std::vector<std::size_t>& cell_partition,
-                                    const LocalMeshData& mesh_data);
+
+#ifdef HAS_PARMETIS
+    // Standard ParMETIS partition
+    static void partition(MPI_Comm mpi_comm,
+                          std::vector<std::size_t>& cell_partition,
+                          ParMETISDualGraph& g);
+
+    // ParMETIS adaptive repartition
+    static void adaptive_repartition(MPI_Comm mpi_comm,
+                                     std::vector<std::size_t>& cell_partition,
+                                     ParMETISDualGraph& g);
+
+    // ParMETIS refine repartition
+    static void refine(MPI_Comm mpi_comm,
+                       std::vector<std::size_t>& cell_partition,
+                       ParMETISDualGraph& g);
+#endif
+
 
   };
 

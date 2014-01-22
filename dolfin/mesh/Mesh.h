@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2012 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -17,7 +17,7 @@
 //
 // Modified by Johan Hoffman 2007
 // Modified by Magnus Vikstrøm 2007
-// Modified by Garth N. Wells 2007-2011
+// Modified by Garth N. Wells 2007-2013
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
@@ -26,39 +26,37 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-03-06
+// Last changed: 2013-06-27
 
 #ifndef __MESH_H
 #define __MESH_H
 
 #include <string>
 #include <utility>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/Hierarchical.h>
-#include <dolfin/intersection/IntersectionOperator.h>
-#include <dolfin/log/log.h>
 #include <dolfin/ale/MeshDisplacement.h>
+#include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
 #include "MeshData.h"
+#include "MeshDomains.h"
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
-#include "MeshDomains.h"
-#include "SubDomain.h"
 
 namespace dolfin
 {
-  class CellType;
   class BoundaryMesh;
-  class GenericFunction;
+  class CellType;
+  class CSGGeometry;
   class Expression;
+  class GenericFunction;
   class LocalMeshData;
   class MeshEntity;
-  template <typename T> class MeshFunction;
+  class Point;
   class SubDomain;
-  class CSGGeometry;
+  class BoundingBoxTree;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -101,6 +99,9 @@ namespace dolfin
     /// Create empty mesh
     Mesh();
 
+    /// Create empty mesh
+    Mesh(MPI_Comm comm);
+
     /// Copy constructor.
     ///
     /// *Arguments*
@@ -115,12 +116,23 @@ namespace dolfin
     ///         Name of file to load.
     explicit Mesh(std::string filename);
 
+    /// Create mesh from data file.
+    ///
+    /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         The MPI communicator
+    ///     filename (std::string)
+    ///         Name of file to load.
+    Mesh(MPI_Comm comm, std::string filename);
+
     /// Create a distributed mesh from local (per process) data.
     ///
     /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         MPI communicator for the mesh.
     ///     local_mesh_data (_LocalMeshData_)
     ///         Data from which to build the mesh.
-    explicit Mesh(LocalMeshData& local_mesh_data);
+    Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
@@ -138,7 +150,8 @@ namespace dolfin
     ///         The CSG geometry
     ///     resolution (std::size_t)
     ///         An integer specifying the mesh resolution
-    Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
+    Mesh(boost::shared_ptr<const CSGGeometry> geometry,
+         std::size_t resolution);
 
     /// Destructor.
     ~Mesh();
@@ -160,7 +173,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_vertices() const { return _topology.size(0); }
+    std::size_t num_vertices() const
+    { return _topology.size(0); }
 
     /// Get number of edges in mesh.
     ///
@@ -172,7 +186,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_edges() const { return _topology.size(1); }
+    std::size_t num_edges() const
+    { return _topology.size(1); }
 
     /// Get number of faces in mesh.
     ///
@@ -184,7 +199,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_faces() const { return _topology.size(2); }
+    std::size_t num_faces() const
+    { return _topology.size(2); }
 
     /// Get number of facets in mesh.
     ///
@@ -196,7 +212,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_facets() const { return _topology.size(_topology.dim() - 1); }
+    std::size_t num_facets() const
+    { return _topology.size(_topology.dim() - 1); }
 
     /// Get number of cells in mesh.
     ///
@@ -208,7 +225,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_cells() const { return _topology.size(_topology.dim()); }
+    std::size_t num_cells() const
+    { return _topology.size(_topology.dim()); }
 
     /// Get number of entities of given topological dimension.
     ///
@@ -224,7 +242,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_entities(std::size_t d) const { return _topology.size(d); }
+    std::size_t num_entities(std::size_t d) const
+    { return _topology.size(d); }
 
     /// Get vertex coordinates.
     ///
@@ -236,10 +255,12 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::vector<double>& coordinates() { return _geometry.x(); }
+    std::vector<double>& coordinates()
+    { return _geometry.x(); }
 
     /// Return coordinates of all vertices (const version).
-    const std::vector<double>& coordinates() const { return _geometry.x(); }
+    const std::vector<double>& coordinates() const
+    { return _geometry.x(); }
 
     /// Get cell connectivity.
     ///
@@ -324,15 +345,14 @@ namespace dolfin
     const MeshDomains& domains() const
     { return _domains; }
 
-    /// Get intersection operator.
-    ///
-    /// *Returns*
-    ///     _IntersectionOperator_
-    ///         The intersection operator object associated with the mesh.
-    IntersectionOperator& intersection_operator();
-
-    /// Return intersection operator (const version);
-    const IntersectionOperator& intersection_operator() const;
+    /// Get bounding box tree for mesh. The bounding box tree is
+    /// initialized and built upon the first call to this
+    /// function. The bounding box tree can be used to compute
+    /// collisions between the mesh and other objects. It is the
+    /// responsibility of the caller to use (and possibly rebuild) the
+    /// tree. It is stored as a (mutable) member of the mesh to enable
+    /// sharing of the bounding box tree data structure.
+    boost::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
 
     /// Get mesh data.
     ///
@@ -349,10 +369,12 @@ namespace dolfin
     /// *Returns*
     ///     _CellType_
     ///         The cell type object associated with the mesh.
-    CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
+    CellType& type()
+    { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Get mesh cell type (const version).
-    const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
+    const CellType& type() const
+    { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension.
     ///
@@ -408,26 +430,33 @@ namespace dolfin
     /// cell-vertex connectivity exists as part of the mesh.
     Mesh renumber_by_color() const;
 
+    /// Translate mesh according to a given vector.
+    ///
+    /// *Arguments*
+    ///     point (Point)
+    ///         The vector defining the translation.
+    void translate(const Point& point);
+
     /// Rotate mesh around a coordinate axis through center of mass
     /// of all mesh vertices
     ///
     /// *Arguments*
     ///     angle (double)
-    ///         The number of degrees (0-360) of rotation
+    ///         The number of degrees (0-360) of rotation.
     ///     axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh
+    ///         The coordinate axis around which to rotate the mesh.
     void rotate(double angle, std::size_t axis=2);
 
     /// Rotate mesh around a coordinate axis through a given point
     ///
     /// *Arguments*
     ///     angle (double)
-    ///         The number of degrees (0-360) of rotation
+    ///         The number of degrees (0-360) of rotation.
     ///     axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh
+    ///         The coordinate axis around which to rotate the mesh.
     ///     point (_Point_)
-    ///         The point around which to rotate the mesh
-    void rotate(double angle, std::size_t axis, const Point& p);
+    ///         The point around which to rotate the mesh.
+    void rotate(double angle, std::size_t axis, const Point& point);
 
     /// Move coordinates of mesh according to new boundary coordinates.
     ///
@@ -437,11 +466,12 @@ namespace dolfin
     ///
     /// *Returns*
     ///     MeshDisplacement
-    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass
+    ///         MeshDisplacement.
     boost::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
 
-    /// Move coordinates of mesh according to adjacent mesh with common global
-    /// vertices.
+    /// Move coordinates of mesh according to adjacent mesh with
+    /// common global vertices.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -449,7 +479,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     MeshDisplacement
-    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass
+    ///         MeshDisplacement.
     boost::shared_ptr<MeshDisplacement> move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
@@ -477,7 +508,8 @@ namespace dolfin
     ///     harmonic_smoothing (bool)
     ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
-    void smooth_boundary(std::size_t num_iterations=1, bool harmonic_smoothing=true);
+    void smooth_boundary(std::size_t num_iterations=1,
+                         bool harmonic_smoothing=true);
 
     /// Snap boundary vertices of mesh to match given sub domain.
     ///
@@ -488,7 +520,8 @@ namespace dolfin
     ///     harmonic_smoothing (bool)
     ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
-    void snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing=true);
+    void snap_boundary(const SubDomain& sub_domain,
+                       bool harmonic_smoothing=true);
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
@@ -502,7 +535,7 @@ namespace dolfin
     ///         "facet".
     ///
     /// *Returns*
-    ///     MeshFunction<std::size_t>
+    ///     std::vector<std::size_t>
     ///         The colors as a mesh function over the cells of the mesh.
     const std::vector<std::size_t>& color(std::string coloring_type) const;
 
@@ -517,132 +550,10 @@ namespace dolfin
     ///         specifying what relation makes two mesh entinties neighbors.
     ///
     /// *Returns*
-    ///     MeshFunction<std::size_t>
+    ///     std::vector<std::size_t>
     ///         The colors as a mesh function over entities of the mesh.
-    const std::vector<std::size_t>& color(std::vector<std::size_t> coloring_type) const;
-
-    /// Compute all cells which are intersected by the given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    ///     cells (std::set<std::size_t>)
-    ///         A set of indices of all intersected cells.
-    void intersected_cells(const Point& point,
-                           std::set<std::size_t>& cells) const;
-
-    /// Compute all cells which are intersected by any of a vector of points.
-    ///
-    /// *Arguments*
-    ///     points (std::vector<_Point_>)
-    ///         A vector of _Point_ objects.
-    ///
-    ///     cells (std::set<std::size_t>)
-    ///         A set of indices of all intersected cells.
-    void intersected_cells(const std::vector<Point>& points,
-                           std::set<std::size_t>& cells) const;
-
-    /// Compute all cells which are intersected by the given entity.
-    ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
-    ///         A _MeshEntity_ object.
-    ///
-    ///     cells (std::vector<std::size_t>)
-    ///         A vector of indices of all intersected cells.
-    void intersected_cells(const MeshEntity& entity,
-                           std::vector<std::size_t>& cells) const;
-
-    /// Compute all cells which are intersected by any of a vector of entities.
-    ///
-    /// *Arguments*
-    ///     entities (std::vector<_MeshEntity_>)
-    ///         A vector of _MeshEntity_ objects.
-    ///
-    ///     cells (std::set<std::size_t>)
-    ///         A vector of indices of all intersected cells.
-    void intersected_cells(const std::vector<MeshEntity>& entities,
-                           std::set<std::size_t>& cells) const;
-
-    /// Compute all cells which are intersected by the given mesh.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         A _Mesh_ object.
-    ///
-    ///     cells (std::set<std::size_t>)
-    ///         A set of indices of all intersected cells.
-    void intersected_cells(const Mesh& mesh,
-                           std::set<std::size_t>& cells) const;
-
-    /// Find the cell (if any) containing the given point. If the point
-    /// is contained in several cells, the first cell is returned.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     int
-    ///         The index of the cell containing the point. If no cell
-    ///         is found, the return value is -1.
-    int intersected_cell(const Point& point) const;
-
-    /// Find the point in the mesh closest to the given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     _Point_
-    ///         The closest point.
-    Point closest_point(const Point& point) const;
-
-    /// Find the cell in the mesh closest to the given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     std::size_t
-    ///         The index of the closest cell.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         UnitSquare mesh(1, 1);
-    ///         Point point(0.0, 2.0);
-    ///         info("%d", mesh.closest_cell(point));
-    ///
-    ///     output::
-    ///
-    ///         1
-    std::size_t closest_cell(const Point& point) const;
-
-    /// Find the point and corresponding cell closest to the given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     std::pair<_Point_, std::size_t>
-    ///         A pair consisting of the closest point and corresponding cell index.
-    std::pair<Point, std::size_t> closest_point_and_cell(const Point& point) const;
-
-    /// Computes the distance between a given point and the mesh
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     double
-    ///         The distance to the mesh.
-    double distance(const Point& point) const;
+    const std::vector<std::size_t>&
+      color(std::vector<std::size_t> coloring_type) const;
 
     /// Compute minimum cell diameter.
     ///
@@ -696,36 +607,6 @@ namespace dolfin
     ///         No example code available for this function.
     double rmax() const;
 
-    /// Compute minimum normalized radius ratio of cells.
-    ///
-    /// *Returns*
-    ///     double
-    ///         The minimum over cells of normalized cell
-    ///         radius ratio (which is = cell_dimension *
-    ///         * inradius / circumradius; cell_dimension
-    ///         is normalization factor).
-    ///
-    /// *Example*
-    ///     .. note::
-    ///
-    ///         No example code available for this function.
-    double radius_ratio_min() const;
-
-    /// Compute maximum normalized radius ratio of cells.
-    ///
-    /// *Returns*
-    ///     double
-    ///         The maximum over cells of normalized cell
-    ///         radius ratio (which is = cell_dimension *
-    ///         * inradius / circumradius; cell_dimension
-    ///         is normalization factor).
-    ///
-    /// *Example*
-    ///     .. note::
-    ///
-    ///         No example code available for this function.
-    double radius_ratio_max() const;
-
     /// Compute hash of mesh, currently based on the has of the mesh
     /// geometry and mesh topology.
     ///
@@ -774,6 +655,9 @@ namespace dolfin
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
 
+    const MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
   private:
 
     // Friends
@@ -794,17 +678,22 @@ namespace dolfin
     // Auxiliary mesh data
     MeshData _data;
 
+    // Bounding box tree used to compute collisions between the mesh
+    // and other objects. The tree is initialized to a zero pointer
+    // and is allocated and built when bounding_box_tree() is called.
+    mutable boost::shared_ptr<BoundingBoxTree> _tree;
+
     // Cell type
     CellType* _cell_type;
-
-    // Intersection detector
-    IntersectionOperator _intersection_operator;
 
     // True if mesh has been ordered
     mutable bool _ordered;
 
     // Orientation of cells relative to a global direction
     std::vector<int> _cell_orientations;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 }

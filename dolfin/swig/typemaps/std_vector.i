@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2013-03-11
+// Last changed: 2013-10-28
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -147,7 +147,7 @@ SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
   {
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
   }
-  
+
   int size = PyList_Size($input);
   int res = 0;
   PyObject * py_item = 0;
@@ -159,7 +159,7 @@ SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
     newmem = 0;
     py_item = PyList_GetItem($input, i);
     res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-    if (!SWIG_IsOK(res)) 
+    if (!SWIG_IsOK(res))
     {
       SWIG_exception(SWIG_TypeError, "expected a list of shared_ptr<TYPE> (Bad conversion)");
     }
@@ -238,7 +238,7 @@ PyObject* list_item)
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY)  \
 const std::vector<TYPE>&  ARG_NAME
 {
-  $1 = PyArray_Check($input) ? 1 : 0;
+  $1 = PyArray_Check($input) ? PyArray_TYPE(reinterpret_cast<PyArrayObject*>($input)) == NUMPY_TYPE : 0;
 }
 
 // The typemap
@@ -252,7 +252,7 @@ const std::vector<TYPE>&  ARG_NAME
       SWIG_exception(SWIG_TypeError, "(2) numpy array of 'TYPE_NAME' expected. "\
 		     "Make sure that the numpy array use dtype=DESCR.");
     }
-    
+
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
     if ( PyArray_TYPE(xa) != NUMPY_TYPE )
     {
@@ -318,15 +318,18 @@ const std::vector<TYPE>&  ARG_NAME
 %enddef
 
 //-----------------------------------------------------------------------------
-// Macro for defining an in typemap for a std::vector of primitives passed by value
+// Macro for defining an in typemap for a std::vector of primitives passed by
+// value
 //
 // TYPE       : The primitive type
 // TYPE_UPPER : The SWIG specific name of the type used in the array type checks
 //              values SWIG use: INT32 for integer, DOUBLE for double aso.
-// ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
+// ARG_NAME   : The name of the argument that will be maped as an 'argout'
+//              argument
 // TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
 //              'dolfin::uint'
-// SEQ_LENGTH : An optional sequence length argument. If set to a negative number
+// SEQ_LENGTH : An optional sequence length argument. If set to a negative
+//              number
 //              will no length check be made
 //-----------------------------------------------------------------------------
 %define PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, \
@@ -348,7 +351,7 @@ const std::vector<TYPE>&  ARG_NAME
   {
     SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
   }
-  
+
   // Get sequence length
   Py_ssize_t pyseq_length = PySequence_Size($input);
   if (SEQ_LENGTH >= 0 && pyseq_length > SEQ_LENGTH)
@@ -391,24 +394,42 @@ const std::vector<TYPE>&  ARG_NAME
   $result = PyArray_SimpleNew(1, &adims, NUMPY_TYPE);
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
   std::copy($1.begin(), $1.end(), data);
+
+}
+
+%typemap(out) const std::vector<TYPE> &
+{
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, NUMPY_TYPE) const std::vector<TYPE> &
+  npy_intp adims = $1->size();
+
+  $result = PyArray_SimpleNew(1, &adims, NUMPY_TYPE);
+  TYPE* data = static_cast<TYPE*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
+  std::copy($1->begin(), $1->end(), data);
 }
 
 %enddef
 
 //-----------------------------------------------------------------------------
-// Macro for out typemaps of primitives of std::vector<TYPE> It returns a copied
-// NumPy array
+// Macro for out typemaps of primitives of std::vector<TYPE> It returns a
+// NumPy array vith a view. This is writable for const vectors and writable for
+// non-const ones.
 //
 // TYPE      : The primitive type
 // TYPE_NAME : The name of the pointer type, 'double' for 'double', 'uint' for
 //             'dolfin::uint'
 //-----------------------------------------------------------------------------
-%define READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_NAME)
+%define OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(TYPE, TYPE_NAME)
 
 %typemap(out, fragment=make_numpy_array_frag(1, TYPE_NAME)) const std::vector<TYPE>&
 {
-  // READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_NAME)
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(TYPE, TYPE_NAME) const version
   $result = %make_numpy_array(1, TYPE_NAME)($1->size(), &($1->operator[](0)), false);
+}
+
+%typemap(out, fragment=make_numpy_array_frag(1, TYPE_NAME)) std::vector<TYPE>&
+{
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(TYPE, TYPE_NAME)
+  $result = %make_numpy_array(1, TYPE_NAME)($1->size(), &($1->operator[](0)), true);
 }
 
 %enddef
@@ -431,7 +452,7 @@ const std::vector<TYPE>&  ARG_NAME
   {
     SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum");
   }
-  
+
   int size = PyList_Size($input);
   int res = 0;
   PyObject * py_item = 0;
@@ -473,7 +494,7 @@ const std::vector<TYPE>&  ARG_NAME
   $1 = PySequence_Check($input) ? 1 : 0;
 }
 
-%typemap (in, fragment=Py_convert_frag(TYPE_NAME)) const std::vector<std::vector<TYPE> >& ARG_NAME (std::vector<std::vector<TYPE> > tmp_vec, std::vector<TYPE> inner_vec, PyObject* inner_list, PyObject* item, TYPE value, dolfin::uint i, dolfin::uint j)
+%typemap (in, fragment=Py_convert_frag(TYPE_NAME)) const std::vector<std::vector<TYPE> >& ARG_NAME (std::vector<std::vector<TYPE> > tmp_vec, std::vector<TYPE> inner_vec, PyObject* inner_list, PyObject* item, TYPE value, std::size_t i, std::size_t j)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
   //                                    ARG_NAME, TYPE_NAME)
@@ -483,7 +504,7 @@ const std::vector<TYPE>&  ARG_NAME
   {
     SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
   }
-  
+
   // Get outer sequence length
   Py_ssize_t pyseq_length_0 = PySequence_Size($input);
 
@@ -547,8 +568,10 @@ const std::vector<TYPE>&  ARG_NAME
 // Run the different macros and instantiate the typemaps
 //-----------------------------------------------------------------------------
 // NOTE: SWIG BUG
-// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions
-// NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
+// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated
+//       versions
+// NOTE: of typdefs, which means we need to use unsigned int instead of
+//       dolfin::uint
 // NOTE: in typemaps
 TYPEMAPS_STD_VECTOR_OF_POINTERS(Function)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(DirichletBC)
@@ -574,19 +597,31 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE)
 //              'dolfin::uint'
 // DESCR      : The char descriptor of the NumPy type
 
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE, double, float_)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE, double,
+                                    float_)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, INT32, , NPY_INT, int, intc)
-//IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, , NPY_UINT, uint, uintc)
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, , NPY_UINT, uint, uintc)
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp, uintp)
+//IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, , NPY_UINT, uint,
+//                                    uintc)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, , NPY_UINT, uint,
+                                    uintc)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp,
+                                    uintp)
 
-// This typemap handles PETSc index typemap. Untested for 46-bit integers
+// This typemap handles PETSc index typemap. Untested for 64-bit integers
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
 
-PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, coloring_type, std_size_t, -1)
-PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, value_shape, std_size_t, -1)
-PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
-PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, dt_stage_offset, double, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32,
+                                               coloring_type, std_size_t, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, value_shape,
+                                               std_size_t, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double,
+                                               -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, dt_stage_offset,
+                                               double, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, ellipsoid_dims,
+                                               double, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, ellipse_dims,
+                                               double, -1)
 
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
@@ -594,15 +629,15 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, NPY_UINT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, NPY_UINTP)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT)
 
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, uint)
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, size_t)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(double, double)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(int, int)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(unsigned int, uint)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(std::size_t, size_t)
 
 // This typemap handles PETSc index typemap. Untested for 64-bit integers
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, dolfin_index)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(PetscInt, dolfin_index)
 
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)
-
-IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, facets, uint)
+IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, facets,
+                                                  std_size_t)

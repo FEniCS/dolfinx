@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -58,10 +59,16 @@ namespace dolfin
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
+    const MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
     bool base_one() const
     { return _base_one; }
 
   private:
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     // Row and column indices
     std::vector<std::size_t> _rows;

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-03-04
+// Last changed: 2013-05-09
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -29,8 +29,8 @@
 #include <utility>
 #include <boost/scoped_ptr.hpp>
 
-#include "dolfin/common/Variable.h"
-
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
 #include "GenericFile.h"
 
 namespace pugi
@@ -60,7 +60,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    XDMFFile(const std::string filename);
+    XDMFFile(MPI_Comm comm, const std::string filename);
 
     /// Destructor
     ~XDMFFile();
@@ -92,12 +92,15 @@ namespace dolfin
 
   private:
 
+    // MPI communicator
+    MPI_Comm _mpi_comm;
+
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
 
     // HDF5 filename
     std::string hdf5_filename;
-    
+
     // HDF5 file mode (r/w)
     std::string hdf5_filemode;
 
@@ -112,10 +115,14 @@ namespace dolfin
     // Write XML description for Function and MeshFunction output
     // updating time-series if need be
     void output_xml(const double time_step, const bool vertex_data,
-                    const std::size_t cell_dim, const std::size_t num_global_cells,
-                    const std::size_t gdim, const std::size_t num_total_vertices,
-                    const std::size_t value_rank, const std::size_t padded_value_size,
-                    const std::string name, const std::string dataset_name) const;
+                    const std::size_t cell_dim,
+                    const std::size_t num_global_cells,
+                    const std::size_t gdim,
+                    const std::size_t num_total_vertices,
+                    const std::size_t value_rank,
+                    const std::size_t padded_value_size,
+                    const std::string name,
+                    const std::string dataset_name) const;
 
     // Helper function to add topology reference to XDMF XML file
     void xml_mesh_topology(pugi::xml_node& xdmf_topology,

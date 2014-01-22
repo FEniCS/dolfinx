@@ -55,7 +55,10 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
 {
-  if (MPI::num_processes() > 1)
+  // Get mesh
+  const Mesh& mesh = a.mesh();
+
+  if (MPI::size(mesh.mpi_comm()) > 1)
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",
@@ -74,10 +77,12 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
   const MeshFunction<std::size_t>* cell_domains = a.cell_domains().get();
 
   // Get exterior facet domains
-  const MeshFunction<std::size_t>* exterior_facet_domains = a.exterior_facet_domains().get();
+  const MeshFunction<std::size_t>* exterior_facet_domains
+    = a.exterior_facet_domains().get();
 
   // Get interior facet domains
-  const MeshFunction<std::size_t>* interior_facet_domains = a.interior_facet_domains().get();
+  const MeshFunction<std::size_t>* interior_facet_domains
+    = a.interior_facet_domains().get();
 
   // Check form
   AssemblerBase::check(a);
@@ -86,7 +91,8 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
   UFC ufc(a);
 
   // Update off-process coefficients
-  const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> >
+    coefficients = a.coefficients();
   for (std::size_t i = 0; i < coefficients.size(); ++i)
     coefficients[i]->update();
 
@@ -99,8 +105,10 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
   if (a.ufc_form()->has_exterior_facet_integrals())
+  {
     assemble_cells_and_exterior_facets(A, a, ufc, cell_domains,
                                        exterior_facet_domains, 0);
+  }
   else
     assemble_cells(A, a, ufc, cell_domains, 0);
 
@@ -127,7 +135,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
+  // FIXME: Check that UFC copy constructor is dealing with copying
+  // pointers correctly
   // Dummy UFC object since each thread needs to created its own UFC object
   UFC ufc(_ufc);
 
@@ -164,9 +173,11 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   }
 
   // Get coloring data
-  const std::vector<std::vector<std::size_t> >& entities_of_color = mesh_coloring->second.second;
+  const std::vector<std::vector<std::size_t> >& entities_of_color
+    = mesh_coloring->second.second;
 
-  // If assembling a scalar we need to ensure each threads assemble its own scalar
+  // If assembling a scalar we need to ensure each threads assemble
+  // its own scalar
   std::vector<double> scalars(num_threads, 0.0);
 
   // Assemble over cells (loop over colours, then cells of same color)
@@ -180,8 +191,11 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
     // Number of cells of current color
     const int num_cells = colored_cells.size();
 
+    ufc::cell ufc_cell;
+    std::vector<double> vertex_coordinates;
+
     // OpenMP test loop over cells of the same color
-    #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs, integral)
+#pragma omp parallel for schedule(guided, 20) firstprivate(ufc, ufc_cell, vertex_coordinates, dofs, integral)
     for (int cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Cell index
@@ -199,17 +213,19 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
         continue;
 
       // Update to current cell
-      ufc.update(cell);
+      cell.get_cell_data(ufc_cell);
+      cell.get_vertex_coordinates(vertex_coordinates);
+      ufc.update(cell, vertex_coordinates, ufc_cell);
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
         dofs[i] = &(dofmaps[i]->cell_dofs(index));
 
       // Tabulate cell tensor
-      integral->tabulate_tensor(&ufc.A[0],
+      integral->tabulate_tensor(ufc.A.data(),
                                 ufc.w(),
-                                &ufc.cell.vertex_coordinates[0],
-                                ufc.cell.orientation);
+                                vertex_coordinates.data(),
+                                ufc_cell.orientation);
 
       // Add entries to global tensor
       if (values && form_rank == 0)
@@ -217,7 +233,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
       else if (form_rank == 0)
         scalars[omp_get_thread_num()] += ufc.A[0];
       else
-        A.add(&ufc.A[0], dofs);
+        A.add(ufc.A.data(), dofs);
     }
     p++;
   }
@@ -225,7 +241,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   // If we assemble a scalar we need to sum the contributions from each thread
   if (form_rank == 0)
   {
-    const double scalar_sum = std::accumulate(scalars.begin(), scalars.end(), 0.0);
+    const double scalar_sum = std::accumulate(scalars.begin(), scalars.end(),
+                                              0.0);
     A.add(&scalar_sum, dofs);
   }
 }
@@ -263,11 +280,13 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // Cell and facet integrals
   ufc::cell_integral* cell_integral = ufc.default_cell_integral.get();
-  ufc::exterior_facet_integral* facet_integral = ufc.default_exterior_facet_integral.get();
+  ufc::exterior_facet_integral* facet_integral
+    = ufc.default_exterior_facet_integral.get();
 
   // Check whether integrals are domain-dependent
   bool use_cell_domains = cell_domains && !cell_domains->empty();
-  bool use_exterior_facet_domains = exterior_facet_domains && !exterior_facet_domains->empty();
+  bool use_exterior_facet_domains
+    = exterior_facet_domains && !exterior_facet_domains->empty();
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -284,7 +303,9 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // Get coloring data
   std::map<const std::vector<std::size_t>,
-           std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<std::size_t>,
+                     std::vector<std::vector<std::size_t> > > >::const_iterator
+    mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
   if (mesh_coloring == mesh.topology().coloring.end())
   {
@@ -294,10 +315,16 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   }
 
   // Get coloring data
-  const std::vector<std::vector<std::size_t> >& entities_of_color = mesh_coloring->second.second;
+  const std::vector<std::vector<std::size_t> >& entities_of_color
+  = mesh_coloring->second.second;
 
-  // If assembling a scalar we need to ensure each threads assemble its own scalar
+  // If assembling a scalar we need to ensure each threads assemble
+  // its own scalar
   std::vector<double> scalars(num_threads, 0.0);
+
+  // UFC cell and vertex coordinates
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
 
   // Assemble over cells (loop over colors, then cells of same color)
   const std::size_t num_colors = entities_of_color.size();
@@ -311,7 +338,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerBase::progress_message(A.rank(), "cells"), num_colors);
-    #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs, cell_integral, facet_integral)
+#pragma omp parallel for schedule(guided, 20) firstprivate(ufc, ufc_cell, vertex_coordinates, dofs, cell_integral, facet_integral)
     for (int index = 0; index < num_cell_in_color; ++index)
     {
       // Cell index
@@ -325,7 +352,9 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         cell_integral = ufc.get_cell_integral((*cell_domains)[cell_index]);
 
       // Update to current cell
-      ufc.update(cell);
+      cell.get_cell_data(ufc_cell);
+      cell.get_vertex_coordinates(vertex_coordinates);
+      ufc.update(cell, vertex_coordinates, ufc_cell);
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
@@ -338,10 +367,12 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
       // Tabulate cell tensor if we have a cell_integral
       if (cell_integral)
-        cell_integral->tabulate_tensor(&ufc.A[0],
+      {
+        cell_integral->tabulate_tensor(ufc.A.data(),
                                        ufc.w(),
-                                       &ufc.cell.vertex_coordinates[0],
-                                       ufc.cell.orientation);
+                                       vertex_coordinates.data(),
+                                       ufc_cell.orientation);
+      }
       else
         std::fill(ufc.A.begin(), ufc.A.end(), 0.0);
 
@@ -373,12 +404,13 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         // FIXME: Do we really need an update version with the local
         //        facet index?
         // Update UFC object
-        ufc.update(cell, local_facet);
+        ufc_cell.local_facet = local_facet;
+        ufc.update(cell, vertex_coordinates, ufc_cell);
 
         // Tabulate tensor
-        facet_integral->tabulate_tensor(&ufc.A_facet[0],
+        facet_integral->tabulate_tensor(ufc.A_facet.data(),
                                         ufc.w(),
-                                        &ufc.cell.vertex_coordinates[0],
+                                        vertex_coordinates.data(),
                                         local_facet);
 
         // Add facet contribution
@@ -401,17 +433,24 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   // If we assemble a scalar we need to sum the contributions from each thread
   if (form_rank == 0)
   {
-    const double scalar_sum = std::accumulate(scalars.begin(), scalars.end(), 0.0);
+    const double scalar_sum = std::accumulate(scalars.begin(),
+                                              scalars.end(), 0.0);
     A.add(&scalar_sum, dofs);
   }
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
-                                         UFC& _ufc,
-                                         const MeshFunction<std::size_t>* domains,
-                                         std::vector<double>* values)
+                                               UFC& _ufc,
+                                       const MeshFunction<std::size_t>* domains,
+                                       std::vector<double>* values)
 {
   warning("OpenMpAssembler::assemble_interior_facets is untested.");
+
+  // Extract mesh
+  const Mesh& mesh = a.mesh();
+
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
 
   dolfin_assert(!values);
 
@@ -434,11 +473,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                  "Subdomains are not yet handled");
   }
 
-  // Extract mesh
-  const Mesh& mesh = a.mesh();
-
   // Color mesh
-  std::vector<std::size_t> coloring_type = a.coloring(mesh.topology().dim() - 1);
+  std::vector<std::size_t> coloring_type = a.coloring(D - 1);
   mesh.color(coloring_type);
 
   // Dummy UFC object since each thread needs to created its own UFC object
@@ -456,26 +492,32 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
 
   // Interior facet integral
-  const ufc::interior_facet_integral* integral = ufc.default_interior_facet_integral.get();
+  const ufc::interior_facet_integral* integral
+    = ufc.default_interior_facet_integral.get();
 
   // Compute facets and facet - cell connectivity if not already computed
-  mesh.init(mesh.topology().dim() - 1);
-  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
   dolfin_assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  boost::shared_ptr<MeshFunction<std::size_t> > facet_orientation = mesh.data().mesh_function("facet_orientation");
-  if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
+  const std::vector<std::size_t>* facet_orientation = NULL;
+  if (mesh.data().exists("facet_orientation", D - 1))
   {
-    dolfin_error("OpenMPAssembler.cpp",
-                 "perform multithreaded assembly using OpenMP assembler",
-                 "Expecting facet orientation to be defined on facets (not dimension %d)",
-                 facet_orientation->dim());
+    facet_orientation = &(mesh.data().array("facet_orientation", D - 1));
+    if (facet_orientation->size() != mesh.num_facets())
+    {
+      dolfin_error("OpenMPAssembler.cpp",
+                   "perform multithreaded assembly using OpenMP assembler",
+                   "Expecting facet orientation to be defined on facets)");
+    }
   }
 
   // Get coloring data
   std::map<const std::vector<std::size_t>,
-           std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<std::size_t>,
+                     std::vector<std::vector<std::size_t> > > >::const_iterator
+    mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
@@ -487,7 +529,12 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   }
 
   // Get coloring data
-  const std::vector<std::vector<std::size_t> >& entities_of_color = mesh_coloring->second.second;
+  const std::vector<std::vector<std::size_t> >& entities_of_color
+    = mesh_coloring->second.second;
+
+  // UFC cells and vertex coordinates
+  ufc::cell ufc_cell0, ufc_cell1;
+  std::vector<double> vertex_coordinates0, vertex_coordinates1;
 
   // Assemble over interior facets (loop over colours, then cells of same color)
   const std::size_t num_colors = entities_of_color.size();
@@ -500,8 +547,9 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     const int num_facets = colored_facets.size();
 
     // OpenMP test loop over cells of the same color
-    Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"), mesh.num_facets());
-    #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, macro_dofs, integral)
+    Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"),
+               mesh.num_facets());
+#pragma omp parallel for schedule(guided, 20) firstprivate(ufc, ufc_cell0, ufc_cell1, vertex_coordinates0, vertex_coordinates1, macro_dofs, integral)
     for (int facet_index = 0; facet_index < num_facets; ++facet_index)
     {
       // Facet index
@@ -526,7 +574,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
         continue;
 
       // Get cells incident with facet
-      std::pair<const Cell, const Cell> cells = facet.adjacent_cells(facet_orientation.get());
+      std::pair<const Cell, const Cell> cells
+        = facet.adjacent_cells(facet_orientation);
       const Cell& cell0 = cells.first;
       const Cell& cell1 = cells.second;
 
@@ -534,15 +583,24 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       const std::size_t local_facet0 = cell0.index(facet);
       const std::size_t local_facet1 = cell1.index(facet);
 
+      // Update UFC cell
+      cell0.get_vertex_coordinates(vertex_coordinates0);
+      cell0.get_cell_data(ufc_cell0, local_facet0);
+      cell1.get_vertex_coordinates(vertex_coordinates1);
+      cell1.get_cell_data(ufc_cell1, local_facet1);
+
       // Update to current pair of cells
-      ufc.update(cell0, local_facet0, cell1, local_facet1);
+      ufc.update(cell0, vertex_coordinates0, ufc_cell0,
+                 cell1, vertex_coordinates1, ufc_cell1);
 
       // Tabulate dofs for each dimension on macro element
       for (std::size_t i = 0; i < form_rank; i++)
       {
         // Get dofs for each cell
-        const std::vector<dolfin::la_index>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-        const std::vector<dolfin::la_index>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+        const std::vector<dolfin::la_index>& cell_dofs0
+          = dofmaps[i]->cell_dofs(cell0.index());
+        const std::vector<dolfin::la_index>& cell_dofs1
+          = dofmaps[i]->cell_dofs(cell1.index());
 
         // Create space in macro dof vector
         macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
@@ -554,15 +612,15 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       }
 
       // Tabulate exterior interior facet tensor on macro element
-      integral->tabulate_tensor(&ufc.macro_A[0],
+      integral->tabulate_tensor(ufc.macro_A.data(),
                                 ufc.macro_w(),
-                                &ufc.cell0.vertex_coordinates[0],
-                                &ufc.cell1.vertex_coordinates[0],
+                                vertex_coordinates0.data(),
+                                vertex_coordinates1.data(),
                                 local_facet0,
                                 local_facet1);
 
       // Add entries to global tensor
-      A.add(&ufc.macro_A[0], macro_dofs);
+      A.add(ufc.macro_A.data(), macro_dofs);
 
       p++;
     }

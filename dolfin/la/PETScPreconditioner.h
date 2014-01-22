@@ -26,9 +26,10 @@
 #ifdef HAS_PETSC
 
 #include <string>
-
-#include <petscpc.h>
+#include <vector>
 #include <boost/shared_ptr.hpp>
+#include <petscpc.h>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/la/PETScObject.h>
@@ -41,13 +42,15 @@ namespace dolfin
   // Forward declarations
   class PETScKrylovSolver;
   class PETScSNESSolver;
+  class VectorSpaceBasis;
 
+  /// This class is a wrapper for configuring PETSc
+  /// preconditioners. It does not own a preconditioner. It can take a
+  /// PETScKrylovSolver and set the preconditioner type and
+  /// parameters.
 
-  /// This class is a wrapper for configuring PETSc preconditioners. It does
-  /// not own a preconditioner. It can take a PETScKrylovSolver and set the
-  /// preconditioner type and parameters.
-
-  class PETScPreconditioner : public PETScObject, public GenericPreconditioner, public Variable
+  class PETScPreconditioner : public PETScObject,
+    public GenericPreconditioner, public Variable
   {
   public:
 
@@ -60,20 +63,26 @@ namespace dolfin
     /// Set the precondtioner type and parameters
     virtual void set(PETScKrylovSolver& solver);
 
-    /// Set the (approximate) null space of the preconditioner operator
+    /// Set the (near) null space of the preconditioner operator
     /// (matrix). This is required for certain preconditioner types,
     /// e.g. smoothed aggregation multigrid
-    void set_nullspace(const std::vector<const GenericVector*> nullspace);
+    void set_nullspace(const VectorSpaceBasis& near_nullspace);
 
     /// Return the PETSc null space
-    boost::shared_ptr<const MatNullSpace> nullspace() const
-    { return petsc_nullspace; }
+    const MatNullSpace near_nullspace() const
+    { return petsc_near_nullspace; }
 
-    /// Set the coordinates of the operator (matrix) rows and geometric
-    /// dimension d. This is can be used by required for certain
-    /// preconditioners, e.g. ML. The input for this function can be
-    /// generated using GenericDofMap::tabulate_all_dofs.
+    /// Set the coordinates of the operator (matrix) rows and
+    /// geometric dimension d. This is can be used by required for
+    /// certain preconditioners, e.g. ML. The input for this function
+    /// can be generated using GenericDofMap::tabulate_all_dofs.
     void set_coordinates(const std::vector<double>& x, std::size_t dim);
+
+    // FIXME: Document
+    void
+      set_fieldsplit(PETScKrylovSolver& solver,
+                     const std::vector<std::vector<dolfin::la_index> >& fields,
+                     const std::vector<std::string>& split_names);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -95,15 +104,14 @@ namespace dolfin
     static const std::map<std::string, const PCType> _methods;
 
     // Available preconditioner descriptions
-    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+    static const std::vector<std::pair<std::string, std::string> >
+      _methods_descr;
 
-    // Null space vectors
-    std::vector<PETScVector> _nullspace;
+    // Near null space vectors
+    std::vector<PETScVector> _near_nullspace;
 
-    // PETSc null space. Would like this to be a scoped_ptr, but it
-    // doesn't support custom deleters. Change to std::unique_ptr in
-    // the future.
-    boost::shared_ptr<MatNullSpace> petsc_nullspace;
+    // PETSc near null space.
+    MatNullSpace petsc_near_nullspace;
 
     // Operator row coordinates
     std::vector<double> _coordinates;

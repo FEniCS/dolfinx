@@ -19,7 +19,7 @@
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2010-01-19
+// Last changed: 2013-08-26
 
 #include <dolfin/log/log.h>
 #include "Cell.h"
@@ -75,7 +75,7 @@ std::size_t PointCell::orientation(const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+void PointCell::create_entities(std::vector<std::vector<unsigned int> >& e,
                                 std::size_t dim,
                                 const unsigned int* v) const
 {
@@ -105,6 +105,12 @@ double PointCell::diameter(const MeshEntity& triangle) const
   dolfin_error("PointCell.cpp",
                "find diameter of cell",
                "Diameter of a point cell is not defined");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+double PointCell::squared_distance(const Cell& cell, const Point& point) const
+{
+  dolfin_not_implemented();
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -148,6 +154,26 @@ void PointCell::order(Cell& cell,
   dolfin_error("PointCell.cpp",
                "order cell",
                "Ordering of a point cell is not defined");
+}
+//-----------------------------------------------------------------------------
+bool PointCell::collides(const Cell& cell, const Point& point) const
+{
+  dolfin_error("PointCell.cpp",
+               "check whether point collides with cell.",
+               "Not defined for point cells");
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_error("PointCell.cpp",
+               "check whether entity collides with cell.",
+               "Not defined for point cells");
+
+  dolfin_not_implemented();
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const

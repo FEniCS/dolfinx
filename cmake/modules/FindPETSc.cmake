@@ -8,6 +8,9 @@
 #  PETSC_ARCH         - architecture for which PETSc is built
 #  PETSC_CUSP_FOUND   - PETSc has Cusp support
 #  PETSC_VERSION      - version for PETSc
+#  PETSC_VERSION_MAJOR - First number in PETSC_VERSION
+#  PETSC_VERSION_MINOR - Second number in PETSC_VERSION
+#  PETSC_VERSION_SUBMINOR - Third number in PETSC_VERSION
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
@@ -57,6 +60,7 @@ endforeach()
 
 # List of possible locations for PETSC_DIR
 set(petsc_dir_locations "")
+list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.4.2")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.2")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")  # Debian location
@@ -154,9 +158,6 @@ show :
   # Call macro to get the PETSc 3rd-party libraries
   petsc_get_variable(PETSC_EXTERNAL_LIB_BASIC PETSC_EXTERNAL_LIB_BASIC)
 
-  # Remove temporary Makefile
-  file(REMOVE ${petsc_config_makefile})
-
   # Extract include paths and libraries from compile command line
   include(ResolveCompilerPaths)
   resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_INCLUDE}")
@@ -167,7 +168,7 @@ show :
   if (APPLE)
 
     # CMake will have troubel finding the gfortan libraries if compiling
-    # with clang (the libs may be required by 3rd party Fortran libraries) 
+    # with clang (the libs may be required by 3rd party Fortran libraries)
     find_program(GFORTRAN_EXECUTABLE gfortran)
     if (GFORTRAN_EXECUTABLE)
       execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.dylib
@@ -183,7 +184,14 @@ show :
     list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
     list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
 
+    # ResolveCompilerPaths strips OSX frameworks, so add BLAS here for OSX
+    petsc_get_variable(PETSC_BLASLAPACK_LIB BLASLAPACK_LIB)
+    list(APPEND PETSC_EXTERNAL_LIBRARIES ${PETSC_BLASLAPACK_LIB})
+
   endif()
+
+  # Remove temporary Makefile
+  file(REMOVE ${petsc_config_makefile})
 
   # Add variables to CMake cache and mark as advanced
   set(PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS} CACHE STRING "PETSc include paths." FORCE)
@@ -238,7 +246,12 @@ int main() {
 
   if (PETSC_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
     set(PETSC_VERSION ${OUTPUT} CACHE TYPE STRING)
+    string(REPLACE "." ";" PETSC_VERSION_LIST ${PETSC_VERSION})
+    list(GET PETSC_VERSION_LIST 0 PETSC_VERSION_MAJOR)
+    list(GET PETSC_VERSION_LIST 1 PETSC_VERSION_MINOR)
+    list(GET PETSC_VERSION_LIST 2 PETSC_VERSION_SUBMINOR)
     mark_as_advanced(PETSC_VERSION)
+    mark_as_advanced(PETSC_VERSION_MAJOR, PETSC_VERSION_MINOR, PETSC_VERSION_SUBMINOR)
   endif()
 
   if (PETSc_FIND_VERSION)

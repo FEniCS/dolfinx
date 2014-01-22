@@ -73,28 +73,33 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(GenericVector& x, const GenericVector& b, bool transpose);
+    std::size_t solve(GenericVector& x, const GenericVector& b,
+                      bool transpose);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+    std::size_t solve(const PETScMatrix& A, PETScVector& x,
+                      const PETScVector& b);
 
     /// Solve linear system A^Tx = b
     std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve_transpose(const GenericLinearOperator& A,
+                                GenericVector& x, const GenericVector& b);
 
     /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+    std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x,
+                                const PETScVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
     /// Return PETSc KSP pointer
-    boost::shared_ptr<KSP> ksp() const;
+    KSP ksp() const;
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -106,17 +111,29 @@ namespace dolfin
 
   private:
 
+    const MatSolverPackage _solver_package;
+
     // Available LU solvers
     static const std::map<std::string, const MatSolverPackage> _methods;
 
+    // Whether those solvers support Cholesky
+    static const std::map<const MatSolverPackage, const bool> _methods_cholesky;
+
     // Available LU solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+    static const std::vector<std::pair<std::string, std::string> >
+      _methods_descr;
 
     // Select LU solver type
     const MatSolverPackage select_solver(std::string& method) const;
 
+    // Does an LU solver support Cholesky?
+    bool solver_has_cholesky(const MatSolverPackage package) const;
+
     // Initialise solver
     void init_solver(std::string& method);
+
+    // Configure PETSc options
+    void configure_ksp(const MatSolverPackage solver_package);
 
     // Set PETSc operators
     void set_petsc_operators();
@@ -125,7 +142,7 @@ namespace dolfin
     void pre_report(const PETScMatrix& A) const;
 
     /// PETSc solver pointer
-    boost::shared_ptr<KSP> _ksp;
+    KSP _ksp;
 
     // Operator (the matrix)
     boost::shared_ptr<const PETScMatrix> _A;

@@ -29,15 +29,16 @@
 namespace dolfin
 {
 
-  /// MeshTopology stores the topology of a mesh, consisting of mesh entities
-  /// and connectivity (incidence relations for the mesh entities). Note that
-  /// the mesh entities don't need to be stored, only the number of entities
-  /// and the connectivity. Any numbering scheme for the mesh entities is
-  /// stored separately in a MeshFunction over the entities.
+  /// MeshTopology stores the topology of a mesh, consisting of mesh
+  /// entities and connectivity (incidence relations for the mesh
+  /// entities). Note that the mesh entities don't need to be stored,
+  /// only the number of entities and the connectivity. Any numbering
+  /// scheme for the mesh entities is stored separately in a
+  /// MeshFunction over the entities.
   ///
-  /// A mesh entity e may be identified globally as a pair e = (dim, i), where
-  /// dim is the topological dimension and i is the index of the entity within
-  /// that topological dimension.
+  /// A mesh entity e may be identified globally as a pair e = (dim,
+  /// i), where dim is the topological dimension and i is the index of
+  /// the entity within that topological dimension.
 
   class MeshTopology
   {
@@ -53,7 +54,7 @@ namespace dolfin
     ~MeshTopology();
 
     /// Assignment
-    const MeshTopology& operator= (const MeshTopology& topology);
+    MeshTopology& operator= (const MeshTopology& topology);
 
     /// Return topological dimension
     std::size_t dim() const;
@@ -73,42 +74,42 @@ namespace dolfin
     /// Initialize topology of given maximum dimension
     void init(std::size_t dim);
 
-    /// Set number of local entities (local_size) for given topological
-    /// dimension
-    void init(std::size_t dim, std::size_t local_size);
-
-    /// Set number of global entities (global_size) for given topological
-    /// dimension
-    void init_global(std::size_t dim, std::size_t global_size);
+    /// Set number of local entities (local_size) and global entities
+    /// (global_size) for given topological dimension dim
+    void init(std::size_t dim, std::size_t local_size, std::size_t global_size);
 
     /// Initialize storage for global entity numbering for entities of
     /// dimension dim
     void init_global_indices(std::size_t dim, std::size_t size);
 
-    /// Set global index for entity of dimension dim and with local index
-    void set_global_index(std::size_t dim, std::size_t local_index, std::size_t global_index)
+    /// Set global index for entity of dimension dim and with local
+    /// index
+    void set_global_index(std::size_t dim, std::size_t local_index,
+                          std::size_t global_index)
     {
       dolfin_assert(dim < _global_indices.size());
       dolfin_assert(local_index < _global_indices[dim].size());
       _global_indices[dim][local_index] = global_index;
     }
 
-    /// Get local-to-global index map for entities of topological dimension d
+    /// Get local-to-global index map for entities of topological
+    /// dimension d
     const std::vector<std::size_t>& global_indices(std::size_t d) const
     {
       dolfin_assert(d < _global_indices.size());
       return _global_indices[d];
     }
 
-    /// Check if global indices are available for entiries of dimension dim
+    /// Check if global indices are available for entiries of
+    /// dimension dim
     bool have_global_indices(std::size_t dim) const
     {
       dolfin_assert(dim < _global_indices.size());
       return !_global_indices[dim].empty();
     }
 
-    /// Return map from shared entities (local index) to processes that
-    /// share the entity
+    /// Return map from shared entities (local index) to processes
+    /// that share the entity
     std::map<unsigned int, std::set<unsigned int> >&
       shared_entities(unsigned int dim);
 
@@ -121,7 +122,8 @@ namespace dolfin
     dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1);
 
     /// Return connectivity for given pair of topological dimensions
-    const dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1) const;
+    const dolfin::MeshConnectivity& operator() (std::size_t d0,
+                                                std::size_t d1) const;
 
     /// Return hash based on the hash of cell-vertex connectivity
     size_t hash() const;
@@ -139,8 +141,9 @@ namespace dolfin
     /// of color 'col'.
     // Developer note: std::vector is used in place of a MeshFunction
     //                 to avoid circular dependencies in the header files
-    std::map<const std::vector<std::size_t>,
-      std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > > coloring;
+    std::map<std::vector<std::size_t>,
+      std::pair<std::vector<std::size_t>,
+      std::vector<std::vector<std::size_t> > > > coloring;
 
   private:
 
@@ -158,7 +161,8 @@ namespace dolfin
 
     // For entities of a given dimension d , maps each shared entity
     // (local index) to a list of the processes sharing the vertex
-    std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > > _shared_entities;
+    std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >
+      _shared_entities;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

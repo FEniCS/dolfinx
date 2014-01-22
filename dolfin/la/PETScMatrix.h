@@ -33,6 +33,8 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <petscmat.h>
+#include <petscsys.h>
+
 #include "GenericMatrix.h"
 #include "PETScBaseMatrix.h"
 
@@ -57,8 +59,8 @@ namespace dolfin
     /// Create empty matrix
     PETScMatrix(bool use_gpu=false);
 
-    /// Create matrix from given PETSc Mat pointer
-    explicit PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu=false);
+    /// Create a wrapper around a PETSc Mat pointer
+    explicit PETScMatrix(Mat A);
 
     /// Copy constructor
     PETScMatrix(const PETScMatrix& A);
@@ -85,10 +87,13 @@ namespace dolfin
     /// Finalize assembly of tensor. The following values are recognized
     /// for the mode parameter:
     ///
-    ///   add    - corresponding to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-    ///   insert - corresponding to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-    ///   flush  - corresponding to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
+    ///   add    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
+    ///   insert - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
+    ///   flush  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
     virtual void apply(std::string mode);
+
+    /// Return MPI communicator
+    const MPI_Comm  mpi_comm() const;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -112,19 +117,23 @@ namespace dolfin
     { PETScBaseMatrix::resize(z, dim); }
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
-                     const dolfin::la_index* cols) const;
+    virtual void get(double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
-                     const dolfin::la_index* cols);
+    virtual void set(const double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
-                     const dolfin::la_index* cols);
+    virtual void add(const double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
+    virtual void axpy(double a, const GenericMatrix& A,
+                      bool same_nonzero_pattern);
 
     /// Get non-zero values of given row
     virtual void getrow(std::size_t row,

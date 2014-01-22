@@ -49,17 +49,10 @@ namespace dolfin
       return A;
     }
 
-    /// Create empty vector (global)
+    /// Create empty vector
     boost::shared_ptr<GenericVector> create_vector() const
     {
-      boost::shared_ptr<GenericVector> x(new STLVector("global"));
-      return x;
-    }
-
-    /// Create empty vector (local)
-    boost::shared_ptr<GenericVector> create_local_vector() const
-    {
-      boost::shared_ptr<GenericVector> x(new STLVector("local"));
+      boost::shared_ptr<GenericVector> x(new STLVector);
       return x;
     }
 
@@ -76,12 +69,14 @@ namespace dolfin
       dolfin_error("STLFactory.h",
                    "create linear operator",
                    "Not supported by STL linear algebra backend");
-      boost::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
+      boost::shared_ptr<GenericLinearOperator>
+        A(new NotImplementedLinearOperator);
       return A;
     }
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
+    boost::shared_ptr<GenericLUSolver>
+      create_lu_solver(std::string method) const
     {
       dolfin_error("STLFactory",
                    "create LU solver",
@@ -91,8 +86,9 @@ namespace dolfin
     }
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
-                                              std::string preconditioner) const
+    boost::shared_ptr<GenericLinearSolver>
+      create_krylov_solver(std::string method,
+                           std::string preconditioner) const
     {
       dolfin_error("STLFactory",
                    "create Krylov solver",
@@ -107,7 +103,7 @@ namespace dolfin
 
   protected:
 
-    /// Private Constructor
+    // Private Constructor
     STLFactory() {}
 
     // Singleton instance

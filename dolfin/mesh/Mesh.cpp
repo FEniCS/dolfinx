@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -26,27 +26,23 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-03-06
+// Last changed: 2013-06-27
 
-#include <boost/serialization/map.hpp>
-#include <dolfin/common/Array.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/ale/ALE.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/common/Array.h>
+#include <dolfin/function/Expression.h>
 #include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
-#include <dolfin/function/Expression.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
+#include "Facet.h"
 #include "LocalMeshData.h"
 #include "MeshColoring.h"
-#include "MeshData.h"
-#include "MeshFunction.h"
-#include "MeshValueCollection.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
@@ -61,52 +57,59 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
-               _domains(*this),
-               _data(*this),
                _cell_type(0),
-               _intersection_operator(*this),
                _ordered(false),
-               _cell_orientations(0)
+               _cell_orientations(0),
+               _mpi_comm(MPI_COMM_WORLD)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
+               Hierarchical<Mesh>(*this),
+               _cell_type(0),
+               _ordered(false),
+               _cell_orientations(0),
+               _mpi_comm(comm)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
-			       _domains(*this),
-                               _data(*this),
                                _cell_type(0),
-                               _intersection_operator(*this),
                                _ordered(false),
-                               _cell_orientations(0)
+                               _cell_orientations(0),
+                               _mpi_comm(MPI_COMM_WORLD)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
-				   _domains(*this),
-                                   _data(*this),
                                    _cell_type(0),
-                                   _intersection_operator(*this),
                                    _ordered(false),
-                                   _cell_orientations(0)
+                                   _cell_orientations(0),
+                                   _mpi_comm(MPI_COMM_WORLD)
 {
-  File file(filename);
+  File file(_mpi_comm, filename);
   file >> *this;
-
   _cell_orientations.resize(this->num_cells(), -1);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(LocalMeshData& local_mesh_data)
-                                 : Variable("mesh", "DOLFIN mesh"),
-                                   Hierarchical<Mesh>(*this),
-				   _domains(*this),
-                                   _data(*this),
-                                   _cell_type(0),
-                                   _intersection_operator(*this),
-                                   _ordered(false),
-                                   _cell_orientations(0)
+Mesh::Mesh(MPI_Comm comm, std::string filename)
+  : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
+    _cell_type(0), _ordered(false), _cell_orientations(0), _mpi_comm(comm)
+{
+  File file(_mpi_comm, filename);
+  file >> *this;
+  _cell_orientations.resize(this->num_cells(), -1);
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
+  : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
+    _cell_type(0), _ordered(false), _cell_orientations(0),
+    _mpi_comm(comm)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
@@ -114,41 +117,37 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
 Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
-    _domains(*this),
-    _data(*this),
     _cell_type(0),
-    _intersection_operator(*this),
     _ordered(false),
-    _cell_orientations(0)
-
+    _cell_orientations(0),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   // Build mesh on process 0
-  if (MPI::process_number() == 0)
+  if (MPI::rank(_mpi_comm) == 0)
     CSGMeshGenerator::generate(*this, geometry, resolution);
 
   // Build distributed mesh
-  if (MPI::num_processes() > 1)
+  if (MPI::size(_mpi_comm) > 1)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution)
+Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
+           std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
-    _domains(*this),
-    _data(*this),
     _cell_type(0),
-    _intersection_operator(*this),
     _ordered(false),
-    _cell_orientations(0)
+    _cell_orientations(0),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   assert(geometry);
 
   // Build mesh on process 0
-  if (MPI::process_number() == 0)
+  if (MPI::rank(_mpi_comm) == 0)
     CSGMeshGenerator::generate(*this, *geometry, resolution);
 
   // Build distributed mesh
-  if (MPI::num_processes() > 1)
+  if (MPI::size(_mpi_comm) > 1)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
@@ -192,10 +191,11 @@ const MeshData& Mesh::data() const
 //-----------------------------------------------------------------------------
 std::size_t Mesh::init(std::size_t dim) const
 {
-  // This function is obviously not const since it may potentially compute
-  // new connectivity. However, in a sense all connectivity of a mesh always
-  // exists, it just hasn't been computed yet. The const_cast is also needed
-  // to allow iterators over a const Mesh to create new connectivity.
+  // This function is obviously not const since it may potentially
+  // compute new connectivity. However, in a sense all connectivity of
+  // a mesh always exists, it just hasn't been computed yet. The
+  // const_cast is also needed to allow iterators over a const Mesh to
+  // create new connectivity.
 
   // Skip if mesh is empty
   if (num_cells() == 0)
@@ -233,10 +233,11 @@ std::size_t Mesh::init(std::size_t dim) const
 //-----------------------------------------------------------------------------
 void Mesh::init(std::size_t d0, std::size_t d1) const
 {
-  // This function is obviously not const since it may potentially compute
-  // new connectivity. However, in a sense all connectivity of a mesh always
-  // exists, it just hasn't been computed yet. The const_cast is also needed
-  // to allow iterators over a const Mesh to create new connectivity.
+  // This function is obviously not const since it may potentially
+  // compute new connectivity. However, in a sense all connectivity of
+  // a mesh always exists, it just hasn't been computed yet. The
+  // const_cast is also needed to allow iterators over a const Mesh to
+  // create new connectivity.
 
   // Skip if mesh is empty
   if (num_cells() == 0)
@@ -285,7 +286,6 @@ void Mesh::clear()
   _data.clear();
   delete _cell_type;
   _cell_type = 0;
-  _intersection_operator.clear();
   _ordered = false;
   _cell_orientations.clear();
 }
@@ -329,8 +329,15 @@ dolfin::Mesh Mesh::renumber_by_color() const
 {
   std::vector<std::size_t> coloring_type;
   const std::size_t D = topology().dim();
-  coloring_type.push_back(D); coloring_type.push_back(0); coloring_type.push_back(D);
+  coloring_type.push_back(D);
+  coloring_type.push_back(0);
+  coloring_type.push_back(D);
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
+}
+//-----------------------------------------------------------------------------
+void Mesh::translate(const Point& point)
+{
+  MeshTransformation::translate(*this, point);
 }
 //-----------------------------------------------------------------------------
 void Mesh::rotate(double angle, std::size_t axis)
@@ -338,9 +345,9 @@ void Mesh::rotate(double angle, std::size_t axis)
   MeshTransformation::rotate(*this, angle, axis);
 }
 //-----------------------------------------------------------------------------
-void Mesh::rotate(double angle, std::size_t axis, const Point& p)
+void Mesh::rotate(double angle, std::size_t axis, const Point& point)
 {
-  MeshTransformation::rotate(*this, angle, axis, p);
+  MeshTransformation::rotate(*this, angle, axis, point);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
@@ -385,12 +392,13 @@ const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& Mesh::color(std::vector<std::size_t> coloring_type) const
+const std::vector<std::size_t>&
+Mesh::color(std::vector<std::size_t> coloring_type) const
 {
   // Find color data
-  std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
-           std::vector<std::vector<std::size_t> > > >::const_iterator coloring_data;
-  coloring_data = this->topology().coloring.find(coloring_type);
+  std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+           std::vector<std::vector<std::size_t> > > >::const_iterator
+    coloring_data = this->topology().coloring.find(coloring_type);
 
   if (coloring_data != this->topology().coloring.end())
   {
@@ -405,124 +413,16 @@ const std::vector<std::size_t>& Mesh::color(std::vector<std::size_t> coloring_ty
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const Point& point, std::set<std::size_t>& cells) const
+boost::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 {
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    _intersection_operator.all_intersected_entities(point, cells);
-  else
+  // Allocate and build tree if necessary
+  if (!_tree)
   {
-    // Num cells == 1
-    const Cell cell(*this, 0);
-    if (cell.intersects(point))
-      cells.insert(0);
+    _tree.reset(new BoundingBoxTree());
+    _tree->build(*this);
   }
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const std::vector<Point>& points,
-                             std::set<std::size_t>& cells) const
-{
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    _intersection_operator.all_intersected_entities(points, cells);
-  else
-  {
-    // Num cells == 1
-    const Cell cell(*this, 0);
-    for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
-    {
-      if (cell.intersects(*p))
-        cells.insert(0);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const MeshEntity & entity,
-                             std::vector<std::size_t>& cells) const
-{
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    _intersection_operator.all_intersected_entities(entity, cells);
-  else
-  {
-    // Num cells == 1
-    const Cell cell(*this, 0);
-    if (cell.intersects(entity))
-      cells.push_back(0);
-  }
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
-                             std::set<std::size_t>& cells) const
-{
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    _intersection_operator.all_intersected_entities(entities, cells);
-  else
-  {
-    // Num cells == 1
-    const Cell cell(*this, 0);
-    for (std::vector<MeshEntity>::const_iterator entity = entities.begin();
-            entity != entities.end(); ++entity)
-    {
-      if (cell.intersects(*entity))
-        cells.insert(0);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const Mesh& another_mesh,
-                             std::set<std::size_t>& cells) const
-{
-  _intersection_operator.all_intersected_entities(another_mesh, cells);
-}
-//-----------------------------------------------------------------------------
-int Mesh::intersected_cell(const Point& point) const
-{
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    return  _intersection_operator.any_intersected_entity(point);
 
-  // Num cells == 1
-  const Cell cell(*this, 0);
-  return cell.intersects(point) ? 0 : -1;
-}
-//-----------------------------------------------------------------------------
-Point Mesh::closest_point(const Point& point) const
-{
-  return _intersection_operator.closest_point(point);
-}
-//-----------------------------------------------------------------------------
-std::size_t Mesh::closest_cell(const Point & point) const
-{
-  // CGAL exits with an assertion error whilst performing
-  // the closest cell query if num_cells() == 1
-  if (num_cells() > 1)
-    return _intersection_operator.closest_cell(point);
-
-  // Num cells == 1
-  return 0;
-}
-//-----------------------------------------------------------------------------
-std::pair<Point, std::size_t>
-Mesh::closest_point_and_cell(const Point & point) const
-{
-  return _intersection_operator.closest_point_and_cell(point);
-}
-//-----------------------------------------------------------------------------
-double Mesh::distance(const Point& point) const
-{
-  return _intersection_operator.distance(point);
-}
-//-----------------------------------------------------------------------------
-IntersectionOperator& Mesh::intersection_operator()
-{
-  return _intersection_operator;
-}
-//-----------------------------------------------------------------------------
-const IntersectionOperator& Mesh::intersection_operator() const
-{
-  return _intersection_operator;
+  return _tree;
 }
 //-----------------------------------------------------------------------------
 double Mesh::hmin() const
@@ -565,38 +465,23 @@ double Mesh::rmax() const
   return r;
 }
 //-----------------------------------------------------------------------------
-double Mesh::radius_ratio_min() const
-{
-  CellIterator cell(*this);
-  double q = cell->radius_ratio();
-  for (; !cell.end(); ++cell)
-    q = std::min(q, cell->radius_ratio());
-
-  return q;
-}
-//-----------------------------------------------------------------------------
-double Mesh::radius_ratio_max() const
-{
-  CellIterator cell(*this);
-  double q = cell->radius_ratio();
-  for (; !cell.end(); ++cell)
-    q = std::max(q, cell->radius_ratio());
-
-  return q;
-}
-//-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const
 {
+  // Get local hashes
+  const std::size_t kt_local = _topology.hash();
+  const std::size_t kg_local = _geometry.hash();
+
+  // Compute global hash
+  const std::size_t kt = hash_global(_mpi_comm, kt_local);
+  const std::size_t kg = hash_global(_mpi_comm, kg_local);
+
   // Compute hash based on the Cantor pairing function
-  const std::size_t k1 = _topology.hash();
-  const std::size_t k2 = _geometry.hash();
-  return (k1 + k2)*(k1 + k2 + 1)/2 + k2;
+  return (kt + kg)*(kt + kg + 1)/2 + kg;
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
@@ -611,7 +496,7 @@ std::string Mesh::str(bool verbose) const
     if (_cell_type)
       cell_type = _cell_type->description(true);
 
-   s << "<Mesh of topological dimension "
+    s << "<Mesh of topological dimension "
       << topology().dim() << " ("
       << cell_type << ") with "
       << num_vertices() << " vertices and "

@@ -43,11 +43,8 @@ namespace dolfin
     /// Create empty matrix
     boost::shared_ptr<GenericMatrix> create_matrix() const;
 
-    /// Create empty vector (global)
+    /// Create empty vector
     boost::shared_ptr<GenericVector> create_vector() const;
-
-    /// Create empty vector (local)
-    boost::shared_ptr<GenericVector> create_local_vector() const;
 
     /// Create empty tensor layout
     boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
@@ -56,11 +53,13 @@ namespace dolfin
     boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
+    boost::shared_ptr<GenericLUSolver>
+      create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
-                                            std::string preconditioner) const;
+    boost::shared_ptr<GenericLinearSolver>
+      create_krylov_solver(std::string method,
+                           std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >

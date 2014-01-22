@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericVector.h"
@@ -55,10 +56,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit uBLASVector(std::string type="global");
+    uBLASVector();
 
     /// Create vector of size N
-    uBLASVector(std::size_t N, std::string type="global");
+    uBLASVector(std::size_t N);
 
     /// Copy constructor
     uBLASVector(const uBLASVector& x);
@@ -77,6 +78,10 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
 
+    /// Return MPI communicator
+    virtual const MPI_Comm mpi_comm() const
+    { return MPI_COMM_SELF; }
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
@@ -86,14 +91,16 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
-    virtual void resize(std::size_t N);
+    virtual void resize(MPI_Comm comm, std::size_t N);
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range);
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range);
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<std::size_t>& ghost_indices);
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
+                        const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -112,13 +119,16 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const;
 
     /// Get block of values
-    virtual void get_local(double* block, std::size_t m, const dolfin::la_index* rows) const;
+    virtual void get_local(double* block, std::size_t m,
+                           const dolfin::la_index* rows) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows);
+    virtual void set(const double* block, std::size_t m,
+                     const dolfin::la_index* rows);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows);
+    virtual void add(const double* block, std::size_t m,
+                     const dolfin::la_index* rows);
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;
@@ -130,10 +140,12 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const;
+    virtual void gather(GenericVector& x,
+                        const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const;
+    virtual void gather(std::vector<double>& x,
+                        const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const;
@@ -159,7 +171,8 @@ namespace dolfin
     /// Return sum of values of vector
     virtual double sum() const;
 
-    /// Return sum of selected rows in vector. Repeated entries are only summed once.
+    /// Return sum of selected rows in vector. Repeated entries are
+    /// only summed once.
     virtual double sum(const Array<std::size_t>& rows) const;
 
     /// Multiply vector by given number

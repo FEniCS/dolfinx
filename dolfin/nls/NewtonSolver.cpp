@@ -20,7 +20,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2011-03-29
+// Last changed: 2013-12-04
 
 #include <iostream>
 #include <dolfin/common/constants.h>
@@ -29,6 +29,8 @@
 #include <dolfin/la/LinearSolver.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
+#include <dolfin/la/LUSolver.h>
+#include <dolfin/la/KrylovSolver.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
@@ -42,6 +44,8 @@ Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
 
+  p.add("linear_solver",           "default");
+  p.add("preconditioner",          "default");
   p.add("maximum_iterations",      10);
   p.add("relative_tolerance",      1e-9);
   p.add("absolute_tolerance",      1e-10);
@@ -53,14 +57,16 @@ Parameters NewtonSolver::default_parameters()
 
   //p.add("reuse_preconditioner", false);
 
+  p.add(LUSolver::default_parameters());
+  p.add(KrylovSolver::default_parameters());
+
   return p;
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
-  : Variable("Newton solver", "unamed"),
-    newton_iteration(0), _residual(0.0), residual0(0.0),
-    _solver(new LinearSolver(solver_type, pc_type)),
-    _A(new Matrix), _dx(new Vector), _b(new Vector)
+NewtonSolver::NewtonSolver()
+  : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
+    _residual0(0.0), _A(new Matrix), _dx(new Vector), _b(new Vector),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -68,15 +74,17 @@ NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
-  : Variable("Newton solver", "unamed"),
-    newton_iteration(0), _residual(0.0), residual0(0.0),
-    _solver(solver),
-    _A(factory.create_matrix()),
-    _dx(factory.create_vector()),
-    _b(factory.create_vector())
+  : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
+    _residual0(0.0), _solver(solver), _A(factory.create_matrix()),
+    _dx(factory.create_vector()), _b(factory.create_vector()),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   // Set default parameters
   parameters = default_parameters();
+
+  // Store linear solver type
+  parameters["linear_solver"] = "user_defined";
+  parameters["preconditioner"] = "user_defined";
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
@@ -84,88 +92,135 @@ NewtonSolver::~NewtonSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
-                                                  GenericVector& x)
+std::pair<std::size_t, bool>
+NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
+                    GenericVector& x)
 {
   dolfin_assert(_A);
   dolfin_assert(_b);
   dolfin_assert(_dx);
-  dolfin_assert(_solver);
 
+  // Extract parameters
+  const std::string convergence_criterion = parameters["convergence_criterion"];
   const std::size_t maxiter = parameters["maximum_iterations"];
 
+  // Create linear solver if not already created
+  const std::string solver_type = parameters["linear_solver"];
+  const std::string pc_type = parameters["preconditioner"];
+  if (!_solver)
+    _solver = boost::shared_ptr<LinearSolver>(new LinearSolver(solver_type, pc_type));
+  dolfin_assert(_solver);
+
+  // Set parameters for linear solver
+  _solver->update_parameters(parameters(_solver->parameter_type()));
+
+  // Reset iteration counts
   std::size_t krylov_iterations = 0;
-  newton_iteration = 0;
-  bool newton_converged = false;
+  _newton_iteration = 0;
 
   // Compute F(u)
-  nonlinear_problem.form(*_A, *_b, x);
   nonlinear_problem.F(*_b, x);
+  nonlinear_problem.form(*_A, *_b, x);
+
+  // Check convergence
+  bool newton_converged = false;
+  if (convergence_criterion == "residual")
+    newton_converged = converged(*_b, nonlinear_problem, 0);
+  else if (convergence_criterion == "incremental")
+  {
+    // We need to do at least one Newton step with the ||dx||-stopping
+    // criterion.
+    newton_converged = false;
+  }
+  else
+  {
+    dolfin_error("NewtonSolver.cpp",
+                 "check for convergence",
+                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
+                 convergence_criterion.c_str());
+  }
 
   _solver->set_operator(_A);
 
+  // Get relaxation parameter
+  const double relaxation = parameters["relaxation_parameter"];
+
   // Start iterations
-  while (!newton_converged && newton_iteration < maxiter)
+  while (!newton_converged && _newton_iteration < maxiter)
   {
     // Compute Jacobian
     nonlinear_problem.J(*_A, x);
 
-    // FIXME: This reset is a hack to handle a deficiency in the Trilinos wrappers
+    // FIXME: This reset is a hack to handle a deficiency in the
+    // Trilinos wrappers
     _solver->set_operator(_A);
 
-    // Perform linear solve and update total number of Krylov iterations
+    // Perform linear solve and update total number of Krylov
+    // iterations
     if (!_dx->empty())
       _dx->zero();
     krylov_iterations += _solver->solve(*_dx, *_b);
 
-    // Compute initial residual
-    if (newton_iteration == 0)
-      newton_converged = converged(*_b, *_dx, nonlinear_problem);
-
     // Update solution
-    const double relaxation = parameters["relaxation_parameter"];
     if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
       x -= (*_dx);
     else
       x.axpy(-relaxation, *_dx);
 
-    // Update number of iterations
-    ++newton_iteration;
+    // Increment iteration count
+    _newton_iteration++;
 
-    //FIXME: this step is not needed if residual is based on dx and this has converged.
+    // FIXME: This step is not needed if residual is based on dx and
+    //        this has converged.
+    // FIXME: But, this function call may update internal variable, etc.
     // Compute F
-    nonlinear_problem.form(*_A, *_b, x);
     nonlinear_problem.F(*_b, x);
+    nonlinear_problem.form(*_A, *_b, x);
 
     // Test for convergence
-    newton_converged = converged(*_b, *_dx, nonlinear_problem);
+    if (convergence_criterion == "residual")
+      newton_converged = converged(*_b, nonlinear_problem, _newton_iteration);
+    else if (convergence_criterion == "incremental")
+    {
+      // Subtract 1 to make sure that the initial residual0 is properly set.
+      newton_converged = converged(*_dx, nonlinear_problem, _newton_iteration - 1);
+    }
+    else
+    {
+      dolfin_error("NewtonSolver.cpp",
+                   "check for convergence",
+                   "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
+                   convergence_criterion.c_str());
+    }
   }
 
   if (newton_converged)
   {
-    if (dolfin::MPI::process_number() == 0)
+    if (dolfin::MPI::rank(_mpi_comm) == 0)
     {
      info("Newton solver finished in %d iterations and %d linear solver iterations.",
-            newton_iteration, krylov_iterations);
+          _newton_iteration, krylov_iterations);
     }
   }
   else
   {
     const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
+    {
       dolfin_error("NewtonSolver.cpp",
                    "solve nonlinear system with NewtonSolver",
                    "Newton solver did not converge. Bummer");
+    }
     else
       warning("Newton solver did not converge.");
   }
 
-  return std::make_pair(newton_iteration, newton_converged);
+  return std::make_pair(_newton_iteration, newton_converged);
 }
 //-----------------------------------------------------------------------------
 std::size_t NewtonSolver::iteration() const
 {
-  return newton_iteration;
+  return _newton_iteration;
 }
 //-----------------------------------------------------------------------------
 double NewtonSolver::residual() const
@@ -175,7 +230,7 @@ double NewtonSolver::residual() const
 //-----------------------------------------------------------------------------
 double NewtonSolver::relative_residual() const
 {
-  return _residual/residual0;
+  return _residual/_residual0;
 }
 //-----------------------------------------------------------------------------
 GenericLinearSolver& NewtonSolver::linear_solver() const
@@ -184,43 +239,34 @@ GenericLinearSolver& NewtonSolver::linear_solver() const
   return *_solver;
 }
 //-----------------------------------------------------------------------------
-bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
-                             const NonlinearProblem& nonlinear_problem)
+bool NewtonSolver::converged(const GenericVector& r,
+                             const NonlinearProblem& nonlinear_problem,
+                             std::size_t newton_iteration)
 {
-  const std::string convergence_criterion = parameters["convergence_criterion"];
   const double rtol = parameters["relative_tolerance"];
   const double atol = parameters["absolute_tolerance"];
   const bool report = parameters["report"];
 
-  // Compute resdiual
-  if (convergence_criterion == "residual")
-    _residual = b.norm("l2");
-  else if (convergence_criterion == "incremental")
-    _residual = dx.norm("l2");
-  else
-    dolfin_error("NewtonSolver.cpp",
-                 "check for convergence",
-                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
+  _residual = r.norm("l2");
 
   // If this is the first iteration step, set initial residual
   if (newton_iteration == 0)
-    residual0 = _residual;
+    _residual0 = _residual;
 
   // Relative residual
-  const double relative_residual = _residual / residual0;
+  const double relative_residual = _residual/_residual0;
 
   // Output iteration number and residual
-  if (report && newton_iteration > 0 && dolfin::MPI::process_number() == 0)
+  if (report && dolfin::MPI::rank(_mpi_comm) == 0)
   {
     info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
          newton_iteration, _residual, atol, relative_residual, rtol);
   }
 
-  // Return true of convergence criterion is met
+  // Return true if convergence criterion is met
   if (relative_residual < rtol || _residual < atol)
     return true;
-
-  // Otherwise return false
-  return false;
+  else
+    return false;
 }
 //-----------------------------------------------------------------------------

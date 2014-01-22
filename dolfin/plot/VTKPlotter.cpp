@@ -375,11 +375,13 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
 
   case CONTROL + '+': // Up-scale glyphs, etc.
     parameters["scale"] = (double)parameters["scale"] * 1.2;
-    plot();
+    rescale();
+    vtk_pipeline->render();
     return true;
   case CONTROL + '-': // Down-scale glyphs, etc.
     parameters["scale"] = (double)parameters["scale"] / 1.2;
-    plot();
+    rescale();
+    vtk_pipeline->render();
     return true;
 
   case 'b': // Toggle bounding box
@@ -462,7 +464,7 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
   case CONTROL + SHIFT + 's':
     // shift/control may be mouse-interaction modifiers
     {
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
+#if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6))
       vtkCamera* camera = vtk_pipeline->get_camera();
       foreach (VTKPlotter *other, *active_plotters)
       {
@@ -649,7 +651,11 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   grid->SetPoints(vtk_points);
 
   vtkSmartPointer<vtkGeometryFilter> extract = vtkSmartPointer<vtkGeometryFilter>::New();
+  #if VTK_MAJOR_VERSION <= 5
   extract->SetInput(grid);
+  #else
+  extract->SetInputData(grid);
+  #endif
 
   vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   mapper->SetInputConnection(extract->GetOutputPort());
@@ -663,6 +669,38 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   polygon_actor->GetProperty()->SetLineWidth(1);
 
   vtk_pipeline->add_viewprop(polygon_actor);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::rescale()
+{
+  double range[2];
+
+  const Parameter &range_min = parameters["range_min"];
+  const Parameter &range_max = parameters["range_max"];
+
+  if (!range_min.is_set() || !range_max.is_set())
+  {
+    _plottable->update_range(range);
+
+    // Round small values (<5% of range) to zero
+    const double diff = range[1]-range[0];
+    if (diff != 0 && std::abs(range[0]/diff) < 0.05)
+      range[0] = 0;
+    else if (diff != 0 && std::abs(range[1]/diff) < 0.05)
+      range[1] = 0;
+
+    // Round endpoints to 2 significant digits (away from center)
+    round_significant_digits(range[0], std::floor, 2);
+    round_significant_digits(range[1], std::ceil,  2);
+  }
+
+  if (range_min.is_set()) range[0] = range_min;
+  if (range_max.is_set()) range[1] = range_max;
+
+  _plottable->rescale(range, parameters);
+  vtk_pipeline->set_scalar_range(range);
+  // The rescale may have changed the scene (scalar/vector warping)
+  vtk_pipeline->reset_camera_clipping_range();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
@@ -700,36 +738,7 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
   // If this is the first render of this plot and/or the rescale parameter
   // is set, we read get the min/max values of the data and process them
   if (_frame_counter == 0 || parameters["rescale"])
-  {
-    double range[2];
-
-    const Parameter &range_min = parameters["range_min"];
-    const Parameter &range_max = parameters["range_max"];
-
-    if (!range_min.is_set() || !range_max.is_set())
-    {
-      _plottable->update_range(range);
-
-      // Round small values (<5% of range) to zero
-      const double diff = range[1]-range[0];
-      if (diff != 0 && std::abs(range[0]/diff) < 0.05)
-        range[0] = 0;
-      else if (diff != 0 && std::abs(range[1]/diff) < 0.05)
-        range[1] = 0;
-
-      // Round endpoints to 2 significant digits (away from center)
-      round_significant_digits(range[0], std::floor, 2);
-      round_significant_digits(range[1], std::ceil,  2);
-    }
-
-    if (range_min.is_set()) range[0] = range_min;
-    if (range_max.is_set()) range[1] = range_max;
-
-    _plottable->rescale(range, parameters);
-    vtk_pipeline->set_scalar_range(range);
-    // The rescale may have changed the scene (scalar/vector warping)
-    vtk_pipeline->reset_camera_clipping_range();
-  }
+    rescale();
 
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and

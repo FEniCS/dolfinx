@@ -35,7 +35,7 @@ using namespace dolfin;
 #ifdef HAS_CGAL
 
 #include "cgal_csg3d.h"
-#include <dolfin/generation/triangulate_polyhedron.h>
+#include <dolfin/generation/cgal_triangulate_polyhedron.h>
 
 //-----------------------------------------------------------------------------
 static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
@@ -62,8 +62,9 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   // Create and initialize mesh editor
   dolfin::MeshEditor mesh_editor;
   mesh_editor.open(mesh, 3, 3);
-  mesh_editor.init_vertices(triangulation.number_of_vertices());
-  mesh_editor.init_cells(num_cells);
+  mesh_editor.init_vertices(triangulation.number_of_vertices(),
+                            triangulation.number_of_vertices());
+  mesh_editor.init_cells(num_cells, num_cells);
 
   // Add vertices to mesh
   std::size_t vertex_index = 0;

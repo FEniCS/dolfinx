@@ -45,16 +45,11 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
-   : _A(reference_to_no_delete_pointer(A)),
-     _B(reference_to_no_delete_pointer(B))
-
+  : _A(reference_to_no_delete_pointer(A)), _B(reference_to_no_delete_pointer(B))
 {
   dolfin_assert(A.size(0) == A.size(1));
   dolfin_assert(B.size(0) == A.size(0));
@@ -64,13 +59,11 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : _A(A)
+SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
+  : _A(A)
 {
   dolfin_assert(A->size(0) == A->size(1));
 
@@ -78,14 +71,12 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : _A(
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
-                         boost::shared_ptr<const PETScMatrix> B) : _A(A), _B(B)
+                                   boost::shared_ptr<const PETScMatrix> B)
+  : _A(A), _B(B)
 
 {
   dolfin_assert(A->size(0) == A->size(1));
@@ -96,10 +87,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
   parameters = default_parameters();
 
   // Set up solver environment
-  if (dolfin::MPI::num_processes() > 1)
-    EPSCreate(PETSC_COMM_WORLD, &eps);
-  else
-    EPSCreate(PETSC_COMM_SELF, &eps);
+  EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
@@ -123,10 +111,10 @@ void SLEPcEigenSolver::solve(std::size_t n)
   if (_B)
   {
     dolfin_assert(_B->size(0) == _B->size(1) && _B->size(0) == _A->size(0));
-    EPSSetOperators(eps, *_A->mat(), *_B->mat());
+    EPSSetOperators(eps, _A->mat(), _B->mat());
   }
   else
-    EPSSetOperators(eps, *_A->mat(), PETSC_NULL);
+    EPSSetOperators(eps, _A->mat(), PETSC_NULL);
 
   // Set number of eigenpairs to compute
   dolfin_assert(n <= _A->size(0));
@@ -150,7 +138,6 @@ void SLEPcEigenSolver::solve(std::size_t n)
     EPSView(eps, PETSC_VIEWER_STDOUT_SELF);
   }
 
-
   // Solve
   EPSSolve(eps);
 
@@ -164,7 +151,11 @@ void SLEPcEigenSolver::solve(std::size_t n)
   dolfin::la_index num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
 
-  const EPSType eps_type = 0;
+  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR < 4
+  const EPSType eps_type = NULL;
+  #else
+  EPSType eps_type = NULL;
+  #endif
   EPSGetType(eps, &eps_type);
   log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
       eps_type, num_iterations);
@@ -189,7 +180,8 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   get_eigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, std::size_t i) const
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
+                                      std::size_t i) const
 {
   const dolfin::la_index ii = static_cast<dolfin::la_index>(i);
 
@@ -234,7 +226,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
     dolfin_assert(r.vec());
     dolfin_assert(c.vec());
-    EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
+    EPSGetEigenpair(eps, ii, &lr, &lc, r.vec(), c.vec());
   }
   else
   {
@@ -253,7 +245,8 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
 {
-  EPSSetDeflationSpace(eps, 1, deflation_space.vec().get());
+  Vec x = deflation_space.vec();
+  EPSSetDeflationSpace(eps, 1, &x);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()

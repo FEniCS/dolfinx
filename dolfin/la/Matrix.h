@@ -69,7 +69,8 @@ namespace dolfin
     { return matrix->size(dim); }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
+    virtual std::pair<std::size_t, std::size_t>
+      local_range(std::size_t dim) const
     { return matrix->local_range(dim); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -79,6 +80,10 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode)
     { matrix->apply(mode); }
+
+    /// Return MPI communicator
+    const MPI_Comm mpi_comm() const
+    { return matrix->mpi_comm(); }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const
@@ -100,19 +105,26 @@ namespace dolfin
     { matrix->resize(y, dim); }
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols) const
+    virtual void get(double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols) const
     { matrix->get(block, m, rows, n, cols); }
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols)
+    virtual void set(const double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols)
     { matrix->set(block, m, rows, n, cols); }
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols)
+    virtual void add(const double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols)
     { matrix->add(block, m, rows, n, cols); }
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
+    virtual void axpy(double a, const GenericMatrix& A,
+                      bool same_nonzero_pattern)
     { matrix->axpy(a, A, same_nonzero_pattern); }
 
     /// Return norm of matrix
@@ -125,7 +137,8 @@ namespace dolfin
     { matrix->getrow(row, columns, values); }
 
     /// Set values for given row
-    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
+    virtual void setrow(std::size_t row,
+                        const std::vector<std::size_t>& columns,
                         const std::vector<double>& values)
     { matrix->setrow(row, columns, values); }
 
@@ -163,7 +176,8 @@ namespace dolfin
 
     /// Return pointers to underlying compressed storage data.
     /// See GenericMatrix for documentation.
-    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
+      const double*, int> data() const
     { return matrix->data(); }
 
     //--- Special functions ---

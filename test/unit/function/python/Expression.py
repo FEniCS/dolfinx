@@ -38,12 +38,24 @@ class Eval(unittest.TestCase):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          f0 = F0()
+          f0 = F0(name="f0", label="My expression")
           f1 = Expression("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", \
-                          degree=2, a=1.)
+                          degree=2, a=1., name="f1")
           x = array([0.31, 0.32, 0.33])
           u00 = zeros(1); u01 = zeros(1)
           u10 = zeros(1); u20 = zeros(1)
+
+          # Check usergeneration of name and label
+          self.assertEqual(f0.name(), "f0")
+          self.assertEqual(str(f0), "f0")
+          self.assertEqual(f0.label(), "My expression")
+          self.assertEqual(f1.name(), "f1")
+          self.assertEqual(str(f1), "f1")
+          self.assertEqual(f1.label(), "User defined expression")
+
+          # Check outgeneration of name
+          count = int(F0().name()[2:])
+          self.assertEqual(F0().count(), count+1)
 
           # Test original and vs short evaluation
           f0.eval(u00, x)
@@ -74,16 +86,21 @@ class Eval(unittest.TestCase):
           if not has_cgal():
                return
 
-          # FIXME: eval does not work in parallel yet
-          if MPI.num_processes() == 1:
-               f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
-               V2 = FunctionSpace(mesh, 'CG', 2)
-               g = project(f2, V=V2)
-               u3 = f2(x)
-               u4 = g(x)
-               self.assertAlmostEqual(u3, u4, places=5)
-               self.assertRaises(TypeError, g, [0,0,0,0])
-               self.assertRaises(TypeError, g, Point(0,0))
+          x = (mesh.coordinates()[0]+mesh.coordinates()[1])/2
+          f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
+          V2 = FunctionSpace(mesh, 'CG', 2)
+          g0 = interpolate(f2, V=V2)
+          g1 = project(f2, V=V2)
+
+          # Update ghost values
+          g0.update()
+          g1.update()
+
+          u3 = f2(x)
+          u4 = g0(x)
+          u5 = g1(x)
+          self.assertAlmostEqual(u3, u4)
+          self.assertAlmostEqual(u3, u5, 4)
 
      def test_ufl_eval(self):
           class F0(Expression):
@@ -233,6 +250,12 @@ class Instantiation(unittest.TestCase):
           def wrongDefaultType():
                Expression("a", a="1")
 
+          def wrongParameterNames0():
+               Expression("long", str=1.0)
+
+          def wrongParameterNames1():
+               Expression("user_parameters", user_parameters=1.0)
+
           self.assertRaises(TypeError, noAttributes)
           self.assertRaises(TypeError, noEvalAttribute)
           self.assertRaises(TypeError, wrongEvalAttribute)
@@ -241,6 +264,8 @@ class Instantiation(unittest.TestCase):
           self.assertRaises(DeprecationWarning, deprecationWarning)
           self.assertRaises(RuntimeError, noDefaultValues)
           self.assertRaises(TypeError, wrongDefaultType)
+          self.assertRaises(RuntimeError, wrongParameterNames0)
+          self.assertRaises(RuntimeError, wrongParameterNames1)
 
      def test_element_instantiation(self):
           class F0(Expression):
@@ -307,30 +332,78 @@ class Instantiation(unittest.TestCase):
           e1 = Expression("sin(x[0])*std::cos(x[1])")
           self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
                                  assemble(e1*dx, mesh=mesh))
-     
-     def test_constant_attributes(self):
-          t = Constant(1.0)
-          e0 = Expression(["2*t", "-t"], t=t)
+
+     def test_generic_function_attributes(self):
+          tc = Constant(2.0)
+          te = Expression("value", value=tc)
+
+          self.assertAlmostEqual(tc(0), te(0))
+          tc.assign(1.0)
+          self.assertAlmostEqual(tc(0), te(0))
+
+          tf = Function(V)
+          tf.vector()[:] = 1.0
+
+          # Update ghost values
+          tf.update()
+
+          e0 = Expression(["2*t", "-t"], t=tc)
           e1 = Expression(["2*t", "-t"], t=1.0)
-          e2 = Expression("t", t=t)
-          
-          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                                 assemble(inner(e1,e1)*dx, mesh=mesh))
-
-          t.assign(3.0)
-          e1.t = float(t)
+          e2 = Expression("t", t=te)
+          e3 = Expression("t", t=tf)
 
           self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
                                  assemble(inner(e1,e1)*dx, mesh=mesh))
-          t.assign(5.0)
-          self.assertNotEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                              assemble(inner(e1,e1)*dx, mesh=mesh))
+
+          self.assertAlmostEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
+                                 assemble(inner(e3,e3)*dx, mesh=mesh))
+
+          tc.assign(3.0)
+          e1.t = float(tc)
+
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
+                                 assemble(inner(e1,e1)*dx, mesh=mesh))
+          tc.assign(5.0)
+
+          self.assertNotEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
+                              assemble(inner(e3,e3)*dx, mesh=mesh))
 
           self.assertAlmostEqual(assemble(e0[0]*dx, mesh=mesh), \
                                  assemble(2*e2*dx, mesh=mesh))
-          
+
+          e2.t = e3.t
+
+          self.assertEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
+                           assemble(inner(e3,e3)*dx, mesh=mesh))
+
+          # Test wrong kwargs
           self.assertRaises(TypeError, lambda : Expression("t", t=Constant((1,0))))
-          self.assertRaises(TypeError, lambda : Expression("t", t=Function(V)))
-          
+          self.assertRaises(TypeError, lambda : Expression("t", t=Function(V*V)))
+
+          # Test non-scalar GenericFunction
+          f2 = Function(V*V)
+          e2.t = f2
+
+          self.assertRaises(RuntimeError, lambda : e2(0, 0))
+
+          # Test self assignment
+          e2.t = e2
+          self.assertRaises(RuntimeError, lambda : e2(0, 0))
+
+          # Test user_parameters assignment
+          self.assertTrue("value" in te.user_parameters)
+          te.user_parameters["value"] = Constant(5.0)
+          self.assertEqual(te(0.0), 5.0)
+
+          te.user_parameters.update(dict(value=Constant(3.0)))
+          self.assertEqual(te(0.0), 3.0)
+
+          te.user_parameters.update([("value", Constant(4.0))])
+          self.assertEqual(te(0.0), 4.0)
+
+          # Test wrong assignment
+          self.assertRaises(TypeError, lambda : te.user_parameters.__setitem__("value", 1.0))
+          self.assertRaises(KeyError, lambda : te.user_parameters.__setitem__("values", 1.0))
+
 if __name__ == "__main__":
     unittest.main()

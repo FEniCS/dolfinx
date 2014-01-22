@@ -46,10 +46,13 @@ namespace dolfin
     ~DynamicMeshEditor();
 
     /// Open mesh of given cell type, topological and geometrical dimension
-    void open(Mesh& mesh, CellType::Type type, std::size_t tdim, std::size_t gdim);
+    void open(Mesh& mesh, CellType::Type type, std::size_t tdim,
+              std::size_t gdim, std::size_t num_global_vertices,
+              std::size_t num_global_cells);
 
     /// Open mesh of given cell type, topological and geometrical dimension
-    void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim);
+    void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim,
+              std::size_t num_global_vertices, std::size_t num_global_cells);
 
     /// Add vertex v at given point p
     void add_vertex(std::size_t v, const Point& p);
@@ -70,10 +73,12 @@ namespace dolfin
     void add_cell(std::size_t c, std::size_t v0, std::size_t v1);
 
     /// Add cell (triangle) with given vertices
-    void add_cell(std::size_t c, std::size_t v0, std::size_t v1, std::size_t v2);
+    void add_cell(std::size_t c,  std::size_t v0, std::size_t v1,
+                  std::size_t v2);
 
     /// Add cell (tetrahedron) with given vertices
-    void add_cell(std::size_t c, std::size_t v0, std::size_t v1, std::size_t v2, std::size_t v3);
+    void add_cell(std::size_t c, std::size_t v0, std::size_t v1,
+                  std::size_t v2, std::size_t v3);
 
     /// Close mesh, finish editing, and order entities locally
     void close(bool order=false);
@@ -94,6 +99,9 @@ namespace dolfin
 
     // Cell type
     CellType* _cell_type;
+
+    // Number of global vertices and cells
+    std::size_t _num_global_vertices, _num_global_cells;
 
     // Dynamic storage for vertex coordinates
     std::vector<double> vertex_coordinates;

@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2007-01-17
-// Last changed: 2011-02-21
+// Last changed: 2013-09-24
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -32,17 +32,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const Form& a) : form(*a.ufc_form()), cell(a.mesh()),
-  cell0(a.mesh()), cell1(a.mesh()),
-  coefficients(a.coefficients()), dolfin_form(a)
+UFC::UFC(const Form& a) : form(*a.ufc_form()), coefficients(a.coefficients()),
+                          dolfin_form(a)
 {
   dolfin_assert(a.ufc_form());
   init(a);
 }
 //-----------------------------------------------------------------------------
-UFC::UFC(const UFC& ufc) : form(ufc.form), cell(ufc.dolfin_form.mesh()),
-   cell0(ufc.dolfin_form.mesh()), cell1(ufc.dolfin_form.mesh()),
-   coefficients(ufc.dolfin_form.coefficients()), dolfin_form(ufc.dolfin_form)
+UFC::UFC(const UFC& ufc) : form(ufc.form),
+                           coefficients(ufc.dolfin_form.coefficients()),
+                           dolfin_form(ufc.dolfin_form)
 {
   this->init(ufc.dolfin_form);
 }
@@ -60,12 +59,14 @@ void UFC::init(const Form& a)
   // Create finite elements for coefficients
   for (std::size_t i = 0; i < form.num_coefficients(); i++)
   {
-    boost::shared_ptr<ufc::finite_element> element(form.create_finite_element(form.rank() + i));
+    boost::shared_ptr<ufc::finite_element>
+      element(form.create_finite_element(form.rank() + i));
     coefficient_elements.push_back(FiniteElement(element));
   }
 
   // Create cell integrals
-  default_cell_integral = boost::shared_ptr<ufc::cell_integral>(form.create_default_cell_integral());
+  default_cell_integral =
+    boost::shared_ptr<ufc::cell_integral>(form.create_default_cell_integral());
   for (std::size_t i = 0; i < form.num_cell_domains(); i++)
     cell_integrals.push_back(boost::shared_ptr<ufc::cell_integral>(form.create_cell_integral(i)));
 
@@ -127,41 +128,32 @@ void UFC::init(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c)
+void UFC::update(const Cell& c, const std::vector<double>& vertex_coordinates,
+                 const ufc::cell& ufc_cell)
 {
-  // Update UFC cell
-  cell.update(c);
-
-  // Restrict coefficients to cell
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], c, cell);
-}
-//-----------------------------------------------------------------------------
-void UFC::update(const Cell& c, std::size_t local_facet)
-{
-  // Update UFC cell
-  cell.update(c, local_facet);
-
-  // Restrict coefficients to facet
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], c, cell);
-}
-//-----------------------------------------------------------------------------
-void UFC::update(const Cell& c0, std::size_t local_facet0,
-                 const Cell& c1, std::size_t local_facet1)
-{
-  // Update UFC cells
-  cell0.update(c0, local_facet0);
-  cell1.update(c1, local_facet1);
-
   // Restrict coefficients to facet
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
+    dolfin_assert(coefficients[i]);
+    coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], c,
+                              vertex_coordinates.data(), ufc_cell);
+  }
+}
+//-----------------------------------------------------------------------------
+void UFC::update(const Cell& c0, const std::vector<double>& vertex_coordinates0,
+                 const ufc::cell& ufc_cell0,
+                 const Cell& c1, const std::vector<double>& vertex_coordinates1,
+                 const ufc::cell& ufc_cell1)
+{
+  // Restrict coefficients to facet
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    dolfin_assert(coefficients[i]);
     const std::size_t offset = coefficient_elements[i].space_dimension();
     coefficients[i]->restrict(&_macro_w[i][0], coefficient_elements[i],
-                              c0, cell0);
+                              c0, vertex_coordinates0.data(), ufc_cell0);
     coefficients[i]->restrict(&_macro_w[i][0] + offset, coefficient_elements[i],
-                              c1, cell1);
+                              c1, vertex_coordinates1.data(), ufc_cell1);
   }
 }
 //-----------------------------------------------------------------------------

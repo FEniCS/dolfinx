@@ -16,13 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-02
+// Last changed: 2013-05-13
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
 
 #include <vector>
-#include <armadillo>
+#include <Eigen/Dense>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
@@ -55,6 +55,23 @@ namespace dolfin
     /// Step solver an interval using dt as time step
     void step_interval(double t0, double t1, double dt);
 
+    /// Return the MultiStageScheme
+    boost::shared_ptr<MultiStageScheme> scheme() const
+    { return _scheme; }
+
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("point_integral_solver");
+
+      // Get default parameters from NewtonSolver
+      p.add(NewtonSolver::default_parameters());
+      p("newton_solver").add("reuse_jacobian", true);
+      p("newton_solver").add("iterations_to_retabulate_jacobian", 4);
+
+      return p;
+    }
+
   private:
 
     // Check the forms making sure they only include piecewise linear
@@ -79,11 +96,10 @@ namespace dolfin
 
     // Flag for retabulation of J
     bool _retabulate_J;
-    
-    // Jacobian and LU factorized jacobian matrices
-    arma::mat _J;
-    arma::mat _J_L;
-    arma::mat _J_U;
+
+    // Jacobian and LU factorized Jacobian matrices
+    Eigen::MatrixXd _J;
+    Eigen::PartialPivLU<Eigen::MatrixXd> _J_LU;
 
   };
 

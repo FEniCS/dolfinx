@@ -170,7 +170,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __contains__(self, value):
         from numpy import isscalar
         if not isscalar(value):
-            raise TypeError, "expected scalar"
+            raise TypeError("expected scalar")
         return _contains(self,value)
 
     def __gt__(self, value):
@@ -227,10 +227,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return ret
 
     def __delitem__(self,i):
-        raise ValueError, "cannot delete Vector elements"
+        raise ValueError("cannot delete Vector elements")
 
     def __delslice__(self,i,j):
-        raise ValueError, "cannot delete Vector elements"
+        raise ValueError("cannot delete Vector elements")
 
     def __setslice__(self, i, j, values):
         if i == 0 and (j >= len(self) or j == -1): # slice == whole
@@ -249,21 +249,21 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __getitem__(self, indices):
         from numpy import ndarray, integer
         from types import SliceType
-        if isinstance(indices, (int, integer)):
+        if isinstance(indices, (int, integer, long)):
             return _get_vector_single_item(self, indices)
         elif isinstance(indices, (SliceType, ndarray, list) ):
             return as_backend_type(_get_vector_sub_vector(self, indices))
         else:
-            raise TypeError, "expected an int, slice, list or numpy array of integers"
+            raise TypeError("expected an int, slice, list or numpy array of integers")
 
     def __setitem__(self, indices, values):
         from numpy import ndarray, integer, isscalar
         from types import SliceType
-        if isinstance(indices, (int, integer)):
+        if isinstance(indices, (int, integer, long)):
             if isscalar(values):
                 return _set_vector_items_value(self, indices, values)
             else:
-                raise TypeError, "provide a scalar to set single item"
+                raise TypeError("provide a scalar to set single item")
         elif isinstance(indices, (SliceType, ndarray, list)):
             if isscalar(values):
                 _set_vector_items_value(self, indices, values)
@@ -272,9 +272,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             elif isinstance(values, ndarray):
                 _set_vector_items_array_of_float(self, indices, values)
             else:
-                raise TypeError, "provide a scalar, GenericVector or numpy array of float to set items in Vector"
+                raise TypeError("provide a scalar, GenericVector or numpy array of float to set items in Vector")
         else:
-            raise TypeError, "index must be an int, slice or a list or numpy array of integers"
+            raise TypeError("index must be an int, slice or a list or numpy array of integers")
 
     def __len__(self):
         return self.size()
@@ -408,11 +408,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     (*self)*=a;
   }
 
-  PyObject* _data() {
-
+  PyObject* _data()
+  {
     PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-						 boost::tuples::get<0>(self->data()),
-						 false);
+						  boost::tuples::get<0>(self->data()),
+						  false);
     PyObject* cols = %make_numpy_array(1, size_t)(boost::tuples::get<3>(self->data()),
 						 boost::tuples::get<1>(self->data()),
 						 false);
@@ -589,7 +589,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             matrix_type = get_tensor_type(self)
             vector_type = get_tensor_type(other)
             if vector_type not in _matrix_vector_mul_map[matrix_type]:
-                raise TypeError, "Provide a Vector which can be as_backend_typeed to ''"%vector_type.__name__
+                raise TypeError("Provide a Vector which can be as_backend_typeed to ''"%vector_type.__name__)
             if type(other) == Vector:
                 ret = Vector()
             else:
@@ -598,13 +598,15 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return ret
         elif isinstance(other, ndarray):
             if len(other.shape) != 1:
-                raise ValueError, "Provide an 1D NumPy array"
+                raise ValueError("Provide an 1D NumPy array")
             vec_size = other.shape[0]
             if vec_size != self.size(1):
-                raise ValueError, "Provide a NumPy array with length %d"%self.size(1)
+                raise ValueError("Provide a NumPy array with length %d"%self.size(1))
             vec_type = _matrix_vector_mul_map[get_tensor_type(self)][0]
-            vec  = vec_type(vec_size)
+            vec = vec_type()
+            vec.resize(self.mpi_comm(), vec_size)
             vec.set_local(other)
+            vec.apply("insert")
             result_vec = vec.copy()
             self.mult(vec, result_vec)
             #ret = other.copy()
@@ -796,7 +798,100 @@ AS_BACKEND_TYPE_MACRO(PETScMatrix)
 %pythoncode %{
 _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 %}
-#endif
+
+#ifdef HAS_PETSC4PY
+// Override default .mat() and .vec() calls.
+// These are wrapped up by petsc4py typemaps so that
+// we see a petsc4py object on the python side.
+
+%feature("docstring") dolfin::PETScBaseMatrix::mat "Return petsc4py representation of PETSc Mat";
+%extend dolfin::PETScBaseMatrix
+{
+  void mat(Mat &A)
+  { A = self->mat(); }
+}
+
+%feature("docstring") dolfin::PETScVector::vec "Return petsc4py representation of PETSc Vec";
+%extend dolfin::PETScVector
+{
+  void vec(Vec&v)
+  { v = self->vec(); }
+}
+
+%feature("docstring") dolfin::PETScKrylovSolver::ksp "Return petsc4py representation of PETSc KSP solver";
+%extend dolfin::PETScKrylovSolver
+{
+  void ksp(KSP& ksp)
+  { ksp = self->ksp(); }
+}
+
+%feature("docstring") dolfin::PETScLUSolver::ksp "Return petsc4py representation of PETSc LU solver";
+%extend dolfin::PETScLUSolver
+{
+  void ksp(KSP& ksp)
+  { ksp = self->ksp(); }
+}
+
+%feature("docstring") dolfin::PETScSNESSolver::snes "Return petsc4py representation of PETSc SNES solver";
+%extend dolfin::PETScSNESSolver
+{
+  void snes(SNES& snes)
+  { snes = self->snes(); }
+}
+
+#else
+%extend dolfin::PETScBaseMatrix {
+    %pythoncode %{
+        def mat(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScMatrix objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScVector {
+    %pythoncode %{
+        def vec(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScVector objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScKrylovSolver {
+    %pythoncode %{
+        def ksp(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScKrylovSolver objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScLUSolver {
+    %pythoncode %{
+        def ksp(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScLUSolver objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScSNESSolver {
+    %pythoncode %{
+        def snes(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScSNESSolver objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+#endif  // HAS_PETSC4PY
+#endif  // HAS_PETSC
 
 #ifdef HAS_TRILINOS
 

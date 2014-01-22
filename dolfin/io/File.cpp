@@ -31,109 +31,45 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/log/dolfin_log.h>
 #include "BinaryFile.h"
-#include "RAWFile.h"
-#include "VTKFile.h"
 #include "ExodusFile.h"
-#include "XMLFile.h"
-#include "XYZFile.h"
-#include "XDMFFile.h"
+#include "RAWFile.h"
 #include "SVGFile.h"
+#include "VTKFile.h"
+#include "X3DFile.h"
+#include "XMLFile.h"
+#include "XDMFFile.h"
+#include "XYZFile.h"
+
 #include "File.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, std::string encoding)
+  : _mpi_comm(MPI_COMM_WORLD)
 {
-  // Create parent path for file if file has a parent path
-  create_parent_path(filename);
-
-  // Get file path and extension
-  const boost::filesystem::path path(filename);
-  const std::string extension = boost::filesystem::extension(path);
-
-  // Choose format based on extension
-  if (extension == ".gz")
-  {
-    // Get suffix after discarding .gz
-    const std::string ext =
-      boost::filesystem::extension(boost::filesystem::basename(path));
-    if (ext == ".xml")
-      file.reset(new XMLFile(filename));
-    else if (ext == ".bin")
-      file.reset(new BinaryFile(filename));
-    else
-    {
-      dolfin_error("File.cpp",
-                   "open file",
-                   "Unknown file type (\"%s\") for file \"%s\"",
-                   ext.c_str(), filename.c_str());
-    }
-  }
-  else if (extension == ".xml")
-    file.reset(new XMLFile(filename));
-  else if (extension == ".pvd")
-    file.reset(new VTKFile(filename, encoding));
-#ifdef HAS_VTK
-#ifdef HAS_VTK_EXODUS
-  else if (extension == ".e")
-    file.reset(new ExodusFile(filename));
-#endif
-#endif
-  else if (extension == ".raw")
-    file.reset(new RAWFile(filename));
-  else if (extension == ".xyz")
-    file.reset(new XYZFile(filename));
-  else if (extension == ".bin")
-    file.reset(new BinaryFile(filename));
-#ifdef HAS_HDF5
-  else if (extension == ".xdmf")
-    file.reset(new XDMFFile(filename));
-#endif
-  else if (extension == ".svg")
-    file.reset(new SVGFile(filename));
-  else
-  {
-    dolfin_error("File.cpp",
-                 "open file",
-                 "Unknown file type (\"%s\") for file \"%s\"",
-                 extension.c_str(), filename.c_str());
-  }
+  init(MPI_COMM_WORLD, filename, encoding);
+}
+//-----------------------------------------------------------------------------
+File::File(MPI_Comm comm, const std::string filename, std::string encoding)
+  : _mpi_comm(comm)
+{
+  init(comm, filename, encoding);
 }
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, Type type, std::string encoding)
+  : _mpi_comm(MPI_COMM_WORLD)
 {
-  switch (type)
-  {
-  case xdmf:
-#ifdef HAS_HDF5
-    file.reset(new XDMFFile(filename));
-    break;
-#endif
-  case xml:
-    file.reset(new XMLFile(filename));
-    break;
-  case vtk:
-    file.reset(new VTKFile(filename, encoding));
-    break;
-  case raw:
-    file.reset(new RAWFile(filename));
-    break;
-  case xyz:
-    file.reset(new XYZFile(filename));
-    break;
-  case binary:
-    file.reset(new BinaryFile(filename));
-    break;
-  default:
-    dolfin_error("File.cpp",
-                 "open file",
-                 "Unknown file type (\"%d\") for file \"%s\"",
-                 type, filename.c_str());
-  }
+  init(MPI_COMM_WORLD, filename, type, encoding);
 }
 //-----------------------------------------------------------------------------
-File::File(std::ostream& outstream)
+File::File(MPI_Comm comm, const std::string filename, Type type,
+           std::string encoding) : _mpi_comm(comm)
+{
+  init(comm, filename, type, encoding);
+}
+//-----------------------------------------------------------------------------
+File::File(std::ostream& outstream) : _mpi_comm(MPI_COMM_SELF)
 {
   file.reset(new XMLFile(outstream));
 }
@@ -145,38 +81,39 @@ File::~File()
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Mesh*, double> mesh)
 {
-  file->write();
+  file->write(MPI::rank(_mpi_comm));
   *file << mesh;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
 {
-  file->write();
+  file->write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
+void
+File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
 {
-  file->write();
+  file->write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<double>*, double> f)
 {
-  file->write();
+  file->write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 {
-  file->write();
+  file->write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)
 {
   u.first->update();
-  file->write();
+  file->write(MPI::rank(_mpi_comm));
   *file << u;
 }
 //-----------------------------------------------------------------------------
@@ -195,8 +132,8 @@ bool File::exists(std::string filename)
 void File::create_parent_path(std::string filename)
 {
   const boost::filesystem::path path(filename);
-
-  if (path.has_parent_path() && !boost::filesystem::is_directory(path.parent_path()))
+  if (path.has_parent_path()
+      && !boost::filesystem::is_directory(path.parent_path()))
   {
     boost::filesystem::create_directories(path.parent_path());
     if (!boost::filesystem::is_directory(path.parent_path()))
@@ -206,6 +143,103 @@ void File::create_parent_path(std::string filename)
                    "Could not create directory \"%s\"",
                    path.parent_path().string().c_str());
     }
+  }
+}
+//-----------------------------------------------------------------------------
+void File::init(MPI_Comm comm, const std::string filename,
+                std::string encoding)
+{
+  // Create parent path for file if file has a parent path
+  create_parent_path(filename);
+
+  // Get file path and extension
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+
+  // Choose format based on extension
+  if (extension == ".gz")
+  {
+    // Get suffix after discarding .gz
+    const std::string ext =
+      boost::filesystem::extension(boost::filesystem::basename(path));
+    if (ext == ".xml")
+      file.reset(new XMLFile(comm, filename));
+    else if (ext == ".bin")
+      file.reset(new BinaryFile(filename));
+    else
+    {
+      dolfin_error("File.cpp",
+                   "open file",
+                   "Unknown file type (\"%s\") for file \"%s\"",
+                   ext.c_str(), filename.c_str());
+    }
+  }
+  else if (extension == ".x3d")
+    file.reset(new X3DFile(filename));
+  else if (extension == ".xml")
+    file.reset(new XMLFile(comm, filename));
+  else if (extension == ".pvd")
+    file.reset(new VTKFile(filename, encoding));
+#ifdef HAS_VTK
+#ifdef HAS_VTK_EXODUS
+  else if (extension == ".e")
+    file.reset(new ExodusFile(filename));
+#endif
+#endif
+  else if (extension == ".raw")
+    file.reset(new RAWFile(filename));
+  else if (extension == ".xyz")
+    file.reset(new XYZFile(filename));
+  else if (extension == ".bin")
+    file.reset(new BinaryFile(filename));
+#ifdef HAS_HDF5
+  else if (extension == ".xdmf")
+    file.reset(new XDMFFile(comm, filename));
+#endif
+  else if (extension == ".svg")
+    file.reset(new SVGFile(filename));
+  else
+  {
+    dolfin_error("File.cpp",
+                 "open file",
+                 "Unknown file type (\"%s\") for file \"%s\"",
+                 extension.c_str(), filename.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
+void File::init(MPI_Comm comm, const std::string filename, Type type,
+                std::string encoding)
+{
+  switch (type)
+  {
+  case x3d:
+    file.reset(new X3DFile(filename));
+    break;
+  case xdmf:
+#ifdef HAS_HDF5
+    file.reset(new XDMFFile(comm, filename));
+    break;
+#endif
+  case xml:
+    file.reset(new XMLFile(comm, filename));
+    break;
+  case vtk:
+    file.reset(new VTKFile(filename, encoding));
+    break;
+  case raw:
+    file.reset(new RAWFile(filename));
+    break;
+  case xyz:
+    file.reset(new XYZFile(filename));
+    break;
+  case binary:
+    file.reset(new BinaryFile(filename));
+    break;
+  default:
+    dolfin_error("File.cpp",
+                 "open file",
+                 "Unknown file type (\"%d\") for file \"%s\"",
+                 type, filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------

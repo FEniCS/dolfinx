@@ -463,11 +463,11 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   else
   {
     // Extract markers
-    const std::vector<std::pair<std::size_t, std::size_t> >& markers = bc.markers();
+    const std::vector<std::size_t>& markers = bc.markers();
 
     // Create refined markers
     dolfin_assert(W->mesh());
-    std::vector<std::pair<std::size_t, std::size_t> > refined_markers;
+    std::vector<std::size_t> refined_markers;
     adapt_markers(refined_markers, *adapted_mesh, markers, *W->mesh());
 
     refined_bc.reset(new DirichletBC(V, g_ptr, refined_markers, bc.method()));
@@ -531,20 +531,27 @@ const dolfin::MeshFunction<std::size_t>&
     return mesh_function.child();
   }
 
-  const Mesh& mesh = mesh_function.mesh();
+  dolfin_assert(mesh_function.mesh());
+  const Mesh& mesh = *mesh_function.mesh();
   const std::size_t dim = mesh.topology().dim();
 
   // Extract parent map from data of refined mesh
-  boost::shared_ptr<MeshFunction<std::size_t> > parent;
+  const std::vector<std::size_t>* parent = NULL;
   if (mesh_function.dim() == dim)
-    parent = adapted_mesh->data().mesh_function("parent_cell");
+  {
+    if (adapted_mesh->data().exists("parent_cell", dim))
+      parent = &(adapted_mesh->data().array("parent_cell", dim));
+  }
   else if (mesh_function.dim() == (dim - 1))
-    parent = adapted_mesh->data().mesh_function("parent_facet");
+  {
+    if (adapted_mesh->data().exists("parent_facet", dim - 1))
+      parent = &(adapted_mesh->data().array("parent_facet", dim - 1));
+  }
   else
     dolfin_not_implemented();
 
   // Check that parent map exists
-  if (!parent.get())
+  if (!parent)
   {
     dolfin_error("adapt.cpp",
                  "adapt mesh function",
@@ -557,7 +564,7 @@ const dolfin::MeshFunction<std::size_t>&
   // Map values of mesh function into refined mesh function
   boost::shared_ptr<MeshFunction<std::size_t> >
     adapted_mesh_function(new MeshFunction<std::size_t>(*adapted_mesh,
-                                                 mesh_function.dim()));
+                                                        mesh_function.dim()));
   for (std::size_t i = 0; i < adapted_mesh_function->size(); i++)
   {
     const std::size_t parent_index = (*parent)[i];
@@ -574,75 +581,50 @@ const dolfin::MeshFunction<std::size_t>&
   return *adapted_mesh_function;
 }
 //-----------------------------------------------------------------------------
-void dolfin::adapt_markers(std::vector<std::pair<std::size_t, std::size_t> >& refined_markers,
+void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
                            const Mesh& adapted_mesh,
-                           const std::vector<std::pair<std::size_t, std::size_t> >& markers,
+                           const std::vector<std::size_t>& markers,
                            const Mesh& mesh)
 {
-
-  // Extract parent map from data of refined mesh
-  boost::shared_ptr<MeshFunction<std::size_t> > parent_cells = \
-    adapted_mesh.data().mesh_function("parent_cell");
-  boost::shared_ptr<MeshFunction<std::size_t> > parent_facets = \
-    adapted_mesh.data().mesh_function("parent_facet");
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
 
   // Check that parent maps exist
-  if (!parent_cells.get() || !parent_facets.get())
+  if (!adapted_mesh.data().exists("parent_facet", D - 1))
   {
     dolfin_error("adapt.cpp",
                  "adapt markers",
                  "Unable to extract information about parent mesh entites");
   }
 
+  // Extract parent map from data of refined mesh
+  const std::vector<std::size_t>& parent_facets
+    = adapted_mesh.data().array("parent_facet", D - 1);
+
   // Create map (parent_cell, parent_local_facet) -> [(child_cell,
   // child_local_facet), ...] for boundary facets
-  std::pair<std::size_t, std::size_t> child;
-  std::pair<std::size_t, std::size_t> parent;
-  std::map< std::pair<std::size_t, std::size_t>,
-    std::vector< std::pair<std::size_t, std::size_t> > > children;
 
-  const std::size_t D = mesh.topology().dim();
+  std::map<std::size_t, std::vector<std::size_t> > children;
   for (FacetIterator facet(adapted_mesh); !facet.end(); ++facet)
   {
     // Ignore interior facets
     if (facet->num_entities(D) == 2)
       continue;
 
-    // Extract cell and local facet number
-    Cell cell(adapted_mesh, facet->entities(D)[0]);
-    const std::size_t local_facet = cell.index(*facet);
+    // Extract index of parent facet
+    const std::size_t parent_facet_index = parent_facets[facet->index()];
 
-    child.first = cell.index();
-    child.second = local_facet;
-
-    // Extract parent cell
-    Cell parent_cell(mesh, (*parent_cells)[cell]);
-
-    // Extract (global) index of parent facet
-    const std::size_t parent_facet_index = (*parent_facets)[*facet];
-
-    // Extract local number of parent facet wrt parent cell
-    Facet parent_facet(mesh, parent_facet_index);
-    const std::size_t parent_local_facet = parent_cell.index(parent_facet);
-
-    parent.first = parent_cell.index();
-    parent.second = parent_local_facet;
-
-    // Add this (cell, local_facet) to list of child facets
-    children[parent].push_back(child);
-
+    children[parent_facet_index].push_back(facet->index());
   }
 
   // Use above map to construct refined markers
-  std::vector<std::pair<std::size_t, std::size_t> >  child_facets;
-  std::vector<std::pair<std::size_t, std::size_t> >::const_iterator it;
+  std::vector<std::size_t> child_facets;
+  std::vector<std::size_t>::const_iterator it;
   for (it = markers.begin(); it != markers.end(); ++it)
   {
     child_facets = children[*it];
     for (std::size_t k = 0; k < child_facets.size(); k++)
-    {
       refined_markers.push_back(child_facets[k]);
-    }
   }
 }
 //-----------------------------------------------------------------------------

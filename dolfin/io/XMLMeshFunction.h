@@ -32,7 +32,6 @@
 #include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include "XMLMesh.h"
 #include "XMLMeshValueCollection.h"
@@ -46,20 +45,20 @@ namespace dolfin
   {
   public:
 
-    // Read XML MeshFunction
+    /// Read XML MeshFunction
     template <typename T>
     static void read(MeshFunction<T>& mesh_function, const std::string type,
-                     const pugi::xml_node& xml_mesh);
+                     const pugi::xml_node xml_mesh);
 
-    // Read XML MeshFunction as a MeshValueCollection
+    /// Read XML MeshFunction as a MeshValueCollection
     template <typename T>
     static void read(MeshValueCollection<T>& mesh_value_collection,
-                     const std::string type, const pugi::xml_node& xml_mesh);
+                     const std::string type, const pugi::xml_node xml_mesh);
 
     /// Write the XML file
     template<typename T>
     static void write(const MeshFunction<T>& mesh_function,
-                      const std::string type, pugi::xml_node& xml_node,
+                      const std::string type, pugi::xml_node xml_node,
                       bool write_mesh=true);
 
   };
@@ -68,37 +67,55 @@ namespace dolfin
   template <typename T>
   inline void XMLMeshFunction::read(MeshFunction<T>& mesh_function,
                                     const std::string type,
-                                    const pugi::xml_node& xml_mesh)
+                                    const pugi::xml_node xml_mesh)
   {
-    // Check for old tag
     bool new_format = false;
-    std::string tag_name = "mesh_function";
-    const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
-    if (xml_mesh.child("meshfunction"))
+    pugi::xml_node xml_meshfunction;
+    if (std::string(xml_mesh.name()) == "mesh_function")
     {
-      warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
-              "I'll be nice and read your XML data anyway, for now, but you will "
-              "need to update your XML files (a simple search and replace) to use "
-              "future versions of DOLFIN.");
-      tag_name = "meshfunction";
-    }
-
-    // Read main tag
-    if (!xml_meshfunction)
-      std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
-
-    if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+      // XML node is a mesh function
       new_format = true;
+      xml_meshfunction = xml_mesh;
+    }
+    else
+    {
+      // Tag
+      std::string tag_name = "mesh_function";
+
+      // Check for old tag
+      if (xml_mesh.child("meshfunction"))
+      {
+        warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
+                "I'll be nice and read your XML data anyway, for now, but you will "
+                "need to update your XML files (a simple search and replace) to use "
+                "future versions of DOLFIN.");
+        tag_name = "meshfunction";
+      }
+
+      // Get XML node
+      xml_meshfunction = xml_mesh.child(tag_name.c_str());
+
+      // Read main tag
+      if (!xml_meshfunction)
+        std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
+
+      if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+        new_format = true;
+    }
 
     // Check for new (MeshValueCollection) / old storage
     if (new_format)
     {
       // Read new-style MeshFunction
-      MeshValueCollection<T> mesh_value_collection;
-      XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
+      MeshValueCollection<T> mesh_value_collection(mesh_function.mesh());
+      XMLMeshValueCollection::read<T>(mesh_value_collection, type,
+                                      xml_meshfunction);
 
-      // Assign collection to mesh function (this is a local operation)
+      // Assign collection to mesh function (this is a local
+      // operation) and attach name
       mesh_function = mesh_value_collection;
+      mesh_function.rename(mesh_value_collection.name(),
+                           mesh_value_collection.label());
     }
     else
     {
@@ -122,7 +139,8 @@ namespace dolfin
       // Iterate over entries (choose data type)
       if (type == "uint")
       {
-        for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+        for (pugi::xml_node_iterator it = xml_meshfunction.begin();
+             it != xml_meshfunction.end(); ++it)
         {
           const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
@@ -131,7 +149,8 @@ namespace dolfin
       }
       else if (type == "int")
       {
-        for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+        for (pugi::xml_node_iterator it = xml_meshfunction.begin();
+             it != xml_meshfunction.end(); ++it)
         {
           const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
@@ -140,7 +159,8 @@ namespace dolfin
       }
       else if (type == "double")
       {
-        for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+        for (pugi::xml_node_iterator it = xml_meshfunction.begin();
+             it != xml_meshfunction.end(); ++it)
         {
           const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
@@ -149,7 +169,8 @@ namespace dolfin
       }
       else if (type == "bool")
       {
-        for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+        for (pugi::xml_node_iterator it = xml_meshfunction.begin();
+             it != xml_meshfunction.end(); ++it)
         {
           const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
@@ -168,7 +189,7 @@ namespace dolfin
   template <typename T>
   inline void XMLMeshFunction::read(MeshValueCollection<T>& mesh_value_collection,
                                     const std::string type,
-                                    const pugi::xml_node& xml_mesh)
+                                    const pugi::xml_node xml_mesh)
   {
     // Check for old tag
     std::string tag_name("mesh_function");
@@ -203,20 +224,21 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template<typename T>
   void XMLMeshFunction::write(const MeshFunction<T>& mesh_function,
-                              const std::string type, pugi::xml_node& xml_node,
+                              const std::string type, pugi::xml_node xml_node,
                               bool write_mesh)
   {
     not_working_in_parallel("MeshFunction XML output");
 
     // Write mesh if requested
     if (write_mesh)
-      XMLMesh::write(mesh_function.mesh(), xml_node);
+      XMLMesh::write(*mesh_function.mesh(), xml_node);
 
     // Add mesh function node and attributes
     pugi::xml_node mf_node = xml_node.append_child("mesh_function");
 
     // Create MeshValueCollection for output
-    const MeshValueCollection<T> mesh_value_collection(mesh_function);
+    MeshValueCollection<T> mesh_value_collection(mesh_function);
+    mesh_value_collection.rename(mesh_function.name(), mesh_function.label());
 
     // Write MeshValueCollection
     XMLMeshValueCollection::write(mesh_value_collection, type, mf_node);

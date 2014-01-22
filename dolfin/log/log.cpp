@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2003-03-13
-// Last changed: 2013-01-07
+// Last changed: 2013-04-18
 
 #include <cstdarg>
 #include <cstdlib>
@@ -135,11 +135,13 @@ void dolfin::dolfin_error(std::string location,
 }
 //-----------------------------------------------------------------------------
 void dolfin::deprecation(std::string feature,
-                         std::string version,
+                         std::string version_deprecated,
+                         std::string version_remove,
                          std::string message, ...)
 {
   read(buffer.get(), message);
-  LogManager::logger.deprecation(feature, version, buffer.get());
+  LogManager::logger.deprecation(feature, version_deprecated, version_remove,
+                                 buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::log(int log_level, std::string msg, ...)
@@ -199,14 +201,13 @@ void dolfin::monitor_memory_usage()
 //-----------------------------------------------------------------------------
 void dolfin::not_working_in_parallel(std::string what)
 {
-  if (MPI::num_processes() > 1)
+  if (MPI::size(MPI_COMM_WORLD) > 1)
   {
-    MPI::barrier();
     dolfin_error("log.cpp",
                  "perform operation in parallel",
                  "%s is not yet working in parallel.\n"
                  "***          Consider filing a bug report at %s",
-                 what.c_str(), "https://bugs.launchpad.net/dolfin");
+                 what.c_str(), "https://bitbucket.org/fenics-project/dolfin/issues");
   }
 }
 //-----------------------------------------------------------------------------
@@ -215,8 +216,9 @@ void dolfin::__debug(std::string file, unsigned long line,
 {
   read(buffer.get(), format);
   std::ostringstream ost;
-  ost << file << ":" << line << " in " << function << "()";
-  std::string msg = std::string(buffer.get()) + " [at " + ost.str() + "]";
+  ost << "[at " << file << ":" << line << " in " << function << "()]";
+  LogManager::logger.__debug(ost.str());
+  std::string msg = std::string(buffer.get());
   LogManager::logger.__debug(msg);
 }
 //-----------------------------------------------------------------------------

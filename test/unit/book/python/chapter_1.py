@@ -38,7 +38,13 @@ def run_path(path, args):
 
     if has_run_path:
         sys.argv = ["foo"] + [str(arg) for arg in args]
-        runpy_run_path(path)
+        try:
+            runpy_run_path(path)
+        except SystemExit, e:
+            if e.args[0] == 0:
+                pass
+            else:
+                raise e
     else:
         status = os.system("python " + path + " " + \
                            " ".join(str(arg) for arg in args))
@@ -47,7 +53,7 @@ def run_path(path, args):
 
 def skip_in_parallel():
     "Skip test in parallel"
-    if MPI.num_processes() > 1:
+    if MPI.size(mpi_comm_world()) > 1:
         print "FIXME: This unit test does not work in parallel, skipping"
         return True
     return False

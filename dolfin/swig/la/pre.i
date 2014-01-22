@@ -54,6 +54,11 @@
 %}
 
 //-----------------------------------------------------------------------------
+// Modify VectorSpaceBasis::operator[]
+//-----------------------------------------------------------------------------
+%rename(_sub) dolfin::VectorSpaceBasis::operator[];
+
+//-----------------------------------------------------------------------------
 // Ignore some operator=
 //-----------------------------------------------------------------------------
 %ignore dolfin::GenericTensor::operator=;
@@ -104,7 +109,7 @@
 // Ignore low level interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::LinearAlgebraObject::instance;
-%ignore dolfin::GenericTensor::get(double*, const  dolfin::la_index*,        const dolfin::la_index * const *) const;
+%ignore dolfin::GenericTensor::get(double*, const  dolfin::la_index*, const dolfin::la_index * const *) const;
 %ignore dolfin::GenericTensor::set(const double* , const dolfin::la_index* , const dolfin::la_index * const *);
 %ignore dolfin::GenericTensor::add(const double* , const dolfin::la_index* , const dolfin::la_index * const *);
 %ignore dolfin::PETScLinearOperator::wrapper;
@@ -187,8 +192,24 @@
 // PETSc/SLEPc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
+// Ignore MatNullSpace not properly wrapped by SWIG
+%ignore dolfin::PETScPreconditioner::near_nullspace() const;
+
+// Only ignore C++ accessors if petsc4py is enabled
+#ifdef HAS_PETSC4PY
+%ignore dolfin::PETScVector::vec() const;
+%ignore dolfin::PETScBaseMatrix::mat() const;
+%ignore dolfin::PETScKrylovSolver::ksp() const;
+%ignore dolfin::PETScLUSolver::ksp() const;
+%ignore dolfin::PETScSNESSolver::snes() const;
+#else
+// Ignore everything
 %ignore dolfin::PETScVector::vec;
 %ignore dolfin::PETScBaseMatrix::mat;
+%ignore dolfin::PETScKrylovSolver::ksp;
+%ignore dolfin::PETScLUSolver::ksp;
+%ignore dolfin::PETScSNESSolver::snes;
+#endif
 #endif
 
 #ifdef HAS_SLEPC
@@ -216,7 +237,8 @@
   {
     Teuchos::RCP<Type> *rcp_ptr;
     int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
+    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr,
+                                $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
     if (!SWIG_IsOK(res))
       SWIG_exception_fail(SWIG_ArgError(res), "in method '$symname', argument $argnum of type '$type'");
     if (rcp_ptr)
@@ -242,7 +264,8 @@
   {
     Teuchos::RCP<Type> *rcp_ptr;
     int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
+    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr,
+                                $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
     if (rcp_ptr && (newmem & SWIG_CAST_NEW_MEMORY))
       delete rcp_ptr;
   }
@@ -294,14 +317,16 @@
 %typemap(directorin, fragment="NoDelete") dolfin::PETScVector&
 {
   // Director in dolfin::PETScVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
+  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *smartresult
+    = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") const dolfin::PETScVector&
 {
   // Director in const dolfin::PETScVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
+  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector > *smartresult
+    = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
 

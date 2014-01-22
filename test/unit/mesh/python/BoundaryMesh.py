@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Oeyvind Evju 2013
+#
 # First added:  2011-10-09
-# Last changed:
+# Last changed: 2013-10-11
 
 import unittest
 import numpy
@@ -31,7 +33,8 @@ class BoundaryMeshConstruction(unittest.TestCase):
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh(mesh, "exterior")
-        self.assertEqual(MPI.sum(bmesh1.num_cells()), 2)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()), 2)
+        self.assertEqual(bmesh1.size_global(0), 2)
         self.assertEqual(bmesh1.topology().dim(), 0)
 
     def test_2D_mesh(self):
@@ -39,7 +42,8 @@ class BoundaryMeshConstruction(unittest.TestCase):
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh(mesh, "exterior")
-        self.assertEqual(MPI.sum(bmesh1.num_cells()), 4*8)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()), 4*8)
+        self.assertEqual(bmesh1.size_global(1), 4*8)
         self.assertEqual(bmesh1.topology().dim(), 1)
 
     def test_3D_mesh(self):
@@ -47,7 +51,8 @@ class BoundaryMeshConstruction(unittest.TestCase):
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh(mesh, "exterior")
-        self.assertEqual(MPI.sum(bmesh1.num_cells()), 6*8*8*2)
+        self.assertEqual(MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()), 6*8*8*2)
+        self.assertEqual(bmesh1.size_global(2), 6*8*8*2)
         self.assertEqual(bmesh1.topology().dim(), 2)
 
 if __name__ == "__main__":

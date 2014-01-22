@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2009-2012
+// Modified by Anders Logg 2009-2013
 //
 // First added:  2008-08-26
-// Last changed: 2013-02-26
+// Last changed: 2013-12-04
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
@@ -27,14 +27,15 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
-#include "GenericLinearOperator.h"
-#include "GenericMatrix.h"
 
 namespace dolfin
 {
 
   // Forward declarations
+  class GenericLinearOperator;
+  class GenericMatrix;
   class GenericVector;
+  class VectorSpaceBasis;
 
   /// This class provides a general solver for linear systems Ax = b.
 
@@ -43,11 +44,13 @@ namespace dolfin
   public:
 
     /// Set operator (matrix)
-    virtual void set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
+    virtual void
+      set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Set operator (matrix) and preconditioner matrix
-    virtual void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                               const boost::shared_ptr<const GenericLinearOperator> P)
+    virtual void
+      set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                    const boost::shared_ptr<const GenericLinearOperator> P)
     {
       dolfin_error("GenericLinearSolver.h",
                    "set operator and preconditioner for linear solver",
@@ -56,7 +59,7 @@ namespace dolfin
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
-    virtual void set_nullspace(const std::vector<const GenericVector*> nullspace)
+    virtual void set_nullspace(const VectorSpaceBasis& nullspace)
     {
       dolfin_error("GenericLinearSolver.h",
                    "set nullspace for operator",
@@ -65,7 +68,7 @@ namespace dolfin
 
     /// Solve linear system Ax = b
     virtual std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
-                       const GenericVector& b)
+                              const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system",
@@ -83,8 +86,9 @@ namespace dolfin
     }
 
     /// Solve linear system A^Tx = b
-    virtual std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x,
-                       const GenericVector& b)
+    virtual std::size_t solve_transpose(const GenericLinearOperator& A,
+                                        GenericVector& x,
+                                        const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system transpose",
@@ -93,12 +97,27 @@ namespace dolfin
     }
 
     /// Solve linear system A^Tx = b
-    virtual std::size_t solve_transpose(GenericVector& x, const GenericVector& b)
+    virtual std::size_t solve_transpose(GenericVector& x,
+                                        const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system transpose",
                    "Not supported by current linear algebra backend. Consider using solve_transpose(x, b)");
       return 0;
+    }
+
+    // FIXME: This should not be needed. Need to cleanup linear solver
+    // name jungle: default, lu, iterative, direct, krylov, etc
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    virtual std::string parameter_type() const
+    {
+      return "default";
+    }
+
+    /// Update solver parameters (useful for LinearSolver wrapper)
+    virtual void update_parameters(const Parameters& parameters)
+    {
+      this->parameters.update(parameters);
     }
 
   protected:

@@ -26,6 +26,7 @@
 #include <set>
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericLinearSolver.h"
@@ -169,7 +170,7 @@ namespace dolfin
     // Reinitialise x if necessary
     if (x.size() != b.size())
     {
-      x.resize(b.size());
+      x.resize(b.mpi_comm(), b.local_range());
       x.zero();
     }
 
@@ -222,9 +223,9 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<typename Mat>
   std::size_t uBLASKrylovSolver::solveCG(const Mat& A,
-                                          uBLASVector& x,
-                                          const uBLASVector& b,
-                                          bool& converged) const
+                                         uBLASVector& x,
+                                         const uBLASVector& b,
+                                         bool& converged) const
   {
     warning("Conjugate-gradient method not yet programmed for uBLASKrylovSolver. Using GMRES.");
     return solveGMRES(A, x, b, converged);
@@ -232,8 +233,8 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<typename Mat>
   std::size_t uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
-                                             const uBLASVector& b,
-                                             bool& converged) const
+                                            const uBLASVector& b,
+                                            bool& converged) const
   {
     // Get underlying uBLAS vectors
     ublas_vector& _x = x.vec();
@@ -251,10 +252,10 @@ namespace dolfin
     ublas_vector _h(restart+1);
 
     // Create gamma vector
-    ublas_vector _gamma(restart+1);
+    ublas_vector _gamma(restart + 1);
 
     // Matrix containing v_k as columns.
-    ublas_matrix_cmajor V(size, restart+1);
+    ublas_matrix_cmajor V(size, restart + 1);
 
     // w vector
     uBLASVector w(size);
@@ -325,9 +326,9 @@ namespace dolfin
         // Insert column of V (inserting v_(j+1)
         noalias(column(V,j+1)) = _w/_h(j+1);
 
-        // Apply previous Givens rotations to the "new" column
-        // (this could be improved? - use more uBLAS functions.
-        //  The below has been taken from old DOLFIN code.)
+        // Apply previous Givens rotations to the "new" column (this
+        // could be improved? - use more uBLAS functions.  The below
+        // has been taken from old DOLFIN code.)
         for(std::size_t i=0; i<j; ++i)
         {
           temp1 = _h(i);
@@ -339,9 +340,10 @@ namespace dolfin
         // Compute new c_i and s_i
         nu = sqrt( _h(j)*_h(j) + _h(j+1)*_h(j+1) );
 
-        // Direct access to c & s below leads to some strange compiler errors
-        // when using vector expressions and noalias(). By using "subrange",
-        // we are working with vector expressions rather than reals
+        // Direct access to c & s below leads to some strange compiler
+        // errors when using vector expressions and noalias(). By
+        // using "subrange", we are working with vector expressions
+        // rather than reals
         //c(j) =  h(j)/nu;
         //s(j) = -h(j+1)/nu;
         subrange(_c, j,j+1) =  subrange(_h, j,j+1)/nu;
@@ -373,15 +375,18 @@ namespace dolfin
         ++j;
       }
 
-      // Eliminate extra rows and columns (this does not resize or copy, just addresses a range)
-      ublas_matrix_cmajor_tri_range Htrunc(H, ublas::range(0,subiteration), ublas::range(0,subiteration) );
+      // Eliminate extra rows and columns (this does not resize or
+      // copy, just addresses a range)
+      ublas_matrix_cmajor_tri_range Htrunc(H, ublas::range(0,subiteration),
+                                           ublas::range(0,subiteration));
       ublas_vector_range _g(_gamma, ublas::range(0,subiteration));
 
       // Solve triangular system H*g and return result in g
       ublas::inplace_solve(Htrunc, _g, ublas::upper_tag ());
 
       // x_m = x_0 + V*y
-      ublas_matrix_cmajor_range _v( V, ublas::range(0,V.size1()), ublas::range(0,subiteration) );
+      ublas_matrix_cmajor_range _v( V, ublas::range(0,V.size1()),
+                                    ublas::range(0,subiteration) );
       axpy_prod(_v, _g, _x, false);
     }
     return iteration;
@@ -389,9 +394,9 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<typename Mat>
   std::size_t uBLASKrylovSolver::solveBiCGStab(const Mat& A,
-                                                uBLASVector& x,
-                                                const uBLASVector& b,
-                                                bool& converged) const
+                                               uBLASVector& x,
+                                               const uBLASVector& b,
+                                               bool& converged) const
   {
     // Get uderlying uBLAS vectors
     ublas_vector& _x = x.vec();
@@ -401,7 +406,8 @@ namespace dolfin
     const std::size_t size = A.size(0);
 
     // Allocate vectors
-    uBLASVector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
+    uBLASVector r(size), rstar(size), p(size), s(size), v(size), t(size),
+      y(size), z(size);
     ublas_vector& _r = r.vec();
     ublas_vector& _rstar = rstar.vec();
     ublas_vector& _p = p.vec();

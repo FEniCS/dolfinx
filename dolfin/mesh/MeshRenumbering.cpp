@@ -45,8 +45,10 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   // Get some some mesh
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t num_vertices = mesh.num_vertices();
-  const std::size_t num_cells = mesh.num_cells();
+  const std::size_t num_local_vertices  = mesh.size(0);
+  const std::size_t num_global_vertices = mesh.size_global(0);
+  const std::size_t num_local_cells     = mesh.size(tdim);
+  const std::size_t num_global_cells    = mesh.size_global(tdim);
 
   // Check that requested coloring is a cell coloring
   if (coloring_type[0] != tdim)
@@ -68,12 +70,12 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   // Create mesh editor
   MeshEditor editor;
   editor.open(new_mesh, mesh.type().cell_type(), tdim, gdim);
-  editor.init_cells(num_cells);
-  editor.init_vertices(num_vertices);
+  editor.init_cells(num_local_cells, num_global_cells);
+  editor.init_vertices(num_local_vertices, num_global_vertices);
 
   // Add vertices
-  dolfin_assert(new_coordinates.size() == num_vertices*gdim);
-  for (std::size_t i = 0; i < num_vertices; ++i)
+  dolfin_assert(new_coordinates.size() == num_local_vertices*gdim);
+  for (std::size_t i = 0; i < num_local_vertices; ++i)
   {
     std::vector<double> x(gdim);
     for (std::size_t j = 0; j < gdim; ++j)
@@ -84,9 +86,9 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   cout << "Done adding vertices" << endl;
 
   // Add cells
-  dolfin_assert(new_coordinates.size() == num_vertices*gdim);
+  dolfin_assert(new_coordinates.size() == num_local_vertices*gdim);
   const std::size_t vertices_per_cell = mesh.type().num_entities(0);
-  for (std::size_t i = 0; i < num_cells; ++i)
+  for (std::size_t i = 0; i < num_local_cells; ++i)
   {
     std::vector<std::size_t> c(vertices_per_cell);
     std::copy(new_connections.begin() + i*vertices_per_cell,
@@ -100,7 +102,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   cout << "Close editor" << endl;
 
   // Initialise coloring data
-  typedef std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+  typedef std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator ConstMeshColoringData;
 
   // Get old coloring
@@ -117,7 +119,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   const std::vector<std::size_t>& colors = mesh_coloring->second.first;
   const std::vector<std::vector<std::size_t> >&
     entities_of_color = mesh_coloring->second.second;
-  dolfin_assert(colors.size() == num_cells);
+  dolfin_assert(colors.size() == num_local_cells);
   dolfin_assert(!entities_of_color.empty());
   const std::size_t num_colors = entities_of_color.size();
 
@@ -172,7 +174,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   const std::size_t coordinates_size = mesh.geometry().size()*mesh.geometry().dim();
   new_coordinates.resize(coordinates_size);
 
-  typedef std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
+  typedef std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator MeshColoringData;
 
   info("Renumbering mesh by cell colors.");

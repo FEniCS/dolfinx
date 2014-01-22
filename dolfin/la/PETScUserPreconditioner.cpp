@@ -50,8 +50,8 @@ PETScUserPreconditioner::~PETScUserPreconditioner()
 void PETScUserPreconditioner::setup(const KSP ksp, PETScUserPreconditioner& pc)
 {
   PC petscpc;
-  KSPGetPC(ksp, &petscpc);
-
+  PetscErrorCode ierr = KSPGetPC(ksp, &petscpc);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
   PETScUserPreconditioner::PCCreate(petscpc);
 
   petscpc->data = &pc;
@@ -63,20 +63,15 @@ void PETScUserPreconditioner::setup(const KSP ksp, PETScUserPreconditioner& pc)
 //-----------------------------------------------------------------------------
 int PETScUserPreconditioner::PCApply(PC pc, Vec x, Vec y)
 {
-  // Convert vectors to DOLFIN wrapper format and pass to DOLFIN preconditioner
-
+  // Convert vectors to DOLFIN wrapper format and pass to DOLFIN
+  // preconditioner
   PETScUserPreconditioner* newpc = (PETScUserPreconditioner*)pc->data;
 
-  // Wrap PETSc vectors in shared pointers
-  boost::shared_ptr<Vec> _x(&x, NoDeleter());
-  boost::shared_ptr<Vec> _y(&y, NoDeleter());
-
   // Wrap PETSc vectors as DOLFIN PETScVectors
-  PETScVector dolfinx(_x), dolfiny(_y);
+  PETScVector dolfinx(x), dolfiny(y);
 
   // Solve
   newpc->solve(dolfiny, dolfinx);
-
   return 0;
 }
 //-----------------------------------------------------------------------------

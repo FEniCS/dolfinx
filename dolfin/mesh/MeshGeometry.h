@@ -24,8 +24,9 @@
 #define __MESH_GEOMETRY_H
 
 #include <string>
+#include <vector>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
-#include "Point.h"
 
 namespace dolfin
 {

@@ -43,17 +43,12 @@ boost::shared_ptr<GenericMatrix> PETScFactory::create_matrix() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> PETScFactory:: create_vector() const
 {
-  boost::shared_ptr<GenericVector> x(new PETScVector("global"));
+  boost::shared_ptr<GenericVector> x(new PETScVector);
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> PETScFactory:: create_local_vector() const
-{
-  boost::shared_ptr<GenericVector> x(new PETScVector("local"));
-  return x;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout> PETScFactory::create_layout(std::size_t rank) const
+boost::shared_ptr<TensorLayout>
+PETScFactory::create_layout(std::size_t rank) const
 {
   bool sparsity = false;
   if (rank > 1)
@@ -62,13 +57,15 @@ boost::shared_ptr<TensorLayout> PETScFactory::create_layout(std::size_t rank) co
   return pattern;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearOperator> PETScFactory::create_linear_operator() const
+boost::shared_ptr<GenericLinearOperator>
+PETScFactory::create_linear_operator() const
 {
   boost::shared_ptr<GenericLinearOperator> A(new PETScLinearOperator);
   return A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLUSolver> PETScFactory::create_lu_solver(std::string method) const
+boost::shared_ptr<GenericLUSolver>
+PETScFactory::create_lu_solver(std::string method) const
 {
   boost::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(method));
   return solver;

@@ -57,10 +57,12 @@ namespace dolfin
 
     // Read mesh data
     static void read_data(MeshData& data,
+                          const Mesh& mesh,
                           const pugi::xml_node mesh_node);
 
     // Read mesh domains
     static void read_domains(MeshDomains& domains,
+                             const Mesh& mesh,
                              const pugi::xml_node mesh_node);
 
     // Read array
@@ -72,11 +74,12 @@ namespace dolfin
                            pugi::xml_node mesh_node);
 
     // Write mesh data
-    static void write_data(const MeshData& data,
+    static void write_data(const Mesh& mesh, const MeshData& data,
                            pugi::xml_node mesh_node);
 
     // Write mesh markers
-    static void write_domains(const MeshDomains& domains,
+    static void write_domains(const Mesh& mesh,
+                              const MeshDomains& domains,
                               pugi::xml_node mesh_node);
 
   };

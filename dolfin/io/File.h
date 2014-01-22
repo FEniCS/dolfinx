@@ -29,6 +29,7 @@
 #include <string>
 #include <utility>
 #include <boost/scoped_ptr.hpp>
+#include <dolfin/common/MPI.h>
 #include "GenericFile.h"
 
 namespace dolfin
@@ -40,20 +41,21 @@ namespace dolfin
 
   /// A list of objects that can be read/written to file can be found in
   /// GenericFile.h. Compatible file formats include:
+  ///     * Binary (.bin)
+  ///     * RAW    (.raw)
+  ///     * SVG    (.svg)
+  ///     * XD3    (.xd3)
   ///     * XDMF   (.xdmf)
   ///     * XML    (.xml)
-  ///     * VTK    (.pvd)
-  ///     * RAW    (.raw)
   ///     * XYZ    (.xyz)
-  ///     * Binary (.bin)
-  ///     * SVG    (.svg)
+  ///     * VTK    (.pvd)
 
   class File
   {
   public:
 
     /// File formats
-    enum Type {xdmf, xml, vtk, raw, xyz, binary, svg};
+    enum Type {x3d, xdmf, xml, vtk, raw, xyz, binary, svg};
 
     /// Create a file with given name
     ///
@@ -79,6 +81,34 @@ namespace dolfin
     ///
     File(const std::string filename, std::string encoding="ascii");
 
+    /// Create a file with given name with MPI communicator
+    ///
+    /// *Arguments*
+    ///     communicator (MPI_Comm)
+    ///         The MPI communicator.
+    ///     filename (std::string)
+    ///         Name of file.
+    ///     encoding (std::string)
+    ///         Optional argument specifying encoding, ascii is default.
+    ///
+    /// *Example*
+    ///    .. code-block:: c++
+    ///
+    ///         // Save solution to file
+    ///         File file(u.mesh()->mpi_comm(), "solution.pvd");
+    ///         file << u;
+    ///
+    ///         // Read mesh data from file
+    ///         File mesh_file(MPI_COMM_WORLD, "mesh.xml");
+    ///         mesh_file >> mesh;
+    ///
+    ///         // Using compressed binary format
+    ///         File comp_file(u.mesh()->mpi_comm(), "solution.pvd",
+    ///                        "compressed");
+    ///
+    File(MPI_Comm comm, const std::string filename,
+         std::string encoding="ascii");
+
     /// Create a file with given name and type (format)
     ///
     /// *Arguments*
@@ -95,6 +125,26 @@ namespace dolfin
     ///         File file("solution", vtk);
     ///
     File(const std::string filename, Type type, std::string encoding="ascii");
+
+    /// Create a file with given name and type (format) with MPI communicator
+    ///
+    /// *Arguments*
+    ///     communicator (MPI_Comm)
+    ///         The MPI communicator.
+    ///     filename (std::string)
+    ///         Name of file.
+    ///     type (Type)
+    ///         File format.
+    ///     encoding (std::string)
+    ///         Optional argument specifying encoding, ascii is default.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         File file(MPI_COMM_WORLD, "solution", vtk);
+    ///
+    File(MPI_Comm comm, const std::string filename, Type type,
+         std::string encoding="ascii");
 
     /// Create an outfile object writing to stream
     ///
@@ -144,7 +194,8 @@ namespace dolfin
     ///         File file("markers.pvd", "compressed");
     ///         file << std::make_pair<const MeshFunction<std::size_t>*, double>(&f, t);
     ///
-    void operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f);
+    void operator<<
+      (const std::pair<const MeshFunction<std::size_t>*, double> f);
 
     /// Write MeshFunction to file with time
     ///
@@ -154,7 +205,7 @@ namespace dolfin
     ///         File file("markers.pvd", "compressed");
     ///         file << std::make_pair<const MeshFunction<double>*, double>(&f, t);
     ///
-    void operator<<(const std::pair<const MeshFunction<double>*, double> f);
+    void operator<< (const std::pair<const MeshFunction<double>*, double> f);
 
     /// Write MeshFunction to file with time
     ///
@@ -179,7 +230,7 @@ namespace dolfin
     /// Write object to file
     template<typename T> void operator<<(const T& t)
     {
-      file->write();
+      file->write(MPI::rank(_mpi_comm));
       *file << t;
     }
 
@@ -202,6 +253,17 @@ namespace dolfin
     static void create_parent_path(std::string filename);
 
   private:
+
+    // Initialise GenericFile (using file extension to determine type)
+    void init(MPI_Comm comm, const std::string filename, std::string encoding);
+
+    // Initialise GenericFile  (with specified type)
+    void init(MPI_Comm comm, const std::string filename, Type type,
+              std::string encoding);
+
+    // FIXME: Remove when GenericFile::write is cleaned up
+    // MPI communicator
+    const MPI_Comm _mpi_comm;
 
     // Pointer to implementation (envelope-letter design)
     boost::scoped_ptr<GenericFile> file;

@@ -21,10 +21,10 @@
 // Last changed: 2012-10-30
 
 #include <dolfin/log/log.h>
+#include <dolfin/geometry/Point.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
-#include "Point.h"
 #include "MeshEditor.h"
 
 using namespace dolfin;
@@ -108,7 +108,8 @@ void MeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
   }
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_vertices(std::size_t num_vertices)
+void MeshEditor::init_vertices(std::size_t num_local_vertices,
+                               std::size_t num_global_vertices)
 {
   // Check if we are currently editing a mesh
   if (!_mesh)
@@ -119,13 +120,14 @@ void MeshEditor::init_vertices(std::size_t num_vertices)
   }
 
   // Initialize mesh data
-  _num_vertices = num_vertices;
-  _mesh->_topology.init(0,    num_vertices);
-  _mesh->_topology.init_global_indices(0, num_vertices);
-  _mesh->_geometry.init(_gdim, num_vertices);
+  _num_vertices = num_local_vertices;
+  _mesh->_topology.init(0, num_local_vertices, num_global_vertices);
+  _mesh->_topology.init_global_indices(0, num_local_vertices);
+  _mesh->_geometry.init(_gdim, num_local_vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_cells(std::size_t num_cells)
+void MeshEditor::init_cells(std::size_t num_local_cells,
+                            std::size_t num_global_cells)
 {
   // Check if we are currently editing a mesh
   if (!_mesh)
@@ -136,10 +138,11 @@ void MeshEditor::init_cells(std::size_t num_cells)
   }
 
   // Initialize mesh data
-  _num_cells = num_cells;
-  _mesh->_topology.init(_tdim, num_cells);
-  _mesh->_topology.init_global_indices(_tdim, num_cells);
-  _mesh->_topology(_tdim, 0).init(_num_cells, _mesh->type().num_vertices(_tdim));
+  _num_cells = num_local_cells;
+  _mesh->_topology.init(_tdim, num_local_cells, num_global_cells);
+  _mesh->_topology.init_global_indices(_tdim, num_local_cells);
+  _mesh->_topology(_tdim, 0).init(_num_cells,
+                                  _mesh->type().num_vertices(_tdim));
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_vertex(std::size_t index, const Point& p)

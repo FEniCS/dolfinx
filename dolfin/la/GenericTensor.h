@@ -29,6 +29,7 @@
 #include <typeinfo>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "LinearAlgebraObject.h"
 
@@ -59,7 +60,8 @@ namespace dolfin
     virtual std::size_t size(std::size_t dim) const = 0;
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const = 0;
+    virtual std::pair<std::size_t, std::size_t>
+      local_range(std::size_t dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block, const dolfin::la_index* num_rows,
@@ -70,12 +72,14 @@ namespace dolfin
                      const dolfin::la_index * const * rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block,
-                     const std::vector<const std::vector<dolfin::la_index>* >& rows) = 0;
+    virtual
+      void add(const double* block,
+           const std::vector<const std::vector<dolfin::la_index>* >& rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block,
-                     const std::vector<std::vector<dolfin::la_index> >& rows) = 0;
+    virtual
+      void add(const double* block,
+               const std::vector<std::vector<dolfin::la_index> >& rows) = 0;
 
     /// Add block of values
     virtual void add(const double* block, const dolfin::la_index* num_rows,
@@ -86,6 +90,9 @@ namespace dolfin
 
     /// Finalize assembly of tensor
     virtual void apply(std::string mode) = 0;
+
+    /// Return MPI communicator
+    virtual const MPI_Comm mpi_comm() const = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;

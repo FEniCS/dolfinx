@@ -60,8 +60,10 @@ namespace dolfin
     EpetraKrylovSolver(std::string method = "default",
                        std::string preconditioner = "default");
 
-    /// Create Krylov solver for a particular method and TrilinosPreconditioner
-    EpetraKrylovSolver(std::string method, TrilinosPreconditioner& preconditioner);
+    /// Create Krylov solver for a particular method and
+    /// TrilinosPreconditioner
+    EpetraKrylovSolver(std::string method,
+                       TrilinosPreconditioner& preconditioner);
 
     /// Destructor
     ~EpetraKrylovSolver();
@@ -83,10 +85,12 @@ namespace dolfin
     std::size_t solve(EpetraVector& x, const EpetraVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
+    std::size_t solve(const EpetraMatrix& A, EpetraVector& x,
+                      const EpetraVector& b);
 
     /// Return residual from most recent solve
     double residual(const std::string residualtype) const;
@@ -115,7 +119,8 @@ namespace dolfin
     static const std::map<std::string, int> _methods;
 
     // Available solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+    static const std::vector<std::pair<std::string, std::string> >
+      _methods_descr;
 
     // Operator (the matrix)
     boost::shared_ptr<const EpetraMatrix> _A;

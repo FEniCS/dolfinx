@@ -78,7 +78,7 @@ class NamedMeshFunctions(unittest.TestCase):
             if tp == 'bool':
                 continue
             for name in self.names:
-                self.assertRaises(TypeError, self.funcs[(tp, name)].__setitem__, len(self.funcs[(tp, name)]), "jada")
+                self.assertRaises(TypeError, self.funcs[(tp, name)].__setitem__, len(self.funcs[(tp, name)])-1, "jada")
                 
 class MeshFunctions(unittest.TestCase):
 

@@ -23,17 +23,21 @@
 #ifdef HAS_VTK
 #ifdef HAS_VTK_EXODUS
 
+#include <vtkSmartPointer.h>
 #include "GenericFile.h"
 
-#include <vtkSmartPointer.h>
-
-// forward declarations
+// Forward declarations
 class vtkUnstructuredGrid;
+class vtkExodusIIWriter;
 
 namespace dolfin
 {
 
-  /// This class supports the output of meshes and functions
+  class Function;
+  class Mesh;
+  template <typename T> class MeshFunction;
+
+  /// This class supports the output of meshes and functions.
   /// Exodus format for visualistion purposes. It is not suitable to
   /// checkpointing as it may decimate some data.
 
@@ -45,31 +49,28 @@ namespace dolfin
     ~ExodusFile();
 
     void operator<< (const Mesh& mesh);
-    void operator<< (const MeshFunction<unsigned int>& meshfunction);
+    void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<int>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
     void operator<< (const Function& u);
     void operator<< (const std::pair<const Function*, double> u);
 
-private:
+  private:
 
     void write_function(const Function& u, double time) const;
 
-    vtkSmartPointer<vtkUnstructuredGrid> create_vtk_mesh(const Mesh& mesh) const;
+    vtkSmartPointer<vtkUnstructuredGrid>
+      create_vtk_mesh(const Mesh& mesh) const;
 
-    void perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_mesh) const;
+    void
+      perform_write(const vtkSmartPointer<vtkUnstructuredGrid>& vtk_mesh) const;
 
-    // File encoding
-    const std::string encoding;
-    std::string encode_string;
-
-    bool binary;
-    bool compress;
+    const vtkSmartPointer<vtkExodusIIWriter> _writer;
 
   };
 
 }
 
-#endif // HAS_VTK_EXODUS
-#endif // HAS_VTK
-#endif // __EXODUS_FILE_H
+#endif
+#endif
+#endif

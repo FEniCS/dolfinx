@@ -59,7 +59,7 @@ if has_linear_algebra_backend("PETSc"):
             x_petsc = as_backend_type(x)
 
             for prec, descr in krylov_solver_preconditioners():
-                if MPI.num_processes() > 1 and prec in ["ilu", "icc", "jacobi", "hypre_amg"]:
+                if MPI.size(mesh.mpi_comm()) > 1 and prec in ["ilu", "icc", "jacobi", "hypre_amg"]:
                     print "FIXME: Preconditioner '%s' does not work in parallel,"\
                           " skipping" % prec
                     continue

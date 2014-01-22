@@ -44,18 +44,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(std::string type): _x(new ublas_vector(0))
+uBLASVector::uBLASVector() : _x(new ublas_vector(0))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(std::size_t N, std::string type): _x(new ublas_vector(N))
+uBLASVector::uBLASVector(std::size_t N)
+  : _x(new ublas_vector(N))
 {
   // Set all entries to zero
   _x->clear();
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(const uBLASVector& x): _x(new ublas_vector(*(x._x)))
+uBLASVector::uBLASVector(const uBLASVector& x) : _x(new ublas_vector(*(x._x)))
 {
   // Do nothing
 }
@@ -76,8 +77,15 @@ boost::shared_ptr<GenericVector> uBLASVector::copy() const
   return y;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(std::size_t N)
+void uBLASVector::resize(MPI_Comm comm, std::size_t N)
 {
+  if (MPI::size(comm) > 1)
+  {
+    dolfin_error("uBLASVector.cpp",
+                 "resize uBLAS vector",
+                 "Distributed vectors not supported by uBLAS backend");
+  }
+
   if (_x->size() == N)
     return;
   _x->resize(N, false);
@@ -87,22 +95,24 @@ void uBLASVector::resize(std::size_t N)
   _x->clear();
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(std::pair<std::size_t, std::size_t> range)
+void uBLASVector::resize(MPI_Comm comm,
+                         std::pair<std::size_t, std::size_t> range)
 {
-  if (range.first != 0)
+  if (MPI::size(comm) > 1)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
                  "Distributed vectors not supported by uBLAS backend");
   }
 
-  resize(range.second - range.first);
+  resize(comm, range.second - range.first);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(std::pair<std::size_t, std::size_t> range,
-                    const std::vector<std::size_t>& ghost_indices)
+void uBLASVector::resize(MPI_Comm comm,
+                         std::pair<std::size_t, std::size_t> range,
+                         const std::vector<la_index>& ghost_indices)
 {
-  if (range.first != 0)
+  if (MPI::size(comm) > 1)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
@@ -116,7 +126,7 @@ void uBLASVector::resize(std::pair<std::size_t, std::size_t> range,
                  "Distributed vectors not supported by uBLAS backend");
   }
 
-  resize(range.second - range.first);
+  resize(comm, range.second - range.first);
 }
 //-----------------------------------------------------------------------------
 bool uBLASVector::empty() const
@@ -142,7 +152,8 @@ bool uBLASVector::owns_index(std::size_t i) const
     return false;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get_local(double* block, std::size_t m, const dolfin::la_index* rows) const
+void uBLASVector::get_local(double* block, std::size_t m,
+                            const dolfin::la_index* rows) const
 {
   for (std::size_t i = 0; i < m; i++)
     block[i] = (*_x)(rows[i]);
@@ -169,14 +180,13 @@ void uBLASVector::add_local(const Array<double>& values)
     (*_x)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const
+void uBLASVector::gather(GenericVector& x,
+                         const std::vector<dolfin::la_index>& indices) const
 {
-  not_working_in_parallel("uBLASVector::gather)");
-
   const std::size_t _size = indices.size();
   dolfin_assert(this->size() >= _size);
 
-  x.resize(_size);
+  x.resize(mpi_comm(), _size);
   ublas_vector& tmp = as_type<uBLASVector>(x).vec();
   for (std::size_t i = 0; i < _size; i++)
     tmp(i) = (*_x)(indices[i]);
@@ -185,8 +195,6 @@ void uBLASVector::gather(GenericVector& x, const std::vector<dolfin::la_index>& 
 void uBLASVector::gather(std::vector<double>& x,
                          const std::vector<dolfin::la_index>& indices) const
 {
-  not_working_in_parallel("uBLASVector::gather)");
-
   const std::size_t _size = indices.size();
   x.resize(_size);
   dolfin_assert(x.size() == _size);
@@ -196,18 +204,18 @@ void uBLASVector::gather(std::vector<double>& x,
 //-----------------------------------------------------------------------------
 void uBLASVector::gather_on_zero(std::vector<double>& x) const
 {
-  not_working_in_parallel("uBLASVector::gather_on_zero)");
-
   get_local(x);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(const double* block, std::size_t m, const dolfin::la_index* rows)
+void uBLASVector::set(const double* block, std::size_t m,
+                      const dolfin::la_index* rows)
 {
   for (std::size_t i = 0; i < m; i++)
     (*_x)(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(const double* block, std::size_t m, const dolfin::la_index* rows)
+void uBLASVector::add(const double* block, std::size_t m,
+                      const dolfin::la_index* rows)
 {
   for (std::size_t i = 0; i < m; i++)
     (*_x)(rows[i]) += block[i];
@@ -215,7 +223,7 @@ void uBLASVector::add(const double* block, std::size_t m, const dolfin::la_index
 //-----------------------------------------------------------------------------
 void uBLASVector::apply(std::string mode)
 {
-  Timer("Apply (vector)");
+  Timer timer("Apply (uBLAS vector)");
 
   // Do nothing
 }
