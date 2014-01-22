@@ -258,7 +258,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   // Set linear solver parameters
   set_linear_solver_parameters();
 
-  const boll report = parameters["report"];
+  const bool report = parameters["report"];
 
   // Compute F(u)
   nonlinear_problem.form(A, f, x);
