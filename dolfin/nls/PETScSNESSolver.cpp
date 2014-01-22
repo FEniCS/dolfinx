@@ -350,17 +350,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   // Set some options
   SNESSetFromOptions(_snes);
   if (parameters["report"])
-  {
-    KSP ksp;
-    PC pc;
-
-    SNESGetKSP(_snes, &ksp);
-    KSPGetPC(ksp, &pc);
-
-    KSPSetUp(ksp);
-    PCSetUp(pc);
     SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
-  }
 
   SNESSolve(_snes, PETSC_NULL, snes_ctx.dx->vec());
 
