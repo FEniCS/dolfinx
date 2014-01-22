@@ -93,7 +93,7 @@ class SNESSolverTester(unittest.TestCase):
             solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters_sign)
             self.assertTrue(u.vector().min() >= 0)
 
-        def xtest_newton_solver(self):
+        def test_newton_solver(self):
             u.interpolate(Constant(-1000.0))
             solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
             self.assertTrue(u.vector().min() < 0)
