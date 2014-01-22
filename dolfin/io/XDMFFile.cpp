@@ -356,7 +356,7 @@ void XDMFFile::operator>> (Mesh& mesh)
   dolfin_assert(geom_bits[4] == "coordinates");
 
   // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, "/Mesh/" + geom_bits[3]);
+  hdf5_file->read(mesh, "/Mesh/" + geom_bits[3], false);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
