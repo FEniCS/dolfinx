@@ -135,7 +135,7 @@ namespace dolfin
     { _value = MPI::sum(_mpi_comm, _value); }
 
     /// Return MPI communicator
-    const MPI_Comm mpi_comm() const
+    MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
