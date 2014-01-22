@@ -26,7 +26,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/function/Function.h>
-#include "assemble.h"
 #include "Assembler.h"
 #include "Form.h"
 #include "NonlinearVariationalProblem.h"
@@ -195,7 +194,9 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
 
   // Assemble right-hand side
   dolfin_assert(F);
-  assemble(b, *F);
+  Assembler assembler;
+  assembler.reset_sparsity = false;
+  assembler.assemble(b, *F);
 
   // Apply boundary conditions
   for (std::size_t i = 0; i < bcs.size(); i++)
