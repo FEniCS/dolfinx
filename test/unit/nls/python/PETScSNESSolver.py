@@ -62,25 +62,25 @@ if has_petsc():
 
     du = TrialFunction(V)
     J = derivative(F,u,du)
-    lb = Function(interpolate(Constant(0.0), V))
-    ub = Function(interpolate(Constant(100.0), V))
+    lb = Function(interpolate(Constant(0.),V))
+    ub = Function(interpolate(Constant(100.),V))
 
     newton_solver_parameters = {"nonlinear_solver": "newton",
                                 "newton_solver": {"linear_solver": "lu",
-                                                  "maximum_iterations": 30,
+                                                  "maximum_iterations": 100,
                                                   "report": False}}
 
     snes_solver_parameters_sign = {"nonlinear_solver": "snes",
                                    "reset_jacobian": False,
                                    "snes_solver": {"linear_solver": "lu",
-                                                   "maximum_iterations": 20,
+                                                   "maximum_iterations": 100,
                                                    "sign": "nonnegative",
                                                    "report": False}}
 
     snes_solver_parameters_bounds = {"nonlinear_solver": "snes",
                                      "reset_jacobian": False,
                                      "snes_solver": {"linear_solver": "lu",
-                                                     "maximum_iterations": 10,
+                                                     "maximum_iterations": 100,
                                                      "sign": "default",
                                                      "report": False}}
 

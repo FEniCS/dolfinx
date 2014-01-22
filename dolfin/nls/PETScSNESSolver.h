@@ -128,7 +128,7 @@ namespace dolfin
     // Here, x is passed in as a model vector from which we make our
     // Vecs that tell PETSc the bounds if the "sign" parameter is
     // used.
-    void set_bounds(PETScVector& x);
+    void set_bounds(GenericVector& x);
 
     // Check if the problem is a variational inequality
     bool is_vi() const;
