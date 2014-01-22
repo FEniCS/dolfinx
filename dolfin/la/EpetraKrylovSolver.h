@@ -33,9 +33,6 @@
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 
-// Forward declarations
-class AztecOO;
-
 namespace dolfin
 {
 
@@ -107,9 +104,6 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Return pointer to Aztec00
-    boost::shared_ptr<AztecOO> aztecoo() const;
-
   private:
 
     // Solver type
@@ -131,12 +125,12 @@ namespace dolfin
     // Preconditioner
     boost::shared_ptr<TrilinosPreconditioner> _preconditioner;
 
-    // Underlying solver
-    boost::shared_ptr<AztecOO> solver;
+    //// Underlying solver
+    //boost::shared_ptr<Belos::SolverManager<double,MV,OP> > _solver;
 
     // Residuals
-    double relative_residual;
-    double absolute_residual;
+    double _relative_residual;
+    double _absolute_residual;
 
   };
 

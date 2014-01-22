@@ -36,6 +36,13 @@
 #include <dolfin/parameter/Parameters.h>
 #include "GenericPreconditioner.h"
 
+#include <BelosLinearProblem.hpp>
+#include <Epetra_MultiVector.h>
+// some typdefs for Belos
+typedef double ST;
+typedef Epetra_MultiVector MV;
+typedef Epetra_Operator OP;
+
 // Trilinos forward declarations
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
@@ -74,7 +81,9 @@ namespace dolfin
     virtual ~TrilinosPreconditioner();
 
     /// Set the precondtioner and matrix used in preconditioner
-    virtual void set(EpetraKrylovSolver& solver, const EpetraMatrix& P);
+    virtual void set(Belos::LinearProblem<ST,MV,OP>& problem,
+                     const EpetraMatrix& P
+                     );
 
     /// Set the Trilonos preconditioner parameters list
     void set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list);
@@ -103,7 +112,9 @@ namespace dolfin
   private:
 
     /// Setup the ML precondtioner
-    void set_ml(AztecOO& solver, const Epetra_RowMatrix& P);
+    void set_ml(Belos::LinearProblem<double,MV,OP>& problem,
+                const Epetra_RowMatrix& P
+                );
 
     /// Named preconditioner
     std::string _preconditioner;
@@ -116,8 +127,8 @@ namespace dolfin
       _preconditioners_descr;
 
     // The Preconditioner
-    boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
-    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
+    boost::shared_ptr<Ifpack_Preconditioner> _ifpack_preconditioner;
+    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> _ml_preconditioner;
 
     // Parameter list
     boost::shared_ptr<const Teuchos::ParameterList> parameter_list;
