@@ -76,7 +76,7 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr
   return solve();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
 {
   begin("Solving nonlinear variational problem.");
 
@@ -101,27 +101,32 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
   dolfin_assert(_problem);
   boost::shared_ptr<Function> u(_problem->solution());
 
-  const bool reset_jacobian = parameters["reset_jacobian"];
+  // 'reset_jacobian' option is deprecated
+  if (parameters["reset_jacobian"].change_count() > 1)
+  {
+    deprecation("reset_jacobian parameter in NonlinearVariationalSolver",
+                "1.4.0", "1.5",
+                "reset_jacobian no longer has any effect.");
+  }
 
   // Create nonlinear problem
-  if (!nonlinear_problem || reset_jacobian)
+  if (!nonlinear_problem)
   {
     nonlinear_problem = boost::shared_ptr<NonlinearDiscreteProblem>(new NonlinearDiscreteProblem(_problem,
                                              reference_to_no_delete_pointer(*this)));
   }
 
   std::pair<std::size_t, bool> ret;
-
   if (std::string(parameters["nonlinear_solver"]) == "newton")
   {
     if (_problem->has_lower_bound() && _problem->has_upper_bound())
     {
-    dolfin_error("NonlinearVariationalSolver.cpp",
-                 "solve nonlinear variational problem",
-                 "Set the \"nonlinear_solver\" parameter to \"snes\" or remove bounds");
+      dolfin_error("NonlinearVariationalSolver.cpp",
+                   "solve nonlinear variational problem",
+                   "Set the \"nonlinear_solver\" parameter to \"snes\" or remove bounds");
     }
     // Create Newton solver and set parameters
-    if (!newton_solver || reset_jacobian)
+    if (!newton_solver)
       newton_solver = boost::shared_ptr<NewtonSolver>(new NewtonSolver());
 
     // Pass parameters to Newton solver
@@ -136,7 +141,7 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
   else if (std::string(parameters["nonlinear_solver"]) == "snes")
   {
     // Create SNES solver and set parameters
-    if (!snes_solver || reset_jacobian)
+    if (!snes_solver)
     {
       // Create Newton solver and set parameters
       snes_solver = boost::shared_ptr<PETScSNESSolver>(new PETScSNESSolver());
@@ -173,7 +178,7 @@ NonlinearVariationalSolver::
 NonlinearDiscreteProblem::
 NonlinearDiscreteProblem(boost::shared_ptr<NonlinearVariationalProblem> problem,
                          boost::shared_ptr<NonlinearVariationalSolver> solver)
-  : _problem(problem), _solver(solver), jacobian_initialized(false)
+  : _problem(problem), _solver(solver)
 {
   // Do nothing
 }
@@ -220,19 +225,11 @@ void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
   boost::shared_ptr<const Form> J(_problem->jacobian_form());
   std::vector<boost::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
 
-  // Check if Jacobian matrix sparsity pattern should be reset
-  dolfin_assert(_solver);
-  const bool reset_jacobian = _solver->parameters["reset_jacobian"];
-  bool reset_sparsity = reset_jacobian || !jacobian_initialized;
-
   // Assemble left-hand side
   dolfin_assert(J);
   Assembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
+  assembler.reset_sparsity = false;
   assembler.assemble(A, *J);
-
-  // Remember that Jacobian has been initialized
-  jacobian_initialized = true;
 
   // Apply boundary conditions
   for (std::size_t i = 0; i < bcs.size(); i++)

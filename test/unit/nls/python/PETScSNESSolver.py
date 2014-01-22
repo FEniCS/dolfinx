@@ -71,14 +71,12 @@ if has_petsc():
                                                   "report": False}}
 
     snes_solver_parameters_sign = {"nonlinear_solver": "snes",
-                                   "reset_jacobian": False,
                                    "snes_solver": {"linear_solver": "lu",
                                                    "maximum_iterations": 100,
                                                    "sign": "nonnegative",
                                                    "report": True}}
 
     snes_solver_parameters_bounds = {"nonlinear_solver": "snes",
-                                     "reset_jacobian": False,
                                      "snes_solver": {"linear_solver": "lu",
                                                      "maximum_iterations": 100,
                                                      "sign": "default",
