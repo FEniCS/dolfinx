@@ -52,6 +52,7 @@ using namespace dolfin;
 // Mapping from preconditioner string to Trilinos
 const std::map<std::string, int> TrilinosPreconditioner::_preconditioners
   = boost::assign::map_list_of("default", -1)
+                              ("none",    -1)
                               ("ilu",     -1)
                               ("icc",     -1)
                               ("amg",     -1)
@@ -62,6 +63,7 @@ const std::vector<std::pair<std::string, std::string> >
 TrilinosPreconditioner::_preconditioners_descr
   = boost::assign::pair_list_of
     ("default",   "default preconditioner")
+    ("none",      "no preconditioner")
     ("ilu",       "Incomplete LU factorization")
     ("icc",       "Incomplete Cholesky factorization")
     ("amg",       "Algebraic multigrid")
@@ -172,12 +174,18 @@ void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
     set_ml(problem, *_P);
   }
   else if (_preconditioner == "ml_amg" || _preconditioner == "amg")
+  {
     set_ml(problem, *_P);
+  }
+  else if (_preconditioner == "none")
+  {
+    // Do nothing.
+  }
   else
   {
     dolfin_error("TrilinosPreconditioner.cpp",
                  "create Trilinos preconditioner",
-                 "Unknown preconditioner");
+                 "Unknown preconditioner \"%s\"", _preconditioner.c_str());
   }
 }
 //-----------------------------------------------------------------------------

@@ -54,14 +54,14 @@
 using namespace dolfin;
 
 // List of available solvers
-const std::map<std::string, int> EpetraKrylovSolver::_methods
-  = boost::assign::map_list_of("default", Belos::details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES)
-                              ("cg",      Belos::details::SOLVER_TYPE_PSEUDO_BLOCK_CG)
-                              ("gmres",   Belos::details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES)
-                              ("minres",  Belos::details::SOLVER_TYPE_MINRES)
-                              ("rcg",     Belos::details::SOLVER_TYPE_RCG)
-                              ("gcrodr",  Belos::details::SOLVER_TYPE_GCRODR)
-                              ("lsqr",    Belos::details::SOLVER_TYPE_LSQR);
+const std::map<std::string, std::string> EpetraKrylovSolver::_methods
+  = boost::assign::map_list_of("default", "GMRES")
+                              ("cg",      "CG")
+                              ("gmres",   "GMRES")
+                              ("minres",  "MINRES")
+                              ("rcg",     "RCG")
+                              ("gcrodr",  "GCRODR")
+                              ("lsqr",    "LSQR");
 
 // List of available solvers descriptions
 const std::vector<std::pair<std::string, std::string> >
@@ -102,6 +102,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
     _relative_residual(0.0),
     _absolute_residual(0.0)
 {
+  // Set parameter values
   parameters = default_parameters();
 
   // Check that requsted solver is supported
@@ -215,7 +216,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     belosList.set("Output Frequency", (int)parameters["monitor_interval"]);
   }
 
-  belosList.set("Convergence Tolerance", (double)parameters["parameters_tolerance"]);
+  belosList.set("Convergence Tolerance", (double)parameters["relative_tolerance"]);
   belosList.set("Maximum Iterations", (int)parameters["maximum_iterations"]);
 
   // TODO treat the preconditioner correctly
@@ -223,9 +224,16 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   dolfin_assert(_P);
   _preconditioner->set(linear_problem, *_P);
 
+  // Look up the Belos name of the method in _methods. This is a little
+  // complicated since std::maps<> don't have const lookup.
+  std::map<std::string, std::string>::const_iterator it = _methods.find(_method);
+  if (it == _methods.end())
+      dolfin_error("EpetraKrylovSolver.cpp",
+                   "solve linear system using Epetra Krylov solver",
+                   "unknown method \"%s\"", _method.c_str());
   // Set-up linear solver
   Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver =
-      Belos::SolverFactory<ST,MV,OP>().create(_method,
+      Belos::SolverFactory<ST,MV,OP>().create(it->second,
                                               Teuchos::rcp(&belosList, false)
                                               );
 

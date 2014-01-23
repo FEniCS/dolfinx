@@ -110,7 +110,7 @@ namespace dolfin
     std::string _method;
 
     // Available solvers
-    static const std::map<std::string, int> _methods;
+    static const std::map<std::string, std::string> _methods;
 
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> >
@@ -124,9 +124,6 @@ namespace dolfin
 
     // Preconditioner
     boost::shared_ptr<TrilinosPreconditioner> _preconditioner;
-
-    //// Underlying solver
-    //boost::shared_ptr<Belos::SolverManager<double,MV,OP> > _solver;
 
     // Residuals
     double _relative_residual;
