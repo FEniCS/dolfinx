@@ -18,9 +18,10 @@
 // Modified by Kristian Oelgaard, 2007
 // Modified by Johan Hake, 2009
 // Modified by Joachim B Haga, 2012
+// Modified by Mikael Mortensen, 2014
 //
 // First added:  2007-04-10
-// Last changed: 2012-11-14
+// Last changed: 2014-01-23
 //
 // FIXME: This class needs some cleanup, in particular collecting
 //        all data from different representations into a common
@@ -97,8 +98,7 @@ namespace dolfin
   /// geometric approach, each dof on each facet that matches the
   /// boundary condition will be checked. To apply pointwise boundary
   /// conditions e.g. pointloads, one will have to use the pointwise
-  /// approach which in turn is the slowest of the three possible
-  /// methods. The three possibilties are "topological", "geometric"
+  /// approach. The three possibilties are "topological", "geometric"
   /// and "pointwise".
   ///
   /// The 'check_midpoint' variable can be used to decide whether or
@@ -502,6 +502,9 @@ namespace dolfin
 
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;
+    
+    // Cells attached to boundary, stored by cell index with map to local dof number
+    mutable std::map<std::size_t, std::vector<std::size_t> > _cells_to_localdofs;
 
     // User defined mesh function
     boost::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;
