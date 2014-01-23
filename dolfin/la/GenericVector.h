@@ -52,11 +52,23 @@ namespace dolfin
 
     /// Resize tensor with given dimensions
     virtual void resize(MPI_Comm comm, std::size_t rank, const std::size_t* dims)
-    { dolfin_assert(rank == 1); resize(comm, dims[0]); }
+    {
+      if (size(0) != 0)
+        error("GenericVector cannot be resized more than once");
+
+      dolfin_assert(rank == 1);
+      resize(comm, dims[0]);
+    }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout)
-    { resize(tensor_layout.mpi_comm(), tensor_layout.local_range(0)); zero(); }
+    {
+      if (size(0) != 0)
+        error("GenericVector cannot be initialised more than once");
+
+      resize(tensor_layout.mpi_comm(), tensor_layout.local_range(0));
+      zero();
+    }
 
     /// Return tensor rank (number of dimensions)
     virtual std::size_t rank() const

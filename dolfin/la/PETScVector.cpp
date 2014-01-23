@@ -797,6 +797,9 @@ void PETScVector::_init(MPI_Comm comm,
                         std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices)
 {
+  if (size() > 0)
+    error("Attempting to reinitialise PETSc vec");
+
   PetscErrorCode ierr;
   if (_x)
     VecDestroy(&_x);

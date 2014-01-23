@@ -90,14 +90,6 @@ class AbstractBaseTest(object):
         tmp = v0.str(False)
         tmp = v0.str(True)
 
-    def test_resize(self):
-        m, n = 301, 409
-        v0 = Vector()
-        v0.resize(mpi_comm_world(), m)
-        self.assertEqual(v0.size(), m)
-        v0.resize(mpi_comm_world(), n)
-        self.assertEqual(v0.size(), n)
-
     def test_resize_range(self):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)

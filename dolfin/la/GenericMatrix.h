@@ -200,7 +200,7 @@ namespace dolfin
                    "Not implemented by current linear algebra backend");
       return boost::tuples::tuple<const std::size_t*, const std::size_t*,
                                   const double*, int>(0, 0, 0, 0);
-    }
+   }
 
     //--- Convenience functions ---
 
