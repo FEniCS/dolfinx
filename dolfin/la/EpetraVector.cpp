@@ -302,7 +302,7 @@ void EpetraVector::apply(std::string mode)
   off_process_set_values.clear();
 }
 //-----------------------------------------------------------------------------
-const MPI_Comm EpetraVector::mpi_comm() const
+MPI_Comm EpetraVector::mpi_comm() const
 {
   dolfin_assert(_x);
   MPI_Comm mpi_comm = MPI_COMM_NULL;

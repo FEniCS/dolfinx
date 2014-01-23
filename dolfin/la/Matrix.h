@@ -82,7 +82,7 @@ namespace dolfin
     { matrix->apply(mode); }
 
     /// Return MPI communicator
-    const MPI_Comm mpi_comm() const
+    MPI_Comm mpi_comm() const
     { return matrix->mpi_comm(); }
 
     /// Return informal string representation (pretty-print)

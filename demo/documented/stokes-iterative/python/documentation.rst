@@ -33,7 +33,9 @@ solvers typically fail to converge for such systems. Some care must
 therefore be taken in preconditioning the systems of
 equations. Moreover, not all of the linear algebra backends support
 this. We therefore start by checking that either "PETSc" or "Epetra"
-(from Trilinos) is available:
+(from Trilinos) is available. We also try to pick MINRES Krylov
+subspace method which is suitable for symmetric indefinite problems.
+If not available, costly QMR method is choosen.
 
 .. code-block:: python
 
@@ -46,7 +48,16 @@ this. We therefore start by checking that either "PETSc" or "Epetra"
 
     if not has_krylov_solver_preconditioner("amg"):
         info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
-             "preconditioner, Hypre or ML.");
+             "preconditioner, Hypre or ML.")
+        exit()
+
+    if has_krylov_solver_method("minres"):
+        krylov_method = "minres"
+    elif has_krylov_solver_method("tfqmr"):
+        krylov_method = "tfqmr"
+    else:
+        info("Default linear algebra backend was not compiled with MINRES or TFQMR "
+             "Krylov subspace method. Terminating.")
         exit()
 
 Next, we define the mesh (a :py:class:`UnitCubeMesh
@@ -154,7 +165,7 @@ the solver by calling :py:func:`solver.set_operators
 .. code-block:: python
 
     # Create Krylov solver and AMG preconditioner
-    solver = KrylovSolver("tfqmr", "amg")
+    solver = KrylovSolver(krylov_method, "amg")
 
     # Associate operator (A) and preconditioner matrix (P)
     solver.set_operators(A, P)

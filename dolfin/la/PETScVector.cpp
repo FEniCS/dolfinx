@@ -344,7 +344,7 @@ void PETScVector::apply(std::string mode)
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
-const MPI_Comm PETScVector::mpi_comm() const
+MPI_Comm PETScVector::mpi_comm() const
 {
   dolfin_assert(_x);
   MPI_Comm mpi_comm = MPI_COMM_NULL;

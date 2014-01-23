@@ -46,7 +46,7 @@ using namespace dolfin;
 struct snes_ctx_t
 {
   NonlinearProblem* nonlinear_problem;
-  PETScVector* dx;
+  PETScVector* x;
   const PETScVector* xl;
   const PETScVector* xu;
 };
@@ -205,9 +205,6 @@ void PETScSNESSolver::init(const std::string& method)
     SNESSetType(_snes, it->second.second);
   }
 
-  // Set some options
-  SNESSetFromOptions(_snes);
-
   // Set to default to not having explicit bounds
   has_explicit_bounds = false;
 }
@@ -261,20 +258,22 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   // Set linear solver parameters
   set_linear_solver_parameters();
 
+  const bool report = parameters["report"];
+
   // Compute F(u)
   nonlinear_problem.form(A, f, x);
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
 
   snes_ctx.nonlinear_problem = &nonlinear_problem;
-  snes_ctx.dx = &x.down_cast<PETScVector>();
+  snes_ctx.x = &x.down_cast<PETScVector>();
 
   SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
   SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
                   &snes_ctx);
 
   // Set some options from the parameters
-  if (parameters["report"])
+  if (report)
     SNESMonitorSet(_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
 
   // Set the bounds, if any
@@ -288,7 +287,6 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     it = _methods.find(std::string(parameters["method"]));
     dolfin_assert(it != _methods.end());
     SNESSetType(_snes, it->second.second);
-    SNESSetFromOptions(_snes);
   // If
   //      a) the user has set bounds (is_vi())
   // AND  b) the user has not set a solver (method == default)
@@ -308,12 +306,11 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     #endif
     dolfin_assert(it != _methods.end());
     SNESSetType(_snes, it->second.second);
-    SNESSetFromOptions(_snes);
   }
 
   // The line search business changed completely from PETSc 3.2 to 3.3.
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
-  if (parameters["report"])
+  if (report)
     SNESLineSearchSetMonitor(_snes, PETSC_TRUE);
 
   const std::string line_search = std::string(parameters["line_search"]);
@@ -338,7 +335,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   SNESGetLineSearch(_snes, &linesearch);
   #endif
 
-  if (parameters["report"])
+  if (report)
     SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
   const std::string line_search_type = std::string(parameters["line_search"]);
   SNESLineSearchSetType(linesearch, line_search_type.c_str());
@@ -352,17 +349,19 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                     parameters["solution_tolerance"],
                     max_iters, max_residual_evals);
 
-  if (parameters["report"])
+  // Set some options
+  SNESSetFromOptions(_snes);
+  if (report)
     SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
 
-  SNESSolve(_snes, PETSC_NULL, snes_ctx.dx->vec());
+  SNESSolve(_snes, PETSC_NULL, snes_ctx.x->vec());
 
   SNESGetIterationNumber(_snes, &its);
   SNESGetConvergedReason(_snes, &reason);
 
   MPI_Comm comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_snes, &comm);
-  if (reason > 0 && parameters["report"] && dolfin::MPI::rank(comm) == 0)
+  if (reason > 0 && report && dolfin::MPI::rank(comm) == 0)
   {
     info("PETSc SNES solver converged in %d iterations with convergence reason %s.",
          its, SNESConvergedReasons[reason]);
@@ -388,20 +387,22 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 {
   struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
   NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
-  PETScVector* dx = snes_ctx.dx;
-
-  PETScMatrix A;
-  PETScVector df;
+  PETScVector* _x = snes_ctx.x;
 
   // Wrap the PETSc Vec as DOLFIN PETScVector
   PETScVector x_wrap(x);
-  *dx = x_wrap;
+  PETScVector f_wrap(f);
+
+  // Update current solution that is associated with nonlinear
+  // problem. This is required because x is not the solution vector
+  // that was passed to PETSc. PETSc updates the solution vector at
+  // the end of solve. We should find a better solution.
+  *_x = x_wrap;
 
   // Compute F(u)
-  nonlinear_problem->form(A, df, *dx);
-  nonlinear_problem->F(df, *dx);
-
-  VecCopy(df.vec(), f);
+  PETScMatrix A;
+  nonlinear_problem->form(A, f_wrap, *_x);
+  nonlinear_problem->F(f_wrap, *_x);
 
   return 0;
 }
@@ -430,7 +431,6 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
   PETScVector f;
   nonlinear_problem->form(A_wrap, f, x_wrap);
   nonlinear_problem->J(A_wrap, x_wrap);
-
 
   *flag = SAME_NONZERO_PATTERN;
 
@@ -472,6 +472,27 @@ void PETScSNESSolver::set_linear_solver_parameters()
       dolfin_assert(it != PETScPreconditioner::_methods.end());
       PCSetType(pc, it->second);
     }
+
+    Parameters krylov_parameters = parameters("krylov_solver");
+
+    // GMRES restart parameter
+    KSPGMRESSetRestart(ksp,krylov_parameters("gmres")["restart"]);
+
+    // Non-zero initial guess
+    const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
+    if (nonzero_guess)
+      KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+    else
+      KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+
+    if (krylov_parameters["monitor_convergence"])
+      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
+
+    // Set tolerances
+    KSPSetTolerances(ksp, krylov_parameters["relative_tolerance"],
+                     krylov_parameters["absolute_tolerance"],
+                     krylov_parameters["divergence_limit"],
+                     krylov_parameters["maximum_iterations"]);
   }
   else if (linear_solver == "lu"
            || PETScLUSolver::_methods.count(linear_solver) != 0)
@@ -566,9 +587,9 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       // tell PETSc the bounds.
       Vec ub, lb;
 
-      PETScVector dx = x.down_cast<PETScVector>();
-      VecDuplicate(dx.vec(), &ub);
-      VecDuplicate(dx.vec(), &lb);
+      PETScVector _x = x.down_cast<PETScVector>();
+      VecDuplicate(_x.vec(), &ub);
+      VecDuplicate(_x.vec(), &lb);
       if (sign == "nonnegative")
       {
         VecSet(lb, 0.0);
