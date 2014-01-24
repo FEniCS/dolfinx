@@ -120,6 +120,10 @@ void BinaryFile::operator>> (Mesh& mesh)
   g.coordinates.resize(g._dim*size);
   read_array(g._dim*size, g.coordinates.data());
 
+  g.local_index_to_position.resize(size);
+  for (std::size_t i = 0; i < size; ++i)
+    g.local_index_to_position[i] = i;
+
   // Read cell type
   mesh._cell_type = CellType::create(static_cast<CellType::Type>(read_uint()));
 

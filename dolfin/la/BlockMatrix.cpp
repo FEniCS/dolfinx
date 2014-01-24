@@ -140,14 +140,15 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     // RHS sub-vector
     GenericVector& _y = *(y.get_block(row));
 
+    const GenericMatrix& _A = *matrices[row][0];
+
     // Resize y and zero
     dolfin_assert(matrices[row][0]);
-    const GenericMatrix& _A = *matrices[row][0];
-    _A.resize(_y, 0);
+    if (_y.size() == 0)
+      _A.resize(_y, 0);
     _y.zero();
 
-    // Resize z_tmp and zero
-    z_tmp->resize(_y.mpi_comm(), _y.size());
+    // Resize z_tmp
     _A.resize(*z_tmp, 0);
 
     // Loop over block columns
