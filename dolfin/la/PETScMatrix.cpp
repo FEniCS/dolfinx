@@ -131,7 +131,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   //}
 
   if (_A)
+  {
+    error("PETScMatrix may not be initialized more than once.");
     MatDestroy(&_A);
+  }
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)

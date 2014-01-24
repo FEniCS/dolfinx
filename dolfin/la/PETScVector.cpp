@@ -799,12 +799,12 @@ void PETScVector::_init(MPI_Comm comm,
                         std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices)
 {
-  if (size() > 0)
-    error("Attempting to reinitialise PETSc vec");
-
   PetscErrorCode ierr;
   if (_x)
+  {
+    error("PETScVector may not be initialized more than once.");
     VecDestroy(&_x);
+  }
 
   // GPU support does not work in parallel
   if (_use_gpu && MPI::size(comm))
