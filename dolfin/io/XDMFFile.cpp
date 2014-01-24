@@ -285,7 +285,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   counter++;
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator>> (Mesh& mesh, bool use_partition_from_file)
+void XDMFFile::operator>> (Mesh& mesh)
+{
+  read(mesh, false);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 {
   // Prepare HDF5 file
   if (hdf5_filemode != "r")

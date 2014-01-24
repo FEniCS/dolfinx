@@ -69,8 +69,13 @@ namespace dolfin
     /// file to store the mesh, and a related XDMF file with metadata.
     void operator<< (const Mesh& mesh);
 
+    /// Read in a mesh from the associated HDF5 file, 
+    /// optionally using stored partitioning, if possible
+    /// when the same number of processes are being used.
+    void read(Mesh& mesh, bool use_partition_from_file);
+    
     /// Read in a mesh from the associated HDF5 file
-    void operator>> (Mesh& mesh, bool use_partition_from_file=false);
+    void operator>> (Mesh& mesh);
 
     /// Save a Function to XDMF/HDF5 files for visualisation.
     void operator<< (const Function& u);
