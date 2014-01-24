@@ -44,7 +44,7 @@ class PointIntegralSolverTest(unittest.TestCase):
 
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
-            
+
             mesh = UnitSquareMesh(10, 10)
             V = FunctionSpace(mesh, "CG", 1)
             u = Function(V)
@@ -99,7 +99,7 @@ class PointIntegralSolverTest(unittest.TestCase):
 
                     solver.step(next_dt)
                     next_dt = min(tstop-float(scheme.t()), dt)
-                    
+
                 u_errors.append(errornorm(u_true, u))
 
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)

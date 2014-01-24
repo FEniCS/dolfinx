@@ -358,6 +358,7 @@ void PETScVector::zero()
   double a = 0.0;
   PetscErrorCode ierr = VecSet(_x, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
+  apply("insert");
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const
