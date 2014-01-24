@@ -134,7 +134,7 @@ namespace dolfin
       p.add("gradient_t_tol"         , 0.0);
       p.add("error_on_nonconvergence", true);
       p.add("maximum_iterations"     , 100);
-      p.add("options_prefix", "default");
+      p.add("options_prefix"         , "default");
 
       Parameters ksp("krylov_solver");
       ksp = KrylovSolver::default_parameters();
