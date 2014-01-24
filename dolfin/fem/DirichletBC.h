@@ -76,7 +76,10 @@ namespace dolfin
   ///
   /// The simplest approach is to specify the boundary by a _SubDomain_
   /// object, using the inside() function to specify on which facets
-  /// the boundary conditions should be applied.
+  /// the boundary conditions should be applied. The boundary facets
+  /// will then be searched for and marked *only* on the first call to
+  /// apply. This means that the mesh could be moved after the first 
+  /// apply and the boundary markers would still remain intact.
   ///
   /// Alternatively, the boundary may be specified by a _MeshFunction_
   /// labeling all mesh facets together with a number that specifies
@@ -237,8 +240,8 @@ namespace dolfin
     ///         The function space.
     ///     g (_GenericFunction_)
     ///         The value.
-    ///     markers (std::vector<std::pair<std::size_t, std::size_t> >)
-    ///         Subdomain markers (cells, local facet number)
+    ///     markers (std::vector<std::size_t>)
+    ///         Subdomain markers (facet index local to process)
     ///     method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
