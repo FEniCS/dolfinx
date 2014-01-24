@@ -358,7 +358,7 @@ void PETScVector::zero()
   double a = 0.0;
   PetscErrorCode ierr = VecSet(_x, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
-  apply("insert");
+  this->apply("insert");
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const
@@ -448,6 +448,7 @@ const PETScVector& PETScVector::operator= (double a)
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSet(_x, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
+  apply("insert");
   return *this;
 }
 //-----------------------------------------------------------------------------
