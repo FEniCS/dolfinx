@@ -194,11 +194,12 @@ class AbstractBaseTest(object):
 
     def test_compress_matrix(self):
 
-        A0, B0 = self.assemble_matrices()
-        A0_norm_0 = A0.norm('frobenius')
-        A0.compress()
-        A0_norm_1 = A0.norm('frobenius')
-        self.assertAlmostEqual(A0_norm_0, A0_norm_1)
+        A, B = self.assemble_matrices()
+        A_norm = A.norm('frobenius')
+        C = Matrix()
+        A.compressed(C)
+        C_norm = C.norm('frobenius')
+        self.assertAlmostEqual(A_norm, C_norm)
 
     def test_ident_zeros(self, use_backend=False):
 
