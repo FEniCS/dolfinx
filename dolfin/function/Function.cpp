@@ -709,8 +709,8 @@ void Function::init_vector()
 
   // Initialize vector of dofs
   dolfin_assert(_function_space->mesh());
-  if (_vector->size() == 0)
-      _vector->resize(_function_space->mesh()->mpi_comm(), range, ghost_indices);
+  if (_vector->empty())
+    _vector->init(_function_space->mesh()->mpi_comm(), range, ghost_indices);
   else
   {
     dolfin_error("Function.cpp",

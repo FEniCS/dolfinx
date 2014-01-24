@@ -221,8 +221,8 @@ _get_vector_sub_vector(const dolfin::GenericVector* self,
   // Create a default Vector
   return_vec = self->factory().create_vector();
 
-  // Resize the vector to the size of the indices
-  return_vec->resize(MPI_COMM_SELF, m);
+  // Initialize the vector to the size of the indices
+  return_vec->init(MPI_COMM_SELF, m);
   range = inds->range();
 
   std::vector<double> values(m);
@@ -432,7 +432,7 @@ _get_matrix_sub_vector(dolfin::GenericMatrix* self, dolfin::la_index single,
   // Create the return vector and set the values
   boost::shared_ptr<dolfin::GenericVector> return_vec
     = self->factory().create_vector();
-  self->resize(*return_vec, 1);
+  self->init_vector(*return_vec, 1);
 
   return_vec->set_local(values);
   return_vec->apply("insert");

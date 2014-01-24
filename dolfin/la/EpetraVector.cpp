@@ -63,7 +63,7 @@ EpetraVector::EpetraVector()
 EpetraVector::EpetraVector(MPI_Comm comm, std::size_t N)
 {
   // Create Epetra vector
-  resize(comm, N);
+  init(comm, N);
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x) : _x(x)
@@ -100,7 +100,7 @@ boost::shared_ptr<GenericVector> EpetraVector::copy() const
   return y;
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::resize(MPI_Comm comm, std::size_t N)
+void EpetraVector::init(MPI_Comm comm, std::size_t N)
 {
   // Create empty ghost vertices vector
   std::vector<la_index> ghost_indices;
@@ -109,19 +109,19 @@ void EpetraVector::resize(MPI_Comm comm, std::size_t N)
   const std::pair<std::size_t, std::size_t> range = MPI::local_range(comm, N);
 
   // Resize vector
-  resize(comm, range, ghost_indices);
+  init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::resize(MPI_Comm comm,
-                          std::pair<std::size_t, std::size_t> range)
+void EpetraVector::init(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range)
 {
   std::vector<la_index> ghost_indices;
-  resize(comm, range, ghost_indices);
+  init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::resize(MPI_Comm comm,
-                          std::pair<std::size_t, std::size_t> range,
-                          const std::vector<la_index>& ghost_indices)
+void EpetraVector::init(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
+                        const std::vector<la_index>& ghost_indices)
 {
   if (_x && !_x.unique())
   {

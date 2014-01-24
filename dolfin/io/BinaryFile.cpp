@@ -67,7 +67,7 @@ void BinaryFile::operator>> (GenericVector& vector)
   std::vector<double> values(n);
   read_array(n, values.data());
 
-  vector.resize(MPI_COMM_WORLD, n);
+  vector.init(MPI_COMM_WORLD, n);
   vector.set_local(values);
   vector.apply("insert");
 

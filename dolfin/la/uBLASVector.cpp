@@ -186,8 +186,10 @@ void uBLASVector::gather(GenericVector& x,
   const std::size_t _size = indices.size();
   dolfin_assert(this->size() >= _size);
 
-  x.resize(mpi_comm(), _size);
+  if (x.empty())
+    x.init(mpi_comm(), _size);
   ublas_vector& tmp = as_type<uBLASVector>(x).vec();
+  dolfin_assert(x.size(0) == _size);
   for (std::size_t i = 0; i < _size; i++)
     tmp(i) = (*_x)(indices[i]);
 }

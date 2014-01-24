@@ -88,7 +88,7 @@ PETScBaseMatrix::local_range(std::size_t dim) const
     return std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
-void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
+void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
 {
   dolfin_assert(_A);
 
@@ -115,7 +115,7 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
   else
   {
     dolfin_error("PETScBaseMatrix.cpp",
-                 "resize PETSc vector to match PETSc matrix",
+                 "intialize PETSc vector to match PETSc matrix",
                  "Dimension must be 0 or 1, not %d", dim);
   }
 

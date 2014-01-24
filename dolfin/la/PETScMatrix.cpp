@@ -413,7 +413,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 
   // Resize RHS if empty
   if (yy.size() == 0)
-    resize(yy, 0);
+    init_vector(yy, 0);
 
   if (size(0) != yy.size())
   {
@@ -442,7 +442,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 
   // Resize RHS if empty
   if (yy.size() == 0)
-    resize(yy, 1);
+    init_vector(yy, 1);
 
   if (size(1) != yy.size())
   {

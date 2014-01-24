@@ -33,6 +33,7 @@
 namespace dolfin
 {
 
+  class GenericVector;
   class TensorLayout;
 
   /// This class provides the default DOLFIN matrix class,
@@ -101,8 +102,8 @@ namespace dolfin
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
     /// case, size and layout are important.
-    virtual void resize(GenericVector& y, std::size_t dim) const
-    { matrix->resize(y, dim); }
+    virtual void init_vector(GenericVector& y, std::size_t dim) const
+    { matrix->init_vector(y, dim); }
 
     /// Get block of values
     virtual void get(double* block,

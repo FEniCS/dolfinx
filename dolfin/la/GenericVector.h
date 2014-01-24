@@ -50,23 +50,12 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Resize tensor with given dimensions
-    virtual void resize(MPI_Comm comm, std::size_t rank, const std::size_t* dims)
-    {
-      if (size(0) != 0)
-        error("GenericVector cannot be resized more than once");
-
-      dolfin_assert(rank == 1);
-      resize(comm, dims[0]);
-    }
-
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout)
     {
-      if (size(0) != 0)
+      if (!empty())
         error("GenericVector cannot be initialised more than once");
-
-      resize(tensor_layout.mpi_comm(), tensor_layout.local_range(0));
+      init(tensor_layout.mpi_comm(), tensor_layout.local_range(0));
       zero();
     }
 
@@ -123,15 +112,34 @@ namespace dolfin
     /// Return copy of vector
     virtual boost::shared_ptr<GenericVector> copy() const = 0;
 
-    /// Resize vector to global size N
+    /// Initialize vector to global size N
+    virtual void init(MPI_Comm comm, std::size_t N) = 0;
+
+    /// Intitialize vector with given local ownership range
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range) = 0;
+
+    /// Initialise vector with given ownership range and with ghost
+    /// values
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range,
+                      const std::vector<la_index>& ghost_indices) = 0;
+
+
+    /*
+    /// Deprecated: resize vector to global size N
     virtual void resize(MPI_Comm comm, std::size_t N) = 0;
 
-    /// Resize vector with given ownership range
-    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range) = 0;
+    /// Deprecated: resize vector with given ownership range
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range) = 0;
 
-    /// Resize vector with given ownership range and with ghost values
-    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+    /// Deprevated: resize vector with given ownership range and with
+    /// ghost values
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices) = 0;
+    */
 
     /// Return true if empty
     virtual bool empty() const = 0;

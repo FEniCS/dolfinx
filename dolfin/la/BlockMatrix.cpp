@@ -144,12 +144,12 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
 
     // Resize y and zero
     dolfin_assert(matrices[row][0]);
-    if (_y.size() == 0)
-      _A.resize(_y, 0);
+    if (_y.empty())
+      _A.init_vector(_y, 0);
     _y.zero();
 
     // Resize z_tmp
-    _A.resize(*z_tmp, 0);
+    _A.init_vector(*z_tmp, 0);
 
     // Loop over block columns
     for(std::size_t col = 0; col < matrices.shape()[1]; ++col)

@@ -192,9 +192,9 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     info("Solving linear system of size %d x %d (Epetra Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
-  if (x.size() != M)
+  if (x.empty())
   {
-    _A->resize(x, 1);
+    _A->init_vector(x, 1);
     x.zero();
   }
   else if (!parameters["nonzero_initial_guess"])

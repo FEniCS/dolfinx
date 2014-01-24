@@ -78,10 +78,11 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   dolfin_assert(dofmap_L);
 
   // Initialise vector
-  if (x.size() == 0)
+  if (x.empty())
   {
-    std::pair<std::size_t, std::size_t> local_range = dofmap_L->ownership_range();
-    x.resize(mesh.mpi_comm(), local_range);
+    std::pair<std::size_t, std::size_t> local_range
+      = dofmap_L->ownership_range();
+    x.init(mesh.mpi_comm(), local_range);
   }
 
   // Cell integrals

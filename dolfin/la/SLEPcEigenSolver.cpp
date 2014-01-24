@@ -221,8 +221,8 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   if (ii < num_computed_eigenvalues)
   {
     dolfin_assert(_A);
-    _A->resize(r, 0);
-    _A->resize(c, 0);
+    _A->init_vector(r, 0);
+    _A->init_vector(c, 0);
 
     dolfin_assert(r.vec());
     dolfin_assert(c.vec());

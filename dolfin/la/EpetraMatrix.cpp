@@ -227,7 +227,7 @@ EpetraMatrix::local_range(std::size_t dim) const
   return std::make_pair(row_map.MinMyGID64(), row_map.MaxMyGID64() + 1);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::resize(GenericVector& z, std::size_t dim) const
+void EpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
 {
   dolfin_assert(_A);
 
@@ -240,7 +240,7 @@ void EpetraMatrix::resize(GenericVector& z, std::size_t dim) const
   else
   {
     dolfin_error("EpetraMatrix.cpp",
-                 "resize Epetra vector to match Epetra matrix",
+                 "initialize Epetra vector to match Epetra matrix",
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
@@ -595,10 +595,10 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
                  "Non-matching dimensions for matrix-vector product");
   }
 
-  // Resize RHS
-  if (Ax.size() == 0)
+  // Initialize RHS
+  if (Ax.empty())
   {
-    this->resize(Ax, 0);
+    this->init_vector(Ax, 0);
   }
 
   if (Ax.size() != size(0))
@@ -632,10 +632,10 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
                  "Non-matching dimensions for transpose matrix-vector product");
   }
 
-  // Resize RHS
-  if (Ax.size() == 0)
+  // Initialize RHS
+  if (Ax.empty())
   {
-    this->resize(Ax, 1);
+    this->init_vector(Ax, 1);
   }
 
   if (Ax.size() != size(1))

@@ -57,7 +57,7 @@ namespace dolfin
     {
       DefaultFactory factory;
       vector = factory.create_vector();
-      vector->resize(comm, N);
+      vector->init(comm, N);
     }
 
     /// Copy constructor
@@ -94,17 +94,45 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Resize vector to size N
-    virtual void resize(MPI_Comm comm, std::size_t N)
-    { vector->resize(comm, N); }
+    virtual void init(MPI_Comm comm, std::size_t N)
+    { vector->init(comm, N); }
 
     /// Resize vector with given ownership range
-    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range)
-    { vector->resize(comm, range); }
+    virtual void init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range)
+    { vector->init(comm, range); }
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range,
+                      const std::vector<la_index>& ghost_indices)
+    { vector->init(comm, range, ghost_indices); }
+
+    /// Resize vector to size N
+    virtual void resize(MPI_Comm comm, std::size_t N)
+    {
+      deprecation("Vector::resize(...)", "1.4", "1.5",
+                  "Use Vector::init(...) (can only be called once).");
+      vector->init(comm, N);
+    }
+
+    /// Resize vector with given ownership range
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range)
+    {
+      deprecation("Vector::resize(...)", "1.4", "1.5",
+                  "Use Vector::init(...) (can only be called once).");
+      vector->init(comm, range);
+    }
+
+    /// Resize vector with given ownership range and with ghost values
+    virtual void resize(MPI_Comm
+                        comm, std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices)
-    { vector->resize(comm, range, ghost_indices); }
+    {
+      deprecation("Vector::resize(...)", "1.4", "1.5",
+                  "Use Vector::init(...) (can only be called once).");
+      vector->init(comm, range, ghost_indices);
+    }
 
     /// Return true if vector is empty
     virtual bool empty() const
@@ -244,9 +272,8 @@ namespace dolfin
 
     /// Update ghost values
     virtual void update_ghost_values()
-    {
-      vector->update_ghost_values();
-    }
+    { vector->update_ghost_values(); }
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory

@@ -83,7 +83,7 @@ PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
   : _x(NULL), x_ghosted(NULL), _use_gpu(false)
 {
   std::vector<la_index> ghost_indices;
-  resize(sparsity_pattern.mpi_comm(), sparsity_pattern.local_range(0),
+  init(sparsity_pattern.mpi_comm(), sparsity_pattern.local_range(0),
          ghost_indices);
 }
 //-----------------------------------------------------------------------------
@@ -167,22 +167,22 @@ boost::shared_ptr<GenericVector> PETScVector::copy() const
   return v;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::resize(MPI_Comm comm, std::size_t N)
+void PETScVector::init(MPI_Comm comm, std::size_t N)
 {
   const std::pair<std::size_t, std::size_t> range
     = MPI::local_range(comm, N);
-  resize(comm, range);
+  init(comm, range);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::resize(MPI_Comm comm,
+void PETScVector::init(MPI_Comm comm,
                          std::pair<std::size_t, std::size_t> range)
 {
   // Create empty ghost indices vector
   std::vector<la_index> ghost_indices;
-  resize(comm, range, ghost_indices);
+  init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::resize(MPI_Comm comm,
+void PETScVector::init(MPI_Comm comm,
                          std::pair<std::size_t, std::size_t> range,
                          const std::vector<la_index>& ghost_indices)
 {
@@ -190,6 +190,32 @@ void PETScVector::resize(MPI_Comm comm,
   _init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
+/*
+void PETScVector::resize(MPI_Comm comm, std::size_t N)
+{
+  deprecation("PETScVector::resize(...)", "1.4", "1.5",
+              "Use PETScVector::init(...) (can only be called once).");
+  init(comm, N);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::resize(MPI_Comm comm,
+                         std::pair<std::size_t, std::size_t> range)
+{
+  deprecation("PETScVector::resize(...)", "1.4", "1.5",
+              "Use PETScVector::init(...) (can only be called once).");
+  init(comm, range);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::resize(MPI_Comm comm,
+                         std::pair<std::size_t, std::size_t> range,
+                         const std::vector<la_index>& ghost_indices)
+{
+  deprecation("PETScVector::resize(...)", "1.4", "1.5",
+              "Use PETScVector::init(...) (can only be called once).");
+  init(comm, range, ghost_indices);
+}
+//-----------------------------------------------------------------------------
+*/
 void PETScVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(_x);
@@ -735,7 +761,7 @@ void PETScVector::gather(GenericVector& y,
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateStride");
 
   // Resize vector and make local
-  y.resize(MPI_COMM_SELF, n);
+  y.init(MPI_COMM_SELF, n);
 
   // Perform scatter
   VecScatter scatter;
