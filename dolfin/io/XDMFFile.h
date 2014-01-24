@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-05-09
+// Last changed: 2014-01-24
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -70,7 +70,7 @@ namespace dolfin
     void operator<< (const Mesh& mesh);
 
     /// Read in a mesh from the associated HDF5 file
-    void operator>> (Mesh& mesh);
+    void operator>> (Mesh& mesh, bool use_partition_from_file=false);
 
     /// Save a Function to XDMF/HDF5 files for visualisation.
     void operator<< (const Function& u);

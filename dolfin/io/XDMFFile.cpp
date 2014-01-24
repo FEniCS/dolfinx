@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-10-15
+// Last changed: 2014-01-24
 
 #ifdef HAS_HDF5
 
@@ -285,7 +285,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   counter++;
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator>> (Mesh& mesh)
+void XDMFFile::operator>> (Mesh& mesh, bool use_partition_from_file)
 {
   // Prepare HDF5 file
   if (hdf5_filemode != "r")
@@ -356,7 +356,7 @@ void XDMFFile::operator>> (Mesh& mesh)
   dolfin_assert(geom_bits[4] == "coordinates");
 
   // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, "/Mesh/" + geom_bits[3], false);
+  hdf5_file->read(mesh, "/Mesh/" + geom_bits[3], use_partition_from_file);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)

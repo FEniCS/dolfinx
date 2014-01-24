@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2014-01-22
+// Last changed: 2014-01-24
 
 #ifdef HAS_HDF5
 
@@ -1236,7 +1236,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
     const std::size_t proc = MPI::rank(_mpi_comm);
     cell_range = std::make_pair(partitions[proc], partitions[proc + 1]);
 
-    // Restore partitioning unless requested otherwise
+    // Restore partitioning if requested
     if (use_partition_from_file)
     {
       mesh_data.cell_partition
@@ -1245,6 +1245,8 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   }
   else
   {
+    if (use_partition_from_file)
+      warning("Could not use partition from file: wrong size");
     // Divide up cells ~equally between processes
     cell_range = MPI::local_range(_mpi_comm, num_global_cells);
   }
