@@ -99,6 +99,8 @@ Parameters PETScKrylovSolver::default_parameters()
   // Control PETSc performance profiling
   p.add<bool>("profile");
 
+  p.add("options_prefix", "default");
+
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -377,6 +379,18 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     }
   }
 
+  std::string prefix = std::string(parameters["options_prefix"]);
+  if (prefix != "default")
+  {
+    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    char lastchar = *prefix.rbegin();
+    if (lastchar != '_')
+      prefix += "_";
+
+    KSPSetOptionsPrefix(_ksp, prefix.c_str());
+  }
+  KSPSetFromOptions(_ksp);
+
   // Solve linear system
   if (MPI::rank(PETSC_COMM_WORLD) == 0)
   {
@@ -483,10 +497,6 @@ void PETScKrylovSolver::init(const std::string& method)
   // Set up solver environment
   ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-
-  // Set some options
-  ierr = KSPSetFromOptions(_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFromOptions");
 
   // Set solver type
   if (method != "default")

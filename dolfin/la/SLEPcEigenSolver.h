@@ -199,6 +199,7 @@ namespace dolfin
       p.add("spectral_transform", "default");
       p.add("spectral_shift",     0.0);
       p.add("verbose",            false);
+      p.add("options_prefix",     "default");
 
       return p;
     }

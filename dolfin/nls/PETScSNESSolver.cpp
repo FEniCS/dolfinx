@@ -136,6 +136,7 @@ Parameters PETScSNESSolver::default_parameters()
   p.rename("snes_solver");
   p.add("solution_tolerance", 1.0e-16);
   p.add("maximum_residual_evaluations", 2000);
+  p.add("options_prefix", "default");
   p.remove("convergence_criterion");
   p.remove("relaxation_parameter");
   p.remove("method");
@@ -271,6 +272,17 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
   SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
                   &snes_ctx);
+
+  std::string prefix = std::string(parameters["options_prefix"]);
+  if (prefix != "default")
+  {
+    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    char lastchar = *prefix.rbegin();
+    if (lastchar != '_')
+      prefix += "_";
+
+    SNESSetOptionsPrefix(_snes, prefix.c_str());
+  }
 
   // Set some options from the parameters
   if (report)
