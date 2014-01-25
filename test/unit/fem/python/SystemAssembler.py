@@ -228,15 +228,15 @@ class TestSystemAssembler(unittest.TestCase):
 
     def test_domains(self):
         
-        if MPI.num_processes() > 1:
+        mesh = UnitSquareMesh(24, 24)
+
+        if MPI.size(mesh.mpi_comm()) > 1:
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
         class RightSubDomain(SubDomain):
             def inside(self, x, on_boundary):
                 return x[0] > 0.5
-
-        mesh = UnitSquareMesh(24, 24)
 
         sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
         sub_domains.set_all(1)
@@ -289,11 +289,11 @@ class TestSystemAssembler(unittest.TestCase):
 
     def test_facet_assembly_cellwise_insertion(self):
 
-        if MPI.num_processes() > 1:
+        mesh = UnitIntervalMesh(10)
+
+        if MPI.size(mesh.mpi_comm()) > 1:
             print "FIXME: This unit test does not work in parallel, skipping"
             return
-
-        mesh = UnitIntervalMesh(10)
 
         c_f = FunctionSpace(mesh, "DG", 0)
         v = Constant((-1.0,))
