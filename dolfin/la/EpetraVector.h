@@ -244,8 +244,8 @@ namespace dolfin
 
     //--- Special Epetra functions ---
 
-    /// Reset Epetra_FEVector
-    void reset(const Epetra_BlockMap& map);
+    /// Initialize Epetra_FEVector with Epetra map
+    void init(const Epetra_BlockMap& map);
 
     /// Return Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> vec() const;

@@ -747,6 +747,18 @@ void PETScVector::gather(GenericVector& y,
   // Prepare data for index sets (local indices)
   const PetscInt n = indices.size();
 
+  // Resize vector and make local
+  if (_y.empty())
+    y.init(MPI_COMM_SELF, n);
+  else if (y.size() != n)
+  {
+    // FIXME: also check that vector is local
+    dolfin_error("PETScVector.cpp",
+                 "gather vector entries",
+                 "Cannot re-initialize gather vector. Must be empty or have correct size");
+  }
+
+
   // PETSc will bail out if it receives a NULL pointer even though m == 0.
   // Can't return from function since function calls are collective.
   if (n == 0)
@@ -760,8 +772,6 @@ void PETScVector::gather(GenericVector& y,
   ierr = ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateStride");
 
-  // Resize vector and make local
-  y.init(MPI_COMM_SELF, n);
 
   // Perform scatter
   VecScatter scatter;

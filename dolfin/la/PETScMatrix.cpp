@@ -571,7 +571,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
     if (_A)
     {
       #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=");
+      error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
       #else
       warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
       #endif
@@ -593,9 +593,9 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
                      "More than one object points to the underlying PETSc object");
       }
       #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=");
+      error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
       #else
-      warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
+      warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
       #endif
       MatDestroy(&_A);
     }

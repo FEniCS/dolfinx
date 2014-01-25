@@ -151,7 +151,7 @@ void XMLFile::operator>> (GenericVector& input)
 To control distribution, initialize vector size before reading from file.");
   }
   if (input.size() != size)
-  input.init(_mpi_comm, size);
+    input.init(_mpi_comm, size);
 
   // Read vector on root process
   if (MPI::rank(_mpi_comm) == 0)

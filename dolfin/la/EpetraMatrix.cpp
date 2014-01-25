@@ -229,6 +229,15 @@ EpetraMatrix::local_range(std::size_t dim) const
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
 {
+  if (!z.empty())
+  {
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("EpetraVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("EpetraVector may not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
+  }
+
   dolfin_assert(_A);
 
   // Get map appropriate map
