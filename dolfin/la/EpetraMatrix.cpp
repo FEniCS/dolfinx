@@ -255,7 +255,7 @@ void EpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
 
   // Reset vector with new map
   EpetraVector& _z = as_type<EpetraVector>(z);
-  _z.reset(*map);
+  _z.init(*map);
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::get(double* block, std::size_t m,

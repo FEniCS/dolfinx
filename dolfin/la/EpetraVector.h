@@ -245,6 +245,7 @@ namespace dolfin
     //--- Special Epetra functions ---
 
     /// Initialize Epetra_FEVector with Epetra map
+    using GenericTensor::init;
     void init(const Epetra_BlockMap& map);
 
     /// Return Epetra_FEVector pointer
