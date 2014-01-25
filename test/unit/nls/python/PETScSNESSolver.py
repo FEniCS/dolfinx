@@ -71,32 +71,33 @@ if has_petsc():
                                                   "report": False}}
 
     snes_solver_parameters_sign = {"nonlinear_solver": "snes",
-                                   "reset_jacobian": False,
                                    "snes_solver": {"linear_solver": "lu",
                                                    "maximum_iterations": 100,
                                                    "sign": "nonnegative",
-                                                   "report": False}}
+                                                   "report": True}}
 
     snes_solver_parameters_bounds = {"nonlinear_solver": "snes",
-                                     "reset_jacobian": False,
                                      "snes_solver": {"linear_solver": "lu",
                                                      "maximum_iterations": 100,
                                                      "sign": "default",
-                                                     "report": False}}
+                                                     "report": True}}
 
 class SNESSolverTester(unittest.TestCase):
 
     if has_petsc():
 
         def test_snes_solver(self):
+            u.interpolate(Constant(-1000.0))
             solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters_sign)
             self.assertTrue(u.vector().min() >= 0)
 
         def test_newton_solver(self):
+            u.interpolate(Constant(-1000.0))
             solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
             self.assertTrue(u.vector().min() < 0)
 
         def test_snes_solver_bound_functions(self):
+            u.interpolate(Constant(-1000.0))
             problem = NonlinearVariationalProblem(F, u, bcs, J)
             solver  = NonlinearVariationalSolver(problem)
             solver.parameters.update(snes_solver_parameters_bounds)
@@ -104,6 +105,7 @@ class SNESSolverTester(unittest.TestCase):
             self.assertTrue(u.vector().min() >= 0)
 
         def test_snes_solver_bound_vectors(self):
+            u.interpolate(Constant(-1000.0))
             problem = NonlinearVariationalProblem(F, u, bcs, J)
             solver  = NonlinearVariationalSolver(problem)
             solver.parameters.update(snes_solver_parameters_bounds)

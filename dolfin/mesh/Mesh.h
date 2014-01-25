@@ -655,7 +655,8 @@ namespace dolfin
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
 
-    const MPI_Comm mpi_comm() const
+    /// Mesh MPI communicator
+    MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
   private:

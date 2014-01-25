@@ -87,7 +87,8 @@ namespace dolfin
     /// ordered dofmao
     std::size_t block_size;
 
-    const MPI_Comm mpi_comm() const
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
   private:

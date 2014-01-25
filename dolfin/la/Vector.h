@@ -84,7 +84,7 @@ namespace dolfin
     { vector->apply(mode); }
 
     /// Return MPI communicator
-    virtual const MPI_Comm mpi_comm() const
+    virtual MPI_Comm mpi_comm() const
     { return vector->mpi_comm(); }
 
     /// Return informal string representation (pretty-print)

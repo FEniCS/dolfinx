@@ -419,7 +419,7 @@ void EpetraMatrix::apply(std::string mode)
   }
 }
 //-----------------------------------------------------------------------------
-const MPI_Comm EpetraMatrix::mpi_comm() const
+MPI_Comm EpetraMatrix::mpi_comm() const
 {
   dolfin_assert(_A);
   MPI_Comm mpi_comm = MPI_COMM_NULL;

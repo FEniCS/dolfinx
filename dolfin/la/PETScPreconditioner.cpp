@@ -170,6 +170,9 @@ Parameters PETScPreconditioner::default_parameters()
   p_hypre.add(p_boomeramg);
   p.add(p_hypre);
 
+  // Prefix for setting options
+  p.add("options_prefix", "default");
+
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -659,10 +662,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   ierr = PCFactorSetLevels(pc, ilu_levels);
   if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetLevels");
 
-  // Make sure options are set
-  ierr = PCSetFromOptions(pc);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetFromOptions");
-
   // Set physical coordinates for row dofs
   if (!_coordinates.empty())
   {
@@ -679,6 +678,18 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
 
   // Clear memory
   _coordinates.clear();
+
+  std::string prefix = std::string(parameters["options_prefix"]);
+  if (prefix != "default")
+  {
+    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    char lastchar = *prefix.rbegin();
+    if (lastchar != '_')
+      prefix += "_";
+
+    PCSetOptionsPrefix(pc, prefix.c_str());
+  }
+  PCSetFromOptions(pc);
 
   // Print preconditioner information
   const bool report = parameters["report"];

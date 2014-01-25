@@ -86,6 +86,19 @@ int main()
     return 0;
   }
 
+  // Check for available Krylov solvers
+  std::string krylov_method;
+  if (has_krylov_solver_method("minres"))
+    krylov_method = "minres";
+  else if (has_krylov_solver_method("tfqmr"))
+    krylov_method = "tfqmr";
+  else
+  {
+    info("Default linear algebra backend was not compiled with MINRES or TFQMR "
+         "Krylov subspace method. Terminating.");
+    return 0;
+  }
+
   // Create mesh
   UnitCubeMesh mesh(16, 16, 16);
 
@@ -135,7 +148,7 @@ int main()
   assemble_system(*A, b, a, L, bcs);
 
   // Create Krylov solver with specified method and preconditioner
-  KrylovSolver solver("tfqmr", "amg");
+  KrylovSolver solver(krylov_method, "amg");
 
   // Set operator (A) and precondtioner matrix (P)
   solver.set_operators(A, P);
