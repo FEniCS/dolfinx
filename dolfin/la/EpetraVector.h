@@ -110,6 +110,7 @@ namespace dolfin
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<la_index>& ghost_indices);
 
+    /*
     /// Deprecated: resize vector to size N
     virtual void resize(MPI_Comm comm, std::size_t N)
     {
@@ -137,6 +138,7 @@ namespace dolfin
                   "Use EpetraVector::init(...) (can only be called once).");
       init(comm, range, ghost_indices);
     }
+    */
 
     /// Return true if vector is empty
     virtual bool empty() const;

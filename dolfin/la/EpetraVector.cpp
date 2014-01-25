@@ -107,7 +107,7 @@ void EpetraVector::init(MPI_Comm comm, std::size_t N)
   // Compute local ownership range
   const std::pair<std::size_t, std::size_t> range = MPI::local_range(comm, N);
 
-  // Resize vector
+  // Initialize vector
   init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
@@ -125,9 +125,9 @@ void EpetraVector::init(MPI_Comm comm,
   if (!this->empty())
   {
     #ifdef DOLFIN_DEPRECATION_ERROR
-    error("EpetraVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    error("EpetraVector may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
     #else
-    warning("EpetraVector may not be initialized more than once. In version > 1.4, this will become an error.");
+    warning("EpetraVector should not be initialized more than once. In version > 1.4, this will become an error.");
     #endif
   }
 
@@ -491,12 +491,12 @@ void EpetraVector::gather(GenericVector& y,
   // Initialise vector y
   if (y.empty())
     _y.init(target_map);
-  else if (_y.size() != indices.size())
+  else if (_y.size() != indices.size() ||  MPI::size(y.mpi_comm()))
   {
     // FIXME: also check that vector is local
     dolfin_error("EpetraVector.cpp",
                  "gather vector entries",
-                 "Cannot re-initialize gather vector. Must be empty or have correct size");
+                 "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
   }
 
   dolfin_assert(_y.vec());

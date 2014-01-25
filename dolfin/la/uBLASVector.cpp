@@ -90,8 +90,7 @@ void uBLASVector::resize(MPI_Comm comm, std::size_t N)
     return;
   _x->resize(N, false);
 
-  // Set vector to zero to prevent random numbers entering the vector.
-  // Fixes this bug: https://bugs.launchpad.net/dolfin/+bug/594954
+  // Set vector to zero
   _x->clear();
 }
 //-----------------------------------------------------------------------------

@@ -93,6 +93,15 @@ EpetraMatrix::~EpetraMatrix()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const TensorLayout& tensor_layout)
 {
+  if (!this->empty())
+  {
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("EpetraMatrix cannot be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("EpetraMatrix should not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
+  }
+
   if (_A && !_A.unique())
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -432,15 +441,15 @@ MPI_Comm EpetraMatrix::mpi_comm() const
 {
   dolfin_assert(_A);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
-#ifdef HAS_MPI
+  #ifdef HAS_MPI
   // Get Epetra MPI communicator (downcast)
   const Epetra_MpiComm* epetra_mpi_comm
     = dynamic_cast<const Epetra_MpiComm*>(&(_A->Map().Comm()));
   dolfin_assert(epetra_mpi_comm);
   mpi_comm = epetra_mpi_comm->Comm();
-#else
+  #else
   mpi_comm = MPI_COMM_SELF;
-#endif
+  #endif
 
   return mpi_comm;
 }
@@ -521,7 +530,6 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
       }
     }
   }
-  //-------------------------
 
   const Epetra_CrsGraph& graph = _A->Graph();
   MySet::const_iterator global_row;
@@ -606,9 +614,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 
   // Initialize RHS
   if (Ax.empty())
-  {
     this->init_vector(Ax, 0);
-  }
 
   if (Ax.size() != size(0))
   {
@@ -643,9 +649,7 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 
   // Initialize RHS
   if (Ax.empty())
-  {
     this->init_vector(Ax, 1);
-  }
 
   if (Ax.size() != size(1))
   {
@@ -773,7 +777,6 @@ const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
     _A.reset(new Epetra_FECrsMatrix(*A.mat()));
   else
     A.mat().reset();
-
   return *this;
 }
 //-----------------------------------------------------------------------------

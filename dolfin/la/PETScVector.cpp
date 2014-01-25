@@ -691,7 +691,6 @@ std::string PETScVector::str(bool verbose) const
     return "<Uninitialized PETScVector>";
 
   PetscErrorCode ierr;
-
   std::stringstream s;
   if (verbose)
   {
@@ -745,17 +744,18 @@ void PETScVector::gather(GenericVector& y,
   std::vector<PetscInt> global_indices(indices.begin(), indices.end());
 
   // Prepare data for index sets (local indices)
-  const PetscInt n = indices.size();
+  const std::size_t n = indices.size();
 
-  // Resize vector and make local
   if (_y.empty())
-    y.init(MPI_COMM_SELF, n);
-  else if (y.size() != n)
   {
-    // FIXME: also check that vector is local
+    // Initialise vector and make local
+    y.init(MPI_COMM_SELF, n);
+  }
+  else if (y.size() != n || MPI::size(y.mpi_comm()))
+  {
     dolfin_error("PETScVector.cpp",
                  "gather vector entries",
-                 "Cannot re-initialize gather vector. Must be empty or have correct size");
+                 "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
   }
 
 
@@ -839,7 +839,7 @@ void PETScVector::_init(MPI_Comm comm,
   if (_x)
   {
     #ifdef DOLFIN_DEPRECATION_ERROR
-    error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    error("PETScVector cannot be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
     #else
     warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error.");
     #endif
