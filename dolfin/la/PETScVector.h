@@ -226,9 +226,6 @@ namespace dolfin
 
     //--- Special functions ---
 
-    /// Reset data and PETSc vector object
-    void reset();
-
     /// Return linear algebra backend factory
     virtual GenericLinearAlgebraFactory& factory() const;
 

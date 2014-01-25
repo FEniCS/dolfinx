@@ -97,9 +97,6 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   // Downcast vector
   PETScVector& _z = as_type<PETScVector>(z);
 
-  // Clear data
-  _z.reset();
-
   // Create new PETSc vector
   Vec x = NULL;
   if (dim == 0)

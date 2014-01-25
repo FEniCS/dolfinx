@@ -828,7 +828,11 @@ void PETScVector::_init(MPI_Comm comm,
   PetscErrorCode ierr;
   if (_x)
   {
-    error("PETScVector may not be initialized more than once.");
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
     VecDestroy(&_x);
   }
 
@@ -870,23 +874,6 @@ void PETScVector::_init(MPI_Comm comm,
 Vec PETScVector::vec() const
 {
   return _x;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::reset()
-{
-  if (_x)
-  {
-    VecDestroy(&_x);
-    _x = NULL;
-  }
-
-  if (x_ghosted)
-  {
-    VecDestroy(&x_ghosted);
-    x_ghosted = NULL;
-  }
-
-  ghost_global_to_local.clear();
 }
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& PETScVector::factory() const
