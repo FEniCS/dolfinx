@@ -53,6 +53,9 @@ namespace dolfin
     /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout) = 0;
 
+    /// Return true if empty
+    virtual bool empty() const = 0;
+
     /// Return tensor rank (number of dimensions)
     virtual std::size_t rank() const = 0;
 

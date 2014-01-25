@@ -766,8 +766,8 @@ class TestPage37(unittest.TestCase):
         u = Function(V)
         t = 0.5
 
-        time_series.retrieve(u.vector(), t)
-        time_series.retrieve(mesh, t)
+        #time_series.retrieve(u.vector(), t)
+        #time_series.retrieve(mesh, t)
 
     def test_box_3(self):
         if skip_in_parallel(): return

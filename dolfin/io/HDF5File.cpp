@@ -138,9 +138,9 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
   dolfin_assert(data_size.size() == 1);
 
   // Check input vector, and re-size if not already sized
-  if (x.size() == 0)
+  if (x.empty())
   {
-    // Resize vector
+    // Intialize vector
     if (use_partition_from_file)
     {
       // Get partition from file
@@ -163,10 +163,10 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       const std::size_t process_num = MPI::rank(_mpi_comm);
       const std::pair<std::size_t, std::size_t>
         local_range(partitions[process_num], partitions[process_num + 1]);
-      x.resize(_mpi_comm, local_range);
+      x.init(_mpi_comm, local_range);
     }
     else
-      x.resize(_mpi_comm, data_size[0]);
+      x.init(_mpi_comm, data_size[0]);
   }
   else if (x.size() != data_size[0])
   {

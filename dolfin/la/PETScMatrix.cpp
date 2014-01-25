@@ -122,16 +122,15 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   const GenericSparsityPattern& sparsity_pattern
     = *tensor_layout.sparsity_pattern();
 
-  // FIXME: Should we throw an error if reference count is greater than one?
-  // Get reference count
-  //if (_A)
-  //{
-  //  int ref_count = 0;
-  //  PetscObjectGetReference((PetscObject)_A, &ref_count);
-  //}
-
   if (_A)
+  {
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
     MatDestroy(&_A);
+  }
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
@@ -258,6 +257,11 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   ierr = MatSetUp(_A);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
   #endif
+}
+//-----------------------------------------------------------------------------
+bool PETScMatrix::empty() const
+{
+  return _A ? true : false;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
@@ -410,7 +414,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 
   // Resize RHS if empty
   if (yy.size() == 0)
-    resize(yy, 0);
+    init_vector(yy, 0);
 
   if (size(0) != yy.size())
   {
@@ -439,7 +443,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 
   // Resize RHS if empty
   if (yy.size() == 0)
-    resize(yy, 1);
+    init_vector(yy, 1);
 
   if (size(1) != yy.size())
   {
@@ -570,7 +574,14 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   if (!A.mat())
   {
     if (_A)
+    {
+      #ifdef DOLFIN_DEPRECATION_ERROR
+      error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
+      #else
+      warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
+      #endif
       MatDestroy(&_A);
+    }
     _A = NULL;
   }
   else if (this != &A) // Check for self-assignment
@@ -586,6 +597,11 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
                      "assign to PETSc matrix",
                      "More than one object points to the underlying PETSc object");
       }
+      #ifdef DOLFIN_DEPRECATION_ERROR
+      error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
+      #else
+      warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
+      #endif
       MatDestroy(&_A);
     }
 
