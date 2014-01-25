@@ -125,24 +125,33 @@ namespace dolfin
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<la_index>& ghost_indices) = 0;
 
-
-    /*
     /// Deprecated: resize vector to global size N
-    virtual void resize(MPI_Comm comm, std::size_t N) = 0;
+    virtual void resize(MPI_Comm comm, std::size_t N)
+    {
+      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
+                  "Use GenericVector::init(...) (can only be called once).");
+      init(comm, N);
+    }
 
     /// Deprecated: resize vector with given ownership range
     virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range) = 0;
+                        std::pair<std::size_t, std::size_t> range)
+    {
+      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
+                  "Use GenericVector::init(...) (can only be called once).");
+      init(comm, range);
+    }
 
     /// Deprevated: resize vector with given ownership range and with
     /// ghost values
     virtual void resize(MPI_Comm comm,
                         std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices) = 0;
-    */
-
-    /// Return true if empty
-    virtual bool empty() const = 0;
+                        const std::vector<la_index>& ghost_indices)
+    {
+      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
+                  "Use GenericVector::init(...) (can only be called once).");
+      init(comm, range, ghost_indices);
+    }
 
     /// Return global size of vector
     virtual std::size_t size() const = 0;
@@ -155,14 +164,6 @@ namespace dolfin
 
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(std::size_t i) const = 0;
-
-    /// Get block of values (values may live on any process)
-    virtual void get(double* block, std::size_t m,
-                     const dolfin::la_index* rows) const
-    {
-      warning("GenericVector::get is redirected to GenericVector::get_local. Use GenericVector::gather for get off-process entries. GenericVector::get will be removed.");
-      get_local(block, m, rows);
-    }
 
     /// Get block of values (values must all live on the local process)
     virtual void get_local(double* block, std::size_t m,

@@ -73,6 +73,9 @@ namespace dolfin
     /// Initialize zero tensor using tensor layout
     void init(const TensorLayout& tensor_layout);
 
+    /// Return true if empty
+    bool empty() const;
+
     /// Return size of given dimension
     std::size_t size(std::size_t dim) const
     { return PETScBaseMatrix::size(dim); }

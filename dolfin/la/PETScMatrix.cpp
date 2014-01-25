@@ -259,6 +259,11 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   #endif
 }
 //-----------------------------------------------------------------------------
+bool PETScMatrix::empty() const
+{
+  return _A ? true : false;
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
                       std::size_t m, const dolfin::la_index* rows,
                       std::size_t n, const dolfin::la_index* cols) const

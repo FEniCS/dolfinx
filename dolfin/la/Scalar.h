@@ -61,6 +61,10 @@ namespace dolfin
       _mpi_comm = tensor_layout.mpi_comm();
     }
 
+    /// Return true if empty
+    bool empty() const
+    { return false; }
+
     /// Return tensor rank (number of dimensions)
     std::size_t rank() const
     { return 0; }

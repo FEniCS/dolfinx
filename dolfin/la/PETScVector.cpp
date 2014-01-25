@@ -190,32 +190,6 @@ void PETScVector::init(MPI_Comm comm,
   _init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-/*
-void PETScVector::resize(MPI_Comm comm, std::size_t N)
-{
-  deprecation("PETScVector::resize(...)", "1.4", "1.5",
-              "Use PETScVector::init(...) (can only be called once).");
-  init(comm, N);
-}
-//-----------------------------------------------------------------------------
-void PETScVector::resize(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range)
-{
-  deprecation("PETScVector::resize(...)", "1.4", "1.5",
-              "Use PETScVector::init(...) (can only be called once).");
-  init(comm, range);
-}
-//-----------------------------------------------------------------------------
-void PETScVector::resize(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range,
-                         const std::vector<la_index>& ghost_indices)
-{
-  deprecation("PETScVector::resize(...)", "1.4", "1.5",
-              "Use PETScVector::init(...) (can only be called once).");
-  init(comm, range, ghost_indices);
-}
-//-----------------------------------------------------------------------------
-*/
 void PETScVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(_x);

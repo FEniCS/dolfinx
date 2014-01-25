@@ -65,6 +65,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout)
     { matrix->init(tensor_layout); }
 
+    /// Return true if matrix is empty
+    virtual bool empty() const
+    { return matrix->empty(); }
+
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const
     { return matrix->size(dim); }

@@ -109,21 +109,6 @@ namespace dolfin
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<la_index>& ghost_indices);
 
-    /*
-    /// Deprecated: resize vector to global size N
-    virtual void resize(MPI_Comm comm, std::size_t N);
-
-    /// Deprecated: resize vector with given ownership range
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range);
-
-    /// Deprecated: resize vector with given ownership range and with
-    /// ghost values
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices);
-    */
-
     /// Return true if vector is empty
     virtual bool empty() const;
 

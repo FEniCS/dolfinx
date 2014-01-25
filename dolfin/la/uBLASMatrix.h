@@ -86,6 +86,10 @@ namespace dolfin
     /// Initialize zero tensor using tenor layout
     virtual void init(const TensorLayout& tensor_layout);
 
+    /// Return true if empty
+    virtual bool empty() const
+    { return this->size(0); }
+
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const;
 
