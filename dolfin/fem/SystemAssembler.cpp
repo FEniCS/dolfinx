@@ -749,7 +749,7 @@ assembler");
                                        boundary_values,
                                        *cell_dofs[form][c][1]);
 
-              // Compute cell tensor, if required
+              // Add cell tensor, if required
               if (cell_tensor_required)
               {
                 data.zero_cell();
