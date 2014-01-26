@@ -392,6 +392,7 @@ void PointIntegralSolver::step(double dt)
       }
     }
 
+
     Timer t_vert_axpy("Step: AXPY solution");
 
     // Get local u0 solution and add the stage derivatives
@@ -409,8 +410,16 @@ void PointIntegralSolver::step(double dt)
     _scheme->solution()->vector()->set(u0.data(), local_to_global_dofs.size(),
 				       &local_to_global_dofs[0]);
 
+    // FIXME: This should not be inside a loop - very expensive
+    // Apply changes to vector
+    _scheme->solution()->vector()->apply("insert");
+
     //p++;
   }
+
+  // Apply changes to vector
+  for (unsigned int stage = 0; stage < num_stages; stage++)
+    _scheme->stage_solutions()[stage]->vector()->apply("insert");
 
   // Update time
   *_scheme->t() = t0 + dt;

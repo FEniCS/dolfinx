@@ -61,14 +61,14 @@ namespace dolfin
     /// Return local range along dimension dim
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
 
-    /// Resize matrix to be compatible with the matrix-vector product
+    /// Initialize vector to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    void resize(GenericVector& z, std::size_t dim) const;
+    void init_vector(GenericVector& z, std::size_t dim) const;
 
     /// Return PETSc Mat pointer
     Mat mat() const

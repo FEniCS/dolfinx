@@ -97,17 +97,17 @@ namespace dolfin
     /// Return copy of vector
     virtual boost::shared_ptr<GenericVector> copy() const;
 
-    /// Resize vector to global size N
-    virtual void resize(MPI_Comm comm, std::size_t N);
+    /// Initialize vector to global size N
+    virtual void init(MPI_Comm comm, std::size_t N);
 
-    /// Resize vector with given ownership range
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range);
+    /// Initialize vector with given ownership range
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range);
 
-    /// Resize vector with given ownership range and with ghost values
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices);
+    /// Initialize vector with given ownership range and with ghost values
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range,
+                      const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -210,9 +210,6 @@ namespace dolfin
     virtual void update_ghost_values();
 
     //--- Special functions ---
-
-    /// Reset data and PETSc vector object
-    void reset();
 
     /// Return linear algebra backend factory
     virtual GenericLinearAlgebraFactory& factory() const;

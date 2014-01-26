@@ -54,16 +54,16 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Resize tensor to given dimensions
-    virtual void resize(std::size_t rank, const std::size_t* dims)
-    { dolfin_assert(rank == 0); _value = 0.0; }
-
     /// Initialize zero tensor using sparsity pattern
     void init(const TensorLayout& tensor_layout)
     {
       _value = 0.0;
       _mpi_comm = tensor_layout.mpi_comm();
     }
+
+    /// Return true if empty
+    bool empty() const
+    { return false; }
 
     /// Return tensor rank (number of dimensions)
     std::size_t rank() const
