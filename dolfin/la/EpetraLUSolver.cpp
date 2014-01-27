@@ -83,7 +83,7 @@ std::string EpetraLUSolver::choose_method(std::string method) const
   else if (method == "mumps")
     method = "Amesos_mumps";
   else if (method == "klu")
-    method = "Amesos_klu";
+    method = "Amesos_Klu";
   else
   {
     dolfin_error("EpetraLUSolver.cpp",
