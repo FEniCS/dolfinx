@@ -110,36 +110,6 @@ namespace dolfin
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<la_index>& ghost_indices);
 
-    /*
-    /// Deprecated: resize vector to size N
-    virtual void resize(MPI_Comm comm, std::size_t N)
-    {
-      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
-                  "Use EpetraVector::init(...) (can only be called once).");
-      init(comm, N);
-    }
-
-    /// Deprecated: resize vector with given ownership range
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range)
-    {
-      deprecation("EpetracVector::resize(...)", "1.4", "1.5",
-                  "Use EpetraVector::init(...) (can only be called once).");
-      init(comm, range);
-    }
-
-    /// Deprecated: resize vector with given ownership range and with
-    /// ghost values
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices)
-    {
-      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
-                  "Use EpetraVector::init(...) (can only be called once).");
-      init(comm, range, ghost_indices);
-    }
-    */
-
     /// Return true if vector is empty
     virtual bool empty() const;
 
@@ -247,7 +217,6 @@ namespace dolfin
     //--- Special Epetra functions ---
 
     /// Initialize Epetra_FEVector with Epetra map
-    using GenericTensor::init;
     void init(const Epetra_BlockMap& map);
 
     /// Return Epetra_FEVector pointer
@@ -255,6 +224,9 @@ namespace dolfin
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
+
+    // Bring init function from GenericVector into scope
+    using GenericTensor::init;
 
   private:
 
