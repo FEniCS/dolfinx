@@ -50,14 +50,12 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 {
   dolfin_assert(a.ufc_form());
 
-  check_parameters();
-
   // Get dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (std::size_t i = 0; i < a.rank(); ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
-  if (A.size(0) == 0 || reset_sparsity)
+  if (A.size(0) == 0)
   {
     Timer t0("Build sparsity");
 
@@ -149,23 +147,6 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 
   if (!add_values)
     A.zero();
-}
-//-----------------------------------------------------------------------------
-void AssemblerBase::check_parameters() const
-{
-  if (reset_sparsity && add_values)
-  {
-    dolfin_error("AssemblerBase.cpp",
-                 "check parameters",
-                 "Can not add values when the sparsity pattern is reset");
-  }
-
-  if (!reset_sparsity && keep_diagonal)
-  {
-    dolfin_error("AssemblerBase.cpp",
-                 "check parameters",
-                 "Not resetting tensor and keeping diagonal entries are incompatible");
-  }
 }
 //-----------------------------------------------------------------------------
 void AssemblerBase::check(const Form& a)

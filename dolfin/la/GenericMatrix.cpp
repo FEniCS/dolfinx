@@ -75,7 +75,7 @@ void GenericMatrix::ident_zeros()
   apply("insert");
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::compress()
+void GenericMatrix::compressed(GenericMatrix& B) const
 {
   Timer timer("Compress matrix");
 
@@ -125,9 +125,16 @@ void GenericMatrix::compress()
   // Declare some variables used to extract matrix information
   std::vector<std::size_t> columns;
   std::vector<double> values;
-  std::vector<double> allvalues; // Hold all values of local matrix
-  std::vector<dolfin::la_index> allcolumns;  // Hold column id for all values of local matrix
-  std::vector<dolfin::la_index> offset(m + 1); // Hold accumulated number of cols on local matrix
+
+  // Hold all values of local matrix
+  std::vector<double> allvalues;
+
+  // Hold column id for all values of local matrix
+  std::vector<dolfin::la_index> allcolumns;
+
+  // Hold accumulated number of cols on local matrix
+  std::vector<dolfin::la_index> offset(m + 1);
+
   offset[0] = 0;
   std::vector<dolfin::la_index> thisrow(1);
   std::vector<dolfin::la_index> thiscolumn;
@@ -166,17 +173,16 @@ void GenericMatrix::compress()
   // Finalize sparsity pattern
   new_sparsity_pattern.apply();
 
-  // Recreate matrix with the new layout
-  init(*new_layout);
+  // Create matrix with the new layout
+  B.init(*new_layout);
 
-  // Put the old values back in the newly compressed matrix
+  // Put the values back into new compressed matrix
   for (std::size_t i = 0; i < m; i++)
   {
     const dolfin::la_index global_row = i + row_range.first;
-    set(&allvalues[offset[i]], 1, &global_row,
+    B.set(&allvalues[offset[i]], 1, &global_row,
         offset[i+1] - offset[i], &allcolumns[offset[i]]);
   }
-
-  apply("insert");
+  B.apply("insert");
 }
 //-----------------------------------------------------------------------------

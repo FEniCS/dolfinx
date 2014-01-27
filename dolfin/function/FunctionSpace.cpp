@@ -150,7 +150,6 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   }
 
   // Initialize vector of expansion coefficients
-  //expansion_coefficients.resize(_dofmap->global_dimension());
   if (expansion_coefficients.size() != _dofmap->global_dimension())
   {
     dolfin_error("FunctionSpace.cpp",
@@ -243,8 +242,8 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
   return collapse(collapsed_dofs);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace>
-FunctionSpace::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
+boost::shared_ptr<FunctionSpace>FunctionSpace::collapse(
+  boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
 {
   dolfin_assert(_mesh);
 
@@ -256,7 +255,8 @@ FunctionSpace::collapse(boost::unordered_map<std::size_t, std::size_t>& collapse
   }
 
   // Create collapsed DofMap
-  boost::shared_ptr<GenericDofMap> collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
+  boost::shared_ptr<GenericDofMap>
+    collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
 
   // Create new FunctionsSpace and return
   boost::shared_ptr<FunctionSpace>
