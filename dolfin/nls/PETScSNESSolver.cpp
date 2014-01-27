@@ -245,15 +245,13 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   return this->solve(nonlinear_problem, x);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool>
-PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+void
+PETScSNESSolver::setup(NonlinearProblem& nonlinear_problem,
                        GenericVector& x)
 {
-  Timer timer("SNES solver");
+  Timer timer("SNES solver setup");
   PETScVector f;
   PETScMatrix A;
-  PetscInt its;
-  SNESConvergedReason reason;
   struct snes_ctx_t snes_ctx;
 
   // Set linear solver parameters
@@ -365,11 +363,26 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   SNESSetFromOptions(_snes);
   if (report)
     SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
+}
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool>
+PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+                       GenericVector& x)
+{
+  Timer timer("SNES solver execution");
+  PETScVector f;
+  PETScMatrix A;
+  PetscInt its;
+  SNESConvergedReason reason;
+  struct snes_ctx_t snes_ctx;
 
+  this->setup(nonlinear_problem, x);
   SNESSolve(_snes, PETSC_NULL, snes_ctx.x->vec());
 
   SNESGetIterationNumber(_snes, &its);
   SNESGetConvergedReason(_snes, &reason);
+
+  const bool report = parameters["report"];
 
   MPI_Comm comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_snes, &comm);

@@ -90,6 +90,10 @@ namespace dolfin
     std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
                                        GenericVector& x);
 
+    /// Set up the SNES object, but don't do anything yet, in case the user wants
+    /// to access the SNES object directly
+    void setup(NonlinearProblem& nonlinear_problem, GenericVector& x);
+
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
 
