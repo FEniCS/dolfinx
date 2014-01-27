@@ -1,3 +1,7 @@
+ - Change GenericMatrix::compresss to return a new matrix (7be3a29)
+ - Add function GenericTensor::empty()
+ - Deprecate resizing of linear algebra via the GenericFoo interfaces
+	(fixes #213)
  - Deprecate MPI::process_number() in favour of MPI::rank(MPI_Comm)
  - Use PETSc built-in reference counting to manage lifetime of wrapped PETSc
 	objects

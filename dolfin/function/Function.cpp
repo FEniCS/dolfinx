@@ -715,7 +715,7 @@ void Function::init_vector()
   {
     dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
-                 "Cannot be resize a non-empty vector. Consider creating a new function");
+                 "Cannot re-initialize a non-empty vector. Consider creating a new function");
 
   }
   _vector->zero();
