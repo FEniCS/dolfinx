@@ -32,9 +32,19 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/PETScObject.h>
+#include <dolfin/la/PETScVector.h>
 
 namespace dolfin
 {
+
+  struct snes_ctx_t
+  {
+    NonlinearProblem* nonlinear_problem;
+    PETScVector* x;
+    const PETScVector* xl;
+    const PETScVector* xu;
+  };
+
   /// Forward declarations
   class PETScVector;
 
@@ -144,6 +154,8 @@ namespace dolfin
     // Flag to indicate if explicit bounds are set
     bool has_explicit_bounds;
 
+    // SNES context
+    struct snes_ctx_t _snes_ctx;
   };
 
 }

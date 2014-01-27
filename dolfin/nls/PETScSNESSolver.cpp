@@ -43,14 +43,6 @@
 
 using namespace dolfin;
 
-struct snes_ctx_t
-{
-  NonlinearProblem* nonlinear_problem;
-  PETScVector* x;
-  const PETScVector* xl;
-  const PETScVector* xu;
-};
-
 #if PETSC_VERSION_RELEASE
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
   // Mapping from method string to PETSc
@@ -252,7 +244,6 @@ PETScSNESSolver::setup(NonlinearProblem& nonlinear_problem,
   Timer timer("SNES solver setup");
   PETScVector f;
   PETScMatrix A;
-  struct snes_ctx_t snes_ctx;
 
   // Set linear solver parameters
   set_linear_solver_parameters();
@@ -264,12 +255,12 @@ PETScSNESSolver::setup(NonlinearProblem& nonlinear_problem,
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
 
-  snes_ctx.nonlinear_problem = &nonlinear_problem;
-  snes_ctx.x = &x.down_cast<PETScVector>();
+  _snes_ctx.nonlinear_problem = &nonlinear_problem;
+  _snes_ctx.x = &x.down_cast<PETScVector>();
 
-  SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
+  SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &_snes_ctx);
   SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
-                  &snes_ctx);
+                  &_snes_ctx);
 
   std::string prefix = std::string(parameters["options_prefix"]);
   if (prefix != "default")
@@ -374,10 +365,9 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   PETScMatrix A;
   PetscInt its;
   SNESConvergedReason reason;
-  struct snes_ctx_t snes_ctx;
 
   this->setup(nonlinear_problem, x);
-  SNESSolve(_snes, PETSC_NULL, snes_ctx.x->vec());
+  SNESSolve(_snes, PETSC_NULL, _snes_ctx.x->vec());
 
   SNESGetIterationNumber(_snes, &its);
   SNESGetConvergedReason(_snes, &reason);
