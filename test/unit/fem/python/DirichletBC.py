@@ -117,13 +117,16 @@ class DirichletBCTest(unittest.TestCase):
         mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
 
         RT1 = lambda mesh: FunctionSpace(mesh, "RT", 1)
+        RT2 = lambda mesh: FunctionSpace(mesh, "RT", 2)
+        DRT1 = lambda mesh: FunctionSpace(mesh, "DRT", 1)
+        DRT2 = lambda mesh: FunctionSpace(mesh, "DRT", 2)
         BDM1 = lambda mesh: FunctionSpace(mesh, "BDM", 1)
         BDM2 = lambda mesh: FunctionSpace(mesh, "BDM", 2)
         N1curl1 = lambda mesh: FunctionSpace(mesh, "N1curl", 1)
         N2curl1 = lambda mesh: FunctionSpace(mesh, "N2curl", 1)
         N1curl2 = lambda mesh:FunctionSpace(mesh, "N1curl", 2)
         N2curl2 = lambda mesh: FunctionSpace(mesh, "N2curl", 2)
-        elements = [N1curl1, N2curl1,  N1curl2, N2curl2, RT1, BDM1, BDM2]
+        elements = [N1curl1, N2curl1,  N1curl2, N2curl2, RT1, RT2, BDM1, BDM2, DRT1, DRT2]
 
         for element in elements:
             V = element(mesh)
