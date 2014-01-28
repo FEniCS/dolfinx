@@ -238,10 +238,10 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
 }
 //-----------------------------------------------------------------------------
 void
-PETScSNESSolver::setup(NonlinearProblem& nonlinear_problem,
+PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                        GenericVector& x)
 {
-  Timer timer("SNES solver setup");
+  Timer timer("SNES solver init");
   PETScVector f;
   PETScMatrix A;
 
@@ -366,7 +366,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   PetscInt its;
   SNESConvergedReason reason;
 
-  this->setup(nonlinear_problem, x);
+  this->init(nonlinear_problem, x);
   SNESSolve(_snes, PETSC_NULL, _snes_ctx.x->vec());
 
   SNESGetIterationNumber(_snes, &its);
