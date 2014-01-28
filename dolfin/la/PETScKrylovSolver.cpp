@@ -302,9 +302,9 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     info("Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
-  if (x.size() != M)
+  if (x.empty())
   {
-    _A->resize(x, 1);
+    _A->init_vector(x, 1);
     x.zero();
   }
 

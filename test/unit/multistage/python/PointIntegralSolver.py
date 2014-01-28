@@ -40,11 +40,11 @@ def convergence_order(errors, base = 2):
 
 class PointIntegralSolverTest(unittest.TestCase):
 
-    def test_butcher_schemes_scalar(self):
+    def xtest_butcher_schemes_scalar(self):
 
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
-            
+
             mesh = UnitSquareMesh(10, 10)
             V = FunctionSpace(mesh, "CG", 1)
             u = Function(V)
@@ -68,7 +68,7 @@ class PointIntegralSolverTest(unittest.TestCase):
 
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
-    def test_butcher_schemes_vector(self):
+    def xtest_butcher_schemes_vector(self):
 
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
@@ -99,7 +99,7 @@ class PointIntegralSolverTest(unittest.TestCase):
 
                     solver.step(next_dt)
                     next_dt = min(tstop-float(scheme.t()), dt)
-                    
+
                 u_errors.append(errornorm(u_true, u))
 
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)

@@ -197,9 +197,10 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
                  "Cannot factorize non-square PETSc matrix");
   }
 
-  // Initialize solution vector if required (make compatible with A in parallel)
-  if (_A->size(1) != x.size())
-    _A->resize(x, 1);
+  // Initialize solution vector if required (make compatible with A in
+  // parallel)
+  if (x.empty())
+    _A->init_vector(x, 1);
 
   // Set PETSc operators (depends on factorization re-use options);
   set_petsc_operators();

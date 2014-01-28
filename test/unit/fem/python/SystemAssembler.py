@@ -227,16 +227,16 @@ class TestSystemAssembler(unittest.TestCase):
             self.assertAlmostEqual(error, 0.0)
 
     def test_domains(self):
-        
-        mesh = UnitSquareMesh(24, 24)
 
-        if MPI.size(mesh.mpi_comm()) > 1:
+        if MPI.size(mpi_comm_world()) > 1:
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
         class RightSubDomain(SubDomain):
             def inside(self, x, on_boundary):
                 return x[0] > 0.5
+
+        mesh = UnitSquareMesh(24, 24)
 
         sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
         sub_domains.set_all(1)
@@ -258,12 +258,12 @@ class TestSystemAssembler(unittest.TestCase):
         L = v*Constant(1.0)*dx(1) + v*Constant(2.0)*dx(2)
         # test cell-wise assembly
         assembler = SystemAssembler(a, L)
-        
-        A = Matrix()
+
+        A0 = Matrix()
         b = Vector()
-        assembler.assemble(A, b)
-        
-        solve(A, x.vector(), b)
+        assembler.assemble(A0, b)
+
+        solve(A0, x.vector(), b)
 
         # check solution
         x.vector()[:] -= 1.0
@@ -274,12 +274,13 @@ class TestSystemAssembler(unittest.TestCase):
         # now give the form some internal facet integrals
         a += v('+')*u('+')*Constant(0.0)('+')*dS
         assembler = SystemAssembler(a, L)
+        A1 = Matrix()
         # test facet-wise assembly
-        assembler.assemble(A, b)
+        assembler.assemble(A1, b)
 
         # reset solution vector to some number
         x.vector()[:] = 30.0
-        solve(A, x.vector(), b)
+        solve(A1, x.vector(), b)
 
         # check solution
         x.vector()[:] -= 1.0
@@ -289,11 +290,11 @@ class TestSystemAssembler(unittest.TestCase):
 
     def test_facet_assembly_cellwise_insertion(self):
 
-        mesh = UnitIntervalMesh(10)
-
-        if MPI.size(mesh.mpi_comm()) > 1:
+        if MPI.size(mpi_comm_world()) > 1:
             print "FIXME: This unit test does not work in parallel, skipping"
             return
+
+        mesh = UnitIntervalMesh(10)
 
         c_f = FunctionSpace(mesh, "DG", 0)
         v = Constant((-1.0,))
