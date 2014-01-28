@@ -47,17 +47,17 @@ namespace dolfin
 
     /// Create a tensor layout
     TensorLayout(const MPI_Comm mpi_comm,
-                 const std::vector<std::size_t>& dims, std::size_t primary_dim,
+                 const std::vector<std::size_t>& dims,
+                 std::size_t primary_dim,
                  std::size_t block_size,
-                 const std::vector<std::pair<std::size_t,
-                 std::size_t> >& ownership_range,
+                 const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
                  bool sparsity_pattern);
 
     /// Initialize tensor layout
     void init(const MPI_Comm mpi_comm,
-              const std::vector<std::size_t>& dims, std::size_t block_size,
-              const std::vector<std::pair<std::size_t,
-              std::size_t> >& ownership_range);
+              const std::vector<std::size_t>& dims,
+              std::size_t block_size,
+              const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range);
 
     /// Return rank
     std::size_t rank() const;
@@ -84,10 +84,11 @@ namespace dolfin
     const std::size_t primary_dim;
 
     /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
-    /// ordered dofmao
+    /// ordered dofmap
     std::size_t block_size;
 
-    const MPI_Comm mpi_comm() const
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
   private:

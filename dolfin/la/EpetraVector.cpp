@@ -30,7 +30,6 @@
 #include <cstring>
 #include <numeric>
 #include <utility>
-#include <boost/scoped_ptr.hpp>
 
 #include <Epetra_FEVector.h>
 #include <Epetra_Export.h>
@@ -63,7 +62,7 @@ EpetraVector::EpetraVector()
 EpetraVector::EpetraVector(MPI_Comm comm, std::size_t N)
 {
   // Create Epetra vector
-  resize(comm, N);
+  init(comm, N);
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x) : _x(x)
@@ -100,7 +99,7 @@ boost::shared_ptr<GenericVector> EpetraVector::copy() const
   return y;
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::resize(MPI_Comm comm, std::size_t N)
+void EpetraVector::init(MPI_Comm comm, std::size_t N)
 {
   // Create empty ghost vertices vector
   std::vector<la_index> ghost_indices;
@@ -108,21 +107,30 @@ void EpetraVector::resize(MPI_Comm comm, std::size_t N)
   // Compute local ownership range
   const std::pair<std::size_t, std::size_t> range = MPI::local_range(comm, N);
 
-  // Resize vector
-  resize(comm, range, ghost_indices);
+  // Initialize vector
+  init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::resize(MPI_Comm comm,
-                          std::pair<std::size_t, std::size_t> range)
+void EpetraVector::init(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range)
 {
   std::vector<la_index> ghost_indices;
-  resize(comm, range, ghost_indices);
+  init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::resize(MPI_Comm comm,
-                          std::pair<std::size_t, std::size_t> range,
-                          const std::vector<la_index>& ghost_indices)
+void EpetraVector::init(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
+                        const std::vector<la_index>& ghost_indices)
 {
+  if (!this->empty())
+  {
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("EpetraVector may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("EpetraVector should not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
+  }
+
   if (_x && !_x.unique())
   {
     dolfin_error("EpetraVector.cpp",
@@ -135,19 +143,16 @@ void EpetraVector::resize(MPI_Comm comm,
 
   Epetra_SerialComm epetra_serial_comm;
   #ifdef HAS_MPI
-    Epetra_MpiComm epetra_comm(comm);
+  Epetra_MpiComm epetra_comm(comm);
   #else
-    Epetra_SerialComm epetra_comm;
-    if (!ghost_indices.empty() && epetra_comm.NumProc() > 1)
-    {
-      dolfin_error("EpetraVector.cpp",
-                   "resize Epetra vector",
-                   "Serial EpetraVectors do not support ghost points");
-    }
+  Epetra_SerialComm epetra_comm;
+  if (!ghost_indices.empty() && epetra_comm.NumProc() > 1)
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "initialize Epetra vector",
+                 "Serial EpetraVectors do not support ghost points");
+  }
   #endif
-
-  // Pointer to Epetra map
-  boost::scoped_ptr<Epetra_BlockMap> epetra_map;
 
   // Compute local size
   const dolfin::la_index local_size = range.second - range.first;
@@ -157,8 +162,8 @@ void EpetraVector::resize(MPI_Comm comm,
   const int _local_size = local_size;
   const int _element_size = 1;
   const int _index_base = 0;
-  epetra_map.reset(new Epetra_BlockMap(_global_size, _local_size, _element_size,
-                                       _index_base, epetra_comm));
+  Epetra_BlockMap epetra_map(_global_size, _local_size, _element_size,
+                             _index_base, epetra_comm);
 
   // Build global-to-local map for ghost indices
   for (std::size_t i = 0; i < ghost_indices.size(); ++i)
@@ -168,7 +173,7 @@ void EpetraVector::resize(MPI_Comm comm,
   }
 
   // Create vector
-  _x.reset(new Epetra_FEVector(*epetra_map));
+  _x.reset(new Epetra_FEVector(epetra_map));
 
   // Create local ghost vector
   const dolfin::la_index num_ghost_entries = ghost_indices.size();
@@ -181,7 +186,7 @@ void EpetraVector::resize(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 bool EpetraVector::empty() const
 {
-  return _x ? _x->GlobalLength64() == 0: true;
+  return _x ? _x->GlobalLength64() == 0 : true;
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraVector::size() const
@@ -191,7 +196,7 @@ std::size_t EpetraVector::size() const
 //-----------------------------------------------------------------------------
 std::size_t EpetraVector::local_size() const
 {
-  return _x ? _x->MyLength(): 0;
+  return _x ? _x->MyLength() : 0;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> EpetraVector::local_range() const
@@ -302,7 +307,7 @@ void EpetraVector::apply(std::string mode)
   off_process_set_values.clear();
 }
 //-----------------------------------------------------------------------------
-const MPI_Comm EpetraVector::mpi_comm() const
+MPI_Comm EpetraVector::mpi_comm() const
 {
   dolfin_assert(_x);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
@@ -483,8 +488,17 @@ void EpetraVector::gather(GenericVector& y,
   Epetra_BlockMap target_map(indices.size(), indices.size(), indices.data(),
                              1, 0, epetra_serial_comm);
 
-  // Reset vector y
-  _y.reset(target_map);
+  // Initialise vector y
+  if (y.empty())
+    _y.init(target_map);
+  else if (_y.size() != indices.size() ||  MPI::size(y.mpi_comm()))
+  {
+    // FIXME: also check that vector is local
+    dolfin_error("EpetraVector.cpp",
+                 "gather vector entries",
+                 "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
+  }
+
   dolfin_assert(_y.vec());
 
   // Create importer
@@ -503,7 +517,7 @@ void EpetraVector::gather(std::vector<double>& x,
 
   // Gather values into a vector
   EpetraVector y;
-  gather(y, indices);
+  this->gather(y, indices);
 
   dolfin_assert(y.size() == _size);
   const Epetra_FEVector& _y = *(y.vec());
@@ -528,8 +542,15 @@ void EpetraVector::gather_on_zero(std::vector<double>& x) const
   gather(x, indices);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::reset(const Epetra_BlockMap& map)
+void EpetraVector::init(const Epetra_BlockMap& map)
 {
+  if (_x)
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "initialize vector with Epetra_BlockMap",
+                 "Cannot re-intialize non-empty vector");
+  }
+
   // Clear ghost data
   x_ghost.reset();
   ghost_global_to_local.clear();

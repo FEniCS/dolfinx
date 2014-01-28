@@ -90,8 +90,7 @@ void uBLASVector::resize(MPI_Comm comm, std::size_t N)
     return;
   _x->resize(N, false);
 
-  // Set vector to zero to prevent random numbers entering the vector.
-  // Fixes this bug: https://bugs.launchpad.net/dolfin/+bug/594954
+  // Set vector to zero
   _x->clear();
 }
 //-----------------------------------------------------------------------------
@@ -186,8 +185,10 @@ void uBLASVector::gather(GenericVector& x,
   const std::size_t _size = indices.size();
   dolfin_assert(this->size() >= _size);
 
-  x.resize(mpi_comm(), _size);
+  if (x.empty())
+    x.init(mpi_comm(), _size);
   ublas_vector& tmp = as_type<uBLASVector>(x).vec();
+  dolfin_assert(x.size(0) == _size);
   for (std::size_t i = 0; i < _size; i++)
     tmp(i) = (*_x)(indices[i]);
 }

@@ -69,6 +69,10 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout);
 
+    /// Return true if empty
+    virtual bool empty() const
+    { return _values.empty(); }
+
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const;
 
@@ -83,7 +87,7 @@ namespace dolfin
     virtual void apply(std::string mode);
 
     /// Return MPI communicator
-    virtual const MPI_Comm mpi_comm() const
+    virtual MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
@@ -98,14 +102,14 @@ namespace dolfin
       return A;
     }
 
-    /// Resize vector z to be compatible with the matrix-vector product
-    /// y = Ax. In the parallel case, both size and layout are
+    /// Initialize vector z to be compatible with the matrix-vector
+    /// product y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, std::size_t dim) const
+    virtual void init_vector(GenericVector& z, std::size_t dim) const
     { dolfin_not_implemented(); }
 
     /// Get block of values

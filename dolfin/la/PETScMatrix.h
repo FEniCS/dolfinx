@@ -73,6 +73,9 @@ namespace dolfin
     /// Initialize zero tensor using tensor layout
     void init(const TensorLayout& tensor_layout);
 
+    /// Return true if empty
+    bool empty() const;
+
     /// Return size of given dimension
     std::size_t size(std::size_t dim) const
     { return PETScBaseMatrix::size(dim); }
@@ -93,7 +96,7 @@ namespace dolfin
     virtual void apply(std::string mode);
 
     /// Return MPI communicator
-    const MPI_Comm  mpi_comm() const;
+    MPI_Comm mpi_comm() const;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -103,18 +106,15 @@ namespace dolfin
     /// Return copy of matrix
     virtual boost::shared_ptr<GenericMatrix> copy() const;
 
-    /// Resize matrix to M x N
-    //virtual void resize(std::size_t M, std::size_t N);
-
-    /// Resize vector z to be compatible with the matrix-vector product
+    /// Intialize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, std::size_t dim) const
-    { PETScBaseMatrix::resize(z, dim); }
+    virtual void init_vector(GenericVector& z, std::size_t dim) const
+    { PETScBaseMatrix::init_vector(z, dim); }
 
     /// Get block of values
     virtual void get(double* block,

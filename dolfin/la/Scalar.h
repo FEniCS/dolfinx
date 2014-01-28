@@ -54,16 +54,16 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Resize tensor to given dimensions
-    virtual void resize(std::size_t rank, const std::size_t* dims)
-    { dolfin_assert(rank == 0); _value = 0.0; }
-
     /// Initialize zero tensor using sparsity pattern
     void init(const TensorLayout& tensor_layout)
     {
       _value = 0.0;
       _mpi_comm = tensor_layout.mpi_comm();
     }
+
+    /// Return true if empty
+    bool empty() const
+    { return false; }
 
     /// Return tensor rank (number of dimensions)
     std::size_t rank() const
@@ -72,9 +72,13 @@ namespace dolfin
     /// Return size of given dimension
     std::size_t size(std::size_t dim) const
     {
-      dolfin_error("Scalar.h",
-                   "get size of scalar",
-                   "The size() function is not available for scalars");
+      if (dim != 0)
+      {
+        dolfin_error("Scalar.h",
+                     "get size of scalar",
+                     "Dim must be equal to zero.");
+      }
+
       return 0;
     }
 
@@ -131,7 +135,7 @@ namespace dolfin
     { _value = MPI::sum(_mpi_comm, _value); }
 
     /// Return MPI communicator
-    const MPI_Comm mpi_comm() const
+    MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)

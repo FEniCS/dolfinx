@@ -276,8 +276,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             _b.data(), nrhs, iparm, dparm);
 
   // Distribute solution
-  //assert(b.size() == x.size());
-  x.resize(mpi_comm, b.local_range());
+  x.init(mpi_comm, b.local_range());
   x.set(_b.data(), idx.size(), idx.data());
   x.apply("insert");
 

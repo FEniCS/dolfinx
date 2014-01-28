@@ -32,7 +32,16 @@ if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("E
 
 if not has_krylov_solver_preconditioner("amg"):
     info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
-	 "preconditioner, Hypre or ML.");
+	 "preconditioner, Hypre or ML.")
+    exit()
+
+if has_krylov_solver_method("minres"):
+    krylov_method = "minres"
+elif has_krylov_solver_method("tfqmr"):
+    krylov_method = "tfqmr"
+else:
+    info("Default linear algebra backend was not compiled with MINRES or TFQMR "
+         "Krylov subspace method. Terminating.")
     exit()
 
 # Load mesh
@@ -81,7 +90,7 @@ A, bb = assemble_system(a, L, bcs)
 P, btmp = assemble_system(b, L, bcs)
 
 # Create Krylov solver and AMG preconditioner
-solver = KrylovSolver("tfqmr", "amg")
+solver = KrylovSolver(krylov_method, "amg")
 
 # Associate operator (A) and preconditioner matrix (P)
 solver.set_operators(A, P)

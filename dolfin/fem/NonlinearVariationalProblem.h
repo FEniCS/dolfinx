@@ -44,50 +44,49 @@ namespace dolfin
   ///
   /// where V is the trial space and V^ is the test space.
 
-  class NonlinearVariationalProblem : public Hierarchical<NonlinearVariationalProblem>
+  class NonlinearVariationalProblem
+    : public Hierarchical<NonlinearVariationalProblem>
   {
   public:
 
-    /// Create nonlinear variational problem without boundary conditions.
-    /// The Jacobian form is not specified which requires the use of a
-    /// nonlinear solver that does not rely on the Jacobian.
-    NonlinearVariationalProblem(const Form& F,
-                                Function& u);
+    /// Create nonlinear variational problem without boundary
+    /// conditions.  The Jacobian form is not specified which requires
+    /// the use of a nonlinear solver that does not rely on the
+    /// Jacobian.
+    NonlinearVariationalProblem(const Form& F, Function& u);
 
-    /// Create nonlinear variational problem without boundary conditions.
-    /// The Jacobian form is specified which allows the use of a nonlinear
-    /// solver that relies on the Jacobian (using Newton's method).
-    NonlinearVariationalProblem(const Form& F,
-                                Function& u,
-                                const Form& J);
+    /// Create nonlinear variational problem without boundary
+    /// conditions.  The Jacobian form is specified which allows the
+    /// use of a nonlinear solver that relies on the Jacobian (using
+    /// Newton's method).
+    NonlinearVariationalProblem(const Form& F, Function& u, const Form& J);
 
-    /// Create nonlinear variational problem with a single boundary condition.
-    /// The Jacobian form is not specified which requires the use of a
-    /// nonlinear solver that does not rely on the Jacobian.
-    NonlinearVariationalProblem(const Form& F,
-                                Function& u,
+    /// Create nonlinear variational problem with a single boundary
+    /// condition.  The Jacobian form is not specified which requires
+    /// the use of a nonlinear solver that does not rely on the
+    /// Jacobian.
+    NonlinearVariationalProblem(const Form& F, Function& u,
                                 const DirichletBC& bc);
 
-    /// Create nonlinear variational problem with a single boundary condition.
-    /// The Jacobian form is specified which allows the use of a nonlinear
-    /// solver that relies on the Jacobian (using Newton's method).
-    NonlinearVariationalProblem(const Form& F,
-                                Function& u,
-                                const DirichletBC& bc,
-                                const Form& J);
+    /// Create nonlinear variational problem with a single boundary
+    /// condition.  The Jacobian form is specified which allows the
+    /// use of a nonlinear solver that relies on the Jacobian (using
+    /// Newton's method).
+    NonlinearVariationalProblem(const Form& F, Function& u,
+                                const DirichletBC& bc, const Form& J);
 
-    /// Create nonlinear variational problem with a list of boundary conditions.
-    /// The Jacobian form is not specified which requires the use of a
-    /// nonlinear solver that does not rely on the Jacobian.
-    NonlinearVariationalProblem(const Form& F,
-                                Function& u,
+    /// Create nonlinear variational problem with a list of boundary
+    /// conditions.  The Jacobian form is not specified which requires
+    /// the use of a nonlinear solver that does not rely on the
+    /// Jacobian.
+    NonlinearVariationalProblem(const Form& F, Function& u,
                                 std::vector<const DirichletBC*> bcs);
 
-    /// Create nonlinear variational problem with a list of boundary conditions.
-    /// The Jacobian form is specified which allows the use of a nonlinear
-    /// solver that relies on the Jacobian (using Newton's method).
-    NonlinearVariationalProblem(const Form& F,
-                                Function& u,
+    /// Create nonlinear variational problem with a list of boundary
+    /// conditions.  The Jacobian form is specified which allows the
+    /// use of a nonlinear solver that relies on the Jacobian (using
+    /// Newton's method).
+    NonlinearVariationalProblem(const Form& F, Function& u,
                                 std::vector<const DirichletBC*> bcs,
                                 const Form& J);
 
@@ -99,8 +98,9 @@ namespace dolfin
                                 std::vector<boost::shared_ptr<const DirichletBC> > bcs);
 
     /// Create nonlinear variational problem, shared pointer version.
-    /// The Jacobian form is specified which allows the use of a nonlinear
-    /// solver that relies on the Jacobian (using Newton's method).
+    /// The Jacobian form is specified which allows the use of a
+    /// nonlinear solver that relies on the Jacobian (using Newton's
+    /// method).
     NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
                                 boost::shared_ptr<Function> u,
                                 std::vector<boost::shared_ptr<const DirichletBC> > bcs,
@@ -109,19 +109,19 @@ namespace dolfin
     /// Set the bounds for bound constrained solver
     void set_bounds(boost::shared_ptr<const GenericVector> lb,
                     boost::shared_ptr<const GenericVector> ub);
-    
+
     /// Set the bounds for bound constrained solver
     void set_bounds(const GenericVector& lb,
                     const GenericVector& ub);
-    
+
     /// Set the bounds for bound constrained solver
     void set_bounds(boost::shared_ptr<const Function> lb_func,
                     boost::shared_ptr<const Function> ub_func);
-    
+
     /// Set the bounds for bound constrained solver
     void set_bounds(const Function& lb_func,
                     const Function& ub_func);
-    
+
     /// Return residual form
     boost::shared_ptr<const Form> residual_form() const;
 
@@ -142,19 +142,19 @@ namespace dolfin
 
     /// Return test space
     boost::shared_ptr<const FunctionSpace> test_space() const;
-    
-    /// Return lower bound 
+
+    /// Return lower bound
     boost::shared_ptr<const GenericVector> lower_bound() const;
 
-    /// Return upper bound 
+    /// Return upper bound
     boost::shared_ptr<const GenericVector> upper_bound() const;
-    
+
     /// Check whether Jacobian has been defined
     bool has_jacobian() const;
-    
+
     /// Check whether lower bound has been defined
-    bool has_lower_bound() const; 
-    
+    bool has_lower_bound() const;
+
     /// Check whether upper bound have has defined
     bool has_upper_bound() const;
 

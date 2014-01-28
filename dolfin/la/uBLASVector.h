@@ -79,7 +79,7 @@ namespace dolfin
     virtual void apply(std::string mode);
 
     /// Return MPI communicator
-    virtual const MPI_Comm mpi_comm() const
+    virtual MPI_Comm mpi_comm() const
     { return MPI_COMM_SELF; }
 
     /// Return informal string representation (pretty-print)
@@ -89,6 +89,48 @@ namespace dolfin
 
     /// Create copy of tensor
     virtual boost::shared_ptr<GenericVector> copy() const;
+
+    /// Resize vector to size N
+    virtual void init(MPI_Comm comm, std::size_t N)
+    {
+      if (!empty())
+      {
+        dolfin_error("uBLASVector.cpp",
+                     "calling uBLASVector::init(...)",
+                     "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
+      }
+      resize(comm, N);
+    }
+
+    /// Resize vector with given ownership range
+    virtual void init(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range)
+    {
+      if (!empty())
+      {
+        dolfin_error("uBLASVector.cpp",
+                     "calling uBLASVector::init(...)",
+                     "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
+      }
+      resize(comm, range);
+    }
+
+    /// Resize vector with given ownership range and with ghost values
+    virtual void init(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
+                        const std::vector<la_index>& ghost_indices)
+    {
+      if (!empty())
+      {
+        dolfin_error("uBLASVector.cpp",
+                     "calling uBLASVector::init(...)",
+                     "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
+      }
+      resize(comm, range, ghost_indices);
+    }
+
+    // Bring init function from GenericVector into scope
+    using GenericVector::init;
 
     /// Resize vector to size N
     virtual void resize(MPI_Comm comm, std::size_t N);

@@ -188,8 +188,6 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
                               bool interpolate) const
 {
   HDF5File hdf5_file(MPI_COMM_WORLD, _name, "r");
-  const std::size_t zero = 0;
-  vector.resize(MPI_COMM_WORLD, 1, &zero);
 
   // Interpolate value
   if (interpolate)
