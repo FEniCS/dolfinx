@@ -24,6 +24,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 #include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/MPI.h>
@@ -43,6 +44,7 @@ namespace dolfin
   class HDF5File;
   class Mesh;
   template<typename T> class MeshFunction;
+  class Point;
 
   /// This class supports the output of meshes and functions in XDMF
   /// (http://www.xdmf.org) format. It creates an XML file that describes
@@ -86,6 +88,15 @@ namespace dolfin
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
 
+    /// Save a cloud of points to file
+    void write(const std::vector<Point>& points);
+
+    /// Save a cloud of points, with scalar values
+    void write(const std::vector<Point>& points,
+               const std::vector<double>& values);
+
+    using GenericFile::write;
+
     /// Read first MeshFunction from file
     void operator>> (MeshFunction<bool>& meshfunction);
     void operator>> (MeshFunction<int>& meshfunction);
@@ -113,6 +124,12 @@ namespace dolfin
     // Generic MeshFunction reader
     template<typename T>
       void read_mesh_function(MeshFunction<T>& meshfunction);
+
+    // Write XML description of point clouds, with value_size = 0, 1 or 3
+    // (for either no point data, scalar, or vector)
+    void write_point_xml(const std::string dataset_name,
+                         const std::size_t num_global_points,
+                         const unsigned int value_size);
 
     // Write XML description for Function and MeshFunction output
     // updating time-series if need be
