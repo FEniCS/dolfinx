@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2013-04-10
-// Last changed: 2014-01-07
 
 #ifdef HAS_HDF5
 

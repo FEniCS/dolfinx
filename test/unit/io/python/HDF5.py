@@ -18,9 +18,6 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Chris Richardson 2013
-#
-# First added:  2012-09-14
-# Last changed: 2014-01-24
 
 import unittest
 from dolfin import *

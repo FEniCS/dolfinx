@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2009-11-11
-// Last changed: 2013-05-09
 
 #ifndef __TIME_SERIES_HDF5_H
 #define __TIME_SERIES_HDF5_H

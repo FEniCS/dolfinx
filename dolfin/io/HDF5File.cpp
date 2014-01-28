@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2012
-//
-// First added:  2012-06-01
-// Last changed: 2014-01-24
 
 #ifdef HAS_HDF5
 
