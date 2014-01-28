@@ -544,7 +544,6 @@ void Parameters::parse_petsc(int argc, char* argv[])
     cout << " " << argv[i];
   cout << endl;
 
-  // Pass options to PETSc
   SubSystemsManager::init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------
