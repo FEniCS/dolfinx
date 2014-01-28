@@ -129,6 +129,9 @@ namespace dolfin
       resize(comm, range, ghost_indices);
     }
 
+    // Bring init function from GenericVector into scope
+    using GenericVector::init;
+
     /// Resize vector to size N
     virtual void resize(MPI_Comm comm, std::size_t N);
 
