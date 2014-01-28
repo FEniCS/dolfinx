@@ -484,8 +484,6 @@ void XDMFFile::write(const std::vector<Point>& points,
   // Get number of points (global)
   const std::size_t num_global_points = MPI::sum(_mpi_comm, points.size());
 
-  // The XML created below will obliterate any existing XDMF file
-
   // Write HDF5 file
   const std::string group_name = "/Points";
   hdf5_file->write(points, group_name);
@@ -493,6 +491,7 @@ void XDMFFile::write(const std::vector<Point>& points,
   const std::string values_name = group_name + "/values";
   hdf5_file->write(values, values_name);
 
+  // The XML created will obliterate any existing XDMF file
   write_point_xml(group_name, num_global_points, 1);
 }
 //----------------------------------------------------------------------------
@@ -501,7 +500,7 @@ void XDMFFile::write_point_xml(const std::string group_name,
                                const unsigned int value_size)
 {
   // Write the XML meta description on process zero
-  if (MPI::process_number() == 0)
+  if (MPI::rank(_mpi_comm) == 0)
   {
     // Dataset names
     const std::string mesh_coords_name = group_name + "/coordinates";

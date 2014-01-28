@@ -122,7 +122,7 @@ void HDF5File::write(const std::vector<Point>& points,
 void HDF5File::write(const std::vector<double>& values,
                      const std::string dataset_name)
 {
-  std::vector<std::size_t> global_size(1, values.size());
+  std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm, values.size()));
   const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
   write_data(dataset_name, values, global_size, mpi_io);
 }

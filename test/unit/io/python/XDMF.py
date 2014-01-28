@@ -201,5 +201,39 @@ if has_hdf5():
             File(mesh.mpi_comm(), "output/mf_vertex_3D.xdmf") << mf
             XDMFFile(mesh.mpi_comm(), "output/mf_vertex_3D.xdmf") << mf
 
+    class XDMF_Point_Output(unittest.TestCase):
+        """Test output of points to XDMF files"""
+
+        def test_save_points_2D(self):
+            import numpy
+            mesh = UnitSquareMesh(16, 16)
+            points, values = [], []
+            for v in vertices(mesh):
+                points.append(v.point())
+                values.append(v.point().norm())
+            vals = numpy.array(values)
+
+            file = XDMFFile(mesh.mpi_comm(), "output/points_2D.xdmf")
+            file.write(points)
+
+            file = XDMFFile(mesh.mpi_comm(), "output/point_values_2D.xdmf")
+            file.write(points, vals)
+
+        def test_save_points_3D(self):
+            import numpy
+            mesh = UnitCubeMesh(4, 4, 4)
+            points, values = [], []
+            for v in vertices(mesh):
+                points.append(v.point())
+                values.append(v.point().norm())
+            vals = numpy.array(values)
+
+            file = XDMFFile(mesh.mpi_comm(), "output/points_3D.xdmf")
+            file.write(points)
+
+            file = XDMFFile(mesh.mpi_comm(), "output/point_values_3D.xdmf")
+            file.write(points, vals)
+
+
 if __name__ == "__main__":
     unittest.main()
