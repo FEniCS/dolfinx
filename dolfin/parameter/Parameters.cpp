@@ -34,10 +34,6 @@
 #include "Parameter.h"
 #include "Parameters.h"
 
-#ifdef HAS_PETSC
-#include "petscsys.h"
-#endif
-
 using namespace dolfin;
 namespace po = boost::program_options;
 
@@ -548,20 +544,7 @@ void Parameters::parse_petsc(int argc, char* argv[])
     cout << " " << argv[i];
   cout << endl;
 
-  #ifdef HAS_PETSC
-  PetscBool is_initialized;
-  PetscInitialized(&is_initialized);
-
-  // Pass options to PETSc
-  if (is_initialized)
-  {
-    PetscOptionsInsert(&argc, &argv, PETSC_NULL);
-  }
-  else
-  {
-    SubSystemsManager::init_petsc(argc, argv);
-  }
-  #endif
+  SubSystemsManager::init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add_parameter_set_to_po(po::options_description& desc,
