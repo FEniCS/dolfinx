@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2012
-//
-// First added:  2012-05-22
-// Last changed: 2013-10-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -69,9 +66,10 @@ namespace dolfin
     /// Write Vector to file in a format suitable for re-reading
     void write(const GenericVector& x, const std::string name);
 
-    /// Read vector from file
+    /// Read vector from file and optionally re-use any partitioning
+    /// that is available in the file
     void read(GenericVector& x, const std::string dataset_name,
-              const bool use_partition_from_file = true) const;
+              const bool use_partition_from_file) const;
 
     /// Write Mesh to file in a format suitable for re-reading
     void write(const Mesh& mesh, const std::string name);
@@ -91,8 +89,10 @@ namespace dolfin
     /// the Mesh and dofmap associated with the Function
     void read(Function& u, const std::string name);
 
-    /// Read Mesh from file
-    void read(Mesh& mesh, const std::string name) const;
+    /// Read Mesh from file and optionally re-use any partition data
+    /// in the file
+    void read(Mesh& mesh, const std::string name,
+              bool use_partition_from_file) const;
 
     /// Write MeshFunction to file in a format suitable for re-reading
     void write(const MeshFunction<std::size_t>& meshfunction,
@@ -120,8 +120,7 @@ namespace dolfin
               const std::string name) const;
 
     /// Read MeshFunction from file
-    void read(MeshFunction<bool>& meshfunction,
-              const std::string name) const;
+    void read(MeshFunction<bool>& meshfunction, const std::string name) const;
 
     /// Write MeshValueCollection to file
     void write(const MeshValueCollection<std::size_t>& mesh_values,

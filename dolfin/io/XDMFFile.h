@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2012
-//
-// First added:  2012-05-22
-// Last changed: 2013-05-09
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -70,6 +67,11 @@ namespace dolfin
     /// Save a mesh for visualisation, with e.g. ParaView. Creates a HDF5
     /// file to store the mesh, and a related XDMF file with metadata.
     void operator<< (const Mesh& mesh);
+
+    /// Read in a mesh from the associated HDF5 file,
+    /// optionally using stored partitioning, if possible
+    /// when the same number of processes are being used.
+    void read(Mesh& mesh, bool use_partition_from_file);
 
     /// Read in a mesh from the associated HDF5 file
     void operator>> (Mesh& mesh);
