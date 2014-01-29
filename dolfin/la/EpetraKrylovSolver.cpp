@@ -201,11 +201,14 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     x.zero();
 
   // Create linear problem
-  Belos::LinearProblem<ST,MV,OP> linear_problem(Teuchos::rcpFromRef(*_A->mat()),
-                                                Teuchos::rcpFromRef(*x.vec()),
-                                                Teuchos::rcpFromRef(*b.vec())
-                                                );
-  const int ierr = linear_problem.setProblem();
+  // TODO don't use .get() but Teuchos's native boost--RCP interoperability
+  Teuchos::RCP<Belos::LinearProblem<ST,MV,OP> > linear_problem =
+    Teuchos::rcp(new Belos::LinearProblem<ST,MV,OP>(
+          Teuchos::rcp(_A->mat().get()),
+          Teuchos::rcp(x.vec().get()),
+          Teuchos::rcp(b.vec().get())
+          ));
+  const int ierr = linear_problem->setProblem();
   dolfin_assert(ierr == 0);
 
   Teuchos::ParameterList belosList;
@@ -219,23 +222,23 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   belosList.set("Convergence Tolerance", (double)parameters["relative_tolerance"]);
   belosList.set("Maximum Iterations", (int)parameters["maximum_iterations"]);
 
-  // TODO treat the preconditioner correctly
   // Set preconditioner
   dolfin_assert(_P);
-  _preconditioner->set(linear_problem, *_P);
+  _preconditioner->set(*linear_problem, *_P);
 
   // Look up the Belos name of the method in _methods. This is a little
   // complicated since std::maps<> don't have const lookup.
-  std::map<std::string, std::string>::const_iterator it = _methods.find(_method);
+  std::map<std::string, std::string>::const_iterator it =
+    _methods.find(_method);
   if (it == _methods.end())
       dolfin_error("EpetraKrylovSolver.cpp",
                    "solve linear system using Epetra Krylov solver",
                    "unknown method \"%s\"", _method.c_str());
   // Set-up linear solver
+  Belos::SolverFactory<ST,MV,OP> factory;
   Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver =
-      Belos::SolverFactory<ST,MV,OP>().create(it->second,
-                                              Teuchos::rcp(&belosList, false)
-                                              );
+    factory.create(it->second, Teuchos::rcp(&belosList, false));
+  solver->setProblem(linear_problem);
 
   // Start solve
   Belos::ReturnType ret = solver->solve();
