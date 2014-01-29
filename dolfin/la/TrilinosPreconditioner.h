@@ -38,6 +38,8 @@
 
 #include <BelosLinearProblem.hpp>
 #include <Epetra_MultiVector.h>
+#include <Epetra_Operator.h>
+
 // some typdefs for Belos
 typedef double ST;
 typedef Epetra_MultiVector MV;
