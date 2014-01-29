@@ -60,6 +60,12 @@ namespace dolfin
     /// Close file
     void close();
 
+    /// Write points to file
+    void write(const std::vector<Point>& points, const std::string name);
+
+    /// Write simple vector of double to file
+    void write(const std::vector<double>& values, const std::string name);
+
     /// Write Vector to file in a format suitable for re-reading
     void write(const GenericVector& x, const std::string name);
 
