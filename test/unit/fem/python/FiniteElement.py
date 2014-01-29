@@ -51,14 +51,16 @@ class FiniteElementTest(unittest.TestCase):
         L11 = L1.sub(1)
 
         for cell in cells(self.mesh):
+            vx = cell.get_vertex_coordinates()
+            orientation = cell.orientation()
             self.V.dofmap().tabulate_coordinates(cell, coords)
             for i in xrange(coords.shape[0]):
                 coord[:] = coords[i,:]
                 values0[i] = e(*coord)
-            L0.element().evaluate_dofs(values1, e, cell)
-            L01.element().evaluate_dofs(values2, e, cell)
-            L11.element().evaluate_dofs(values3, e, cell)
-            L1.element().evaluate_dofs(values4, e2, cell)
+            L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
+            L01.element().evaluate_dofs(values2, e, vx, orientation, cell)
+            L11.element().evaluate_dofs(values3, e, vx, orientation, cell)
+            L1.element().evaluate_dofs(values4, e2, vx, orientation, cell)
 
             for i in range(3):
                 self.assertAlmostEqual(values0[i], values1[i])
@@ -71,7 +73,7 @@ class FiniteElementTest(unittest.TestCase):
         "Testing evaluate_dofs vs tabulated coordinates."
 
         # Boundary mesh not running in parallel
-        if MPI.num_processes() > 1:
+        if MPI.size(mpi_comm_world()) > 1:
             return
 
         n = 4
@@ -96,11 +98,13 @@ class FiniteElementTest(unittest.TestCase):
             values0 = numpy.zeros(sdim, dtype="d")
             values1 = numpy.zeros(sdim, dtype="d")
             for cell in cells(V.mesh()):
+                vx = cell.get_vertex_coordinates()
+                orientation = cell.orientation()
                 V.dofmap().tabulate_coordinates(cell, coords)
                 for i in xrange(coords.shape[0]):
                     coord[:] = coords[i,:]
                     values0[i] = f(*coord)
-                V.element().evaluate_dofs(values1, f, cell)
+                V.element().evaluate_dofs(values1, f, vx, orientation, cell)
                 for i in range(sdim):
                     self.assertAlmostEqual(values0[i], values1[i])
 

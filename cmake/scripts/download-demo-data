@@ -63,6 +63,7 @@ download_mesh demo/undocumented/dg-advection-diffusion       unitsquare_64_64.xm
 download_mesh demo/undocumented/dg-advection-diffusion       unitsquare_64_64_velocity.xml.gz
 download_mesh demo/documented/bcs                            aneurysm.xml.gz
 download_mesh demo/documented/navier-stokes                  lshape.xml.gz
+download_mesh demo/undocumented/mesh-quality                 dolfin_fine.xml.gz
 download_mesh test/unit/fem/python                           aneurysm.xml.gz
 download_mesh test/unit/io                                   snake.xml.gz
 download_mesh test/unit/nls/python                           doughnut.xml.gz

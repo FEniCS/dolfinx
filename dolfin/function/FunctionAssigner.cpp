@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-20
-// Last changed: 2013-11-11
+// Last changed: 2013-12-04
 
 #include <utility>
 
@@ -446,7 +446,14 @@ void FunctionAssigner::_check_and_build_indices(const Mesh& mesh,
       const std::vector<dolfin::la_index>& receiving_cell_dofs
         = receiving_dofmap.cell_dofs(cell->index());
 
-      dolfin_assert(assigning_cell_dofs.size()==receiving_cell_dofs.size());
+      // Check that both spaces have the same number of dofs
+      if (assigning_cell_dofs.size()!=receiving_cell_dofs.size())
+      {
+	dolfin_error("FunctionAssigner.cpp",
+		     "create function assigner",
+		     "The receiving and assigning spaces do not have the same "
+		     "number of dofs per cell");
+      }
 
       // Iterate over the local dofs and collect on-process dofs
       for (std::size_t i=0; i<assigning_cell_dofs.size(); i++)

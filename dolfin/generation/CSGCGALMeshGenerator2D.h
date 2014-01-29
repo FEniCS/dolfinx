@@ -33,8 +33,7 @@ namespace dolfin
   class CSGGeometry;
 
   /// Mesh generator for Constructive Solid Geometry (CSG)
-  /// utilizing CGALs boolean operation on Nef_polyhedrons.
-
+  /// utilizing CGALs 2D Regularized Boolean Set-Operations
   class CSGCGALMeshGenerator2D : public Variable
   {
   public :
@@ -53,7 +52,7 @@ namespace dolfin
       p.add("mesh_resolution", 64);
       p.add("triangle_shape_bound", 0.125);
       p.add("cell_size", 0.25);
-      
+
       // shorter edges in the domain will be collapsed before meshing
       p.add("edge_minimum", 10e-5);
 
@@ -61,7 +60,11 @@ namespace dolfin
     }
 
   private:
-    const CSGGeometry &geometry;
+
+    #ifdef HAS_CGAL
+    const CSGGeometry& geometry;
+    #endif
+
   };
 
 }

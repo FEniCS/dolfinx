@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Anders Logg
+// Copyright (C) 20013 Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -15,21 +15,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-08-17
-// Last changed: 2012-08-17
-
-#include "TensorProductVector.h"
-
-using namespace dolfin;
+// First added:  2013-11-29
+// Last changed: 2013-11-29
 
 //-----------------------------------------------------------------------------
-TensorProductVector::TensorProductVector(const std::vector<std::size_t>& dims)
-{
+// Include code for SWIG related defines
+//-----------------------------------------------------------------------------
 
+%inline %{
+namespace dolfin {
+
+  bool has_petsc4py()
+  {
+#ifdef HAS_PETSC4PY
+    return true;
+#else
+    return false;
+#endif
+  }
 }
-//-----------------------------------------------------------------------------
-std::string TensorProductVector::str(bool verbose) const
-{
-  return "test";
-}
-//-----------------------------------------------------------------------------
+%}

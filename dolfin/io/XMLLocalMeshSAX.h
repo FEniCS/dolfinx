@@ -25,6 +25,7 @@
 
 #include <string>
 #include <libxml/parser.h>
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -38,12 +39,13 @@ namespace dolfin
 
   public:
 
-    XMLLocalMeshSAX(LocalMeshData& mesh_data,
-                                const std::string filename);
+    XMLLocalMeshSAX(MPI_Comm mpi_comm, LocalMeshData& mesh_data,
+                    const std::string filename);
 
     void read();
 
-    void start_element(const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void start_element(const xmlChar* name, const xmlChar** attrs,
+                       std::size_t num_attributes);
     void end_element(const xmlChar* name);
 
   private:
@@ -79,22 +81,26 @@ namespace dolfin
     static void sax_fatal_error (void *ctx, const char *msg, ...);
 
     // Callbacks for reading XML data
-    void read_mesh       (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
-    void read_vertices   (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
-    void read_vertex     (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
-    void read_cells      (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
-    void read_interval   (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
-    void read_triangle   (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
-    void read_tetrahedron(const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void read_mesh(const xmlChar* name, const xmlChar** attrs,
+                   std::size_t num_attributes);
+    void read_vertices(const xmlChar* name, const xmlChar** attrs,
+                       std::size_t num_attributes);
+    void read_vertex(const xmlChar* name, const xmlChar** attrs,
+                     std::size_t num_attributes);
+    void read_cells(const xmlChar* name, const xmlChar** attrs,
+                    std::size_t num_attributes);
+    void read_interval(const xmlChar* name, const xmlChar** attrs,
+                       std::size_t num_attributes);
+    void read_triangle(const xmlChar* name, const xmlChar** attrs,
+                       std::size_t num_attributes);
+    void read_tetrahedron(const xmlChar* name, const xmlChar** attrs,
+                          std::size_t num_attributes);
 
-    void read_mesh_value_collection(const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
-    void read_mesh_value_collection_entry(const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
-
-    /*
-    void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
-    void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);
-    void read_data_entry   (const xmlChar* name, const xmlChar** attrs);
-    */
+    void read_mesh_value_collection(const xmlChar* name, const xmlChar** attrs,
+                                    std::size_t num_attributes);
+    void read_mesh_value_collection_entry(const xmlChar* name,
+                                          const xmlChar** attrs,
+                                          std::size_t num_attributes);
 
     // Number of local vertices
     std::size_t num_local_vertices() const;
@@ -119,12 +125,15 @@ namespace dolfin
     std::size_t domain_value_counter;
     std::size_t domain_dim;
 
-    // State of parser
-    ParserState state;
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     LocalMeshData& _mesh_data;
 
     const std::string _filename;
+
+    // State of parser
+    ParserState state;
 
   };
 

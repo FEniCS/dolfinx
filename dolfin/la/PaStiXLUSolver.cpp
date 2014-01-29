@@ -103,7 +103,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   const std::size_t block_size = A->block_size();
 
   // MPI communicator
-  MPI_Comm mpi_comm = MPI_COMM_WORLD;
+  MPI_Comm mpi_comm = A->mpi_comm();
 
   // Intitialise PaStiX parameters
   pastix_int_t iparm[IPARM_SIZE];
@@ -276,8 +276,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             _b.data(), nrhs, iparm, dparm);
 
   // Distribute solution
-  //assert(b.size() == x.size());
-  x.resize(b.size());
+  x.init(mpi_comm, b.local_range());
   x.set(_b.data(), idx.size(), idx.data());
   x.apply("insert");
 

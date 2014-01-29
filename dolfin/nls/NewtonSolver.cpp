@@ -20,7 +20,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2011-03-29
+// Last changed: 2013-12-04
 
 #include <iostream>
 #include <dolfin/common/constants.h>
@@ -29,6 +29,8 @@
 #include <dolfin/la/LinearSolver.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
+#include <dolfin/la/LUSolver.h>
+#include <dolfin/la/KrylovSolver.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
@@ -42,6 +44,8 @@ Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
 
+  p.add("linear_solver",           "default");
+  p.add("preconditioner",          "default");
   p.add("maximum_iterations",      10);
   p.add("relative_tolerance",      1e-9);
   p.add("absolute_tolerance",      1e-10);
@@ -50,15 +54,19 @@ Parameters NewtonSolver::default_parameters()
   p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
+
   //p.add("reuse_preconditioner", false);
+
+  p.add(LUSolver::default_parameters());
+  p.add(KrylovSolver::default_parameters());
 
   return p;
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
+NewtonSolver::NewtonSolver()
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _solver(new LinearSolver(solver_type, pc_type)),
-    _A(new Matrix), _dx(new Vector), _b(new Vector)
+    _residual0(0.0), _A(new Matrix), _dx(new Vector), _b(new Vector),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -68,10 +76,15 @@ NewtonSolver::NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
     _residual0(0.0), _solver(solver), _A(factory.create_matrix()),
-    _dx(factory.create_vector()), _b(factory.create_vector())
+    _dx(factory.create_vector()), _b(factory.create_vector()),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   // Set default parameters
   parameters = default_parameters();
+
+  // Store linear solver type
+  parameters["linear_solver"] = "user_defined";
+  parameters["preconditioner"] = "user_defined";
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
@@ -86,11 +99,22 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   dolfin_assert(_A);
   dolfin_assert(_b);
   dolfin_assert(_dx);
-  dolfin_assert(_solver);
 
+  // Extract parameters
   const std::string convergence_criterion = parameters["convergence_criterion"];
   const std::size_t maxiter = parameters["maximum_iterations"];
 
+  // Create linear solver if not already created
+  const std::string solver_type = parameters["linear_solver"];
+  const std::string pc_type = parameters["preconditioner"];
+  if (!_solver)
+    _solver = boost::shared_ptr<LinearSolver>(new LinearSolver(solver_type, pc_type));
+  dolfin_assert(_solver);
+
+  // Set parameters for linear solver
+  _solver->update_parameters(parameters(_solver->parameter_type()));
+
+  // Reset iteration counts
   std::size_t krylov_iterations = 0;
   _newton_iteration = 0;
 
@@ -172,7 +196,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
   if (newton_converged)
   {
-    if (dolfin::MPI::process_number() == 0)
+    if (dolfin::MPI::rank(_mpi_comm) == 0)
     {
      info("Newton solver finished in %d iterations and %d linear solver iterations.",
           _newton_iteration, krylov_iterations);
@@ -233,7 +257,7 @@ bool NewtonSolver::converged(const GenericVector& r,
   const double relative_residual = _residual/_residual0;
 
   // Output iteration number and residual
-  if (report && dolfin::MPI::process_number() == 0)
+  if (report && dolfin::MPI::rank(_mpi_comm) == 0)
   {
     info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
          newton_iteration, _residual, atol, relative_residual, rtol);

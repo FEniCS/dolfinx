@@ -107,8 +107,9 @@ namespace dolfin
     /// Clear parameter set
     void clear();
 
-    /// Add an unset parameter of type T. For example, to create a unset
-    /// parameter of type bool, do parameters.add<bool>("my_setting")
+    /// Add an unset parameter of type T. For example, to create a
+    /// unset parameter of type bool, do
+    /// parameters.add<bool>("my_setting")
     template<typename T>
     void add(std::string key)
     {
@@ -184,8 +185,9 @@ namespace dolfin
     /// Return parameter for given key (const version)
     const Parameter& operator[] (std::string key) const;
 
-    // Note: We would have liked to use [] also for access of nested parameter
-    // sets just like we do in Python but we can't overload on return type.
+    // Note: We would have liked to use [] also for access of nested
+    // parameter sets just like we do in Python but we can't overload
+    // on return type.
 
     /// Return nested parameter set for given key
     Parameters& operator() (std::string key);
@@ -232,9 +234,10 @@ namespace dolfin
   private:
 
     // Add all parameters as options to a boost::program_option instance
-    void add_parameter_set_to_po(boost::program_options::options_description& desc,
-                                 const Parameters &parameters,
-                                 std::string base_name="") const;
+    void
+      add_parameter_set_to_po(boost::program_options::options_description& desc,
+                              const Parameters &parameters,
+                              std::string base_name="") const;
 
     // Read in values from the boost::variable_map
     void read_vm(boost::program_options::variables_map& vm,
@@ -256,7 +259,9 @@ namespace dolfin
   template<> inline void Parameters::add<std::size_t>(std::string key)
   { _parameters[key] = new IntParameter(key); }
 
-  template<> inline void Parameters::add<std::size_t>(std::string key, std::size_t min, std::size_t max)
+  template<> inline void  Parameters::add<std::size_t>(std::string key,
+                                                       std::size_t min,
+                                                       std::size_t max)
   {
     _parameters[key] = new IntParameter(key);
     _parameters[key]->set_range((int) min, (int) max);
@@ -274,7 +279,8 @@ namespace dolfin
   template<> inline void Parameters::add<double>(std::string key)
   { _parameters[key] = new DoubleParameter(key); }
 
-  template<> inline void Parameters::add<double>(std::string key, double min, double max)
+  template<> inline void Parameters::add<double>(std::string key, double min,
+                                                 double max)
   {
     _parameters[key] = new DoubleParameter(key);
     _parameters[key]->set_range(min, max);
@@ -283,7 +289,8 @@ namespace dolfin
   template<> inline void Parameters::add<std::string>(std::string key)
   { _parameters[key] = new StringParameter(key); }
 
-  template<> inline void Parameters::add(std::string key, std::set<std::string> valid_values)
+  template<> inline void Parameters::add(std::string key,
+                                         std::set<std::string> valid_values)
   {
     _parameters[key] = new StringParameter(key);
     _parameters[key]->set_range(valid_values);

@@ -75,11 +75,10 @@ class MeshQualityTest(unittest.TestCase):
 
         # Create mesh, collpase and compute min ratio
         mesh = UnitCubeMesh(12, 12, 12)
-        test = MeshQuality.radius_ratio_matplolib_histogram(mesh, 5)
+        test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
         print test
 
-
-if MPI.num_processes() == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):

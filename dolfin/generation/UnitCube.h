@@ -56,7 +56,7 @@ namespace dolfin
     UnitCube(std::size_t nx, std::size_t ny, std::size_t nz)
       : UnitCubeMesh(nx, ny, nz)
     {
-      deprecation("UnitCube", "1.1.0",
+      deprecation("UnitCube", "1.1.0", "1.4",
                   "The class UnitCube has been replaced by UnitCubeMesh.");
     }
 

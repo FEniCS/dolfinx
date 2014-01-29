@@ -26,12 +26,9 @@ using namespace dolfin;
 
 int main()
 {
-  if (dolfin::MPI::num_processes() == 1)
-  {
-    UnitIntervalMesh interval(10);
-    info("Plotting a UnitIntervalMesh");
-    plot(interval, "Unit interval");
-  }
+  UnitIntervalMesh interval(20);
+  info("Plotting a UnitIntervalMesh");
+  plot(interval, "Unit interval");
 
   UnitSquareMesh square_default(10, 10);
   info("Plotting a UnitSquareMesh");
@@ -58,17 +55,9 @@ int main()
   plot(rectangle_right_left, "Rectangle (right/left)");
 
 #ifdef HAS_CGAL
-  UnitCircleMesh circle_rotsumn(20, "right", "rotsumn");
-  info("Plotting a UnitCircleMesh");
-  plot(circle_rotsumn, "Unit circle (rotsum)");
-
-  //UnitCircleMesh circle_sumn(20, "left", "sumn");
-  //info("Plotting a UnitCircle");
-  //plot(circle_sumn, "Unit circle (sumn)");
-
-  UnitCircleMesh circle_maxn(20, "right", "maxn");
-  info("Plotting a UnitCircleMesh");
-  plot(circle_maxn, "Unit circle (maxn)");
+  CircleMesh circle_rotsumn(Point(0.0, 0.0), 1.0, 1.0/20);
+  info("Plotting a CircleMesh");
+  plot(circle_rotsumn, "Unit circle");
 #endif
 
   UnitCubeMesh cube(10, 10, 10);

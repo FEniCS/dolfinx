@@ -125,7 +125,7 @@ std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
   }
 
   // Initialise solution vector and solve
-  x.resize(N);
+  x.resize(b.mpi_comm(), b.local_range());
 
   log(PROGRESS, "Solving factorized linear system of size %d x %d (CHOLMOD).",
       N, N);

@@ -57,6 +57,9 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
                  "Primary storage dim of matrix and tensot layout must be the same");
   }
 
+  // Get MPI communicator
+  _mpi_comm = tensor_layout.mpi_comm();
+
   // Set co-dimension
   std::size_t primary_codim = 1;
   if (_primary_dim == 1)
@@ -93,7 +96,10 @@ std::size_t STLMatrix::size(std::size_t dim) const
   if (_primary_dim == 0)
   {
     if (dim == 0)
-      return dolfin::MPI::sum(_local_range.second - _local_range.first);
+    {
+      return dolfin::MPI::sum(_mpi_comm, _local_range.second
+                              - _local_range.first);
+    }
     else
       return num_codim_entities;
   }
@@ -102,7 +108,10 @@ std::size_t STLMatrix::size(std::size_t dim) const
     if (dim == 0)
       return num_codim_entities;
     else
-      return dolfin::MPI::sum(_local_range.second - _local_range.first);
+    {
+      return dolfin::MPI::sum(_mpi_comm, _local_range.second
+                              - _local_range.first);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -216,7 +225,7 @@ void STLMatrix::apply(std::string mode)
   Timer timer("Apply (STLMatrix)");
 
   // Number of processes
-  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t num_processes = MPI::size(_mpi_comm);
 
   // Data to send
   std::vector<std::vector<std::size_t> > send_non_local_rows(num_processes);
@@ -224,7 +233,7 @@ void STLMatrix::apply(std::string mode)
   std::vector<std::vector<double> > send_non_local_vals(num_processes);
 
   std::vector<std::pair<std::size_t, std::size_t> > process_ranges;
-  dolfin::MPI::all_gather(_local_range, process_ranges);
+  dolfin::MPI::all_gather(_mpi_comm, _local_range, process_ranges);
 
   // Communicate off-process data
   boost::unordered_map<std::pair<std::size_t,
@@ -258,9 +267,12 @@ void STLMatrix::apply(std::string mode)
   std::vector<std::vector<std::size_t> > received_non_local_rows;
   std::vector<std::vector<std::size_t> > received_non_local_cols;
   std::vector<std::vector<double> > received_non_local_vals;
-  dolfin::MPI::all_to_all(send_non_local_rows, received_non_local_rows);
-  dolfin::MPI::all_to_all(send_non_local_cols, received_non_local_cols);
-  dolfin::MPI::all_to_all(send_non_local_vals, received_non_local_vals);
+  dolfin::MPI::all_to_all(_mpi_comm, send_non_local_rows,
+                          received_non_local_rows);
+  dolfin::MPI::all_to_all(_mpi_comm, send_non_local_cols,
+                          received_non_local_cols);
+  dolfin::MPI::all_to_all(_mpi_comm, send_non_local_vals,
+                          received_non_local_vals);
 
   // Add/insert off-process data
   for (std::size_t p = 0; p < num_processes; ++p)
@@ -312,7 +324,7 @@ double STLMatrix::norm(std::string norm_type) const
     for (std::size_t j = 0; j < _values[i].size(); ++j)
       _norm += _values[i][j].second*_values[i][j].second;
   }
-  return std::sqrt(dolfin::MPI::sum(_norm));
+  return std::sqrt(dolfin::MPI::sum(_mpi_comm, _norm));
 }
 //-----------------------------------------------------------------------------
 void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
@@ -442,7 +454,7 @@ GenericLinearAlgebraFactory& STLMatrix::factory() const
 //-----------------------------------------------------------------------------
 std::size_t STLMatrix::nnz() const
 {
-  return dolfin::MPI::sum(local_nnz());
+  return dolfin::MPI::sum(_mpi_comm, local_nnz());
 }
 //-----------------------------------------------------------------------------
 std::size_t STLMatrix::local_nnz() const

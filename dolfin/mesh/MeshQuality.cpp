@@ -52,8 +52,8 @@ std::pair<double, double> MeshQuality::radius_ratio_min_max(const Mesh& mesh)
     qmax = std::max(qmax, cell->radius_ratio());
   }
 
-  qmin = MPI::min(qmin);
-  qmax = MPI::min(qmax);
+  qmin = MPI::min(mesh.mpi_comm(), qmin);
+  qmax = MPI::max(mesh.mpi_comm(), qmax);
   return std::make_pair(qmin, qmax);
 }
 //-----------------------------------------------------------------------------
@@ -80,14 +80,14 @@ MeshQuality::radius_ratio_histogram_data(const Mesh& mesh,
   }
 
   for (std::size_t i = 0; i < values.size(); ++i)
-    values[i] = MPI::sum(values[i]);
+    values[i] = MPI::sum(mesh.mpi_comm(), values[i]);
 
   return std::make_pair(bins, values);
 }
 //-----------------------------------------------------------------------------
 std::string
-MeshQuality::radius_ratio_matplolib_histogram(const Mesh& mesh,
-                                              std::size_t num_intervals)
+MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
+					       std::size_t num_intervals)
 {
   // Compute data
   std::pair<std::vector<double>, std::vector<double> >
@@ -99,7 +99,6 @@ MeshQuality::radius_ratio_matplolib_histogram(const Mesh& mesh,
   // Create Matplotlib string
   std::stringstream matplotlib;
   matplotlib << "def plot_histogram():" << std::endl;
-  matplotlib << "    import pylab" <<  std::endl;
   std::stringstream bins, values;
   bins   << "    bins = [" << data.first[0];
   values << "    values = [" << data.second[0];

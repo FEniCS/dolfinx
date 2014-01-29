@@ -16,11 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2013-03-06
+// Last changed: 2013-12-02
 
 #include <dolfin/common/Array.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/fem/Assembler.h>
+#include <dolfin/fem/fem_utils.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/solve.h>
 #include <dolfin/la/Vector.h>
@@ -37,7 +38,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh, 
+boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
                                             const BoundaryMesh& new_boundary)
 {
   // Now this works regardless of reorder_dofs_serial value
@@ -92,13 +93,12 @@ boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
                       vertex_map_mesh_func.values() + num_boundary_vertices);
 
   // Mapping of mesh vertex numbers to dofs (including ghost dofs)
-  const std::vector<dolfin::la_index> dof_to_vertex_map =
-                                   V->dofmap()->dof_to_vertex_map(mesh);
+  const std::vector<dolfin::la_index> vertex_to_dofs = vertex_to_dof_map(*V);
 
   // Array of all dofs (including ghosts) with global numbering
   std::vector<dolfin::la_index> all_global_dofs(num_vertices);
   for (std::size_t i = 0; i < num_vertices; i++)
-    all_global_dofs[i] = dof_to_vertex_map[i] + n0;
+    all_global_dofs[i] = vertex_to_dofs[i] + n0;
 
   // Create arrays for setting bcs.
   // Their indexing does not matter - same ordering does.
@@ -109,7 +109,7 @@ boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   boundary_vertices.reserve(num_boundary_vertices);
   for (std::size_t vert = 0; vert < num_boundary_vertices; vert++)
   {
-    const dolfin::la_index dof = dof_to_vertex_map[vertex_map[vert]];
+    const dolfin::la_index dof = vertex_to_dofs[vertex_map[vert]];
 
     // Skip ghosts
     if (dof >= 0 && dof < num_dofs)
@@ -163,9 +163,8 @@ boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
     // Solve system
     solve(A, *x, b, "cg", prec);
 
-    // PETScVector::update_ghost_values() segfaults in serial - is it a BUG?
-    if (MPI::num_processes() > 1)
-      x->update_ghost_values();
+    // Update_ghost_values()
+    x->update_ghost_values();
 
     // Get displacement
     std::vector<double> _displacement(num_vertices);

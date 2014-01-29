@@ -29,16 +29,16 @@ class TestVector : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(TestVector);
   CPPUNIT_TEST(test_backends);
+  CPPUNIT_TEST(test_init);
   CPPUNIT_TEST_SUITE_END();
 
 public:
 
   void test_backends()
   {
-
     // uBLAS
     parameters["linear_algebra_backend"] = "uBLAS";
-    _test_operators();
+    _test_operators(MPI_COMM_SELF);
 
     // FIXME: Outcommented STL backend to circumvent infinite loops as
     // FIXME: seen on one buildbot
@@ -49,27 +49,19 @@ public:
     // PETSc
     #ifdef HAS_PETSC
     parameters["linear_algebra_backend"] = "PETSc";
-    _test_operators();
+    _test_operators(MPI_COMM_WORLD);
     #endif
 
     // Epetra
     #ifdef HAS_EPETRA
     parameters["linear_algebra_backend"] = "Epetra";
-    _test_operators();
+    _test_operators(MPI_COMM_WORLD);
     #endif
-
-    // MTL4
-    #ifdef HAS_MTL4
-    parameters["linear_algebra_backend"] = "MTL4";
-    _test_operators();
-    #endif
-
-
   }
 
-  void _test_operators()
+  void _test_operators(MPI_Comm comm)
   {
-    Vector v(10), u(10);
+    Vector v(comm, 10), u(comm, 10);
     v = 0.0;
     u = 0.0;
     CPPUNIT_ASSERT(v.sum() == 0.0);
@@ -103,6 +95,72 @@ public:
     u = 2.0;
     v*=u;
     CPPUNIT_ASSERT(v.sum() == v.size()*5.0);
+
+  }
+
+  void test_init()
+  {
+    // Create local and distributed vector layouts
+    const std::vector<std::size_t> dims(1, 203);
+
+    // Create local vector layout
+    TensorLayout layout_local(0, false);
+    std::vector<std::pair<std::size_t, std::size_t> >
+      local_range(1, std::make_pair(0, 203));
+    layout_local.init(MPI_COMM_SELF, dims, 1, local_range);
+
+    // Create distributed vector layout
+    TensorLayout layout_distributed(0, false);
+    std::vector<std::pair<std::size_t, std::size_t> >
+      ownership_range(1, MPI::local_range(MPI_COMM_WORLD, 203));
+    layout_distributed.init(MPI_COMM_WORLD, dims, 1, ownership_range);
+
+    // Vector
+    #ifdef HAS_PETSC
+    parameters["linear_algebra_backend"] = "PETSc";
+    {
+      Vector x;
+      x.init(layout_local);
+      CPPUNIT_ASSERT(x.size() == 203);
+
+      Vector y;
+      y.init(layout_distributed);
+      CPPUNIT_ASSERT(y.size() == 203);
+    }
+    #endif
+
+    // uBLAS
+    {
+      uBLASVector x;
+      x.init(layout_local);
+      CPPUNIT_ASSERT(x.size() == 203);
+    }
+
+    // PETSc
+    #ifdef HAS_PETSC
+    {
+      PETScVector x;
+      x.init(layout_local);
+      CPPUNIT_ASSERT(x.size() == 203);
+
+      PETScVector y;
+      y.init(layout_distributed);
+      CPPUNIT_ASSERT(y.size() == 203);
+    }
+    #endif
+
+    // Epetra
+    #ifdef HAS_EPETRA
+    {
+      EpetraVector x;
+      x.init(layout_local);
+      CPPUNIT_ASSERT(x.size() == 203);
+
+      EpetraVector y;
+      y.init(layout_distributed);
+      CPPUNIT_ASSERT(y.size() == 203);
+    }
+    #endif
 
   }
 

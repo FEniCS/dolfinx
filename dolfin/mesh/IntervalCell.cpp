@@ -20,7 +20,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2006-06-05
-// Last changed: 2013-11-13
+// Last changed: 2013-12-09
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -78,7 +78,7 @@ std::size_t IntervalCell::orientation(const Cell& cell) const
   return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+void IntervalCell::create_entities(std::vector<std::vector<unsigned int> >& e,
                                    std::size_t dim, const unsigned int* v) const
 {
   // We don't need to create any entities
@@ -289,9 +289,11 @@ bool IntervalCell::collides(const Cell& cell, const Point& point) const
   const double x0 = geometry.point(vertices[0])[0];
   const double x1 = geometry.point(vertices[1])[0];
   const double x = point.x();
+  const double dx = std::abs(x1 - x0);
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
 
-  return ((x >= x0 - DOLFIN_EPS_LARGE && x <= x1 + DOLFIN_EPS_LARGE) ||
-          (x >= x1 - DOLFIN_EPS_LARGE && x <= x0 + DOLFIN_EPS_LARGE));
+  return ((x >= x0 - eps && x <= x1 + eps) ||
+          (x >= x1 - eps && x <= x0 + eps));
 }
 //-----------------------------------------------------------------------------
 bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const

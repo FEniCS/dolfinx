@@ -219,41 +219,26 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
 
-  if (NOT VTK_LIBRARIES)
-    # FIXME: Check which of these we actually need.
-    set(VTK_LIBRARIES
-      vtkCommon
-      vtkFiltering
-      vtkImaging
-      vtkGraphics
-      vtkGenericFiltering
-      vtkIO
-      vtkRendering
-      vtkVolumeRendering
-      vtkHybrid
-      vtkWidgets
-      vtkParallel
-      vtkInfovis
-      vtkGeovis
-      vtkViews
-      vtkCharts
-      )
-  endif()
-
-  # Loop over libs and get full path
   foreach (lib ${VTK_LIBRARIES})
-    find_library(VTK_LIB_${lib} ${lib} HINTS ${VTK_LIBRARY_DIRS})
-    if (VTK_LIB_${lib})
-      list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_${lib}})
-    endif()
+    list(APPEND DOLFIN_VTK_LIBRARIES ${lib})
   endforeach()
 
   # Check if the QVTK library is found
   if (DOLFIN_ENABLE_QT AND QT_FOUND)
-    find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
+    if ("${VTK_MAJOR_VERSION}" STREQUAL "5")
+      find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS} NO_DEFAULT_PATH)
+      find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
+      if (VTK_LIB_QVTK)
+	list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
+      endif()
+    else()
+      if (TARGET vtkGUISupportQt)
+	set(VTK_LIB_QVTK TRUE)
+      endif()
+    endif()
+
     if (VTK_LIB_QVTK)
       list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QVTK")
-      list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
     else()
       message(STATUS "QVTK not found, disabling QT for plotting")
     endif()
@@ -278,7 +263,9 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   #  message(STATUS "vtkExodusIIWriter not found, disabling Exodus file writing")
   #endif()
 
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
+  # Append to EXTRA libraries, so they are not linked with demos (this fails
+  # with VTK6 unless the vtk macros are also installed).
+  list(APPEND DOLFIN_EXTRA_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------------------
@@ -306,8 +293,7 @@ set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 string(STRIP DOLFIN_TARGET_LINK_LIBRARIES "${DOLFIN_TARGET_LINK_LIBRARIES}")
 
 # Add DOLFIN target libraries
-target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
-
+target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES} ${DOLFIN_EXTRA_TARGET_LINK_LIBRARIES})
 #------------------------------------------------------------------------------
 # SWIG
 

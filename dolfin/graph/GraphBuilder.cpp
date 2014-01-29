@@ -151,22 +151,24 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
+                                      const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {
   FacetCellMap facet_cell_map;
 
   #ifdef HAS_MPI
-  compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
-  compute_nonlocal_dual_graph(mesh_data, local_graph, facet_cell_map,
+  compute_local_dual_graph(mpi_comm, mesh_data, local_graph, facet_cell_map);
+  compute_nonlocal_dual_graph(mpi_comm, mesh_data, local_graph, facet_cell_map,
                               ghost_vertices);
   #else
-  compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
+  compute_local_dual_graph(mpi_comm, mesh_data, local_graph, facet_cell_map);
   #endif
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_local_dual_graph(const MPI_Comm mpi_comm,
+                                            const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             FacetCellMap& facet_cell_map)
 {
@@ -189,7 +191,8 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
   // (internal to this function, not the user numbering) numbering
 
   // Get offset for this process
-  const std::size_t cell_offset = MPI::global_offset(num_local_cells, true);
+  const std::size_t cell_offset = MPI::global_offset(mpi_comm, num_local_cells,
+                                                     true);
 
   // Create map from facet (list of vertex indices) to cells
   facet_cell_map.rehash((facet_cell_map.size()
@@ -238,7 +241,8 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
   }
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
+                                               const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             FacetCellMap& facet_cell_map,
                             std::set<std::size_t>& ghost_vertices)
@@ -262,8 +266,9 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
   // (internal to this function, not the user numbering) numbering
 
   // Get offset for this process
-  const std::size_t offset = MPI::global_offset(num_local_cells, true);
-  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t offset = MPI::global_offset(mpi_comm, num_local_cells,
+                                                true);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::size_t> > send_buffer(num_processes);
@@ -278,7 +283,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
     //        towards low values - may not be important
 
     // Use first vertex of facet to partition into blocks
-    std::size_t dest_proc = MPI::index_owner((it->first)[0],
+    std::size_t dest_proc = MPI::index_owner(mpi_comm, (it->first)[0],
                                              mesh_data.num_global_vertices);
 
     // Pack map into vectors to send
@@ -290,7 +295,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
   }
 
   // Send data
-  MPI::all_to_all(send_buffer, received_buffer);
+  MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::size_t> >(num_processes);
@@ -341,7 +346,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
   }
 
   // Send matches to other proceses
-  MPI::all_to_all(send_buffer, received_buffer);
+  MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
   // Clear ghost vertices
   ghost_vertices.clear();

@@ -25,7 +25,7 @@ iterative_solver = True if answer == 'g' else False
 degree = int(sys.argv[3])
 divisions = [int(arg) for arg in sys.argv[4:]]
 d = len(divisions)
-domain_type = [UnitInterval, UnitSquare, UnitCube]
+domain_type = [UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]
 mesh = domain_type[d-1](*divisions)
 V = FunctionSpace(mesh, 'Lagrange', degree)
 
@@ -76,16 +76,16 @@ prm['newton_solver']['maximum_iterations'] = 25
 prm['newton_solver']['relaxation_parameter'] = 1.0
 if iterative_solver:
     prec = 'jacobi' if 'jacobi' in zip(*krylov_solver_preconditioners())[0] else 'ilu'
-    prm['linear_solver'] = 'gmres'
-    prm['preconditioner'] = prec
-    prm['krylov_solver']['absolute_tolerance'] = 1E-9
-    prm['krylov_solver']['relative_tolerance'] = 1E-7
-    prm['krylov_solver']['maximum_iterations'] = 1000
-    prm['krylov_solver']['monitor_convergence'] = True
-    prm['krylov_solver']['nonzero_initial_guess'] = False
-    prm['krylov_solver']['gmres']['restart'] = 40
-    prm['krylov_solver']['preconditioner']['structure'] = 'same_nonzero_pattern'
-    prm['krylov_solver']['preconditioner']['ilu']['fill_level'] = 0
+    prm['newton_solver']['linear_solver'] = 'gmres'
+    prm['newton_solver']['preconditioner'] = prec
+    prm['newton_solver']['krylov_solver']['absolute_tolerance'] = 1E-9
+    prm['newton_solver']['krylov_solver']['relative_tolerance'] = 1E-7
+    prm['newton_solver']['krylov_solver']['maximum_iterations'] = 1000
+    prm['newton_solver']['krylov_solver']['monitor_convergence'] = True
+    prm['newton_solver']['krylov_solver']['nonzero_initial_guess'] = False
+    prm['newton_solver']['krylov_solver']['gmres']['restart'] = 40
+    prm['newton_solver']['krylov_solver']['preconditioner']['structure'] = 'same_nonzero_pattern'
+    prm['newton_solver']['krylov_solver']['preconditioner']['ilu']['fill_level'] = 0
 PROGRESS = 16
 set_log_level(PROGRESS)
 

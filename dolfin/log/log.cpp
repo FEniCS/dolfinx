@@ -135,11 +135,13 @@ void dolfin::dolfin_error(std::string location,
 }
 //-----------------------------------------------------------------------------
 void dolfin::deprecation(std::string feature,
-                         std::string version,
+                         std::string version_deprecated,
+                         std::string version_remove,
                          std::string message, ...)
 {
   read(buffer.get(), message);
-  LogManager::logger.deprecation(feature, version, buffer.get());
+  LogManager::logger.deprecation(feature, version_deprecated, version_remove,
+                                 buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::log(int log_level, std::string msg, ...)
@@ -199,9 +201,8 @@ void dolfin::monitor_memory_usage()
 //-----------------------------------------------------------------------------
 void dolfin::not_working_in_parallel(std::string what)
 {
-  if (MPI::num_processes() > 1)
+  if (MPI::size(MPI_COMM_WORLD) > 1)
   {
-    MPI::barrier();
     dolfin_error("log.cpp",
                  "perform operation in parallel",
                  "%s is not yet working in parallel.\n"

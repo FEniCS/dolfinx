@@ -77,7 +77,7 @@ namespace dolfin
   ///         Note that this string should begin with uppercase.
   ///         Note that this string should not be punctuated.
   ///         Note that this string may contain printf style formatting.
-  ///     ... (primitive types like int, uint, double, bool)
+  ///     ... (primitive types like int, std::size_t, double, bool)
   ///         Optional arguments for the format string.
   ///
   /// Developers should read the file dolfin/log/README in the DOLFIN
@@ -91,12 +91,15 @@ namespace dolfin
   /// *Arguments*
   ///     feature (std::string)
   ///        Name of the feature that has been removed.
-  ///     version (std::string)
-  ///        Version number of the release in which the feature was removed.
+  ///     version_deprecated (std::string)
+  ///        Version number of the release in which the feature is deprecated.
+  ///     version_remove (std::string)
+  ///        Version number of the release in which the feature will be removed.
   ///     message (std::string)
   ///        A format string explaining the deprecation.
   void deprecation(std::string feature,
-                   std::string version,
+                   std::string version_deprecated,
+                   std::string version_remove,
                    std::string message, ...);
 
   /// Print message at given debug level
