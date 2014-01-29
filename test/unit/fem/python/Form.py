@@ -105,7 +105,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         a = u*w*dx
         b = assemble(a)
         facetareas = MPI.sum(self.mesh2.mpi_comm(),
-			     assemble(u*w*dx).array().sum())
+                             assemble(u*w*dx).array().sum())
         self.assertAlmostEqual(facetareas, 3.0)
 
         mesh = UnitSquareMesh(8, 8)
@@ -119,9 +119,9 @@ class FormTestsOverManifolds(unittest.TestCase):
         bv = TestFunction(BV)
 
         a = MPI.sum(mesh.mpi_comm(),
-	            assemble(inner(u, v)*ds).array().sum())
+                    assemble(inner(u, v)*ds).array().sum())
         b = MPI.sum(bdry.mpi_comm(),
-	            assemble(inner(bu, bv)*dx).array().sum())
+                    assemble(inner(bu, bv)*dx).array().sum())
         self.assertAlmostEqual(a, b)
 
     def test_assemble_bilinear_1D_2D(self):
@@ -138,20 +138,20 @@ class FormTestsOverManifolds(unittest.TestCase):
         bv = TestFunction(self.V1)
 
         a = MPI.sum(self.square.mpi_comm(),
-	            assemble(inner(u, v)*ds).array().sum())
+                    assemble(inner(u, v)*ds).array().sum())
         b = MPI.sum(self.mesh1.mpi_comm(),
-		    assemble(inner(bu, bv)*dx).array().sum())
+                    assemble(inner(bu, bv)*dx).array().sum())
         self.assertAlmostEqual(a, b)
 
         bottom = CompiledSubDomain("near(x[1], 0.0)")
         foo = MPI.sum(self.square.mpi_comm(),
-		      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
+                      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
                                    exterior_facet_domains=bottom).array()).sum())
         BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
         bu = TrialFunction(BV)
         bv = TestFunction(BV)
         bar = MPI.sum(self.mesh1.mpi_comm(),
-		      abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum())
+                      abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum())
         self.assertAlmostEqual(bar, foo)
 
     def test_assemble_bilinear_2D_3D(self):
@@ -168,20 +168,20 @@ class FormTestsOverManifolds(unittest.TestCase):
         bv = TestFunction(self.V2)
 
         a = MPI.sum(self.mesh1.mpi_comm(),
-		    assemble(inner(u, v)*ds).array().sum())
+                    assemble(inner(u, v)*ds).array().sum())
         b = MPI.sum(self.mesh2.mpi_comm(),
-		    assemble(inner(bu, bv)*dx).array().sum())
+                    assemble(inner(bu, bv)*dx).array().sum())
         self.assertAlmostEqual(a, b)
 
         bottom = CompiledSubDomain("near(x[1], 0.0)")
         foo = MPI.sum(self.mesh1.mpi_comm(),
-		      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
+                      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
                                    exterior_facet_domains=bottom).array()).sum())
         BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
         bu = TrialFunction(BV)
         bv = TestFunction(BV)
         bar = MPI.sum(self.mesh1.mpi_comm(),
-	              abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum())
+                      abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum())
         self.assertAlmostEqual(bar, foo)
 
 class FormTestsOverFunnySpaces(unittest.TestCase):
