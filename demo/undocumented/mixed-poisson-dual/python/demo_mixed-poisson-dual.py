@@ -1,16 +1,21 @@
 """This demo program solves the mixed formulation of Poisson's
 equation:
 
-    sigma - grad(u) = 0
-         div(sigma) = f
+    sigma + grad(u) = 0    in Omega
+       - div(sigma) = f    in Omega
+              du/dn = g    on Gamma_N
+                  u = u_D  on Gamma_D
 
 The corresponding weak (variational problem)
 
-    <sigma, tau> + <tau, grad(u)>   = 0         for all tau
-                   <sigma, grad(v)> = - <f, v>  for all v
+    <sigma, tau> + <grad(u), tau>   = 0
+                                              for all tau
+                 - <sigma, grad(v)> = <f, v> + <g, v>
+                                              for all v
 
-is solved using DRT (Discontinuous Raviart-Thomas) elements of degree k for
-(sigma, tau) and CG (Lagrange) elements of degree k + 1 for (u, v) for k >= 1.
+is solved using DRT (Discontinuous Raviart-Thomas) elements
+of degree k for (sigma, tau) and CG (Lagrange) elements
+of degree k + 1 for (u, v) for k >= 1.
 """
 
 # Copyright (C) 2014 Jan Blechta
@@ -31,7 +36,7 @@ is solved using DRT (Discontinuous Raviart-Thomas) elements of degree k for
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-01-27
-# Last changed: 2014-01-28
+# Last changed: 2014-01-29
 
 # Begin demo
 
@@ -41,8 +46,8 @@ from dolfin import *
 mesh = UnitSquareMesh(32, 32)
 
 # Define function spaces and mixed (product) space
-DRT= FunctionSpace(mesh, "DRT", 2)
-CG = FunctionSpace(mesh, "CG", 3)
+DRT = FunctionSpace(mesh, "DRT", 2)
+CG  = FunctionSpace(mesh, "CG", 3)
 W = DRT * CG
 
 # Define trial and test functions
@@ -51,14 +56,15 @@ W = DRT * CG
 
 # Define source function
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+g = Expression("sin(5.0*x[0])")
 
 # Define variational form
-a = (dot(sigma, tau) + dot(tau, grad(u)) + dot(sigma, grad(v)))*dx
-L = - f*v*dx
+a = (dot(sigma, tau) + dot(grad(u), tau) + dot(sigma, grad(v)))*dx
+L = - f*v*dx - g*v*ds
 
 # Define Dirichlet BC
 def boundary(x):
-    return x[1] < DOLFIN_EPS or x[1] > 1.0 - DOLFIN_EPS
+    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 bc = DirichletBC(W.sub(1), 0.0, boundary)
 
 # Compute solution
