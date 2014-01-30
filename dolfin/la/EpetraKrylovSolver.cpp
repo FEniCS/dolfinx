@@ -137,13 +137,17 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+void EpetraKrylovSolver::set_operator(
+    const boost::shared_ptr<const GenericLinearOperator> A
+    )
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                                       const boost::shared_ptr<const GenericLinearOperator> P)
+void EpetraKrylovSolver::set_operators(
+    const boost::shared_ptr<const GenericLinearOperator> A,
+    const boost::shared_ptr<const GenericLinearOperator> P
+    )
 {
   _A = as_type<const EpetraMatrix>(require_matrix(A));
   _P = as_type<const EpetraMatrix>(require_matrix(P));
@@ -189,7 +193,9 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Write a message
   const bool report = parameters["report"];
   if (report && _A->mat()->Comm().MyPID() == 0)
-    info("Solving linear system of size %d x %d (Epetra Krylov solver).", M, N);
+    info("Solving linear system of size %d x %d (Epetra Krylov solver).",
+         M, N
+         );
 
   // Reinitialize solution vector if necessary
   if (x.size() != M)
@@ -220,7 +226,9 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     belosList.set("Output Frequency", (int)parameters["monitor_interval"]);
   }
 
-  belosList.set("Convergence Tolerance", (double)parameters["relative_tolerance"]);
+  belosList.set("Convergence Tolerance",
+                (double)parameters["relative_tolerance"]
+                );
   belosList.set("Maximum Iterations", (int)parameters["maximum_iterations"]);
 
   // Set preconditioner
@@ -247,7 +255,10 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   if (ret == Belos::Converged)
   {
     info("Epetra (Belos) Krylov solver (%s, %s) converged in %d iterations.",
-         _method.c_str(), _preconditioner->name().c_str(), solver->getNumIters());
+         _method.c_str(),
+         _preconditioner->name().c_str(),
+         solver->getNumIters()
+         );
   }
   else if (ret == Belos::Unconverged)
   {
@@ -312,7 +323,8 @@ double EpetraKrylovSolver::residual(const std::string residual_type) const
   {
     dolfin_error("EpetraKrylovSolver.cpp",
                  "compute residual of Epetra Krylov solver",
-                 "Unknown residual type: \"%s\"", residual_type.c_str());
+                 "Unknown residual type: \"%s\"", residual_type.c_str()
+                 );
     return 0.0;
   }
 }
