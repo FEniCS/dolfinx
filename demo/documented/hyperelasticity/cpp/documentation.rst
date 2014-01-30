@@ -57,7 +57,8 @@ Now, we can define the kinematic quantities involved in the model
 .. code-block:: python
 
     # Kinematics
-    I = Identity(element.cell().d)  # Identity tensor
+    d = u.geometric_dimension()
+    I = Identity(d)                 # Identity tensor
     F = I + grad(u)                 # Deformation gradient
     C = F.T*F                       # Right Cauchy-Green tensor
 

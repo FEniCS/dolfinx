@@ -62,7 +62,8 @@ B  = Constant((0.0, -0.5, 0.0))  # Body force per unit volume
 T  = Constant((0.1,  0.0, 0.0))  # Traction force on the boundary
 
 # Kinematics
-I = Identity(u.geometric_dimension())  # Identity tensor
+d = u.geometric_dimension()
+I = Identity(d)             # Identity tensor
 F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 

@@ -438,12 +438,19 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.num_processes(self.cube_bnd.mpi_comm()) > 1:
             return
 
-        a = FacetArea(self.square_bottom)*ds
+        area = FacetArea(self.square_bottom)
+        a = area*ds
         b = assemble(a)
         self.assertAlmostEqual(b, 2.0)
 
         cell = ufl.Cell("interval", geometric_dimension=3)
-        area = ufl.FacetArea(cell)
+
+        domain_numbering = {}
+        #print ufl.as_domain(cell).signature_data(domain_numbering=domain_numbering)
+        #print self.cube_edge.ufl_domain().signature_data(domain_numbering=domain_numbering)
+
+        #area = ufl.FacetArea(cell) # Does not work!
+        area = ufl.FacetArea(self.cube_edge)
         a = area*ds(self.cube_edge)
         b = assemble(a)
         self.assertAlmostEqual(b, 2.0)

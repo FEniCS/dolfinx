@@ -54,7 +54,9 @@ if has_petsc():
     v = TestFunction(V)
     u.interpolate(Constant(-1000.0))
 
-    r = sqrt(triangle.x[0]**2 + triangle.x[1]**2)
+    #x = SpatialCoordinate(triangle)
+    x = SpatialCoordinate(mesh)
+    r = sqrt(x[0]**2 + x[1]**2)
     rho = 1.0/r**3
 
     F = (8*inner(grad(u), grad(v))*dx + rho * inner(u**5, v)*dx \
