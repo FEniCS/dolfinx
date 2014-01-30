@@ -50,12 +50,10 @@ Combined modules
 
 A combined module consist of the interface of one or several modules,
 mention above. What modules are included in a combined modules is defined
-in generate-swig-interface. All interface files declaring these files are
-automatically generated when generate-swig-interface is run.
+by the comments in the main dolfin.h file. 
 
   * If a combined module is added/removed, the corresponding
-    subdirectory needs to be added/removed too, and it should
-    added/removed in generate-swig-interface.
+    subdirectory needs to be added/removed too.
 
   * If a combined module is added a CMakeList.txt need to be added to
     that directory. These are all module independent so just copy one
