@@ -127,9 +127,14 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD)
-if (HAVE_STD)
+CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
+if (HAVE_STD_CPP11)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+  CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
+  if (HAVE_STD_CPP0x)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  endif()
 endif()
 
 # Debug flags
