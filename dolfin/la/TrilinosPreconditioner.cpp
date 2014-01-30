@@ -142,12 +142,13 @@ void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
     plist.set("schwarz: reordering type", reordering);
 
     // Create preconditioner
+    std::string ifpack_name;
     if (_preconditioner == "icc")
-      _preconditioner = "IC";
+      ifpack_name = "IC";
     else
-      _preconditioner = "ILU";
+      ifpack_name = "ILU";
     Ifpack ifpack_factory;
-    _ifpack_preconditioner.reset(ifpack_factory.Create(_preconditioner, _P,
+    _ifpack_preconditioner.reset(ifpack_factory.Create(ifpack_name, _P,
                                                        overlap));
     dolfin_assert(_ifpack_preconditioner != 0);
 
