@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     lu.solve(*u.vector(), b);
 
     // Save solution in VTK format
-    file << std::make_pair<const Function*, double>(&u, t);
+    file << std::pair<const Function*, double>(&u, t);
 
     // Move to next interval
     p = t / T;
