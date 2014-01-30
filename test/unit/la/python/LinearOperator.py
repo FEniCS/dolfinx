@@ -24,7 +24,7 @@ import unittest
 from dolfin import *
 
 # Backends supporting the LinearOperator interface
-backends = ["PETSc", "Epetra", "uBLAS"]
+backends = ["PETSc", "uBLAS"]
 
 class TestLinearOperator(unittest.TestCase):
 
