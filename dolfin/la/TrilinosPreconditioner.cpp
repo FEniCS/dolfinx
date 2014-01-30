@@ -164,7 +164,7 @@ void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
     // This is necessary because Belos expects an operator to apply the
     // preconditioner with Apply() NOT ApplyInverse().
     Teuchos::RCP<Belos::EpetraPrecOp> belosPrec =
-      Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(&*_ifpack_preconditioner)));
+      Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ifpack_preconditioner.get(), false)));
 
     problem.setLeftPrec(belosPrec);
   }
@@ -293,7 +293,7 @@ void TrilinosPreconditioner::set_ml(
   _ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist,
                                                                    true));
   Teuchos::RCP<Belos::EpetraPrecOp> belosPrec =
-    Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(&*_ml_preconditioner)));
+    Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ml_preconditioner.get(), false)));
 
   // Set this operator as preconditioner for the linear problem
   problem.setLeftPrec(belosPrec);
