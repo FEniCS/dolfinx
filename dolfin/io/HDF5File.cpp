@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2012
-//
-// First added:  2012-06-01
-// Last changed: 2014-01-09
 
 #ifdef HAS_HDF5
 
@@ -88,6 +85,43 @@ void HDF5File::flush()
 {
   dolfin_assert(hdf5_file_open);
   HDF5Interface::flush_file(hdf5_file_id);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write(const std::vector<Point>& points,
+                     const std::string dataset_name)
+{
+  dolfin_assert(points.size() > 0);
+  dolfin_assert(hdf5_file_open);
+
+  // Get number of points (global)
+  std::size_t num_points_global = MPI::sum(_mpi_comm, points.size());
+
+  // Data set name
+  const std::string coord_dataset =  dataset_name + "/coordinates";
+
+  // Pack data
+  const std::size_t n = points.size();
+  std::vector<double> x(3*n);
+  for (std::size_t i = 0; i< n; ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3*i + j] = points[i][j];
+
+  // Write data to file
+  //  const bool chunking = parameters["chunking"];
+  std::vector<std::size_t> global_size(2);
+  global_size[0] = num_points_global;
+  global_size[1] = 3;
+
+  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  write_data(coord_dataset, x, global_size, mpi_io);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write(const std::vector<double>& values,
+                     const std::string dataset_name)
+{
+  std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm, values.size()));
+  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  write_data(dataset_name, values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const GenericVector& x, const std::string dataset_name)
@@ -1179,7 +1213,8 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   }
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(Mesh& input_mesh, const std::string mesh_name) const
+void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
+                    bool use_partition_from_file) const
 {
   Timer t("HDF5: read mesh");
 
@@ -1234,9 +1269,18 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name) const
     partitions.push_back(num_global_cells);
     const std::size_t proc = MPI::rank(_mpi_comm);
     cell_range = std::make_pair(partitions[proc], partitions[proc + 1]);
+
+    // Restore partitioning if requested
+    if (use_partition_from_file)
+    {
+      mesh_data.cell_partition
+        = std::vector<std::size_t>(cell_range.second - cell_range.first, proc);
+    }
   }
   else
   {
+    if (use_partition_from_file)
+      warning("Could not use partition from file: wrong size");
     // Divide up cells ~equally between processes
     cell_range = MPI::local_range(_mpi_comm, num_global_cells);
   }

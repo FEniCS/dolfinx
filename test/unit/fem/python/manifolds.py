@@ -169,7 +169,7 @@ class ManifoldSolving(unittest.TestCase):
         and then on a unit square embedded in 3D and rotated pi/4
         radians about each of the z and x axes."""
 
-        # Boundary mesh not working in parallel
+        # SubMesh not working in parallel
         if MPI.size(mpi_comm_world()) > 1:
             return
 
@@ -189,7 +189,7 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         """This test checks that basis functions and their derivatives are
         unaffected by rotations."""
 
-        # Boundary mesh not working in parallel
+        # SubMesh not working in parallel
         if MPI.size(mpi_comm_world()) > 1:
             return
 
@@ -212,10 +212,6 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         self.basis_test("BDFM", 2, piola=True)
 
     def basis_test(self, family, degree, piola=False):
-
-        # Boundary mesh not working in parallel
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         parameters["form_compiler"]["no-evaluate_basis_derivatives"] = False
 
