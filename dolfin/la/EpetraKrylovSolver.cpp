@@ -201,12 +201,13 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     x.zero();
 
   // Create linear problem
-  // TODO don't use .get() but Teuchos's native boost--RCP interoperability
+  // Make clear that the RCP doesn't own the memory and thus doesn't try
+  // to destroy the object when it goes out of scope.
   Teuchos::RCP<Belos::LinearProblem<ST,MV,OP> > linear_problem =
     Teuchos::rcp(new Belos::LinearProblem<ST,MV,OP>(
-          Teuchos::rcp(_A->mat().get()),
-          Teuchos::rcp(x.vec().get()),
-          Teuchos::rcp(b.vec().get())
+          Teuchos::rcp(_A->mat().get(), false),
+          Teuchos::rcp(x.vec().get(), false),
+          Teuchos::rcp(b.vec().get(), false)
           ));
   const int ierr = linear_problem->setProblem();
   dolfin_assert(ierr == 0);
