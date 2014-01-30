@@ -489,6 +489,16 @@ endif()
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit)
+
+  # Older version of CPPUNIT use std::auto_ptr, which is deprecated
+  if (${CPPUNIT_VERSION} LESS 1.13.1)
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
+    if (HAVE_NO_DEPRECATED)
+      set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-deprecated")
+    endif()
+  endif()
+
 endif()
 
 # Check for Sphinx
