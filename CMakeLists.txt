@@ -129,7 +129,7 @@ endif()
 
 CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD)
 if (HAVE_STD)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++11 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
 # Debug flags
