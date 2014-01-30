@@ -21,7 +21,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2007-01-17
-// Last changed: 2013-03-30
+// Last changed: 2013-09-19
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -43,7 +43,6 @@
 #include "SparsityPatternBuilder.h"
 #include "AssemblerBase.h"
 
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -51,29 +50,29 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 {
   dolfin_assert(a.ufc_form());
 
-  check_parameters();
-
   // Get dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (std::size_t i = 0; i < a.rank(); ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
-  if (reset_sparsity)
+  if (A.size(0) == 0)
   {
     Timer t0("Build sparsity");
 
     // Create layout for initialising tensor
-    boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
+    boost::shared_ptr<TensorLayout> tensor_layout;
+    tensor_layout = A.factory().create_layout(a.rank());
     dolfin_assert(tensor_layout);
 
-    std::vector<std::size_t> global_dimensions(a.rank());
-    std::vector<std::pair<std::size_t, std::size_t> > local_range(a.rank());
+    // Get dimensions
+    std::vector<std::size_t> global_dimensions;
+    std::vector<std::pair<std::size_t, std::size_t> > local_range;
     std::vector<std::size_t> block_sizes;
     for (std::size_t i = 0; i < a.rank(); i++)
     {
       dolfin_assert(dofmaps[i]);
-      global_dimensions[i] = dofmaps[i]->global_dimension();
-      local_range[i]       = dofmaps[i]->ownership_range();
+      global_dimensions.push_back(dofmaps[i]->global_dimension());
+      local_range.push_back(dofmaps[i]->ownership_range());
       block_sizes.push_back(dofmaps[i]->block_size);
     }
 
@@ -86,7 +85,8 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     }
 
     // Initialise tensor layout
-    tensor_layout->init(global_dimensions, block_size, local_range);
+    tensor_layout->init(a.mesh().mpi_comm(), global_dimensions, block_size,
+                        local_range);
 
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
@@ -147,23 +147,6 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 
   if (!add_values)
     A.zero();
-}
-//-----------------------------------------------------------------------------
-void AssemblerBase::check_parameters() const
-{
-  if (reset_sparsity && add_values)
-  {
-    dolfin_error("AssemblerBase.cpp",
-                 "check parameters",
-                 "Can not add values when the sparsity pattern is reset");
-  }
-
-  if (!reset_sparsity && keep_diagonal)
-  {
-    dolfin_error("AssemblerBase.cpp",
-                 "check parameters",
-                 "Not resetting tensor and keeping diagonal entries are incompatible");
-  }
 }
 //-----------------------------------------------------------------------------
 void AssemblerBase::check(const Form& a)

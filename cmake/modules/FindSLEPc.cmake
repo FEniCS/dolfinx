@@ -52,6 +52,7 @@ endforeach()
 
 # List of possible locations for SLEPC_DIR
 set(slepc_dir_locations "")
+list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.4.2")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.2")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.1")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.0.0")
@@ -86,6 +87,11 @@ if (SLEPC_DIR)
   find_library(SLEPC_LIBRARY
     NAMES slepc
     HINTS ${SLEPC_DIR}/lib $ENV{SLEPC_DIR}/lib  ${SLEPC_DIR}/${PETSC_ARCH}/lib $ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib 
+    NO_DEFAULT_PATH
+    DOC "The SLEPc library"
+    )
+  find_library(SLEPC_LIBRARY
+    NAMES slepc
     DOC "The SLEPc library"
     )
   mark_as_advanced(SLEPC_LIBRARY)

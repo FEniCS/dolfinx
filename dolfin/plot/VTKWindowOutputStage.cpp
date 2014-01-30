@@ -298,6 +298,7 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters& p)
   _actor->GetProperty()->SetPointSize(4);   // should be parameter?
 
   // Set window stuff
+  _scalarBar->SetTitle(""); // To avoid uninitialized-warning in VTK 6
   _scalarBar->SetTextPositionToPrecedeScalarBar();
 
   // Set the look of scalar bar labels
@@ -624,7 +625,7 @@ void VTKWindowOutputStage::set_translucent(bool onoff, std::size_t topo_dim,
   // The depth sorting is slow, particularly for glyphs.
   // Hence, set these only when required.
 
-  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 8)
+  #if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 8))
   _lut->SetNanColor(0.0, 0.0, 0.0, (onoff ? 0.05 : 1.0));
   #endif
 

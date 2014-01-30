@@ -92,10 +92,6 @@ void dolfin::list_timings(bool reset)
   if (!LogManager::logger.is_active())
     return;
 
-  // Only print summary for process 0
-  if (MPI::process_number() != 0)
-    return;
-
   LogManager::logger.list_timings(reset);
 }
 //-----------------------------------------------------------------------------

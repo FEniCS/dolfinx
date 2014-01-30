@@ -34,6 +34,7 @@
 #include <utility>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <petscsys.h>
 #include <petscvec.h>
 
 #include <dolfin/log/dolfin_log.h>
@@ -43,17 +44,6 @@
 
 namespace dolfin
 {
-
-  class PETScVectorDeleter
-  {
-  public:
-    void operator() (Vec* x)
-    {
-      if (*x)
-        VecDestroy(x);
-      delete x;
-    }
-  };
 
   class GenericSparsityPattern;
   template<typename T> class Array;
@@ -71,19 +61,19 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit PETScVector(std::string type="global", bool use_gpu=false);
+    PETScVector();
 
     /// Create vector of size N
-    PETScVector(std::size_t N, std::string type="global", bool use_gpu=false);
+    PETScVector(MPI_Comm comm, std::size_t N, bool use_gpu=false);
 
     /// Create vector
-    PETScVector(const GenericSparsityPattern& sparsity_pattern);
+    explicit PETScVector(const GenericSparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     PETScVector(const PETScVector& x);
 
-    /// Create vector from given PETSc Vec pointer
-    explicit PETScVector(boost::shared_ptr<Vec> x);
+    /// Create vector wrapper of PETSc Vec pointer
+    explicit PETScVector(Vec x);
 
     /// Destructor
     virtual ~PETScVector();
@@ -96,6 +86,9 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
 
+    /// Return MPI communicator
+    virtual MPI_Comm mpi_comm() const;
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
@@ -104,15 +97,20 @@ namespace dolfin
     /// Return copy of vector
     virtual boost::shared_ptr<GenericVector> copy() const;
 
-    /// Resize vector to global size N
-    virtual void resize(std::size_t N);
+    /// Initialize vector to global size N
+    virtual void init(MPI_Comm comm, std::size_t N);
 
-    /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range);
+    /// Initialize vector with given ownership range
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range);
 
-    /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices);
+    /// Initialize vector with given ownership range and with ghost values
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range,
+                      const std::vector<la_index>& ghost_indices);
+
+    // Bring init function from GenericVector into scope
+    using GenericVector::init;
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -130,13 +128,16 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const;
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, std::size_t m, const dolfin::la_index* rows) const;
+    virtual void get_local(double* block, std::size_t m,
+                           const dolfin::la_index* rows) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows);
+    virtual void set(const double* block, std::size_t m,
+                     const dolfin::la_index* rows);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows);
+    virtual void add(const double* block, std::size_t m,
+                     const dolfin::la_index* rows);
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;
@@ -148,10 +149,12 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather vector entries into a local vector
-    virtual void gather(GenericVector& y, const std::vector<dolfin::la_index>& indices) const;
+    virtual void gather(GenericVector& y,
+                        const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const;
+    virtual void gather(std::vector<double>& x,
+                        const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const;
@@ -211,16 +214,13 @@ namespace dolfin
 
     //--- Special functions ---
 
-    /// Reset data and PETSc vector object
-    void reset();
-
     /// Return linear algebra backend factory
     virtual GenericLinearAlgebraFactory& factory() const;
 
     //--- Special PETSc functions ---
 
-    /// Return shared_ptr to PETSc Vec object
-    boost::shared_ptr<Vec> vec() const;
+    /// Return pointer to PETSc Vec object
+    Vec vec() const;
 
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
@@ -231,18 +231,17 @@ namespace dolfin
   private:
 
     // Initialise PETSc vector
-    void _init(std::pair<std::size_t, std::size_t> range,
-               const std::vector<la_index>& ghost_indices,
-               bool distributed);
+    void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+               const std::vector<la_index>& ghost_indices);
 
     // Return true if vector is distributed
     bool distributed() const;
 
     // PETSc Vec pointer
-    boost::shared_ptr<Vec> _x;
+    Vec _x;
 
     // PETSc Vec pointer (local ghosted)
-    mutable boost::shared_ptr<Vec> x_ghosted;
+    mutable Vec x_ghosted;
 
     // Global-to-local map for ghost values
     boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
@@ -250,7 +249,7 @@ namespace dolfin
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
 
-    // PETSc vector architechture
+    // PETSc vector architecture
     const bool _use_gpu;
 
   };

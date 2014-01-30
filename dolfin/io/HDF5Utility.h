@@ -48,19 +48,21 @@ namespace dolfin
     /// and remote_local_dofi is the pertinent local_dof of the cell.
     /// input_cells is a list of cells held on this process, and
     /// input_cell_dofs/x_cell_dofs list their local_dofs.
-    static void map_gdof_to_cell(const std::vector<std::size_t>& input_cells,
-                          const std::vector<dolfin::la_index>& input_cell_dofs,
-                          const std::vector<std::size_t>& x_cell_dofs,
-                          const std::pair<dolfin::la_index, dolfin::la_index>
-                          vector_range,
-                          std::vector<std::size_t>& global_cells,
-                          std::vector<std::size_t>& remote_local_dofi);
+    static void
+      map_gdof_to_cell(const MPI_Comm mpi_comm,
+                       const std::vector<std::size_t>& input_cells,
+                       const std::vector<dolfin::la_index>& input_cell_dofs,
+                       const std::vector<std::size_t>& x_cell_dofs,
+                       const std::pair<dolfin::la_index, dolfin::la_index>
+                       vector_range,
+                       std::vector<std::size_t>& global_cells,
+                       std::vector<std::size_t>& remote_local_dofi);
 
     /// Given the cell dof index specified
     /// as (process, local_cell_index, local_cell_dof_index)
     /// get the global_dof index from that location, and return it for all
     /// DOFs in the range of "vector_range"
-    static void get_global_dof(
+    static void get_global_dof(const MPI_Comm mpi_comm,
          const std::vector<std::pair<std::size_t, std::size_t> >& cell_ownership,
          const std::vector<std::size_t>& remote_local_dofi,
          const std::pair<std::size_t, std::size_t> vector_range,
@@ -90,8 +92,8 @@ namespace dolfin
     /// Reorder data values of type double into global index order
     /// Shape of 2D array is given in global_size
     static void reorder_values_by_global_indices(const Mesh& mesh,
-                               std::vector<double>& data,
-                               std::vector<std::size_t>& global_size);
+                                                 std::vector<double>& data,
+                                                 std::size_t width);
 
   };
 

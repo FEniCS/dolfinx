@@ -2,7 +2,6 @@
 
 .. _demo_pde_subdomains_python_documentation:
 
-
 Marking subdomains of a mesh
 ============================
 

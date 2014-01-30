@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-09-03
+# Last changed: 2013-11-14
 
 import unittest
 import numpy
@@ -42,7 +42,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree = BoundingBoxTree()
             tree.build(mesh, dim)
             entities = tree.compute_collisions(p)
-            if MPI.num_processes() == 1:
+            if MPI.size(mesh.mpi_comm()) == 1:
                 self.assertEqual(sorted(entities), reference[dim])
 
     def test_compute_collisions_point_2d(self):
@@ -56,7 +56,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree = BoundingBoxTree()
             tree.build(mesh, dim)
             entities = tree.compute_collisions(p)
-            if MPI.num_processes() == 1:
+            if MPI.size(mesh.mpi_comm()) == 1:
                 self.assertEqual(sorted(entities), reference[dim])
 
     def test_compute_collisions_point_3d(self):
@@ -71,7 +71,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree = BoundingBoxTree()
             tree.build(mesh, dim)
             entities = tree.compute_collisions(p)
-            if MPI.num_processes() == 1:
+            if MPI.size(mesh.mpi_comm()) == 1:
                 self.assertEqual(sorted(entities), reference[dim])
 
     #--- compute_collisions with tree ---
@@ -104,7 +104,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
             entities_A, entities_B = tree_A.compute_collisions(tree_B)
 
-            if MPI.num_processes() == 1:
+            if MPI.size(mesh_A.mpi_comm()) == 1:
                 self.assertEqual(sorted(entities_A), references[i][0])
                 self.assertEqual(sorted(entities_B), references[i][1])
 
@@ -124,13 +124,13 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree = BoundingBoxTree()
         tree.build(mesh)
         entities = tree.compute_entity_collisions(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(sorted(entities), reference)
 
         tree = mesh.bounding_box_tree()
         entities = tree.compute_entity_collisions(p)
 
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(sorted(entities), reference)
 
     def test_compute_entity_collisions_2d(self):
@@ -143,13 +143,13 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree = BoundingBoxTree()
         tree.build(mesh)
         entities = tree.compute_entity_collisions(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(sorted(entities), reference)
 
         tree = mesh.bounding_box_tree()
         entities = tree.compute_entity_collisions(p)
 
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(sorted(entities), reference)
 
     def test_compute_entity_collisions_3d(self):
@@ -162,7 +162,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree = BoundingBoxTree()
         tree.build(mesh)
         entities = tree.compute_entity_collisions(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(sorted(entities), reference)
 
     #--- compute_entity_collisions with tree ---
@@ -195,7 +195,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
             entities_A, entities_B = tree_A.compute_entity_collisions(tree_B)
 
-            if MPI.num_processes() == 1:
+            if MPI.size(mesh_A.mpi_comm()) == 1:
                 self.assertEqual(sorted(entities_A), references[i][0])
                 self.assertEqual(sorted(entities_B), references[i][1])
 
@@ -215,12 +215,12 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree = BoundingBoxTree()
             tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
-            if MPI.num_processes() == 1:
+            if MPI.size(mesh.mpi_comm()) == 1:
                 self.assertIn(first, reference[dim])
 
         tree = mesh.bounding_box_tree()
         first = tree.compute_first_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference[mesh.topology().dim()])
 
     def test_compute_first_collision_2d(self):
@@ -234,12 +234,12 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree = BoundingBoxTree()
             tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
-            if MPI.num_processes() == 1:
+            if MPI.size(mesh.mpi_comm()) == 1:
                 self.assertIn(first, reference[dim])
 
         tree = mesh.bounding_box_tree()
         first = tree.compute_first_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference[mesh.topology().dim()])
 
     def test_compute_first_collision_3d(self):
@@ -254,12 +254,12 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree = BoundingBoxTree()
             tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
-            if MPI.num_processes() == 1:
+            if MPI.size(mesh.mpi_comm()) == 1:
                 self.assertIn(first, reference[dim])
 
         tree = mesh.bounding_box_tree()
         first = tree.compute_first_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference[mesh.topology().dim()])
 
     #--- compute_first_entity_collision ---
@@ -273,12 +273,12 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree = BoundingBoxTree()
         tree.build(mesh)
         first = tree.compute_first_entity_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference)
 
         tree = mesh.bounding_box_tree()
         first = tree.compute_first_entity_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference)
 
     def test_compute_first_entity_collision_2d(self):
@@ -290,13 +290,13 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree = BoundingBoxTree()
         tree.build(mesh)
         first = tree.compute_first_entity_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference)
 
 
         tree = mesh.bounding_box_tree()
         first = tree.compute_first_entity_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference)
 
     def test_compute_first_entity_collision_3d(self):
@@ -308,12 +308,12 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree = BoundingBoxTree()
         tree.build(mesh)
         first = tree.compute_first_entity_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference)
 
         tree = mesh.bounding_box_tree()
         first = tree.compute_first_entity_collision(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertIn(first, reference)
 
     #--- compute_closest_entity ---
@@ -328,53 +328,53 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree.build(mesh)
         entity, distance = tree.compute_closest_entity(p)
 
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(entity, reference[0])
             self.assertAlmostEqual(distance, reference[1])
 
         tree = mesh.bounding_box_tree()
         entity, distance = tree.compute_closest_entity(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(entity, reference[0])
             self.assertAlmostEqual(distance, reference[1])
 
     def test_compute_closest_entity_2d(self):
 
-        reference = (0, numpy.sqrt(2.0))
+        reference = (1, 1.0)
 
-        p = Point(-1.0, -1.0)
+        p = Point(-1.0, 0.01)
         mesh = UnitSquareMesh(16, 16)
         tree = BoundingBoxTree()
         tree.build(mesh)
         entity, distance = tree.compute_closest_entity(p)
 
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(entity, reference[0])
             self.assertAlmostEqual(distance, reference[1])
 
         tree = mesh.bounding_box_tree()
         entity, distance = tree.compute_closest_entity(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(entity, reference[0])
             self.assertAlmostEqual(distance, reference[1])
 
     def test_compute_closest_entity_3d(self):
 
-        reference = (2, numpy.sqrt(3.0))
+        reference = (0, 0.1)
 
-        p = Point(-1.0, -1.0, -1.0)
+        p = Point(0.1, 0.05, -0.1)
         mesh = UnitCubeMesh(8, 8, 8)
         tree = BoundingBoxTree()
         tree.build(mesh)
         entity, distance = tree.compute_closest_entity(p)
 
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(entity, reference[0])
             self.assertAlmostEqual(distance, reference[1])
 
         tree = mesh.bounding_box_tree()
         entity, distance = tree.compute_closest_entity(p)
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             self.assertEqual(entity, reference[0])
             self.assertAlmostEqual(distance, reference[1])
 
@@ -382,6 +382,4 @@ if __name__ == "__main__":
     print ""
     print "Testing BoundingBoxTree"
     print "------------------------------------------------"
-
-    print "FIXME: Temporary testing"
     unittest.main()

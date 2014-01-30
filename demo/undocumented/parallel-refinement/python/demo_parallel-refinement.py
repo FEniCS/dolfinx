@@ -24,25 +24,25 @@ from dolfin import *
 mesh = UnitSquareMesh(20, 20)
 
 # Create MeshFunction to hold cell process rank
-processes = CellFunction('size_t', mesh, MPI.process_number())
+processes = CellFunction('size_t', mesh, MPI.rank(mesh.mpi_comm()))
 
 # Output cell distribution to VTK file
 file = File("processes.pvd")
 file << processes
 
 # Mark all cells on process 0 for refinement
-marker = CellFunction('bool', mesh, (MPI.process_number() == 0))
+marker = CellFunction('bool', mesh, (MPI.rank(mesh.mpi_comm()) == 0))
 
 # Refine mesh, but keep all news cells on parent process
 mesh0 = refine(mesh, marker, False)
 
 # Create MeshFunction to hold cell process rank for refined mesh
-processes1 = CellFunction('size_t', mesh0, MPI.process_number())
+processes1 = CellFunction('size_t', mesh0, MPI.rank(mesh.mpi_comm()))
 file << processes1
 
 # Refine mesh, but this time repartition the mesh after refinement
 mesh1 = refine(mesh, marker, True)
 
 # Create MeshFunction to hold cell process rank for refined mesh
-processes2 = CellFunction('size_t', mesh1, MPI.process_number())
+processes2 = CellFunction('size_t', mesh1, MPI.rank(mesh.mpi_comm()))
 file << processes2

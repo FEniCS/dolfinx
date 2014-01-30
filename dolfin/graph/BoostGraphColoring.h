@@ -27,7 +27,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/sequential_vertex_coloring.hpp>
-#include <dolfin/graph/Graph.h>
+#include <dolfin/common/Timer.h>
+#include "Graph.h"
 
 namespace dolfin
 {
@@ -46,6 +47,8 @@ namespace dolfin
     static std::size_t compute_local_vertex_coloring(const Graph& graph,
                                      std::vector<ColorType>& colors)
     {
+      Timer timer("Boost graph coloring (from dolfin::Graph)");
+
       // Typedef for Boost compressed sparse row graph
       typedef boost::compressed_sparse_row_graph<boost::directedS,
         boost::property<boost::vertex_color_t, ColorType> > BoostGraph;
@@ -88,6 +91,8 @@ namespace dolfin
     static std::size_t compute_local_vertex_coloring(const T& graph,
                                             std::vector<ColorType>& colors)
     {
+      Timer timer("Boost graph coloring");
+
       // Number of vertices in graph
       const std::size_t num_vertices = boost::num_vertices(graph);
       dolfin_assert(num_vertices == colors.size());

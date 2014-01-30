@@ -56,16 +56,17 @@ class TestLinearOperator(unittest.TestCase):
             if not has_linear_algebra_backend(backend):
                 continue
 
-            # Skip testing uBLAS in parallel
-            if MPI.num_processes() > 1 and backend == "uBLAS":
-                print "Not running uBLAS test in parallel"
-                continue
-
             # Set linear algebra backend
             parameters["linear_algebra_backend"] = backend
 
             # Compute reference value by solving ordinary linear system
             mesh = UnitSquareMesh(8, 8)
+
+            # Skip testing uBLAS in parallel
+            if MPI.size(mesh.mpi_comm()) > 1 and backend == "uBLAS":
+                print "Not running uBLAS test in parallel"
+                continue
+
             V = FunctionSpace(mesh, "Lagrange", 1)
             u = TrialFunction(V)
             v = TestFunction(V)

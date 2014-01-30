@@ -23,7 +23,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-03-04
+// Last changed: 2013-09-19
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -45,7 +45,6 @@ namespace dolfin
 {
 
   class GenericVector;
-  class UFC;
   class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
@@ -116,7 +115,7 @@ namespace dolfin
     ///         True if the dof map is a sub-dof map (a view into
     ///         another map).
     bool is_view() const
-    { return (_ownership_range.first == 0 && _ownership_range.second == 0); }
+    { return _is_view; }
 
     /// True if dof map is restricted
     ///
@@ -233,8 +232,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<dolfin::la_index>
     ///         Local-to-global mapping of dofs.
-    const std::vector<dolfin::la_index>&
-      cell_dofs(std::size_t cell_index) const
+    const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const
     {
       dolfin_assert(cell_index < _dofmap.size());
       return _dofmap[cell_index];
@@ -268,10 +266,13 @@ namespace dolfin
     /// *Arguments*
     ///     coordinates (boost::multi_array<double, 2>)
     ///         The coordinates of all dofs on a cell.
-    ///     ufc_cell (ufc::cell)
+    ///     vertex_coordinates (std::vector<double>)
+    ///         The cell vertex coordinates
+    ///     cell (Cell)
     ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const ufc::cell& ufc_cell) const;
+                              const std::vector<double>& vertex_coordinates,
+                              const Cell& cell) const;
 
     /// Tabulate the coordinates of all dofs on this process. This
     /// function is typically used by preconditioners that require the
@@ -367,7 +368,7 @@ namespace dolfin
                    collapsed_map, const Mesh& mesh) const;
 
     // FIXME: Document this function
-    std::vector<dolfin::la_index> dofs(std::size_t r0, std::size_t r1) const;
+    std::vector<dolfin::la_index> dofs() const;
 
     /// Set dof entries in vector to a specified value. Parallel layout
     /// of vector must be consistent with dof map range. This
@@ -448,6 +449,9 @@ namespace dolfin
 
     // Restriction, pointer zero if not restricted
     boost::shared_ptr<const Restriction> _restriction;
+
+    // Flag to determine if the DofMap is a view
+    bool _is_view;
 
     // Global dimension. Note that this may differ from the global
     // dimension of the UFC dofmap if the function space is restricted

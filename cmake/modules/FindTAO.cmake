@@ -81,7 +81,12 @@ if (TAO_DIR)
 
   find_library(TAO_LIBRARY
     NAMES tao
-    HINTS ${TAO_DIR}/lib $ENV{TAO_DIR}/lib  ${TAO_DIR}/${PETSC_ARCH}/lib $ENV{TAO_DIR}/$ENV{PETSC_ARCH}/lib 
+    HINTS ${TAO_DIR}/lib $ENV{TAO_DIR}/lib  ${TAO_DIR}/${PETSC_ARCH}/lib $ENV{TAO_DIR}/$ENV{PETSC_ARCH}/lib
+    NO_DEFAULT_PATH
+    DOC "The TAO library"
+    )
+  find_library(TAO_LIBRARY
+    NAMES tao
     DOC "The TAO library"
     )
   mark_as_advanced(TAO_LIBRARY)
@@ -94,14 +99,14 @@ TAO_DIR  = ${TAO_DIR}
 PETSC_ARCH = ${PETSC_ARCH}
 PETSC_DIR = ${PETSC_DIR}
 include ${TAO_DIR}/conf/tao_base
-show :
+showvar :
 	-@echo -n \${\${VARIABLE}}
 ")
 
   # Define macro for getting TAO variables from Makefile
   macro(TAO_GET_VARIABLE var name)
     set(${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} --no-print-directory -f ${tao_config_makefile} show VARIABLE=${name}
+    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} --no-print-directory -f ${tao_config_makefile} showvar VARIABLE=${name}
       OUTPUT_VARIABLE ${var}
       RESULT_VARIABLE tao_return)
   endmacro()
@@ -140,7 +145,7 @@ elseif (TAO_LIBRARIES AND TAO_INCLUDE_DIRS)
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES} ${BLAS_LIBRARIES})
     set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS}${MPI_C_LIBRARIES} ${BLAS_LIBRARIES}")
   endif()
-  
+
   # Run TAO test program
   set(TAO_TEST_LIB_CPP
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/tao_test_lib.cpp")

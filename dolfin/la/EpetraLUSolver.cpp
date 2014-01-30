@@ -36,6 +36,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Timer.h>
 #include "GenericLinearOperator.h"
 #include "GenericVector.h"
 #include "EpetraMatrix.h"
@@ -82,7 +83,7 @@ std::string EpetraLUSolver::choose_method(std::string method) const
   else if (method == "mumps")
     method = "Amesos_mumps";
   else if (method == "klu")
-    method = "Amesos_klu";
+    method = "Amesos_Klu";
   else
   {
     dolfin_error("EpetraLUSolver.cpp",
@@ -187,11 +188,13 @@ const GenericLinearOperator& EpetraLUSolver::get_operator() const
 //-----------------------------------------------------------------------------
 std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
+  Timer timer("Epetra LU solver");
+
   dolfin_assert(linear_problem);
   dolfin_assert(solver);
 
   // Write a message
-  if (parameters["report"] && dolfin::MPI::process_number() == 0)
+  if (parameters["report"] && dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
   {
     if (solver->UseTranspose())
     {
@@ -218,7 +221,6 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
                  "Operator has not been set");
   }
 
-  const std::size_t M = A->NumGlobalRows64();
   const std::size_t N = A->NumGlobalCols64();
   if (N != b.size())
   {
@@ -228,9 +230,9 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   }
 
   // Initialize solution vector
-  if (x.size() != M)
+  if (x.empty())
   {
-    _A->resize(x, 1);
+    _A->init_vector(x, 1);
     x.zero();
   }
 

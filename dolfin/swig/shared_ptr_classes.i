@@ -16,14 +16,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders logg, 2009.
+// Modified by Anders Logg, 2009.
 // Modified by Garth N. Wells, 2009-2012.
 // Modified by Fredrik Valdmanis, 2012.
 // Modified by Patrick E. Farrell, 2012.
-// Modified by Benjamin Kehlet, 2012
+// Modified by Benjamin Kehlet, 2012.
+// Modified by Andre Massing, 2013.
 //
 // First added:  2007-11-25
-// Last changed: 2013-04-18
+// Last changed: 2013-10-30
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -81,6 +82,7 @@
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
 %shared_ptr(dolfin::GenericDofMap)
 %shared_ptr(dolfin::DofMap)
+%shared_ptr(dolfin::CCFEMDofMap)
 %shared_ptr(dolfin::Form)
 %shared_ptr(dolfin::FiniteElement)
 %shared_ptr(dolfin::BasisFunction)
@@ -116,9 +118,13 @@
 
 // mesh
 %shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
+%shared_ptr(dolfin::BoundaryMesh)
+%shared_ptr(dolfin::CircleMesh)
+%shared_ptr(dolfin::EllipseMesh)
+%shared_ptr(dolfin::EllipsoidMesh)
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::Restriction)
-%shared_ptr(dolfin::BoundaryMesh)
+%shared_ptr(dolfin::SphereMesh)
 %shared_ptr(dolfin::SubMesh)
 %shared_ptr(dolfin::UnitTetrahedronMesh)
 %shared_ptr(dolfin::UnitTetrahedron)

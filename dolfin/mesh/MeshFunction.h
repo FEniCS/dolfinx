@@ -588,6 +588,9 @@ namespace dolfin
     const MeshConnectivity& connectivity = _mesh->topology()(D, d);
     dolfin_assert(!connectivity.empty());
 
+    // Set MeshFunction with default value
+    set_all(std::numeric_limits<T>::max());
+
     // Iterate over all values
     boost::unordered_set<std::size_t> entities_values_set;
     typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it;
@@ -621,13 +624,9 @@ namespace dolfin
       entities_values_set.insert(entity_index);
     }
 
-    // Check that all values have been set
+    // Check that all values have been set, if not issue a debug message
     if (entities_values_set.size() != _size)
-    {
-      dolfin_error("MeshFunction.h",
-                   "assign mesh value collection to mesh function",
-                   "Mesh value collection does not contain all values for all entities");
-    }
+      dolfin_debug("Mesh value collection does not contain all values for all entities");
 
     return *this;
   }

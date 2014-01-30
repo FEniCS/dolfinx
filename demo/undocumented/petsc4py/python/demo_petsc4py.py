@@ -41,12 +41,12 @@ from dolfin import *
 try:
     from petsc4py import PETSc
 except:
-    print "*** Warning: you need to have petsc4py installed for this demo to run",
+    print "*** You need to have petsc4py installed for this demo to run",
     print "Exiting."
     exit()
 
 if not has_petsc4py():
-    print "*** Warning: Dolfin is not compiled with petsc4py support",
+    print "*** DOLFIN has not been compiled with petsc4py support",
     print "Exiting."
     exit()
 
@@ -99,6 +99,3 @@ plot(u, interactive=True)
 # Save solution to file
 file = File("poisson.pvd")
 file << u
-
-
-

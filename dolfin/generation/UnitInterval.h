@@ -39,7 +39,7 @@ namespace dolfin
     /// Create mesh of unit interval
     UnitInterval(std::size_t nx=1) : UnitIntervalMesh(nx)
     {
-      deprecation("UnitInterval", "1.1.0",
+      deprecation("UnitInterval", "1.1.0", "1.4",
                   "The class UnitInterval has been replaced by UnitIntervalMesh.");
     }
 

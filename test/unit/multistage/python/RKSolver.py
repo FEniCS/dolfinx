@@ -39,21 +39,22 @@ def convergence_order(errors, base = 2):
 class RKSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_scalar(self):
-        
-        if cpp.MPI.num_processes() > 1:
-            return
 
         LEVEL = cpp.get_log_level()
         cpp.set_log_level(cpp.WARNING)
         mesh = UnitSquareMesh(4, 4)
+
+        if cpp.MPI.size(mesh.mpi_comm()) > 1:
+            return
+
         V = FunctionSpace(mesh, "R", 0)
         u = Function(V)
         v = TestFunction(V)
         form = u*v*dx
-            
+
         tstop = 1.0
         u_true = Expression("exp(t)", t=tstop)
-            
+
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             scheme = Scheme(form, u)
@@ -69,13 +70,14 @@ class RKSolverTest(unittest.TestCase):
         cpp.set_log_level(LEVEL)
 
     def test_butcher_schemes_vector(self):
-        
-        if cpp.MPI.num_processes() > 1:
-            return
 
         LEVEL = cpp.get_log_level()
         cpp.set_log_level(cpp.WARNING)
         mesh = UnitSquareMesh(4, 4)
+
+        if cpp.MPI.size(mesh.mpi_comm()) > 1:
+            return
+
         V = VectorFunctionSpace(mesh, "R", 0, dim=2)
         u = Function(V)
         v = TestFunction(V)

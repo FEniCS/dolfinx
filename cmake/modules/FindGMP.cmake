@@ -46,18 +46,33 @@ find_path(GMP_INCLUDE_DIRS
 find_library(GMP_LIBRARIES
   NAMES gmp libgmp
   HINTS ${GMP_DIR}/lib $ENV{GMP_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The GMP libraries"
+  )
+find_library(GMP_LIBRARIES
+  NAMES gmp libgmp
   DOC "The GMP libraries"
   )
 
 find_library(GMPXX_LIBRARIES
   NAMES gmpxx
   HINTS ${GMP_DIR}/lib $ENV{GMP_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The GMPXX libraries"
+  )
+find_library(GMPXX_LIBRARIES
+  NAMES gmpxx
   DOC "The GMPXX libraries"
   )
 
 find_library(MPFR_LIBRARIES
   NAMES mpfr
   HINTS ${GMP_DIR}/lib $ENV{GMP_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The NPFR libraries"
+  )
+find_library(MPFR_LIBRARIES
+  NAMES mpfr
   DOC "The NPFR libraries"
   )
 

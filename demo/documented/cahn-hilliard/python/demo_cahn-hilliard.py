@@ -19,7 +19,7 @@ equation, which is a time-dependent nonlinear PDE """
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-06-20
-# Last changed: 2012-11-12
+# Last changed: 2013-11-20
 
 # Begin demo
 
@@ -29,7 +29,7 @@ from dolfin import *
 # Class representing the intial conditions
 class InitialConditions(Expression):
     def __init__(self):
-        random.seed(2 + MPI.process_number())
+        random.seed(2 + MPI.rank(mpi_comm_world()))
     def eval(self, values, x):
         values[0] = 0.63 + 0.02*(0.5 - random.random())
         values[1] = 0.0
@@ -42,12 +42,14 @@ class CahnHilliardEquation(NonlinearProblem):
         NonlinearProblem.__init__(self)
         self.L = L
         self.a = a
-        self.reset_sparsity = True
+        self.reset_sparsity_b = True
+        self.reset_sparsity_A = True
     def F(self, b, x):
-        assemble(self.L, tensor=b)
+        assemble(self.L, tensor=b, reset_sparsity=self.reset_sparsity_b)
+        self.reset_sparsity_b = False
     def J(self, A, x):
-        assemble(self.a, tensor=A, reset_sparsity=self.reset_sparsity)
-        self.reset_sparsity = False
+        assemble(self.a, tensor=A, reset_sparsity=self.reset_sparsity_A)
+        self.reset_sparsity_A = False
 
 # Model parameters
 lmbda  = 1.0e-02  # surface parameter
@@ -100,7 +102,8 @@ a = derivative(L, u, du)
 
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
-solver = NewtonSolver("lu")
+solver = NewtonSolver()
+solver.parameters["linear_solver"] = "lu"
 solver.parameters["convergence_criterion"] = "incremental"
 solver.parameters["relative_tolerance"] = 1e-6
 

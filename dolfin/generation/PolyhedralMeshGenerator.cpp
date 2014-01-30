@@ -33,6 +33,10 @@
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/make_mesh_3.h>
 
+#if CGAL_VERSION_NR >= 1040301000
+#include <CGAL/Compact_mesh_cell_base_3.h>
+#endif
+
 // The below two files are from the CGAL demos. Path can be changed
 // once they are included with the CGAL code.
 #include "cgal_triangulate_polyhedron.h"
@@ -64,10 +68,18 @@ typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits,
 typedef CGAL::Mesh_vertex_base_3<Geom_traits, Mesh_domain, Tvb3> Vertex_base;
 
 // CGAL 3D triangulation cell typedefs
+// CGAL 3D triangulation cell typedefs
+#if CGAL_VERSION_NR >= 1040301000
+typedef CGAL::Compact_mesh_cell_base_3<Geom_traits, Mesh_domain> Cb;
+typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits,
+                                                  Cb> Cell_base;
+#else
 typedef CGAL::Triangulation_cell_base_3<Geom_traits> Tcb3_base;
 typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits,
-                                                  Tcb3_base> Tcb3;
-typedef CGAL::Mesh_cell_base_3<Geom_traits, Mesh_domain, Tcb3> Cell_base;
+                                            Tcb3_base> Tcb3;
+typedef CGAL::Mesh_cell_base_3<Geom_traits, Mesh_domain,
+                               Tcb3> Cell_base;
+#endif
 
 // CGAL 3D triangulation typedefs
 typedef CGAL::Triangulation_data_structure_3<Vertex_base, Cell_base> Tds_mesh;
@@ -147,7 +159,7 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
                                        bool detect_sharp_features)
 {
   // Generate CGAL mesh on root process
-  if (MPI::process_number() == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create empty CGAL polyhedron
     Polyhedron p;
@@ -176,7 +188,7 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
                         double cell_size, bool detect_sharp_features)
 {
   // Generate CGAL mesh on root process
-  if (MPI::process_number() == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create empty CGAL polyhedron
     Polyhedron p;
@@ -199,7 +211,7 @@ void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
                          double cell_size, bool detect_sharp_features)
 {
   // Generate CGAL mesh on root process
-  if (MPI::process_number() == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create empty CGAL polyhedron
     Polyhedron p;
@@ -221,7 +233,7 @@ void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
                                                     double cell_size,
                                                     bool detect_sharp_features)
 {
-  if (MPI::num_processes() == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Create empty CGAL polyhedron
     Polyhedron p;

@@ -38,17 +38,6 @@
 
 using namespace dolfin;
 
-class PETScMatNullSpaceDeleter
-{
-public:
-  void operator() (MatNullSpace* ns)
-  {
-    if (*ns)
-      MatNullSpaceDestroy(ns);
-    delete ns;
-  }
-};
-
 // Mapping from preconditioner string to PETSc
 const std::map<std::string, const PCType> PETScPreconditioner::_methods
   = boost::assign::map_list_of("default",          "")
@@ -181,11 +170,14 @@ Parameters PETScPreconditioner::default_parameters()
   p_hypre.add(p_boomeramg);
   p.add(p_hypre);
 
+  // Prefix for setting options
+  p.add("options_prefix", "default");
+
   return p;
 }
 //-----------------------------------------------------------------------------
 PETScPreconditioner::PETScPreconditioner(std::string type)
-  : _type(type), gdim(0)
+  : _type(type), petsc_near_nullspace(NULL), gdim(0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -201,7 +193,8 @@ PETScPreconditioner::PETScPreconditioner(std::string type)
 //-----------------------------------------------------------------------------
 PETScPreconditioner::~PETScPreconditioner()
 {
-  // Do nothing
+  if (petsc_near_nullspace)
+    MatNullSpaceDestroy(&petsc_near_nullspace);
 }
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set(PETScKrylovSolver& solver)
@@ -209,10 +202,9 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   PetscErrorCode ierr;
   dolfin_assert(solver.ksp());
 
-
   // Get PETSc PC pointer
   PC pc;
-  ierr = KSPGetPC(*(solver.ksp()), &pc);
+  ierr = KSPGetPC(solver.ksp(), &pc);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
 
   // Treat special cases  first
@@ -670,10 +662,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   ierr = PCFactorSetLevels(pc, ilu_levels);
   if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetLevels");
 
-  // Make sure options are set
-  ierr = PCSetFromOptions(pc);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetFromOptions");
-
   // Set physical coordinates for row dofs
   if (!_coordinates.empty())
   {
@@ -691,6 +679,18 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   // Clear memory
   _coordinates.clear();
 
+  std::string prefix = std::string(parameters["options_prefix"]);
+  if (prefix != "default")
+  {
+    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    char lastchar = *prefix.rbegin();
+    if (lastchar != '_')
+      prefix += "_";
+
+    PCSetOptionsPrefix(pc, prefix.c_str());
+  }
+  PCSetFromOptions(pc);
+
   // Print preconditioner information
   const bool report = parameters["report"];
   if (report)
@@ -702,7 +702,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   }
 }
 //-----------------------------------------------------------------------------
-void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& nullspace)
+void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& near_nullspace)
 {
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
   dolfin_error("PETScPreconditioner.cpp",
@@ -710,30 +710,30 @@ void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& nullspace)
                "This is supported by PETSc version > 3.2");
   #else
 
-  // Clear nullspace
-  petsc_nullspace.reset();
-  _nullspace.clear();
+  // Clear near nullspace
+  if (petsc_near_nullspace)
+    MatNullSpaceDestroy(&petsc_near_nullspace);
+  _near_nullspace.clear();
 
   // Copy vectors
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  for (std::size_t i = 0; i < near_nullspace.dim(); ++i)
   {
-    dolfin_assert(nullspace[i]);
-    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+    dolfin_assert(near_nullspace[i]);
+    const PETScVector& x = near_nullspace[i]->down_cast<PETScVector>();
 
     // Copy vector
-    _nullspace.push_back(x);
+    _near_nullspace.push_back(x);
   }
 
   // Get pointers to underlying PETSc objects
-  std::vector<Vec> petsc_vec(nullspace.dim());
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-    petsc_vec[i] = *(_nullspace[i].vec().get());
+  std::vector<Vec> petsc_vec(near_nullspace.dim());
+  for (std::size_t i = 0; i < near_nullspace.dim(); ++i)
+    petsc_vec[i] = _near_nullspace[i].vec();
 
   // Create null space
-  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
   PetscErrorCode ierr;
-  ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.dim(),
-                            petsc_vec.data(), petsc_nullspace.get());
+  ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, near_nullspace.dim(),
+                            petsc_vec.data(), &petsc_near_nullspace);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
   #endif
 }
@@ -758,7 +758,7 @@ void PETScPreconditioner::set_fieldsplit(PETScKrylovSolver& solver,
   // Get PETSc PC pointer
   PC pc;
   dolfin_assert(solver.ksp());
-  ierr = KSPGetPC(*(solver.ksp()), &pc);
+  ierr = KSPGetPC(solver.ksp(), &pc);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
 
   // Add split for each field

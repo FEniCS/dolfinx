@@ -57,12 +57,13 @@ typedef CGAL::Polygon_2<K> Polygon_2;
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void PolygonalMeshGenerator::generate(Mesh& mesh,
-                                    const std::vector<Point>& polygon_vertices,
-                                    double cell_size)
+void
+PolygonalMeshGenerator::generate(Mesh& mesh,
+                                 const std::vector<Point>& polygon_vertices,
+                                 double cell_size)
 {
   // Generate CGAL mesh on root process
-  if (MPI::process_number() == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     // Build list of CGAL points
     std::vector<CGAL_Point> cgal_points;
@@ -73,7 +74,7 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
     // Create polygon
     Polygon_2 polygon(cgal_points.begin(), cgal_points.end());
 
-    // Generate mesh
+    // Generate mesh::vet
     generate(mesh, polygon, cell_size);
   }
 

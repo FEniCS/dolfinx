@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-09-02
+// Last changed: 2013-12-09
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -85,7 +85,7 @@ std::size_t TriangleCell::orientation(const Cell& cell) const
   return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+void TriangleCell::create_entities(std::vector<std::vector<unsigned int> >& e,
                                    std::size_t dim, const unsigned int* v) const
 {
   // We only need to know how to create edges
@@ -95,6 +95,12 @@ void TriangleCell::create_entities(std::vector<std::vector<std::size_t> >& e,
                  "create entities of triangle cell",
                  "Don't know how to create entities of topological dimension %d", dim);
   }
+
+  // Resize data structure
+  e.resize(3);
+  e[0].resize(2);
+  e[1].resize(2);
+  e[2].resize(2);
 
   // Create the three edges
   e[0][0] = v[1]; e[0][1] = v[2];
@@ -238,49 +244,56 @@ double TriangleCell::squared_distance(const Point& point,
   // Algorithm from Real-time collision detection by Christer Ericson:
   // ClosestPtPointTriangle on page 141, Section 5.1.5.
   //
+  // Algorithm modified to handle triangles embedded in 3D.
+  //
   // Note: This algorithm actually computes the closest point but we
   // only return the distance to that point.
-  //
-  // Note: This function may be optimized to take into account that
-  // only 2D vectors and inner products need to be computed.
 
-  // Check if point is in vertex region outside A
+  // Compute normal to plane defined by triangle
   const Point ab = b - a;
   const Point ac = c - a;
-  const Point ap = point - a;
+  Point n = ab.cross(ac);
+  n /= n.norm();
+
+  // Subtract projection onto plane
+  const double pn = (point - a).dot(n);
+  const Point p = point - pn*n;
+
+  // Check if point is in vertex region outside A
+  const Point ap = p - a;
   const double d1 = ab.dot(ap);
   const double d2 = ac.dot(ap);
   if (d1 <= 0.0 && d2 <= 0.0)
-    return point.squared_distance(a);
+    return p.squared_distance(a) + pn*pn;
 
   // Check if point is in vertex region outside B
-  const Point bp = point - b;
+  const Point bp = p - b;
   const double d3 = ab.dot(bp);
   const double d4 = ac.dot(bp);
   if (d3 >= 0.0 && d4 <= d3)
-    return point.squared_distance(b);
+    return p.squared_distance(b) + pn*pn;
 
   // Check if point is in edge region of AB and if so compute projection
   const double vc = d1*d4 - d3*d2;
   if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0)
   {
     const double v = d1 / (d1 - d3);
-    return point.squared_distance(a + v*ab);
+    return p.squared_distance(a + v*ab) + pn*pn;
   }
 
   // Check if point is in vertex region outside C
-  const Point cp = point - c;
+  const Point cp = p - c;
   const double d5 = ab.dot(cp);
   const double d6 = ac.dot(cp);
   if (d6 >= 0.0 && d5 <= d6)
-    return point.squared_distance(c);
+    return p.squared_distance(c) + pn*pn;
 
   // Check if point is in edge region of AC and if so compute projection
   const double vb = d5*d2 - d1*d6;
   if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0)
   {
     const double w = d2 / (d2 - d6);
-    return point.squared_distance(a + w*ac);
+    return p.squared_distance(a + w*ac) + pn*pn;
   }
 
   // Check if point is in edge region of BC and if so compute projection
@@ -288,11 +301,11 @@ double TriangleCell::squared_distance(const Point& point,
   if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0)
   {
     const double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-    return point.squared_distance(b + w*(c - b));
+    return p.squared_distance(b + w*(c - b)) + pn*pn;
   }
 
-  // Point is inside triangle so distance is zero
-  return 0.0;
+  // Point is inside triangle so return distance to plane
+  return pn*pn;
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
@@ -461,23 +474,6 @@ void TriangleCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::radius_ratio(const Cell& triangle) const
-{
-  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
-  // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-
-  const double S = volume(triangle);
-
-  // Handle degenerate case
-  if (S == 0.0) {return 0.0;}
-
-  const double a = facet_area(triangle, 0);
-  const double b = facet_area(triangle, 1);
-  const double c = facet_area(triangle, 2);
-
-  return 16.0*S*S / (a*b*c*(a+b+c));
-}
-//-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const Point& point) const
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
@@ -513,10 +509,13 @@ bool TriangleCell::collides(const Cell& cell, const Point& point) const
   const double x1 = inv_det*( a22*b1 - a12*b2);
   const double x2 = inv_det*(-a12*b1 + a11*b2);
 
+  // Tolerance for numeric test (using vector v1)
+  const double dx = std::abs(v1.x());
+  const double dy = std::abs(v1.y());
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*std::max(dx, dy));
+
   // Check if point is inside
-  return (x1 >= -DOLFIN_EPS_LARGE &&
-          x2 >= -DOLFIN_EPS_LARGE &&
-          x1 + x2 <= 1.0 + DOLFIN_EPS_LARGE);
+  return x1 >= -eps && x2 >= -eps && x1 + x2 <= 1.0 + eps;
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
@@ -546,7 +545,7 @@ bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
   // First check if triangles are completely overlapping (necessary
   // since tests below will fail for collinear edges). Note that this
   // test will also cover a few other cases with coinciding midpoints.
-  const double eps2 = DOLFIN_EPS*DOLFIN_EPS;
+  const double eps2 = DOLFIN_EPS_LARGE*DOLFIN_EPS_LARGE*p0.squared_distance(p1);
   if (cell.midpoint().squared_distance(entity.midpoint()) < eps2)
     return true;
 

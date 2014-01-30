@@ -60,6 +60,7 @@ endforeach()
 
 # List of possible locations for PETSC_DIR
 set(petsc_dir_locations "")
+list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.4.2")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.2")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")  # Debian location

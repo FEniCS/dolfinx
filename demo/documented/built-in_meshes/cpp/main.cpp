@@ -26,7 +26,7 @@ using namespace dolfin;
 
 int main()
 {
-  if (dolfin::MPI::num_processes() == 1)
+  if (dolfin::MPI::size(MPI_COMM_WORLD) == 1)
   {
     UnitIntervalMesh interval(10);
     info("Plotting a UnitIntervalMesh");
@@ -57,17 +57,28 @@ int main()
   info("Plotting a RectangleMesh");
   plot(rectangle_right_left, "Rectangle (right/left)");
 
-  UnitCircleMesh circle_rotsumn(20, "right", "rotsumn");
-  info("Plotting a UnitCircleMesh");
-  plot(circle_rotsumn, "Unit circle (rotsum)");
+  #ifdef HAS_CGAL
+  CircleMesh circle_mesh(Point(0.0, 0.0), 1.0, 0.2);
+  info("Plotting a CircleMesh");
+  plot(circle_mesh, "Circle (unstructured)");
 
-  //UnitCircleMesh circle_sumn(20, "left", "sumn");
-  //info("Plotting a UnitCircle");
-  //plot(circle_sumn, "Unit circle (sumn)");
+  std::vector<double> ellipse_dims(2);
+  ellipse_dims[0] = 3.0; ellipse_dims[1] = 1.0;
+  EllipseMesh ellipse_mesh(Point(0.0, 0.0), ellipse_dims, 0.2);
+  info("Plotting an EllipseMesh");
+  plot(ellipse_mesh, "Ellipse mesh (unstructured)");
 
-  UnitCircleMesh circle_maxn(20, "right", "maxn");
-  info("Plotting a UnitCircleMesh");
-  plot(circle_maxn, "Unit circle (maxn)");
+  SphereMesh sphere_mesh(Point(0.0, 0.0, 0.0), 1.0, 0.2);
+  info("Plotting a SphereMesh");
+  plot(sphere_mesh, "Sphere mesh (unstructured)");
+
+  std::vector<double> ellipsoid_dims(3);
+  ellipsoid_dims[0] = 3.0; ellipsoid_dims[1] = 1.0; ellipsoid_dims[2] = 2.0;
+  EllipsoidMesh ellipsoid_mesh(Point(0.0, 0.0, 0.0), ellipsoid_dims, 0.2);
+  info("Plotting an EllipsoidMesh");
+  plot(ellipsoid_mesh, "Ellipsoid mesh (unstructured)");
+  #endif
+
 
   UnitCubeMesh cube(10, 10, 10);
   info("Plotting a UnitCubeMesh");

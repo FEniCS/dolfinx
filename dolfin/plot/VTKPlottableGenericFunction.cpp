@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-11-12
+// Last changed: 2013-11-15
 
 #ifdef HAS_VTK
 
@@ -50,8 +50,7 @@ VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const
 //----------------------------------------------------------------------------
 VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const Expression> expression,
                                                          boost::shared_ptr<const Mesh> mesh)
-  : VTKPlottableMesh(mesh),
-    _function(expression)
+  : VTKPlottableMesh(mesh), _function(expression)
 {
   // Do nothing
 }
@@ -64,17 +63,19 @@ std::size_t VTKPlottableGenericFunction::value_rank() const
 void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
 {
   _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
+  // Required in VTK6.0/6.1, default and XYPlaneOn() doesn't work
+  _warpscalar->UseNormalOn();
+  _warpscalar->SetNormal(0, 0, 1);
   _warpvector = vtkSmartPointer<vtkWarpVector>::New();
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
+  _mode = (std::string)p["mode"];
 
   VTKPlottableMesh::init_pipeline(p);
-
-  _mode = (std::string)p["mode"];
 
   switch (_function->value_rank())
   {
     // Setup pipeline for scalar functions
-  case 0:
+    case 0:
     {
       if (mesh()->topology().dim() < 3)
       {
@@ -116,7 +117,7 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
 
     // Setup pipeline for vector functions. Everything is set up except the
     // mapper
-  case 1:
+    case 1:
     {
       if (_mode == "auto")
       {
@@ -144,8 +145,8 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
       arrow->SetShaftRadius(0.05);
       arrow->SetShaftResolution(16);
 
-      // Create the glyph object, set source (the arrow) and input (the grid) and
-      // adjust various parameters
+      // Create the glyph object, set source (the arrow) and input
+      // (the grid) and adjust various parameters
       _glyphs->SetSourceConnection(arrow->GetOutputPort());
       #if VTK_MAJOR_VERSION <= 5
       _glyphs->SetInput(grid());
@@ -157,11 +158,11 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
       _glyphs->SetColorModeToColorByVector();
     }
     break;
-  default:
+    default:
     {
-    dolfin_error("VTKPlotter.cpp",
-                 "plot function of rank > 2.",
-                 "Plotting of higher order functions is not supported.");
+      dolfin_error("VTKPlotter.cpp",
+                   "plot function of rank > 2.",
+                   "Plotting of higher order functions is not supported.");
     }
   }
 }
@@ -169,12 +170,14 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
 bool VTKPlottableGenericFunction::is_compatible(const Variable &var) const
 {
   const GenericFunction *function(dynamic_cast<const Function*>(&var));
-  const ExpressionWrapper *wrapper(dynamic_cast<const ExpressionWrapper*>(&var));
+  const ExpressionWrapper
+    *wrapper(dynamic_cast<const ExpressionWrapper*>(&var));
   const Mesh *mesh(NULL);
 
   if (function)
   {
-    mesh = static_cast<const Function*>(function)->function_space()->mesh().get();
+    mesh
+      = static_cast<const Function*>(function)->function_space()->mesh().get();
   }
   else if (wrapper)
   {
@@ -182,10 +185,10 @@ bool VTKPlottableGenericFunction::is_compatible(const Variable &var) const
     mesh = wrapper->mesh().get();
   }
   else
-  {
     return false;
-  }
-  if (function->value_rank() > 1 || (function->value_rank() == 0) != !_glyphs->GetInput())
+
+  if (function->value_rank() > 1 || (function->value_rank() == 0)
+      != !_glyphs->GetInput())
   {
     return false;
   }
@@ -198,8 +201,10 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
   boost::shared_ptr<const Mesh> mesh = VTKPlottableMesh::mesh();
   if (var)
   {
-    boost::shared_ptr<const Function> function(boost::dynamic_pointer_cast<const Function>(var));
-    boost::shared_ptr<const ExpressionWrapper> wrapper(boost::dynamic_pointer_cast<const ExpressionWrapper>(var));
+    boost::shared_ptr<const Function>
+      function(boost::dynamic_pointer_cast<const Function>(var));
+    boost::shared_ptr<const ExpressionWrapper>
+      wrapper(boost::dynamic_pointer_cast<const ExpressionWrapper>(var));
     dolfin_assert(function || wrapper);
     if (function)
     {
@@ -218,8 +223,8 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
 
   // Update the values on the mesh
   const Function *func = dynamic_cast<const Function *>(_function.get());
-  if (func && func->vector()->local_size() == (std::size_t)grid()->GetNumberOfCells()
-      && dim() > 1)
+  if (func && func->vector()->local_size()
+      == (std::size_t)grid()->GetNumberOfCells() && dim() > 1)
   {
     // Hack to display DG0 functions. Should really be implemented using
     // duplicate points (one point per vertex per cell), so that warping.
@@ -234,6 +239,23 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
   {
     std::vector<double> vertex_values;
     _function->compute_vertex_values(vertex_values, *mesh);
+    if (dim() == 1)
+    {
+      // Sort 1D data on x-coordinate because vtkXYPlotActor does not
+      // recognise cell connectivity information
+      std::vector<std::pair<double, double> > point_value;
+      VertexIterator v(*mesh);
+      for(std::size_t i = 0; i < vertex_values.size(); ++i)
+      {
+        const double xpos = v[i].point().x();
+        point_value.push_back(std::make_pair(xpos, vertex_values[i]));
+      }
+
+      std::sort(point_value.begin(), point_value.end());
+      for(std::size_t i = 0; i < vertex_values.size(); ++i)
+        vertex_values[i] = point_value[i].second;
+    }
+
     setPointValues(vertex_values.size(), &vertex_values[0], p);
   }
 }
@@ -241,17 +263,18 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
 void VTKPlottableGenericFunction::rescale(double range[2], const Parameters& p)
 {
   const double scale = p["scale"];
-
   const double* bounds = grid()->GetBounds();
-  const double length[3] = {bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4]};
+  const double length[3]
+    = {bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4]};
 
-  const double bbox_diag = std::sqrt(length[0]*length[0] + length[1]*length[1] + length[2]*length[2]);
+  const double bbox_diag = std::sqrt(length[0]*length[0] + length[1]*length[1]
+                                     + length[2]*length[2]);
 
   // The scale for displacements is absolute
   _warpvector->SetScaleFactor(scale);
 
-  // Compute the scale for vector glyphs, so that the longest arrows cover
-  // about two cells
+  // Compute the scale for vector glyphs, so that the longest arrows
+  // cover about two cells
   double vector_scale = scale * mesh()->hmax() * 2.0;
   vector_scale /= (range[1] > 0 ? range[1] : 1.0);
 
@@ -259,7 +282,7 @@ void VTKPlottableGenericFunction::rescale(double range[2], const Parameters& p)
 
   // Set the default warp such that the max warp is one sixth of the
   // diagonal of the mesh
-  double scalar_scale = scale * bbox_diag / 6.0;
+  double scalar_scale = scale*bbox_diag/6.0;
   scalar_scale /= (range[1] > range[0] ? range[1] - range[0] : 1.0);
 
   _warpscalar->SetScaleFactor(scalar_scale);
@@ -271,41 +294,39 @@ void VTKPlottableGenericFunction::update_range(double range[2])
   VTKPlottableMesh::update_range(range);
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() const
+vtkSmartPointer<vtkAlgorithmOutput>
+VTKPlottableGenericFunction::get_output() const
 {
   // In the 3D glyph case, return the glyphs' output
   if (_function->value_rank() == 1 && _mode == "glyphs")
-  {
     return _glyphs->GetOutputPort();
-  }
   else
-  {
     return VTKPlottableMesh::get_output();
-  }
 }
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const Function> function)
+VTKPlottableGenericFunction*
+dolfin::CreateVTKPlottable(boost::shared_ptr<const Function> function)
 {
   if (function->function_space()->mesh()->topology().dim() == 1)
-  {
     return new VTKPlottableGenericFunction1D(function);
-  }
-  return new VTKPlottableGenericFunction(function);
+  else
+    return new VTKPlottableGenericFunction(function);
 }
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper> wrapper)
+VTKPlottableGenericFunction*
+dolfin::CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper> wrapper)
 {
   return CreateVTKPlottable(wrapper->expression(), wrapper->mesh());
 }
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const Expression> expr,
-                                                        boost::shared_ptr<const Mesh> mesh)
+VTKPlottableGenericFunction*
+dolfin::CreateVTKPlottable(boost::shared_ptr<const Expression> expr,
+                           boost::shared_ptr<const Mesh> mesh)
 {
   if (mesh->topology().dim() == 1)
-  {
     return new VTKPlottableGenericFunction1D(expr, mesh);
-  }
-  return new VTKPlottableGenericFunction(expr, mesh);
+  else
+    return new VTKPlottableGenericFunction(expr, mesh);
 }
-
+//----------------------------------------------------------------------------
 #endif

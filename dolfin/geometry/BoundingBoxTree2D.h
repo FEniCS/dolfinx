@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-08-12
+// Last changed: 2013-11-30
 
 #ifndef __BOUNDING_BOX_TREE_2D_H
 #define __BOUNDING_BOX_TREE_2D_H
@@ -77,16 +77,20 @@ namespace dolfin
     bool point_in_bbox(const double* x, unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 4*node;
-      return (b[0] - DOLFIN_EPS <= x[0] && x[0] <= b[2] + DOLFIN_EPS &&
-              b[1] - DOLFIN_EPS <= x[1] && x[1] <= b[3] + DOLFIN_EPS);
+      const double eps0 = DOLFIN_EPS_LARGE*(b[2] - b[0]);
+      const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
+      return (b[0] - eps0 <= x[0] && x[0] <= b[2] + eps0 &&
+              b[1] - eps1 <= x[1] && x[1] <= b[3] + eps1);
     }
 
-    // Check whether bounding box (a) is in bounding box (node)
+    // Check whether bounding box (a) collides with bounding box (node)
     bool bbox_in_bbox(const double* a, unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 4*node;
-      return (a[0] <= b[2] + DOLFIN_EPS && b[0] <= a[2] + DOLFIN_EPS &&
-              a[1] <= b[3] + DOLFIN_EPS && b[1] <= a[3] + DOLFIN_EPS);
+      const double eps0 = DOLFIN_EPS_LARGE*(b[2] - b[0]);
+      const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
+      return (b[0] - eps0 <= a[2] && a[0] <= b[2] + eps0 &&
+              b[1] - eps1 <= a[3] && a[1] <= b[3] + eps1);
     }
 
     // Compute squared distance between point and bounding box
@@ -135,7 +139,7 @@ namespace dolfin
       bbox[3] = b[3];
 
       // Compute min and max over remaining boxes
-      for (; it != end; ++it)
+      for (++it; it != end; ++it)
       {
         const double* b = leaf_bboxes.data() + 4*(*it);
         if (b[0] < bbox[0]) bbox[0] = b[0];

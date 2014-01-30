@@ -24,7 +24,6 @@
 #include <dolfin/mesh/DynamicMeshEditor.h>
 #include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/MeshColoring.h>
 #include <dolfin/mesh/MeshRenumbering.h>
@@ -36,5 +35,6 @@
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
+#include <dolfin/mesh/MeshQuality.h>
 
 #endif

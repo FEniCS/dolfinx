@@ -15,13 +15,24 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg, 2011
+// Modified by Garth N. Wells, 2013
 //
 // First added:  2011-10-15
-// Last changed: 2011-10-21
+// Last changed: 2013-11-01
 
 #include <dolfin/common/defines.h>
 
+//-------------------------------------------------------------------------
+std::string dolfin::dolfin_version()
+{
+  return std::string(DOLFIN_VERSION);
+}
+//-------------------------------------------------------------------------
+std::string dolfin::git_commit_hash()
+{
+  return std::string(DOLFIN_GIT_COMMIT_HASH);
+}
 //-------------------------------------------------------------------------
 bool dolfin::has_openmp()
 {
@@ -41,18 +52,18 @@ bool dolfin::has_mpi()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_slepc()
+bool dolfin::has_petsc()
 {
-#ifdef HAS_SLEPC
+#ifdef HAS_PETSC
   return true;
 #else
   return false;
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_petsc4py()
+bool dolfin::has_slepc()
 {
-#ifdef HAS_PETSC4PY
+#ifdef HAS_SLEPC
   return true;
 #else
   return false;

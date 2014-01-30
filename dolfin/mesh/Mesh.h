@@ -35,9 +35,10 @@
 #include <utility>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/ale/MeshDisplacement.h>
+#include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
 #include "MeshData.h"
 #include "MeshDomains.h"
 #include "MeshGeometry.h"
@@ -98,6 +99,9 @@ namespace dolfin
     /// Create empty mesh
     Mesh();
 
+    /// Create empty mesh
+    Mesh(MPI_Comm comm);
+
     /// Copy constructor.
     ///
     /// *Arguments*
@@ -112,12 +116,23 @@ namespace dolfin
     ///         Name of file to load.
     explicit Mesh(std::string filename);
 
+    /// Create mesh from data file.
+    ///
+    /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         The MPI communicator
+    ///     filename (std::string)
+    ///         Name of file to load.
+    Mesh(MPI_Comm comm, std::string filename);
+
     /// Create a distributed mesh from local (per process) data.
     ///
     /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         MPI communicator for the mesh.
     ///     local_mesh_data (_LocalMeshData_)
     ///         Data from which to build the mesh.
-    explicit Mesh(LocalMeshData& local_mesh_data);
+    Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
@@ -592,36 +607,6 @@ namespace dolfin
     ///         No example code available for this function.
     double rmax() const;
 
-    /// Compute minimum normalized radius ratio of cells.
-    ///
-    /// *Returns*
-    ///     double
-    ///         The minimum over cells of normalized cell
-    ///         radius ratio (which is = cell_dimension *
-    ///         * inradius / circumradius; cell_dimension
-    ///         is normalization factor).
-    ///
-    /// *Example*
-    ///     .. note::
-    ///
-    ///         No example code available for this function.
-    double radius_ratio_min() const;
-
-    /// Compute maximum normalized radius ratio of cells.
-    ///
-    /// *Returns*
-    ///     double
-    ///         The maximum over cells of normalized cell
-    ///         radius ratio (which is = cell_dimension *
-    ///         * inradius / circumradius; cell_dimension
-    ///         is normalization factor).
-    ///
-    /// *Example*
-    ///     .. note::
-    ///
-    ///         No example code available for this function.
-    double radius_ratio_max() const;
-
     /// Compute hash of mesh, currently based on the has of the mesh
     /// geometry and mesh topology.
     ///
@@ -670,6 +655,10 @@ namespace dolfin
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
 
+    /// Mesh MPI communicator
+    MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
   private:
 
     // Friends
@@ -703,6 +692,9 @@ namespace dolfin
 
     // Orientation of cells relative to a global direction
     std::vector<int> _cell_orientations;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 }

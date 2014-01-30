@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-07-10
+// Last changed: 2014-01-30
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
 
 #include <vector>
 #include <set>
+#include <Eigen/Dense>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
@@ -58,13 +59,12 @@ namespace dolfin
     void step_interval(double t0, double t1, double dt);
 
     /// Return the MultiStageScheme
-    boost::shared_ptr<MultiStageScheme> scheme()const
-    {return _scheme;}
+    boost::shared_ptr<MultiStageScheme> scheme() const
+    { return _scheme; }
 
     /// Default parameter values
     static Parameters default_parameters()
     {
-      
       Parameters p("point_integral_solver");
 
       p.add("reset_stage_solutions", false);
@@ -90,6 +90,7 @@ namespace dolfin
       p("newton_solver").add("max_relative_residual", 1e-1, 1e-5, 0.5);
       p("newton_solver")["absolute_tolerance"].set_range(1e-20,1e-1);
       p("newton_solver").add("reset_each_step", false);
+      p("newton_solver")["report"] = false;
 
       return p;
     }
@@ -131,7 +132,9 @@ namespace dolfin
     // Compute jacobian using passed UFC form
     void _compute_jacobian(std::vector<double>& jac, const std::vector<double>& u, 
 			   unsigned int local_vert, UFC& loc_ufc, 
-			   const Cell& cell, int coefficient_index);
+			   const Cell& cell, const ufc::cell& ufc_cell, 
+			   int coefficient_index,
+			   const std::vector<double>& vertex_coordinates);
     
     // Compute the norm of a vector
     double _norm(const std::vector<double>& vec) const;
@@ -148,17 +151,18 @@ namespace dolfin
     void _init();
 
     // Solve an explicit stage
-    void _solve_explicit_stage(std::size_t vert_ind, unsigned int stage);
+    void _solve_explicit_stage(std::size_t vert_ind, unsigned int stage, 
+			       const std::vector<double>& vertex_coordinates);
 
     // Solve an implicit stage
     void _solve_implicit_stage(std::size_t vert_ind, unsigned int stage,
-			       const Cell& cell);
+			       const Cell& cell, const ufc::cell& ufc_cell,
+			       const std::vector<double>& vertex_coordinates);
 
     convergence_criteria_t _simplified_newton_solve(std::vector<double>& u, 
-						    std::size_t vert_ind, 
-						    UFC& loc_ufc, 
-						    int coefficient_index, 
-						    const Cell& cell);
+			     std::size_t vert_ind, UFC& loc_ufc, 
+			     int coefficient_index, const Cell& cell,
+			     const std::vector<double>& vertex_coordinates);
 
     // The MultiStageScheme
     boost::shared_ptr<MultiStageScheme> _scheme;
@@ -214,6 +218,9 @@ namespace dolfin
     // Variable used in the estimation of the error of the newton 
     // iteration for the first iteration (Important for linear problems!)
     double _eta;
+
+    // Flag for retabulation of J
+    bool _retabulate_J;
 
     // Number of computations of Jacobian
     unsigned int _num_jacobian_computations;

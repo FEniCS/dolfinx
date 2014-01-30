@@ -26,19 +26,19 @@ from dolfin import *
 class MeshRefinement(unittest.TestCase):
 
     def test_uniform_refine1D(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitIntervalMesh(2)
-            mesh2 = refine(mesh)
-            self.assertEqual(mesh.hmax(), 0.5)
-            self.assertEqual(mesh2.hmax(), 0.25)
+            mesh = UnitIntervalMesh(20)
+
+            # Distributed refinment in 1D is not supported
+            if (MPI.size(mesh.mpi_comm()) == 1):
+                mesh2 = refine(mesh)
+                self.assertAlmostEqual(mesh.hmax(), 0.05)
+                self.assertAlmostEqual(mesh2.hmax(), 0.025)
 
     def test_uniform_refine2D(self):
-        if MPI.num_processes() == 1:
             mesh = UnitSquareMesh(4, 6)
             mesh = refine(mesh)
 
     def test_uniform_refine3D(self):
-        if MPI.num_processes() == 1:
             mesh = UnitCubeMesh(4, 4, 6)
             mesh = refine(mesh)
 

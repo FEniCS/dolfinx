@@ -25,10 +25,9 @@
 
 from dolfin import *
 
-if MPI.num_processes() == 1:
-    mesh = UnitIntervalMesh(10)
-    print "Plotting a UnitIntervalMesh"
-    plot(mesh, title="Unit interval")
+mesh = UnitIntervalMesh(10)
+print "Plotting a UnitIntervalMesh"
+plot(mesh, title="Unit interval")
 
 mesh = UnitSquareMesh(10, 10)
 print "Plotting a UnitSquareMesh"
@@ -54,17 +53,10 @@ mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
 print "Plotting a RectangleMesh"
 plot(mesh, title="Rectangle (right/left)")
 
-mesh = UnitCircleMesh(20, "right", "rotsumn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (rotsum)")
-
-#mesh = UnitCircleMesh(20, "left", "sumn")
-#print "Plotting a UnitCircle"
-#plot(mesh, title="Unit circle (sumn)")
-
-mesh = UnitCircleMesh(20, "right", "maxn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (maxn)")
+if has_cgal():
+    mesh = CircleMesh(Point(0.0, 0.0), 1.0, 1.0/20.0)
+    print "Plotting a CircleMesh"
+    plot(mesh, title="Unit circle")
 
 mesh = UnitCubeMesh(10, 10, 10)
 print "Plotting a UnitCubeMesh"

@@ -40,30 +40,32 @@ int main(int argc, char* argv[])
   UnitCubeMesh mesh(n, n, n);
   Poisson::FunctionSpace V(mesh);
 
+  const MPI_Comm comm = mesh.mpi_comm();
+
   // Assemble matrix
   Poisson::BilinearForm a(V, V);
   Matrix A;
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   double t = time();
   Assembler assembler;
   assembler.assemble(A, a);
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   t = time() - t;
 
   // Report timing
-  if (dolfin::MPI::process_number() == 0)
+  if (dolfin::MPI::rank(comm) == 0)
     info("TIME (first assembly): %.5g", t);
 
   // Re-assemble matrix
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   t = time();
   assembler.reset_sparsity = false;
   assembler.assemble(A, a);
-  dolfin::MPI::barrier();
+  dolfin::MPI::barrier(comm);
   t = time() - t;
 
   // Report timing
-  if (dolfin::MPI::process_number() == 0)
+  if (dolfin::MPI::rank(comm) == 0)
     info("TIME (second assembly): %.5g", t);
 
   return 0;

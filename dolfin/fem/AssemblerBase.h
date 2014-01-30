@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-06
+// Last changed: 2013-09-19
 
 #ifndef __ASSEMBLER_BASE_H
 #define __ASSEMBLER_BASE_H
@@ -44,8 +44,11 @@ namespace dolfin
   public:
 
     // Check form
-    AssemblerBase() : reset_sparsity(true), add_values(false),
-        finalize_tensor(true), keep_diagonal(false) {}
+    AssemblerBase() :
+      reset_sparsity(true),
+      add_values(false),
+      finalize_tensor(true),
+      keep_diagonal(false) {}
 
     /// reset_sparsity (bool)
     ///     Default value is true.
@@ -77,10 +80,6 @@ namespace dolfin
     void init_global_tensor(GenericTensor& A, const Form& a);
 
   protected:
-
-    // Check for compatibility of reset_sparsity, add_values,
-    // finalize_tensor and keep_diagonal
-    void check_parameters() const;
 
     // Check form
     static void check(const Form& a);

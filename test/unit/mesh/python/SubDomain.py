@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2013-06-24 
-# Last changed: 2013-06-24 
+# First added:  2013-06-24
+# Last changed: 2013-06-24
 
 import unittest
 import numpy as np
@@ -32,7 +32,7 @@ class SubDomainTester(unittest.TestCase):
 
         def wrongDefaultType():
             CompiledSubDomain("a", a="1")
-                
+
         def wrongParameterNames():
             CompiledSubDomain("long", str=1.0)
 
@@ -41,7 +41,7 @@ class SubDomainTester(unittest.TestCase):
         self.assertRaises(RuntimeError, wrongParameterNames)
 
     def test_creation_and_marking(self):
-        
+
         class Left(SubDomain):
             def inside(self, x, on_boundary):
                 return x[0] < DOLFIN_EPS
@@ -49,20 +49,22 @@ class SubDomainTester(unittest.TestCase):
         class Right(SubDomain):
             def inside(self, x, on_boundary):
                 return x[0] > 1.0 - DOLFIN_EPS
-        
+
         subdomain_pairs = [(Left(), Right()),
                            (AutoSubDomain(\
                                lambda x, on_boundary: x[0] < DOLFIN_EPS),
                             AutoSubDomain(\
                                 lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
                            (CompiledSubDomain("near(x[0], a)", a = 0.0),
-                            CompiledSubDomain("near(x[0], a)", a = 1.0))]
-        
+                            CompiledSubDomain("near(x[0], a)", a = 1.0)),
+                           (CompiledSubDomain("near(x[0], 0.0)"),
+                            CompiledSubDomain("near(x[0], 1.0)"))]
+
         for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
             dim = ind+1
             args = [10]*dim
             mesh = MeshClass(*args)
-            
+
             mesh.init()
 
             for left, right in subdomain_pairs:
@@ -71,10 +73,10 @@ class SubDomainTester(unittest.TestCase):
                                         (FacetFunction, dim-1),
                                         (CellFunction, dim)]:
                     f = MeshFunc("size_t", mesh, 0)
-                
+
                     left.mark(f, 1)
                     right.mark(f, 2)
-                    
+
                     correct = {(1,0):1,
                                (1,0):1,
                                (1,1):0,
@@ -89,10 +91,10 @@ class SubDomainTester(unittest.TestCase):
                     # correct number (it can be larger in parallel)
                     self.assertTrue(all(value >= correct[dim, f_dim]
                                         for value in [
-                                            MPI.sum(float((f.array()==2).sum())),
-                                            MPI.sum(float((f.array()==1).sum())),
+                                            MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
+                                            MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
                                             ]))
-                    
-                    
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-06-21
+// Last changed: 2013-10-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -29,8 +29,9 @@
 #include <utility>
 #include <vector>
 
-#include "dolfin/common/MPI.h"
-#include "dolfin/common/Variable.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
+#include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -42,18 +43,22 @@ namespace dolfin
   class Mesh;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
+  class HDF5Attribute;
 
   class HDF5File : public Variable
   {
   public:
 
-    /// Constructor. file_mode should "a" (append), "w" (write) ot "r"
+    /// Constructor. file_mode should "a" (append), "w" (write) or "r"
     /// (read).
-    HDF5File(const std::string filename, const std::string file_mode,
-             bool use_mpiio=true);
+    HDF5File(MPI_Comm comm, const std::string filename,
+             const std::string file_mode);
 
     /// Destructor
     ~HDF5File();
+
+    /// Close file
+    void close();
 
     /// Write Vector to file in a format suitable for re-reading
     void write(const GenericVector& x, const std::string name);
@@ -61,7 +66,6 @@ namespace dolfin
     /// Read vector from file
     void read(GenericVector& x, const std::string dataset_name,
               const bool use_partition_from_file = true) const;
-
 
     /// Write Mesh to file in a format suitable for re-reading
     void write(const Mesh& mesh, const std::string name);
@@ -73,6 +77,9 @@ namespace dolfin
 
     /// Write Function to file in a format suitable for re-reading
     void write(const Function& u, const std::string name);
+
+    /// Write Function to file with a timestamp
+    void write(const Function& u, const std::string name, double timestamp);
 
     /// Read Function from file and distribute data according to
     /// the Mesh and dofmap associated with the Function
@@ -137,6 +144,9 @@ namespace dolfin
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
 
+    // Get/set attributes of an existing dataset
+    HDF5Attribute attributes(const std::string dataset_name);
+
     /// Flush buffered I/O to disk
     void flush();
 
@@ -171,21 +181,24 @@ namespace dolfin
     template <typename T>
     void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
-                    const std::vector<std::size_t> global_size);
+                    const std::vector<std::size_t> global_size,
+                    bool use_mpi_io);
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
     hid_t hdf5_file_id;
 
-    // Parallel mode
-    const bool mpi_io;
+    // MPI communicator
+    MPI_Comm _mpi_comm;
   };
 
   //---------------------------------------------------------------------------
+  // Needs to go here, because of use in XDMFFile.cpp
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
-                            const std::vector<std::size_t> global_size)
+                            const std::vector<std::size_t> global_size,
+                            bool use_mpi_io)
   {
     dolfin_assert(hdf5_file_open);
     dolfin_assert(global_size.size() > 0);
@@ -197,14 +210,15 @@ namespace dolfin
     num_local_items = data.size()/num_local_items;
 
     // Compute offset
-    const std::size_t offset = MPI::global_offset(num_local_items, true);
+    const std::size_t offset = MPI::global_offset(_mpi_comm, num_local_items,
+                                                  true);
     std::pair<std::size_t, std::size_t> range(offset,
                                               offset + num_local_items);
 
     // Write data to HDF5 file
     const bool chunking = parameters["chunking"];
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
-                                 range, global_size, mpi_io, chunking);
+                                 range, global_size, use_mpi_io, chunking);
   }
   //---------------------------------------------------------------------------
 

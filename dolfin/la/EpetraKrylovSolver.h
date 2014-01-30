@@ -60,7 +60,8 @@ namespace dolfin
     EpetraKrylovSolver(std::string method = "default",
                        std::string preconditioner = "default");
 
-    /// Create Krylov solver for a particular method and TrilinosPreconditioner
+    /// Create Krylov solver for a particular method and
+    /// TrilinosPreconditioner
     EpetraKrylovSolver(std::string method,
                        TrilinosPreconditioner& preconditioner);
 

@@ -5,3 +5,26 @@ This directory contains unit tests for the FEniCS book:
 
 These tests ensure that the examples presented in the book
 continue to work with future versions of DOLFIN.
+
+When we do need to break the unit tests for the book, those changes
+should be listeed in this file:
+
+* DOLFIN 1.3:
+  - Move parameter "linear_solver" from NonlinearVariationalSolver
+  to NewtonSolver and PETScSNESSolver.
+
+  - python/chapter_1_files/stationary/nonlinear_poisson/vp1_np.py: change parameters
+  - python/chapter_1_files/stationary/nonlinear_poisson/vp2_np.py: change parameters
+  - python/chapter_10.py: change parameters
+
+
+* DOLFIN 1.4:
+  - python/chapter_1.py: change "UnitFoo -> UnitFooMesh
+  - python/chapter_1.py: change "UnitCirle -> CircleMesh
+  - python/chapter_10.py: change UnitSquare -> UnitSquareMesh
+  - python/chapter_10.py: change UnitCube -> UnitCubeMesh
+  - python/chapter_10.py: change "uint" -> "size_t" in MeshFunctions
+  - Add MPI communicator to vectors
+  - Change UnitSquare to UnitSquareMesh
+  - Change 'uint' to 'size_t' for MeshFunctions
+  - Add global vertex/cell number to MeshEditor::init_vertices/cells

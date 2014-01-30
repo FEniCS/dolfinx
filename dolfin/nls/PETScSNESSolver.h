@@ -19,7 +19,7 @@
 // Modified by Corrado Maurini, 2013.
 //
 // First added:  2012-10-13
-// Last changed: 2013-03-20
+// Last changed: 2013-11-21
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -96,37 +96,38 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
-    /// Update the linear solver with the Parameters for a linear solver
-    void set_linear_solver_parameters(Parameters ksp_parameters);
-
     Parameters parameters;
 
     /// Return PETSc SNES pointer
-    boost::shared_ptr<SNES> snes() const
+    SNES snes() const
     { return _snes; }
 
   private:
 
-    /// PETSc solver pointer
-    boost::shared_ptr<SNES> _snes;
+    // PETSc solver pointer
+    SNES _snes;
 
-    /// Initialize SNES solver
+    // Initialize SNES solver
     void init(const std::string& method);
 
-    /// Available solvers
+    // Update the linear solver parameters
+    void set_linear_solver_parameters();
+
+    // Available solvers
     static const std::map<std::string,
       std::pair<std::string, const SNESType> > _methods;
 
-    /// The callback for PETSc to compute F, the nonlinear residual
+    // The callback for PETSc to compute F, the nonlinear residual
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);
 
-    /// The callback for PETSc to compute A, the Jacobian
+    // The callback for PETSc to compute A, the Jacobian
     static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
                                        MatStructure* flag, void* ctx);
 
-    /// Set the bounds on the problem from the parameters, if desired
-    /// Here, x is passed in as a model vector from which we make our Vecs
-    /// that tell PETSc the bounds if the "sign" parameter is used.
+    // Set the bounds on the problem from the parameters, if desired
+    // Here, x is passed in as a model vector from which we make our
+    // Vecs that tell PETSc the bounds if the "sign" parameter is
+    // used.
     void set_bounds(GenericVector& x);
 
     // Check if the problem is a variational inequality

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-24
+// Last changed: 2014-01-30
 
 #include <sstream>
 #include <boost/shared_ptr.hpp>
@@ -67,7 +67,8 @@ MultiStageScheme::MultiStageScheme(
   _check_arguments();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<boost::shared_ptr<const Form> > >& MultiStageScheme::stage_forms()
+std::vector<std::vector<boost::shared_ptr<const Form> > >&
+MultiStageScheme::stage_forms()
 {
   return _stage_forms;
 }
@@ -170,7 +171,6 @@ void MultiStageScheme::_check_arguments()
   // Check number of passed stage forms
   for (unsigned int i=0; i < _stage_forms.size();i++)
   {
-    
     // Check solution is in the same space as the stage solution
     if (!_u->in(*_stage_solutions[i]->function_space()))
     {
@@ -186,7 +186,7 @@ void MultiStageScheme::_check_arguments()
 		   "construct MultiStageScheme",
 		   "Expecting stage_forms to only include vectors of size 1 or 2");
     }
-    
+
     // Check if Scheme is implicit
     if (_stage_forms[i].size()==2)
     {
@@ -209,7 +209,7 @@ void MultiStageScheme::_check_arguments()
 		     "Expecting the left-hand side of stage form %d to be a "\
 		     "linear form (not rank %d)", i, _stage_forms[i][1]->rank());
       }
-      
+
       // Check that function space of solution variable matches trial space
       if (!_stage_solutions[i]->in(*_stage_forms[i][1]->function_space(1)))
       {
@@ -218,12 +218,10 @@ void MultiStageScheme::_check_arguments()
 		     "Expecting the stage solution %d to be a member of the "
 		     "trial space of stage form %d", i, i);
       }
-      
     }
     else
     {
-
-      // Check explicit stage form 
+      // Check explicit stage form
       if (_stage_forms[i][0]->rank() != 1)
       {
 	dolfin_error("MultiStageScheme.cpp",

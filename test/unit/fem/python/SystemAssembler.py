@@ -128,11 +128,12 @@ class TestSystemAssembler(unittest.TestCase):
 
     def test_facet_assembly(self):
 
-        if MPI.num_processes() > 1:
+        mesh = UnitSquareMesh(24, 24)
+
+        if MPI.size(mesh.mpi_comm()) > 1:
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
-        mesh = UnitSquareMesh(24, 24)
         V = FunctionSpace(mesh, "DG", 1)
 
         # Define test and trial functions
@@ -224,6 +225,68 @@ class TestSystemAssembler(unittest.TestCase):
             u.update()
             error = norm(u.vector(), 'linf')
             self.assertAlmostEqual(error, 0.0)
+
+    def test_domains(self):
+
+        if MPI.size(mpi_comm_world()) > 1:
+            print "FIXME: This unit test does not work in parallel, skipping"
+            return
+
+        class RightSubDomain(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] > 0.5
+
+        mesh = UnitSquareMesh(24, 24)
+
+        sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
+        sub_domains.set_all(1)
+        right = RightSubDomain()
+        right.mark(sub_domains, 2)
+
+        V = FunctionSpace(mesh, "DG", 1)
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        # the numerical answer (initialized to some number)
+        x = Function(V)
+        x.vector()[:] = 30.0
+        x.update()
+
+        dx = Measure("dx")[sub_domains]
+        # the forms
+        a = v*u*dx(1) + 2*v*u*dx(2)
+        L = v*Constant(1.0)*dx(1) + v*Constant(2.0)*dx(2)
+        # test cell-wise assembly
+        assembler = SystemAssembler(a, L)
+
+        A0 = Matrix()
+        b = Vector()
+        assembler.assemble(A0, b)
+
+        solve(A0, x.vector(), b)
+
+        # check solution
+        x.vector()[:] -= 1.0
+        x.update()
+        error = norm(x.vector(), 'linf')
+        self.assertAlmostEqual(error, 0.0)
+
+        # now give the form some internal facet integrals
+        a += v('+')*u('+')*Constant(0.0)('+')*dS
+        assembler = SystemAssembler(a, L)
+        A1 = Matrix()
+        # test facet-wise assembly
+        assembler.assemble(A1, b)
+
+        # reset solution vector to some number
+        x.vector()[:] = 30.0
+        solve(A1, x.vector(), b)
+
+        # check solution
+        x.vector()[:] -= 1.0
+        x.update()
+        error = norm(x.vector(), 'linf')
+        self.assertAlmostEqual(error, 0.0)
 
 
 if __name__ == "__main__":

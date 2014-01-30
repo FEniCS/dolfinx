@@ -19,12 +19,15 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-11-05
+// Last changed: 2013-11-12
 
 #ifndef __CSG_GEOMETRY_H
 #define __CSG_GEOMETRY_H
 
 #include <cstddef>
+#include <vector>
+#include <list>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -32,7 +35,6 @@ namespace dolfin
 
 
   /// Geometry described by Constructive Solid Geometry (CSG)
-
   class CSGGeometry : public Variable
   {
   public:
@@ -49,11 +51,22 @@ namespace dolfin
     /// Informal string representation
     virtual std::string str(bool verbose) const = 0;
 
+    /// Define subdomain. This feature is 2D only.
+    /// The subdomain is itself a CSGGeometry and the corresponding
+    /// cells in the resulting will be marked with i
+    /// If subdomains overlap, the latest added will take precedence.
+    void set_subdomain(std::size_t i, boost::shared_ptr<CSGGeometry> s);
+    void set_subdomain(std::size_t i, CSGGeometry& s);
+    bool has_subdomains() const;
+
     enum Type { Box, Sphere, Cone, Tetrahedron, Surface3D, Circle, Ellipse, Rectangle, Polygon, Union, Intersection, Difference };
     virtual Type getType() const = 0;
-
     virtual bool is_operator() const = 0;
+
+    std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > > subdomains;
   };
+
+  
 
 }
 

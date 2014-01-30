@@ -52,20 +52,19 @@ namespace dolfin
     std::size_t orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(std::vector<std::vector<std::size_t> >& e, std::size_t dim,
+    void create_entities(std::vector<std::vector<unsigned int> >& e,
+                         std::size_t dim,
                          const unsigned int* v) const;
 
     /// Refine cell uniformly
-    void refine_cell(Cell& cell, MeshEditor& editor, std::size_t& current_cell) const;
+    void refine_cell(Cell& cell, MeshEditor& editor,
+                     std::size_t& current_cell) const;
 
     /// Compute (generalized) volume (area) of triangle
     double volume(const MeshEntity& triangle) const;
 
     /// Compute diameter of triangle
     double diameter(const MeshEntity& triangle) const;
-
-    /// Compute 2.*inradius/circumradius for given triangle
-    virtual double radius_ratio(const Cell& triangle) const;
 
     /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
@@ -110,7 +109,7 @@ namespace dolfin
     std::size_t find_edge(std::size_t i, const Cell& cell) const;
 
     // Compute signed area of triangle abc
-    inline double signed_area(const Point& a, const Point& b, const Point c) const
+    double signed_area(const Point& a, const Point& b, const Point c) const
     { return (a.x() - c.x())*(b.y() - c.y()) - (a.y() - c.y())*(b.x() - c.x()); }
 
     // Check whether edges ab and cd collide

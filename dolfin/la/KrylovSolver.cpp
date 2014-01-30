@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2012
 //
 // First added:  2007-07-03
-// Last changed: 2012-08-21
+// Last changed: 2013-11-25
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -59,10 +59,16 @@ Parameters KrylovSolver::default_parameters()
 
   // General preconditioner options
   Parameters p_pc("preconditioner");
-  p_pc.add("shift_nonzero",        0.0);
-  p_pc.add("reuse",                false);
-  p_pc.add("same_nonzero_pattern", false);
-  p_pc.add("report",               false);
+  p_pc.add("shift_nonzero", 0.0);
+
+  // Re-use options
+  std::set<std::string> structure_options;
+  structure_options.insert("same");
+  structure_options.insert("same_nonzero_pattern");
+  structure_options.insert("different_nonzero_pattern");
+  p_pc.add("structure", "different_nonzero_pattern", structure_options);
+
+  p_pc.add("report", false);
 
   // ILU preconditioner options
   Parameters p_pc_ilu("ilu");

@@ -2,12 +2,10 @@
 
 .. _demo_pde_poisson_cpp_documentation:
 
-
 Poisson equation
 ================
 
 .. include:: ../common.txt
-
 
 Implementation
 --------------
