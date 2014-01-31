@@ -249,20 +249,14 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
+set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
-find_package(Boost 1.36 QUIET REQUIRED)
+find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams timer chrono)
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
 endif()
-
-# Boost timer was not a separate Boost component until version 1.48
-if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  list(APPEND DOLFIN_BOOST_COMPONENTS timer chrono)
-endif()
-find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
 find_package(UFC 2.3.0 QUIET HINTS ${UFC_DIR})
