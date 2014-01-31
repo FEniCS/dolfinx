@@ -74,7 +74,7 @@ namespace dolfin
     { return _sparsity_pattern; }
 
     /// Return sparsity pattern (possibly null), const version
-    const boost::shared_ptr<GenericSparsityPattern> sparsity_pattern() const
+    boost::shared_ptr<const GenericSparsityPattern> sparsity_pattern() const
     { return _sparsity_pattern; }
 
     /// Return informal string representation (pretty-print)
