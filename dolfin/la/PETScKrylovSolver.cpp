@@ -187,25 +187,26 @@ PETScKrylovSolver::~PETScKrylovSolver()
     MatNullSpaceDestroy(&petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+void PETScKrylovSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const boost::shared_ptr<const PETScBaseMatrix> A)
+void PETScKrylovSolver::set_operator(boost::shared_ptr<const PETScBaseMatrix> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const boost::shared_ptr<const  GenericLinearOperator> A,
-                                      const boost::shared_ptr<const GenericLinearOperator> P)
+void PETScKrylovSolver::set_operators(boost::shared_ptr<const  GenericLinearOperator> A,
+                                      boost::shared_ptr<const GenericLinearOperator> P)
 {
   set_operators(as_type<const PETScBaseMatrix>(A),
                 as_type<const PETScBaseMatrix>(P));
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
-                              const boost::shared_ptr<const PETScBaseMatrix> P)
+void
+PETScKrylovSolver::set_operators(boost::shared_ptr<const PETScBaseMatrix> A,
+                                 boost::shared_ptr<const PETScBaseMatrix> P)
 {
   _A = A;
   _P = P;
