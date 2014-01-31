@@ -58,7 +58,7 @@ int main()
 
   // Create another block vector
   boost::shared_ptr<GenericVector> y(new Vector);
-  A->resize(*y, 0);
+  A->init_vector(*y, 0);
   BlockVector yy(2);
   yy.set_block(0, y);
   yy.set_block(1, y);

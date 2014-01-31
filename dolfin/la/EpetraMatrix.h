@@ -74,11 +74,15 @@ namespace dolfin
     /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout);
 
+    /// Return true if empty
+    virtual bool empty() const;
+
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const;
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
+    virtual std::pair<std::size_t, std::size_t>
+      local_range(std::size_t dim) const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -101,26 +105,32 @@ namespace dolfin
     /// Return copy of matrix
     virtual boost::shared_ptr<GenericMatrix> copy() const;
 
-    /// Resize vector z to be compatible with the matrix-vector product
-    /// y = Ax. In the parallel case, both size and layout are
+    /// Intialize vector z to be compatible with the matrix-vector
+    /// product y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, std::size_t dim) const;
+    virtual void init_vector(GenericVector& z, std::size_t dim) const;
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols) const;
+    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols);
+    virtual void set(const double* block, std::size_t m,
+                     const dolfin::la_index* rows, std::size_t n,
+                     const dolfin::la_index* cols);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols);
+    virtual void add(const double* block, std::size_t m,
+                     const dolfin::la_index* rows, std::size_t n,
+                     const dolfin::la_index* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
+    virtual void axpy(double a, const GenericMatrix& A,
+                      bool same_nonzero_pattern);
 
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const;
@@ -130,7 +140,8 @@ namespace dolfin
                         std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
+    virtual void setrow(std::size_t row,
+                        const std::vector<std::size_t>& columns,
                         const std::vector<double>& values);
 
     /// Set given rows to zero
@@ -172,8 +183,8 @@ namespace dolfin
     // Epetra_FECrsMatrix pointer
     boost::shared_ptr<Epetra_FECrsMatrix> _A;
 
-    // Epetra_FECrsMatrix pointer, used when initialized with a Teuchos::RCP
-    // shared_ptr
+    // Epetra_FECrsMatrix pointer, used when initialized with a
+    // Teuchos::RCP shared_ptr
     Teuchos::RCP<Epetra_FECrsMatrix> ref_keeper;
   };
 

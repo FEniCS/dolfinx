@@ -174,8 +174,18 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (argc > 1)
     log(TRACE, "Initializing PETSc with given command-line arguments.");
 
-  // Initialize PETSc
-  PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+  PetscBool is_initialized;
+  PetscInitialized(&is_initialized);
+
+  if (is_initialized)
+  {
+    PetscOptionsInsert(&argc, &argv, PETSC_NULL);
+  }
+  else
+  {
+    // Initialize PETSc
+    PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+  }
 
   #ifdef HAS_SLEPC
   // Initialize SLEPc

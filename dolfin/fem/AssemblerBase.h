@@ -81,10 +81,6 @@ namespace dolfin
 
   protected:
 
-    // Check for compatibility of reset_sparsity, add_values,
-    // finalize_tensor and keep_diagonal
-    void check_parameters() const;
-
     // Check form
     static void check(const Form& a);
 

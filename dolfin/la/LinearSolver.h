@@ -24,8 +24,8 @@
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
 
+#include <memory>
 #include <string>
-#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 
@@ -101,7 +101,7 @@ namespace dolfin
             const std::vector<std::pair<std::string, std::string> > methods);
 
     // Solver
-    boost::scoped_ptr<GenericLinearSolver> solver;
+    std::unique_ptr<GenericLinearSolver> solver;
 
     // FIXME: This should not be needed
     // Parameter type

@@ -90,19 +90,11 @@ class AbstractBaseTest(object):
         tmp = v0.str(False)
         tmp = v0.str(True)
 
-    def test_resize(self):
-        m, n = 301, 409
-        v0 = Vector()
-        v0.resize(mpi_comm_world(), m)
-        self.assertEqual(v0.size(), m)
-        v0.resize(mpi_comm_world(), n)
-        self.assertEqual(v0.size(), n)
-
-    def test_resize_range(self):
+    def test_init_range(self):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
-        v0.resize(mpi_comm_world(), local_range)
+        v0.init(mpi_comm_world(), local_range)
         self.assertEqual(v0.local_range(), local_range)
 
     def test_size(self):
@@ -114,7 +106,7 @@ class AbstractBaseTest(object):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
-        v0.resize(mpi_comm_world(), local_range)
+        v0.init(mpi_comm_world(), local_range)
         self.assertEqual(v0.local_size(), local_range[1] - local_range[0])
 
     def test_owns_index(self):
@@ -307,9 +299,9 @@ class AbstractBaseTest(object):
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
 
             v0 = Vector()
-            v0.resize(mpi_comm_world(), local_range0)
+            v0.init(mpi_comm_world(), local_range0)
             v1 = Vector()
-            v1.resize(mpi_comm_world(), local_range1)
+            v1.init(mpi_comm_world(), local_range1)
             self.assertEqual(v0.size(), v1.size())
 
             def wrong_assignment(v0, v1):

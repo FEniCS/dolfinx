@@ -22,7 +22,7 @@
 // Modified by Mikael Mortensen, 2013
 //
 // First added:  2007-04-10
-// Last changed: 2013-06-19
+// Last changed: 2014-01-23
 
 #include <map>
 #include <utility>
@@ -1001,59 +1001,106 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                  : dofmap.ownership_range());
 
   // Iterate over cells
-  Progress p("Computing Dirichlet boundary values, pointwise search",
-             mesh.num_cells());
   std::vector<double> vertex_coordinates;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update UFC cell
-    cell->get_vertex_coordinates(vertex_coordinates);
-    cell->get_cell_data(ufc_cell);
-
-    // Tabulate coordinates of dofs on cell
-    dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
-                                *cell);
-
-    // Tabulate dofs on cell
-    const std::vector<dolfin::la_index>& cell_dofs
-      = dofmap.cell_dofs(cell->index());
-
-    // Interpolate function only once and only on cells where necessary
-    bool already_interpolated = false;
-
-    // Loop all dofs on cell
-    for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+  if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
+  {    
+    // First time around all cells must be iterated over. 
+    // Create map from cells attached to boundary to local dofs.
+    Progress p("Computing Dirichlet boundary values, pointwise search",
+               mesh.num_cells());
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      const std::size_t global_dof = cell_dofs[i];
+      // Update UFC cell
+      cell->get_vertex_coordinates(vertex_coordinates);
+      cell->get_cell_data(ufc_cell);
 
-      // Skip already checked dofs
-      if (already_visited.in_range(global_dof)
-          && !already_visited.insert(global_dof))
+      // Tabulate coordinates of dofs on cell
+      dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
+                                  *cell);
+
+      // Tabulate dofs on cell
+      const std::vector<dolfin::la_index>& cell_dofs
+        = dofmap.cell_dofs(cell->index());
+
+      // Interpolate function only once and only on cells where necessary
+      bool already_interpolated = false;
+      
+      std::vector<std::size_t> dofs;
+
+      // Loop all dofs on cell
+      for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
       {
-        continue;
+        const std::size_t global_dof = cell_dofs[i];
+
+        // Skip already checked dofs
+        if (already_visited.in_range(global_dof)
+            && !already_visited.insert(global_dof))
+        {
+          continue;
+        }
+
+        // Check if the coordinates are part of the sub domain (calls
+        // user-defined 'inside' function)
+        Array<double> x(gdim, &data.coordinates[i][0]);
+        if (!_user_sub_domain->inside(x, false))
+          continue;
+
+        if (!already_interpolated)
+        {
+          already_interpolated = true;
+
+          // Restrict coefficient to cell
+          _g->restrict(data.w.data(), *_function_space->element(), *cell,
+                      vertex_coordinates.data(), ufc_cell);
+          
+          // Put cell index in storage for next time function is called
+          _cells_to_localdofs.insert(std::make_pair(cell->index(), dofs));
+        }
+
+        // Add local dof to map
+        _cells_to_localdofs[cell->index()].push_back(i);
+        
+        // Set boundary value
+        const double value = data.w[i];
+        boundary_values[global_dof] = value;
       }
-
-      // Check if the coordinates are part of the sub domain (calls
-      // user-defined 'inside' function)
-      Array<double> x(gdim, &data.coordinates[i][0]);
-      if (!_user_sub_domain->inside(x, false))
-        continue;
-
-      if (!already_interpolated)
-      {
-        already_interpolated = true;
-
-        // Restrict coefficient to cell
-        _g->restrict(data.w.data(), *_function_space->element(), *cell,
-                     vertex_coordinates.data(), ufc_cell);
-      }
-
-      // Set boundary value
-      const double value = data.w[i];
-      boundary_values[global_dof] = value;
+      p++;
     }
+  }
+  else
+  {      
+    // Loop over cells that contain dofs on boundary.
+    std::map<std::size_t, std::vector<std::size_t> >::const_iterator it;
+    for (it = _cells_to_localdofs.begin(); it != _cells_to_localdofs.end(); ++it)
+    {
+      const Cell cell(mesh, it->first);
+      // Update UFC cell
+      cell.get_vertex_coordinates(vertex_coordinates);
+      cell.get_cell_data(ufc_cell);
+ 
+      // Tabulate coordinates of dofs on cell
+      dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
+                                  cell);
 
-    p++;
+      // Restrict coefficient to cell
+      _g->restrict(data.w.data(), *_function_space->element(), cell,
+                    vertex_coordinates.data(), ufc_cell);
+
+      // Tabulate dofs on cell
+      const std::vector<dolfin::la_index>& cell_dofs
+        = dofmap.cell_dofs(cell.index());
+
+      // Loop dofs on boundary of cell      
+      for (std::size_t i = 0; i < it->second.size(); ++i)
+      {
+        const std::size_t local_dof  = it->second[i];
+        const std::size_t global_dof = cell_dofs[local_dof];
+
+        // Set boundary value
+        const double value = data.w[local_dof];
+        boundary_values[global_dof] = value;
+      }
+    }        
   }
 }
 //-----------------------------------------------------------------------------

@@ -124,7 +124,7 @@ void LinearVariationalSolver::solve()
                      "assemble linear form in linear variational solver",
                      "Empty linear forms cannot have coefficient");
       }
-      A->resize(*b, 0);
+      A->init_vector(*b, 0);
     }
 
     // Apply boundary conditions
@@ -150,7 +150,8 @@ void LinearVariationalSolver::solve()
     preconditioners = u->vector()->factory().krylov_solver_preconditioners();
 
   // Choose linear solver
-  if (solver_type == "direct" || solver_type == "lu" || LinearSolver::in_list(solver_type, lu_methods))
+  if (solver_type == "direct" || solver_type == "lu"
+      || LinearSolver::in_list(solver_type, lu_methods))
   {
     std::string lu_method;
 
@@ -189,7 +190,8 @@ void LinearVariationalSolver::solve()
                    solver_type.c_str());
     }
 
-    if (pc_type != "default" && !LinearSolver::in_list(pc_type, preconditioners))
+    if (pc_type != "default"
+        && !LinearSolver::in_list(pc_type, preconditioners))
     {
       dolfin_error("LinearVariationalSolver.cpp",
                    "solve linear system",
