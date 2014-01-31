@@ -98,7 +98,7 @@ def test_place_at_vertex():
         [error,relativeerror] = compute_errors(volume,exactvolume)
         max_relativeerror = max(max_relativeerror,abs(relativeerror))
         
-        # plotter.plot(triangulation_to_mesh_3d(triangulation))
+        # plot(triangulation_to_mesh_3d(triangulation))
         # interactive()
 
         print "%f %f %f %1.6g %1.6g %1.6g" % (xyz[0],xyz[1],xyz[2],volume,error,relativeerror)
@@ -124,7 +124,7 @@ def test_translation():
         mesh_B.translate(Point(x,y,z))
         exactvolume = (1-abs(x))*(1-abs(y))*(1-abs(z))
         
-        # plotter.plot(mesh_B)
+        # plot(mesh_B)
         # interactive()
         
         triangulation = compute_intersection(mesh_A,mesh_B)
@@ -160,7 +160,7 @@ def test_rotation():
         else:
             exactvolume=1
         
-        # plotter.plot(mesh_B)
+        # plot(mesh_B)
         # interactive()
         
         triangulation = compute_intersection(mesh_A,mesh_B)
@@ -168,7 +168,7 @@ def test_rotation():
         [error,relativeerror] = compute_errors(volume,exactvolume)
         max_relativeerror = max(max_relativeerror,abs(relativeerror))
         
-        # plotter.plot(triangulation_to_mesh_3d(triangulation))
+        # plot(triangulation_to_mesh_3d(triangulation))
         # interactive()
         
         print "%f %1.6g %1.6g %1.6g" % (angle,volume,error,relativeerror)
