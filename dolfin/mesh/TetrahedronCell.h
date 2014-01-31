@@ -20,7 +20,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-06
+// Last changed: 2014-01-31
 
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
@@ -117,6 +117,69 @@ namespace dolfin
                                 const Point& B,
                                 const Point& C,
                                 const Point& D) const;
+
+
+    /// Check whether given triangle collides with cell
+    bool collides_triangle(const Cell& cell, const MeshEntity& entity) const;
+
+    /// Check whether given tetrahedron collides with cell
+    bool collides_tetrahedron(const Cell& cell, const MeshEntity& entity) const;
+
+    // Helper function for collides_tetrahedron: checks if plane pv1 is a separating plane. Stores local coordinates bc and the mask bit maskEdges.
+    bool separating_plane_face_A_1(const std::vector<Point>& pv1,
+				   const Point& n,
+				   std::vector<double>& bc,
+				   int& maskEdges) const;
+
+    // Helper function for collides_tetrahedron: checks if plane v1,v2 is a separating plane. Stores local coordinates bc and the mask bit maskEdges.
+    bool separating_plane_face_A_2(const std::vector<Point>& v1,
+				   const std::vector<Point>& v2,
+				   const Point& n,
+				   std::vector<double>& bc,
+				   int& maskEdges) const;
+		
+    // Helper function for collides_tetrahedron: checks if plane pv2 is a separating plane.
+    bool separating_plane_face_B_1(const std::vector<Point>& P_V2,
+				   const Point& n) const
+    {
+      return ((P_V2[0].dot(n) > 0) &&
+	      (P_V2[1].dot(n) > 0) &&
+	      (P_V2[2].dot(n) > 0) &&
+	      (P_V2[3].dot(n) > 0));
+    }
+
+    // Helper function for collides_tetrahedron: checks if plane v1,v2 is a separating plane.  
+    bool separating_plane_face_B_2(const std::vector<Point>& V1,
+				   const std::vector<Point>& V2,
+				   const Point& n) const
+    {
+      return (((V1[0]-V2[1]).dot(n) > 0) &&
+	      ((V1[1]-V2[1]).dot(n) > 0) &&
+	      ((V1[2]-V2[1]).dot(n) > 0) &&
+	      ((V1[3]-V2[1]).dot(n) > 0));
+    }
+    
+    // Helper function for collides_tetrahedron: checks if edge is in the plane separating faces f0 and f1. 
+    bool separating_plane_edge_A(const std::vector<std::vector<double> >& Coord_1,
+				 const std::vector<int>& masks,
+				 int f0, 
+				 int f1) const;
+ 
+    // Helper function for triangulate_intersection: computes edge face intersection
+    bool edge_face_collision(const Point& r,
+			     const Point& s,
+			     const Point& t,
+			     const Point& a,
+			     const Point& b,
+			     Point& pt) const;
+    
+    // Helper function for triangulate_intersection: computes edge edge intersection.
+    bool edge_edge_collision(const Point& a,
+			     const Point& b,
+			     const Point& c,
+			     const Point& d,
+			     Point& pt) const;
+
 
   };
 
