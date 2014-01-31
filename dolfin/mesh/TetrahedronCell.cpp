@@ -716,8 +716,7 @@ bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
       dolfin_not_implemented();
       break;
     case 2:
-      dolfin_not_implemented();
-      break;
+      return collides_triangle(cell, entity);
     case 3:
       return collides_tetrahedron(cell, entity);
     default:
@@ -1108,8 +1107,65 @@ bool TetrahedronCell::point_outside_of_plane(const Point& point,
 bool TetrahedronCell::collides_triangle(const Cell& cell,
                                         const MeshEntity& entity) const
 {
-  dolfin_not_implemented();
+  // This algorithm checks whether a triangle and a tetrahedron
+  // intersects.
+
+  // Get the vertices of the tet as points
+  const MeshGeometry& geometry_tet = cell.mesh().geometry();
+  const unsigned int* vertices_tet = cell.entities(0);
+
+  // Get the vertices of the triangle as points
+  const MeshGeometry& geometry_tri = entity.mesh().geometry();
+  const unsigned int* vertices_tri = entity.entities(0);
+  const Point q0 = geometry_tri.point(vertices_tri[0]);
+  const Point q1 = geometry_tri.point(vertices_tri[1]);
+  const Point q2 = geometry_tri.point(vertices_tri[2]);
+
+  // Check if triangle vertices intersects
+  if (collides(cell,q0)) return true;
+  if (collides(cell,q1)) return true;
+  if (collides(cell,q2)) return true;
   
+  // Check if a tetrahedron edge intersects the triangle
+  std::vector<std::vector<std::size_t> > tetedges(6,std::vector<std::size_t>(2));  
+  create_entities(tetedges, 1,vertices_tet);
+
+  Point pt;
+  for (int e=0; e<6; ++e) {
+    if (edge_face_collision(q0,q1,q2,
+			    geometry_tet.point(tetedges[e][0]),
+			    geometry_tet.point(tetedges[e][1]),
+			    pt)) {
+      return true;
+    }
+  }			  
+
+  // Check if a triangle edge intersects a tetrahedron face
+  std::vector<std::vector<std::size_t> > tetfaces(4,std::vector<std::size_t>(3));
+  create_entities(tetfaces, 2,vertices_tet);
+
+  for (int f=0; f<4; ++f) {
+    if (edge_face_collision(geometry_tet.point(tetfaces[f][0]),
+			    geometry_tet.point(tetfaces[f][1]),
+			    geometry_tet.point(tetfaces[f][2]),
+			    q0,q1, pt)) {
+      return true;
+    }
+    if (edge_face_collision(geometry_tet.point(tetfaces[f][0]),
+			    geometry_tet.point(tetfaces[f][1]),
+			    geometry_tet.point(tetfaces[f][2]),
+			    q0,q2, pt)) {
+      return true;
+    }
+    if (edge_face_collision(geometry_tet.point(tetfaces[f][0]),
+			    geometry_tet.point(tetfaces[f][1]),
+			    geometry_tet.point(tetfaces[f][2]),
+			    q1,q2, pt)) {
+      return true;
+    }
+  }
+
+  // No intersection found
   return false;
 }
 //-----------------------------------------------------------------------------
