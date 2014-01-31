@@ -257,6 +257,7 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams t
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
 endif()
+find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
 find_package(UFC 2.3.0 QUIET HINTS ${UFC_DIR})
