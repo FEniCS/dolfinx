@@ -219,12 +219,21 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   dolfin_assert(ierr == 0);
 
   Teuchos::ParameterList belosList;
+  int verbosity = Belos::Errors + Belos::Warnings;
   // Set output level
   if (parameters["monitor_convergence"])
   {
-    belosList.set("Verbosity", Belos::Errors + Belos::Warnings);
+    verbosity += Belos::IterationDetails;
+    verbosity += Belos::OrthoDetails;
+    verbosity += Belos::StatusTestDetails;
     belosList.set("Output Frequency", (int)parameters["monitor_interval"]);
+    belosList.set("Output Style", Belos::Brief);
   }
+
+  if (parameters["report"])
+      verbosity += Belos::TimingDetails;
+
+  belosList.set("Verbosity", verbosity);
 
   belosList.set("Convergence Tolerance",
                 (double)parameters["relative_tolerance"]
@@ -254,11 +263,14 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 
   if (ret == Belos::Converged)
   {
-    info("Epetra (Belos) Krylov solver (%s, %s) converged in %d iterations.",
-         _method.c_str(),
-         _preconditioner->name().c_str(),
-         solver->getNumIters()
-         );
+    if (parameters["report"])
+    {
+      info("Epetra (Belos) Krylov solver (%s, %s) converged in %d iterations.",
+           _method.c_str(),
+           _preconditioner->name().c_str(),
+           solver->getNumIters()
+           );
+    }
   }
   else if (ret == Belos::Unconverged)
   {
