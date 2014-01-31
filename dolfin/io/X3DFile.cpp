@@ -212,7 +212,8 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
 
   // Gather up data on zero
   std::vector<std::string> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
+  std::vector<std::string> local_output_str(1, local_output.str());
+  MPI::gather(mesh.mpi_comm(), local_output_str, gathered_output);
 
   // Write XML on root process
   if (process_number == 0)
@@ -413,7 +414,8 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
 
   // Gather up on zero
   std::vector<std::string> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
+  std::vector<std::string> local_output_str(1, local_output.str());
+  MPI::gather(mesh.mpi_comm(), local_output_str, gathered_output);
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     pugi::xml_node indexed_face_set = xml_doc.child("X3D")
@@ -495,7 +497,8 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
   }
 
   std::vector<std::string> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
+  std::vector<std::string> local_output_str(1, local_output.str());
+  MPI::gather(mesh.mpi_comm(), local_output_str, gathered_output);
 
   if (process_number == 0)
   {
@@ -523,7 +526,8 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
       local_output << v.x(2) << " ";
   }
 
-  MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
+  std::vector<std::string> local_output_str1(1, local_output.str());
+  MPI::gather(mesh.mpi_comm(), local_output_str1, gathered_output);
 
   // Finally, close off with the XML footer on process zero
   if (process_number == 0)

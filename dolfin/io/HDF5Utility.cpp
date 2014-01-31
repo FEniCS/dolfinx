@@ -56,7 +56,8 @@ void HDF5Utility::map_gdof_to_cell(
 
   const std::size_t num_processes = MPI::size(mpi_comm);
   std::vector<dolfin::la_index> all_vec_range;
-  MPI::gather(mpi_comm, vector_range.second, all_vec_range);
+  std::vector<dolfin::la_index> vector_range_second(1, vector_range.second);
+  MPI::gather(mpi_comm, vector_range_second, all_vec_range);
   MPI::broadcast(mpi_comm, all_vec_range);
 
   std::map<dolfin::la_index,

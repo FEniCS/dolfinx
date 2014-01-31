@@ -143,7 +143,8 @@ void HDF5File::write(const GenericVector& x, const std::string dataset_name)
 
   // Add partitioning attribute to dataset
   std::vector<std::size_t> partitions;
-  MPI::gather(_mpi_comm, local_range.first, partitions);
+  std::vector<std::size_t> local_range_first(1, local_range.first);
+  MPI::gather(_mpi_comm, local_range_first, partitions);
   MPI::broadcast(_mpi_comm, partitions);
 
   HDF5Interface::add_attribute(hdf5_file_id, dataset_name, "partition",
@@ -333,7 +334,9 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     const std::size_t topology_offset
       = MPI::global_offset(_mpi_comm, topological_data.size()/(cell_dim + 1),
                            true);
-    MPI::gather(_mpi_comm, topology_offset, partitions);
+
+    std::vector<std::size_t> topology_offset_tmp(1, topology_offset);
+    MPI::gather(_mpi_comm, topology_offset_tmp, partitions);
     MPI::broadcast(_mpi_comm, partitions);
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
                                  "partition", partitions);
@@ -910,7 +913,9 @@ void HDF5File::read(Function& u, const std::string name)
     const std::size_t
       n_vector_vals = input_vector_range.second - input_vector_range.first;
     std::vector<dolfin::la_index> all_vec_range;
-    MPI::gather(_mpi_comm, vector_range.second, all_vec_range);
+
+    std::vector<dolfin::la_index> vector_range_second(1, vector_range.second);
+    MPI::gather(_mpi_comm, vector_range_second, all_vec_range);
     MPI::broadcast(_mpi_comm, all_vec_range);
 
     for (std::size_t i = 0; i != n_vector_vals; ++i)

@@ -36,7 +36,6 @@
 #include <mpi.h>
 #endif
 
-#include <boost/static_assert.hpp>
 #include <dolfin/log/dolfin_log.h>
 
 #ifndef HAS_MPI
@@ -48,17 +47,6 @@ typedef int MPI_Comm;
 
 namespace dolfin
 {
-    // Return MPI data type
-    template<typename T> MPI_Datatype mpi_typex()
-    {
-      BOOST_STATIC_ASSERT_MSG(sizeof(T) == 0, "Unknown MPI type");
-      dolfin_error("MPI.h",
-                   "perform MPI operation",
-                   "MPI data type unknown");
-      return MPI_CHAR;
-    }
-
-
 
   #ifdef HAS_MPI
 
@@ -203,9 +191,30 @@ namespace dolfin
       #endif
     }
 
+    // NOTE: Part of removing Boost MPI transition
     /// Gather values on one process (wrapper for boost::mpi::gather)
     template<typename T>
-      static void gather(const MPI_Comm comm, const T& in_value,
+      static void gather(const MPI_Comm comm, const std::vector<T>& in_value,
+                         std::vector<T>& out_values,
+                         unsigned int receiving_process=0)
+    {
+      #ifdef HAS_MPI
+      std::vector<std::vector<T> > _out_values;
+      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+      boost::mpi::gather(_comm, in_value, _out_values, receiving_process);
+
+      // Re-pack return values
+      out_values.clear();
+      for (std::size_t p = 0; p < _out_values.size(); ++p)
+        out_values.insert(out_values.end(), _out_values[p].begin(), _out_values[p].end());
+      #else
+      out_values = in_value;
+      #endif
+    }
+
+    /// Gather values on one process (wrapper for boost::mpi::gather)
+    template<typename T>
+      static void _gather(const MPI_Comm comm, const T& in_value,
                          std::vector<T>& out_values,
                          unsigned int receiving_process=0)
     {
@@ -271,10 +280,9 @@ namespace dolfin
       T all_reduce(const MPI_Comm comm, const T& value, X op)
     {
       #ifdef HAS_MPI
-      return value;
-      //T out;
-      //MPI_Allreduce(&value, &out, 1, mpi_type<T>(), op, comm);
-      //return out;
+      T out;
+      MPI_Allreduce(&value, &out, 1, mpi_type<T>(), op, comm);
+      return out;
       #else
       dolfin_error("MPI.h",
                    "call MPI::all_reduce",
@@ -339,31 +347,26 @@ namespace dolfin
     #endif
 
     #ifdef HAS_MPI
-    /*
     // Return MPI data type
-    template<typename T> static MPI_Datatype mpi_typex()
+    template<typename T> static MPI_Datatype mpi_type()
     {
-      //BOOST_STATIC_ASSERT_MSG(false, "Unknown MPI type");
       dolfin_error("MPI.h",
                    "perform MPI operation",
                    "MPI data type unknown");
       return MPI_CHAR;
     }
-    */
     #endif
 
   };
 
   #ifdef HAS_MPI
   // Specialisations for MPI_Datatypes
-  /*
   template<> inline MPI_Datatype MPI::mpi_type<float>() { return MPI_FLOAT; }
   template<> inline MPI_Datatype MPI::mpi_type<double>() { return MPI_DOUBLE; }
   template<> inline MPI_Datatype MPI::mpi_type<int>() { return MPI_INT; }
   template<> inline MPI_Datatype MPI::mpi_type<long int>() { return MPI_LONG; }
   template<> inline MPI_Datatype MPI::mpi_type<unsigned int>() { return MPI_UNSIGNED; }
   template<> inline MPI_Datatype MPI::mpi_type<unsigned long int>() { return MPI_UNSIGNED_LONG; }
-  */
   #endif
 
   //---------------------------------------------------------------------------
