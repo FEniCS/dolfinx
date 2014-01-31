@@ -97,15 +97,18 @@ namespace dolfin
     /// Return copy of vector
     virtual boost::shared_ptr<GenericVector> copy() const;
 
-    /// Resize vector to size N
-    virtual void resize(MPI_Comm comm, std::size_t N);
+    /// Initialize vector to size N
+    virtual void init(MPI_Comm comm, std::size_t N);
 
-    /// Resize vector with given ownership range
-    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range);
+    /// Initialize vector with given ownership range
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range);
 
-    /// Resize vector with given ownership range and with ghost values
-    virtual void resize(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices);
+    /// Initialize vector with given ownership range and with ghost
+    /// values
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range,
+                      const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -213,14 +216,17 @@ namespace dolfin
 
     //--- Special Epetra functions ---
 
-    /// Reset Epetra_FEVector
-    void reset(const Epetra_BlockMap& map);
+    /// Initialize Epetra_FEVector with Epetra map
+    void init(const Epetra_BlockMap& map);
 
     /// Return Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> vec() const;
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
+
+    // Bring init function from GenericVector into scope
+    using GenericTensor::init;
 
   private:
 

@@ -95,11 +95,12 @@ std::size_t MeshTopology::size_global(std::size_t dim) const
 void MeshTopology::clear()
 {
   // Clear data
+  coloring.clear();
   num_entities.clear();
   global_num_entities.clear();
-  connectivity.clear();
   _global_indices.clear();
-  coloring.clear();
+  _shared_entities.clear();
+  connectivity.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(std::size_t d0, std::size_t d1)

@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2013-04-10
-// Last changed: 2014-01-07
 
 #ifdef HAS_HDF5
 
@@ -188,8 +185,6 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
                               bool interpolate) const
 {
   HDF5File hdf5_file(MPI_COMM_WORLD, _name, "r");
-  const std::size_t zero = 0;
-  vector.resize(MPI_COMM_WORLD, 1, &zero);
 
   // Interpolate value
   if (interpolate)
@@ -203,7 +198,7 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
     // Special case: same index
     if (i0 == i1)
     {
-      hdf5_file.read(vector, "/Vector/" + boost::lexical_cast<std::string>(i0));
+      hdf5_file.read(vector, "/Vector/" + boost::lexical_cast<std::string>(i0), false);
       log(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
       return;
     }
@@ -214,8 +209,8 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
     // Read vectors
     GenericVector& x0(vector);
     boost::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
-    hdf5_file.read(x0, "/Vector/" + boost::lexical_cast<std::string>(i0));
-    hdf5_file.read(*x1, "/Vector/" + boost::lexical_cast<std::string>(i1));
+    hdf5_file.read(x0, "/Vector/" + boost::lexical_cast<std::string>(i0), false);
+    hdf5_file.read(*x1, "/Vector/" + boost::lexical_cast<std::string>(i1), false);
 
     // Check that the vectors have the same size
     if (x0.size() != x1->size())
@@ -249,7 +244,7 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
 
     // Read vector
     hdf5_file.read(vector, "/Vector/"
-                   + boost::lexical_cast<std::string>(index));
+                   + boost::lexical_cast<std::string>(index), false);
   }
 }
 //-----------------------------------------------------------------------------
@@ -263,8 +258,8 @@ void TimeSeriesHDF5::retrieve(Mesh& mesh, double t) const
 
   // Read mesh
   HDF5File hdf5_file(MPI_COMM_WORLD, _name, "r");
-  hdf5_file.read(mesh, "/Mesh/" + boost::lexical_cast<std::string>(index));
-
+  hdf5_file.read(mesh, "/Mesh/" + boost::lexical_cast<std::string>(index),
+                 false);
 }
 //-----------------------------------------------------------------------------
 std::vector<double> TimeSeriesHDF5::vector_times() const

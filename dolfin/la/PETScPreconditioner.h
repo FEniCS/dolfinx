@@ -69,7 +69,7 @@ namespace dolfin
     void set_nullspace(const VectorSpaceBasis& near_nullspace);
 
     /// Return the PETSc null space
-    const MatNullSpace near_nullspace() const
+    MatNullSpace near_nullspace() const
     { return petsc_near_nullspace; }
 
     /// Set the coordinates of the operator (matrix) rows and

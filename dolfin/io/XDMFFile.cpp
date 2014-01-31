@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2012
-//
-// First added:  2012-05-28
-// Last changed: 2013-10-15
 
 #ifdef HAS_HDF5
 
@@ -287,6 +284,11 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator>> (Mesh& mesh)
 {
+  read(mesh, false);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
+{
   // Prepare HDF5 file
   if (hdf5_filemode != "r")
   {
@@ -356,7 +358,7 @@ void XDMFFile::operator>> (Mesh& mesh)
   dolfin_assert(geom_bits[4] == "coordinates");
 
   // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, "/Mesh/" + geom_bits[3]);
+  hdf5_file->read(mesh, "/Mesh/" + geom_bits[3], use_partition_from_file);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
@@ -443,6 +445,126 @@ void XDMFFile::operator<< (const MeshFunction<std::size_t>& meshfunction)
 void XDMFFile::operator<< (const MeshFunction<double>& meshfunction)
 {
   write_mesh_function(meshfunction);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write(const std::vector<Point>& points)
+{
+  // Intialise HDF5 file
+  if (hdf5_filemode != "w")
+  {
+    // Create HDF5 file (truncate)
+    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+    hdf5_filemode = "w";
+  }
+
+  // Get number of points (global)
+  const std::size_t num_global_points = MPI::sum(_mpi_comm, points.size());
+
+  // Write HDF5 file
+  const std::string group_name = "/Points";
+  hdf5_file->write(points, group_name);
+
+  // The XML created below will obliterate any existing XDMF file
+  write_point_xml(group_name, num_global_points, 0);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write(const std::vector<Point>& points,
+                     const std::vector<double>& values)
+{
+  // Write clouds of points to XDMF/HDF5 with values
+
+  dolfin_assert(points.size() == values.size());
+
+  // Intialise HDF5 file
+  if (hdf5_filemode != "w")
+  {
+    // Create HDF5 file (truncate)
+    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+    hdf5_filemode = "w";
+  }
+
+  // Get number of points (global)
+  const std::size_t num_global_points = MPI::sum(_mpi_comm, points.size());
+
+  // Write HDF5 file
+  const std::string group_name = "/Points";
+  hdf5_file->write(points, group_name);
+
+  const std::string values_name = group_name + "/values";
+  hdf5_file->write(values, values_name);
+
+  // The XML created will obliterate any existing XDMF file
+  write_point_xml(group_name, num_global_points, 1);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write_point_xml(const std::string group_name,
+                               const std::size_t num_global_points,
+                               const unsigned int value_size)
+{
+  // Write the XML meta description on process zero
+  if (MPI::rank(_mpi_comm) == 0)
+  {
+    // Dataset names
+    const std::string mesh_coords_name = group_name + "/coordinates";
+    const std::string values_name = group_name + "/values";
+
+    // Create XML document
+    pugi::xml_document xml_doc;
+
+    // XML headers
+    xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
+    xdmf.append_attribute("Version") = "2.0";
+    xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+    pugi::xml_node xdmf_domain = xdmf.append_child("Domain");
+    pugi::xml_node xdmf_grid = xdmf_domain.append_child("Grid");
+    xdmf_grid.append_attribute("Name") = "Point cloud";
+    xdmf_grid.append_attribute("GridType") = "Uniform";
+
+
+    // Describe topological connectivity
+    pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
+    xdmf_topology.append_attribute("NumberOfElements")
+      = (unsigned int) num_global_points;
+    xdmf_topology.append_attribute("TopologyType") = "PolyVertex";
+    xdmf_topology.append_attribute("NodesPerElement") = "1";
+
+    // Describe geometric coordinates
+    pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
+    xml_mesh_geometry(xdmf_geometry, num_global_points, 3,
+                      mesh_coords_name);
+
+    if(value_size != 0)
+    {
+      dolfin_assert(value_size == 1 || value_size == 3);
+
+      // Grid/Attribute (value data)
+      pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");
+      xdmf_values.append_attribute("Name") = "point_values";
+
+      if(value_size == 1)
+        xdmf_values.append_attribute("AttributeType") = "Scalar";
+      else
+        xdmf_values.append_attribute("AttributeType") = "Vector";
+
+      xdmf_values.append_attribute("Center") = "Node";
+
+      pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
+      xdmf_data.append_attribute("Format") = "HDF";
+
+      std::string s
+        = boost::lexical_cast<std::string>(num_global_points) + " "
+        + boost::lexical_cast<std::string>(value_size);
+
+      xdmf_data.append_attribute("Dimensions") = s.c_str();
+
+      boost::filesystem::path p(hdf5_filename);
+      s = p.filename().string() + ":" + values_name;
+      xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
+    }
+
+    xml_doc.save_file(_filename.c_str(), "  ");
+  }
 }
 //----------------------------------------------------------------------------
 template<typename T>

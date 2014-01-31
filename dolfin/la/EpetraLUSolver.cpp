@@ -83,7 +83,7 @@ std::string EpetraLUSolver::choose_method(std::string method) const
   else if (method == "mumps")
     method = "Amesos_mumps";
   else if (method == "klu")
-    method = "Amesos_klu";
+    method = "Amesos_Klu";
   else
   {
     dolfin_error("EpetraLUSolver.cpp",
@@ -221,7 +221,6 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
                  "Operator has not been set");
   }
 
-  const std::size_t M = A->NumGlobalRows64();
   const std::size_t N = A->NumGlobalCols64();
   if (N != b.size())
   {
@@ -231,9 +230,9 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   }
 
   // Initialize solution vector
-  if (x.size() != M)
+  if (x.empty())
   {
-    _A->resize(x, 1);
+    _A->init_vector(x, 1);
     x.zero();
   }
 

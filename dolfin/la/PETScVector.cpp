@@ -83,7 +83,7 @@ PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
   : _x(NULL), x_ghosted(NULL), _use_gpu(false)
 {
   std::vector<la_index> ghost_indices;
-  resize(sparsity_pattern.mpi_comm(), sparsity_pattern.local_range(0),
+  init(sparsity_pattern.mpi_comm(), sparsity_pattern.local_range(0),
          ghost_indices);
 }
 //-----------------------------------------------------------------------------
@@ -167,22 +167,22 @@ boost::shared_ptr<GenericVector> PETScVector::copy() const
   return v;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::resize(MPI_Comm comm, std::size_t N)
+void PETScVector::init(MPI_Comm comm, std::size_t N)
 {
   const std::pair<std::size_t, std::size_t> range
     = MPI::local_range(comm, N);
-  resize(comm, range);
+  init(comm, range);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::resize(MPI_Comm comm,
+void PETScVector::init(MPI_Comm comm,
                          std::pair<std::size_t, std::size_t> range)
 {
   // Create empty ghost indices vector
   std::vector<la_index> ghost_indices;
-  resize(comm, range, ghost_indices);
+  init(comm, range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::resize(MPI_Comm comm,
+void PETScVector::init(MPI_Comm comm,
                          std::pair<std::size_t, std::size_t> range,
                          const std::vector<la_index>& ghost_indices)
 {
@@ -358,6 +358,7 @@ void PETScVector::zero()
   double a = 0.0;
   PetscErrorCode ierr = VecSet(_x, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
+  this->apply("insert");
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const
@@ -447,6 +448,7 @@ const PETScVector& PETScVector::operator= (double a)
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSet(_x, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
+  apply("insert");
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -663,7 +665,6 @@ std::string PETScVector::str(bool verbose) const
     return "<Uninitialized PETScVector>";
 
   PetscErrorCode ierr;
-
   std::stringstream s;
   if (verbose)
   {
@@ -717,7 +718,20 @@ void PETScVector::gather(GenericVector& y,
   std::vector<PetscInt> global_indices(indices.begin(), indices.end());
 
   // Prepare data for index sets (local indices)
-  const PetscInt n = indices.size();
+  const std::size_t n = indices.size();
+
+  if (_y.empty())
+  {
+    // Initialise vector and make local
+    y.init(MPI_COMM_SELF, n);
+  }
+  else if (y.size() != n || MPI::size(y.mpi_comm()))
+  {
+    dolfin_error("PETScVector.cpp",
+                 "gather vector entries",
+                 "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
+  }
+
 
   // PETSc will bail out if it receives a NULL pointer even though m == 0.
   // Can't return from function since function calls are collective.
@@ -732,8 +746,6 @@ void PETScVector::gather(GenericVector& y,
   ierr = ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateStride");
 
-  // Resize vector and make local
-  y.resize(MPI_COMM_SELF, n);
 
   // Perform scatter
   VecScatter scatter;
@@ -799,7 +811,14 @@ void PETScVector::_init(MPI_Comm comm,
 {
   PetscErrorCode ierr;
   if (_x)
+  {
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("PETScVector cannot be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
     VecDestroy(&_x);
+  }
 
   // GPU support does not work in parallel
   if (_use_gpu && MPI::size(comm))
@@ -839,23 +858,6 @@ void PETScVector::_init(MPI_Comm comm,
 Vec PETScVector::vec() const
 {
   return _x;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::reset()
-{
-  if (_x)
-  {
-    VecDestroy(&_x);
-    _x = NULL;
-  }
-
-  if (x_ghosted)
-  {
-    VecDestroy(&x_ghosted);
-    x_ghosted = NULL;
-  }
-
-  ghost_global_to_local.clear();
 }
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& PETScVector::factory() const

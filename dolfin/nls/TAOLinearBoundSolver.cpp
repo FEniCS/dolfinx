@@ -171,15 +171,26 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x,
   // Set parameters from local parameters, including ksp parameters
   read_parameters();
 
-  // Check for any tao command line options
-  TaoSetFromOptions(_tao);
-
   // Clear previous monitors
   TaoCancelMonitors(_tao);
 
   // Set the monitor
   if (parameters["monitor_convergence"])
     TaoSetMonitor(_tao, __TAOMonitor, this, PETSC_NULL);
+
+
+  // Check for any tao command line options
+  std::string prefix = std::string(parameters["options_prefix"]);
+  if (prefix != "default")
+  {
+    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    char lastchar = *prefix.rbegin();
+    if (lastchar != '_')
+      prefix += "_";
+
+    TaoSetOptionsPrefix(_tao, prefix.c_str());
+  }
+  TaoSetFromOptions(_tao);
 
   // Solve the bound constrained problem
   Timer timer("TAO solver");
