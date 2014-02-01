@@ -165,14 +165,31 @@ namespace dolfin
                              const std::map<S, T>& in_values_per_dest,
                              std::map<S, T>& out_values_per_src);
 
+
+    /// Broadcast value from broadcaster process to all processes
+    template<typename T>
+      static void broadcast(const MPI_Comm comm, std::vector<T>& value,
+                            unsigned int broadcaster=0)
+    {
+      #ifdef HAS_MPI
+      // Broadcast cast size
+      int bsize = value.size();
+      MPI_Bcast(&bsize, 1, mpi_type<T>(), broadcaster, comm);
+
+      // Broadcast
+      value.resize(bsize);
+      MPI_Bcast(const_cast<T*>(value.data()), bsize, mpi_type<T>(),
+                broadcaster, comm);
+      #endif
+    }
+
     /// Broadcast value from broadcaster process to all processes
     template<typename T>
       static void broadcast(const MPI_Comm comm, T& value,
                             unsigned int broadcaster=0)
     {
       #ifdef HAS_MPI
-      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
-      boost::mpi::broadcast(_comm, value, broadcaster);
+      MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, comm);
       #endif
     }
 
@@ -213,21 +230,6 @@ namespace dolfin
       #endif
     }
 
-    /// Gather values on one process (wrapper for boost::mpi::gather)
-    template<typename T>
-      static void _gather(const MPI_Comm comm, const T& in_value,
-                         std::vector<T>& out_values,
-                         unsigned int receiving_process=0)
-    {
-      #ifdef HAS_MPI
-      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
-      boost::mpi::gather(_comm, in_value, out_values, receiving_process);
-      #else
-      out_values.clear();
-      out_values.push_back(in_value);
-      #endif
-    }
-
     /// Gather values from all proceses. Same data count from each
     /// process (wrapper for MPI_Allgather)
     template<typename T>
@@ -246,9 +248,6 @@ namespace dolfin
 
     /// Gather values from each process (variable count per process)
     template<typename T>
-      //static void all_gatherv(const MPI_Comm comm, const std::vector<T>& in_values,
-      //                        std::vector<T>& out_values,
-      //                        std::vector<int>& process_ptr)
       static void all_gather(const MPI_Comm comm, const std::vector<T>& in_values,
                               std::vector<std::vector<T> >& out_values)
     {
@@ -281,13 +280,6 @@ namespace dolfin
         for (std::size_t i = 0; i < pcounts[p]; ++i)
           out_values[p][i] = recvbuf[offsets[p] + i];
       }
-
-      //boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
-      //boost::mpi::all_gather(_comm, in_value, out_values);
-      //out_values.resize(MPI::size(comm));
-      //MPI_Allgather(&in_value, 1, mpi_type<T>(),
-      //              out_values.data(), out_values.size(), mpi_type<T>(),
-      //              comm);
       #else
       out_values.clear();
       out_values.push_back(in_value);
