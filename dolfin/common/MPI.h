@@ -26,6 +26,7 @@
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
 
+#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -227,19 +228,81 @@ namespace dolfin
       #endif
     }
 
-    /// Gather values, one from each process (wrapper for
-    /// boost::mpi::all_gather)
+    /// Gather values from all proceses. Same data count from each
+    /// process (wrapper for MPI_Allgather)
+    template<typename T>
+      static void all_gather(const MPI_Comm comm, const std::vector<T>& in_values,
+                             std::vector<T>& out_values)
+    {
+      #ifdef HAS_MPI
+      out_values.resize(in_values.size()*MPI::size(comm));
+      MPI_Allgather(const_cast<T*>(in_values.data()), in_values.size(), mpi_type<T>(),
+                    out_values.data(), in_values.size(), mpi_type<T>(),
+                    comm);
+      #else
+      out_values = in_values;
+      #endif
+    }
+
+    /// Gather values from each process (variable count per process)
+    template<typename T>
+      //static void all_gatherv(const MPI_Comm comm, const std::vector<T>& in_values,
+      //                        std::vector<T>& out_values,
+      //                        std::vector<int>& process_ptr)
+      static void all_gather(const MPI_Comm comm, const std::vector<T>& in_values,
+                              std::vector<std::vector<T> >& out_values)
+    {
+      #ifdef HAS_MPI
+      const std::size_t comm_size = MPI::size(comm);
+
+      // Get data size on each process
+      std::vector<int> pcounts;
+      const int local_size = in_values.size();
+      MPI::all_gather(comm, local_size, pcounts);
+      dolfin_assert(pcounts.size() == comm_size);
+
+      // Build offsets
+      const std::size_t n = std::accumulate(pcounts.begin(), pcounts.end(), 0);
+      std::vector<int> offsets(n + 1, 0);
+      for (std::size_t i = 1; i <= n; ++i)
+        offsets[i] = offsets[i - 1] + pcounts[i - 1];
+
+      // Gather data
+      std::vector<T> recvbuf(n);
+      MPI_Allgatherv(const_cast<T*>(in_values.data()), in_values.size(), mpi_type<T>(),
+                     recvbuf.data(), pcounts.data(), offsets.data(),
+                     mpi_type<T>(), comm);
+
+      // Repack data
+      out_values.resize(comm_size);
+      for (std::size_t p = 0; p < comm_size; ++p)
+      {
+        out_values[p].resize(pcounts[p]);
+        for (std::size_t i = 0; i < pcounts[p]; ++i)
+          out_values[p][i] = recvbuf[offsets[p] + i];
+      }
+
+      //boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+      //boost::mpi::all_gather(_comm, in_value, out_values);
+      //out_values.resize(MPI::size(comm));
+      //MPI_Allgather(&in_value, 1, mpi_type<T>(),
+      //              out_values.data(), out_values.size(), mpi_type<T>(),
+      //              comm);
+      #else
+      out_values.clear();
+      out_values.push_back(in_value);
+      #endif
+    }
+
+    /// Gather values, one primitive from each process (MPI_Allgather)
     template<typename T>
       static void all_gather(const MPI_Comm comm, const T& in_value,
                              std::vector<T>& out_values)
     {
       #ifdef HAS_MPI
-      boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
-      boost::mpi::all_gather(_comm, in_value, out_values);
-      //out_values.resize(MPI::size(comm));
-      //MPI_Allgather(&in_value, 1, mpi_type<T>(),
-      //              out_values.data(), out_values.size(), mpi_type<T>(),
-      //              comm);
+      out_values.resize(MPI::size(comm));
+      MPI_Allgather(&in_value, 1, mpi_type<T>(),
+                    out_values.data(), 1, mpi_type<T>(), comm);
       #else
       out_values.clear();
       out_values.push_back(in_value);
@@ -348,6 +411,8 @@ namespace dolfin
 
     #ifdef HAS_MPI
     // Return MPI data type
+    template<typename T> static MPI_Datatype mpi_type();
+    /*
     template<typename T> static MPI_Datatype mpi_type()
     {
       dolfin_error("MPI.h",
@@ -355,6 +420,7 @@ namespace dolfin
                    "MPI data type unknown");
       return MPI_CHAR;
     }
+    */
     #endif
 
   };
