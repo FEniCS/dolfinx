@@ -80,6 +80,11 @@ void CCFEMFunctionSpace::build()
 {
   begin(PROGRESS, "Building CCFEM function space.");
 
+  // Extract meshes
+  _meshes.clear();
+  for (std::size_t i = 0; i < num_parts(); i++)
+    _meshes.push_back(_function_spaces[i]->mesh());
+
   // Build dofmap
   _build_dofmap();
 
@@ -100,7 +105,9 @@ void CCFEMFunctionSpace::clear()
   dolfin_assert(_dofmap);
 
   _function_spaces.clear();
+  _boundary_meshes.clear();
   _trees.clear();
+  _boundary_trees.clear();
   _dofmap->clear();
 }
 //-----------------------------------------------------------------------------
@@ -132,9 +139,8 @@ void CCFEMFunctionSpace::_build_boundary_meshes()
   // Build boundary mesh for each part
   for (std::size_t i = 0; i < num_parts(); i++)
   {
-    const Mesh& mesh = *_function_spaces[i]->mesh();
     boost::shared_ptr<BoundaryMesh>
-      boundary_mesh(new BoundaryMesh(mesh, "exterior"));
+      boundary_mesh(new BoundaryMesh(*_meshes[i], "exterior"));
     _boundary_meshes.push_back(boundary_mesh);
   }
 
@@ -147,13 +153,20 @@ void CCFEMFunctionSpace::_build_bounding_box_trees()
 
   // Clear bounding box trees
   _trees.clear();
+  _boundary_trees.clear();
 
-  // Build tree for each part
+  // Build trees for each part
   for (std::size_t i = 0; i < num_parts(); i++)
   {
+    // Build tree for mesh
     boost::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
-    tree->build(*_function_spaces[i]->mesh());
+    tree->build(*_meshes[i]);
     _trees.push_back(tree);
+
+    // Build tree for boundary mesh
+    boost::shared_ptr<BoundingBoxTree> boundary_tree(new BoundingBoxTree());
+    boundary_tree->build(*_boundary_meshes[i]);
+    _boundary_trees.push_back(boundary_tree);
   }
 
   end();

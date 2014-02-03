@@ -30,6 +30,7 @@ namespace dolfin
   // Forward declarations
   class FunctionSpace;
   class CCFEMDofMap;
+  class Mesh;
   class BoundingBoxTree;
   class BoundaryMesh;
 
@@ -105,11 +106,17 @@ namespace dolfin
     // CCFEM dofmap
     boost::shared_ptr<CCFEMDofMap> _dofmap;
 
-    // List of bounding box trees for meshes
-    std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
+    // List of meshes
+    std::vector<boost::shared_ptr<const Mesh> > _meshes;
 
     // List of boundary meshes
     std::vector<boost::shared_ptr<BoundaryMesh> > _boundary_meshes;
+
+    // List of bounding box trees for meshes
+    std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
+
+    // List of bounding box trees for boundary meshes
+    std::vector<boost::shared_ptr<BoundingBoxTree> > _boundary_trees;
 
     // Cell indices for all uncut cells for all parts. Access data by
     //
