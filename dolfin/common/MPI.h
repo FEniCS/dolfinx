@@ -636,9 +636,9 @@ namespace dolfin
                               T& out_value, unsigned int sending_process)
   {
     #ifdef HAS_MPI
-    boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
-    boost::mpi::scatter(_comm, in_values, out_value, sending_process);
-    return ;
+    //boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
+    //boost::mpi::scatter(_comm, in_values, out_value, sending_process);
+    //return;
     if (MPI::rank(comm) == sending_process)
       dolfin_assert(in_values.size() == MPI::size(comm));
 
