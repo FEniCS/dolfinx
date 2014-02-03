@@ -28,7 +28,7 @@ namespace dolfin
 {
 
   // Forward declarations
-  class Cell;
+  class MeshEntity;
 
   /// This class implements algorithms for computing triangulations of
   /// pairwise intersections of simplices.
@@ -40,9 +40,9 @@ namespace dolfin
     /// Compute triangulation of intersection of two intervals
     ///
     /// *Arguments*
-    ///     T0 (_Cell_)
+    ///     T0 (_MeshEntity_)
     ///         The first interval.
-    ///     T1 (_Cell_)
+    ///     T1 (_MeshEntity_)
     ///         The second interval.
     ///
     /// *Returns*
@@ -51,15 +51,15 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     static std::vector<double>
-    triangulate_intersection_interval_interval(const Cell& T0,
-                                               const Cell& T1);
+    triangulate_intersection_interval_interval(const MeshEntity& interval_0,
+                                               const MeshEntity& interval_1);
 
     /// Compute triangulation of intersection of two triangles
     ///
     /// *Arguments*
-    ///     T0 (_Cell_)
+    ///     T0 (_MeshEntity_)
     ///         The first triangle.
-    ///     T1 (_Cell_)
+    ///     T1 (_MeshEntity_)
     ///         The second triangle.
     ///
     /// *Returns*
@@ -68,15 +68,15 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     static std::vector<double>
-    triangulate_intersection_triangle_triangle(const Cell& T0,
-                                               const Cell& T1);
+    triangulate_intersection_triangle_triangle(const MeshEntity& triangle_0,
+                                               const MeshEntity& triangle_1);
 
     /// Compute triangulation of intersection of two tetrahedra
     ///
     /// *Arguments*
-    ///     T0 (_Cell_)
+    ///     T0 (_MeshEntity_)
     ///         The first tetrahedron.
-    ///     T1 (_Cell_)
+    ///     T1 (_MeshEntity_)
     ///         The second tetrahedron.
     ///
     /// *Returns*
@@ -85,8 +85,12 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     static std::vector<double>
-    triangulate_intersection_tetrahedron_tetrahedron(const Cell& T0,
-                                                     const Cell& T1);
+    triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
+                                                     const MeshEntity& tetrahedron_1);
+
+  private:
+
+    // Put private helper functions here and remove this comment.
 
   };
 

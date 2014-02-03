@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,44 +19,41 @@
 // Last changed: 2014-02-03
 
 #include <dolfin/mesh/MeshEntity.h>
-#include "IntersectionTriangulation.h"
+#include "Point.h"
+#include "CollisionDetection.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<double>
-triangulate_intersection_interval_interval(const MeshEntity& interval_0,
-                                           const MeshEntity& interval_1)
+bool
+CollisionDetection::collides_tetrahedron_point(const MeshEntity& tetrahedron,
+                                               const Point& point)
 {
-  dolfin_assert(interval_0.mesh().topology().dim() == 1);
-  dolfin_assert(interval_1.mesh().topology().dim() == 1);
+  dolfin_assert(tetrahedron.mesh().topology().dim() == 3);
 
   dolfin_not_implemented();
-  std::vector<double> triangulation;
-  return triangulation;
+  return false;
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
-triangulate_intersection_triangulate_triangulate(const MeshEntity& triangle_0,
-                                                 const MeshEntity& triangle_1)
+bool
+CollisionDetection::collides_tetrahedron_triangle(const MeshEntity& tetrahedron,
+                                                  const MeshEntity& triangle)
 {
-  dolfin_assert(triangle_0.mesh().topology().dim() == 2);
-  dolfin_assert(triangle_1.mesh().topology().dim() == 2);
+  dolfin_assert(tetrahedron.mesh().topology().dim() == 3);
+  dolfin_assert(triangle.mesh().topology().dim() == 2);
 
   dolfin_not_implemented();
-  std::vector<double> triangulation;
-  return triangulation;
+  return false;
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
-triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
-                                                 const MeshEntity& tetrahedron_1)
+bool
+CollisionDetection::collides_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
+                                                     const MeshEntity& tetrahedron_1)
 {
   dolfin_assert(tetrahedron_0.mesh().topology().dim() == 3);
   dolfin_assert(tetrahedron_1.mesh().topology().dim() == 3);
 
   dolfin_not_implemented();
-  std::vector<double> triangulation;
-  return triangulation;
+  return false;
 }
 //-----------------------------------------------------------------------------
