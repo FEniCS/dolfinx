@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2013-10-22
+// Last changed: 2014-02-03
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
@@ -75,8 +75,6 @@ void CCFEMDofMap::add(const GenericDofMap& dofmap)
 //-----------------------------------------------------------------------------
 void CCFEMDofMap::build(const CCFEMFunctionSpace& function_space)
 {
-  begin(PROGRESS, "Building CCFEM dofmap.");
-
   // Compute global dimension
   begin(PROGRESS, "Computing total dimension.");
   _global_dimension = 0;
@@ -127,8 +125,6 @@ void CCFEMDofMap::build(const CCFEMFunctionSpace& function_space)
     // Increase offset
     offset += _dofmaps[part]->global_dimension();
   }
-
-  end();
 }
 //-----------------------------------------------------------------------------
 void CCFEMDofMap::clear()

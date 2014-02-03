@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-09-19
+// Last changed: 2014-02-03
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -80,34 +80,13 @@ void CCFEMFunctionSpace::build()
   begin(PROGRESS, "Building CCFEM function space.");
 
   // Build dofmap
-  dolfin_assert(_dofmap);
-  _dofmap->clear();
-  for (std::size_t i = 0; i < num_parts(); i++)
-    _dofmap->add(_function_spaces[i]->dofmap());
-  _dofmap->build(*this);
+  _build_dofmap();
 
-  // Build bounding box trees for all meshes
-  begin(PROGRESS, "Building bounding box trees for all meshes.");
-  _trees.clear();
-  for (std::size_t i = 0; i < num_parts(); i++)
-  {
-    boost::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
-    tree->build(*_function_spaces[i]->mesh());
-    _trees.push_back(tree);
-  }
-  end();
+  // Build bounding box trees
+  _build_bounding_box_trees();
 
-  // Compute collisions between all meshes
-  begin(PROGRESS, "Computing collisions between meshes.");
-  for (std::size_t i = 0; i < num_parts(); i++)
-  {
-    for (std::size_t j = i + 1; j < num_parts(); j++)
-    {
-      log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
-      _trees[i]->compute_collisions(*_trees[j]);
-    }
-  }
-  end();
+  // Compute collision maps
+  _build_collision_maps();
 
   end();
 }
@@ -119,5 +98,58 @@ void CCFEMFunctionSpace::clear()
   _function_spaces.clear();
   _trees.clear();
   _dofmap->clear();
+}
+//-----------------------------------------------------------------------------
+void CCFEMFunctionSpace::_build_dofmap()
+{
+  begin(PROGRESS, "Building CCFEM dofmap.");
+
+  // Clear dofmap
+  dolfin_assert(_dofmap);
+  _dofmap->clear();
+
+  // Add dofmap for each part
+  for (std::size_t i = 0; i < num_parts(); i++)
+    _dofmap->add(_function_spaces[i]->dofmap());
+
+  // Call function to build dofmap
+  _dofmap->build(*this);
+
+  end();
+}
+//-----------------------------------------------------------------------------
+void CCFEMFunctionSpace::_build_bounding_box_trees()
+{
+  begin(PROGRESS, "Building bounding box trees for all meshes.");
+
+  // Clear bounding box trees
+  _trees.clear();
+
+  // Build tree for each part
+  for (std::size_t i = 0; i < num_parts(); i++)
+  {
+    boost::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
+    tree->build(*_function_spaces[i]->mesh());
+    _trees.push_back(tree);
+  }
+
+  end();
+}
+//-----------------------------------------------------------------------------
+void CCFEMFunctionSpace::_build_collision_maps()
+{
+  begin(PROGRESS, "Building collision maps.");
+
+  begin(PROGRESS, "Computing collisions between meshes.");
+  for (std::size_t i = 0; i < num_parts(); i++)
+  {
+    for (std::size_t j = i + 1; j < num_parts(); j++)
+    {
+      log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
+      _trees[i]->compute_collisions(*_trees[j]);
+    }
+  }
+
+  end();
 }
 //-----------------------------------------------------------------------------

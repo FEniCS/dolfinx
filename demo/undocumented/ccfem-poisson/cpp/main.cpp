@@ -100,9 +100,9 @@ int main()
   CCFEMFunction u(V);
   solve(A, *u.vector(), b);
 
-  cout << "A = " << endl; info(A, true);
-  cout << "b = " << endl; info(b, true);
-  cout << "x = " << endl; info(*u.vector(), true);
+  //cout << "A = " << endl; info(A, true);
+  //cout << "b = " << endl; info(b, true);
+  //cout << "x = " << endl; info(*u.vector(), true);
 
   return 0;
 }

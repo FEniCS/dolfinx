@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-09-25
+// Last changed: 2014-02-03
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
@@ -107,6 +107,15 @@ namespace dolfin
 
     // CCFEM dofmap
     boost::shared_ptr<CCFEMDofMap> _dofmap;
+
+    // Build dofmap
+    void _build_dofmap();
+
+    // Build bounding box trees
+    void _build_bounding_box_trees();
+
+    // Build collision maps
+    void _build_collision_maps();
 
   };
 
