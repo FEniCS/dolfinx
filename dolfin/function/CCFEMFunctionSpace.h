@@ -102,11 +102,47 @@ namespace dolfin
     // List of function spaces
     std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
 
-    // List of bounding box trees for meshes
-    std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
-
     // CCFEM dofmap
     boost::shared_ptr<CCFEMDofMap> _dofmap;
+
+    // Bounding box trees for meshes
+    std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
+
+    // Cell indices for all uncut cells for all parts. Access data by
+    //
+    //     c = _uncut_cells[i][j]
+    //
+    // where
+    //
+    //     c = cell index for an uncut cell
+    //     i = the part (mesh) number
+    //     j = the cell number (in the list of uncut cells)
+    std::vector<std::vector<unsigned int> > _uncut_cells;
+
+    // Cell indices for all cut cells for all parts. Access data by
+    //
+    //     c = _cut_cells[i][k][l]
+    //
+    // where
+    //
+    //     c.first  = part number for the cutting mesh
+    //     c.second = cell index for the cutting cell
+    //            i = the part (mesh) number
+    //            j = the cell number (in the list of cut cells)
+    //            k = the collision number (in the list of cutting cell)
+    std::vector<std::vector<std::vector<std::pair<std::size_t, unsigned int> > > >
+    cut_cells;
+
+    // Cell indices for all covered cells for all parts. Access data by
+    //
+    //     c = _covered_cells[i][j]
+    //
+    // where
+    //
+    //     c = cell index for a covered cell
+    //     i = the part (mesh) number
+    //     j = the cell number (in the list of covered cells)
+    std::vector<std::vector<unsigned int> > _covered_cells;
 
     // Build dofmap
     void _build_dofmap();
