@@ -209,7 +209,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
                      Teuchos::rcp(x.vec().get(), false),
                      Teuchos::rcp(b.vec().get(), false)));
   const int ierr = linear_problem->setProblem();
-  dolfin_assert(ierr == 0);
+  dolfin_assert(!ierr);
 
   // Set output level
   Teuchos::ParameterList belosList;

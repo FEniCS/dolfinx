@@ -190,7 +190,7 @@ int main()
     // Move to next time step
     u0 = u1;
     t += dt;
-    cout << "t = " << t << endl;
+    dolfin::cout << "t = " << t << dolfin::endl;
   }
 
   // Plot solution

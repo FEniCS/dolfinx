@@ -155,7 +155,7 @@ int main()
 
   // Solve system
   solver.solve(*w.vector(), b);
-  cout << "Soln norm: " << w.vector()->norm("l2") << endl;
+  dolfin::cout << "Soln norm: " << w.vector()->norm("l2") << dolfin::endl;
 
   // Split solution
   Function u = w[0];
