@@ -105,14 +105,13 @@ TetrahedronCell::create_entities(std::vector<std::vector<unsigned int> >& e,
 {
   // We only need to know how to create edges and faces
   switch (dim)
-<<<<<<< HEAD
   {
   case 1:
     // Resize data structure
     e.resize(6);
     for (int i = 0; i < 6; ++i)
       e[i] .resize(2);
-
+    
     // Create the six edges
     e[0][0] = v[2]; e[0][1] = v[3];
     e[1][0] = v[1]; e[1][1] = v[3];
@@ -138,30 +137,6 @@ TetrahedronCell::create_entities(std::vector<std::vector<unsigned int> >& e,
                  "create entities of tetrahedron cell",
                  "Don't know how to create entities of topological dimension %d", dim);
   }
-=======
-    {
-    case 1:
-      // Create the six edges
-      e[0][0] = v[2]; e[0][1] = v[3];
-      e[1][0] = v[1]; e[1][1] = v[3];
-      e[2][0] = v[1]; e[2][1] = v[2];
-      e[3][0] = v[0]; e[3][1] = v[3];
-      e[4][0] = v[0]; e[4][1] = v[2];
-      e[5][0] = v[0]; e[5][1] = v[1];
-      break;
-    case 2:
-      // Create the four faces
-      e[0][0] = v[1]; e[0][1] = v[2]; e[0][2] = v[3];
-      e[1][0] = v[0]; e[1][1] = v[2]; e[1][2] = v[3];
-      e[2][0] = v[0]; e[2][1] = v[1]; e[2][2] = v[3];
-      e[3][0] = v[0]; e[3][1] = v[1]; e[3][2] = v[2];
-      break;
-    default:
-      dolfin_error("TetrahedronCell.cpp",
-		   "create entities of tetrahedron cell",
-		   "Don't know how to create entities of topological dimension %d", dim);
-    }
->>>>>>> august/topic-tetintersection
 }
 //-----------------------------------------------------------------------------
 void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
