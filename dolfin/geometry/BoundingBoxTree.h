@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-09-02
+// Last changed: 2014-02-03
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
 
 #include <limits>
+#include <tuple>
 #include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -89,19 +90,29 @@ namespace dolfin
     compute_collisions(const Point& point) const;
 
     /// Compute all collisions between bounding boxes and _BoundingBoxTree_.
+    /// This function only checks collisions between boundin boxes of
+    /// entities. It does not check that the entities themselves
+    /// actually collide. To compute entity collisions, use the
+    /// function compute_entity_collisions.
     ///
-    /// *Returns* std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
-    ///     Two lists of local indices for entities contained in
-    ///     (leaf) bounding boxes that collide with (intersect) the
-    ///     given bounding box tree. The first list contains entity
-    ///     indices for the first tree (this tree) and the second
-    ///     contains entity indices for the second tree (the input
-    ///     argument).
+    /// *Returns*
+    ///     std::vector<unsigned int>
+    ///         A list of local indices for entities in this tree that
+    ///         collide with (intersect) entities in other tree.
+    ///     std::vector<unsigned int>
+    ///         A list of local indices for entities in other tree that
+    ///         collide with (intersect) entities in this tree.
+    ///     std::vector<std::pair<unsigned int, unsigned int> >
+    ///         A list of pairs of collisions, the first in each pair
+    ///         being an entity in this tree and the second in the
+    ///         other.
     ///
     /// *Arguments*
     ///     tree (_BoundingBoxTree_)
     ///         The bounding box tree.
-    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+    std::tuple<std::vector<unsigned int>,
+               std::vector<unsigned int>,
+               std::vector<std::pair<unsigned int, unsigned int> > >
     compute_collisions(const BoundingBoxTree& tree) const;
 
     /// Compute all collisions between entities and _Point_.
@@ -120,17 +131,23 @@ namespace dolfin
     /// Compute all collisions between entities and _BoundingBoxTree_.
     ///
     /// *Returns*
-    ///     std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
-    ///         A list of local indices for entities that collide with
-    ///         (intersect) the given bounding box tree. The first
-    ///         list contains entity indices for the first tree (this
-    ///         tree) and the second contains entity indices for the
-    ///         second tree (the input argument).
+    ///     std::vector<unsigned int>
+    ///         A list of local indices for entities in this tree that
+    ///         collide with (intersect) entities in other tree.
+    ///     std::vector<unsigned int>
+    ///         A list of local indices for entities in other tree that
+    ///         collide with (intersect) entities in this tree.
+    ///     std::vector<std::pair<unsigned int, unsigned int> >
+    ///         A list of pairs of collisions, the first in each pair
+    ///         being an entity in this tree and the second in the
+    ///         other.
     ///
     /// *Arguments*
     ///     tree (_BoundingBoxTree_)
     ///         The bounding box tree.
-    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
+    std::tuple<std::vector<unsigned int>,
+               std::vector<unsigned int>,
+               std::vector<std::pair<unsigned int, unsigned int> > >
     compute_entity_collisions(const BoundingBoxTree& tree) const;
 
     /// Compute first collision between bounding boxes and _Point_.
