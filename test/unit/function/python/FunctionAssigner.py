@@ -92,7 +92,7 @@ class Creation(unittest.TestCase):
 
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
-        if MPI.num_processes()>1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             return
 
         assigner = FunctionAssigner(WW.sub(0), W)
@@ -107,7 +107,8 @@ class Creation(unittest.TestCase):
         self.assertEqual(self.wr.vector().sum(), (4+3+1)*V.dim() + 3)
 
         assign(self.qqv.sub(0).sub(0), self.q)
-        self.assertEqual(self.qqv.vector().sum(), (2*3*Q.dim()+1*Q.dim()+3*V.dim()))
+        self.assertEqual(self.qqv.vector().sum(), \
+                         (2*3*Q.dim()+1*Q.dim()+3*V.dim()))
 
         self.assertRaises(RuntimeError, lambda : assign(self.qqv.sub(0), self.q))
         self.assertRaises(RuntimeError, lambda : assign(self.qqv.sub(1), self.q))
@@ -124,7 +125,7 @@ class Creation(unittest.TestCase):
 
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
-        if MPI.num_processes()>1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             return
 
         assign(self.qqv, [self.qq, self.u1])
@@ -151,7 +152,7 @@ class Creation(unittest.TestCase):
 
         # FIXME: With better block detection it should be OK to run the
         # FIXME: rest of the tests in parallel too
-        if MPI.num_processes()>1:
+        if MPI.size(mesh.mpi_comm()) > 1:
             return
 
         assign([self.qq, self.u1], self.qqv)

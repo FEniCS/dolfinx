@@ -88,7 +88,7 @@ namespace dolfin
     std::size_t orientation(const Cell& cell, const Point& up) const;
 
     /// Create entities e of given topological dimension from vertices v
-    virtual void create_entities(std::vector<std::vector<std::size_t> >& e,
+    virtual void create_entities(std::vector<std::vector<unsigned int> >& e,
                                  std::size_t dim, const unsigned int* v) const = 0;
 
     /// Refine cell uniformly

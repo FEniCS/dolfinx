@@ -38,7 +38,7 @@ public:
   {
     // Not working in parallel, even if only process 0 writes and
     // others wait for a barrier. Skipping this in parallel for now.
-    if (dolfin::MPI::num_processes() > 1)
+    if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
       return;
 
     // Create some parameters
@@ -74,7 +74,7 @@ public:
   {
     // Not working in parallel, even if only process 0 writes and
     // others wait for a barrier. Skipping this in parallel for now.
-    if (dolfin::MPI::num_processes() > 1)
+    if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
       return;
 
     // Create some nested parameters

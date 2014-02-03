@@ -26,8 +26,9 @@
 %pythoncode %{
 def __contains__(self,u):
     "Check whether a function is in the FunctionSpace"
-    assert(isinstance(u,Function))
-    return u._in(self)
+    if isinstance(u, Function):
+        return u._in(self)
+    return False
 
 def leaf_node(self):
     "Return the finest FunctionSpace in hierarchy"

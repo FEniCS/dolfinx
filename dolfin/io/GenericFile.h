@@ -114,7 +114,7 @@ namespace dolfin
     virtual void operator<< (const std::map<std::size_t, std::vector<double> >& array_map);
 
     void read();
-    virtual void write();
+    virtual void write(std::size_t process_number);
 
     // Return filename
     std::string name() const

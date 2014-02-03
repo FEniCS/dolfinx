@@ -48,7 +48,7 @@ xx[1] = x
 
 # Create a another block vector (that is compatible with A in parallel)
 y = Vector()
-A.resize(y, 0)
+A.init_vector(y, 0)
 yy = BlockVector(2)
 yy[0] = y
 yy[1] = y

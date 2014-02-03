@@ -72,10 +72,6 @@ class FiniteElementTest(unittest.TestCase):
     def test_evaluate_dofs_manifolds_affine(self):
         "Testing evaluate_dofs vs tabulated coordinates."
 
-        # Boundary mesh not running in parallel
-        if MPI.num_processes() > 1:
-            return
-
         n = 4
         mesh = BoundaryMesh(UnitSquareMesh(n, n), "exterior")
         mesh2 = BoundaryMesh(UnitCubeMesh(n, n, n), "exterior")

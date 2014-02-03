@@ -51,7 +51,8 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
                               ("frobenius", NORM_FROBENIUS);
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(bool use_gpu) : _use_gpu(use_gpu)
+PETScMatrix::PETScMatrix(bool use_gpu) : PETScBaseMatrix(NULL),
+                                         _use_gpu(use_gpu)
 {
 #ifndef HAS_PETSC_CUSP
   if (use_gpu)
@@ -65,27 +66,20 @@ PETScMatrix::PETScMatrix(bool use_gpu) : _use_gpu(use_gpu)
   // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu) :
-  PETScBaseMatrix(A), _use_gpu(use_gpu)
+PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A), _use_gpu(false)
 {
-#ifndef HAS_PETSC_CUSP
-  if (use_gpu)
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "create GPU matrix",
-                 "PETSc not compiled with Cusp support");
-  }
-#endif
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A): _use_gpu(false)
+PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix(NULL),
+                                                 _use_gpu(false)
 {
   *this = A;
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
 {
-  // Do nothing
+  // Do nothing.
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
@@ -96,8 +90,8 @@ boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
   else
   {
     // Create copy of PETSc matrix
-    boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
-    PetscErrorCode ierr = MatDuplicate(*_A, MAT_COPY_VALUES, _Acopy.get());
+    Mat _Acopy = NULL;
+    PetscErrorCode ierr = MatDuplicate(_A, MAT_COPY_VALUES, &_Acopy);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
 
     // Create PETScMatrix
@@ -128,14 +122,15 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   const GenericSparsityPattern& sparsity_pattern
     = *tensor_layout.sparsity_pattern();
 
-  // Create matrix (any old matrix is destroyed automatically)
-  if (_A && !_A.unique())
+  if (_A)
   {
-    dolfin_error("PETScMatrix.cpp",
-                 "initialize PETSc matrix",
-                 "More than one object points to the underlying PETSc object");
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
+    MatDestroy(&_A);
   }
-  _A.reset(new Mat, PETScMatrixDeleter());
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
@@ -145,29 +140,24 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     std::vector<std::size_t> num_nonzeros(M);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
-    // FIXME: Debugging
-    //cout << "Number of nonzeros for PETSc matrix:" << endl;
-    //for (unsigned int i = 0; i < M; i++)
-    //  cout << "i = " << i << ": " << num_nonzeros[i] << endl;
-
     // Create matrix
-    ierr = MatCreate(PETSC_COMM_SELF, _A.get());
+    ierr = MatCreate(PETSC_COMM_SELF, &_A);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
     // Set size
-    ierr = MatSetSizes(*_A, M, N, M, N);
+    ierr = MatSetSizes(_A, M, N, M, N);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetSizes");
 
     // Set matrix type according to chosen architecture
     if (!_use_gpu)
     {
-      ierr = MatSetType(*_A, MATSEQAIJ);
+      ierr = MatSetType(_A, MATSEQAIJ);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
     }
     #ifdef HAS_PETSC_CUSP
     else
     {
-      ierr = MatSetType(*_A, MATSEQAIJCUSP);
+      ierr = MatSetType(_A, MATSEQAIJCUSP);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
     }
     #endif
@@ -175,7 +165,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Set block size
     if (tensor_layout.block_size > 1)
     {
-     ierr =  MatSetBlockSize(*_A, tensor_layout.block_size);
+     ierr =  MatSetBlockSize(_A, tensor_layout.block_size);
      if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetBlockSize");
     }
 
@@ -186,7 +176,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Copy number of non-zeros to PetscInt type
     const std::vector<PetscInt> _num_nonzeros(num_nonzeros.begin(),
                                               num_nonzeros.end());
-    ierr = MatSeqAIJSetPreallocation(*_A, 0, _num_nonzeros.data());
+    ierr = MatSeqAIJSetPreallocation(_A, 0, _num_nonzeros.data());
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSeqAIJSetPreallocation");
 
     // Set column indices
@@ -202,7 +192,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       //  cout << "  Col: " << _column_indices[i][j] << endl;
       column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
     }
-    MatSeqAIJSetColumnIndices(*_A, &column_indices[0]);
+    MatSeqAIJSetColumnIndices(_A, &column_indices[0]);
     */
   }
   else
@@ -215,10 +205,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // FIXME: Try using MatStashSetInitialSize to optimise performance
 
-    //info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
-    //info("Local range is [%d, %d] x [%d, %d].",
-    //     row_range.first, row_range.second, col_range.first, col_range.second);
-
     // Get number of nonzeros for each row from sparsity pattern
     std::vector<std::size_t> num_nonzeros_diagonal;
     std::vector<std::size_t> num_nonzeros_off_diagonal;
@@ -226,21 +212,21 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
     // Create matrix
-    ierr = MatCreate(PETSC_COMM_WORLD, _A.get());
+    ierr = MatCreate(PETSC_COMM_WORLD, &_A);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
     // Set size
-    ierr = MatSetSizes(*_A, m, n, M, N);
+    ierr = MatSetSizes(_A, m, n, M, N);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetSizes");
 
     // Set matrix type
-    ierr = MatSetType(*_A, MATMPIAIJ);
+    ierr = MatSetType(_A, MATMPIAIJ);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
 
     // Set block size
     if (tensor_layout.block_size > 1)
     {
-      ierr = MatSetBlockSize(*_A, tensor_layout.block_size);
+      ierr = MatSetBlockSize(_A, tensor_layout.block_size);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetBlockSize");
     }
     // Allocate space (using data from sparsity pattern)
@@ -250,7 +236,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     const std::vector<PetscInt>
       _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(),
                                  num_nonzeros_off_diagonal.end());
-    ierr = MatMPIAIJSetPreallocation(*_A, 0, _num_nonzeros_diagonal.data(),
+    ierr = MatMPIAIJSetPreallocation(_A, 0, _num_nonzeros_diagonal.data(),
                                      0, _num_nonzeros_off_diagonal.data());
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatMPIAIJSetPreallocation");
   }
@@ -258,19 +244,24 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   // Set some options
 
   // Do not allow more entries than have been pre-allocated
-  ierr = MatSetOption(*_A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  ierr = MatSetOption(_A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOption");
 
-  ierr = MatSetOption(*_A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
+  ierr = MatSetOption(_A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOption");
 
-  ierr = MatSetFromOptions(*_A);
+  ierr = MatSetFromOptions(_A);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
-  ierr = MatSetUp(*_A.get());
+  ierr = MatSetUp(_A);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
   #endif
+}
+//-----------------------------------------------------------------------------
+bool PETScMatrix::empty() const
+{
+  return _A ? true : false;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
@@ -279,7 +270,7 @@ void PETScMatrix::get(double* block,
 {
   // Get matrix entries (must be on this process)
   dolfin_assert(_A);
-  PetscErrorCode ierr = MatGetValues(*_A, m, rows, n, cols, block);
+  PetscErrorCode ierr = MatGetValues(_A, m, rows, n, cols, block);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetValues");
 }
 //-----------------------------------------------------------------------------
@@ -288,7 +279,7 @@ void PETScMatrix::set(const double* block,
                       std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(_A);
-  PetscErrorCode ierr = MatSetValues(*_A, m, rows, n, cols, block,
+  PetscErrorCode ierr = MatSetValues(_A, m, rows, n, cols, block,
                                     INSERT_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValues");
 }
@@ -298,7 +289,7 @@ void PETScMatrix::add(const double* block,
                       std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(_A);
-  PetscErrorCode ierr = MatSetValues(*_A, m, rows, n, cols, block, ADD_VALUES);
+  PetscErrorCode ierr = MatSetValues(_A, m, rows, n, cols, block, ADD_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValues");
 }
 //-----------------------------------------------------------------------------
@@ -312,12 +303,12 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
   dolfin_assert(AA->mat());
   if (same_nonzero_pattern)
   {
-    ierr = MatAXPY(*_A, a, *AA->mat(), SAME_NONZERO_PATTERN);
+    ierr = MatAXPY(_A, a, AA->mat(), SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
   }
   else
   {
-    ierr = MatAXPY(*_A, a, *AA->mat(), DIFFERENT_NONZERO_PATTERN);
+    ierr = MatAXPY(_A, a, AA->mat(), DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
   }
 }
@@ -331,14 +322,14 @@ void PETScMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   const PetscInt *cols = 0;
   const double *vals = 0;
   PetscInt ncols = 0;
-  ierr = MatGetRow(*_A, row, &ncols, &cols, &vals);
+  ierr = MatGetRow(_A, row, &ncols, &cols, &vals);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetRow");
 
   // Assign values to std::vectors
   columns.assign(cols, cols + ncols);
   values.assign(vals, vals + ncols);
 
-  ierr = MatRestoreRow(*_A, row, &ncols, &cols, &vals);
+  ierr = MatRestoreRow(_A, row, &ncols, &cols, &vals);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatRestorRow");
 }
 //-----------------------------------------------------------------------------
@@ -377,7 +368,7 @@ void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
   const PetscInt _m = m;
   ierr = ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
-  ierr = MatZeroRowsIS(*_A, is, null, NULL, NULL);
+  ierr = MatZeroRowsIS(_A, is, null, NULL, NULL);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsIS");
   ierr = ISDestroy(&is);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
@@ -393,7 +384,7 @@ void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   const PetscInt _m = m;
   ierr = ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
-  ierr = MatZeroRowsIS(*_A, is, one, NULL, NULL);
+  ierr = MatZeroRowsIS(_A, is, one, NULL, NULL);
   if (ierr == PETSC_ERR_ARG_WRONGSTATE)
   {
     dolfin_error("PETScMatrix.cpp",
@@ -423,7 +414,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 
   // Resize RHS if empty
   if (yy.size() == 0)
-    resize(yy, 0);
+    init_vector(yy, 0);
 
   if (size(0) != yy.size())
   {
@@ -432,7 +423,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
                  "Vector for matrix-vector result has wrong size");
   }
 
-  PetscErrorCode ierr = MatMult(*_A, *xx.vec(), *yy.vec());
+  PetscErrorCode ierr = MatMult(_A, xx.vec(), yy.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMult");
 }
 //-----------------------------------------------------------------------------
@@ -452,7 +443,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 
   // Resize RHS if empty
   if (yy.size() == 0)
-    resize(yy, 1);
+    init_vector(yy, 1);
 
   if (size(1) != yy.size())
   {
@@ -461,7 +452,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
                  "Vector for transpose matrix-vector result has wrong size");
   }
 
-  PetscErrorCode ierr = MatMultTranspose(*_A, *xx.vec(), *yy.vec());
+  PetscErrorCode ierr = MatMultTranspose(_A, xx.vec(), yy.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMultTranspose");
 }
 //-----------------------------------------------------------------------------
@@ -478,7 +469,7 @@ double PETScMatrix::norm(std::string norm_type) const
   }
 
   double value = 0.0;
-  PetscErrorCode ierr = MatNorm(*_A, norm_types.find(norm_type)->second,
+  PetscErrorCode ierr = MatNorm(_A, norm_types.find(norm_type)->second,
                                 &value);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatNorm");
   return value;
@@ -492,23 +483,23 @@ void PETScMatrix::apply(std::string mode)
   PetscErrorCode ierr;
   if (mode == "add")
   {
-    ierr = MatAssemblyBegin(*_A, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(*_A, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAssemblyEnd");
   }
   else if (mode == "insert")
   {
-    ierr = MatAssemblyBegin(*_A, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(*_A, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAssemblyEnd");
   }
   else if (mode == "flush")
   {
-    ierr = MatAssemblyBegin(*_A, MAT_FLUSH_ASSEMBLY);
+    ierr = MatAssemblyBegin(_A, MAT_FLUSH_ASSEMBLY);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(*_A, MAT_FLUSH_ASSEMBLY);
+    ierr = MatAssemblyEnd(_A, MAT_FLUSH_ASSEMBLY);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAssemblyEnd");
   }
   else
@@ -519,17 +510,25 @@ void PETScMatrix::apply(std::string mode)
   }
 }
 //-----------------------------------------------------------------------------
+MPI_Comm PETScMatrix::mpi_comm() const
+{
+  dolfin_assert(_A);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_A, &mpi_comm);
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
   dolfin_assert(_A);
-  PetscErrorCode ierr = MatZeroEntries(*_A);
+  PetscErrorCode ierr = MatZeroEntries(_A);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroEntries");
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator*= (double a)
 {
   dolfin_assert(_A);
-  PetscErrorCode ierr = MatScale(*_A, a);
+  PetscErrorCode ierr = MatScale(_A, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatScale");
   return *this;
 }
@@ -537,7 +536,7 @@ const PETScMatrix& PETScMatrix::operator*= (double a)
 const PETScMatrix& PETScMatrix::operator/= (double a)
 {
   dolfin_assert(_A);
-  MatScale(*_A, 1.0/a);
+  MatScale(_A, 1.0/a);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -551,7 +550,7 @@ bool PETScMatrix::is_symmetric(double tol) const
 {
   dolfin_assert(_A);
   PetscBool symmetric = PETSC_FALSE;
-  PetscErrorCode ierr = MatIsSymmetric(*_A, tol, &symmetric);
+  PetscErrorCode ierr = MatIsSymmetric(_A, tol, &symmetric);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatIsSymmetric");
   return symmetric == PETSC_TRUE ? true : false;
 }
@@ -565,26 +564,49 @@ GenericLinearAlgebraFactory& PETScMatrix::factory() const
     return PETScCuspFactory::instance();
   #endif
 
-  // Return something to keep the compiler happy. Code will never be reached.
+  // Return something to keep the compiler happy. Code will never be
+  // reached.
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 {
   if (!A.mat())
-    _A.reset();
+  {
+    if (_A)
+    {
+      #ifdef DOLFIN_DEPRECATION_ERROR
+      error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
+      #else
+      warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
+      #endif
+      MatDestroy(&_A);
+    }
+    _A = NULL;
+  }
   else if (this != &A) // Check for self-assignment
   {
-    if (_A && !_A.unique())
+    if (_A)
     {
-      dolfin_error("PETScMatrix.cpp",
-                 "assign to PETSc matrix",
-                 "More than one object points to the underlying PETSc object");
+      // Get reference count to _A
+      int ref_count = 0;
+      PetscObjectGetReference((PetscObject)_A, &ref_count);
+      if (ref_count > 1)
+      {
+        dolfin_error("PETScMatrix.cpp",
+                     "assign to PETSc matrix",
+                     "More than one object points to the underlying PETSc object");
+      }
+      #ifdef DOLFIN_DEPRECATION_ERROR
+      error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
+      #else
+      warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
+      #endif
+      MatDestroy(&_A);
     }
-    _A.reset(new Mat, PETScMatrixDeleter());
 
     // Duplicate with the same pattern as A.A
-    PetscErrorCode ierr = MatDuplicate(*A.mat(), MAT_COPY_VALUES, _A.get());
+    PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_A);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
   }
   return *this;
@@ -599,7 +621,7 @@ void PETScMatrix::binary_dump(std::string file_name) const
                                FILE_MODE_WRITE, &view_out);
   if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerBinaryOpen");
 
-  ierr = MatView(*(_A.get()), view_out);
+  ierr = MatView(_A, view_out);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatView");
 
   ierr = PetscViewerDestroy(&view_out);
@@ -619,14 +641,14 @@ std::string PETScMatrix::str(bool verbose) const
     // FIXME: Maybe this could be an option?
     dolfin_assert(_A);
     PetscErrorCode ierr;
-    if (MPI::num_processes() > 1)
+    if (MPI::size(MPI_COMM_WORLD) > 1)
     {
-      ierr = MatView(*_A, PETSC_VIEWER_STDOUT_WORLD);
+      ierr = MatView(_A, PETSC_VIEWER_STDOUT_WORLD);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatView");
     }
     else
     {
-      ierr = MatView(*_A, PETSC_VIEWER_STDOUT_SELF);
+      ierr = MatView(_A, PETSC_VIEWER_STDOUT_SELF);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatView");
     }
   }

@@ -44,12 +44,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(std::string type) : _x(new ublas_vector(0))
+uBLASVector::uBLASVector() : _x(new ublas_vector(0))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(std::size_t N, std::string type)
+uBLASVector::uBLASVector(std::size_t N)
   : _x(new ublas_vector(N))
 {
   // Set all entries to zero
@@ -77,33 +77,41 @@ boost::shared_ptr<GenericVector> uBLASVector::copy() const
   return y;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(std::size_t N)
+void uBLASVector::resize(MPI_Comm comm, std::size_t N)
 {
-  if (_x->size() == N)
-    return;
-  _x->resize(N, false);
-
-  // Set vector to zero to prevent random numbers entering the vector.
-  // Fixes this bug: https://bugs.launchpad.net/dolfin/+bug/594954
-  _x->clear();
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(std::pair<std::size_t, std::size_t> range)
-{
-  if (range.first != 0)
+  if (MPI::size(comm) > 1)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
                  "Distributed vectors not supported by uBLAS backend");
   }
 
-  resize(range.second - range.first);
+  if (_x->size() == N)
+    return;
+  _x->resize(N, false);
+
+  // Set vector to zero
+  _x->clear();
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(std::pair<std::size_t, std::size_t> range,
+void uBLASVector::resize(MPI_Comm comm,
+                         std::pair<std::size_t, std::size_t> range)
+{
+  if (MPI::size(comm) > 1)
+  {
+    dolfin_error("uBLASVector.cpp",
+                 "resize uBLAS vector",
+                 "Distributed vectors not supported by uBLAS backend");
+  }
+
+  resize(comm, range.second - range.first);
+}
+//-----------------------------------------------------------------------------
+void uBLASVector::resize(MPI_Comm comm,
+                         std::pair<std::size_t, std::size_t> range,
                          const std::vector<la_index>& ghost_indices)
 {
-  if (range.first != 0)
+  if (MPI::size(comm) > 1)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
@@ -117,7 +125,7 @@ void uBLASVector::resize(std::pair<std::size_t, std::size_t> range,
                  "Distributed vectors not supported by uBLAS backend");
   }
 
-  resize(range.second - range.first);
+  resize(comm, range.second - range.first);
 }
 //-----------------------------------------------------------------------------
 bool uBLASVector::empty() const
@@ -174,13 +182,13 @@ void uBLASVector::add_local(const Array<double>& values)
 void uBLASVector::gather(GenericVector& x,
                          const std::vector<dolfin::la_index>& indices) const
 {
-  not_working_in_parallel("uBLASVector::gather)");
-
   const std::size_t _size = indices.size();
   dolfin_assert(this->size() >= _size);
 
-  x.resize(_size);
+  if (x.empty())
+    x.init(mpi_comm(), _size);
   ublas_vector& tmp = as_type<uBLASVector>(x).vec();
+  dolfin_assert(x.size(0) == _size);
   for (std::size_t i = 0; i < _size; i++)
     tmp(i) = (*_x)(indices[i]);
 }
@@ -188,8 +196,6 @@ void uBLASVector::gather(GenericVector& x,
 void uBLASVector::gather(std::vector<double>& x,
                          const std::vector<dolfin::la_index>& indices) const
 {
-  not_working_in_parallel("uBLASVector::gather)");
-
   const std::size_t _size = indices.size();
   x.resize(_size);
   dolfin_assert(x.size() == _size);
@@ -199,8 +205,6 @@ void uBLASVector::gather(std::vector<double>& x,
 //-----------------------------------------------------------------------------
 void uBLASVector::gather_on_zero(std::vector<double>& x) const
 {
-  not_working_in_parallel("uBLASVector::gather_on_zero)");
-
   get_local(x);
 }
 //-----------------------------------------------------------------------------

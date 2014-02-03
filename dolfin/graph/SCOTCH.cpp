@@ -48,7 +48,8 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
+                               std::vector<std::size_t>& cell_partition,
                                const LocalMeshData& mesh_data)
 {
   // FIXME: Use std::set or std::vector?
@@ -58,13 +59,14 @@ void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
-  GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
+  GraphBuilder::compute_dual_graph(mpi_comm, mesh_data, local_graph,
+                                   ghost_vertices);
 
   // Compute partitions
   const std::size_t num_global_vertices = mesh_data.num_global_cells;
   const std::vector<std::size_t>& global_cell_indices
     = mesh_data.global_cell_indices;
-  partition(local_graph, ghost_vertices, global_cell_indices,
+  partition(mpi_comm, local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition);
 }
 //-----------------------------------------------------------------------------
@@ -192,7 +194,8 @@ void SCOTCH::compute_reordering(const Graph& graph,
             inverse_permutation_indices.end(), inverse_permutation.begin());
 }
 //-----------------------------------------------------------------------------
-void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
+void SCOTCH::partition(const MPI_Comm mpi_comm,
+                       const std::vector<std::set<std::size_t> >& local_graph,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
@@ -204,10 +207,10 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   const int baseval = 0;
 
   // Number of processes
-  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // This process number
-  const std::size_t proc_num = MPI::process_number();
+  const std::size_t proc_num = MPI::rank(mpi_comm);
 
   // Local data ---------------------------------
 
@@ -242,7 +245,7 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   // Number of local vertices (cells) on each process
   std::vector<SCOTCH_Num> proccnttab;
   const SCOTCH_Num local_graph_size = local_graph.size();
-  MPI::all_gather(local_graph_size, proccnttab);
+  MPI::all_gather(mpi_comm, local_graph_size, proccnttab);
 
   // FIXME: explain this test
   // Array containing . . . . (some sanity checks)
@@ -268,7 +271,7 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
     const SCOTCH_Num vertglbnbr = num_global_vertices;
 
     // Total (global) number of edges (cell-cell connections) in the graph
-    const SCOTCH_Num edgeglbnbr = MPI::sum(edgelocnbr);
+    const SCOTCH_Num edgeglbnbr = MPI::sum(mpi_comm, edgelocnbr);
 
     for (std::size_t proc = 0; proc < num_processes; ++proc)
     {
@@ -305,19 +308,16 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
         cout << endl;
         cout << "--------------------------------------------------" << endl;
       }
-      MPI::barrier();
+      MPI::barrier(mpi_comm);
     }
-    MPI::barrier();
+    MPI::barrier(mpi_comm);
   }
   */
   // ------------------------------------------------------
 
-  // Construct communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm;
-
   // Create SCOTCH graph and intialise
   SCOTCH_Dgraph dgrafdat;
-  if (SCOTCH_dgraphInit(&dgrafdat, *comm) != 0)
+  if (SCOTCH_dgraphInit(&dgrafdat, mpi_comm) != 0)
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
@@ -389,7 +389,8 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
+                               std::vector<std::size_t>& cell_partition,
                                const LocalMeshData& mesh_data)
 {
   dolfin_error("SCOTCH.cpp",
@@ -427,7 +428,8 @@ void SCOTCH::compute_reordering(const Graph& graph,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
+void SCOTCH::partition(const MPI_Comm mpi_comm,
+                       const std::vector<std::set<std::size_t> >& local_graph,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
                        std::size_t num_global_vertices,

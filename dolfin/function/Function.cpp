@@ -451,14 +451,13 @@ void Function::eval(Array<double>& values, const Array<double>& x,
 //-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
 {
+  dolfin_assert(_vector);
+  dolfin_assert(_function_space);
+
   // Gather off-process dofs
   v.update();
 
-  // Initialise vector
-  init_vector();
-
   // Interpolate
-  dolfin_assert(_function_space);
   _function_space->interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
@@ -709,7 +708,16 @@ void Function::init_vector()
   dolfin_assert(_vector);
 
   // Initialize vector of dofs
-  _vector->resize(range, ghost_indices);
+  dolfin_assert(_function_space->mesh());
+  if (_vector->empty())
+    _vector->init(_function_space->mesh()->mpi_comm(), range, ghost_indices);
+  else
+  {
+    dolfin_error("Function.cpp",
+                 "initialize vector of degrees of freedom for function",
+                 "Cannot re-initialize a non-empty vector. Consider creating a new function");
+
+  }
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

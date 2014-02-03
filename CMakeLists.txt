@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "2")
+set(DOLFIN_VERSION_MINOR "3")
 set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
@@ -61,7 +61,7 @@ option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
-
+option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
@@ -94,6 +94,13 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
 endforeach()
 
 #------------------------------------------------------------------------------
+# General compiler defintions
+
+if (DOLFIN_DEPRECATION_ERROR)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_DEPRECATION_ERROR")
+endif()
+
+#------------------------------------------------------------------------------
 # Package-specific options
 
 option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
@@ -120,9 +127,14 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
-if (HAVE_STD AND CMAKE_COMPILER_IS_GNUCXX)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++98 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
+if (HAVE_STD_CPP11)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+  CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
+  if (HAVE_STD_CPP0x)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  endif()
 endif()
 
 # Debug flags
@@ -253,10 +265,10 @@ endif()
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 2.2.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 2.3.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 2.2.0.\n"
+    "compatible with requested version 2.3.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -297,13 +309,15 @@ if (DOLFIN_ENABLE_PYTHON)
     endif()
 
     # Add a search path for Python library based on output from
-    # iterpreter
+    # interpreter
+    set(CMAKE_LIBRARY_PATH_SAVE ${CMAKE_LIBRARY_PATH})
     if ("${_PYTHON_LIB_RESULT}" STREQUAL "0")
       set(CMAKE_LIBRARY_PATH ${_PYTHON_LIB_PATH})
     endif()
 
-    # Find Pythons livs
+    # Find Pythons libs
     find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT QUIET REQUIRED)
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH_SAVE})
   endif()
 
   # If Python is found, check for NumPy and SWIG
@@ -411,8 +425,12 @@ if (DOLFIN_ENABLE_TRILINOS)
     foreach (required_package ${DOLFIN_TRILINOS_PACKAGES})
 
       # Search for required package in list of available packages
-      set(${required_trilinos_package}_found false)
-      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_found)
+      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_index)
+      if(required_trilinos_package_index EQUAL -1)
+          set(required_trilinos_package_found false)
+      else()
+          set(required_trilinos_package_found true)
+      endif()
 
       # Print whether or not package is found
       if (required_trilinos_package_found)
@@ -471,6 +489,16 @@ endif()
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit)
+
+  # Older version of CPPUNIT use std::auto_ptr, which is deprecated
+  if (${CPPUNIT_VERSION} LESS 1.13.1)
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
+    if (HAVE_NO_DEPRECATED)
+      set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-deprecated")
+    endif()
+  endif()
+
 endif()
 
 # Check for Sphinx
@@ -493,10 +521,6 @@ if (DOLFIN_ENABLE_VTK)
       message(WARNING "Unable to find VTK (>= 5.2)")
     else()
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
-      if ("${VTK_VERSION}" VERSION_EQUAL "6.0" OR "${VTK_VERSION}" VERSION_GREATER "6.0")
-	message(STATUS "VTK 6.0 and above is not yet supported. VTK disabled.")
-        set(VTK_FOUND FALSE)
-     endif()
     endif()
   endif()
 endif()

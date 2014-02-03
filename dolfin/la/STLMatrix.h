@@ -57,8 +57,9 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    STLMatrix(std::size_t primary_dim=0) : _primary_dim(primary_dim),
-      _block_size(1), _local_range(0, 0), num_codim_entities(0) {}
+  STLMatrix(std::size_t primary_dim=0) : _mpi_comm(MPI_COMM_SELF),
+      _primary_dim(primary_dim), _block_size(1), _local_range(0, 0),
+      num_codim_entities(0) {}
 
     /// Destructor
     virtual ~STLMatrix() {}
@@ -67,6 +68,10 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout);
+
+    /// Return true if empty
+    virtual bool empty() const
+    { return _values.empty(); }
 
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const;
@@ -81,6 +86,10 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
 
+    /// Return MPI communicator
+    virtual MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
@@ -93,14 +102,14 @@ namespace dolfin
       return A;
     }
 
-    /// Resize vector z to be compatible with the matrix-vector product
-    /// y = Ax. In the parallel case, both size and layout are
+    /// Initialize vector z to be compatible with the matrix-vector
+    /// product y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, std::size_t dim) const
+    virtual void init_vector(GenericVector& z, std::size_t dim) const
     { dolfin_not_implemented(); }
 
     /// Get block of values
@@ -213,6 +222,9 @@ namespace dolfin
     std::size_t local_nnz() const;
 
   private:
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     /// Return matrix in compressed format
     template<typename T>

@@ -205,7 +205,8 @@ void UmfpackLUSolver::symbolic_factorize()
   dolfin_assert(nnz >= M);
 
   // Factorize and solve
-  log(PROGRESS, "Symbolic factorization of a matrix of size %d x %d (UMFPACK).", M, N);
+  log(PROGRESS, "Symbolic factorization of a matrix of size %d x %d (UMFPACK).",
+      M, N);
 
   // Perform symbolic factorisation
   symbolic = umfpack_factorize_symbolic(M, N, Ap, Ai, Ax);
@@ -237,7 +238,8 @@ void UmfpackLUSolver::numeric_factorize()
   dolfin_assert(nnz >= M);
 
   // Factorize and solve
-  log(PROGRESS, "LU factorization of a matrix of size %d x %d (UMFPACK).", M, N);
+  log(PROGRESS, "LU factorization of a matrix of size %d x %d (UMFPACK).",
+      M, N);
 
   dolfin_assert(symbolic);
   numeric.reset();
@@ -263,8 +265,8 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   dolfin_assert(A->size(0) == b.size());
 
   // Resize x if required
-  if (A->size(1) != x.size())
-    x.resize(A->size(1));
+  if (x.empty())
+    x.init(MPI_COMM_SELF, A->size(1));
 
   if (!symbolic)
   {
@@ -281,7 +283,8 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   }
 
   // Get matrix data
-  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*,
+                       int> data = A->data();
   const std::size_t* Ap  = boost::tuples::get<0>(data);
   const std::size_t* Ai  = boost::tuples::get<1>(data);
   const double*      Ax  = boost::tuples::get<2>(data);

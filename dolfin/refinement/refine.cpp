@@ -44,7 +44,7 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
   const std::size_t D = mesh.topology().dim();
 
   // Dispatch to appropriate refinement function
-  if(MPI::num_processes() == 1)
+  if(MPI::size(mesh.mpi_comm()) == 1)
     UniformMeshRefinement::refine(refined_mesh, mesh);
   else if(D == 2)
     ParallelRefinement2D::refine(refined_mesh, mesh, redistribute);
@@ -74,7 +74,7 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
   const std::size_t D = mesh.topology().dim();
 
   // Dispatch to appropriate refinement function
-  if (MPI::num_processes() == 1)
+  if (MPI::size(mesh.mpi_comm()) == 1)
     LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
   else if (D == 2)
   {

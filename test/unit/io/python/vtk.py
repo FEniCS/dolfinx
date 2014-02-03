@@ -31,7 +31,6 @@ mesh_function_types = ["size_t", "int", "double", "bool"]
 class VTK_MeshFunction_Output(unittest.TestCase):
     """Test output of MeshFunctions to VTK files"""
     def test_save_1d_meshfunctions(self):
-        #if MPI.num_processes() == 1:
         mesh = UnitIntervalMesh(32)
         for F in mesh_functions:
             if F in [FaceFunction, EdgeFunction]: continue
@@ -103,16 +102,15 @@ class VTK_Point_Function_Output(unittest.TestCase):
     """Test output of point-based Functions to VTK files"""
 
     def test_save_1d_scalar(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitIntervalMesh(32)
-            u = Function(FunctionSpace(mesh, "Lagrange", 2))
-            u.vector()[:] = 1.0
-            File("u.pvd") << u
-            f = File("u.pvd")
-            f << (u, 0.)
-            f << (u, 1.)
-            for file_option in file_options:
-                File("u.pvd", file_option) << u
+        mesh = UnitIntervalMesh(32)
+        u = Function(FunctionSpace(mesh, "Lagrange", 2))
+        u.vector()[:] = 1.0
+        File("u.pvd") << u
+        f = File("u.pvd")
+        f << (u, 0.)
+        f << (u, 1.)
+        for file_option in file_options:
+            File("u.pvd", file_option) << u
 
     def test_save_2d_scalar(self):
         mesh = UnitSquareMesh(16, 16)
@@ -138,7 +136,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
 
     # FFC fails for vector spaces in 1D
     #def test_save_1d_vector(self):
-    #    if MPI.num_processes() == 1:
+    #    if MPI.size() == 1:
     #        mesh = UnitIntervalMesh(32)
     #        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     #        u.vector()[:] = 1.0
@@ -170,7 +168,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
 
     # FFC fails for tensor spaces in 1D
     #def test_save_1d_tensor(self):
-    #    if MPI.num_processes() == 1:
+    #    if MPI.size() == 1:
     #        mesh = UnitIntervalMesh(32)
     #        u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     #        u.vector()[:] = 1.0

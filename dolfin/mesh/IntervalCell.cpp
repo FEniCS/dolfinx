@@ -78,7 +78,7 @@ std::size_t IntervalCell::orientation(const Cell& cell) const
   return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+void IntervalCell::create_entities(std::vector<std::vector<unsigned int> >& e,
                                    std::size_t dim, const unsigned int* v) const
 {
   // We don't need to create any entities

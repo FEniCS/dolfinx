@@ -53,11 +53,11 @@ namespace dolfin
     }
 
     /// Create vector of size N
-    explicit Vector(std::size_t N)
+    Vector(MPI_Comm comm, std::size_t N)
     {
       DefaultFactory factory;
       vector = factory.create_vector();
-      vector->resize(N);
+      vector->init(comm, N);
     }
 
     /// Copy constructor
@@ -83,24 +83,33 @@ namespace dolfin
     virtual void apply(std::string mode)
     { vector->apply(mode); }
 
+    /// Return MPI communicator
+    virtual MPI_Comm mpi_comm() const
+    { return vector->mpi_comm(); }
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const
     { return "<Vector wrapper of " + vector->str(verbose) + ">"; }
 
     //--- Implementation of the GenericVector interface ---
 
-    /// Resize vector to size N
-    virtual void resize(std::size_t N)
-    { vector->resize(N); }
+    /// Initialize vector to size N
+    virtual void init(MPI_Comm comm, std::size_t N)
+    { vector->init(comm, N); }
 
-    /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range)
-    { vector->resize(range); }
+    /// Initlialize vector with given ownership range
+    virtual void init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range)
+    { vector->init(comm, range); }
 
-    /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices)
-    { vector->resize(range, ghost_indices); }
+    /// Initialize vector with given ownership range and with ghost
+    /// values
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range,
+                      const std::vector<la_index>& ghost_indices)
+    { vector->init(comm, range, ghost_indices); }
+
+    // Bring init function from GenericVector into scope
+    using GenericVector::init;
 
     /// Return true if vector is empty
     virtual bool empty() const
@@ -240,9 +249,8 @@ namespace dolfin
 
     /// Update ghost values
     virtual void update_ghost_values()
-    {
-      vector->update_ghost_values();
-    }
+    { vector->update_ghost_values(); }
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory

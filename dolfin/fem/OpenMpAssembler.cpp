@@ -55,7 +55,10 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
 {
-  if (MPI::num_processes() > 1)
+  // Get mesh
+  const Mesh& mesh = a.mesh();
+
+  if (MPI::size(mesh.mpi_comm()) > 1)
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",

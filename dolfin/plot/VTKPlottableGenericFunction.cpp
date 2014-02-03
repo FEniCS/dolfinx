@@ -63,6 +63,9 @@ std::size_t VTKPlottableGenericFunction::value_rank() const
 void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
 {
   _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
+  // Required in VTK6.0/6.1, default and XYPlaneOn() doesn't work
+  _warpscalar->UseNormalOn();
+  _warpscalar->SetNormal(0, 0, 1);
   _warpvector = vtkSmartPointer<vtkWarpVector>::New();
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
   _mode = (std::string)p["mode"];

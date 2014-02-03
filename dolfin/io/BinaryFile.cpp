@@ -67,8 +67,9 @@ void BinaryFile::operator>> (GenericVector& vector)
   std::vector<double> values(n);
   read_array(n, values.data());
 
-  vector.resize(n);
+  vector.init(MPI_COMM_WORLD, n);
   vector.set_local(values);
+  vector.apply("insert");
 
   close_read();
 }
@@ -118,6 +119,10 @@ void BinaryFile::operator>> (Mesh& mesh)
   const std::size_t size = read_uint();
   g.coordinates.resize(g._dim*size);
   read_array(g._dim*size, g.coordinates.data());
+
+  g.local_index_to_position.resize(size);
+  for (std::size_t i = 0; i < size; ++i)
+    g.local_index_to_position[i] = i;
 
   // Read cell type
   mesh._cell_type = CellType::create(static_cast<CellType::Type>(read_uint()));

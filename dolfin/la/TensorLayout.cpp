@@ -27,20 +27,21 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TensorLayout::TensorLayout(std::size_t pdim, bool sparsity_pattern)
-  : primary_dim(pdim), block_size(0)
+  : primary_dim(pdim), block_size(0), _mpi_comm(MPI_COMM_NULL)
 {
   // Create empty sparsity pattern
   if (sparsity_pattern)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(const std::vector<std::size_t>& dims,
+TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
+                           const std::vector<std::size_t>& dims,
                            std::size_t pdim, std::size_t bs,
                            const std::vector<std::pair<std::size_t,
-                                     std::size_t> >& ownership_range,
+                           std::size_t> >& ownership_range,
                            bool sparsity_pattern)
-  : primary_dim(pdim), block_size(bs), _shape(dims),
-    _ownership_range(ownership_range)
+  : primary_dim(pdim), block_size(bs), _mpi_comm(mpi_comm),
+    _shape(dims), _ownership_range(ownership_range)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(!(sparsity_pattern && dims.size() != 2));
@@ -53,7 +54,8 @@ TensorLayout::TensorLayout(const std::vector<std::size_t>& dims,
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-void TensorLayout::init(const std::vector<std::size_t>& dims, std::size_t bs,
+void TensorLayout::init(const MPI_Comm mpi_comm,
+                        const std::vector<std::size_t>& dims, std::size_t bs,
   const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range)
 {
   // Only rank 2 sparsity patterns are supported
@@ -61,6 +63,9 @@ void TensorLayout::init(const std::vector<std::size_t>& dims, std::size_t bs,
 
   // Check that dimensions match
   dolfin_assert(dims.size() == ownership_range.size());
+
+  // Store MPI communicator
+  _mpi_comm = mpi_comm;
 
   // Store dimensions
   _shape = dims;

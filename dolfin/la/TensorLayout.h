@@ -27,6 +27,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "dolfin/common/types.h"
+#include "dolfin/common/MPI.h"
 #include "GenericSparsityPattern.h"
 
 namespace dolfin
@@ -45,16 +46,18 @@ namespace dolfin
     TensorLayout(std::size_t primary_dim, bool sparsity_pattern);
 
     /// Create a tensor layout
-    TensorLayout(const std::vector<std::size_t>& dims, std::size_t primary_dim,
+    TensorLayout(const MPI_Comm mpi_comm,
+                 const std::vector<std::size_t>& dims,
+                 std::size_t primary_dim,
                  std::size_t block_size,
-                 const std::vector<std::pair<std::size_t,
-                 std::size_t> >& ownership_range,
+                 const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
                  bool sparsity_pattern);
 
     /// Initialize tensor layout
-    void init(const std::vector<std::size_t>& dims, std::size_t block_size,
-              const std::vector<std::pair<std::size_t,
-              std::size_t> >& ownership_range);
+    void init(const MPI_Comm mpi_comm,
+              const std::vector<std::size_t>& dims,
+              std::size_t block_size,
+              const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range);
 
     /// Return rank
     std::size_t rank() const;
@@ -81,10 +84,17 @@ namespace dolfin
     const std::size_t primary_dim;
 
     /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
-    /// ordered dofmao
+    /// ordered dofmap
     std::size_t block_size;
 
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
   private:
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     // Shape of tensor
     std::vector<std::size_t> _shape;

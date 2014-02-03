@@ -33,7 +33,7 @@ int main()
   // Create a mesh and a vector
   UnitSquareMesh unit_square(2, 2);
   Mesh mesh(unit_square);
-  Vector x;
+  //Vector x;
 
   // Add a bunch of meshes and vectors to the series
   double t = 0.0;
@@ -41,7 +41,7 @@ int main()
   {
     // Refine mesh and resize vector
     mesh = refine(mesh);
-    x.resize(mesh.num_vertices());
+    Vector x(mesh.mpi_comm(), mesh.num_vertices());
 
     // Set some vector values
     std::vector<double> values(x.local_size());
@@ -60,6 +60,7 @@ int main()
 
   // Retrieve mesh and vector at some point in time
   series.retrieve(mesh, 0.29);
+  Vector x;
   series.retrieve(x, 0.31, false);
 
   // Plot mesh
