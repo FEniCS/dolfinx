@@ -137,17 +137,13 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operator(
-    const boost::shared_ptr<const GenericLinearOperator> A
-    )
+void EpetraKrylovSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operators(
-    const boost::shared_ptr<const GenericLinearOperator> A,
-    const boost::shared_ptr<const GenericLinearOperator> P
-    )
+void EpetraKrylovSolver::set_operators(boost::shared_ptr<const GenericLinearOperator> A,
+                                       boost::shared_ptr<const GenericLinearOperator> P)
 {
   _A = as_type<const EpetraMatrix>(require_matrix(A));
   _P = as_type<const EpetraMatrix>(require_matrix(P));

@@ -114,16 +114,20 @@ TAOLinearBoundSolver::~TAOLinearBoundSolver()
     TaoDestroy(&_tao);
 }
 //-----------------------------------------------------------------------------
-void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                                      const boost::shared_ptr<const GenericVector> b)
+void
+TAOLinearBoundSolver::set_operators(boost::shared_ptr<const GenericMatrix> A,
+                                    boost::shared_ptr<const GenericVector> b)
 {
-  boost::shared_ptr<const PETScMatrix> _A=GenericTensor::down_cast<const PETScMatrix>(A);
-  boost::shared_ptr<const PETScVector> _b=GenericTensor::down_cast<const PETScVector>(b);
+  boost::shared_ptr<const PETScMatrix>
+    _A = GenericTensor::down_cast<const PETScMatrix>(A);
+  boost::shared_ptr<const PETScVector>
+    _b = GenericTensor::down_cast<const PETScVector>(b);
   set_operators(_A, _b);
 }
 //-----------------------------------------------------------------------------
-void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const PETScMatrix> A,
-					 const boost::shared_ptr<const PETScVector> b)
+void
+TAOLinearBoundSolver::set_operators(boost::shared_ptr<const PETScMatrix> A,
+				    boost::shared_ptr<const PETScVector> b)
 {
   this->A = A;
   this->b = b;
@@ -131,8 +135,10 @@ void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const PETScMatr
   dolfin_assert(this->b);
 }
 //-----------------------------------------------------------------------------
-std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1, GenericVector& x,
-					const GenericVector& b1, const GenericVector& xl,
+std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1,
+                                        GenericVector& x,
+					const GenericVector& b1,
+                                        const GenericVector& xl,
 					const GenericVector& xu)
 {
   return solve(A1.down_cast<PETScMatrix>(),
@@ -142,8 +148,10 @@ std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1, GenericVector& 
 	       xu.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
-std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x,
-					const PETScVector& b1, const PETScVector& xl,
+std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
+                                        PETScVector& x,
+					const PETScVector& b1,
+                                        const PETScVector& xl,
 					const PETScVector& xu)
 {
 
@@ -164,9 +172,13 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x,
   // Set the bound on the variables
   TaoSetVariableBounds(_tao, xl.vec(), xu.vec());
 
-  // Set the user function, gradient, hessian evaluation routines and data structures
-  TaoSetObjectiveAndGradientRoutine(_tao, __TAOFormFunctionGradientQuadraticProblem, this);
-  TaoSetHessianRoutine(_tao, A->mat(), A->mat(), __TAOFormHessianQuadraticProblem, this);
+  // Set the user function, gradient, hessian evaluation routines and
+  // data structures
+  TaoSetObjectiveAndGradientRoutine(_tao,
+                                    __TAOFormFunctionGradientQuadraticProblem,
+                                    this);
+  TaoSetHessianRoutine(_tao, A->mat(), A->mat(),
+                       __TAOFormHessianQuadraticProblem, this);
 
   // Set parameters from local parameters, including ksp parameters
   read_parameters();
@@ -183,7 +195,8 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x,
   std::string prefix = std::string(parameters["options_prefix"]);
   if (prefix != "default")
   {
-    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    // Make sure that the prefix has a '_' at the end if the user
+    // didn't provide it
     char lastchar = *prefix.rbegin();
     if (lastchar != '_')
       prefix += "_";
@@ -406,7 +419,6 @@ TAOLinearBoundSolver::__TAOFormHessianQuadraticProblem(TaoSolver tao,
                                                        MatStructure *flg,
                                                        void *ptr)
 {
-
    const TAOLinearBoundSolver* solver = static_cast<TAOLinearBoundSolver*>(ptr);
    const PETScMatrix* A = solver->get_matrix().get();
 
@@ -417,11 +429,10 @@ TAOLinearBoundSolver::__TAOFormHessianQuadraticProblem(TaoSolver tao,
    H = &Atmp;
    return 0;
 }
-//-------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(TaoSolver tao, void *ctx)
 {
   dolfin_assert(tao);
-
   PetscInt its;
   PetscReal f, gnorm, cnorm, xdiff;
   TaoSolverTerminationReason reason;
@@ -430,7 +441,7 @@ PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(TaoSolver tao, void *ctx)
 	      "cnorm=%-10G\txdiff=%G\n", its, f, gnorm, cnorm, xdiff);
   return 0;
 }
-//-------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #endif
 
 #endif
