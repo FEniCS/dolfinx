@@ -29,9 +29,9 @@ namespace dolfin
 
   // Forward declarations
   class FunctionSpace;
-  class BoundingBoxTree;
   class CCFEMDofMap;
-  class GenericDofMap;
+  class BoundingBoxTree;
+  class BoundaryMesh;
 
   /// This class represents a cut and composite finite element
   /// function space (CCFEM) defined on one or more possibly
@@ -105,8 +105,11 @@ namespace dolfin
     // CCFEM dofmap
     boost::shared_ptr<CCFEMDofMap> _dofmap;
 
-    // Bounding box trees for meshes
+    // List of bounding box trees for meshes
     std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
+
+    // List of boundary meshes
+    std::vector<boost::shared_ptr<BoundaryMesh> > _boundary_meshes;
 
     // Cell indices for all uncut cells for all parts. Access data by
     //
@@ -121,7 +124,7 @@ namespace dolfin
 
     // Cell indices for all cut cells for all parts. Access data by
     //
-    //     c = _cut_cells[i][k][l]
+    //     c = _cut_cells[i][j][k]
     //
     // where
     //
@@ -146,6 +149,9 @@ namespace dolfin
 
     // Build dofmap
     void _build_dofmap();
+
+    // Build boundary meshes
+    void _build_boundary_meshes();
 
     // Build bounding box trees
     void _build_bounding_box_trees();

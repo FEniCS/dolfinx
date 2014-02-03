@@ -20,6 +20,7 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/fem/CCFEMDofMap.h>
 #include "FunctionSpace.h"
@@ -82,6 +83,9 @@ void CCFEMFunctionSpace::build()
   // Build dofmap
   _build_dofmap();
 
+  // Build boundary meshes
+  _build_boundary_meshes();
+
   // Build bounding box trees
   _build_bounding_box_trees();
 
@@ -118,6 +122,25 @@ void CCFEMFunctionSpace::_build_dofmap()
   end();
 }
 //-----------------------------------------------------------------------------
+void CCFEMFunctionSpace::_build_boundary_meshes()
+{
+  begin(PROGRESS, "Building boundary meshes.");
+
+  // Clear boundary meshes
+  _boundary_meshes.clear();
+
+  // Build boundary mesh for each part
+  for (std::size_t i = 0; i < num_parts(); i++)
+  {
+    const Mesh& mesh = *_function_spaces[i]->mesh();
+    boost::shared_ptr<BoundaryMesh>
+      boundary_mesh(new BoundaryMesh(mesh, "exterior"));
+    _boundary_meshes.push_back(boundary_mesh);
+  }
+
+  end();
+}
+//-----------------------------------------------------------------------------
 void CCFEMFunctionSpace::_build_bounding_box_trees()
 {
   begin(PROGRESS, "Building bounding box trees for all meshes.");
@@ -140,9 +163,14 @@ void CCFEMFunctionSpace::_build_collision_maps()
 {
   begin(PROGRESS, "Building collision maps.");
 
-  begin(PROGRESS, "Computing collisions between meshes.");
+  // Iterate over all parts
   for (std::size_t i = 0; i < num_parts(); i++)
   {
+
+
+
+
+    // Iterate over covering parts (with higher part number)
     for (std::size_t j = i + 1; j < num_parts(); j++)
     {
       log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
