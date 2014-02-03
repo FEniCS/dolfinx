@@ -217,7 +217,7 @@ namespace dolfin
       // Get data size on each process
       std::vector<int> pcounts(comm_size);
       const int local_size = in_values.size();
-      MPI_Gather(&local_size, 1, mpi_type<int>(),
+      MPI_Gather(const_cast<int*>(&local_size), 1, mpi_type<int>(),
                  pcounts.data(), 1, mpi_type<int>(),
                  receiving_process, comm);
 
@@ -337,7 +337,7 @@ namespace dolfin
     {
       #ifdef HAS_MPI
       out_values.resize(MPI::size(comm));
-      MPI_Allgather(&in_value, 1, mpi_type<T>(),
+      MPI_Allgather(const_cast<T*>(&in_value), 1, mpi_type<T>(),
                     out_values.data(), 1, mpi_type<T>(), comm);
       #else
       out_values.clear();
@@ -380,7 +380,7 @@ namespace dolfin
     {
       #ifdef HAS_MPI
       T out;
-      MPI_Allreduce(&value, &out, 1, mpi_type<T>(), op, comm);
+      MPI_Allreduce(const_cast<T*>(&value), &out, 1, mpi_type<T>(), op, comm);
       return out;
       #else
       dolfin_error("MPI.h",
