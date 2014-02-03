@@ -51,23 +51,24 @@ using namespace dolfin;
 
 // Mapping from preconditioner string to Trilinos
 const std::map<std::string, int> TrilinosPreconditioner::_preconditioners
-  = boost::assign::map_list_of("default", -1)
-                              ("none",    -1)
-                              ("ilu",     -1)
-                              ("icc",     -1)
-                              ("amg",     -1)
-                              ("ml_amg",  -1);
+  = boost::assign::map_list_of
+  ("default", -1)
+  ("none",    -1)
+  ("ilu",     -1)
+  ("icc",     -1)
+  ("amg",     -1)
+  ("ml_amg",  -1);
 
 // Mapping from preconditioner string to Trilinos
 const std::vector<std::pair<std::string, std::string> >
 TrilinosPreconditioner::_preconditioners_descr
   = boost::assign::pair_list_of
-    ("default",   "default preconditioner")
-    ("none",      "no preconditioner")
-    ("ilu",       "Incomplete LU factorization")
-    ("icc",       "Incomplete Cholesky factorization")
-    ("amg",       "Algebraic multigrid")
-    ("ml_amg",    "ML algebraic multigrid");
+  ("default",   "default preconditioner")
+  ("none",      "no preconditioner")
+  ("ilu",       "Incomplete LU factorization")
+  ("icc",       "Incomplete Cholesky factorization")
+  ("amg",       "Algebraic multigrid")
+  ("ml_amg",    "ML algebraic multigrid");
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
@@ -147,6 +148,7 @@ void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
       ifpack_name = "IC";
     else
       ifpack_name = "ILU";
+
     Ifpack ifpack_factory;
     _ifpack_preconditioner.reset(ifpack_factory.Create(ifpack_name, _P,
                                                        overlap));
@@ -161,12 +163,13 @@ void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
     _ifpack_preconditioner->Initialize();
     _ifpack_preconditioner->Compute();
 
-    // Create the Belos preconditioned operator from the Ifpack preconditioner.
-    // This is necessary because Belos expects an operator to apply the
-    // preconditioner with Apply() NOT ApplyInverse().
+    // Create the Belos preconditioned operator from the Ifpack
+    // preconditioner.  This is necessary because Belos expects an
+    // operator to apply the preconditioner with Apply() NOT
+    // ApplyInverse().
     Teuchos::RCP<Belos::EpetraPrecOp> belosPrec =
-      Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ifpack_preconditioner.get(), false)));
-
+      Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ifpack_preconditioner.get(),
+                                                        false)));
     problem.setLeftPrec(belosPrec);
   }
   else if (_preconditioner == "hypre_amg")
@@ -175,9 +178,7 @@ void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
     set_ml(problem, *_P);
   }
   else if (_preconditioner == "ml_amg" || _preconditioner == "amg")
-  {
     set_ml(problem, *_P);
-  }
   else if (_preconditioner == "none")
   {
     // Do nothing.
@@ -242,10 +243,9 @@ std::string TrilinosPreconditioner::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_ml(
-    Belos::LinearProblem<double,MV,OP>& problem,
-    const Epetra_RowMatrix& P
-    )
+void
+TrilinosPreconditioner::set_ml(Belos::LinearProblem<double, MV, OP>& problem,
+                               const Epetra_RowMatrix& P)
 {
 
   Teuchos::ParameterList mlist;
@@ -294,7 +294,8 @@ void TrilinosPreconditioner::set_ml(
   _ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist,
                                                                    true));
   Teuchos::RCP<Belos::EpetraPrecOp> belosPrec =
-    Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ml_preconditioner.get(), false)));
+    Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ml_preconditioner.get(),
+                                                      false)));
 
   // Set this operator as preconditioner for the linear problem
   problem.setLeftPrec(belosPrec);

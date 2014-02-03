@@ -66,17 +66,15 @@ const std::map<std::string, std::string> EpetraKrylovSolver::_methods
 // List of available solvers descriptions
 const std::vector<std::pair<std::string, std::string> >
 EpetraKrylovSolver::_methods_descr = boost::assign::pair_list_of
-    ("default", "default Krylov method")
-    ("cg",      "Conjugate gradient method")
-    ("gmres",   "Generalized minimal residual method")
-    ("minres",  "Minimal residual method")
-    ("rcg",     "Recycling conjugate gradient method")
-    ("gcrodr",  "Block recycling GMRES method")
-    ("lsqr",    "Least-squared QR method")
-    ;
+  ("default", "default Krylov method")
+  ("cg",      "Conjugate gradient method")
+  ("gmres",   "Generalized minimal residual method")
+  ("minres",  "Minimal residual method")
+  ("rcg",     "Recycling conjugate gradient method")
+  ("gcrodr",  "Block recycling GMRES method")
+  ("lsqr",    "Least-squared QR method");
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EpetraKrylovSolver::methods()
+std::vector<std::pair<std::string, std::string> > EpetraKrylovSolver::methods()
 {
   return EpetraKrylovSolver::_methods_descr;
 }
@@ -118,7 +116,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        TrilinosPreconditioner& preconditioner)
   : _method(method),
     _preconditioner(reference_to_no_delete_pointer(preconditioner)),
-     _relative_residual(0.0), _absolute_residual(0.0)
+    _relative_residual(0.0), _absolute_residual(0.0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -172,7 +170,6 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 {
   Timer timer("Epetra Krylov solver");
 
-  dolfin_assert(solver);
   dolfin_assert(_A);
   dolfin_assert(_P);
 
@@ -189,9 +186,10 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Write a message
   const bool report = parameters["report"];
   if (report && _A->mat()->Comm().MyPID() == 0)
-    info("Solving linear system of size %d x %d (Epetra Krylov solver).",
-         M, N
-         );
+  {
+   info("Solving linear system of size %d x %d (Epetra Krylov solver).",
+        M, N);
+  }
 
   // Reinitialize solution vector if necessary
   if (x.empty())
@@ -205,18 +203,17 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Create linear problem
   // Make clear that the RCP doesn't own the memory and thus doesn't try
   // to destroy the object when it goes out of scope.
-  Teuchos::RCP<Belos::LinearProblem<ST,MV,OP> > linear_problem =
-    Teuchos::rcp(new Belos::LinearProblem<ST,MV,OP>(
-          Teuchos::rcp(_A->mat().get(), false),
-          Teuchos::rcp(x.vec().get(), false),
-          Teuchos::rcp(b.vec().get(), false)
-          ));
+  Teuchos::RCP<Belos::LinearProblem<ST, MV, OP> > linear_problem
+    = Teuchos::rcp(new Belos::LinearProblem<ST, MV, OP>(
+                     Teuchos::rcp(_A->mat().get(), false),
+                     Teuchos::rcp(x.vec().get(), false),
+                     Teuchos::rcp(b.vec().get(), false)));
   const int ierr = linear_problem->setProblem();
   dolfin_assert(ierr == 0);
 
+  // Set output level
   Teuchos::ParameterList belosList;
   int verbosity = Belos::Errors + Belos::Warnings;
-  // Set output level
   if (parameters["monitor_convergence"])
   {
     verbosity += Belos::IterationDetails;
@@ -227,36 +224,35 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   }
 
   if (parameters["report"])
-      verbosity += Belos::TimingDetails;
+    verbosity += Belos::TimingDetails;
 
   belosList.set("Verbosity", verbosity);
-
   belosList.set("Convergence Tolerance",
-                (double)parameters["relative_tolerance"]
-                );
+                (double)parameters["relative_tolerance"]);
   belosList.set("Maximum Iterations", (int)parameters["maximum_iterations"]);
 
   // Set preconditioner
   dolfin_assert(_P);
   _preconditioner->set(*linear_problem, *_P);
 
-  // Look up the Belos name of the method in _methods. This is a little
-  // complicated since std::maps<> don't have const lookup.
-  std::map<std::string, std::string>::const_iterator it =
-    _methods.find(_method);
+  // Look up the Belos name of the method in _methods. This is a
+  // little complicated since std::maps<> don't have const lookup.
+  std::map<std::string, std::string>::const_iterator it = _methods.find(_method);
   if (it == _methods.end())
+  {
       dolfin_error("EpetraKrylovSolver.cpp",
                    "solve linear system using Epetra Krylov solver",
                    "unknown method \"%s\"", _method.c_str());
+  }
+
   // Set-up linear solver
   Belos::SolverFactory<ST,MV,OP> factory;
-  Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver =
-    factory.create(it->second, Teuchos::rcp(&belosList, false));
+  Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver
+    = factory.create(it->second, Teuchos::rcp(&belosList, false));
   solver->setProblem(linear_problem);
 
   // Start solve
   Belos::ReturnType ret = solver->solve();
-
   if (ret == Belos::Converged)
   {
     if (parameters["report"])
@@ -264,8 +260,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
       info("Epetra (Belos) Krylov solver (%s, %s) converged in %d iterations.",
            _method.c_str(),
            _preconditioner->name().c_str(),
-           solver->getNumIters()
-           );
+           solver->getNumIters());
     }
   }
   else if (ret == Belos::Unconverged)
@@ -275,6 +270,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
             << _preconditioner->name() << ") "
             << "failed to converge after " << solver->getNumIters()
             << " iterations ";
+
     if (parameters["error_on_nonconvergence"])
     {
       dolfin_error("EpetraKrylovSolver.cpp",

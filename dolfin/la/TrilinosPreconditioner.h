@@ -49,10 +49,12 @@ typedef Epetra_Operator OP;
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
 class Ifpack_Preconditioner;
+
 namespace ML_Epetra
 {
   class MultiLevelPreconditioner;
 }
+
 namespace Teuchos
 {
   class ParameterList;
@@ -94,8 +96,8 @@ namespace dolfin
     /// Python)
     void set_parameters(Teuchos::RCP<Teuchos::ParameterList> list);
 
-    /// Set basis for the null space of the operator. Setting this
-    /// is critical to the performance of some preconditioners, e.g. ML.
+    /// Set basis for the null space of the operator. Setting this is
+    /// critical to the performance of some preconditioners, e.g. ML.
     /// The vectors spanning the null space are copied.
     void set_nullspace(const VectorSpaceBasis& null_space);
 
@@ -114,9 +116,8 @@ namespace dolfin
   private:
 
     /// Setup the ML precondtioner
-    void set_ml(Belos::LinearProblem<double,MV,OP>& problem,
-                const Epetra_RowMatrix& P
-                );
+    void set_ml(Belos::LinearProblem<double, MV, OP>& problem,
+                const Epetra_RowMatrix& P);
 
     /// Named preconditioner
     std::string _preconditioner;
