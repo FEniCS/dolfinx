@@ -52,7 +52,7 @@ LUSolver::~LUSolver()
 }
 //-----------------------------------------------------------------------------
 void
-LUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+LUSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
