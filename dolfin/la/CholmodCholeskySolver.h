@@ -59,7 +59,7 @@ namespace dolfin
     ~CholmodCholeskySolver();
 
     /// Solve the operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+    void set_operator(boost::shared_ptr<const GenericLinearOperator> A)
     {
       dolfin_error("CholmodCholeskySolver.h",
                    "set operator for CHOLMOD Cholesky solver",
