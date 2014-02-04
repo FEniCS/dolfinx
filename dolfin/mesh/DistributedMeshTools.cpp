@@ -560,9 +560,6 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
     }
   }
 
-  // DOLFIN MPI communicators
-  MPINonblocking mpi;
-
   // Send/receive global indices
   boost::unordered_map<std::size_t, std::vector<std::size_t> > recv_entities;
   boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
@@ -571,10 +568,9 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
        global_indices != send_indices.end(); ++global_indices)
   {
     const std::size_t destination = global_indices->first;
-    mpi.send_recv(mpi_comm, global_indices->second, my_rank, destination,
-                  recv_entities[destination], destination, destination);
+    MPI::send_recv(mpi_comm, global_indices->second, my_rank, destination,
+                   recv_entities[destination], destination, destination);
   }
-  mpi.wait_all();
 
   // Clear send data
   send_indices.clear();
@@ -621,10 +617,9 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
        local_indices != send_indices.end(); ++local_indices)
   {
     const std::size_t destination = local_indices->first;
-    mpi.send_recv(mpi_comm, local_indices->second, my_rank, destination,
-                  recv_entities[destination], destination, destination);
+    MPI::send_recv(mpi_comm, local_indices->second, my_rank, destination,
+                   recv_entities[destination], destination, destination);
   }
-  mpi.wait_all();
 
   // Build map
   boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > > shared_local_indices_map;
