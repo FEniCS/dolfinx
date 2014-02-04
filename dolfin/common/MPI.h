@@ -396,19 +396,47 @@ namespace dolfin
     static std::size_t global_offset(const MPI_Comm comm,
                                      std::size_t range, bool exclusive);
 
-    /// Send-receive data. Note that if the number of posted
-    /// send-receives may differ between processes, another interface
-    /// (such as MPINonblocking::send_recv) must be used since
-    /// duplicating the communicator requires participation from all
-    /// processes.
+    /*
+    /// Send-receive data between processes
     template<typename T>
       static void send_recv(const MPI_Comm comm,
-                            const T& send_value, unsigned int dest,
+                            T& send_value, unsigned int dest,
                             T& recv_value, unsigned int source)
     {
       #ifdef HAS_MPI
-      MPINonblocking mpi;
-      mpi.send_recv(comm, send_value, dest, recv_value, source);
+      MPI_Status mpi_status;
+      MPI_Sendrecv(const_cast<T*>(&send_value), 1, mpi_type<T>(), dest, 0,
+                   &recv_value, 1, mpi_type<T>(), source, 0,
+                   comm, &mpi_status);
+      #else
+      dolfin_error("MPI.h",
+                   "call MPI::send_recv",
+                   "DOLFIN has been configured without MPI support");
+      #endif
+    }
+    */
+
+    /// Send-receive data between processes
+    template<typename T>
+      static void send_recv(const MPI_Comm comm,
+                            const std::vector<T>& send_value, unsigned int dest,
+                            std::vector<T>& recv_value, unsigned int source)
+    {
+      #ifdef HAS_MPI
+      //MPINonblocking mpi;
+      //mpi.send_recv(comm, send_value, dest, recv_value, source);
+      std::size_t send_size = send_value.size();
+      std::size_t recv_size = 0;
+      MPI_Status mpi_status;
+      MPI_Sendrecv(&send_size, 1, mpi_type<std::size_t>(), dest, 0,
+                   &recv_size, 1, mpi_type<std::size_t>(), source, 0,
+                   comm, &mpi_status);
+
+      recv_value.resize(recv_size);
+      MPI_Sendrecv(const_cast<T*>(send_value.data()), send_value.size(),
+                   mpi_type<T>(), dest, 0,
+                   recv_value.data(), recv_size, mpi_type<T>(),
+                   source, 0, comm, &mpi_status);
       #else
       dolfin_error("MPI.h",
                    "call MPI::send_recv",
@@ -611,9 +639,6 @@ namespace dolfin
                 data_recv.begin() + data_offset_recv[p + 1],
                 out_values[p].begin());
     }
-
-    //boost::mpi::communicator _comm(comm, boost::mpi::comm_attach);
-    //boost::mpi::all_to_all(_comm, in_values, out_values);
     #else
     dolfin_assert(in_values.size() == 1);
     out_values = in_values;
@@ -625,8 +650,6 @@ namespace dolfin
                                  std::vector<std::vector<bool> >& in_values,
                                  std::vector<std::vector<bool> >& out_values)
   {
-    return;
-/*
     #ifdef HAS_MPI
     // Copy to short int
     std::vector<std::vector<short int> > send(in_values.size());
@@ -645,7 +668,6 @@ namespace dolfin
     dolfin_assert(in_values.size() == 1);
     out_values = in_values;
     #endif
-*/
   }
   //---------------------------------------------------------------------------
   template<typename T>
