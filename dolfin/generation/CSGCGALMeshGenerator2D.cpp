@@ -41,7 +41,6 @@
 #include <cmath>
 #include <limits>
 
-
 #ifdef HAS_CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
@@ -55,7 +54,7 @@
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Inexact_Kernel;
 
 typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel>  Vertex_base;
-typedef CGAL::Constrained_triangulation_face_base_2<Inexact_Kernel> Face_base;
+typedef CGAL::Delaunay_mesh_face_base_2<Inexact_Kernel> Face_base;
 
 template <class Gt, class Fb >
 class Enriched_face_base_2 : public Fb
@@ -73,16 +72,15 @@ class Enriched_face_base_2 : public Fb
   };
 
 protected:
-  int status;
-  bool in_domain;
+  int c;
 
 public:
-  Enriched_face_base_2(): Fb(), status(-1) {}
+  Enriched_face_base_2(): Fb(), c(-1) {}
 
   Enriched_face_base_2(Vertex_handle v0,
                        Vertex_handle v1,
                        Vertex_handle v2)
-    : Fb(v0,v1,v2), status(-1), in_domain(true) {}
+    : Fb(v0,v1,v2), c(-1) {}
 
   Enriched_face_base_2(Vertex_handle v0,
                        Vertex_handle v1,
@@ -90,29 +88,10 @@ public:
                        Face_handle n0,
                        Face_handle n1,
                        Face_handle n2)
-    : Fb(v0,v1,v2,n0,n1,n2), status(-1), in_domain(true) {}
+    : Fb(v0,v1,v2,n0,n1,n2), c(-1) {}
 
-  inline
-  bool is_in_domain() const
-  //{ return (status%2 == 1); }
-  { return in_domain; }
-
-  inline
-  void set_in_domain(const bool b)
-  //{ status = (b ? 1 : 0); }
-  { in_domain = b; }
-
-  inline
-  void set_counter(int i)
-  { status = i; }
-
-  inline
-  int counter() const
-  { return status; }
-
-  inline
-  int& counter()
-  { return status; }
+  inline void set_counter(int i) { c = i; }
+  inline int counter() const { return c; }
 };
 
 typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel> Vb;
@@ -172,7 +151,6 @@ void explore_subdomain(CDT &ct,
         {
           // Set neighbor interface to the same and push to queue
           n->set_counter(face->counter());
-          n->set_in_domain(face->is_in_domain());
           queue.push_back(n);
         }
       }
@@ -191,7 +169,6 @@ void explore_subdomains(CDT& cdt,
        it != cdt.finite_faces_end(); ++it)
   {
     it->set_counter(-1);
-    it->set_in_domain(false);
   }
 
   std::list<CDT::Face_handle> subdomains;
@@ -216,9 +193,6 @@ void explore_subdomains(CDT& cdt,
 
       Point p( (p0[0] + p1[0] + p2[0]) / 3.0,
                (p0[1] + p1[1] + p2[1]) / 3.0 );
-
-      // Set the in_domain member (is face in the total domain)
-      f->set_in_domain(total_domain.point_in_domain(p));
 
       for (int i = subdomain_geometries.size(); i > 0; --i)
       {
@@ -258,7 +232,7 @@ void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry,
         prev = current;
       }
 
-      cdt.insert_constraint(first, prev);
+      cdt.insert_constraint(prev, first);
     }
   }
 
@@ -337,8 +311,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   if (!geometry.subdomains.empty())
     log(TRACE, "Processing subdomains");
 
-  for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend();
-       ++it)
+  for (it = geometry.subdomains.rbegin();
+       it != geometry.subdomains.rend(); ++it)
   {
     const std::size_t current_index = it->first;
     boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
@@ -361,20 +335,20 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Create mesher
   CGAL_Mesher_2 mesher(cdt);
 
-  // Add seeds for all faces in the domain
+  // Add seeds for all faces in the total domain
   std::list<Point_2> list_of_seeds;
   for(CDT::Finite_faces_iterator fit = cdt.finite_faces_begin();
       fit != cdt.finite_faces_end(); ++fit)
   {
-    if (fit->is_in_domain())
-    {
-      // Calculate center of triangle and add to list of seeds
-      Point_2 p0 = fit->vertex(0)->point();
-      Point_2 p1 = fit->vertex(1)->point();
-      Point_2 p2 = fit->vertex(2)->point();
-      const double x = (p0[0] + p1[0] + p2[0]) / 3;
-      const double y = (p0[1] + p1[1] + p2[1]) / 3;
+    // Calculate center of triangle and add to list of seeds
+    Point_2 p0 = fit->vertex(0)->point();
+    Point_2 p1 = fit->vertex(1)->point();
+    Point_2 p2 = fit->vertex(2)->point();
+    const double x = (p0[0] + p1[0] + p2[0]) / 3;
+    const double y = (p0[1] + p1[1] + p2[1]) / 3;
 
+    if (total_domain.point_in_domain(Point(x, y)))
+    {
       list_of_seeds.push_back(Point_2(x, y));
     }
   }
@@ -387,10 +361,11 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   {
     const double min_radius = total_domain.compute_boundingcircle_radius();
     const double cell_size = 2.0*min_radius/mesh_resolution;
+    const double shape_bound = parameters["triangle_shape_bound"];
 
-
-    Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
+    Mesh_criteria_2 criteria(shape_bound,
                              cell_size);
+
     mesher.set_criteria(criteria);
   }
   else
@@ -426,7 +401,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     // Add cell if it is in the domain
     if (cgal_cell->is_in_domain())
     {
-      num_cells++;
+       num_cells++;
     }
   }
 
@@ -479,6 +454,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
       ++cell_index;
     }
   }
+
   dolfin_assert(cell_index == num_cells);
 
   // Close mesh editor
