@@ -88,18 +88,18 @@ namespace dolfin
     ~PETScKrylovSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const PETScBaseMatrix> A);
+    void set_operator(boost::shared_ptr<const PETScBaseMatrix> A);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                       const boost::shared_ptr<const GenericLinearOperator> P);
+    void set_operators(boost::shared_ptr<const GenericLinearOperator> A,
+                       boost::shared_ptr<const GenericLinearOperator> P);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
-                       const boost::shared_ptr<const PETScBaseMatrix> P);
+    void set_operators(boost::shared_ptr<const PETScBaseMatrix> A,
+                       boost::shared_ptr<const PETScBaseMatrix> P);
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
