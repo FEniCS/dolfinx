@@ -32,13 +32,10 @@
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
-#include <boost/serialization/utility.hpp>
-#include <boost/mpi.hpp>
 #include <mpi.h>
 #endif
 
 #include <boost/static_assert.hpp>
-
 #include <dolfin/log/dolfin_log.h>
 
 #ifndef HAS_MPI
