@@ -42,6 +42,10 @@ class JIT(unittest.TestCase):
             self.assertAlmostEqual(M2, 1.0)
 
     def test_compile_extension_module(self):
+      
+        # This test should do basically the same as the docstring of
+        # the compile_extension_module function in compilemodule.py.
+        # Remember to update the docstring if the test is modified!
 
         if not has_linear_algebra_backend("PETSc"):
             return
