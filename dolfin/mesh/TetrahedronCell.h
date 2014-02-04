@@ -101,7 +101,7 @@ namespace dolfin
     /// Compute triangulation of intersection of two cells
     virtual std::vector<double>
       triangulate_intersection(const Cell& c0, const Cell& c1) const;
-
+    
     /// Return description of cell type
     std::string description(bool plural) const;
 
@@ -125,45 +125,45 @@ namespace dolfin
     /// Check whether given tetrahedron collides with cell
     bool collides_tetrahedron(const Cell& cell, const MeshEntity& entity) const;
 
-    // Helper function for collides_tetrahedron: checks if plane pv1 is a separating plane. Stores local coordinates bc and the mask bit maskEdges.
-    bool separating_plane_face_A_1(const std::vector<Point>& pv1,
-				   const Point& n,
-				   std::vector<double>& bc,
-				   int& maskEdges) const;
+    /* // Helper function for collides_tetrahedron: checks if plane pv1 is a separating plane. Stores local coordinates bc and the mask bit maskEdges. */
+    /* bool separating_plane_face_A_1(const std::vector<Point>& pv1, */
+    /* 				   const Point& n, */
+    /* 				   std::vector<double>& bc, */
+    /* 				   int& maskEdges) const; */
 
-    // Helper function for collides_tetrahedron: checks if plane v1,v2 is a separating plane. Stores local coordinates bc and the mask bit maskEdges.
-    bool separating_plane_face_A_2(const std::vector<Point>& v1,
-				   const std::vector<Point>& v2,
-				   const Point& n,
-				   std::vector<double>& bc,
-				   int& maskEdges) const;
+    /* // Helper function for collides_tetrahedron: checks if plane v1,v2 is a separating plane. Stores local coordinates bc and the mask bit maskEdges. */
+    /* bool separating_plane_face_A_2(const std::vector<Point>& v1, */
+    /* 				   const std::vector<Point>& v2, */
+    /* 				   const Point& n, */
+    /* 				   std::vector<double>& bc, */
+    /* 				   int& maskEdges) const; */
 		
-    // Helper function for collides_tetrahedron: checks if plane pv2 is a separating plane.
-    bool separating_plane_face_B_1(const std::vector<Point>& P_V2,
-				   const Point& n) const
-    {
-      return ((P_V2[0].dot(n) > 0) &&
-	      (P_V2[1].dot(n) > 0) &&
-	      (P_V2[2].dot(n) > 0) &&
-	      (P_V2[3].dot(n) > 0));
-    }
+    /* // Helper function for collides_tetrahedron: checks if plane pv2 is a separating plane. */
+    /* bool separating_plane_face_B_1(const std::vector<Point>& P_V2, */
+    /* 				   const Point& n) const */
+    /* { */
+    /*   return ((P_V2[0].dot(n) > 0) && */
+    /* 	      (P_V2[1].dot(n) > 0) && */
+    /* 	      (P_V2[2].dot(n) > 0) && */
+    /* 	      (P_V2[3].dot(n) > 0)); */
+    /* } */
 
-    // Helper function for collides_tetrahedron: checks if plane v1,v2 is a separating plane.  
-    bool separating_plane_face_B_2(const std::vector<Point>& V1,
-				   const std::vector<Point>& V2,
-				   const Point& n) const
-    {
-      return (((V1[0]-V2[1]).dot(n) > 0) &&
-	      ((V1[1]-V2[1]).dot(n) > 0) &&
-	      ((V1[2]-V2[1]).dot(n) > 0) &&
-	      ((V1[3]-V2[1]).dot(n) > 0));
-    }
+    /* // Helper function for collides_tetrahedron: checks if plane v1,v2 is a separating plane.   */
+    /* bool separating_plane_face_B_2(const std::vector<Point>& V1, */
+    /* 				   const std::vector<Point>& V2, */
+    /* 				   const Point& n) const */
+    /* { */
+    /*   return (((V1[0]-V2[1]).dot(n) > 0) && */
+    /* 	      ((V1[1]-V2[1]).dot(n) > 0) && */
+    /* 	      ((V1[2]-V2[1]).dot(n) > 0) && */
+    /* 	      ((V1[3]-V2[1]).dot(n) > 0)); */
+    /* } */
     
-    // Helper function for collides_tetrahedron: checks if edge is in the plane separating faces f0 and f1. 
-    bool separating_plane_edge_A(const std::vector<std::vector<double> >& Coord_1,
-				 const std::vector<int>& masks,
-				 int f0, 
-				 int f1) const;
+    /* // Helper function for collides_tetrahedron: checks if edge is in the plane separating faces f0 and f1.  */
+    /* bool separating_plane_edge_A(const std::vector<std::vector<double> >& Coord_1, */
+    /* 				 const std::vector<int>& masks, */
+    /* 				 int f0,  */
+    /* 				 int f1) const; */
  
     // Helper function for triangulate_intersection: computes edge face intersection
     bool edge_face_collision(const Point& r,
