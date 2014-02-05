@@ -74,7 +74,7 @@ CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
   dolfin_assert(triangle.mesh().topology().dim() == 2);
 
   const MeshGeometry& geometry = triangle.mesh().geometry();
-  const unsigned int* vertices = triangle.entities(0);  
+  const unsigned int* vertices = triangle.entities(0);
   return collides_triangle_point(geometry.point(vertices[0]),
 				 geometry.point(vertices[1]),
 				 geometry.point(vertices[2]),
@@ -166,7 +166,7 @@ CollisionDetection::collides_tetrahedron_point(const MeshEntity& tetrahedron,
   const Point p1 = geometry.point(vertices[1]);
   const Point p2 = geometry.point(vertices[2]);
   const Point p3 = geometry.point(vertices[3]);
-  
+
   return collides_tetrahedron_point(p0,p1,p2,p3, point);
 }
 //-----------------------------------------------------------------------------
@@ -323,9 +323,9 @@ CollisionDetection::collides_tetrahedron_tetrahedron(const MeshEntity& tetrahedr
   return true;
 }
 //-----------------------------------------------------------------------------
-bool 
+bool
 CollisionDetection::collides_triangle_point(const Point& p0,
-					    const Point& p1, 
+					    const Point& p1,
 					    const Point& p2,
 					    const Point &point)
 {
@@ -366,10 +366,10 @@ CollisionDetection::collides_triangle_point(const Point& p0,
 //-----------------------------------------------------------------------------
 bool
 CollisionDetection::collides_triangle_triangle(const Point& V0,
-					       const Point& V1, 
+					       const Point& V1,
 					       const Point& V2,
 					       const Point& U0,
-					       const Point& U1, 
+					       const Point& U1,
 					       const Point& U2)
 {
   // This algorithm and code is from
@@ -514,7 +514,7 @@ CollisionDetection::collides_triangle_triangle(const Point& V0,
 //-----------------------------------------------------------------------------
 bool
 CollisionDetection::collides_tetrahedron_point(const Point& p0,
-					       const Point& p1, 
+					       const Point& p1,
 					       const Point& p2,
 					       const Point& p3,
 					       const Point& point)
@@ -729,20 +729,21 @@ CollisionDetection::edge_against_tri_edges(int i0,
 					   const Point& U1,
 					   const Point& U2)
 {
-  // Helper function to triangle-triangle test
-  
+  // Helper function to triangle-triangle test: call the edge_edge
+  // tests
+
   const double Ax=V1[i0]-V0[i0];
   const double Ay=V1[i1]-V0[i1];
 
-  // test edge U0,U1 against V0,V1 
+  // test edge U0,U1 against V0,V1
   if (edge_edge_test(i0,i1,Ax,Ay, V0,U0,U1)) return true;
-  
-  // test edge U1,U2 against V0,V1 
+
+  // test edge U1,U2 against V0,V1
   if (edge_edge_test(i0,i1,Ax,Ay, V0,U1,U2)) return true;
-  
-  // test edge U2,U1 against V0,V1 
+
+  // test edge U2,U1 against V0,V1
   if (edge_edge_test(i0,i1,Ax,Ay, V0,U2,U0)) return true;
-  
+
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -758,6 +759,7 @@ CollisionDetection::edge_edge_test(int i0,
   // Helper function to triangle-triangle test. This edge to edge test
   // is based on Franlin Antonio's gem: "Faster Line Segment
   // Intersection", in Graphics Gems III, pp. 199-202
+
   const double Bx=U0[i0]-U1[i0];
   const double By=U0[i1]-U1[i1];
   const double Cx=V0[i0]-U0[i0];
@@ -780,7 +782,7 @@ CollisionDetection::edge_edge_test(int i0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool 
+bool
 CollisionDetection::point_in_tri(int i0,
 				 int i1,
 				 const Point& V0,
@@ -790,6 +792,7 @@ CollisionDetection::point_in_tri(int i0,
 {
   // Helper function to the triangle-triangle collision test: computes
   // whether a point is inside a triangle or not
+
   double a=U1[i1]-U0[i1];
   double b=-(U1[i0]-U0[i0]);
   double c=-a*U0[i0]-b*U0[i1];

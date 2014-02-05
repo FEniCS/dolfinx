@@ -148,7 +148,7 @@ namespace dolfin
 					   const Point& p1, 
 					   const Point& p2,
 					   const Point& p3,
-					   const Point& q);
+					   const Point& point);
 
     // The implementation of collides_tetrahedron_triangle
     static bool collides_tetrahedron_triangle(const Point& p0,
