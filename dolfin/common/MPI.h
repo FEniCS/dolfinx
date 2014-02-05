@@ -26,6 +26,8 @@
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
 
+#include <iostream>
+
 #include <numeric>
 #include <utility>
 #include <vector>
@@ -369,21 +371,27 @@ namespace dolfin
       static void send_recv(const MPI_Comm comm,
                             const std::vector<T>& send_value, unsigned int dest,
                             int send_tag,
-                            std::vector<T>& recv_value, unsigned int source, int recv_tag)
+                            std::vector<T>& recv_value, unsigned int source,
+                            int recv_tag)
     {
       #ifdef HAS_MPI
       std::size_t send_size = send_value.size();
       std::size_t recv_size = 0;
       MPI_Status mpi_status;
+      std::cout << "-------- Start send_recv: "
+                << MPI::rank(comm)
+                << ", " << dest << ", " << source << std::endl;
       MPI_Sendrecv(&send_size, 1, mpi_type<std::size_t>(), dest, send_tag,
                    &recv_size, 1, mpi_type<std::size_t>(), source, recv_tag,
                    comm, &mpi_status);
 
+      std::cout << "-------- Mid send_recv" << std::endl;
       recv_value.resize(recv_size);
       MPI_Sendrecv(const_cast<T*>(send_value.data()), send_value.size(),
                    mpi_type<T>(), dest, send_tag,
                    recv_value.data(), recv_size, mpi_type<T>(),
                    source, recv_tag, comm, &mpi_status);
+      std::cout << "-------- End send_recv" << std::endl;
       #else
       dolfin_error("MPI.h",
                    "call MPI::send_recv",
@@ -397,7 +405,7 @@ namespace dolfin
                             const std::vector<T>& send_value, unsigned int dest,
                             std::vector<T>& recv_value, unsigned int source)
     {
-      MPI::send_recv(comm, send_value, 0, dest, recv_value, 0, source);
+      MPI::send_recv(comm, send_value, dest, 0, recv_value, source, 0);
     }
 
     /// Return local range for local process, splitting [0, N - 1] into

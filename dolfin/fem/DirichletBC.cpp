@@ -224,8 +224,8 @@ void DirichletBC::gather(Map& boundary_values) const
 
   // typedef boost::unordered_map<std::size_t, double> Map;
 
-  typedef std::vector<std::pair<std::size_t, double> > bv_vec_type;
-  typedef std::map<std::size_t, bv_vec_type> map_type;
+  //typedef std::vector<std::pair<std::size_t, double> > bv_vec_type;
+  //typedef std::map<std::size_t, bv_vec_type> map_type;
 
   typedef boost::unordered_map<std::size_t, std::vector<unsigned int> >
     shared_dof_type;

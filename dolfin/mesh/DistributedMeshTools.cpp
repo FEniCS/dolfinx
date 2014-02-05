@@ -440,7 +440,9 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
     const std::size_t src  = (proc_num - k + num_proc) % num_proc;
     const std::size_t dest = (proc_num + k) % num_proc;
 
+    std::cout << "-- Send-recv (0) " << std::endl;
     MPI::send_recv(mpi_comm, my_entities, dest, off_process_entities, src);
+    std::cout << "-- End Send-recv (0) " << std::endl;
 
     const std::size_t recv_entity_count = off_process_entities.size();
 
@@ -472,7 +474,9 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
     const std::size_t max_recv_host_proc
       = MPI::max(mpi_comm, my_hosted_entities.size());
     std::vector<std::size_t> host_processes(max_recv_host_proc);
+    std::cout << "-- Send-recv (1) " << std::endl;
     MPI::send_recv(mpi_comm, my_hosted_entities, src, host_processes, dest);
+    std::cout << "-- End Send-recv (1) " << std::endl;
 
     const std::size_t recv_hostproc_count = host_processes.size();
     for (std::size_t j = 0; j < recv_hostproc_count; j += 2)
@@ -568,8 +572,10 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
        global_indices != send_indices.end(); ++global_indices)
   {
     const std::size_t destination = global_indices->first;
-    MPI::send_recv(mpi_comm, global_indices->second, my_rank, destination,
+    std::cout << "-- Send-recv (2) " << std::endl;
+    MPI::send_recv(mpi_comm, global_indices->second, destination, my_rank,
                    recv_entities[destination], destination, destination);
+    std::cout << "-- End Send-recv (2) " << std::endl;
   }
 
   // Clear send data
@@ -617,8 +623,10 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
        local_indices != send_indices.end(); ++local_indices)
   {
     const std::size_t destination = local_indices->first;
-    MPI::send_recv(mpi_comm, local_indices->second, my_rank, destination,
+    std::cout << "-- Send-recv (3) " << std::endl;
+    MPI::send_recv(mpi_comm, local_indices->second, destination, my_rank,
                    recv_entities[destination], destination, destination);
+    std::cout << "-- Send-recv (3) " << std::endl;
   }
 
   // Build map
