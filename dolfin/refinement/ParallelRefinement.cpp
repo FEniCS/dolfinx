@@ -112,7 +112,6 @@ void ParallelRefinement::update_logical_edgefunction()
   // Create a list of edges on this process that are 'true' and copy
   // to remote sharing processes
   std::vector<std::vector<std::size_t> > values_to_send(num_processes);
-  std::vector<std::vector<std::size_t> > received_values;
   boost::unordered_map<unsigned int, std::vector<
     std::pair<unsigned int, unsigned int> > >::iterator sh_edge;
    for (sh_edge = shared_edges.begin(); sh_edge != shared_edges.end();
@@ -130,7 +129,8 @@ void ParallelRefinement::update_logical_edgefunction()
     }
   }
 
-   MPI::all_to_all(_mesh.mpi_comm(), values_to_send, received_values);
+  std::vector<std::vector<std::size_t> > received_values;
+  MPI::all_to_all(_mesh.mpi_comm(), values_to_send, received_values);
 
   // Flatten received values and set EdgeFunction true at each index
   // received
@@ -154,9 +154,7 @@ void ParallelRefinement::create_new_vertices()
 
   // Tally up unshared marked edges, and shared marked edges which are
   // owned on this process.  Index them sequentially from zero.
-
   const std::size_t gdim = _mesh.geometry().dim();
-
   std::size_t n = 0;
   for (std::size_t local_i = 0 ; local_i < _mesh.num_edges(); ++local_i)
   {
@@ -293,14 +291,12 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
     const std::size_t global_i = global_indices[i];
     const std::size_t process_i
       = MPI::index_owner(_mesh.mpi_comm(), global_i, global_vector_size);
-    const std::vector<double> v(vertex_array[i].begin(),
-                                vertex_array[i].end());
-    //values_to_send[process_i].push_back(std::make_pair(global_i, v));
     values_to_send0[process_i].push_back(global_i);
-    values_to_send0[process_i].push_back(v.size());
+    values_to_send0[process_i].push_back(vertex_array[i].shape()[0]);
     values_to_send0[process_i].push_back(values_to_send1[process_i].size());
     values_to_send1[process_i].insert(values_to_send1[process_i].end(),
-                                      v.begin(), v.end());
+                                      vertex_array[i].begin(),
+                                      vertex_array[i].end());
   }
 
   // Redistribute the values to the appropriate process - including
@@ -319,10 +315,10 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
   boost::multi_array_ref<double, 2>
     new_vertex_array(vertex_coords.data(),
                      boost::extents[range.second - range.first][gdim]);
-  for (std::size_t i = 0; i < received_values0.size(); ++i)
+  for (std::size_t p = 0; p < received_values0.size(); ++p)
   {
-    const std::vector<std::size_t>& received_global_data0 = received_values0[i];
-    const std::vector<double>& received_global_data1 = received_values1[i];
+    const std::vector<std::size_t>& received_global_data0 = received_values0[p];
+    const std::vector<double>& received_global_data1 = received_values1[p];
     for (std::size_t j = 0; j < received_global_data0.size(); j += 3)
     {
       const std::size_t global_i = received_global_data0[j];
