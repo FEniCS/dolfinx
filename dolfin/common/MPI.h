@@ -580,7 +580,7 @@ namespace dolfin
     }
     #else
     out_values.clear();
-    out_values.push_back(in_value);
+    out_values.push_back(in_values);
     #endif
   }
   //---------------------------------------------------------------------------
