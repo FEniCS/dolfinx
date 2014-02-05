@@ -191,7 +191,8 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
 }
 //-----------------------------------------------------------------------------
 void XMLFunctionData::build_global_to_cell_dof(
-  std::vector<std::vector<std::pair<dolfin::la_index, dolfin::la_index> > >& global_dof_to_cell_dof,
+  std::vector<std::vector<std::pair<dolfin::la_index, dolfin::la_index> > >&
+  global_dof_to_cell_dof,
   const FunctionSpace& V)
 {
   // Get mesh and dofmap
@@ -312,25 +313,6 @@ void XMLFunctionData::build_dof_map(
       for (std::size_t j = 0; j < num_dofs; ++j)
         dof_map[global_cell_index].push_back(gathered_dofmap[i++]);
     }
-    /*
-    // Loop of dof map from each process
-    std::vector<std::vector<std::vector<dolfin::la_index> >
-                > ::const_iterator proc_dofmap;
-    for (proc_dofmap = gathered_dofmap.begin();
-         proc_dofmap != gathered_dofmap.end(); ++proc_dofmap)
-    {
-      std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofmap;
-      for (cell_dofmap = proc_dofmap->begin();
-           cell_dofmap != proc_dofmap->end(); ++cell_dofmap)
-      {
-        const std::vector<dolfin::la_index>& cell_dofs = *cell_dofmap;
-        const std::size_t global_cell_index = cell_dofs.back();
-        dolfin_assert(global_cell_index < dof_map.size());
-        dof_map[global_cell_index] = *cell_dofmap;
-        dof_map[global_cell_index].pop_back();
-      }
-    }
-    */
   }
 }
 //-----------------------------------------------------------------------------
