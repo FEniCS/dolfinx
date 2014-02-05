@@ -51,8 +51,17 @@ class ErrorControlTest(unittest.TestCase):
         problem = LinearVariationalProblem(a, L, u, bc)
 
         # Define goal
-        M = u*dx()
+        self.goal_functional = lambda u: u*dx
+        M = self.goal_functional(u)
         self.goal = M
+
+        # Asserting that domains are ok before trying error control generation
+        assert len(M.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert M.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+        assert len(a.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert a.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+        assert len(L.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert L.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
 
         # Generate ErrorControl object
         ec = generate_error_control(problem, M)
@@ -109,7 +118,9 @@ class ErrorControlTest(unittest.TestCase):
         # Extract solution and update goal
         w = Function(self.u.leaf_node().function_space())
         w.assign(self.u.leaf_node())
-        M = replace(self.goal, {self.u: w})
+        M = self.goal_functional(w)
+        # Note: This approach is too fragile, breaks with new domain features:
+        #M = replace(self.goal, {self.u: w})
 
         # Compare computed goal with reference
         reference = 0.12583303389560166
