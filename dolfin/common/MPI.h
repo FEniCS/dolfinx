@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Magnus Vikstrøm and Garth N. Wells
+// Copyright (C) 2007-2014 Magnus Vikstrøm and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,8 +20,6 @@
 // Modified by Niclas Jansson 2009
 // Modified by Joachim B Haga 2012
 //
-// First added:  2007-11-30
-// Last changed: 2013-01-11
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H

@@ -20,9 +20,6 @@
 // Modified by Ola Skavhaug 2008-2009
 // Modified by Niclas Jansson 2009
 // Modified by Joachim B Haga 2012
-//
-// First added:  2007-11-30
-// Last changed: 2012-11-17
 
 #include <numeric>
 #include <dolfin/log/dolfin_log.h>
@@ -198,15 +195,3 @@ unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-#ifndef HAS_MPI
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-void dolfin::MPINonblocking::wait_all()
-{
-  dolfin_error("MPI.h",
-               "call MPINonblocking::wait_all",
-               "DOLFIN has been configured without MPI support");
-}
-//-----------------------------------------------------------------------------
-#endif
