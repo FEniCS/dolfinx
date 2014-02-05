@@ -59,7 +59,8 @@ void BlockVector::set_block(std::size_t i, boost::shared_ptr<GenericVector> v)
   vectors[i] = v;
 }
 //-----------------------------------------------------------------------------
-const boost::shared_ptr<GenericVector> BlockVector::get_block(std::size_t i) const
+boost::shared_ptr<const GenericVector>
+BlockVector::get_block(std::size_t i) const
 {
   dolfin_assert(i < vectors.size());
   return vectors[i];

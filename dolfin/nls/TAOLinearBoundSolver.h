@@ -152,12 +152,12 @@ namespace dolfin
   private:
 
     // Set operators with GenericMatrix and GenericVector
-    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-		       const boost::shared_ptr<const GenericVector> b);
+    void set_operators(boost::shared_ptr<const GenericMatrix> A,
+		       boost::shared_ptr<const GenericVector> b);
 
     // Set operators with shared pointer to PETSc objects
-    void set_operators(const boost::shared_ptr<const PETScMatrix> A,
-		       const boost::shared_ptr<const PETScVector> b);
+    void set_operators(boost::shared_ptr<const PETScMatrix> A,
+		       boost::shared_ptr<const PETScVector> b);
 
     // Callback for changes in parameter values
     void read_parameters();

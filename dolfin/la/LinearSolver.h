@@ -24,8 +24,9 @@
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
 
+#include <memory>
 #include <string>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 
@@ -52,11 +53,11 @@ namespace dolfin
     ~LinearSolver();
 
     /// Set the operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Set the operator (matrix) and preconitioner matrix
-    void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                       const boost::shared_ptr<const GenericLinearOperator> P);
+    void set_operators(boost::shared_ptr<const GenericLinearOperator> A,
+                       boost::shared_ptr<const GenericLinearOperator> P);
 
     /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A,
@@ -101,7 +102,7 @@ namespace dolfin
             const std::vector<std::pair<std::string, std::string> > methods);
 
     // Solver
-    boost::scoped_ptr<GenericLinearSolver> solver;
+    std::unique_ptr<GenericLinearSolver> solver;
 
     // FIXME: This should not be needed
     // Parameter type

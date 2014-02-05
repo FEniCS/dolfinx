@@ -42,7 +42,8 @@ namespace dolfin
   public:
 
     /// Set operator (matrix)
-    virtual void set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
+    virtual void
+      set_operator(boost::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Solve linear system Ax = b
     virtual std::size_t solve(GenericVector& x, const GenericVector& b) = 0;

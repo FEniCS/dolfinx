@@ -29,7 +29,7 @@ if (DOLFIN_FOUND)
 
     # Get directory name
     get_filename_component(cpp_dir ${cpp_test} PATH)
-    
+
     # Get last dir name
     get_filename_component(last_component ${cpp_dir} NAME)
 
@@ -43,7 +43,7 @@ if (DOLFIN_FOUND)
 	  set(already_in TRUE)
 	endif()
       endforeach()
-      
+
       # Schedule directory for compilation
       if (NOT already_in)
 	list(APPEND added_dirs ${cpp_dir})
@@ -51,11 +51,6 @@ if (DOLFIN_FOUND)
       endif()
     endif()
   endforeach()
-
-
-
-  #list(SORT list)
-
 else()
 
   message(STATUS "Could not locate DOLFINConfig.cmake file. Did you do 'make install' for the DOLFIN library and set the appropriate paths (source <build_dir>/dolfin.conf)?")

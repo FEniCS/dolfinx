@@ -61,10 +61,10 @@ namespace dolfin
     ~PETScLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const PETScMatrix> A);
+    void set_operator(boost::shared_ptr<const PETScMatrix> A);
 
     /// Get operator (matrix)
     const GenericLinearOperator& get_operator() const;
