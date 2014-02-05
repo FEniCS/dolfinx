@@ -129,6 +129,36 @@ namespace dolfin
 
   private:
 
+    // The implementation of collides_triangle_point
+    static bool collides_triangle_point(const Point& p0,
+					const Point& p1, 
+					const Point& p2,
+					const Point& point);
+    
+    // The implementation of collides_triangle_triangle
+    static bool collides_triangle_triangle(const Point& p0,
+					   const Point& p1, 
+					   const Point& p2,
+					   const Point& q0,
+					   const Point& q1, 
+					   const Point& q2);
+
+    // The implementation of collides_tetrahedron_point
+    static bool collides_tetrahedron_point(const Point& p0,
+					   const Point& p1, 
+					   const Point& p2,
+					   const Point& p3,
+					   const Point& q);
+
+    // The implementation of collides_tetrahedron_triangle
+    static bool collides_tetrahedron_triangle(const Point& p0,
+					      const Point& p1, 
+					      const Point& p2,
+					      const Point& p3,
+					      const Point& q0,
+					      const Point& q1, 
+					      const Point& q2);
+
     // Helper function for collides_triangle_triangle
     static bool compute_intervals(const Point& N1,
 				  const Point& V0,
@@ -153,16 +183,17 @@ namespace dolfin
 					   const Point& U0,
 					   const Point& U1,
 					   const Point& U2);
+
     // Helper function for collides_triangle_triangle
     static bool edge_against_tri_edges(int i0,
 				       int i1,
 				       const Point& V0,
-				      const Point& V1,
-				      const Point& U0,
-				      const Point& U1,
-				      const Point& U2);
+				       const Point& V1,
+				       const Point& U0,
+				       const Point& U1,
+				       const Point& U2);
 
-    // Helper
+    // Helper function to collides_triangle_triangle
     static bool edge_edge_test(int i0,
 			       int i1,
 			       double Ax,
@@ -171,7 +202,7 @@ namespace dolfin
 			       const Point& U0,
 			       const Point& U1);
 
-    // Helper
+    // Helper function to collides_triangle_triangle
     static bool point_in_tri(int i0,
 			     int i1,
 			     const Point& V0,
@@ -182,20 +213,20 @@ namespace dolfin
 
     // Helper function for collides_tetrahedron_tetrahedron: checks if plane pv1 is a separating plane. Stores local coordinates bc and the mask bit maskEdges.
     static bool separating_plane_face_A_1(const std::vector<Point>& pv1,
-				   const Point& n,
-				   std::vector<double>& bc,
-				   int& maskEdges);
+					  const Point& n,
+					  std::vector<double>& bc,
+					  int& maskEdges);
 
     // Helper function for collides_tetrahedron_tetrahedron: checks if plane v1,v2 is a separating plane. Stores local coordinates bc and the mask bit maskEdges.
     static bool separating_plane_face_A_2(const std::vector<Point>& v1,
-				   const std::vector<Point>& v2,
-				   const Point& n,
-				   std::vector<double>& bc,
-				   int& maskEdges);
-		
+					  const std::vector<Point>& v2,
+					  const Point& n,
+					  std::vector<double>& bc,
+					  int& maskEdges);
+    
     // Helper function for collides_tetrahedron_tetrahedron: checks if plane pv2 is a separating plane.
     static bool separating_plane_face_B_1(const std::vector<Point>& P_V2,
-				   const Point& n) 
+					  const Point& n) 
     {
       return ((P_V2[0].dot(n) > 0) &&
 	      (P_V2[1].dot(n) > 0) &&
@@ -205,8 +236,8 @@ namespace dolfin
 
     // Helper function for collides_tetrahedron_tetrahedron: checks if plane v1,v2 is a separating plane.  
     static bool separating_plane_face_B_2(const std::vector<Point>& V1,
-				   const std::vector<Point>& V2,
-				   const Point& n) 
+					  const std::vector<Point>& V2,
+					  const Point& n) 
     {
       return (((V1[0]-V2[1]).dot(n) > 0) &&
 	      ((V1[1]-V2[1]).dot(n) > 0) &&
@@ -216,9 +247,9 @@ namespace dolfin
     
     // Helper function for collides_tetrahedron_tetrahedron: checks if edge is in the plane separating faces f0 and f1. 
     static bool separating_plane_edge_A(const std::vector<std::vector<double> >& Coord_1,
-				 const std::vector<int>& masks,
-				 int f0, 
-				 int f1);
+					const std::vector<int>& masks,
+					int f0, 
+					int f1);
 
   };
 
