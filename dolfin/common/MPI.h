@@ -45,6 +45,8 @@ typedef int MPI_Comm;
 #define MPI_COMM_WORLD 2
 #define MPI_COMM_SELF 1
 #define MPI_COMM_NULL 0
+
+typedef int MPI_Request;
 #endif
 
 namespace dolfin
@@ -347,13 +349,17 @@ namespace dolfin
                                      std::size_t range, bool exclusive);
 
     /*
-    /// Send-receive data between processes
+    /// Non-blocking dend-receive data between process
     template<typename T>
-      static void send_recv(const MPI_Comm comm,
+      static void send_recv_nb(const MPI_Comm comm,
                             T& send_value, unsigned int dest,
                             T& recv_value, unsigned int source)
     {
       #ifdef HAS_MPI
+      MPI_Status mpi_status;
+      MPI_Isend(const_cast<T*>(&send_value), 1, mpi_type<T>(),
+                dest, 0, comm, MPI_Request *request)
+
       MPI_Status mpi_status;
       MPI_Sendrecv(const_cast<T*>(&send_value), 1, mpi_type<T>(), dest, 0,
                    &recv_value, 1, mpi_type<T>(), source, 0,

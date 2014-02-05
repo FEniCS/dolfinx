@@ -160,8 +160,10 @@ for prefix in prefixes:
         cppdemos_to_run = list(set(cppdemos) - set(not_working_in_parallel))
         pydemos_to_run  = list(set(pydemos)  - set(not_working_in_parallel))
     else:
-        cppdemos_to_run = cppdemos
-        pydemos_to_run  = pydemos
+        #cppdemos_to_run = cppdemos
+        #pydemos_to_run  = pydemos
+        cppdemos_to_run = []
+        pydemos_to_run  = []
 
     # Run C++ demos
     for demo in cppdemos_to_run:

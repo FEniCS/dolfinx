@@ -509,14 +509,13 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
 {
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
+  const unsigned int comm_size = MPI::size(mpi_comm);
 
   // Return empty set if running in serial
   if (MPI::size(mpi_comm) == 1)
   {
     return boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >();
   }
-
-  const unsigned int my_rank = MPI::rank(mpi_comm);
 
   // Initialize entities of dimension d
   mesh.init(d);
@@ -536,9 +535,8 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
   boost::unordered_map<std::size_t, boost::unordered_map<std::size_t, std::size_t> > global_to_local;
 
   // Pack global indices for sending to sharing processes
-  boost::unordered_map<std::size_t, std::vector<std::size_t> > send_indices;
-  boost::unordered_map<std::size_t, std::vector<std::size_t> >
-    local_sent_indices;
+  std::vector<std::vector<std::size_t> > send_indices(comm_size);
+  std::vector<std::vector<std::size_t> > local_sent_indices(comm_size);
   std::map<unsigned int, std::set<unsigned int> >::const_iterator shared_entity;
   for (shared_entity = shared_entities.begin();
        shared_entity != shared_entities.end(); ++shared_entity)
@@ -565,6 +563,7 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
   }
 
   // Send/receive global indices
+  /*
   boost::unordered_map<std::size_t, std::vector<std::size_t> > recv_entities;
   boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
     global_indices;
@@ -577,46 +576,58 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
                    recv_entities[destination], destination, destination);
     std::cout << "-- End Send-recv (2) " << std::endl;
   }
+  */
+
+  std::vector<std::vector<std::size_t> > recv_entities;
+  MPI::all_to_all(mpi_comm, send_indices, recv_entities);
 
   // Clear send data
   send_indices.clear();
+  send_indices.resize(comm_size);
 
   // Determine local entities indices for received global entity indices
-  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator received_global_indices;
-  for (received_global_indices = recv_entities.begin();
-      received_global_indices != recv_entities.end(); ++received_global_indices)
+  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
+    received_global_indices;
+  //for (received_global_indices = recv_entities.begin();
+  //    received_global_indices != recv_entities.end(); ++received_global_indices)
+  for (std::size_t p = 0; p < recv_entities.size(); ++p)
   {
     // Get process number of neighbour
-    const std::size_t sending_proc = received_global_indices->first;
+    //const std::size_t sending_proc = received_global_indices->first;
+    const std::size_t sending_proc = p;
 
-    // Get global-to-local map for neighbour process
-    boost::unordered_map<std::size_t, boost::unordered_map<std::size_t, std::size_t> >::const_iterator
-      it = global_to_local.find(sending_proc);
-    dolfin_assert(it != global_to_local.end());
-    const boost::unordered_map<std::size_t, std::size_t>& neighbour_global_to_local = it->second;
-
-    // Build vector of local indices
-    const std::vector<std::size_t>& global_indices_recv
-      = received_global_indices->second;
-    for (std::size_t i = 0; i < global_indices_recv.size(); ++i)
+    if (recv_entities[p].size() > 0)
     {
-      // Global index
-      const std::size_t global_index = global_indices_recv[i];
+      // Get global-to-local map for neighbour process
+      boost::unordered_map<std::size_t, boost::unordered_map<std::size_t, std::size_t> >::const_iterator
+        it = global_to_local.find(sending_proc);
+      dolfin_assert(it != global_to_local.end());
+      const boost::unordered_map<std::size_t, std::size_t>&
+        neighbour_global_to_local = it->second;
 
-      // Find local index corresponding to global index
-      boost::unordered_map<std::size_t, std::size_t>::const_iterator
-        n_global_to_local = neighbour_global_to_local.find(global_index);
+      // Build vector of local indices
+      //const std::vector<std::size_t>& global_indices_recv
+      //  = received_global_indices->second;
+      const std::vector<std::size_t>& global_indices_recv
+        = recv_entities[p];
+      for (std::size_t i = 0; i < global_indices_recv.size(); ++i)
+      {
+        // Global index
+        const std::size_t global_index = global_indices_recv[i];
 
-      dolfin_assert(n_global_to_local != neighbour_global_to_local.end());
-      const std::size_t my_local_index = n_global_to_local->second;
-      send_indices[sending_proc].push_back(my_local_index);
+        // Find local index corresponding to global index
+        boost::unordered_map<std::size_t, std::size_t>::const_iterator
+          n_global_to_local = neighbour_global_to_local.find(global_index);
+
+        dolfin_assert(n_global_to_local != neighbour_global_to_local.end());
+        const std::size_t my_local_index = n_global_to_local->second;
+        send_indices[sending_proc].push_back(my_local_index);
+      }
     }
   }
 
-  // Clear receive data for re-use
-  recv_entities.clear();
-
   // Send back/receive local indices
+  /*
   boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
     local_indices;
   for (local_indices = send_indices.begin();
@@ -628,34 +639,47 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
                    recv_entities[destination], destination, destination);
     std::cout << "-- Send-recv (3) " << std::endl;
   }
+  */
+
+  MPI::all_to_all(mpi_comm, send_indices, recv_entities);
 
   // Build map
-  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > > shared_local_indices_map;
+  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
+    shared_local_indices_map;
 
   // Loop over data received from each process
   boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
     received_local_indices;
-  for (received_local_indices = recv_entities.begin();
-       received_local_indices != recv_entities.end(); ++received_local_indices)
+  //for (received_local_indices = recv_entities.begin();
+  //    received_local_indices != recv_entities.end(); ++received_local_indices)
+  for (std::size_t p = 0; p < recv_entities.size(); ++p)
   {
-    // Process that shares entities
-    const std::size_t proc = received_local_indices->first;
-
-    // Local indices on sharing process
-    const std::vector<std::size_t>& neighbour_local_indices
-      = received_local_indices->second;
-
-    // Local indices on this process
-    dolfin_assert(local_sent_indices.find(proc) != local_sent_indices.end());
-    const std::vector<std::size_t>& my_local_indices
-      = local_sent_indices.find(proc)->second;
-
-    // Check that sizes match
-    dolfin_assert(my_local_indices.size() == neighbour_local_indices.size());
-
-    for (std::size_t i = 0; i < neighbour_local_indices.size(); ++i)
+    if (recv_entities[p].size() > 0)
     {
-      shared_local_indices_map[my_local_indices[i]].push_back(std::make_pair(proc, neighbour_local_indices[i]));
+      // Process that shares entities
+      //const std::size_t proc = received_local_indices->first;
+      const std::size_t proc = p;
+
+      // Local indices on sharing process
+      //const std::vector<std::size_t>& neighbour_local_indices
+      //  = received_local_indices->second;
+      const std::vector<std::size_t>& neighbour_local_indices
+        = recv_entities[p];
+
+      // Local indices on this process
+      //dolfin_assert(local_sent_indices.find(proc) != local_sent_indices.end());
+      //const std::vector<std::size_t>& my_local_indices
+      //  = local_sent_indices.find(proc)->second;
+      const std::vector<std::size_t>& my_local_indices = local_sent_indices[p];
+
+      // Check that sizes match
+      dolfin_assert(my_local_indices.size() == neighbour_local_indices.size());
+
+      for (std::size_t i = 0; i < neighbour_local_indices.size(); ++i)
+      {
+        shared_local_indices_map[my_local_indices[i]].push_back(std::make_pair(proc,
+                                                                               neighbour_local_indices[i]));
+      }
     }
   }
 
