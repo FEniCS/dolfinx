@@ -455,8 +455,10 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     const int q = (process_number + i) % num_processes;
 
     // Send and receive
+    std::cout << "-- Send-recv (p) " << std::endl;
     MPI::send_recv(mesh.mpi_comm(), global_vertex_send, p,
                    global_vertex_recv, q);
+    std::cout << "-- End  Send-recv (p) " << std::endl;
 
     // Compute intersection of global indices
     std::vector<std::size_t> intersection(std::min(global_vertex_send.size(),
