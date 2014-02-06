@@ -44,7 +44,7 @@ const GenericMatrix& GenericLinearSolver::require_matrix(const GenericLinearOper
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const GenericMatrix>
-  GenericLinearSolver::require_matrix(const boost::shared_ptr<const GenericLinearOperator> A)
+GenericLinearSolver::require_matrix(boost::shared_ptr<const GenericLinearOperator> A)
 {
   // Try to down cast shared pointer
   boost::shared_ptr<const GenericMatrix> _A

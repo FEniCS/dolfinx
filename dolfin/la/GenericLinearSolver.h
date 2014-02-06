@@ -45,12 +45,12 @@ namespace dolfin
 
     /// Set operator (matrix)
     virtual void
-      set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
+      set_operator(boost::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Set operator (matrix) and preconditioner matrix
     virtual void
-      set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                    const boost::shared_ptr<const GenericLinearOperator> P)
+      set_operators(boost::shared_ptr<const GenericLinearOperator> A,
+                    boost::shared_ptr<const GenericLinearOperator> P)
     {
       dolfin_error("GenericLinearSolver.h",
                    "set operator and preconditioner for linear solver",
@@ -138,7 +138,7 @@ namespace dolfin
     // matrix is required, not only a linear operator. This is the
     // const reference version of the down-cast.
     static boost::shared_ptr<const GenericMatrix>
-    require_matrix(const boost::shared_ptr<const GenericLinearOperator> A);
+    require_matrix(boost::shared_ptr<const GenericLinearOperator> A);
 
   };
 

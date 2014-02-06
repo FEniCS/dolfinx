@@ -20,7 +20,7 @@
 # Generate CMakeLists.txt files in demo and test directories
 # This script should be run from the top level directory.
 #
-# Modified by Anders Logg 2013
+# Modified by Anders Logg 2013, 2014
 
 import os
 import subprocess
@@ -53,6 +53,9 @@ endif()
 
 # Compiler definitions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
+
+# Compiler flags
+set(CMAKE_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
 # Include directories
 include_directories(${DOLFIN_INCLUDE_DIRS})
