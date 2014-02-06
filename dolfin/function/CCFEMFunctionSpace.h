@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-03
+// Last changed: 2014-02-06
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
@@ -127,7 +127,8 @@ namespace dolfin
     //     c = cell index for an uncut cell
     //     i = the part (mesh) number
     //     j = the cell number (in the list of uncut cells)
-    std::vector<std::vector<unsigned int> > _uncut_cells;
+    std::vector<std::vector<unsigned int> >
+    _uncut_cells;
 
     // Cell indices for all cut cells for all parts. Access data by
     //
@@ -139,9 +140,9 @@ namespace dolfin
     //     c.second = cell index for the cutting cell
     //            i = the part (mesh) number
     //            j = the cell number (in the list of cut cells)
-    //            k = the collision number (in the list of cutting cell)
+    //            k = the collision number (in the list of cutting cells)
     std::vector<std::vector<std::vector<std::pair<std::size_t, unsigned int> > > >
-    cut_cells;
+    _cut_cells;
 
     // Cell indices for all covered cells for all parts. Access data by
     //

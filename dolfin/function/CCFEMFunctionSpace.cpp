@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-03
+// Last changed: 2014-02-06
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -181,13 +181,15 @@ void CCFEMFunctionSpace::_build_collision_maps()
   {
 
 
-
-
     // Iterate over covering parts (with higher part number)
     for (std::size_t j = i + 1; j < num_parts(); j++)
     {
       log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
-      _trees[i]->compute_collisions(*_trees[j]);
+
+      log(PROGRESS, "  Computing domain collisions.");
+      auto domain_collisions = _trees[i]->compute_collisions(*_trees[j]);
+      log(PROGRESS, "  Computing boundary collisions.");
+      auto boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
     }
   }
 
