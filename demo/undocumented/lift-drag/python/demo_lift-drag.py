@@ -47,15 +47,17 @@ class Fish(SubDomain):
         return x[0] > DOLFIN_EPS and x[0] < (1.0 - DOLFIN_EPS) and \
                x[1] > DOLFIN_EPS and x[1] < (1.0 - DOLFIN_EPS)
 
+markers = FacetFunctionSizet(mesh, 1)
+Fish().mark(markers, 1);
+
 # Define functionals for drag and lift
 n = FacetNormal(mesh)
-D = -p*n[0]*ds
-L = p*n[1]*ds
+D = -p*n[0]*ds(1)
+L = p*n[1]*ds(1)
 
 # Assemble functionals over sub domain
-fish = Fish()
-drag = assemble(D, mesh=mesh, exterior_facet_domains=fish)
-lift = assemble(L, mesh=mesh, exterior_facet_domains=fish)
+drag = assemble(D, mesh=mesh, exterior_facet_domains=markers)
+lift = assemble(L, mesh=mesh, exterior_facet_domains=markers)
 
-print "Lift: %f" %lift
-print "Drag: %f" %drag
+print "Lift: %f" % lift
+print "Drag: %f" % drag
