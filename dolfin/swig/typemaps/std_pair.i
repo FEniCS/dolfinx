@@ -17,10 +17,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-25
-// Last changed: 2013-08-27
+// Last changed: 2014-02-06
 
 //-----------------------------------------------------------------------------
-// User macro for defining in typmaps for std::pair of a pointer to some
+// User macro for defining in typemaps for std::pair of a pointer to some
 // DOLFIN type and a double
 //-----------------------------------------------------------------------------
 %define IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE)
