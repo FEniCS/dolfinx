@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2014-02-03
+// Last changed: 2014-02-06
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -56,9 +56,7 @@ namespace dolfin
     compute_collisions(const Point& point) const;
 
     /// Compute all collisions between bounding boxes and _BoundingBoxTree_
-    std::tuple<std::vector<unsigned int>,
-               std::vector<unsigned int>,
-               std::vector<std::pair<unsigned int, unsigned int> > >
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
     compute_collisions(const GenericBoundingBoxTree& tree) const;
 
     /// Compute all collisions between entities and _Point_
@@ -67,9 +65,7 @@ namespace dolfin
                               const Mesh& mesh) const;
 
     /// Compute all collisions between entities and _BoundingBoxTree_
-    std::tuple<std::vector<unsigned int>,
-               std::vector<unsigned int>,
-               std::vector<std::pair<unsigned int, unsigned int> > >
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
     compute_entity_collisions(const GenericBoundingBoxTree& tree,
                               const Mesh& mesh_A, const Mesh& mesh_B) const;
 
@@ -148,7 +144,6 @@ namespace dolfin
                         unsigned int node_B,
                         std::set<unsigned int>& entities_A,
                         std::set<unsigned int>& entities_B,
-                        std::vector<std::pair<unsigned int, unsigned int> >& collision_pairs,
                         const Mesh* mesh_A,
                         const Mesh* mesh_B);
 

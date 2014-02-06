@@ -16,13 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2014-02-03
+// Last changed: 2014-02-06
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
 
 #include <limits>
-#include <tuple>
 #include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -90,10 +89,6 @@ namespace dolfin
     compute_collisions(const Point& point) const;
 
     /// Compute all collisions between bounding boxes and _BoundingBoxTree_.
-    /// This function only checks collisions between boundin boxes of
-    /// entities. It does not check that the entities themselves
-    /// actually collide. To compute entity collisions, use the
-    /// function compute_entity_collisions.
     ///
     /// *Returns*
     ///     std::vector<unsigned int>
@@ -102,17 +97,24 @@ namespace dolfin
     ///     std::vector<unsigned int>
     ///         A list of local indices for entities in other tree that
     ///         collide with (intersect) entities in this tree.
-    ///     std::vector<std::pair<unsigned int, unsigned int> >
-    ///         A list of pairs of collisions, the first in each pair
-    ///         being an entity in this tree and the second in the
-    ///         other.
+    ///
+    /// The two lists have equal length and contain matching entities,
+    /// such that entity `i` in the first list collides with entity
+    /// `i` in the second list.
+    ///
+    /// Note that this means that the entity lists may contain
+    /// duplicate entities since a single entity may collide with
+    /// several different entities.
     ///
     /// *Arguments*
     ///     tree (_BoundingBoxTree_)
     ///         The bounding box tree.
-    std::tuple<std::vector<unsigned int>,
-               std::vector<unsigned int>,
-               std::vector<std::pair<unsigned int, unsigned int> > >
+    ///
+    /// Note that this function only checks collisions between bounding
+    /// boxes of entities. It does not check that the entities
+    /// themselves actually collide. To compute entity collisions, use
+    /// the function compute_entity_collisions.
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
     compute_collisions(const BoundingBoxTree& tree) const;
 
     /// Compute all collisions between entities and _Point_.
@@ -137,17 +139,19 @@ namespace dolfin
     ///     std::vector<unsigned int>
     ///         A list of local indices for entities in other tree that
     ///         collide with (intersect) entities in this tree.
-    ///     std::vector<std::pair<unsigned int, unsigned int> >
-    ///         A list of pairs of collisions, the first in each pair
-    ///         being an entity in this tree and the second in the
-    ///         other.
+    ///
+    /// The two lists have equal length and contain matching entities,
+    /// such that entity `i` in the first list collides with entity
+    /// `i` in the second list.
+    ///
+    /// Note that this means that the entity lists may contain
+    /// duplicate entities since a single entity may collide with
+    /// several different entities.
     ///
     /// *Arguments*
     ///     tree (_BoundingBoxTree_)
     ///         The bounding box tree.
-    std::tuple<std::vector<unsigned int>,
-               std::vector<unsigned int>,
-               std::vector<std::pair<unsigned int, unsigned int> > >
+    std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
     compute_entity_collisions(const BoundingBoxTree& tree) const;
 
     /// Compute first collision between bounding boxes and _Point_.
