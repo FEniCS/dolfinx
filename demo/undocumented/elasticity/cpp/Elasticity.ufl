@@ -38,7 +38,7 @@ def epsilon(v):
     return 0.5*(grad(v) + grad(v).T)
 
 def sigma(v):
-    return 2.0*mu*epsilon(v) + lmbda*tr(epsilon(v))*Identity(v.cell().d)
+    return 2.0*mu*epsilon(v) + lmbda*tr(epsilon(v))*Identity(v.geometric_dimension())
 
 a = inner(sigma(u), epsilon(v))*dx
 L = inner(f, v)*dx
