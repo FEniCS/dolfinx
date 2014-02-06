@@ -573,7 +573,7 @@ namespace dolfin
     for (std::size_t p = 0; p < comm_size; ++p)
     {
       out_values[p].resize(pcounts[p]);
-      for (std::size_t i = 0; i < pcounts[p]; ++i)
+      for (int i = 0; i < pcounts[p]; ++i)
         out_values[p][i] = recvbuf[offsets[p] + i];
     }
     #else
