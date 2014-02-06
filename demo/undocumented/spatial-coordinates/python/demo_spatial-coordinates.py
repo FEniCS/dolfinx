@@ -57,7 +57,7 @@ u0 = Constant(0.0)
 bc = DirichletBC(V, u0, boundary)
 
 # Define variational problem
-x = V.cell().x
+x = SpatialCoordinate(mesh)
 u = TrialFunction(V)
 v = TestFunction(V)
 d_x = x[0] - 0.5

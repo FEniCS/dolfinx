@@ -51,7 +51,7 @@ bc = DirichletBC(V, u0, boundary)
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-x = V.cell().x
+x = SpatialCoordinate(mesh)
 
 c0 = conditional(le( (x[0]-0.33)**2 + (x[1]-0.67)**2,  0.015), -1.0, 5.0)
 c = conditional( le( (x[0]-0.33)**2 + (x[1]-0.67)**2,  0.025), c0, 0.0 )

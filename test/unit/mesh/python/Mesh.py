@@ -52,6 +52,23 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
 
+    def testUFLDomain(self):
+        import ufl
+        def _check_ufl_domain(mesh):
+            domain = mesh.ufl_domain()
+            self.assertEqual(mesh.geometry().dim(), domain.geometric_dimension())
+            self.assertEqual(mesh.topology().dim(), domain.topological_dimension())
+            self.assertTrue(mesh.ufl_cell() == domain.cell())
+            self.assertTrue(str(mesh.id()) in domain.label())
+
+        _check_ufl_domain(self.interval)
+        if has_cgal():
+            _check_ufl_domain(self.circle)
+        _check_ufl_domain(self.square)
+        _check_ufl_domain(self.rectangle)
+        _check_ufl_domain(self.cube)
+        _check_ufl_domain(self.box)
+
 class SimpleShapes(unittest.TestCase):
 
     def testUnitSquareMesh(self):
