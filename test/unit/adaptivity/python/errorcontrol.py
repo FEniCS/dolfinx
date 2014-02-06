@@ -63,8 +63,7 @@ class ErrorControlTest(unittest.TestCase):
         problem = LinearVariationalProblem(a, L, u, bc)
 
         # Define goal
-        self.goal_functional = lambda u: u*dx
-        M = self.goal_functional(u)
+        M = u*dx()
         self.goal = M
 
         # Asserting that domains are ok before trying error control generation
