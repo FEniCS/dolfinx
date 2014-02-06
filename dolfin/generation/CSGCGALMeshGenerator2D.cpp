@@ -21,11 +21,9 @@
 // First added:  2012-05-10
 // Last changed: 2013-08-06
 
-#include "CSGCGALMeshGenerator2D.h"
-#include "CSGGeometry.h"
-#include "CSGOperators.h"
-#include "CSGPrimitives2D.h"
-#include "CSGCGALDomain2D.h"
+#include <cmath>
+#include <limits>
+#include <vector>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/basic.h>
@@ -36,10 +34,11 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/log/log.h>
 
-
-#include <vector>
-#include <cmath>
-#include <limits>
+#include "CSGCGALMeshGenerator2D.h"
+#include "CSGGeometry.h"
+#include "CSGOperators.h"
+#include "CSGPrimitives2D.h"
+#include "CSGCGALDomain2D.h"
 
 #ifdef HAS_CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -52,7 +51,6 @@
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Inexact_Kernel;
-
 typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel>  Vertex_base;
 typedef CGAL::Delaunay_mesh_face_base_2<Inexact_Kernel> Face_base;
 
@@ -77,17 +75,11 @@ protected:
 public:
   Enriched_face_base_2(): Fb(), c(-1) {}
 
-  Enriched_face_base_2(Vertex_handle v0,
-                       Vertex_handle v1,
-                       Vertex_handle v2)
+  Enriched_face_base_2(Vertex_handle v0, Vertex_handle v1, Vertex_handle v2)
     : Fb(v0,v1,v2), c(-1) {}
 
-  Enriched_face_base_2(Vertex_handle v0,
-                       Vertex_handle v1,
-                       Vertex_handle v2,
-                       Face_handle n0,
-                       Face_handle n1,
-                       Face_handle n2)
+  Enriched_face_base_2(Vertex_handle v0, Vertex_handle v1, Vertex_handle v2,
+                       Face_handle n0, Face_handle n1, Face_handle n2)
     : Fb(v0,v1,v2,n0,n1,n2), c(-1) {}
 
   inline void set_counter(int i) { c = i; }
@@ -113,17 +105,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
-: geometry(geometry)
+  : geometry(geometry)
 {
   parameters = default_parameters();
-  //subdomains.push_back(reference_to_no_delete_pointer(geometry));
 }
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D() {}
 //-----------------------------------------------------------------------------
-void explore_subdomain(CDT &ct,
-                        CDT::Face_handle start,
-                        std::list<CDT::Face_handle>& other_domains)
+void explore_subdomain(CDT &ct, CDT::Face_handle start,
+                       std::list<CDT::Face_handle>& other_domains)
 {
   std::list<Face_handle> queue;
   queue.push_back(start);
@@ -140,14 +130,14 @@ void explore_subdomain(CDT &ct,
         continue;
 
       const CDT::Edge e(face,i);
-
       if (n->counter() == -1)
       {
         if (ct.is_constrained(e))
         {
           // Reached a border
           other_domains.push_back(n);
-        } else
+        }
+        else
         {
           // Set neighbor interface to the same and push to queue
           n->set_counter(face->counter());
@@ -158,7 +148,6 @@ void explore_subdomain(CDT &ct,
   }
 }
 //-----------------------------------------------------------------------------
-// Set the member in_domain and counter for all faces in the cdt
 void explore_subdomains(CDT& cdt,
                         const CSGCGALDomain2D& total_domain,
                         const std::vector<std::pair<std::size_t,
@@ -173,10 +162,6 @@ void explore_subdomains(CDT& cdt,
 
   std::list<CDT::Face_handle> subdomains;
   subdomains.push_back(cdt.finite_faces_begin());
-
-  //print_face(subdomains.front());
-  //dolfin_assert(face_in_domain(subdomains.front(), total_domain));
-
   while (!subdomains.empty())
   {
     const CDT::Face_handle f = subdomains.front();
@@ -202,7 +187,6 @@ void explore_subdomains(CDT& cdt,
           break;
         }
       }
-
       explore_subdomain(cdt, f, subdomains);
     }
   }
@@ -211,7 +195,6 @@ void explore_subdomains(CDT& cdt,
 void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry,
                    double threshold)
 {
-
   // Insert the outer boundaries of the domain
   {
     std::list<std::vector<Point> > v;
@@ -225,7 +208,7 @@ void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry,
       Vertex_handle prev = first;
       ++it;
 
-      for(; it != pit->end(); ++it)
+      for (; it != pit->end(); ++it)
       {
         Vertex_handle current = cdt.insert(Point_2(it->x(), it->y()));
         cdt.insert_constraint(prev, current);
@@ -266,8 +249,7 @@ double shortest_constrained_edge(const CDT &cdt)
 {
   double min_length = std::numeric_limits<double>::max();
   for (CDT::Finite_edges_iterator it = cdt.finite_edges_begin();
-       it != cdt.finite_edges_end();
-       it++)
+       it != cdt.finite_edges_end(); it++)
   {
     if (!cdt.is_constrained(*it))
       continue;
@@ -304,15 +286,15 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   std::vector<std::pair<std::size_t, CSGCGALDomain2D> >
     subdomain_geometries;
 
-  // Add the subdomains to the CDT. Traverse in reverse order to get the latest
-  // added subdomain on top
+  // Add the subdomains to the CDT. Traverse in reverse order to get
+  // the latest added subdomain on top
   std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
 
   if (!geometry.subdomains.empty())
     log(TRACE, "Processing subdomains");
 
-  for (it = geometry.subdomains.rbegin();
-       it != geometry.subdomains.rend(); ++it)
+  for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend();
+       ++it)
   {
     const std::size_t current_index = it->first;
     boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
@@ -322,9 +304,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
     subdomain_geometries.push_back(std::make_pair(current_index,
                                                   cgal_geometry));
-
     add_subdomain(cdt, cgal_geometry, parameters["edge_minimum"]);
-
     overlaying.join_inplace(cgal_geometry);
   }
 
@@ -348,9 +328,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     const double y = (p0[1] + p1[1] + p2[1]) / 3;
 
     if (total_domain.point_in_domain(Point(x, y)))
-    {
       list_of_seeds.push_back(Point_2(x, y));
-    }
   }
 
   mesher.set_seeds(list_of_seeds.begin(), list_of_seeds.end(), true);
@@ -362,10 +340,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     const double min_radius = total_domain.compute_boundingcircle_radius();
     const double cell_size = 2.0*min_radius/mesh_resolution;
     const double shape_bound = parameters["triangle_shape_bound"];
-
     Mesh_criteria_2 criteria(shape_bound,
                              cell_size);
-
     mesher.set_criteria(criteria);
   }
   else
@@ -400,9 +376,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   {
     // Add cell if it is in the domain
     if (cgal_cell->is_in_domain())
-    {
        num_cells++;
-    }
   }
 
   // Create a MeshEditor and open
@@ -470,12 +444,12 @@ namespace dolfin
                  "Create mesh generator",
                  "Dolfin must be compiled with CGAL to use this feature.");
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D()
   {
     // Do nothing
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   {
     // Do nothing
