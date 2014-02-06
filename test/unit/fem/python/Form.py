@@ -306,20 +306,20 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         self.bottom3 = SubMesh(self.mesh3, line)
 
     def test_normals_2D_1D(self):
+        "Testing assembly of normals for 1D meshes embedded in 2D"
 
         # SubMesh not running in parallel
         if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
-        "Testing assembly of normals for 1D meshes embedded in 2D"
-        n = ufl.Cell("interval", geometric_dimension=2).n
+        n = FacetNormal(self.bottom1)
         a = inner(n, n)*ds
-        value_bottom1 = assemble(a, mesh=self.bottom1)
+        value_bottom1 = assemble(a)
         self.assertAlmostEqual(value_bottom1, 2.0)
         b = inner(n('+'), n('+'))*dS
-        b1 = assemble(b, mesh=self.bottom1)
+        b1 = assemble(b)
         c = inner(n('+'), n('-'))*dS
-        c1 = assemble(c, mesh=self.bottom1)
+        c1 = assemble(c)
         self.assertAlmostEqual(b1, self.m-1)
         self.assertAlmostEqual(c1, - b1)
 
@@ -330,14 +330,14 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
-        n = ufl.Cell("interval", geometric_dimension=3).n
+        n = FacetNormal(self.bottom3)
         a = inner(n, n)*ds
-        v1 = assemble(a, mesh=self.bottom3)
+        v1 = assemble(a)
         self.assertAlmostEqual(v1, 2.0)
         b = inner(n('+'), n('+'))*dS
-        b1 = assemble(b, mesh=self.bottom3)
+        b1 = assemble(b)
         c = inner(n('+'), n('-'))*dS
-        c1 = assemble(c, mesh=self.bottom3)
+        c1 = assemble(c)
         self.assertAlmostEqual(b1, self.m-1)
         self.assertAlmostEqual(c1, - b1)
 
@@ -348,15 +348,15 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
-        n = ufl.Cell("triangle", geometric_dimension=3).n
+        n = FacetNormal(self.bottom2)
         a = inner(n, n)*ds
-        v1 = assemble(a, mesh=self.bottom2)
+        v1 = assemble(a)
         self.assertAlmostEqual(v1, 4.0)
 
         b = inner(n('+'), n('+'))*dS
-        b1 = assemble(b, mesh=self.bottom2)
+        b1 = assemble(b)
         c = inner(n('+'), n('-'))*dS
-        c1 = assemble(c, mesh=self.bottom2)
+        c1 = assemble(c)
         self.assertAlmostEqual(c1, - b1)
 
     def test_cell_volume(self):
@@ -366,19 +366,19 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
-        volume = ufl.Cell("interval", geometric_dimension=2).volume
+        volume = CellVolume(self.bottom1)
         a = volume*dx
-        b = assemble(a, mesh=self.bottom1)
+        b = assemble(a)
         self.assertAlmostEqual(b, 1.0/self.m)
 
-        volume = ufl.Cell("interval", geometric_dimension=3).volume
+        volume = CellVolume(self.bottom3)
         a = volume*dx
-        b = assemble(a, mesh=self.bottom3)
+        b = assemble(a)
         self.assertAlmostEqual(b, 1.0/self.m)
 
-        volume = ufl.Cell("triangle", geometric_dimension=3).volume
+        volume = CellVolume(self.bottom2)
         a = volume*dx
-        b = assemble(a, mesh=self.bottom2)
+        b = assemble(a)
         self.assertAlmostEqual(b, 1.0/(2*self.m*self.m))
 
     def test_circumradius(self):
@@ -388,22 +388,24 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
-        r = ufl.Cell("interval", geometric_dimension=2).circumradius
+        r = Circumradius(self.bottom1)
         a = r*dx
-        b = assemble(a, mesh=self.bottom1)
+        b = assemble(a)
         self.assertAlmostEqual(b, 0.5*(1.0/self.m))
 
-        r = ufl.Cell("interval", geometric_dimension=3).circumradius
+        r = Circumradius(self.bottom3)
         a = r*dx
-        b = assemble(a, mesh=self.bottom3)
+        b = assemble(a)
         self.assertAlmostEqual(b, 0.5*(1.0/self.m))
 
-        r = ufl.Cell("triangle", geometric_dimension=2).circumradius
+        square = UnitSquareMesh(self.m, self.m)
+        r = Circumradius(square)
         a = r*dx
-        b0 = assemble(a, mesh=UnitSquareMesh(self.m, self.m))
-        r = ufl.Cell("triangle", geometric_dimension=3).circumradius
+        b0 = assemble(a)
+
+        r = Circumradius(self.bottom2)
         a = r*dx
-        b1 = assemble(a, mesh=self.bottom2)
+        b1 = assemble(a)
         self.assertAlmostEqual(b0, b1)
 
     def test_facetarea(self):
@@ -413,23 +415,24 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.size(self.mesh2.mpi_comm()) > 1:
             return
 
-        area = ufl.Cell("interval", geometric_dimension=2).facet_area
+        area = FacetArea(self.bottom1)
         a = area*ds
-        b = assemble(a, mesh=self.bottom1)
+        b = assemble(a)
         self.assertAlmostEqual(b, 2.0)
 
-        area = ufl.Cell("interval", geometric_dimension=3).facet_area
+        area = FacetArea(self.bottom3)
         a = area*ds
-        b = assemble(a, mesh=self.bottom3)
+        b = assemble(a)
         self.assertAlmostEqual(b, 2.0)
 
-        area = ufl.Cell("triangle", geometric_dimension=2).facet_area
+        square = UnitSquareMesh(self.m, self.m)
+        area = FacetArea(square)
         a = area*ds
-        b0 = assemble(a, mesh=UnitSquareMesh(self.m, self.m))
+        b0 = assemble(a)
 
-        area = ufl.Cell("triangle", geometric_dimension=3).facet_area
+        area = FacetArea(self.bottom2)
         a = area*ds
-        b1 = assemble(a, mesh=self.bottom2)
+        b1 = assemble(a)
         self.assertAlmostEqual(b0, b1)
 
 if __name__ == "__main__":
