@@ -170,7 +170,11 @@ void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
     Teuchos::RCP<Belos::EpetraPrecOp> belosPrec =
       Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ifpack_preconditioner.get(),
                                                         false)));
-    problem.setLeftPrec(belosPrec);
+
+    // Using a *left* preconditioner messes with Belos' norm computation and
+    // can cause funny behavior at places. Stick with right preconditioning for
+    // now.
+    problem.setRightPrec(belosPrec);
   }
   else if (_preconditioner == "hypre_amg")
   {
