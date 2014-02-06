@@ -97,7 +97,6 @@ def mark(self, *args):
                             "Expected a MeshFunction of type \"size_t\", \"int\", \"double\" or \"bool\"")
 
     self._mark(*args)
-
 %}
 }
 
@@ -168,6 +167,11 @@ def __setitem__(self, index, value):
 
 def __len__(self):
     return self.size()
+
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
 %}
 }
 
@@ -372,9 +376,23 @@ del _meshvaluecollection_doc_string
 %extend dolfin::Mesh {
 %pythoncode
 %{
+def ufl_domain(self):
+    """Returns the ufl Domain corresponding to the mesh."""
+    import ufl
+    label = "dolfin_mesh_with_id_%d" % self.id()
+    return ufl.Domain(cell=self.ufl_cell(),
+                      geometric_dimension=self.geometry().dim(),
+                      topological_dimension=self.topology().dim(),
+                      label=label,
+                      data=self)
+
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
 def ufl_cell(self):
     """
-    Returns the ufl cell of the mesh
+    Returns the ufl cell of the mesh.
 
     The cell corresponds to the topological dimension of the mesh.
     """
@@ -382,7 +400,8 @@ def ufl_cell(self):
     tdim = self.topology().dim()
     gdim = self.geometry().dim()
     dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    return ufl.Cell(dim2domain[tdim], geometric_dimension=gdim)
+    cellname = dim2domain[tdim]
+    return ufl.Cell(cellname, geometric_dimension=gdim)
 
 def coordinates(self):
     """

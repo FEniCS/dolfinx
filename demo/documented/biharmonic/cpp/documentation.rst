@@ -53,8 +53,8 @@ regenerating the code.
 .. code-block:: python
 
     # Normal component, mesh size and right-hand side
-    n  = element.cell().n
-    h = 2.0*triangle.circumradius
+    n  = FacetNormal(triangle)
+    h = 2.0*Circumradius(triangle)
     h_avg = (h('+') + h('-'))/2
 
     # Parameters

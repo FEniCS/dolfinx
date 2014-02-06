@@ -56,13 +56,20 @@ int main()
   Functionals::CoefficientSpace_p Vp(mesh);
   Function p(Vp, "../dolfin_fine_pressure.xml.gz");
 
+  // Mark 'fish'
+  FacetFunction<std::size_t> markers(mesh, 1);
+  Fish fish;
+  fish.mark(markers, 1);
+
   // Functionals for lift and drag
   Functionals::Form_lift L(mesh, p);
   Functionals::Form_drag D(mesh, p);
 
+  // Attach markers to functionals
+  L.ds = markers;
+  D.ds = markers;
+
   // Assemble functionals over sub domain
-  Fish fish;
-  fish.mark_facets(mesh, 1);
   const double lift = assemble(L);
   const double drag = assemble(D);
 

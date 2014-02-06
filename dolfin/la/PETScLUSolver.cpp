@@ -147,13 +147,14 @@ PETScLUSolver::~PETScLUSolver()
     KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+void
+PETScLUSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
 {
   _A = as_type<const PETScMatrix>(require_matrix(A));
   dolfin_assert(_A);
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
+void PETScLUSolver::set_operator(boost::shared_ptr<const PETScMatrix> A)
 {
   _A = A;
   dolfin_assert(_A);

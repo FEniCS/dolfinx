@@ -31,7 +31,7 @@ system = vector * scalar
 (u, p) = TrialFunctions(system)
 
 f = Coefficient(vector)
-h = 2.0*scalar.cell().circumradius
+h = 2.0*Circumradius(triangle)
 
 beta  = 0.2
 delta = beta*h*h
