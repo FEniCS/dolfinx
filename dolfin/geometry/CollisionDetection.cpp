@@ -23,48 +23,138 @@
 #include "CollisionDetection.h"
 
 using namespace dolfin;
-
 //-----------------------------------------------------------------------------
 bool
-CollisionDetection::collides_edge_edge(const Point& a,
-				       const Point& b,
-				       const Point& c,
-				       const Point& d)
+CollisionDetection::collides(const MeshEntity& entity,
+			     const Point& point)
 {
-  // Form edges and normal
-  const Point L1=b-a, L2=d-c;
-  const Point n=L1.cross(L2);
-
-  const Point ca=c-a;
-
-  // L1 and L2 must be coplanar for collision
-  if (std::abs(ca.dot(n))>DOLFIN_EPS) return false;
-
-  // Find orthogonal plane with normal nplane
-  const Point nplane=n.cross(L1);
-
-  // Check if c and d are on opposite sides of this plane
-  if (nplane.dot(ca)*nplane.dot(d-a)>DOLFIN_EPS) return false;
-
-  return true;
-
-  // // Algorithm from Real-time collision detection by Christer Ericson:
-  // // Test2DSegmentSegment on page 152, Section 5.1.9.
-
-  // // Compute signed areas of abd and abc
-  // const double abd = signed_area(a, b, d);
-  // const double abc = signed_area(a, b, c);
-
-  // // Return false if not intersecting (or collinear)
-  // if (abd*abc >= 0.0)
-  //   return false;
-
-  // // Compute signed area of cda
-  // const double cda = signed_area(c, d, a);
-
-  // // Check whether segments collide
-  // return cda*(cda + abc - abd) < -DOLFIN_EPS;
-
+  switch (entity.dim())
+  {
+  case 0:
+    dolfin_not_implemented();
+    break;
+  case 1:
+    return collides_interval_point(entity,point);
+  case 2:
+    return collides_triangle_point(entity,point);
+  case 3:
+    return collides_tetrahedron_point(entity,point);
+  default:
+    dolfin_error("CollisionDetection.cpp",
+		 "collides entity with point",
+		 "unknown dimension of entity");
+  }
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool
+CollisionDetection::collides(const MeshEntity& entity_0,
+			     const MeshEntity& entity_1)
+{
+  switch (entity_0.dim())
+  {
+  case 0: 
+    // Collision with PointCell
+    dolfin_not_implemented();
+    // switch (entity_1.dim())
+    // {
+    // case 0: 
+    //   dolfin_not_implemented();
+    //   break;
+    // case 1:
+    //   return collides_interval_point(entity_1,entity_0);
+    // case 2:
+    //   return collides_triangle_point(entity_1,entity_0);
+    // case 3:
+    //   return collides_tetrahedron_point(entity_1,entity_0);
+    // default:
+    //   dolfin_error("CollisionDetection.cpp",
+    // 		   "collides entity_0 with entity_1",
+    // 		   "unknown dimension of entity_1 in PointCell collision");
+    // }
+  case 1:
+    // Collision with interval 
+    dolfin_not_implemented();
+    // switch (entity_1.dim())
+    // {
+    // case 0:
+    //   return collides_interval_point(entity_1,entity_0);
+    // case 1:
+    //   dolfin_not_implemented();
+    //   break;
+    // case 2:
+    //   dolfin_not_implemented();
+    //   break;
+    // case 3:
+    //   dolfin_not_implemented();
+    //   break;
+    // default:
+    //   dolfin_error("CollisionDetection.cpp"
+    // 		   "collides entity_0 with entity_1"
+    // 		   "unknown dimension of entity_1 in IntervalCell collision");
+    // }
+  case 2: 
+    // Collision with triangle
+    switch (entity_1.dim()) 
+    {
+    case 0:
+      //return collides_triangle_point(entity_0,entity_1);
+      dolfin_not_implemented();
+      break;
+    case 1:
+      dolfin_not_implemented();
+      break;
+    case 2:
+      return collides_triangle_triangle(entity_0,entity_1); 
+    case 3:
+      return collides_tetrahedron_triangle(entity_1,entity_0); 
+    default:
+      dolfin_error("CollisionDetection.cpp",
+		   "collides entity_0 with entity_1",
+		   "unknown dimension of entity_1 in TriangleCell collision");
+    }
+  case 3:
+    // Collision with tetrahedron
+    switch (entity_1.dim())
+    {
+    case 0:
+      //return collides_tetrahedron_point(entity_0,entity_1);
+      dolfin_not_implemented();
+      break;
+    case 1:
+      dolfin_not_implemented();
+      break;
+    case 2:
+      return collides_tetrahedron_triangle(entity_0,entity_1);
+    case 3:
+      return collides_tetrahedron_tetrahedron(entity_0,entity_1);
+    default:
+      dolfin_error("CollisionDetection.cpp",
+		   "collides entity_0 with entity_1",
+		   "unknown dimension of entity_1 in TetrahedronCell collision");
+    }
+  default:
+    dolfin_error("CollisionDetection.cpp",
+		 "collides entity_0 with entity_1",
+		 "unknown dimension of entity_0");
+  }
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool 
+CollisionDetection::collides_interval_point(const MeshEntity& entity, 
+					    const Point& point)
+{
+  // Get coordinates
+  const MeshGeometry& geometry = entity.mesh().geometry();
+  const unsigned int* vertices = entity.entities(0);
+  const double x0 = geometry.point(vertices[0])[0];
+  const double x1 = geometry.point(vertices[1])[0];
+  const double x = point.x();
+  const double dx = std::abs(x1 - x0);
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
+  return ((x >= x0 - eps && x <= x1 + eps) ||
+          (x >= x1 - eps && x <= x0 + eps));
 }
 //-----------------------------------------------------------------------------
 bool
@@ -321,6 +411,47 @@ CollisionDetection::collides_tetrahedron_tetrahedron(const MeshEntity& tetrahedr
   if (separating_plane_face_B_2(V1,V2,n)) return false;
 
   return true;
+}
+//-----------------------------------------------------------------------------
+bool
+CollisionDetection::collides_edge_edge(const Point& a,
+				       const Point& b,
+				       const Point& c,
+				       const Point& d)
+{
+  // Form edges and normal
+  const Point L1=b-a, L2=d-c;
+  const Point n=L1.cross(L2);
+
+  const Point ca=c-a;
+
+  // L1 and L2 must be coplanar for collision
+  if (std::abs(ca.dot(n))>DOLFIN_EPS) return false;
+
+  // Find orthogonal plane with normal nplane
+  const Point nplane=n.cross(L1);
+
+  // Check if c and d are on opposite sides of this plane
+  if (nplane.dot(ca)*nplane.dot(d-a)>DOLFIN_EPS) return false;
+
+  return true;
+
+  // // Algorithm from Real-time collision detection by Christer Ericson:
+  // // Test2DSegmentSegment on page 152, Section 5.1.9.
+
+  // // Compute signed areas of abd and abc
+  // const double abd = signed_area(a, b, d);
+  // const double abc = signed_area(a, b, c);
+
+  // // Return false if not intersecting (or collinear)
+  // if (abd*abc >= 0.0)
+  //   return false;
+
+  // // Compute signed area of cda
+  // const double cda = signed_area(c, d, a);
+
+  // // Check whether segments collide
+  // return cda*(cda + abc - abd) < -DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
 bool

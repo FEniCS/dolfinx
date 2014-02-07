@@ -26,7 +26,7 @@ import sys
 # specify the mesh (must be cube)
 def loadmesh():
     # return Mesh("cube12.0.xml")
-    N = 4
+    N = 2
     return UnitCubeMesh(N,N,N)
 
 

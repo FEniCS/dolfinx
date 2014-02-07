@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-03
+// Last changed: 2014-02-07
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -37,25 +37,48 @@ namespace dolfin
   {
   public:
 
-    /// Check whether edge collides with edge.
+    /// Check whether entity collides with point.
     ///
     /// *Arguments*
-    ///     a (_Point_)
-    ///         The first point of the first edge.
-    ///     b (_Point_)
-    ///         The second point of the first edge.
-    ///     c (_Point_)
-    ///         The first point of the second edge.
-    ///     d (_Point_)
-    ///         The second point of the second edge.
+    ///     entity (_MeshEntity_)
+    ///         The entity.
+    ///     point (_Point_)
+    ///         The point.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff entity collides with cell.
+    static bool collides(const MeshEntity& entity_0,
+			 const Point& point);
+
+
+    /// Check whether two entities collide. 
+    ///
+    /// *Arguments*
+    ///     entity_0 (_MeshEntity_)
+    ///         The first entity.
+    ///     entity_1 (_MeshEntity_)
+    ///         The second entity.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff entity collides with cell.
+    static bool collides(const MeshEntity& entity_0,
+			 const MeshEntity& entity_1);
+
+    /// Check whether interval collides with point.
+    ///
+    /// *Arguments*
+    ///     interval (_MeshEntity_)
+    ///         The interval.
+    ///     point (_Point_)
+    ///         The point.
     ///
     /// *Returns*
     ///     bool
     ///         True iff objects collide.
-    static bool collides_edge_edge(const Point& a,
-				   const Point& b,
-				   const Point& c,
-				   const Point& d);
+    static bool collides_interval_point(const MeshEntity& interval,
+					const Point& point);
 
     /// Check whether triangle collides with point.
     ///
@@ -126,6 +149,13 @@ namespace dolfin
     ///         True iff objects collide.
     static bool collides_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
                                                  const MeshEntity& tetrahedron_1);
+
+    /// Check whether two edges collides
+    static bool collides_edge_edge(const Point& a,
+				   const Point& b,
+				   const Point& c,
+				   const Point& d);
+
 
   private:
 

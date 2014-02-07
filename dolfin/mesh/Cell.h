@@ -21,7 +21,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2014-01-06
+// Last changed: 2014-02-07
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -34,6 +34,8 @@
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
+#include <dolfin/geometry/CollisionDetection.h>
+#include <dolfin/geometry/IntersectionTriangulation.h>
 
 namespace dolfin
 {
@@ -275,7 +277,7 @@ namespace dolfin
     ///     bool
     ///         True iff point is contained in cell.
     bool contains(const Point& point) const
-    { return _mesh->type().collides(*this, point); }
+    { return CollisionDetection::collides(*this, point); }
 
     /// Check whether given point collides with cell
     ///
@@ -287,7 +289,7 @@ namespace dolfin
     ///     bool
     ///         True iff point collides with cell.
     bool collides(const Point& point) const
-    { return _mesh->type().collides(*this, point); }
+    { return CollisionDetection::collides(*this, point); }
 
     /// Check whether given entity collides with cell
     ///
@@ -299,13 +301,13 @@ namespace dolfin
     ///     bool
     ///         True iff entity collides with cell.
     bool collides(const MeshEntity& entity) const
-    { return _mesh->type().collides(*this, entity); }
+    { return CollisionDetection::collides(*this, entity); }
 
-    /// Compute triangulation of intersection with given cell
+    /// Compute triangulation of intersection with given entity
     ///
     /// *Arguments*
-    ///     cell (_Cell_)
-    ///         The cell with which to intersect.
+    ///     entity (_MeshEntity_)
+    ///         The entity with which to intersect.
     ///
     /// *Returns*
     ///     std::vector<double>
@@ -313,8 +315,8 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     std::vector<double>
-    triangulate_intersection(const Cell& cell) const
-    { return _mesh->type().triangulate_intersection(*this, cell); }
+    triangulate_intersection(const MeshEntity& entity) const
+    { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
 
     // FIXME: This function is part of a UFC transition
     /// Get cell vertex coordinates

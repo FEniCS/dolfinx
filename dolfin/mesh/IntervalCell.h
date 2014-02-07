@@ -89,9 +89,11 @@ namespace dolfin
                const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
     /// Check whether given point collides with cell
+    virtual
     bool collides(const Cell& cell, const Point& point) const;
 
     /// Check whether given entity collides with cell
+    virtual
     bool collides(const Cell& cell, const MeshEntity& entity) const;
 
     /// Compute triangulation of intersection of two cells
