@@ -203,8 +203,8 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Create linear problem
   // Make clear that the RCP doesn't own the memory and thus doesn't try
   // to destroy the object when it goes out of scope.
-  Teuchos::RCP<Belos::LinearProblem<ST, MV, OP> > linear_problem
-    = Teuchos::rcp(new Belos::LinearProblem<ST, MV, OP>(
+  Teuchos::RCP<BelosLinearProblem> linear_problem
+    = Teuchos::rcp(new BelosLinearProblem(
                      Teuchos::rcp(_A->mat().get(), false),
                      Teuchos::rcp(x.vec().get(), false),
                      Teuchos::rcp(b.vec().get(), false)));
@@ -246,8 +246,8 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   }
 
   // Set-up linear solver
-  Belos::SolverFactory<ST,MV,OP> factory;
-  Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver
+  Belos::SolverFactory<BelosScalarType,BelosMultiVector,BelosOperator> factory;
+  Teuchos::RCP<Belos::SolverManager<BelosScalarType,BelosMultiVector,BelosOperator> > solver
     = factory.create(it->second, Teuchos::rcp(&belosList, false));
   solver->setProblem(linear_problem);
 

@@ -41,9 +41,10 @@
 #include <Epetra_Operator.h>
 
 // some typdefs for Belos
-typedef double ST;
-typedef Epetra_MultiVector MV;
-typedef Epetra_Operator OP;
+typedef double BelosScalarType;
+typedef Epetra_MultiVector BelosMultiVector;
+typedef Epetra_Operator BelosOperator;
+typedef Belos::LinearProblem<BelosScalarType, BelosMultiVector, BelosOperator> BelosLinearProblem;
 
 // Trilinos forward declarations
 class Epetra_MultiVector;
@@ -85,7 +86,7 @@ namespace dolfin
     virtual ~TrilinosPreconditioner();
 
     /// Set the precondtioner and matrix used in preconditioner
-    virtual void set(Belos::LinearProblem<ST,MV,OP>& problem,
+    virtual void set(BelosLinearProblem& problem,
                      const EpetraMatrix& P
                      );
 
@@ -116,7 +117,7 @@ namespace dolfin
   private:
 
     /// Setup the ML precondtioner
-    void set_ml(Belos::LinearProblem<double, MV, OP>& problem,
+    void set_ml(BelosLinearProblem& problem,
                 const Epetra_RowMatrix& P);
 
     /// Named preconditioner

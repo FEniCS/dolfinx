@@ -119,7 +119,7 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
+void TrilinosPreconditioner::set(BelosLinearProblem& problem,
                                  const EpetraMatrix& P
                                  )
 {
@@ -248,7 +248,7 @@ std::string TrilinosPreconditioner::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 void
-TrilinosPreconditioner::set_ml(Belos::LinearProblem<double, MV, OP>& problem,
+TrilinosPreconditioner::set_ml(BelosLinearProblem& problem,
                                const Epetra_RowMatrix& P)
 {
 
