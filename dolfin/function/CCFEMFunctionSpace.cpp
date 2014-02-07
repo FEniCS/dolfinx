@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-06
+// Last changed: 2014-02-07
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -180,63 +180,85 @@ void CCFEMFunctionSpace::_build_collision_maps()
   _uncut_cells.clear();
   _cut_cells.clear();
   _covered_cells.clear();
+  _collision_map_cut_cells.clear();
 
   // Iterate over all parts
   for (std::size_t i = 0; i < num_parts(); i++)
   {
-    // Create markers for collisions with domain and boundary
+    // Collision map for cut cells in mesh `i`
+    std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int> > >
+      collision_map_cut_cells;
+
+    // Markers for collisions with domain
     std::vector<bool> markers_domain(_meshes[i]->num_cells());
-    std::vector<bool> markers_boundary(_meshes[i]->num_cells());
     std::fill(markers_domain.begin(), markers_domain.end(), false);
-    std::fill(markers_boundary.begin(), markers_boundary.end(), false);
 
     // Iterate over covering parts (with higher part number)
     for (std::size_t j = i + 1; j < num_parts(); j++)
     {
       log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
 
-      // Compute both domain collisions and boundary collisions
-      auto domain_collisions = _trees[i]->compute_collisions(*_trees[j]);
+      // Compute boundary collisions
       auto boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
 
-      // Mark cell collisions for domain
-      for (auto it = domain_collisions.first.begin();
-           it != domain_collisions.first.end(); ++it)
-      {
-        markers_domain[*it] = true;
-      }
-
-      // Mark cell collisions for boundary
+      // Iterate over boundary collisions
       for (auto it = boundary_collisions.first.begin();
            it != boundary_collisions.first.end(); ++it)
       {
-        markers_boundary[*it] = true;
+        // Add empty list of collisions into map if it does not exist
+        if (collision_map_cut_cells.find(*it) == collision_map_cut_cells.end())
+        {
+          std::vector<std::pair<std::size_t, unsigned int> > collisions;
+          collision_map_cut_cells[*it] = collisions;
+        }
+      }
+
+      // Compute domain collisions
+      auto domain_collisions = _trees[i]->compute_collisions(*_trees[j]);
+
+      // Iterate over domain collisions
+      dolfin_assert(domain_collisions.first.size() == domain_collisions.second.size());
+      for (std::size_t k = 0; k < domain_collisions.first.size(); k++)
+      {
+        // Get the two colliding cells
+        auto cell_i = domain_collisions.first[k];
+        auto cell_j = domain_collisions.second[k];
+
+        // Mark collision for first cell
+        markers_domain[cell_i] = true;
+
+        // Add to collision map if we find a cut cell
+        auto it = collision_map_cut_cells.find(cell_i);
+        if (it != collision_map_cut_cells.end())
+          it->second.push_back(std::make_pair(j, cell_j));
       }
     }
 
     // Extract uncut, cut and covered cells:
     //
-    // uncut   = cell not colliding with any other mesh domain
-    // cut     = cell colliding with any other mesh boundary
-    // covered = cell colliding some other mesh domain but not any boundary
+    // uncut   = cell not colliding with any other domain
+    // cut     = cell colliding with some other boundary
+    // covered = cell colliding with some other domain but no boundary
 
     // Iterate over cells and check markers
     std::vector<unsigned int> uncut_cells;
-    std::vector<unsigned int> cut_cells; // FIXME: More data needed
+    std::vector<unsigned int> cut_cells;
     std::vector<unsigned int> covered_cells;
     for (unsigned int c = 0; c < _meshes[i]->num_cells(); c++)
     {
       if (!markers_domain[c])
         uncut_cells.push_back(c);
-      else if (markers_boundary[c])
+      else if (collision_map_cut_cells.find(c) != collision_map_cut_cells.end())
         cut_cells.push_back(c);
       else
         covered_cells.push_back(c);
     }
 
     // Store data for this mesh
-    _uncut_cells.push_back(cut_cells);
+    _uncut_cells.push_back(uncut_cells);
+    _cut_cells.push_back(cut_cells);
     _covered_cells.push_back(covered_cells);
+    _collision_map_cut_cells.push_back(collision_map_cut_cells);
   }
 
   end();

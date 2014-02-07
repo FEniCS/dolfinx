@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-06
+// Last changed: 2014-02-07
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
 
 #include <vector>
+#include <map>
 #include <boost/shared_ptr.hpp>
 
 namespace dolfin
@@ -127,22 +128,18 @@ namespace dolfin
     //     c = cell index for an uncut cell
     //     i = the part (mesh) number
     //     j = the cell number (in the list of uncut cells)
-    std::vector<std::vector<unsigned int> >
-    _uncut_cells;
+    std::vector<std::vector<unsigned int> > _uncut_cells;
 
     // Cell indices for all cut cells for all parts. Access data by
     //
-    //     c = _cut_cells[i][j][k]
+    //     c = _cut_cells[i][j]
     //
     // where
     //
-    //     c.first  = part number for the cutting mesh
-    //     c.second = cell index for the cutting cell
-    //            i = the part (mesh) number
-    //            j = the cell number (in the list of cut cells)
-    //            k = the collision number (in the list of cutting cells)
-    std::vector<std::vector<std::vector<std::pair<std::size_t, unsigned int> > > >
-    _cut_cells;
+    //     c = cell index for a cut cell
+    //     i = the part (mesh) number
+    //     j = the cell number (in the list of cut cells)
+    std::vector<std::vector<unsigned int> > _cut_cells;
 
     // Cell indices for all covered cells for all parts. Access data by
     //
@@ -154,6 +151,19 @@ namespace dolfin
     //     i = the part (mesh) number
     //     j = the cell number (in the list of covered cells)
     std::vector<std::vector<unsigned int> > _covered_cells;
+
+    // Collision map for cut cells. Access data by
+    //
+    // where
+    //
+    //     c.first  = part number for the cutting mesh
+    //     c.second = cell index for the cutting cell
+    //            i = the part (mesh) number
+    //            j = the cell number (in the list of cut cells)
+    //            k = the collision number (in the list of cutting cells)
+    std::vector<std::map<unsigned int,
+                         std::vector<std::pair<std::size_t, unsigned int> > > >
+    _collision_map_cut_cells;
 
     // Build dofmap
     void _build_dofmap();
