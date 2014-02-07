@@ -74,7 +74,7 @@ mu    = E / (2.0*(1.0 + nu))
 lmbda = E*nu / ((1.0 + nu)*(1.0 - 2.0*nu))
 
 def sigma(v):
-    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.cell().d)
+    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.geometric_dimension())
 
 a = inner(sigma(u), grad(v))*dx
 L = inner(f, v)*dx

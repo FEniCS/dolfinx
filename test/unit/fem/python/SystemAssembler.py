@@ -141,7 +141,7 @@ class TestSystemAssembler(unittest.TestCase):
         u = TrialFunction(V)
 
         # Define normal component, mesh size and right-hand side
-        n = V.cell().n
+        n = FacetNormal(mesh)
         h = CellSize(mesh)
         h_avg = (h('+') + h('-'))/2
         f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)

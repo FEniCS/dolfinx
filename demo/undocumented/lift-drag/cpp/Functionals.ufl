@@ -28,7 +28,7 @@
 cell = triangle
 element = FiniteElement("Lagrange", cell, 1)
 
-n = cell.n
+n = FacetNormal(cell)
 p = Coefficient(element)
 drag = -p*n[0]*ds(1)
 lift = p*n[1]*ds(1)
