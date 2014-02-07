@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2013-05-08
-// Last changed: 2013-06-04
+// Last changed: 2014-02-06
 
 #ifdef HAS_HDF5
 
@@ -306,8 +306,8 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
   editor.open(mesh, cell_type_str, mesh_data.tdim, mesh_data.gdim);
 
   // Iterate over vertices and add to mesh
-  editor.init_vertices(mesh_data.num_global_vertices,
-                       mesh_data.num_global_vertices);
+  editor.init_vertices_global(mesh_data.num_global_vertices,
+                              mesh_data.num_global_vertices);
   for (std::size_t i = 0; i < mesh_data.num_global_vertices; ++i)
   {
     const std::size_t index = mesh_data.vertex_indices[i];
@@ -318,8 +318,8 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
   }
 
   // Iterate over cells and add to mesh
-  editor.init_cells(mesh_data.num_global_cells,
-                    mesh_data.num_global_cells);
+  editor.init_cells_global(mesh_data.num_global_cells,
+                           mesh_data.num_global_cells);
 
   for (std::size_t i = 0; i < mesh_data.num_global_cells; ++i)
   {

@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2012-2013
 //
 // First added:  2012-05-10
-// Last changed: 2013-08-06
+// Last changed: 2014-02-06
 
 #include "CSGCGALMeshGenerator2D.h"
 #include "CSGGeometry.h"
@@ -433,8 +433,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Create a MeshEditor and open
   dolfin::MeshEditor mesh_editor;
   mesh_editor.open(mesh, tdim, gdim);
-  mesh_editor.init_vertices(num_vertices, num_vertices);
-  mesh_editor.init_cells(num_cells, num_cells);
+  mesh_editor.init_vertices_global(num_vertices, num_vertices);
+  mesh_editor.init_cells_global(num_cells, num_cells);
 
   // Add vertices to mesh
   std::size_t vertex_index = 0;
