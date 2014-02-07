@@ -28,6 +28,8 @@
 #include <boost/random.hpp>
 #include <boost/unordered_map.hpp>
 
+#include <dolfin/common/timing.h>
+
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
 #include <dolfin/graph/GraphBuilder.h>
@@ -395,6 +397,8 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
   Graph graph(num_nodes);
 
   // Build local graph for blocks
+  tic();
+  std::vector<dolfin::la_index> dofs_tmp;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::vector<dolfin::la_index>& dofs0
@@ -405,11 +409,12 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
     dolfin_assert(dofs0.size() % block_size == 0);
     const std::size_t nodes_per_cell = dofs0.size()/block_size;
 
-    std::vector<dolfin::la_index>::const_iterator node0, node1;
+    dofs_tmp.resize(nodes_per_cell);
     for (std::size_t i = 0; i < nodes_per_cell; ++i)
-      for (std::size_t j = 0; j < nodes_per_cell; ++j)
-        if (dofs0[i] != dofs1[j])
-          graph[dofs0[i] % num_nodes].insert(dofs1[j] % num_nodes);
+      dofs_tmp[i] = dofs1[i] % num_nodes;
+
+    for (std::size_t i = 0; i < nodes_per_cell; ++i)
+      graph[dofs0[i] % num_nodes].insert(dofs_tmp.begin(), dofs_tmp.end());
   }
 
   // Reorder block graph
