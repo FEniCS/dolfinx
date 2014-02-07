@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2002-12-06
-// Last changed: 2013-05-25
+// Last changed: 2014-02-06
 
 #include <map>
 #include <iomanip>
@@ -105,7 +105,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 
   // Get number of vertices and init editor
   const std::size_t num_vertices = xml_vertices.attribute("size").as_uint();
-  editor.init_vertices(num_vertices, num_vertices);
+  editor.init_vertices_global(num_vertices, num_vertices);
 
   // Iterate over vertices and add to mesh
   Point p;
@@ -125,7 +125,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 
   // Get number of cells and init editor
   const std::size_t num_cells = xml_cells.attribute("size").as_uint();
-  editor.init_cells(num_cells, num_cells);
+  editor.init_cells_global(num_cells, num_cells);
 
   // Create list of vertex index attribute names
   const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);

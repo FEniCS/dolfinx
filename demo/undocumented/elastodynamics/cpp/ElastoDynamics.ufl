@@ -63,7 +63,7 @@ factor_d3  = eta*(gamma-2.0*beta)*(1.0-alpha_f)*dt/(2.0*beta)
 
 # Stress tensor
 def sigma(r):
-    return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.cell().d)
+    return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.geometric_dimension())
 
 # Forms
 a = factor_m1*inner(r, u)*dx  \

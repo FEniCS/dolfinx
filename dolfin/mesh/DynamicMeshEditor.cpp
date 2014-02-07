@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-09-22
-// Last changed: 2012-09-27
+// Last changed: 2014-02-06
 
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/dolfin_log.h>
@@ -186,12 +186,12 @@ void DynamicMeshEditor::close(bool order)
 
   // Set number of vertices
   const std::size_t num_vertices = vertex_coordinates.size()/_gdim;
-  editor.init_vertices(num_vertices, _num_global_vertices);
+  editor.init_vertices_global(num_vertices, _num_global_vertices);
 
   // Set number of cells
   const std::size_t vertices_per_cell = _cell_type->num_vertices(_gdim);
   const std::size_t num_cells = cell_vertices.size()/vertices_per_cell;
-  editor.init_cells(num_cells, _num_global_cells);
+  editor.init_cells_global(num_cells, _num_global_cells);
 
   // Add vertices
   std::vector<double> p(_gdim);

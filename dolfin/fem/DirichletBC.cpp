@@ -222,13 +222,14 @@ void DirichletBC::gather(Map& boundary_values) const
 {
   Timer timer("DirichletBC gather");
 
-  typedef std::vector<std::pair<std::size_t, double> > bv_vec_type;
-  typedef std::map<std::size_t, bv_vec_type> map_type;
-
   typedef boost::unordered_map<std::size_t, std::vector<unsigned int> >
     shared_dof_type;
   typedef shared_dof_type::const_iterator shared_dof_iterator;
   typedef std::vector<unsigned int>::const_iterator proc_iterator;
+
+  dolfin_assert(_function_space->mesh());
+  MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
+  std::size_t comm_size = MPI::size(mpi_comm);
 
   // Get dofmap
   dolfin_assert(_function_space->dofmap());
@@ -236,7 +237,8 @@ void DirichletBC::gather(Map& boundary_values) const
   const shared_dof_type& shared_dofs = dofmap.shared_dofs();
 
   // Create list of boundary values to send to each processor
-  map_type proc_map;
+  std::vector<std::vector<std::size_t> > proc_map0(comm_size);
+  std::vector<std::vector<double> > proc_map1(comm_size);
   for (Map::const_iterator bv = boundary_values.begin();
        bv != boundary_values.end(); ++bv)
   {
@@ -249,23 +251,29 @@ void DirichletBC::gather(Map& boundary_values) const
       for (proc_iterator proc = shared_dof->second.begin();
            proc != shared_dof->second.end(); ++proc)
       {
-        proc_map[*proc].push_back(*bv);
+        proc_map0[*proc].push_back(bv->first);
+        proc_map1[*proc].push_back(bv->second);
       }
     }
   }
 
   // Distribute the lists between neighbours
-  map_type received_bvs;
-  dolfin_assert(_function_space->mesh());
-  MPI::distribute(_function_space->mesh()->mpi_comm(),
-                  dofmap.neighbours(), proc_map, received_bvs);
+  std::vector<std::vector<std::size_t> > received_bvc0;
+  std::vector<std::vector<double> > received_bvc1;
+  MPI::all_to_all(mpi_comm, proc_map0, received_bvc0);
+  MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
 
   // Add the received boundary values to the local boundary values
-
-  for (map_type::const_iterator it = received_bvs.begin();
-       it != received_bvs.end(); ++it)
+  for (std::size_t p = 0; p < comm_size; ++p)
   {
-    boundary_values.insert(it->second.begin(), it->second.end());
+    dolfin_assert(received_bvc0[p].size() == received_bvc1[p].size());
+    std::vector<std::pair<std::size_t, double> > _vec(received_bvc0[p].size());
+    for (std::size_t i = 0; i < _vec.size(); ++i)
+    {
+      _vec[i].first  = received_bvc0[p][i];
+      _vec[i].second = received_bvc1[p][i];
+    }
+    boundary_values.insert(_vec.begin(), _vec.end());
   }
 }
 //-----------------------------------------------------------------------------
@@ -1003,8 +1011,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   // Iterate over cells
   std::vector<double> vertex_coordinates;
   if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
-  {    
-    // First time around all cells must be iterated over. 
+  {
+    // First time around all cells must be iterated over.
     // Create map from cells attached to boundary to local dofs.
     Progress p("Computing Dirichlet boundary values, pointwise search",
                mesh.num_cells());
@@ -1024,7 +1032,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
       // Interpolate function only once and only on cells where necessary
       bool already_interpolated = false;
-      
+
       std::vector<std::size_t> dofs;
 
       // Loop all dofs on cell
@@ -1052,14 +1060,14 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
           // Restrict coefficient to cell
           _g->restrict(data.w.data(), *_function_space->element(), *cell,
                       vertex_coordinates.data(), ufc_cell);
-          
+
           // Put cell index in storage for next time function is called
           _cells_to_localdofs.insert(std::make_pair(cell->index(), dofs));
         }
 
         // Add local dof to map
         _cells_to_localdofs[cell->index()].push_back(i);
-        
+
         // Set boundary value
         const double value = data.w[i];
         boundary_values[global_dof] = value;
@@ -1068,7 +1076,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     }
   }
   else
-  {      
+  {
     // Loop over cells that contain dofs on boundary.
     std::map<std::size_t, std::vector<std::size_t> >::const_iterator it;
     for (it = _cells_to_localdofs.begin(); it != _cells_to_localdofs.end(); ++it)
@@ -1077,7 +1085,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       // Update UFC cell
       cell.get_vertex_coordinates(vertex_coordinates);
       cell.get_cell_data(ufc_cell);
- 
+
       // Tabulate coordinates of dofs on cell
       dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
                                   cell);
@@ -1090,7 +1098,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       const std::vector<dolfin::la_index>& cell_dofs
         = dofmap.cell_dofs(cell.index());
 
-      // Loop dofs on boundary of cell      
+      // Loop dofs on boundary of cell
       for (std::size_t i = 0; i < it->second.size(); ++i)
       {
         const std::size_t local_dof  = it->second[i];
@@ -1100,7 +1108,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
         const double value = data.w[local_dof];
         boundary_values[global_dof] = value;
       }
-    }        
+    }
   }
 }
 //-----------------------------------------------------------------------------
