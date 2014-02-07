@@ -15,11 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
-//
-// First added:  2010-02-25
-// Last changed: 2011-10-19
-
 #ifndef __DOLFIN_TRILINOS_PRECONDITIONER_H
 #define __DOLFIN_TRILINOS_PRECONDITIONER_H
 

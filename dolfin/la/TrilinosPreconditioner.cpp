@@ -15,11 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011-2012
-//
-// First added:  2010-02-25
-// Last changed: 2013-06-25
-
 #ifdef HAS_TRILINOS
 
 #include <dolfin/common/MPI.h>

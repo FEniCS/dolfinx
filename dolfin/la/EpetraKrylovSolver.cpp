@@ -15,12 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2009
-// Modified by Anders Logg 2011-2012
-//
-// First added:  2008
-// Last changed: 2012-08-21
-
 #ifdef HAS_TRILINOS
 
 #include <boost/assign/list_of.hpp>
