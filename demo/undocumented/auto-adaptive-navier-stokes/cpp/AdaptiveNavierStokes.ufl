@@ -37,7 +37,7 @@ p0 = Coefficient(T)
 nu = Constant(cell)
 
 # Define FacetNormal
-n = V.cell().n
+n = FacetNormal(cell)
 
 # Define variational form
 L = (nu*inner(grad(u), grad(v)) - p*div(v) + div(u)*q

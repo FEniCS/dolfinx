@@ -1,5 +1,5 @@
 To build the unit tests using CMake, DOLFIN must be configured with
-the DOLFIN_ENABLE_UNIT_TESTS set. This will automatically be set when
+the DOLFIN_ENABLE_TESTING set. This will automatically be set when
 running the cmake.local script in the top level directory (see the
 INSTALL file for more info).
 
@@ -8,7 +8,7 @@ update the environment variables, for instance by sourcing
 'dolfin.conf' in the build directory. Then, to run the complete test
 suite, navigate to the build directory and enter
 
-  make runtest
+  make runtests
 
 This will build and run all unit tests and (almost) all demos, both
 C++ and Python versions. The tests will also be run in parallel,

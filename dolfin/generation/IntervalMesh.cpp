@@ -18,7 +18,7 @@
 // Modified by N. Lopes, 2008.
 //
 // First added:  2007-11-23
-// Last changed: 2012-11-12
+// Last changed: 2014-02-06
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/constants.h"
@@ -67,8 +67,8 @@ IntervalMesh::IntervalMesh(std::size_t nx, double a, double b) : Mesh()
   editor.open(*this, CellType::interval, 1, 1);
 
   // Create vertices and cells:
-  editor.init_vertices((nx+1), (nx+1));
-  editor.init_cells(nx, nx);
+  editor.init_vertices_global((nx+1), (nx+1));
+  editor.init_cells_global(nx, nx);
 
   // Create main vertices:
   for (std::size_t ix = 0; ix <= nx; ix++)

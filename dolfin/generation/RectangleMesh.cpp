@@ -20,7 +20,7 @@
 // Modified by Kristian B. Oelgaard 2009.
 //
 // First added:  2005-12-02
-// Last changed: 2012-11-12
+// Last changed: 2014-02-06
 
 #include <boost/assign.hpp>
 
@@ -95,13 +95,13 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
   // Create vertices and cells:
   if (diagonal == "crossed")
   {
-    editor.init_vertices((nx + 1)*(ny + 1) + nx*ny, (nx + 1)*(ny + 1) + nx*ny);
-    editor.init_cells(4*nx*ny, 4*nx*ny);
+    editor.init_vertices_global((nx + 1)*(ny + 1) + nx*ny, (nx + 1)*(ny + 1) + nx*ny);
+    editor.init_cells_global(4*nx*ny, 4*nx*ny);
   }
   else
   {
-    editor.init_vertices((nx + 1)*(ny + 1), (nx + 1)*(ny + 1));
-    editor.init_cells(2*nx*ny, 2*nx*ny);
+    editor.init_vertices_global((nx + 1)*(ny + 1), (nx + 1)*(ny + 1));
+    editor.init_cells_global(2*nx*ny, 2*nx*ny);
   }
 
   // Storage for vertices

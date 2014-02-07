@@ -69,7 +69,8 @@ namespace dolfin
 
     // Gather hash keys on root process
     std::vector<std::size_t> all_hashes;
-    MPI::gather(mpi_comm, local_hash, all_hashes);
+    std::vector<std::size_t> local_hash_tmp(1, local_hash);
+    MPI::gather(mpi_comm, local_hash_tmp, all_hashes);
 
     // Hash the received hash keys
     boost::hash<std::vector<std::size_t> > hash;

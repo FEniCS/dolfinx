@@ -142,7 +142,8 @@ are defined using UFL syntax:
 .. code-block:: python
 
     # Kinematics
-    I = Identity(V.cell().d)    # Identity tensor
+    d = u.geometric_dimension()
+    I = Identity(d)             # Identity tensor
     F = I + grad(u)             # Deformation gradient
     C = F.T*F                   # Right Cauchy-Green tensor
 
