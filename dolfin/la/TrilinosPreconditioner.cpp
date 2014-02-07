@@ -37,6 +37,7 @@
 #include <ml_MultiLevelPreconditioner.h>
 #include <Teuchos_ParameterList.hpp>
 #include <BelosEpetraAdapter.hpp>
+#include <BelosLinearProblem.hpp>
 
 #include <dolfin/log/log.h>
 #include "EpetraKrylovSolver.h"

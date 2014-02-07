@@ -36,30 +36,30 @@
 #include <dolfin/parameter/Parameters.h>
 #include "GenericPreconditioner.h"
 
-#include <BelosLinearProblem.hpp>
-#include <Epetra_MultiVector.h>
-#include <Epetra_Operator.h>
+// Trilinos forward declarations
+class Epetra_MultiVector;
+class Epetra_RowMatrix;
+class Epetra_Operator;
+class Ifpack_Preconditioner;
+namespace Belos {
+  template<class ScalarType, class MV, class OP>
+  class LinearProblem;
+}
+namespace ML_Epetra
+{
+  class MultiLevelPreconditioner;
+}
+namespace Teuchos
+{
+  class ParameterList;
+}
 
 // some typdefs for Belos
 typedef double BelosScalarType;
 typedef Epetra_MultiVector BelosMultiVector;
 typedef Epetra_Operator BelosOperator;
-typedef Belos::LinearProblem<BelosScalarType, BelosMultiVector, BelosOperator> BelosLinearProblem;
-
-// Trilinos forward declarations
-class Epetra_MultiVector;
-class Epetra_RowMatrix;
-class Ifpack_Preconditioner;
-
-namespace ML_Epetra
-{
-  class MultiLevelPreconditioner;
-}
-
-namespace Teuchos
-{
-  class ParameterList;
-}
+typedef Belos::LinearProblem<BelosScalarType, BelosMultiVector, BelosOperator>
+        BelosLinearProblem;
 
 namespace dolfin
 {
