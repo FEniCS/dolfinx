@@ -253,10 +253,7 @@ set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams timer chrono)
-if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
-endif()
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC

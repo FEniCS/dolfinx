@@ -26,11 +26,11 @@ element = FiniteElement("Lagrange", triangle, 2)
 u = TrialFunction(element)
 v = TestFunction(element)
 
-x = triangle.x[0]
-d_x = triangle.x[0] - 0.5
-d_y = triangle.x[1] - 0.5
+x = SpatialCoordinate(triangle)
+d_x = x[0] - 0.5
+d_y = x[1] - 0.5
 f = 10.0*exp(-(d_x*d_x + d_y*d_y) / 0.02)
-g = -sin(5.0*x)
+g = -sin(5.0*x[0])
 
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds

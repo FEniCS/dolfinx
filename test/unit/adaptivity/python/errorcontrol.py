@@ -27,6 +27,18 @@ from ufl.algorithms import replace
 from dolfin import *
 from dolfin.fem.adaptivesolving import *
 
+# FIXME: Move this to dolfin for user access?
+def reconstruct_refined_form(form, functions, mesh):
+    function_mapping = {}
+    for u in functions:
+        w = Function(u.leaf_node().function_space())
+        w.assign(u.leaf_node())
+        function_mapping[u] = w
+    domain = mesh.leaf_node().ufl_domain()
+    newform = replace_integral_domains(replace(form, function_mapping), domain)
+    return newform, function_mapping
+
+
 #@skipIf("Skipping error control test in parallel", MPI.size() > 1)
 class ErrorControlTest(unittest.TestCase):
 
@@ -53,6 +65,14 @@ class ErrorControlTest(unittest.TestCase):
         # Define goal
         M = u*dx()
         self.goal = M
+
+        # Asserting that domains are ok before trying error control generation
+        assert len(M.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert M.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+        assert len(a.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert a.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+        assert len(L.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert L.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
 
         # Generate ErrorControl object
         ec = generate_error_control(problem, M)
@@ -106,10 +126,10 @@ class ErrorControlTest(unittest.TestCase):
         tol = 0.00087
         solver.solve(tol)
 
-        # Extract solution and update goal
-        w = Function(self.u.leaf_node().function_space())
-        w.assign(self.u.leaf_node())
-        M = replace(self.goal, {self.u: w})
+        # Note: This old approach is now broken, as it doesn't change the integration domain:
+        #M = replace(self.goal, {self.u: w})
+        # This new approach handles the integration domain properly:
+        M, fm = reconstruct_refined_form(self.goal, [self.u], self.mesh)
 
         # Compare computed goal with reference
         reference = 0.12583303389560166

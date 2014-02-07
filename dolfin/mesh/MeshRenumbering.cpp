@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2010-11-27
-// Last changed: 2011-01-16
+// Last changed: 2014-02-06
 
 #include <algorithm>
 #include <vector>
@@ -70,8 +70,8 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   // Create mesh editor
   MeshEditor editor;
   editor.open(new_mesh, mesh.type().cell_type(), tdim, gdim);
-  editor.init_cells(num_local_cells, num_global_cells);
-  editor.init_vertices(num_local_vertices, num_global_vertices);
+  editor.init_cells_global(num_local_cells, num_global_cells);
+  editor.init_vertices_global(num_local_vertices, num_global_vertices);
 
   // Add vertices
   dolfin_assert(new_coordinates.size() == num_local_vertices*gdim);

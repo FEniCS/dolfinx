@@ -37,7 +37,7 @@ u = Coefficient(element)        # Displacement from previous iteration
 B = Coefficient(element)        # Body force per unit volume
 
 # Kinematics
-I = Identity(2)#element.cell().d)  # Identity tensor
+I = Identity(u.geometric_dimension())  # Identity tensor
 F = I + grad(u)                 # Deformation gradient
 C = F.T*F                       # Right Cauchy-Green tensor
 
