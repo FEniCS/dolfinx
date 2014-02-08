@@ -163,7 +163,8 @@ EpetraLUSolver::~EpetraLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+void
+EpetraLUSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(linear_problem);
 

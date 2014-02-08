@@ -803,7 +803,6 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
       = (process_number - k + num_prococesses) % num_prococesses;
     const std::size_t dest = (process_number + k) % num_prococesses;
     MPI::send_recv(mpi_comm, send_buffer, dest, recv_buffer, src);
-
     for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
     {
       const std::size_t received_node = recv_buffer[i];

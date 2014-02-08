@@ -31,7 +31,8 @@ u = TrialFunction(V)
 v = TestFunction(V)
 a = dot(grad(u), grad(v))*dx
 A = assemble(a)
-L = sin(V.cell().x[0])*v*dx
+x0 = SpatialCoordinate(mesh)[0]
+L = sin(x0)*v*dx
 x = assemble(L)
 
 # Create a block matrix

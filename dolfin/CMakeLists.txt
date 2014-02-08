@@ -275,7 +275,7 @@ endif()
 include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
 include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 
-# Add CXX defintions
+# Add CXX definitions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
 add_definitions(-DDOLFIN_VERSION="${DOLFIN_VERSION}"
   -DDOLFIN_GIT_COMMIT_HASH="${GIT_COMMIT_HASH}")

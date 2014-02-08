@@ -26,7 +26,6 @@
 #define __EPETRA_FACTORY_H
 
 #include <string>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "EpetraKrylovSolver.h"
 #include "EpetraLUSolver.h"
