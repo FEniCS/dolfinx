@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2011-2012
 //
 // First added:  2008-12-01
-// Last changed: 2013-04-20
+// Last changed: 2014-02-06
 
 #include <algorithm>
 #include <iterator>
@@ -389,7 +389,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   editor.open(mesh, tdim, gdim);
 
   // Add vertices
-  editor.init_vertices(vertex_coordinates.size(), num_global_vertices);
+  editor.init_vertices_global(vertex_coordinates.size(), num_global_vertices);
   Point point(gdim);
   dolfin_assert(vertex_indices.size() == vertex_coordinates.size());
   for (std::size_t i = 0; i < vertex_coordinates.size(); ++i)
@@ -400,7 +400,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   }
 
   // Add cells
-  editor.init_cells(cell_global_vertices.size(), num_global_cells);
+  editor.init_cells_global(cell_global_vertices.size(), num_global_cells);
   const std::size_t num_cell_vertices = tdim + 1;
   std::vector<std::size_t> cell(num_cell_vertices);
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
@@ -455,10 +455,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     const int q = (process_number + i) % num_processes;
 
     // Send and receive
-    std::cout << "-- Send-recv (p) " << std::endl;
     MPI::send_recv(mesh.mpi_comm(), global_vertex_send, p,
                    global_vertex_recv, q);
-    std::cout << "-- End  Send-recv (p) " << std::endl;
 
     // Compute intersection of global indices
     std::vector<std::size_t> intersection(std::min(global_vertex_send.size(),
