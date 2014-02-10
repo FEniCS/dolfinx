@@ -27,7 +27,7 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "pugixml.hpp"
 
@@ -285,7 +285,7 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
     mesh.init(dim);
 
     // Read data into a mesh value collection
-    boost::shared_ptr<const Mesh> _mesh = reference_to_no_delete_pointer(mesh);
+    std::shared_ptr<const Mesh> _mesh = reference_to_no_delete_pointer(mesh);
     MeshValueCollection<std::size_t> mvc(_mesh);
     XMLMeshValueCollection::read(mvc, type, *it);
 

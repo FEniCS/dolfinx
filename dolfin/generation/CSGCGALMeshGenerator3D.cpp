@@ -104,12 +104,12 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(const CSGGeometry& geometry)
 {
-  boost::shared_ptr<const CSGGeometry> tmp = reference_to_no_delete_pointer<const CSGGeometry>(geometry);
+  std::shared_ptr<const CSGGeometry> tmp = reference_to_no_delete_pointer<const CSGGeometry>(geometry);
   _geometry = tmp;
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry)
+CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(std::shared_ptr<const CSGGeometry> geometry)
   : _geometry(geometry)
 {
   parameters = default_parameters();
@@ -222,7 +222,7 @@ CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(const CSGGeometry& geometry)
 	       "Dolfin must be compiled with CGAL to use this feature.");
 }
 //-----------------------------------------------------------------------------
-CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry)
+CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(std::shared_ptr<const CSGGeometry> geometry)
 {
   dolfin_error("CSGCGALMeshGenerator3D.cpp",
 	       "Create mesh generator",

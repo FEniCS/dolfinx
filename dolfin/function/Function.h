@@ -30,7 +30,7 @@
 #include <vector>
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
@@ -86,7 +86,7 @@ namespace dolfin
     /// *Arguments*
     ///     V (_FunctionSpace_)
     ///         The function space.
-    explicit Function(boost::shared_ptr<const FunctionSpace> V);
+    explicit Function(std::shared_ptr<const FunctionSpace> V);
 
     /// Create function on given function space with a given vector
     /// (shared data)
@@ -98,8 +98,8 @@ namespace dolfin
     ///         The function space.
     ///     x (_GenericVector_)
     ///         The vector.
-    Function(boost::shared_ptr<const FunctionSpace> V,
-             boost::shared_ptr<GenericVector> x);
+    Function(std::shared_ptr<const FunctionSpace> V,
+             std::shared_ptr<GenericVector> x);
 
     /// Create function from vector of dofs stored to file
     ///
@@ -119,7 +119,7 @@ namespace dolfin
     ///         The function space.
     ///     filename_dofdata (std::string)
     ///         The name of the file containing the dofmap data.
-    Function(boost::shared_ptr<const FunctionSpace> V,
+    Function(std::shared_ptr<const FunctionSpace> V,
              std::string filename);
 
     /// Copy constructor
@@ -221,21 +221,21 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         Return the shared pointer.
-    boost::shared_ptr<const FunctionSpace> function_space() const;
+    std::shared_ptr<const FunctionSpace> function_space() const;
 
     /// Return vector of expansion coefficients (non-const version)
     ///
     /// *Returns*
     ///     _GenericVector_
     ///         The vector of expansion coefficients.
-    boost::shared_ptr<GenericVector> vector();
+    std::shared_ptr<GenericVector> vector();
 
     /// Return vector of expansion coefficients (const version)
     ///
     /// *Returns*
     ///     _GenericVector_
     ///         The vector of expansion coefficients (const).
-    boost::shared_ptr<const GenericVector> vector() const;
+    std::shared_ptr<const GenericVector> vector() const;
 
     /// Check if function is a member of the given function space
     ///
@@ -395,10 +395,10 @@ namespace dolfin
                                std::vector<la_index>& ghost_indices) const;
 
     // The function space
-    boost::shared_ptr<const FunctionSpace> _function_space;
+    std::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of expansion coefficients (local)
-    boost::shared_ptr<GenericVector> _vector;
+    std::shared_ptr<GenericVector> _vector;
 
     // True if extrapolation should be allowed
     bool allow_extrapolation;

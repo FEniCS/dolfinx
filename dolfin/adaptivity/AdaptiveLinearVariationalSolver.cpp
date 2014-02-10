@@ -45,17 +45,17 @@ AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
 }
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
-AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
-                                boost::shared_ptr<GoalFunctional> goal)
+AdaptiveLinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem,
+                                std::shared_ptr<GoalFunctional> goal)
   : _problem(problem)
 {
   init(problem, goal);
 }
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
-AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
-                                boost::shared_ptr<Form> goal,
-                                boost::shared_ptr<ErrorControl> control)
+AdaptiveLinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem,
+                                std::shared_ptr<Form> goal,
+                                std::shared_ptr<ErrorControl> control)
   : _problem(problem)
 {
   this->goal = goal;
@@ -69,8 +69,8 @@ AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> prob
 }
 // ----------------------------------------------------------------------------
 void AdaptiveLinearVariationalSolver::
-init(boost::shared_ptr<LinearVariationalProblem> problem,
-     boost::shared_ptr<GoalFunctional> goal)
+init(std::shared_ptr<LinearVariationalProblem> problem,
+     std::shared_ptr<GoalFunctional> goal)
 {
   dolfin_assert(goal);
   this->goal = goal;
@@ -82,8 +82,8 @@ init(boost::shared_ptr<LinearVariationalProblem> problem,
   parameters.add(LinearVariationalSolver::default_parameters());
 
   // Extract error control from goal
-  boost::shared_ptr<const Form> a = problem->bilinear_form();
-  boost::shared_ptr<const Form> L = problem->linear_form();
+  std::shared_ptr<const Form> a = problem->bilinear_form();
+  std::shared_ptr<const Form> L = problem->linear_form();
   dolfin_assert(a);
   dolfin_assert(L);
 
@@ -92,7 +92,7 @@ init(boost::shared_ptr<LinearVariationalProblem> problem,
   control = goal->_ec;
 }
 // ----------------------------------------------------------------------------
-boost::shared_ptr<const Function>
+std::shared_ptr<const Function>
 AdaptiveLinearVariationalSolver::solve_primal()
 {
   LinearVariationalProblem& current = _problem->leaf_node();
@@ -102,7 +102,7 @@ AdaptiveLinearVariationalSolver::solve_primal()
   return current.solution();
 }
 // ----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const DirichletBC> >
+std::vector<std::shared_ptr<const DirichletBC> >
 AdaptiveLinearVariationalSolver::extract_bcs() const
 {
   const LinearVariationalProblem& current = _problem->leaf_node();
@@ -110,7 +110,7 @@ AdaptiveLinearVariationalSolver::extract_bcs() const
 }
 // ----------------------------------------------------------------------------
 double AdaptiveLinearVariationalSolver::
-evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
+evaluate_goal(Form& M, std::shared_ptr<const Function> u) const
 {
   dolfin_assert(M.num_coefficients() > 0);
   M.set_coefficient(M.num_coefficients() - 1, u);
@@ -118,7 +118,7 @@ evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 }
 // ----------------------------------------------------------------------------
 void AdaptiveLinearVariationalSolver::
-adapt_problem(boost::shared_ptr<const Mesh> mesh)
+adapt_problem(std::shared_ptr<const Mesh> mesh)
 {
   const LinearVariationalProblem& current = _problem->leaf_node();
   adapt(current, mesh);

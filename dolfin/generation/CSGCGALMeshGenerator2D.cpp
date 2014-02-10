@@ -332,7 +332,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   // Add the subdomains to the CDT. Traverse in reverse order to get the latest
   // added subdomain on top
-  std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
+  std::list<std::pair<std::size_t, std::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
 
   if (!geometry.subdomains.empty())
     log(TRACE, "Processing subdomains");
@@ -341,7 +341,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
        ++it)
   {
     const std::size_t current_index = it->first;
-    boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
+    std::shared_ptr<const CSGGeometry> current_subdomain = it->second;
 
     CSGCGALDomain2D cgal_geometry(current_subdomain.get());
     cgal_geometry.difference_inplace(overlaying);

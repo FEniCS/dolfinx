@@ -27,7 +27,7 @@
 #include <cstddef>
 #include <vector>
 #include <list>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -55,7 +55,7 @@ namespace dolfin
     /// The subdomain is itself a CSGGeometry and the corresponding
     /// cells in the resulting will be marked with i
     /// If subdomains overlap, the latest added will take precedence.
-    void set_subdomain(std::size_t i, boost::shared_ptr<CSGGeometry> s);
+    void set_subdomain(std::size_t i, std::shared_ptr<CSGGeometry> s);
     void set_subdomain(std::size_t i, CSGGeometry& s);
     bool has_subdomains() const;
 
@@ -63,7 +63,7 @@ namespace dolfin
     virtual Type getType() const = 0;
     virtual bool is_operator() const = 0;
 
-    std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > > subdomains;
+    std::list<std::pair<std::size_t, std::shared_ptr<const CSGGeometry> > > subdomains;
   };
 
   

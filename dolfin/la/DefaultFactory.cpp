@@ -31,35 +31,35 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> DefaultFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> DefaultFactory::create_matrix() const
 {
   return factory().create_matrix();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> DefaultFactory::create_vector() const
+std::shared_ptr<GenericVector> DefaultFactory::create_vector() const
 {
   return factory().create_vector();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout>
+std::shared_ptr<TensorLayout>
 DefaultFactory::create_layout(std::size_t rank) const
 {
   return factory().create_layout(rank);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearOperator>
+std::shared_ptr<GenericLinearOperator>
 DefaultFactory::create_linear_operator() const
 {
   return factory().create_linear_operator();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLUSolver>
+std::shared_ptr<GenericLUSolver>
   DefaultFactory::create_lu_solver(std::string method) const
 {
   return factory().create_lu_solver(method);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearSolver>
+std::shared_ptr<GenericLinearSolver>
 DefaultFactory::create_krylov_solver(std::string method,
                                      std::string preconditioner) const
 {

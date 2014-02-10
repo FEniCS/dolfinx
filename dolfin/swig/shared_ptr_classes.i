@@ -30,7 +30,7 @@
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
 //
 // Objects of these classes can then be passed to c++ functions
-// demanding a boost::shared_ptr<type>
+// demanding a std::shared_ptr<type>
 //=============================================================================
 
 //-----------------------------------------------------------------------------

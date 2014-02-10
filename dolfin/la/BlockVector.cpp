@@ -49,24 +49,24 @@ BlockVector* BlockVector::copy() const
 {
   BlockVector* x = new BlockVector(vectors.size());
   for (std::size_t i = 0; i < vectors.size(); i++)
-    x->set_block(i, boost::shared_ptr<GenericVector>(vectors[i]->copy()));
+    x->set_block(i, std::shared_ptr<GenericVector>(vectors[i]->copy()));
   return x;
 }
 //-----------------------------------------------------------------------------
-void BlockVector::set_block(std::size_t i, boost::shared_ptr<GenericVector> v)
+void BlockVector::set_block(std::size_t i, std::shared_ptr<GenericVector> v)
 {
   dolfin_assert(i < vectors.size());
   vectors[i] = v;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector>
+std::shared_ptr<const GenericVector>
 BlockVector::get_block(std::size_t i) const
 {
   dolfin_assert(i < vectors.size());
   return vectors[i];
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> BlockVector::get_block(std::size_t i)
+std::shared_ptr<GenericVector> BlockVector::get_block(std::size_t i)
 {
   dolfin_assert(i < vectors.size());
   return vectors[i];

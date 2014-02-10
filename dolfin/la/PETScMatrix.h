@@ -31,7 +31,7 @@
 
 #include <map>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <petscmat.h>
 #include <petscsys.h>
 
@@ -104,7 +104,7 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface --
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const;
+    virtual std::shared_ptr<GenericMatrix> copy() const;
 
     /// Intialize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are

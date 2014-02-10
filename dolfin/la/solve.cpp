@@ -22,7 +22,7 @@
 // First added:  2007-04-30
 // Last changed: 2011-12-21
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/Timer.h>
@@ -181,7 +181,7 @@ double dolfin::residual(const GenericLinearOperator& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {
-  boost::shared_ptr<GenericVector> y = x.factory().create_vector();
+  std::shared_ptr<GenericVector> y = x.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
   return y->norm("l2");

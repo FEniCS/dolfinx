@@ -27,7 +27,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 
@@ -77,7 +77,7 @@ namespace dolfin
     virtual void set(EpetraKrylovSolver& solver, const EpetraMatrix& P);
 
     /// Set the Trilonos preconditioner parameters list
-    void set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list);
+    void set_parameters(std::shared_ptr<const Teuchos::ParameterList> list);
 
     /// Set the Trilonos preconditioner parameters list (for use from
     /// Python)
@@ -116,14 +116,14 @@ namespace dolfin
       _preconditioners_descr;
 
     // The Preconditioner
-    boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
-    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
+    std::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
+    std::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
 
     // Parameter list
-    boost::shared_ptr<const Teuchos::ParameterList> parameter_list;
+    std::shared_ptr<const Teuchos::ParameterList> parameter_list;
 
     // Vectors spanning the null space
-    boost::shared_ptr<Epetra_MultiVector> _nullspace;
+    std::shared_ptr<Epetra_MultiVector> _nullspace;
 
     // Teuchos::ParameterList pointer, used when initialized with a
     // Teuchos::RCP shared_ptr

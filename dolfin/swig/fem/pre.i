@@ -65,8 +65,8 @@ PROBLEM_RENAMES(NonlinearVariational)
 					 const GenericFunction&,
 					 std::size_t,
 					 std::string method="topological");
-%ignore dolfin::DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace>,
-					 boost::shared_ptr<const GenericFunction>,
+%ignore dolfin::DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace>,
+					 std::shared_ptr<const GenericFunction>,
 					 const std::vector<std::pair<std::size_t, std::size_t> >&,
 					 std::string method="topological");
 

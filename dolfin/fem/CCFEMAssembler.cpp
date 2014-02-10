@@ -133,7 +133,7 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   // function space.
 
   // Create layout for initializing tensor
-  boost::shared_ptr<TensorLayout> tensor_layout;
+  std::shared_ptr<TensorLayout> tensor_layout;
   tensor_layout = A.factory().create_layout(a.rank());
   dolfin_assert(tensor_layout);
 
@@ -143,7 +143,7 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   std::vector<std::size_t> block_sizes;
   for (std::size_t i = 0; i < a.rank(); i++)
   {
-    boost::shared_ptr<const CCFEMFunctionSpace> V = a.function_space(i);
+    std::shared_ptr<const CCFEMFunctionSpace> V = a.function_space(i);
     dolfin_assert(V);
 
     global_dimensions.push_back(V->dim());

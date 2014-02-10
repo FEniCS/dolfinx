@@ -19,7 +19,7 @@
 // Last changed: 2012-11-29
 
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
@@ -45,7 +45,7 @@ using namespace dolfin;
 
 // Common function for setting parent/child
 template <typename T>
-void set_parent_child(const T& parent, boost::shared_ptr<T> child)
+void set_parent_child(const T& parent, std::shared_ptr<T> child)
 {
   // Use a const_cast so we can set the parent/child
   T& _parent = const_cast<T&>(parent);
@@ -65,7 +65,7 @@ const Mesh& dolfin::adapt(const Mesh& mesh)
   }
 
   // Refine uniformly
-  boost::shared_ptr<Mesh> adapted_mesh(new Mesh());
+  std::shared_ptr<Mesh> adapted_mesh(new Mesh());
   UniformMeshRefinement::refine(*adapted_mesh, mesh);
 
   // Initialize the entities initialized in mesh in adapted_mesh
@@ -90,7 +90,7 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
   }
 
   // Call refinement algorithm
-  boost::shared_ptr<Mesh> adapted_mesh(new Mesh());
+  std::shared_ptr<Mesh> adapted_mesh(new Mesh());
   LocalMeshRefinement::refine(*adapted_mesh, mesh, cell_markers);
 
   // Initialize the entities initialized in mesh in adapted_mesh
@@ -132,7 +132,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 }
 //-----------------------------------------------------------------------------
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
-                                           boost::shared_ptr<const Mesh> adapted_mesh)
+                                           std::shared_ptr<const Mesh> adapted_mesh)
 {
 
   // Skip refinement if already refined and child's mesh is the same
@@ -147,13 +147,13 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   // Create DOLFIN finite element and dofmap
   dolfin_assert(space.dofmap());
   dolfin_assert(space.element());
-  boost::shared_ptr<const FiniteElement>
+  std::shared_ptr<const FiniteElement>
     refined_element(space.element()->create());
-  boost::shared_ptr<const GenericDofMap>
+  std::shared_ptr<const GenericDofMap>
       refined_dofmap(space.dofmap()->create(*adapted_mesh));
 
   // Create new function space
-  boost::shared_ptr<FunctionSpace>
+  std::shared_ptr<FunctionSpace>
     refined_space(new FunctionSpace(adapted_mesh, refined_element, refined_dofmap));
 
   // Set parent / child
@@ -163,7 +163,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 }
 //-----------------------------------------------------------------------------
 const dolfin::Function& dolfin::adapt(const Function& function,
-                                      boost::shared_ptr<const Mesh> adapted_mesh,
+                                      std::shared_ptr<const Mesh> adapted_mesh,
                                       bool interpolate)
 {
   // Skip refinement if already refined and if child's mesh matches
@@ -176,15 +176,15 @@ const dolfin::Function& dolfin::adapt(const Function& function,
   }
 
   // Refine function space
-  boost::shared_ptr<const FunctionSpace> space = function.function_space();
+  std::shared_ptr<const FunctionSpace> space = function.function_space();
   dolfin_assert(space);
   adapt(*space, adapted_mesh);
-  boost::shared_ptr<const FunctionSpace>
+  std::shared_ptr<const FunctionSpace>
     refined_space = space->child_shared_ptr();
   dolfin_assert(refined_space);
 
   // Create new function on refined space and interpolate
-  boost::shared_ptr<Function> refined_function(new Function(refined_space));
+  std::shared_ptr<Function> refined_function(new Function(refined_space));
   if (interpolate)
     refined_function->interpolate(function);
 
@@ -195,7 +195,7 @@ const dolfin::Function& dolfin::adapt(const Function& function,
 }
 //-----------------------------------------------------------------------------
 const dolfin::GenericFunction& dolfin::adapt(const GenericFunction& function,
-                                             boost::shared_ptr<const Mesh> adapted_mesh)
+                                             std::shared_ptr<const Mesh> adapted_mesh)
 {
   // Try casting to a function
   const Function* f = dynamic_cast<const Function*>(&function);
@@ -206,7 +206,7 @@ const dolfin::GenericFunction& dolfin::adapt(const GenericFunction& function,
 }
 //-----------------------------------------------------------------------------
 const dolfin::Form& dolfin::adapt(const Form& form,
-                                  boost::shared_ptr<const Mesh> adapted_mesh,
+                                  std::shared_ptr<const Mesh> adapted_mesh,
                                   bool adapt_coefficients)
 {
   // Skip refinement if already refined
@@ -217,14 +217,14 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   }
 
   // Get data
-  std::vector<boost::shared_ptr<const FunctionSpace> >
+  std::vector<std::shared_ptr<const FunctionSpace> >
     spaces = form.function_spaces();
-  std::vector<boost::shared_ptr<const GenericFunction> >
+  std::vector<std::shared_ptr<const GenericFunction> >
     coefficients = form.coefficients();
-  boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form();
+  std::shared_ptr<const ufc::form> ufc_form = form.ufc_form();
 
   // Refine function spaces
-  std::vector<boost::shared_ptr<const FunctionSpace> > refined_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace> > refined_spaces;
   for (std::size_t i = 0; i < spaces.size(); i++)
   {
     const FunctionSpace& space = *spaces[i];
@@ -233,7 +233,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   }
 
   // Refine coefficients:
-  std::vector<boost::shared_ptr<const GenericFunction> > refined_coefficients;
+  std::vector<std::shared_ptr<const GenericFunction> > refined_coefficients;
   for (std::size_t i = 0; i < coefficients.size(); i++)
   {
     // Try casting to Function
@@ -249,7 +249,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   }
 
   /// Create new form (constructor used from Python interface)
-  boost::shared_ptr<Form> refined_form(new Form(ufc_form,
+  std::shared_ptr<Form> refined_form(new Form(ufc_form,
                                                 refined_spaces,
                                                 refined_coefficients));
 
@@ -284,7 +284,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
 //-----------------------------------------------------------------------------
 const dolfin::LinearVariationalProblem&
 dolfin::adapt(const LinearVariationalProblem& problem,
-              boost::shared_ptr<const Mesh> adapted_mesh)
+              std::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (problem.has_child())
@@ -294,10 +294,10 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   }
 
   // Get data
-  boost::shared_ptr<const Form> a = problem.bilinear_form();
-  boost::shared_ptr<const Form> L = problem.linear_form();
-  boost::shared_ptr<const Function> u = problem.solution();
-  std::vector<boost::shared_ptr<const DirichletBC> > bcs = problem.bcs();
+  std::shared_ptr<const Form> a = problem.bilinear_form();
+  std::shared_ptr<const Form> L = problem.linear_form();
+  std::shared_ptr<const Function> u = problem.solution();
+  std::vector<std::shared_ptr<const DirichletBC> > bcs = problem.bcs();
 
   // Refine forms
   dolfin_assert(a);
@@ -310,12 +310,12 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   // Refine solution variable
   dolfin_assert(u);
   adapt(*u, adapted_mesh);
-  boost::shared_ptr<Function> refined_u
+  std::shared_ptr<Function> refined_u
     = reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
 
   // Refine bcs
-  boost::shared_ptr<const FunctionSpace> V(problem.trial_space());
-  std::vector<boost::shared_ptr<const DirichletBC> > refined_bcs;
+  std::shared_ptr<const FunctionSpace> V(problem.trial_space());
+  std::vector<std::shared_ptr<const DirichletBC> > refined_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
     if (bcs[i] != 0)
@@ -336,7 +336,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   dolfin_assert(a);
   dolfin_assert(L);
   dolfin_assert(u);
-  boost::shared_ptr<LinearVariationalProblem>
+  std::shared_ptr<LinearVariationalProblem>
     refined_problem(new LinearVariationalProblem(a->child_shared_ptr(),
                                                  L->child_shared_ptr(),
                                                  refined_u,
@@ -350,7 +350,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
 //-----------------------------------------------------------------------------
 const dolfin::NonlinearVariationalProblem&
 dolfin::adapt(const NonlinearVariationalProblem& problem,
-              boost::shared_ptr<const Mesh> adapted_mesh)
+              std::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (problem.has_child())
@@ -360,10 +360,10 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   }
 
   // Get data
-  boost::shared_ptr<const Form> F = problem.residual_form();
-  boost::shared_ptr<const Form> J = problem.jacobian_form();
-  boost::shared_ptr<const Function> u = problem.solution();
-  std::vector<boost::shared_ptr<const DirichletBC> > bcs = problem.bcs();
+  std::shared_ptr<const Form> F = problem.residual_form();
+  std::shared_ptr<const Form> J = problem.jacobian_form();
+  std::shared_ptr<const Function> u = problem.solution();
+  std::vector<std::shared_ptr<const DirichletBC> > bcs = problem.bcs();
 
   // Refine forms
   dolfin_assert(F);
@@ -376,12 +376,12 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   // Refine solution variable
   dolfin_assert(u);
   adapt(*u, adapted_mesh);
-  boost::shared_ptr<Function> refined_u =
+  std::shared_ptr<Function> refined_u =
     reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
 
   // Refine bcs
-  boost::shared_ptr<const FunctionSpace> V(problem.trial_space());
-  std::vector<boost::shared_ptr<const DirichletBC> > refined_bcs;
+  std::shared_ptr<const FunctionSpace> V(problem.trial_space());
+  std::vector<std::shared_ptr<const DirichletBC> > refined_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
     dolfin_assert(bcs[i] != 0);
@@ -393,7 +393,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   // Create new problem
   dolfin_assert(F);
   dolfin_assert(u);
-  boost::shared_ptr<NonlinearVariationalProblem> refined_problem;
+  std::shared_ptr<NonlinearVariationalProblem> refined_problem;
   if (J)
   {
     refined_problem.reset(new NonlinearVariationalProblem(F->child_shared_ptr(),
@@ -415,7 +415,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
 }
 //-----------------------------------------------------------------------------
 const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
-                                    boost::shared_ptr<const Mesh> adapted_mesh,
+                                    std::shared_ptr<const Mesh> adapted_mesh,
                                     const FunctionSpace& S)
 {
   dolfin_assert(adapted_mesh);
@@ -429,12 +429,12 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     return bc.child();
   }
 
-  boost::shared_ptr<const FunctionSpace> W = bc.function_space();
+  std::shared_ptr<const FunctionSpace> W = bc.function_space();
   dolfin_assert(W);
 
   // Refine function space
   const std::vector<std::size_t> component = W->component();
-  boost::shared_ptr<const FunctionSpace> V;
+  std::shared_ptr<const FunctionSpace> V;
   if (component.empty())
   {
     adapt(*W, adapted_mesh);
@@ -448,13 +448,13 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 
   // Get refined value
   const GenericFunction& g = adapt(*(bc.value()), adapted_mesh);
-  boost::shared_ptr<const GenericFunction> g_ptr(reference_to_no_delete_pointer(g));
+  std::shared_ptr<const GenericFunction> g_ptr(reference_to_no_delete_pointer(g));
 
   // Extract user_sub_domain
-  boost::shared_ptr<const SubDomain> user_sub_domain = bc.user_sub_domain();
+  std::shared_ptr<const SubDomain> user_sub_domain = bc.user_sub_domain();
 
   // Create refined boundary condition
-  boost::shared_ptr<DirichletBC> refined_bc;
+  std::shared_ptr<DirichletBC> refined_bc;
   if (user_sub_domain)
   {
     // Use user defined sub domain if defined
@@ -480,7 +480,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 }
 //-----------------------------------------------------------------------------
 const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
-                                    boost::shared_ptr<const Mesh> adapted_mesh,
+                                    std::shared_ptr<const Mesh> adapted_mesh,
                                     bool adapt_coefficients)
 {
   dolfin_assert(adapted_mesh);
@@ -503,7 +503,7 @@ const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
   adapt(*ec._eta_T, adapted_mesh, adapt_coefficients);
 
   // Create refined error control
-  boost::shared_ptr<ErrorControl>
+  std::shared_ptr<ErrorControl>
     refined_ec(new ErrorControl(ec._a_star->child_shared_ptr(),
                                 ec._L_star->child_shared_ptr(),
                                 ec._residual->child_shared_ptr(),
@@ -522,7 +522,7 @@ const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<std::size_t>&
   dolfin::adapt(const MeshFunction<std::size_t>& mesh_function,
-                boost::shared_ptr<const Mesh> adapted_mesh)
+                std::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (mesh_function.has_child())
@@ -562,7 +562,7 @@ const dolfin::MeshFunction<std::size_t>&
   const std::size_t undefined = std::numeric_limits<std::size_t>::max();
 
   // Map values of mesh function into refined mesh function
-  boost::shared_ptr<MeshFunction<std::size_t> >
+  std::shared_ptr<MeshFunction<std::size_t> >
     adapted_mesh_function(new MeshFunction<std::size_t>(*adapted_mesh,
                                                         mesh_function.dim()));
   for (std::size_t i = 0; i < adapted_mesh_function->size(); i++)

@@ -223,7 +223,7 @@
 #ifdef HAS_TRILINOS
 %ignore dolfin::EpetraMatrix::mat;
 %ignore dolfin::EpetraVector::vec;
-%ignore dolfin::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A);
+%ignore dolfin::EpetraMatrix(std::shared_ptr<Epetra_FECrsMatrix> A);
 
 //-----------------------------------------------------------------------------
 // Typemaps for Teuchos::RCP (Trilinos backend)

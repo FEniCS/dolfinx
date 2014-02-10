@@ -34,7 +34,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RKSolver::RKSolver(boost::shared_ptr<MultiStageScheme> scheme) : 
+RKSolver::RKSolver(std::shared_ptr<MultiStageScheme> scheme) : 
   _scheme(scheme)
 {}
 //-----------------------------------------------------------------------------
@@ -49,9 +49,9 @@ void RKSolver::step(double dt)
   const double t0 = *_scheme->t();
 
   // Get scheme data
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms = \
+  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms = \
     _scheme->stage_forms();
-  std::vector<boost::shared_ptr<Function> >& stage_solutions = _scheme->stage_solutions();
+  std::vector<std::shared_ptr<Function> >& stage_solutions = _scheme->stage_solutions();
   std::vector<const DirichletBC* > bcs = _scheme->bcs();
   
   // Iterate over stage forms
