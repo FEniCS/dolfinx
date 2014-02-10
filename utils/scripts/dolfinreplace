@@ -6,11 +6,11 @@
 #
 # Example:
 #
-#     dolfinreplace foo bar 
+#     dolfinreplace foo bar
 #
-# Johan hake, 2008-19-09
+# Johan Hake, 2008-19-09
 #
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg 2008, 2014
 
 from os import path
 import glob
@@ -76,12 +76,12 @@ def replace(args, dirname, filenames):
                 output = input.replace(s0, s1)
 
             f.close()
-            
+
             if not options.simulate and num_changed > 0:
                 f = open(fullpath_filename, "w")
                 f.write(output)
                 f.close()
-            
+
             if num_changed > 0:
                 changed_files += 1
                 report_lines.append(" "*4+fullpath_filename)
@@ -94,7 +94,8 @@ def options_parser():
     usage ="""Usage: %prog [options] arg1 arg2
 
 Replaces string 'arg1' with 'arg2' in files in the present directory tree.
-"""
+
+For options, see dolfinreplace --help."""
 
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("-s", "--simulate", help="simulate the replacement",
@@ -129,11 +130,11 @@ def main():
 
         if report_lines[-1]:
             report_lines.pop(-1)
-        
+
         print report_str % (count, changed_files, "\n".\
                             join(report_lines), simulate_str)
     else:
         print "Done\n\nNo occurens of '%s' found"%args[0]
-    
+
 if __name__ == "__main__":
     main()
