@@ -18,8 +18,8 @@ import glob
 # File post fixes to look in
 post_fixes = [".h", ".cpp", ".i", ".tex", ".py", ".rst"]
 
-# Directories to explude
-exclude_dir = [".bzr", "build", "local"]
+# Primitive exclusion of some directories
+exclude_patterns = ["build.", "local."]
 
 # Global variables
 count         = 0
@@ -46,11 +46,12 @@ def replace(args, dirname, filenames):
     """
     global count, report_lines, changed_files
     (s0, s1), options = args
-    for exclude in exclude_dir:
-        if exclude in filenames:
-            filenames.remove(exclude)
 
-    #print dirname
+    _filenames = filenames[:]
+    for f in _filenames:
+        for exclude in exclude_patterns:
+            if exclude in f:
+                filenames.remove(f)
 
     for filename in glob.glob(path.join(dirname, options.pattern)):
         if path.splitext(filename)[1] in post_fixes:
