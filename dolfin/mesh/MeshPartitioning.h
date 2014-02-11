@@ -86,7 +86,7 @@ namespace dolfin
     static void partition_cells(const MPI_Comm& mpi_comm, 
                                 const LocalMeshData& mesh_data,
            std::vector<std::size_t>& cell_partition,
-           std::map<std::size_t, std::vector<std::size_t> >& ghost_procs);
+           std::vector<std::vector<std::size_t> >& ghost_procs);
 
     // Get the set of common vertices from a boost::multi_array of cell
     // vertex indices
@@ -96,7 +96,7 @@ namespace dolfin
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
          const std::vector<std::size_t>& cell_partition,
-         const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs);
+         const std::vector<std::vector<std::size_t> >& ghost_procs);
 
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
@@ -115,8 +115,7 @@ namespace dolfin
     static void 
       distribute_ghost_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
-        const std::vector<std::size_t>& cell_partition,
-        const std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
+        const std::vector<std::vector<std::size_t> >& ghost_procs,
         std::vector<std::size_t>& ghost_global_cell_indices,
         std::vector<std::size_t>& ghost_remote_process,
         boost::multi_array<std::size_t, 2>& ghost_cell_vertices);

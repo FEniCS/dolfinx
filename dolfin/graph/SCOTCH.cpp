@@ -51,7 +51,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
               std::vector<std::size_t>& cell_partition,
-              std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
+              std::vector<std::vector<std::size_t> >& ghost_procs,
               const LocalMeshData& mesh_data)
 {
   // FIXME: Use std::set or std::vector?
@@ -203,7 +203,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::vector<std::size_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
                        std::vector<std::size_t>& cell_partition,
-                       std::map<std::size_t, std::vector<std::size_t> >& ghost_procs)
+                       std::vector<std::vector<std::size_t> >& ghost_procs)
 {
   Timer timer("Partition graph (calling SCOTCH)");
 
@@ -407,20 +407,18 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
 
   // Iterate through SCOTCH's local compact graph to find partition
   // boundaries and save to map
+  ghost_procs.resize(vertlocnbr);  
   for(SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
     const std::size_t proc_this =  _cell_partition[i];
+    ghost_procs[i] = std::vector<std::size_t>(1, proc_this);
+    
     for(SCOTCH_Num j = vertloctab[i]; j < vertloctab[i + 1]; ++j)
     {
       const std::size_t proc_other 
         = _cell_partition[edge_ghost_tab[j]];
       if(proc_this != proc_other)
-      {
-        if(ghost_procs.find(i) == ghost_procs.end())
-          ghost_procs[i] = std::vector<std::size_t>(1, proc_other);
-        else
           ghost_procs[i].push_back(proc_other);
-      }
     }
   }
 
@@ -439,7 +437,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                std::vector<std::size_t>& cell_partition,
-         std::map<std::size_t, std::vector<std::size_t> >& ghost_procs,
+         std::vector<std::vector<std::size_t> >& ghost_procs,
          const LocalMeshData& mesh_data)
 {
   dolfin_error("SCOTCH.cpp",
