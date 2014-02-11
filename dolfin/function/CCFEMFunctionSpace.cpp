@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-07
+// Last changed: 2014-02-11
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -61,6 +61,35 @@ CCFEMFunctionSpace::part(std::size_t i) const
 {
   dolfin_assert(i < _function_spaces.size());
   return _function_spaces[i];
+}
+//-----------------------------------------------------------------------------
+const std::vector<unsigned int>&
+CCFEMFunctionSpace::uncut_cells(std::size_t part) const
+{
+  dolfin_assert(part < num_parts());
+  return _uncut_cells[part];
+}
+//-----------------------------------------------------------------------------
+const std::vector<unsigned int>&
+CCFEMFunctionSpace::cut_cells(std::size_t part) const
+{
+  dolfin_assert(part < num_parts());
+  return _cut_cells[part];
+}
+//-----------------------------------------------------------------------------
+const std::vector<unsigned int>&
+CCFEMFunctionSpace::covered_cells(std::size_t part) const
+{
+  dolfin_assert(part < num_parts());
+  return _covered_cells[part];
+}
+//-----------------------------------------------------------------------------
+const std::map<unsigned int,
+               std::vector<std::pair<std::size_t, unsigned int> > >&
+  CCFEMFunctionSpace::collision_map_cut_cells(std::size_t part) const
+{
+  dolfin_assert(part < num_parts());
+  return _collision_map_cut_cells[part];
 }
 //-----------------------------------------------------------------------------
 void
@@ -259,6 +288,10 @@ void CCFEMFunctionSpace::_build_collision_maps()
     _cut_cells.push_back(cut_cells);
     _covered_cells.push_back(covered_cells);
     _collision_map_cut_cells.push_back(collision_map_cut_cells);
+
+    // Report results
+    log(PROGRESS, "Part %d has %d uncut cells, %d cut cells, and %d covered cells.",
+        i, uncut_cells.size(), cut_cells.size(), covered_cells.size());
   }
 
   end();
