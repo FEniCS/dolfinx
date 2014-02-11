@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-01-30
+// Last changed: 2014-02-11
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -109,7 +109,7 @@ void PointIntegralSolver::step(double dt)
   
   dolfin_assert(dt > 0.0);
 
-  Timer t_step_stage("Step: set the stage");
+  //Timer t_step_stage("Step: set the stage");
 
   // Update time constant of scheme
   *_scheme->dt() = dt;
@@ -227,7 +227,7 @@ void PointIntegralSolver::step(double dt)
 
     }
 
-    //Timer t_last_stage("Last stage: tabulate_tensor");
+    Timer t_last_stage("Last stage: tabulate_tensor");
 
     // Update coeffcients for last stage
     _last_stage_ufc->update(cell, vertex_coordinates, ufc_cell);
@@ -278,10 +278,10 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
   //t_expl_update.stop();
 
   // Tabulate cell tensor
-  //Timer t_expl_tt("Explicit stage: tabulate_tensor");
+  Timer t_expl_tt("Explicit stage: tabulate_tensor");
   integral.tabulate_tensor(_ufcs[stage][0]->A.data(), _ufcs[stage][0]->w(), 
 			   vertex_coordinates.data(), local_vert);
-  //t_expl_tt.stop();
+  t_expl_tt.stop();
 
   // Extract vertex dofs from tabulated tensor and put them into the local 
   // stage solution vector
@@ -305,7 +305,7 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
 			     const std::vector<double>& vertex_coordinates)
 {
 	
-  //Timer t_impl("Implicit stage");
+  Timer t_impl("Implicit stage");
 	
   _recompute_jacobian = _recompute_jacobian || \
     (parameters("newton_solver")["recompute_jacobian_for_linear_problems"] && \
@@ -439,11 +439,11 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
   }
 
   // Tabulate Jacobian
-  //Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
+  Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
   J_integral.tabulate_tensor(loc_ufc.A.data(), loc_ufc.w(), 
 			     vertex_coordinates.data(), 
 			     local_vert);
-  //t_impl_tt_jac.stop();
+  t_impl_tt_jac.stop();
 
   // Extract vertex dofs from tabulated tensor
   //Timer t_impl_update_jac("Implicit stage: update_jac");
@@ -748,11 +748,11 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
   {
 
     // Tabulate residual 
-    //Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
+    Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
     F_integral.tabulate_tensor(loc_ufc.A.data(), loc_ufc.w(), 
 			       vertex_coordinates.data(), 
 			       local_vert);
-    //t_impl_tt_F.stop();
+    t_impl_tt_F.stop();
   
     // Extract vertex dofs from tabulated tensor, together with the old stage 
     // solution

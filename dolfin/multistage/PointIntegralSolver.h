@@ -67,7 +67,7 @@ namespace dolfin
     {
       Parameters p("point_integral_solver");
 
-      p.add("reset_stage_solutions", false);
+      p.add("reset_stage_solutions", true);
       p.add("enable_debug_output", false);
 
       std::set<std::string> allowed_convergence_criterion;
@@ -89,7 +89,7 @@ namespace dolfin
       p("newton_solver").add("eta_0", 1e-10, 1e-15, 1e-5);
       p("newton_solver").add("max_relative_residual", 1e-1, 1e-5, 0.5);
       p("newton_solver")["absolute_tolerance"].set_range(1e-20,1e-1);
-      p("newton_solver").add("reset_each_step", false);
+      p("newton_solver").add("reset_each_step", true);
       p("newton_solver")["report"] = false;
 
       return p;
