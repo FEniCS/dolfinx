@@ -268,7 +268,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   mesh.data().create_array("ghost_owner", mesh_data.tdim);
   std::vector<std::size_t>& ghost_cell_owner = mesh.data().array("ghost_owner", mesh_data.tdim);
   ghost_cell_owner.resize(mesh.num_cells());
-  const std::size_t process_number = MPI::process_number(mesh.mpi_comm());
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
   for(unsigned int i = 0; i < mesh.num_cells(); ++i)
   {
     if (i < num_regular_cells)
@@ -324,8 +324,8 @@ void MeshPartitioning::ghost_build_shared_vertices(Mesh& mesh,
 
   std::vector<std::size_t> shared_ownership_list;
 
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
-  const std::size_t process_number = MPI::process_number(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
 
   for(std::map<std::size_t, std::set<unsigned int> >::iterator map_it
     = shared_vertices_global.begin(); map_it != shared_vertices_global.end();
@@ -410,7 +410,7 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
   // Ghost procs map contains local indices (key) which must be sent to
   // remote processes (vector value)
 
-  const std::size_t num_processes = MPI::num_processes(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Get dimensions of local mesh_data
   const std::size_t num_local_cells = mesh_data.cell_vertices.size();
@@ -424,7 +424,7 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
                    "distribute cells",
                    "Mismatch in number of cell vertices (%d != %d) on process %d",
                    mesh_data.cell_vertices[0].size(), num_cell_vertices,
-                   MPI::process_number(mpi_comm));
+                   MPI::rank(mpi_comm));
     }
   }
 
@@ -727,8 +727,8 @@ void MeshPartitioning::build_shared_vertices(Mesh& mesh,
               const std::map<std::size_t, std::size_t>& vertex_global_to_local)
 {
   // Get number of processes and process number
-  const std::size_t num_processes = MPI::num_processes(mesh.mpi_comm());
-  const std::size_t process_number = MPI::process_number(mesh.mpi_comm());
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
 
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes

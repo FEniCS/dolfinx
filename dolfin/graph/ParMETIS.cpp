@@ -141,8 +141,8 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   dolfin_assert(err == METIS_OK);
 
   // Work out halo cells for current division of dual graph
-  const unsigned int num_processes = MPI::num_processes(mpi_comm);
-  const unsigned int process_number = MPI::process_number(mpi_comm);
+  const unsigned int num_processes = MPI::size(mpi_comm);
+  const unsigned int process_number = MPI::rank(mpi_comm);
   const idx_t elm_begin = g.elmdist[process_number];
   const idx_t elm_end = g.elmdist[process_number + 1];
   const unsigned int ncells = elm_end - elm_begin;

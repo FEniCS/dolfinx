@@ -382,9 +382,16 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   // FIXME: check MPI type compatibility with SCOTCH_Num
   // Getting this wrong will cause a SEGV
   // FIXME: is there a better way to do this?
+  
+  MPI_Datatype MPI_SCOTCH_Num;
+  if (sizeof(SCOTCH_Num) == 4)
+    MPI_SCOTCH_Num = MPI_INT;
+  else if (sizeof(SCOTCH_Num)==8)
+    MPI_SCOTCH_Num = MPI_LONG_LONG_INT;
+
   if (SCOTCH_dgraphHalo(&dgrafdat,
                         (void *)_cell_partition.data(),
-                        MPI_INT))
+                        MPI_SCOTCH_Num))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",

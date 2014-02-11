@@ -567,11 +567,11 @@ void DofMapBuilder::build_ufc_dofmap(
   // Build dofmap from ufc::dofmap
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if (MPI::num_processes(mesh.mpi_comm()) != 1)
+    if (MPI::size(mesh.mpi_comm()) != 1)
     {
       // Skip ghost cells
       const std::vector<std::size_t>& ghost_owner = mesh.data().array("ghost_owner", D);
-      if (ghost_owner[cell->index()] != MPI::process_number(mesh.mpi_comm()))
+      if (ghost_owner[cell->index()] != MPI::rank(mesh.mpi_comm()))
         continue;
     }
     
@@ -740,7 +740,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
       ++c;
       const std::size_t g1 = ghost_owner[c->index()];
 
-      const unsigned int process_number = MPI::process_number(mesh.mpi_comm());
+      const unsigned int process_number = MPI::rank(mesh.mpi_comm());
       if(g0 == process_number && g1 == process_number)
         continue;
       if(g0 != process_number && g1 != process_number)
