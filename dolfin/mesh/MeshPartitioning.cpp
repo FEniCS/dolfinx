@@ -221,7 +221,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                           ghost_remote_process.begin(),
                           ghost_remote_process.end());
 
-  // Attach ghost vertex mask to Mesh, marks shared vertices...
+  // Attach ghost vertex mask to Mesh, marking vertices which are in cells
+  // belonging to other processes.
   mesh.data().create_array("ghost_mask", 0);
   std::vector<std::size_t>& ghost_vertex_mask = mesh.data().array("ghost_mask", 0);
   ghost_vertex_mask.resize(mesh.num_vertices());
@@ -350,6 +351,12 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
       std::vector<std::size_t>& ghost_remote_process,
       boost::multi_array<std::size_t, 2>& cell_vertices)
 {
+  // This function takes the partition computed by the partitioner
+  // stored in ghost_procs - some cells go to multiple destinations.
+  // Each cell is transmitted to its final destination(s) including
+  // its global index, and the cell owner (for ghost cells this
+  // will be different from the destination)
+
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Get dimensions of local mesh_data
