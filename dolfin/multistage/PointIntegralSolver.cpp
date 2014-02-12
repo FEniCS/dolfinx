@@ -136,7 +136,7 @@ void PointIntegralSolver::step(double dt)
   {
 
     // FIXME: Some debug output
-    if (enable_debug)
+    if (enable_debug && vert_ind == 0)
       std::cout << std::endl << std::endl << "Vertex: " << vert_ind << std::endl;
     
     //Timer t_vert("Step: update vert");
@@ -166,7 +166,7 @@ void PointIntegralSolver::step(double dt)
     {
 
       // FIXME: Debug:
-      if (enable_debug)
+      if (enable_debug && vert_ind == 0)
       {
 	_scheme->stage_solutions()[stage]->vector()->get_local(
 			_y.data(), _local_to_global_dofs.size(), 
@@ -208,7 +208,7 @@ void PointIntegralSolver::step(double dt)
       }
 
       // FIXME: Debug:
-      if (enable_debug)
+      if (enable_debug && vert_ind == 0)
       {
 	_scheme->stage_solutions()[stage]->vector()->get_local(
 	     _y.data(), _local_to_global_dofs.size(), _local_to_global_dofs.data());
