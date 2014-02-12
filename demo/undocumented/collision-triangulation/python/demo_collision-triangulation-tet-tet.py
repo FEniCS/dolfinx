@@ -23,13 +23,11 @@ from dolfin import *
 import sys
 
 
-# specify the mesh (must be cube)
+# Specify the mesh (must be cube otherwise the volume calculations
+# doesn't work)
 def loadmesh():
-    # return Mesh("cube12.0.xml")
     N = 2
     return UnitCubeMesh(N,N,N)
-
-
 
 # Creating a mesh from a triangulation (for visualization and volume
 # computation). Note that this function completely disregards common
@@ -38,18 +36,16 @@ def triangulation_to_mesh_3d(triangulation):
     editor = MeshEditor()
     mesh = Mesh()
     editor.open(mesh,3,3)
-
     num_cells = len(triangulation)/12
     num_vertices = len(triangulation)/3
-    editor.init_cells(num_cells)
-    editor.init_vertices(num_vertices)
+    editor.init_cells(num_cells,1)
+    editor.init_vertices(num_vertices,1)
     for i in xrange(num_cells):
         editor.add_cell(i, 4*i, 4*i+1, 4*i+2, 4*i+3)
     for i in xrange(num_vertices):
         editor.add_vertex(i, triangulation[3*i], triangulation[3*i+1], triangulation[3*i+2])
     editor.close()
     return mesh
-
 
 # call the intersection calculation
 def compute_intersection(mesh_A,mesh_B):
@@ -83,6 +79,7 @@ def compute_errors(volume,exactvolume):
     return (error,relativeerror)
 
 
+
 # Test intersection calculation when mesh_B is placed in the vertices
 # of mesh_A
 def test_place_at_vertex():
@@ -106,15 +103,16 @@ def test_place_at_vertex():
     return max_relativeerror
 
 
+
 # Tests intersection calculation when mesh_B is translated across
 # mesh_A. The translation can be arbitrary as long as there is no
 # rotation.
-def test_translation():
+def test_translation(num_steps):
     x0 = -1
     y0 = -1
     z0 = -1
-    num_steps = 100
     mesh_A = loadmesh()
+    plotter = VTKPlotter(mesh_A)
     max_relativeerror = -1
     for n in range(num_steps+1):
         x = x0+2*n/float(num_steps)
@@ -122,12 +120,14 @@ def test_translation():
         z = z0+2*n/float(num_steps)
         mesh_B = loadmesh()
         mesh_B.translate(Point(x,y,z))
+
         exactvolume = (1-abs(x))*(1-abs(y))*(1-abs(z))
-        
-        # plot(mesh_B)
-        # interactive()
-        
         triangulation = compute_intersection(mesh_A,mesh_B)
+
+        # if (triangulation.size>0):
+        #     plotter.plot(triangulation_to_mesh_3d(triangulation))
+        #     interactive()
+
         volume = compute_volume(triangulation)
         [error,relativeerror] = compute_errors(volume,exactvolume)
         max_relativeerror = max(max_relativeerror,abs(relativeerror))
@@ -138,19 +138,21 @@ def test_translation():
 
 
 # Tests intersection calculation when mesh_B is rotated along the
-# z-axis around the center (0.5,0.5,0.5). 
-def test_rotation():
+# z-axis around the center (0.5,0.5,0.5). We can only rotate angles
+# [0,90] degrees.
+def test_rotation(num_angles):
     angle_start = 0
-    num_angles = 90
-    angle_step = 90./num_angles # exact volume only works for angles [0,90]
+    angle_step = 90./num_angles 
     mesh_A = loadmesh()    
+    plotter = VTKPlotter(mesh_A)
     max_relativeerror = -1
+
     for n in range(num_angles+1):
         angle = angle_start+n*angle_step
-        # using mesh_B.rotate(angle_step) gives poor accuracy
-        mesh_B = loadmesh() 
+        # reload mesh_B since using mesh_B.rotate(angle_step) gives
+        # poor accuracy
+        mesh_B = loadmesh()   
         mesh_B.rotate(angle,2)
-        
         k=tan(angle*pi/180)
         if (k>0):
             # triangle area to remove is 4*b*h/2
@@ -159,16 +161,12 @@ def test_rotation():
             exactvolume=1-2*b*h;
         else:
             exactvolume=1
-        
-        # plot(mesh_B)
-        # interactive()
-        
         triangulation = compute_intersection(mesh_A,mesh_B)
         volume = compute_volume(triangulation)
         [error,relativeerror] = compute_errors(volume,exactvolume)
         max_relativeerror = max(max_relativeerror,abs(relativeerror))
         
-        # plot(triangulation_to_mesh_3d(triangulation))
+        # plotter.plot(triangulation_to_mesh_3d(triangulation))
         # interactive()
         
         print "%f %1.6g %1.6g %1.6g" % (angle,volume,error,relativeerror)
@@ -177,12 +175,17 @@ def test_rotation():
 
 
 
-
 # main
+print "test place at vertex"
 max_relativeerror_vertex = test_place_at_vertex()
-max_relativeerror_translation = test_translation()
-max_relativeerror_rotation = test_rotation()
 
-print "max relative errors for vertex, translation and rotation:"
-print max_relativeerror_vertex, max_relativeerror_translation, max_relativeerror_rotation
+print "test translation"
+max_relativeerror_translation = test_translation(10)
+
+print "test rotation"
+max_relativeerror_rotation = test_rotation(9)
+
+print "max relative error vertex ", max_relativeerror_vertex
+print "max relative error translation ", max_relativeerror_translation
+print "max relative error rotation ", max_relativeerror_rotation
 

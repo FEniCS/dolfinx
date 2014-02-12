@@ -30,8 +30,8 @@ def triangulation_to_mesh_2d(triangulation):
     editor.open(mesh, 2, 2)
     num_cells = len(triangulation) / 6
     num_vertices = len(triangulation) / 2
-    editor.init_cells(num_cells)
-    editor.init_vertices(num_vertices)
+    editor.init_cells(num_cells,1)
+    editor.init_vertices(num_vertices,1)
     for i in xrange(num_cells):
         editor.add_cell(i, 3*i, 3*i + 1, 3*i + 2)
     for i in xrange(num_vertices):

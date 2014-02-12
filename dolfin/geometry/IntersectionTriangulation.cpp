@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-07
+// Last changed: 2014-02-12
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -132,21 +132,22 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle(const Mesh
       points.push_back(p1);
   }
 
-  // // Find all edge-edge collisions (not needed?)
-  // for (std::size_t i0 = 0; i0 < 3; i0++)
-  // {
-  //   const std::size_t j0 = (i0 + 1) % 3;
-  //   const Point p0 = geometry_0.point(vertices_0[i0]);
-  //   const Point q0 = geometry_0.point(vertices_0[j0]);
-  //   for (std::size_t i1 = 0; i1 < 3; i1++)
-  //   {
-  //     const std::size_t j1 = (i1 + 1) % 3;
-  //     const Point p1 = geometry_1.point(vertices_1[i1]);
-  //     const Point q1 = geometry_1.point(vertices_1[j1]);
-  //     if (collides_edge_edge(p0, q0, p1, q1))
-  //       points.push_back(edge_collision(p0, q0, p1, q1));
-  //   }
-  // }
+  // Find all edge-edge collisions (not needed?)
+  for (std::size_t i0 = 0; i0 < 3; i0++)
+  {
+    const std::size_t j0 = (i0 + 1) % 3;
+    const Point p0 = geometry_0.point(vertices_0[i0]);
+    const Point q0 = geometry_0.point(vertices_0[j0]);
+    for (std::size_t i1 = 0; i1 < 3; i1++)
+    {
+      const std::size_t j1 = (i1 + 1) % 3;
+      const Point p1 = geometry_1.point(vertices_1[i1]);
+      const Point q1 = geometry_1.point(vertices_1[j1]);
+      Point point;
+      if (intersection_edge_edge(p0, q0, p1, q1, point))
+        points.push_back(point);
+    }
+  }
 
   // Special case: no points found
   std::vector<double> triangulation;
@@ -208,21 +209,28 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle(const Mesh
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const MeshEntity& tetrahedron,
-									 const MeshEntity& triangle)
+IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
+(const MeshEntity& tetrahedron,
+ const MeshEntity& triangle)
 {
-  // This code mimics the collides_tetrahedron_tetrahedron and the
-  // collides_triangle_codes: we first identify triangle nodes in the
-  // tetrahedra. Them we continue with edge-face detection for the
-  // four faces of the tetrahedron and the triangle. The points found
-  // are used to form a triangulation by first sorting them using a
-  // Graham scan.
+  // This code mimics the
+  // triangulate_intersection_tetrahedron_tetrahedron and the
+  // triangulate_intersection_tetrahedron_tetrahedron_triangle_codes:
+  // we first identify triangle nodes in the tetrahedra. Them we
+  // continue with edge-face detection for the four faces of the
+  // tetrahedron and the triangle. The points found are used to form a
+  // triangulation by first sorting them using a Graham scan.
 
   dolfin_assert(tetrahedron.mesh().topology().dim() == 3);
   dolfin_assert(triangle.mesh().topology().dim() == 2);
 
-  const double samepointtol=1e-15;
-  const double smalldettol=1e-13;
+  // Tolerance for duplicate points (p and q are the same if
+  // (p-q).norm() < same_point_tol)
+  const double same_point_tol=DOLFIN_EPS_LARGE;
+
+  // Tolerance for small triangle (could be improved by identifying
+  // sliver and small triangles)
+  const double tri_det_tol=DOLFIN_EPS_LARGE;
 
   // Get the vertices as points 
   const MeshGeometry& tet_geom = tetrahedron.mesh().geometry();
@@ -237,19 +245,29 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
   std::vector<Point> points;
 
   // Triangle node in tetrahedron intersection
-  if (CollisionDetection::collides_tetrahedron_point(tetrahedron, q0)) points.push_back(q0);
-  if (CollisionDetection::collides_tetrahedron_point(tetrahedron, q1)) points.push_back(q1);
-  if (CollisionDetection::collides_tetrahedron_point(tetrahedron, q2)) points.push_back(q2);
+  if (CollisionDetection::collides_tetrahedron_point(tetrahedron, q0)) 
+    points.push_back(q0);
+
+  if (CollisionDetection::collides_tetrahedron_point(tetrahedron, q1)) 
+    points.push_back(q1);
+
+  if (CollisionDetection::collides_tetrahedron_point(tetrahedron, q2)) 
+    points.push_back(q2);
 
   // Check if a tetrahedron edge intersects the triangle
   std::vector<std::vector<int> > tet_edges(6,std::vector<int>(2));
-  //tetrahedron.create_entities(tet_edges, 1,tet_vert);
-  tet_edges[0][0] = tet_vert[2]; tet_edges[0][1] = tet_vert[3];
-  tet_edges[1][0] = tet_vert[1]; tet_edges[1][1] = tet_vert[3];
-  tet_edges[2][0] = tet_vert[1]; tet_edges[2][1] = tet_vert[2];
-  tet_edges[3][0] = tet_vert[0]; tet_edges[3][1] = tet_vert[3];
-  tet_edges[4][0] = tet_vert[0]; tet_edges[4][1] = tet_vert[2];
-  tet_edges[5][0] = tet_vert[0]; tet_edges[5][1] = tet_vert[1];
+  tet_edges[0][0] = tet_vert[2]; 
+  tet_edges[0][1] = tet_vert[3];
+  tet_edges[1][0] = tet_vert[1]; 
+  tet_edges[1][1] = tet_vert[3];
+  tet_edges[2][0] = tet_vert[1]; 
+  tet_edges[2][1] = tet_vert[2];
+  tet_edges[3][0] = tet_vert[0]; 
+  tet_edges[3][1] = tet_vert[3];
+  tet_edges[4][0] = tet_vert[0]; 
+  tet_edges[4][1] = tet_vert[2];
+  tet_edges[5][0] = tet_vert[0]; 
+  tet_edges[5][1] = tet_vert[1];
 
   Point pt;
   for (int e=0; e<6; ++e) 
@@ -263,11 +281,18 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
   
   // Check if a triangle edge intersects a tetrahedron face
   std::vector<std::vector<int> > tet_faces(4,std::vector<int>(3));
-  //tetrahedron.create_entities(tet_faces, 2,tet_vert);
-  tet_faces[0][0] = tet_vert[1]; tet_faces[0][1] = tet_vert[2]; tet_faces[0][2] = tet_vert[3];
-  tet_faces[1][0] = tet_vert[0]; tet_faces[1][1] = tet_vert[2]; tet_faces[1][2] = tet_vert[3];
-  tet_faces[2][0] = tet_vert[0]; tet_faces[2][1] = tet_vert[1]; tet_faces[2][2] = tet_vert[3];
-  tet_faces[3][0] = tet_vert[0]; tet_faces[3][1] = tet_vert[1]; tet_faces[3][2] = tet_vert[2];
+  tet_faces[0][0] = tet_vert[1]; 
+  tet_faces[0][1] = tet_vert[2]; 
+  tet_faces[0][2] = tet_vert[3];
+  tet_faces[1][0] = tet_vert[0]; 
+  tet_faces[1][1] = tet_vert[2]; 
+  tet_faces[1][2] = tet_vert[3];
+  tet_faces[2][0] = tet_vert[0]; 
+  tet_faces[2][1] = tet_vert[1]; 
+  tet_faces[2][2] = tet_vert[3];
+  tet_faces[3][0] = tet_vert[0]; 
+  tet_faces[3][1] = tet_vert[1]; 
+  tet_faces[3][2] = tet_vert[2];
 
   for (int f=0; f<4; ++f) 
   {
@@ -288,6 +313,29 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
       points.push_back(pt);
   }
 
+
+  // edge edge intersection
+  for (int f=0; f<6; ++f) 
+  {
+    if (intersection_edge_edge(tet_geom.point(tet_edges[f][0]),
+			       tet_geom.point(tet_edges[f][1]),
+			       q0,q1,
+			       pt)) 
+      points.push_back(pt);
+    if (intersection_edge_edge(tet_geom.point(tet_edges[f][0]),
+			       tet_geom.point(tet_edges[f][1]),
+			       q0,q2,
+			       pt)) 
+      points.push_back(pt);
+    if (intersection_edge_edge(tet_geom.point(tet_edges[f][0]),
+			       tet_geom.point(tet_edges[f][1]),
+			       q1,q2,
+			       pt)) 
+      points.push_back(pt);
+  }
+
+
+
   // Remove duplicate nodes
   std::vector<Point> tmp; 
   tmp.reserve(points.size());
@@ -296,7 +344,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
   {
     bool different=true;
     for (std::size_t j=i+1; j<points.size(); ++j) 
-      if ((points[i]-points[j]).norm()<samepointtol) {
+      if ((points[i]-points[j]).norm()<same_point_tol) {
 	different=false;
 	break;
       }
@@ -317,18 +365,15 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
 
   if (points.size()==3) { 
     // Include if determinant is sufficiently large
-    if (std::abs(det)>smalldettol)
+    if (std::abs(det)>tri_det_tol)
     {
-      if (det<-smalldettol) 
+      if (det<-tri_det_tol) 
 	std::swap(points[0],points[1]);
       // One triangle with three vertices in 3D gives 9 doubles
       triangulation.resize(9);
       for (std::size_t m=0,idx=0; m<3; ++m) 
-      {
-	//cout<<plot3(points[m])<<'\n';
 	for (std::size_t d=0; d<3; ++d,++idx) 
 	  triangulation[idx]=points[m][d];
-      }
     }    
     return triangulation;
   }
@@ -346,7 +391,6 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
   std::vector<std::pair<double, std::size_t> > order;
   Point ref=points[0]-pointscenter;
   ref/=ref.norm();
-  const Point orthref=n.cross(ref);
 	  
   // Calculate and store angles
   for (std::size_t m=1; m<points.size(); ++m) 
@@ -359,7 +403,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
     else 
     { 
       alpha=acos(frac);
-      if (v.dot(orthref)<0) alpha=2*DOLFIN_PI-alpha;
+      if (v.dot(n.cross(ref))<0) alpha=2*DOLFIN_PI-alpha;
     }
     order.push_back(std::make_pair(alpha,m));
   }
@@ -378,9 +422,9 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
         
     // Include triangle if determinant is sufficiently large
     const double det=((cand[2]-cand[1]).cross(cand[1]-cand[0])).norm();
-    if (std::abs(det)>smalldettol) 
+    if (std::abs(det)>tri_det_tol) 
     {
-      if (det<-smalldettol) 
+      if (det<-tri_det_tol) 
 	std::swap(cand[0],cand[1]);
       for (std::size_t n=0; n<3; ++n) 
 	for (std::size_t d=0; d<3; ++d) 
@@ -392,8 +436,9 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle(const M
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
-									    const MeshEntity& tetrahedron_1)
+IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
+(const MeshEntity& tetrahedron_0,
+ const MeshEntity& tetrahedron_1)
 {
   // This algorithm computes the intersection of cell_0 and cell_1 by
   // returning a vector<double> with points describing a tetrahedral
@@ -412,19 +457,19 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   dolfin_assert(tetrahedron_1.mesh().topology().dim() == 3);
 
   // Tolerance for coplanar points
-  const double coplanar_tol=1e-11;
+  const double coplanar_tol=1000*DOLFIN_EPS_LARGE;//1e-11;
 
   // Tolerance for the tetrahedron determinant (otherwise problems
   // with warped tets)
-  const double tet_det_tol=1e-15; 
+  const double tet_det_tol=DOLFIN_EPS_LARGE;//1e-15; 
 
   // Tolerance for duplicate points (p and q are the same if
   // (p-q).norm() < same_point_tol)
-  const double same_point_tol=1e-15;
+  const double same_point_tol=DOLFIN_EPS_LARGE;//1e-15;
 
   // Tolerance for small triangle (could be improved by identifying
   // sliver and small triangles)
-  const double tri_det_tol=1e-11; 
+  const double tri_det_tol=DOLFIN_EPS_LARGE;//1e-11; 
 
   // Points in the triangulation (unique)
   std::vector<Point> points;
@@ -438,46 +483,74 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   // Node intersection
   for (int i=0; i<4; ++i) 
   {
-    if (CollisionDetection::collides_tetrahedron_point(tetrahedron_0, geom_1.point(vert_1[i]))) 
+    if (CollisionDetection::collides_tetrahedron_point(tetrahedron_0, 
+						       geom_1.point(vert_1[i]))) 
       points.push_back(geom_1.point(vert_1[i]));
 
-    if (CollisionDetection::collides_tetrahedron_point(tetrahedron_1, geom_0.point(vert_0[i]))) 
+    if (CollisionDetection::collides_tetrahedron_point(tetrahedron_1, 
+						       geom_0.point(vert_0[i]))) 
       points.push_back(geom_0.point(vert_0[i]));
   }
 
   // Edge face intersections 
-  std::vector<std::vector<std::size_t> > edges_0(6,std::vector<std::size_t>(2));
-  edges_0[0][0] = vert_0[2]; edges_0[0][1] = vert_0[3];
-  edges_0[1][0] = vert_0[1]; edges_0[1][1] = vert_0[3];
-  edges_0[2][0] = vert_0[1]; edges_0[2][1] = vert_0[2];
-  edges_0[3][0] = vert_0[0]; edges_0[3][1] = vert_0[3];
-  edges_0[4][0] = vert_0[0]; edges_0[4][1] = vert_0[2];
-  edges_0[5][0] = vert_0[0]; edges_0[5][1] = vert_0[1];
+  std::vector<std::vector<int> > edges_0(6,std::vector<int>(2));
+  edges_0[0][0] = vert_0[2]; 
+  edges_0[0][1] = vert_0[3];
+  edges_0[1][0] = vert_0[1]; 
+  edges_0[1][1] = vert_0[3];
+  edges_0[2][0] = vert_0[1]; 
+  edges_0[2][1] = vert_0[2];
+  edges_0[3][0] = vert_0[0]; 
+  edges_0[3][1] = vert_0[3];
+  edges_0[4][0] = vert_0[0]; 
+  edges_0[4][1] = vert_0[2];
+  edges_0[5][0] = vert_0[0]; 
+  edges_0[5][1] = vert_0[1];
 
-  std::vector<std::vector<std::size_t> > edges_1(6,std::vector<std::size_t>(2));
-  edges_1[0][0] = vert_1[2]; edges_1[0][1] = vert_1[3];
-  edges_1[1][0] = vert_1[1]; edges_1[1][1] = vert_1[3];
-  edges_1[2][0] = vert_1[1]; edges_1[2][1] = vert_1[2];
-  edges_1[3][0] = vert_1[0]; edges_1[3][1] = vert_1[3];
-  edges_1[4][0] = vert_1[0]; edges_1[4][1] = vert_1[2];
-  edges_1[5][0] = vert_1[0]; edges_1[5][1] = vert_1[1];
+  std::vector<std::vector<int> > edges_1(6,std::vector<int>(2));
+  edges_1[0][0] = vert_1[2]; 
+  edges_1[0][1] = vert_1[3];
+  edges_1[1][0] = vert_1[1]; 
+  edges_1[1][1] = vert_1[3];
+  edges_1[2][0] = vert_1[1]; 
+  edges_1[2][1] = vert_1[2];
+  edges_1[3][0] = vert_1[0]; 
+  edges_1[3][1] = vert_1[3];
+  edges_1[4][0] = vert_1[0]; 
+  edges_1[4][1] = vert_1[2];
+  edges_1[5][0] = vert_1[0]; 
+  edges_1[5][1] = vert_1[1];
 
-  std::vector<std::vector<std::size_t> > faces_0(4,std::vector<std::size_t>(3));
-  faces_0[0][0] = vert_0[1]; faces_0[0][1] = vert_0[2]; faces_0[0][2] = vert_0[3];
-  faces_0[1][0] = vert_0[0]; faces_0[1][1] = vert_0[2]; faces_0[1][2] = vert_0[3];
-  faces_0[2][0] = vert_0[0]; faces_0[2][1] = vert_0[1]; faces_0[2][2] = vert_0[3];
-  faces_0[3][0] = vert_0[0]; faces_0[3][1] = vert_0[1]; faces_0[3][2] = vert_0[2];
+  std::vector<std::vector<int> > faces_0(4,std::vector<int>(3));
+  faces_0[0][0] = vert_0[1]; 
+  faces_0[0][1] = vert_0[2]; 
+  faces_0[0][2] = vert_0[3];
+  faces_0[1][0] = vert_0[0]; 
+  faces_0[1][1] = vert_0[2]; 
+  faces_0[1][2] = vert_0[3];
+  faces_0[2][0] = vert_0[0]; 
+  faces_0[2][1] = vert_0[1]; 
+  faces_0[2][2] = vert_0[3];
+  faces_0[3][0] = vert_0[0]; 
+  faces_0[3][1] = vert_0[1]; 
+  faces_0[3][2] = vert_0[2];
 
-  std::vector<std::vector<std::size_t> > faces_1(4,std::vector<std::size_t>(3));
-  faces_1[0][0] = vert_1[1]; faces_1[0][1] = vert_1[2]; faces_1[0][2] = vert_1[3];
-  faces_1[1][0] = vert_1[0]; faces_1[1][1] = vert_1[2]; faces_1[1][2] = vert_1[3];
-  faces_1[2][0] = vert_1[0]; faces_1[2][1] = vert_1[1]; faces_1[2][2] = vert_1[3];
-  faces_1[3][0] = vert_1[0]; faces_1[3][1] = vert_1[1]; faces_1[3][2] = vert_1[2];
-
+  std::vector<std::vector<int> > faces_1(4,std::vector<int>(3));
+  faces_1[0][0] = vert_1[1]; 
+  faces_1[0][1] = vert_1[2]; 
+  faces_1[0][2] = vert_1[3];
+  faces_1[1][0] = vert_1[0]; 
+  faces_1[1][1] = vert_1[2]; 
+  faces_1[1][2] = vert_1[3];
+  faces_1[2][0] = vert_1[0]; 
+  faces_1[2][1] = vert_1[1]; 
+  faces_1[2][2] = vert_1[3];
+  faces_1[3][0] = vert_1[0]; 
+  faces_1[3][1] = vert_1[1]; 
+  faces_1[3][2] = vert_1[2];
 
   // Loop over edges e and faces f
   for (int e=0; e<6; ++e) 
-  { 
     for (int f=0; f<4; ++f) 
     {
       Point pta;
@@ -497,26 +570,21 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
 				 geom_0.point(edges_0[e][1]),
 				 ptb)) 
   	points.push_back(ptb);
-    }
-  }    
-  
-  // Edge edge intersection (only needed in very few cases)
+    }    
+
+  // Edge edge intersection
   for (int i=0; i<6; ++i) 
-  {
     for (int j=0; j<6; ++j) 
     {
       Point pt;
-      if (CollisionDetection::collides_edge_edge(geom_0.point(edges_0[i][0]),
-						 geom_0.point(edges_0[i][1]),
-						 geom_1.point(edges_1[j][0]),
-						 geom_1.point(edges_1[j][1]))) 
-      { 
-	
+      if (intersection_edge_edge(geom_0.point(edges_0[i][0]),
+				 geom_0.point(edges_0[i][1]),
+				 geom_1.point(edges_1[j][0]),
+				 geom_1.point(edges_1[j][1]),
+				 pt)) 
   	points.push_back(pt);
-      }
     }
-  }
-  
+
   // Remove duplicate nodes
   std::vector<Point> tmp; 
   tmp.reserve(points.size());
@@ -559,7 +627,6 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
       for (std::size_t m=0,idx=0; m<4; ++m) 
   	for (std::size_t d=0; d<3; ++d,++idx) 
   	  triangulation[idx]=points[m][d];
-	  
     }
     // Note: this can be empty if the tetrahedron was not sufficiently
     // large
@@ -574,23 +641,20 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
 
   // Data structure for storing checked triangle indices (do this
   // better with some fancy stl structure?)
-  const int N=points.size(), N2=points.size()*points.size();
+  const std::size_t N=points.size(), N2=points.size()*points.size();
   std::vector<int> checked(N*N2+N2+N,0);
 
   // Find coplanar points
   for (std::size_t i=0; i<points.size(); ++i) 
-  {
     for (std::size_t j=i+1; j<points.size(); ++j) 
-    {
       for (std::size_t k=0; k<points.size(); ++k) 
-      {
   	if (checked[i*N2+j*N+k]==0 and k!=i and k!=j) 
   	{
   	  // Check that triangle area is sufficiently large
   	  Point n=(points[j]-points[i]).cross(points[k]-points[i]);
   	  const double tridet=n.norm();
   	  if (tridet<tri_det_tol) { break; }
-		  
+
   	  // Normalize normal
   	  n/=tridet; 
 		  
@@ -601,7 +665,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   	  // facet. Initialize as true for the case of only three
   	  // coplanar points.
   	  bool on_convex_hull=true; 
-		  
+
   	  // Compute dot products to check which side of the plane
   	  // (i,j,k) we're on. Note: it seems to be better to compute
   	  // n.dot(points[m]-n.dot(tricenter) rather than
@@ -609,7 +673,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   	  std::vector<double> ip(points.size(),-(n.dot(tricenter)));
   	  for (std::size_t m=0; m<points.size(); ++m) 
   	    ip[m]+=n.dot(points[m]);
-		  
+
   	  // Check inner products range by finding max & min (this
   	  // seemed possibly more numerically stable than checking all
   	  // vs all and then break).
@@ -644,7 +708,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   		    checked[coplanar[n]*N2+coplanar[o]*N+coplanar[m]]=
   		    checked[coplanar[o]*N2+coplanar[n]*N+coplanar[m]]=
   		    checked[coplanar[o]*N2+coplanar[m]*N+coplanar[n]]=1;
-		      
+
   	    // Do the actual tesselation using the coplanar points and
   	    // a center point
   	    if (coplanar.size()==3) 
@@ -655,7 +719,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   	      cand[1]=points[coplanar[1]];
   	      cand[2]=points[coplanar[2]];
   	      cand[3]=polyhedroncenter;
-			  
+
   	      // Include if determinant is sufficiently large
   	      const double det=(cand[3]-cand[0]).dot((cand[1]-cand[0]).cross(cand[2]-cand[0]));
   	      if (std::abs(det)>tet_det_tol) 
@@ -669,7 +733,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   	      }
 
   	    }
-  	    else 
+  	    else if (coplanar.size()>3)
   	    {
   	      // Tesselate as in the triangle-triangle intersection
   	      // case: First sort points using a Graham scan, then
@@ -682,12 +746,11 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   	      for (std::size_t m=1; m<coplanar.size(); ++m) 
   		pointscenter+=points[coplanar[m]];
   	      pointscenter/=coplanar.size();
-			  
+
   	      std::vector<std::pair<double, std::size_t> > order;
   	      Point ref=points[coplanar[0]]-pointscenter;
   	      ref/=ref.norm();
-  	      const Point orthref=n.cross(ref);
-			  
+
   	      // Calculate and store angles
   	      for (std::size_t m=1; m<coplanar.size(); ++m) 
   	      {		
@@ -698,15 +761,14 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   		else if (frac>=1) alpha=0;
   		else { 
   		  alpha=acos(frac);
-  		  if (v.dot(orthref)<0) 
-  		    alpha=2*DOLFIN_PI-alpha; 
+  		  if (v.dot(n.cross(ref))<0) alpha=2*DOLFIN_PI-alpha; 
   		}
   		order.push_back(std::make_pair(alpha,m));
   	      }
 
   	      // Sort angles
   	      std::sort(order.begin(),order.end());
-			  
+
   	      // Tesselate
   	      for (std::size_t m=0; m<coplanar.size()-2; ++m) 
   	      {
@@ -731,11 +793,58 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(cons
   	    }
   	  }
   	}
+  
+
+  return triangulation;
+}
+//-----------------------------------------------------------------------------
+bool
+IntersectionTriangulation::intersection_edge_edge(const Point& a,
+						  const Point& b,
+						  const Point& c,
+						  const Point& d,
+						  Point& pt) 
+{
+  // Check if two edges are the same
+  const double same_point_tol=DOLFIN_EPS_LARGE;
+  if ((a-c).norm()<same_point_tol and (b-d).norm()<same_point_tol) {
+    return false; 
+  }
+  if ((a-d).norm()<same_point_tol and (b-c).norm()<same_point_tol) {
+    return false;
+  }
+
+  // Tolerance for orthogonality
+  const double orth_tol=DOLFIN_EPS_LARGE;
+
+  // Tolerance for coplanarity
+  const double coplanar_tol=DOLFIN_EPS_LARGE;
+
+  const Point L1=b-a, L2=d-c;
+  const Point ca=c-a;
+  const Point n=L1.cross(L2);
+
+  // Check if L1 and L2 are coplanar (what if they're overlapping?)
+  if (std::abs(ca.dot(n))>coplanar_tol) return false;
+
+  // Find orthogonal plane with normal n1
+  const Point n1=n.cross(L1);
+  const double n1dotL2=n1.dot(L2);
+  if (std::abs(n1dotL2)>orth_tol) { // orthogonal
+    const double t=n1.dot(a-c)/n1dotL2;
+
+    // Find orthogonal plane with normal n2
+    const Point n2=n.cross(L2);
+    const double n2dotL1=n2.dot(L1);
+    if (t>=0 and t<=1 and std::abs(n2dotL1)>orth_tol) {
+      const double s=n2.dot(c-a)/n2dotL1;
+      if (s>=0 and s<=1) {
+	pt=a+s*L1;
+	return true;
       }
     }
   }
-
-  return triangulation;
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool 
@@ -756,7 +865,7 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
   // and leave this to the edge-edge intersection test.
 
   // Tolerance for edga and face in plane (topologically 2D problem)
-  const double Top2dtol=1e-15; 
+  const double top2d_tol=DOLFIN_EPS_LARGE; // 1e-15; 
   
   // Compute normal
   const Point rs=s-r;
@@ -774,8 +883,8 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
   if (da*db>0) return false; 
 
   // Face and edge are in topological 2d: taken care of in edge-edge
-  // intersection.
-  if (std::abs(da)+std::abs(db) < Top2dtol) return false;
+  // intersection or point in simplex.
+  if (std::abs(da)+std::abs(db)<top2d_tol) return false;
 
   // Calculate intersection
   pt=a+std::abs(da)/(std::abs(da)+std::abs(db))*(b-a);

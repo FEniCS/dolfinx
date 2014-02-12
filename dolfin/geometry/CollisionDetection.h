@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-07
+// Last changed: 2014-02-12
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -189,57 +189,42 @@ namespace dolfin
 					      const Point& q1, 
 					      const Point& q2);
 
-    // Helper function for collides_triangle_triangle
-    static bool compute_intervals(const Point& N1,
-				  const Point& V0,
-				  const Point& V1,
-				  const Point& V2,
-				  const Point& U0,
-				  const Point& U1,
-				  const Point& U2,
-				  const Point& VV,
-				  const Point& D,
-				  double D0D1,
-				  double D0D2,
-				  Point& ABC,
-				  double& X0,
-				  double& X1);
+    // Helper function for triangle triangle collision
+    static bool edge_edge_test(int i0,int i1,double Ax,double Ay,
+			       const Point& V0,
+			       const Point& U0,
+			       const Point& U1);
 
-    // Helper function for collides_triangle_triangle
-    static bool coplanar_triangle_triangle(const Point& N,
-					   const Point& V0,
-					   const Point& V1,
-					   const Point& V2,
-					   const Point& U0,
-					   const Point& U1,
-					   const Point& U2);
-
-    // Helper function for collides_triangle_triangle
-    static bool edge_against_tri_edges(int i0,
-				       int i1,
+    // Helper function for triangle triangle collision
+    static bool edge_against_tri_edges(int i0,int i1,
 				       const Point& V0,
 				       const Point& V1,
 				       const Point& U0,
 				       const Point& U1,
 				       const Point& U2);
 
-    // Helper function to collides_triangle_triangle
-    static bool edge_edge_test(int i0,
-			       int i1,
-			       double Ax,
-			       double Ay,
-			       const Point& V0,
-			       const Point& U0,
-			       const Point& U1);
-
-    // Helper function to collides_triangle_triangle
-    static bool point_in_tri(int i0,
-			     int i1,
+    // Helper function for triangle triangle collision
+    static bool point_in_tri(int i0,int i1,
 			     const Point& V0,
 			     const Point& U0,
 			     const Point& U1,
 			     const Point& U2);
-    
+
+    // Helper function for triangle triangle collision
+    static bool coplanar_tri_tri(const Point& N,
+				 const Point& V0,
+				 const Point& V1,
+				 const Point& V2,
+				 const Point& U0,
+				 const Point& U1,
+				 const Point& U2);
+
+    // Helper function for triangle triangle collision
+    static bool compute_intervals(double VV0,double VV1,double VV2,
+				  double D0,double D1,double D2,
+				  double D0D1,double D0D2,
+				  double& A,double& B,double& C,
+				  double& X0,double& X1);
 
     // Helper function for collides_tetrahedron_tetrahedron: checks if plane pv1 is a separating plane. Stores local coordinates bc and the mask bit maskEdges.
     static bool separating_plane_face_A_1(const std::vector<Point>& pv1,

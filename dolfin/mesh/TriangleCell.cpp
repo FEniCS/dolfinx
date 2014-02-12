@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-08
+// Last changed: 2014-02-12
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -520,29 +520,4 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
                "Edge really not found");
   return 0;
 }
-// //-----------------------------------------------------------------------------
-// Point TriangleCell::edge_collision(const Point& a, const Point& b,
-//                                    const Point& c, const Point& d) const
-// {
-//   // Compute vectors
-//   const Point v0 = b - a;
-//   const Point v1 = c - d; // Note negative sign here!
-
-//   // Compute determinant
-//   const double det = v0.x()*v1.y() - v0.y()*v1.x();
-//   if (std::abs(det) < DOLFIN_EPS)
-//   {
-//     dolfin_error("TriangleCell.cpp",
-//                  "compute edge collision",
-//                  "Edges are parallel to within machine precision");
-//   }
-
-//   // Solve for distance from the point a using Cramer's rule
-//   const double alpha = (v1.y()*(c.x() - a.x()) - v1.x()*(c.y() - a.y())) / det;
-
-//   // Compute point of intersection
-//   const Point p = a + alpha*v0;
-
-//   return p;
-// }
-// //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------

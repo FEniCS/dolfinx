@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-04
+// Last changed: 2014-02-12
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "Point.h"
@@ -175,72 +175,22 @@ bool
 CollisionDetection::collides_triangle_triangle(const MeshEntity& triangle_0,
 					       const MeshEntity& triangle_1)
 {
-  // This algorithm and code is from
-  // Triangle/triangle intersection test routine,
-  // by Tomas Moller, 1997.
-  // See article "A Fast Triangle-Triangle Intersection Test",
-  // Journal of Graphics Tools, 2(2), 1997
-
   dolfin_assert(triangle_0.mesh().topology().dim() == 2);
   dolfin_assert(triangle_1.mesh().topology().dim() == 2);
 
   // Get vertices as points
   const MeshGeometry& geometry_0 = triangle_0.mesh().geometry();
   const unsigned int* vertices_0 = triangle_0.entities(0);
-  const Point p0=geometry_0.point(vertices_0[0]);
-  const Point p1=geometry_0.point(vertices_0[1]);
-  const Point p2=geometry_0.point(vertices_0[2]);
 
   const MeshGeometry& geometry_1 = triangle_1.mesh().geometry();
   const unsigned int* vertices_1 = triangle_1.entities(0);
-  const Point q0=geometry_1.point(vertices_1[0]);
-  const Point q1=geometry_1.point(vertices_1[1]);
-  const Point q2=geometry_1.point(vertices_1[2]);
 
-  return collides_triangle_triangle(p0,p1,p2, q0,q1,q2);
-
-  // // This is only implemented for triangle-triangle collisions at this point
-  // // if (entity.dim() != 2)
-  // // {
-  // //   dolfin_error("TriangleCell.cpp",
-  // //                "compute collision with entity",
-  // //                "Only know how to compute triangle-triangle collisions");
-  // // }
-
-  // // Get the vertices as points
-  // const MeshGeometry& geometry_p = triangle_0.mesh().geometry();
-  // const unsigned int* vertices_p = triangle_0.entities(0);
-  // const Point p0 = geometry_p.point(vertices_p[0]);
-  // const Point p1 = geometry_p.point(vertices_p[1]);
-  // const Point p2 = geometry_p.point(vertices_p[2]);
-
-  // // Get the vertices as points
-  // const MeshGeometry& geometry_q = triangle_1.mesh().geometry();
-  // const unsigned int* vertices_q = triangle_1.entities(0);
-  // const Point q0 = geometry_q.point(vertices_q[0]);
-  // const Point q1 = geometry_q.point(vertices_q[1]);
-  // const Point q2 = geometry_q.point(vertices_q[2]);
-
-
-  // // First check if triangles are completely overlapping (necessary
-  // // since tests below will fail for collinear edges). Note that this
-  // // test will also cover a few other cases with coinciding midpoints.
-  // const double eps2 = DOLFIN_EPS_LARGE*DOLFIN_EPS_LARGE*p0.squared_distance(p1);
-  // if (triangle_0.midpoint().squared_distance(triangle_1.midpoint()) < eps2)
-  //   return true;
-
-  // // Check for pairwise collisions between the edges
-  // if (collides_edge_edge(p0, p1, q0, q1)) return true;
-  // if (collides_edge_edge(p0, p1, q1, q2)) return true;
-  // if (collides_edge_edge(p0, p1, q2, q0)) return true;
-  // if (collides_edge_edge(p1, p2, q0, q1)) return true;
-  // if (collides_edge_edge(p1, p2, q1, q2)) return true;
-  // if (collides_edge_edge(p1, p2, q2, q0)) return true;
-  // if (collides_edge_edge(p2, p0, q0, q1)) return true;
-  // if (collides_edge_edge(p2, p0, q1, q2)) return true;
-  // //if (collides(p2, p0, q2, q0)) return true; // optimization, not needed
-
-  // return false;
+  return collides_triangle_triangle(geometry_0.point(vertices_0[0]),
+				    geometry_0.point(vertices_0[1]),
+				    geometry_0.point(vertices_0[2]),
+				    geometry_1.point(vertices_1[0]),
+				    geometry_1.point(vertices_1[1]),
+				    geometry_1.point(vertices_1[2]));
 }
 //-----------------------------------------------------------------------------
 bool
@@ -252,12 +202,12 @@ CollisionDetection::collides_tetrahedron_point(const MeshEntity& tetrahedron,
   // Get the vertices as points
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
   const unsigned int* vertices = tetrahedron.entities(0);
-  const Point p0 = geometry.point(vertices[0]);
-  const Point p1 = geometry.point(vertices[1]);
-  const Point p2 = geometry.point(vertices[2]);
-  const Point p3 = geometry.point(vertices[3]);
 
-  return collides_tetrahedron_point(p0,p1,p2,p3, point);
+  return collides_tetrahedron_point(geometry.point(vertices[0]),
+				    geometry.point(vertices[1]),
+				    geometry.point(vertices[2]),
+				    geometry.point(vertices[3]),
+				    point);
 }
 //-----------------------------------------------------------------------------
 bool
@@ -270,19 +220,18 @@ CollisionDetection::collides_tetrahedron_triangle(const MeshEntity& tetrahedron,
   // Get the vertices of the tetrahedron as points
   const MeshGeometry& geometry_tet = tetrahedron.mesh().geometry();
   const unsigned int* vertices_tet = tetrahedron.entities(0);
-  const Point p0 = geometry_tet.point(vertices_tet[0]);
-  const Point p1 = geometry_tet.point(vertices_tet[1]);
-  const Point p2 = geometry_tet.point(vertices_tet[2]);
-  const Point p3 = geometry_tet.point(vertices_tet[3]);
 
   // Get the vertices of the triangle as points
   const MeshGeometry& geometry_tri = triangle.mesh().geometry();
   const unsigned int* vertices_tri = triangle.entities(0);
-  const Point q0 = geometry_tri.point(vertices_tri[0]);
-  const Point q1 = geometry_tri.point(vertices_tri[1]);
-  const Point q2 = geometry_tri.point(vertices_tri[2]);
 
-  return collides_tetrahedron_triangle(p0,p1,p2,p3, q0,q1,q2);
+  return collides_tetrahedron_triangle(geometry_tet.point(vertices_tet[0]),
+				       geometry_tet.point(vertices_tet[1]),
+				       geometry_tet.point(vertices_tet[2]),
+				       geometry_tet.point(vertices_tet[3]),
+				       geometry_tri.point(vertices_tri[0]),
+				       geometry_tri.point(vertices_tri[1]),
+				       geometry_tri.point(vertices_tri[2]));
 }
 //-----------------------------------------------------------------------------
 bool
@@ -419,39 +368,48 @@ CollisionDetection::collides_edge_edge(const Point& a,
 				       const Point& c,
 				       const Point& d)
 {
-  // Form edges and normal
+  // Check if two edges are the same
+  const double Samepointtol=DOLFIN_EPS_LARGE;
+  if ((a-c).norm()<Samepointtol and (b-d).norm()<Samepointtol) {
+    return false; 
+  }
+  if ((a-d).norm()<Samepointtol and (b-c).norm()<Samepointtol) {
+    return false;
+  }
+
+  const double Orthtol=DOLFIN_EPS_LARGE;
+  const double CPtol=DOLFIN_EPS_LARGE;
+
   const Point L1=b-a, L2=d-c;
+  const Point ca=c-a;
   const Point n=L1.cross(L2);
 
-  const Point ca=c-a;
+  // Check if L1 and L2 are coplanar
+  if (std::abs(ca.dot(n))>CPtol) return false;
 
-  // L1 and L2 must be coplanar for collision
-  if (std::abs(ca.dot(n))>DOLFIN_EPS) return false;
+  // Find orthogonal plane with normal n1
+  const Point n1=n.cross(L1);
+  const double n1dotL2=n1.dot(L2);
 
-  // Find orthogonal plane with normal nplane
-  const Point nplane=n.cross(L1);
+  if (std::abs(n1dotL2)<Orthtol) return false;
 
-  // Check if c and d are on opposite sides of this plane
-  if (nplane.dot(ca)*nplane.dot(d-a)>DOLFIN_EPS) return false;
+  const double t=n1.dot(a-c)/n1dotL2;
+
+  if (t<=0 or t>=1) return false; 
+  //if (t<0 or t>1) return false;
+  
+  // Find orthogonal plane with normal n2
+  const Point n2=n.cross(L2);
+  const double n2dotL1=n2.dot(L1);
+  
+  if (std::abs(n2dotL1)<Orthtol) return false;
+  
+  const double s=n2.dot(c-a)/n2dotL1;
+
+  if (s<=0 or s>=1) return false;
+  //if (s<0 or s>1) return false;
 
   return true;
-
-  // // Algorithm from Real-time collision detection by Christer Ericson:
-  // // Test2DSegmentSegment on page 152, Section 5.1.9.
-
-  // // Compute signed areas of abd and abc
-  // const double abd = signed_area(a, b, d);
-  // const double abc = signed_area(a, b, c);
-
-  // // Return false if not intersecting (or collinear)
-  // if (abd*abc >= 0.0)
-  //   return false;
-
-  // // Compute signed area of cda
-  // const double cda = signed_area(c, d, a);
-
-  // // Check whether segments collide
-  // return cda*(cda + abc - abd) < -DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
 bool
@@ -496,151 +454,162 @@ CollisionDetection::collides_triangle_point(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 bool
-CollisionDetection::collides_triangle_triangle(const Point& V0,
-					       const Point& V1,
-					       const Point& V2,
-					       const Point& U0,
-					       const Point& U1,
-					       const Point& U2)
+CollisionDetection::collides_triangle_triangle(const Point& p0,
+					       const Point& p1,
+					       const Point& p2,
+					       const Point& q0,
+					       const Point& q1,
+					       const Point& q2)
 {
-  // This algorithm and code is from
+  // // First check if triangles are completely overlapping (necessary
+  // // since tests below will fail for collinear edges). Note that this
+  // // test will also cover a few other cases with coinciding midpoints.
+  // // classified as colliding (see the edge_edge_test).
+  
+  // const Point Vmid=(p0+p1+p2)/3., Umid=(q0+q1+q2)/3.;
+  // if ((Vmid-Umid).norm()<DOLFIN_EPS_LARGE) return true;
+
+  // // Check for pairwise collisions between the edges
+  // if (collides_edge_edge(p0, p1, q0, q1)) return true;
+  // if (collides_edge_edge(p0, p1, q1, q2)) return true;
+  // if (collides_edge_edge(p0, p1, q2, q0)) return true;
+  // if (collides_edge_edge(p1, p2, q0, q1)) return true;
+  // if (collides_edge_edge(p1, p2, q1, q2)) return true;
+  // if (collides_edge_edge(p1, p2, q2, q0)) return true;
+  // if (collides_edge_edge(p2, p0, q0, q1)) return true;
+  // if (collides_edge_edge(p2, p0, q1, q2)) return true;
+  // //if (collides_edge_edge(p2, p0, q2, q0)) return true; // optimization, not needed
+  // return false;
+
+
+
+
+
+
+  // Algorithm and code from 
   // Triangle/triangle intersection test routine,
   // by Tomas Moller, 1997.
   // See article "A Fast Triangle-Triangle Intersection Test",
   // Journal of Graphics Tools, 2(2), 1997
-  // The C-code is available at:
+  // Code available at
   // http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/opttritri.txt
 
-  // compute plane equation of triangle(V0,V1,V2)
-  // SUB(E1,V1,V0);
-  // SUB(E2,V2,V0);
-  // CROSS(N1,E1,E2);
-  // d1=-DOT(N1,V0);
-  Point E1=V1-V0;
-  Point E2=V2-V0;
-  const Point N1=E1.cross(E2);
-  const double d1=-N1.dot(V0);
+  // First check if the triangles are the same. We need to do this
+  // separately if we do _not_ allow for adjacent edges to be
+  // classified as colliding (see the edge_edge_test).
+  
+  const Point Vmid=(p0+p1+p2)/3., Umid=(q0+q1+q2)/3.;
+  if ((Vmid-Umid).norm()<DOLFIN_EPS_LARGE) return true;
 
-  // plane equation 1: N1.X+d1=0 //
+  Point E1,E2;
+  Point N1,N2;
+  double d1,d2;
+  double du0,du1,du2,dv0,dv1,dv2;
+  Point D;
+  double isect1[2], isect2[2];
+  double du0du1,du0du2,dv0dv1,dv0dv2;
+  int index;
+  double vp0,vp1,vp2;
+  double up0,up1,up2;
+  double bb,cc,max;
 
-  // put U0,U1,U2 into plane equation 1 to compute signed distances to the plane
-  // du0=DOT(N1,U0)+d1;
-  // du1=DOT(N1,U1)+d1;
-  // du2=DOT(N1,U2)+d1;
-  // double du0=N1.dot(U0)+d1;
-  // double du1=N1.dot(U1)+d1;
-  // double du2=N1.dot(U2)+d1;
-  Point du(N1.dot(U0)+d1, N1.dot(U1)+d1, N1.dot(U2)+d1);
+  // Compute plane equation of triangle(p0,p1,p2)
+  E1=p1-p0;
+  E2=p2-p0;
+  N1=E1.cross(E2);
+  d1=-N1.dot(p0);
 
-//   // coplanarity robustness check
-// #if USE_EPSILON_TEST==TRUE
-//   if (FABS(du0)<EPSILON) du0=0.0;
-//   if (FABS(du1)<EPSILON) du1=0.0;
-//   if (FABS(du2)<EPSILON) du2=0.0;
-// #endif
-//   du0du1=du0*du1;
-//   du0du2=du0*du2;
-  if (std::abs(du[0])<DOLFIN_EPS) du[0]=0.;
-  if (std::abs(du[1])<DOLFIN_EPS) du[1]=0.;
-  if (std::abs(du[2])<DOLFIN_EPS) du[2]=0.;
-  const double du0du1=du[0]*du[1];
-  const double du0du2=du[0]*du[2];
+  // Plane equation 1: N1.X+d1=0. Put q0,q1,q2 into plane equation 1
+  // to compute signed distances to the plane
+  du0=N1.dot(q0)+d1;
+  du1=N1.dot(q1)+d1;
+  du2=N1.dot(q2)+d1;
 
-  if (du0du1>0. && du0du2>0.) // same sign on all of them + not equal 0 ?
-    return false;             // no intersection occurs
+  // Coplanarity robustness check 
+  if (std::abs(du0)<DOLFIN_EPS_LARGE) du0=0.0;
+  if (std::abs(du1)<DOLFIN_EPS_LARGE) du1=0.0;
+  if (std::abs(du2)<DOLFIN_EPS_LARGE) du2=0.0;
+  du0du1=du0*du1;
+  du0du2=du0*du2;
 
-  // compute plane of triangle (U0,U1,U2)
-  // SUB(E1,U1,U0);
-  // SUB(E2,U2,U0);
-  // CROSS(N2,E1,E2);
-  // d2=-DOT(N2,U0);
-  E1=U1-U0;
-  E2=U2-U0;
-  const Point N2=E1.cross(E2);
-  const double d2=-N2.dot(U0);
+  // Same sign on all of them + not equal 0? 
+  if (du0du1>0. && du0du2>0.) 
+    return false;                    
 
-  // plane equation 2: N2.X+d2=0
-  // put V0,V1,V2 into plane equation 2
-  // dv0=DOT(N2,V0)+d2;
-  // dv1=DOT(N2,V1)+d2;
-  // dv2=DOT(N2,V2)+d2;
-  // double dv0=N2.dot(V0)+d2;
-  // double dv1=N2.dot(V1)+d2;
-  // double dv2=N2.dot(V2)+d2;
-  Point dv(N2.dot(V0)+d2, N2.dot(V1)+d2, N2.dot(V2)+d2);
+  // Compute plane of triangle (q0,q1,q2) 
+  E1=q1-q0;
+  E2=q2-q0;
+  N2=E1.cross(E2);
+  d2=-N2.dot(q0);
+  // Plane equation 2: N2.X+d2=0. Put p0,p1,p2 into plane equation 2
+  dv0=N2.dot(p0)+d2;
+  dv1=N2.dot(p1)+d2;
+  dv2=N2.dot(p2)+d2;
 
-// #if USE_EPSILON_TEST==TRUE
-//   if (FABS(dv0)<EPSILON) dv0=0.0;
-//   if (FABS(dv1)<EPSILON) dv1=0.0;
-//   if (FABS(dv2)<EPSILON) dv2=0.0;
-// #endif
-  if (std::abs(dv[0])<DOLFIN_EPS) dv[0]=0.;
-  if (std::abs(dv[1])<DOLFIN_EPS) dv[1]=0.;
-  if (std::abs(dv[2])<DOLFIN_EPS) dv[2]=0.;
-  const double dv0dv1=dv[0]*dv[1];
-  const double dv0dv2=dv[0]*dv[2];
+  // Coplanarity check
+  if (std::abs(dv0)<DOLFIN_EPS_LARGE) dv0=0.0;
+  if (std::abs(dv1)<DOLFIN_EPS_LARGE) dv1=0.0;
+  if (std::abs(dv2)<DOLFIN_EPS_LARGE) dv2=0.0;
+  dv0dv1=dv0*dv1;
+  dv0dv2=dv0*dv2;
 
-  if (dv0dv1>0. && dv0dv2>0.) // same sign on all of them + not equal 0 ?
-    return false;             // no intersection occurs
+  // Same sign on all of them + not equal 0 ? 
+  if (dv0dv1>0. && dv0dv2>0.) 
+    return false;
 
-  // compute direction of intersection line
-  //CROSS(D,N1,N2);
-  const Point D=N1.cross(N2);
+  // Compute direction of intersection line 
+  D=N1.cross(N2);
 
-  // compute and index to the largest component of D
-  double max=std::abs(D[0]);
-  int index=0;
-  const double bb=std::abs(D[1]);
-  const double cc=std::abs(D[2]);
+  // Compute and index to the largest component of D 
+  max=(double)std::abs(D[0]);
+  index=0;
+  bb=(double)std::abs(D[1]);
+  cc=(double)std::abs(D[2]);
   if (bb>max) max=bb,index=1;
   if (cc>max) max=cc,index=2;
 
-  // this is the simplified projection onto L
-  const Point vp(V0[index],V1[index],V2[index]);
-  const Point up(U0[index],U1[index],U2[index]);
-  // const double vp0=V0[index];
-  // const double vp1=V1[index];
-  // const double vp2=V2[index];
-  // const double up0=U0[index];
-  // const double up1=U1[index];
-  // const double up2=U2[index];
+  // This is the simplified projection onto L
+  vp0=p0[index];
+  vp1=p1[index];
+  vp2=p2[index];
 
-  // compute interval for triangle 1
-  //double a,b,c,x0,x1;
-  //NEWCOMPUTE_INTERVALS(vp0,vp1,vp2,dv0,dv1,dv2,dv0dv1,dv0dv2,a,b,c,x0,x1);
-  Point abc;
-  double x0,x1;
-  if (compute_intervals(N1,V0,V1,V2,U0,U1,U2,
-			vp,dv,dv0dv1,dv0dv2,abc,x0,x1)) return false;
+  up0=q0[index];
+  up1=q1[index];
+  up2=q2[index];
 
-  // compute interval for triangle 2
-  //double d,e,f,y0,y1;
-  //NEWCOMPUTE_INTERVALS(up0,up1,up2,du0,du1,du2,du0du1,du0du2,d,e,f,y0,y1);
-  Point def;
-  double y0,y1;
-  if (compute_intervals(N1,V0,V1,V2,U0,U1,U2,
-			up,du,du0du1,du0du2,def,y0,y1)) return false;
+  // Compute interval for triangle 1 
+  double a,b,c,x0,x1;
+  if (compute_intervals(vp0,vp1,vp2,dv0,dv1,dv2,dv0dv1,dv0dv2,a,b,c,x0,x1))
+  {
+    return coplanar_tri_tri(N1,p0,p1,p2,q0,q1,q2);
+  }
 
-  const double xx=x0*x1;
-  const double yy=y0*y1;
-  const double xxyy=xx*yy;
-  const double tmp1=abc[0]*xxyy;
-  double isect1[2]={tmp1+abc[1]*x1*yy,
-		    tmp1+abc[2]*x0*yy};
+  // Compute interval for triangle 2 
+  double d,e,f,y0,y1;
+  if (compute_intervals(up0,up1,up2,du0,du1,du2,du0du1,du0du2,d,e,f,y0,y1))
+  {
+    return coplanar_tri_tri(N1,p0,p1,p2,q0,q1,q2);
+  }
 
-  const double tmp2=def[0]*xxyy;
-  double isect2[2]={tmp2+def[1]*xx*y1,
-		    tmp2+def[2]*xx*y0};
+  double xx,yy,xxyy,tmp;
+  xx=x0*x1;
+  yy=y0*y1;
+  xxyy=xx*yy;
 
-  // SORT(isect1[0],isect1[1]);
-  // SORT(isect2[0],isect2[1]);
+  tmp=a*xxyy;
+  isect1[0]=tmp+b*x1*yy;
+  isect1[1]=tmp+c*x0*yy;
+
+  tmp=d*xxyy;
+  isect2[0]=tmp+e*xx*y1;
+  isect2[1]=tmp+f*xx*y0;
+
   if (isect1[0]>isect1[1]) std::swap(isect1[0],isect1[1]);
   if (isect2[0]>isect2[1]) std::swap(isect2[0],isect2[1]);
 
   if (isect1[1]<isect2[0] || isect2[1]<isect1[0]) return false;
 
   return true;
-
 }
 //-----------------------------------------------------------------------------
 bool
@@ -726,170 +695,16 @@ CollisionDetection::collides_tetrahedron_triangle(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool
-CollisionDetection::compute_intervals(const Point& N1,
-				      const Point& V0,
-				      const Point& V1,
-				      const Point& V2,
-				      const Point& U0,
-				      const Point& U1,
-				      const Point& U2,
-				      const Point& VV,
-				      const Point& D,
-				      double D0D1,
-				      double D0D2,
-				      Point& ABC,
-				      double& X0,
-				      double& X1)
+bool CollisionDetection::edge_edge_test(int i0,int i1,double Ax,double Ay,
+					const Point& V0,
+					const Point& U0,
+					const Point& U1)
 {
-  // Helper function to triangle-triangle intersection test: compute
-  // (projected) intervals
-
-  if (D0D1>0.)
-  {
-    // Here we know that D0D2<=0.0, that is D[0], D[1] are on the same
-    // side, D2 on the other or on the plane
-    ABC[0]=VV[2];
-    ABC[1]=(VV[0]-VV[2])*D[2];
-    ABC[2]=(VV[1]-VV[2])*D[2];
-    X0=D[2]-D[0];
-    X1=D[2]-D[1];
-  }
-  else if (D0D2>0.)
-  {
-    // Here we know that d0d1<=0.0
-    ABC[0]=VV[1];
-    ABC[1]=(VV[0]-VV[1])*D[1];
-    ABC[2]=(VV[2]-VV[1])*D[1];
-    X0=D[1]-D[0];
-    X1=D[1]-D[2];
-  }
-  else if (D[1]*D[2]>0. || D[0]!=0.)
-  {
-    // Here we know that d0d1<=0.0 or that D[0]!=0.0
-    ABC[0]=VV[0];
-    ABC[1]=(VV[1]-VV[0])*D[0];
-    ABC[2]=(VV[2]-VV[0])*D[0];
-    X0=D[0]-D[1];
-    X1=D[0]-D[2];
-  }
-  else if (D[1]!=0.)
-  {
-    ABC[0]=VV[1];
-    ABC[1]=(VV[0]-VV[1])*D[1];
-    ABC[2]=(VV[2]-VV[1])*D[1];
-    X0=D[1]-D[0];
-    X1=D[1]-D[2];
-  }
-  else if (D[2]!=0.)
-  {
-    ABC[0]=VV[2];
-    ABC[1]=(VV[0]-VV[2])*D[2];
-    ABC[2]=(VV[1]-VV[2])*D[2];
-    X0=D[2]-D[0];
-    X1=D[2]-D[1];
-  }
-  else
-  {
-    // Triangles are coplanar
-    return coplanar_triangle_triangle(N1,V0,V1,V2,U0,U1,U2);
-  }
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::coplanar_triangle_triangle(const Point& N,
-					       const Point& V0,
-					       const Point& V1,
-					       const Point& V2,
-					       const Point& U0,
-					       const Point& U1,
-					       const Point& U2)
-{
-  // First project onto an axis-aligned plane that maximizes the area
-  // of the triangles. Then compute indices: i0,i1.
-
-  const Point A(std::abs(N[0]),std::abs(N[1]),std::abs(N[2]));
-  int i0,i1;
-
-  if (A[0]>A[1])
-  {
-    if (A[0]>A[2])
-    {
-      i0=1;      // A[0] is greatest
-      i1=2;
-    }
-    else
-    {
-      i0=0;      // A[2] is greatest
-      i1=1;
-    }
-  }
-  else   // A[0]<=A[1]
-  {
-    if (A[2]>A[1])
-    {
-      i0=0;      // A[2] is greatest
-      i1=1;
-    }
-    else
-    {
-      i0=0;      // A[1] is greatest
-      i1=2;
-    }
-  }
-
-  // Test all edges of triangle 1 against the edges of triangle 2
-  if (edge_against_tri_edges(i0,i1,V0,V1,U0,U1,U2)) return true;
-  if (edge_against_tri_edges(i0,i1,V1,V2,U0,U1,U2)) return true;
-  if (edge_against_tri_edges(i0,i1,V2,V0,U0,U1,U2)) return true;
-
-  // Finally, test if tri1 is totally contained in tri2 or vice versa
-  if (point_in_tri(i0,i1, V0, U0,U1,U2)) return true;
-  if (point_in_tri(i0,i1, U0, V0,V1,V2)) return true;
-
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::edge_against_tri_edges(int i0,
-					   int i1,
-					   const Point& V0,
-					   const Point& V1,
-					   const Point& U0,
-					   const Point& U1,
-					   const Point& U2)
-{
-  // Helper function to triangle-triangle test: call the edge_edge
-  // tests
-
-  const double Ax=V1[i0]-V0[i0];
-  const double Ay=V1[i1]-V0[i1];
-
-  // test edge U0,U1 against V0,V1
-  if (edge_edge_test(i0,i1,Ax,Ay, V0,U0,U1)) return true;
-
-  // test edge U1,U2 against V0,V1
-  if (edge_edge_test(i0,i1,Ax,Ay, V0,U1,U2)) return true;
-
-  // test edge U2,U1 against V0,V1
-  if (edge_edge_test(i0,i1,Ax,Ay, V0,U2,U0)) return true;
-
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::edge_edge_test(int i0,
-				   int i1,
-				   double Ax,
-				   double Ay,
-				   const Point& V0,
-				   const Point& U0,
-				   const Point& U1)
-{
-  // Helper function to triangle-triangle test. This edge to edge test
-  // is based on Franlin Antonio's gem: "Faster Line Segment
-  // Intersection", in Graphics Gems III, pp. 199-202
+  // Helper function for triangle triangle collision. Test edge vs
+  // edge.
+  
+  // Here we have the option of classifying adjacent edges of two
+  // triangles as colliding by changing > to >= and < to <= below.
 
   const double Bx=U0[i0]-U1[i0];
   const double By=U0[i1]-U1[i1];
@@ -900,48 +715,179 @@ CollisionDetection::edge_edge_test(int i0,
 
   if ((f>0 && d>=0 && d<=f) || (f<0 && d<=0 && d>=f))
   {
-    double e=Ax*Cy-Ay*Cx;
+    const double e=Ax*Cy-Ay*Cx;
     if (f>0)
     {
-      if (e>=0 && e<=f) return true;
+      // Allow or not allow adjacent edges as colliding:
+      //if (e>=0 && e<=f) return true;
+      if (e>0 && e<f) return true;
     }
     else
     {
-      if (e<=0 && e>=f) return true;
+      // Allow or not allow adjacent edges as colliding:
+      //if (e<=0 && e>=f) return true;
+      if (e<0 && e>f) return true;
     }
   }
   return false;
 }
 //-----------------------------------------------------------------------------
-bool
-CollisionDetection::point_in_tri(int i0,
-				 int i1,
-				 const Point& V0,
-				 const Point& U0,
-				 const Point& U1,
-				 const Point& U2)
+bool CollisionDetection::edge_against_tri_edges(int i0,int i1,
+						const Point& V0,
+						const Point& V1,
+						const Point& U0,
+						const Point& U1,
+						const Point& U2)
 {
-  // Helper function to the triangle-triangle collision test: computes
-  // whether a point is inside a triangle or not
+  // Helper function for triangle triangle collision
+  const double Ax=V1[i0]-V0[i0];
+  const double Ay=V1[i1]-V0[i1];
 
+  // Test edge U0,U1 against V0,V1 
+  if (edge_edge_test(i0,i1,Ax,Ay,V0,U0,U1)) return true;
+
+  // Test edge U1,U2 against V0,V1 
+  if (edge_edge_test(i0,i1,Ax,Ay,V0,U1,U2)) return true;
+
+  // Test edge U2,U1 against V0,V1 
+  if (edge_edge_test(i0,i1,Ax,Ay,V0,U2,U0)) return true;
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool CollisionDetection::point_in_tri(int i0,int i1,
+				      const Point& V0,
+				      const Point& U0,
+				      const Point& U1,
+				      const Point& U2)
+{
+  // Helper function for triangle triangle collision
+  // Is T1 completly inside T2? 
+  // Check if V0 is inside tri(U0,U1,U2)
   double a=U1[i1]-U0[i1];
   double b=-(U1[i0]-U0[i0]);
   double c=-a*U0[i0]-b*U0[i1];
-  double d0=a*V0[i0]+b*V0[i1]+c;
+  const double d0=a*V0[i0]+b*V0[i1]+c;
 
   a=U2[i1]-U1[i1];
   b=-(U2[i0]-U1[i0]);
   c=-a*U1[i0]-b*U1[i1];
-  double d1=a*V0[i0]+b*V0[i1]+c;
+  const double d1=a*V0[i0]+b*V0[i1]+c;
 
   a=U0[i1]-U2[i1];
   b=-(U0[i0]-U2[i0]);
   c=-a*U2[i0]-b*U2[i1];
-  double d2=a*V0[i0]+b*V0[i1]+c;
+  const double d2=a*V0[i0]+b*V0[i1]+c;
 
   if (d0*d1>0.0)
   {
     if (d0*d2>0.0) return true;
+  }
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool CollisionDetection::coplanar_tri_tri(const Point& N,
+					  const Point& V0,
+					  const Point& V1,
+					  const Point& V2,
+					  const Point& U0,
+					  const Point& U1,
+					  const Point& U2)
+{
+  // Helper function for triangle triangle collision
+
+  double A[3];
+  int i0,i1;
+
+  // First project onto an axis-aligned plane, that maximizes the area
+  // of the triangles, compute indices: i0,i1.
+  A[0]=std::abs(N[0]);
+  A[1]=std::abs(N[1]);
+  A[2]=std::abs(N[2]);
+
+  if (A[0]>A[1])
+  {
+    if (A[0]>A[2])
+    {
+      i0=1;      // A[0] is greatest 
+      i1=2;
+    }
+    else
+    {
+      i0=0;      // A[2] is greatest 
+      i1=1;
+    }
+  }
+  else   // A[0]<=A[1] 
+  {
+    if (A[2]>A[1])
+    {
+      i0=0;      // A[2] is greatest 
+      i1=1;
+    }
+    else
+    {
+      i0=0;      // A[1] is greatest 
+      i1=2;
+    }
+  }
+
+  // Test all edges of triangle 1 against the edges of triangle 2 
+  if (edge_against_tri_edges(i0,i1,V0,V1,U0,U1,U2)) return true;
+  if (edge_against_tri_edges(i0,i1,V1,V2,U0,U1,U2)) return true;
+  if (edge_against_tri_edges(i0,i1,V2,V0,U0,U1,U2)) return true;
+
+  // Finally, test if tri1 is totally contained in tri2 or vice versa
+  if (point_in_tri(i0,i1,V0,U0,U1,U2)) return true;
+  if (point_in_tri(i0,i1,U0,V0,V1,V2)) return true;
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool CollisionDetection::compute_intervals(double VV0,
+					   double VV1,
+					   double VV2,
+					   double D0,
+					   double D1,
+					   double D2,
+					   double D0D1,
+					   double D0D2,
+					   double& A,
+					   double& B,
+					   double& C,
+					   double& X0,
+					   double& X1)
+{
+  // Helper function for triangle triangle collision
+
+  if (D0D1>0.)
+  {
+    // Here we know that D0D2<=0.0, that is D0, D1 are on the same
+    // side, D2 on the other or on the plane
+    A=VV2; B=(VV0-VV2)*D2; C=(VV1-VV2)*D2; X0=D2-D0; X1=D2-D1;
+  }
+  else if (D0D2>0.)
+  {
+    // Here we know that d0d1<=0.0 
+    A=VV1; B=(VV0-VV1)*D1; C=(VV2-VV1)*D1; X0=D1-D0; X1=D1-D2;
+  }
+  else if (D1*D2>0. || D0!=0.)
+  {
+    // Here we know that d0d1<=0.0 or that D0!=0.0
+    A=VV0; B=(VV1-VV0)*D0; C=(VV2-VV0)*D0; X0=D0-D1; X1=D0-D2;
+  }
+  else if (D1!=0.)
+  {
+    A=VV1; B=(VV0-VV1)*D1; C=(VV2-VV1)*D1; X0=D1-D0; X1=D1-D2;
+  }
+  else if (D2!=0.)
+  {
+    A=VV2; B=(VV0-VV2)*D2; C=(VV1-VV2)*D2; X0=D2-D0; X1=D2-D1;
+  }
+  else { 
+    // Go to coplanar test
+    return true; 
   }
 
   return false;

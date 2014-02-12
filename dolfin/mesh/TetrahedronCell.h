@@ -100,7 +100,7 @@ namespace dolfin
 
     /// Compute triangulation of intersection of two cells
     virtual std::vector<double>
-      triangulate_intersection(const Cell& c0, const Cell& c1) const;
+    triangulate_intersection(const Cell& c0, const Cell& c1) const;
     
     /// Return description of cell type
     std::string description(bool plural) const;

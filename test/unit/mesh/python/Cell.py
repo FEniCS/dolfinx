@@ -72,6 +72,11 @@ class TriangleTest(unittest.TestCase):
         c1 = Cell(m1, 0)
         c2 = Cell(m1, 1)
 
+        # import pylab
+        # plot_cell_2d(c0,pylab)
+        # plot_cell_2d(c2,pylab)
+        # pylab.show()
+
         self.assertEqual(c0.collides(c0), True)
         self.assertEqual(c0.collides(c1), True)
         self.assertEqual(c0.collides(c2), False)
@@ -137,15 +142,30 @@ def plot_intersection_triangulation_2d(c0, c1):
     plot_triangulation_2d(T, pylab)
     pylab.show()
 
+def triangulation_to_mesh_top_2d(triangulation):
+    editor = MeshEditor()
+    mesh = Mesh()
+    editor.open(mesh,2,3)
+    num_cells = len(triangulation)/9
+    num_vertices = len(triangulation)/3
+    editor.init_cells(num_cells,1)
+    editor.init_vertices(num_vertices,1)
+    for i in xrange(num_cells):
+        editor.add_cell(i, 3*i, 3*i+1, 3*i+2)
+    for i in xrange(num_vertices):
+        editor.add_vertex(i, triangulation[3*i], triangulation[3*i+1], triangulation[3*i+2])
+    editor.close()
+    return mesh
+
+
 def triangulation_to_mesh_3d(triangulation):
     editor = MeshEditor()
     mesh = Mesh()
     editor.open(mesh,3,3)
-
     num_cells = len(triangulation)/12
     num_vertices = len(triangulation)/3
-    editor.init_cells(num_cells)
-    editor.init_vertices(num_vertices)
+    editor.init_cells(num_cells,1)
+    editor.init_vertices(num_vertices,1)
     for i in xrange(num_cells):
         editor.add_cell(i, 4*i, 4*i+1, 4*i+2, 4*i+3)
     for i in xrange(num_vertices):
@@ -157,6 +177,8 @@ def triangulation_to_mesh_3d(triangulation):
 class TriangulationTest(unittest.TestCase):
     
     def test_triangulate_intersection_2d(self):
+
+        if MPI.size(mpi_comm_world()) > 1: return
 
         # Create two meshes of the unit square
         mesh_0 = UnitSquareMesh(1, 1)
@@ -179,10 +201,51 @@ class TriangulationTest(unittest.TestCase):
                 c0.triangulate_intersection(c1)
 
         # For debugging and testing
-        plot_intersection_triangulation_2d(c01, c10)
+        # plot_intersection_triangulation_2d(c01, c10)
 
+    def test_triangulate_intersection_2d_3d(self):
+
+        if MPI.size(mpi_comm_world()) > 1: return
+
+        # Create a unit cube
+        mesh_0 = UnitCubeMesh(1,1,1)
+
+        # Create a 3D surface mesh
+        editor = MeshEditor()
+        mesh_1 = Mesh()
+        editor.open(mesh_1,2,3)
+        editor.init_cells(2,1)
+        editor.init_vertices(4,1)
+        # add cells
+        editor.add_cell(0,0,1,2)
+        editor.add_cell(1,1,2,3)
+        # add vertices
+        editor.add_vertex(0,0,0,0.5)
+        editor.add_vertex(1,1,0,0.5)
+        editor.add_vertex(2,0,1,0.5)
+        editor.add_vertex(3,1,1,0.5)
+        editor.close()
+        
+        # Rotate the triangle mesh around y axis a random angle in
+        # (0,90) degrees
+        mesh_1.rotate(numpy.random.rand()*90)
+        
+        # Exact area 
+        exactarea = 1
+
+        # Compute triangulation
+        area = 0
+        for c0 in cells(mesh_0):
+            for c1 in cells(mesh_1):
+                triangulation = c0.triangulate_intersection(c1)
+                if (triangulation.size>0):
+                    tmesh = triangulation_to_mesh_top_2d(triangulation)
+                    for t in cells(tmesh):
+                        area += t.volume()
 
     def test_triangulate_intersection_3d(self):
+
+        if MPI.size(mpi_comm_world()) > 1: return
         
         # Create two meshes of the unit cube
         mesh_0 = UnitCubeMesh(1,1,1)
@@ -207,3 +270,4 @@ class TriangulationTest(unittest.TestCase):
 
 if __name__ == "__main__":
         unittest.main()
+

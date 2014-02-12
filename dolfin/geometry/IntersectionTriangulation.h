@@ -125,7 +125,14 @@ namespace dolfin
 
   private:
 
-    // Helper function for triangulate_intersection_tetrahedron_tetrahedron
+    // Helper function
+    static bool intersection_edge_edge(const Point& a,
+				       const Point& b,
+				       const Point& c,
+				       const Point& d,
+				       Point& pt);
+
+    // Helper function
     static bool intersection_face_edge(const Point& r,
 				       const Point& s, 
 				       const Point& t,
