@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-02-11
+// Last changed: 2014-02-12
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -38,6 +38,8 @@
 
 #include "MultiStageScheme.h"
 #include "PointIntegralSolver.h"
+
+#include "fenv.h"
 
 using namespace dolfin;
 
@@ -92,6 +94,8 @@ void PointIntegralSolver::reset_stage_solutions()
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::step(double dt)
 {
+  
+  //feenableexcept(FE_INVALID | FE_OVERFLOW);
   
   const bool reset_stage_solutions_ = parameters["reset_stage_solutions"];
   const bool reset_newton_solver_ = parameters("newton_solver")["reset_each_step"];
@@ -730,7 +734,7 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
   const Parameters& newton_solver_params = parameters("newton_solver");
   const std::string convergence_criterion = newton_solver_params["convergence_criterion"];
   const double kappa = newton_solver_params["kappa"];
-  const double atol = newton_solver_params["absolute_tolerance"];
+  const double rtol = newton_solver_params["relative_tolerance"];
   const std::size_t max_iterations = newton_solver_params["maximum_iterations"];
   const double max_relative_residual = newton_solver_params["max_relative_residual"];
   const double relaxation = newton_solver_params["relaxation_parameter"];
@@ -739,7 +743,8 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
 
 
   unsigned int newton_iterations = 0;
-  double relative_residual = 1.0, residual, prev_residual = 1.0;
+  double relative_previous_residual = 1.0, residual, prev_residual = 1.0, 
+    initial_residual = 1.0, relative_residual = 1.0;
 
   // Get point integrals
   const ufc::point_integral& F_integral = *loc_ufc.default_point_integral;
@@ -759,24 +764,25 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
     for (unsigned int row=0; row < _system_size; row++)
       _F[row] = loc_ufc.A[_local_to_local_dofs[row]];
 
+    residual = _norm(_F);
+    if (newton_iterations == 0) 
+      initial_residual = residual;
+
+    relative_residual = residual/initial_residual;
+
+    // Check for relative residual convergence
+    if (relative_residual < rtol)
+      break;
+
     // Perform linear solve By forward backward substitution
     //Timer forward_backward_substitution("Implicit stage: fb substituion");
     _forward_backward_subst(_jac, _F, _dx);
     //forward_backward_substitution.stop();
 
-    // Residual (residual or incremental)
-    if (convergence_criterion == "residual")
-      residual = _norm(_F);
-    else 
-      residual = _norm(_dx);
-
-    // Check for residual convergence
-    if (residual < atol)
-      break;
     //return converged;
 
     // Newton_Iterations == 0
-    if (newton_iterations == 0) 
+    if (newton_iterations == 0)
     {
       // On first iteration we need an approximation of eta. We take
       // the one from previous step and increase it slightly. This is
@@ -790,18 +796,18 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
     else
     {
       // How fast are we converging?
-      relative_residual = residual/prev_residual;
+      relative_previous_residual = residual/prev_residual;
 
       // If we are not converging fast enough we flag the jacobian to be recomputed
-      _recompute_jacobian = relative_residual >= max_relative_residual;
+      _recompute_jacobian = relative_previous_residual >= max_relative_residual;
       
       // If we diverge
-      if (relative_residual > 1)
+      if (relative_previous_residual > 1)
       {
 	if (report && vert_ind == 0)
 	  info("Newton solver diverges with relative_residual: %.3f, residual " \
 	       "%.3e, after %d iterations. Recomputing jacobian.", 
-	       relative_residual, residual, newton_iterations);
+	       relative_previous_residual, residual, newton_iterations);
 	_recompute_jacobian = true;
         return diverge;
       }
@@ -823,7 +829,7 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
 	}*/
       
       // Update eta 
-      _eta = relative_residual/(1.0 - relative_residual);
+      _eta = relative_previous_residual/(1.0 - relative_previous_residual);
     }
     
     // No convergence
@@ -832,7 +838,7 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
       if (report && vert_ind == 0)
 	info("Newton solver did not converged after %d iterations. "  \
 	     "relative_residual: %.3f, residual: %.3e. Recomputing jacobian.", \
-	     max_iterations, relative_residual, residual);
+	     max_iterations, relative_previous_residual, residual);
       _recompute_jacobian = true;
       return exceeds_max_iter;
     }
@@ -852,11 +858,12 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
     prev_residual = residual;
     newton_iterations++;
 
-  } while(_eta*residual >= kappa*atol);
+    //  } while(true);
+  } while(_eta*relative_residual >= kappa*rtol);
   
   if (report && vert_ind == 0)
     info("Newton solver converged after %d iterations. relative_residual: %.3f, "\
-	 "residual: %.3e.", newton_iterations, relative_residual, residual);
+	 "residual: %.3e.", newton_iterations, relative_previous_residual, residual);
   
   return converged;
 }
