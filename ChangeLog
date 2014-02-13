@@ -1,3 +1,4 @@
+ - Add FEniCS ('fenics') Python module, identical with DOLFIN Python module
  - Add function Form::set_some_coefficients()
  - Remove Boost.MPI dependency
  - Change GenericMatrix::compresss to return a new matrix (7be3a29)
