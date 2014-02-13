@@ -568,8 +568,17 @@ void Function::restrict(double* w, const FiniteElement& element,
     const std::vector<dolfin::la_index>& dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
-    // Pick values from vector(s)
-    _vector->get_local(w, dofs.size(), dofs.data());
+    if (dofs.size() > 0)
+    {
+      // Note: We should have dofmap.max_cell_dimension() == dofs.size() here.
+      // Pick values from vector(s)
+      _vector->get_local(w, dofs.size(), dofs.data());
+    }
+    else
+    {
+      // Set dofs to zero (zero extension of function space on a Restriction)
+      memset(w, 0, sizeof(*w)*dofmap.max_cell_dimension());
+    }
   }
   else
   {

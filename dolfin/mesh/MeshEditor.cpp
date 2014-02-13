@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2006-05-16
-// Last changed: 2012-10-30
+// Last changed: 2014-02-06
 
 #include <dolfin/log/log.h>
 #include <dolfin/geometry/Point.h>
@@ -108,8 +108,8 @@ void MeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
   }
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_vertices(std::size_t num_local_vertices,
-                               std::size_t num_global_vertices)
+void MeshEditor::init_vertices_global(std::size_t num_local_vertices,
+                                      std::size_t num_global_vertices)
 {
   // Check if we are currently editing a mesh
   if (!_mesh)
@@ -126,8 +126,8 @@ void MeshEditor::init_vertices(std::size_t num_local_vertices,
   _mesh->_geometry.init(_gdim, num_local_vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_cells(std::size_t num_local_cells,
-                            std::size_t num_global_cells)
+void MeshEditor::init_cells_global(std::size_t num_local_cells,
+                                   std::size_t num_global_cells)
 {
   // Check if we are currently editing a mesh
   if (!_mesh)

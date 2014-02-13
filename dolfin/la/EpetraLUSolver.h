@@ -59,7 +59,7 @@ namespace dolfin
     ~EpetraLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Get operator (matrix)
     const GenericLinearOperator& get_operator() const;

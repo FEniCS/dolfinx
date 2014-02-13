@@ -123,7 +123,8 @@ UmfpackLUSolver::~UmfpackLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+void
+UmfpackLUSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
 {
   symbolic.reset();
   numeric.reset();
@@ -259,7 +260,7 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   }
 
   // Need matrix data
-  const boost::shared_ptr<const GenericMatrix> A = require_matrix(_A);
+  boost::shared_ptr<const GenericMatrix> A = require_matrix(_A);
 
   dolfin_assert(A->size(0) == A->size(0));
   dolfin_assert(A->size(0) == b.size());
