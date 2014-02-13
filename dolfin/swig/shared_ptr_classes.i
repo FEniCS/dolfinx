@@ -36,14 +36,7 @@
 //-----------------------------------------------------------------------------
 // Include macros for shared_ptr support
 //-----------------------------------------------------------------------------
-%include <boost_shared_ptr.i>
-
-//-----------------------------------------------------------------------------
-// define to make SWIG_SHARED_PTR_QNAMESPACE available in inlined C++ code
-//-----------------------------------------------------------------------------
-%{
-#define SWIG_SHARED_PTR_QNAMESPACE boost
-%}
+%include <std_shared_ptr.i>
 
 //-----------------------------------------------------------------------------
 // Make DOLFIN aware of the types defined in UFC

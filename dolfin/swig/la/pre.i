@@ -300,15 +300,15 @@
 %typemap(directorin, fragment="NoDelete") dolfin::GenericVector&
 {
   // Director in dolfin::GenericVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< dolfin::GenericVector > *smartresult = new std::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") const dolfin::GenericVector&
 {
   // Director in const dolfin::GenericVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< const dolfin::GenericVector > *smartresult = new std::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }
 
 //-----------------------------------------------------------------------------
@@ -317,17 +317,17 @@
 %typemap(directorin, fragment="NoDelete") dolfin::PETScVector&
 {
   // Director in dolfin::PETScVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *smartresult
-    = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< dolfin::PETScVector > *smartresult
+    = new std::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") const dolfin::PETScVector&
 {
   // Director in const dolfin::PETScVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector > *smartresult
-    = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< const dolfin::PETScVector > *smartresult
+    = new std::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
 
 //-----------------------------------------------------------------------------
@@ -336,12 +336,12 @@
 %typemap(directorin, fragment="NoDelete") dolfin::uBLASVector&
 {
   // Director in dolfin::uBLASVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< dolfin::uBLASVector > *smartresult = new std::shared_ptr< dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") const dolfin::uBLASVector& {
   // Director in const dolfin::uBLASVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::uBLASVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< const dolfin::uBLASVector > *smartresult = new std::shared_ptr< const dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
 }
