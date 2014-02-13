@@ -10,7 +10,7 @@
 # This script is what most developers use to build and rebuild DOLFIN.
 
 # Number of processes to use during build
-: ${PROCS:=8}
+: ${PROCS:=3}
 
 # Extract any extra argument
 CMAKE_EXTRA_ARGS=$@
