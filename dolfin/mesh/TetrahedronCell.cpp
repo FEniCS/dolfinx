@@ -19,9 +19,10 @@
 // Modified by Garth N. Wells 2006
 // Modified by Kristian Oelgaard 2006
 // Modified by Kristoffer Selim 2008
+// Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-02-12
+// Last changed: 2014-02-13
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -111,7 +112,7 @@ TetrahedronCell::create_entities(std::vector<std::vector<unsigned int> >& e,
     e.resize(6);
     for (int i = 0; i < 6; ++i)
       e[i] .resize(2);
-    
+
     // Create the six edges
     e[0][0] = v[2]; e[0][1] = v[3];
     e[1][0] = v[1]; e[1][1] = v[3];
@@ -659,18 +660,18 @@ void TetrahedronCell::order(Cell& cell,
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell,point);
+  return CollisionDetection::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell,entity);
+  return CollisionDetection::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
 TetrahedronCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
-  return IntersectionTriangulation::triangulate_intersection(c0,c1);
+  return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
