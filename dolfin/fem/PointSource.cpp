@@ -42,7 +42,7 @@ PointSource::PointSource(const FunctionSpace& V,
   check_is_scalar(V);
 }
 //-----------------------------------------------------------------------------
-PointSource::PointSource(boost::shared_ptr<const FunctionSpace> V,
+PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
                          const Point& p,
                          double magnitude)
   : _V(V), _p(p), _magnitude(magnitude)
@@ -67,7 +67,7 @@ void PointSource::apply(GenericVector& b)
   // functions are continuous but may give unexpected results for DG.
   dolfin_assert(_V->mesh());
   const Mesh& mesh = *_V->mesh();
-  boost::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int cell_index = tree->compute_first_entity_collision(_p);
 
   // Check that we found the point on at least one processor

@@ -35,47 +35,47 @@ using namespace dolfin;
 PETScFactory PETScFactory::factory;
 
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> PETScFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> PETScFactory::create_matrix() const
 {
-  boost::shared_ptr<GenericMatrix> A(new PETScMatrix);
+  std::shared_ptr<GenericMatrix> A(new PETScMatrix);
   return A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> PETScFactory:: create_vector() const
+std::shared_ptr<GenericVector> PETScFactory:: create_vector() const
 {
-  boost::shared_ptr<GenericVector> x(new PETScVector);
+  std::shared_ptr<GenericVector> x(new PETScVector);
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout>
+std::shared_ptr<TensorLayout>
 PETScFactory::create_layout(std::size_t rank) const
 {
   bool sparsity = false;
   if (rank > 1)
     sparsity = true;
-  boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
+  std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearOperator>
+std::shared_ptr<GenericLinearOperator>
 PETScFactory::create_linear_operator() const
 {
-  boost::shared_ptr<GenericLinearOperator> A(new PETScLinearOperator);
+  std::shared_ptr<GenericLinearOperator> A(new PETScLinearOperator);
   return A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLUSolver>
+std::shared_ptr<GenericLUSolver>
 PETScFactory::create_lu_solver(std::string method) const
 {
-  boost::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(method));
+  std::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(method));
   return solver;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearSolver>
+std::shared_ptr<GenericLinearSolver>
 PETScFactory::create_krylov_solver(std::string method,
                                    std::string preconditioner) const
 {
-  boost::shared_ptr<GenericLinearSolver>
+  std::shared_ptr<GenericLinearSolver>
     solver(new PETScKrylovSolver(method, preconditioner));
   return solver;
 }

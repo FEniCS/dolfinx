@@ -234,9 +234,9 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   }
 
   // Set the bounds
-  boost::shared_ptr<const PETScVector>
+  std::shared_ptr<const PETScVector>
     _ub(&ub.down_cast<PETScVector>(), NoDeleter());
-  boost::shared_ptr<const PETScVector>
+  std::shared_ptr<const PETScVector>
     _lb(&lb.down_cast<PETScVector>(), NoDeleter());
   this->lb = _lb;
   this->ub = _ub;

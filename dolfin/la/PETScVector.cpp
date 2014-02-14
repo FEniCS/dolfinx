@@ -161,9 +161,9 @@ bool PETScVector::distributed() const
   return _distributed;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> PETScVector::copy() const
+std::shared_ptr<GenericVector> PETScVector::copy() const
 {
-  boost::shared_ptr<GenericVector> v(new PETScVector(*this));
+  std::shared_ptr<GenericVector> v(new PETScVector(*this));
   return v;
 }
 //-----------------------------------------------------------------------------

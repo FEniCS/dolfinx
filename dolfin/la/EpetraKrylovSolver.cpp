@@ -137,13 +137,13 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+void EpetraKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                                       boost::shared_ptr<const GenericLinearOperator> P)
+void EpetraKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                                       std::shared_ptr<const GenericLinearOperator> P)
 {
   _A = as_type<const EpetraMatrix>(require_matrix(A));
   _P = as_type<const EpetraMatrix>(require_matrix(P));
@@ -284,7 +284,7 @@ std::size_t EpetraKrylovSolver::solve(const GenericLinearOperator& A,
 std::size_t EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                       const EpetraVector& b)
 {
-  boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
+  std::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }
@@ -310,7 +310,7 @@ std::string EpetraKrylovSolver::str(bool verbose) const
   return std::string();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<AztecOO> EpetraKrylovSolver::aztecoo() const
+std::shared_ptr<AztecOO> EpetraKrylovSolver::aztecoo() const
 {
   return solver;
 }

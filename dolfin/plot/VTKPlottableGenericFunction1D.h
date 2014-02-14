@@ -43,10 +43,10 @@ namespace dolfin
   public:
 
     explicit
-    VTKPlottableGenericFunction1D(boost::shared_ptr<const Function> function);
+    VTKPlottableGenericFunction1D(std::shared_ptr<const Function> function);
 
-    VTKPlottableGenericFunction1D(boost::shared_ptr<const Expression> expression,
-                                  boost::shared_ptr<const Mesh> mesh);
+    VTKPlottableGenericFunction1D(std::shared_ptr<const Expression> expression,
+                                  std::shared_ptr<const Mesh> mesh);
 
     virtual ~VTKPlottableGenericFunction1D() {}
 
@@ -65,7 +65,7 @@ namespace dolfin
     virtual void connect_to_output(VTKWindowOutputStage& output);
 
     /// Update the plottable data
-    virtual void update(boost::shared_ptr<const Variable> var,
+    virtual void update(std::shared_ptr<const Variable> var,
                         const Parameters& p, int frame_counter);
 
     /// Inform the plottable about the range.

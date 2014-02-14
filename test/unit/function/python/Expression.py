@@ -446,7 +446,7 @@ class Instantiation(unittest.TestCase):
           {
           public:
 
-            boost::shared_ptr<MeshFunction<std::size_t> > cell_data;
+            std::shared_ptr<MeshFunction<std::size_t> > cell_data;
 
             MyFunc() : Expression()
             {
@@ -543,12 +543,12 @@ class Instantiation(unittest.TestCase):
                         const ufc::cell& cell) const
               { }
             
-              void update(const boost::shared_ptr<const Function> u, 
+              void update(const std::shared_ptr<const Function> u, 
                           double nu, double dt, double C1,
                           double U_infty, double chord)
               {
-                const boost::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
-                const boost::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
+                const std::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
+                const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
                 const uint ncells = mesh->num_cells();
                 uint ndofs_per_cell;
                 if (ncells > 0) 
@@ -584,12 +584,12 @@ class Instantiation(unittest.TestCase):
                         const ufc::cell& cell) const
               { }
             
-              void update(const boost::shared_ptr<const Function> u, 
+              void update(const std::shared_ptr<const Function> u, 
                           double nu, double dt, double C1,
                           double U_infty, double chord)
               {
-                const boost::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
-                const boost::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
+                const std::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
+                const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
                 const uint ncells = mesh->num_cells();
                 uint ndofs_per_cell;
                 if (ncells > 0) 

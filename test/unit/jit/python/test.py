@@ -54,7 +54,7 @@ class JIT(unittest.TestCase):
         code = """
         namespace dolfin {
 
-          void PETSc_exp(boost::shared_ptr<dolfin::PETScVector> vec)
+          void PETSc_exp(std::shared_ptr<dolfin::PETScVector> vec)
           {
             Vec x = vec->vec();
             assert(x);

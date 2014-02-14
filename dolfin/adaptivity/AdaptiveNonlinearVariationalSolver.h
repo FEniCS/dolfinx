@@ -24,7 +24,7 @@
 #ifndef __ADAPTIVE_NONLINEAR_VARIATIONAL_SOLVER_H
 #define __ADAPTIVE_NONLINEAR_VARIATIONAL_SOLVER_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "GenericAdaptiveVariationalSolver.h"
 
@@ -82,8 +82,8 @@ namespace dolfin
     ///         The primal problem
     ///     goal (_GoalFunctional_)
     ///         The goal functional
-    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
-                                       boost::shared_ptr<GoalFunctional> goal);
+    AdaptiveNonlinearVariationalSolver(std::shared_ptr<NonlinearVariationalProblem> problem,
+                                       std::shared_ptr<GoalFunctional> goal);
 
     /// Create AdaptiveLinearVariationalSolver from variational
     /// problem, goal form and error control instance
@@ -95,9 +95,9 @@ namespace dolfin
     ///         The goal functional
     ///     control (_ErrorControl_)
     ///         An error controller object
-    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
-                                       boost::shared_ptr<Form> goal,
-                                       boost::shared_ptr<ErrorControl> control);
+    AdaptiveNonlinearVariationalSolver(std::shared_ptr<NonlinearVariationalProblem> problem,
+                                       std::shared_ptr<Form> goal,
+                                       std::shared_ptr<ErrorControl> control);
 
 
     /// Destructor
@@ -108,14 +108,14 @@ namespace dolfin
     /// *Returns*
     ///     _Function_
     ///         The solution to the primal problem
-    virtual boost::shared_ptr<const Function> solve_primal();
+    virtual std::shared_ptr<const Function> solve_primal();
 
     /// Extract the boundary conditions for the primal problem.
     ///
     /// *Returns*
     ///     std::vector<_DirichletBC_>
     ///         The primal boundary conditions
-    virtual std::vector<boost::shared_ptr<const DirichletBC> >
+    virtual std::vector<std::shared_ptr<const DirichletBC> >
       extract_bcs() const;
 
     /// Evaluate the goal functional.
@@ -130,14 +130,14 @@ namespace dolfin
     ///     double
     ///         The value of M evaluated at u
     virtual double evaluate_goal(Form& M,
-                                 boost::shared_ptr<const Function> u) const;
+                                 std::shared_ptr<const Function> u) const;
 
     /// Adapt the problem to other mesh.
     ///
     /// *Arguments*
     ///    mesh (_Mesh_)
     ///        The other mesh
-    virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh);
+    virtual void adapt_problem(std::shared_ptr<const Mesh> mesh);
 
   protected:
     /// Return the number of degrees of freedom for primal problem
@@ -156,11 +156,11 @@ namespace dolfin
     ///        The primal problem
     ///    u (_GoalFunctional_)
     ///        The goal functional
-    void init(boost::shared_ptr<NonlinearVariationalProblem> problem,
-              boost::shared_ptr<GoalFunctional> goal);
+    void init(std::shared_ptr<NonlinearVariationalProblem> problem,
+              std::shared_ptr<GoalFunctional> goal);
 
     // The problem
-    boost::shared_ptr<NonlinearVariationalProblem> _problem;
+    std::shared_ptr<NonlinearVariationalProblem> _problem;
 
   };
 
