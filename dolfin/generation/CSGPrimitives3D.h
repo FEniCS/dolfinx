@@ -47,15 +47,11 @@ namespace dolfin
   {
   public:
 
-    /// Create sphere at x = (x0, x1, x2) with radius r.
+    /// Create sphere at center = (x0, x1, x2) with radius r.
     ///
     /// *Arguments*
-    ///     x0 (double)
-    ///         x0-coordinate of center.
-    ///     x1 (double)
-    ///         x1-coordinate of center.
-    ///     x2 (double)
-    ///         x2-coordinate of center.
+    ///     center (Point)
+    ///         Center of sphere.
     ///     r (double)
     ///         radius.
     Sphere(Point center, double radius, std::size_t slices=16);
