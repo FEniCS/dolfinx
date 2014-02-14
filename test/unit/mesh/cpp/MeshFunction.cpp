@@ -36,7 +36,7 @@ public:
   void test_create_from_domains()
   {
     // Create mesh
-    boost::shared_ptr<Mesh> mesh(new UnitSquareMesh(3, 3));
+    std::shared_ptr<Mesh> mesh(new UnitSquareMesh(3, 3));
     dolfin_assert(mesh);
 
     const std::size_t D = mesh->topology().dim();

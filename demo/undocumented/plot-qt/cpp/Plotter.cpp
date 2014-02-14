@@ -28,13 +28,13 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-Plotter::Plotter(boost::shared_ptr<const Variable> obj, QWidget *parent)
+Plotter::Plotter(std::shared_ptr<const Variable> obj, QWidget *parent)
   : VTKPlotter(obj, new PlotWidget(parent))
 {
   init();
 }
 //----------------------------------------------------------------------------
-Plotter::Plotter(boost::shared_ptr<const Expression> e, boost::shared_ptr<const Mesh> m, QWidget *parent)
+Plotter::Plotter(std::shared_ptr<const Expression> e, std::shared_ptr<const Mesh> m, QWidget *parent)
   : VTKPlotter(e, m, new PlotWidget(parent))
 {
   init();

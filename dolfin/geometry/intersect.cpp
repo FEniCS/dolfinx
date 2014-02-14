@@ -24,10 +24,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshPointIntersection>
+std::shared_ptr<const MeshPointIntersection>
 dolfin::intersect(const Mesh& mesh, const Point& point)
 {
-  return boost::shared_ptr<const MeshPointIntersection>
+  return std::shared_ptr<const MeshPointIntersection>
     (new MeshPointIntersection(mesh, point));
 }
 //-----------------------------------------------------------------------------

@@ -25,7 +25,7 @@
 
 #include <set>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "ublas.h"
@@ -63,12 +63,12 @@ namespace dolfin
     ~uBLASKrylovSolver();
 
     /// Solve the operator (matrix)
-    void set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A)
     { set_operators(A, A); }
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                       boost::shared_ptr<const GenericLinearOperator> P)
+    void set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                       std::shared_ptr<const GenericLinearOperator> P)
     { _A = A; _P = P; }
 
 
@@ -136,7 +136,7 @@ namespace dolfin
     std::string _method;
 
     /// Preconditioner
-    boost::shared_ptr<uBLASPreconditioner> _pc;
+    std::shared_ptr<uBLASPreconditioner> _pc;
 
     /// Solver parameters
     double rtol, atol, div_tol;
@@ -144,10 +144,10 @@ namespace dolfin
     bool report;
 
     /// Operator (the matrix)
-    boost::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _A;
 
     /// Matrix used to construct the preconditoner
-    boost::shared_ptr<const GenericLinearOperator> _P;
+    std::shared_ptr<const GenericLinearOperator> _P;
 
   };
   //---------------------------------------------------------------------------

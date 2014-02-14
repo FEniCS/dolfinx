@@ -16,14 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-11
+// Last changed: 2014-02-14
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
 
 #include <vector>
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace dolfin
 {
@@ -66,7 +66,7 @@ namespace dolfin
     /// *Returns*
     ///     _CCFEMDofMap_
     ///         The dofmap.
-    boost::shared_ptr<const CCFEMDofMap> dofmap() const;
+    std::shared_ptr<const CCFEMDofMap> dofmap() const;
 
     /// Return the number function spaces (parts) of the CCFEM function space
     ///
@@ -84,7 +84,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         Function space (part) number i
-    boost::shared_ptr<const FunctionSpace> part(std::size_t i) const;
+    std::shared_ptr<const FunctionSpace> part(std::size_t i) const;
 
     /// Return the list of uncut cells for given part. The uncut cells
     /// are defined as all cells that don't collide with any cells in
@@ -153,7 +153,7 @@ namespace dolfin
     /// *Arguments*
     ///     function_space (_FunctionSpace_)
     ///         The function space.
-    void add(boost::shared_ptr<const FunctionSpace> function_space);
+    void add(std::shared_ptr<const FunctionSpace> function_space);
 
     /// Add function space (reference version)
     ///
@@ -171,22 +171,22 @@ namespace dolfin
   private:
 
     // List of function spaces
-    std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
+    std::vector<std::shared_ptr<const FunctionSpace> > _function_spaces;
 
     // CCFEM dofmap
-    boost::shared_ptr<CCFEMDofMap> _dofmap;
+    std::shared_ptr<CCFEMDofMap> _dofmap;
 
     // List of meshes
-    std::vector<boost::shared_ptr<const Mesh> > _meshes;
+    std::vector<std::shared_ptr<const Mesh> > _meshes;
 
     // List of boundary meshes
-    std::vector<boost::shared_ptr<BoundaryMesh> > _boundary_meshes;
+    std::vector<std::shared_ptr<BoundaryMesh> > _boundary_meshes;
 
     // List of bounding box trees for meshes
-    std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
+    std::vector<std::shared_ptr<BoundingBoxTree> > _trees;
 
     // List of bounding box trees for boundary meshes
-    std::vector<boost::shared_ptr<BoundingBoxTree> > _boundary_trees;
+    std::vector<std::shared_ptr<BoundingBoxTree> > _boundary_trees;
 
     // Cell indices for all uncut cells for all parts. Access data by
     //

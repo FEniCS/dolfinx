@@ -25,7 +25,7 @@
 
 #include <vector>
 
-#include<boost/shared_ptr.hpp>
+#include<memory>
 
 #include <dolfin/log/log.h>
 #include "Mesh.h"
@@ -122,7 +122,7 @@ namespace dolfin
     MeshEntity _entity;
 
     // Subset in shared data form
-    boost::shared_ptr< std::vector<std::size_t> > _subset;
+    std::shared_ptr< std::vector<std::size_t> > _subset;
 
     //Subset reference for convenience / speed
     std::vector<std::size_t> & subset;

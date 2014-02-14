@@ -131,7 +131,7 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
+Mesh::Mesh(std::shared_ptr<const CSGGeometry> geometry,
            std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
@@ -350,12 +350,12 @@ void Mesh::rotate(double angle, std::size_t axis, const Point& point)
   MeshTransformation::rotate(*this, angle, axis, point);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
+std::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
 {
   return ALE::move(*this, boundary);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> Mesh::move(Mesh& mesh)
+std::shared_ptr<MeshDisplacement> Mesh::move(Mesh& mesh)
 {
   return ALE::move(*this, mesh);
 }
@@ -413,7 +413,7 @@ Mesh::color(std::vector<std::size_t> coloring_type) const
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
+std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 {
   // Allocate and build tree if necessary
   if (!_tree)

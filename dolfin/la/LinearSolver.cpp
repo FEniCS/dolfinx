@@ -127,7 +127,7 @@ LinearSolver::~LinearSolver()
 }
 //-----------------------------------------------------------------------------
 void
-LinearSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+LinearSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
@@ -135,8 +135,8 @@ LinearSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
 }
 //-----------------------------------------------------------------------------
 void
-LinearSolver::set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                            boost::shared_ptr<const GenericLinearOperator> P)
+LinearSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                            std::shared_ptr<const GenericLinearOperator> P)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);

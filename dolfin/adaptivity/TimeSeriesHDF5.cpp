@@ -208,7 +208,7 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
 
     // Read vectors
     GenericVector& x0(vector);
-    boost::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
+    std::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
     hdf5_file.read(x0, "/Vector/" + boost::lexical_cast<std::string>(i0), false);
     hdf5_file.read(*x1, "/Vector/" + boost::lexical_cast<std::string>(i1), false);
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-11
+// Last changed: 2014-02-14
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -45,7 +45,7 @@ std::size_t CCFEMFunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const CCFEMDofMap> CCFEMFunctionSpace::dofmap() const
+std::shared_ptr<const CCFEMDofMap> CCFEMFunctionSpace::dofmap() const
 {
   dolfin_assert(_dofmap);
   return _dofmap;
@@ -56,7 +56,7 @@ std::size_t CCFEMFunctionSpace::num_parts() const
   return _function_spaces.size();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 CCFEMFunctionSpace::part(std::size_t i) const
 {
   dolfin_assert(i < _function_spaces.size());
@@ -93,7 +93,7 @@ const std::map<unsigned int,
 }
 //-----------------------------------------------------------------------------
 void
-CCFEMFunctionSpace::add(boost::shared_ptr<const FunctionSpace> function_space)
+CCFEMFunctionSpace::add(std::shared_ptr<const FunctionSpace> function_space)
 {
   _function_spaces.push_back(function_space);
   log(PROGRESS, "Added function space to CCFEM space; space has %d part(s).",
@@ -168,7 +168,7 @@ void CCFEMFunctionSpace::_build_boundary_meshes()
   // Build boundary mesh for each part
   for (std::size_t i = 0; i < num_parts(); i++)
   {
-    boost::shared_ptr<BoundaryMesh>
+    std::shared_ptr<BoundaryMesh>
       boundary_mesh(new BoundaryMesh(*_meshes[i], "exterior"));
     _boundary_meshes.push_back(boundary_mesh);
   }
@@ -188,12 +188,12 @@ void CCFEMFunctionSpace::_build_bounding_box_trees()
   for (std::size_t i = 0; i < num_parts(); i++)
   {
     // Build tree for mesh
-    boost::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
+    std::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
     tree->build(*_meshes[i]);
     _trees.push_back(tree);
 
     // Build tree for boundary mesh
-    boost::shared_ptr<BoundingBoxTree> boundary_tree(new BoundingBoxTree());
+    std::shared_ptr<BoundingBoxTree> boundary_tree(new BoundingBoxTree());
     boundary_tree->build(*_boundary_meshes[i]);
     _boundary_trees.push_back(boundary_tree);
   }

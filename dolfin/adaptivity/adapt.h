@@ -60,7 +60,7 @@ namespace dolfin
 
   /// Refine function space based on refined mesh
   const FunctionSpace& adapt(const FunctionSpace& space,
-                             boost::shared_ptr<const Mesh> adapted_mesh);
+                             std::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of functions ---
 
@@ -80,22 +80,22 @@ namespace dolfin
   ///     _Function__
   ///         The adapted function
   const Function& adapt(const Function& function,
-                        boost::shared_ptr<const Mesh> adapted_mesh,
+                        std::shared_ptr<const Mesh> adapted_mesh,
                         bool interpolate=true);
 
   /// Refine GenericFunction based on refined mesh
   const GenericFunction& adapt(const GenericFunction& function,
-                               boost::shared_ptr<const Mesh> adapted_mesh);
+                               std::shared_ptr<const Mesh> adapted_mesh);
 
   /// Refine mesh function<std::size_t> based on mesh
   const MeshFunction<std::size_t>& adapt(const MeshFunction<std::size_t>& mesh_function,
-                                  boost::shared_ptr<const Mesh> adapted_mesh);
+                                  std::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of boundary conditions ---
 
   /// Refine Dirichlet bc based on refined mesh
   const DirichletBC& adapt(const DirichletBC& bc,
-                           boost::shared_ptr<const Mesh> adapted_mesh,
+                           std::shared_ptr<const Mesh> adapted_mesh,
                            const FunctionSpace& S);
 
   /// Helper function for refinement of boundary conditions
@@ -122,18 +122,18 @@ namespace dolfin
   ///     _Form__
   ///         The adapted form
   const Form& adapt(const Form& form,
-                    boost::shared_ptr<const Mesh> adapted_mesh,
+                    std::shared_ptr<const Mesh> adapted_mesh,
                     bool adapt_coefficients=true);
 
   //--- Refinement of variational problems ---
 
   /// Refine linear variational problem based on mesh
   const LinearVariationalProblem& adapt(const LinearVariationalProblem& problem,
-                                        boost::shared_ptr<const Mesh> adapted_mesh);
+                                        std::shared_ptr<const Mesh> adapted_mesh);
 
   /// Refine nonlinear variational problem based on mesh
   const NonlinearVariationalProblem& adapt(const NonlinearVariationalProblem& problem,
-                                           boost::shared_ptr<const Mesh> adapted_mesh);
+                                           std::shared_ptr<const Mesh> adapted_mesh);
 
   /// Adapt error control object based on adapted mesh
   ///
@@ -151,7 +151,7 @@ namespace dolfin
   ///     _ErrorControl__
   ///         The adapted error control object
   const ErrorControl& adapt(const ErrorControl& ec,
-                            boost::shared_ptr<const Mesh> adapted_mesh,
+                            std::shared_ptr<const Mesh> adapted_mesh,
                             bool adapt_coefficients=true);
 
 
