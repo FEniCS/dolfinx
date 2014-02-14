@@ -1107,8 +1107,10 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   // which have the following connectivity:
   // 1) i-i or i- (local)
   // 2) i-j (interprocess)
-  // 3) j-j, j-, j-k (remote)
+  // 3) j-j, j-, j-k (remote) - ignore
   // and do global numbering accordingly...
+
+  topology.init_global_indices(D - 1, current_entity);
 
   const std::vector<std::size_t>& ghost_owner 
     = mesh.data().array("ghost_owner", D);
@@ -1116,7 +1118,8 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   const unsigned int rank = MPI::rank(mesh.mpi_comm());
 
   std::vector<unsigned int> facet_counts(MPI::size(mesh.mpi_comm()));
-  
+  std::vector<std::size_t> global_indices(current_entity);
+
   for (auto f = evertices_to_index.begin(); 
        f != evertices_to_index.end(); ++f)
   {
@@ -1128,22 +1131,32 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
     if (cec_owner[0] == rank && 
         (cec_owner.size() == 1 || cec_owner[1] == rank) )
     {
-      facet_counts[rank]++;
+      // Locally connected - increment local counter
+      global_indices[f->second] = facet_counts[rank]++;
     }
     else if (cec_owner.size() == 2 && 
              (cec_owner[0] == rank || cec_owner[1] == rank))
     {
-      unsigned int other_cell = (cec_owner[0] == rank) ? 
-                                 cec_owner[1] : cec_owner[0];
-      facet_counts[other_cell]++;
+      // Connected to a cell on another process
+      const unsigned int cell_owner = (cec_owner[0] == rank) ? 
+                                       cec_owner[1] : cec_owner[0];
+      // FIXME: this could work if the facets were ordered 
+      // (so that they appear in the same order on both sharing processes)
+      global_indices[f->second] = facet_counts[cell_owner]++;
     }  
   }
 
-  for (auto fc = facet_counts.begin(); fc != facet_counts.end(); ++fc)
-  {
-    std::cout << rank << "-" 
-              << fc - facet_counts.begin() << ") " << *fc << "\n";
-  }
+  // Add up all facets which are taken care of locally
+  std::size_t fcount = 0;
+  for (unsigned int i = rank; i < facet_counts.size(); ++i)
+    fcount += facet_counts[i];
+
+  for (unsigned int i = 0; i < facet_counts.size(); ++i)
+    std::cout << rank << "-" << i << " = " << facet_counts[i] <<" \n";
+
+  std::size_t offset = MPI::global_offset(mesh.mpi_comm(), fcount, true);
+
+  std::cout << rank << "] " << offset <<" \n";
   
   // Initialise connectivity data structure
   topology.init(D - 1, connectivity_ev.size(), connectivity_ev.size());
