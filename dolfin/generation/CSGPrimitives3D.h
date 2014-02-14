@@ -155,7 +155,7 @@ namespace dolfin
     ///     top (Point)
     ///         Center at top of cylinder.
     ///     bottom(Point)
-    ///         Center at top of cylinder.
+    ///         Center at bottom of cylinder.
     ///     r (double)
     ///         radius of cylinder.
     ///     slices (std::size_t)
