@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-02-02
-// Last changed: 2012-09-05
+// Last changed: 2014-02-06
 
 #ifndef __DOLFIN_CGALMESHBUILDER_H
 #define __DOLFIN_CGALMESHBUILDER_H
@@ -183,8 +183,8 @@ namespace dolfin
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
     mesh_editor.open(mesh, tdim, gdim);
-    mesh_editor.init_vertices(num_vertices, num_vertices);
-    mesh_editor.init_cells(num_cells, num_cells);
+    mesh_editor.init_vertices_global(num_vertices, num_vertices);
+    mesh_editor.init_cells_global(num_cells, num_cells);
 
     // Add vertices to mesh
     std::size_t vertex_index = 0;
@@ -232,8 +232,8 @@ namespace dolfin
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
     mesh_editor.open(mesh, tdim, gdim);
-    mesh_editor.init_vertices(num_vertices, num_vertices);
-    mesh_editor.init_cells(num_cells, num_cells);
+    mesh_editor.init_vertices_global(num_vertices, num_vertices);
+    mesh_editor.init_cells_global(num_cells, num_cells);
 
     // Add vertices to mesh
     std::size_t vertex_index = 0;
@@ -297,8 +297,8 @@ namespace dolfin
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
     mesh_editor.open(mesh, tdim, gdim);
-    mesh_editor.init_vertices(num_vertices, num_vertices);
-    mesh_editor.init_cells(num_cells, num_cells);
+    mesh_editor.init_vertices_global(num_vertices, num_vertices);
+    mesh_editor.init_cells_global(num_cells, num_cells);
 
     // Set all vertex indices to -1
     typename T::Facets_in_complex_iterator c;
@@ -392,8 +392,8 @@ namespace dolfin
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
     mesh_editor.open(mesh, tdim, gdim);
-    mesh_editor.init_vertices(num_vertices, num_vertices);
-    mesh_editor.init_cells(num_cells, num_cells);
+    mesh_editor.init_vertices_global(num_vertices, num_vertices);
+    mesh_editor.init_cells_global(num_cells, num_cells);
 
     std::size_t vertex_index = 0;
     typename T::Vertex_iterator v;
@@ -477,8 +477,8 @@ namespace dolfin
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
     mesh_editor.open(mesh, tdim, gdim);
-    mesh_editor.init_vertices(num_vertices, num_vertices);
-    mesh_editor.init_cells(num_cells, num_cells);
+    mesh_editor.init_vertices_global(num_vertices, num_vertices);
+    mesh_editor.init_cells_global(num_cells, num_cells);
 
     // Add vertices to mesh
     std::size_t vertex_index = 0;
