@@ -18,10 +18,11 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2011-09-17
-// Last changed: 2013-12-03
+// Last changed: 2014-02-14
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/Timer.h"
+#include "dolfin/graph/Graph.h"
 #include "dolfin/log/log.h"
 #include "BoundaryMesh.h"
 #include "Facet.h"
@@ -987,6 +988,170 @@ DistributedMeshTools::compute_num_global_entities(const MPI_Comm mpi_comm,
                                                  0);
 
   return std::make_pair(num_global, offset);
+}
+//-----------------------------------------------------------------------------
+void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
+{
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
+  // Get mesh topology and connectivity
+  MeshTopology& topology = mesh.topology();
+  MeshConnectivity& ce = topology(D, D - 1);
+  MeshConnectivity& ec = topology(D - 1, D);
+  MeshConnectivity& ev = topology(D - 1, 0);
+  
+  // Check if entities have already been computed
+  dolfin_assert(topology.size(D - 1) == 0);
+
+  // Make sure connectivity does not already exist  
+  dolfin_assert(ce.empty() && ev.empty() && ec.empty());
+
+  // Get cell type
+  const CellType& cell_type = mesh.type();
+
+  // Initialize local array of entities
+  const std::size_t m = cell_type.num_entities(D - 1);
+  const std::size_t n = cell_type.num_vertices(D - 1);
+  std::vector<std::vector<unsigned int> >
+    e_vertices(m, std::vector<unsigned int>(n, 0));
+
+  // List of facet indices connected to cell
+  std::vector<std::vector<unsigned int> > connectivity_ce(mesh.num_cells());
+
+  // List of vertex indices connected to facet
+  std::vector<std::vector<unsigned int> > connectivity_ev;
+
+  // List of cell indices connected to facet
+  std::vector<std::vector<unsigned int> > connectivity_ec;
+
+  std::size_t current_entity = 0;
+  std::size_t max_ce_connections = 1;
+  boost::unordered_map<std::vector<unsigned int>, unsigned int>
+    evertices_to_index;
+
+  // Rehash/reserve map for efficiency
+  const std::size_t max_elements
+    = mesh.num_cells()*mesh.type().num_entities(D - 1)/2;
+  #if BOOST_VERSION < 105000
+  evertices_to_index.rehash(max_elements/evertices_to_index.max_load_factor()
+                            + 1);
+  #else
+  evertices_to_index.reserve(max_elements);
+  #endif
+
+  // Cell-cell connectivity via facet
+  Graph g_dual(mesh.num_cells());
+
+  // Loop over cells
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    // Cell index
+    const std::size_t cell_index = c->index();
+
+    // Reserve space to reduce dynamic allocations
+    connectivity_ce[cell_index].reserve(max_ce_connections);
+
+    // Get vertices from cell
+    const unsigned int* vertices = c->entities(0);
+    dolfin_assert(vertices);
+
+    // Create entities
+    cell_type.create_entities(e_vertices, D - 1, vertices);
+
+    // Iterate over the given list of entities
+    std::vector<std::vector<unsigned int> >::iterator entity;
+    for (entity = e_vertices.begin(); entity != e_vertices.end(); ++entity)
+    {
+      // Sort entities (to use as map key)
+      std::sort(entity->begin(), entity->end());
+
+      // Insert into map
+      std::pair<boost::unordered_map<std::vector<unsigned int>, unsigned int>::iterator, bool>
+        it = evertices_to_index.insert(std::make_pair(*entity, current_entity));
+
+      // Entity index
+      std::size_t e_index = it.first->second;
+
+      // Add entity index to cell - e connectivity
+      connectivity_ce[cell_index].push_back(e_index);
+
+      // If new key was inserted, increment entity counter
+      if (it.second)
+      {
+        // Add list of new entity vertices
+        connectivity_ev.push_back(*entity);
+        connectivity_ec.push_back(std::vector<unsigned int>(1, cell_index));
+
+        // Update max vector size (used to reserve space for performance)
+        max_ce_connections = std::max(max_ce_connections,
+                             connectivity_ce[cell_index].size());
+
+        // Increase counter
+        current_entity++;
+      }
+      else
+      {
+        // Second cell connected to this facet
+        std::vector<unsigned int>& cec = connectivity_ec[e_index];
+        const unsigned int other_cell = cec[0];
+        cec.push_back(cell_index);
+        g_dual[cell_index].insert(other_cell);
+        g_dual[other_cell].insert(cell_index);
+      }
+      
+    }
+  }
+
+  // Now go through connectivity_ec and pick out facets
+  // which have the following connectivity:
+  // 1) i-i or i- (local)
+  // 2) i-j (interprocess)
+  // 3) j-j, j-, j-k (remote)
+  // and do global numbering accordingly...
+
+  const std::vector<std::size_t>& ghost_owner 
+    = mesh.data().array("ghost_owner", D);
+
+  const unsigned int rank = MPI::rank(mesh.mpi_comm());
+
+  std::vector<unsigned int> facet_counts(MPI::size(mesh.mpi_comm()));
+  
+  for (auto f = evertices_to_index.begin(); 
+       f != evertices_to_index.end(); ++f)
+  {
+    const std::vector<unsigned int>& cec = connectivity_ec[f->second];
+    std::vector<unsigned int> cec_owner;
+    for (auto cp = cec.begin(); cp != cec.end(); ++cp)
+      cec_owner.push_back(ghost_owner[*cp]);
+
+    if (cec_owner[0] == rank && 
+        (cec_owner.size() == 1 || cec_owner[1] == rank) )
+    {
+      facet_counts[rank]++;
+    }
+    else if (cec_owner.size() == 2 && 
+             (cec_owner[0] == rank || cec_owner[1] == rank))
+    {
+      unsigned int other_cell = (cec_owner[0] == rank) ? 
+                                 cec_owner[1] : cec_owner[0];
+      facet_counts[other_cell]++;
+    }  
+  }
+
+  for (auto fc = facet_counts.begin(); fc != facet_counts.end(); ++fc)
+  {
+    std::cout << rank << "-" 
+              << fc - facet_counts.begin() << ") " << *fc << "\n";
+  }
+  
+  // Initialise connectivity data structure
+  topology.init(D - 1, connectivity_ev.size(), connectivity_ev.size());
+
+  // Copy connectivity data into static MeshTopology data structures
+  ce.set(connectivity_ce);
+  ec.set(connectivity_ec);
+  ev.set(connectivity_ev);
 }
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)

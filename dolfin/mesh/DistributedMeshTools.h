@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-17
-// Last changed: 2013-01-29
+// Last changed: 2014-02-14
 
 #ifndef __MESH_DISTRIBUTED_TOOLS_H
 #define __MESH_DISTRIBUTED_TOOLS_H
@@ -60,6 +60,8 @@ namespace dolfin
     // two cells (with the cells residing on neighboring processes)
     static void init_facet_cell_connections(Mesh& mesh);
 
+    static void init_facet_cell_connections_by_ghost(Mesh& mesh);
+    
     /// Find processes that own or share mesh entities (using entity
     /// global indices). Returns (global_dof, set(process_num,
     /// local_index)). Exclusively local entities will not appear in

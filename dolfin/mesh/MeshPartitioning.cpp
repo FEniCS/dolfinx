@@ -144,7 +144,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
-  DistributedMeshTools::init_facet_cell_connections(mesh);
+  DistributedMeshTools::init_facet_cell_connections_by_ghost(mesh);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
@@ -214,15 +214,17 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
              mesh_data.num_global_vertices);
 
   // Attach ghost cell ownership data to Mesh
+  // FIXME: this may later become a Mesh member variable
   mesh.data().create_array("ghost_owner", mesh_data.tdim);
-  std::vector<std::size_t>& ghost_cell_owner = mesh.data().array("ghost_owner", mesh_data.tdim);
+  std::vector<std::size_t>& ghost_cell_owner 
+    = mesh.data().array("ghost_owner", mesh_data.tdim);
   // Copy over ghost cell ownership data
   ghost_cell_owner.insert(ghost_cell_owner.begin(),
                           ghost_remote_process.begin(),
                           ghost_remote_process.end());
 
   // Attach ghost vertex mask to Mesh, marking vertices which are in cells
-  // belonging to other processes.
+  // belonging to other processes - maybe not needed
   mesh.data().create_array("ghost_mask", 0);
   std::vector<std::size_t>& ghost_vertex_mask = mesh.data().array("ghost_mask", 0);
   ghost_vertex_mask.resize(mesh.num_vertices());

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2012.
 //
 // First added:  2006-06-02
-// Last changed: 2014-01-17
+// Last changed: 2014-02-13
 
 #include <algorithm>
 #include <vector>
@@ -67,7 +67,6 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
                  "Connectivity for topological dimension %d exists but entities are missing", dim);
   }
 
-
   // Start timer
   Timer timer("compute entities dim = " + to_string(dim));
 
@@ -83,7 +82,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   // List of entity e indices connected to cell
   std::vector<std::vector<unsigned int> > connectivity_ce(mesh.num_cells());
 
-  // List of vertces indices connected to entity e
+  // List of vertex indices connected to entity e
   std::vector<std::vector<unsigned int> > connectivity_ev;
 
   std::size_t current_entity = 0;
