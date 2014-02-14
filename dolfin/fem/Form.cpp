@@ -19,7 +19,7 @@
 // Modified by Martin Alnes 2008
 //
 // First added:  2007-12-10
-// Last changed: 2014-02-12
+// Last changed: 2014-02-14
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -270,7 +270,7 @@ void Form::set_some_coefficients(std::map<std::string,
   }
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunction> Form::coefficient(std::size_t i) const
+std::shared_ptr<const GenericFunction> Form::coefficient(std::size_t i) const
 {
   dolfin_assert(i < _coefficients.size());
   return _coefficients[i];
@@ -301,40 +301,40 @@ std::string Form::coefficient_name(std::size_t i) const
   return name.str();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> > Form::cell_domains() const
+std::shared_ptr<const MeshFunction<std::size_t> > Form::cell_domains() const
 {
   return _cell_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> > Form::exterior_facet_domains() const
+std::shared_ptr<const MeshFunction<std::size_t> > Form::exterior_facet_domains() const
 {
   return _exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> > Form::interior_facet_domains() const
+std::shared_ptr<const MeshFunction<std::size_t> > Form::interior_facet_domains() const
 {
   return _interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_cell_domains
-(boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains)
+(std::shared_ptr<const MeshFunction<std::size_t> > cell_domains)
 {
   _cell_domains = cell_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains
-(boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains)
+(std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains)
 {
   _exterior_facet_domains = exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains
-(boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains)
+(std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains)
 {
   _interior_facet_domains = interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const ufc::form> Form::ufc_form() const
+std::shared_ptr<const ufc::form> Form::ufc_form() const
 {
   return _ufc_form;
 }

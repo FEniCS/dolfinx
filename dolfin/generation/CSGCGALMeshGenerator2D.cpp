@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2012-2013
 //
 // First added:  2012-05-10
-// Last changed: 2014-02-06
+// Last changed: 2014-02-14
 
 #include <cmath>
 #include <limits>
@@ -288,7 +288,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   // Add the subdomains to the CDT. Traverse in reverse order to get
   // the latest added subdomain on top
-  std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
+  std::list<std::pair<std::size_t, std::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
 
   if (!geometry.subdomains.empty())
     log(TRACE, "Processing subdomains");

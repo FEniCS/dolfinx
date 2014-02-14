@@ -19,7 +19,7 @@
 // Modified by Martin Alnes 2008
 //
 // First added:  2007-04-02
-// Last changed: 2014-02-12
+// Last changed: 2014-02-14
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -194,7 +194,7 @@ namespace dolfin
     ///     coefficient (_GenericFunction_)
     ///         The coefficient.
     void set_coefficient(std::string name,
-                         boost::shared_ptr<const GenericFunction> coefficient);
+                         std::shared_ptr<const GenericFunction> coefficient);
 
     /// Set all coefficients in given map. All coefficients in the
     /// given map, which may contain only a subset of the coefficients
@@ -221,7 +221,7 @@ namespace dolfin
     ///     coefficients (std::map<std::string, _GenericFunction_>)
     ///         The map of coefficients.
     void set_some_coefficients(std::map<std::string,
-                                   boost::shared_ptr<const GenericFunction> > coefficients);
+                               std::shared_ptr<const GenericFunction> > coefficients);
 
     /// Return coefficient with given number
     ///
@@ -280,15 +280,15 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The cell domains.
-    boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t> > cell_domains() const;
 
     /// Return exterior facet domains (zero pointer if no domains have
     /// been specified)
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_MeshFunction_ <std::size_t> >
+    ///     std::shared_ptr<_MeshFunction_ <std::size_t> >
     ///         The exterior facet domains.
-    boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains() const;
 
     /// Return interior facet domains (zero pointer if no domains have
     /// been specified)
@@ -296,35 +296,35 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The interior facet domains.
-    boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains() const;
 
     /// Set cell domains
     ///
     /// *Arguments*
     ///     cell_domains (_MeshFunction_ <std::size_t>)
     ///         The cell domains.
-    void set_cell_domains(boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains);
+    void set_cell_domains(std::shared_ptr<const MeshFunction<std::size_t> > cell_domains);
 
     /// Set exterior facet domains
     ///
     /// *Arguments*
     ///     exterior_facet_domains (_MeshFunction_ <std::size_t>)
     ///         The exterior facet domains.
-    void set_exterior_facet_domains(boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains);
+    void set_exterior_facet_domains(std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains);
 
     /// Set interior facet domains
     ///
     /// *Arguments*
     ///     interior_facet_domains (_MeshFunction_ <std::size_t>)
     ///         The interior facet domains.
-    void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
+    void set_interior_facet_domains(std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
 
     /// Return UFC form shared pointer
     ///
     /// *Returns*
     ///     ufc::form
     ///         The UFC form.
-    boost::shared_ptr<const ufc::form> ufc_form() const;
+    std::shared_ptr<const ufc::form> ufc_form() const;
 
     /// Check function spaces and coefficients
     void check() const;
@@ -343,25 +343,25 @@ namespace dolfin
   protected:
 
     // The UFC form
-    boost::shared_ptr<const ufc::form> _ufc_form;
+    std::shared_ptr<const ufc::form> _ufc_form;
 
     // Function spaces (one for each argument)
-    std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
+    std::vector<std::shared_ptr<const FunctionSpace> > _function_spaces;
 
     // Coefficients
-    std::vector<boost::shared_ptr<const GenericFunction> > _coefficients;
+    std::vector<std::shared_ptr<const GenericFunction> > _coefficients;
 
     // The mesh (needed for functionals when we don't have any spaces)
-    boost::shared_ptr<const Mesh> _mesh;
+    std::shared_ptr<const Mesh> _mesh;
 
     // Markers for cell domains
-    boost::shared_ptr<const MeshFunction<std::size_t> > _cell_domains;
+    std::shared_ptr<const MeshFunction<std::size_t> > _cell_domains;
 
     // Markers for exterior facet domains
-    boost::shared_ptr<const MeshFunction<std::size_t> > _exterior_facet_domains;
+    std::shared_ptr<const MeshFunction<std::size_t> > _exterior_facet_domains;
 
     // Markers for interior facet domains
-    boost::shared_ptr<const MeshFunction<std::size_t> > _interior_facet_domains;
+    std::shared_ptr<const MeshFunction<std::size_t> > _interior_facet_domains;
 
   private:
 
