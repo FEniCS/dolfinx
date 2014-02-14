@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-10
-// Last changed: 2012-11-14
+// Last changed: 2014-02-06
 
 
 #include "CSGCGALMeshGenerator3D.h"
@@ -62,9 +62,9 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   // Create and initialize mesh editor
   dolfin::MeshEditor mesh_editor;
   mesh_editor.open(mesh, 3, 3);
-  mesh_editor.init_vertices(triangulation.number_of_vertices(),
-                            triangulation.number_of_vertices());
-  mesh_editor.init_cells(num_cells, num_cells);
+  mesh_editor.init_vertices_global(triangulation.number_of_vertices(),
+                                   triangulation.number_of_vertices());
+  mesh_editor.init_cells_global(num_cells, num_cells);
 
   // Add vertices to mesh
   std::size_t vertex_index = 0;

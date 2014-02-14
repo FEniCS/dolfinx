@@ -39,7 +39,6 @@ namespace dolfin
   public :
 
     CSGCGALMeshGenerator2D(const CSGGeometry& geometry);
-    //CSGCGALMeshGenerator2D(const std::vector<std::shared_ptr<const CSGGeometry> >& subdomains);
 
     ~CSGCGALMeshGenerator2D();
 

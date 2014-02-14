@@ -331,6 +331,48 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
+    def test_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
+        class Side0(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] <= 0.55
+
+        class Side1(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] >= 0.45
+
+        mesh = UnitSquareMesh(10,10)
+        dim = 2
+
+        sd0 = MeshFunctionSizet(mesh, dim)
+        sd1 = MeshFunctionSizet(mesh, dim)
+
+        Side0().mark(sd0, 1)
+        Side1().mark(sd1, 2)
+
+        r0 = Restriction(sd0, 1)
+        r1 = Restriction(sd1, 2)
+
+        Vt = FunctionSpace(mesh, "DG", 1)
+        V0 = FunctionSpace(r0, "CG", 1)
+        V1 = FunctionSpace(r1, "CG", 1)
+
+        ft = Function(Vt)
+        f0 = Function(V0)
+        f1 = Function(V1)
+
+        f0.interpolate(Expression("x[0]*x[0]"))
+        f1.interpolate(Expression("x[1]*x[1]"))
+        ft.interpolate(f0)
+        gt = project(f1+f0, Vt)
+
+        f0v = assemble(f0*dx(1, domain_data=sd0))
+        f1v = assemble(f1*dx(2, domain_data=sd1))
+        ftv = assemble(ft*dx(1, domain_data=sd0))
+        gtv = assemble(gt*dx)
+
+        self.assertAlmostEqual(f0v, ftv)
+        self.assertAlmostEqual(f0v+f1v, gtv)
+
     def test_interpolation_old(self):
         class F0(Expression):
             def eval(self, values, x):
