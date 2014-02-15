@@ -44,10 +44,12 @@ namespace dolfin
     ~BlockMatrix();
 
     /// Set block
-    void set_block(std::size_t i, std::size_t j, boost::shared_ptr<GenericMatrix> m);
+    void set_block(std::size_t i, std::size_t j,
+                   boost::shared_ptr<GenericMatrix> m);
 
     /// Get block (const version)
-    const boost::shared_ptr<GenericMatrix> get_block(std::size_t i, std::size_t j) const;
+    boost::shared_ptr<const GenericMatrix>
+      get_block(std::size_t i, std::size_t j) const;
 
     /// Get block
     boost::shared_ptr<GenericMatrix> get_block(std::size_t i, std::size_t j);
@@ -65,11 +67,14 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Matrix-vector product, y = Ax
-    void mult(const BlockVector& x, BlockVector& y, bool transposed=false) const;
+    void mult(const BlockVector& x, BlockVector& y,
+              bool transposed=false) const;
 
-    /// Create a crude explicit Schur approximation of S = D - C A^-1 B of (A B; C D)
-    /// If symmetry != 0, then the caller promises that B = symmetry * transpose(C).
-    boost::shared_ptr<GenericMatrix> schur_approximation(bool symmetry=true) const;
+    /// Create a crude explicit Schur approximation  of S = D - C A^-1
+    /// B of  (A B; C  D) If symmetry !=  0, then the  caller promises
+    /// that B = symmetry * transpose(C).
+    boost::shared_ptr<GenericMatrix>
+      schur_approximation(bool symmetry=true) const;
 
   private:
 

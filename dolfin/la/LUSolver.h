@@ -54,7 +54,7 @@ namespace dolfin
     ~LUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);

@@ -20,7 +20,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2008
-// Last changed: 2011-03-17
+// Last changed: 2014-02-06
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -180,8 +180,8 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
   MeshEditor editor;
   editor.open(mesh, cell_type->cell_type(), tdim, gdim);
 
-  editor.init_vertices(vertices.size(), vertices.size());
-  editor.init_cells(cells.size(), cells.size());
+  editor.init_vertices_global(vertices.size(), vertices.size());
+  editor.init_cells_global(cells.size(), cells.size());
 
   // Add vertices
   std::size_t current_vertex = 0;

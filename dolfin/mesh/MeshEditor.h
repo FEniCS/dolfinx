@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2012-09-27
+// Last changed: 2014-02-06
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -89,7 +89,24 @@ namespace dolfin
     ///         The geometrical dimension.
     void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim);
 
-    /// Specify number of vertices
+    /// Specify number of vertices (serial version)
+    ///
+    /// *Arguments*
+    ///     num_vertices (std::size_t)
+    ///         The number of vertices.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Mesh mesh;
+    ///         MeshEditor editor;
+    ///         editor.open(mesh, 2, 2);
+    ///         editor.init_vertices(9);
+    ///
+    void init_vertices(std::size_t num_vertices)
+    { init_vertices_global(num_vertices, num_vertices); }
+
+    /// Specify number of vertices (distributed version)
     ///
     /// *Arguments*
     ///     num_local_vertices (std::size_t)
@@ -105,10 +122,26 @@ namespace dolfin
     ///         editor.open(mesh, 2, 2);
     ///         editor.init_vertices(4, 8);
     ///
-    void init_vertices(std::size_t num_local_vertices,
-                       std::size_t num_global_vertices);
+    void init_vertices_global(std::size_t num_local_vertices,
+                              std::size_t num_global_vertices);
 
-    /// Specify number of cells
+    /// Specify number of cells (serial version)
+    ///
+    /// *Arguments*
+    ///     num_cells (std::size_t)
+    ///         The number of cells.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Mesh mesh;
+    ///         MeshEditor editor;
+    ///         editor.open(mesh, 2, 2);
+    ///         editor.init_cells(8);
+    void init_cells(std::size_t num_cells)
+    { init_cells_global(num_cells, num_cells); }
+
+    /// Specify number of cells (distributed version)
     ///
     /// *Arguments*
     ///     num_local_cells (std::size_t)
@@ -124,7 +157,7 @@ namespace dolfin
     ///         editor.open(mesh, 2, 2);
     ///         editor.init_cells(2, 6);
     ///
-    void init_cells(std::size_t num_local_cells, std::size_t num_global_cells);
+    void init_cells_global(std::size_t num_local_cells, std::size_t num_global_cells);
 
     /// Add vertex v at given point p
     ///

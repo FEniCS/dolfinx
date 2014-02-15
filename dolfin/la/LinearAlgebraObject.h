@@ -78,7 +78,7 @@ namespace dolfin
     /// Cast shared pointer object to its derived class, if possible.
     /// Caller must check for success (returns null if cast fails).
     template<typename X, typename Y>
-    static boost::shared_ptr<X> down_cast(const boost::shared_ptr<Y> A)
+    static boost::shared_ptr<X> down_cast(boost::shared_ptr<Y> A)
     {
       // Try to down cast shared pointer
       boost::shared_ptr<X> _A = boost::dynamic_pointer_cast<X>(A);
@@ -157,7 +157,7 @@ namespace dolfin
   /// Cast shared pointer object to its derived class, if possible.
   /// Caller must check for success (returns null if cast fails).
   template<typename Y, typename X>
-  boost::shared_ptr<Y> as_type(const boost::shared_ptr<X> x)
+  boost::shared_ptr<Y> as_type(boost::shared_ptr<X> x)
   {
     // Try to down cast shared pointer
     boost::shared_ptr<Y> y = boost::dynamic_pointer_cast<Y>(x);

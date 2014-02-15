@@ -97,8 +97,8 @@ std::size_t STLMatrix::size(std::size_t dim) const
   {
     if (dim == 0)
     {
-      return dolfin::MPI::sum(_mpi_comm, _local_range.second
-                              - _local_range.first);
+      return dolfin::MPI::sum(_mpi_comm,
+                              _local_range.second - _local_range.first);
     }
     else
       return num_codim_entities;
@@ -109,8 +109,8 @@ std::size_t STLMatrix::size(std::size_t dim) const
       return num_codim_entities;
     else
     {
-      return dolfin::MPI::sum(_mpi_comm, _local_range.second
-                              - _local_range.first);
+      return dolfin::MPI::sum(_mpi_comm,
+                              _local_range.second - _local_range.first);
     }
   }
 }
@@ -232,8 +232,11 @@ void STLMatrix::apply(std::string mode)
   std::vector<std::vector<std::size_t> > send_non_local_cols(num_processes);
   std::vector<std::vector<double> > send_non_local_vals(num_processes);
 
-  std::vector<std::pair<std::size_t, std::size_t> > process_ranges;
-  dolfin::MPI::all_gather(_mpi_comm, _local_range, process_ranges);
+  std::vector<std::size_t> range(2);
+  range[0] = _local_range.first;
+  range[1] = _local_range.second;
+  std::vector<std::size_t> process_ranges;
+  dolfin::MPI::all_gather(_mpi_comm, range, process_ranges);
 
   // Communicate off-process data
   boost::unordered_map<std::pair<std::size_t,
@@ -248,10 +251,10 @@ void STLMatrix::apply(std::string mode)
 
     // Get owning process
     std::size_t owner = 0;
-    for (std::size_t proc = 0; proc < process_ranges.size(); ++proc)
+    for (std::size_t proc = 0; proc < num_processes; ++proc)
     {
-      if (global_row < process_ranges[proc].second
-          && global_row >= process_ranges[proc].first)
+      if (global_row < process_ranges[2*proc + 1]
+          && global_row >= process_ranges[2*proc])
       {
         owner = proc;
         break;

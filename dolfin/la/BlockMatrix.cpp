@@ -56,7 +56,7 @@ void BlockMatrix::set_block(std::size_t i, std::size_t j,
   matrices[i][j] = m;
 }
 //-----------------------------------------------------------------------------
-const boost::shared_ptr<GenericMatrix>
+boost::shared_ptr<const GenericMatrix>
 BlockMatrix::get_block(std::size_t i, std::size_t j) const
 {
   dolfin_assert(i < matrices.shape()[0]);
