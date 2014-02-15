@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,10 @@
 // Modified by Kristian Oelgaard 2007
 // Modified by Kristoffer Selim 2008
 // Modified by Marie E. Rognes 2011
+// Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-06
+// Last changed: 2014-02-13
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -283,18 +284,18 @@ void IntervalCell::order(Cell& cell,
 //-----------------------------------------------------------------------------
 bool IntervalCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell,point);
+  return CollisionDetection::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell,entity);
+  return CollisionDetection::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
 IntervalCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
-  return IntersectionTriangulation::triangulate_intersection(c0,c1);
+  return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

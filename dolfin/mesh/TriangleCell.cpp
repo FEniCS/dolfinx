@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,9 +20,10 @@
 // Modified by Dag Lindbo 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Jan Blechta 2013
+// Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-02-12
+// Last changed: 2014-02-13
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -476,18 +477,18 @@ void TriangleCell::order(Cell& cell,
 //-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell,point);
+  return CollisionDetection::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell,entity);
+  return CollisionDetection::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
 TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
-  return IntersectionTriangulation::triangulate_intersection(c0,c1);
+  return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const

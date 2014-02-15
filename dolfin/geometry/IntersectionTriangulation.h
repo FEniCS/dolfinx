@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-03
+// Last changed: 2014-02-13
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -51,9 +51,8 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     static std::vector<double>
-      triangulate_intersection(const MeshEntity& entity_0,
-			       const MeshEntity& entity_1);
-
+    triangulate_intersection(const MeshEntity& entity_0,
+                             const MeshEntity& entity_1);
 
     /// Compute triangulation of intersection of two intervals
     ///
@@ -69,8 +68,8 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     static std::vector<double>
-      triangulate_intersection_interval_interval(const MeshEntity& interval_0,
-						 const MeshEntity& interval_1);
+    triangulate_intersection_interval_interval(const MeshEntity& interval_0,
+                                               const MeshEntity& interval_1);
 
     /// Compute triangulation of intersection of two triangles
     ///
@@ -86,8 +85,8 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     static std::vector<double>
-      triangulate_intersection_triangle_triangle(const MeshEntity& triangle_0,
-						 const MeshEntity& triangle_1);
+    triangulate_intersection_triangle_triangle(const MeshEntity& triangle_0,
+                                               const MeshEntity& triangle_1);
 
     /// Compute triangulation of intersection of a tetrahedron and a triangle
     ///
@@ -103,8 +102,8 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     static std::vector<double>
-      triangulate_intersection_tetrahedron_triangle(const MeshEntity& tetrahedron,
-						    const MeshEntity& triangle);
+    triangulate_intersection_tetrahedron_triangle(const MeshEntity& tetrahedron,
+                                                  const MeshEntity& triangle);
 
     /// Compute triangulation of intersection of two tetrahedra
     ///
@@ -120,8 +119,8 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     static std::vector<double>
-      triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
-						       const MeshEntity& tetrahedron_1);
+    triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
+                                                     const MeshEntity& tetrahedron_1);
 
   private:
 
@@ -134,11 +133,12 @@ namespace dolfin
 
     // Helper function
     static bool intersection_face_edge(const Point& r,
-				       const Point& s, 
+				       const Point& s,
 				       const Point& t,
 				       const Point& a,
 				       const Point& b,
 				       Point& pt);
+
   };
 
 }
