@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2014
 // Modified by Martin Alnes 2008
 //
 // First added:  2007-12-10
-// Last changed: 2013-07-14
+// Last changed: 2014-02-12
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -217,11 +217,58 @@ void Form::set_coefficient(std::string name,
   set_coefficient(coefficient_number(name), coefficient);
 }
 //-----------------------------------------------------------------------------
-void Form::set_coefficients(std::map<std::string, boost::shared_ptr<const GenericFunction> > coefficients)
+void Form::set_coefficients(std::map<std::string,
+                                     boost::shared_ptr<const GenericFunction> > coefficients)
 {
-  std::map<std::string, boost::shared_ptr<const GenericFunction> >::iterator it;
-  for (it = coefficients.begin(); it != coefficients.end(); ++it)
+  for (auto it = coefficients.begin(); it != coefficients.end(); ++it)
     set_coefficient(it->first, it->second);
+}
+//-----------------------------------------------------------------------------
+void Form::set_some_coefficients(std::map<std::string,
+                                          boost::shared_ptr<const GenericFunction> > coefficients)
+{
+  // Build map of which coefficients has been set
+  std::map<std::string, bool> markers;
+  for (std::size_t i = 0; i < num_coefficients(); i++)
+    markers[coefficient_name(i)] = false;
+
+  // Set all coefficients that need to be set
+  for (auto it = coefficients.begin(); it != coefficients.end(); ++it)
+  {
+    auto name = it->first;
+    auto coefficient = it->second;
+    if (markers.find(name) != markers.end())
+    {
+      set_coefficient(name, coefficient);
+      markers[name] = true;
+    }
+  }
+
+  // Check which coefficients that have been set
+  std::stringstream s_set;
+  std::stringstream s_unset;
+  std::size_t num_set = 0;
+  for (auto it = markers.begin(); it != markers.end(); ++it)
+  {
+    if (it->second)
+    {
+      num_set++;
+      s_set << " " << it->first;
+    }
+    else
+      s_unset << " " << it->second;
+  }
+
+  // Report status of set coefficients
+  if (num_set == num_coefficients())
+    info("All coefficients attached to form:%s", s_set.str().c_str());
+  else
+  {
+    info("%d coefficient(s) attached to form:%s",
+         num_set, s_set.str().c_str());
+    info("%d coefficient(s) missing: %s",
+         num_coefficients() - num_set, s_unset.str().c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const GenericFunction> Form::coefficient(std::size_t i) const

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-03-05
-// Last changed: 2013-05-21
+// Last changed: 2014-02-01
 
 #include <iostream>
 #include <fstream>
@@ -176,7 +176,6 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   const std::vector<double> xpos = mesh_min_max(mesh);
 
   // Get MPI details
-  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
   const std::size_t process_number = MPI::rank(mesh.mpi_comm());
 
   // Create pugi xml document
@@ -195,7 +194,7 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   write_vertices(xml_doc, mesh, vecindex);
 
   // Iterate over mesh facets
-  std::stringstream local_output;
+  std::vector<unsigned int> local_output;
   for (FaceIterator f(mesh); !f.end(); ++f)
   {
     // Check if topolgical dimension is 2, or if we have a boundary
@@ -206,13 +205,14 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
       CellIterator cell(*f);
 
       // Write mesh function value to string stream
-      local_output << (int)((meshfunction[*cell] - minval)*dval) << " " ;
+      local_output.push_back((unsigned int)
+                             ((meshfunction[*cell] - minval)*dval));
     }
   }
 
   // Gather up data on zero
-  std::vector<std::string> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
+  std::vector<unsigned int> gathered_output;
+  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
 
   // Write XML on root process
   if (process_number == 0)
@@ -222,8 +222,12 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
     indexed_face_set.append_attribute("colorPerVertex") = "false";
 
     std::stringstream str_output;
-    for (std::size_t i = 0; i < num_processes; ++i)
-      str_output << gathered_output[i];
+    for (std::vector<unsigned int>::iterator val = gathered_output.begin();
+         val != gathered_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
+
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
     // Output palette
@@ -362,7 +366,7 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
   else
     scale = 255.0/(maxval - minval);
 
-  std::stringstream local_output;
+  std::vector<int> local_output;
   if (facet_type == "IndexedLineSet")
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
@@ -384,10 +388,10 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
       {
         for (VertexIterator v(*e); !v.end(); ++v)
         {
-          local_output << (int)((data_values[v->index()] - minval)*scale)
-                       << " " ;
+          local_output.push_back((int)((data_values[v->index()] - minval)
+                                       *scale));
         }
-        local_output << "-1 ";
+        local_output.push_back(-1);
       }
     }
   }
@@ -400,20 +404,17 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
       {
         for (VertexIterator v(*f); !v.end(); ++v)
         {
-          local_output << (int)((data_values[v->index()] - minval)*scale)
-                       << " " ;
+          local_output.push_back((int)((data_values[v->index()] - minval)
+                                       *scale));
         }
-        local_output << "-1 ";
+        local_output.push_back(-1);
       }
     }
   }
 
-  // Number of MPI processes
-  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
-
   // Gather up on zero
-  std::vector<std::string> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
+  std::vector<int> gathered_output;
+  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     pugi::xml_node indexed_face_set = xml_doc.child("X3D")
@@ -421,9 +422,11 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
     indexed_face_set.append_attribute("colorPerVertex") = "true";
 
     std::stringstream str_output;
-    for (std::size_t i = 0; i < num_processes; ++i)
-      str_output << gathered_output[i];
-
+    for (std::vector<int>::iterator val = gathered_output.begin();
+         val != gathered_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
     // Output colour palette
@@ -440,11 +443,10 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
                                           true);
 
   const std::size_t process_number = MPI::rank(mesh.mpi_comm());
-  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
-  std::stringstream local_output;
+  std::vector<int> local_output;
   if (facet_type == "IndexedLineSet")
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
@@ -469,9 +471,9 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
           std::size_t index_it  = std::find(vecindex.begin(),
                                             vecindex.end(),
                                             v->index()) - vecindex.begin();
-          local_output << index_it + offset  << " " ;
+          local_output.push_back(index_it + offset);
         }
-        local_output << "-1 ";
+        local_output.push_back(-1);
       }
     }
   }
@@ -487,15 +489,15 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
           std::size_t index_it = std::find(vecindex.begin(),
                                            vecindex.end(),
                                            v->index()) - vecindex.begin();
-          local_output << index_it + offset  << " " ;
+          local_output.push_back(index_it + offset);
         }
-        local_output << "-1 ";
+        local_output.push_back(-1);
       }
     }
   }
 
-  std::vector<std::string> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
+  std::vector<int> gathered_output;
+  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
 
   if (process_number == 0)
   {
@@ -503,27 +505,30 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
       = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type.c_str());
 
     std::stringstream str_output;
-    for (std::size_t i = 0; i < num_processes; ++i)
-      str_output << gathered_output[i];
-
+    for (std::vector<int>::iterator val = gathered_output.begin();
+         val != gathered_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
     indexed_face_set.append_attribute("coordIndex") = str_output.str().c_str();
   }
 
-  local_output.str("");
-
   // Now fill in the geometry
+  std::vector<double> local_geom_output;
   for (std::vector<std::size_t>::const_iterator index = vecindex.begin();
        index != vecindex.end(); ++index)
   {
     Vertex v(mesh, *index);
-    local_output << v.x(0) << " " << v.x(1) << " ";
+    local_geom_output.push_back(v.x(0));
+    local_geom_output.push_back(v.x(1));
     if (gdim == 2)
-      local_output << "0 ";
+      local_geom_output.push_back(0.0);
     else
-      local_output << v.x(2) << " ";
+      local_geom_output.push_back(v.x(2));
   }
 
-  MPI::gather(mesh.mpi_comm(), local_output.str(), gathered_output);
+  std::vector<double> gathered_geom_output;
+  MPI::gather(mesh.mpi_comm(), local_geom_output, gathered_geom_output);
 
   // Finally, close off with the XML footer on process zero
   if (process_number == 0)
@@ -534,9 +539,11 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
     pugi::xml_node coordinate = indexed_face_set.append_child("Coordinate");
 
     std::stringstream str_output;
-    for (std::size_t i = 0; i < num_processes; ++i)
-      str_output << gathered_output[i];
-
+    for (std::vector<double>::iterator val = gathered_geom_output.begin();
+         val != gathered_geom_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
     coordinate.append_attribute("point") = str_output.str().c_str();
   }
 }

@@ -27,4 +27,3 @@ should be listeed in this file:
   - Add MPI communicator to vectors
   - Change UnitSquare to UnitSquareMesh
   - Change 'uint' to 'size_t' for MeshFunctions
-  - Add global vertex/cell number to MeshEditor::init_vertices/cells

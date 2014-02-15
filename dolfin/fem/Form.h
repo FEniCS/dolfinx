@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008-2011.
-// Modified by Martin Alnes, 2008.
+// Modified by Garth N. Wells 2008-2011.
+// Modified by Martin Alnes 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2013-09-18
+// Last changed: 2014-02-12
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -196,13 +196,32 @@ namespace dolfin
     void set_coefficient(std::string name,
                          boost::shared_ptr<const GenericFunction> coefficient);
 
-    /// Set all coefficients in given map, possibly a subset (shared
-    /// pointer version)
+    /// Set all coefficients in given map. All coefficients in the
+    /// given map, which may contain only a subset of the coefficients
+    /// of the form, will be set.
     ///
     /// *Arguments*
     ///     coefficients (std::map<std::string, _GenericFunction_>)
     ///         The map of coefficients.
-    void set_coefficients(std::map<std::string, boost::shared_ptr<const GenericFunction> > coefficients);
+    void set_coefficients(std::map<std::string,
+                                   boost::shared_ptr<const GenericFunction> > coefficients);
+
+    /// Set some coefficients in given map. Each coefficient in the
+    /// given map will be set, if the name of the coefficient matches
+    /// the name of a coefficient in the form.
+    ///
+    /// This is useful when reusing the same coefficient map for
+    /// several forms, or when some part of the form has been
+    /// outcommented (for testing) in the UFL file, which means that
+    /// the coefficient and attaching it to the form does not need to
+    /// be outcommented in a C++ program using code from the generated
+    /// UFL file.
+    ///
+    /// *Arguments*
+    ///     coefficients (std::map<std::string, _GenericFunction_>)
+    ///         The map of coefficients.
+    void set_some_coefficients(std::map<std::string,
+                                   boost::shared_ptr<const GenericFunction> > coefficients);
 
     /// Return coefficient with given number
     ///

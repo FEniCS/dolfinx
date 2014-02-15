@@ -21,7 +21,7 @@
 // Modified by Oeyvind Evju, 2013
 //
 // First added:  2006-06-21
-// Last changed: 2013-10-08
+// Last changed: 2014-02-06
 
 #include <dolfin/common/timing.h>
 
@@ -249,10 +249,10 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   */
 
   // Specify number of vertices and cells
-  editor.init_vertices(num_boundary_vertices, MPI::sum(mesh.mpi_comm(),
-                                                       num_owned_vertices));
-  editor.init_cells(num_boundary_cells, MPI::sum(mesh.mpi_comm(),
-                                                 num_boundary_cells));
+  editor.init_vertices_global(num_boundary_vertices, MPI::sum(mesh.mpi_comm(),
+                                                              num_owned_vertices));
+  editor.init_cells_global(num_boundary_cells, MPI::sum(mesh.mpi_comm(),
+                                                        num_boundary_cells));
 
   // Write vertex map
   MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
