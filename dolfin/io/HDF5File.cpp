@@ -62,6 +62,26 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   // HDF5 chunking
   parameters.add("chunking", false);
 
+  // Ensure directory exists 
+  // Create on process zero, and force other processes to wait
+  if (MPI::rank(_mpi_comm) == 0)
+  {
+    const boost::filesystem::path path(filename);
+    if (path.has_parent_path()
+        && !boost::filesystem::is_directory(path.parent_path()))
+    {
+      boost::filesystem::create_directories(path.parent_path());
+      if (!boost::filesystem::is_directory(path.parent_path()))
+      {
+        dolfin_error("HDF5File.cpp",
+                     "open file",
+                     "Could not create directory \"%s\"",
+                     path.parent_path().string().c_str());
+      }
+    }
+  }
+  MPI::barrier(_mpi_comm);
+
   // Open HDF5 file
   const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
   hdf5_file_id = HDF5Interface::open_file(_mpi_comm, filename, file_mode,
