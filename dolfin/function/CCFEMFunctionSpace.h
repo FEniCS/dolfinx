@@ -246,6 +246,9 @@ namespace dolfin
     // Build collision maps
     void _build_collision_maps();
 
+    // Build quadrature rules
+    void _build_quadrature_rules();
+
   };
 
 }

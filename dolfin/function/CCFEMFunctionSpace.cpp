@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -123,8 +123,11 @@ void CCFEMFunctionSpace::build()
   // Build bounding box trees
   _build_bounding_box_trees();
 
-  // Compute collision maps
+  // Build collision maps
   _build_collision_maps();
+
+  // Build quadrature rules
+  _build_quadrature_rules();
 
   end();
 }
@@ -292,6 +295,24 @@ void CCFEMFunctionSpace::_build_collision_maps()
     // Report results
     log(PROGRESS, "Part %d has %d uncut cells, %d cut cells, and %d covered cells.",
         i, uncut_cells.size(), cut_cells.size(), covered_cells.size());
+  }
+
+  end();
+}
+//-----------------------------------------------------------------------------
+void CCFEMFunctionSpace::_build_quadrature_rules()
+{
+  begin(PROGRESS, "Building quadrature rules.");
+
+  // Iterate over all parts
+  for (std::size_t part = 0; part < num_parts(); part++)
+  {
+    const auto cmap = collision_map_cut_cells(part);
+    for (auto it = cmap.begin(); it != cmap.end(); ++it)
+    {
+      cout << it->first << endl;
+
+    }
   }
 
   end();
