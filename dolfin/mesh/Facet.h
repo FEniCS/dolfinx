@@ -23,7 +23,7 @@
 #ifndef __FACET_H
 #define __FACET_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <utility>
 #include <vector>
@@ -86,7 +86,7 @@ namespace dolfin
     FacetFunction(const Mesh& mesh)
       : MeshFunction<T>(mesh, mesh.topology().dim() - 1) {}
 
-    FacetFunction(boost::shared_ptr<const Mesh> mesh)
+    FacetFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, mesh->topology().dim() - 1) {}
 
     FacetFunction(const Mesh& mesh, const T& value)

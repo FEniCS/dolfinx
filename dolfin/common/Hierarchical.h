@@ -21,7 +21,7 @@
 #ifndef __HIERARCHICAL_H
 #define __HIERARCHICAL_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/log/dolfin_log.h>
 #include "NoDeleter.h"
@@ -59,7 +59,7 @@ namespace dolfin
     std::size_t depth() const
     {
       std::size_t d = 1;
-      for (boost::shared_ptr<const T> it = root_node_shared_ptr();
+      for (std::shared_ptr<const T> it = root_node_shared_ptr();
            it->_child; it = it->_child)
         d++;
       return d;
@@ -112,11 +112,11 @@ namespace dolfin
     /// *Returns*
     ///     shared_ptr<T>
     ///         The parent object.
-    boost::shared_ptr<T> parent_shared_ptr()
+    std::shared_ptr<T> parent_shared_ptr()
     { return _parent; }
 
     /// Return shared pointer to parent (const version).
-    boost::shared_ptr<const T> parent_shared_ptr() const
+    std::shared_ptr<const T> parent_shared_ptr() const
     { return _parent; }
 
     /// Return child in hierarchy. An error is thrown if the object
@@ -150,11 +150,11 @@ namespace dolfin
     /// *Returns*
     ///     shared_ptr<T>
     ///         The child object.
-    boost::shared_ptr<T> child_shared_ptr()
+    std::shared_ptr<T> child_shared_ptr()
     { return _child; }
 
     /// Return shared pointer to child (const version).
-    boost::shared_ptr<const T> child_shared_ptr() const
+    std::shared_ptr<const T> child_shared_ptr() const
     { return _child; }
 
     /// Return root node object in hierarchy.
@@ -178,17 +178,17 @@ namespace dolfin
     /// *Returns*
     ///     _T_
     ///         The root node object.
-    boost::shared_ptr<T> root_node_shared_ptr()
+    std::shared_ptr<T> root_node_shared_ptr()
     {
-      boost::shared_ptr<T> it = _self;
+      std::shared_ptr<T> it = _self;
       for (; it->_parent; it = it->_parent);
       return it;
     }
 
     /// Return shared pointer to root node object in hierarchy (const version).
-    boost::shared_ptr<const T> root_node_shared_ptr() const
+    std::shared_ptr<const T> root_node_shared_ptr() const
     {
-      boost::shared_ptr<const T> it = _self;
+      std::shared_ptr<const T> it = _self;
       for (; it->_parent; it = it->_parent);
       return it;
     }
@@ -214,23 +214,23 @@ namespace dolfin
     /// *Returns*
     ///     _T_
     ///         The leaf node object.
-    boost::shared_ptr<T> leaf_node_shared_ptr()
+    std::shared_ptr<T> leaf_node_shared_ptr()
     {
-      boost::shared_ptr<T> it = _self;
+      std::shared_ptr<T> it = _self;
       for (; it->_child; it = it->_child);
       return it;
     }
 
     /// Return shared pointer to leaf node object in hierarchy (const version).
-    boost::shared_ptr<const T> leaf_node_shared_ptr() const
+    std::shared_ptr<const T> leaf_node_shared_ptr() const
     {
-      boost::shared_ptr<const T> it = _self;
+      std::shared_ptr<const T> it = _self;
       for (; it->_child; it = it->_child);
       return it;
     }
 
     /// Set parent
-    void set_parent(boost::shared_ptr<T> parent)
+    void set_parent(std::shared_ptr<T> parent)
     { _parent = parent; }
 
     /// Clear child
@@ -240,7 +240,7 @@ namespace dolfin
     }
 
     /// Set child
-    void set_child(boost::shared_ptr<T> child)
+    void set_child(std::shared_ptr<T> child)
     { _child = child; }
 
     /// Assignment operator
@@ -269,11 +269,11 @@ namespace dolfin
   private:
 
     // The object itself
-    boost::shared_ptr<T> _self;
+    std::shared_ptr<T> _self;
 
     // Parent and child in hierarchy
-    boost::shared_ptr<T> _parent;
-    boost::shared_ptr<T> _child;
+    std::shared_ptr<T> _parent;
+    std::shared_ptr<T> _child;
 
   };
 

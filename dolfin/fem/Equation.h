@@ -21,7 +21,7 @@
 #ifndef __EQUATION_H
 #define __EQUATION_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace dolfin
 {
@@ -42,11 +42,11 @@ namespace dolfin
   public:
 
     /// Create equation a == L
-    Equation(boost::shared_ptr<const Form> a,
-             boost::shared_ptr<const Form> L);
+    Equation(std::shared_ptr<const Form> a,
+             std::shared_ptr<const Form> L);
 
     /// Create equation F == 0
-    Equation(boost::shared_ptr<const Form> F, int rhs);
+    Equation(std::shared_ptr<const Form> F, int rhs);
 
     /// Destructor
     ~Equation();
@@ -55,10 +55,10 @@ namespace dolfin
     bool is_linear() const;
 
     /// Return form for left-hand side
-    boost::shared_ptr<const Form> lhs() const;
+    std::shared_ptr<const Form> lhs() const;
 
     /// Return form for right-hand side
-    boost::shared_ptr<const Form> rhs() const;
+    std::shared_ptr<const Form> rhs() const;
 
     /// Return value for right-hand side
     int rhs_int() const;
@@ -66,10 +66,10 @@ namespace dolfin
   private:
 
     // Left-hand side form
-    boost::shared_ptr<const Form> _lhs;
+    std::shared_ptr<const Form> _lhs;
 
     // Right-hand side form
-    boost::shared_ptr<const Form> _rhs;
+    std::shared_ptr<const Form> _rhs;
 
     // Right-hand side value (should be zero)
     int _rhs_int;

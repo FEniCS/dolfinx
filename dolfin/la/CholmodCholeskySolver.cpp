@@ -46,7 +46,7 @@ CholmodCholeskySolver::CholmodCholeskySolver()
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-CholmodCholeskySolver::CholmodCholeskySolver(boost::shared_ptr<const GenericLinearOperator> A)
+CholmodCholeskySolver::CholmodCholeskySolver(std::shared_ptr<const GenericLinearOperator> A)
   : _A(A)
 {
   // Set parameter values
@@ -143,7 +143,7 @@ std::size_t CholmodCholeskySolver::solve(const GenericLinearOperator& A,
 {
   warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
 
-  boost::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
+  std::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
   UmfpackLUSolver solver(Atmp);
   return solver.solve(x, b);
 }

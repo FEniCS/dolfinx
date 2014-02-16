@@ -36,14 +36,14 @@ int main()
   // Define 2D geometry
   // Rectangle r(0.5, 0.5, 1.5, 1.5);
   // Circle c(1, 1, 1);
-  // boost::shared_ptr<CSGGeometry> g2d = c - r;
+  // std::shared_ptr<CSGGeometry> g2d = c - r;
 
   // Define 2D geometry
   Rectangle r1(0., 0., 5., 5.);
   Rectangle r2 (2., 1.25, 3., 1.75);
   Circle c1(1, 4, .25);
   Circle c2(4, 4, .25);
-  boost::shared_ptr<CSGGeometry> domain =  r1 - r2 - c1 - c2;
+  std::shared_ptr<CSGGeometry> domain =  r1 - r2 - c1 - c2;
 
   Rectangle s1(1., 1., 4., 3.);
   domain->set_subdomain(1, s1);
@@ -63,7 +63,7 @@ int main()
   plot(domain, "2D Geometry (boundary)");
 
   // Generate and plot mesh
-  boost::shared_ptr<Mesh>  mesh2d(new Mesh(domain, 45));
+  std::shared_ptr<Mesh>  mesh2d(new Mesh(domain, 45));
   plot(mesh2d, "2D mesh");
 
   // Convert mesh domains to mesh function for plotting

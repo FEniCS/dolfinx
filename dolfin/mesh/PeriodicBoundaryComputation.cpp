@@ -276,7 +276,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 }
 //-----------------------------------------------------------------------------
 MeshFunction<std::size_t>
-PeriodicBoundaryComputation::masters_slaves(boost::shared_ptr<const Mesh> mesh,
+PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
                                             const SubDomain& sub_domain,
                                             const std::size_t dim)
 {

@@ -27,7 +27,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -94,13 +94,13 @@ namespace dolfin
     /// This function is no longer supported. It is retained to print
     /// an informative error message. It will be removed in the
     /// future.
-    boost::shared_ptr<MeshFunction<std::size_t> >
+    std::shared_ptr<MeshFunction<std::size_t> >
       create_mesh_function(std::string name);
 
     /// This function is no longer supported. It is retained to print
     /// an informative error message. It will be removed in the
     /// future.
-    boost::shared_ptr<MeshFunction<std::size_t> >
+    std::shared_ptr<MeshFunction<std::size_t> >
       create_mesh_function(std::string name, std::size_t dim);
 
     /// Create empty array (vector) with given name
@@ -134,7 +134,7 @@ namespace dolfin
     /// This function is no longer supported. It is retained to print
     /// an informative error message. It will be removed in the
     /// future.
-    boost::shared_ptr<MeshFunction<std::size_t> >
+    std::shared_ptr<MeshFunction<std::size_t> >
       mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not

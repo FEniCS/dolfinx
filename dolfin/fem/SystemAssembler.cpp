@@ -76,16 +76,16 @@ SystemAssembler::SystemAssembler(const Form& a, const Form& L,
   check_arity(_a, _L);
 }
 //-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
-                                 boost::shared_ptr<const Form> L)
+SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
+                                 std::shared_ptr<const Form> L)
   : _a(a), _L(L)
 {
   // Check arity of forms
   check_arity(_a, _L);
 }
 //-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
-                                 boost::shared_ptr<const Form> L,
+SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
+                                 std::shared_ptr<const Form> L,
                                  const DirichletBC& bc)
   : _a(a), _L(L)
 {
@@ -96,8 +96,8 @@ SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
   _bcs.push_back(&bc);
 }
 //-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
-                                 boost::shared_ptr<const Form> L,
+SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
+                                 std::shared_ptr<const Form> L,
                                  const std::vector<const DirichletBC*> bcs)
   : _a(a), _L(L), _bcs(bcs)
 {
@@ -131,8 +131,8 @@ void SystemAssembler::assemble(GenericVector& b, const GenericVector& x0)
   assemble(NULL, &b, &x0);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::check_arity(boost::shared_ptr<const Form> a,
-                                  boost::shared_ptr<const Form> L)
+void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
+                                  std::shared_ptr<const Form> L)
 {
   // Check that a is a bilinear form
   if (a)
@@ -216,7 +216,7 @@ subdomains in SystemAssembler. Taking subdomains from bilinear form");
   //        coefficients
 
   // Update off-process coefficients for a
-  std::vector<boost::shared_ptr<const GenericFunction> > coefficients
+  std::vector<std::shared_ptr<const GenericFunction> > coefficients
     = _a->coefficients();
   for (std::size_t i = 0; i < coefficients.size(); ++i)
     coefficients[i]->update();

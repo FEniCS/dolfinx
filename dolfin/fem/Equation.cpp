@@ -25,14 +25,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Equation::Equation(boost::shared_ptr<const Form> a,
-                   boost::shared_ptr<const Form> L)
+Equation::Equation(std::shared_ptr<const Form> a,
+                   std::shared_ptr<const Form> L)
   : _lhs(a), _rhs(L), _rhs_int(0), _is_linear(true)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Equation::Equation(boost::shared_ptr<const Form> F, int rhs)
+Equation::Equation(std::shared_ptr<const Form> F, int rhs)
   : _lhs(F), _rhs_int(rhs), _is_linear(false)
 {
   // Do nothing
@@ -48,13 +48,13 @@ bool Equation::is_linear() const
   return _is_linear;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> Equation::lhs() const
+std::shared_ptr<const Form> Equation::lhs() const
 {
   dolfin_assert(_lhs);
   return _lhs;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> Equation::rhs() const
+std::shared_ptr<const Form> Equation::rhs() const
 {
   dolfin_assert(_rhs);
   return _rhs;
