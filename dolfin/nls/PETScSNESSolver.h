@@ -37,14 +37,6 @@
 namespace dolfin
 {
 
-  struct snes_ctx_t
-  {
-    NonlinearProblem* nonlinear_problem;
-    PETScVector* x;
-    const PETScVector* xl;
-    const PETScVector* xu;
-  };
-
   /// Forward declarations
   class PETScVector;
 
@@ -117,6 +109,13 @@ namespace dolfin
     { return _snes; }
 
   private:
+    struct snes_ctx_t
+    {
+      NonlinearProblem* nonlinear_problem;
+      PETScVector* x;
+      const PETScVector* xl;
+      const PETScVector* xu;
+    };
 
     // PETSc solver pointer
     SNES _snes;
