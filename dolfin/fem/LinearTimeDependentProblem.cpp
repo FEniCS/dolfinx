@@ -75,10 +75,10 @@ LinearTimeDependentProblem(const TensorProductForm& a,
 }
 //-----------------------------------------------------------------------------
 LinearTimeDependentProblem::
-LinearTimeDependentProblem(boost::shared_ptr<const TensorProductForm> a,
-                           boost::shared_ptr<const TensorProductForm> L,
-                           boost::shared_ptr<Function> u,
-                           std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+LinearTimeDependentProblem(std::shared_ptr<const TensorProductForm> a,
+                           std::shared_ptr<const TensorProductForm> L,
+                           std::shared_ptr<Function> u,
+                           std::vector<std::shared_ptr<const BoundaryCondition> > bcs)
   : Hierarchical<LinearTimeDependentProblem>(*this),
     _a(a), _L(L), _u(u)
 {
@@ -90,42 +90,42 @@ LinearTimeDependentProblem(boost::shared_ptr<const TensorProductForm> a,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const TensorProductForm>
+std::shared_ptr<const TensorProductForm>
 LinearTimeDependentProblem::bilinear_form() const
 {
   return _a;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const TensorProductForm>
+std::shared_ptr<const TensorProductForm>
 LinearTimeDependentProblem::linear_form() const
 {
   return _L;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Function> LinearTimeDependentProblem::solution()
+std::shared_ptr<Function> LinearTimeDependentProblem::solution()
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Function> LinearTimeDependentProblem::solution() const
+std::shared_ptr<const Function> LinearTimeDependentProblem::solution() const
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const BoundaryCondition> >
+std::vector<std::shared_ptr<const BoundaryCondition> >
 LinearTimeDependentProblem::bcs() const
 {
   return _bcs;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 LinearTimeDependentProblem::trial_space() const
 {
   dolfin_assert(_u);
   return _u->function_space();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 LinearTimeDependentProblem::test_space() const
 {
   dolfin_assert(_a);

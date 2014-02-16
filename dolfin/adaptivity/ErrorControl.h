@@ -22,7 +22,7 @@
 #define __ERROR_CONTROL_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/Variable.h>
@@ -72,14 +72,14 @@ namespace dolfin
     ///        a linear form over DG_0 for error indicators
     ///     is_linear (bool)
     ///        true iff primal problem is linear
-    ErrorControl(boost::shared_ptr<Form> a_star,
-                 boost::shared_ptr<Form> L_star,
-                 boost::shared_ptr<Form> residual,
-                 boost::shared_ptr<Form> a_R_T,
-                 boost::shared_ptr<Form> L_R_T,
-                 boost::shared_ptr<Form> a_R_dT,
-                 boost::shared_ptr<Form> L_R_dT,
-                 boost::shared_ptr<Form> eta_T,
+    ErrorControl(std::shared_ptr<Form> a_star,
+                 std::shared_ptr<Form> L_star,
+                 std::shared_ptr<Form> residual,
+                 std::shared_ptr<Form> a_R_T,
+                 std::shared_ptr<Form> L_R_T,
+                 std::shared_ptr<Form> a_R_dT,
+                 std::shared_ptr<Form> L_R_dT,
+                 std::shared_ptr<Form> eta_T,
                  bool is_linear);
 
     /// Destructor.
@@ -115,7 +115,7 @@ namespace dolfin
     ///     double
     ///         error estimate
     double estimate_error(const Function& u,
-           const std::vector<boost::shared_ptr<const DirichletBC> > bcs);
+           const std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
     /// Compute error indicators
     ///
@@ -182,7 +182,7 @@ namespace dolfin
     ///     bcs (std::vector<_DirichletBC_>)
     ///         the primal boundary conditions
     void compute_dual(Function& z,
-         const std::vector<boost::shared_ptr<const DirichletBC> > bcs);
+         const std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
     /// Compute extrapolation with boundary conditions
     ///
@@ -193,51 +193,51 @@ namespace dolfin
     ///     bcs (std::vector<_DirichletBC_>)
     ///         the dual boundary conditions
     void compute_extrapolation(const Function& z,
-         const std::vector<boost::shared_ptr<const DirichletBC> > bcs);
+         const std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
     friend const ErrorControl& adapt(const ErrorControl& ec,
-                                     boost::shared_ptr<const Mesh> adapted_mesh,
+                                     std::shared_ptr<const Mesh> adapted_mesh,
                                      bool adapt_coefficients);
 
   private:
 
-    void apply_bcs_to_extrapolation(const std::vector<boost::shared_ptr<const DirichletBC> > bcs);
+    void apply_bcs_to_extrapolation(const std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
     // Bilinear and linear form for dual problem
-    boost::shared_ptr<Form> _a_star;
-    boost::shared_ptr<Form> _L_star;
+    std::shared_ptr<Form> _a_star;
+    std::shared_ptr<Form> _L_star;
 
     // Functional for evaluating residual (error estimate)
-    boost::shared_ptr<Form> _residual;
+    std::shared_ptr<Form> _residual;
 
     // Bilinear and linear form for computing cell residual R_T
-    boost::shared_ptr<Form> _a_R_T;
-    boost::shared_ptr<Form> _L_R_T;
+    std::shared_ptr<Form> _a_R_T;
+    std::shared_ptr<Form> _L_R_T;
 
     // Bilinear and linear form for computing facet residual R_dT
-    boost::shared_ptr<Form> _a_R_dT;
-    boost::shared_ptr<Form> _L_R_dT;
+    std::shared_ptr<Form> _a_R_dT;
+    std::shared_ptr<Form> _L_R_dT;
 
     // Linear form for computing error indicators
-    boost::shared_ptr<Form> _eta_T;
+    std::shared_ptr<Form> _eta_T;
 
     // Computed extrapolation
-    boost::shared_ptr<Function> _Ez_h;
+    std::shared_ptr<Function> _Ez_h;
 
     bool _is_linear;
 
     // Function spaces for extrapolation, cell bubble and cell cone:
-    boost::shared_ptr<const FunctionSpace> _E;
-    boost::shared_ptr<const FunctionSpace> _B;
-    boost::shared_ptr<const FunctionSpace> _C;
+    std::shared_ptr<const FunctionSpace> _E;
+    std::shared_ptr<const FunctionSpace> _B;
+    std::shared_ptr<const FunctionSpace> _C;
 
     // Functions for cell bubble, cell cone, computed cell residual,
     // computed facet residual, and interpolated extrapolated(!) dual:
-    boost::shared_ptr<Function> _cell_bubble;
-    boost::shared_ptr<Function> _cell_cone;
-    boost::shared_ptr<Function> _R_T;
-    boost::shared_ptr<SpecialFacetFunction> _R_dT;
-    boost::shared_ptr<Function> _Pi_E_z_h;
+    std::shared_ptr<Function> _cell_bubble;
+    std::shared_ptr<Function> _cell_cone;
+    std::shared_ptr<Function> _R_T;
+    std::shared_ptr<SpecialFacetFunction> _R_dT;
+    std::shared_ptr<Function> _Pi_E_z_h;
   };
 }
 

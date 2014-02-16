@@ -105,7 +105,7 @@ namespace dolfin
     //--- Matrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const = 0;
+    virtual std::shared_ptr<GenericMatrix> copy() const = 0;
 
     /// Initialize vector z to be compatible with the matrix-vector
     /// product y = Ax. In the parallel case, both size and layout are

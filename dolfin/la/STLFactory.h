@@ -24,7 +24,7 @@
 #ifndef __DOLFIN_STL_FACTORY_H
 #define __DOLFIN_STL_FACTORY_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/log/log.h>
 #include "GenericLinearAlgebraFactory.h"
 #include "STLMatrix.h"
@@ -43,57 +43,57 @@ namespace dolfin
     virtual ~STLFactory() {}
 
     /// Create empty matrix
-    boost::shared_ptr<GenericMatrix> create_matrix() const
+    std::shared_ptr<GenericMatrix> create_matrix() const
     {
-      boost::shared_ptr<GenericMatrix> A(new STLMatrix);
+      std::shared_ptr<GenericMatrix> A(new STLMatrix);
       return A;
     }
 
     /// Create empty vector
-    boost::shared_ptr<GenericVector> create_vector() const
+    std::shared_ptr<GenericVector> create_vector() const
     {
-      boost::shared_ptr<GenericVector> x(new STLVector);
+      std::shared_ptr<GenericVector> x(new STLVector);
       return x;
     }
 
     /// Create empty tensor layout
-    boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
+    std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
     {
-      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
+      std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
       return pattern;
     }
 
     /// Create empty linear operator
-    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const
+    std::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
       dolfin_error("STLFactory.h",
                    "create linear operator",
                    "Not supported by STL linear algebra backend");
-      boost::shared_ptr<GenericLinearOperator>
+      std::shared_ptr<GenericLinearOperator>
         A(new NotImplementedLinearOperator);
       return A;
     }
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver>
+    std::shared_ptr<GenericLUSolver>
       create_lu_solver(std::string method) const
     {
       dolfin_error("STLFactory",
                    "create LU solver",
                    "LU solver not available for the STL backend");
-      boost::shared_ptr<GenericLUSolver> solver;
+      std::shared_ptr<GenericLUSolver> solver;
       return solver;
     }
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver>
+    std::shared_ptr<GenericLinearSolver>
       create_krylov_solver(std::string method,
                            std::string preconditioner) const
     {
       dolfin_error("STLFactory",
                    "create Krylov solver",
                    "Krylov solver not available for the STL backend");
-      boost::shared_ptr<GenericLinearSolver> solver;
+      std::shared_ptr<GenericLinearSolver> solver;
       return solver;
     }
 

@@ -149,9 +149,9 @@ namespace dolfin
     //--- Scalar interface ---
 
     /// Return copy of scalar
-    virtual boost::shared_ptr<Scalar> copy() const
+    virtual std::shared_ptr<Scalar> copy() const
     {
-      boost::shared_ptr<Scalar> s(new Scalar);
+      std::shared_ptr<Scalar> s(new Scalar);
       s->_value = _value;
       return s;
     }

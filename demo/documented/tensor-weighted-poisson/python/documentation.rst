@@ -194,9 +194,9 @@ matrix.
 	  }
 
 	  // The data stored in mesh functions
-	  boost::shared_ptr<MeshFunction<double> > c00;
-	  boost::shared_ptr<MeshFunction<double> > c01;
-	  boost::shared_ptr<MeshFunction<double> > c11;
+	  std::shared_ptr<MeshFunction<double> > c00;
+	  std::shared_ptr<MeshFunction<double> > c01;
+	  std::shared_ptr<MeshFunction<double> > c11;
 
 	};
 	"""

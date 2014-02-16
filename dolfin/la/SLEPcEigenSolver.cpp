@@ -62,7 +62,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
   EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
+SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A)
   : _A(A)
 {
   dolfin_assert(A->size(0) == A->size(1));
@@ -74,8 +74,8 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
   EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
-                                   boost::shared_ptr<const PETScMatrix> B)
+SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
+                                   std::shared_ptr<const PETScMatrix> B)
   : _A(A), _B(B)
 
 {

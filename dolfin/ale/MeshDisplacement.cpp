@@ -34,7 +34,7 @@ MeshDisplacement::MeshDisplacement(const Mesh& mesh)
   const std::size_t D = mesh.topology().dim();
 
   // Choose form and function space
-  boost::shared_ptr<FunctionSpace> V;
+  std::shared_ptr<FunctionSpace> V;
   switch (D)
   {
   case 1:

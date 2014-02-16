@@ -46,9 +46,9 @@ VariationalProblem::VariationalProblem(const Form& form_0,
   error_message();
 }
 //-----------------------------------------------------------------------------
-VariationalProblem::VariationalProblem(boost::shared_ptr<const Form> form_0,
-                                       boost::shared_ptr<const Form> form_1,
-                                       std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+VariationalProblem::VariationalProblem(std::shared_ptr<const Form> form_0,
+                                       std::shared_ptr<const Form> form_1,
+                                       std::vector<std::shared_ptr<const BoundaryCondition> > bcs)
 {
   error_message();
 }

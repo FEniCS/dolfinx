@@ -23,7 +23,7 @@
 
 #ifdef HAS_PETSC
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <petscversion.h>
 #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
 #include <petsc-private/pcimpl.h>

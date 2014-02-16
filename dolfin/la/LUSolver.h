@@ -27,7 +27,7 @@
 #define __LU_SOLVER_H
 
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "GenericLUSolver.h"
 
 namespace dolfin
@@ -47,14 +47,14 @@ namespace dolfin
     LUSolver(std::string method= "default");
 
     /// Constructor
-    LUSolver(boost::shared_ptr<const GenericLinearOperator> A,
+    LUSolver(std::shared_ptr<const GenericLinearOperator> A,
              std::string method="default");
 
     /// Destructor
     ~LUSolver();
 
     /// Set operator (matrix)
-    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
@@ -95,7 +95,7 @@ namespace dolfin
     void init(std::string method);
 
     // Solver
-    boost::shared_ptr<GenericLinearSolver> solver;
+    std::shared_ptr<GenericLinearSolver> solver;
 
   };
 }
