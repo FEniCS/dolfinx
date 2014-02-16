@@ -91,7 +91,7 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
   UFC ufc(a);
 
   // Update off-process coefficients
-  const std::vector<boost::shared_ptr<const GenericFunction> >
+  const std::vector<std::shared_ptr<const GenericFunction> >
     coefficients = a.coefficients();
   for (std::size_t i = 0; i < coefficients.size(); ++i)
     coefficients[i]->update();

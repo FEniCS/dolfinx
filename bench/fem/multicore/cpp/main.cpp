@@ -39,11 +39,11 @@ class PoissonFactory
 {
   public:
 
-  static boost::shared_ptr<Form> a(const Mesh& mesh)
+  static std::shared_ptr<Form> a(const Mesh& mesh)
   {
     // Create function space
-    boost::shared_ptr<FunctionSpace> _V(new Poisson::FunctionSpace(mesh));
-    boost::shared_ptr<Form> _a(new Poisson::BilinearForm(_V, _V));;
+    std::shared_ptr<FunctionSpace> _V(new Poisson::FunctionSpace(mesh));
+    std::shared_ptr<Form> _a(new Poisson::BilinearForm(_V, _V));;
     return _a;
   }
 
@@ -53,28 +53,28 @@ class NavierStokesFactory
 {
   public:
 
-  static boost::shared_ptr<Form> a(const Mesh& mesh)
+  static std::shared_ptr<Form> a(const Mesh& mesh)
   {
-    boost::shared_ptr<FunctionSpace> _V(new NavierStokes::FunctionSpace(mesh));
+    std::shared_ptr<FunctionSpace> _V(new NavierStokes::FunctionSpace(mesh));
 
-    boost::shared_ptr<FunctionSpace>
+    std::shared_ptr<FunctionSpace>
       W0(new NavierStokes::Form_a_FunctionSpace_2(mesh));
-    boost::shared_ptr<FunctionSpace>
+    std::shared_ptr<FunctionSpace>
       W1(new NavierStokes::Form_a_FunctionSpace_3(mesh));
-    boost::shared_ptr<FunctionSpace>
+    std::shared_ptr<FunctionSpace>
       W2(new NavierStokes::Form_a_FunctionSpace_4(mesh));
-    boost::shared_ptr<FunctionSpace>
+    std::shared_ptr<FunctionSpace>
       W3(new NavierStokes::Form_a_FunctionSpace_5(mesh));
-    boost::shared_ptr<FunctionSpace>
+    std::shared_ptr<FunctionSpace>
       W4(new NavierStokes::Form_a_FunctionSpace_6(mesh));
 
-    boost::shared_ptr<Function> w0(new Function(W0));
-    boost::shared_ptr<Function> w1(new Function(W1));
-    boost::shared_ptr<Function> w2(new Function(W2));
-    boost::shared_ptr<Function> w3(new Function(W3));
-    boost::shared_ptr<Function> w4(new Function(W4));
+    std::shared_ptr<Function> w0(new Function(W0));
+    std::shared_ptr<Function> w1(new Function(W1));
+    std::shared_ptr<Function> w2(new Function(W2));
+    std::shared_ptr<Function> w3(new Function(W3));
+    std::shared_ptr<Function> w4(new Function(W4));
 
-    boost::shared_ptr<Form> a(new NavierStokes::BilinearForm(_V, _V));
+    std::shared_ptr<Form> a(new NavierStokes::BilinearForm(_V, _V));
 
     a->set_coefficient(0, w0);
     a->set_coefficient(1, w1);
@@ -86,7 +86,7 @@ class NavierStokesFactory
   }
 };
 
-double bench(std::string form, boost::shared_ptr<const Form> a)
+double bench(std::string form, std::shared_ptr<const Form> a)
 {
   std::size_t num_threads = parameters["num_threads"];
   info_underline("Benchmarking %s, num_threads = %d", form.c_str(),
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
   Mesh mesh = old_mesh.renumber_by_color();
 
   // Test cases
-  std::vector<std::pair<std::string, boost::shared_ptr<const Form> > > forms;
+  std::vector<std::pair<std::string, std::shared_ptr<const Form> > > forms;
   forms.push_back(std::make_pair("Poisson", PoissonFactory::a(mesh)));
   forms.push_back(std::make_pair("NavierStokes", NavierStokesFactory::a(mesh)));
 

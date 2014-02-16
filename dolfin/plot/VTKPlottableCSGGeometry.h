@@ -37,7 +37,7 @@ namespace dolfin
   public:
 
     explicit
-    VTKPlottableCSGGeometry(boost::shared_ptr<const CSGGeometry> geometry);
+    VTKPlottableCSGGeometry(std::shared_ptr<const CSGGeometry> geometry);
 
     /// Additional parameters for VTKPlottableCSGGeometry
     virtual void modify_default_parameters(Parameters& p)
@@ -47,7 +47,7 @@ namespace dolfin
     }
 
     /// Update the plottable data
-    void update(boost::shared_ptr<const Variable> var, const Parameters& p,
+    void update(std::shared_ptr<const Variable> var, const Parameters& p,
                 int frame_counter);
 
     /// Return whether this plottable is compatible with the variable
@@ -55,11 +55,11 @@ namespace dolfin
 
   private:
 
-    boost::shared_ptr<const CSGGeometry> _geometry;
+    std::shared_ptr<const CSGGeometry> _geometry;
 
   };
 
-  VTKPlottableCSGGeometry *CreateVTKPlottable(boost::shared_ptr<const CSGGeometry> geometry);
+  VTKPlottableCSGGeometry *CreateVTKPlottable(std::shared_ptr<const CSGGeometry> geometry);
 }
 
 #endif

@@ -23,7 +23,7 @@
 #ifndef __FACE_H
 #define __FACE_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
@@ -68,13 +68,13 @@ namespace dolfin
 
     FaceFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 2) {}
 
-    FaceFunction(boost::shared_ptr<const Mesh> mesh)
+    FaceFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, 2) {}
 
     FaceFunction(const Mesh& mesh, const T& value)
       : MeshFunction<T>(mesh, 2, value) {}
 
-    FaceFunction(boost::shared_ptr<const Mesh> mesh, const T& value)
+    FaceFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, 2, value) {}
 
   };

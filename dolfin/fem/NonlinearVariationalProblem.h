@@ -23,7 +23,7 @@
 #ifndef __NONLINEAR_VARIATIONAL_PROBLEM_H
 #define __NONLINEAR_VARIATIONAL_PROBLEM_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Hierarchical.h>
 
 namespace dolfin
@@ -93,61 +93,61 @@ namespace dolfin
     /// Create nonlinear variational problem, shared pointer version.
     /// The Jacobian form is not specified which requires the use of a
     /// nonlinear solver that does not rely on the Jacobian.
-    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                                boost::shared_ptr<Function> u,
-                                std::vector<boost::shared_ptr<const DirichletBC> > bcs);
+    NonlinearVariationalProblem(std::shared_ptr<const Form> F,
+                                std::shared_ptr<Function> u,
+                                std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
     /// Create nonlinear variational problem, shared pointer version.
     /// The Jacobian form is specified which allows the use of a
     /// nonlinear solver that relies on the Jacobian (using Newton's
     /// method).
-    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                                boost::shared_ptr<Function> u,
-                                std::vector<boost::shared_ptr<const DirichletBC> > bcs,
-                                boost::shared_ptr<const Form> J);
+    NonlinearVariationalProblem(std::shared_ptr<const Form> F,
+                                std::shared_ptr<Function> u,
+                                std::vector<std::shared_ptr<const DirichletBC> > bcs,
+                                std::shared_ptr<const Form> J);
 
     /// Set the bounds for bound constrained solver
-    void set_bounds(boost::shared_ptr<const GenericVector> lb,
-                    boost::shared_ptr<const GenericVector> ub);
+    void set_bounds(std::shared_ptr<const GenericVector> lb,
+                    std::shared_ptr<const GenericVector> ub);
 
     /// Set the bounds for bound constrained solver
     void set_bounds(const GenericVector& lb,
                     const GenericVector& ub);
 
     /// Set the bounds for bound constrained solver
-    void set_bounds(boost::shared_ptr<const Function> lb_func,
-                    boost::shared_ptr<const Function> ub_func);
+    void set_bounds(std::shared_ptr<const Function> lb_func,
+                    std::shared_ptr<const Function> ub_func);
 
     /// Set the bounds for bound constrained solver
     void set_bounds(const Function& lb_func,
                     const Function& ub_func);
 
     /// Return residual form
-    boost::shared_ptr<const Form> residual_form() const;
+    std::shared_ptr<const Form> residual_form() const;
 
     /// Return Jacobian form
-    boost::shared_ptr<const Form> jacobian_form() const;
+    std::shared_ptr<const Form> jacobian_form() const;
 
     /// Return solution variable
-    boost::shared_ptr<Function> solution();
+    std::shared_ptr<Function> solution();
 
     /// Return solution variable (const version)
-    boost::shared_ptr<const Function> solution() const;
+    std::shared_ptr<const Function> solution() const;
 
     /// Return boundary conditions
-    std::vector<boost::shared_ptr<const DirichletBC> > bcs() const;
+    std::vector<std::shared_ptr<const DirichletBC> > bcs() const;
 
     /// Return trial space
-    boost::shared_ptr<const FunctionSpace> trial_space() const;
+    std::shared_ptr<const FunctionSpace> trial_space() const;
 
     /// Return test space
-    boost::shared_ptr<const FunctionSpace> test_space() const;
+    std::shared_ptr<const FunctionSpace> test_space() const;
 
     /// Return lower bound
-    boost::shared_ptr<const GenericVector> lower_bound() const;
+    std::shared_ptr<const GenericVector> lower_bound() const;
 
     /// Return upper bound
-    boost::shared_ptr<const GenericVector> upper_bound() const;
+    std::shared_ptr<const GenericVector> upper_bound() const;
 
     /// Check whether Jacobian has been defined
     bool has_jacobian() const;
@@ -164,20 +164,20 @@ namespace dolfin
     void check_forms() const;
 
     // The residual form
-    boost::shared_ptr<const Form> _F;
+    std::shared_ptr<const Form> _F;
 
     // The Jacobian form (pointer may be zero if not provided)
-    boost::shared_ptr<const Form> _J;
+    std::shared_ptr<const Form> _J;
 
     // The solution
-    boost::shared_ptr<Function> _u;
+    std::shared_ptr<Function> _u;
 
     // The boundary conditions
-    std::vector<boost::shared_ptr<const DirichletBC> > _bcs;
+    std::vector<std::shared_ptr<const DirichletBC> > _bcs;
 
     // The lower and upper bounds (pointers may be zero if not provided)
-    boost::shared_ptr<const GenericVector> _lb;
-    boost::shared_ptr<const GenericVector> _ub;
+    std::shared_ptr<const GenericVector> _lb;
+    std::shared_ptr<const GenericVector> _ub;
   };
 
 }

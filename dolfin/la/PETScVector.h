@@ -32,7 +32,7 @@
 #include <map>
 #include <string>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/unordered_map.hpp>
 #include <petscsys.h>
 #include <petscvec.h>
@@ -95,7 +95,7 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Return copy of vector
-    virtual boost::shared_ptr<GenericVector> copy() const;
+    virtual std::shared_ptr<GenericVector> copy() const;
 
     /// Initialize vector to global size N
     virtual void init(MPI_Comm comm, std::size_t N);

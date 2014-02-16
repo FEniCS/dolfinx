@@ -80,7 +80,7 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   Timer timer("Compress matrix");
 
   // Create new layout
-  boost::shared_ptr<TensorLayout>
+  std::shared_ptr<TensorLayout>
     new_layout = factory().create_layout(2);
   dolfin_assert(new_layout);
 

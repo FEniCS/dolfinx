@@ -24,7 +24,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VectorSpaceBasis::VectorSpaceBasis(const std::vector<boost::shared_ptr<
+VectorSpaceBasis::VectorSpaceBasis(const std::vector<std::shared_ptr<
                                      GenericVector> > basis)
   : _basis(basis)
 {
@@ -84,7 +84,7 @@ std::size_t VectorSpaceBasis::dim() const
   return _basis.size();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector>
+std::shared_ptr<const GenericVector>
 VectorSpaceBasis::operator[] (std::size_t i) const
 {
   dolfin_assert(i < _basis.size());

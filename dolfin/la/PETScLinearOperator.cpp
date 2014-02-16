@@ -24,7 +24,7 @@
 
 #include <iostream>
 #include <petscmat.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>

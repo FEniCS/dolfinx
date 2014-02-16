@@ -566,7 +566,7 @@ static void make_surface3D(const Surface3D* s, csg::Exact_Polyhedron_3& P)
   PolyhedronUtils::readSurfaceFile(s->_filename, P);
 }
 //-----------------------------------------------------------------------------
-static boost::shared_ptr<csg::Nef_polyhedron_3>
+static std::shared_ptr<csg::Nef_polyhedron_3>
 convertSubTree(const CSGGeometry *geometry)
 {
   switch (geometry->getType())
@@ -575,8 +575,8 @@ convertSubTree(const CSGGeometry *geometry)
     {
       const CSGUnion* u = dynamic_cast<const CSGUnion*>(geometry);
       dolfin_assert(u);
-      boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
-      boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
+      std::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+      std::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
       (*g0) += (*g1);
       return g0;
 
@@ -586,8 +586,8 @@ convertSubTree(const CSGGeometry *geometry)
     {
       const CSGIntersection* u = dynamic_cast<const CSGIntersection*>(geometry);
       dolfin_assert(u);
-      boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
-      boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
+      std::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+      std::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
       (*g0) *= (*g1);
       return g0;
       break;
@@ -596,8 +596,8 @@ convertSubTree(const CSGGeometry *geometry)
     {
       const CSGDifference* u = dynamic_cast<const CSGDifference*>(geometry);
       dolfin_assert(u);
-      boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
-      boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
+      std::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+      std::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
       (*g0) -= (*g1);
       return g0;
       break;
@@ -608,7 +608,7 @@ convertSubTree(const CSGGeometry *geometry)
       dolfin_assert(c);
       csg::Exact_Polyhedron_3 P;
       make_cone(c, P);
-      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      return std::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
       break;
     }
     case CSGGeometry::Sphere :
@@ -617,7 +617,7 @@ convertSubTree(const CSGGeometry *geometry)
       dolfin_assert(s);
       csg::Exact_Polyhedron_3 P;
       make_sphere(s, P);
-      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      return std::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
       break;
     }
     case CSGGeometry::Box :
@@ -626,7 +626,7 @@ convertSubTree(const CSGGeometry *geometry)
       dolfin_assert(b);
       csg::Exact_Polyhedron_3 P;
       make_box(b, P);
-      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      return std::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
       break;
     }
 
@@ -636,7 +636,7 @@ convertSubTree(const CSGGeometry *geometry)
       dolfin_assert(b);
       csg::Exact_Polyhedron_3 P;
       make_tetrahedron(b, P);
-      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      return std::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
       break;
     }
     case CSGGeometry::Surface3D :
@@ -645,7 +645,7 @@ convertSubTree(const CSGGeometry *geometry)
       dolfin_assert(b);
       csg::Exact_Polyhedron_3 P;
       make_surface3D(b, P);
-      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      return std::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
       break;
     }
     default:
@@ -655,7 +655,7 @@ convertSubTree(const CSGGeometry *geometry)
   }
 
   // Make compiler happy.
-  return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3);
+  return std::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3);
 }
 //-----------------------------------------------------------------------------
 void GeometryToCGALConverter::convert(const CSGGeometry& geometry,
@@ -716,7 +716,7 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry,
   else
   {
     cout << "Convert to nef polyhedron" << endl;
-    boost::shared_ptr<csg::Nef_polyhedron_3> cgal_geometry
+    std::shared_ptr<csg::Nef_polyhedron_3> cgal_geometry
       = convertSubTree(&geometry);
     dolfin_assert(cgal_geometry->is_valid());
     dolfin_assert(cgal_geometry->is_simple());

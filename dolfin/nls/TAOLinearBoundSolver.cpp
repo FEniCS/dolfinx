@@ -115,19 +115,19 @@ TAOLinearBoundSolver::~TAOLinearBoundSolver()
 }
 //-----------------------------------------------------------------------------
 void
-TAOLinearBoundSolver::set_operators(boost::shared_ptr<const GenericMatrix> A,
-                                    boost::shared_ptr<const GenericVector> b)
+TAOLinearBoundSolver::set_operators(std::shared_ptr<const GenericMatrix> A,
+                                    std::shared_ptr<const GenericVector> b)
 {
-  boost::shared_ptr<const PETScMatrix>
+  std::shared_ptr<const PETScMatrix>
     _A = GenericTensor::down_cast<const PETScMatrix>(A);
-  boost::shared_ptr<const PETScVector>
+  std::shared_ptr<const PETScVector>
     _b = GenericTensor::down_cast<const PETScVector>(b);
   set_operators(_A, _b);
 }
 //-----------------------------------------------------------------------------
 void
-TAOLinearBoundSolver::set_operators(boost::shared_ptr<const PETScMatrix> A,
-				    boost::shared_ptr<const PETScVector> b)
+TAOLinearBoundSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
+				    std::shared_ptr<const PETScVector> b)
 {
   this->A = A;
   this->b = b;
@@ -159,8 +159,8 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
   dolfin_assert(A1.size(0) == A1.size(1));
 
   // Set operators (A and b)
-  boost::shared_ptr<const PETScMatrix> _A(&A1, NoDeleter());
-  boost::shared_ptr<const PETScVector> _b(&b1, NoDeleter());
+  std::shared_ptr<const PETScMatrix> _A(&A1, NoDeleter());
+  std::shared_ptr<const PETScVector> _b(&b1, NoDeleter());
   set_operators(_A,_b);
   dolfin_assert(A->mat());
   //dolfin_assert(b->vec());
@@ -300,12 +300,12 @@ TaoSolver TAOLinearBoundSolver::tao() const
   return _tao;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const PETScMatrix> TAOLinearBoundSolver::get_matrix() const
+std::shared_ptr<const PETScMatrix> TAOLinearBoundSolver::get_matrix() const
 {
   return A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const PETScVector> TAOLinearBoundSolver::get_vector() const
+std::shared_ptr<const PETScVector> TAOLinearBoundSolver::get_vector() const
 {
   return b;
 }

@@ -32,8 +32,8 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableDirichletBC::VTKPlottableDirichletBC(boost::shared_ptr<const DirichletBC> bc)
-  : VTKPlottableGenericFunction(boost::shared_ptr<const Function>(new Function(bc->function_space()))),
+VTKPlottableDirichletBC::VTKPlottableDirichletBC(std::shared_ptr<const DirichletBC> bc)
+  : VTKPlottableGenericFunction(std::shared_ptr<const Function>(new Function(bc->function_space()))),
     _bc(bc)
 {
   // Do nothing
@@ -63,14 +63,14 @@ bool VTKPlottableDirichletBC::is_compatible(const Variable &var) const
   return VTKPlottableMesh::is_compatible(*V.mesh());
 }
 //----------------------------------------------------------------------------
-void VTKPlottableDirichletBC::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
+void VTKPlottableDirichletBC::update(std::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
 {
   if (var)
   {
-    _bc = boost::dynamic_pointer_cast<const DirichletBC>(var);
+    _bc = std::dynamic_pointer_cast<const DirichletBC>(var);
   }
 
-  boost::shared_ptr<const Function> func = boost::dynamic_pointer_cast<const Function>(_function);
+  std::shared_ptr<const Function> func = std::dynamic_pointer_cast<const Function>(_function);
 
   dolfin_assert(_bc && func);
 
@@ -99,7 +99,7 @@ void VTKPlottableDirichletBC::update(boost::shared_ptr<const Variable> var, cons
   VTKPlottableGenericFunction::update(func, parameters, framecounter);
 }
 //----------------------------------------------------------------------------
-VTKPlottableDirichletBC *dolfin::CreateVTKPlottable(boost::shared_ptr<const DirichletBC> bc)
+VTKPlottableDirichletBC *dolfin::CreateVTKPlottable(std::shared_ptr<const DirichletBC> bc)
 {
   return new VTKPlottableDirichletBC(bc);
 }

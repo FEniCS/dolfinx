@@ -319,9 +319,9 @@ Parameters.__init__ = __new_Parameter_init__
 //       wrap the global parameters as a shared_ptr
 %fragment("NoDelete");
 %inline %{
-SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Parameters> get_global_parameters()
+std::shared_ptr<dolfin::Parameters> get_global_parameters()
  {
-   return SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Parameters>(dolfin::reference_to_no_delete_pointer(dolfin::parameters));
+   return std::shared_ptr<dolfin::Parameters>(dolfin::reference_to_no_delete_pointer(dolfin::parameters));
  }
 %}
 

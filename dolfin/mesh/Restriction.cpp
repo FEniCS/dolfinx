@@ -45,7 +45,7 @@ Restriction::Restriction(const MeshFunction<std::size_t>& domain_markers,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Restriction::Restriction(boost::shared_ptr<const MeshFunction<std::size_t> > domain_markers,
+Restriction::Restriction(std::shared_ptr<const MeshFunction<std::size_t> > domain_markers,
                          std::size_t domain_number)
   : _domain_markers(domain_markers),
     _domain_number(domain_number)
@@ -78,6 +78,6 @@ void Restriction::init_from_subdomain(const Mesh& mesh,
   _domain_number = 0;
 
   // Store shared pointer
-  _domain_markers = boost::shared_ptr<const MeshFunction<std::size_t> >(__domain_markers);
+  _domain_markers = std::shared_ptr<const MeshFunction<std::size_t> >(__domain_markers);
 }
 //-----------------------------------------------------------------------------
