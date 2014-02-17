@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by N. Lopes, 2008.
+// Modified by Mikael Mortensen, 2014.
 //
 // First added:  2007-11-23
-// Last changed: 2014-02-06
+// Last changed: 2014-02-17
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/constants.h"
@@ -30,7 +31,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntervalMesh::IntervalMesh(std::size_t nx, double a, double b) : Mesh()
+IntervalMesh::IntervalMesh(std::size_t nx, double a, double b) 
+  : Mesh(MPI_COMM_WORLD)
+{
+  build(nx, a, b);
+}
+//-----------------------------------------------------------------------------
+IntervalMesh::IntervalMesh(MPI_Comm comm, std::size_t nx, double a, double b) 
+  : Mesh(comm)
+{
+  build(nx, a, b);
+}
+//-----------------------------------------------------------------------------
+void IntervalMesh::build(std::size_t nx, double a, double b)
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver(this->mpi_comm()))
