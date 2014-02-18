@@ -104,12 +104,6 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-<<<<<<< HEAD
-=======
-    /// Return pointer to Aztec00
-    std::shared_ptr<AztecOO> aztecoo() const;
-
->>>>>>> master
   private:
 
     // Solver type
