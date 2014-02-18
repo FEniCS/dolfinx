@@ -26,7 +26,7 @@
 #ifndef __CELL_H
 #define __CELL_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/geometry/Point.h>
 #include "CellType.h"
@@ -375,13 +375,13 @@ namespace dolfin
     CellFunction(const Mesh& mesh)
       : MeshFunction<T>(mesh, mesh.topology().dim()) {}
 
-    CellFunction(boost::shared_ptr<const Mesh> mesh)
+    CellFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, mesh->topology().dim()) {}
 
     CellFunction(const Mesh& mesh, const T& value)
       : MeshFunction<T>(mesh, mesh.topology().dim(), value) {}
 
-    CellFunction(boost::shared_ptr<const Mesh> mesh, const T& value)
+    CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, mesh->topology().dim(), value) {}
   };
 

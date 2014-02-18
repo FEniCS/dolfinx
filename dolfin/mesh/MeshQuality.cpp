@@ -29,7 +29,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 dolfin::CellFunction<double>
-MeshQuality::radius_ratios(boost::shared_ptr<const Mesh> mesh)
+MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
 {
   // Create CellFunction
   CellFunction<double> cf(mesh, 0.0);

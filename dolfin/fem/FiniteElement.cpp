@@ -25,23 +25,23 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(boost::shared_ptr<const ufc::finite_element> element)
+FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
   : _ufc_element(element), _hash(dolfin::hash_local(signature()))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FiniteElement> 
+std::shared_ptr<const FiniteElement> 
 FiniteElement::extract_sub_element(const std::vector<std::size_t>& component) const
 {
   // Recursively extract sub element
-  boost::shared_ptr<const FiniteElement> sub_finite_element = extract_sub_element(*this, component);
+  std::shared_ptr<const FiniteElement> sub_finite_element = extract_sub_element(*this, component);
   log(DBG, "Extracted finite element for sub system: %s", sub_finite_element->signature().c_str());
 
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FiniteElement>
+std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const FiniteElement& finite_element,
                                    const std::vector<std::size_t>& component)
 {
@@ -71,7 +71,7 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   }
 
   // Create sub system
-  boost::shared_ptr<const FiniteElement> sub_element = finite_element.create_sub_element(component[0]);
+  std::shared_ptr<const FiniteElement> sub_element = finite_element.create_sub_element(component[0]);
   dolfin_assert(sub_element);
 
   // Return sub system if sub sub system should not be extracted
@@ -82,7 +82,7 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   std::vector<std::size_t> sub_component;
   for (std::size_t i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
-  boost::shared_ptr<const FiniteElement> sub_sub_element = extract_sub_element(*sub_element, sub_component);
+  std::shared_ptr<const FiniteElement> sub_sub_element = extract_sub_element(*sub_element, sub_component);
   //delete sub_element;
 
   return sub_sub_element;

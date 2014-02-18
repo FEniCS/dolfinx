@@ -28,7 +28,7 @@
 //-----------------------------------------------------------------------------
 // Make SWIG aware of the shared_ptr version of TYPE
 //-----------------------------------------------------------------------------
-%types(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE >*);
+%types(std::shared_ptr<TYPE >*);
 //
 ////-----------------------------------------------------------------------------
 //// Run the macros for the combination of const and no const of
@@ -66,13 +66,13 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
       // If failed with normal pointer conversion then
       // try with shared_ptr conversion
       int newmem = 0;
-      res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+      res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(std::shared_ptr< dolfin::TYPE > *), 0, &newmem);
       if (SWIG_IsOK(res))
       {
 	$1 = 1;
 	if (newmem & SWIG_CAST_NEW_MEMORY)
 	{
-	  delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+	  delete reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp);
 	}
       }
     }
@@ -86,7 +86,7 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
 //-----------------------------------------------------------------------------
 // The typemap
 //-----------------------------------------------------------------------------
-%typemap(in) CONST_PAIR std::pair<CONST dolfin::TYPE*, double> (std::pair<CONST dolfin::TYPE*, double> tmp_pair, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE > tempshared, dolfin::TYPE * arg)
+%typemap(in) CONST_PAIR std::pair<CONST dolfin::TYPE*, double> (std::pair<CONST dolfin::TYPE*, double> tmp_pair, std::shared_ptr<dolfin::TYPE > tempshared, dolfin::TYPE * arg)
 {
   // TYPEMAP IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE, CONST, CONST_PAIR)
   int res = 0;
@@ -117,18 +117,18 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
     // If failed with normal pointer conversion then
     // try with shared_ptr conversion
     newmem = 0;
-    res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+    res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(std::shared_ptr< dolfin::TYPE > *), 0, &newmem);
     if (SWIG_IsOK(res)){
       // If we need to release memory
       if (newmem & SWIG_CAST_NEW_MEMORY)
       {
-        tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE > * >(itemp);
-        delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+        tempshared = *reinterpret_cast< std::shared_ptr<dolfin::TYPE > * >(itemp);
+        delete reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp);
         arg = const_cast< dolfin::TYPE * >(tempshared.get());
       }
       else
       {
-        arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
+        arg = const_cast< dolfin::TYPE * >(reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp)->get());
       }
       tmp_pair.first = arg;
     }

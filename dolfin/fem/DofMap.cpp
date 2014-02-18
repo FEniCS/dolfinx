@@ -42,7 +42,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
   : _ufc_dofmap(ufc_dofmap), _is_view(false), _global_dimension(0),
     _ufc_offset(0)
@@ -53,9 +53,9 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   DofMapBuilder::build(*this, mesh, slave_master_mesh_entities, _restriction);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
-               boost::shared_ptr<const SubDomain> constrained_domain)
+               std::shared_ptr<const SubDomain> constrained_domain)
   : _ufc_dofmap(ufc_dofmap), _is_view(false), _global_dimension(0),
     _ufc_offset(0)
 {
@@ -82,8 +82,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   DofMapBuilder::build(*this, mesh, slave_master_mesh_entities, _restriction);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               boost::shared_ptr<const Restriction> restriction)
+DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+               std::shared_ptr<const Restriction> restriction)
   : _ufc_dofmap(ufc_dofmap), _restriction(restriction), _is_view(false),
     _global_dimension(0), _ufc_offset(0)
 {
@@ -225,7 +225,7 @@ std::size_t DofMap::num_facet_dofs() const
   return _ufc_dofmap->num_facet_dofs();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const dolfin::Restriction> DofMap::restriction() const
+std::shared_ptr<const dolfin::Restriction> DofMap::restriction() const
 {
   return _restriction;
 }
@@ -466,31 +466,31 @@ std::vector<std::size_t> DofMap::vertex_to_dof_map(const Mesh& mesh) const
   return vertex_map;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap> DofMap::copy() const
+std::shared_ptr<GenericDofMap> DofMap::copy() const
 {
-  return boost::shared_ptr<GenericDofMap>(new DofMap(*this));
+  return std::shared_ptr<GenericDofMap>(new DofMap(*this));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap> DofMap::create(const Mesh& new_mesh) const
+std::shared_ptr<GenericDofMap> DofMap::create(const Mesh& new_mesh) const
 {
   // Get underlying UFC dof map
-  boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap);
-  return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
+  std::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap);
+  return std::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap>
+std::shared_ptr<GenericDofMap>
   DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                              const Mesh& mesh) const
 {
-  return boost::shared_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
+  return std::shared_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap>
+std::shared_ptr<GenericDofMap>
   DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>&
                    collapsed_map,
                    const Mesh& mesh) const
 {
-  return boost::shared_ptr<GenericDofMap>(new DofMap(collapsed_map,
+  return std::shared_ptr<GenericDofMap>(new DofMap(collapsed_map,
                                                      *this, mesh));
 }
 //-----------------------------------------------------------------------------

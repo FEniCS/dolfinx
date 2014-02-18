@@ -30,13 +30,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh,
+std::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh,
                                               const BoundaryMesh& new_boundary)
 {
   return HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
+std::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
 {
   // FIXME: Maybe this works in parallel but there is no obvious way to
   //        test it as SubMesh::init does not work in parallel

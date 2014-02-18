@@ -304,7 +304,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   p.partition(new_mesh, redistribute);
 
   // Save some data about partial refinements to assist with future subdivision
-  //  boost::shared_ptr<std::vector<std::size_t> > mesh_out_array =
+  //  std::shared_ptr<std::vector<std::size_t> > mesh_out_array =
   // new_mesh.data().create_array("experimental_data");
 }
 //-----------------------------------------------------------------------------

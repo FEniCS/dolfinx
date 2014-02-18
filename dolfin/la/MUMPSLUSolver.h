@@ -23,7 +23,7 @@
 #ifndef __DOLFIN_MUMPS_LU_SOLVER_H
 #define __DOLFIN_MUMPS_LU_SOLVER_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Variable.h>
 
 #ifdef HAS_PETSC
@@ -55,7 +55,7 @@ namespace dolfin
     MUMPSLUSolver(const CoordinateMatrix& A);
 
     /// Constructor
-    MUMPSLUSolver(boost::shared_ptr<const CoordinateMatrix> A);
+    MUMPSLUSolver(std::shared_ptr<const CoordinateMatrix> A);
 
     /// Destructor
     ~MUMPSLUSolver();
@@ -69,7 +69,7 @@ namespace dolfin
   private:
 
     // Operator (the matrix)
-    boost::shared_ptr<const CoordinateMatrix> _A;
+    std::shared_ptr<const CoordinateMatrix> _A;
 
   };
 

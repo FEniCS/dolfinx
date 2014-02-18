@@ -206,6 +206,8 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         for i in range(4):
             self.basis_test("RT", i + 1, piola=True)
         for i in range(4):
+            self.basis_test("DRT", i + 1, piola=True)
+        for i in range(4):
             self.basis_test("BDM", i + 1, piola=True)
         for i in range(4):
             self.basis_test("N1curl", i + 1, piola=True)

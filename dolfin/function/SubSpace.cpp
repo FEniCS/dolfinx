@@ -34,7 +34,7 @@ SubSpace::SubSpace(const FunctionSpace& V, std::size_t component)
   c.push_back(component);
 
   // Extract subspace and assign
-  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c));
+  std::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c));
   *static_cast<FunctionSpace*>(this) = *_V;
 }
 //-----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ SubSpace::SubSpace(const FunctionSpace& V, std::size_t component, std::size_t su
   c.push_back(sub_component);
 
   // Extract subspace and assign
-  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c));
+  std::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c));
   *static_cast<FunctionSpace*>(this) = *_V;
 }
 //-----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ SubSpace::SubSpace(const FunctionSpace& V, const std::vector<std::size_t>& compo
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Extract subspace and assign
-  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(component));
+  std::shared_ptr<FunctionSpace> _V(V.extract_sub_space(component));
   *static_cast<FunctionSpace*>(this) = *_V;
 }
 //-----------------------------------------------------------------------------

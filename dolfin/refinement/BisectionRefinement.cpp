@@ -22,7 +22,7 @@
 // First added:  2006-11-01
 // Last changed: 2011-04-07
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Facet.h>
@@ -106,7 +106,7 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
   // Rewrite materials
   if (oldmesh.data().mesh_function("material_indicators"))
   {
-    boost::shared_ptr<MeshFunction<std::size_t> > mat;
+    std::shared_ptr<MeshFunction<std::size_t> > mat;
     mat = newmesh.data().create_mesh_function("material_indicators", newmesh.type().dim());
 
     for(std::size_t i=0; i < newmesh.num_cells(); i++)

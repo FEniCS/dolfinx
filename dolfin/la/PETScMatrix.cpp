@@ -82,9 +82,9 @@ PETScMatrix::~PETScMatrix()
   // Do nothing.
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
+std::shared_ptr<GenericMatrix> PETScMatrix::copy() const
 {
-  boost::shared_ptr<GenericMatrix> B;
+  std::shared_ptr<GenericMatrix> B;
   if (!_A)
     B.reset(new PETScMatrix());
   else

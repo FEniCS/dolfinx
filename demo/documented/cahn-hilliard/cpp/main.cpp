@@ -114,7 +114,7 @@ class CahnHilliardEquation : public NonlinearProblem
               const Constant& lambda)
     {
       // Create function space and functions
-      boost::shared_ptr<X> V(new X(mesh));
+      std::shared_ptr<X> V(new X(mesh));
       _u.reset(new Function(V));
       _u0.reset(new Function(V));
 

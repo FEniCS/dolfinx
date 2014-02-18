@@ -32,8 +32,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // CSGUnion
 //-----------------------------------------------------------------------------
-CSGUnion::CSGUnion(boost::shared_ptr<CSGGeometry> g0,
-                   boost::shared_ptr<CSGGeometry> g1)
+CSGUnion::CSGUnion(std::shared_ptr<CSGGeometry> g0,
+                   std::shared_ptr<CSGGeometry> g1)
   : _g0(g0), _g1(g1)
 {
   assert(g0);
@@ -77,8 +77,8 @@ std::string CSGUnion::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // CSGDifference
 //-----------------------------------------------------------------------------
-CSGDifference::CSGDifference(boost::shared_ptr<CSGGeometry> g0,
-			     boost::shared_ptr<CSGGeometry> g1)
+CSGDifference::CSGDifference(std::shared_ptr<CSGGeometry> g0,
+			     std::shared_ptr<CSGGeometry> g1)
   : _g0(g0), _g1(g1)
 {
   assert(g0);
@@ -122,8 +122,8 @@ std::string CSGDifference::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // CSGIntersection
 //-----------------------------------------------------------------------------
-CSGIntersection::CSGIntersection(boost::shared_ptr<CSGGeometry> g0,
-                                 boost::shared_ptr<CSGGeometry> g1)
+CSGIntersection::CSGIntersection(std::shared_ptr<CSGGeometry> g0,
+                                 std::shared_ptr<CSGGeometry> g1)
   : _g0(g0), _g1(g1)
 {
   assert(g0);

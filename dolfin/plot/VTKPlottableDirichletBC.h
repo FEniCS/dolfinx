@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     explicit
-    VTKPlottableDirichletBC(boost::shared_ptr<const DirichletBC> bc);
+    VTKPlottableDirichletBC(std::shared_ptr<const DirichletBC> bc);
 
     /// Additional parameters for VTKPlottableDirichletBC
     virtual Parameters default_parameters()
@@ -53,14 +53,14 @@ namespace dolfin
     bool is_compatible(const Variable &var) const;
 
     /// Update the scalar range of the plottable data
-    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter);
+    void update(std::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter);
 
   private:
 
-    boost::shared_ptr<const DirichletBC> _bc;
+    std::shared_ptr<const DirichletBC> _bc;
   };
 
-  VTKPlottableDirichletBC *CreateVTKPlottable(boost::shared_ptr<const DirichletBC>);
+  VTKPlottableDirichletBC *CreateVTKPlottable(std::shared_ptr<const DirichletBC>);
 
 }
 

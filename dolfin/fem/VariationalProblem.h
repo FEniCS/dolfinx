@@ -24,7 +24,7 @@
 #define __VARIATIONAL_PROBLEM_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace dolfin
 {
@@ -59,9 +59,9 @@ namespace dolfin
                        const std::vector<const BoundaryCondition*> bcs);
 
     /// Deprecated
-    VariationalProblem(boost::shared_ptr<const Form> form_0,
-                       boost::shared_ptr<const Form> form_1,
-                       std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+    VariationalProblem(std::shared_ptr<const Form> form_0,
+                       std::shared_ptr<const Form> form_1,
+                       std::vector<std::shared_ptr<const BoundaryCondition> > bcs);
 
     /// Destructor
     ~VariationalProblem();
