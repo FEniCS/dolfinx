@@ -26,7 +26,7 @@
 #include <map>
 #include <vector>
 #include <boost/array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "DirichletBC.h"
 #include "AssemblerBase.h"
 
@@ -67,17 +67,17 @@ namespace dolfin
                     const std::vector<const DirichletBC*> bcs);
 
     /// Constructor
-    SystemAssembler(boost::shared_ptr<const Form> a,
-                    boost::shared_ptr<const Form> L);
+    SystemAssembler(std::shared_ptr<const Form> a,
+                    std::shared_ptr<const Form> L);
 
     /// Constructor
-    SystemAssembler(boost::shared_ptr<const Form> a,
-                    boost::shared_ptr<const Form> L,
+    SystemAssembler(std::shared_ptr<const Form> a,
+                    std::shared_ptr<const Form> L,
                     const DirichletBC& bc);
 
     /// Constructor
-    SystemAssembler(boost::shared_ptr<const Form> a,
-                    boost::shared_ptr<const Form> L,
+    SystemAssembler(std::shared_ptr<const Form> a,
+                    std::shared_ptr<const Form> L,
                     const std::vector<const DirichletBC*> bcs);
 
     /// Assemble system (A, b)
@@ -102,15 +102,15 @@ namespace dolfin
   private:
 
     // Check form arity
-    static void check_arity(boost::shared_ptr<const Form> a,
-                            boost::shared_ptr<const Form> L);
+    static void check_arity(std::shared_ptr<const Form> a,
+                            std::shared_ptr<const Form> L);
 
     // Assemble system
     void assemble(GenericMatrix* A, GenericVector* b,
                   const GenericVector* x0);
 
     // Bilinear and linear forms
-    boost::shared_ptr<const Form> _a, _L;
+    std::shared_ptr<const Form> _a, _L;
 
     // Boundary conditions
     std::vector<const DirichletBC*> _bcs;

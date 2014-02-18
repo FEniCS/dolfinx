@@ -24,7 +24,7 @@
 #define __PLOT_H
 
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace dolfin
 {
@@ -45,48 +45,48 @@ namespace dolfin
   //---------------------------------------------------------------------------
 
   // Plot variable of any supported type
-  boost::shared_ptr<VTKPlotter> plot(const Variable&,
+  std::shared_ptr<VTKPlotter> plot(const Variable&,
 				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot variable (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Variable>,
+  std::shared_ptr<VTKPlotter> plot(std::shared_ptr<const Variable>,
 				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot variable (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const Variable&,
+  std::shared_ptr<VTKPlotter> plot(const Variable&,
 				     const Parameters& parameters);
 
   /// Plot variable (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Variable>,
-				     boost::shared_ptr<const Parameters> parameters);
+  std::shared_ptr<VTKPlotter> plot(std::shared_ptr<const Variable>,
+				     std::shared_ptr<const Parameters> parameters);
 
   //---------------------------------------------------------------------------
   // Specialised versions for Expression together with Mesh
   //---------------------------------------------------------------------------
 
   /// Plot expression
-  boost::shared_ptr<VTKPlotter> plot(const Expression& expression,
+  std::shared_ptr<VTKPlotter> plot(const Expression& expression,
 				     const Mesh& mesh,
 				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot expression (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Expression> expression,
-                                     boost::shared_ptr<const Mesh> mesh,
+  std::shared_ptr<VTKPlotter> plot(std::shared_ptr<const Expression> expression,
+                                     std::shared_ptr<const Mesh> mesh,
 				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot expression (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const Expression& expression,
+  std::shared_ptr<VTKPlotter> plot(const Expression& expression,
 				     const Mesh& mesh,
 				     const Parameters& parameters);
 
   /// Plot expression (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Expression> expression,
-				     boost::shared_ptr<const Mesh> mesh,
-				     boost::shared_ptr<const Parameters> parameters);
+  std::shared_ptr<VTKPlotter> plot(std::shared_ptr<const Expression> expression,
+				     std::shared_ptr<const Mesh> mesh,
+				     std::shared_ptr<const Parameters> parameters);
 
 }
 

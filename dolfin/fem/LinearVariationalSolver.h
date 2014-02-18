@@ -44,7 +44,7 @@ namespace dolfin
 
     /// Create linear variational solver for given problem (shared
     /// pointer version)
-    LinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem);
+    LinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem);
 
     /// Solve variational problem
     void solve();
@@ -70,7 +70,7 @@ namespace dolfin
   private:
 
     // The linear problem
-    boost::shared_ptr<LinearVariationalProblem> _problem;
+    std::shared_ptr<LinearVariationalProblem> _problem;
 
   };
 

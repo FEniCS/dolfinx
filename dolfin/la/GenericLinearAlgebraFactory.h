@@ -25,7 +25,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
@@ -52,23 +52,23 @@ namespace dolfin
     virtual ~GenericLinearAlgebraFactory() {}
 
     /// Create empty matrix
-    virtual boost::shared_ptr<GenericMatrix> create_matrix() const = 0;
+    virtual std::shared_ptr<GenericMatrix> create_matrix() const = 0;
 
     /// Create empty vector
-    virtual boost::shared_ptr<GenericVector> create_vector() const = 0;
+    virtual std::shared_ptr<GenericVector> create_vector() const = 0;
 
     /// Create empty tensor layout
-    virtual boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const = 0;
+    virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const = 0;
 
     /// Create empty linear operator
-    virtual boost::shared_ptr<GenericLinearOperator> create_linear_operator() const = 0;
+    virtual std::shared_ptr<GenericLinearOperator> create_linear_operator() const = 0;
 
     /// Create LU solver
-    virtual boost::shared_ptr<GenericLUSolver>
+    virtual std::shared_ptr<GenericLUSolver>
     create_lu_solver(std::string method) const = 0;
 
     /// Create Krylov solver
-    virtual boost::shared_ptr<GenericLinearSolver>
+    virtual std::shared_ptr<GenericLinearSolver>
     create_krylov_solver(std::string method, std::string preconditioner) const = 0;
 
     /// Return a list of available LU solver methods.

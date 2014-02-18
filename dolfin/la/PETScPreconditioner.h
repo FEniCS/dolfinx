@@ -27,7 +27,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <petscpc.h>
 
 #include <dolfin/common/types.h>

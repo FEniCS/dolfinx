@@ -65,7 +65,7 @@ EpetraVector::EpetraVector(MPI_Comm comm, std::size_t N)
   init(comm, N);
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x) : _x(x)
+EpetraVector::EpetraVector(std::shared_ptr<Epetra_FEVector> x) : _x(x)
 {
   // Do nothing
 }
@@ -92,10 +92,10 @@ EpetraVector::~EpetraVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> EpetraVector::copy() const
+std::shared_ptr<GenericVector> EpetraVector::copy() const
 {
   dolfin_assert(_x);
-  boost::shared_ptr<GenericVector> y(new EpetraVector(*this));
+  std::shared_ptr<GenericVector> y(new EpetraVector(*this));
   return y;
 }
 //-----------------------------------------------------------------------------
@@ -559,7 +559,7 @@ void EpetraVector::init(const Epetra_BlockMap& map)
   _x.reset(new Epetra_FEVector(map));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
+std::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
 {
   return _x;
 }

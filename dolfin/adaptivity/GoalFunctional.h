@@ -21,7 +21,7 @@
 #ifndef __GOAL_FUNCTIONAL_H
 #define __GOAL_FUNCTIONAL_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/fem/Form.h>
 #include "ErrorControl.h"
 
@@ -59,7 +59,7 @@ namespace dolfin
     virtual void update_ec(const Form& a, const Form& L) = 0;
 
     // Pointer to _ErrorControl_ instance
-    boost::shared_ptr<ErrorControl> _ec;
+    std::shared_ptr<ErrorControl> _ec;
 
   };
 

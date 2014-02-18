@@ -23,7 +23,7 @@
 
 #include <vector>
 #include <ufc.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
@@ -37,7 +37,7 @@ namespace dolfin
   public:
 
     /// Create finite element from UFC finite element (data may be shared)
-    FiniteElement(boost::shared_ptr<const ufc::finite_element> element);
+    FiniteElement(std::shared_ptr<const ufc::finite_element> element);
 
     /// Destructor
     virtual ~FiniteElement() {}
@@ -241,39 +241,39 @@ namespace dolfin
     { return _hash; }
 
     /// Create a new finite element for sub element i (for a mixed element)
-    boost::shared_ptr<const FiniteElement>
+    std::shared_ptr<const FiniteElement>
       create_sub_element(std::size_t i) const
     {
       dolfin_assert(_ufc_element);
-      boost::shared_ptr<const ufc::finite_element>
+      std::shared_ptr<const ufc::finite_element>
         ufc_element(_ufc_element->create_sub_element(i));
-      boost::shared_ptr<const FiniteElement>
+      std::shared_ptr<const FiniteElement>
         element(new const FiniteElement(ufc_element));
       return element;
     }
 
     /// Create a new class instance
-    boost::shared_ptr<const FiniteElement> create() const
+    std::shared_ptr<const FiniteElement> create() const
     {
       dolfin_assert(_ufc_element);
-      boost::shared_ptr<const ufc::finite_element>
+      std::shared_ptr<const ufc::finite_element>
         ufc_element(_ufc_element->create());
-      return boost::shared_ptr<const FiniteElement>(new FiniteElement(ufc_element));
+      return std::shared_ptr<const FiniteElement>(new FiniteElement(ufc_element));
     }
 
     /// Extract sub finite element for component
-    boost::shared_ptr<const FiniteElement>
+    std::shared_ptr<const FiniteElement>
       extract_sub_element(const std::vector<std::size_t>& component) const;
 
   private:
 
     // Recursively extract sub finite element
-    static boost::shared_ptr<const FiniteElement>
+    static std::shared_ptr<const FiniteElement>
       extract_sub_element(const FiniteElement& finite_element,
                           const std::vector<std::size_t>& component);
 
     // UFC finite element
-    boost::shared_ptr<const ufc::finite_element> _ufc_element;
+    std::shared_ptr<const ufc::finite_element> _ufc_element;
 
     // Simple hash of the signature string
     std::size_t _hash;

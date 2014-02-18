@@ -191,14 +191,14 @@ void TrilinosPreconditioner::set(BelosLinearProblem& problem,
   }
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list)
+void TrilinosPreconditioner::set_parameters(std::shared_ptr<const Teuchos::ParameterList> list)
 {
   parameter_list = list;
 }
 //-----------------------------------------------------------------------------
 void TrilinosPreconditioner::set_parameters(Teuchos::RCP<Teuchos::ParameterList> list)
 {
-  parameter_list = boost::shared_ptr<const Teuchos::ParameterList>(reference_to_no_delete_pointer(*list.get()));
+  parameter_list = std::shared_ptr<const Teuchos::ParameterList>(reference_to_no_delete_pointer(*list.get()));
   parameter_ref_keeper = list;
 }
 //-----------------------------------------------------------------------------

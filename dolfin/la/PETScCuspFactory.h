@@ -41,23 +41,23 @@ namespace dolfin
     virtual ~PETScCuspFactory() {}
 
     /// Create empty matrix
-    boost::shared_ptr<GenericMatrix> create_matrix() const;
+    std::shared_ptr<GenericMatrix> create_matrix() const;
 
     /// Create empty vector
-    boost::shared_ptr<GenericVector> create_vector() const;
+    std::shared_ptr<GenericVector> create_vector() const;
 
     /// Create empty tensor layout
-    boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
+    std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
 
     /// Create empty linear operator
-    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
+    std::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver>
+    std::shared_ptr<GenericLUSolver>
       create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver>
+    std::shared_ptr<GenericLinearSolver>
       create_krylov_solver(std::string method,
                            std::string preconditioner) const;
 

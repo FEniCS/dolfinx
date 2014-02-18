@@ -21,7 +21,7 @@
 #ifndef __DOMAIN_ASSIGNER_H
 #define __DOMAIN_ASSIGNER_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace dolfin
 {
@@ -50,7 +50,7 @@ namespace dolfin
     const CellDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const CellDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains);
+    const CellDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
 
   private:
 
@@ -71,7 +71,7 @@ namespace dolfin
     const ExteriorFacetDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const ExteriorFacetDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains);
+    const ExteriorFacetDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
 
   private:
 
@@ -92,7 +92,7 @@ namespace dolfin
     const InteriorFacetDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const InteriorFacetDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains);
+    const InteriorFacetDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
 
   private:
 

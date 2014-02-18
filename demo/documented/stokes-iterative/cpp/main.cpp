@@ -139,12 +139,12 @@ int main()
   StokesPreconditioner::BilinearForm a_P(W, W);
 
   // Assemble precondtioner system (P, b_dummy)
-  boost::shared_ptr<Matrix> P(new Matrix);
+  std::shared_ptr<Matrix> P(new Matrix);
   Vector b;
   assemble_system(*P, b, a_P, L, bcs);
 
   // Assemble Stokes system (A, b)
-  boost::shared_ptr<Matrix> A(new Matrix);
+  std::shared_ptr<Matrix> A(new Matrix);
   assemble_system(*A, b, a, L, bcs);
 
   // Create Krylov solver with specified method and preconditioner

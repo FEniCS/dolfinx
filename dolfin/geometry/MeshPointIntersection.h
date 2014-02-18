@@ -22,7 +22,7 @@
 #define __MESH_POINT_INTERSECTION_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace dolfin
 {
