@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2014-02-17
+# Last changed: 2014-02-19
 
 import unittest
 import numpy
@@ -81,8 +81,9 @@ class TriangulateTest(unittest.TestCase):
         mesh_0 = UnitSquareMesh(1, 1)
         mesh_1 = UnitSquareMesh(1, 1)
 
-        # Translate second mesh
-        dx = Point(numpy.random.rand(),numpy.random.rand())
+        # Translate second mesh randomly
+        #dx = Point(numpy.random.rand(),numpy.random.rand())
+        dx = Point(0.278498,0.546881,0.957506)
         mesh_1.translate(dx)
 
         exactvolume = (1-abs(dx[0]))*(1-abs(dx[1]))
@@ -128,7 +129,8 @@ class TriangulateTest(unittest.TestCase):
 
         # Rotate the triangle mesh around y axis a random angle in
         # (0,90) degrees
-        angle = numpy.random.rand()*90
+        #angle = numpy.random.rand()*90
+        angle = 23.46354
         mesh_1.rotate(angle,1)
 
         # Exact area
@@ -157,7 +159,9 @@ class TriangulateTest(unittest.TestCase):
         mesh_1 = UnitCubeMesh(1,1,1)
 
         # Translate second mesh
-        dx=Point(numpy.random.rand(),numpy.random.rand(),numpy.random.rand())
+        # dx = Point(numpy.random.rand(),numpy.random.rand(),numpy.random.rand())
+        dx = Point(0.913375,0.632359,0.097540)
+
         mesh_1.translate(dx)
         exactvolume = (1-abs(dx[0]))*(1-abs(dx[1]))*(1-abs(dx[2]))
 
