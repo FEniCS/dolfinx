@@ -62,8 +62,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   // HDF5 chunking
   parameters.add("chunking", false);
 
-  // Ensure directory exists 
-  // Create on process zero, and force other processes to wait
+  // Ensure directory exists, or create on process zero
   if (MPI::rank(_mpi_comm) == 0)
   {
     const boost::filesystem::path path(filename);
@@ -80,7 +79,11 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
       }
     }
   }
-  MPI::barrier(_mpi_comm);
+
+  // If more than one process, wait here for process zero to
+  // have created directory
+  if (MPI::size(_mpi_comm) > 1)
+    MPI::barrier(_mpi_comm);
 
   // Open HDF5 file
   const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
