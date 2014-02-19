@@ -2,7 +2,7 @@
 equation:
 
     sigma + grad(u) = 0    in Omega
-       - div(sigma) = f    in Omega
+         div(sigma) = f    in Omega
               du/dn = g    on Gamma_N
                   u = u_D  on Gamma_D
 
@@ -54,9 +54,9 @@ W = DRT * CG
 (sigma, u) = TrialFunctions(W)
 (tau, v) = TestFunctions(W)
 
-# Define source function
+# Define source functions
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-g = Expression("sin(5.0*x[0])")
+g = Expression("sin(5*x[0])")
 
 # Define variational form
 a = (dot(sigma, tau) + dot(grad(u), tau) + dot(sigma, grad(v)))*dx
