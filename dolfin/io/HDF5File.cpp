@@ -62,28 +62,21 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   // HDF5 chunking
   parameters.add("chunking", false);
 
-  // Ensure directory exists, or create on process zero
-  if (MPI::rank(_mpi_comm) == 0)
+  // Ensure directory exists, or create
+  // FIXME: is this safe in parallel?
+  const boost::filesystem::path path(filename);
+  if (path.has_parent_path()
+      && !boost::filesystem::is_directory(path.parent_path()))
   {
-    const boost::filesystem::path path(filename);
-    if (path.has_parent_path()
-        && !boost::filesystem::is_directory(path.parent_path()))
+    boost::filesystem::create_directories(path.parent_path());
+    if (!boost::filesystem::is_directory(path.parent_path()))
     {
-      boost::filesystem::create_directories(path.parent_path());
-      if (!boost::filesystem::is_directory(path.parent_path()))
-      {
-        dolfin_error("HDF5File.cpp",
-                     "open file",
-                     "Could not create directory \"%s\"",
-                     path.parent_path().string().c_str());
-      }
+      dolfin_error("HDF5File.cpp",
+                   "open file",
+                   "Could not create directory \"%s\"",
+                   path.parent_path().string().c_str());
     }
   }
-
-  // If more than one process, wait here for process zero to
-  // have created directory
-  if (MPI::size(_mpi_comm) > 1)
-    MPI::barrier(_mpi_comm);
 
   // Open HDF5 file
   const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;

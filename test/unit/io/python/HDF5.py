@@ -29,7 +29,7 @@ if has_hdf5():
         def test_save_vector(self):
             x = Vector(mpi_comm_world(), 305)
             x[:] = 1.0
-            vector_file = HDF5File(x.mpi_comm(), "x.h5", "w")
+            vector_file = HDF5File(x.mpi_comm(), "new_folder/x.h5", "w")
             vector_file.write(x, "/my_vector")
 
         def test_save_and_read_vector(self):
