@@ -36,7 +36,7 @@ CCFEMFunction::CCFEMFunction(const CCFEMFunctionSpace& V)
   init_vector();
 }
 //-----------------------------------------------------------------------------
-CCFEMFunction::CCFEMFunction(boost::shared_ptr<const CCFEMFunctionSpace> V)
+CCFEMFunction::CCFEMFunction(std::shared_ptr<const CCFEMFunctionSpace> V)
   : _function_space(V)
 {
   // Initialize vector
@@ -62,7 +62,7 @@ const Function& CCFEMFunction::part(std::size_t i) const
   {
     // Extract function subspace
     std::vector<std::size_t> component = boost::assign::list_of(i);
-    boost::shared_ptr<const FunctionSpace>
+    std::shared_ptr<const FunctionSpace>
       sub_space(_function_space->extract_sub_space(component));
 
     // Insert sub-Function into map and return reference
@@ -74,13 +74,13 @@ const Function& CCFEMFunction::part(std::size_t i) const
   return *(_function_parts.find(0)->second);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> CCFEMFunction::vector()
+std::shared_ptr<GenericVector> CCFEMFunction::vector()
 {
   dolfin_assert(_vector);
   return _vector;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector> CCFEMFunction::vector() const
+std::shared_ptr<const GenericVector> CCFEMFunction::vector() const
 {
   dolfin_assert(_vector);
   return _vector;

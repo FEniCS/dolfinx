@@ -55,7 +55,7 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, std::size_t entity_dim) :
+VTKPlottableMesh::VTKPlottableMesh(std::shared_ptr<const Mesh> mesh, std::size_t entity_dim) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
@@ -65,7 +65,7 @@ VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, std::size
   // Do nothing
 }
 //----------------------------------------------------------------------------
-VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
+VTKPlottableMesh::VTKPlottableMesh(std::shared_ptr<const Mesh> mesh) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
@@ -132,11 +132,11 @@ bool VTKPlottableMesh::is_compatible(const Variable &var) const
   return dynamic_cast<const Mesh*>(&var);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var,
+void VTKPlottableMesh::update(std::shared_ptr<const Variable> var,
                               const Parameters& p, int framecounter)
 {
   if (var)
-    _mesh = boost::dynamic_pointer_cast<const Mesh>(var);
+    _mesh = std::dynamic_pointer_cast<const Mesh>(var);
 
   dolfin_assert(_grid);
   dolfin_assert(_full_grid);
@@ -360,7 +360,7 @@ vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
   return _meshActor;
 }
 //----------------------------------------------------------------------------
-boost::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
+std::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
 {
   return _mesh;
 }
@@ -393,7 +393,7 @@ void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filte
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------
-VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
+VTKPlottableMesh *dolfin::CreateVTKPlottable(std::shared_ptr<const Mesh> mesh)
 {
   return new VTKPlottableMesh(mesh);
 }

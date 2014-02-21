@@ -44,7 +44,7 @@ std::size_t CCFEMFunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const CCFEMDofMap> CCFEMFunctionSpace::dofmap() const
+std::shared_ptr<const CCFEMDofMap> CCFEMFunctionSpace::dofmap() const
 {
   dolfin_assert(_dofmap);
   return _dofmap;
@@ -55,7 +55,7 @@ std::size_t CCFEMFunctionSpace::num_parts() const
   return _function_spaces.size();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 CCFEMFunctionSpace::part(std::size_t i) const
 {
   dolfin_assert(i < _function_spaces.size());
@@ -63,7 +63,7 @@ CCFEMFunctionSpace::part(std::size_t i) const
 }
 //-----------------------------------------------------------------------------
 void
-CCFEMFunctionSpace::add(boost::shared_ptr<const FunctionSpace> function_space)
+CCFEMFunctionSpace::add(std::shared_ptr<const FunctionSpace> function_space)
 {
   _function_spaces.push_back(function_space);
   log(PROGRESS, "Added function space to CCFEM space; space has %d part(s).",
@@ -91,7 +91,7 @@ void CCFEMFunctionSpace::build()
   _trees.clear();
   for (std::size_t i = 0; i < num_parts(); i++)
   {
-    boost::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
+    std::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
     tree->build(*_function_spaces[i]->mesh());
     _trees.push_back(tree);
   }

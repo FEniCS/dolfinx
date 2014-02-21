@@ -68,10 +68,10 @@ LinearVariationalProblem(const Form& a,
 }
 //-----------------------------------------------------------------------------
 LinearVariationalProblem::
-LinearVariationalProblem(boost::shared_ptr<const Form> a,
-                         boost::shared_ptr<const Form> L,
-                         boost::shared_ptr<Function> u,
-                         std::vector<boost::shared_ptr<const DirichletBC> > bcs)
+LinearVariationalProblem(std::shared_ptr<const Form> a,
+                         std::shared_ptr<const Form> L,
+                         std::shared_ptr<Function> u,
+                         std::vector<std::shared_ptr<const DirichletBC> > bcs)
   : Hierarchical<LinearVariationalProblem>(*this),
     _a(a), _L(L), _u(u)
 {
@@ -83,40 +83,40 @@ LinearVariationalProblem(boost::shared_ptr<const Form> a,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> LinearVariationalProblem::bilinear_form() const
+std::shared_ptr<const Form> LinearVariationalProblem::bilinear_form() const
 {
   return _a;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> LinearVariationalProblem::linear_form() const
+std::shared_ptr<const Form> LinearVariationalProblem::linear_form() const
 {
   return _L;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Function> LinearVariationalProblem::solution()
+std::shared_ptr<Function> LinearVariationalProblem::solution()
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Function> LinearVariationalProblem::solution() const
+std::shared_ptr<const Function> LinearVariationalProblem::solution() const
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const DirichletBC> >
+std::vector<std::shared_ptr<const DirichletBC> >
   LinearVariationalProblem::bcs() const
 {
   return _bcs;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
   LinearVariationalProblem::trial_space() const
 {
   dolfin_assert(_u);
   return _u->function_space();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 LinearVariationalProblem::test_space() const
 {
   dolfin_assert(_a);

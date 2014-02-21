@@ -94,7 +94,7 @@ KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
   init(method, preconditioner);
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(boost::shared_ptr<const GenericLinearOperator> A,
+KrylovSolver::KrylovSolver(std::shared_ptr<const GenericLinearOperator> A,
                            std::string method, std::string preconditioner)
 {
   // Initialize solver
@@ -110,7 +110,7 @@ KrylovSolver::~KrylovSolver()
 }
 //-----------------------------------------------------------------------------
 void
-KrylovSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+KrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
@@ -118,8 +118,8 @@ KrylovSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
 }
 //-----------------------------------------------------------------------------
 void
-KrylovSolver::set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                            boost::shared_ptr<const GenericLinearOperator> P)
+KrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                            std::shared_ptr<const GenericLinearOperator> P)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);

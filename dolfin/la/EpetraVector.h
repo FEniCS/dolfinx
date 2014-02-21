@@ -30,7 +30,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
@@ -70,7 +70,7 @@ namespace dolfin
     EpetraVector(const EpetraVector& x);
 
     /// Create vector view from given Epetra_FEVector pointer
-    explicit EpetraVector(boost::shared_ptr<Epetra_FEVector> vector);
+    explicit EpetraVector(std::shared_ptr<Epetra_FEVector> vector);
 
     /// Create vector from given Epetra_BlockMap
     explicit EpetraVector(const Epetra_BlockMap& map);
@@ -95,7 +95,7 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Return copy of vector
-    virtual boost::shared_ptr<GenericVector> copy() const;
+    virtual std::shared_ptr<GenericVector> copy() const;
 
     /// Initialize vector to size N
     virtual void init(MPI_Comm comm, std::size_t N);
@@ -220,7 +220,7 @@ namespace dolfin
     void init(const Epetra_BlockMap& map);
 
     /// Return Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_FEVector> vec() const;
+    std::shared_ptr<Epetra_FEVector> vec() const;
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
@@ -231,10 +231,10 @@ namespace dolfin
   private:
 
     // Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_FEVector> _x;
+    std::shared_ptr<Epetra_FEVector> _x;
 
     // Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_Vector> x_ghost;
+    std::shared_ptr<Epetra_Vector> x_ghost;
 
     // Global-to-local map for ghost values
     boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;

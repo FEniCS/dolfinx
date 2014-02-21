@@ -41,15 +41,15 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const Function> function)
+VTKPlottableGenericFunction::VTKPlottableGenericFunction(std::shared_ptr<const Function> function)
   : VTKPlottableMesh(function->function_space()->mesh()),
     _function(function)
 {
   // Do nothing
 }
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const Expression> expression,
-                                                         boost::shared_ptr<const Mesh> mesh)
+VTKPlottableGenericFunction::VTKPlottableGenericFunction(std::shared_ptr<const Expression> expression,
+                                                         std::shared_ptr<const Mesh> mesh)
   : VTKPlottableMesh(mesh), _function(expression)
 {
   // Do nothing
@@ -195,16 +195,16 @@ bool VTKPlottableGenericFunction::is_compatible(const Variable &var) const
   return VTKPlottableMesh::is_compatible(*mesh);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
+void VTKPlottableGenericFunction::update(std::shared_ptr<const Variable> var,
                                          const Parameters& p, int frame_counter)
 {
-  boost::shared_ptr<const Mesh> mesh = VTKPlottableMesh::mesh();
+  std::shared_ptr<const Mesh> mesh = VTKPlottableMesh::mesh();
   if (var)
   {
-    boost::shared_ptr<const Function>
-      function(boost::dynamic_pointer_cast<const Function>(var));
-    boost::shared_ptr<const ExpressionWrapper>
-      wrapper(boost::dynamic_pointer_cast<const ExpressionWrapper>(var));
+    std::shared_ptr<const Function>
+      function(std::dynamic_pointer_cast<const Function>(var));
+    std::shared_ptr<const ExpressionWrapper>
+      wrapper(std::dynamic_pointer_cast<const ExpressionWrapper>(var));
     dolfin_assert(function || wrapper);
     if (function)
     {
@@ -305,7 +305,7 @@ VTKPlottableGenericFunction::get_output() const
 }
 //----------------------------------------------------------------------------
 VTKPlottableGenericFunction*
-dolfin::CreateVTKPlottable(boost::shared_ptr<const Function> function)
+dolfin::CreateVTKPlottable(std::shared_ptr<const Function> function)
 {
   if (function->function_space()->mesh()->topology().dim() == 1)
     return new VTKPlottableGenericFunction1D(function);
@@ -314,14 +314,14 @@ dolfin::CreateVTKPlottable(boost::shared_ptr<const Function> function)
 }
 //----------------------------------------------------------------------------
 VTKPlottableGenericFunction*
-dolfin::CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper> wrapper)
+dolfin::CreateVTKPlottable(std::shared_ptr<const ExpressionWrapper> wrapper)
 {
   return CreateVTKPlottable(wrapper->expression(), wrapper->mesh());
 }
 //----------------------------------------------------------------------------
 VTKPlottableGenericFunction*
-dolfin::CreateVTKPlottable(boost::shared_ptr<const Expression> expr,
-                           boost::shared_ptr<const Mesh> mesh)
+dolfin::CreateVTKPlottable(std::shared_ptr<const Expression> expr,
+                           std::shared_ptr<const Mesh> mesh)
 {
   if (mesh->topology().dim() == 1)
     return new VTKPlottableGenericFunction1D(expr, mesh);

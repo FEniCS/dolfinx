@@ -22,7 +22,7 @@
 #define __DEFAULT_FACTORY_H
 
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include "GenericLinearAlgebraFactory.h"
 
@@ -43,23 +43,23 @@ namespace dolfin
     virtual ~DefaultFactory() {}
 
     /// Create empty matrix
-    virtual boost::shared_ptr<GenericMatrix> create_matrix() const;
+    virtual std::shared_ptr<GenericMatrix> create_matrix() const;
 
     /// Create empty vector
-    virtual boost::shared_ptr<GenericVector> create_vector() const;
+    virtual std::shared_ptr<GenericVector> create_vector() const;
 
     /// Create empty tensor layout
-    virtual boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
+    virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
 
     /// Create empty linear operator
-    virtual boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
+    virtual std::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
-    virtual boost::shared_ptr<dolfin::GenericLUSolver>
+    virtual std::shared_ptr<dolfin::GenericLUSolver>
       create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    virtual boost::shared_ptr<dolfin::GenericLinearSolver>
+    virtual std::shared_ptr<dolfin::GenericLinearSolver>
       create_krylov_solver(std::string method, std::string preconditioner) const;
 
     /// Return a list of available LU solver methods

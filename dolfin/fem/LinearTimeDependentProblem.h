@@ -21,7 +21,7 @@
 #ifndef __LINEAR_TIME_DEPENDENT_PROBLEM_H
 #define __LINEAR_TIME_DEPENDENT_PROBLEM_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Hierarchical.h>
 
 // FIXME: Temporary fix
@@ -68,31 +68,31 @@ namespace dolfin
 
     /// Create linear variational problem with a list of boundary conditions
     /// (shared pointer version)
-    LinearTimeDependentProblem(boost::shared_ptr<const TensorProductForm> a,
-                               boost::shared_ptr<const TensorProductForm> L,
-                               boost::shared_ptr<Function> u,
-                               std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+    LinearTimeDependentProblem(std::shared_ptr<const TensorProductForm> a,
+                               std::shared_ptr<const TensorProductForm> L,
+                               std::shared_ptr<Function> u,
+                               std::vector<std::shared_ptr<const BoundaryCondition> > bcs);
 
     /// Return bilinear form
-    boost::shared_ptr<const TensorProductForm> bilinear_form() const;
+    std::shared_ptr<const TensorProductForm> bilinear_form() const;
 
     /// Return linear form
-    boost::shared_ptr<const TensorProductForm> linear_form() const;
+    std::shared_ptr<const TensorProductForm> linear_form() const;
 
     /// Return solution variable
-    boost::shared_ptr<Function> solution();
+    std::shared_ptr<Function> solution();
 
     /// Return solution variable (const version)
-    boost::shared_ptr<const Function> solution() const;
+    std::shared_ptr<const Function> solution() const;
 
     /// Return boundary conditions
-    std::vector<boost::shared_ptr<const BoundaryCondition> > bcs() const;
+    std::vector<std::shared_ptr<const BoundaryCondition> > bcs() const;
 
     /// Return trial space
-    boost::shared_ptr<const FunctionSpace> trial_space() const;
+    std::shared_ptr<const FunctionSpace> trial_space() const;
 
     /// Return test space
-    boost::shared_ptr<const FunctionSpace> test_space() const;
+    std::shared_ptr<const FunctionSpace> test_space() const;
 
   private:
 
@@ -100,16 +100,16 @@ namespace dolfin
     void check_forms() const;
 
     // The bilinear form
-    boost::shared_ptr<const TensorProductForm> _a;
+    std::shared_ptr<const TensorProductForm> _a;
 
     // The linear form
-    boost::shared_ptr<const TensorProductForm> _L;
+    std::shared_ptr<const TensorProductForm> _L;
 
     // The solution
-    boost::shared_ptr<Function> _u;
+    std::shared_ptr<Function> _u;
 
     // The boundary conditions
-    std::vector<boost::shared_ptr<const BoundaryCondition> > _bcs;
+    std::vector<std::shared_ptr<const BoundaryCondition> > _bcs;
 
   };
 

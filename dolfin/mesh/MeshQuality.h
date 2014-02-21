@@ -25,7 +25,7 @@
 #include <utility>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "Cell.h"
 
 namespace dolfin
@@ -51,10 +51,10 @@ namespace dolfin
     /// *Example*
     ///     .. note::
     ///
-    ///         boost::shared_ptr<Mesh> mesh(new UnitCubeMesh(4, 4, 4));
+    ///         std::shared_ptr<Mesh> mesh(new UnitCubeMesh(4, 4, 4));
     ///         CellFunction<double> = MeshQuality::radius_ratio(mesh);
     static CellFunction<double>
-      radius_ratios(boost::shared_ptr<const Mesh> mesh);
+      radius_ratios(std::shared_ptr<const Mesh> mesh);
 
 
     /// Compute the minimum and maximum radius ratio of cells
