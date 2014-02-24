@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2014-02-06
+# Last changed: 2014-02-24
 
 import unittest
 import numpy
@@ -77,8 +77,32 @@ class BoundingBoxTreeTest(unittest.TestCase):
     #--- compute_collisions with tree ---
 
     def test_compute_collisions_tree_1d(self):
-        # Not yet implemented in library
-        print "FIXME"
+
+        references = [[set([8, 9, 10, 11, 12, 13, 14, 15]),
+                       set([0, 1, 2, 3, 4, 5, 6, 7])],
+                      [set([14, 15]),
+                       set([0, 1])]]
+
+        points = [Point(0.52), Point(0.9)]
+
+        for i, point in enumerate(points):
+
+            mesh_A = UnitIntervalMesh(16)
+            mesh_B = UnitIntervalMesh(16)
+
+            mesh_B.translate(point)
+
+            tree_A = BoundingBoxTree()
+            tree_A.build(mesh_A)
+
+            tree_B = BoundingBoxTree()
+            tree_B.build(mesh_B)
+
+            entities_A, entities_B = tree_A.compute_collisions(tree_B)
+
+            if MPI.size(mesh_A.mpi_comm()) == 1:
+                self.assertEqual(set(entities_A), references[i][0])
+                self.assertEqual(set(entities_B), references[i][1])
 
     def test_compute_collisions_tree_2d(self):
 
@@ -109,8 +133,32 @@ class BoundingBoxTreeTest(unittest.TestCase):
                 self.assertEqual(set(entities_B), references[i][1])
 
     def test_compute_collisions_tree_3d(self):
-        # Not yet implemented in library
-        print "FIXME"
+
+        references = [[set([18, 19, 20, 21, 22, 23, 42, 43, 44, 45, 46, 47]),
+                       set([0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29])],
+                      [set([6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35]),
+                       set([12, 13, 14, 15, 16, 17, 36, 37, 38, 39, 40, 41])]]
+
+        points = [Point(0.52, 0.51, 0.3), Point(0.9, -0.9, 0.3)]
+
+        for i, point in enumerate(points):
+
+            mesh_A = UnitCubeMesh(2, 2, 2)
+            mesh_B = UnitCubeMesh(2, 2, 2)
+
+            mesh_B.translate(point)
+
+            tree_A = BoundingBoxTree()
+            tree_A.build(mesh_A)
+
+            tree_B = BoundingBoxTree()
+            tree_B.build(mesh_B)
+
+            entities_A, entities_B = tree_A.compute_collisions(tree_B)
+
+            if MPI.size(mesh_A.mpi_comm()) == 1:
+                self.assertEqual(set(entities_A), references[i][0])
+                self.assertEqual(set(entities_B), references[i][1])
 
     #--- compute_entity_collisions ---
 
@@ -168,8 +216,32 @@ class BoundingBoxTreeTest(unittest.TestCase):
     #--- compute_entity_collisions with tree ---
 
     def test_compute_entity_collisions_tree_1d(self):
-        # Not yet implemented in library
-        print "FIXME"
+
+        references = [[set([8, 9, 10, 11, 12, 13, 14, 15]),
+                       set([0, 1, 2, 3, 4, 5, 6, 7])],
+                      [set([14, 15]),
+                       set([0, 1])]]
+
+        points = [Point(0.52), Point(0.9)]
+
+        for i, point in enumerate(points):
+
+            mesh_A = UnitIntervalMesh(16)
+            mesh_B = UnitIntervalMesh(16)
+
+            mesh_B.translate(point)
+
+            tree_A = BoundingBoxTree()
+            tree_A.build(mesh_A)
+
+            tree_B = BoundingBoxTree()
+            tree_B.build(mesh_B)
+
+            entities_A, entities_B = tree_A.compute_entity_collisions(tree_B)
+
+            if MPI.size(mesh_A.mpi_comm()) == 1:
+                self.assertEqual(set(entities_A), references[i][0])
+                self.assertEqual(set(entities_B), references[i][1])
 
     def test_compute_entity_collisions_tree_2d(self):
 
@@ -200,8 +272,32 @@ class BoundingBoxTreeTest(unittest.TestCase):
                 self.assertEqual(set(entities_B), references[i][1])
 
     def test_compute_entity_collisions_tree_3d(self):
-        # Not yet implemented in library
-        print "FIXME"
+
+        references = [[set([18, 19, 20, 21, 22, 23, 42, 43, 44, 45, 46, 47]),
+                       set([0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29])],
+                      [set([7, 8, 30, 31, 32]),
+                       set([15, 16, 17, 39, 41])]]
+
+        points = [Point(0.52, 0.51, 0.3), Point(0.9, -0.9, 0.3)]
+
+        for i, point in enumerate(points):
+
+            mesh_A = UnitCubeMesh(2, 2, 2)
+            mesh_B = UnitCubeMesh(2, 2, 2)
+
+            mesh_B.translate(point)
+
+            tree_A = BoundingBoxTree()
+            tree_A.build(mesh_A)
+
+            tree_B = BoundingBoxTree()
+            tree_B.build(mesh_B)
+
+            entities_A, entities_B = tree_A.compute_entity_collisions(tree_B)
+
+            if MPI.size(mesh_A.mpi_comm()) == 1:
+                self.assertEqual(set(entities_A), references[i][0])
+                self.assertEqual(set(entities_B), references[i][1])
 
     #--- compute_first_collision ---
 
