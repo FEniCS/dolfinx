@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,10 @@
 // Modified by Kristian Oelgaard 2007
 // Modified by Kristoffer Selim 2008
 // Modified by Marie E. Rognes 2011
+// Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-06
+// Last changed: 2014-02-13
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -283,32 +284,18 @@ void IntervalCell::order(Cell& cell,
 //-----------------------------------------------------------------------------
 bool IntervalCell::collides(const Cell& cell, const Point& point) const
 {
-  // Get coordinates
-  const MeshGeometry& geometry = cell.mesh().geometry();
-  const unsigned int* vertices = cell.entities(0);
-  const double x0 = geometry.point(vertices[0])[0];
-  const double x1 = geometry.point(vertices[1])[0];
-  const double x = point.x();
-  const double dx = std::abs(x1 - x0);
-  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
-
-  return ((x >= x0 - eps && x <= x1 + eps) ||
-          (x >= x1 - eps && x <= x0 + eps));
+  return CollisionDetection::collides(cell, point);
+}
+//-----------------------------------------------------------------------------
+bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
+{
+  return CollisionDetection::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
 IntervalCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
-  dolfin_not_implemented();
-  std::vector<double> triangulation;
-  return triangulation;
-}
-//-----------------------------------------------------------------------------
-bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
-{
-  dolfin_not_implemented();
-
-  return false;
+  return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

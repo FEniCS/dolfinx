@@ -111,22 +111,6 @@ namespace dolfin
 
     // Find local index of edge i according to ordering convention
     std::size_t find_edge(std::size_t i, const Cell& cell) const;
-
-    // Compute signed area of triangle abc
-    double signed_area(const Point& a, const Point& b, const Point c) const
-    { return (a.x() - c.x())*(b.y() - c.y()) - (a.y() - c.y())*(b.x() - c.x()); }
-
-    // Check whether edges ab and cd collide
-    bool collides(const Point& a, const Point& b,
-                  const Point& c, const Point& d) const;
-
-    // Compute collision (intersection point) between edges ab and cd.
-    // This function assumes that the two edges collide and solve for
-    // the intersection point between the extended line segments. An
-    // error is thrown if the edges are parallel.
-    Point edge_collision(const Point& a, const Point& b,
-                         const Point& c, const Point& d) const;
-
   };
 
 }

@@ -19,9 +19,10 @@
 // Modified by Garth N. Wells 2006
 // Modified by Kristian Oelgaard 2006
 // Modified by Kristoffer Selim 2008
+// Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-01-06
+// Last changed: 2014-02-13
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -55,8 +56,8 @@ std::size_t TetrahedronCell::num_entities(std::size_t dim) const
     return 1; // cells
   default:
     dolfin_error("TetrahedronCell.cpp",
-                 "access number of entities of tetrahedron cell",
-                 "Illegal topological dimension (%d)", dim);
+		 "access number of entities of tetrahedron cell",
+		 "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -76,8 +77,8 @@ std::size_t TetrahedronCell::num_vertices(std::size_t dim) const
     return 4; // cells
   default:
     dolfin_error("TetrahedronCell.cpp",
-                 "access number of vertices for subsimplex of tetrahedron cell",
-                 "Illegal topological dimension (%d)", dim);
+		 "access number of vertices for subsimplex of tetrahedron cell",
+		 "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -217,7 +218,7 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
 }
 //-----------------------------------------------------------------------------
 void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
-  std::size_t& current_cell, std::size_t refinement_rule, std::size_t* marked_edges) const
+					   std::size_t& current_cell, std::size_t refinement_rule, std::size_t* marked_edges) const
 {
   dolfin_not_implemented();
 
@@ -249,35 +250,35 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
   switch (refinement_rule)
   {
   case 1:
-    // Rule 1: 4 new cells
-    editor.add_cell(current_cell++, v0, e1, e3, e2);
-    editor.add_cell(current_cell++, v1, e2, e4, e0);
-    editor.add_cell(current_cell++, v2, e0, e5, e1);
-    editor.add_cell(current_cell++, v3, e5, e4, e3);
-    break;
+  // Rule 1: 4 new cells
+  editor.add_cell(current_cell++, v0, e1, e3, e2);
+  editor.add_cell(current_cell++, v1, e2, e4, e0);
+  editor.add_cell(current_cell++, v2, e0, e5, e1);
+  editor.add_cell(current_cell++, v3, e5, e4, e3);
+  break;
   case 2:
-    // Rule 2: 2 new cells
-    editor.add_cell(current_cell++, v0, e1, e3, e2);
-    editor.add_cell(current_cell++, v1, e2, e4, e0);
-    break;
+  // Rule 2: 2 new cells
+  editor.add_cell(current_cell++, v0, e1, e3, e2);
+  editor.add_cell(current_cell++, v1, e2, e4, e0);
+  break;
   case 3:
-    // Rule 3: 3 new cells
-    editor.add_cell(current_cell++, v0, e1, e3, e2);
-    editor.add_cell(current_cell++, v1, e2, e4, e0);
-    editor.add_cell(current_cell++, v2, e0, e5, e1);
-    break;
+  // Rule 3: 3 new cells
+  editor.add_cell(current_cell++, v0, e1, e3, e2);
+  editor.add_cell(current_cell++, v1, e2, e4, e0);
+  editor.add_cell(current_cell++, v2, e0, e5, e1);
+  break;
   case 4:
-    // Rule 4: 4 new cells
-    editor.add_cell(current_cell++, v0, e1, e3, e2);
-    editor.add_cell(current_cell++, v1, e2, e4, e0);
-    editor.add_cell(current_cell++, v2, e0, e5, e1);
-    editor.add_cell(current_cell++, v3, e5, e4, e3);
-    break;
+  // Rule 4: 4 new cells
+  editor.add_cell(current_cell++, v0, e1, e3, e2);
+  editor.add_cell(current_cell++, v1, e2, e4, e0);
+  editor.add_cell(current_cell++, v2, e0, e5, e1);
+  editor.add_cell(current_cell++, v3, e5, e4, e3);
+  break;
   default:
-    dolfin_error("TetrahedronCell.cpp",
-                 "perform regular cut refinement of tetrahedron",
-                 "Illegal rule (%d) for irregular refinement of tetrahedron",
-                 refinement_rule);
+  dolfin_error("TetrahedronCell.cpp",
+  "perform regular cut refinement of tetrahedron",
+  "Illegal rule (%d) for irregular refinement of tetrahedron",
+  refinement_rule);
   }
   */
 }
@@ -288,8 +289,8 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   if (tetrahedron.dim() != 3)
   {
     dolfin_error("TetrahedronCell.cpp",
-                 "compute volume of tetrahedron cell",
-                 "Illegal mesh entity, not a tetrahedron");
+		 "compute volume of tetrahedron cell",
+		 "Illegal mesh entity, not a tetrahedron");
   }
 
   // Get mesh geometry
@@ -299,8 +300,8 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   if (geometry.dim() != 3)
   {
     dolfin_error("TetrahedronCell.cpp",
-                 "compute volume of tetrahedron",
-                 "Only know how to compute volume when embedded in R^3");
+		 "compute volume of tetrahedron",
+		 "Only know how to compute volume when embedded in R^3");
   }
 
   // Get the coordinates of the four vertices
@@ -325,8 +326,8 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
   if (tetrahedron.dim() != 3)
   {
     dolfin_error("TetrahedronCell.cpp",
-                 "compute diameter of tetrahedron cell",
-                 "Illegal mesh entity, not a tetrahedron");
+		 "compute diameter of tetrahedron cell",
+		 "Illegal mesh entity, not a tetrahedron");
   }
 
   // Get mesh geometry
@@ -336,8 +337,8 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
   if (geometry.dim() != 3)
   {
     dolfin_error("TetrahedronCell.cpp",
-                 "compute diameter",
-                 "Tetrahedron is not embedded in R^3, only know how to compute diameter in that case");
+		 "compute diameter",
+		 "Tetrahedron is not embedded in R^3, only know how to compute diameter in that case");
   }
 
   // Get the coordinates of the four vertices
@@ -498,7 +499,7 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 }
 //-----------------------------------------------------------------------------
 void TetrahedronCell::order(Cell& cell,
-                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
+			    const std::vector<std::size_t>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
@@ -560,23 +561,23 @@ void TetrahedronCell::order(Cell& cell,
       std::size_t m = 0;
       for (std::size_t j = 0; j < 3; j++)
       {
-        // Loop edges on facet
-        for (std::size_t k(m); k < 3; k++)
-        {
-          // For each edge number get the global vertex numbers
-          const unsigned int* edge_vertices = topology(1, 0)(cell_edges[k]);
+	// Loop edges on facet
+	for (std::size_t k(m); k < 3; k++)
+	{
+	  // For each edge number get the global vertex numbers
+	  const unsigned int* edge_vertices = topology(1, 0)(cell_edges[k]);
 
-          // Check if the jth vertex of facet i is non-incident on edge k
-          if (!std::count(edge_vertices, edge_vertices + 2, facet_vertices[j]))
-          {
-            // Swap facet numbers
-            std::size_t tmp = cell_edges[m];
-            cell_edges[m] = cell_edges[k];
-            cell_edges[k] = tmp;
-            m++;
-            break;
-          }
-        }
+	  // Check if the jth vertex of facet i is non-incident on edge k
+	  if (!std::count(edge_vertices, edge_vertices + 2, facet_vertices[j]))
+	  {
+	    // Swap facet numbers
+	    std::size_t tmp = cell_edges[m];
+	    cell_edges[m] = cell_edges[k];
+	    cell_edges[k] = tmp;
+	    m++;
+	    break;
+	  }
+	}
       }
     }
   }
@@ -604,24 +605,24 @@ void TetrahedronCell::order(Cell& cell,
     {
       for (std::size_t j = i+1; j < 4; j++)
       {
-        // Loop edge numbers
-        for (std::size_t k = m; k < 6; k++)
-        {
-          // Get local vertices on edge
-          const unsigned int* edge_vertices = topology(1, 0)(cell_edges[k]);
+	// Loop edge numbers
+	for (std::size_t k = m; k < 6; k++)
+	{
+	  // Get local vertices on edge
+	  const unsigned int* edge_vertices = topology(1, 0)(cell_edges[k]);
 
-          // Check if the ith and jth vertex of the cell are non-incident on edge k
-          if (!std::count(edge_vertices, edge_vertices+2, cell_vertices[i]) && \
-              !std::count(edge_vertices, edge_vertices+2, cell_vertices[j]) )
-          {
-            // Swap edge numbers
-            std::size_t tmp = cell_edges[m];
-            cell_edges[m] = cell_edges[k];
-            cell_edges[k] = tmp;
-            m++;
-            break;
-          }
-        }
+	  // Check if the ith and jth vertex of the cell are non-incident on edge k
+	  if (!std::count(edge_vertices, edge_vertices+2, cell_vertices[i]) && \
+	      !std::count(edge_vertices, edge_vertices+2, cell_vertices[j]) )
+	  {
+	    // Swap edge numbers
+	    std::size_t tmp = cell_edges[m];
+	    cell_edges[m] = cell_edges[k];
+	    cell_edges[k] = tmp;
+	    m++;
+	    break;
+	  }
+	}
       }
     }
   }
@@ -641,17 +642,17 @@ void TetrahedronCell::order(Cell& cell,
       // Loop facets on cell
       for (std::size_t j = i; j < 4; j++)
       {
-        unsigned int* facet_vertices = const_cast<unsigned int*>(topology(2, 0)(cell_facets[j]));
+	unsigned int* facet_vertices = const_cast<unsigned int*>(topology(2, 0)(cell_facets[j]));
 
-        // Check if the ith vertex of the cell is non-incident on facet j
-        if (!std::count(facet_vertices, facet_vertices+3, cell_vertices[i]))
-        {
-          // Swap facet numbers
-          std::size_t tmp = cell_facets[i];
-          cell_facets[i] = cell_facets[j];
-          cell_facets[j] = tmp;
-          break;
-        }
+	// Check if the ith vertex of the cell is non-incident on facet j
+	if (!std::count(facet_vertices, facet_vertices+3, cell_vertices[i]))
+	{
+	  // Swap facet numbers
+	  std::size_t tmp = cell_facets[i];
+	  cell_facets[i] = cell_facets[j];
+	  cell_facets[j] = tmp;
+	  break;
+	}
       }
     }
   }
@@ -659,76 +660,18 @@ void TetrahedronCell::order(Cell& cell,
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
 {
-  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
-  // See also "Real-Time Collision Detection" by Christer Ericson.
-  //
-  // We express AP as a linear combination of the vectors AB, AC and
-  // AD. Point is inside triangle iff AP is a convex combination.
-
-  // Get the vertices as points
-  const MeshGeometry& geometry = cell.mesh().geometry();
-  const unsigned int* vertices = cell.entities(0);
-  Point p0 = geometry.point(vertices[0]);
-  Point p1 = geometry.point(vertices[1]);
-  Point p2 = geometry.point(vertices[2]);
-  Point p3 = geometry.point(vertices[3]);
-
-  // Compute vectors
-  Point v1 = p1 - p0;
-  Point v2 = p2 - p0;
-  Point v3 = p3 - p0;
-  Point v = point - p0;
-
-  // Compute entries of linear system
-  const double a11 = v1.dot(v1);
-  const double a12 = v1.dot(v2);
-  const double a13 = v1.dot(v3);
-  const double a22 = v2.dot(v2);
-  const double a23 = v2.dot(v3);
-  const double a33 = v3.dot(v3);
-  const double b1 = v.dot(v1);
-  const double b2 = v.dot(v2);
-  const double b3 = v.dot(v3);
-
-  // Compute subdeterminants
-  const double d11 = a22*a33 - a23*a23;
-  const double d12 = a12*a33 - a23*a13;
-  const double d13 = a12*a23 - a22*a13;
-  const double d22 = a11*a33 - a13*a13;
-  const double d23 = a11*a23 - a12*a13;
-  const double d33 = a11*a22 - a12*a12;
-
-  // Compute inverse of determinant determinant
-  const double inv_det = 1.0 / (a11*d11 - a12*d12 + a13*d13);
-
-  // Solve linear system
-  const double x1 = inv_det*( d11*b1 - d12*b2 + d13*b3);
-  const double x2 = inv_det*(-d12*b1 + d22*b2 - d23*b3);
-  const double x3 = inv_det*( d13*b1 - d23*b2 + d33*b3);
-
-  // Tolerance for numeric test (using vector v1)
-  const double dx = std::abs(v1.x());
-  const double dy = std::abs(v1.y());
-  const double dz = std::abs(v1.z());
-  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*std::max(dx, std::max(dy, dz)));
-
-  // Check if point is inside cell
-  return x1 >= -eps && x2 >= -eps && x3 >= -eps && x1 + x2 + x3 <= 1.0 + eps;
+  return CollisionDetection::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  dolfin_not_implemented();
-
-  return false;
+  return CollisionDetection::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
 TetrahedronCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
-  dolfin_not_implemented();
-  std::vector<double> triangulation;
-  return triangulation;
+  return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
@@ -783,3 +726,4 @@ bool TetrahedronCell::point_outside_of_plane(const Point& point,
   return signp * signd < 0.0;
 }
 //-----------------------------------------------------------------------------
+

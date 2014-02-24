@@ -253,7 +253,7 @@ class Assembly(unittest.TestCase):
         self.assertEqual(dss.domain_data(), boundaries)
 
         M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
-        self.assertEqual(M.domains(), [mesh.ufl_domain()])
+        self.assertEqual(M.domains(), (mesh.ufl_domain(),))
         sd = M.compute_form_data().subdomain_data[mesh.ufl_domain().label()]
         self.assertEqual(sd["cell"], subdomains)
         self.assertEqual(sd["exterior_facet"], boundaries)

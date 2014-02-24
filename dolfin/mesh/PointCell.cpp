@@ -15,11 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
-// Modified by Kristoffer Sleim, 2008.
+// Modified by Anders Logg 2008-2014
+// Modified by Kristoffer Sleim 2008
+// Modified by August Johansson 2014
 //
 // First added:  2007-12-12
-// Last changed: 2014-01-06
+// Last changed: 2014-02-13
 
 #include <dolfin/log/log.h>
 #include "Cell.h"
@@ -158,31 +159,18 @@ void PointCell::order(Cell& cell,
 //-----------------------------------------------------------------------------
 bool PointCell::collides(const Cell& cell, const Point& point) const
 {
-  dolfin_error("PointCell.cpp",
-               "check whether point collides with cell",
-               "Not defined for point cells");
-
-  return false;
+  return CollisionDetection::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  dolfin_error("PointCell.cpp",
-               "check whether entity collides with cell",
-               "Not defined for point cells");
-
-  return false;
+  return CollisionDetection::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
 PointCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
-  dolfin_error("PointCell.cpp",
-               "triangulate intersection",
-               "Not defined for point cells");
-
-  std::vector<double> triangulation;
-  return triangulation;
+  return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const

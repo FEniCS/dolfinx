@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014 Anders Logg and August Johansson
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-03
+// Last changed: 2014-02-15
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -36,6 +36,23 @@ namespace dolfin
   class IntersectionTriangulation
   {
   public:
+
+    /// Compute triangulation of intersection of two entities
+    ///
+    /// *Arguments*
+    ///     entity_0 (_MeshEntity_)
+    ///         The first entity.
+    ///     entity_1 (_MeshEntity_)
+    ///         The second entity.
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         A flattened array of simplices of dimension
+    ///         num_simplices x num_vertices x gdim =
+    ///         num_simplices x (tdim + 1) x gdim
+    static std::vector<double>
+    triangulate_intersection(const MeshEntity& entity_0,
+                             const MeshEntity& entity_1);
 
     /// Compute triangulation of intersection of two intervals
     ///
@@ -71,6 +88,23 @@ namespace dolfin
     triangulate_intersection_triangle_triangle(const MeshEntity& triangle_0,
                                                const MeshEntity& triangle_1);
 
+    /// Compute triangulation of intersection of a tetrahedron and a triangle
+    ///
+    /// *Arguments*
+    ///     T0 (_MeshEntity_)
+    ///         The tetrahedron.
+    ///     T1 (_MeshEntity_)
+    ///         The triangle
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         A flattened array of simplices of dimension
+    ///         num_simplices x num_vertices x gdim =
+    ///         num_simplices x (tdim + 1) x gdim
+    static std::vector<double>
+    triangulate_intersection_tetrahedron_triangle(const MeshEntity& tetrahedron,
+                                                  const MeshEntity& triangle);
+
     /// Compute triangulation of intersection of two tetrahedra
     ///
     /// *Arguments*
@@ -90,7 +124,20 @@ namespace dolfin
 
   private:
 
-    // Put private helper functions here and remove this comment.
+    // Helper function
+    static bool intersection_edge_edge(const Point& a,
+				       const Point& b,
+				       const Point& c,
+				       const Point& d,
+				       Point& pt);
+
+    // Helper function
+    static bool intersection_face_edge(const Point& r,
+				       const Point& s,
+				       const Point& t,
+				       const Point& a,
+				       const Point& b,
+				       Point& pt);
 
   };
 
