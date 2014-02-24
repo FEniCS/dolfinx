@@ -78,7 +78,7 @@ bool CollisionDetection::collides(const MeshEntity& entity,
   default:
     dolfin_error("CollisionDetection.cpp",
 		 "collides entity with point",
-		 "unknown dimension of entity");
+		 "Unknown dimension of entity");
   }
 
   return false;
@@ -93,53 +93,37 @@ CollisionDetection::collides(const MeshEntity& entity_0,
   case 0:
     // Collision with PointCell
     dolfin_not_implemented();
-    // switch (entity_1.dim())
-    // {
-    // case 0:
-    //   dolfin_not_implemented();
-    //   break;
-    // case 1:
-    //   return collides_interval_point(entity_1,entity_0);
-    // case 2:
-    //   return collides_triangle_point(entity_1,entity_0);
-    // case 3:
-    //   return collides_tetrahedron_point(entity_1,entity_0);
-    // default:
-    //   dolfin_error("CollisionDetection.cpp",
-    // 		   "collides entity_0 with entity_1",
-    // 		   "unknown dimension of entity_1 in PointCell collision");
-    // }
+    break;
   case 1:
     // Collision with interval
-    dolfin_not_implemented();
-    // switch (entity_1.dim())
-    // {
-    // case 0:
-    //   return collides_interval_point(entity_1,entity_0);
-    // case 1:
-    //   dolfin_not_implemented();
-    //   break;
-    // case 2:
-    //   dolfin_not_implemented();
-    //   break;
-    // case 3:
-    //   dolfin_not_implemented();
-    //   break;
-    // default:
-    //   dolfin_error("CollisionDetection.cpp"
-    // 		   "collides entity_0 with entity_1"
-    // 		   "unknown dimension of entity_1 in IntervalCell collision");
-    // }
+    switch (entity_1.dim())
+    {
+    case 0:
+      dolfin_not_implemented();
+      break;
+    case 1:
+      return collides_interval_interval(entity_1, entity_0);
+      break;
+    case 2:
+      dolfin_not_implemented();
+      break;
+    case 3:
+      dolfin_not_implemented();
+      break;
+    default:
+      dolfin_error("CollisionDetection.cpp",
+                   "collides entity_0 with entity_1",
+                   "Unknown dimension of entity_1 in IntervalCell collision");
+    }
+    break;
   case 2:
     // Collision with triangle
     switch (entity_1.dim())
     {
     case 0:
-      //return collides_triangle_point(entity_0, entity_1);
       dolfin_not_implemented();
       break;
     case 1:
-      //return collides_triangle_interval(entity_0, entity_1);
       dolfin_not_implemented();
       break;
     case 2:
@@ -149,34 +133,37 @@ CollisionDetection::collides(const MeshEntity& entity_0,
     default:
       dolfin_error("CollisionDetection.cpp",
 		   "collides entity_0 with entity_1",
-		   "unknown dimension of entity_1 in TriangleCell collision");
+		   "Unknown dimension of entity_1 in TriangleCell collision");
     }
+    break;
   case 3:
     // Collision with tetrahedron
     switch (entity_1.dim())
     {
     case 0:
-      //return collides_tetrahedron_point(entity_0, entity_1);
-      dolfin_not_implemented();
+     dolfin_not_implemented();
       break;
     case 1:
-      //return collides_tetrahedron_interval(entity_0, entity_1);
       dolfin_not_implemented();
       break;
     case 2:
       return collides_tetrahedron_triangle(entity_0, entity_1);
+      break;
     case 3:
       return collides_tetrahedron_tetrahedron(entity_0, entity_1);
+      break;
     default:
       dolfin_error("CollisionDetection.cpp",
 		   "collides entity_0 with entity_1",
-		   "unknown dimension of entity_1 in TetrahedronCell collision");
+		   "Unknown dimension of entity_1 in TetrahedronCell collision");
     }
+    break;
   default:
     dolfin_error("CollisionDetection.cpp",
 		 "collides entity_0 with entity_1",
-		 "unknown dimension of entity_0");
+		 "Unknown dimension of entity_0");
   }
+
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -189,10 +176,37 @@ bool CollisionDetection::collides_interval_point(const MeshEntity& entity,
   const double x0 = geometry.point(vertices[0])[0];
   const double x1 = geometry.point(vertices[1])[0];
   const double x = point.x();
+
+  // Check for collision
   const double dx = std::abs(x1 - x0);
   const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
   return ((x >= x0 - eps && x <= x1 + eps) ||
           (x >= x1 - eps && x <= x0 + eps));
+}
+//-----------------------------------------------------------------------------
+bool
+CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
+                                               const MeshEntity& interval_1)
+{
+  // Get coordinates
+  const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
+  const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
+  const unsigned int* vertices_0 = interval_0.entities(0);
+  const unsigned int* vertices_1 = interval_1.entities(0);
+  const double x00 = geometry_0.point(vertices_0[0])[0];
+  const double x01 = geometry_0.point(vertices_0[1])[0];
+  const double x10 = geometry_1.point(vertices_1[0])[0];
+  const double x11 = geometry_1.point(vertices_1[1])[0];
+
+  const double a0 = std::min(x00, x01);
+  const double b0 = std::max(x00, x01);
+  const double a1 = std::min(x10, x11);
+  const double b1 = std::max(x10, x11);
+
+  // Check for collisions
+  const double dx = std::min(b0 - a0, b1 - a1);
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
+  return b1 > a0 - eps && a1 < b0 + eps;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
@@ -218,7 +232,6 @@ CollisionDetection::collides_triangle_triangle(const MeshEntity& triangle_0,
   // Get vertices as points
   const MeshGeometry& geometry_0 = triangle_0.mesh().geometry();
   const unsigned int* vertices_0 = triangle_0.entities(0);
-
   const MeshGeometry& geometry_1 = triangle_1.mesh().geometry();
   const unsigned int* vertices_1 = triangle_1.entities(0);
 

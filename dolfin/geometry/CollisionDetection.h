@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-16
+// Last changed: 2014-02-24
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -78,6 +78,20 @@ namespace dolfin
     ///         True iff objects collide.
     static bool collides_interval_point(const MeshEntity& interval,
 					const Point& point);
+
+    /// Check whether interval collides with interval.
+    ///
+    /// *Arguments*
+    ///     interval_0 (_MeshEntity_)
+    ///         The first interval.
+    ///     interval_1 (_MeshEntity_)
+    ///         The second interval.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff objects collide.
+    static bool collides_interval_interval(const MeshEntity& interval_0,
+					   const MeshEntity& interval_1);
 
     /// Check whether triangle collides with point.
     ///
