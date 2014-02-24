@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-16
+// Last changed: 2014-02-24
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/geometry/SimplexQuadrature.h>
 #include <dolfin/fem/CCFEMDofMap.h>
 #include "FunctionSpace.h"
 #include "CCFEMFunctionSpace.h"
@@ -294,6 +295,9 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
 {
   begin(PROGRESS, "Building quadrature rules.");
 
+  // FIXME: Make this a parameters
+  const std::size_t order = 1;
+
   // Clear quadrature rules
   _quadrature_rules_cut_cells.clear();
 
@@ -307,6 +311,10 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
       // Get cut cell
       const Cell cut_cell(*(_meshes[cut_part]), it->first);
 
+      // Get dimensions
+      const std::size_t tdim = cut_cell.mesh().topology().dim();
+      const std::size_t gdim = cut_cell.mesh().geometry().dim();
+
       // Iterate over cutting cells
       auto cutting_cells = it->second;
       for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
@@ -315,15 +323,22 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
         const std::size_t cutting_part = jt->first;
         const Cell cutting_cell(*(_meshes[cutting_part]), jt->second);
 
-        // FIXME: Use IntersectionTriangulation class directly here
-        // when august/topic-intersection has been merged.
-
         // Compute triangulation of intersection between cut and cutting cell
-        std::vector<double> triangulation
-          = cut_cell.triangulate_intersection(cutting_cell);
+        auto triangulation = cut_cell.triangulate_intersection(cutting_cell);
 
+        // Iterate over simplices in triangulation
+        const std::size_t offset = (tdim + 1)*gdim; // coordinates per simplex
+        const std::size_t num_intersections = triangulation.size() / offset;
+        for (std::size_t k = 0; k < num_intersections; k++)
+        {
+          // Get coordinates for current simplex in triangulation
+          const double* coordinates = &triangulation[0] + k*offset;
+
+          // Compute quadrature rule for simplex
+          auto quadrature_rule
+            = SimplexQuadrature::compute_quadrature_rule(coordinates, tdim, gdim, order);
+        }
       }
-
     }
   }
 
