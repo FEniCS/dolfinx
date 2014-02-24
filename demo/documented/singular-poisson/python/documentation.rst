@@ -6,7 +6,7 @@ Singular Poisson
 ================
 
 This demo is implemented in a single Python file,
-:download:`demo_singular.py`, which contains both the variational
+:download:`demo_singular-poisson.py`, which contains both the variational
 forms and the solver.
 
 .. include:: ../common.txt
@@ -15,7 +15,7 @@ Implementation
 --------------
 
 This description goes through the implementation (in
-:download:`demo_singular.py`) of a solver for the above described
+:download:`demo_singular-poisson.py`) of a solver for the above described
 Poisson equation step-by-step.
 
 First, the :py:mod:`dolfin` module is imported:
@@ -157,5 +157,5 @@ and plot the solution
 Complete code
 -------------
 
-.. literalinclude:: demo_singular.py
+.. literalinclude:: demo_singular-poisson.py
     :start-after: # Begin demo

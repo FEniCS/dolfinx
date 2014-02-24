@@ -21,7 +21,7 @@
 #ifndef __CCFEM_FUNCTION_H
 #define __CCFEM_FUNCTION_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/ptr_container/ptr_map.hpp>
 
 namespace dolfin
@@ -59,7 +59,7 @@ namespace dolfin
     /// *Arguments*
     ///     V (_CCFEMFunctionSpace_)
     ///         The CCFEM function space.
-    explicit CCFEMFunction(boost::shared_ptr<const CCFEMFunctionSpace> V);
+    explicit CCFEMFunction(std::shared_ptr<const CCFEMFunctionSpace> V);
 
     /// Destructor
     virtual ~CCFEMFunction();
@@ -76,14 +76,14 @@ namespace dolfin
     /// *Returns*
     ///     _GenericVector_
     ///         The vector of expansion coefficients.
-    boost::shared_ptr<GenericVector> vector();
+    std::shared_ptr<GenericVector> vector();
 
     /// Return vector of expansion coefficients (const version)
     ///
     /// *Returns*
     ///     _GenericVector_
     ///         The vector of expansion coefficients (const).
-    boost::shared_ptr<const GenericVector> vector() const;
+    std::shared_ptr<const GenericVector> vector() const;
 
   private:
 
@@ -91,10 +91,10 @@ namespace dolfin
     void init_vector();
 
     // The function space
-    boost::shared_ptr<const CCFEMFunctionSpace> _function_space;
+    std::shared_ptr<const CCFEMFunctionSpace> _function_space;
 
     // The vector of expansion coefficients (local)
-    boost::shared_ptr<GenericVector> _vector;
+    std::shared_ptr<GenericVector> _vector;
 
     // Collection of functions for parts which share data
     mutable boost::ptr_map<std::size_t, Function> _function_parts;

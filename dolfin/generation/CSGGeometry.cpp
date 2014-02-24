@@ -36,7 +36,7 @@ CSGGeometry::~CSGGeometry()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void CSGGeometry::set_subdomain(std::size_t i, boost::shared_ptr<CSGGeometry> s)
+void CSGGeometry::set_subdomain(std::size_t i, std::shared_ptr<CSGGeometry> s)
 {
   dolfin_assert(dim() == s->dim());
 
@@ -46,7 +46,7 @@ void CSGGeometry::set_subdomain(std::size_t i, boost::shared_ptr<CSGGeometry> s)
   }
 
   // Check if i already used
-  std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::iterator it = subdomains.begin();
+  std::list<std::pair<std::size_t, std::shared_ptr<const CSGGeometry> > >::iterator it = subdomains.begin();
   while (it != subdomains.end())
   {
     if (it->first == i)

@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   Function u1(V);
 
   // Linear system
-  boost::shared_ptr<Matrix> A(new Matrix);
+  std::shared_ptr<Matrix> A(new Matrix);
   Vector b;
 
   // Assemble matrix

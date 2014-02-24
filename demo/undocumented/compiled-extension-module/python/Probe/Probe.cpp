@@ -47,7 +47,7 @@ Probe::Probe(const Array<double>& x, const FunctionSpace& V)
 
   // Find the cell that contains probe
   const Point point(gdim, x.data());
-  boost::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int id = tree->compute_first_entity_collision(point);
 
   // If the cell is on this process, then create an instance

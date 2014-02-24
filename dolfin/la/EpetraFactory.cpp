@@ -52,43 +52,43 @@ EpetraFactory::~EpetraFactory()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> EpetraFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> EpetraFactory::create_matrix() const
 {
-  boost::shared_ptr<GenericMatrix> A(new EpetraMatrix);
+  std::shared_ptr<GenericMatrix> A(new EpetraMatrix);
   return A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> EpetraFactory::create_vector() const
+std::shared_ptr<GenericVector> EpetraFactory::create_vector() const
 {
-  boost::shared_ptr<GenericVector> x(new EpetraVector);
+  std::shared_ptr<GenericVector> x(new EpetraVector);
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout> EpetraFactory::create_layout(std::size_t rank) const
+std::shared_ptr<TensorLayout> EpetraFactory::create_layout(std::size_t rank) const
 {
   bool sparsity = false;
   if (rank > 1)
     sparsity = true;
-  boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
+  std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearOperator> EpetraFactory::create_linear_operator() const
+std::shared_ptr<GenericLinearOperator> EpetraFactory::create_linear_operator() const
 {
-  boost::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
+  std::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
   return A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLUSolver> EpetraFactory::create_lu_solver(std::string method) const
+std::shared_ptr<GenericLUSolver> EpetraFactory::create_lu_solver(std::string method) const
 {
-  boost::shared_ptr<GenericLUSolver> solver(new EpetraLUSolver(method));
+  std::shared_ptr<GenericLUSolver> solver(new EpetraLUSolver(method));
   return solver;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearSolver> EpetraFactory::create_krylov_solver(std::string method,
+std::shared_ptr<GenericLinearSolver> EpetraFactory::create_krylov_solver(std::string method,
                                               std::string preconditioner) const
 {
-  boost::shared_ptr<GenericLinearSolver> solver(new EpetraKrylovSolver(method, preconditioner));
+  std::shared_ptr<GenericLinearSolver> solver(new EpetraKrylovSolver(method, preconditioner));
   return solver;
 }
 //-----------------------------------------------------------------------------

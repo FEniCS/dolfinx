@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
@@ -85,7 +85,7 @@ namespace dolfin
 
     /// Restriction if any. If the dofmap is not restricted, a null
     /// pointer is returned.
-    virtual boost::shared_ptr<const Restriction> restriction() const = 0;
+    virtual std::shared_ptr<const Restriction> restriction() const = 0;
 
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
@@ -133,19 +133,19 @@ namespace dolfin
       tabulate_all_coordinates(const Mesh& mesh) const = 0;
 
     /// Create a copy of the dof map
-    virtual boost::shared_ptr<GenericDofMap> copy() const = 0;
+    virtual std::shared_ptr<GenericDofMap> copy() const = 0;
 
     /// Create a new dof map on new mesh
-    virtual boost::shared_ptr<GenericDofMap>
+    virtual std::shared_ptr<GenericDofMap>
       create(const Mesh& new_mesh) const = 0;
 
     /// Extract sub dofmap component
-    virtual boost::shared_ptr<GenericDofMap>
+    virtual std::shared_ptr<GenericDofMap>
         extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const Mesh& mesh) const = 0;
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-    virtual boost::shared_ptr<GenericDofMap>
+    virtual std::shared_ptr<GenericDofMap>
         collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                  const Mesh& mesh) const = 0;
 
@@ -178,7 +178,7 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
     /// Subdomain mapping constrained boundaries, e.g. periodic conditions
-    boost::shared_ptr<const SubDomain> constrained_domain;
+    std::shared_ptr<const SubDomain> constrained_domain;
 
     /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
     // ordered dofmap

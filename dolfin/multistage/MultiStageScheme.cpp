@@ -19,7 +19,7 @@
 // Last changed: 2013-04-02
 
 #include <sstream>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/log/log.h>
 
@@ -29,12 +29,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiStageScheme::MultiStageScheme(
-  std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms,
+  std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms,
   const FunctionAXPY& last_stage,
-  std::vector<boost::shared_ptr<Function> > stage_solutions,
-  boost::shared_ptr<Function> u,
-  boost::shared_ptr<Constant> t,
-  boost::shared_ptr<Constant> dt,
+  std::vector<std::shared_ptr<Function> > stage_solutions,
+  std::shared_ptr<Function> u,
+  std::shared_ptr<Constant> t,
+  std::shared_ptr<Constant> dt,
   std::vector<double> dt_stage_offset,
   unsigned int order,
   const std::string name,
@@ -48,12 +48,12 @@ MultiStageScheme::MultiStageScheme(
 }
 //-----------------------------------------------------------------------------
 MultiStageScheme::MultiStageScheme(
-  std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms,
+  std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms,
   const FunctionAXPY& last_stage,
-  std::vector<boost::shared_ptr<Function> > stage_solutions,
-  boost::shared_ptr<Function> u,
-  boost::shared_ptr<Constant> t,
-  boost::shared_ptr<Constant> dt,
+  std::vector<std::shared_ptr<Function> > stage_solutions,
+  std::shared_ptr<Function> u,
+  std::shared_ptr<Constant> t,
+  std::shared_ptr<Constant> dt,
   std::vector<double> dt_stage_offset,
   unsigned int order,
   const std::string name,
@@ -68,7 +68,7 @@ MultiStageScheme::MultiStageScheme(
   _check_arguments();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<boost::shared_ptr<const Form> > >&
+std::vector<std::vector<std::shared_ptr<const Form> > >&
 MultiStageScheme::stage_forms()
 {
   return _stage_forms;
@@ -79,27 +79,27 @@ FunctionAXPY& MultiStageScheme::last_stage()
   return _last_stage;
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<Function> >& MultiStageScheme::stage_solutions()
+std::vector<std::shared_ptr<Function> >& MultiStageScheme::stage_solutions()
 {
   return _stage_solutions;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Function> MultiStageScheme::solution()
+std::shared_ptr<Function> MultiStageScheme::solution()
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Function> MultiStageScheme::solution() const
+std::shared_ptr<const Function> MultiStageScheme::solution() const
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Constant> MultiStageScheme::t()
+std::shared_ptr<Constant> MultiStageScheme::t()
 {
   return _t;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Constant> MultiStageScheme::dt()
+std::shared_ptr<Constant> MultiStageScheme::dt()
 {
   return _dt;
 }

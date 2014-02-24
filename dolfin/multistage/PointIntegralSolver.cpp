@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-13
+// Last changed: 2014-02-10
 
 #include <cmath>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <Eigen/Dense>
 
 #include <dolfin/log/log.h>
@@ -43,7 +43,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme) :
+PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme) :
   Variable("PointIntegralSolver", "unamed"),
   _scheme(scheme), _vertex_map(), _ufcs(), _coefficient_index(),
   _retabulate_J(true)
@@ -95,7 +95,7 @@ void PointIntegralSolver::step(double dt)
   {
     for (unsigned int j = 0; j < _scheme->stage_forms()[i].size(); j++)
     {
-      const std::vector<boost::shared_ptr<const GenericFunction> >
+      const std::vector<std::shared_ptr<const GenericFunction> >
 	coefficients = _scheme->stage_forms()[i][j]->coefficients();
 
       for (unsigned int k = 0; k < coefficients.size(); ++k)
@@ -460,7 +460,7 @@ void PointIntegralSolver::step_interval(double t0, double t1, double dt)
 void PointIntegralSolver::_check_forms()
 {
   // Iterate over stage forms and check they include point integrals
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms
+  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
     = _scheme->stage_forms();
   for (unsigned int i=0; i < stage_forms.size(); i++)
   {
@@ -495,7 +495,7 @@ void PointIntegralSolver::_check_forms()
 void PointIntegralSolver::_init()
 {
   // Get stage forms
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms
+  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
     = _scheme->stage_forms();
 
   // Init coefficient index and ufcs
@@ -514,13 +514,13 @@ void PointIntegralSolver::_init()
   for (unsigned int stage = 0; stage < stage_forms.size(); stage++)
   {
     // Create a UFC object for first form
-    _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][0]));
+    _ufcs[stage].push_back(std::make_shared<UFC>(*stage_forms[stage][0]));
 
     //  If implicit stage
     if (stage_forms[stage].size()==2)
     {
       // Create a UFC object for second form
-      _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][1]));
+      _ufcs[stage].push_back(std::make_shared<UFC>(*stage_forms[stage][1]));
 
       // Find coefficient index for each of the two implicit forms
       for (unsigned int i = 0; i < 2; i++)

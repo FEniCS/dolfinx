@@ -59,12 +59,12 @@ GenericLinearOperator* LinearOperator::instance()
   return _A.get();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const LinearAlgebraObject> LinearOperator::shared_instance() const
+std::shared_ptr<const LinearAlgebraObject> LinearOperator::shared_instance() const
 {
   return _A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<LinearAlgebraObject> LinearOperator::shared_instance()
+std::shared_ptr<LinearAlgebraObject> LinearOperator::shared_instance()
 {
   return _A;
 }
