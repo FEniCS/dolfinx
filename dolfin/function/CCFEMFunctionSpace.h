@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-14
+// Last changed: 2014-02-16
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
@@ -165,9 +165,6 @@ namespace dolfin
     /// Build CCFEM function space
     void build();
 
-    /// Clear CCFEM function space
-    void clear();
-
   private:
 
     // List of function spaces
@@ -221,18 +218,45 @@ namespace dolfin
     //     j = the cell number (in the list of covered cells)
     std::vector<std::vector<unsigned int> > _covered_cells;
 
+    // Developer note 1: The data structures _collision_map_cut_cells
+    // and _quadrature_rules_cut_cells may be changed from maps to
+    // vectors and indexed by the number of the cut cell (in the list
+    // of cut cells), instead of indexed by the local cell index as
+    // here, if we find that this is important for performance.
+    //
+    // Developer note 2: Quadrature points are naturally a part of a
+    // form (or a term in a form) and not a part of a mesh or function
+    // space. However, for now we use a global (to the function space)
+    // quadrature rule for all cut cells, for simplicity.
+
     // Collision map for cut cells. Access data by
+    //
+    //     c = _collision_map_cut_cells[i][j][k]
     //
     // where
     //
     //     c.first  = part number for the cutting mesh
     //     c.second = cell index for the cutting cell
     //            i = the part (mesh) number
-    //            j = the cell number (in the list of cut cells)
+    //            j = the cell number (local cell index)
     //            k = the collision number (in the list of cutting cells)
     std::vector<std::map<unsigned int,
                          std::vector<std::pair<std::size_t, unsigned int> > > >
     _collision_map_cut_cells;
+
+    // Quadrature rules for cut cells. Access data by
+    //
+    //     q = _quadrature_rules_cut_cells[i][j]
+    //
+    // where
+    //
+    //     q.first  = quadrature weights, array of length num_points
+    //     q.second = quadrature points, flattened num_points x gdim array
+    //            i = the part (mesh) number
+    //            j = the cell number (local cell index)
+    std::vector<std::map<unsigned int,
+                         std::pair<std::vector<double>, std::vector<double> > > >
+    _quadrature_rules_cut_cells;
 
     // Build dofmap
     void _build_dofmap();

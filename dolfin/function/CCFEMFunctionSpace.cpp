@@ -16,10 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-14
+// Last changed: 2014-02-16
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/fem/CCFEMDofMap.h>
@@ -130,17 +131,6 @@ void CCFEMFunctionSpace::build()
   _build_quadrature_rules();
 
   end();
-}
-//-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::clear()
-{
-  dolfin_assert(_dofmap);
-
-  _function_spaces.clear();
-  _boundary_meshes.clear();
-  _trees.clear();
-  _boundary_trees.clear();
-  _dofmap->clear();
 }
 //-----------------------------------------------------------------------------
 void CCFEMFunctionSpace::_build_dofmap()
@@ -304,13 +294,35 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
 {
   begin(PROGRESS, "Building quadrature rules.");
 
+  // Clear quadrature rules
+  _quadrature_rules_cut_cells.clear();
+
   // Iterate over all parts
-  for (std::size_t part = 0; part < num_parts(); part++)
+  for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
-    const auto cmap = collision_map_cut_cells(part);
+    // Iterate over cut cells for current part
+    const auto cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
-      cout << it->first << endl;
+      // Get cut cell
+      const Cell cut_cell(*(_meshes[cut_part]), it->first);
+
+      // Iterate over cutting cells
+      auto cutting_cells = it->second;
+      for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+      {
+        // Get cutting part and cutting cell
+        const std::size_t cutting_part = jt->first;
+        const Cell cutting_cell(*(_meshes[cutting_part]), jt->second);
+
+        // FIXME: Use IntersectionTriangulation class directly here
+        // when august/topic-intersection has been merged.
+
+        // Compute triangulation of intersection between cut and cutting cell
+        std::vector<double> triangulation
+          = cut_cell.triangulate_intersection(cutting_cell);
+
+      }
 
     }
   }

@@ -21,7 +21,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2014-01-06
+// Last changed: 2014-02-16
 
 #ifndef __CELL_H
 #define __CELL_H
