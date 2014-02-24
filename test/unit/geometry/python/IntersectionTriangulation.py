@@ -18,12 +18,11 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2014-02-19
+# Last changed: 2014-02-24
 
 import unittest
 import numpy
 from dolfin import *
-
 
 def triangulation_to_mesh_2d(triangulation):
     editor = MeshEditor()
@@ -70,7 +69,6 @@ def triangulation_to_mesh_3d(triangulation):
     editor.close()
     return mesh
 
-
 class TriangulateTest(unittest.TestCase):
 
     def test_triangulate_intersection_2d(self):
@@ -83,10 +81,10 @@ class TriangulateTest(unittest.TestCase):
 
         # Translate second mesh randomly
         #dx = Point(numpy.random.rand(),numpy.random.rand())
-        dx = Point(0.278498,0.546881,0.957506)
+        dx = Point(0.278498, 0.546881, 0.957506)
         mesh_1.translate(dx)
 
-        exactvolume = (1-abs(dx[0]))*(1-abs(dx[1]))
+        exactvolume = (1 - abs(dx[0]))*(1 - abs(dx[1]))
 
         # Compute triangulation
         volume = 0
@@ -147,23 +145,22 @@ class TriangulateTest(unittest.TestCase):
                         volume += t.volume()
 
         errorstring = "rotation angle = " + str(angle)
-        self.assertAlmostEqual(volume,exactvolume,7,errorstring)
-
+        self.assertAlmostEqual(volume, exactvolume, 7, errorstring)
 
     def test_triangulate_intersection_3d(self):
 
         if MPI.size(mpi_comm_world()) > 1: return
 
         # Create two meshes of the unit cube
-        mesh_0 = UnitCubeMesh(1,1,1)
-        mesh_1 = UnitCubeMesh(1,1,1)
+        mesh_0 = UnitCubeMesh(1, 1, 1)
+        mesh_1 = UnitCubeMesh(1, 1, 1)
 
         # Translate second mesh
         # dx = Point(numpy.random.rand(),numpy.random.rand(),numpy.random.rand())
-        dx = Point(0.913375,0.632359,0.097540)
+        dx = Point(0.913375, 0.632359, 0.097540)
 
         mesh_1.translate(dx)
-        exactvolume = (1-abs(dx[0]))*(1-abs(dx[1]))*(1-abs(dx[2]))
+        exactvolume = (1 - abs(dx[0]))*(1 - abs(dx[1]))*(1 - abs(dx[2]))
 
         # Compute triangulation
         volume = 0
@@ -177,9 +174,7 @@ class TriangulateTest(unittest.TestCase):
 
         errorstring = "translation="
         errorstring += str(dx[0])+" "+str(dx[1])+" "+str(dx[2])
-        self.assertAlmostEqual(volume,exactvolume,7,errorstring)
-
+        self.assertAlmostEqual(volume, exactvolume, 7, errorstring)
 
 if __name__ == "__main__":
         unittest.main()
-

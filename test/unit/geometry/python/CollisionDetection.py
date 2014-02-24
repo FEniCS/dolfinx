@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2014-02-17
+# Last changed: 2014-02-24
 
 import unittest
 from dolfin import *
@@ -37,7 +37,6 @@ def create_triangular_mesh_3D():
     editor.add_vertex(3, 1,1,0.5)
     editor.close()
     return mesh;
-
 
 # Test class for collision with interval
 class IntervalTest(unittest.TestCase):
@@ -133,7 +132,7 @@ class TetrahedronTest(unittest.TestCase):
 
         if MPI.size(mpi_comm_world()) > 1: return
 
-        m0 = UnitCubeMesh(2,2,2)
+        m0 = UnitCubeMesh(2, 2, 2)
         c19 = Cell(m0, 19)
         c26 = Cell(m0, 26)
         c37 = Cell(m0, 37)
@@ -167,4 +166,3 @@ class TetrahedronTest(unittest.TestCase):
 
 if __name__ == "__main__":
         unittest.main()
-

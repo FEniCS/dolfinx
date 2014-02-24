@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-16
+// Last changed: 2014-02-24
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -965,4 +965,3 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
   return true;
 }
 //-----------------------------------------------------------------------------
-

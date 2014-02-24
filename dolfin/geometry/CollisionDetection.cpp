@@ -15,6 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// First added:  2014-02-03
+// Last changed: 2014-02-24
+//
+//-----------------------------------------------------------------------------
+// Special note regarding the function collides_tetrahedron_tetrahedron
+//-----------------------------------------------------------------------------
 //
 // The source code for the tetrahedron-tetrahedron collision test is
 // from Fabio Ganovelli, Federico Ponchio and Claudio Rocchini: Fast
@@ -38,13 +44,15 @@
 // purpose. It is provided "as is" without express or implied
 // warranty.
 //
+//-----------------------------------------------------------------------------
+// Special note regarding the function collides_triangle_triangle
+//-----------------------------------------------------------------------------
 //
 // The source code for the triangle-triangle collision test is from
 // Tomas Moller: A Fast Triangle-Triangle Intersection Test, Journal
 // of Graphics Tools, 2(2), 1997, and is in the public domain.
-
-// First added:  2014-02-03
-// Last changed: 2014-02-17
+//
+//-----------------------------------------------------------------------------
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "Point.h"
