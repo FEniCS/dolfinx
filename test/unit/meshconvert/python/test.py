@@ -500,6 +500,36 @@ class DiffPackTester(_TestCase):
         # Clean up
         os.unlink(dfname)
 
+    def test_convert_diffpack_2d(self):
+        from dolfin import Mesh, MPI, MeshFunction
+
+        if MPI.num_processes() != 1:
+            return
+
+        fname = os.path.join("data", "diffpack_tri")
+        dfname = fname+".xml"
+
+        # Read triangle file and convert to a dolfin xml mesh file
+        meshconvert.diffpack2xml(fname+".grid", dfname)
+
+        # Read in dolfin mesh and check number of cells and vertices
+        mesh = Mesh(dfname)
+
+        self.assertEqual(mesh.num_vertices(), 41)
+        self.assertEqual(mesh.num_cells(), 64)
+        self.assertEqual(len(mesh.domains().markers(2)), 64)
+
+        mf_basename = dfname.replace(".xml", "_marker_%d.xml")
+        for marker, num in [(1,10), (2,5), (3,5)]:
+
+            mf_name = mf_basename % marker
+            mf = MeshFunction("size_t", mesh, mf_name)
+            self.assertEqual(sum(mf.array()==marker), num)
+            os.unlink(mf_name)
+
+        # Clean up
+        os.unlink(dfname)
+
 if __name__ == "__main__":
     unittest.main()
     meshconvert
