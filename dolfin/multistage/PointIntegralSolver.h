@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-02-12
+// Last changed: 2014-02-25
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -70,26 +70,23 @@ namespace dolfin
       p.add("reset_stage_solutions", true);
       p.add("enable_debug_output", false);
 
-      std::set<std::string> allowed_convergence_criterion;
-      allowed_convergence_criterion.insert("residual");
-      allowed_convergence_criterion.insert("incremental");
-
       // Get default parameters from NewtonSolver
-      p.add(NewtonSolver::default_parameters());
-      p("newton_solver")["convergence_criterion"].set_range(\
-				allowed_convergence_criterion);
-      p("newton_solver")["convergence_criterion"] = "incremental";
-      p("newton_solver")["maximum_iterations"] = 10;
-      p("newton_solver").add("maximum_jacobian_computations", 2, 1, 8);
-      p("newton_solver").add("recompute_jacobian_for_linear_problems", false);
-      p("newton_solver")["relaxation_parameter"].set_range(0.,1.);
-      p("newton_solver").remove("absolute_tolerance");
+      Parameters pn("newton_solver"); 
+      pn.add("maximum_iterations", 40);
+      pn.add("recompute_jacobian_for_linear_problems", false);
+      pn.add("always_recompute_jacobian", false);
+      pn.add("relaxation_parameter", 1., 0., 1.);
+      pn.add("relative_tolerance", 1e-10, 1e-20, 1e-3);
+       
+      pn.add("kappa", 0.1, 0.05, 1.0);
+      pn.add("eta_0", 1., 1e-15, 1.0);
+      pn.add("max_relative_previous_residual", 1e-1, 1e-5, 1.0);
+      pn.add("reset_each_step", true);
+      pn.add("report", false);
+      pn.add("report_vertex", 0, 0, 32767);
+      pn.add("verbose_report", false);
 
-      p("newton_solver").add("kappa", 0.1, 0.05, 1.0);
-      p("newton_solver").add("eta_0", 1e-10, 1e-15, 1e-5);
-      p("newton_solver").add("max_relative_residual", 1e-1, 1e-5, 0.5);
-      p("newton_solver").add("reset_each_step", true);
-      p("newton_solver")["report"] = false;
+      p.add(pn);
 
       return p;
     }
@@ -101,7 +98,7 @@ namespace dolfin
     void reset_stage_solutions();
 
     // Return number of computations of jacobian
-    unsigned int num_jacobian_computations() const
+    std::size_t num_jacobian_computations() const
     {
       return _num_jacobian_computations;
     }
@@ -158,10 +155,9 @@ namespace dolfin
 			       const Cell& cell, const ufc::cell& ufc_cell,
 			       const std::vector<double>& vertex_coordinates);
 
-    convergence_criteria_t _simplified_newton_solve(std::vector<double>& u, 
-			     std::size_t vert_ind, UFC& loc_ufc, 
-			     int coefficient_index, const Cell& cell,
-			     const std::vector<double>& vertex_coordinates);
+    void _simplified_newton_solve(std::size_t vert_ind, unsigned int stage, 
+				  const Cell& cell, const ufc::cell& ufc_cell,
+				  const std::vector<double>& vertex_coordinates);
 
     // The MultiStageScheme
     boost::shared_ptr<MultiStageScheme> _scheme;
@@ -195,6 +191,7 @@ namespace dolfin
     std::vector<std::vector<double> > _local_stage_solutions;
 
     // Local solutions
+    std::vector<double> _u0;
     std::vector<double> _F;
     std::vector<double> _y;
     std::vector<double> _dx;
@@ -209,20 +206,17 @@ namespace dolfin
     std::vector<std::vector<int> > _coefficient_index;
 
     // Flag which is set to false once the jacobian has been computed
-    bool _recompute_jacobian;
+    std::vector<bool> _recompute_jacobian;
     
-    // Jacobian and LU factorized jacobian matrices
-    std::vector<double> _jac;
+    // Jacobians/LU factorized jacobians matrices
+    std::vector<std::vector<double> > _jacobians;
     
     // Variable used in the estimation of the error of the newton 
     // iteration for the first iteration (Important for linear problems!)
     double _eta;
 
-    // Flag for retabulation of J
-    bool _retabulate_J;
-
     // Number of computations of Jacobian
-    unsigned int _num_jacobian_computations;
+    std::size_t _num_jacobian_computations;
     
   };
 

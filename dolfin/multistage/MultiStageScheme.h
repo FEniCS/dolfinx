@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-02
+// Last changed: 2014-02-25
 
 #ifndef __BUTCHERSCHEME_H
 #define __BUTCHERSCHEME_H
@@ -53,6 +53,7 @@ namespace dolfin
 		  boost::shared_ptr<Constant> t, 
 		  boost::shared_ptr<Constant> dt,
 		  std::vector<double> dt_stage_offset, 
+		  std::vector<int> jacobian_indices,
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form);
@@ -65,6 +66,7 @@ namespace dolfin
 		  boost::shared_ptr<Constant> t, 
 		  boost::shared_ptr<Constant> dt, 
 		  std::vector<double> dt_stage_offset, 
+		  std::vector<int> jacobian_indices,
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form,
@@ -106,6 +108,10 @@ namespace dolfin
     /// Return true if the whole scheme is implicit
     bool implicit() const;
 
+    // Return a distinct jacobian index for a given stage if negative the 
+    // stage is explicit and hence no jacobian needed.
+    int jacobian_index(unsigned int stage) const;
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
@@ -134,6 +140,9 @@ namespace dolfin
     
     // The time step offset. (c from the ButcherTableau)
     std::vector<double> _dt_stage_offset;
+
+    // Map for distinct storage of jacobians
+    std::vector<int> _jacobian_indices;
 
     // The order of the scheme
     unsigned int _order;

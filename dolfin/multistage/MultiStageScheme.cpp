@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-01-30
+// Last changed: 2014-02-25
 
 #include <sstream>
 #include <boost/shared_ptr.hpp>
@@ -35,13 +35,14 @@ MultiStageScheme::MultiStageScheme(
     boost::shared_ptr<Constant> t, 
     boost::shared_ptr<Constant> dt,
     std::vector<double> dt_stage_offset, 
+    std::vector<int> jacobian_indices,
     unsigned int order,
     const std::string name,
     const std::string human_form) : 
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
   _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
-  _dt_stage_offset(dt_stage_offset), _order(order), _implicit(false), 
-  _human_form(human_form)
+  _dt_stage_offset(dt_stage_offset), _jacobian_indices(jacobian_indices), 
+  _order(order), _implicit(false), _human_form(human_form)
 {
   _check_arguments();
 }
@@ -54,15 +55,15 @@ MultiStageScheme::MultiStageScheme(
     boost::shared_ptr<Constant> t, 
     boost::shared_ptr<Constant> dt,
     std::vector<double> dt_stage_offset, 
+    std::vector<int> jacobian_indices,
     unsigned int order,
     const std::string name,
     const std::string human_form,
     std::vector<const DirichletBC* > bcs) :
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
   _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
-  _dt_stage_offset(dt_stage_offset), _order(order), _implicit(false), 
-  _human_form(human_form), 
-  _bcs(bcs)
+  _dt_stage_offset(dt_stage_offset), _jacobian_indices(jacobian_indices), 
+  _order(order), _implicit(false), _human_form(human_form), _bcs(bcs)
 {
   _check_arguments();
 }
@@ -120,13 +121,34 @@ std::vector<const DirichletBC* > MultiStageScheme::bcs() const
 //-----------------------------------------------------------------------------
 bool MultiStageScheme::implicit(unsigned int stage) const
 {
-  dolfin_assert(stage < _stage_forms.size());
+  if (stage >= _stage_forms.size())
+  {
+    dolfin_error("MultiStageScheme.cpp",
+		 "quering if stage is implicit",
+		 "Expecting a stage less than the number of total stages in "
+		 "the scheme.");
+  }
+
   return _stage_forms[stage].size() == 2;
 }
 //-----------------------------------------------------------------------------
+
 bool MultiStageScheme::implicit() const
 {
   return _implicit;
+}
+//-----------------------------------------------------------------------------
+int MultiStageScheme::jacobian_index(unsigned int stage) const
+{
+  if (stage >= _jacobian_indices.size())
+  {
+    dolfin_error("MultiStageScheme.cpp",
+		 "quering for jacobian index",
+		 "Expecting a stage less than the number of total stages in "
+		 "the scheme.");
+  }
+
+  return _jacobian_indices[stage];
 }
 //-----------------------------------------------------------------------------
 std::string MultiStageScheme::str(bool verbose) const
