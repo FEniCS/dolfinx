@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-02-25
+// Last changed: 2014-02-26
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -699,6 +699,9 @@ void PointIntegralSolver::_simplified_newton_solve(
     _coefficient_index[stage][1] : -1;
   const unsigned int jac_index = _scheme->jacobian_index(stage);
   std::vector<double>& jac = _jacobians[jac_index];
+
+  if (newton_solver_params["recompute_jacobian_each_solve"])
+    _recompute_jacobian[jac_index] = true;
 
   bool newton_solve_restared = false;
   unsigned int newton_iterations = 0;
