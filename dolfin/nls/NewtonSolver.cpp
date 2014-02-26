@@ -209,7 +209,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     {
       dolfin_error("NewtonSolver.cpp",
                    "solve nonlinear system with NewtonSolver",
-                   "Newton solver did not converge. Bummer");
+                   "Newton solver did not converge");
     }
     else
       warning("Newton solver did not converge.");
