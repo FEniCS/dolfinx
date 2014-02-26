@@ -19,6 +19,7 @@
 // Last changed: 2014-02-26
 
 #include <cmath>
+#include <algorithm> 
 #include <boost/make_shared.hpp>
 
 #include <dolfin/log/log.h>
@@ -571,7 +572,7 @@ void PointIntegralSolver::_init()
     
     // Create memory for jacobians
     _jacobians.resize(max_jacobian_index+1);
-    for (unsigned int i=0; i<=max_jacobian_index; i++)
+    for (int i=0; i<=max_jacobian_index; i++)
       _jacobians[i].resize(_system_size*_system_size);
     _recompute_jacobian.resize(max_jacobian_index+1, true);
     
@@ -778,7 +779,7 @@ void PointIntegralSolver::_simplified_newton_solve(
       if (always_recompute_jacobian)
       {
 
-	if (report && vert_ind == report_vertex || verbose_report)
+	if ((report && vert_ind == report_vertex) || verbose_report)
 	  info("Newton solver after %d iterations. vertex: %d, "	\
 	       "relative_previous_residual: %.3f, "			\
 	       "relative_residual: %.3e, residual: %.3e.", 
@@ -791,7 +792,7 @@ void PointIntegralSolver::_simplified_newton_solve(
       else if (relative_previous_residual > 1)
       {
 	
-	if (report && vert_ind == report_vertex || verbose_report)
+	if ((report && vert_ind == report_vertex) || verbose_report)
 	  info("Newton solver diverges after %d iterations. vertex: %d, "		\
 	       "relative_previous_residual: %.3f, "			\
 	       "relative_residual: %.3e, residual: %.3e.", 
@@ -801,7 +802,7 @@ void PointIntegralSolver::_simplified_newton_solve(
 	// If we have not restarted newton solve previously
 	if (!newton_solve_restared)
 	{
-	  if (report && vert_ind == report_vertex || verbose_report)
+	  if ((report && vert_ind == report_vertex) || verbose_report)
 	    info("Restarting newton solve for vertex: %d", vert_ind);
 
 	  // Reset flags
@@ -829,7 +830,7 @@ void PointIntegralSolver::_simplified_newton_solve(
 				    max_iterations - newton_iterations)))
       {
 	
-	if (report && vert_ind == report_vertex || verbose_report)
+	if ((report && vert_ind == report_vertex) || verbose_report)
 	  info("Newton solver converges too slow at iteration %d. vertex: %d, "	\
 	       "relative_previous_residual: %.3f, "			\
 	       "relative_residual: %.3e, residual: %.3e. Recomputing jacobian.", 
@@ -841,7 +842,7 @@ void PointIntegralSolver::_simplified_newton_solve(
       }
       else
       {
-	if (report && vert_ind == report_vertex || verbose_report)
+	if ((report && vert_ind == report_vertex) || verbose_report)
 	  info("Newton solver after %d iterations. vertex: %d, "	\
 	       "relative_previous_residual: %.3f, "			\
 	       "relative_residual: %.3e, residual: %.3e.", 
@@ -858,7 +859,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     // No convergence
     if (newton_iterations > max_iterations)
     {
-      if (report && vert_ind == report_vertex || verbose_report)
+      if ((report && vert_ind == report_vertex) || verbose_report)
 	info("Newton solver did not converge after %d iterations. vertex: %d, "	\
 	     "relative_previous_residual: %.3f, "			\
 	     "relative_residual: %.3e, residual: %.3e.", max_iterations, vert_ind, 
@@ -882,10 +883,9 @@ void PointIntegralSolver::_simplified_newton_solve(
     prev_residual = residual;
     newton_iterations++;
 
-    //} while(true);
   } while(_eta*relative_residual >= kappa*rtol);
   
-  if (report && vert_ind == report_vertex || verbose_report)
+  if ((report && vert_ind == report_vertex) || verbose_report)
     info("Newton solver converged after %d iterations. vertex: %d, "\
 	 "relative_previous_residual: %.3f, relative_residual: %.3e, "\
 	 "residual: %.3e.", newton_iterations, vert_ind, 
