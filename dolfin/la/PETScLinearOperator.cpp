@@ -24,7 +24,7 @@
 
 #include <iostream>
 #include <petscmat.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
@@ -40,10 +40,8 @@ namespace dolfin
   int usermult(Mat A, Vec x, Vec y)
   {
     // Wrap PETSc Vec as dolfin::PETScVector
-    boost::shared_ptr<Vec> _x(&x, NoDeleter());
-    boost::shared_ptr<Vec> _y(&y, NoDeleter());
-    PETScVector __x(_x);
-    PETScVector __y(_y);
+    PETScVector _x(x);
+    PETScVector _y(y);
 
     // Extract pointer to PETScLinearOperator
     void* ctx = 0;
@@ -54,7 +52,7 @@ namespace dolfin
     dolfin_assert(_A);
     GenericLinearOperator* wrapper = _A->wrapper();
     dolfin_assert(wrapper);
-    wrapper->mult(__x, __y);
+    wrapper->mult(_x, _y);
 
     return 0;
   }
@@ -119,7 +117,7 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
   // Get local range
   std::size_t m_local = M;
   std::size_t n_local = N;
-  if (MPI::num_processes() > 1)
+  if (MPI::size(MPI_COMM_WORLD) > 1)
   {
     std::pair<std::size_t, std::size_t> local_range_x = x.local_range();
     std::pair<std::size_t, std::size_t> local_range_y = y.local_range();
@@ -129,12 +127,18 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
 
   // Initialize PETSc matrix
   PetscErrorCode ierr;
-  _A.reset(new Mat, PETScMatrixDeleter());
+  if (_A)
+    MatDestroy(&_A);
+
+  // Create shell matrix
   ierr = MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N,
-                        (void*) this, _A.get());
+                        (void*) this, &_A);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateShell");
 
-  ierr = MatShellSetOperation(*_A, MATOP_MULT, (void (*)()) usermult);
+  // Incrase reference count
+  PetscObjectReference((PetscObject)_A);
+
+  ierr = MatShellSetOperation(_A, MATOP_MULT, (void (*)()) usermult);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatShellSetOperation");
 }
 //-----------------------------------------------------------------------------

@@ -111,7 +111,7 @@
 //-----------------------------------------------------------------------------
 // Make SWIG aware of the shared_ptr version of TYPE
 //-----------------------------------------------------------------------------
-%types(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE>*);
+%types(std::shared_ptr<dolfin::TYPE>*);
 
 //-----------------------------------------------------------------------------
 // Run the macros for the combination of const and no const of
@@ -142,7 +142,7 @@ CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
 //-----------------------------------------------------------------------------
 %typemap (in) std::vector<std::pair<double, CONST dolfin::TYPE *> >
   (std::vector<std::pair<double, CONST dolfin::TYPE *> > tmp_vec,
-   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared,
+   std::shared_ptr<dolfin::TYPE> tempshared,
    dolfin::TYPE* arg)
 {
 
@@ -184,19 +184,19 @@ CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
       // If failed with normal pointer conversion then try with shared_ptr conversion
       newmem = 0;
       res = SWIG_ConvertPtrAndOwn(PyTuple_GetItem(py_item, 1), &itemp, $descriptor(\
-			SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), \
+			std::shared_ptr< dolfin::TYPE > *), \
 				  0, &newmem);
       if (SWIG_IsOK(res))
       {
         if (itemp)
         {
-          tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
+          tempshared = *(reinterpret_cast< std::shared_ptr<dolfin::TYPE> * >(itemp));
 	  tmp_vec.push_back(std::make_pair(value, tempshared.get()));
         }
 
         // If we need to release memory
         if (newmem & SWIG_CAST_NEW_MEMORY)
-          delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+          delete reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp);
       }
       else
         SWIG_exception(SWIG_TypeError, "list of tuples of float and TYPE expected. (Bad conversion)");

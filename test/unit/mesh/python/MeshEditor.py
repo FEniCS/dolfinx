@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2006-08-08
-# Last changed: 2011-08-22
+# Last changed: 2014-02-06
 
 import unittest
 import numpy
@@ -32,8 +32,10 @@ class MeshEditorTest(unittest.TestCase):
         mesh = Mesh()
         editor = MeshEditor()
         editor.open(mesh, 2, 2)
-        editor.init_vertices(3)
-        editor.init_cells(1)
+        editor.init_vertices(3) # test both versions of interface
+        editor.init_vertices_global(3, 3)
+        editor.init_cells(1)    # test both versions of interface
+        editor.init_cells_global(1, 1)
 
         # Add vertices
         editor.add_vertex(0, 0.0, 0.0)

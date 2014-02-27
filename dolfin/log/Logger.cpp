@@ -21,17 +21,19 @@
 // First added:  2003-03-13
 // Last changed: 2013-11-15
 
-#include <unistd.h>
+
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include <stdexcept>
 #include <string>
+#include <unistd.h>
 
-#include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -47,8 +49,10 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::pair<std::size_t, double> >::iterator map_iterator;
-typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator const_map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::iterator
+map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator
+const_map_iterator;
 
 // Function for monitoring memory usage, called by thread
 #ifdef __linux__
@@ -96,8 +100,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 
 //-----------------------------------------------------------------------------
 Logger::Logger() : _active(true), _log_level(INFO), indentation_level(0),
-  logstream(&std::cout), num_processes(0), process_number(0),
-  _maximum_memory_usage(-1)
+                   logstream(&std::cout), _maximum_memory_usage(-1)
 {
   // Do nothing
 }
@@ -111,7 +114,7 @@ Logger::~Logger()
 //-----------------------------------------------------------------------------
 void Logger::log(std::string msg, int log_level) const
 {
-  write(log_level, msg);
+  write(log_level, msg, -1);
 }
 //-----------------------------------------------------------------------------
 void Logger::log_underline(std::string msg, int log_level) const
@@ -133,7 +136,7 @@ void Logger::log_underline(std::string msg, int log_level) const
 void Logger::warning(std::string msg) const
 {
   std::string s = std::string("*** Warning: ") + msg;
-  write(WARNING, s);
+  write(WARNING, s, -1);
 }
 //-----------------------------------------------------------------------------
 void Logger::error(std::string msg) const
@@ -144,8 +147,13 @@ void Logger::error(std::string msg) const
 //-----------------------------------------------------------------------------
 void Logger::dolfin_error(std::string location,
                           std::string task,
-                          std::string reason) const
+                          std::string reason,
+                          int mpi_rank) const
 {
+  std::string _mpi_rank = boost::lexical_cast<std::string>(mpi_rank);
+  if (mpi_rank < 0)
+    _mpi_rank = "unknown";
+
   std::stringstream s;
   s << std::endl << std::endl
     << "*** "
@@ -171,7 +179,7 @@ void Logger::dolfin_error(std::string location,
     << "*** " << "Reason:  " << reason << "." << std::endl
     << "*** " << "Where:   This error was encountered inside " << location << "."
     << std::endl
-    << "*** " << "Process: " << MPI::process_number() << std::endl
+    << "*** " << "Process: " << _mpi_rank << std::endl
     << "*** " << std::endl
     << "*** " << "DOLFIN version: " << dolfin_version()  << std::endl
     << "*** " << "Git changeset:  " << git_commit_hash() << std::endl
@@ -183,7 +191,8 @@ void Logger::dolfin_error(std::string location,
 }
 //-----------------------------------------------------------------------------
 void Logger::deprecation(std::string feature,
-                         std::string version,
+                         std::string version_deprecated,
+                         std::string version_remove,
                          std::string message) const
 {
   std::stringstream s;
@@ -191,13 +200,19 @@ void Logger::deprecation(std::string feature,
     << "-------------------------------------------------------------------------"
     << std::endl
     << "*** Warning: " << feature << " has been deprecated in DOLFIN version "
-    << version << "." << std::endl
+    << version_deprecated << "." << std::endl
+    << "*** It will be removed from version " << version_remove << "."
+    << std::endl
     << "*** " << message << std::endl
     << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl;
 
-  write(WARNING, s.str());
+  #ifdef DOLFIN_DEPRECATION_ERROR
+  error(s.str());
+  #else
+  write(WARNING, s.str(), -1);
+  #endif
 }
 //-----------------------------------------------------------------------------
 void Logger::begin(std::string msg, int log_level)
@@ -231,7 +246,7 @@ void Logger::progress(std::string title, double p) const
   line << std::setprecision(1);
   line << "] " << 100.0*p << '%';
 
-  write(PROGRESS, line.str());
+  write(PROGRESS, line.str(), -1);
 }
 //-----------------------------------------------------------------------------
 void Logger::set_output_stream(std::ostream& ostream)
@@ -378,11 +393,11 @@ void Logger::_report_memory_usage(size_t num_mb)
 void Logger::__debug(std::string msg) const
 {
   std::string s = std::string("DEBUG: ") + msg;
-  write(DBG, s);
+  write(DBG, s, -1);
 }
 //-----------------------------------------------------------------------------
 void Logger::__dolfin_assert(std::string file, unsigned long line,
-                      std::string function, std::string check) const
+                             std::string function, std::string check) const
 {
   std::stringstream location;
   location << file << " (line " << line << ")";
@@ -393,29 +408,22 @@ void Logger::__dolfin_assert(std::string file, unsigned long line,
   dolfin_error(location.str(), task.str(), reason.str());
 }
 //-----------------------------------------------------------------------------
-void Logger::write(int log_level, std::string msg) const
+void Logger::write(int log_level, std::string msg, int rank) const
 {
   // Check log level
   if (!_active || log_level < _log_level)
     return;
 
-  // Get data from MPI (only first time)
-  if (num_processes == 0)
-  {
-    num_processes = MPI::num_processes();
-    process_number = MPI::process_number();
-  }
-
   // Check if we want output on root process only
   const bool std_out_all_processes = parameters["std_out_all_processes"];
-  if (process_number > 0 && !std_out_all_processes && log_level < WARNING)
+  if (rank > 0 && !std_out_all_processes && log_level < WARNING)
     return;
 
   // Prefix with process number if running in parallel
-  if (num_processes > 1)
+  if (rank >= 0)
   {
     std::stringstream prefix;
-    prefix << "Process " << process_number << ": ";
+    prefix << "Process " << rank << ": ";
     msg = prefix.str() + msg;
   }
 

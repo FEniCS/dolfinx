@@ -44,18 +44,18 @@ AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
        reference_to_no_delete_pointer(goal));
 }
 // ----------------------------------------------------------------------------
-AdaptiveNonlinearVariationalSolver::
-AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
-                                   boost::shared_ptr<GoalFunctional> goal)
+AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(
+  std::shared_ptr<NonlinearVariationalProblem> problem,
+  std::shared_ptr<GoalFunctional> goal)
   : _problem(problem)
 {
   init(problem, goal);
 }
 // ----------------------------------------------------------------------------
-AdaptiveNonlinearVariationalSolver::
-AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
-                                boost::shared_ptr<Form> goal,
-                                boost::shared_ptr<ErrorControl> control)
+AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(
+  std::shared_ptr<NonlinearVariationalProblem> problem,
+  std::shared_ptr<Form> goal,
+  std::shared_ptr<ErrorControl> control)
   : _problem(problem)
 {
   this->goal = goal;
@@ -68,9 +68,9 @@ AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem
   parameters.add(NonlinearVariationalSolver::default_parameters());
 }
 // ----------------------------------------------------------------------------
-void AdaptiveNonlinearVariationalSolver::
-init(boost::shared_ptr<NonlinearVariationalProblem> problem,
-     boost::shared_ptr<GoalFunctional> goal)
+void AdaptiveNonlinearVariationalSolver::init(
+  std::shared_ptr<NonlinearVariationalProblem> problem,
+  std::shared_ptr<GoalFunctional> goal)
 {
   this->goal = goal;
 
@@ -81,8 +81,8 @@ init(boost::shared_ptr<NonlinearVariationalProblem> problem,
   parameters.add(NonlinearVariationalSolver::default_parameters());
 
   // Extract error control from goal
-  boost::shared_ptr<const Form> a = problem->jacobian_form();
-  boost::shared_ptr<const Form> L = problem->residual_form();
+  std::shared_ptr<const Form> a = problem->jacobian_form();
+  std::shared_ptr<const Form> L = problem->residual_form();
   dolfin_assert(a);
   dolfin_assert(L);
 
@@ -91,7 +91,7 @@ init(boost::shared_ptr<NonlinearVariationalProblem> problem,
   control = goal->_ec;
 }
 // ----------------------------------------------------------------------------
-boost::shared_ptr<const Function>
+std::shared_ptr<const Function>
 AdaptiveNonlinearVariationalSolver::solve_primal()
 {
   NonlinearVariationalProblem& current = _problem->leaf_node();
@@ -101,21 +101,21 @@ AdaptiveNonlinearVariationalSolver::solve_primal()
   return current.solution();
 }
 // ----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const DirichletBC> >
+std::vector<std::shared_ptr<const DirichletBC> >
 AdaptiveNonlinearVariationalSolver::extract_bcs() const
 {
   const NonlinearVariationalProblem& current = _problem->leaf_node();
   return current.bcs();
 }
 // ----------------------------------------------------------------------------
-double AdaptiveNonlinearVariationalSolver::
-evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
+double AdaptiveNonlinearVariationalSolver::evaluate_goal(Form& M,
+                                 std::shared_ptr<const Function> u) const
 {
   return assemble(M);
 }
 // ----------------------------------------------------------------------------
-void AdaptiveNonlinearVariationalSolver::
-adapt_problem(boost::shared_ptr<const Mesh> mesh)
+void AdaptiveNonlinearVariationalSolver::adapt_problem(
+  std::shared_ptr<const Mesh> mesh)
 {
   const NonlinearVariationalProblem& current = _problem->leaf_node();
   adapt(current, mesh);

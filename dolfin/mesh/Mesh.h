@@ -33,11 +33,12 @@
 
 #include <string>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/ale/MeshDisplacement.h>
+#include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
 #include "MeshData.h"
 #include "MeshDomains.h"
 #include "MeshGeometry.h"
@@ -98,6 +99,9 @@ namespace dolfin
     /// Create empty mesh
     Mesh();
 
+    /// Create empty mesh
+    Mesh(MPI_Comm comm);
+
     /// Copy constructor.
     ///
     /// *Arguments*
@@ -112,12 +116,23 @@ namespace dolfin
     ///         Name of file to load.
     explicit Mesh(std::string filename);
 
+    /// Create mesh from data file.
+    ///
+    /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         The MPI communicator
+    ///     filename (std::string)
+    ///         Name of file to load.
+    Mesh(MPI_Comm comm, std::string filename);
+
     /// Create a distributed mesh from local (per process) data.
     ///
     /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         MPI communicator for the mesh.
     ///     local_mesh_data (_LocalMeshData_)
     ///         Data from which to build the mesh.
-    explicit Mesh(LocalMeshData& local_mesh_data);
+    Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
@@ -135,7 +150,7 @@ namespace dolfin
     ///         The CSG geometry
     ///     resolution (std::size_t)
     ///         An integer specifying the mesh resolution
-    Mesh(boost::shared_ptr<const CSGGeometry> geometry,
+    Mesh(std::shared_ptr<const CSGGeometry> geometry,
          std::size_t resolution);
 
     /// Destructor.
@@ -337,7 +352,7 @@ namespace dolfin
     /// responsibility of the caller to use (and possibly rebuild) the
     /// tree. It is stored as a (mutable) member of the mesh to enable
     /// sharing of the bounding box tree data structure.
-    boost::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
+    std::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
 
     /// Get mesh data.
     ///
@@ -453,7 +468,7 @@ namespace dolfin
     ///     MeshDisplacement
     ///         Displacement encapsulated in Expression subclass
     ///         MeshDisplacement.
-    boost::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
+    std::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with
     /// common global vertices.
@@ -466,7 +481,7 @@ namespace dolfin
     ///     MeshDisplacement
     ///         Displacement encapsulated in Expression subclass
     ///         MeshDisplacement.
-    boost::shared_ptr<MeshDisplacement> move(Mesh& mesh);
+    std::shared_ptr<MeshDisplacement> move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
     ///
@@ -640,6 +655,10 @@ namespace dolfin
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
 
+    /// Mesh MPI communicator
+    MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
   private:
 
     // Friends
@@ -663,7 +682,7 @@ namespace dolfin
     // Bounding box tree used to compute collisions between the mesh
     // and other objects. The tree is initialized to a zero pointer
     // and is allocated and built when bounding_box_tree() is called.
-    mutable boost::shared_ptr<BoundingBoxTree> _tree;
+    mutable std::shared_ptr<BoundingBoxTree> _tree;
 
     // Cell type
     CellType* _cell_type;
@@ -673,6 +692,9 @@ namespace dolfin
 
     // Orientation of cells relative to a global direction
     std::vector<int> _cell_orientations;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 }

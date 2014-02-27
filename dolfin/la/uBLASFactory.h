@@ -25,7 +25,7 @@
 #define __UBLAS_FACTORY_H
 
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "uBLASKrylovSolver.h"
 #include "uBLASMatrix.h"
@@ -48,55 +48,48 @@ namespace dolfin
     virtual ~uBLASFactory() {}
 
     /// Create empty matrix
-    boost::shared_ptr<GenericMatrix> create_matrix() const
+    std::shared_ptr<GenericMatrix> create_matrix() const
     {
-      boost::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>);
+      std::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>);
       return A;
     }
 
     /// Create empty vector
-    boost::shared_ptr<GenericVector> create_vector() const
+    std::shared_ptr<GenericVector> create_vector() const
     {
-      boost::shared_ptr<GenericVector> x(new uBLASVector);
-      return x;
-    }
-
-    /// Create empty vector (local)
-    boost::shared_ptr<GenericVector> create_local_vector() const
-    {
-      boost::shared_ptr<GenericVector> x(new uBLASVector);
+      std::shared_ptr<GenericVector> x(new uBLASVector);
       return x;
     }
 
     /// Create empty tensor layout
-    boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
+    std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
     {
       bool sparsity = false;
       if (rank > 1)
         sparsity = true;
-      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
+      std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
       return pattern;
     }
 
     /// Create empty linear operator
-    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const
+    std::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
-      boost::shared_ptr<GenericLinearOperator> A(new uBLASLinearOperator);
+      std::shared_ptr<GenericLinearOperator> A(new uBLASLinearOperator);
       return A;
     }
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
+    std::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
     {
-      boost::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
+      std::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
       return solver;
     }
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
+    std::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
                                               std::string preconditioner) const
     {
-      boost::shared_ptr<GenericLinearSolver>
+      std::shared_ptr<GenericLinearSolver>
         solver(new uBLASKrylovSolver(method, preconditioner));
       return solver;
     }

@@ -7,7 +7,7 @@ This yields a solution u(x,y)=x, regardless of the values of k.
 from dolfin import *
 import sys, math, numpy
 
-mesh = UnitSquare(4, 6)
+mesh = UnitSquareMesh(4, 6)
 
 # Define a MeshFunction over two subdomains
 subdomains = MeshFunction('size_t', mesh, 2)

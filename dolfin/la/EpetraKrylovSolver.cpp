@@ -27,6 +27,7 @@
 
 #include <dolfin/common/MPI.h>
 
+#include <Epetra_Comm.h>
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsMatrix.h>
@@ -136,13 +137,13 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+void EpetraKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                                       const boost::shared_ptr<const GenericLinearOperator> P)
+void EpetraKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                                       std::shared_ptr<const GenericLinearOperator> P)
 {
   _A = as_type<const EpetraMatrix>(require_matrix(A));
   _P = as_type<const EpetraMatrix>(require_matrix(P));
@@ -187,13 +188,13 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 
   // Write a message
   const bool report = parameters["report"];
-  if (report && dolfin::MPI::process_number() == 0)
+  if (report && _A->mat()->Comm().MyPID() == 0)
     info("Solving linear system of size %d x %d (Epetra Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
-  if (x.size() != M)
+  if (x.empty())
   {
-    _A->resize(x, 1);
+    _A->init_vector(x, 1);
     x.zero();
   }
   else if (!parameters["nonzero_initial_guess"])
@@ -283,7 +284,7 @@ std::size_t EpetraKrylovSolver::solve(const GenericLinearOperator& A,
 std::size_t EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                       const EpetraVector& b)
 {
-  boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
+  std::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }
@@ -309,7 +310,7 @@ std::string EpetraKrylovSolver::str(bool verbose) const
   return std::string();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<AztecOO> EpetraKrylovSolver::aztecoo() const
+std::shared_ptr<AztecOO> EpetraKrylovSolver::aztecoo() const
 {
   return solver;
 }

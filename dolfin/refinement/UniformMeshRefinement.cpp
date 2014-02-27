@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2006-06-08
-// Last changed: 2011-04-07
+// Last changed: 2014-02-06
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -76,8 +76,9 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
   const std::size_t num_cells = mesh.size(mesh.topology().dim());
 
   // Specify number of vertices and cells
-  editor.init_vertices(num_vertices + num_edges);
-  editor.init_cells(ipow(2, mesh.topology().dim())*num_cells);
+  editor.init_vertices_global(num_vertices + num_edges, num_vertices + num_edges);
+  editor.init_cells_global(ipow(2, mesh.topology().dim())*num_cells,
+                           ipow(2, mesh.topology().dim())*num_cells);
 
   // Add old vertices
   std::size_t vertex = 0;

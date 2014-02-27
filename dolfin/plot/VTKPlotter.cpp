@@ -85,11 +85,11 @@ namespace // anonymous
 //----------------------------------------------------------------------------
 namespace dolfin
 {
-  GenericVTKPlottable *CreateVTKPlottable(boost::shared_ptr<const Variable> var)
+  GenericVTKPlottable *CreateVTKPlottable(std::shared_ptr<const Variable> var)
   {
 #define DISPATCH(T) do                                                  \
     {                                                                   \
-      boost::shared_ptr<const T > t = boost::dynamic_pointer_cast<const T >(var); \
+      std::shared_ptr<const T > t = std::dynamic_pointer_cast<const T >(var); \
       if (t)                                                            \
         return CreateVTKPlottable(t);                                   \
     } while (0)
@@ -116,7 +116,7 @@ namespace dolfin
   }
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Variable> obj, QVTKWidget *widget)
+VTKPlotter::VTKPlotter(std::shared_ptr<const Variable> obj, QVTKWidget *widget)
   : _initialized(false),
     _plottable(CreateVTKPlottable(obj)),
     vtk_pipeline(new VTKWindowOutputStage(widget)),
@@ -128,8 +128,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Variable> obj, QVTKWidget *widget
   set_title_from(*obj);
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-    boost::shared_ptr<const Mesh> mesh, QVTKWidget *widget)
+VTKPlotter::VTKPlotter(std::shared_ptr<const Expression> expression,
+    std::shared_ptr<const Mesh> mesh, QVTKWidget *widget)
   : _initialized(false),
     _plottable(CreateVTKPlottable(expression, mesh)),
     vtk_pipeline(new VTKWindowOutputStage(widget)),
@@ -146,7 +146,7 @@ VTKPlotter::~VTKPlotter()
   active_plotters->remove(this);
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
+void VTKPlotter::plot(std::shared_ptr<const Variable> variable)
 {
   init();
 
@@ -375,11 +375,13 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
 
   case CONTROL + '+': // Up-scale glyphs, etc.
     parameters["scale"] = (double)parameters["scale"] * 1.2;
-    plot();
+    rescale();
+    vtk_pipeline->render();
     return true;
   case CONTROL + '-': // Down-scale glyphs, etc.
     parameters["scale"] = (double)parameters["scale"] / 1.2;
-    plot();
+    rescale();
+    vtk_pipeline->render();
     return true;
 
   case 'b': // Toggle bounding box
@@ -462,7 +464,7 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
   case CONTROL + SHIFT + 's':
     // shift/control may be mouse-interaction modifiers
     {
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
+#if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6))
       vtkCamera* camera = vtk_pipeline->get_camera();
       foreach (VTKPlotter *other, *active_plotters)
       {
@@ -669,7 +671,39 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   vtk_pipeline->add_viewprop(polygon_actor);
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
+void VTKPlotter::rescale()
+{
+  double range[2];
+
+  const Parameter &range_min = parameters["range_min"];
+  const Parameter &range_max = parameters["range_max"];
+
+  if (!range_min.is_set() || !range_max.is_set())
+  {
+    _plottable->update_range(range);
+
+    // Round small values (<5% of range) to zero
+    const double diff = range[1]-range[0];
+    if (diff != 0 && std::abs(range[0]/diff) < 0.05)
+      range[0] = 0;
+    else if (diff != 0 && std::abs(range[1]/diff) < 0.05)
+      range[1] = 0;
+
+    // Round endpoints to 2 significant digits (away from center)
+    round_significant_digits(range[0], std::floor, 2);
+    round_significant_digits(range[1], std::ceil,  2);
+  }
+
+  if (range_min.is_set()) range[0] = range_min;
+  if (range_max.is_set()) range[1] = range_max;
+
+  _plottable->rescale(range, parameters);
+  vtk_pipeline->set_scalar_range(range);
+  // The rescale may have changed the scene (scalar/vector warping)
+  vtk_pipeline->reset_camera_clipping_range();
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::update_pipeline(std::shared_ptr<const Variable> variable)
 {
   if (!is_compatible(variable))
   {
@@ -704,36 +738,7 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
   // If this is the first render of this plot and/or the rescale parameter
   // is set, we read get the min/max values of the data and process them
   if (_frame_counter == 0 || parameters["rescale"])
-  {
-    double range[2];
-
-    const Parameter &range_min = parameters["range_min"];
-    const Parameter &range_max = parameters["range_max"];
-
-    if (!range_min.is_set() || !range_max.is_set())
-    {
-      _plottable->update_range(range);
-
-      // Round small values (<5% of range) to zero
-      const double diff = range[1]-range[0];
-      if (diff != 0 && std::abs(range[0]/diff) < 0.05)
-        range[0] = 0;
-      else if (diff != 0 && std::abs(range[1]/diff) < 0.05)
-        range[1] = 0;
-
-      // Round endpoints to 2 significant digits (away from center)
-      round_significant_digits(range[0], std::floor, 2);
-      round_significant_digits(range[1], std::ceil,  2);
-    }
-
-    if (range_min.is_set()) range[0] = range_min;
-    if (range_max.is_set()) range[1] = range_max;
-
-    _plottable->rescale(range, parameters);
-    vtk_pipeline->set_scalar_range(range);
-    // The rescale may have changed the scene (scalar/vector warping)
-    vtk_pipeline->reset_camera_clipping_range();
-  }
+    rescale();
 
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and
@@ -744,7 +749,7 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
     vtk_pipeline->reset_camera();
 }
 //----------------------------------------------------------------------------
-bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
+bool VTKPlotter::is_compatible(std::shared_ptr<const Variable> variable) const
 {
   return (no_plot || !variable || _plottable->is_compatible(*variable));
 }
@@ -787,9 +792,9 @@ namespace dolfin
   class VTKWindowOutputStage {}; // dummy class
 }
 
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Variable>, QVTKWidget*) { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression>,
-		       boost::shared_ptr<const Mesh>, QVTKWidget*)  { init(); }
+VTKPlotter::VTKPlotter(std::shared_ptr<const Variable>, QVTKWidget*) { init(); }
+VTKPlotter::VTKPlotter(std::shared_ptr<const Expression>,
+		       std::shared_ptr<const Mesh>, QVTKWidget*)  { init(); }
 VTKPlotter::~VTKPlotter() {}
 
 // (Ab)use init() to issue a warning.
@@ -802,7 +807,7 @@ void VTKPlotter::init()
   warning("Plotting not available. DOLFIN has been compiled without VTK support.");
 }
 
-void VTKPlotter::plot         (boost::shared_ptr<const Variable>) {}
+void VTKPlotter::plot         (std::shared_ptr<const Variable>) {}
 void VTKPlotter::interactive  (bool)                              {}
 void VTKPlotter::write_png    (std::string)                       {}
 void VTKPlotter::write_pdf    (std::string)                       {}
@@ -818,7 +823,7 @@ void VTKPlotter::all_interactive(bool)                            {}
 void VTKPlotter::set_key(std::string key)                         {}
 
 bool VTKPlotter::key_pressed(int, char, std::string)                    { return false; }
-bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable>) const { return false; }
+bool VTKPlotter::is_compatible(std::shared_ptr<const Variable>) const { return false; }
 
 std::string        VTKPlotter::to_key(const Variable &) { return ""; }
 const std::string& VTKPlotter::key() const              { return _key; }
@@ -827,7 +832,7 @@ QVTKWidget *       VTKPlotter::get_widget() const       { return NULL; }
 #endif // HAS_VTK
 
 // Define the static members
-boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::list<VTKPlotter*>());
+std::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::list<VTKPlotter*>());
 int VTKPlotter::hardcopy_counter = 0;
 bool VTKPlotter::run_to_end = false;
 

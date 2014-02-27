@@ -20,6 +20,24 @@
 // Last changed: 2012-03-28
 
 //-----------------------------------------------------------------------------
+// MPI communicator wrappers (deliberately very lightweight)
+//-----------------------------------------------------------------------------
+//#ifdef HAS_MPI
+typedef struct {
+} MPI_Comm;
+//#endif
+
+// Lightweight wrappers for MPI_COMM_WORLD and MPI_COMM_SELF
+%inline %{
+  MPI_Comm mpi_comm_world()
+  { return MPI_COMM_WORLD; }
+
+  MPI_Comm mpi_comm_self()
+  { return MPI_COMM_SELF; }
+%}
+
+
+//-----------------------------------------------------------------------------
 // Instantiate some DOLFIN MPI templates
 //-----------------------------------------------------------------------------
 
@@ -91,7 +109,7 @@ def __getitem__(self, index):
     if index >= self.size():
         raise IndexError("index out of range")
     return self._getitem(index)
-    
+
 def __setitem__(self, index, value):
     if not isinstance(index, int):
         raise TypeError("expected an int as index argument")

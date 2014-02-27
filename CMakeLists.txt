@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "2")
+set(DOLFIN_VERSION_MINOR "3")
 set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
@@ -61,7 +61,7 @@ option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
-
+option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
@@ -94,6 +94,13 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
 endforeach()
 
 #------------------------------------------------------------------------------
+# General compiler defintions
+
+if (DOLFIN_DEPRECATION_ERROR)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_DEPRECATION_ERROR")
+endif()
+
+#------------------------------------------------------------------------------
 # Package-specific options
 
 option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
@@ -120,9 +127,14 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
-if (HAVE_STD AND CMAKE_COMPILER_IS_GNUCXX)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++98 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
+if (HAVE_STD_CPP11)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+  CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
+  if (HAVE_STD_CPP0x)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  endif()
 endif()
 
 # Debug flags
@@ -237,26 +249,18 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
+set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
-find_package(Boost 1.36 QUIET REQUIRED)
+find_package(Boost 1.48 QUIET REQUIRED)
 
 set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
-if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
-endif()
-
-# Boost timer was not a separate Boost component until version 1.48
-if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  list(APPEND DOLFIN_BOOST_COMPONENTS timer chrono)
-endif()
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 2.2.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.3.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 2.2.0.\n"
+    "compatible with requested version 1.3.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -297,13 +301,15 @@ if (DOLFIN_ENABLE_PYTHON)
     endif()
 
     # Add a search path for Python library based on output from
-    # iterpreter
+    # interpreter
+    set(CMAKE_LIBRARY_PATH_SAVE ${CMAKE_LIBRARY_PATH})
     if ("${_PYTHON_LIB_RESULT}" STREQUAL "0")
       set(CMAKE_LIBRARY_PATH ${_PYTHON_LIB_PATH})
     endif()
 
-    # Find Pythons livs
+    # Find Pythons libs
     find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT QUIET REQUIRED)
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH_SAVE})
   endif()
 
   # If Python is found, check for NumPy and SWIG
@@ -411,8 +417,12 @@ if (DOLFIN_ENABLE_TRILINOS)
     foreach (required_package ${DOLFIN_TRILINOS_PACKAGES})
 
       # Search for required package in list of available packages
-      set(${required_trilinos_package}_found false)
-      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_found)
+      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_index)
+      if(required_trilinos_package_index EQUAL -1)
+          set(required_trilinos_package_found false)
+      else()
+          set(required_trilinos_package_found true)
+      endif()
 
       # Print whether or not package is found
       if (required_trilinos_package_found)
@@ -436,6 +446,8 @@ if (DOLFIN_ENABLE_TRILINOS)
         # Loop over libs and get full path
         foreach (lib ${${package}_LIBRARIES})
           find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${${package}_LIBRARY_DIRS} NO_DEFAULT_PATH)
+          # Also search the default paths
+          find_library(TRILINOS_LIB_${lib} ${lib})
           if (TRILINOS_LIB_${lib})
             list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
           endif()
@@ -469,6 +481,16 @@ endif()
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit)
+
+  # Older version of CPPUNIT use std::auto_ptr, which is deprecated
+  if (${CPPUNIT_VERSION} LESS 1.13.1)
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
+    if (HAVE_NO_DEPRECATED)
+      set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-deprecated")
+    endif()
+  endif()
+
 endif()
 
 # Check for Sphinx
@@ -483,7 +505,7 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR})
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.2")
@@ -594,7 +616,7 @@ if (PYTHONINTERP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN Python module
+# Installation of DOLFIN and FEniCS Python modules
 
 if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(DIRECTORY
@@ -611,6 +633,14 @@ if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(FILES ${CMAKE_BINARY_DIR}/globalparameters.py
     DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/common/
     COMPONENT RuntimeLibraries
+    )
+
+  install(DIRECTORY
+    ${CMAKE_SOURCE_DIR}/site-packages/fenics
+    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+    USE_SOURCE_PERMISSIONS
+    COMPONENT RuntimeLibraries
+    PATTERN "*.in" EXCLUDE
     )
 endif()
 

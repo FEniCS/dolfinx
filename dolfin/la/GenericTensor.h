@@ -27,8 +27,9 @@
 
 #include <exception>
 #include <typeinfo>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/log/log.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "LinearAlgebraObject.h"
 
@@ -51,6 +52,9 @@ namespace dolfin
 
     /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout) = 0;
+
+    /// Return true if empty
+    virtual bool empty() const = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual std::size_t rank() const = 0;
@@ -89,6 +93,9 @@ namespace dolfin
 
     /// Finalize assembly of tensor
     virtual void apply(std::string mode) = 0;
+
+    /// Return MPI communicator
+    virtual MPI_Comm mpi_comm() const = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;

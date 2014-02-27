@@ -18,12 +18,15 @@
 // First added:  2013-09-12
 // Last changed: 2013-09-25
 
-#include <dolfin/log/log.h>
+#include <dolfin/function/CCFEMFunctionSpace.h>
+
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/TensorLayout.h>
-#include <dolfin/function/CCFEMFunctionSpace.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 
 #include "SparsityPatternBuilder.h"
 #include "UFC.h"
@@ -74,6 +77,8 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Iterate over parts
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (std::size_t part = 0; part < a.num_parts(); part++)
   {
     // Get form for current part
@@ -100,19 +105,21 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Update to current cell
-      ufc.update(*cell);
+      cell->get_vertex_coordinates(vertex_coordinates);
+      cell->get_cell_data(ufc_cell);
+      ufc.update(*cell, vertex_coordinates, ufc_cell);
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
         dofs[i] = &(dofmaps[i]->cell_dofs(cell->index()));
 
       // Tabulate cell tensor
-      integral->tabulate_tensor(&ufc.A[0], ufc.w(),
-                                &ufc.cell.vertex_coordinates[0],
-                                ufc.cell.orientation);
+      integral->tabulate_tensor(ufc.A.data(), ufc.w(),
+                                vertex_coordinates.data(),
+                                ufc_cell.orientation);
 
       // Add entries to global tensor
-      A.add(&ufc.A[0], dofs);
+      A.add(ufc.A.data(), dofs);
     }
   }
 }
@@ -126,7 +133,7 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   // function space.
 
   // Create layout for initializing tensor
-  boost::shared_ptr<TensorLayout> tensor_layout;
+  std::shared_ptr<TensorLayout> tensor_layout;
   tensor_layout = A.factory().create_layout(a.rank());
   dolfin_assert(tensor_layout);
 
@@ -136,7 +143,7 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   std::vector<std::size_t> block_sizes;
   for (std::size_t i = 0; i < a.rank(); i++)
   {
-    boost::shared_ptr<const CCFEMFunctionSpace> V = a.function_space(i);
+    std::shared_ptr<const CCFEMFunctionSpace> V = a.function_space(i);
     dolfin_assert(V);
 
     global_dimensions.push_back(V->dim());
@@ -147,7 +154,8 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   const std::size_t block_size = 1;
 
   // Initialise tensor layout
-  tensor_layout->init(global_dimensions, block_size, local_ranges);
+  tensor_layout->init(MPI_COMM_WORLD,
+                      global_dimensions, block_size, local_ranges);
 
   // Build sparsity pattern if required
   if (tensor_layout->sparsity_pattern())

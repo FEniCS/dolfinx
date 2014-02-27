@@ -31,6 +31,7 @@ import tempfile
 from dolfin_utils.meshconvert import meshconvert
 from dolfin_utils.meshconvert.meshconvert import DataHandler
 
+
 class TestCase(_TestCase):
     def _get_tempfname(self, suffix=None):
         fd, fname = tempfile.mkstemp(suffix=suffix)
@@ -205,6 +206,38 @@ class AbaqusTest(_ConverterTest):
 #        convert(fname, """*MATERIAL, NAME=MAT
 #*SOLID SECTION, ELSET=NONE, MATERIAL=MAT""", error=True)
 
+    def test_facet_success(self):
+        """ Test facet export.
+        """
+        dim = 3
+        nb_facets = 1170  # The total number of facets in the mesh
+        marker_counter = {0: 990,
+                          1: 42,
+                          2: 42,
+                          3: 96,
+                          4: 0}
+        handler = self.__convert("abaqus_facet.inp")
+        self.assert_(handler.vertices_ended)
+        self.assert_(handler.cells_ended)
+
+        self.assert_("facet_region" in handler.functions.keys())
+        cell_type = DataHandler.CellType_Triangle
+        function_dim, sz, entries, ended = handler.functions["facet_region"]
+
+        # the dimension of the meshfunction should be dim-1
+        self.assertEqual(function_dim, dim - 1)
+        # There should be size facets in the mesh function
+        self.assertEqual(len(entries), nb_facets)
+        self.assertEqual(sz, nb_facets)
+
+
+        # Check that the right number of facets are marked
+        for marker, count in marker_counter.iteritems():
+            self.assert_(len([i for i in entries if i == marker]) == count)
+
+        self.assert_(ended)
+        self.assert_(handler.closed)
+
     def __convert(self, fname):
         handler = _TestHandler(DataHandler.CellType_Tetrahedron, 3, self)
         if not os.path.isabs(fname):
@@ -350,8 +383,10 @@ class GmshTest(_ConverterTest):
 class TriangleTester(_TestCase):
     def test_convert_triangle(self): # Disabled because it fails, see FIXME below
         # test no. 1
-        from dolfin import Mesh, MPI
-        if MPI.num_processes() != 1:
+        from dolfin import Mesh, MPI, mpi_comm_world
+
+        # MPI_COMM_WORLD wrapper
+        if MPI.size(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "triangle")
         dfname = fname+".xml"
@@ -371,8 +406,8 @@ class TriangleTester(_TestCase):
         # test no. 2
         from dolfin import MPI, Mesh, MeshFunction, \
                            edges, Edge, faces, Face, \
-                           SubsetIterator, facets, CellFunction
-        if MPI.num_processes() != 1:
+                           SubsetIterator, facets, CellFunction, mpi_comm_world
+        if MPI.size(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "test_Triangle_3")
         dfname = fname+".xml"
@@ -438,8 +473,8 @@ class TriangleTester(_TestCase):
 
 class DiffPackTester(_TestCase):
     def test_convert_diffpack(self):
-        from dolfin import Mesh, MPI, MeshFunction
-        if MPI.num_processes() != 1:
+        from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
+        if MPI.size(mpi_comm_world()) != 1:
             return
         fname = os.path.join("data", "diffpack_tet")
         dfname = fname+".xml"
@@ -458,7 +493,7 @@ class DiffPackTester(_TestCase):
         for marker, num in [(3, 9), (6, 9), (7, 3), (8, 1)]:
 
             mf_name = mf_basename % marker
-            mf = MeshFunction("uint", mesh, mf_name)
+            mf = MeshFunction("size_t", mesh, mf_name)
             self.assertEqual(sum(mf.array()==marker), num)
             os.unlink(mf_name)
 

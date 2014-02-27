@@ -29,11 +29,6 @@ class IntegrateDerivatives(unittest.TestCase):
 
     def test_diff_then_integrate(self):
 
-        if MPI.num_processes() > 1:
-            # Not attempted, check and enable!
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
-
         # Define 1D geometry
         n = 21
         mesh = UnitIntervalMesh(n)
@@ -43,8 +38,7 @@ class IntegrateDerivatives(unittest.TestCase):
         mesh.coordinates()[:] *= (x1 - x0)
         mesh.coordinates()[:] += x0
 
-        cell = mesh.ufl_cell()
-        x = cell.x[0]
+        x = SpatialCoordinate(mesh)[0]
         xs = 0.1+0.8*x/x1 # scaled to be within [0.1,0.9]
 
         # Define list of expressions to test, and configure
@@ -93,7 +87,8 @@ class IntegrateDerivatives(unittest.TestCase):
                 # but 4 covers all and is sufficient for this test
                 reg([bessel_J(nu, xs), bessel_Y(nu, xs), bessel_I(nu, xs), bessel_K(nu, xs)], 4)
 
-        # To handle tensor algebra, make an x dependent input tensor xx and square all expressions
+        # To handle tensor algebra, make an x dependent input tensor
+        # xx and square all expressions
         def reg2(exprs, acc=10):
             for expr in exprs:
                 F_list.append((inner(expr,expr), acc))
@@ -118,14 +113,16 @@ class IntegrateDerivatives(unittest.TestCase):
         reg2([elem_op(lambda z: sin(z) + 2, 0.03*xx)], 2) # pretty inaccurate...
 
         # FIXME: Add tests for all UFL operators:
-        # These cause discontinuities and may be harder to test in the above fashion:
+        # These cause discontinuities and may be harder to test in the
+        # above fashion:
         #'inv', 'cofac',
         #'eq', 'ne', 'le', 'ge', 'lt', 'gt', 'And', 'Or', 'Not',
         #'conditional', 'sign',
         #'jump', 'avg',
         #'LiftingFunction', 'LiftingOperator',
 
-        # FIXME: Test other derivatives: (but algorithms for operator derivatives are the same!):
+        # FIXME: Test other derivatives: (but algorithms for operator
+        # derivatives are the same!):
         #'variable', 'diff',
         #'Dx', 'grad', 'div', 'curl', 'rot', 'Dn', 'exterior_derivative',
 
@@ -133,7 +130,7 @@ class IntegrateDerivatives(unittest.TestCase):
         debug = 0
         for F, acc in F_list:
             # Apply UFL differentiation
-            f = diff(F, cell.x)[...,0]
+            f = diff(F, SpatialCoordinate(mesh))[...,0]
             if debug:
                 print F
                 print x
@@ -167,20 +164,14 @@ class IntegrateDerivatives(unittest.TestCase):
 
     def test_div_grad_then_integrate_over_cells_and_boundary(self):
 
-        if MPI.num_processes() > 1:
-            # Not attempted, check and enable!
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
-
         # Define 2D geometry
         n = 10
         mesh = RectangleMesh(0.0, 0.0, 2.0, 3.0, 2*n, 3*n)
 
-        cell = mesh.ufl_cell()
-        x, y = cell.x
+        x, y = SpatialCoordinate(mesh)
         xs = 0.1+0.8*x/2 # scaled to be within [0.1,0.9]
         ys = 0.1+0.8*y/3 # scaled to be within [0.1,0.9]
-        n = cell.n
+        n = FacetNormal(mesh)
 
         # Define list of expressions to test, and configure
         # accuracies these expressions are known to pass with.
@@ -208,7 +199,8 @@ class IntegrateDerivatives(unittest.TestCase):
         reg([asin(xs), acos(xs)], 1)
         reg([tan(xs)], 7)
 
-        # To handle tensor algebra, make an x dependent input tensor xx and square all expressions
+        # To handle tensor algebra, make an x dependent input tensor
+        # xx and square all expressions
         def reg2(exprs, acc=10):
             for expr in exprs:
                 F_list.append((inner(expr,expr), acc))
@@ -234,14 +226,16 @@ class IntegrateDerivatives(unittest.TestCase):
         reg2([elem_op(lambda z: sin(z)+2, 0.03*xx)], 2) # pretty inaccurate...
 
         # FIXME: Add tests for all UFL operators:
-        # These cause discontinuities and may be harder to test in the above fashion:
+        # These cause discontinuities and may be harder to test in the
+        # above fashion:
         #'inv', 'cofac',
         #'eq', 'ne', 'le', 'ge', 'lt', 'gt', 'And', 'Or', 'Not',
         #'conditional', 'sign',
         #'jump', 'avg',
         #'LiftingFunction', 'LiftingOperator',
 
-        # FIXME: Test other derivatives: (but algorithms for operator derivatives are the same!):
+        # FIXME: Test other derivatives: (but algorithms for operator
+        # derivatives are the same!):
         #'variable', 'diff',
         #'Dx', 'grad', 'div', 'curl', 'rot', 'Dn', 'exterior_derivative',
 

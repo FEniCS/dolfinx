@@ -41,10 +41,12 @@ namespace dolfin
     /// Create nonlinear variational solver for given problem
     NonlinearVariationalSolver(NonlinearVariationalProblem& problem);
 
-    /// Create nonlinear variational solver for given problem (shared pointer version)
-    NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
+    /// Create nonlinear variational solver for given problem (shared
+    /// pointer version)
+    NonlinearVariationalSolver(std::shared_ptr<NonlinearVariationalProblem> problem);
 
-    /// Solve variational problem with bound constraints defined by GenericVectors
+    /// Solve variational problem with bound constraints defined by
+    /// GenericVectors
     ///
     /// *Arguments*
     ///     lb (_GenericVector_)
@@ -58,19 +60,21 @@ namespace dolfin
     std::pair<std::size_t, bool> solve(const GenericVector& lb,
                                        const GenericVector& ub);
 
-    /// Solve variational problem with bound constraints defined by GenericVectors (shared pointer version)
+    /// Solve variational problem with bound constraints defined by
+    /// GenericVectors (shared pointer version)
     ///
     /// *Arguments*
-    ///     lb (_boost::shared_ptr<const GenericVector>_)
+    ///     lb (_std::shared_ptr<const GenericVector>_)
     ///         The linear solver.
-    ///     ub (_boost::shared_ptr<const GenericVector>_)
+    ///     ub (_std::shared_ptr<const GenericVector>_)
     ///         The factory.
     /// *Returns*
     ///     std::pair<std::size_t, bool>
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
-    std::pair<std::size_t, bool> solve(boost::shared_ptr<const GenericVector> lb,
-                                       boost::shared_ptr<const GenericVector> ub);
+    std::pair<std::size_t, bool>
+      solve(std::shared_ptr<const GenericVector> lb,
+            std::shared_ptr<const GenericVector> ub);
 
     /// Solve variational problem with bound constraints defined by Functions
     ///
@@ -86,19 +90,20 @@ namespace dolfin
     std::pair<std::size_t, bool> solve(const Function& lb,
                                        const Function& ub);
 
-    /// Solve variational problem with bound constraints defined by Functions (shared pointer version)
+    /// Solve variational problem with bound constraints defined by
+    /// Functions (shared pointer version)
     ///
     /// *Arguments*
-    ///     lb (_boost::shared_ptr<const Function>_)
+    ///     lb (_std::shared_ptr<const Function>_)
     ///         The linear solver.
-    ///     ub (_boost::shared_ptr<const Function>_)
+    ///     ub (_std::shared_ptr<const Function>_)
     ///         The factory.
     /// *Returns*
     ///     std::pair<std::size_t, bool>
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
-    std::pair<std::size_t, bool> solve(boost::shared_ptr<const Function> lb,
-                                       boost::shared_ptr<const Function> ub);
+    std::pair<std::size_t, bool> solve(std::shared_ptr<const Function> lb,
+                                       std::shared_ptr<const Function> ub);
 
     /// Solve variational problem
     ///
@@ -114,7 +119,9 @@ namespace dolfin
       Parameters p("nonlinear_variational_solver");
 
       p.add("symmetric", false);
-      p.add("reset_jacobian", true);
+
+      // TODO: Remove in DOLFIN 1.5
+      p.add("reset_jacobian", false);
 
       std::set<std::string> nonlinear_solvers;
       nonlinear_solvers.insert("newton");
@@ -143,8 +150,9 @@ namespace dolfin
     public:
 
       // Constructor
-      NonlinearDiscreteProblem(boost::shared_ptr<NonlinearVariationalProblem> problem,
-                               boost::shared_ptr<NonlinearVariationalSolver> solver);
+      NonlinearDiscreteProblem(
+        std::shared_ptr<NonlinearVariationalProblem> problem,
+        std::shared_ptr<NonlinearVariationalSolver> solver);
 
       // Destructor
       ~NonlinearDiscreteProblem();
@@ -158,26 +166,23 @@ namespace dolfin
     private:
 
       // Problem and solver objects
-      boost::shared_ptr<NonlinearVariationalProblem> _problem;
-      boost::shared_ptr<NonlinearVariationalSolver> _solver;
-
-      // True if Jacobian has been initialized
-      bool jacobian_initialized;
+      std::shared_ptr<NonlinearVariationalProblem> _problem;
+      std::shared_ptr<NonlinearVariationalSolver> _solver;
 
     };
 
     // The nonlinear problem
-    boost::shared_ptr<NonlinearVariationalProblem> _problem;
+    std::shared_ptr<NonlinearVariationalProblem> _problem;
 
     // The nonlinear discrete problem
-    boost::shared_ptr<NonlinearDiscreteProblem> nonlinear_problem;
+    std::shared_ptr<NonlinearDiscreteProblem> nonlinear_problem;
 
     // The Newton solver
-    boost::shared_ptr<NewtonSolver> newton_solver;
+    std::shared_ptr<NewtonSolver> newton_solver;
 
     #ifdef HAS_PETSC
     // Or, alternatively, the SNES solver
-    boost::shared_ptr<PETScSNESSolver> snes_solver;
+    std::shared_ptr<PETScSNESSolver> snes_solver;
     #endif
 
   };

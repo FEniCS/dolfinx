@@ -23,7 +23,7 @@
 
 #ifdef HAS_PETSC
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <petscversion.h>
 #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
 #include <petsc-private/pcimpl.h>
@@ -67,12 +67,8 @@ int PETScUserPreconditioner::PCApply(PC pc, Vec x, Vec y)
   // preconditioner
   PETScUserPreconditioner* newpc = (PETScUserPreconditioner*)pc->data;
 
-  // Wrap PETSc vectors in shared pointers
-  boost::shared_ptr<Vec> _x(&x, NoDeleter());
-  boost::shared_ptr<Vec> _y(&y, NoDeleter());
-
   // Wrap PETSc vectors as DOLFIN PETScVectors
-  PETScVector dolfinx(_x), dolfiny(_y);
+  PETScVector dolfinx(x), dolfiny(y);
 
   // Solve
   newpc->solve(dolfiny, dolfinx);

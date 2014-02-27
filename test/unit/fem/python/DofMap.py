@@ -240,7 +240,7 @@ class DofMapTest(unittest.TestCase):
 
 
     def test_entity_dofs(self):
-        
+
         # Test that num entity dofs is correctly wrapped to dolfin::DofMap
         V = FunctionSpace(self.mesh, "CG", 1)
         self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
@@ -266,7 +266,7 @@ class DofMapTest(unittest.TestCase):
         self.assertEqual(V.dofmap().num_entity_dofs(0), 0)
         self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
         self.assertEqual(V.dofmap().num_entity_dofs(2), 1)
-        
+
         V = FunctionSpace(self.mesh, "DG", 1)
         self.assertEqual(V.dofmap().num_entity_dofs(0), 0)
         self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
@@ -282,8 +282,9 @@ class DofMapTest(unittest.TestCase):
             self.assertTrue(all(d==cd for d, cd in zip(dofs, cdofs)))
 
     def test_mpi_dofmap_stats(self):
-        if MPI.num_processes() > 1:
-            
+
+        if MPI.size(self.mesh.mpi_comm()) > 1:
+
             V = FunctionSpace(self.mesh, "CG", 1)
             self.assertTrue(len(V.dofmap().shared_dofs())>0)
             self.assertTrue(len(V.dofmap().off_process_owner())>0)
@@ -294,8 +295,8 @@ class DofMapTest(unittest.TestCase):
 
             for owner in V.dofmap().off_process_owner().values():
                 self.assertTrue(owner in neighbours)
-                
-        
+
+
 if __name__ == "__main__":
     print ""
     print "Testing PyDOLFIN DofMap operations"

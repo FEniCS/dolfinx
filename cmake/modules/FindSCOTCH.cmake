@@ -57,6 +57,11 @@ find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
 find_library(SCOTCH_LIBRARY
   NAMES scotch
   HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The SCOTCH library"
+  )
+find_library(SCOTCH_LIBRARY
+  NAMES scotch
   DOC "The SCOTCH library"
   )
 
@@ -64,6 +69,11 @@ find_library(SCOTCH_LIBRARY
 find_library(SCOTCHERR_LIBRARY
   NAMES scotcherr
   HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The SCOTCH-ERROR library"
+  )
+find_library(SCOTCHERR_LIBRARY
+  NAMES scotcherr
   DOC "The SCOTCH-ERROR library"
   )
 
@@ -71,6 +81,11 @@ find_library(SCOTCHERR_LIBRARY
 find_library(PTSCOTCH_LIBRARY
   NAMES ptscotch
   HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The PTSCOTCH library"
+  )
+find_library(PTSCOTCH_LIBRARY
+  NAMES ptscotch
   DOC "The PTSCOTCH library"
   )
 
@@ -78,6 +93,11 @@ find_library(PTSCOTCH_LIBRARY
 find_library(PTESMUMPS_LIBRARY
   NAMES ptesmumps esmumps
   HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The PTSCOTCH-ESMUMPS library"
+  )
+find_library(PTESMUMPS_LIBRARY
+  NAMES ptesmumps esmumps
   DOC "The PTSCOTCH-ESMUMPS library"
   )
 
@@ -85,6 +105,11 @@ find_library(PTESMUMPS_LIBRARY
 find_library(PTSCOTCHERR_LIBRARY
   NAMES ptscotcherr
   HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  NO_DEFAULT_PATH
+  DOC "The PTSCOTCH-ERROR library"
+  )
+find_library(PTSCOTCHERR_LIBRARY
+  NAMES ptscotcherr
   DOC "The PTSCOTCH-ERROR library"
   )
 

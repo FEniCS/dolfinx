@@ -17,23 +17,26 @@
 //
 // First added:  2013-04-02
 
+#include <dolfin/common/Array.h>
+#include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/mesh/Cell.h>
 #include "Probe.h"
 
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
 Probe::Probe(const Array<double>& x, const FunctionSpace& V)
+  : _element(V.element())
 {
-
   const Mesh& mesh = *V.mesh();
-  std::size_t gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Store position of probe
   for (std::size_t i = 0; i < 3; i++)
     _x[i] = (i < gdim ? x[i] : 0.0);
-
-  _element = V.element();
 
   // Compute in tensor (one for scalar function, . . .)
   value_size_loc = 1;
@@ -44,47 +47,47 @@ Probe::Probe(const Array<double>& x, const FunctionSpace& V)
 
   // Find the cell that contains probe
   const Point point(gdim, x.data());
-  boost::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
-  unsigned int id = tree->compute_first_entity_collision(point);
+  std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  const unsigned int id = tree->compute_first_entity_collision(point);
 
   // If the cell is on this process, then create an instance
   // of the Probe class. Otherwise raise a dolfin_error.
   if (id != std::numeric_limits<unsigned int>::max())
   {
-
     // Create cell that contains point
-    dolfin_cell = new Cell(mesh, id);
-    ufc_cell = new UFCCell(*dolfin_cell);
+    dolfin_cell.reset(new Cell(mesh, id));
+    dolfin_cell->get_cell_data(ufc_cell);
+    dolfin_cell->get_vertex_coordinates(_vertex_coordinates);
 
     // Create work vector for basis
     std::vector<double> basis(value_size_loc);
 
-    coefficients.resize(_element->space_dimension());
+    _coefficients.resize(_element->space_dimension());
 
     // Create work vector for basis
-    basis_matrix.resize(value_size_loc);
-    for (uint i = 0; i < value_size_loc; ++i)
-      basis_matrix[i].resize(_element->space_dimension());
+    _basis_matrix.resize(value_size_loc);
+    for (std::size_t i = 0; i < value_size_loc; ++i)
+      _basis_matrix[i].resize(_element->space_dimension());
 
-    for (uint i = 0; i < _element->space_dimension(); ++i)
+    for (std::size_t i = 0; i < _element->space_dimension(); ++i)
     {
-      _element->evaluate_basis(i, &basis[0], &x[0], *ufc_cell);
-      for (uint j = 0; j < value_size_loc; ++j)
-        basis_matrix[j][i] = basis[j];
+      _element->evaluate_basis(i, basis.data(), x.data(),
+                               _vertex_coordinates.data(),
+                               dolfin_cell->orientation());
+      for (std::size_t j = 0; j < value_size_loc; ++j)
+        _basis_matrix[j][i] = basis[j];
     }
   }
   else
-  {
     dolfin_error("Probe.cpp","set probe","Probe is not found on processor");
-  }
 }
 //----------------------------------------------------------------------------
-std::size_t Probe::value_size()
+std::size_t Probe::value_size() const
 {
   return value_size_loc;
 }
 //----------------------------------------------------------------------------
-std::size_t Probe::number_of_evaluations()
+std::size_t Probe::number_of_evaluations() const
 {
   return _probes[0].size();
 }
@@ -92,19 +95,20 @@ std::size_t Probe::number_of_evaluations()
 void Probe::eval(const Function& u)
 {
   // Restrict function to cell
-  u.restrict(&coefficients[0], *_element, *dolfin_cell, *ufc_cell);
+  u.restrict(&_coefficients[0], *_element, *dolfin_cell,
+             _vertex_coordinates.data(), ufc_cell);
 
   // Make room for one more evaluation
   for (std::size_t j = 0; j < value_size_loc; j++)
-    _probes[j].push_back(0.);
+    _probes[j].push_back(0.0);
 
-  std::size_t n = _probes[0].size()-1;
+  const std::size_t n = _probes[0].size() - 1;
 
   // Compute linear combination
   for (std::size_t i = 0; i < _element->space_dimension(); i++)
   {
     for (std::size_t j = 0; j < value_size_loc; j++)
-      _probes[j][n] += coefficients[i]*basis_matrix[j][i];
+      _probes[j][n] += _coefficients[i]*_basis_matrix[j][i];
   }
 }
 //----------------------------------------------------------------------------
@@ -120,15 +124,15 @@ void Probe::clear()
     _probes[j].clear();
 }
 //----------------------------------------------------------------------------
-std::vector<double> Probe::get_probe(std::size_t i)
+std::vector<double> Probe::get_probe(std::size_t i) const
 {
   return _probes[i];
 }
 //----------------------------------------------------------------------------
-std::vector<double> Probe::coordinates()
+std::vector<double> Probe::coordinates() const
 {
   std::vector<double> x(3);
-  x.assign(_x, _x+3);
+  x.assign(_x, _x + 3);
   return x;
 }
 //----------------------------------------------------------------------------

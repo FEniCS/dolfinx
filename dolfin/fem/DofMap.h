@@ -33,7 +33,7 @@
 #include <utility>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/unordered_map.hpp>
 #include <ufc.h>
 
@@ -45,7 +45,6 @@ namespace dolfin
 {
 
   class GenericVector;
-  class UFC;
   class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
@@ -64,7 +63,7 @@ namespace dolfin
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+    DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
            const Mesh& mesh);
 
     /// Create a periodic dof map on mesh (mesh is not stored)
@@ -76,9 +75,9 @@ namespace dolfin
     ///         The mesh.
     ///     conatrained_boundary (_SubDomain_)
     ///         The subdomain marking the constrained (tied) boudaries.
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+    DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
            const Mesh& mesh,
-           boost::shared_ptr<const SubDomain> constrained_domain);
+           std::shared_ptr<const SubDomain> constrained_domain);
 
     /// Create restricted dof map on mesh
     ///
@@ -87,8 +86,8 @@ namespace dolfin
     ///         The ufc::dofmap.
     ///     restriction (_Restriction_)
     ///         The restriction.
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-           boost::shared_ptr<const Restriction> restriction);
+    DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           std::shared_ptr<const Restriction> restriction);
 
   private:
 
@@ -187,9 +186,9 @@ namespace dolfin
     /// pointer is returned.
     ///
     /// *Returns*
-    ///     boost::shared_ptr<const Restriction>
+    ///     std::shared_ptr<const Restriction>
     //          The restriction.
-    boost::shared_ptr<const Restriction> restriction() const;
+    std::shared_ptr<const Restriction> restriction() const;
 
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
@@ -267,10 +266,13 @@ namespace dolfin
     /// *Arguments*
     ///     coordinates (boost::multi_array<double, 2>)
     ///         The coordinates of all dofs on a cell.
-    ///     ufc_cell (ufc::cell)
+    ///     vertex_coordinates (std::vector<double>)
+    ///         The cell vertex coordinates
+    ///     cell (Cell)
     ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const ufc::cell& ufc_cell) const;
+                              const std::vector<double>& vertex_coordinates,
+                              const Cell& cell) const;
 
     /// Tabulate the coordinates of all dofs on this process. This
     /// function is typically used by preconditioners that require the
@@ -321,7 +323,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The Dofmap copy.
-    boost::shared_ptr<GenericDofMap> copy() const;
+    std::shared_ptr<GenericDofMap> copy() const;
 
     /// Create a copy of the dof map on a new mesh
     ///
@@ -332,7 +334,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The new Dofmap copy.
-    boost::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const;
+    std::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const;
 
 
     /// Extract subdofmap component
@@ -346,7 +348,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The subdofmap component.
-    boost::shared_ptr<GenericDofMap>
+    std::shared_ptr<GenericDofMap>
         extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const Mesh& mesh) const;
 
@@ -361,7 +363,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The collapsed dofmap.
-    boost::shared_ptr<GenericDofMap>
+    std::shared_ptr<GenericDofMap>
           collapse(boost::unordered_map<std::size_t, std::size_t>&
                    collapsed_map, const Mesh& mesh) const;
 
@@ -435,7 +437,7 @@ namespace dolfin
     std::vector<std::vector<dolfin::la_index> > _dofmap;
 
     // UFC dof map
-    boost::shared_ptr<const ufc::dofmap> _ufc_dofmap;
+    std::shared_ptr<const ufc::dofmap> _ufc_dofmap;
 
     // Number global mesh entities. This is usually the same as what
     // is reported by the mesh, but will differ for dofmaps constrained,
@@ -446,7 +448,7 @@ namespace dolfin
     boost::unordered_map<std::size_t, std::size_t> ufc_map_to_dofmap;
 
     // Restriction, pointer zero if not restricted
-    boost::shared_ptr<const Restriction> _restriction;
+    std::shared_ptr<const Restriction> _restriction;
 
     // Flag to determine if the DofMap is a view
     bool _is_view;
@@ -474,7 +476,7 @@ namespace dolfin
     std::set<std::size_t> _neighbours;
 
     // Map from slave to master mesh entities
-    boost::shared_ptr<std::map<unsigned int, std::map<unsigned int,
+    std::shared_ptr<std::map<unsigned int, std::map<unsigned int,
       std::pair<unsigned int, unsigned int> > > > slave_master_mesh_entities;
   };
 }

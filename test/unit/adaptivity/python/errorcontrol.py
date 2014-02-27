@@ -27,7 +27,19 @@ from ufl.algorithms import replace
 from dolfin import *
 from dolfin.fem.adaptivesolving import *
 
-#@skipIf("Skipping error control test in parallel", MPI.num_processes() > 1)
+# FIXME: Move this to dolfin for user access?
+def reconstruct_refined_form(form, functions, mesh):
+    function_mapping = {}
+    for u in functions:
+        w = Function(u.leaf_node().function_space())
+        w.assign(u.leaf_node())
+        function_mapping[u] = w
+    domain = mesh.leaf_node().ufl_domain()
+    newform = replace_integral_domains(replace(form, function_mapping), domain)
+    return newform, function_mapping
+
+
+#@skipIf("Skipping error control test in parallel", MPI.size() > 1)
 class ErrorControlTest(unittest.TestCase):
 
     def setUp(self):
@@ -54,17 +66,26 @@ class ErrorControlTest(unittest.TestCase):
         M = u*dx()
         self.goal = M
 
+        # Asserting that domains are ok before trying error control generation
+        assert len(M.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert M.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+        assert len(a.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert a.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+        assert len(L.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert L.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+
         # Generate ErrorControl object
         ec = generate_error_control(problem, M)
 
         # Store created stuff
+        self.mesh = mesh
         self.problem = problem
         self.u = u
         self.ec = ec
 
     def test_error_estimation(self):
 
-        if MPI.num_processes() > 1:
+        if MPI.size(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve variational problem once
@@ -80,7 +101,7 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_error_indicators(self):
 
-        if MPI.num_processes() > 1:
+        if MPI.size(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve variational problem once
@@ -88,7 +109,7 @@ class ErrorControlTest(unittest.TestCase):
         solver.solve()
 
         # Compute error indicators
-        indicators = Vector(self.u.function_space().mesh().num_cells())
+        indicators = Vector(self.mesh.mpi_comm(), self.u.function_space().mesh().num_cells())
         indicators[0] = 1.0
         #self.ec.compute_indicators(indicators, self.u) #
 
@@ -97,7 +118,7 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_adaptive_solve(self):
 
-        if MPI.num_processes() > 1:
+        if MPI.size(self.mesh.mpi_comm()) > 1:
             return
 
         # Solve problem adaptively
@@ -105,10 +126,10 @@ class ErrorControlTest(unittest.TestCase):
         tol = 0.00087
         solver.solve(tol)
 
-        # Extract solution and update goal
-        w = Function(self.u.leaf_node().function_space())
-        w.assign(self.u.leaf_node())
-        M = replace(self.goal, {self.u: w})
+        # Note: This old approach is now broken, as it doesn't change the integration domain:
+        #M = replace(self.goal, {self.u: w})
+        # This new approach handles the integration domain properly:
+        M, fm = reconstruct_refined_form(self.goal, [self.u], self.mesh)
 
         # Compare computed goal with reference
         reference = 0.12583303389560166

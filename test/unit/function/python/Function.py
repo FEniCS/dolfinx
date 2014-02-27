@@ -213,18 +213,18 @@ class Interface(unittest.TestCase):
         u2 = Function(W)
         e0=Expression("x[0]+x[1]+x[2]")
         e1=Expression(("x[0]+x[1]+x[2]", "x[0]-x[1]-x[2]", "x[0]+x[1]+x[2]"))
-        
+
         u0.vector()[:] = 1.0
         u1.interpolate(e0)
         u2.interpolate(e1)
         u0.update()
         u1.update()
         u2.update()
-        
+
         p0 = (Vertex(mesh,0).point()+Vertex(mesh,1).point())/2
         x0 = (mesh.coordinates()[0]+mesh.coordinates()[1])/2
         x1 = tuple(x0)
-        
+
         self.assertAlmostEqual(u0(*x1), u0(x0))
         self.assertAlmostEqual(u0(x1), u0(p0))
         self.assertAlmostEqual(u1(x1), u1(x0))
@@ -302,8 +302,8 @@ class Interpolate(unittest.TestCase):
         f0 = Function(V)
         self.assertRaises(RuntimeError, f0.__call__, (0., 0, -1))
 
-        if MPI.num_processes() == 1:
-            mesh1 = UnitSquareMesh(3,3)
+        if MPI.size(mpi_comm_world()) == 1:
+            mesh1 = UnitSquareMesh(3, 3)
             V1 = FunctionSpace(mesh1, "CG", 1)
 
             parameters["allow_extrapolation"] = True
@@ -331,6 +331,48 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
+    def test_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
+        class Side0(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] <= 0.55
+
+        class Side1(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] >= 0.45
+
+        mesh = UnitSquareMesh(10,10)
+        dim = 2
+
+        sd0 = MeshFunctionSizet(mesh, dim)
+        sd1 = MeshFunctionSizet(mesh, dim)
+
+        Side0().mark(sd0, 1)
+        Side1().mark(sd1, 2)
+
+        r0 = Restriction(sd0, 1)
+        r1 = Restriction(sd1, 2)
+
+        Vt = FunctionSpace(mesh, "DG", 1)
+        V0 = FunctionSpace(r0, "CG", 1)
+        V1 = FunctionSpace(r1, "CG", 1)
+
+        ft = Function(Vt)
+        f0 = Function(V0)
+        f1 = Function(V1)
+
+        f0.interpolate(Expression("x[0]*x[0]"))
+        f1.interpolate(Expression("x[1]*x[1]"))
+        ft.interpolate(f0)
+        gt = project(f1+f0, Vt)
+
+        f0v = assemble(f0*dx(1, domain_data=sd0))
+        f1v = assemble(f1*dx(2, domain_data=sd1))
+        ftv = assemble(ft*dx(1, domain_data=sd0))
+        gtv = assemble(gt*dx)
+
+        self.assertAlmostEqual(f0v, ftv)
+        self.assertAlmostEqual(f0v+f1v, gtv)
+
     def test_interpolation_old(self):
         class F0(Expression):
             def eval(self, values, x):
@@ -342,8 +384,9 @@ class Interpolate(unittest.TestCase):
             def value_shape(self):
                 return (2,)
 
-        # Interpolation not working in parallel yet (need number of global vertices in tests)
-        if MPI.num_processes() == 1:
+        # Interpolation not working in parallel yet (need number of
+        # global vertices in tests)
+        if MPI.size(mpi_comm_world()) == 1:
             # Scalar interpolation
             f0 = F0()
             f = Function(V)

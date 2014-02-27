@@ -27,7 +27,7 @@
 #include <list>
 #include <string>
 #include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parameters.h>
@@ -162,13 +162,13 @@ namespace dolfin
     /// Create plotter for a variable. If a widget is supplied, this widget
     /// will be used for drawing, instead of a new top-level widget. Ownership
     /// is transferred.
-    VTKPlotter(boost::shared_ptr<const Variable>, QVTKWidget *widget = NULL);
+    VTKPlotter(std::shared_ptr<const Variable>, QVTKWidget *widget = NULL);
 
     /// Create plotter for an Expression with associated Mesh. If a widget is
     /// supplied, this widget will be used for drawing, instead of a new
     /// top-level widget. Ownership is transferred.
-    VTKPlotter(boost::shared_ptr<const Expression> expression,
-               boost::shared_ptr<const Mesh> mesh,
+    VTKPlotter(std::shared_ptr<const Expression> expression,
+               std::shared_ptr<const Mesh> mesh,
                QVTKWidget *wiget = NULL);
 
     /// Destructor
@@ -209,13 +209,13 @@ namespace dolfin
       return p;
     }
 
-    bool is_compatible(boost::shared_ptr<const Variable> variable) const;
+    bool is_compatible(std::shared_ptr<const Variable> variable) const;
 
     /// Plot the object
-    void plot(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
+    void plot(std::shared_ptr<const Variable> variable=std::shared_ptr<const Variable>());
 
     // FIXME: Deprecated? What should it do?
-    void update(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>())
+    void update(std::shared_ptr<const Variable> variable=std::shared_ptr<const Variable>())
     {
       warning("VTKPlotter::update is deprecated, use ::plot instead");
       plot(variable);
@@ -275,14 +275,14 @@ namespace dolfin
 
   protected:
 
-    void update_pipeline(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
+    void update_pipeline(std::shared_ptr<const Variable> variable=std::shared_ptr<const Variable>());
 
     // The pool of plotter objects. Objects register
     // themselves in the list when created and remove themselves when
     // destroyed.
     // Used when calling interactive() (which should have effect on
     // all plot windows)
-    static boost::shared_ptr<std::list<VTKPlotter*> > active_plotters;
+    static std::shared_ptr<std::list<VTKPlotter*> > active_plotters;
 
     // Initialization common to all constructors.
     // Setup all pipeline objects and connect them.
@@ -291,6 +291,9 @@ namespace dolfin
     // Has init been called
     bool _initialized;
 
+    // Rescales ranges and glyphs
+    void rescale();
+
     // Set the title parameter from the name and label of the Variable to plot
     void set_title_from(const Variable &variable);
 
@@ -298,7 +301,7 @@ namespace dolfin
     std::string get_helptext();
 
     // The plottable object (plot data wrapper)
-    boost::shared_ptr<GenericVTKPlottable> _plottable;
+    std::shared_ptr<GenericVTKPlottable> _plottable;
 
     // The output stage
     boost::scoped_ptr<VTKWindowOutputStage> vtk_pipeline;
@@ -317,7 +320,7 @@ namespace dolfin
     // Keep a shared_ptr to the list of plotter to ensure that the
     // list is not destroyed before the last VTKPlotter object is
     // destroyed.
-    boost::shared_ptr<std::list<VTKPlotter*> > active_plotters_local_copy;
+    std::shared_ptr<std::list<VTKPlotter*> > active_plotters_local_copy;
 
     // Usually false, but if true ('Q' keyboard binding) then all event loops are skipped.
     static bool run_to_end;

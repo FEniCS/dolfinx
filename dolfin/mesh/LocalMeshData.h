@@ -29,6 +29,7 @@
 #include <map>
 #include <vector>
 #include <boost/multi_array.hpp>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include "CellType.h"
 
@@ -59,7 +60,7 @@ namespace dolfin
   public:
 
     /// Create empty local mesh data
-    LocalMeshData();
+    LocalMeshData(const MPI_Comm mpi_comm);
 
     /// Create local mesh data for given mesh
     LocalMeshData(const Mesh& mesh);
@@ -78,10 +79,10 @@ namespace dolfin
 
     // Broadcast mesh data from main process (used when Mesh is created
     // on one process)
-    void broadcast_mesh_data();
+    void broadcast_mesh_data(const MPI_Comm mpi_comm);
 
     // Receive mesh data from main process
-    void receive_mesh_data();
+    void receive_mesh_data(const MPI_Comm mpi_comm);
 
     // Unpack received vertex coordinates
     void unpack_vertex_coordinates(const std::vector<double>& values);
@@ -120,8 +121,19 @@ namespace dolfin
     std::size_t tdim;
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
-    std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >
+    std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t,
+      std::size_t>, std::size_t> > >
         domain_data;
+
+    // Return MPI communicator
+    MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
+  private:
+
+    // MPI communicator. It is stored because it is used on some
+    // Zoltan call-back functions.
+    MPI_Comm _mpi_comm;
 
   };
 

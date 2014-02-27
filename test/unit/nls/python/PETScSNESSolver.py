@@ -54,7 +54,9 @@ if has_petsc():
     v = TestFunction(V)
     u.interpolate(Constant(-1000.0))
 
-    r = sqrt(triangle.x[0]**2 + triangle.x[1]**2)
+    #x = SpatialCoordinate(triangle)
+    x = SpatialCoordinate(mesh)
+    r = sqrt(x[0]**2 + x[1]**2)
     rho = 1.0/r**3
 
     F = (8*inner(grad(u), grad(v))*dx + rho * inner(u**5, v)*dx \
@@ -74,27 +76,30 @@ if has_petsc():
                                    "snes_solver": {"linear_solver": "lu",
                                                    "maximum_iterations": 100,
                                                    "sign": "nonnegative",
-                                                   "report": False}}
+                                                   "report": True}}
 
     snes_solver_parameters_bounds = {"nonlinear_solver": "snes",
                                      "snes_solver": {"linear_solver": "lu",
                                                      "maximum_iterations": 100,
                                                      "sign": "default",
-                                                     "report": False}}
+                                                     "report": True}}
 
 class SNESSolverTester(unittest.TestCase):
 
     if has_petsc():
 
         def test_snes_solver(self):
+            u.interpolate(Constant(-1000.0))
             solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters_sign)
             self.assertTrue(u.vector().min() >= 0)
 
         def test_newton_solver(self):
+            u.interpolate(Constant(-1000.0))
             solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
             self.assertTrue(u.vector().min() < 0)
 
         def test_snes_solver_bound_functions(self):
+            u.interpolate(Constant(-1000.0))
             problem = NonlinearVariationalProblem(F, u, bcs, J)
             solver  = NonlinearVariationalSolver(problem)
             solver.parameters.update(snes_solver_parameters_bounds)
@@ -102,6 +107,7 @@ class SNESSolverTester(unittest.TestCase):
             self.assertTrue(u.vector().min() >= 0)
 
         def test_snes_solver_bound_vectors(self):
+            u.interpolate(Constant(-1000.0))
             problem = NonlinearVariationalProblem(F, u, bcs, J)
             solver  = NonlinearVariationalSolver(problem)
             solver.parameters.update(snes_solver_parameters_bounds)

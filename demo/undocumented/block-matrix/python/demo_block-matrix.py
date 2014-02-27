@@ -31,7 +31,8 @@ u = TrialFunction(V)
 v = TestFunction(V)
 a = dot(grad(u), grad(v))*dx
 A = assemble(a)
-L = sin(V.cell().x[0])*v*dx
+x0 = SpatialCoordinate(mesh)[0]
+L = sin(x0)*v*dx
 x = assemble(L)
 
 # Create a block matrix
@@ -48,7 +49,7 @@ xx[1] = x
 
 # Create a another block vector (that is compatible with A in parallel)
 y = Vector()
-A.resize(y, 0)
+A.init_vector(y, 0)
 yy = BlockVector(2)
 yy[0] = y
 yy[1] = y

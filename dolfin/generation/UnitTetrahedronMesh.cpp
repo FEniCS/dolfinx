@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-10-19
-// Last changed: 2012-11-09
+// Last changed: 2014-02-06
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -29,7 +29,7 @@ using namespace dolfin;
 UnitTetrahedronMesh::UnitTetrahedronMesh() : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver())
+  if (MPI::is_receiver(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
     return;
@@ -40,7 +40,7 @@ UnitTetrahedronMesh::UnitTetrahedronMesh() : Mesh()
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
   // Create vertices
-  editor.init_vertices(4);
+  editor.init_vertices_global(4, 4);
   std::vector<double> x(3);
   x[0] = 0.0; x[1] = 0.0; x[2] = 0.0;
   editor.add_vertex(0, x);
@@ -55,7 +55,7 @@ UnitTetrahedronMesh::UnitTetrahedronMesh() : Mesh()
   editor.add_vertex(3, x);
 
   // Create cells
-  editor.init_cells(1);
+  editor.init_cells_global(1, 1);
   std::vector<std::size_t> cell_data(4);
   cell_data[0] = 0; cell_data[1] = 1; cell_data[2] = 2; cell_data[3] = 3;
   editor.add_cell(0, cell_data);
@@ -64,7 +64,7 @@ UnitTetrahedronMesh::UnitTetrahedronMesh() : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster())
+  if (MPI::is_broadcaster(this->mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(*this);
     return;

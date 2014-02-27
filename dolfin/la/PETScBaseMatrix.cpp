@@ -28,6 +28,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+PETScBaseMatrix::PETScBaseMatrix(Mat A) : _A(A)
+{
+  // Increase reference count
+  if (_A)
+    PetscObjectReference((PetscObject)_A);
+}
+//-----------------------------------------------------------------------------
+PETScBaseMatrix::~PETScBaseMatrix()
+{
+  // Decrease reference count (PETSc will destroy object once
+  // reference counts reached zero)
+  if (_A)
+    MatDestroy(&_A);
+}
+//-----------------------------------------------------------------------------
 std::size_t PETScBaseMatrix::size(std::size_t dim) const
 {
   if (dim > 1)
@@ -40,7 +55,7 @@ std::size_t PETScBaseMatrix::size(std::size_t dim) const
   if (_A)
   {
     PetscInt m(0), n(0);
-    PetscErrorCode ierr = MatGetSize(*_A, &m, &n);
+    PetscErrorCode ierr = MatGetSize(_A, &m, &n);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MetGetSize");
     if (dim == 0)
       return m;
@@ -65,7 +80,7 @@ PETScBaseMatrix::local_range(std::size_t dim) const
   if (_A)
   {
     PetscInt m(0), n(0);
-    PetscErrorCode ierr = MatGetOwnershipRange(*_A, &m, &n);
+    PetscErrorCode ierr = MatGetOwnershipRange(_A, &m, &n);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
     return std::make_pair(m, n);
   }
@@ -73,7 +88,7 @@ PETScBaseMatrix::local_range(std::size_t dim) const
     return std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
-void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
+void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
 {
   dolfin_assert(_A);
 
@@ -82,25 +97,22 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
   // Downcast vector
   PETScVector& _z = as_type<PETScVector>(z);
 
-  // Clear data
-  _z.reset();
-
   // Create new PETSc vector
-  boost::shared_ptr<Vec> x(new Vec(0), PETScVectorDeleter());
+  Vec x = NULL;
   if (dim == 0)
   {
-    ierr = MatGetVecs(*_A, PETSC_NULL, x.get());
+    ierr = MatGetVecs(_A, PETSC_NULL, &x);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
   }
   else if (dim == 1)
   {
-    ierr = MatGetVecs(*_A, x.get(), PETSC_NULL);
+    ierr = MatGetVecs(_A, &x, PETSC_NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
   }
   else
   {
     dolfin_error("PETScBaseMatrix.cpp",
-                 "resize PETSc vector to match PETSc matrix",
+                 "intialize PETSc vector to match PETSc matrix",
                  "Dimension must be 0 or 1, not %d", dim);
   }
 

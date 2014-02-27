@@ -25,7 +25,8 @@
 #define __NEWTON_SOLVER_H
 
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -55,7 +56,7 @@ namespace dolfin
     ///         The linear solver.
     ///     factory (_GenericLinearAlgebraFactory_)
     ///         The factory.
-    NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
+    NewtonSolver(std::shared_ptr<GenericLinearSolver> solver,
                  GenericLinearAlgebraFactory& factory);
 
     /// Destructor
@@ -114,28 +115,31 @@ namespace dolfin
 
   private:
 
-    /// Convergence test
+    // Convergence test
     virtual bool converged(const GenericVector& r,
                            const NonlinearProblem& nonlinear_problem,
                            std::size_t iteration);
 
-    /// Current number of Newton iterations
+    // Current number of Newton iterations
     std::size_t _newton_iteration;
 
-    /// Most recent residual and intitial residual
+    // Most recent residual and intitial residual
     double _residual, _residual0;
 
-    /// Solver
-    boost::shared_ptr<GenericLinearSolver> _solver;
+    // Solver
+    std::shared_ptr<GenericLinearSolver> _solver;
 
-    /// Jacobian matrix
-    boost::shared_ptr<GenericMatrix> _A;
+    // Jacobian matrix
+    std::shared_ptr<GenericMatrix> _A;
 
-    /// Solution vector
-    boost::shared_ptr<GenericVector> _dx;
+    // Solution vector
+    std::shared_ptr<GenericVector> _dx;
 
-    /// Resdiual vector
-    boost::shared_ptr<GenericVector> _b;
+    // Resdiual vector
+    std::shared_ptr<GenericVector> _b;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 

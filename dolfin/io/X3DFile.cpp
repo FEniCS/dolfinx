@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-03-05
-// Last changed: 2013-05-21
+// Last changed: 2014-02-01
 
 #include <iostream>
 #include <fstream>
@@ -119,7 +119,7 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   const int palette = 2;
 
   // Get mesh
-  dolfin_assert( meshfunction.mesh());
+  dolfin_assert(meshfunction.mesh());
   const Mesh& mesh = *meshfunction.mesh();
 
   // Ensure connectivity has been computed
@@ -163,9 +163,9 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
 
   // Get min/max values of MeshFunction
   std::size_t minval = *std::min_element(values, values + meshfunction.size());
-  minval = MPI::min(minval);
+  minval = MPI::min(mesh.mpi_comm(), minval);
   std::size_t maxval = *std::max_element(values, values + meshfunction.size());
-  maxval = MPI::max(maxval);
+  maxval = MPI::max(mesh.mpi_comm(), maxval);
   double dval;
   if (maxval == minval)
     dval = 1.0;
@@ -176,14 +176,14 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   const std::vector<double> xpos = mesh_min_max(mesh);
 
   // Get MPI details
-  const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
 
   // Create pugi xml document
   pugi::xml_document xml_doc;
 
   // Write XML header
-  output_xml_header(xml_doc, xpos);
+  if (MPI::rank(mesh.mpi_comm()) == 0)
+    output_xml_header(xml_doc, xpos);
 
   // Make a set of the indices we wish to use. In 3D, we are ignoring
   // all interior facets, so reducing the number of vertices
@@ -194,7 +194,7 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   write_vertices(xml_doc, mesh, vecindex);
 
   // Iterate over mesh facets
-  std::stringstream local_output;
+  std::vector<unsigned int> local_output;
   for (FaceIterator f(mesh); !f.end(); ++f)
   {
     // Check if topolgical dimension is 2, or if we have a boundary
@@ -205,13 +205,14 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
       CellIterator cell(*f);
 
       // Write mesh function value to string stream
-      local_output << (int)((meshfunction[*cell] - minval)*dval) << " " ;
+      local_output.push_back((unsigned int)
+                             ((meshfunction[*cell] - minval)*dval));
     }
   }
 
   // Gather up data on zero
-  std::vector<std::string> gathered_output;
-  MPI::gather(local_output.str(), gathered_output);
+  std::vector<unsigned int> gathered_output;
+  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
 
   // Write XML on root process
   if (process_number == 0)
@@ -221,8 +222,12 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
     indexed_face_set.append_attribute("colorPerVertex") = "false";
 
     std::stringstream str_output;
-    for (std::size_t i = 0; i < num_processes; ++i)
-      str_output << gathered_output[i];
+    for (std::vector<unsigned int>::iterator val = gathered_output.begin();
+         val != gathered_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
+
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
     // Output palette
@@ -312,7 +317,7 @@ void X3DFile::write_function(const Function& u)
   write_values(xml_doc, mesh, surface_vertices, data_values);
 
   // Save XML file
-  if (MPI::process_number() == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
     xml_doc.save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
@@ -340,7 +345,7 @@ void X3DFile::write_mesh(const Mesh& mesh)
   const std::vector<std::size_t> vecindex = vertex_index(mesh);
   write_vertices(xml_doc, mesh, vecindex);
 
-  if (MPI::process_number() == 0)
+  if (MPI::rank(mesh.mpi_comm()) == 0)
     xml_doc.save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
@@ -351,9 +356,9 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
   const std::size_t tdim = mesh.topology().dim();
 
   double minval = *std::min_element(data_values.begin(), data_values.end());
-  minval = MPI::min(minval);
+  minval = MPI::min(mesh.mpi_comm(), minval);
   double maxval = *std::max_element(data_values.begin(), data_values.end());
-  maxval = MPI::max(maxval);
+  maxval = MPI::max(mesh.mpi_comm(), maxval);
 
   double scale = 0.0;
   if (maxval == minval)
@@ -361,7 +366,7 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
   else
     scale = 255.0/(maxval - minval);
 
-  std::stringstream local_output;
+  std::vector<int> local_output;
   if (facet_type == "IndexedLineSet")
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
@@ -383,10 +388,10 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
       {
         for (VertexIterator v(*e); !v.end(); ++v)
         {
-          local_output << (int)((data_values[v->index()] - minval)*scale)
-                       << " " ;
+          local_output.push_back((int)((data_values[v->index()] - minval)
+                                       *scale));
         }
-        local_output << "-1 ";
+        local_output.push_back(-1);
       }
     }
   }
@@ -399,27 +404,29 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
       {
         for (VertexIterator v(*f); !v.end(); ++v)
         {
-          local_output << (int)((data_values[v->index()] - minval)*scale)
-                       << " " ;
+          local_output.push_back((int)((data_values[v->index()] - minval)
+                                       *scale));
         }
-        local_output << "-1 ";
+        local_output.push_back(-1);
       }
     }
   }
 
   // Gather up on zero
-  std::vector<std::string> gathered_output;
-  MPI::gather(local_output.str(), gathered_output);
-  if (MPI::process_number() == 0)
+  std::vector<int> gathered_output;
+  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     pugi::xml_node indexed_face_set = xml_doc.child("X3D")
       .child("Scene").child("Shape").child(facet_type.c_str());
     indexed_face_set.append_attribute("colorPerVertex") = "true";
 
     std::stringstream str_output;
-    for (std::size_t i = 0; i < MPI::num_processes(); ++i)
-      str_output << gathered_output[i];
-
+    for (std::vector<int>::iterator val = gathered_output.begin();
+         val != gathered_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
     // Output colour palette
@@ -432,14 +439,14 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
 void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
                              const std::vector<std::size_t> vecindex)
 {
-  std::size_t offset = MPI::global_offset(vecindex.size(), true);
+  std::size_t offset = MPI::global_offset(mesh.mpi_comm(), vecindex.size(),
+                                          true);
 
-  const std::size_t process_number = MPI::process_number();
-  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
-  std::stringstream local_output;
+  std::vector<int> local_output;
   if (facet_type == "IndexedLineSet")
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
@@ -464,9 +471,9 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
           std::size_t index_it  = std::find(vecindex.begin(),
                                             vecindex.end(),
                                             v->index()) - vecindex.begin();
-          local_output << index_it + offset  << " " ;
+          local_output.push_back(index_it + offset);
         }
-        local_output << "-1 ";
+        local_output.push_back(-1);
       }
     }
   }
@@ -482,15 +489,15 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
           std::size_t index_it = std::find(vecindex.begin(),
                                            vecindex.end(),
                                            v->index()) - vecindex.begin();
-          local_output << index_it + offset  << " " ;
+          local_output.push_back(index_it + offset);
         }
-        local_output << "-1 ";
+        local_output.push_back(-1);
       }
     }
   }
 
-  std::vector<std::string> gathered_output;
-  MPI::gather(local_output.str(), gathered_output);
+  std::vector<int> gathered_output;
+  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
 
   if (process_number == 0)
   {
@@ -498,27 +505,30 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
       = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type.c_str());
 
     std::stringstream str_output;
-    for (std::size_t i = 0; i < num_processes; ++i)
-      str_output << gathered_output[i];
-
+    for (std::vector<int>::iterator val = gathered_output.begin();
+         val != gathered_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
     indexed_face_set.append_attribute("coordIndex") = str_output.str().c_str();
   }
 
-  local_output.str("");
-
   // Now fill in the geometry
+  std::vector<double> local_geom_output;
   for (std::vector<std::size_t>::const_iterator index = vecindex.begin();
        index != vecindex.end(); ++index)
   {
     Vertex v(mesh, *index);
-    local_output << v.x(0) << " " << v.x(1) << " ";
+    local_geom_output.push_back(v.x(0));
+    local_geom_output.push_back(v.x(1));
     if (gdim == 2)
-      local_output << "0 ";
+      local_geom_output.push_back(0.0);
     else
-      local_output << v.x(2) << " ";
+      local_geom_output.push_back(v.x(2));
   }
 
-  MPI::gather(local_output.str(), gathered_output);
+  std::vector<double> gathered_geom_output;
+  MPI::gather(mesh.mpi_comm(), local_geom_output, gathered_geom_output);
 
   // Finally, close off with the XML footer on process zero
   if (process_number == 0)
@@ -529,9 +539,11 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
     pugi::xml_node coordinate = indexed_face_set.append_child("Coordinate");
 
     std::stringstream str_output;
-    for (std::size_t i = 0; i < num_processes; ++i)
-      str_output << gathered_output[i];
-
+    for (std::vector<double>::iterator val = gathered_geom_output.begin();
+         val != gathered_geom_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
     coordinate.append_attribute("point") = str_output.str().c_str();
   }
 }
@@ -539,52 +551,52 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
 void X3DFile::output_xml_header(pugi::xml_document& xml_doc,
                                 const std::vector<double>& xpos)
 {
-  if (MPI::process_number() == 0)
-  {
-    xml_doc.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
+  xml_doc.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
 
-    pugi::xml_node x3d = xml_doc.append_child("X3D");
-    x3d.append_attribute("profile") = "Interchange";
-    x3d.append_attribute("version") = "3.2";
-    x3d.append_attribute("xmlns:xsd")
-      = "http://www.w3.org/2001/XMLSchema-instance";
-    x3d.append_attribute("xsd:noNamespaceSchemaLocation")
-      = "http://www.web3d.org/specifications/x3d-3.2.xsd";
+  pugi::xml_node x3d = xml_doc.append_child("X3D");
+  x3d.append_attribute("profile") = "Interchange";
+  x3d.append_attribute("version") = "3.2";
+  x3d.append_attribute("xmlns:xsd")
+    = "http://www.w3.org/2001/XMLSchema-instance";
+  x3d.append_attribute("xsd:noNamespaceSchemaLocation")
+    = "http://www.web3d.org/specifications/x3d-3.2.xsd";
 
-    pugi::xml_node scene = x3d.append_child("Scene");
-    pugi::xml_node viewpoint = scene.append_child("Viewpoint");
-    std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+  pugi::xml_node scene = x3d.append_child("Scene");
+  pugi::xml_node viewpoint = scene.append_child("Viewpoint");
+  std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
       + boost::lexical_cast<std::string>(xpos[1]) + " "
-      + boost::lexical_cast<std::string>(xpos[3]);
-    viewpoint.append_attribute("position") = xyz.c_str();
+    + boost::lexical_cast<std::string>(xpos[3]);
+  viewpoint.append_attribute("position") = xyz.c_str();
 
-    viewpoint.append_attribute("orientation") = "0 0 0 1";
-    viewpoint.append_attribute("fieldOfView") = "0.785398";
-    xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-      + boost::lexical_cast<std::string>(xpos[1]) + " "
-      + boost::lexical_cast<std::string>(xpos[2]);
-    viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
+  viewpoint.append_attribute("orientation") = "0 0 0 1";
+  viewpoint.append_attribute("fieldOfView") = "0.785398";
+  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+    + boost::lexical_cast<std::string>(xpos[1]) + " "
+    + boost::lexical_cast<std::string>(xpos[2]);
+  viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
 
-    viewpoint.append_attribute("zNear") = "-1";
-    viewpoint.append_attribute("zFar") = "-1";
-    pugi::xml_node background = scene.append_child("Background");
-    background.append_attribute("skyColor") = "0.9 0.9 1.0";
+  viewpoint.append_attribute("zNear") = "-1";
+  viewpoint.append_attribute("zFar") = "-1";
+  pugi::xml_node background = scene.append_child("Background");
+  background.append_attribute("skyColor") = "0.9 0.9 1.0";
 
-    pugi::xml_node shape = scene.append_child("Shape");
-    pugi::xml_node material
-      = shape.append_child("Appearance").append_child("Material");
-    material.append_attribute("ambientIntensity") = "0.05";
-    material.append_attribute("shininess") = "0.5";
-    material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
-    material.append_attribute("specularColor") = "0.9 0.9 0.9";
-    material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
+  pugi::xml_node shape = scene.append_child("Shape");
+  pugi::xml_node material
+    = shape.append_child("Appearance").append_child("Material");
+  material.append_attribute("ambientIntensity") = "0.05";
+  material.append_attribute("shininess") = "0.5";
+  material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
+  material.append_attribute("specularColor") = "0.9 0.9 0.9";
+  material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
 
-    shape.append_child(facet_type.c_str()).append_attribute("solid") = "false";
-  }
+  shape.append_child(facet_type.c_str()).append_attribute("solid") = "false";
 }
 //-----------------------------------------------------------------------------
 std::vector<double> X3DFile::mesh_min_max(const Mesh& mesh) const
 {
+  // Get MPI communicator
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+
   // Get dimensions
   double xmin = std::numeric_limits<double>::max();
   double xmax = std::numeric_limits<double>::min();
@@ -613,13 +625,13 @@ std::vector<double> X3DFile::mesh_min_max(const Mesh& mesh) const
     }
   }
 
-  xmin = MPI::min(xmin);
-  ymin = MPI::min(ymin);
-  zmin = MPI::min(zmin);
+  xmin = MPI::min(mpi_comm, xmin);
+  ymin = MPI::min(mpi_comm, ymin);
+  zmin = MPI::min(mpi_comm, zmin);
 
-  xmax = MPI::max(xmax);
-  ymax = MPI::max(ymax);
-  zmax = MPI::max(zmax);
+  xmax = MPI::max(mpi_comm, xmax);
+  ymax = MPI::max(mpi_comm, ymax);
+  zmax = MPI::max(mpi_comm, zmax);
 
   std::vector<double> result;
   result.push_back((xmax + xmin)/2.0);

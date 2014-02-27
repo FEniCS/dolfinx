@@ -16,7 +16,7 @@ nx = 2
 ny = 3
 nx = 10
 ny = 10
-mesh = UnitSquare(nx, ny)
+mesh = UnitSquareMesh(nx, ny)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
 # Define boundary conditions
@@ -109,7 +109,7 @@ ev.contour(u_box.grid.coorv[X], u_box.grid.coorv[Y], u_box.values,
            clabels='on')
 ev.figure()
 ev.surf(u_box.grid.coorv[X], u_box.grid.coorv[Y], u_box.values,
-        shading='interp', colorbar='on', 
+        shading='interp', colorbar='on',
         title='surf plot of u', savefig='tmp3.eps')
 ev.figure()
 ev.mesh(u_box.grid.coorv[X], u_box.grid.coorv[Y], u_box.values,
@@ -121,7 +121,7 @@ x, uval, y_fixed, snapped = u_box.gridline(start, direction=X)
 if snapped:
     print 'Line at %s adjusted (snapped) to y=%g' % (start, y_fixed)
 ev.figure()
-ev.plot(x, uval, 'r-', title='Solution', 
+ev.plot(x, uval, 'r-', title='Solution',
         legend='finite element solution')
 
 # Plot the numerical (projected) and exact flux along this line
@@ -168,4 +168,3 @@ print 'Max error:', numpy.abs(u_e_array - u_array).max()
 
 #interactive()
 raw_input('Press Return: ')  # some curve plot engines need this for a lasting plot on the screen
-

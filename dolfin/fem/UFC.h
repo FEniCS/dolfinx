@@ -24,9 +24,8 @@
 #define __UFC_DATA_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <ufc.h>
-#include "UFCCell.h"
 
 namespace dolfin
 {
@@ -61,14 +60,17 @@ namespace dolfin
     void init(const Form& form);
 
     /// Update current cell
-    void update(const Cell& cell);
-
-    /// Update current cell and facet
-    void update(const Cell& cell, std::size_t local_facet);
+    void update(const Cell& cell,
+                const std::vector<double>& vertex_coordinates0,
+                const ufc::cell& ufc_cell);
 
     /// Update current pair of cells for macro element
-    void update(const Cell& cell0, std::size_t local_facet0,
-                const Cell& cell1, std::size_t local_facet1);
+    void update(const Cell& cell0,
+                const std::vector<double>& vertex_coordinates0,
+                const ufc::cell& ufc_cell0,
+                const Cell& cell1,
+                const std::vector<double>& vertex_coordinates1,
+                const ufc::cell& ufc_cell1);
 
     /// Pointer to coefficient data. Used to support UFC interface.
     const double* const * w() const
@@ -91,37 +93,37 @@ namespace dolfin
 
     // Cell integrals (access through get_cell_integral to get proper
     // fallback to default)
-    std::vector<boost::shared_ptr<ufc::cell_integral> > cell_integrals;
+    std::vector<std::shared_ptr<ufc::cell_integral> > cell_integrals;
 
     // Exterior facet integrals (access through
     // get_exterior_facet_integral to get proper fallback to default)
-    std::vector<boost::shared_ptr<ufc::exterior_facet_integral> >
+    std::vector<std::shared_ptr<ufc::exterior_facet_integral> >
       exterior_facet_integrals;
 
     // Interior facet integrals (access through
     // get_interior_facet_integral to get proper fallback to default)
-    std::vector<boost::shared_ptr<ufc::interior_facet_integral> >
+    std::vector<std::shared_ptr<ufc::interior_facet_integral> >
       interior_facet_integrals;
 
     // Point integrals (access through get_point_integral to get
     // proper fallback to default)
-    std::vector<boost::shared_ptr<ufc::point_integral> > point_integrals;
+    std::vector<std::shared_ptr<ufc::point_integral> > point_integrals;
 
   public:
 
     // Default cell integral
-    boost::shared_ptr<ufc::cell_integral> default_cell_integral;
+    std::shared_ptr<ufc::cell_integral> default_cell_integral;
 
     // Default exterior facet integral
-    boost::shared_ptr<ufc::exterior_facet_integral>
+    std::shared_ptr<ufc::exterior_facet_integral>
       default_exterior_facet_integral;
 
     // Default interior facet integral
-    boost::shared_ptr<ufc::interior_facet_integral>
+    std::shared_ptr<ufc::interior_facet_integral>
       default_interior_facet_integral;
 
     // Default point integral
-    boost::shared_ptr<ufc::point_integral> default_point_integral;
+    std::shared_ptr<ufc::point_integral> default_point_integral;
 
     /// Get cell integral over a given domain, falling back to the
     /// default if necessary
@@ -183,14 +185,6 @@ namespace dolfin
     const ufc::form& form;
 
     // FIXME AL: Check which data is actually used and remove the rest
-    // FIXME AL: Remove UFCCell class
-
-    // Current cell
-    UFCCell cell;
-
-    // Current pair of cells of macro element
-    UFCCell cell0;
-    UFCCell cell1;
 
     // Local tensor
     std::vector<double> A;
@@ -214,7 +208,7 @@ namespace dolfin
     std::vector<double*> macro_w_pointer;
 
     // Coefficient functions
-    const std::vector<boost::shared_ptr<const GenericFunction> > coefficients;
+    const std::vector<std::shared_ptr<const GenericFunction> > coefficients;
 
   public:
 

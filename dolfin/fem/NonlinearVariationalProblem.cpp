@@ -28,9 +28,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(const Form& F,
-                            Function& u)
+NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
+                                                         Function& u)
   : Hierarchical<NonlinearVariationalProblem>(*this),
     _F(reference_to_no_delete_pointer(F)),
     _u(reference_to_no_delete_pointer(u))
@@ -39,10 +38,9 @@ NonlinearVariationalProblem(const Form& F,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(const Form& F,
-                            Function& u,
-                            const Form& J)
+NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
+                                                         Function& u,
+                                                         const Form& J)
   : Hierarchical<NonlinearVariationalProblem>(*this),
     _F(reference_to_no_delete_pointer(F)),
     _J(reference_to_no_delete_pointer(J)),
@@ -52,13 +50,11 @@ NonlinearVariationalProblem(const Form& F,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(const Form& F,
-                            Function& u,
-                            const DirichletBC& bc)
+NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
+                                                         Function& u,
+                                                         const DirichletBC& bc)
   : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(reference_to_no_delete_pointer(F)),
-    _u(reference_to_no_delete_pointer(u))
+    _F(reference_to_no_delete_pointer(F)), _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary condition
   _bcs.push_back(reference_to_no_delete_pointer(bc));
@@ -67,11 +63,10 @@ NonlinearVariationalProblem(const Form& F,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(const Form& F,
-                            Function& u,
-                            const DirichletBC& bc,
-                            const Form& J)
+NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
+                                                         Function& u,
+                                                         const DirichletBC& bc,
+                                                         const Form& J)
   : Hierarchical<NonlinearVariationalProblem>(*this),
     _F(reference_to_no_delete_pointer(F)),
     _J(reference_to_no_delete_pointer(J)),
@@ -84,13 +79,11 @@ NonlinearVariationalProblem(const Form& F,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(const Form& F,
-                            Function& u,
-                            std::vector<const DirichletBC*> bcs)
+NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
+                                                         Function& u,
+                                          std::vector<const DirichletBC*> bcs)
   : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(reference_to_no_delete_pointer(F)),
-    _u(reference_to_no_delete_pointer(u))
+    _F(reference_to_no_delete_pointer(F)), _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary conditions
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -100,11 +93,10 @@ NonlinearVariationalProblem(const Form& F,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(const Form& F,
-                            Function& u,
-                            std::vector<const DirichletBC*> bcs,
-                            const Form& J)
+NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
+                                                         Function& u,
+                                          std::vector<const DirichletBC*> bcs,
+                                          const Form& J)
   : Hierarchical<NonlinearVariationalProblem>(*this),
     _F(reference_to_no_delete_pointer(F)),
     _J(reference_to_no_delete_pointer(J)),
@@ -118,12 +110,11 @@ NonlinearVariationalProblem(const Form& F,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                            boost::shared_ptr<Function> u,
-                            std::vector<boost::shared_ptr<const DirichletBC> > bcs)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(F), _u(u)
+NonlinearVariationalProblem::NonlinearVariationalProblem(
+  std::shared_ptr<const Form> F,
+  std::shared_ptr<Function> u,
+  std::vector<std::shared_ptr<const DirichletBC> > bcs)
+  : Hierarchical<NonlinearVariationalProblem>(*this), _F(F), _u(u)
 {
   // Store boundary conditions
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -133,13 +124,12 @@ NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                            boost::shared_ptr<Function> u,
-                            std::vector<boost::shared_ptr<const DirichletBC> > bcs,
-                            boost::shared_ptr<const Form> J)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(F), _J(J), _u(u)
+NonlinearVariationalProblem::NonlinearVariationalProblem(
+  std::shared_ptr<const Form> F,
+  std::shared_ptr<Function> u,
+  std::vector<std::shared_ptr<const DirichletBC> > bcs,
+  std::shared_ptr<const Form> J)
+  : Hierarchical<NonlinearVariationalProblem>(*this), _F(F), _J(J), _u(u)
 {
   // Store boundary conditions
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -149,22 +139,29 @@ NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
   check_forms();
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(boost::shared_ptr<const Function> lb_func, boost::shared_ptr<const Function> ub_func)
+void NonlinearVariationalProblem::set_bounds(
+  std::shared_ptr<const Function> lb_func,
+  std::shared_ptr<const Function> ub_func)
 {
     set_bounds(*lb_func,*ub_func);
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(const Function& lb_func, const Function& ub_func)
+void NonlinearVariationalProblem::set_bounds(const Function& lb_func,
+                                             const Function& ub_func)
 {
     set_bounds(lb_func.vector(),ub_func.vector());
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(const GenericVector& lb, const GenericVector& ub)
+void NonlinearVariationalProblem::set_bounds(const GenericVector& lb,
+                                             const GenericVector& ub)
 {
-    set_bounds(reference_to_no_delete_pointer(lb),reference_to_no_delete_pointer(ub));
+    set_bounds(reference_to_no_delete_pointer(lb),
+               reference_to_no_delete_pointer(ub));
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(boost::shared_ptr<const GenericVector> lb, boost::shared_ptr<const GenericVector> ub)
+void NonlinearVariationalProblem::set_bounds(
+  std::shared_ptr<const GenericVector> lb,
+  std::shared_ptr<const GenericVector> ub)
 {
     this->_lb = lb;
     this->_ub = ub;
@@ -172,53 +169,55 @@ void NonlinearVariationalProblem::set_bounds(boost::shared_ptr<const GenericVect
     dolfin_assert(_ub);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> NonlinearVariationalProblem::residual_form() const
+std::shared_ptr<const Form> NonlinearVariationalProblem::residual_form() const
 {
   return _F;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> NonlinearVariationalProblem::jacobian_form() const
+std::shared_ptr<const Form> NonlinearVariationalProblem::jacobian_form() const
 {
   return _J;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Function> NonlinearVariationalProblem::solution()
+std::shared_ptr<Function> NonlinearVariationalProblem::solution()
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Function> NonlinearVariationalProblem::solution() const
+std::shared_ptr<const Function> NonlinearVariationalProblem::solution() const
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const DirichletBC> >
+std::vector<std::shared_ptr<const DirichletBC> >
 NonlinearVariationalProblem::bcs() const
 {
   return _bcs;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 NonlinearVariationalProblem::trial_space() const
 {
   dolfin_assert(_u);
   return _u->function_space();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 NonlinearVariationalProblem::test_space() const
 {
   dolfin_assert(_F);
   return _F->function_space(0);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector> NonlinearVariationalProblem::lower_bound() const
+std::shared_ptr<const GenericVector>
+NonlinearVariationalProblem::lower_bound() const
 {
   dolfin_assert(_lb);
   return _lb;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector> NonlinearVariationalProblem::upper_bound() const
+std::shared_ptr<const GenericVector>
+NonlinearVariationalProblem::upper_bound() const
 {
   dolfin_assert(_ub);
   return _ub;
@@ -227,19 +226,16 @@ boost::shared_ptr<const GenericVector> NonlinearVariationalProblem::upper_bound(
 bool NonlinearVariationalProblem::has_jacobian() const
 {
   return _J ?  true : false;
-  //return _J; // cast to bool
 }
 //-----------------------------------------------------------------------------
 bool NonlinearVariationalProblem::has_lower_bound() const
 {
   return _lb ?  true : false;
-  //return _lb; // cast to bool
 }
 //-----------------------------------------------------------------------------
 bool NonlinearVariationalProblem::has_upper_bound() const
 {
   return _ub ?  true : false;
-  //return _ub; // cast to bool
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::check_forms() const
@@ -262,15 +258,6 @@ void NonlinearVariationalProblem::check_forms() const
                  "Expecting the Jacobian J to be a bilinear form (not rank %d)",
                  _J->rank());
   }
-
-  /*
-  // Check value of right-hand side
-  if (rhs != 0)
-    dolfin_error("NonlinearVariationalProblem.cpp",
-                 "define nonlinear variational problem F(u; v) = 0 for all v",
-                 "Expecting the right-hand side to be zero (not %d)",
-                 rhs);
-  */
 
   // FIXME: Should we add a check here that matches the function space
   // FIXME: of the solution variable u to a coefficient space for F?

@@ -18,9 +18,10 @@
 // Modified by Kristian Oelgaard, 2007
 // Modified by Johan Hake, 2009
 // Modified by Joachim B Haga, 2012
+// Modified by Mikael Mortensen, 2014
 //
 // First added:  2007-04-10
-// Last changed: 2012-11-14
+// Last changed: 2014-01-23
 //
 // FIXME: This class needs some cleanup, in particular collecting
 //        all data from different representations into a common
@@ -35,11 +36,12 @@
 #include <string>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -74,7 +76,10 @@ namespace dolfin
   ///
   /// The simplest approach is to specify the boundary by a _SubDomain_
   /// object, using the inside() function to specify on which facets
-  /// the boundary conditions should be applied.
+  /// the boundary conditions should be applied. The boundary facets
+  /// will then be searched for and marked *only* on the first call to
+  /// apply. This means that the mesh could be moved after the first 
+  /// apply and the boundary markers would still remain intact.
   ///
   /// Alternatively, the boundary may be specified by a _MeshFunction_
   /// labeling all mesh facets together with a number that specifies
@@ -96,8 +101,7 @@ namespace dolfin
   /// geometric approach, each dof on each facet that matches the
   /// boundary condition will be checked. To apply pointwise boundary
   /// conditions e.g. pointloads, one will have to use the pointwise
-  /// approach which in turn is the slowest of the three possible
-  /// methods. The three possibilties are "topological", "geometric"
+  /// approach. The three possibilties are "topological", "geometric"
   /// and "pointwise".
   ///
   /// The 'check_midpoint' variable can be used to decide whether or
@@ -148,9 +152,9 @@ namespace dolfin
     ///     method (std::string)
     ///         Optional argument: A string specifying
     ///         the method to identify dofs
-    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                boost::shared_ptr<const GenericFunction> g,
-                boost::shared_ptr<const SubDomain> sub_domain,
+    DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                std::shared_ptr<const GenericFunction> g,
+                std::shared_ptr<const SubDomain> sub_domain,
                 std::string method="topological",
                 bool check_midpoint=true);
 
@@ -188,9 +192,9 @@ namespace dolfin
     ///     method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
-    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                boost::shared_ptr<const GenericFunction> g,
-                boost::shared_ptr<const MeshFunction<std::size_t> > sub_domains,
+    DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                std::shared_ptr<const GenericFunction> g,
+                std::shared_ptr<const MeshFunction<std::size_t> > sub_domains,
                 std::size_t sub_domain,
                 std::string method="topological");
 
@@ -223,8 +227,8 @@ namespace dolfin
     ///     method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
-    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                boost::shared_ptr<const GenericFunction> g,
+    DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                std::shared_ptr<const GenericFunction> g,
                 std::size_t sub_domain,
                 std::string method="topological");
 
@@ -236,13 +240,13 @@ namespace dolfin
     ///         The function space.
     ///     g (_GenericFunction_)
     ///         The value.
-    ///     markers (std::vector<std::pair<std::size_t, std::size_t> >)
-    ///         Subdomain markers (cells, local facet number)
+    ///     markers (std::vector<std::size_t>)
+    ///         Subdomain markers (facet index local to process)
     ///     method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
-    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                boost::shared_ptr<const GenericFunction> g,
+    DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                std::shared_ptr<const GenericFunction> g,
                 const std::vector<std::size_t>&
                 markers,
                 std::string method="topological");
@@ -367,7 +371,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSPace_
     ///         The function space to which boundary conditions are applied.
-    boost::shared_ptr<const FunctionSpace> function_space() const
+    std::shared_ptr<const FunctionSpace> function_space() const
     { return _function_space; }
 
     /// Return boundary value g
@@ -375,14 +379,14 @@ namespace dolfin
     /// *Returns*
     ///     _GenericFunction_
     ///         The boundary values.
-    boost::shared_ptr<const GenericFunction> value() const;
+    std::shared_ptr<const GenericFunction> value() const;
 
     /// Return shared pointer to subdomain
     ///
     /// *Returns*
     ///     _SubDomain_
     ///         Shared pointer to subdomain.
-    boost::shared_ptr<const SubDomain> user_sub_domain() const;
+    std::shared_ptr<const SubDomain> user_sub_domain() const;
 
     /// Check if given function is compatible with boundary condition
     /// (checking only vertex values)
@@ -409,7 +413,7 @@ namespace dolfin
     /// *Arguments*
     ///     g (_GenericFunction_)
     ///         The value.
-    void set_value(boost::shared_ptr<const GenericFunction> g);
+    void set_value(std::shared_ptr<const GenericFunction> g);
 
     /// Set value to 0.0
     void homogenize();
@@ -442,11 +446,11 @@ namespace dolfin
     void check() const;
 
     // Initialize facets (from sub domain, mesh, etc)
-    void init_facets() const;
+    void init_facets(const MPI_Comm mpi_comm) const;
 
     // Initialize sub domain markers from sub domain
     void
-      init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain) const;
+      init_from_sub_domain(std::shared_ptr<const SubDomain> sub_domain) const;
 
     // Initialize sub domain markers from MeshFunction
     void init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
@@ -481,10 +485,10 @@ namespace dolfin
                          const GenericVector* x) const;
 
     // The function space (possibly a sub function space)
-    boost::shared_ptr<const FunctionSpace> _function_space;
+    std::shared_ptr<const FunctionSpace> _function_space;
 
     // The function
-    boost::shared_ptr<const GenericFunction> _g;
+    std::shared_ptr<const GenericFunction> _g;
 
     // Search method
     std::string _method;
@@ -495,15 +499,18 @@ namespace dolfin
   public:
 
     // User defined sub domain
-    boost::shared_ptr<const SubDomain> _user_sub_domain;
+    std::shared_ptr<const SubDomain> _user_sub_domain;
 
   private:
 
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;
+    
+    // Cells attached to boundary, stored by cell index with map to local dof number
+    mutable std::map<std::size_t, std::vector<std::size_t> > _cells_to_localdofs;
 
     // User defined mesh function
-    boost::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;
+    std::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;
 
     // User defined sub domain marker for mesh or mesh function
     std::size_t _user_sub_domain_marker;

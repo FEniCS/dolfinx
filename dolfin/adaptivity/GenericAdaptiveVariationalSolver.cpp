@@ -85,7 +85,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     }
 
     // Initialize adaptive data
-    boost::shared_ptr<Parameters> datum(new Parameters("adaptive_data"));
+    std::shared_ptr<Parameters> datum(new Parameters("adaptive_data"));
     _adaptive_data.push_back(datum);
     const int refinement_level = i;
     datum->add("refinement_level", refinement_level);
@@ -104,7 +104,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     //--- Stage 0: Solve primal problem
     begin(PROGRESS, "Stage %d.0: Solving primal problem...", i);
     timer.start();
-    boost::shared_ptr<const Function> u = solve_primal();
+    std::shared_ptr<const Function> u = solve_primal();
     datum->add("time_solve_primal", timer.stop());
 
     // Extract views to primal trial space and mesh
@@ -189,7 +189,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
           max_iterations);
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<Parameters> >
+std::vector<std::shared_ptr<Parameters> >
 GenericAdaptiveVariationalSolver::adaptive_data() const
 {
   return _adaptive_data;

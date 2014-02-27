@@ -27,7 +27,6 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
-#include "dolfin/common/MPI.h"
 #include "dolfin/common/SubSystemsManager.h"
 #include "SparsityPattern.h"
 #include "EpetraLUSolver.h"
@@ -53,49 +52,43 @@ EpetraFactory::~EpetraFactory()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> EpetraFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> EpetraFactory::create_matrix() const
 {
-  boost::shared_ptr<GenericMatrix> A(new EpetraMatrix);
+  std::shared_ptr<GenericMatrix> A(new EpetraMatrix);
   return A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> EpetraFactory::create_vector() const
+std::shared_ptr<GenericVector> EpetraFactory::create_vector() const
 {
-  boost::shared_ptr<GenericVector> x(new EpetraVector("global"));
+  std::shared_ptr<GenericVector> x(new EpetraVector);
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> EpetraFactory::create_local_vector() const
-{
-  boost::shared_ptr<GenericVector> x(new EpetraVector("local"));
-  return x;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout> EpetraFactory::create_layout(std::size_t rank) const
+std::shared_ptr<TensorLayout> EpetraFactory::create_layout(std::size_t rank) const
 {
   bool sparsity = false;
   if (rank > 1)
     sparsity = true;
-  boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
+  std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearOperator> EpetraFactory::create_linear_operator() const
+std::shared_ptr<GenericLinearOperator> EpetraFactory::create_linear_operator() const
 {
-  boost::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
+  std::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
   return A;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLUSolver> EpetraFactory::create_lu_solver(std::string method) const
+std::shared_ptr<GenericLUSolver> EpetraFactory::create_lu_solver(std::string method) const
 {
-  boost::shared_ptr<GenericLUSolver> solver(new EpetraLUSolver(method));
+  std::shared_ptr<GenericLUSolver> solver(new EpetraLUSolver(method));
   return solver;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericLinearSolver> EpetraFactory::create_krylov_solver(std::string method,
+std::shared_ptr<GenericLinearSolver> EpetraFactory::create_krylov_solver(std::string method,
                                               std::string preconditioner) const
 {
-  boost::shared_ptr<GenericLinearSolver> solver(new EpetraKrylovSolver(method, preconditioner));
+  std::shared_ptr<GenericLinearSolver> solver(new EpetraKrylovSolver(method, preconditioner));
   return solver;
 }
 //-----------------------------------------------------------------------------
@@ -115,27 +108,6 @@ std::vector<std::pair<std::string, std::string> >
   EpetraFactory::krylov_solver_preconditioners() const
 {
   return EpetraKrylovSolver::preconditioners();
-}
-//-----------------------------------------------------------------------------
-Epetra_SerialComm& EpetraFactory::get_serial_comm()
-{
-  if (!serial_comm)
-  {
-    serial_comm.reset(new Epetra_SerialComm());
-    dolfin_assert(serial_comm);
-  }
-  return *serial_comm;
-}
-//-----------------------------------------------------------------------------
-Epetra_MpiComm& EpetraFactory::get_mpi_comm()
-{
-  if (!mpi_comm)
-  {
-    SubSystemsManager::init_mpi();
-    mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
-    dolfin_assert(mpi_comm);
-  }
-  return *mpi_comm;
 }
 //-----------------------------------------------------------------------------
 #endif

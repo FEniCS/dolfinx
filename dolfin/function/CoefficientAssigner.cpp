@@ -20,7 +20,7 @@
 // First added:  2008-10-28
 // Last changed: 2009-10-04
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
 #include "CoefficientAssigner.h"
@@ -41,7 +41,7 @@ CoefficientAssigner::~CoefficientAssigner()
 //-----------------------------------------------------------------------------
 void CoefficientAssigner::operator= (const GenericFunction& coefficient)
 {
-  boost::shared_ptr<const GenericFunction> c(&coefficient, NoDeleter());
+  std::shared_ptr<const GenericFunction> c(&coefficient, NoDeleter());
   _form.set_coefficient(_number, c);
 }
 //-----------------------------------------------------------------------------

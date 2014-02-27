@@ -79,24 +79,24 @@ void MeshData::clear()
   _arrays.clear();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<dolfin::MeshFunction<std::size_t> >
+std::shared_ptr<dolfin::MeshFunction<std::size_t> >
 MeshData::create_mesh_function(std::string name)
 {
   dolfin_error("MeshData.cpp",
                "create a MeshFunction via mesh data",
                "MeshFunctions can no longer be stored in MeshData. Use arrays instead");
 
-  return boost::shared_ptr<MeshFunction<std::size_t> >();
+  return std::shared_ptr<MeshFunction<std::size_t> >();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<dolfin::MeshFunction<std::size_t> >
+std::shared_ptr<dolfin::MeshFunction<std::size_t> >
 MeshData::create_mesh_function(std::string name, std::size_t dim)
 {
   dolfin_error("MeshData.cpp",
                "create a MeshFunction via mesh data",
                "MeshFunctions can no longer be stored in MeshData. Use arrays instead");
 
-  return boost::shared_ptr<MeshFunction<std::size_t> >();
+  return std::shared_ptr<MeshFunction<std::size_t> >();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>& MeshData::create_array(std::string name,
@@ -126,14 +126,14 @@ std::vector<std::size_t>& MeshData::create_array(std::string name,
   return ins.first->second;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshFunction<std::size_t> >
+std::shared_ptr<MeshFunction<std::size_t> >
 MeshData::mesh_function(const std::string name) const
 {
   dolfin_error("MeshData.cpp",
                "access a MeshFunction via mesh data",
                "MeshFunctions can no longer be stored in MeshData. Use arrays instead");
 
-  return boost::shared_ptr<MeshFunction<std::size_t> >();
+  return std::shared_ptr<MeshFunction<std::size_t> >();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>& MeshData::array(std::string name, std::size_t dim)

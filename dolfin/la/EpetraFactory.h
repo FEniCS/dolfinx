@@ -26,18 +26,13 @@
 #define __EPETRA_FACTORY_H
 
 #include <string>
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "EpetraKrylovSolver.h"
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 #include "TensorLayout.h"
 #include "GenericLinearAlgebraFactory.h"
-
-// Forwad declarations
-class Epetra_MpiComm;
-class Epetra_SerialComm;
 
 namespace dolfin
 {
@@ -54,27 +49,24 @@ namespace dolfin
     /// --- GenericLinearAlgebraFactory interface
 
     /// Create empty matrix
-    boost::shared_ptr<GenericMatrix> create_matrix() const;
+    std::shared_ptr<GenericMatrix> create_matrix() const;
 
-    /// Create empty vector (global)
-    boost::shared_ptr<GenericVector> create_vector() const;
-
-    /// Create empty vector (local)
-    boost::shared_ptr<GenericVector> create_local_vector() const;
+    /// Create empty vector
+    std::shared_ptr<GenericVector> create_vector() const;
 
     /// Create empty tensor layout
-    boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
+    std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
 
     /// Create empty linear operator
-    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
+    std::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
+    std::shared_ptr<GenericLUSolver>
+      create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver>
-      create_krylov_solver(std::string method,
-                           std::string preconditioner) const;
+    std::shared_ptr<GenericLinearSolver>
+      create_krylov_solver(std::string method, std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >
@@ -82,19 +74,13 @@ namespace dolfin
 
     /// Return a list of available Krylov solver methods
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const;
+      krylov_solver_methods() const;
 
     /// Return a list of available preconditioners
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const;
+      krylov_solver_preconditioners() const;
 
     /// --- EpetraFactory interface
-
-    // Return Epetra Communicator
-    Epetra_SerialComm& get_serial_comm();
-
-    // Return Epetra Communicator
-    Epetra_MpiComm& get_mpi_comm();
 
     // Return singleton instance
     static EpetraFactory& instance()
@@ -107,12 +93,6 @@ namespace dolfin
 
     // Singleton instance
     static EpetraFactory factory;
-
-    // Communicator
-    boost::scoped_ptr<Epetra_SerialComm> serial_comm;
-
-    // Communicator
-    boost::scoped_ptr<Epetra_MpiComm> mpi_comm;
 
   };
 

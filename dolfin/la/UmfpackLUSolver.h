@@ -25,7 +25,7 @@
 #define __UMFPACK_LU_SOLVER_H
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include "GenericLUSolver.h"
 
@@ -52,13 +52,13 @@ namespace dolfin
     UmfpackLUSolver();
 
     /// Constructor
-    UmfpackLUSolver(boost::shared_ptr<const GenericLinearOperator> A);
+    UmfpackLUSolver(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Destructor
     ~UmfpackLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Return the operator (matrix)
     const GenericLinearOperator& get_operator() const;
@@ -87,14 +87,14 @@ namespace dolfin
                                  const GenericVector& b) const;
 
     // Return pointer to symbolic factorisation
-    static boost::shared_ptr<void>
+    static std::shared_ptr<void>
       umfpack_factorize_symbolic(std::size_t M, std::size_t N,
                                  const std::size_t* Ap,
                                  const std::size_t* Ai,
                                  const double* Ax);
 
     // Return pointer to the numerical factorisation
-    static boost::shared_ptr<void>
+    static std::shared_ptr<void>
       umfpack_factorize_numeric(const std::size_t* Ap,
                                 const std::size_t* Ai,
                                 const double* Ax, void* symbolic);
@@ -107,11 +107,11 @@ namespace dolfin
     static void umfpack_check_status(long int status, std::string function);
 
     // UMFPACK data (note that boost::scoped_ptr cannot hold a void pointer)
-    boost::shared_ptr<void> symbolic;
-    boost::shared_ptr<void> numeric;
+    std::shared_ptr<void> symbolic;
+    std::shared_ptr<void> numeric;
 
     // Operator (the matrix)
-    boost::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _A;
 
   };
 

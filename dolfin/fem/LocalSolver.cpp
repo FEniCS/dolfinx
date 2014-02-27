@@ -49,11 +49,11 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   const Mesh& mesh = a.mesh();
 
   // Update off-process coefficients
-  const std::vector<boost::shared_ptr<const GenericFunction> >
+  const std::vector<std::shared_ptr<const GenericFunction> >
     coefficients_a = a.coefficients();
   for (std::size_t i = 0; i < coefficients_a.size(); ++i)
     coefficients_a[i]->update();
-  const std::vector<boost::shared_ptr<const GenericFunction> >
+  const std::vector<std::shared_ptr<const GenericFunction> >
     coefficients_L = L.coefficients();
   for (std::size_t i = 0; i < coefficients_L.size(); ++i)
     coefficients_L[i]->update();
@@ -67,19 +67,23 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   dolfin_assert(rank_L == 1);
 
   // Collect pointers to dof maps
-  boost::shared_ptr<const GenericDofMap> dofmap_a0
+  std::shared_ptr<const GenericDofMap> dofmap_a0
     = a.function_space(0)->dofmap();
-  boost::shared_ptr<const GenericDofMap> dofmap_a1
+  std::shared_ptr<const GenericDofMap> dofmap_a1
     = a.function_space(1)->dofmap();
-  boost::shared_ptr<const GenericDofMap> dofmap_L
+  std::shared_ptr<const GenericDofMap> dofmap_L
     = a.function_space(0)->dofmap();
   dolfin_assert(dofmap_a0);
   dolfin_assert(dofmap_a1);
   dolfin_assert(dofmap_L);
 
   // Initialise vector
-  std::pair<std::size_t, std::size_t> local_range = dofmap_L->ownership_range();
-  x.resize(local_range);
+  if (x.empty())
+  {
+    std::pair<std::size_t, std::size_t> local_range
+      = dofmap_L->ownership_range();
+    x.init(mesh.mpi_comm(), local_range);
+  }
 
   // Cell integrals
   ufc::cell_integral* integral_a = ufc_a.default_cell_integral.get();
@@ -91,11 +95,15 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
 
   // Assemble over cells
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell
-    ufc_a.update(*cell);
-    ufc_L.update(*cell);
+    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_cell_data(ufc_cell);
+    ufc_a.update(*cell, vertex_coordinates, ufc_cell);
+    ufc_L.update(*cell, vertex_coordinates, ufc_cell);
 
     // Get local-to-global dof maps for cell
     const std::vector<dolfin::la_index>& dofs_a0
@@ -116,12 +124,12 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     // Tabulate A and b on cell
     integral_a->tabulate_tensor(A.data(),
                                 ufc_a.w(),
-                                &ufc_a.cell.vertex_coordinates[0],
-                                ufc_a.cell.orientation);
+                                vertex_coordinates.data(),
+                                ufc_cell.orientation);
     integral_L->tabulate_tensor(b.data(),
                                 ufc_L.w(),
-                                &ufc_L.cell.vertex_coordinates[0],
-                                ufc_L.cell.orientation);
+                                vertex_coordinates.data(),
+                                ufc_cell.orientation);
 
     // Solve local problem
     x_local = A.partialPivLu().solve(b);

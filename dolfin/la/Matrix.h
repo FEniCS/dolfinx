@@ -26,13 +26,14 @@
 #define __MATRIX_H
 
 #include <boost/tuple/tuple.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
 namespace dolfin
 {
 
+  class GenericVector;
   class TensorLayout;
 
   /// This class provides the default DOLFIN matrix class,
@@ -64,6 +65,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout)
     { matrix->init(tensor_layout); }
 
+    /// Return true if matrix is empty
+    virtual bool empty() const
+    { return matrix->empty(); }
+
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const
     { return matrix->size(dim); }
@@ -81,6 +86,10 @@ namespace dolfin
     virtual void apply(std::string mode)
     { matrix->apply(mode); }
 
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const
+    { return matrix->mpi_comm(); }
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const
     { return "<Matrix wrapper of " + matrix->str(verbose) + ">"; }
@@ -88,17 +97,17 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const
+    virtual std::shared_ptr<GenericMatrix> copy() const
     {
-      boost::shared_ptr<Matrix> A(new Matrix(*this));
+      std::shared_ptr<Matrix> A(new Matrix(*this));
       return A;
     }
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
     /// case, size and layout are important.
-    virtual void resize(GenericVector& y, std::size_t dim) const
-    { matrix->resize(y, dim); }
+    virtual void init_vector(GenericVector& y, std::size_t dim) const
+    { matrix->init_vector(y, dim); }
 
     /// Get block of values
     virtual void get(double* block,
@@ -192,10 +201,10 @@ namespace dolfin
     virtual GenericMatrix* instance()
     { return matrix.get(); }
 
-    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
+    virtual std::shared_ptr<const LinearAlgebraObject> shared_instance() const
     { return matrix; }
 
-    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
+    virtual std::shared_ptr<LinearAlgebraObject> shared_instance()
     { return matrix; }
 
     //--- Special Matrix functions ---
@@ -207,7 +216,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    boost::shared_ptr<GenericMatrix> matrix;
+    std::shared_ptr<GenericMatrix> matrix;
 
   };
 

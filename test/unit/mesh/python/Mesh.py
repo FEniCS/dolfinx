@@ -33,9 +33,8 @@ from dolfin import *
 class MeshConstruction(unittest.TestCase):
 
     def setUp(self):
-        if MPI.num_processes() == 1:
-            self.interval = UnitIntervalMesh(10)
 
+        self.interval = UnitIntervalMesh(10)
         if has_cgal():
             self.circle = CircleMesh(Point(0.0, 0.0), 1.0, 0.1)
         self.square = UnitSquareMesh(5, 5)
@@ -45,8 +44,7 @@ class MeshConstruction(unittest.TestCase):
 
     def testUFLCell(self):
         import ufl
-        if MPI.num_processes() == 1:
-            self.assertEqual(ufl.interval, self.interval.ufl_cell())
+        self.assertEqual(ufl.interval, self.interval.ufl_cell())
         if has_cgal():
             self.assertEqual(ufl.triangle, self.circle.ufl_cell())
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
@@ -54,20 +52,70 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
 
-if MPI.num_processes() == 1:
-    class SimpleShapes(unittest.TestCase):
+    def testUFLDomain(self):
+        import ufl
+        def _check_ufl_domain(mesh):
+            domain = mesh.ufl_domain()
+            self.assertEqual(mesh.geometry().dim(), domain.geometric_dimension())
+            self.assertEqual(mesh.topology().dim(), domain.topological_dimension())
+            self.assertTrue(mesh.ufl_cell() == domain.cell())
+            self.assertTrue(str(mesh.id()) in domain.label())
 
-        def testUnitSquareMesh(self):
-            """Create mesh of unit square."""
-            mesh = UnitSquareMesh(5, 7)
-            self.assertEqual(mesh.num_vertices(), 48)
-            self.assertEqual(mesh.num_cells(), 70)
+        _check_ufl_domain(self.interval)
+        if has_cgal():
+            _check_ufl_domain(self.circle)
+        _check_ufl_domain(self.square)
+        _check_ufl_domain(self.rectangle)
+        _check_ufl_domain(self.cube)
+        _check_ufl_domain(self.box)
 
-        def testUnitCubeMesh(self):
-            """Create mesh of unit cube."""
-            mesh = UnitCubeMesh(5, 7, 9)
-            self.assertEqual(mesh.num_vertices(), 480)
-            self.assertEqual(mesh.num_cells(), 1890)
+class SimpleShapes(unittest.TestCase):
+
+    def testUnitSquareMesh(self):
+        """Create mesh of unit square."""
+        mesh = UnitSquareMesh(5, 7)
+        self.assertEqual(mesh.size_global(0), 48)
+        self.assertEqual(mesh.size_global(2), 70)
+
+    def testUnitSquareMeshDistributed(self):
+        """Create mesh of unit square."""
+        mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
+        self.assertEqual(mesh.size_global(0), 48)
+        self.assertEqual(mesh.size_global(2), 70)
+        if has_petsc4py():
+            import petsc4py
+            self.assertTrue(isinstance(mpi_comm_world(), petsc4py.PETSc.Comm))
+            self.assertTrue(isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm))
+            self.assertEqual(mesh.mpi_comm(), mpi_comm_world())
+
+    def testUnitSquareMeshLocal(self):
+        """Create mesh of unit square."""
+        mesh = UnitSquareMesh(mpi_comm_self(), 5, 7)
+        self.assertEqual(mesh.num_vertices(), 48)
+        self.assertEqual(mesh.num_cells(), 70)
+        if has_petsc4py():
+            import petsc4py
+            self.assertTrue(isinstance(mpi_comm_self(), petsc4py.PETSc.Comm))
+            self.assertTrue(isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm))
+            self.assertEqual(mesh.mpi_comm(), mpi_comm_self())
+
+    def testUnitCubeMesh(self):
+        """Create mesh of unit cube."""
+        mesh = UnitCubeMesh(5, 7, 9)
+        self.assertEqual(mesh.size_global(0), 480)
+        self.assertEqual(mesh.size_global(3), 1890)
+
+    def testUnitCubeMeshDistributed(self):
+        """Create mesh of unit cube."""
+        mesh = UnitCubeMesh(mpi_comm_world(), 5, 7, 9)
+        self.assertEqual(mesh.size_global(0), 480)
+        self.assertEqual(mesh.size_global(3), 1890)
+
+    def testUnitCubeMeshDistributedLocal(self):
+        """Create mesh of unit cube."""
+        mesh = UnitCubeMesh(mpi_comm_self(), 5, 7, 9)
+        self.assertEqual(mesh.num_vertices(), 480)
+        self.assertEqual(mesh.num_cells(), 1890)
 
 class MeshRefinement(unittest.TestCase):
 
@@ -102,7 +150,7 @@ class BoundaryExtraction(unittest.TestCase):
             self.assertEqual(b1.num_vertices(), 0)
             self.assertEqual(b1.num_cells(), 0)
 
-if MPI.num_processes() == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class MeshFunctions(unittest.TestCase):
 
         def setUp(self):
@@ -159,7 +207,7 @@ if MPI.num_processes() == 1:
 
 
 # FIXME: Mesh IO tests should be in io test directory
-if MPI.num_processes() == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class InputOutput(unittest.TestCase):
 
         def testMeshXML2D(self):
@@ -180,7 +228,7 @@ if MPI.num_processes() == 1:
             file >> mesh_in
             self.assertEqual(mesh_in.num_vertices(), 64)
 
-        def testMeshFunction(self):
+        def xtestMeshFunction(self):
             """Write and read mesh function to/from file"""
             mesh = UnitSquareMesh(1, 1)
             f = MeshFunction('int', mesh, 0)
@@ -194,6 +242,7 @@ if MPI.num_processes() == 1:
             file >> g
             for v in vertices(mesh):
                 self.assertEqual(f[v], g[v])
+
 class PyCCInterface(unittest.TestCase):
 
     def testGetGeometricalDimension(self):
@@ -201,7 +250,7 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquareMesh(5, 5)
         self.assertEqual(mesh.geometry().dim(), 2)
 
-    if MPI.num_processes() == 1:
+    if MPI.size(mpi_comm_world()) == 1:
         def testGetCoordinates(self):
             """Get coordinates of vertices"""
             mesh = UnitSquareMesh(5, 5)
@@ -210,10 +259,10 @@ class PyCCInterface(unittest.TestCase):
         def testGetCells(self):
             """Get cells of mesh"""
             mesh = UnitSquareMesh(5, 5)
-            self.assertEqual(MPI.sum(len(mesh.cells())), 50)
+            self.assertEqual(MPI.sum(mesh.mpi_comm(), len(mesh.cells())), 50)
 
 
-if MPI.num_processes() == 1:
+if MPI.size(mpi_comm_world()) == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):
@@ -294,7 +343,7 @@ class MeshOrientations(unittest.TestCase):
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)
 
-        if MPI.num_processes() == 1:
+        if MPI.size(mesh.mpi_comm()) == 1:
             mesh = UnitSquareMesh(2, 2)
             mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
             reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))

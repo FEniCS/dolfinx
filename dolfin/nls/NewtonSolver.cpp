@@ -65,17 +65,19 @@ Parameters NewtonSolver::default_parameters()
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver()
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _A(new Matrix), _dx(new Vector), _b(new Vector)
+    _residual0(0.0), _A(new Matrix), _dx(new Vector), _b(new Vector),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   // Set default parameters
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
+NewtonSolver::NewtonSolver(std::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
     _residual0(0.0), _solver(solver), _A(factory.create_matrix()),
-    _dx(factory.create_vector()), _b(factory.create_vector())
+    _dx(factory.create_vector()), _b(factory.create_vector()),
+    _mpi_comm(MPI_COMM_WORLD)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -106,7 +108,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   const std::string solver_type = parameters["linear_solver"];
   const std::string pc_type = parameters["preconditioner"];
   if (!_solver)
-    _solver = boost::shared_ptr<LinearSolver>(new LinearSolver(solver_type, pc_type));
+    _solver = std::shared_ptr<LinearSolver>(new LinearSolver(solver_type, pc_type));
   dolfin_assert(_solver);
 
   // Set parameters for linear solver
@@ -194,7 +196,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
   if (newton_converged)
   {
-    if (dolfin::MPI::process_number() == 0)
+    if (dolfin::MPI::rank(_mpi_comm) == 0)
     {
      info("Newton solver finished in %d iterations and %d linear solver iterations.",
           _newton_iteration, krylov_iterations);
@@ -207,7 +209,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     {
       dolfin_error("NewtonSolver.cpp",
                    "solve nonlinear system with NewtonSolver",
-                   "Newton solver did not converge. Bummer");
+                   "Newton solver did not converge");
     }
     else
       warning("Newton solver did not converge.");
@@ -255,7 +257,7 @@ bool NewtonSolver::converged(const GenericVector& r,
   const double relative_residual = _residual/_residual0;
 
   // Output iteration number and residual
-  if (report && dolfin::MPI::process_number() == 0)
+  if (report && dolfin::MPI::rank(_mpi_comm) == 0)
   {
     info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
          newton_iteration, _residual, atol, relative_residual, rtol);

@@ -1,7 +1,8 @@
-"""This demo program uses of the interface to SNES solver for
- variational inequalities to solve a contact mechanics problems in
- FEnics.  The example considers a heavy hyperelastic circle in a box
- of the same size"""
+"""This demo program uses the interface to SNES solver for variational
+ inequalities to solve a contact mechanics problems in FEniCS.  The
+ example considers a heavy hyperelastic circle in a box of the same
+ size"""
+
 # Copyright (C) 2012 Corrado Maurini
 #
 # This file is part of DOLFIN.
@@ -22,7 +23,7 @@
 # Modified by Corrado Maurini 2013
 #
 # First added:  2012-09-03
-# Last changed: 2013-11-21
+# Last changed: 2014-02-21
 #
 from dolfin import *
 
@@ -43,7 +44,7 @@ u  = Function(V)                 # Displacement from previous iteration
 B  = Constant((0.0, -0.05))      # Body force per unit volume
 
 # Kinematics
-I = Identity(V.cell().d)    # Identity tensor
+I = Identity(u.geometric_dimension())  # Identity tensor
 F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 
@@ -72,7 +73,7 @@ J = derivative(F, u, du)
 tol = mesh.hmin()
 def symmetry_line(x):
     return abs(x[0]) < DOLFIN_EPS
-bc = DirichletBC(V.sub(0), 0., symmetry_line,method="pointwise")
+bc = DirichletBC(V.sub(0), 0., symmetry_line, method="pointwise")
 
 # The displacement u must be such that the current configuration x+u
 # remains in the box [xmin,xmax] x [umin,ymax]

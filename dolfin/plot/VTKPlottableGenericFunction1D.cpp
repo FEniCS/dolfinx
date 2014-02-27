@@ -37,7 +37,7 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction1D::VTKPlottableGenericFunction1D(boost::shared_ptr<const Function> function)
+VTKPlottableGenericFunction1D::VTKPlottableGenericFunction1D(std::shared_ptr<const Function> function)
   : VTKPlottableGenericFunction(function),
     _actor(vtkSmartPointer<vtkXYPlotActor>::New())
 {
@@ -45,8 +45,8 @@ VTKPlottableGenericFunction1D::VTKPlottableGenericFunction1D(boost::shared_ptr<c
   // Do nothing
 }
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction1D::VTKPlottableGenericFunction1D(boost::shared_ptr<const Expression> expression,
-                                                             boost::shared_ptr<const Mesh> mesh)
+VTKPlottableGenericFunction1D::VTKPlottableGenericFunction1D(std::shared_ptr<const Expression> expression,
+                                                             std::shared_ptr<const Mesh> mesh)
   : VTKPlottableGenericFunction(expression, mesh),
     _actor(vtkSmartPointer<vtkXYPlotActor>::New())
 {
@@ -86,7 +86,7 @@ void VTKPlottableGenericFunction1D::init_pipeline(const Parameters& p)
   _actor->GetPosition2Coordinate()->SetValue(1, 1, 0);
   _actor->SetBorder(30);
 
-  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
+  #if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6))
   _actor->SetReferenceYValue(0.0);
   #endif
   _actor->SetAdjustYLabels(false); // Use the ranges set in rescale()
@@ -120,7 +120,7 @@ bool VTKPlottableGenericFunction1D::is_compatible(const Variable &var) const
   return VTKPlottableGenericFunction::is_compatible(var);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction1D::update(boost::shared_ptr<const Variable> var,
+void VTKPlottableGenericFunction1D::update(std::shared_ptr<const Variable> var,
                                            const Parameters& p, int framecounter)
 {
   VTKPlottableGenericFunction::update(var, p, framecounter);
@@ -134,7 +134,7 @@ void VTKPlottableGenericFunction1D::rescale(double range[2],
                                             const Parameters& p)
 {
   _actor->SetYRange(range);
-  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
+  #if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6))
   if (range[0] < 0 && range[1] > 0)
     _actor->ShowReferenceYLineOn();
   else

@@ -26,7 +26,7 @@
 #ifdef HAS_PETSC
 
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <petscksp.h>
 #include <petscpc.h>
 #include "GenericLUSolver.h"
@@ -54,17 +54,17 @@ namespace dolfin
     PETScLUSolver(std::string method="default");
 
     /// Constructor
-    PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
+    PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
                   std::string method="default");
 
     /// Destructor
     ~PETScLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const PETScMatrix> A);
+    void set_operator(std::shared_ptr<const PETScMatrix> A);
 
     /// Get operator (matrix)
     const GenericLinearOperator& get_operator() const;
@@ -99,7 +99,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return PETSc KSP pointer
-    boost::shared_ptr<KSP> ksp() const;
+    KSP ksp() const;
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -142,10 +142,10 @@ namespace dolfin
     void pre_report(const PETScMatrix& A) const;
 
     /// PETSc solver pointer
-    boost::shared_ptr<KSP> _ksp;
+    KSP _ksp;
 
     // Operator (the matrix)
-    boost::shared_ptr<const PETScMatrix> _A;
+    std::shared_ptr<const PETScMatrix> _A;
 
   };
 

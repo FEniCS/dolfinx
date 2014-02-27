@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-13
+// Last changed: 2014-02-10
 
 #include <cmath>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <Eigen/Dense>
 
 #include <dolfin/log/log.h>
@@ -43,7 +43,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme) :
+PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme) :
   Variable("PointIntegralSolver", "unamed"),
   _scheme(scheme), _vertex_map(), _ufcs(), _coefficient_index(),
   _retabulate_J(true)
@@ -95,7 +95,7 @@ void PointIntegralSolver::step(double dt)
   {
     for (unsigned int j = 0; j < _scheme->stage_forms()[i].size(); j++)
     {
-      const std::vector<boost::shared_ptr<const GenericFunction> >
+      const std::vector<std::shared_ptr<const GenericFunction> >
 	coefficients = _scheme->stage_forms()[i][j]->coefficients();
 
       for (unsigned int k = 0; k < coefficients.size(); ++k)
@@ -109,21 +109,21 @@ void PointIntegralSolver::step(double dt)
   // Local to global dofs used when solution is fanned out to global vector
   std::vector<dolfin::la_index> local_to_global_dofs(N);
 
-  //const std::size_t num_threads = dolfin::parameters["num_threads"];
-
   // Iterate over vertices
   //Progress p("Solving local point integral problems", mesh.num_vertices());
 
   t_step_stage.stop();
 
-  //#pragma omp parallel for schedule(guided, 20) private(_J_L, _J_U, _J, local_to_global_dofs, local_to_local_dofs, _ufcs)
-  for (std::size_t vert_ind=0; vert_ind< mesh.num_vertices(); ++vert_ind)
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
+  for (std::size_t vert_ind = 0; vert_ind < mesh.num_vertices(); ++vert_ind)
   {
-
     Timer t_vert("Step: update vert");
 
     // Cell containing vertex
     const Cell cell(mesh, _vertex_map[vert_ind].first);
+    cell.get_vertex_coordinates(vertex_coordinates);
+    cell.get_cell_data(ufc_cell);
 
     // Get all dofs for cell
     // FIXME: Shold we include logics about empty dofmaps?
@@ -137,7 +137,7 @@ void PointIntegralSolver::step(double dt)
     dofmap.tabulate_entity_dofs(local_to_local_dofs, 0, local_vert);
 
     // Fill local to global dof map
-    for (unsigned int row=0; row<N; row++)
+    for (unsigned int row = 0; row < N; row++)
       local_to_global_dofs[row] = cell_dofs[local_to_local_dofs[row]];
 
     t_vert.stop();
@@ -159,13 +159,14 @@ void PointIntegralSolver::step(double dt)
 
 	// Update to current cell
 	Timer t_expl_update("Explicit stage: update_cell");
-	_ufcs[stage][0]->update(cell);
+	_ufcs[stage][0]->update(cell, vertex_coordinates, ufc_cell);
 	t_expl_update.stop();
 
 	// Tabulate cell tensor
 	Timer t_expl_tt("Explicit stage: tabulate_tensor");
-	integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(),
-				 &_ufcs[stage][0]->cell.vertex_coordinates[0],
+	integral.tabulate_tensor(_ufcs[stage][0]->A.data(),
+                                 _ufcs[stage][0]->w(),
+				 vertex_coordinates.data(),
 				 local_vert);
 	t_expl_tt.stop();
 
@@ -182,7 +183,7 @@ void PointIntegralSolver::step(double dt)
 	Timer t_expl_set("Explicit stage: set");
 	_scheme->stage_solutions()[stage]->vector()->set(
           local_stage_solutions[stage].data(), N,
-          &local_to_global_dofs[0]);
+          local_to_global_dofs.data());
       }
 
       // or an implicit stage (2 forms)
@@ -229,14 +230,15 @@ void PointIntegralSolver::step(double dt)
 	// Update to current cell. This only need to be done once for
 	// each stage and vertex
 	Timer t_impl_update("Implicit stage: update_cell");
-	_ufcs[stage][0]->update(cell);
-	_ufcs[stage][1]->update(cell);
+	_ufcs[stage][0]->update(cell, vertex_coordinates, ufc_cell);
+	_ufcs[stage][1]->update(cell, vertex_coordinates, ufc_cell);
 	t_impl_update.stop();
 
 	// Tabulate an initial residual solution
 	Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
-	F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(),
-				   &_ufcs[stage][0]->cell.vertex_coordinates[0],
+	F_integral.tabulate_tensor(_ufcs[stage][0]->A.data(),
+                                   _ufcs[stage][0]->w(),
+				   vertex_coordinates.data(),
 				   local_vert);
 	t_impl_tt_F.stop();
 
@@ -262,8 +264,9 @@ void PointIntegralSolver::step(double dt)
 	  {
 	    // Tabulate Jacobian
 	    Timer t_impl_tt_J("Implicit stage: tabulate_tensor (J)");
-	    J_integral.tabulate_tensor(&_ufcs[stage][1]->A[0], _ufcs[stage][1]->w(),
-				       &_ufcs[stage][1]->cell.vertex_coordinates[0],
+	    J_integral.tabulate_tensor(_ufcs[stage][1]->A.data(),
+                                       _ufcs[stage][1]->w(),
+				       vertex_coordinates.data(),
 				       local_vert);
 	    t_impl_tt_J.stop();
 
@@ -274,8 +277,8 @@ void PointIntegralSolver::step(double dt)
 	      for (unsigned int col=0; col < N; col++)
               {
 		_J(row, col)
-                  = _ufcs[stage][1]->A[local_to_local_dofs[row]*dof_offset*N+
-                                       local_to_local_dofs[col]];
+                  = _ufcs[stage][1]->A[local_to_local_dofs[row]*dof_offset*N
+                                       + local_to_local_dofs[col]];
               }
             }
 	    t_impl_update_J.stop();
@@ -325,9 +328,10 @@ void PointIntegralSolver::step(double dt)
           }
 	  // Tabulate new residual
 	  t_impl_tt_F.start();
-	  F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(),
-				     &_ufcs[stage][0]->cell.vertex_coordinates[0],
-				     local_vert);
+	  F_integral.tabulate_tensor(_ufcs[stage][0]->A.data(),
+                                     _ufcs[stage][0]->w(),
+                                     vertex_coordinates.data(),
+                                     local_vert);
 	  t_impl_tt_F.stop();
 
 	  t_impl_update_F.start();
@@ -388,6 +392,7 @@ void PointIntegralSolver::step(double dt)
       }
     }
 
+
     Timer t_vert_axpy("Step: AXPY solution");
 
     // Get local u0 solution and add the stage derivatives
@@ -405,8 +410,16 @@ void PointIntegralSolver::step(double dt)
     _scheme->solution()->vector()->set(u0.data(), local_to_global_dofs.size(),
 				       &local_to_global_dofs[0]);
 
+    // FIXME: This should not be inside a loop - very expensive
+    // Apply changes to vector
+    _scheme->solution()->vector()->apply("insert");
+
     //p++;
   }
+
+  // Apply changes to vector
+  for (unsigned int stage = 0; stage < num_stages; stage++)
+    _scheme->stage_solutions()[stage]->vector()->apply("insert");
 
   // Update time
   *_scheme->t() = t0 + dt;
@@ -447,7 +460,7 @@ void PointIntegralSolver::step_interval(double t0, double t1, double dt)
 void PointIntegralSolver::_check_forms()
 {
   // Iterate over stage forms and check they include point integrals
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms
+  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
     = _scheme->stage_forms();
   for (unsigned int i=0; i < stage_forms.size(); i++)
   {
@@ -482,7 +495,7 @@ void PointIntegralSolver::_check_forms()
 void PointIntegralSolver::_init()
 {
   // Get stage forms
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms
+  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
     = _scheme->stage_forms();
 
   // Init coefficient index and ufcs
@@ -501,13 +514,13 @@ void PointIntegralSolver::_init()
   for (unsigned int stage = 0; stage < stage_forms.size(); stage++)
   {
     // Create a UFC object for first form
-    _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][0]));
+    _ufcs[stage].push_back(std::make_shared<UFC>(*stage_forms[stage][0]));
 
     //  If implicit stage
     if (stage_forms[stage].size()==2)
     {
       // Create a UFC object for second form
-      _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][1]));
+      _ufcs[stage].push_back(std::make_shared<UFC>(*stage_forms[stage][1]));
 
       // Find coefficient index for each of the two implicit forms
       for (unsigned int i = 0; i < 2; i++)

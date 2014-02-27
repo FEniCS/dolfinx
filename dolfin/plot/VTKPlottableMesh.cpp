@@ -40,7 +40,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkVectorNorm.h>
 
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+#if !((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION < 4))
 #include <vtkLabeledDataMapper.h>
 #include <vtkPointSetToLabelHierarchy.h>
 #endif
@@ -55,7 +55,7 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, std::size_t entity_dim) :
+VTKPlottableMesh::VTKPlottableMesh(std::shared_ptr<const Mesh> mesh, std::size_t entity_dim) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
@@ -65,7 +65,7 @@ VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, std::size
   // Do nothing
 }
 //----------------------------------------------------------------------------
-VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
+VTKPlottableMesh::VTKPlottableMesh(std::shared_ptr<const Mesh> mesh) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
@@ -79,7 +79,7 @@ void VTKPlottableMesh::init_pipeline(const Parameters& p)
 {
   dolfin_assert(_geometryFilter);
 
-  #if VTK_MAJOR_VERSION <= 5
+  #if VTK_MAJOR_VERSION == 5
   _geometryFilter->SetInput(_grid);
   #else
   _geometryFilter->SetInputData(_grid);
@@ -132,11 +132,11 @@ bool VTKPlottableMesh::is_compatible(const Variable &var) const
   return dynamic_cast<const Mesh*>(&var);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var,
+void VTKPlottableMesh::update(std::shared_ptr<const Variable> var,
                               const Parameters& p, int framecounter)
 {
   if (var)
-    _mesh = boost::dynamic_pointer_cast<const Mesh>(var);
+    _mesh = std::dynamic_pointer_cast<const Mesh>(var);
 
   dolfin_assert(_grid);
   dolfin_assert(_full_grid);
@@ -271,7 +271,9 @@ void VTKPlottableMesh::build_id_filter()
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
-  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+  #if ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION < 4))
+  warning("Plotting of vertex labels requires VTK >= 5.4");
+  #else
   // Return actor if already created
   if (!_vertexLabelActor)
   {
@@ -297,8 +299,6 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPoi
     _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();
     _vertexLabelActor->SetMapper(ldm);
   }
-  #else
-  warning("Plotting of vertex labels requires VTK >= 5.4");
   #endif
 
   return _vertexLabelActor;
@@ -306,7 +306,9 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPoi
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
-  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+  #if ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION < 4))
+  warning("Plotting of cell labels requires VTK >= 5.4");
+  #else
   if (!_cellLabelActor)
   {
     build_id_filter();
@@ -328,8 +330,6 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPoint
     _cellLabelActor = vtkSmartPointer<vtkActor2D>::New();
     _cellLabelActor->SetMapper(ldm);
   }
-  #else
-  warning("Plotting of cell labels requires VTK >= 5.4");
   #endif
 
   return _cellLabelActor;
@@ -340,7 +340,7 @@ vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
   if (!_meshActor)
   {
     vtkSmartPointer<vtkGeometryFilter> geomfilter = vtkSmartPointer<vtkGeometryFilter>::New();
-    #if VTK_MAJOR_VERSION <= 5
+    #if VTK_MAJOR_VERSION == 5
     geomfilter->SetInput(_full_grid);
     #else
     geomfilter->SetInputData(_full_grid);
@@ -360,7 +360,7 @@ vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
   return _meshActor;
 }
 //----------------------------------------------------------------------------
-boost::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
+std::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
 {
   return _mesh;
 }
@@ -374,17 +374,16 @@ void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filte
 {
   if (filter)
   {
-    #if VTK_MAJOR_VERSION <= 5
+    #if VTK_MAJOR_VERSION == 5
     filter->SetInput(_grid);
-    _geometryFilter->SetInput(filter->GetOutput());
     #else
     filter->SetInputData(_grid);
-    _geometryFilter->SetInputData(filter->GetOutput());
     #endif
+    _geometryFilter->SetInputConnection(filter->GetOutputPort());
   }
   else
   {
-    #if VTK_MAJOR_VERSION <= 5
+    #if VTK_MAJOR_VERSION == 5
     _geometryFilter->SetInput(_grid);
     #else
     _geometryFilter->SetInputData(_grid);
@@ -394,7 +393,7 @@ void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filte
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------
-VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
+VTKPlottableMesh *dolfin::CreateVTKPlottable(std::shared_ptr<const Mesh> mesh)
 {
   return new VTKPlottableMesh(mesh);
 }
@@ -467,7 +466,7 @@ void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata,
     // Compute norms of vector data
     vtkSmartPointer<vtkVectorNorm>
       norms =vtkSmartPointer<vtkVectorNorm>::New();
-    #if VTK_MAJOR_VERSION <= 5
+    #if VTK_MAJOR_VERSION == 5
     norms->SetInput(_grid);
     #else
     norms->SetInputData(_grid);

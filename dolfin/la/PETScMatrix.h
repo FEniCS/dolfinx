@@ -31,8 +31,10 @@
 
 #include <map>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <petscmat.h>
+#include <petscsys.h>
+
 #include "GenericMatrix.h"
 #include "PETScBaseMatrix.h"
 
@@ -57,8 +59,8 @@ namespace dolfin
     /// Create empty matrix
     PETScMatrix(bool use_gpu=false);
 
-    /// Create matrix from given PETSc Mat pointer
-    explicit PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu=false);
+    /// Create a wrapper around a PETSc Mat pointer
+    explicit PETScMatrix(Mat A);
 
     /// Copy constructor
     PETScMatrix(const PETScMatrix& A);
@@ -70,6 +72,9 @@ namespace dolfin
 
     /// Initialize zero tensor using tensor layout
     void init(const TensorLayout& tensor_layout);
+
+    /// Return true if empty
+    bool empty() const;
 
     /// Return size of given dimension
     std::size_t size(std::size_t dim) const
@@ -90,26 +95,26 @@ namespace dolfin
     ///   flush  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
     virtual void apply(std::string mode);
 
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const;
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface --
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const;
+    virtual std::shared_ptr<GenericMatrix> copy() const;
 
-    /// Resize matrix to M x N
-    //virtual void resize(std::size_t M, std::size_t N);
-
-    /// Resize vector z to be compatible with the matrix-vector product
+    /// Intialize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, std::size_t dim) const
-    { PETScBaseMatrix::resize(z, dim); }
+    virtual void init_vector(GenericVector& z, std::size_t dim) const
+    { PETScBaseMatrix::init_vector(z, dim); }
 
     /// Get block of values
     virtual void get(double* block,

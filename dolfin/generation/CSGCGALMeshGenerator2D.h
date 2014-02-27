@@ -39,7 +39,6 @@ namespace dolfin
   public :
 
     CSGCGALMeshGenerator2D(const CSGGeometry& geometry);
-    //CSGCGALMeshGenerator2D(const std::vector<boost::shared_ptr<const CSGGeometry> >& subdomains);
 
     ~CSGCGALMeshGenerator2D();
 
@@ -52,7 +51,7 @@ namespace dolfin
       p.add("mesh_resolution", 64);
       p.add("triangle_shape_bound", 0.125);
       p.add("cell_size", 0.25);
-      
+
       // shorter edges in the domain will be collapsed before meshing
       p.add("edge_minimum", 10e-5);
 
@@ -60,7 +59,11 @@ namespace dolfin
     }
 
   private:
-    const CSGGeometry &geometry;
+
+    #ifdef HAS_CGAL
+    const CSGGeometry& geometry;
+    #endif
+
   };
 
 }

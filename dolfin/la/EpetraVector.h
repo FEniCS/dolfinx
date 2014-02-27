@@ -30,7 +30,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
@@ -61,16 +61,16 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    EpetraVector(std::string type="global");
+    EpetraVector();
 
     /// Create vector of size N
-    explicit EpetraVector(std::size_t N, std::string type="global");
+    EpetraVector(MPI_Comm comm, std::size_t N);
 
     /// Copy constructor
     EpetraVector(const EpetraVector& x);
 
     /// Create vector view from given Epetra_FEVector pointer
-    explicit EpetraVector(boost::shared_ptr<Epetra_FEVector> vector);
+    explicit EpetraVector(std::shared_ptr<Epetra_FEVector> vector);
 
     /// Create vector from given Epetra_BlockMap
     explicit EpetraVector(const Epetra_BlockMap& map);
@@ -86,23 +86,29 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
 
+    /// Return MPI communicator
+    virtual MPI_Comm mpi_comm() const;
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
 
     /// Return copy of vector
-    virtual boost::shared_ptr<GenericVector> copy() const;
+    virtual std::shared_ptr<GenericVector> copy() const;
 
-    /// Resize vector to size N
-    virtual void resize(std::size_t N);
+    /// Initialize vector to size N
+    virtual void init(MPI_Comm comm, std::size_t N);
 
-    /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range);
+    /// Initialize vector with given ownership range
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range);
 
-    /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices);
+    /// Initialize vector with given ownership range and with ghost
+    /// values
+    virtual void init(MPI_Comm comm,
+                      std::pair<std::size_t, std::size_t> range,
+                      const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -210,22 +216,25 @@ namespace dolfin
 
     //--- Special Epetra functions ---
 
-    /// Reset Epetra_FEVector
-    void reset(const Epetra_BlockMap& map);
+    /// Initialize Epetra_FEVector with Epetra map
+    void init(const Epetra_BlockMap& map);
 
     /// Return Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_FEVector> vec() const;
+    std::shared_ptr<Epetra_FEVector> vec() const;
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
 
+    // Bring init function from GenericVector into scope
+    using GenericTensor::init;
+
   private:
 
     // Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_FEVector> _x;
+    std::shared_ptr<Epetra_FEVector> _x;
 
     // Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_Vector> x_ghost;
+    std::shared_ptr<Epetra_Vector> x_ghost;
 
     // Global-to-local map for ghost values
     boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
@@ -233,9 +242,6 @@ namespace dolfin
     // Cache of off-process 'set' values (versus 'add') to be
     // communicated
     boost::unordered_map<std::size_t, double> off_process_set_values;
-
-    // Local/global vector
-    const std::string _type;
 
   };
 

@@ -38,7 +38,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh, 
+std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
                                             const BoundaryMesh& new_boundary)
 {
   // Now this works regardless of reorder_dofs_serial value
@@ -51,8 +51,8 @@ boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   const std::size_t d = mesh.geometry().dim();
 
   // Choose form and function space
-  boost::shared_ptr<FunctionSpace> V;
-  boost::shared_ptr<Form> form;
+  std::shared_ptr<FunctionSpace> V;
+  std::shared_ptr<Form> form;
   switch (D)
   {
   case 1:
@@ -138,7 +138,7 @@ boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
                          ? "amg" : "default");
 
   // Displacement solution wrapped in Expression subclass MeshDisplacement
-  boost::shared_ptr<MeshDisplacement> u(new MeshDisplacement(mesh));
+  std::shared_ptr<MeshDisplacement> u(new MeshDisplacement(mesh));
 
   // RHS vector
   Vector b(*(*u)[0].vector());
@@ -147,7 +147,7 @@ boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   for (std::size_t dim = 0; dim < d; dim++)
   {
     // Get solution vector
-    boost::shared_ptr<GenericVector> x = (*u)[dim].vector();
+    std::shared_ptr<GenericVector> x = (*u)[dim].vector();
 
     if (dim > 0)
       b.zero();
@@ -163,9 +163,8 @@ boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
     // Solve system
     solve(A, *x, b, "cg", prec);
 
-    // PETScVector::update_ghost_values() segfaults in serial - is it a BUG?
-    if (MPI::num_processes() > 1)
-      x->update_ghost_values();
+    // Update_ghost_values()
+    x->update_ghost_values();
 
     // Get displacement
     std::vector<double> _displacement(num_vertices);

@@ -29,7 +29,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericVector.h"
@@ -55,16 +56,16 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit uBLASVector(std::string type="global");
+    uBLASVector();
 
     /// Create vector of size N
-    uBLASVector(std::size_t N, std::string type="global");
+    uBLASVector(std::size_t N);
 
     /// Copy constructor
     uBLASVector(const uBLASVector& x);
 
     /// Construct vector from a ublas_vector
-    explicit uBLASVector(boost::shared_ptr<ublas_vector> x);
+    explicit uBLASVector(std::shared_ptr<ublas_vector> x);
 
     /// Destructor
     virtual ~uBLASVector();
@@ -77,22 +78,70 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
 
+    /// Return MPI communicator
+    virtual MPI_Comm mpi_comm() const
+    { return MPI_COMM_SELF; }
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
 
     /// Create copy of tensor
-    virtual boost::shared_ptr<GenericVector> copy() const;
+    virtual std::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
-    virtual void resize(std::size_t N);
+    virtual void init(MPI_Comm comm, std::size_t N)
+    {
+      if (!empty())
+      {
+        dolfin_error("uBLASVector.cpp",
+                     "calling uBLASVector::init(...)",
+                     "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
+      }
+      resize(comm, N);
+    }
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<std::size_t, std::size_t> range);
+    virtual void init(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range)
+    {
+      if (!empty())
+      {
+        dolfin_error("uBLASVector.cpp",
+                     "calling uBLASVector::init(...)",
+                     "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
+      }
+      resize(comm, range);
+    }
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<std::size_t, std::size_t> range,
+    virtual void init(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
+                        const std::vector<la_index>& ghost_indices)
+    {
+      if (!empty())
+      {
+        dolfin_error("uBLASVector.cpp",
+                     "calling uBLASVector::init(...)",
+                     "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
+      }
+      resize(comm, range, ghost_indices);
+    }
+
+    // Bring init function from GenericVector into scope
+    using GenericVector::init;
+
+    /// Resize vector to size N
+    virtual void resize(MPI_Comm comm, std::size_t N);
+
+    /// Resize vector with given ownership range
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range);
+
+    /// Resize vector with given ownership range and with ghost values
+    virtual void resize(MPI_Comm comm,
+                        std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
@@ -232,7 +281,7 @@ namespace dolfin
   private:
 
     // Smart pointer to uBLAS vector object
-    boost::shared_ptr<ublas_vector> _x;
+    std::shared_ptr<ublas_vector> _x;
 
   };
 

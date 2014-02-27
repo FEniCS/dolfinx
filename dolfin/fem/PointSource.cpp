@@ -21,11 +21,11 @@
 #include <boost/scoped_array.hpp>
 
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
 #include "PointSource.h"
@@ -42,7 +42,7 @@ PointSource::PointSource(const FunctionSpace& V,
   check_is_scalar(V);
 }
 //-----------------------------------------------------------------------------
-PointSource::PointSource(boost::shared_ptr<const FunctionSpace> V,
+PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
                          const Point& p,
                          double magnitude)
   : _V(V), _p(p), _magnitude(magnitude)
@@ -67,23 +67,23 @@ void PointSource::apply(GenericVector& b)
   // functions are continuous but may give unexpected results for DG.
   dolfin_assert(_V->mesh());
   const Mesh& mesh = *_V->mesh();
-  boost::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int cell_index = tree->compute_first_entity_collision(_p);
 
   // Check that we found the point on at least one processor
   int num_found = 0;
   if (cell_index == std::numeric_limits<unsigned int>::max())
-    num_found = MPI::sum(0);
+    num_found = MPI::sum(mesh.mpi_comm(), 0);
   else
-    num_found = MPI::sum(1);
-  if (MPI::process_number() == 0 && num_found == 0)
+    num_found = MPI::sum(mesh.mpi_comm(), 1);
+  if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
   {
     dolfin_error("PointSource.cpp",
                  "apply point source to vector",
                  "The point is outside of the domain (%s)", _p.str().c_str());
   }
 
-  // Only continue if we found the point
+  // Return if point not found
   if (cell_index == std::numeric_limits<unsigned int>::max())
   {
     b.apply("add");
@@ -91,8 +91,16 @@ void PointSource::apply(GenericVector& b)
   }
 
   // Create cell
-  Cell cell(mesh, static_cast<std::size_t>(cell_index));
-  UFCCell ufc_cell(cell);
+  const Cell cell(mesh, static_cast<std::size_t>(cell_index));
+
+  // Vertex coordinates
+  const std::size_t gdim = mesh.geometry().dim();
+  const std::size_t num_vertices = cell.num_entities(0);
+  std::vector<double> vertex_coordinates(gdim* num_vertices);
+  const unsigned int* vertices = cell.entities(0);
+  for (std::size_t i = 0; i < num_vertices; i++)
+    for (std::size_t j = 0; j < gdim; j++)
+      vertex_coordinates[i*gdim + j] = mesh.geometry().x(vertices[i])[j];
 
   // Evaluate all basis functions at the point()
   dolfin_assert(_V->element());
@@ -101,8 +109,8 @@ void PointSource::apply(GenericVector& b)
   const int cell_orientation = 0;
   _V->element()->evaluate_basis_all(values.data(),
                                    _p.coordinates(),
-                                   &ufc_cell.vertex_coordinates[0],
-                                   cell_orientation);
+                                    vertex_coordinates.data(),
+                                    cell_orientation);
 
   // Scale by magnitude
   for (std::size_t i = 0; i < _V->element()->space_dimension(); i++)
@@ -110,10 +118,12 @@ void PointSource::apply(GenericVector& b)
 
   // Compute local-to-global mapping
   dolfin_assert(_V->dofmap());
-  const std::vector<dolfin::la_index>& dofs = _V->dofmap()->cell_dofs(cell.index());
+  const std::vector<dolfin::la_index>& dofs
+    = _V->dofmap()->cell_dofs(cell.index());
 
   // Add values to vector
-  dolfin_assert(_V->element()->space_dimension() == _V->dofmap()->cell_dimension(cell.index()));
+  dolfin_assert(_V->element()->space_dimension()
+                == _V->dofmap()->cell_dimension(cell.index()));
   b.add(values.data(), _V->element()->space_dimension(), dofs.data());
   b.apply("add");
 }

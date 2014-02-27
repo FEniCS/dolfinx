@@ -68,7 +68,13 @@ macro (RESOLVE_LIBRARIES LIBS LINK_LINE)
         set (token ${libname})
       endif (token MATCHES "^/")
       set (_lib "NOTFOUND" CACHE FILEPATH "Cleared" FORCE)
-      find_library (_lib ${token} HINTS ${_directory_list} ${_root})
+      # First search only the HINTS paths, then (if nothing was found) CMake's
+      # default paths.
+      find_library (_lib ${token}
+                    HINTS ${_directory_list}
+                    NO_DEFAULT_PATH
+                    ${_root})
+      find_library (_lib ${token} ${_root})
       if (_lib)
 	string (REPLACE "//" "/" _lib ${_lib})
         list (APPEND _libs_found ${_lib})

@@ -52,14 +52,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
-                           boost::shared_ptr<Form> L_star,
-                           boost::shared_ptr<Form> residual,
-                           boost::shared_ptr<Form> a_R_T,
-                           boost::shared_ptr<Form> L_R_T,
-                           boost::shared_ptr<Form> a_R_dT,
-                           boost::shared_ptr<Form> L_R_dT,
-                           boost::shared_ptr<Form> eta_T,
+ErrorControl::ErrorControl(std::shared_ptr<Form> a_star,
+                           std::shared_ptr<Form> L_star,
+                           std::shared_ptr<Form> residual,
+                           std::shared_ptr<Form> a_R_T,
+                           std::shared_ptr<Form> L_R_T,
+                           std::shared_ptr<Form> a_R_dT,
+                           std::shared_ptr<Form> L_R_dT,
+                           std::shared_ptr<Form> eta_T,
                            bool is_linear)
   : Hierarchical<ErrorControl>(*this)
 {
@@ -94,7 +94,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
-  const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
+  const std::vector<std::shared_ptr<const DirichletBC> > bcs)
 {
   // Compute discrete dual approximation
   dolfin_assert(_a_star);
@@ -115,7 +115,7 @@ double ErrorControl::estimate_error(const Function& u,
   // otherwise).
   if (_is_linear)
   {
-    boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
+    std::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
     _residual->set_coefficient(num_coeffs - 2, _u);
   }
 
@@ -128,18 +128,18 @@ double ErrorControl::estimate_error(const Function& u,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_dual(Function& z,
-   const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
+   const std::vector<std::shared_ptr<const DirichletBC> > bcs)
 {
   log(PROGRESS, "Solving dual problem.");
 
   // Create dual boundary conditions by homogenizing
-  std::vector<boost::shared_ptr<const DirichletBC> > dual_bcs;
+  std::vector<std::shared_ptr<const DirichletBC> > dual_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
     dolfin_assert(bcs[i]);
 
     // Create shared_ptr to boundary condition
-    boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bcs[i]));
+    std::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bcs[i]));
 
     // Run homogenize
     dual_bc_ptr->homogenize();
@@ -149,7 +149,7 @@ void ErrorControl::compute_dual(Function& z,
   }
 
   // Create shared_ptr to dual solution (FIXME: missing interface ...)
-  boost::shared_ptr<Function> dual(reference_to_no_delete_pointer(z));
+  std::shared_ptr<Function> dual(reference_to_no_delete_pointer(z));
 
   // Solve dual problem
   LinearVariationalProblem dual_problem(_a_star, _L_star, dual, dual_bcs);
@@ -159,7 +159,7 @@ void ErrorControl::compute_dual(Function& z,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_extrapolation(const Function& z,
-   const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
+   const std::vector<std::shared_ptr<const DirichletBC> > bcs)
 {
   log(PROGRESS, "Extrapolating dual solution.");
 
@@ -214,7 +214,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
-  Vector x(indicators.mesh()->num_cells());
+  Vector x(indicators.mesh()->mpi_comm(), indicators.mesh()->num_cells());
   assemble(x, *_eta_T);
 
   // Take absolute value of indicators
@@ -270,7 +270,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   // necessary.
   if (_is_linear)
   {
-    boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
+    std::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
     _L_R_T->set_coefficient(num_coeffs - 2, _u);
   }
 
@@ -300,12 +300,19 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     interior_facet_domains = _L_R_T->interior_facet_domains().get();
 
   // Assemble and solve local linear systems
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Get cell vertices
+    cell->get_vertex_coordinates(vertex_coordinates);
+
     // Assemble local linear system
-    LocalAssembler::assemble(A, ufc_lhs, *cell, cell_domains,
+    LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+                             ufc_cell, *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
-    LocalAssembler::assemble(b, ufc_rhs, *cell, cell_domains,
+    LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates, ufc_cell,
+                             *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
 
     // Solve linear system and convert result
@@ -351,7 +358,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // otherwise).
   if (_is_linear)
   {
-    boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
+    std::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
     _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 3, _u);
   }
 
@@ -390,13 +397,15 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     dolfin_assert(_cell_cone->vector());
     *(_cell_cone->vector()) = 0.0;
     facet_dofs.clear();
-    const std::size_t local_facet_dof = local_cone_dim - (dim + 1) + local_facet;
+    const std::size_t local_facet_dof = local_cone_dim - (dim + 1)
+      + local_facet;
     dolfin_assert(_cell_cone->function_space());
     dolfin_assert(_cell_cone->function_space()->dofmap());
     const GenericDofMap& cone_dofmap(*(_cell_cone->function_space()->dofmap()));
     for (std::size_t k = 0; k < num_cells; k++)
       facet_dofs.push_back(cone_dofmap.cell_dofs(k)[local_facet_dof]);
     _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
+    _cell_cone->vector()->apply("insert");
 
     // Attach cell cone to _a_R_dT and _L_R_dT
     _a_R_dT->set_coefficient(0, _cell_cone);
@@ -407,12 +416,19 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     UFC ufc_rhs(*_L_R_dT);
 
     // Assemble and solve local linear systems
+    ufc::cell ufc_cell;
+    std::vector<double> vertex_coordinates;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
+      // Get cell vertex_coordinates
+      cell->get_vertex_coordinates(vertex_coordinates);
+
       // Assemble linear system
-      LocalAssembler::assemble(A, ufc_lhs, *cell, cell_domains,
+      LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+                               ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
-      LocalAssembler::assemble(b, ufc_rhs, *cell, cell_domains,
+      LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates,
+                               ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
 
       // Non-singularize local matrix
@@ -441,7 +457,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::apply_bcs_to_extrapolation(
-const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
+const std::vector<std::shared_ptr<const DirichletBC> > bcs)
 {
   // Create boundary conditions for extrapolated dual, and apply
   // these.
@@ -454,7 +470,7 @@ const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
     const std::vector<std::size_t> component = bcs[i]->function_space()->component();
 
     // Extract sub-domain
-    boost::shared_ptr<const SubDomain> sub_domain = bcs[i]->user_sub_domain();
+    std::shared_ptr<const SubDomain> sub_domain = bcs[i]->user_sub_domain();
 
     // Create zero-valued boundary condition on extrapolation space.
     // (Sub-spaces need special handling, and boundary conditions can
@@ -470,7 +486,7 @@ const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
     }
     else
     {
-      boost::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
+      std::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
       if (sub_domain)
         e_bc.reset(new DirichletBC(S, bcs[i]->value(), sub_domain, bcs[i]->method()));
       else

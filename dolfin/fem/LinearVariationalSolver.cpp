@@ -46,7 +46,7 @@ LinearVariationalSolver(LinearVariationalProblem& problem)
 }
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
-LinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem)
+LinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem)
   : _problem(problem)
 {
   // Set parameters
@@ -66,10 +66,10 @@ void LinearVariationalSolver::solve()
 
   // Get problem data
   dolfin_assert(_problem);
-  boost::shared_ptr<const Form> a(_problem->bilinear_form());
-  boost::shared_ptr<const Form> L(_problem->linear_form());
-  boost::shared_ptr<Function> u(_problem->solution());
-  std::vector<boost::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
+  std::shared_ptr<const Form> a(_problem->bilinear_form());
+  std::shared_ptr<const Form> L(_problem->linear_form());
+  std::shared_ptr<Function> u(_problem->solution());
+  std::vector<std::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
 
   dolfin_assert(a);
   dolfin_assert(L);
@@ -77,8 +77,8 @@ void LinearVariationalSolver::solve()
 
   // Create matrix and vector
   dolfin_assert(u->vector());
-  boost::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix();
-  boost::shared_ptr<GenericVector> b = u->vector()->factory().create_vector();
+  std::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix();
+  std::shared_ptr<GenericVector> b = u->vector()->factory().create_vector();
 
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)
@@ -124,7 +124,7 @@ void LinearVariationalSolver::solve()
                      "assemble linear form in linear variational solver",
                      "Empty linear forms cannot have coefficient");
       }
-      A->resize(*b, 0);
+      A->init_vector(*b, 0);
     }
 
     // Apply boundary conditions
@@ -150,7 +150,8 @@ void LinearVariationalSolver::solve()
     preconditioners = u->vector()->factory().krylov_solver_preconditioners();
 
   // Choose linear solver
-  if (solver_type == "direct" || solver_type == "lu" || LinearSolver::in_list(solver_type, lu_methods))
+  if (solver_type == "direct" || solver_type == "lu"
+      || LinearSolver::in_list(solver_type, lu_methods))
   {
     std::string lu_method;
 
@@ -189,7 +190,8 @@ void LinearVariationalSolver::solve()
                    solver_type.c_str());
     }
 
-    if (pc_type != "default" && !LinearSolver::in_list(pc_type, preconditioners))
+    if (pc_type != "default"
+        && !LinearSolver::in_list(pc_type, preconditioners))
     {
       dolfin_error("LinearVariationalSolver.cpp",
                    "solve linear system",

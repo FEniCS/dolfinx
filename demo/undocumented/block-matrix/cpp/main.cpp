@@ -37,11 +37,11 @@ int main()
   StiffnessMatrix::FunctionSpace V(mesh);
 
   StiffnessMatrix::BilinearForm a(V, V);
-  boost::shared_ptr<GenericMatrix> A(new Matrix);
+  std::shared_ptr<GenericMatrix> A(new Matrix);
   assemble(*A, a);
 
   StiffnessMatrix::LinearForm L(V);
-  boost::shared_ptr<GenericVector> x(new Vector);
+  std::shared_ptr<GenericVector> x(new Vector);
   assemble(*x, L);
 
   // Create a block matrix
@@ -57,8 +57,8 @@ int main()
   xx.set_block(1, x);
 
   // Create another block vector
-  boost::shared_ptr<GenericVector> y(new Vector);
-  A->resize(*y, 0);
+  std::shared_ptr<GenericVector> y(new Vector);
+  A->init_vector(*y, 0);
   BlockVector yy(2);
   yy.set_block(0, y);
   yy.set_block(1, y);

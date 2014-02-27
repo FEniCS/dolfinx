@@ -308,7 +308,7 @@ int main()
   CPPUNIT_TEST_SUITE_REGISTRATION(MeshIterators);
 
   // FIXME: The following test breaks in parallel
-  if (dolfin::MPI::num_processes() == 1)
+  if (dolfin::MPI::size(MPI_COMM_WORLD) == 1)
   {
     CPPUNIT_TEST_SUITE_REGISTRATION(SimpleShapes);
     CPPUNIT_TEST_SUITE_REGISTRATION(MeshRefinement);

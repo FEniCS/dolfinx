@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2012
-//
-// First added:  2012-05-22
-// Last changed: 2013-05-09
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -27,10 +24,11 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 #include <boost/scoped_ptr.hpp>
 
-#include "dolfin/common/Variable.h"
-
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
 #include "GenericFile.h"
 
 namespace pugi
@@ -46,6 +44,7 @@ namespace dolfin
   class HDF5File;
   class Mesh;
   template<typename T> class MeshFunction;
+  class Point;
 
   /// This class supports the output of meshes and functions in XDMF
   /// (http://www.xdmf.org) format. It creates an XML file that describes
@@ -60,7 +59,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    explicit XDMFFile(const std::string filename);
+    XDMFFile(MPI_Comm comm, const std::string filename);
 
     /// Destructor
     ~XDMFFile();
@@ -68,6 +67,11 @@ namespace dolfin
     /// Save a mesh for visualisation, with e.g. ParaView. Creates a HDF5
     /// file to store the mesh, and a related XDMF file with metadata.
     void operator<< (const Mesh& mesh);
+
+    /// Read in a mesh from the associated HDF5 file,
+    /// optionally using stored partitioning, if possible
+    /// when the same number of processes are being used.
+    void read(Mesh& mesh, bool use_partition_from_file);
 
     /// Read in a mesh from the associated HDF5 file
     void operator>> (Mesh& mesh);
@@ -84,6 +88,15 @@ namespace dolfin
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
 
+    /// Save a cloud of points to file
+    void write(const std::vector<Point>& points);
+
+    /// Save a cloud of points, with scalar values
+    void write(const std::vector<Point>& points,
+               const std::vector<double>& values);
+
+    using GenericFile::write;
+
     /// Read first MeshFunction from file
     void operator>> (MeshFunction<bool>& meshfunction);
     void operator>> (MeshFunction<int>& meshfunction);
@@ -91,6 +104,9 @@ namespace dolfin
     void operator>> (MeshFunction<double>& meshfunction);
 
   private:
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
@@ -108,6 +124,12 @@ namespace dolfin
     // Generic MeshFunction reader
     template<typename T>
       void read_mesh_function(MeshFunction<T>& meshfunction);
+
+    // Write XML description of point clouds, with value_size = 0, 1 or 3
+    // (for either no point data, scalar, or vector)
+    void write_point_xml(const std::string dataset_name,
+                         const std::size_t num_global_points,
+                         const unsigned int value_size);
 
     // Write XML description for Function and MeshFunction output
     // updating time-series if need be

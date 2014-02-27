@@ -82,6 +82,11 @@ if (TAO_DIR)
   find_library(TAO_LIBRARY
     NAMES tao
     HINTS ${TAO_DIR}/lib $ENV{TAO_DIR}/lib  ${TAO_DIR}/${PETSC_ARCH}/lib $ENV{TAO_DIR}/$ENV{PETSC_ARCH}/lib
+    NO_DEFAULT_PATH
+    DOC "The TAO library"
+    )
+  find_library(TAO_LIBRARY
+    NAMES tao
     DOC "The TAO library"
     )
   mark_as_advanced(TAO_LIBRARY)

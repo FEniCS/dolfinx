@@ -23,7 +23,7 @@
 #ifndef __CSG_GEOMETRIES_H
 #define __CSG_GEOMETRIES_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/geometry/Point.h>
 #include "CSGGeometry.h"
 
@@ -36,13 +36,13 @@ namespace dolfin
     // A standard LEGO brick starting at the point x with (n0, n1)
     // knobs and height n2. The height should be 1 for a thin brick or 3
     // for a regular brick.
-    static boost::shared_ptr<CSGGeometry> lego(std::size_t n0, std::size_t n1,
+    static std::shared_ptr<CSGGeometry> lego(std::size_t n0, std::size_t n1,
                                                std::size_t n2, double x0,
                                                double x1, double x2);
 
     // A simple propeller with parameters r - radius of center body, R - length of blades,
     // w - width of blades and h - thicknes of blades
-    static boost::shared_ptr<CSGGeometry> propeller(double r=0.125,
+    static std::shared_ptr<CSGGeometry> propeller(double r=0.125,
                                                     double R=0.5,
                                                     double w=0.3,
                                                     double h=0.025 );

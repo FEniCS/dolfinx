@@ -75,7 +75,7 @@ EpetraMatrix::EpetraMatrix(Teuchos::RCP<Epetra_FECrsMatrix> A)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : _A(A)
+EpetraMatrix::EpetraMatrix(std::shared_ptr<Epetra_FECrsMatrix> A) : _A(A)
 {
   // Do nothing
 }
@@ -93,6 +93,15 @@ EpetraMatrix::~EpetraMatrix()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const TensorLayout& tensor_layout)
 {
+  if (this->empty())
+  {
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("EpetraMatrix cannot be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("EpetraMatrix should not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
+  }
+
   if (_A && !_A.unique())
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -119,9 +128,14 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   _pattern.num_local_nonzeros(num_nonzeros);
 
   // Create row map
-  EpetraFactory& f = EpetraFactory::instance();
-  Epetra_MpiComm comm = f.get_mpi_comm();
-  Epetra_Map row_map((dolfin::la_index) tensor_layout.size(0), (dolfin::la_index) num_local_rows, 0, comm);
+  #ifdef HAS_MPI
+  Epetra_MpiComm epetra_comm(tensor_layout.mpi_comm());
+  #else
+  Epetra_SerialComm epetra_comm;
+  #endif
+
+  Epetra_Map row_map((dolfin::la_index) tensor_layout.size(0),
+                     (dolfin::la_index) num_local_rows, 0, epetra_comm);
 
   // For rectangular matrices with more columns than rows, the columns
   // which are larger than those in row_map are marked as nonlocal
@@ -132,7 +146,7 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
     = tensor_layout.local_range(1);
   const int num_local_cols = colrange.second - colrange.first;
   Epetra_Map domain_map((dolfin::la_index) tensor_layout.size(1),
-                        num_local_cols, 0, comm);
+                        num_local_cols, 0, epetra_comm);
 
   // Create Epetra_FECrsGraph
   const std::vector<int> _num_nonzeros(num_nonzeros.begin(),
@@ -179,10 +193,15 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   _A.reset(new Epetra_FECrsMatrix(Copy, matrix_map));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
+std::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
 {
-  boost::shared_ptr<EpetraMatrix> B(new EpetraMatrix(*this));
+  std::shared_ptr<EpetraMatrix> B(new EpetraMatrix(*this));
   return B;
+}
+//-----------------------------------------------------------------------------
+bool EpetraMatrix::empty() const
+{
+  return _A ? true : false;
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraMatrix::size(std::size_t dim) const
@@ -222,8 +241,17 @@ EpetraMatrix::local_range(std::size_t dim) const
   return std::make_pair(row_map.MinMyGID64(), row_map.MaxMyGID64() + 1);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::resize(GenericVector& z, std::size_t dim) const
+void EpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
 {
+  if (!z.empty())
+  {
+    #ifdef DOLFIN_DEPRECATION_ERROR
+    error("EpetraVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    #else
+    warning("EpetraVector may not be initialized more than once. In version > 1.4, this will become an error.");
+    #endif
+  }
+
   dolfin_assert(_A);
 
   // Get map appropriate map
@@ -235,13 +263,13 @@ void EpetraMatrix::resize(GenericVector& z, std::size_t dim) const
   else
   {
     dolfin_error("EpetraMatrix.cpp",
-                 "resize Epetra vector to match Epetra matrix",
+                 "initialize Epetra vector to match Epetra matrix",
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
   // Reset vector with new map
   EpetraVector& _z = as_type<EpetraVector>(z);
-  _z.reset(*map);
+  _z.init(*map);
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::get(double* block, std::size_t m,
@@ -414,6 +442,23 @@ void EpetraMatrix::apply(std::string mode)
   }
 }
 //-----------------------------------------------------------------------------
+MPI_Comm EpetraMatrix::mpi_comm() const
+{
+  dolfin_assert(_A);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  #ifdef HAS_MPI
+  // Get Epetra MPI communicator (downcast)
+  const Epetra_MpiComm* epetra_mpi_comm
+    = dynamic_cast<const Epetra_MpiComm*>(&(_A->Map().Comm()));
+  dolfin_assert(epetra_mpi_comm);
+  mpi_comm = epetra_mpi_comm->Comm();
+  #else
+  mpi_comm = MPI_COMM_SELF;
+  #endif
+
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 std::string EpetraMatrix::str(bool verbose) const
 {
   if (!_A)
@@ -447,8 +492,8 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   typedef boost::unordered_set<std::size_t> MySet;
 
   // Number of MPI processes
-  const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
+  const std::size_t num_processes = _A->Comm().NumProc();
+  const std::size_t process_number = _A->Comm().MyPID();
 
   // Build lists of local and nonlocal rows
   MySet local_rows;
@@ -476,7 +521,7 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
     }
 
     std::vector<std::vector<std::size_t> > received_data;
-    MPI::all_to_all(send_data, received_data);
+    MPI::all_to_all(mpi_comm(), send_data, received_data);
 
     // Unpack data
     for (std::size_t p = 0; p < num_processes; ++p)
@@ -490,7 +535,6 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
       }
     }
   }
-  //-------------------------
 
   const Epetra_CrsGraph& graph = _A->Graph();
   MySet::const_iterator global_row;
@@ -573,11 +617,9 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
                  "Non-matching dimensions for matrix-vector product");
   }
 
-  // Resize RHS
-  if (Ax.size() == 0)
-  {
-    this->resize(Ax, 0);
-  }
+  // Initialize RHS
+  if (Ax.empty())
+    this->init_vector(Ax, 0);
 
   if (Ax.size() != size(0))
   {
@@ -610,11 +652,9 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
                  "Non-matching dimensions for transpose matrix-vector product");
   }
 
-  // Resize RHS
-  if (Ax.size() == 0)
-  {
-    this->resize(Ax, 1);
-  }
+  // Initialize RHS
+  if (Ax.empty())
+    this->init_vector(Ax, 1);
 
   if (Ax.size() != size(1))
   {
@@ -699,7 +739,7 @@ GenericLinearAlgebraFactory& EpetraMatrix::factory() const
   return EpetraFactory::instance();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
+std::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
 {
   return _A;
 }
@@ -742,7 +782,6 @@ const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
     _A.reset(new Epetra_FECrsMatrix(*A.mat()));
   else
     A.mat().reset();
-
   return *this;
 }
 //-----------------------------------------------------------------------------

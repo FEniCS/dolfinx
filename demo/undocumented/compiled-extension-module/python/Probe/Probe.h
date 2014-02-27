@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Kent-Andre Mardal, Mikael Mortensen, Johan Hake 
+// Copyright (C) 2013 Kent-Andre Mardal, Mikael Mortensen, Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -20,57 +20,63 @@
 #ifndef __PROBE_H
 #define __PROBE_H
 
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/Function.h>
+#include <vector>
+#include <ufc.h>
+#include <boost/scoped_ptr.hpp>
 
 namespace dolfin
 {
-  class Function;  
-  class FunctionSpace;    
+
+  class Cell;
+  class FiniteElement;
+  class Function;
+  class FunctionSpace;
   template<typename T> class Array;
 
   class Probe
   {
-    
+
   public:
-      
+
     /// Constructor
     Probe(const Array<double>& x, const FunctionSpace& V);
 
     void eval(const Function& u);
-    
+
     /// Return probe values for chosen value_size
-    std::vector<double> get_probe(std::size_t i);
-    
-    std::size_t value_size();
-    
-    std::size_t number_of_evaluations();
-    
+    std::vector<double> get_probe(std::size_t i) const;
+
+    std::size_t value_size() const;
+
+    std::size_t number_of_evaluations() const;
+
     /// Return coordinates of probe
-    std::vector<double> coordinates();
-    
+    std::vector<double> coordinates() const;
+
     /// Remove one instance of the probe
     void erase(std::size_t i);
-    
+
     /// Reset probe by removing all values
     void clear();
-    
+
   private:
-      
-    std::vector<std::vector<double> > basis_matrix;
-    
-    std::vector<double> coefficients;
-    
+
+    std::vector<std::vector<double> > _basis_matrix;
+
+    std::vector<double> _coefficients;
+
     double _x[3];
-    
-    boost::shared_ptr<const FiniteElement> _element;
-    
-    Cell* dolfin_cell;
-    
-    UFCCell* ufc_cell;
-    
-    std::size_t value_size_loc;    
-    
+
+    std::shared_ptr<const FiniteElement> _element;
+
+    boost::scoped_ptr<Cell> dolfin_cell;
+
+    ufc::cell ufc_cell;
+
+    std::vector<double> _vertex_coordinates;
+
+    std::size_t value_size_loc;
+
     std::vector<std::vector<double> > _probes;
 
   };

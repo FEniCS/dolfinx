@@ -28,8 +28,8 @@
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
-#include <boost/tuple/tuple.hpp>
 #include <vector>
+#include <boost/tuple/tuple.hpp>
 #include "GenericTensor.h"
 #include "GenericLinearOperator.h"
 
@@ -105,16 +105,16 @@ namespace dolfin
     //--- Matrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const = 0;
+    virtual std::shared_ptr<GenericMatrix> copy() const = 0;
 
-    /// Resize vector z to be compatible with the matrix-vector
+    /// Initialize vector z to be compatible with the matrix-vector
     /// product y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, std::size_t dim) const = 0;
+    virtual void init_vector(GenericVector& z, std::size_t dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block,
@@ -200,7 +200,7 @@ namespace dolfin
                    "Not implemented by current linear algebra backend");
       return boost::tuples::tuple<const std::size_t*, const std::size_t*,
                                   const double*, int>(0, 0, 0, 0);
-    }
+   }
 
     //--- Convenience functions ---
 
@@ -211,19 +211,23 @@ namespace dolfin
     /// Get value of given entry
     virtual double getitem(std::pair<dolfin::la_index,
                            dolfin::la_index> ij) const
-    { double value(0); get(&value, 1, &ij.first, 1, &ij.second); return value; }
+    {
+      double value(0);
+      get(&value, 1, &ij.first, 1, &ij.second);
+      return value;
+    }
 
-    /// Set given entry to value. apply("insert") should be called before using
-    /// using the object.
+    /// Set given entry to value. apply("insert") must be called
+    /// before using using the object.
     virtual void setitem(std::pair<dolfin::la_index, dolfin::la_index> ij,
                          double value)
-    { set(&value, 1, &ij.first, 1, &ij.second); }
+    {  set(&value, 1, &ij.first, 1, &ij.second); }
 
     /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
 
-    /// Compress matrix
-    virtual void compress();
+    /// Build compressed version of matrix (zeros removed)
+    virtual void compressed(GenericMatrix& B) const;
 
   };
 

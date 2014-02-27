@@ -28,7 +28,7 @@
 #ifdef HAS_SLEPC
 
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <slepceps.h>
 #include "dolfin/common/types.h"
 #include "PETScObject.h"
@@ -140,11 +140,11 @@ namespace dolfin
     SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B);
 
     /// Create eigenvalue solver for Ax = \lambda x
-    SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A);
+    SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A);
 
     /// Create eigenvalue solver for Ax = \lambda x
-    SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
-                     boost::shared_ptr<const PETScMatrix> B);
+    SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
+                     std::shared_ptr<const PETScMatrix> B);
 
     /// Destructor
     ~SLEPcEigenSolver();
@@ -199,6 +199,7 @@ namespace dolfin
       p.add("spectral_transform", "default");
       p.add("spectral_shift",     0.0);
       p.add("verbose",            false);
+      p.add("options_prefix",     "default");
 
       return p;
     }
@@ -224,8 +225,8 @@ namespace dolfin
     void set_tolerance(double tolerance, std::size_t maxiter);
 
     // Operators (A x = \lambda x or Ax = \lambda B x)
-    boost::shared_ptr<const PETScMatrix> _A;
-    boost::shared_ptr<const PETScMatrix> _B;
+    std::shared_ptr<const PETScMatrix> _A;
+    std::shared_ptr<const PETScMatrix> _B;
 
     // SLEPc solver pointer
     EPS eps;

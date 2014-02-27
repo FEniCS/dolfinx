@@ -49,6 +49,8 @@ copyright_form_swig = dict(comment = r"//", holder="Johan Hake")
 
 # reg exp pattern
 _header_pattern = re.compile("#include +<(dolfin/\w+/\w+\.h)>")
+_submodule_pattern = re.compile("#include +<dolfin/(\w+)/\w+\.h>")
+_module_pattern = re.compile("// +SWIG +module +(\w+)")
 
 # Get top DOLFIN directory.
 script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
@@ -75,7 +77,7 @@ def extract_module_header_files(submodule, excludes):
     return [header for header in all_headers \
             if header.split("/")[-1] not in excludes]
 
-def generate_submodule_info(module_to_submodules, excludes):
+def generate_submodule_info(excludes):
     """
     Check the passed module to submodule mapping and sort it
     Creates the reverse mapping together with additional info
@@ -85,11 +87,28 @@ def generate_submodule_info(module_to_submodules, excludes):
     # Extract original modules from dolfin.h
     # NOTE: We need these, in particular the order
     original_submodules = []
+    module_to_submodules = OrderedDict()
     f = open(os.path.join(dolfin_dir, "dolfin", "dolfin.h"))
+    present_module = ""
     for line in f:
-        if "#include <dolfin/" in line and line[:17] == "#include <dolfin/":
-            module = line.split("/")[1]
-            original_submodules += [module]
+        
+        module_match = re.findall(_module_pattern, line)
+        if module_match:
+            module = module_match[0]
+            module_to_submodules[module] = []
+            present_module = module
+            continue
+        
+        submodule_match = re.findall(_submodule_pattern, line)
+        if submodule_match:
+            submodule = submodule_match[0]
+            original_submodules += [submodule]
+
+            if not present_module:
+                raise RuntimeError("Found a submodule in dolfin.h before a "\
+                                   "SWIG module was declared.")
+            module_to_submodules[present_module].append(submodule)
+
     f.close()
 
     # Check that the directory structure of the combined modules
@@ -146,7 +165,7 @@ def generate_submodule_info(module_to_submodules, excludes):
         module_to_submodules[module] = ordered_submodules
 
     # Return ordered submodule info
-    return submodule_info
+    return module_to_submodules, submodule_info
 
 def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
     """
@@ -493,7 +512,7 @@ submodule_info = %s
                       "compilemodules", "swigimportinfo.py"), "w").write(\
         runtime_file)
 
-def regenerate_swig_interface(module_to_submodules, excludes, top_destdir):
+def regenerate_swig_interface(excludes, top_destdir):
     """
     Regenerate the whole swig interface
     """
@@ -523,7 +542,7 @@ def regenerate_swig_interface(module_to_submodules, excludes, top_destdir):
         swig_dir = swig_dir.replace(dolfin_dir, top_destdir)
 
     # Check the submodule order and create a submodule to module mapping
-    submodule_info = generate_submodule_info(module_to_submodules, excludes)
+    module_to_submodules, submodule_info = generate_submodule_info(excludes)
 
     # Create dolfin type info and depdency structures to be used when
     # generating swig interface files
@@ -531,7 +550,13 @@ def regenerate_swig_interface(module_to_submodules, excludes, top_destdir):
         module_to_submodules, submodule_info)
 
     # Iterate over the modules and create a swig interface file
+    submodule_ordered = [submodule for submodules in module_to_submodules.values() \
+                         for submodule in submodules]
     for module in module_to_submodules:
+        # Sort submodules
+        dependencies = sorted(module_info[module]["dependencies"].keys(), \
+                              cmp=lambda a, b : cmp(\
+            submodule_ordered.index(a), submodule_ordered.index(b)))
         write_module_interface_file(module, module_info[module]["dependencies"], \
                                     submodule_info)
         write_swig_cmakelist_file(module)
@@ -560,7 +585,7 @@ if __name__ == "__main__":
         ("io", ["io", "plot"])])
 
     # User defined list of headers to exclude (add more here)
-    excludes = ["LogStream.h", "IntersectionOperatorImplementation.h" ]
+    excludes = ["LogStream.h"]
 
     # Regnerate SWIG interface
-    regenerate_swig_interface(module_to_submodules, excludes, dest_dir)
+    regenerate_swig_interface(excludes, dest_dir)

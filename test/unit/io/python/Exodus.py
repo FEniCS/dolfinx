@@ -29,9 +29,8 @@ if has_exodus():
         """Test output of Meshes to Exodus files"""
 
         def test_save_1d_mesh(self):
-            if MPI.num_processes() == 1:
-                mesh = UnitIntervalMesh(32)
-                File("mesh.e") << mesh
+            mesh = UnitIntervalMesh(32)
+            File("mesh.e") << mesh
 
         def test_save_2d_mesh(self):
             mesh = UnitSquareMesh(32, 32)
@@ -46,11 +45,10 @@ if has_exodus():
         """Test output of point-based Functions to Exodus files"""
 
         def test_save_1d_scalar(self):
-            if MPI.num_processes() == 1:
-                mesh = UnitIntervalMesh(32)
-                u = Function(FunctionSpace(mesh, "Lagrange", 2))
-                u.vector()[:] = 1.0
-                File("u.e") << u
+            mesh = UnitIntervalMesh(32)
+            u = Function(FunctionSpace(mesh, "Lagrange", 2))
+            u.vector()[:] = 1.0
+            File("u.e") << u
 
         def test_save_2d_scalar(self):
             mesh = UnitSquareMesh(16, 16)

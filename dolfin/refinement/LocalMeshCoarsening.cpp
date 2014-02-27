@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2006-11-01
-// Last changed: 2011-04-07
+// Last changed: 2014-02-06
 
 #include <list>
 
@@ -338,8 +338,9 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   }
 
   // Specify number of vertices and cells
-  editor.init_vertices(num_vertices - 1);
-  editor.init_cells(num_cells - num_cells_to_remove);
+  editor.init_vertices_global(num_vertices - 1, num_vertices - 1);
+  editor.init_cells_global(num_cells - num_cells_to_remove,
+                           num_cells - num_cells_to_remove);
 
   cout << "Number of cells in old mesh: " << num_cells << "; to remove: " <<
     num_cells_to_remove << endl;
@@ -365,7 +366,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   std::vector<std::size_t> cell_vertices(cell_type.num_entities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    if(cell_to_remove[*c] == false && cell_to_regenerate[*c] == false)
+    if (cell_to_remove[*c] == false && cell_to_regenerate[*c] == false)
     {
       cv_idx = 0;
       for (VertexIterator v(*c); !v.end(); ++v)

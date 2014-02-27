@@ -23,7 +23,7 @@
 #ifndef __GENERIC_LU_SOLVER_H
 #define __GENERIC_LU_SOLVER_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Variable.h>
 #include "GenericLinearSolver.h"
 
@@ -42,7 +42,8 @@ namespace dolfin
   public:
 
     /// Set operator (matrix)
-    virtual void set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
+    virtual void
+      set_operator(std::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Solve linear system Ax = b
     virtual std::size_t solve(GenericVector& x, const GenericVector& b) = 0;
