@@ -116,8 +116,7 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
 }
 //-----------------------------------------------------------------------------
 void TrilinosPreconditioner::set(BelosLinearProblem& problem,
-                                 const EpetraMatrix& P
-                                 )
+                                 const EpetraMatrix& P)
 {
   // Pointer to preconditioner matrix
   // TODO const?!

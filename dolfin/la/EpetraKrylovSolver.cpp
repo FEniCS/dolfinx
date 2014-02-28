@@ -231,17 +231,19 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 
   // Look up the Belos name of the method in _methods. This is a
   // little complicated since std::maps<> don't have const lookup.
-  std::map<std::string, std::string>::const_iterator it = _methods.find(_method);
+  std::map<std::string, std::string>::const_iterator
+    it = _methods.find(_method);
   if (it == _methods.end())
   {
-      dolfin_error("EpetraKrylovSolver.cpp",
-                   "solve linear system using Epetra Krylov solver",
-                   "unknown method \"%s\"", _method.c_str());
+    dolfin_error("EpetraKrylovSolver.cpp",
+                 "solve linear system using Epetra Krylov solver",
+                 "unknown method \"%s\"", _method.c_str());
   }
 
   // Set-up linear solver
-  Belos::SolverFactory<BelosScalarType,BelosMultiVector,BelosOperator> factory;
-  Teuchos::RCP<Belos::SolverManager<BelosScalarType,BelosMultiVector,BelosOperator> > solver
+  Belos::SolverFactory<BelosScalarType,BelosMultiVector, BelosOperator> factory;
+  Teuchos::RCP<Belos::SolverManager<BelosScalarType,
+                                    BelosMultiVector, BelosOperator> > solver
     = factory.create(it->second, Teuchos::rcp(&belosList, false));
   solver->setProblem(linear_problem);
 

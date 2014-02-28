@@ -36,14 +36,17 @@ class Epetra_MultiVector;
 class Epetra_RowMatrix;
 class Epetra_Operator;
 class Ifpack_Preconditioner;
-namespace Belos {
+namespace Belos
+{
   template<class ScalarType, class MV, class OP>
   class LinearProblem;
 }
+
 namespace ML_Epetra
 {
   class MultiLevelPreconditioner;
 }
+
 namespace Teuchos
 {
   class ParameterList;
@@ -54,7 +57,7 @@ typedef double BelosScalarType;
 typedef Epetra_MultiVector BelosMultiVector;
 typedef Epetra_Operator BelosOperator;
 typedef Belos::LinearProblem<BelosScalarType, BelosMultiVector, BelosOperator>
-        BelosLinearProblem;
+  BelosLinearProblem;
 
 namespace dolfin
 {
@@ -126,8 +129,8 @@ namespace dolfin
       _preconditioners_descr;
 
     // The Preconditioner
-    std::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
-    std::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
+    std::shared_ptr<Ifpack_Preconditioner> _ifpack_preconditioner;
+    std::shared_ptr<ML_Epetra::MultiLevelPreconditioner> _ml_preconditioner;
 
     // Parameter list
     std::shared_ptr<const Teuchos::ParameterList> parameter_list;
