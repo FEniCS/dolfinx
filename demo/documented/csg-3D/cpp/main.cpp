@@ -38,7 +38,7 @@ int main(int argc, char** argv)
   Sphere sphere(Point(0, 0, 0), 0.3);
   Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .5);
 
-  const boost::shared_ptr<CSGGeometry> g3d = box + cone - sphere;
+  const std::shared_ptr<CSGGeometry> g3d = box + cone - sphere;
 
   // Test printing
   info("\nCompact output of 3D geometry:");

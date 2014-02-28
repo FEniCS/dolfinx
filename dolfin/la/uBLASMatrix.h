@@ -114,7 +114,7 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const;
+    virtual std::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize matrix to M x N
     virtual void resize(std::size_t M, std::size_t N);
@@ -264,9 +264,9 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  boost::shared_ptr<GenericMatrix> uBLASMatrix<Mat>::copy() const
+  std::shared_ptr<GenericMatrix> uBLASMatrix<Mat>::copy() const
   {
-    boost::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>(*this));
+    std::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>(*this));
     return A;
   }
   //---------------------------------------------------------------------------

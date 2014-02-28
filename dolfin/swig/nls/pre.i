@@ -38,8 +38,8 @@
 %define DIRECTORIN_TYPEMAPS(TYPE, CONST)
 
 %typemap(directorin, fragment="NoDelete") CONST TYPE& {
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< CONST TYPE > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< CONST TYPE >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< TYPE > *), SWIG_POINTER_OWN);
+  std::shared_ptr< CONST TYPE > *smartresult = new std::shared_ptr< CONST TYPE >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< TYPE > *), SWIG_POINTER_OWN);
 }
 
 %enddef
@@ -49,16 +49,16 @@ DIRECTORIN_TYPEMAPS(dofin::GenericVector, )
 DIRECTORIN_TYPEMAPS(dofin::GenericVector, const)
 
 %typemap(directorin, fragment="NoDelete") dolfin::GenericMatrix& {
-    SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericMatrix > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericMatrix >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericMatrix > *), SWIG_POINTER_OWN);
+    std::shared_ptr< dolfin::GenericMatrix > *smartresult = new std::shared_ptr< dolfin::GenericMatrix >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericMatrix > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") dolfin::GenericVector& {
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< dolfin::GenericVector > *smartresult = new std::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") const dolfin::GenericVector& {
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< const dolfin::GenericVector > *smartresult = new std::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }

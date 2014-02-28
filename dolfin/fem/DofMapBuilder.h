@@ -28,7 +28,7 @@
 #include <map>
 #include <set>
 #include <boost/array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include <dolfin/common/types.h>
@@ -80,9 +80,9 @@ namespace dolfin
     /// Build dofmap. The restriction may be a null pointer, in which
     /// case it is ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-        boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
+        std::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
           std::pair<unsigned int, unsigned int> > > > slave_master_entities,
-        boost::shared_ptr<const Restriction> restriction);
+        std::shared_ptr<const Restriction> restriction);
 
     /// Build sub-dofmap
     static void build_sub_map(DofMap& sub_dofmap,
@@ -95,9 +95,9 @@ namespace dolfin
     // Build UFC-based dofmap
     static void build_ufc_dofmap(DofMap& dofmap, map& restricted_dofs_inverse,
       const Mesh& mesh,
-      boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
+      std::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
         std::pair<unsigned int, unsigned int> > > > slave_master_entities,
-      boost::shared_ptr<const Restriction> restriction);
+      std::shared_ptr<const Restriction> restriction);
 
     // Build modified global entity indices that account for periodic bcs
     static std::size_t build_constrained_vertex_indices(const Mesh& mesh,
@@ -113,7 +113,7 @@ namespace dolfin
     // Re-order distributed dof map for process locality
     static void reorder_distributed(DofMap& dofmap,
                                    const Mesh& mesh,
-                                   boost::shared_ptr<const Restriction> restriction,
+                                   std::shared_ptr<const Restriction> restriction,
                                    const map& restricted_dofs_inverse,
                                    std::size_t block_size);
 
@@ -126,7 +126,7 @@ namespace dolfin
                                   DofMap& dofmap,
                                   const DofMapBuilder::set& global_dofs,
                                   const Mesh& mesh,
-                                  boost::shared_ptr<const Restriction> restriction,
+                                  std::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse,
                                   std::size_t block_size);
 
@@ -135,7 +135,7 @@ namespace dolfin
                                   const vec_map& shared_node_processes,
                                   DofMap& dofmap,
                                   const Mesh& mesh,
-                                  boost::shared_ptr<const Restriction> restriction,
+                                  std::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse,
                                   std::size_t block_size);
 
@@ -147,11 +147,11 @@ namespace dolfin
     // Iterate recursively over all sub-dof maps to find global
     // degrees of freedom
     static void compute_global_dofs(set& global_dofs, std::size_t& offset,
-                            boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+                            std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                             const DofMap& dofmap);
 
     // Recursively extract UFC sub-dofmap and compute offset
-    static boost::shared_ptr<ufc::dofmap>
+    static std::shared_ptr<ufc::dofmap>
         extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                std::size_t& offset,
                                const std::vector<std::size_t>& component,

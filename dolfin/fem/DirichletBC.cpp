@@ -78,9 +78,9 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const GenericFunction> g,
-                         boost::shared_ptr<const SubDomain> sub_domain,
+DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
+                         std::shared_ptr<const SubDomain> sub_domain,
                          std::string method,
                          bool check_midpoint)
   : Hierarchical<DirichletBC>(*this),
@@ -108,9 +108,9 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const GenericFunction> g,
-                         boost::shared_ptr<const MeshFunction<std::size_t> > sub_domains,
+DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
+                         std::shared_ptr<const MeshFunction<std::size_t> > sub_domains,
                          std::size_t sub_domain,
                          std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
@@ -134,8 +134,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const GenericFunction> g,
+DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
                          std::size_t sub_domain, std::string method)
   : Hierarchical<DirichletBC>(*this),
     _function_space(V),
@@ -148,8 +148,8 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const GenericFunction> g,
+DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
                          const std::vector<std::size_t>& markers,
                          std::string method)
   : Hierarchical<DirichletBC>(*this),
@@ -395,12 +395,12 @@ const std::vector<std::size_t>& DirichletBC::markers() const
   return _facets;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunction> DirichletBC::value() const
+std::shared_ptr<const GenericFunction> DirichletBC::value() const
 {
   return _g;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const SubDomain> DirichletBC::user_sub_domain() const
+std::shared_ptr<const SubDomain> DirichletBC::user_sub_domain() const
 {
   return _user_sub_domain;
 }
@@ -484,14 +484,14 @@ void DirichletBC::homogenize()
   const std::size_t value_rank = _g->value_rank();
   if (!value_rank)
   {
-    boost::shared_ptr<Constant> zero(new Constant(0.0));
+    std::shared_ptr<Constant> zero(new Constant(0.0));
     set_value(zero);
   }
   else if (value_rank == 1)
   {
     const std::size_t value_dim = _g->value_dimension(0);
     std::vector<double> values(value_dim, 0.0);
-    boost::shared_ptr<Constant> zero(new Constant(values));
+    std::shared_ptr<Constant> zero(new Constant(values));
     set_value(zero);
   }
   else
@@ -500,12 +500,12 @@ void DirichletBC::homogenize()
     for (std::size_t i = 0; i < value_rank; i++)
       value_shape.push_back(_g->value_dimension(i));
     std::vector<double> values(_g->value_size(), 0.0);
-    boost::shared_ptr<Constant> zero(new Constant(value_shape, values));
+    std::shared_ptr<Constant> zero(new Constant(value_shape, values));
     set_value(zero);
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::set_value(boost::shared_ptr<const GenericFunction> g)
+void DirichletBC::set_value(std::shared_ptr<const GenericFunction> g)
 {
   _g = g;
 }
@@ -660,7 +660,7 @@ void DirichletBC::init_facets(const MPI_Comm mpi_comm) const
     init_from_mesh(_user_sub_domain_marker);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain>
+void DirichletBC::init_from_sub_domain(std::shared_ptr<const SubDomain>
                                        sub_domain) const
 {
   dolfin_assert(_facets.size() == 0);
@@ -795,7 +795,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   mesh.init(D - 1, D);
 
   // Get restriction if any
-  boost::shared_ptr<const Restriction> restriction
+  std::shared_ptr<const Restriction> restriction
     = _function_space->dofmap()->restriction();
 
   // Create UFC cell

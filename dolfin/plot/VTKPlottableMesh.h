@@ -55,10 +55,10 @@ namespace dolfin
   {
   public:
 
-    VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh,
+    VTKPlottableMesh(std::shared_ptr<const Mesh> mesh,
                      std::size_t entity_dim);
 
-    explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh);
+    explicit VTKPlottableMesh(std::shared_ptr<const Mesh> mesh);
 
     virtual ~VTKPlottableMesh() {}
 
@@ -78,7 +78,7 @@ namespace dolfin
     virtual void connect_to_output(VTKWindowOutputStage& output);
 
     /// Update the plottable data
-    virtual void update(boost::shared_ptr<const Variable> var,
+    virtual void update(std::shared_ptr<const Variable> var,
                         const Parameters& p, int frame_counter);
 
     /// Return whether this plottable is compatible with the variable
@@ -122,7 +122,7 @@ namespace dolfin
     template <class T>
     void setCellValues(std::size_t size, const T *indata, const Parameters& p);
 
-    boost::shared_ptr<const Mesh> mesh() const;
+    std::shared_ptr<const Mesh> mesh() const;
 
     vtkSmartPointer<vtkUnstructuredGrid> grid() const;
 
@@ -140,7 +140,7 @@ namespace dolfin
     vtkSmartPointer<vtkGeometryFilter> _geometryFilter;
 
     // The mesh to visualize
-    boost::shared_ptr<const Mesh> _mesh;
+    std::shared_ptr<const Mesh> _mesh;
 
     // The label actors
     vtkSmartPointer<vtkActor2D> _vertexLabelActor;
@@ -155,7 +155,7 @@ namespace dolfin
 
   };
 
-  VTKPlottableMesh *CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh);
+  VTKPlottableMesh *CreateVTKPlottable(std::shared_ptr<const Mesh> mesh);
 }
 
 #endif

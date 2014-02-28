@@ -128,7 +128,7 @@ EpetraLUSolver::EpetraLUSolver(std::string method)
   }
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericLinearOperator> A,
+EpetraLUSolver::EpetraLUSolver(std::shared_ptr<const GenericLinearOperator> A,
                                std::string method)
   : symbolic_factorized(false),
     numeric_factorized(false),
@@ -164,7 +164,7 @@ EpetraLUSolver::~EpetraLUSolver()
 }
 //-----------------------------------------------------------------------------
 void
-EpetraLUSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+EpetraLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(linear_problem);
 
@@ -287,7 +287,7 @@ std::size_t EpetraLUSolver::solve(const GenericLinearOperator& A,
 std::size_t EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                   const EpetraVector& b)
 {
-  boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
+  std::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }

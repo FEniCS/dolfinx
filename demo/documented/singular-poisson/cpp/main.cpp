@@ -80,7 +80,7 @@ int main()
   L.g = g;
 
   // Assemble system
-  boost::shared_ptr<GenericMatrix> A(new Matrix);
+  std::shared_ptr<GenericMatrix> A(new Matrix);
   Vector b;
   assemble(*A, a);
   assemble(b, L);
@@ -92,9 +92,9 @@ int main()
   KrylovSolver solver(A, "gmres");
 
   // Create vector that spans null space (normalised)
-  boost::shared_ptr<GenericVector> null_space_ptr(b.copy());
+  std::shared_ptr<GenericVector> null_space_ptr(b.copy());
   V.dofmap()->set(*null_space_ptr, sqrt(1.0/null_space_ptr->size()));
-  std::vector<boost::shared_ptr<GenericVector> > null_space_basis;
+  std::vector<std::shared_ptr<GenericVector> > null_space_basis;
   null_space_basis.push_back(null_space_ptr);
 
   // Create null space basis object and attach to Krylov solver

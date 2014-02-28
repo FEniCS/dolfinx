@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     explicit
-    VTKPlottableMeshFunction(boost::shared_ptr<const MeshFunction<T> > mesh_function);
+    VTKPlottableMeshFunction(std::shared_ptr<const MeshFunction<T> > mesh_function);
 
     virtual ~VTKPlottableMeshFunction() {}
 
@@ -48,7 +48,7 @@ namespace dolfin
     virtual void modify_default_parameters(Parameters& p) {}
 
     /// Update the plottable data
-    void update(boost::shared_ptr<const Variable> var, const Parameters& p,
+    void update(std::shared_ptr<const Variable> var, const Parameters& p,
                 int frame_counter);
 
     bool is_compatible(const Variable &var) const
@@ -57,19 +57,19 @@ namespace dolfin
   private:
 
     // The mesh function
-    boost::shared_ptr<const MeshFunction<T> > _mesh_function;
+    std::shared_ptr<const MeshFunction<T> > _mesh_function;
 
   };
 
   //----------------------------------------------------------------------------
   template <typename T>
-  VTKPlottableMeshFunction<T> *CreateVTKPlottable(boost::shared_ptr<const MeshFunction<T> > meshfunc)
+  VTKPlottableMeshFunction<T> *CreateVTKPlottable(std::shared_ptr<const MeshFunction<T> > meshfunc)
   {
     return new VTKPlottableMeshFunction<T>(meshfunc);
   }
   //----------------------------------------------------------------------------
   template <typename T>
-  VTKPlottableMeshFunction<T> *CreateVTKPlottable(boost::shared_ptr<MeshFunction<T> > meshfunc)
+  VTKPlottableMeshFunction<T> *CreateVTKPlottable(std::shared_ptr<MeshFunction<T> > meshfunc)
   { return new VTKPlottableMeshFunction<T>(meshfunc); }
   //----------------------------------------------------------------------------
 

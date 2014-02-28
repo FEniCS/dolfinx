@@ -21,7 +21,7 @@
 #ifndef __INTERSECT_H
 #define __INTERSECT_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace dolfin
 {
@@ -42,7 +42,7 @@ namespace dolfin
   /// *Returns*
   ///     _MeshPointIntersection_
   ///         The intersection data.
-  boost::shared_ptr<const MeshPointIntersection>
+  std::shared_ptr<const MeshPointIntersection>
   intersect(const Mesh& mesh, const Point& point);
 
 }

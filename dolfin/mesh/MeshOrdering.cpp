@@ -19,7 +19,7 @@
 // Last changed: 2012-06-25
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
 #include "Cell.h"

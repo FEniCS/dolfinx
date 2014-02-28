@@ -28,7 +28,7 @@
 
 #include <map>
 #include <petscsnes.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/PETScObject.h>
@@ -134,8 +134,8 @@ namespace dolfin
     bool is_vi() const;
 
     // Upper and lower bounds for bound-constrained solvers
-    boost::shared_ptr<const PETScVector> lb;
-    boost::shared_ptr<const PETScVector> ub;
+    std::shared_ptr<const PETScVector> lb;
+    std::shared_ptr<const PETScVector> ub;
 
     // Flag to indicate if explicit bounds are set
     bool has_explicit_bounds;

@@ -24,7 +24,7 @@
 #define __GENERIC_ADAPTIVE_VARIATIONAL_SOLVER_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Variable.h>
 #include <dolfin/adaptivity/ErrorControl.h>
 
@@ -62,7 +62,7 @@ namespace dolfin
     /// *Returns*
     ///     _Function_
     ///         The solution to the primal problem
-    virtual boost::shared_ptr<const Function> solve_primal() = 0;
+    virtual std::shared_ptr<const Function> solve_primal() = 0;
 
     /// Extract the boundary conditions for the primal problem. Must
     /// be overloaded in subclass.
@@ -70,7 +70,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<_DirichletBC_>
     ///         The primal boundary conditions
-    virtual std::vector<boost::shared_ptr<const DirichletBC> >
+    virtual std::vector<std::shared_ptr<const DirichletBC> >
       extract_bcs() const = 0;
 
     /// Evaluate the goal functional. Must be overloaded in subclass.
@@ -85,21 +85,21 @@ namespace dolfin
     ///     double
     ///         The value of M evaluated at u
     virtual double evaluate_goal(Form& M,
-                                 boost::shared_ptr<const Function> u) const = 0;
+                                 std::shared_ptr<const Function> u) const = 0;
 
     /// Adapt the problem to other mesh. Must be overloaded in subclass.
     ///
     /// *Arguments*
     ///    mesh (_Mesh_)
     ///        The other mesh
-    virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh) = 0;
+    virtual void adapt_problem(std::shared_ptr<const Mesh> mesh) = 0;
 
     /// Return stored adaptive data
     ///
     /// *Returns*
     ///    std::vector<_Parameters_>
     ///        The data stored in the adaptive loop
-    std::vector<boost::shared_ptr<Parameters> > adaptive_data() const;
+    std::vector<std::shared_ptr<Parameters> > adaptive_data() const;
 
     /// Default parameter values:
     ///
@@ -138,13 +138,13 @@ namespace dolfin
   protected:
 
     // The goal functional
-    boost::shared_ptr<Form> goal;
+    std::shared_ptr<Form> goal;
 
     // Error control object
-    boost::shared_ptr<ErrorControl> control;
+    std::shared_ptr<ErrorControl> control;
 
     // A list of adaptive data
-    std::vector<boost::shared_ptr<Parameters> > _adaptive_data;
+    std::vector<std::shared_ptr<Parameters> > _adaptive_data;
 
     /// Return the number of degrees of freedom for primal problem
     ///

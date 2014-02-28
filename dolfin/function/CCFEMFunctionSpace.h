@@ -22,7 +22,7 @@
 #define __CCFEM_FUNCTION_SPACE_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace dolfin
 {
@@ -61,7 +61,7 @@ namespace dolfin
     /// *Returns*
     ///     _CCFEMDofMap_
     ///         The dofmap.
-    boost::shared_ptr<const CCFEMDofMap> dofmap() const;
+    std::shared_ptr<const CCFEMDofMap> dofmap() const;
 
     /// Return the number function spaces (parts) of the CCFEM function space
     ///
@@ -75,14 +75,14 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         Function space (part) number i
-    boost::shared_ptr<const FunctionSpace> part(std::size_t i) const;
+    std::shared_ptr<const FunctionSpace> part(std::size_t i) const;
 
     /// Add function space (shared pointer version)
     ///
     /// *Arguments*
     ///     function_space (_FunctionSpace_)
     ///         The function space.
-    void add(boost::shared_ptr<const FunctionSpace> function_space);
+    void add(std::shared_ptr<const FunctionSpace> function_space);
 
     /// Add function space (reference version)
     ///
@@ -100,13 +100,13 @@ namespace dolfin
   private:
 
     // List of function spaces
-    std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
+    std::vector<std::shared_ptr<const FunctionSpace> > _function_spaces;
 
     // List of bounding box trees for meshes
-    std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
+    std::vector<std::shared_ptr<BoundingBoxTree> > _trees;
 
     // CCFEM dofmap
-    boost::shared_ptr<CCFEMDofMap> _dofmap;
+    std::shared_ptr<CCFEMDofMap> _dofmap;
 
   };
 

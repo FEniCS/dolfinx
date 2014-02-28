@@ -24,7 +24,7 @@
 #ifndef __EXPRESSION_WRAPPER_H
 #define __EXPRESSION_WRAPPER_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -41,24 +41,24 @@ namespace dolfin
   public:
 
     /// Create wrapped expression object
-    explicit ExpressionWrapper(boost::shared_ptr<const Expression> expression,
-                               boost::shared_ptr<const Mesh> mesh);
+    explicit ExpressionWrapper(std::shared_ptr<const Expression> expression,
+                               std::shared_ptr<const Mesh> mesh);
 
     /// Get shared pointer to the expression
-    boost::shared_ptr<const Expression> expression() const
+    std::shared_ptr<const Expression> expression() const
     { return _expression; }
 
     /// Get shared pointer to the mesh
-    boost::shared_ptr<const Mesh> mesh() const
+    std::shared_ptr<const Mesh> mesh() const
     { return _mesh; }
 
   private:
 
     // The mesh to plot on
-    boost::shared_ptr<const Mesh> _mesh;
+    std::shared_ptr<const Mesh> _mesh;
 
     // The expression itself
-    boost::shared_ptr<const Expression> _expression;
+    std::shared_ptr<const Expression> _expression;
 
   };
 
