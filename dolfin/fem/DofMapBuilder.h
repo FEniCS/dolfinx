@@ -108,14 +108,15 @@ namespace dolfin
     // optional, but re-ordering can make other algorithms (e.g.,
     // matrix-vector products) significantly faster.
     static void reorder_local(DofMap& dofmap, const Mesh& mesh,
-                              std::size_t block_size);
+                              std::size_t block_size, const set& global_dofs);
 
     // Re-order distributed dof map for process locality
     static void reorder_distributed(DofMap& dofmap,
-                                   const Mesh& mesh,
-                                   std::shared_ptr<const Restriction> restriction,
-                                   const map& restricted_dofs_inverse,
-                                   std::size_t block_size);
+				    const Mesh& mesh,
+				    std::shared_ptr<const Restriction> restriction,
+				    const map& restricted_dofs_inverse,
+				    std::size_t block_size,
+				    const DofMapBuilder::set& global_dofs);
 
     // Compute which process 'owns' each node (point at which dofs live)
     //   node_ownership[0] -> all dofs owned by this process (will intersect dof_ownership[1])
@@ -134,6 +135,7 @@ namespace dolfin
     static void parallel_renumber(const boost::array<set, 3>& node_ownership,
                                   const vec_map& shared_node_processes,
                                   DofMap& dofmap,
+				  const DofMapBuilder::set& global_dofs,
                                   const Mesh& mesh,
                                   std::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse,
