@@ -51,9 +51,9 @@ using namespace dolfin;
 void DofMapBuilder::build(
   DofMap& dofmap,
   const Mesh& mesh,
-  boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
+  std::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
   std::pair<unsigned int, unsigned int> > > > slave_master_entities,
-  boost::shared_ptr<const Restriction> restriction)
+  std::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
   Timer t0("Init dofmap");
@@ -130,7 +130,7 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
 
   // Build UFC-based dof map for sub-dofmap
   map restricted_dofs_inverse;
-  boost::shared_ptr<const Restriction> restriction;
+  std::shared_ptr<const Restriction> restriction;
   build_ufc_dofmap(sub_dofmap, restricted_dofs_inverse, mesh,
                    parent_dofmap.slave_master_mesh_entities, restriction);
 
@@ -464,9 +464,9 @@ void DofMapBuilder::build_ufc_dofmap(
   DofMap& dofmap,
   DofMapBuilder::map& restricted_dofs_inverse,
   const Mesh& mesh,
-  boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
+  std::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
   std::pair<unsigned int, unsigned int> > > > slave_master_entities,
-  boost::shared_ptr<const Restriction> restriction)
+  std::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
   Timer t0("Init dofmap from UFC dofmap");
@@ -632,7 +632,7 @@ void DofMapBuilder::build_ufc_dofmap(
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_distributed(DofMap& dofmap,
                             const Mesh& mesh,
-                            boost::shared_ptr<const Restriction> restriction,
+                            std::shared_ptr<const Restriction> restriction,
                             const map& restricted_dofs_inverse,
                             std::size_t block_size)
 {
@@ -664,7 +664,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
                               DofMap& dofmap,
                               const DofMapBuilder::set& global_dofs,
                               const Mesh& mesh,
-                              boost::shared_ptr<const Restriction> restriction,
+                              std::shared_ptr<const Restriction> restriction,
                               const map& restricted_nodes_inverse,
                               std::size_t block_size)
 {
@@ -883,7 +883,7 @@ void DofMapBuilder::parallel_renumber(
   const vec_map& shared_node_processes,
   DofMap& dofmap,
   const Mesh& mesh,
-  boost::shared_ptr<const Restriction> restriction,
+  std::shared_ptr<const Restriction> restriction,
   const map& restricted_nodes_inverse,
   std::size_t block_size)
 {
@@ -1154,7 +1154,7 @@ DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap)
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
                           std::size_t& offset,
-                          boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+                          std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                           const DofMap& dofmap)
 {
   dolfin_assert(ufc_dofmap);
@@ -1205,7 +1205,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
     for (std::size_t i = 0; i < ufc_dofmap->num_sub_dofmaps(); ++i)
     {
       // Extract sub-dofmap and intialise
-      boost::shared_ptr<ufc::dofmap>
+      std::shared_ptr<ufc::dofmap>
         sub_dofmap(ufc_dofmap->create_sub_dofmap(i));
 
       compute_global_dofs(global_dofs, offset, sub_dofmap, dofmap);
@@ -1217,7 +1217,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
   }
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
+std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
   const ufc::dofmap& ufc_dofmap,
   std::size_t& offset,
   const std::vector<std::size_t>& component,
@@ -1264,7 +1264,7 @@ boost::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
   }
 
   // Create UFC sub-system
-  boost::shared_ptr<ufc::dofmap>
+  std::shared_ptr<ufc::dofmap>
     sub_dofmap(ufc_dofmap.create_sub_dofmap(component[0]));
   dolfin_assert(sub_dofmap);
 
@@ -1278,7 +1278,7 @@ boost::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
     for (std::size_t i = 1; i < component.size(); ++i)
       sub_component.push_back(component[i]);
 
-    boost::shared_ptr<ufc::dofmap> sub_sub_dofmap
+    std::shared_ptr<ufc::dofmap> sub_sub_dofmap
         = extract_ufc_sub_dofmap(*sub_dofmap, offset, sub_component,
                                  num_global_mesh_entities);
 

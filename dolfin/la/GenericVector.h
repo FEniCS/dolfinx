@@ -110,7 +110,7 @@ namespace dolfin
     //--- Vector interface ---
 
     /// Return copy of vector
-    virtual boost::shared_ptr<GenericVector> copy() const = 0;
+    virtual std::shared_ptr<GenericVector> copy() const = 0;
 
     /// Initialize vector to global size N
     virtual void init(MPI_Comm comm, std::size_t N) = 0;

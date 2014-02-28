@@ -32,8 +32,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FunctionAssigner::FunctionAssigner(boost::shared_ptr<const FunctionSpace> receiving_space,
-				   boost::shared_ptr<const FunctionSpace> assigning_space)
+FunctionAssigner::FunctionAssigner(std::shared_ptr<const FunctionSpace> receiving_space,
+				   std::shared_ptr<const FunctionSpace> assigning_space)
   : _receiving_spaces(1, receiving_space),_assigning_spaces(1, assigning_space),
     _receiving_indices(1), _assigning_indices(1), _transfer(1)
 {
@@ -44,8 +44,8 @@ FunctionAssigner::FunctionAssigner(boost::shared_ptr<const FunctionSpace> receiv
   _check_and_build_indices(mesh, _receiving_spaces, _assigning_spaces);
 }
 //-----------------------------------------------------------------------------
-FunctionAssigner::FunctionAssigner(std::vector<boost::shared_ptr<const FunctionSpace> > receiving_spaces,
-	           boost::shared_ptr<const FunctionSpace> assigning_space)
+FunctionAssigner::FunctionAssigner(std::vector<std::shared_ptr<const FunctionSpace> > receiving_spaces,
+	           std::shared_ptr<const FunctionSpace> assigning_space)
   : _receiving_spaces(receiving_spaces), _assigning_spaces(1, assigning_space),
     _receiving_indices(receiving_spaces.size()),
     _assigning_indices(receiving_spaces.size()),
@@ -67,7 +67,7 @@ FunctionAssigner::FunctionAssigner(std::vector<boost::shared_ptr<const FunctionS
   }
 
   // Collect assigning sub spaces
-  std::vector<boost::shared_ptr<const FunctionSpace> > assigning_sub_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace> > assigning_sub_spaces;
   for (std::size_t sub_space_ind = 0; sub_space_ind < N; sub_space_ind++)
     assigning_sub_spaces.push_back((*_assigning_spaces[0])[sub_space_ind]);
 
@@ -76,8 +76,8 @@ FunctionAssigner::FunctionAssigner(std::vector<boost::shared_ptr<const FunctionS
 
 }
 //-----------------------------------------------------------------------------
-FunctionAssigner::FunctionAssigner(boost::shared_ptr<const FunctionSpace> receiving_space,
-				   std::vector<boost::shared_ptr<const FunctionSpace> > assigning_spaces)
+FunctionAssigner::FunctionAssigner(std::shared_ptr<const FunctionSpace> receiving_space,
+				   std::vector<std::shared_ptr<const FunctionSpace> > assigning_spaces)
   :_receiving_spaces(1, receiving_space), _assigning_spaces(assigning_spaces),
    _receiving_indices(assigning_spaces.size()),
    _assigning_indices(assigning_spaces.size()),
@@ -99,7 +99,7 @@ FunctionAssigner::FunctionAssigner(boost::shared_ptr<const FunctionSpace> receiv
   }
 
   // Collect receiving sub spaces
-  std::vector<boost::shared_ptr<const FunctionSpace> > receiving_sub_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace> > receiving_sub_spaces;
   for (std::size_t sub_space_ind = 0; sub_space_ind < N; sub_space_ind++)
     receiving_sub_spaces.push_back((*_receiving_spaces[0])[sub_space_ind]);
 
@@ -113,20 +113,20 @@ FunctionAssigner::~FunctionAssigner()
 }
 //-----------------------------------------------------------------------------
 void
-FunctionAssigner::assign(boost::shared_ptr<Function> receiving_func,
-                         boost::shared_ptr<const Function> assigning_func) const
+FunctionAssigner::assign(std::shared_ptr<Function> receiving_func,
+                         std::shared_ptr<const Function> assigning_func) const
 {
   // Wrap functions
-  std::vector<boost::shared_ptr<Function> > receiving_funcs(1, receiving_func);
-  std::vector<boost::shared_ptr<const Function> >
+  std::vector<std::shared_ptr<Function> > receiving_funcs(1, receiving_func);
+  std::vector<std::shared_ptr<const Function> >
     assigning_funcs(1, assigning_func);
 
   // Do the assignment
   _assign(receiving_funcs, assigning_funcs);
 }
 //-----------------------------------------------------------------------------
-void FunctionAssigner::assign(boost::shared_ptr<Function> receiving_func,
-      std::vector<boost::shared_ptr<const Function> > assigning_funcs) const
+void FunctionAssigner::assign(std::shared_ptr<Function> receiving_func,
+      std::vector<std::shared_ptr<const Function> > assigning_funcs) const
 {
   // Num assigning functions
   const std::size_t N = assigning_funcs.size();
@@ -139,10 +139,10 @@ void FunctionAssigner::assign(boost::shared_ptr<Function> receiving_func,
   }
 
   // Collect receiving sub functions
-  std::vector<boost::shared_ptr<Function> > receiving_funcs(0);
+  std::vector<std::shared_ptr<Function> > receiving_funcs(0);
   for (std::size_t i = 0; i < N; i++)
   {
-    boost::shared_ptr<Function>
+    std::shared_ptr<Function>
       func(reference_to_no_delete_pointer((*receiving_func)[i]));
     receiving_funcs.push_back(func);
   }
@@ -151,8 +151,8 @@ void FunctionAssigner::assign(boost::shared_ptr<Function> receiving_func,
   _assign(receiving_funcs, assigning_funcs);
 }
 //-----------------------------------------------------------------------------
-void FunctionAssigner::assign(std::vector<boost::shared_ptr<Function> > receiving_funcs,
-			      boost::shared_ptr<const Function> assigning_func) const
+void FunctionAssigner::assign(std::vector<std::shared_ptr<Function> > receiving_funcs,
+			      std::shared_ptr<const Function> assigning_func) const
 {
   // Num receiving functions
   const std::size_t N = receiving_funcs.size();
@@ -165,10 +165,10 @@ void FunctionAssigner::assign(std::vector<boost::shared_ptr<Function> > receivin
   }
 
   // Collect receiving sub functions
-  std::vector<boost::shared_ptr<const Function> > assigning_funcs(0);
+  std::vector<std::shared_ptr<const Function> > assigning_funcs(0);
   for (std::size_t i = 0; i < N; i++)
   {
-    boost::shared_ptr<const Function>
+    std::shared_ptr<const Function>
       func(reference_to_no_delete_pointer((*assigning_func)[i]));
     assigning_funcs.push_back(func);
   }
@@ -177,8 +177,8 @@ void FunctionAssigner::assign(std::vector<boost::shared_ptr<Function> > receivin
   _assign(receiving_funcs, assigning_funcs);
 }
 //-----------------------------------------------------------------------------
-void FunctionAssigner::_assign(std::vector<boost::shared_ptr<Function> > receiving_funcs,
-			       std::vector<boost::shared_ptr<const Function> > assigning_funcs) const
+void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving_funcs,
+			       std::vector<std::shared_ptr<const Function> > assigning_funcs) const
 {
   // Num spaces
   const std::size_t N = std::max(_assigning_spaces.size(),
@@ -385,8 +385,8 @@ const Mesh& FunctionAssigner::_get_mesh() const
 }
 //-----------------------------------------------------------------------------
 void FunctionAssigner::_check_and_build_indices(const Mesh& mesh,
-	  const std::vector<boost::shared_ptr<const FunctionSpace> >& receiving_spaces,
-	  const std::vector<boost::shared_ptr<const FunctionSpace> >& assigning_spaces)
+	  const std::vector<std::shared_ptr<const FunctionSpace> >& receiving_spaces,
+	  const std::vector<std::shared_ptr<const FunctionSpace> >& assigning_spaces)
 {
 
   // Num spaces

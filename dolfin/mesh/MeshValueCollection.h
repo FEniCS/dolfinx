@@ -25,7 +25,7 @@
 
 #include <map>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
@@ -60,7 +60,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    explicit MeshValueCollection(boost::shared_ptr<const Mesh> mesh);
+    explicit MeshValueCollection(std::shared_ptr<const Mesh> mesh);
 
     /// Create a mesh value collection from a MeshFunction
     ///
@@ -87,7 +87,7 @@ namespace dolfin
     ///         The mesh associated with the collection.
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    MeshValueCollection(boost::shared_ptr<const Mesh> mesh, std::size_t dim);
+    MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
     /// Create a mesh value collection from a file.
     ///
@@ -138,7 +138,7 @@ namespace dolfin
     ///         The mesh on which the value collection is defined
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    void init(boost::shared_ptr<const Mesh> mesh, std::size_t dim);
+    void init(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
     /// Set dimension. This function should not generally be used. It is
     /// for reading MeshValueCollections as the dimension is not
@@ -161,7 +161,7 @@ namespace dolfin
     /// *Returns*
     ///     _Mesh_
     ///         The mesh.
-    boost::shared_ptr<const Mesh> mesh() const;
+    std::shared_ptr<const Mesh> mesh() const;
 
     /// Return true if the subset is empty
     ///
@@ -256,7 +256,7 @@ namespace dolfin
   private:
 
     // Associated mesh
-    boost::shared_ptr<const Mesh> _mesh;
+    std::shared_ptr<const Mesh> _mesh;
 
     // Topological dimension
     int _dim;
@@ -277,7 +277,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>::MeshValueCollection(boost::shared_ptr<const Mesh>
+    MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh>
                                                 mesh) : _mesh(mesh), _dim(-1)
   {
     // Do nothing
@@ -293,7 +293,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>::MeshValueCollection(boost::shared_ptr<const Mesh>
+    MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh>
                                                 mesh, std::size_t dim)
     : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh), _dim(dim)
   {
@@ -433,7 +433,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    void MeshValueCollection<T>::init(boost::shared_ptr<const Mesh> mesh,
+    void MeshValueCollection<T>::init(std::shared_ptr<const Mesh> mesh,
                                       std::size_t dim)
   {
     mesh->init(dim);
@@ -470,7 +470,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    boost::shared_ptr<const Mesh> MeshValueCollection<T>::mesh() const
+    std::shared_ptr<const Mesh> MeshValueCollection<T>::mesh() const
   {
     dolfin_assert(_mesh);
     return _mesh;

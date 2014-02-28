@@ -57,7 +57,7 @@ namespace dolfin
     /// *Returns*
     ///     _GenericDofMap_
     ///         Dofmap (part) number i
-    boost::shared_ptr<const GenericDofMap> part(std::size_t i) const;
+    std::shared_ptr<const GenericDofMap> part(std::size_t i) const;
 
     /// Set current part. This will make the CCFEM dofmap act as a
     /// dofmap for the part of the CCFEM function space defined on the
@@ -73,7 +73,7 @@ namespace dolfin
     /// *Arguments*
     ///     dofmap (_GenericDofMap_)
     ///         The dofmap.
-    void add(boost::shared_ptr<const GenericDofMap> dofmap);
+    void add(std::shared_ptr<const GenericDofMap> dofmap);
 
     /// Add dofmap (reference version)
     ///
@@ -117,7 +117,7 @@ namespace dolfin
 
     /// Restriction if any. If the dofmap is not restricted, a null
     /// pointer is returned.
-    boost::shared_ptr<const Restriction> restriction() const;
+    std::shared_ptr<const Restriction> restriction() const;
 
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
@@ -164,19 +164,19 @@ namespace dolfin
       tabulate_all_coordinates(const Mesh& mesh) const;
 
     /// Create a copy of the dof map
-    boost::shared_ptr<GenericDofMap> copy() const;
+    std::shared_ptr<GenericDofMap> copy() const;
 
     /// Create a new dof map on new mesh
-    boost::shared_ptr<GenericDofMap>
+    std::shared_ptr<GenericDofMap>
       create(const Mesh& new_mesh) const;
 
     /// Extract sub dofmap component
-    boost::shared_ptr<GenericDofMap>
+    std::shared_ptr<GenericDofMap>
         extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const Mesh& mesh) const;
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-    boost::shared_ptr<GenericDofMap>
+    std::shared_ptr<GenericDofMap>
         collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                  const Mesh& mesh) const;
 
@@ -214,7 +214,7 @@ namespace dolfin
     std::size_t _global_dimension;
 
     // List of dofmaps
-    std::vector<boost::shared_ptr<const GenericDofMap> > _dofmaps;
+    std::vector<std::shared_ptr<const GenericDofMap> > _dofmaps;
 
     // Current part (mesh)
     mutable std::size_t _current_part;

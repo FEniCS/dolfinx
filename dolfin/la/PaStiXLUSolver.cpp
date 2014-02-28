@@ -84,7 +84,7 @@ PaStiXLUSolver::PaStiXLUSolver(const STLMatrix& A)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A) : A(A)
+PaStiXLUSolver::PaStiXLUSolver(std::shared_ptr<const STLMatrix> A) : A(A)
 {
   // Set parameter values
   parameters = default_parameters();

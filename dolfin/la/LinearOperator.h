@@ -20,7 +20,7 @@
 #ifndef __LINEAR_OPERATOR_H
 #define __LINEAR_OPERATOR_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "GenericLinearOperator.h"
 
 namespace dolfin
@@ -68,15 +68,15 @@ namespace dolfin
     virtual GenericLinearOperator* instance();
 
     /// Return concrete instance / unwrap (const shared pointer version)
-    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const;
+    virtual std::shared_ptr<const LinearAlgebraObject> shared_instance() const;
 
     /// Return concrete instance / unwrap (shared pointer version)
-    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance();
+    virtual std::shared_ptr<LinearAlgebraObject> shared_instance();
 
   private:
 
     // Pointer to concrete implementation
-    boost::shared_ptr<GenericLinearOperator> _A;
+    std::shared_ptr<GenericLinearOperator> _A;
 
   };
 

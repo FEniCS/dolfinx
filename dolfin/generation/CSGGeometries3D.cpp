@@ -29,7 +29,7 @@
 
 using namespace dolfin;
 
-boost::shared_ptr<CSGGeometry> CSGGeometries::lego(std::size_t n0,
+std::shared_ptr<CSGGeometry> CSGGeometries::lego(std::size_t n0,
                                                    std::size_t n1,
                                                    std::size_t n2,
                                                    double x0,
@@ -44,7 +44,7 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::lego(std::size_t n0,
   const double d = 0.2 * 0.001;
 
   // Create brick
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     lego(new Box(x0 + 0.5*d, x1 + 0.5*d, x2,
                  x0 + n0*P - 0.5*d, x1 + n1*P - 0.5*d, x2 + n2*h));
 
@@ -57,7 +57,7 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::lego(std::size_t n0,
       const double y = x1 + (j + 0.5)*P;
       const double z = x2;
 
-      boost::shared_ptr<CSGGeometry>
+      std::shared_ptr<CSGGeometry>
         knob(new Cone(Point(x, y, z), Point(x, y, z + n2*h + b), 0.5*D, 0.5*D));
       lego = lego + knob;
     }
@@ -66,7 +66,7 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::lego(std::size_t n0,
   return lego;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<CSGGeometry> CSGGeometries::propeller(double r, double R,
+std::shared_ptr<CSGGeometry> CSGGeometries::propeller(double r, double R,
                                                         double w, double h)
 {
   // Parameters
@@ -76,13 +76,13 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::propeller(double r, double R,
   const double a = h;      // radius of tip of cone
 
   // // Create blades
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blade_0(new Box(0.8*r, -0.5*h, -0.5*w, R, 0.5*h, 0.5*w));
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blade_1(new Box(-R, -0.5*h, -0.5*w, -0.8*r, 0.5*h, 0.5*w));
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blade_2(new Box(-0.5*h, 0.8*r, -0.5*w,  0.5*h, R, 0.5*w));
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blade_3(new Box(-0.5*h, -R, -0.5*w, 0.5*h, -0.8*r, 0.5*w));
 
   // // Rotate blades
@@ -92,16 +92,16 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::propeller(double r, double R,
   // // blade_3.rotate(-v, 1);
 
   // Create blade tips
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blade_tip_0(new Cylinder(Point( R, -0.5*h, 0),
                              Point( R, 0.5*h, 0), 0.5*w));
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blade_tip_1(new Cylinder(Point(-R, -0.5*h, 0),
                              Point(-R,0.5*h, 0), 0.5*w));
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blade_tip_2(new Cylinder(Point(-0.5*h,  R, 0),
                              Point( 0.5*h,  R, 0), 0.5*w));
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blade_tip_3(new Cylinder(Point(-0.5*h, -R, 0),
                              Point( 0.5*h, -R, 0), 0.5*w));
 
@@ -118,25 +118,25 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::propeller(double r, double R,
   blade_3 = blade_3 + blade_tip_3;
 
   // // Add blades
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     blades = blade_0 + blade_1 + blade_2 + blade_3;
 
   // Create outer cylinder
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     cylinder_outer(new Cylinder(Point(0, 0, -0.5*w), Point(0, 0, 0.5*w), r));
 
   // Create inner cylinder
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     cylinder_inner(new Cylinder(Point(0, 0, -0.5*w), Point(0, 0, 0.5*w),
                                 0.5*r));
 
   // Create center cone
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     cone( new Cone(Point(0, 0, -0.5*w), Point(0, 0, -0.5*w - l), r, a));
 
   // Create sphere for tip of cone
   const double d = a*(r - a) / l;
-  boost::shared_ptr<CSGGeometry>
+  std::shared_ptr<CSGGeometry>
     tip(new Sphere(Point(0, 0, -0.5*w - l + d), sqrt(a*a + d*d)));
 
   // Build propeller from parts

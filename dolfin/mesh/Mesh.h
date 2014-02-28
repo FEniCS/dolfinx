@@ -33,7 +33,7 @@
 
 #include <string>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/ale/MeshDisplacement.h>
 #include <dolfin/common/Hierarchical.h>
@@ -150,7 +150,7 @@ namespace dolfin
     ///         The CSG geometry
     ///     resolution (std::size_t)
     ///         An integer specifying the mesh resolution
-    Mesh(boost::shared_ptr<const CSGGeometry> geometry,
+    Mesh(std::shared_ptr<const CSGGeometry> geometry,
          std::size_t resolution);
 
     /// Destructor.
@@ -352,7 +352,7 @@ namespace dolfin
     /// responsibility of the caller to use (and possibly rebuild) the
     /// tree. It is stored as a (mutable) member of the mesh to enable
     /// sharing of the bounding box tree data structure.
-    boost::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
+    std::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
 
     /// Get mesh data.
     ///
@@ -468,7 +468,7 @@ namespace dolfin
     ///     MeshDisplacement
     ///         Displacement encapsulated in Expression subclass
     ///         MeshDisplacement.
-    boost::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
+    std::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with
     /// common global vertices.
@@ -481,7 +481,7 @@ namespace dolfin
     ///     MeshDisplacement
     ///         Displacement encapsulated in Expression subclass
     ///         MeshDisplacement.
-    boost::shared_ptr<MeshDisplacement> move(Mesh& mesh);
+    std::shared_ptr<MeshDisplacement> move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
     ///
@@ -682,7 +682,7 @@ namespace dolfin
     // Bounding box tree used to compute collisions between the mesh
     // and other objects. The tree is initialized to a zero pointer
     // and is allocated and built when bounding_box_tree() is called.
-    mutable boost::shared_ptr<BoundingBoxTree> _tree;
+    mutable std::shared_ptr<BoundingBoxTree> _tree;
 
     // Cell type
     CellType* _cell_type;

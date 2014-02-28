@@ -26,7 +26,7 @@
 #define __MATRIX_H
 
 #include <boost/tuple/tuple.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
@@ -97,9 +97,9 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const
+    virtual std::shared_ptr<GenericMatrix> copy() const
     {
-      boost::shared_ptr<Matrix> A(new Matrix(*this));
+      std::shared_ptr<Matrix> A(new Matrix(*this));
       return A;
     }
 
@@ -201,10 +201,10 @@ namespace dolfin
     virtual GenericMatrix* instance()
     { return matrix.get(); }
 
-    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
+    virtual std::shared_ptr<const LinearAlgebraObject> shared_instance() const
     { return matrix; }
 
-    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
+    virtual std::shared_ptr<LinearAlgebraObject> shared_instance()
     { return matrix; }
 
     //--- Special Matrix functions ---
@@ -216,7 +216,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    boost::shared_ptr<GenericMatrix> matrix;
+    std::shared_ptr<GenericMatrix> matrix;
 
   };
 

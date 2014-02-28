@@ -111,9 +111,9 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
 }
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::NonlinearVariationalProblem(
-  boost::shared_ptr<const Form> F,
-  boost::shared_ptr<Function> u,
-  std::vector<boost::shared_ptr<const DirichletBC> > bcs)
+  std::shared_ptr<const Form> F,
+  std::shared_ptr<Function> u,
+  std::vector<std::shared_ptr<const DirichletBC> > bcs)
   : Hierarchical<NonlinearVariationalProblem>(*this), _F(F), _u(u)
 {
   // Store boundary conditions
@@ -125,10 +125,10 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
 }
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::NonlinearVariationalProblem(
-  boost::shared_ptr<const Form> F,
-  boost::shared_ptr<Function> u,
-  std::vector<boost::shared_ptr<const DirichletBC> > bcs,
-  boost::shared_ptr<const Form> J)
+  std::shared_ptr<const Form> F,
+  std::shared_ptr<Function> u,
+  std::vector<std::shared_ptr<const DirichletBC> > bcs,
+  std::shared_ptr<const Form> J)
   : Hierarchical<NonlinearVariationalProblem>(*this), _F(F), _J(J), _u(u)
 {
   // Store boundary conditions
@@ -140,8 +140,8 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(
-  boost::shared_ptr<const Function> lb_func,
-  boost::shared_ptr<const Function> ub_func)
+  std::shared_ptr<const Function> lb_func,
+  std::shared_ptr<const Function> ub_func)
 {
     set_bounds(*lb_func,*ub_func);
 }
@@ -160,8 +160,8 @@ void NonlinearVariationalProblem::set_bounds(const GenericVector& lb,
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(
-  boost::shared_ptr<const GenericVector> lb,
-  boost::shared_ptr<const GenericVector> ub)
+  std::shared_ptr<const GenericVector> lb,
+  std::shared_ptr<const GenericVector> ub)
 {
     this->_lb = lb;
     this->_ub = ub;
@@ -169,54 +169,54 @@ void NonlinearVariationalProblem::set_bounds(
     dolfin_assert(_ub);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> NonlinearVariationalProblem::residual_form() const
+std::shared_ptr<const Form> NonlinearVariationalProblem::residual_form() const
 {
   return _F;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> NonlinearVariationalProblem::jacobian_form() const
+std::shared_ptr<const Form> NonlinearVariationalProblem::jacobian_form() const
 {
   return _J;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Function> NonlinearVariationalProblem::solution()
+std::shared_ptr<Function> NonlinearVariationalProblem::solution()
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Function> NonlinearVariationalProblem::solution() const
+std::shared_ptr<const Function> NonlinearVariationalProblem::solution() const
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const DirichletBC> >
+std::vector<std::shared_ptr<const DirichletBC> >
 NonlinearVariationalProblem::bcs() const
 {
   return _bcs;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 NonlinearVariationalProblem::trial_space() const
 {
   dolfin_assert(_u);
   return _u->function_space();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace>
+std::shared_ptr<const FunctionSpace>
 NonlinearVariationalProblem::test_space() const
 {
   dolfin_assert(_F);
   return _F->function_space(0);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector>
+std::shared_ptr<const GenericVector>
 NonlinearVariationalProblem::lower_bound() const
 {
   dolfin_assert(_lb);
   return _lb;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector>
+std::shared_ptr<const GenericVector>
 NonlinearVariationalProblem::upper_bound() const
 {
   dolfin_assert(_ub);
