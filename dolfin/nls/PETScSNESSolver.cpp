@@ -21,8 +21,7 @@
 // First added:  2012-10-13
 // Last changed: 2013-11-21
 
-#ifdef HAS_PETSC
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
+#ifdef ENABLE_PETSC_SNES
 
 #include <map>
 #include <string>
@@ -70,7 +69,7 @@ struct snes_ctx_t
         ("ncg",         std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
         ("fas",         std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
         ("ms",          std::make_pair("Multistage smoothers", SNESMS));
-  #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 4 // PETSc 3.4
+  #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 4
   // Mapping from method string to PETSc
   const std::map<std::string, std::pair<std::string, const SNESType> >
   PETScSNESSolver::_methods
@@ -614,5 +613,4 @@ bool PETScSNESSolver::is_vi() const
 }
 //-----------------------------------------------------------------------------
 
-#endif
 #endif
