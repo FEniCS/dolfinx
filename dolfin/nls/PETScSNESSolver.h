@@ -23,8 +23,7 @@
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
 
-#ifdef HAS_PETSC
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
+#ifdef ENABLE_PETSC_SNES
 
 #include <map>
 #include <petscsnes.h>
@@ -144,7 +143,6 @@ namespace dolfin
 
 }
 
-#endif
 #endif
 
 #endif
