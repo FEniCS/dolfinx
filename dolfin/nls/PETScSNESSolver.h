@@ -1,4 +1,3 @@
-
 // Copyright (C) 2012 Patrick E. Farrell
 //
 // This file is part of DOLFIN.
@@ -25,6 +24,7 @@
 #define __PETSC_SNES_SOLVER_H
 
 #ifdef HAS_PETSC
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
 
 #include <map>
 #include <petscsnes.h>
@@ -144,6 +144,7 @@ namespace dolfin
 
 }
 
+#endif
 #endif
 
 #endif

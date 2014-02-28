@@ -133,8 +133,10 @@ namespace dolfin
       p.add(NewtonSolver::default_parameters());
 
       #ifdef HAS_PETSC
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
       p.add(PETScSNESSolver::default_parameters());
       nonlinear_solvers.insert("snes");
+      #endif
       #endif
 
       p.add("nonlinear_solver", default_nonlinear_solver, nonlinear_solvers);
@@ -181,8 +183,10 @@ namespace dolfin
     std::shared_ptr<NewtonSolver> newton_solver;
 
     #ifdef HAS_PETSC
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
     // Or, alternatively, the SNES solver
     std::shared_ptr<PETScSNESSolver> snes_solver;
+    #endif
     #endif
 
   };
