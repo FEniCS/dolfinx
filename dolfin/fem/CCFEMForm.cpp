@@ -26,7 +26,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMForm::CCFEMForm(boost::shared_ptr<const CCFEMFunctionSpace> function_space)
+CCFEMForm::CCFEMForm(std::shared_ptr<const CCFEMFunctionSpace> function_space)
   : _rank(0)
 {
   _function_spaces.push_back(function_space);
@@ -38,8 +38,8 @@ CCFEMForm::CCFEMForm(const CCFEMFunctionSpace& function_space)
   _function_spaces.push_back(reference_to_no_delete_pointer(function_space));
 }
 //-----------------------------------------------------------------------------
-CCFEMForm::CCFEMForm(boost::shared_ptr<const CCFEMFunctionSpace> function_space_0,
-                     boost::shared_ptr<const CCFEMFunctionSpace> function_space_1)
+CCFEMForm::CCFEMForm(std::shared_ptr<const CCFEMFunctionSpace> function_space_0,
+                     std::shared_ptr<const CCFEMFunctionSpace> function_space_1)
   : _rank(0)
 {
   _function_spaces.push_back(function_space_0);
@@ -69,20 +69,20 @@ std::size_t CCFEMForm::num_parts() const
   return _forms.size();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> CCFEMForm::part(std::size_t i) const
+std::shared_ptr<const Form> CCFEMForm::part(std::size_t i) const
 {
   dolfin_assert(i < _forms.size());
   return _forms[i];
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const CCFEMFunctionSpace>
+std::shared_ptr<const CCFEMFunctionSpace>
 CCFEMForm::function_space(std::size_t i) const
 {
   dolfin_assert(i < _function_spaces.size());
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-void CCFEMForm::add(boost::shared_ptr<const Form> form)
+void CCFEMForm::add(std::shared_ptr<const Form> form)
 {
   _forms.push_back(form);
   log(PROGRESS, "Added form to CCFEM form; form has %d part(s).",

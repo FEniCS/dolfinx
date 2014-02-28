@@ -616,7 +616,7 @@ if (PYTHONINTERP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN Python module
+# Installation of DOLFIN and FEniCS Python modules
 
 if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(DIRECTORY
@@ -633,6 +633,14 @@ if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(FILES ${CMAKE_BINARY_DIR}/globalparameters.py
     DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/common/
     COMPONENT RuntimeLibraries
+    )
+
+  install(DIRECTORY
+    ${CMAKE_SOURCE_DIR}/site-packages/fenics
+    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+    USE_SOURCE_PERMISSIONS
+    COMPONENT RuntimeLibraries
+    PATTERN "*.in" EXCLUDE
     )
 endif()
 

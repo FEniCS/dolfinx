@@ -25,7 +25,7 @@
 
 #ifdef HAS_VTK
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <vtkWarpScalar.h>
 #include <vtkWarpVector.h>
 #include <vtkGlyph3D.h>
@@ -53,10 +53,10 @@ namespace dolfin
   public:
 
     explicit
-    VTKPlottableGenericFunction(boost::shared_ptr<const Function> function);
+    VTKPlottableGenericFunction(std::shared_ptr<const Function> function);
 
-    VTKPlottableGenericFunction(boost::shared_ptr<const Expression> expression,
-                                boost::shared_ptr<const Mesh> mesh);
+    VTKPlottableGenericFunction(std::shared_ptr<const Expression> expression,
+                                std::shared_ptr<const Mesh> mesh);
 
     virtual ~VTKPlottableGenericFunction() {}
 
@@ -80,7 +80,7 @@ namespace dolfin
     void init_pipeline(const Parameters& p);
 
     /// Update the plottable data
-    void update(boost::shared_ptr<const Variable> var, const Parameters& p,
+    void update(std::shared_ptr<const Variable> var, const Parameters& p,
                 int framecounter);
 
     /// Check if the plotter is compatible with a given variable
@@ -105,7 +105,7 @@ namespace dolfin
     void update_vector();
 
     // The function to visualize
-    boost::shared_ptr<const GenericFunction> _function;
+    std::shared_ptr<const GenericFunction> _function;
 
     // The scalar warp filter
     vtkSmartPointer<vtkWarpScalar> _warpscalar;
@@ -124,12 +124,12 @@ namespace dolfin
   };
 
   VTKPlottableGenericFunction*
-    CreateVTKPlottable(boost::shared_ptr<const Function>);
+    CreateVTKPlottable(std::shared_ptr<const Function>);
   VTKPlottableGenericFunction*
-    CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper>);
+    CreateVTKPlottable(std::shared_ptr<const ExpressionWrapper>);
   VTKPlottableGenericFunction*
-    CreateVTKPlottable(boost::shared_ptr<const Expression>,
-                       boost::shared_ptr<const Mesh>);
+    CreateVTKPlottable(std::shared_ptr<const Expression>,
+                       std::shared_ptr<const Mesh>);
 
 }
 

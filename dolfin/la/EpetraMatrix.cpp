@@ -75,7 +75,7 @@ EpetraMatrix::EpetraMatrix(Teuchos::RCP<Epetra_FECrsMatrix> A)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : _A(A)
+EpetraMatrix::EpetraMatrix(std::shared_ptr<Epetra_FECrsMatrix> A) : _A(A)
 {
   // Do nothing
 }
@@ -193,9 +193,9 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   _A.reset(new Epetra_FECrsMatrix(Copy, matrix_map));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
+std::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
 {
-  boost::shared_ptr<EpetraMatrix> B(new EpetraMatrix(*this));
+  std::shared_ptr<EpetraMatrix> B(new EpetraMatrix(*this));
   return B;
 }
 //-----------------------------------------------------------------------------
@@ -739,7 +739,7 @@ GenericLinearAlgebraFactory& EpetraMatrix::factory() const
   return EpetraFactory::instance();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
+std::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
 {
   return _A;
 }

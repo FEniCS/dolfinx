@@ -15,11 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
-//
-// First added:  2010-02-25
-// Last changed: 2011-10-19
-
 #ifndef __DOLFIN_TRILINOS_PRECONDITIONER_H
 #define __DOLFIN_TRILINOS_PRECONDITIONER_H
 
@@ -27,7 +22,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 
@@ -36,29 +31,30 @@
 #include <dolfin/parameter/Parameters.h>
 #include "GenericPreconditioner.h"
 
-#include <BelosLinearProblem.hpp>
-#include <Epetra_MultiVector.h>
-#include <Epetra_Operator.h>
-
-// some typdefs for Belos
-typedef double ST;
-typedef Epetra_MultiVector MV;
-typedef Epetra_Operator OP;
-
 // Trilinos forward declarations
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
+class Epetra_Operator;
 class Ifpack_Preconditioner;
-
+namespace Belos {
+  template<class ScalarType, class MV, class OP>
+  class LinearProblem;
+}
 namespace ML_Epetra
 {
   class MultiLevelPreconditioner;
 }
-
 namespace Teuchos
 {
   class ParameterList;
 }
+
+// some typdefs for Belos
+typedef double BelosScalarType;
+typedef Epetra_MultiVector BelosMultiVector;
+typedef Epetra_Operator BelosOperator;
+typedef Belos::LinearProblem<BelosScalarType, BelosMultiVector, BelosOperator>
+        BelosLinearProblem;
 
 namespace dolfin
 {
@@ -85,12 +81,12 @@ namespace dolfin
     virtual ~TrilinosPreconditioner();
 
     /// Set the precondtioner and matrix used in preconditioner
-    virtual void set(Belos::LinearProblem<ST,MV,OP>& problem,
+    virtual void set(BelosLinearProblem& problem,
                      const EpetraMatrix& P
                      );
 
     /// Set the Trilonos preconditioner parameters list
-    void set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list);
+    void set_parameters(std::shared_ptr<const Teuchos::ParameterList> list);
 
     /// Set the Trilonos preconditioner parameters list (for use from
     /// Python)
@@ -116,7 +112,7 @@ namespace dolfin
   private:
 
     /// Setup the ML precondtioner
-    void set_ml(Belos::LinearProblem<double, MV, OP>& problem,
+    void set_ml(BelosLinearProblem& problem,
                 const Epetra_RowMatrix& P);
 
     /// Named preconditioner
@@ -130,14 +126,14 @@ namespace dolfin
       _preconditioners_descr;
 
     // The Preconditioner
-    boost::shared_ptr<Ifpack_Preconditioner> _ifpack_preconditioner;
-    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> _ml_preconditioner;
+    std::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
+    std::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
 
     // Parameter list
-    boost::shared_ptr<const Teuchos::ParameterList> parameter_list;
+    std::shared_ptr<const Teuchos::ParameterList> parameter_list;
 
     // Vectors spanning the null space
-    boost::shared_ptr<Epetra_MultiVector> _nullspace;
+    std::shared_ptr<Epetra_MultiVector> _nullspace;
 
     // Teuchos::ParameterList pointer, used when initialized with a
     // Teuchos::RCP shared_ptr

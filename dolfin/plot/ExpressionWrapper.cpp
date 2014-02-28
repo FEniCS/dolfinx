@@ -25,8 +25,8 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-ExpressionWrapper::ExpressionWrapper(boost::shared_ptr<const Expression> expression,
-                                     boost::shared_ptr<const Mesh> mesh) :
+ExpressionWrapper::ExpressionWrapper(std::shared_ptr<const Expression> expression,
+                                     std::shared_ptr<const Mesh> mesh) :
   _mesh(mesh), _expression(expression)
 {
   // Do nothing

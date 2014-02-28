@@ -28,7 +28,7 @@
 
 #include <map>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
@@ -66,11 +66,11 @@ namespace dolfin
     ~EpetraKrylovSolver();
 
     /// Set the operator (matrix)
-    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Set the operator (matrix)
-    void set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                       boost::shared_ptr<const GenericLinearOperator> P);
+    void set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                       std::shared_ptr<const GenericLinearOperator> P);
 
     /// Get the operator (matrix)
     const GenericLinearOperator& get_operator() const;
@@ -117,13 +117,13 @@ namespace dolfin
       _methods_descr;
 
     // Operator (the matrix)
-    boost::shared_ptr<const EpetraMatrix> _A;
+    std::shared_ptr<const EpetraMatrix> _A;
 
     // Matrix used to construct the preconditoner
-    boost::shared_ptr<const EpetraMatrix> _P;
+    std::shared_ptr<const EpetraMatrix> _P;
 
     // Preconditioner
-    boost::shared_ptr<TrilinosPreconditioner> _preconditioner;
+    std::shared_ptr<TrilinosPreconditioner> _preconditioner;
 
     // Residuals
     double _relative_residual;

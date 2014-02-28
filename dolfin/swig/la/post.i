@@ -723,10 +723,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 %define AS_BACKEND_TYPE_MACRO(TENSOR_TYPE)
 %inline %{
-bool _has_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::has_type<dolfin::TENSOR_TYPE>(*tensor); }
 
-boost::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::as_type<dolfin::TENSOR_TYPE>(tensor); }
 %}
 
@@ -760,16 +760,16 @@ AS_BACKEND_TYPE_MACRO(uBLASVector)
 
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
-bool _has_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(*tensor); }
 
-boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(tensor); }
 
-bool _has_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor > tensor)
+bool _has_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::GenericTensor > tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(*tensor); }
 
-const boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+const std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(tensor); }
 %}
 

@@ -15,11 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011-2012
-//
-// First added:  2010-02-25
-// Last changed: 2013-06-25
-
 #ifdef HAS_TRILINOS
 
 #include <dolfin/common/MPI.h>
@@ -37,6 +32,7 @@
 #include <ml_MultiLevelPreconditioner.h>
 #include <Teuchos_ParameterList.hpp>
 #include <BelosEpetraAdapter.hpp>
+#include <BelosLinearProblem.hpp>
 
 #include <dolfin/log/log.h>
 #include "EpetraKrylovSolver.h"
@@ -119,7 +115,7 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
+void TrilinosPreconditioner::set(BelosLinearProblem& problem,
                                  const EpetraMatrix& P
                                  )
 {
@@ -195,14 +191,14 @@ void TrilinosPreconditioner::set(Belos::LinearProblem<ST,MV,OP>& problem,
   }
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list)
+void TrilinosPreconditioner::set_parameters(std::shared_ptr<const Teuchos::ParameterList> list)
 {
   parameter_list = list;
 }
 //-----------------------------------------------------------------------------
 void TrilinosPreconditioner::set_parameters(Teuchos::RCP<Teuchos::ParameterList> list)
 {
-  parameter_list = boost::shared_ptr<const Teuchos::ParameterList>(reference_to_no_delete_pointer(*list.get()));
+  parameter_list = std::shared_ptr<const Teuchos::ParameterList>(reference_to_no_delete_pointer(*list.get()));
   parameter_ref_keeper = list;
 }
 //-----------------------------------------------------------------------------
@@ -248,7 +244,7 @@ std::string TrilinosPreconditioner::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 void
-TrilinosPreconditioner::set_ml(Belos::LinearProblem<double, MV, OP>& problem,
+TrilinosPreconditioner::set_ml(BelosLinearProblem& problem,
                                const Epetra_RowMatrix& P)
 {
 

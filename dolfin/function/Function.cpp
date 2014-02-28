@@ -70,7 +70,7 @@ Function::Function(const FunctionSpace& V)
   init_vector();
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V)
+Function::Function(std::shared_ptr<const FunctionSpace> V)
   : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -86,8 +86,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   init_vector();
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V,
-                   boost::shared_ptr<GenericVector> x)
+Function::Function(std::shared_ptr<const FunctionSpace> V,
+                   std::shared_ptr<GenericVector> x)
   : Hierarchical<Function>(*this), _function_space(V), _vector(x),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -129,7 +129,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V,
+Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::string filename)
   : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
@@ -259,7 +259,7 @@ Function& Function::operator[] (std::size_t i) const
   {
     // Extract function subspace
     std::vector<std::size_t> component = boost::assign::list_of(i);
-    boost::shared_ptr<const FunctionSpace>
+    std::shared_ptr<const FunctionSpace>
       sub_space(_function_space->extract_sub_space(component));
 
     // Insert sub-Function into map and return reference
@@ -318,13 +318,13 @@ void Function::operator=(const FunctionAXPY& axpy)
     _vector->axpy(it->first, *(it->second->vector()));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace> Function::function_space() const
+std::shared_ptr<const FunctionSpace> Function::function_space() const
 {
   dolfin_assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> Function::vector()
+std::shared_ptr<GenericVector> Function::vector()
 {
   dolfin_assert(_vector);
   dolfin_assert(_function_space->dofmap());
@@ -340,7 +340,7 @@ boost::shared_ptr<GenericVector> Function::vector()
   return _vector;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector> Function::vector() const
+std::shared_ptr<const GenericVector> Function::vector() const
 {
   dolfin_assert(_vector);
   return _vector;
@@ -568,8 +568,17 @@ void Function::restrict(double* w, const FiniteElement& element,
     const std::vector<dolfin::la_index>& dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
-    // Pick values from vector(s)
-    _vector->get_local(w, dofs.size(), dofs.data());
+    if (dofs.size() > 0)
+    {
+      // Note: We should have dofmap.max_cell_dimension() == dofs.size() here.
+      // Pick values from vector(s)
+      _vector->get_local(w, dofs.size(), dofs.data());
+    }
+    else
+    {
+      // Set dofs to zero (zero extension of function space on a Restriction)
+      memset(w, 0, sizeof(*w)*dofmap.max_cell_dimension());
+    }
   }
   else
   {
@@ -603,7 +612,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   const FiniteElement& element = *_function_space->element();
 
   // Get restriction if any
-  boost::shared_ptr<const Restriction> restriction
+  std::shared_ptr<const Restriction> restriction
     = _function_space->dofmap()->restriction();
 
   // Local data for interpolation on each cell

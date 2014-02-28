@@ -18,7 +18,7 @@
 // First added:  2011-04-13
 // Last changed: 2013-06-23
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin
@@ -44,7 +44,7 @@ namespace dolfin
                 double magnitude=1.0);
 
     /// Create point source at given point of given magnitude
-    PointSource(boost::shared_ptr<const FunctionSpace> V,
+    PointSource(std::shared_ptr<const FunctionSpace> V,
                 const Point& p,
                 double magnitude=1.0);
 
@@ -60,7 +60,7 @@ namespace dolfin
     void check_is_scalar(const FunctionSpace& V);
 
     // The function space
-    boost::shared_ptr<const FunctionSpace> _V;
+    std::shared_ptr<const FunctionSpace> _V;
 
     // The point
     Point _p;

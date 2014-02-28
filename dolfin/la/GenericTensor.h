@@ -27,7 +27,7 @@
 
 #include <exception>
 #include <typeinfo>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>

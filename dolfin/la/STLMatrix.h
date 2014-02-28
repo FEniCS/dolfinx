@@ -96,9 +96,9 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const
+    virtual std::shared_ptr<GenericMatrix> copy() const
     {
-      boost::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
+      std::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
       return A;
     }
 

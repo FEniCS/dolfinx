@@ -234,9 +234,9 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   }
 
   // Set the bounds
-  boost::shared_ptr<const PETScVector>
+  std::shared_ptr<const PETScVector>
     _ub(&ub.down_cast<PETScVector>(), NoDeleter());
-  boost::shared_ptr<const PETScVector>
+  std::shared_ptr<const PETScVector>
     _lb(&lb.down_cast<PETScVector>(), NoDeleter());
   this->lb = _lb;
   this->ub = _ub;
@@ -604,13 +604,24 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       VecDuplicate(_x.vec(), &lb);
       if (sign == "nonnegative")
       {
-        VecSet(lb, 0.0);
+        #if PETSC_VERSION_RELEASE
         VecSet(ub, SNES_VI_INF);
+        #else
+        VecSet(ub, PETSC_INFINITY);
+        #endif
+
+        VecSet(lb, 0.0);
       }
       else if (sign == "nonpositive")
       {
         VecSet(ub, 0.0);
-        VecSet(lb, SNES_VI_NINF);
+
+        #if PETSC_VERSION_RELEASE
+        VecSet(lb, SNES_VI_INF);
+        #else
+        VecSet(lb, PETSC_INFINITY);
+        #endif
+
       }
       else
       {

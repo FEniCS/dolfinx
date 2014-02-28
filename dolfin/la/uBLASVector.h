@@ -29,7 +29,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "ublas.h"
@@ -65,7 +65,7 @@ namespace dolfin
     uBLASVector(const uBLASVector& x);
 
     /// Construct vector from a ublas_vector
-    explicit uBLASVector(boost::shared_ptr<ublas_vector> x);
+    explicit uBLASVector(std::shared_ptr<ublas_vector> x);
 
     /// Destructor
     virtual ~uBLASVector();
@@ -88,7 +88,7 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Create copy of tensor
-    virtual boost::shared_ptr<GenericVector> copy() const;
+    virtual std::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
     virtual void init(MPI_Comm comm, std::size_t N)
@@ -281,7 +281,7 @@ namespace dolfin
   private:
 
     // Smart pointer to uBLAS vector object
-    boost::shared_ptr<ublas_vector> _x;
+    std::shared_ptr<ublas_vector> _x;
 
   };
 

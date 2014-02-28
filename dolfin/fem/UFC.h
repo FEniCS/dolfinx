@@ -24,7 +24,7 @@
 #define __UFC_DATA_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <ufc.h>
 
 namespace dolfin
@@ -93,37 +93,37 @@ namespace dolfin
 
     // Cell integrals (access through get_cell_integral to get proper
     // fallback to default)
-    std::vector<boost::shared_ptr<ufc::cell_integral> > cell_integrals;
+    std::vector<std::shared_ptr<ufc::cell_integral> > cell_integrals;
 
     // Exterior facet integrals (access through
     // get_exterior_facet_integral to get proper fallback to default)
-    std::vector<boost::shared_ptr<ufc::exterior_facet_integral> >
+    std::vector<std::shared_ptr<ufc::exterior_facet_integral> >
       exterior_facet_integrals;
 
     // Interior facet integrals (access through
     // get_interior_facet_integral to get proper fallback to default)
-    std::vector<boost::shared_ptr<ufc::interior_facet_integral> >
+    std::vector<std::shared_ptr<ufc::interior_facet_integral> >
       interior_facet_integrals;
 
     // Point integrals (access through get_point_integral to get
     // proper fallback to default)
-    std::vector<boost::shared_ptr<ufc::point_integral> > point_integrals;
+    std::vector<std::shared_ptr<ufc::point_integral> > point_integrals;
 
   public:
 
     // Default cell integral
-    boost::shared_ptr<ufc::cell_integral> default_cell_integral;
+    std::shared_ptr<ufc::cell_integral> default_cell_integral;
 
     // Default exterior facet integral
-    boost::shared_ptr<ufc::exterior_facet_integral>
+    std::shared_ptr<ufc::exterior_facet_integral>
       default_exterior_facet_integral;
 
     // Default interior facet integral
-    boost::shared_ptr<ufc::interior_facet_integral>
+    std::shared_ptr<ufc::interior_facet_integral>
       default_interior_facet_integral;
 
     // Default point integral
-    boost::shared_ptr<ufc::point_integral> default_point_integral;
+    std::shared_ptr<ufc::point_integral> default_point_integral;
 
     /// Get cell integral over a given domain, falling back to the
     /// default if necessary
@@ -208,7 +208,7 @@ namespace dolfin
     std::vector<double*> macro_w_pointer;
 
     // Coefficient functions
-    const std::vector<boost::shared_ptr<const GenericFunction> > coefficients;
+    const std::vector<std::shared_ptr<const GenericFunction> > coefficients;
 
   public:
 

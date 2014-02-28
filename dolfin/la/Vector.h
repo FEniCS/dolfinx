@@ -28,7 +28,7 @@
 
 #include <string>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
@@ -69,9 +69,9 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Return copy of vector
-    virtual boost::shared_ptr<GenericVector> copy() const
+    virtual std::shared_ptr<GenericVector> copy() const
     {
-      boost::shared_ptr<Vector> x(new Vector(*this));
+      std::shared_ptr<Vector> x(new Vector(*this));
       return x;
     }
 
@@ -267,10 +267,10 @@ namespace dolfin
     virtual GenericVector* instance()
     { return vector.get(); }
 
-    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
+    virtual std::shared_ptr<const LinearAlgebraObject> shared_instance() const
     { return vector; }
 
-    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
+    virtual std::shared_ptr<LinearAlgebraObject> shared_instance()
     { return vector; }
 
     //--- Special Vector functions ---
@@ -282,7 +282,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    boost::shared_ptr<GenericVector> vector;
+    std::shared_ptr<GenericVector> vector;
 
   };
 

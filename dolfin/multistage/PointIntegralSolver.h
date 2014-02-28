@@ -23,7 +23,7 @@
 
 #include <vector>
 #include <Eigen/Dense>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/function/FunctionAXPY.h>
@@ -47,7 +47,7 @@ namespace dolfin
 
     /// Constructor
     /// FIXME: Include version where one can pass a Solver and/or Parameters
-    PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme);
+    PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme);
 
     /// Step solver with time step dt
     void step(double dt);
@@ -56,7 +56,7 @@ namespace dolfin
     void step_interval(double t0, double t1, double dt);
 
     /// Return the MultiStageScheme
-    boost::shared_ptr<MultiStageScheme> scheme() const
+    std::shared_ptr<MultiStageScheme> scheme() const
     { return _scheme; }
 
     /// Default parameter values
@@ -83,13 +83,13 @@ namespace dolfin
     void _init();
 
     // The MultiStageScheme
-    boost::shared_ptr<MultiStageScheme> _scheme;
+    std::shared_ptr<MultiStageScheme> _scheme;
 
     // Vertex map between vertices, cells and corresponding local vertex
     std::vector<std::pair<std::size_t, unsigned int> > _vertex_map;
 
     // UFC objects, one for each form
-    std::vector<std::vector<boost::shared_ptr<UFC> > > _ufcs;
+    std::vector<std::vector<std::shared_ptr<UFC> > > _ufcs;
 
     // Solution coefficient index in form
     std::vector<std::vector<int> > _coefficient_index;

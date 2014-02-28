@@ -15,12 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2009
-// Modified by Anders Logg 2011-2012
-//
-// First added:  2008
-// Last changed: 2012-08-21
-
 #ifdef HAS_TRILINOS
 
 #include <boost/assign/list_of.hpp>
@@ -33,7 +27,7 @@
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_FEVector.h>
 #include <Epetra_LinearProblem.h>
-#include <Epetra_RowMatrix.h>
+#include <Epetra_Operator.h>
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
 #include <Epetra_LinearProblem.h>
@@ -135,13 +129,13 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+void EpetraKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                                       boost::shared_ptr<const GenericLinearOperator> P)
+void EpetraKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                                       std::shared_ptr<const GenericLinearOperator> P)
 {
   _A = as_type<const EpetraMatrix>(require_matrix(A));
   _P = as_type<const EpetraMatrix>(require_matrix(P));
@@ -203,8 +197,8 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Create linear problem
   // Make clear that the RCP doesn't own the memory and thus doesn't try
   // to destroy the object when it goes out of scope.
-  Teuchos::RCP<Belos::LinearProblem<ST, MV, OP> > linear_problem
-    = Teuchos::rcp(new Belos::LinearProblem<ST, MV, OP>(
+  Teuchos::RCP<BelosLinearProblem> linear_problem
+    = Teuchos::rcp(new BelosLinearProblem(
                      Teuchos::rcp(_A->mat().get(), false),
                      Teuchos::rcp(x.vec().get(), false),
                      Teuchos::rcp(b.vec().get(), false)));
@@ -246,8 +240,8 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   }
 
   // Set-up linear solver
-  Belos::SolverFactory<ST,MV,OP> factory;
-  Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver
+  Belos::SolverFactory<BelosScalarType,BelosMultiVector,BelosOperator> factory;
+  Teuchos::RCP<Belos::SolverManager<BelosScalarType,BelosMultiVector,BelosOperator> > solver
     = factory.create(it->second, Teuchos::rcp(&belosList, false));
   solver->setProblem(linear_problem);
 
@@ -308,7 +302,7 @@ std::size_t EpetraKrylovSolver::solve(const GenericLinearOperator& A,
 std::size_t EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                       const EpetraVector& b)
 {
-  boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
+  std::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }
