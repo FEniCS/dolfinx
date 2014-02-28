@@ -25,6 +25,7 @@
 #define __INTERVAL_MESH_H
 
 #include <cstddef>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -73,14 +74,14 @@ namespace dolfin
     ///
     ///         // Create a mesh of 25 cells in the interval [-1,1]
     ///         IntervalMesh mesh(MPI_COMM_WORLD, 25, -1.0, 1.0);
-    ///    
+    ///
     IntervalMesh(MPI_Comm comm, std::size_t nx, double a, double b);
-    
+
   private:
-    
+
     // Build mesh
     void build(std::size_t nx, double a, double b);
-    
+
   };
 
 }
