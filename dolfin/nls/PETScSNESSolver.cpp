@@ -21,7 +21,8 @@
 // First added:  2012-10-13
 // Last changed: 2013-11-21
 
-#ifdef HAS_PETSC 
+#ifdef HAS_PETSC
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
 
 #include <map>
 #include <string>
@@ -52,7 +53,7 @@ struct snes_ctx_t
 };
 
 #if PETSC_VERSION_RELEASE
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 // PETSc 3.3
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
   // Mapping from method string to PETSc
   const std::map<std::string, std::pair<std::string, const SNESType> >
   PETScSNESSolver::_methods
@@ -613,4 +614,5 @@ bool PETScSNESSolver::is_vi() const
 }
 //-----------------------------------------------------------------------------
 
+#endif
 #endif
