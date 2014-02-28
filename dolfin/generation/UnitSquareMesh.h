@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Mikael Mortensen, 2014
+//
 // First added:  2005-12-02
-// Last changed: 2012-11-09
+// Last changed: 2014-02-17
 
 #ifndef __UNIT_SQUARE_MESH_H
 #define __UNIT_SQUARE_MESH_H
@@ -54,8 +56,8 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh1(32, 32);
-    ///         UnitSquare mesh2(32, 32, "crossed");
+    ///         UnitSquareMesh mesh1(32, 32);
+    ///         UnitSquareMesh mesh2(32, 32, "crossed");
     ///
     UnitSquareMesh(std::size_t nx, std::size_t ny, std::string diagonal="right")
       : RectangleMesh(0.0, 0.0, 1.0, 1.0, nx, ny, diagonal) {}
@@ -77,8 +79,8 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh1(32, 32);
-    ///         UnitSquare mesh2(32, 32, "crossed");
+    ///         UnitSquareMesh mesh1(MPI_COMM_WORLD, 32, 32);
+    ///         UnitSquareMesh mesh2(MPI_COMM_WORLD, 32, 32, "crossed");
     ///
     UnitSquareMesh(MPI_Comm comm, std::size_t nx, std::size_t ny,
                    std::string diagonal="right")
