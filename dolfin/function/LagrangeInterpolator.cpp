@@ -30,7 +30,7 @@
 
 using namespace dolfin;
 
-void LagrangeInterpolator::interpolate(const Expression& u0, Function& u) 
+void LagrangeInterpolator::interpolate(Function& u, const Expression& u0) 
 {    
   // Get function space interpolating to
   const FunctionSpace& V = *u.function_space();
@@ -103,7 +103,7 @@ void LagrangeInterpolator::interpolate(const Expression& u0, Function& u)
   u.vector()->apply("insert");
 }
 
-void LagrangeInterpolator::interpolate(const Function& u0, Function& u) 
+void LagrangeInterpolator::interpolate(Function& u, const Function& u0) 
 {
   // Interpolate from Function u0 to Function u.
   // This mesh of u0 may be different from that of u0
@@ -134,8 +134,8 @@ void LagrangeInterpolator::interpolate(const Function& u0, Function& u)
   if (element.value_rank() != u0.value_rank())
   {
     dolfin_error("LagrangeInterpolator.cpp",
-                 "interpolate Expression into function space",
-                 "Rank of Expression (%d) does not match rank of function space (%d)",
+                 "interpolate Function into function space",
+                 "Rank of Function (%d) does not match rank of function space (%d)",
                  u0.value_rank(), element.value_rank());
   }
 
@@ -145,8 +145,8 @@ void LagrangeInterpolator::interpolate(const Function& u0, Function& u)
     if (element.value_dimension(i) != u0.value_dimension(i))
     {
       dolfin_error("LagrangeInterpolator.cpp",
-                   "interpolate Expression into function space",
-                   "Dimension %d of Expression (%d) does not match dimension %d of function space (%d)",
+                   "interpolate Function into function space",
+                   "Dimension %d of Function (%d) does not match dimension %d of function space (%d)",
                    i, u0.value_dimension(i), i, element.value_dimension(i));
     }
   }  
@@ -204,7 +204,7 @@ void LagrangeInterpolator::interpolate(const Function& u0, Function& u)
   int component = -1;
   extract_dof_component_map(dof_component_map, V1, &component);
 
-  // Search this process first for all coordinates in u1's local mesh
+  // Search this process first for all coordinates in u's local mesh
   std::vector<double> points_not_found;          
   std::map<std::vector<double>, std::vector<std::size_t>, 
            lt_coordinate>::const_iterator map_it;

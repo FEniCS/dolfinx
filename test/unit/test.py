@@ -39,7 +39,8 @@ tests = {
     "function":       ["Constant", "ConstrainedFunctionSpace", \
                        "Expression", "Function", "FunctionAssigner", \
                        "FunctionSpace", "SpecialFunctions", \
-                       "nonmatching_interpolation"],
+                       "nonmatching_interpolation", \
+                       "LagrangeInterpolator"],
     "geometry":       ["BoundingBoxTree", "Intersection", "Issues"],
     "graph":          ["GraphBuild"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \

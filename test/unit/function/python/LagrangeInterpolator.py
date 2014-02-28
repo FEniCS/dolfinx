@@ -45,19 +45,19 @@ class LagrangeInterpolatorTest(unittest.TestCase):
         mesh0 = UnitSquareMesh(8, 8)
         V0 = FunctionSpace(mesh0, "Lagrange", 2)
         u0 = Function(V0)
-        ll.interpolate(f, u0)
+        ll.interpolate(u0, f)
 
         # Interpolate FE function on finer mesh
         mesh1 = UnitSquareMesh(31, 31)
         V1 = FunctionSpace(mesh1, "Lagrange", 2)
         u1 = Function(V1)
-        ll.interpolate(u0, u1)
+        ll.interpolate(u1, u0)
         self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
         mesh1 = UnitSquareMesh(30, 30)
         V1 = FunctionSpace(mesh1, "Lagrange", 2)
         u1 = Function(V1)
-        ll.interpolate(u0, u1)
+        ll.interpolate(u1, u0)
         self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
     def test_functional3D(self):
@@ -71,19 +71,19 @@ class LagrangeInterpolatorTest(unittest.TestCase):
         mesh0 = UnitCubeMesh(4, 4, 4)
         V0 = FunctionSpace(mesh0, "Lagrange", 2)
         u0 = Function(V0)
-        ll.interpolate(f, u0)
+        ll.interpolate(u0, f)
 
         # Interpolate FE function on finer mesh
         mesh1 = UnitCubeMesh(11, 11, 11)
         V1 = FunctionSpace(mesh1, "Lagrange", 2)
         u1 = Function(V1)
-        ll.interpolate(u0, u1)
+        ll.interpolate(u1, u0)
         self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
         mesh1 = UnitCubeMesh(10, 11, 10)
         V1 = FunctionSpace(mesh1, "Lagrange", 2)
         u1 = Function(V1)
-        ll.interpolate(u0, u1)
+        ll.interpolate(u1, u0)
         self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
 if __name__ == "__main__":

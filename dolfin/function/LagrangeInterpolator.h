@@ -72,20 +72,20 @@ namespace dolfin
     /// Interpolate function (on possibly non-matching meshes)
     ///
     /// *Arguments*
-    ///     u0 (_Expression_)
-    ///         The Expression to be interpolated.
     ///     u  (_Function_)
     ///         The resulting Function
-    void interpolate(const Expression& u0, Function& u); 
+    ///     u0 (_Expression_)
+    ///         The Expression to be interpolated.
+    void interpolate(Function& u, const Expression& u0); 
 
     /// Interpolate function (on possibly non-matching meshes)
     ///
     /// *Arguments*
-    ///     u0 (_Function_)
-    ///         The Function to be interpolated.
     ///     u  (_Function_)
     ///         The resulting Function    
-    void interpolate(const Function& u0, Function& u); 
+    ///     u0 (_Function_)
+    ///         The Function to be interpolated.
+    void interpolate(Function& u, const Function& u0); 
 
   private:
 
