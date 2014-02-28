@@ -69,7 +69,6 @@ PROBLEM_RENAMES(NonlinearVariational)
 					 std::shared_ptr<const GenericFunction>,
 					 const std::vector<std::pair<std::size_t, std::size_t> >&,
 					 std::string method="topological");
-
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,
                                                                    Function&);
@@ -121,6 +120,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 //-----------------------------------------------------------------------------
 %rename (_function_space) dolfin::DirichletBC::function_space;
 %ignore dolfin::DirichletBC::set_value(const GenericFunction&);
+%ignore dolfin::DirichletBC::gather;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Form
