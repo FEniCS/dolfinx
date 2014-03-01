@@ -734,7 +734,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
     for (CellIterator _f(boundary); !_f.end(); ++_f)
     {
       // Create a vote per facet
-      const std::size_t facet_vote = rng();
+      //const std::size_t facet_vote = rng();
 
       // Get boundary facet
       Facet f(mesh, cell_map[*_f]);
@@ -773,7 +773,8 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
         if (shared_owned_nodes.find(facet_node) == shared_owned_nodes.end())
         {
           shared_owned_nodes.insert(facet_node);
-          node_vote[facet_node] = facet_vote;
+          node_vote[facet_node] = rng();
+          //node_vote[facet_node] = facet_vote;
 
           send_buffer.push_back(facet_node);
           send_buffer.push_back(node_vote[facet_node]);
@@ -833,7 +834,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
 
   // Add/remove global dofs to/from relevant sets (last process owns
   // global dofs)
-  if (process_number == num_prococesses-1)
+  if (process_number == num_prococesses - 1)
   {
     shared_owned_nodes.insert(global_dofs.begin(), global_dofs.end());
     for (set::const_iterator dof = global_dofs.begin();
