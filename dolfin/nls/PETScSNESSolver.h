@@ -1,4 +1,3 @@
-
 // Copyright (C) 2012 Patrick E. Farrell
 //
 // This file is part of DOLFIN.
@@ -24,7 +23,7 @@
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
 
-#ifdef HAS_PETSC
+#ifdef ENABLE_PETSC_SNES
 
 #include <map>
 #include <petscsnes.h>
