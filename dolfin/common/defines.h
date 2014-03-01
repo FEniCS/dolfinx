@@ -45,6 +45,9 @@ namespace dolfin
   /// Return true if DOLFIN is compiled with PETSc
   bool has_petsc();
 
+  /// Return true if PETSc SNES is enabled
+  bool has_petsc_snes();
+
   /// Return true if DOLFIN is compiled with SLEPc
   bool has_slepc();
 

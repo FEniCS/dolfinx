@@ -61,6 +61,15 @@ bool dolfin::has_petsc()
 #endif
 }
 //-------------------------------------------------------------------------
+bool dolfin::has_petsc_snes()
+{
+#ifdef ENABLE_PETSC_SNES
+  return true;
+#else
+  return false;
+#endif
+}
+//-------------------------------------------------------------------------
 bool dolfin::has_slepc()
 {
 #ifdef HAS_SLEPC
