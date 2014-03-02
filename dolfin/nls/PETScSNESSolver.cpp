@@ -21,7 +21,7 @@
 // First added:  2012-10-13
 // Last changed: 2013-11-21
 
-#ifdef HAS_PETSC
+#ifdef ENABLE_PETSC_SNES
 
 #include <map>
 #include <string>
@@ -52,17 +52,7 @@ struct snes_ctx_t
 };
 
 #if PETSC_VERSION_RELEASE
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
-  // Mapping from method string to PETSc
-  const std::map<std::string, std::pair<std::string, const SNESType> >
-  PETScSNESSolver::_methods
-    = boost::assign::map_list_of
-        ("default", std::make_pair("default SNES method", ""))
-        ("ls",      std::make_pair("Line search method",  SNESLS))
-        ("tr",      std::make_pair("Trust region method", SNESTR))
-        ("vi",      std::make_pair("Reduced space active set solver method (for bounds)", SNESVI))
-        ("test",    std::make_pair("Tool to verify Jacobian approximation", SNESTEST));
-  #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 // PETSc 3.3
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
   // Mapping from method string to PETSc
   const std::map<std::string, std::pair<std::string, const SNESType> >
   PETScSNESSolver::_methods
@@ -79,7 +69,7 @@ struct snes_ctx_t
         ("ncg",         std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
         ("fas",         std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
         ("ms",          std::make_pair("Multistage smoothers", SNESMS));
-  #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 4 // PETSc 3.4
+  #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 4
   // Mapping from method string to PETSc
   const std::map<std::string, std::pair<std::string, const SNESType> >
   PETScSNESSolver::_methods
@@ -142,20 +132,12 @@ Parameters PETScSNESSolver::default_parameters()
   p.remove("method");
   p.add("method", "default");
 
-  // The line search business changed completely from PETSc 3.2 to 3.3.
   std::set<std::string> line_searches;
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
-  line_searches.insert("basic");
-  line_searches.insert("quadratic");
-  line_searches.insert("cubic");
-  p.add("line_search", "basic", line_searches);
-  #else
   line_searches.insert("basic");
   line_searches.insert("bt");
   line_searches.insert("l2");
   line_searches.insert("cp");
   p.add("line_search", "basic", line_searches);
-  #endif
 
   std::set<std::string> bound_types;
   bound_types.insert("default");
@@ -309,9 +291,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   {
     std::map<std::string, std::pair<std::string,
                                     const SNESType> >::const_iterator it;
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
-    it = _methods.find("vi");
-    #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 && PETSC_VERSION_RELEASE
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 && PETSC_VERSION_RELEASE
     it = _methods.find("viss");
     #else
     it = _methods.find("vinewtonssls");
@@ -320,25 +300,6 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     SNESSetType(_snes, it->second.second);
   }
 
-  // The line search business changed completely from PETSc 3.2 to 3.3.
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
-  if (report)
-    SNESLineSearchSetMonitor(_snes, PETSC_TRUE);
-
-  const std::string line_search = std::string(parameters["line_search"]);
-  if (line_search == "basic")
-    SNESLineSearchSet(_snes, SNESLineSearchNo, PETSC_NULL);
-  else if (line_search == "quadratic")
-    SNESLineSearchSet(_snes, SNESLineSearchQuadratic, PETSC_NULL);
-  else if (line_search == "cubic")
-    SNESLineSearchSet(_snes, SNESLineSearchCubic, PETSC_NULL);
-  else
-  {
-    dolfin_error("PETScSNESSolver.cpp",
-                 "set line search algorithm",
-                 "Unknown line search \"%s\"", line_search.c_str());
-  }
-  #else
   SNESLineSearch linesearch;
 
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 4
@@ -351,7 +312,6 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
   const std::string line_search_type = std::string(parameters["line_search"]);
   SNESLineSearchSetType(linesearch, line_search_type.c_str());
-  #endif
 
   // Tolerances
   const int max_iters = parameters["maximum_iterations"];
@@ -570,26 +530,19 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     dolfin_assert(_snes);
     const std::string sign   = parameters["sign"];
     const std::string method = parameters["method"];
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
-    MPI_Comm comm = MPI_COMM_NULL;
-    PetscObjectGetComm((PetscObject)_snes, &comm);
-    if (dolfin::MPI::rank(comm) == 0)
-    {
-      warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
-    }
-
-    if (method != "vi" && method != "default")
-    {
-      dolfin_error("PETScSNESSolver.cpp",
-                   "set variational inequality bounds",
-                   "With PETSc 3.2 need to use vi method if bounds are set");
-    }
-    #else
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
     if (method != "virs" && method != "viss" && method != "default")
     {
       dolfin_error("PETScSNESSolver.cpp",
                    "set variational inequality bounds",
                    "Need to use virs or viss methods if bounds are set");
+    }
+    #else
+    if (method != "vinewtonrsls" && method != "vinewtonssls" && method != "default")
+    {
+      dolfin_error("PETScSNESSolver.cpp",
+                   "set variational inequality bounds",
+                   "Need to use vinewtonrsls or vinewtonssls methods if bounds are set");
     }
     #endif
 

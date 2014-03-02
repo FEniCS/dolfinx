@@ -38,7 +38,7 @@ more complex bounds as GenericVectors or Function.
 from dolfin import *
 import unittest
 
-if has_petsc():
+if has_petsc_snes():
     try:
         parameters["linear_algebra_backend"] = "PETSc"
     except RuntimeError:
@@ -86,7 +86,7 @@ if has_petsc():
 
 class SNESSolverTester(unittest.TestCase):
 
-    if has_petsc():
+    if has_petsc_snes():
 
         def test_snes_solver(self):
             u.interpolate(Constant(-1000.0))
