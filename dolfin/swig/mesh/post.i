@@ -231,7 +231,7 @@ class MeshFunction(object):
         if tp == "int":
             return MeshFunctionInt(*args)
         if tp == "uint":
-            common.deprecation("uint-valued MeshFunction", "1.1.0",
+            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshFunctionSizet(*args)
         elif tp == "size_t":
@@ -355,7 +355,7 @@ class MeshValueCollection(object):
         if tp == "int":
             return MeshValueCollectionInt(*args)
         if tp == "uint":
-            common.deprecation("uint-valued MeshFunction", "1.1.0",
+            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshValueCollectionSizet(*args)
         elif tp == "size_t":
