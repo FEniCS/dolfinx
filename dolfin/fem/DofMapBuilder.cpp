@@ -187,8 +187,6 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
       }
     }
   }
-
-  //sub_dofmap._ownership_range = std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMapBuilder::build_constrained_vertex_indices(
@@ -833,7 +831,7 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
 
   // Add/remove global dofs to/from relevant sets (last process owns
   // global dofs)
-  if (process_number == num_prococesses-1)
+  if (process_number == num_prococesses - 1)
   {
     shared_owned_nodes.insert(global_dofs.begin(), global_dofs.end());
     for (set::const_iterator dof = global_dofs.begin();
