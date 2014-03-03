@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-24
+// Last changed: 2014-03-03
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>

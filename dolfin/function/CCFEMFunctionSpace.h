@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-16
+// Last changed: 2014-03-03
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
@@ -34,6 +34,14 @@ namespace dolfin
   class Mesh;
   class BoundingBoxTree;
   class BoundaryMesh;
+
+  // FIXME: Consider moving many of the data structures from this
+  // class to a new class named CCFEMMesh (or similar), since many of
+  // them are related to meshes only and not a particular function
+  // space.
+
+  // FIXME: Consider renaming this class and related classes from
+  // CCFEM to something else, perhaps MultiMeshFunctionSpace?
 
   /// This class represents a cut and composite finite element
   /// function space (CCFEM) defined on one or more possibly
