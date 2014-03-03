@@ -16,14 +16,9 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-09-02
-# Last changed: 2013-09-05
+# Last changed: 2014-01-07
 
 from dolfin import *
-
-# Check that DOLFIN is configured with CGAL
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0)
 
 # Some parameters
 L = 10.0

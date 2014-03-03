@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-18
-# Last changed: 2013-08-27
+# Last changed: 2014-02-17
 
 import unittest
 import numpy
@@ -26,17 +26,6 @@ import numpy
 from dolfin import *
 
 class IntervalTest(unittest.TestCase):
-
-    def test_collides_point(self):
-
-        if MPI.size(mpi_comm_world()) > 1:
-            return
-
-        mesh = UnitIntervalMesh(1)
-        cell = Cell(mesh, 0)
-
-        self.assertEqual(cell.collides(Point(0.5)), True)
-        self.assertEqual(cell.collides(Point(1.5)), False)
 
     def test_distance(self):
 
@@ -50,38 +39,6 @@ class IntervalTest(unittest.TestCase):
 
 class TriangleTest(unittest.TestCase):
 
-    def test_collides_point(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
-
-        mesh = UnitSquareMesh(1, 1)
-        cell = Cell(mesh, 0)
-
-        self.assertEqual(cell.collides(Point(0.5)), True)
-        self.assertEqual(cell.collides(Point(1.5)), False)
-
-    def test_collides_cell(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
-
-        m0 = UnitSquareMesh(8, 8)
-        c0 = Cell(m0, 0)
-
-        m1 = UnitSquareMesh(8, 8)
-        m1.translate(Point(0.1, 0.1))
-        c1 = Cell(m1, 0)
-        c2 = Cell(m1, 1)
-
-        self.assertEqual(c0.collides(c0), True)
-        self.assertEqual(c0.collides(c1), True)
-        self.assertEqual(c0.collides(c2), False)
-        self.assertEqual(c1.collides(c0), True)
-        self.assertEqual(c1.collides(c1), True)
-        self.assertEqual(c1.collides(c2), False)
-        self.assertEqual(c2.collides(c0), False)
-        self.assertEqual(c2.collides(c1), False)
-        self.assertEqual(c2.collides(c2), True)
-
     def test_distance(self):
 
         if MPI.size(mpi_comm_world()) > 1: return
@@ -94,16 +51,6 @@ class TriangleTest(unittest.TestCase):
         self.assertAlmostEqual(cell.distance(Point(0.5, 0.5)), 0.0)
 
 class TetrahedronTest(unittest.TestCase):
-
-    def test_collides_point(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
-
-        mesh = UnitCubeMesh(1, 1, 1)
-        cell = Cell(mesh, 0)
-
-        self.assertEqual(cell.collides(Point(0.5)), True)
-        self.assertEqual(cell.collides(Point(1.5)), False)
 
     def test_distance(self):
 
@@ -119,3 +66,4 @@ class TetrahedronTest(unittest.TestCase):
 
 if __name__ == "__main__":
         unittest.main()
+

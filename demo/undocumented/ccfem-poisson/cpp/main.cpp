@@ -16,13 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2013-10-27
+// Last changed: 2014-02-03
 //
 // This demo program solves Poisson's equation using a Cut and
 // Composite Finite Element Method (CCFEM) on a domain defined by
-// three overlapping and non-matching meshes: a mesh of two displaced
-// unit circles which partly overlap a mesh of a unit square and each
-// other.
+// three overlapping and non-matching meshes.
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -42,28 +40,18 @@ class Source : public Expression
 
 int main()
 {
-  return 0;
-
-
-  info("THIS DEMO IS WORK IN PROGRESS!");
-
   // Increase log level
   set_log_level(DBG);
 
   // Create meshes
-  UnitSquareMesh square(4, 4);
-  UnitCircleMesh circle_1(3);
-  UnitCircleMesh circle_2(3);
-
-  // Displace circle meshes
-  Point dx(0.5, 0.5);
-  circle_1.translate(dx);
-  circle_2.translate(-dx);
+  UnitSquareMesh square(16, 16);
+  RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 4, 4);
+  RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 4, 4);
 
   // Create function spaces
   Poisson::FunctionSpace V0(square);
-  Poisson::FunctionSpace V1(circle_1);
-  Poisson::FunctionSpace V2(circle_2);
+  Poisson::FunctionSpace V1(rectangle_1);
+  Poisson::FunctionSpace V2(rectangle_2);
 
   // Some of this stuff may be wrapped or automated later to avoid
   // needing to explicitly call add() and build()
@@ -112,9 +100,9 @@ int main()
   CCFEMFunction u(V);
   solve(A, *u.vector(), b);
 
-  cout << "A = " << endl; info(A, true);
-  cout << "b = " << endl; info(b, true);
-  cout << "x = " << endl; info(*u.vector(), true);
+  //cout << "A = " << endl; info(A, true);
+  //cout << "b = " << endl; info(b, true);
+  //cout << "x = " << endl; info(*u.vector(), true);
 
   return 0;
 }
