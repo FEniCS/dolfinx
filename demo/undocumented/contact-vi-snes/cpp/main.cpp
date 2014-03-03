@@ -21,10 +21,9 @@
 // First added:  2012-09-03
 // Last changed: 2013-11-21
 //
-// This demo program uses of the interface to TAO solver for
-// variational inequalities to solve a contact mechanics problems in
-// FEniCS.  The example considers a heavy elastic circle in a box of
-// the same size.
+// This demo program uses the PETSc nonlinear solver for variational
+// inequalities to solve a contact mechanics problems in FEniCS.  The
+// example considers a heavy elastic circle in a box of the same size.
 
 #include <dolfin.h>
 #include "HyperElasticity.h"
@@ -68,7 +67,7 @@ public:
 
 int main()
 {
-#ifdef HAS_PETSC
+#ifdef HAS_PETSC_SNES
 
   // Read mesh and create function space
   Mesh mesh("../circle_yplane.xml.gz");
@@ -130,11 +129,11 @@ int main()
   out = solver.solve(umin,umax);
 
   // Check for convergence. Convergence is one modifies the loading
-  // and the mesh size.
+  // and the mesh size
   cout << out.second;
   if (out.second != true)
   {
-    warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying some parameters or using PETSC 3.2.");
+    warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying parameters.");
   }
 
   // Save solution in VTK format
