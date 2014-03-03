@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-24
+// Last changed: 2014-03-03
 
 #ifndef __CCFEM_ASSEMBLER_H
 #define __CCFEM_ASSEMBLER_H
@@ -34,7 +34,7 @@ namespace dolfin
   /// This class implements functionality for finite element assembly
   /// over cut and composite finite element (CCFEM) function spaces.
 
-  class CCFEMAssembler
+  class CCFEMAssembler : public AssemblerBase
   {
   public:
 

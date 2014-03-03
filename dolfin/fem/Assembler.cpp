@@ -22,7 +22,7 @@
 // Modified by Martin Alnaes 2013
 //
 // First added:  2007-01-17
-// Last changed: 2013-09-19
+// Last changed: 2014-03-03
 
 #include <boost/scoped_ptr.hpp>
 
@@ -128,7 +128,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Form rank
+  // Get form rank
   const std::size_t form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps

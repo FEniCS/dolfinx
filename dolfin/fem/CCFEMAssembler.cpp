@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-25
+// Last changed: 2014-03-03
 
 #include <dolfin/function/CCFEMFunctionSpace.h>
 
@@ -45,6 +45,11 @@ CCFEMAssembler::CCFEMAssembler()
 //-----------------------------------------------------------------------------
 void CCFEMAssembler::assemble(GenericTensor& A, const CCFEMForm& a)
 {
+  // Developer note: This implementation does not yet handle
+  // - subdomains
+  // - interior facets
+  // - exterior facets
+
   begin(PROGRESS, "Assembling tensor over CCFEM function space.");
 
   // Initialize global tensor
@@ -54,27 +59,26 @@ void CCFEMAssembler::assemble(GenericTensor& A, const CCFEMForm& a)
   assemble_cells(A, a);
 
   // Finalize assembly of global tensor
-  A.apply("add");
+  if (finalize_tensor)
+    A.apply("add");
 
   end();
 }
 //-----------------------------------------------------------------------------
 void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
 {
-  // Note: This implementation does not yet handle subdomains.
-
   log(PROGRESS, "Assembling CCFEM form over cells.");
 
-  // Form rank
+  // Get form rank
   const std::size_t form_rank = a.rank();
-
-  // Vector to hold dof map for a cell
-  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
   // Collect pointers to dof maps
   std::vector<const CCFEMDofMap*> dofmaps;
   for (std::size_t i = 0; i < form_rank; i++)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
+
+  // Vector to hold dof map for a cell
+  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
   // Iterate over parts
   ufc::cell ufc_cell;
@@ -89,37 +93,37 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
       dofmaps[i]->set_current_part(part);
 
     // Create data structure for local assembly data
-    UFC ufc(a_part);
+    UFC ufc_part(a_part);
 
     // Extract mesh
-    const Mesh& mesh = a_part.mesh();
+    const Mesh& mesh_part = a_part.mesh();
 
     // Skip assembly if there are no cell integrals
-    if (!ufc.form.has_cell_integrals())
+    if (!ufc_part.form.has_cell_integrals())
       return;
 
     // Cell integral
-    ufc::cell_integral* integral = ufc.default_cell_integral.get();
+    ufc::cell_integral* integral = ufc_part.default_cell_integral.get();
 
     // Iterate over cells
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(mesh_part); !cell.end(); ++cell)
     {
       // Update to current cell
       cell->get_vertex_coordinates(vertex_coordinates);
       cell->get_cell_data(ufc_cell);
-      ufc.update(*cell, vertex_coordinates, ufc_cell);
+      ufc_part.update(*cell, vertex_coordinates, ufc_cell);
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
         dofs[i] = &(dofmaps[i]->cell_dofs(cell->index()));
 
       // Tabulate cell tensor
-      integral->tabulate_tensor(ufc.A.data(), ufc.w(),
+      integral->tabulate_tensor(ufc_part.A.data(), ufc_part.w(),
                                 vertex_coordinates.data(),
                                 ufc_cell.orientation);
 
       // Add entries to global tensor
-      A.add(ufc.A.data(), dofs);
+      A.add(ufc_part.A.data(), dofs);
     }
   }
 }

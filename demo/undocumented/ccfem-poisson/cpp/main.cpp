@@ -44,9 +44,9 @@ int main()
   set_log_level(DBG);
 
   // Create meshes
-  UnitSquareMesh square(16, 16);
-  RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 4, 4);
-  RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 4, 4);
+  UnitSquareMesh square(32, 32);
+  RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
+  RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
 
   // Create function spaces
   Poisson::FunctionSpace V0(square);
