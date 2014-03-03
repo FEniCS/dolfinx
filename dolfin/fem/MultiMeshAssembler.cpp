@@ -27,6 +27,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MultiMesh.h>
 
 #include "SparsityPatternBuilder.h"
 #include "UFC.h"
@@ -108,17 +109,21 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a
     // Cell integral
     ufc::cell_integral* integral = ufc_part.default_cell_integral.get();
 
-    // Iterate over cells
-    for (CellIterator cell(mesh_part); !cell.end(); ++cell)
+    // Iterate over uncut cells
+    const std::vector<unsigned int>& uncut_cells = multimesh->uncut_cells(part);
+    for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
     {
+      // Create cell
+      Cell cell(mesh_part, *it);
+
       // Update to current cell
-      cell->get_vertex_coordinates(vertex_coordinates);
-      cell->get_cell_data(ufc_cell);
-      ufc_part.update(*cell, vertex_coordinates, ufc_cell);
+      cell.get_vertex_coordinates(vertex_coordinates);
+      cell.get_cell_data(ufc_cell);
+      ufc_part.update(cell, vertex_coordinates, ufc_cell);
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
-        dofs[i] = &(dofmaps[i]->cell_dofs(cell->index()));
+        dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
 
       // Tabulate cell tensor
       integral->tabulate_tensor(ufc_part.A.data(), ufc_part.w(),
