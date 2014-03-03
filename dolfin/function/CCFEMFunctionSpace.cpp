@@ -300,6 +300,7 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
 
   // Clear quadrature rules
   _quadrature_rules_cut_cells.clear();
+  _quadrature_rules_cut_cells.resize(num_parts());
 
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
@@ -309,7 +310,8 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
       // Get cut cell
-      const Cell cut_cell(*(_meshes[cut_part]), it->first);
+      const unsigned int cut_cell_index = it->first;
+      const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
       // Get dimensions
       const std::size_t tdim = cut_cell.mesh().topology().dim();
@@ -335,7 +337,7 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
           const double* coordinates = &triangulation[0] + k*offset;
 
           // Compute quadrature rule for simplex
-          auto quadrature_rule
+          _quadrature_rules_cut_cells[cut_part][cut_cell_index]
             = SimplexQuadrature::compute_quadrature_rule(coordinates, tdim, gdim, order);
         }
       }
