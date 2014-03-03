@@ -73,9 +73,25 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   // FIXME: Temporary implementation just so we have something to work with
 
   // Compute area of triangle
+  const double* x0 = coordinates;
+  const double* x1 = coordinates + 2;
+  const double* x2 = coordinates + 4;
+  const double A = 0.5*std::abs((x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) -
+                                (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]));
 
+  // Quadrature weights
+  std::vector<double> w;
+  w.push_back(A / 3);
+  w.push_back(A / 3);
+  w.push_back(A / 3);
 
-  return quadrature_rule;
+  // Quadrature points
+  std::vector<double> x;
+  x.push_back(x0[0]); x.push_back(x0[1]);
+  x.push_back(x1[0]); x.push_back(x1[1]);
+  x.push_back(x2[0]); x.push_back(x2[1]);
+
+  return std::make_pair(w, x);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double> >
