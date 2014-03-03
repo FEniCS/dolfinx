@@ -88,10 +88,19 @@ CCFEMFunctionSpace::covered_cells(std::size_t part) const
 //-----------------------------------------------------------------------------
 const std::map<unsigned int,
                std::vector<std::pair<std::size_t, unsigned int> > >&
-  CCFEMFunctionSpace::collision_map_cut_cells(std::size_t part) const
+CCFEMFunctionSpace::collision_map_cut_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
-  return _collision_map_cut_cells[part];
+  return _collision_maps_cut_cells[part];
+}
+//-----------------------------------------------------------------------------
+const std::map<unsigned int,
+               std::pair<std::vector<double>, std::vector<double> > > &
+CCFEMFunctionSpace::quadrature_rule_cut_cells(std::size_t part) const
+
+{
+  dolfin_assert(part < num_parts());
+  return _quadrature_rules_cut_cells[part];
 }
 //-----------------------------------------------------------------------------
 void
@@ -203,7 +212,7 @@ void CCFEMFunctionSpace::_build_collision_maps()
   _uncut_cells.clear();
   _cut_cells.clear();
   _covered_cells.clear();
-  _collision_map_cut_cells.clear();
+  _collision_maps_cut_cells.clear();
 
   // Iterate over all parts
   for (std::size_t i = 0; i < num_parts(); i++)
@@ -281,7 +290,7 @@ void CCFEMFunctionSpace::_build_collision_maps()
     _uncut_cells.push_back(uncut_cells);
     _cut_cells.push_back(cut_cells);
     _covered_cells.push_back(covered_cells);
-    _collision_map_cut_cells.push_back(collision_map_cut_cells);
+    _collision_maps_cut_cells.push_back(collision_map_cut_cells);
 
     // Report results
     log(PROGRESS, "Part %d has %d uncut cells, %d cut cells, and %d covered cells.",

@@ -156,6 +156,21 @@ namespace dolfin
                    std::vector<std::pair<std::size_t, unsigned int> > >&
     collision_map_cut_cells(std::size_t part) const;
 
+    /// Return quadrature rules for cut cells of the given part
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The part number
+    ///
+    /// *Returns*
+    ///     std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >
+    ///         A map from cell indices of cut cells to a quadrature
+    ///         rules. Each quadrature rule is represented as a pair
+    ///         of an array of quadrature weights and a corresponding
+    ///         flattened array of quadrature points.
+    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > > &
+    quadrature_rule_cut_cells(std::size_t part) const;
+
     /// Add function space (shared pointer version)
     ///
     /// *Arguments*
@@ -250,7 +265,7 @@ namespace dolfin
     //            k = the collision number (in the list of cutting cells)
     std::vector<std::map<unsigned int,
                          std::vector<std::pair<std::size_t, unsigned int> > > >
-    _collision_map_cut_cells;
+    _collision_maps_cut_cells;
 
     // Quadrature rules for cut cells. Access data by
     //
