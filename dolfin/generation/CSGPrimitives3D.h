@@ -47,7 +47,7 @@ namespace dolfin
   {
   public:
 
-    /// Create sphere at center = (x0, x1, x2) with radius r.
+    /// Create sphere with center (x0, x1, x2) and radius r.
     ///
     /// *Arguments*
     ///     center (Point)
