@@ -59,8 +59,6 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
   std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
 
   // FIXME: Not implemented
-  // FIXME: Should probably not use Point, but something that matches
-  // FIXME: the data structure _quadrature_rules_cut_cells
 
   return quadrature_rule;
 }
@@ -72,7 +70,10 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
 {
   std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
 
-  // FIXME: Not implemented
+  // FIXME: Temporary implementation just so we have something to work with
+
+  // Compute area of triangle
+
 
   return quadrature_rule;
 }
