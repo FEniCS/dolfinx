@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-19
+// Last changed: 2014-03-03
 
-#ifndef __MultiMesh_FORM_H
-#define __MultiMesh_FORM_H
+#ifndef __MULTI_MESH_FORM_H
+#define __MULTI_MESH_FORM_H
 
 #include <vector>
 #include <memory>
@@ -29,13 +29,12 @@ namespace dolfin
 
   // Forward declarations
   class MultiMeshFunctionSpace;
+  class MultiMesh;
   class Form;
 
   /// This class represents a variational form on a cut and composite
   /// finite element function space (MultiMesh) defined on one or more
   /// possibly intersecting meshes.
-  ///
-  /// FIXME: Document usage of class with add() followed by build()
 
   class MultiMeshForm
   {
@@ -72,6 +71,13 @@ namespace dolfin
     ///     std::size_t
     ///         The number of forms (parts) of the MultiMesh form.
     std::size_t num_parts() const;
+
+    /// Extract common multimesh from form
+    ///
+    /// *Returns*
+    ///     _MultiMesh_
+    ///         The mesh.
+    std::shared_ptr<const MultiMesh> multimesh() const;
 
     /// Return form (part) number i
     ///

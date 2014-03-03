@@ -50,7 +50,7 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   // - interior facets
   // - exterior facets
 
-  begin(PROGRESS, "Assembling tensor over MultiMesh function space.");
+  begin(PROGRESS, "Assembling tensor over multimesh function space.");
 
   // Initialize global tensor
   init_global_tensor(A, a);
@@ -67,7 +67,10 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
 //-----------------------------------------------------------------------------
 void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a)
 {
-  log(PROGRESS, "Assembling MultiMesh form over cells.");
+  log(PROGRESS, "Assembling multimesh form over cells.");
+
+  // Extract multimesh
+  std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
 
   // Get form rank
   const std::size_t form_rank = a.rank();

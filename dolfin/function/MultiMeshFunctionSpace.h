@@ -33,44 +33,48 @@ namespace dolfin
   class MultiMeshDofMap;
   class MultiMesh;
 
-  /// This class represents a cut and composite finite element
-  /// function space (MultiMesh) defined on one or more possibly
-  /// intersecting meshes.
-  ///
-  /// A MultiMesh function space may be created from a set of standard
-  /// function spaces by repeatedly calling add(), followed by a call
-  /// to build(). Note that a MultiMesh function space is not useful and
-  /// its data structures are empty until build() has been called.
+  /// This class represents a function space on a multimesh. It may
+  /// may be created from a set of standard function spaces by
+  /// repeatedly calling add(), followed by a call to build(). Note
+  /// that a multimesh function space is not useful and its data
+  /// structures are empty until build() has been called.
 
   class MultiMeshFunctionSpace
   {
   public:
 
-    /// Create empty MultiMesh function space
+    /// Create empty multimesh function space
     MultiMeshFunctionSpace();
 
     /// Destructor
     ~MultiMeshFunctionSpace();
 
-    /// Return dimension of the MultiMesh function space
+    /// Return dimension of the multimesh function space
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The dimension of the MultiMesh function space.
+    ///         The dimension of the multimesh function space.
     std::size_t dim() const;
 
-    /// Return MultiMesh dofmap
+    /// Return multimesh
+    ///
+    /// *Returns*
+    ///     _MultiMesh_
+    ///         The multimesh.
+    std::shared_ptr<const MultiMesh> multimesh() const;
+
+    /// Return multimesh dofmap
     ///
     /// *Returns*
     ///     _MultiMeshDofMap_
     ///         The dofmap.
     std::shared_ptr<const MultiMeshDofMap> dofmap() const;
 
-    /// Return the number of function spaces (parts) of the MultiMesh function space
+    /// Return the number of function spaces (parts) of the multimesh function space
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The number of function spaces (parts) of the MultiMesh function space.
+    ///         The number of function spaces (parts) of the multimesh function space.
     std::size_t num_parts() const;
 
     /// Return function space (part) number i
@@ -98,7 +102,7 @@ namespace dolfin
     ///         The function space.
     void add(const FunctionSpace& function_space);
 
-    /// Build MultiMesh function space
+    /// Build multimesh function space
     void build();
 
   private:

@@ -49,6 +49,12 @@ std::size_t MultiMeshFunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const MultiMesh> MultiMeshFunctionSpace::multimesh() const
+{
+  dolfin_assert(_multimesh);
+  return _multimesh;
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<const MultiMeshDofMap> MultiMeshFunctionSpace::dofmap() const
 {
   dolfin_assert(_dofmap);

@@ -16,10 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-19
+// Last changed: 2014-03-03
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/function/MultiMeshFunctionSpace.h>
 #include "Form.h"
 #include "MultiMeshForm.h"
 
@@ -67,6 +68,40 @@ std::size_t MultiMeshForm::rank() const
 std::size_t MultiMeshForm::num_parts() const
 {
   return _forms.size();
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const MultiMesh> MultiMeshForm::multimesh() const
+{
+  // Extract meshes from function spaces
+  std::vector<std::shared_ptr<const MultiMesh> > multimeshes;
+  for (std::size_t i = 0; i < _function_spaces.size(); i++)
+  {
+    dolfin_assert(_function_spaces[i]->multimesh());
+    multimeshes.push_back(_function_spaces[i]->multimesh());
+  }
+
+  // Check that we have at least one multimesh
+  if (multimeshes.empty())
+  {
+    dolfin_error("MultiMeshForm.cpp",
+                 "extract multimesh from form",
+                 "No multimesh was found");
+  }
+
+  // Check that all multimeshes are the same
+  for (std::size_t i = 1; i < multimeshes.size(); i++)
+  {
+    if (multimeshes[i] != multimeshes[i - 1])
+    {
+      dolfin_error("MultiMeshForm.cpp",
+                   "extract multimesh from form",
+                   "Non-matching multimeshes for function spaces");
+    }
+  }
+
+  // Return first multimesh
+  dolfin_assert(multimeshes[0]);
+  return multimeshes[0];
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Form> MultiMeshForm::part(std::size_t i) const
