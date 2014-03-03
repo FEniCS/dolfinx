@@ -149,7 +149,7 @@ PROBLEM_RENAMES(NonlinearVariational)
                                 const std::vector<double>& vertex_coordinates,
                                 const Cell& cell) const;
 
-%ignore dolfin::CCFEMDofMap::tabulate_coordinates(
+%ignore dolfin::MultiMeshDofMap::tabulate_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
                                 const std::vector<double>& vertex_coordinates,
                                 const ufc::cell& cell) const;

@@ -21,34 +21,34 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
-#include <dolfin/fem/CCFEMDofMap.h>
+#include <dolfin/fem/MultiMeshDofMap.h>
 #include "Function.h"
-#include "CCFEMFunctionSpace.h"
-#include "CCFEMFunction.h"
+#include "MultiMeshFunctionSpace.h"
+#include "MultiMeshFunction.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMFunction::CCFEMFunction(const CCFEMFunctionSpace& V)
+MultiMeshFunction::MultiMeshFunction(const MultiMeshFunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V))
 {
   // Initialize vector
   init_vector();
 }
 //-----------------------------------------------------------------------------
-CCFEMFunction::CCFEMFunction(std::shared_ptr<const CCFEMFunctionSpace> V)
+MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V)
   : _function_space(V)
 {
   // Initialize vector
   init_vector();
 }
 //-----------------------------------------------------------------------------
-CCFEMFunction::~CCFEMFunction()
+MultiMeshFunction::~MultiMeshFunction()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const Function& CCFEMFunction::part(std::size_t i) const
+const Function& MultiMeshFunction::part(std::size_t i) const
 {
   // Developer note: This function has a similar role as operator[] of
   // the regular Function class.
@@ -67,19 +67,19 @@ const Function& CCFEMFunction::part(std::size_t i) const
   return *(_function_parts.find(i)->second);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericVector> CCFEMFunction::vector()
+std::shared_ptr<GenericVector> MultiMeshFunction::vector()
 {
   dolfin_assert(_vector);
   return _vector;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const GenericVector> CCFEMFunction::vector() const
+std::shared_ptr<const GenericVector> MultiMeshFunction::vector() const
 {
   dolfin_assert(_vector);
   return _vector;
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunction::init_vector()
+void MultiMeshFunction::init_vector()
 {
   // Developer note: At this point, this function reproduces the code
   // for the corresponding function in the Function class, but does
@@ -125,7 +125,7 @@ void CCFEMFunction::init_vector()
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunction::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
+void MultiMeshFunction::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
                                           std::vector<la_index>& ghost_indices) const
 {
   dolfin_not_implemented();

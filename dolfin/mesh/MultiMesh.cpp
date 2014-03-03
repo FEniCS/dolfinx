@@ -91,7 +91,7 @@ MultiMesh::quadrature_rule_cut_cells(std::size_t part) const
 void MultiMesh::add(std::shared_ptr<const Mesh> mesh)
 {
   _meshes.push_back(mesh);
-  log(PROGRESS, "Added mesh to multi mesh; multi mesh has %d part(s).",
+  log(PROGRESS, "Added mesh to multimesh; multimesh has %d part(s).",
       _meshes.size());
 }
 //-----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ void MultiMesh::add(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MultiMesh::build()
 {
-  begin(PROGRESS, "Building multi mesh.");
+  begin(PROGRESS, "Building multimesh.");
 
   // Build boundary meshes
   _build_boundary_meshes();

@@ -33,26 +33,26 @@ namespace dolfin
   class BoundingBoxTree;
 
   /// This class represents a collection of meshes with arbitrary
-  /// overlaps. A multi mesh may be created from a set of standard
+  /// overlaps. A multimesh may be created from a set of standard
   /// meshes spaces by repeatedly calling add(), followed by a call to
-  /// build(). Note that a multi mesh is not useful until build() has
+  /// build(). Note that a multimesh is not useful until build() has
   /// been called.
 
   class MultiMesh
   {
   public:
 
-    /// Create empty multi mesh
+    /// Create empty multimesh
     MultiMesh();
 
     /// Destructor
     ~MultiMesh();
 
-    /// Return the number of meshes (parts) of the multi mesh
+    /// Return the number of meshes (parts) of the multimesh
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The number of meshes (parts) of the multi mesh.
+    ///         The number of meshes (parts) of the multimesh.
     std::size_t num_parts() const;
 
     /// Return mesh (part) number i
@@ -157,10 +157,10 @@ namespace dolfin
     ///         The mesh
     void add(const Mesh& mesh);
 
-    /// Build multi mesh
+    /// Build multimesh
     void build();
 
-    /// Clear multi mesh
+    /// Clear multimesh
     void clear();
 
   private:
@@ -218,7 +218,7 @@ namespace dolfin
     //
     // Developer note 2: Quadrature points are naturally a part of a
     // form (or a term in a form) and not a part of a mesh. However,
-    // for now we use a global (to the multi mesh) quadrature rule for
+    // for now we use a global (to the multimesh) quadrature rule for
     // all cut cells, for simplicity.
 
     // Collision map for cut cells. Access data by

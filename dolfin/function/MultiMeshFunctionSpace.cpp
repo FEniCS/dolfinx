@@ -25,67 +25,67 @@
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
-#include <dolfin/fem/CCFEMDofMap.h>
+#include <dolfin/fem/MultiMeshDofMap.h>
 #include "FunctionSpace.h"
-#include "CCFEMFunctionSpace.h"
+#include "MultiMeshFunctionSpace.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMFunctionSpace::CCFEMFunctionSpace()
-  : _multi_mesh(new MultiMesh()), _dofmap(new CCFEMDofMap())
+MultiMeshFunctionSpace::MultiMeshFunctionSpace()
+  : _multimesh(new MultiMesh()), _dofmap(new MultiMeshDofMap())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-CCFEMFunctionSpace::~CCFEMFunctionSpace()
+MultiMeshFunctionSpace::~MultiMeshFunctionSpace()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMFunctionSpace::dim() const
+std::size_t MultiMeshFunctionSpace::dim() const
 {
   dolfin_assert(_dofmap);
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const CCFEMDofMap> CCFEMFunctionSpace::dofmap() const
+std::shared_ptr<const MultiMeshDofMap> MultiMeshFunctionSpace::dofmap() const
 {
   dolfin_assert(_dofmap);
   return _dofmap;
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMFunctionSpace::num_parts() const
+std::size_t MultiMeshFunctionSpace::num_parts() const
 {
   return _function_spaces.size();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace>
-CCFEMFunctionSpace::part(std::size_t i) const
+MultiMeshFunctionSpace::part(std::size_t i) const
 {
   dolfin_assert(i < _function_spaces.size());
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
 void
-CCFEMFunctionSpace::add(std::shared_ptr<const FunctionSpace> function_space)
+MultiMeshFunctionSpace::add(std::shared_ptr<const FunctionSpace> function_space)
 {
   _function_spaces.push_back(function_space);
-  log(PROGRESS, "Added function space to CCFEM space; space has %d part(s).",
+  log(PROGRESS, "Added function space to multimesh space; space has %d part(s).",
       _function_spaces.size());
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::add(const FunctionSpace& function_space)
+void MultiMeshFunctionSpace::add(const FunctionSpace& function_space)
 {
   add(reference_to_no_delete_pointer(function_space));
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::build()
+void MultiMeshFunctionSpace::build()
 {
-  begin(PROGRESS, "Building CCFEM function space.");
+  begin(PROGRESS, "Building multimesh function space.");
 
-  // Build multi mesh
-  _build_multi_mesh();
+  // Build multimesh
+  _build_multimesh();
 
   // Build dofmap
   _build_dofmap();
@@ -93,23 +93,23 @@ void CCFEMFunctionSpace::build()
   end();
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::_build_multi_mesh()
+void MultiMeshFunctionSpace::_build_multimesh()
 {
-  // Clear multi mesh
-  dolfin_assert(_multi_mesh);
-  _multi_mesh->clear();
+  // Clear multimesh
+  dolfin_assert(_multimesh);
+  _multimesh->clear();
 
   // Add meshes
   for (std::size_t i = 0; i < num_parts(); i++)
-    _multi_mesh->add(_function_spaces[i]->mesh());
+    _multimesh->add(_function_spaces[i]->mesh());
 
-  // Build multi mesh
-  _multi_mesh->build();
+  // Build multimesh
+  _multimesh->build();
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::_build_dofmap()
+void MultiMeshFunctionSpace::_build_dofmap()
 {
-  begin(PROGRESS, "Building CCFEM dofmap.");
+  begin(PROGRESS, "Building multimesh dofmap.");
 
   // Clear dofmap
   dolfin_assert(_dofmap);

@@ -18,7 +18,7 @@
 // First added:  2013-09-12
 // Last changed: 2014-03-03
 
-#include <dolfin/function/CCFEMFunctionSpace.h>
+#include <dolfin/function/MultiMeshFunctionSpace.h>
 
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
@@ -31,26 +31,26 @@
 #include "SparsityPatternBuilder.h"
 #include "UFC.h"
 #include "Form.h"
-#include "CCFEMForm.h"
-#include "CCFEMDofMap.h"
-#include "CCFEMAssembler.h"
+#include "MultiMeshForm.h"
+#include "MultiMeshDofMap.h"
+#include "MultiMeshAssembler.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMAssembler::CCFEMAssembler()
+MultiMeshAssembler::MultiMeshAssembler()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void CCFEMAssembler::assemble(GenericTensor& A, const CCFEMForm& a)
+void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
 {
   // Developer note: This implementation does not yet handle
   // - subdomains
   // - interior facets
   // - exterior facets
 
-  begin(PROGRESS, "Assembling tensor over CCFEM function space.");
+  begin(PROGRESS, "Assembling tensor over MultiMesh function space.");
 
   // Initialize global tensor
   init_global_tensor(A, a);
@@ -65,15 +65,15 @@ void CCFEMAssembler::assemble(GenericTensor& A, const CCFEMForm& a)
   end();
 }
 //-----------------------------------------------------------------------------
-void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
+void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a)
 {
-  log(PROGRESS, "Assembling CCFEM form over cells.");
+  log(PROGRESS, "Assembling MultiMesh form over cells.");
 
   // Get form rank
   const std::size_t form_rank = a.rank();
 
   // Collect pointers to dof maps
-  std::vector<const CCFEMDofMap*> dofmaps;
+  std::vector<const MultiMeshDofMap*> dofmaps;
   for (std::size_t i = 0; i < form_rank; i++)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
@@ -128,12 +128,12 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
   }
 }
 //-----------------------------------------------------------------------------
-void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
+void MultiMeshAssembler::init_global_tensor(GenericTensor& A, const MultiMeshForm& a)
 {
   log(PROGRESS, "Initializing global tensor.");
 
   // This function initializes the big system matrix corresponding to
-  // all dofs (including inactive dofs) on all parts of the CCFEM
+  // all dofs (including inactive dofs) on all parts of the MultiMesh
   // function space.
 
   // Create layout for initializing tensor
@@ -147,7 +147,7 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   std::vector<std::size_t> block_sizes;
   for (std::size_t i = 0; i < a.rank(); i++)
   {
-    std::shared_ptr<const CCFEMFunctionSpace> V = a.function_space(i);
+    std::shared_ptr<const MultiMeshFunctionSpace> V = a.function_space(i);
     dolfin_assert(V);
 
     global_dimensions.push_back(V->dim());

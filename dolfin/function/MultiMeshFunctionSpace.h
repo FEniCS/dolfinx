@@ -18,8 +18,8 @@
 // First added:  2013-08-05
 // Last changed: 2014-03-03
 
-#ifndef __CCFEM_FUNCTION_SPACE_H
-#define __CCFEM_FUNCTION_SPACE_H
+#ifndef __MultiMesh_FUNCTION_SPACE_H
+#define __MultiMesh_FUNCTION_SPACE_H
 
 #include <vector>
 #include <map>
@@ -30,47 +30,47 @@ namespace dolfin
 
   // Forward declarations
   class FunctionSpace;
-  class CCFEMDofMap;
+  class MultiMeshDofMap;
   class MultiMesh;
 
   /// This class represents a cut and composite finite element
-  /// function space (CCFEM) defined on one or more possibly
+  /// function space (MultiMesh) defined on one or more possibly
   /// intersecting meshes.
   ///
-  /// A CCFEM function space may be created from a set of standard
+  /// A MultiMesh function space may be created from a set of standard
   /// function spaces by repeatedly calling add(), followed by a call
-  /// to build(). Note that a CCFEM function space is not useful and
+  /// to build(). Note that a MultiMesh function space is not useful and
   /// its data structures are empty until build() has been called.
 
-  class CCFEMFunctionSpace
+  class MultiMeshFunctionSpace
   {
   public:
 
-    /// Create empty CCFEM function space
-    CCFEMFunctionSpace();
+    /// Create empty MultiMesh function space
+    MultiMeshFunctionSpace();
 
     /// Destructor
-    ~CCFEMFunctionSpace();
+    ~MultiMeshFunctionSpace();
 
-    /// Return dimension of the CCFEM function space
+    /// Return dimension of the MultiMesh function space
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The dimension of the CCFEM function space.
+    ///         The dimension of the MultiMesh function space.
     std::size_t dim() const;
 
-    /// Return CCFEM dofmap
+    /// Return MultiMesh dofmap
     ///
     /// *Returns*
-    ///     _CCFEMDofMap_
+    ///     _MultiMeshDofMap_
     ///         The dofmap.
-    std::shared_ptr<const CCFEMDofMap> dofmap() const;
+    std::shared_ptr<const MultiMeshDofMap> dofmap() const;
 
-    /// Return the number of function spaces (parts) of the CCFEM function space
+    /// Return the number of function spaces (parts) of the MultiMesh function space
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The number of function spaces (parts) of the CCFEM function space.
+    ///         The number of function spaces (parts) of the MultiMesh function space.
     std::size_t num_parts() const;
 
     /// Return function space (part) number i
@@ -98,7 +98,7 @@ namespace dolfin
     ///         The function space.
     void add(const FunctionSpace& function_space);
 
-    /// Build CCFEM function space
+    /// Build MultiMesh function space
     void build();
 
   private:
@@ -106,14 +106,14 @@ namespace dolfin
     // List of function spaces
     std::vector<std::shared_ptr<const FunctionSpace> > _function_spaces;
 
-    // Multi mesh
-    std::shared_ptr<MultiMesh> _multi_mesh;
+    // Multimesh
+    std::shared_ptr<MultiMesh> _multimesh;
 
-    // Multi mesh dofmap
-    std::shared_ptr<CCFEMDofMap> _dofmap;
+    // Multimesh dofmap
+    std::shared_ptr<MultiMeshDofMap> _dofmap;
 
-    // Build multi mesh
-    void _build_multi_mesh();
+    // Build multimesh
+    void _build_multimesh();
 
     // Build dofmap
     void _build_dofmap();

@@ -34,7 +34,7 @@ namespace dolfin
   class GenericDofMap;
   class GenericSparsityPattern;
   class Mesh;
-  class CCFEMForm;
+  class MultiMeshForm;
 
   /// This class provides functions to compute the sparsity pattern.
 
@@ -53,9 +53,9 @@ namespace dolfin
                       bool init=true,
                       bool finalize=true);
 
-    /// Build sparsity pattern for assembly of given CCFEM form
+    /// Build sparsity pattern for assembly of given MultiMesh form
     static void build_ccfem(GenericSparsityPattern& sparsity_pattern,
-                            const CCFEMForm& form);
+                            const MultiMeshForm& form);
 
   };
 

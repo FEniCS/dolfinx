@@ -19,7 +19,7 @@
 // Last changed: 2014-03-03
 //
 // This demo program solves Poisson's equation using a Cut and
-// Composite Finite Element Method (CCFEM) on a domain defined by
+// Composite Finite Element Method (MultiMesh) on a domain defined by
 // three overlapping and non-matching meshes.
 
 #include <dolfin.h>
@@ -70,20 +70,20 @@ int main()
   L1.f = f;
   L2.f = f;
 
-  // Build CCFEM function space
-  CCFEMFunctionSpace V;
+  // Build MultiMesh function space
+  MultiMeshFunctionSpace V;
   V.add(V0);
   V.add(V1);
   V.add(V2);
   V.build();
 
-  // Build CCFEM forms
-  CCFEMForm a(V, V);
+  // Build MultiMesh forms
+  MultiMeshForm a(V, V);
   a.add(a0);
   a.add(a1);
   a.add(a2);
   a.build();
-  CCFEMForm L(V);
+  MultiMeshForm L(V);
   L.add(L0);
   L.add(L1);
   L.add(L2);
@@ -92,12 +92,12 @@ int main()
   // Assemble linear system
   Matrix A;
   Vector b;
-  CCFEMAssembler assembler;
+  MultiMeshAssembler assembler;
   assembler.assemble(A, a);
   assembler.assemble(b, L);
 
   // Compute solution
-  CCFEMFunction u(V);
+  MultiMeshFunction u(V);
   solve(A, *u.vector(), b);
 
   plot(u.part(0), "u_0");
