@@ -43,14 +43,6 @@
 
 using namespace dolfin;
 
-struct snes_ctx_t
-{
-  NonlinearProblem* nonlinear_problem;
-  PETScVector* x;
-  const PETScVector* xl;
-  const PETScVector* xu;
-};
-
 #if PETSC_VERSION_RELEASE
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
   // Mapping from method string to PETSc
@@ -227,16 +219,13 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   return this->solve(nonlinear_problem, x);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool>
-PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+void
+PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                        GenericVector& x)
 {
-  Timer timer("SNES solver");
+  Timer timer("SNES solver init");
   PETScVector f;
   PETScMatrix A;
-  PetscInt its;
-  SNESConvergedReason reason;
-  struct snes_ctx_t snes_ctx;
 
   // Set linear solver parameters
   set_linear_solver_parameters();
@@ -248,12 +237,12 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
 
-  snes_ctx.nonlinear_problem = &nonlinear_problem;
-  snes_ctx.x = &x.down_cast<PETScVector>();
+  _snes_ctx.nonlinear_problem = &nonlinear_problem;
+  _snes_ctx.x = &x.down_cast<PETScVector>();
 
-  SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
+  SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &_snes_ctx);
   SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
-                  &snes_ctx);
+                  &_snes_ctx);
 
   std::string prefix = std::string(parameters["options_prefix"]);
   if (prefix != "default")
@@ -325,11 +314,25 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   SNESSetFromOptions(_snes);
   if (report)
     SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
+}
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool>
+PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+                       GenericVector& x)
+{
+  Timer timer("SNES solver execution");
+  PETScVector f;
+  PETScMatrix A;
+  PetscInt its;
+  SNESConvergedReason reason;
 
-  SNESSolve(_snes, PETSC_NULL, snes_ctx.x->vec());
+  this->init(nonlinear_problem, x);
+  SNESSolve(_snes, PETSC_NULL, _snes_ctx.x->vec());
 
   SNESGetIterationNumber(_snes, &its);
   SNESGetConvergedReason(_snes, &reason);
+
+  const bool report = parameters["report"];
 
   MPI_Comm comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_snes, &comm);
