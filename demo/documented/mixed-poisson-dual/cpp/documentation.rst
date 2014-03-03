@@ -10,9 +10,9 @@ Dual-mixed formulation for Poisson equation
 Implementation
 --------------
 
-The implementation is split in two files, a form file containing the definition
-of the variational forms expressed in UFL and the solver which is implemented
-in a C++ file.
+The implementation is split in two files, a form file containing the
+definition of the variational forms expressed in UFL and the solver
+which is implemented in a C++ file.
 
 Running this demo requires the files: :download:`main.cpp`,
 :download:`MixedPoissonDual.ufl` and :download:`CMakeLists.txt`.
@@ -52,10 +52,10 @@ test functions on this space. This can be done as follows
     (sigma, u) = TrialFunctions(W)
     (tau, v) = TestFunctions(W)
 
-Further, we need to specify the sources :math:`f` and :math:`g` (coefficients)
-that will be used in the linear form of the variational problem. This
-coefficient needs be defined on a finite element space, but ``CG`` of
-polynmial degree 3 is not necessary. We therefore define
+Further, we need to specify the sources :math:`f` and :math:`g`
+(coefficients) that will be used in the linear form of the variational
+problem. This coefficient needs be defined on a finite element space,
+but ``CG`` of polynmial degree 3 is not necessary. We therefore define
 a separate finite element space for these coefficients.
 
 .. code-block:: python
@@ -64,7 +64,8 @@ a separate finite element space for these coefficients.
     f = Coefficient(CG1)
     g = Coefficient(CG1)
 
-Finally, we define the bilinear and linear forms according to the equations:
+Finally, we define the bilinear and linear forms according to the
+equations:
 
 .. code-block:: python
 
@@ -112,8 +113,7 @@ Then follows the definition of the coefficient functions (for
      {
        values[0] = sin(5.0*x[0]);
      }
-    };
-
+   };
 
 Then follows the definition of the essential boundary part of the
 boundary of the domain, which is derived from the
@@ -142,7 +142,8 @@ formulation. We also define the bilinear form ``a`` and linear form
     MixedPoisson::BilinearForm a(W, W);
     MixedPoisson::LinearForm L(W);
 
-Then we create the sources (:math:`f`, :math:`g`) and assign it to the linear form.
+Then we create the sources (:math:`f`, :math:`g`) and assign it to the
+linear form.
 
 .. code-block:: c++
 

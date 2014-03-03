@@ -6,8 +6,8 @@ Dual-mixed formulation for Poisson equation
 ======================================
 
 This demo is implemented in a single Python file,
-:download:`demo_mixed-poisson-dual.py`, which contains both the variational
-forms and the solver.
+:download:`demo_mixed-poisson-dual.py`, which contains both the
+variational forms and the solver.
 
 .. include:: ../common.txt
 
@@ -38,8 +38,8 @@ the unit square. In this example, we will let the mesh consist of 32 x
    pair: FunctionSpace; Lagrange
 
 Next, we need to define the function spaces. We define the two
-function spaces :math:`\Sigma_h = DRT` and :math:`V_h = CG` separately,
-before combining these into a mixed function space:
+function spaces :math:`\Sigma_h = DRT` and :math:`V_h = CG`
+separately, before combining these into a mixed function space:
 
 .. code-block:: python
 
@@ -71,7 +71,8 @@ test functions on this space. This can be done as follows
 
 In order to define the variational form, it only remains to define the
 source functions :math:`f` and :math:`g`. This is done just as for the
-:ref:`mixed Poisson demo <demo_pde_mixed-poisson_python_documentation>`:
+:ref:`mixed Poisson demo
+<demo_pde_mixed-poisson_python_documentation>`:
 
 .. code-block:: python
 
@@ -88,11 +89,11 @@ We are now ready to define the variational forms a and L.
     L = - f*v*dx - g*v*ds
 
 It only remains to prescribe the Dirichlet boundary condition for
-:math:`u`. Essential boundary conditions are specified through the class
-:py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` which takes three
-arguments: the function space the boundary condition is supposed to be
-applied to, the data for the boundary condition, and the relevant part
-of the boundary.
+:math:`u`. Essential boundary conditions are specified through the
+class :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` which takes
+three arguments: the function space the boundary condition is supposed
+to be applied to, the data for the boundary condition, and the
+relevant part of the boundary.
 
 We want to apply the boundary condition to the second subspace of the
 mixed space. Subspaces of a :py:class:`MixedFunctionSpace
@@ -141,6 +142,7 @@ the solutions to examine the result.
     plot(sigma)
     plot(u)
     interactive()
+
 
 Complete code
 -------------
