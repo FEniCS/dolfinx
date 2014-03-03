@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2013-10-22
+// Last changed: 2014-03-03
 
 #ifndef __CCFEM_FUNCTION_H
 #define __CCFEM_FUNCTION_H
@@ -90,13 +90,17 @@ namespace dolfin
     // Initialize vector
     void init_vector();
 
+    // Compute ghost indices
+    void compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
+                               std::vector<la_index>& ghost_indices) const;
+
     // The function space
     std::shared_ptr<const CCFEMFunctionSpace> _function_space;
 
     // The vector of expansion coefficients (local)
     std::shared_ptr<GenericVector> _vector;
 
-    // Collection of functions for parts which share data
+    // Cache of regular functions for the parts
     mutable boost::ptr_map<std::size_t, Function> _function_parts;
 
   };
