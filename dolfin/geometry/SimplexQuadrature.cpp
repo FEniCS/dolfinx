@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-02-24
+// Last changed: 2014-03-03
 
 #include <dolfin/log/log.h>
 #include "SimplexQuadrature.h"
@@ -24,7 +24,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<std::pair<Point, double> >
+std::pair<std::vector<double>, std::vector<double> >
 SimplexQuadrature::compute_quadrature_rule(const double* coordinates,
                                            std::size_t tdim,
                                            std::size_t gdim,
@@ -47,16 +47,16 @@ SimplexQuadrature::compute_quadrature_rule(const double* coordinates,
                  "Only implemented for topological dimension 1, 2, 3");
   };
 
-  std::vector<std::pair<Point, double> > quadrature_rule;
+  std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<Point, double> >
+std::pair<std::vector<double>, std::vector<double> >
 SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
                                                     std::size_t gdim,
                                                     std::size_t order)
 {
-  std::vector<std::pair<Point, double> > quadrature_rule;
+  std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
 
   // FIXME: Not implemented
   // FIXME: Should probably not use Point, but something that matches
@@ -65,24 +65,24 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<Point, double> >
+std::pair<std::vector<double>, std::vector<double> >
 SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
                                                     std::size_t gdim,
                                                     std::size_t order)
 {
-  std::vector<std::pair<Point, double> > quadrature_rule;
+  std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
 
   // FIXME: Not implemented
 
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<Point, double> >
+std::pair<std::vector<double>, std::vector<double> >
 SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates,
                                                        std::size_t gdim,
                                                        std::size_t order)
 {
-  std::vector<std::pair<Point, double> > quadrature_rule;
+  std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
 
   // FIXME: Not implemented
 

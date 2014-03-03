@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-02-24
+// Last changed: 2014-03-03
 
 #ifndef __SIMPLEX_QUADRATURE_H
 #define __SIMPLEX_QUADRATURE_H
@@ -45,9 +45,10 @@ namespace dolfin
     ///         The order of convergence of the quadrature rule.
     ///
     /// *Returns*
-    ///     std::vector<std::pair<Point, double> >
-    ///         A list of points and quadrature weights.
-    static std::vector<std::pair<Point, double> >
+    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///         An array of quadrature weights and a corresponding
+    ///         flattened array of quadrature points.
+    static std::pair<std::vector<double>, std::vector<double> >
     compute_quadrature_rule(const double* coordinates,
                             std::size_t tdim,
                             std::size_t gdim,
@@ -65,9 +66,10 @@ namespace dolfin
     ///         The order of convergence of the quadrature rule.
     ///
     /// *Returns*
-    ///     std::vector<std::pair<Point, double> >
-    ///         A list of points and quadrature weights.
-    static std::vector<std::pair<Point, double> >
+    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///         An array of quadrature weights and a corresponding
+    ///         flattened array of quadrature points.
+    static std::pair<std::vector<double>, std::vector<double> >
     compute_quadrature_rule_interval(const double* coordinates,
                                      std::size_t gdim,
                                      std::size_t order);
@@ -84,9 +86,10 @@ namespace dolfin
     ///         The order of convergence of the quadrature rule.
     ///
     /// *Returns*
-    ///     std::vector<std::pair<Point, double> >
-    ///         A list of points and quadrature weights.
-    static std::vector<std::pair<Point, double> >
+    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///         An array of quadrature weights and a corresponding
+    ///         flattened array of quadrature points.
+    static std::pair<std::vector<double>, std::vector<double> >
     compute_quadrature_rule_triangle(const double* coordinates,
                                      std::size_t gdim,
                                      std::size_t order);
@@ -103,9 +106,10 @@ namespace dolfin
     ///         The order of convergence of the quadrature rule.
     ///
     /// *Returns*
-    ///     std::vector<std::pair<Point, double> >
-    ///         A list of points and quadrature weights.
-    static std::vector<std::pair<Point, double> >
+    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///         An array of quadrature weights and a corresponding
+    ///         flattened array of quadrature points.
+    static std::pair<std::vector<double>, std::vector<double> >
     compute_quadrature_rule_tetrahedron(const double* coordinates,
                                         std::size_t gdim,
                                         std::size_t order);
