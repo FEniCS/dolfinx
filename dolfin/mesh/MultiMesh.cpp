@@ -296,6 +296,8 @@ void MultiMesh::_build_quadrature_rules()
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
+      // Compute quadrature rule for the cell itself
+      auto quadrature_rule = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
 
       // Iterate over cutting cells
       auto cutting_cells = it->second;
@@ -317,10 +319,23 @@ void MultiMesh::_build_quadrature_rules()
           const double* x = &triangulation[0] + k*offset;
 
           // Compute quadrature rule for simplex
-          _quadrature_rules_cut_cells[cut_part][cut_cell_index]
-            = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
+          auto q = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
+
+          // Subtract quadrature rule for intersection from quadrature
+          // rule for the cut cell itself
+          dolfin_assert(gdim*q.first.size() == q.second.size());
+          const std::size_t num_points = q.first.size();
+          for (std::size_t i = 0; i < num_points; i++)
+          {
+            quadrature_rule.first.push_back(-q.first[i]);
+            for (std::size_t j = 0; j < gdim; j++)
+              quadrature_rule.second.push_back(q.second[i*gdim + j]);
+          }
         }
       }
+
+      // Store quadrature rule for cut cell
+      _quadrature_rules_cut_cells[cut_part][cut_cell_index] = quadrature_rule;
     }
   }
 
