@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-03
+// Last changed: 2014-03-04
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -296,6 +296,7 @@ void MultiMesh::_build_quadrature_rules()
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
+
       // Iterate over cutting cells
       auto cutting_cells = it->second;
       for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
@@ -313,11 +314,11 @@ void MultiMesh::_build_quadrature_rules()
         for (std::size_t k = 0; k < num_intersections; k++)
         {
           // Get coordinates for current simplex in triangulation
-          const double* coordinates = &triangulation[0] + k*offset;
+          const double* x = &triangulation[0] + k*offset;
 
           // Compute quadrature rule for simplex
           _quadrature_rules_cut_cells[cut_part][cut_cell_index]
-            = SimplexQuadrature::compute_quadrature_rule(coordinates, tdim, gdim, order);
+            = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
         }
       }
     }

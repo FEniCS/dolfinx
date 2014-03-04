@@ -16,13 +16,39 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-03-03
+// Last changed: 2014-03-04
 
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshGeometry.h>
 #include "SimplexQuadrature.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+std::pair<std::vector<double>, std::vector<double> >
+SimplexQuadrature::compute_quadrature_rule(const Cell& cell, std::size_t order)
+{
+  // Extract dimensions
+  const std::size_t tdim = cell.mesh().topology().dim();
+  const std::size_t gdim = cell.mesh().geometry().dim();
+
+  // Extract vertex coordinates
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const std::size_t num_vertices = cell.num_entities(0);
+  std::vector<double> coordinates(num_vertices*gdim);
+  for (unsigned int i = 0; i < num_vertices; i++)
+  {
+    const double* x = geometry.x(vertices[i]);
+    for (unsigned int j = 0; j < gdim; j++)
+      coordinates[i*gdim + j] = x[j];
+  }
+
+  // Call function to compute quadrature rule
+  return compute_quadrature_rule(&coordinates[0], tdim, gdim, order);
+}
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double> >
 SimplexQuadrature::compute_quadrature_rule(const double* coordinates,
