@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-03-03
+// Last changed: 2014-03-04
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -132,6 +132,35 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a
 
       // Add entries to global tensor
       A.add(ufc_part.A.data(), dofs);
+    }
+
+    // Iterate over cut cells
+    const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
+    auto quadrature_rules = multimesh->quadrature_rule_cut_cells(part);
+    for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+    {
+      // Create cell
+      Cell cell(mesh_part, *it);
+
+      // Update to current cell
+      cell.get_vertex_coordinates(vertex_coordinates);
+      cell.get_cell_data(ufc_cell);
+      ufc_part.update(cell, vertex_coordinates, ufc_cell);
+
+      // Get local-to-global dof maps for cell
+      for (std::size_t i = 0; i < form_rank; ++i)
+        dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
+
+      // Get quadrature rule for cut cell
+      auto q = quadrature_rules[*it];
+
+      // Tabulate cell tensor
+      //integral->tabulate_tensor(ufc_part.A.data(), ufc_part.w(),
+      //                          vertex_coordinates.data(),
+      //                          ufc_cell.orientation);
+
+      // Add entries to global tensor
+      //A.add(ufc_part.A.data(), dofs);
     }
   }
 }

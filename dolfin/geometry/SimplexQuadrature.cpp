@@ -30,6 +30,9 @@ using namespace dolfin;
 std::pair<std::vector<double>, std::vector<double> >
 SimplexQuadrature::compute_quadrature_rule(const Cell& cell, std::size_t order)
 {
+  // FIXME: Use function cell.get_vertex_coordinates which does exactly
+  // the same thing as the code here.
+
   // Extract dimensions
   const std::size_t tdim = cell.mesh().topology().dim();
   const std::size_t gdim = cell.mesh().geometry().dim();
