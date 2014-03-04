@@ -65,7 +65,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  UnitSquareMesh mesh(128, 128);
 
   // Create functions
   Source f;

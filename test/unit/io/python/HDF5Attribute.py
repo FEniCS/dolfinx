@@ -29,7 +29,7 @@ if has_hdf5():
         """Test read/write of Atrtibutes in HDF5 files"""
 
         def test_read_write_str_attribute(self):
-            hdf_file = HDF5File("a.h5", "w")
+            hdf_file = HDF5File(mpi_comm_world(), "a.h5", "w")
             x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
@@ -38,7 +38,7 @@ if has_hdf5():
             self.assertEqual(attr['name'], 'Vector')
 
         def test_read_write_float_attribute(self):
-            hdf_file = HDF5File("a.h5", "w")
+            hdf_file = HDF5File(mpi_comm_world(), "a.h5", "w")
             x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
@@ -47,7 +47,7 @@ if has_hdf5():
             self.assertEqual(attr['val'], -9.2554)
 
         def test_read_write_int_attribute(self):
-            hdf_file = HDF5File("a.h5", "w")
+            hdf_file = HDF5File(mpi_comm_world(), "a.h5", "w")
             x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
@@ -57,7 +57,7 @@ if has_hdf5():
 
         def test_read_write_vec_float_attribute(self):
             import numpy
-            hdf_file = HDF5File("a.h5", "w")
+            hdf_file = HDF5File(mpi_comm_world(), "a.h5", "w")
             x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")
@@ -71,7 +71,7 @@ if has_hdf5():
 
         def test_read_write_vec_int_attribute(self):
             import numpy
-            hdf_file = HDF5File("a.h5", "w")
+            hdf_file = HDF5File(mpi_comm_world(), "a.h5", "w")
             x = Vector(mpi_comm_world(), 123)
             hdf_file.write(x, "/a_vector")
             attr = hdf_file.attributes("/a_vector")

@@ -28,8 +28,8 @@
 from dolfin import *
 
 # Check that DOLFIN is configured with PETSc and CGAL
-if not has_petsc():
-    print "DOLFIN must be compiled with PETSc to run this demo."
+if not has_petsc_snes():
+    print "DOLFIN must be compiled with PETSc version > 3.2 to run this demo."
     exit(0)
 
 # Create mesh
