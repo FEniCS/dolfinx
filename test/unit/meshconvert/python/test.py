@@ -501,9 +501,9 @@ class DiffPackTester(_TestCase):
         os.unlink(dfname)
 
     def test_convert_diffpack_2d(self):
-        from dolfin import Mesh, MPI, MeshFunction
+        from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
 
-        if MPI.num_processes() != 1:
+        if MPI.size(mpi_comm_world()) != 1:
             return
 
         fname = os.path.join("data", "diffpack_tri")
