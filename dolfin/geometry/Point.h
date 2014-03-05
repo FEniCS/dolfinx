@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg
+// Copyright (C) 2006-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2013-08-26
+// Last changed: 2014-01-06
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -237,7 +237,31 @@ namespace dolfin
     ///     output::
     ///
     ///         3
-    double norm() const;
+    double norm() const
+    {
+      return std::sqrt(_x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]);
+    }
+
+    /// Compute norm of point representing a vector from the origin
+    ///
+    /// *Returns*
+    ///     double
+    ///         The squared (Euclidean) norm of the vector from the
+    ///         origin of the point.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Point p(1.0, 2.0, 2.0);
+    ///         info("%g", p.squared_norm());
+    ///
+    ///     output::
+    ///
+    ///         9
+    double squared_norm() const
+    {
+      return _x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2];
+    }
 
     /// Compute cross product with given vector
     ///

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-11-30
+// Last changed: 2014-02-24
 
 #ifndef __BOUNDING_BOX_TREE_1D_H
 #define __BOUNDING_BOX_TREE_1D_H
@@ -71,7 +71,7 @@ namespace dolfin
     // Check whether bounding box (a) collides with bounding box (node)
     bool bbox_in_bbox(const double* a, unsigned int node) const
     {
-      const double* b = _bbox_coordinates.data() + 4*node;
+      const double* b = _bbox_coordinates.data() + 2*node;
       const double eps = DOLFIN_EPS_LARGE*(b[1] - b[0]);
       return b[0] - eps <= a[1] && a[0] <= b[1] + eps;
     }

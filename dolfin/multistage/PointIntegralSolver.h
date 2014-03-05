@@ -16,17 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-13
+// Last changed: 2014-03-05
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
 
 #include <vector>
-#include <Eigen/Dense>
+#include <set>
 #include <memory>
 
 #include <dolfin/common/Variable.h>
-#include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/fem/Assembler.h>
 
 namespace dolfin
@@ -49,6 +48,9 @@ namespace dolfin
     /// FIXME: Include version where one can pass a Solver and/or Parameters
     PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme);
 
+    /// Destructor
+    ~PointIntegralSolver();
+
     /// Step solver with time step dt
     void step(double dt);
 
@@ -64,15 +66,73 @@ namespace dolfin
     {
       Parameters p("point_integral_solver");
 
-      // Get default parameters from NewtonSolver
-      p.add(NewtonSolver::default_parameters());
-      p("newton_solver").add("reuse_jacobian", true);
-      p("newton_solver").add("iterations_to_retabulate_jacobian", 4);
+      p.add("reset_stage_solutions", true);
+
+      // Set parameters for NewtonSolver
+      Parameters pn("newton_solver"); 
+      pn.add("maximum_iterations", 40);
+      pn.add("recompute_jacobian_for_linear_problems", false);
+      pn.add("always_recompute_jacobian", false);
+      pn.add("recompute_jacobian_each_solve", false);
+      pn.add("relaxation_parameter", 1., 0., 1.);
+      pn.add("relative_tolerance", 1e-10, 1e-20, 1e-3);
+       
+      pn.add("kappa", 0.1, 0.05, 1.0);
+      pn.add("eta_0", 1., 1e-15, 1.0);
+      pn.add("max_relative_previous_residual", 1e-1, 1e-5, 1.0);
+      pn.add("reset_each_step", true);
+      pn.add("report", false);
+      pn.add("report_vertex", 0, 0, 32767);
+      pn.add("verbose_report", false);
+
+      p.add(pn);
 
       return p;
     }
 
+    // Reset newton solver
+    void reset_newton_solver();
+
+    // Reset stage solutions
+    void reset_stage_solutions();
+
+    // Return number of computations of jacobian
+    std::size_t num_jacobian_computations() const
+    {
+      return _num_jacobian_computations;
+    }
+
   private:
+
+    // Convergence critera for simplified Newton solver
+    enum convergence_criteria_t
+    {
+      
+      converged,
+      too_slow,
+      exceeds_max_iter,
+      diverge
+
+    };
+    
+    // In-place LU factorization of jacobian matrix
+    void _lu_factorize(std::vector<double>& A);
+
+    // Forward backward substitution, assume that mat is already
+    // inplace LU factorized
+    void _forward_backward_subst(const std::vector<double>& A, 
+				 const std::vector<double>& b, 
+				 std::vector<double>& x) const;
+    
+    // Compute jacobian using passed UFC form
+    void _compute_jacobian(std::vector<double>& jac, const std::vector<double>& u, 
+			   unsigned int local_vert, UFC& loc_ufc, 
+			   const Cell& cell, const ufc::cell& ufc_cell, 
+			   int coefficient_index,
+			   const std::vector<double>& vertex_coordinates);
+    
+    // Compute the norm of a vector
+    double _norm(const std::vector<double>& vec) const;
 
     // Check the forms making sure they only include piecewise linear
     // test functions
@@ -82,25 +142,78 @@ namespace dolfin
     // and initialize UFC data for each form
     void _init();
 
+    // Solve an explicit stage
+    void _solve_explicit_stage(std::size_t vert_ind, unsigned int stage, 
+			       const std::vector<double>& vertex_coordinates);
+
+    // Solve an implicit stage
+    void _solve_implicit_stage(std::size_t vert_ind, unsigned int stage,
+			       const Cell& cell, const ufc::cell& ufc_cell,
+			       const std::vector<double>& vertex_coordinates);
+
+    void _simplified_newton_solve(std::size_t vert_ind, unsigned int stage, 
+				  const Cell& cell, const ufc::cell& ufc_cell,
+				  const std::vector<double>& vertex_coordinates);
+
     // The MultiStageScheme
     std::shared_ptr<MultiStageScheme> _scheme;
 
+    // Reference to mesh
+    const Mesh& _mesh;
+
+    // The dofmap (Same for all stages and forms)
+    const GenericDofMap& _dofmap;
+
+    // Size of ODE system
+    const std::size_t _system_size;
+
+    // Offset into local dofmap 
+    // FIXME: Consider put in local loop
+    const unsigned int _dof_offset;
+
+    // Number of stages
+    const unsigned int _num_stages;
+
+    // Local to local dofs to be used in tabulate entity dofs
+    std::vector<std::size_t> _local_to_local_dofs;
+    
     // Vertex map between vertices, cells and corresponding local vertex
     std::vector<std::pair<std::size_t, unsigned int> > _vertex_map;
 
+    // Local to global dofs used when solution is fanned out to global vector
+    std::vector<dolfin::la_index> _local_to_global_dofs;
+  
+    // Local stage solutions 
+    std::vector<std::vector<double> > _local_stage_solutions;
+
+    // Local solutions
+    std::vector<double> _u0;
+    std::vector<double> _F;
+    std::vector<double> _y;
+    std::vector<double> _dx;
+      
     // UFC objects, one for each form
     std::vector<std::vector<std::shared_ptr<UFC> > > _ufcs;
+
+    // UFC objects for the last form
+    std::shared_ptr<UFC> _last_stage_ufc;
 
     // Solution coefficient index in form
     std::vector<std::vector<int> > _coefficient_index;
 
-    // Flag for retabulation of J
-    bool _retabulate_J;
+    // Flag which is set to false once the jacobian has been computed
+    std::vector<bool> _recompute_jacobian;
+    
+    // Jacobians/LU factorized jacobians matrices
+    std::vector<std::vector<double> > _jacobians;
+    
+    // Variable used in the estimation of the error of the newton 
+    // iteration for the first iteration (Important for linear problems!)
+    double _eta;
 
-    // Jacobian and LU factorized Jacobian matrices
-    Eigen::MatrixXd _J;
-    Eigen::PartialPivLU<Eigen::MatrixXd> _J_LU;
-
+    // Number of computations of Jacobian
+    std::size_t _num_jacobian_computations;
+    
   };
 
 }
