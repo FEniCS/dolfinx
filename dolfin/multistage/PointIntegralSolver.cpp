@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-02-26
+// Last changed: 2014-03-05
 
 #include <cmath>
 #include <algorithm> 
@@ -39,8 +39,6 @@
 
 #include "MultiStageScheme.h"
 #include "PointIntegralSolver.h"
-
-#include "fenv.h"
 
 using namespace dolfin;
 
@@ -97,11 +95,8 @@ void PointIntegralSolver::reset_stage_solutions()
 void PointIntegralSolver::step(double dt)
 {
   
-  //feenableexcept(FE_INVALID | FE_OVERFLOW);
-  
   const bool reset_stage_solutions_ = parameters["reset_stage_solutions"];
   const bool reset_newton_solver_ = parameters("newton_solver")["reset_each_step"];
-  const bool enable_debug = parameters["enable_debug_output"];
 
   // Check for reseting stage solutions
   if (reset_stage_solutions_)
@@ -115,8 +110,6 @@ void PointIntegralSolver::step(double dt)
   
   dolfin_assert(dt > 0.0);
 
-  //Timer t_step_stage("Step: set the stage");
-
   // Update time constant of scheme
   *_scheme->dt() = dt;
 
@@ -126,22 +119,15 @@ void PointIntegralSolver::step(double dt)
   // Update ghost values
   _update_ghost_values();
 
-  //const std::size_t num_threads = dolfin::parameters["num_threads"];
+  // Get ownership range
+  const dolfin::la_index n0 = _dofmap.ownership_range().first;
+  const dolfin::la_index n1 = _dofmap.ownership_range().second;
 
   // Iterate over vertices
-  //Progress p("Solving local point integral problems", _mesh.num_vertices());
-  
-  //#pragma omp parallel for schedule(guided, 20) private(_jac_L, _jac_U, _jac, _local_to_global_dofs, _local_to_local_dofs, _ufcs)
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
   for (std::size_t vert_ind=0; vert_ind < _mesh.num_vertices(); ++vert_ind)
   {
-
-    // FIXME: Some debug output
-    if (enable_debug && vert_ind == 0)
-      std::cout << std::endl << std::endl << "Vertex: " << vert_ind << std::endl;
-    
-    //Timer t_vert("Step: update vert");
 
     // Cell containing vertex
     const Cell cell(_mesh, _vertex_map[vert_ind].first);
@@ -156,46 +142,29 @@ void PointIntegralSolver::step(double dt)
     // Tabulate local-local dofmap
     _dofmap.tabulate_entity_dofs(_local_to_local_dofs, 0, 
 				 _vertex_map[vert_ind].second);
-    
-    // Fill local to global dof map
-    for (unsigned int row=0; row < _system_size; row++)
-      _local_to_global_dofs[row] = cell_dofs[_local_to_local_dofs[row]];
 
-    //t_vert.stop();
+    // Fill local to global dof map and check that the dof is owned
+    bool owns_all_dofs = true;
+    for (unsigned int row=0; row < _system_size; row++)
+    {
+      _local_to_global_dofs[row] = cell_dofs[_local_to_local_dofs[row]];
+      if (_local_to_global_dofs[row] < n0 || n1 <=_local_to_global_dofs[row])
+      {
+	owns_all_dofs = false;
+	break;
+      }
+    }
+
+    // If not owning all dofs
+    if (!owns_all_dofs)
+      continue;
 
     // Iterate over stage forms
     for (unsigned int stage=0; stage<_num_stages; stage++)
     {
 
-      // FIXME: Debug:
-      if (enable_debug && vert_ind == 0)
-      {
-	_scheme->stage_solutions()[stage]->vector()->get_local(
-			_y.data(), _local_to_global_dofs.size(), 
-			_local_to_global_dofs.data());
-      
-	// FIXME: Some debug output
-	std::cout << "Stage solution before solve[" << stage << "]: ";
-	for (unsigned int row=0; row < _system_size; row++)
-	  std::cout << _y[row] << ", ";
-      
-	std::cout << std::endl;
-
-	// FIXME: Some debug output
-	std::cout << "Local stage solution before solve[" << stage << "]: ";
-	for (unsigned int row=0; row < _system_size; row++)
-	  std::cout << _local_stage_solutions[stage][row] << ", ";
-      
-	std::cout << std::endl;
-	
-      }
-
       // Update cell
-      //Timer t_impl_update("Update_cell");
-      //for (unsigned int i=0; i < _ufcs[stage].size(); i++)
       _ufcs[stage][0]->update(cell, vertex_coordinates, ufc_cell);
-
-      //t_impl_update.stop();
 
       // Check if we have an explicit stage (only 1 form)
       if (_ufcs[stage].size() == 1)
@@ -207,28 +176,6 @@ void PointIntegralSolver::step(double dt)
       else
       {
 	_solve_implicit_stage(vert_ind, stage, cell, ufc_cell, vertex_coordinates);
-      }
-
-      // FIXME: Debug:
-      if (enable_debug && vert_ind == 0)
-      {
-	_scheme->stage_solutions()[stage]->vector()->get_local(
-	     _y.data(), _local_to_global_dofs.size(), _local_to_global_dofs.data());
-      
-	// FIXME: Some debug output
-	std::cout << "Stage solution after solve[" << stage << "]: ";
-	for (unsigned int row=0; row < _system_size; row++)
-	  std::cout << _y[row] << ", ";
-      
-	std::cout << std::endl;
-
-	// FIXME: Some debug output
-	std::cout << "Local stage solution after solve[" << stage << "]: ";
-	for (unsigned int row=0; row < _system_size; row++)
-	  std::cout << _local_stage_solutions[stage][row] << ", ";
-      
-	std::cout << std::endl;
-	
       }
 
     }
@@ -253,9 +200,6 @@ void PointIntegralSolver::step(double dt)
     // Update global solution with last stage
     _scheme->solution()->vector()->set(_y.data(), _local_to_global_dofs.size(), 
 				       _local_to_global_dofs.data());
-    //t_last_stage.stop();
-    
-    //p++;
   }
   
   for (unsigned int stage=0; stage<_num_stages; stage++)
@@ -271,17 +215,13 @@ void PointIntegralSolver::step(double dt)
 void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind, 
 		unsigned int stage, const std::vector<double>& vertex_coordinates)
 {
-  //Timer t_expl("Explicit stage");
+  Timer t_expl("Explicit stage");
 
   // Local vertex ind
   const unsigned int local_vert = _vertex_map[vert_ind].second;
 
   // Point integral
   const ufc::point_integral& integral = *_ufcs[stage][0]->default_point_integral;
-
-  // Update to current cell
-  //Timer t_expl_update("Explicit stage: update_cell");
-  //t_expl_update.stop();
 
   // Tabulate cell tensor
   Timer t_expl_tt("Explicit stage: tabulate_tensor");
@@ -315,8 +255,6 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
 	
   // Do a simplified newton solve
   _simplified_newton_solve(vert_ind, stage, cell, ufc_cell, vertex_coordinates);
-
-  //Timer t_impl_set("Implicit stage: set");
 
   // Put solution back into global stage solution vector
   _scheme->stage_solutions()[stage]->vector()->set(_local_stage_solutions[stage].data(), \

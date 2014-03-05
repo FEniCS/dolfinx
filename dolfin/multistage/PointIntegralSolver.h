@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-02-26
+// Last changed: 2014-03-05
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -68,9 +68,8 @@ namespace dolfin
       Parameters p("point_integral_solver");
 
       p.add("reset_stage_solutions", true);
-      p.add("enable_debug_output", false);
 
-      // Get default parameters from NewtonSolver
+      // Set parameters for NewtonSolver
       Parameters pn("newton_solver"); 
       pn.add("maximum_iterations", 40);
       pn.add("recompute_jacobian_for_linear_problems", false);
