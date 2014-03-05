@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-11-30
+// Last changed: 2014-02-06
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -28,6 +28,7 @@
 namespace dolfin
 {
 
+  // Forward declarations
   class Mesh;
   class MeshEntity;
 
@@ -141,8 +142,8 @@ namespace dolfin
                         const GenericBoundingBoxTree& B,
                         unsigned int node_A,
                         unsigned int node_B,
-                        std::set<unsigned int>& entities_A,
-                        std::set<unsigned int>& entities_B,
+                        std::vector<unsigned int>& entities_A,
+                        std::vector<unsigned int>& entities_B,
                         const Mesh* mesh_A,
                         const Mesh* mesh_B);
 

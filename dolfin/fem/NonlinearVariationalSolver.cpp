@@ -137,7 +137,7 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
     dolfin_assert(nonlinear_problem);
     ret = newton_solver->solve(*nonlinear_problem, *u->vector());
   }
-#ifdef HAS_PETSC
+  #ifdef ENABLE_PETSC_SNES
   else if (std::string(parameters["nonlinear_solver"]) == "snes")
   {
     // Create SNES solver and set parameters
@@ -153,14 +153,14 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
     dolfin_assert(nonlinear_problem);
     if (_problem->has_lower_bound() && _problem->has_upper_bound())
     {
-    ret = snes_solver->solve(*nonlinear_problem, *u->vector(), *_problem->lower_bound(), *_problem->upper_bound());
+      ret = snes_solver->solve(*nonlinear_problem, *u->vector(),
+                               *_problem->lower_bound(),
+                               *_problem->upper_bound());
     }
     else
-    {
-    ret = snes_solver->solve(*nonlinear_problem, *u->vector());
-    }
+      ret = snes_solver->solve(*nonlinear_problem, *u->vector());
   }
-#endif
+  #endif
   else
   {
     dolfin_error("NonlinearVariationalSolver.cpp",
