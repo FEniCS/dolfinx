@@ -20,7 +20,7 @@
 
 #include <cmath>
 #include <algorithm> 
-#include <boost/make_shared.hpp>
+#include <memory>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
@@ -43,7 +43,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme) : 
+PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme) : 
   Variable("PointIntegralSolver", "unnamed"), _scheme(scheme), 
   _mesh(_scheme->stage_forms()[0][0]->mesh()),
   _dofmap(*_scheme->stage_forms()[0][0]->function_space(0)->dofmap()), 
@@ -115,9 +115,6 @@ void PointIntegralSolver::step(double dt)
 
   // Time at start of timestep
   const double t0 = *_scheme->t();
-
-  // Update ghost values
-  _update_ghost_values();
 
   // Get ownership range
   const dolfin::la_index n0 = _dofmap.ownership_range().first;
@@ -435,28 +432,10 @@ double PointIntegralSolver::_norm(const std::vector<double>& vec) const
   return l2_norm;
 }
 //-----------------------------------------------------------------------------
-void PointIntegralSolver::_update_ghost_values()
-{
-  // Update off-process coefficients
-  for (unsigned int i=0; i < _num_stages; i++)
-  {
-    for (unsigned int j=0; j < _scheme->stage_forms()[i].size(); j++)
-    {
-      const std::vector<boost::shared_ptr<const GenericFunction> >
-	coefficients = _scheme->stage_forms()[i][j]->coefficients();
-      
-      for (unsigned int k = 0; k < coefficients.size(); ++k)
-      {
-	coefficients[k]->update();
-      }
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 void PointIntegralSolver::_check_forms()
 {
   // Iterate over stage forms and check they include point integrals
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms
+  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
     = _scheme->stage_forms();
   for (unsigned int i=0; i < stage_forms.size(); i++)
   {
@@ -488,7 +467,7 @@ void PointIntegralSolver::_check_forms()
 void PointIntegralSolver::_init()
 {
   // Get stage forms
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms
+  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
     = _scheme->stage_forms();
 
   // Init local stage solutions
@@ -517,19 +496,19 @@ void PointIntegralSolver::_init()
   }
 
   // Create last stage UFC form
-  _last_stage_ufc = boost::make_shared<UFC>(*_scheme->last_stage());
+  _last_stage_ufc = std::make_shared<UFC>(*_scheme->last_stage());
 
   // Iterate over stages and collect information
   for (unsigned int stage = 0; stage < stage_forms.size(); stage++)
   {
     // Create a UFC object for first form
-    _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][0]));
+    _ufcs[stage].push_back(std::make_shared<UFC>(*stage_forms[stage][0]));
 
     //  If implicit stage
     if (stage_forms[stage].size()==2)
     {
       // Create a UFC object for second form
-      _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][1]));
+      _ufcs[stage].push_back(std::make_shared<UFC>(*stage_forms[stage][1]));
 
       // Find coefficient index for each of the two implicit forms
       for (unsigned int i = 0; i < 2; i++)

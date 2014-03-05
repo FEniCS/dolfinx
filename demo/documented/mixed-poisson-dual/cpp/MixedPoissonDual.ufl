@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Anders Logg
+# Copyright (C) 2014 Jan Blechta
 #
 # This file is part of DOLFIN.
 #
@@ -15,19 +15,24 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2005
-# Last changed: 2013-09-25
+# First added:  2014-01-29
+# Last changed: 2014-01-29
 #
-# The bilinear form a(u, v) and linear form L(v) for
-# Poisson's equation.
+# The bilinear form a(u, v) and linear form L(v) for a two-field
+# (mixed) formulation of Poisson's equation
 #
-# Compile this form with FFC: ffc -l dolfin Poisson.ufl.
+# Compile this form with FFC: ffc -l dolfin MixedPoissonDual.ufl.
 
-element = FiniteElement("Lagrange", triangle, 1)
+DRT = FiniteElement("DRT", triangle, 2)
+CG  = FiniteElement("CG", triangle, 3)
+W = DRT * CG
 
-u = TrialFunction(element)
-v = TestFunction(element)
-f = Coefficient(element)
+(sigma, u) = TrialFunctions(W)
+(tau, v)   = TestFunctions(W)
 
-a = u*v*dx + inner(grad(u), grad(v))*dx
-L = f*v*dx
+CG1 = FiniteElement("CG", triangle, 1)
+f = Coefficient(CG1)
+g = Coefficient(CG1)
+
+a = (dot(sigma, tau) + dot(grad(u), tau) + dot(sigma, grad(v)))*dx
+L = - f*v*dx - g*v*ds

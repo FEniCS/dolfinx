@@ -23,7 +23,7 @@
 
 #include <utility>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
@@ -46,7 +46,7 @@ namespace dolfin
     PaStiXLUSolver(const STLMatrix& A);
 
     /// Constructor
-    PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A);
+    PaStiXLUSolver(std::shared_ptr<const STLMatrix> A);
 
     /// Destructor
     virtual ~PaStiXLUSolver();
@@ -59,7 +59,7 @@ namespace dolfin
 
   private:
 
-    boost::shared_ptr<const STLMatrix> A;
+    std::shared_ptr<const STLMatrix> A;
 
   };
 

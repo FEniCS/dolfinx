@@ -29,7 +29,7 @@
 #include <map>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/unordered_map.hpp>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
@@ -64,9 +64,9 @@ namespace dolfin
     ///         The element.
     ///     dofmap (_GenericDofMap_)
     ///         The dofmap.
-    FunctionSpace(boost::shared_ptr<const Mesh> mesh,
-                  boost::shared_ptr<const FiniteElement> element,
-                  boost::shared_ptr<const GenericDofMap> dofmap);
+    FunctionSpace(std::shared_ptr<const Mesh> mesh,
+                  std::shared_ptr<const FiniteElement> element,
+                  std::shared_ptr<const GenericDofMap> dofmap);
 
   protected:
 
@@ -79,7 +79,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    explicit FunctionSpace(boost::shared_ptr<const Mesh> mesh);
+    explicit FunctionSpace(std::shared_ptr<const Mesh> mesh);
 
   public:
 
@@ -102,8 +102,8 @@ namespace dolfin
     ///         The element.
     ///     dofmap (_GenericDofMap_)
     ///         The dofmap.
-    void attach(boost::shared_ptr<const FiniteElement> element,
-                boost::shared_ptr<const GenericDofMap> dofmap);
+    void attach(std::shared_ptr<const FiniteElement> element,
+                std::shared_ptr<const GenericDofMap> dofmap);
 
   public:
 
@@ -133,21 +133,21 @@ namespace dolfin
     /// *Returns*
     ///     _Mesh_
     ///         The mesh.
-    boost::shared_ptr<const Mesh> mesh() const;
+    std::shared_ptr<const Mesh> mesh() const;
 
     /// Return finite element
     ///
     /// *Returns*
     ///     _FiniteElement_
     ///         The finite element.
-    boost::shared_ptr<const FiniteElement> element() const;
+    std::shared_ptr<const FiniteElement> element() const;
 
     /// Return dofmap
     ///
     /// *Returns*
     ///     _GenericDofMap_
     ///         The dofmap.
-    boost::shared_ptr<const GenericDofMap> dofmap() const;
+    std::shared_ptr<const GenericDofMap> dofmap() const;
 
     /// Return dimension of function space
     ///
@@ -175,7 +175,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         The subspace.
-    boost::shared_ptr<FunctionSpace> operator[] (std::size_t i) const;
+    std::shared_ptr<FunctionSpace> operator[] (std::size_t i) const;
 
     /// Extract subspace for component
     ///
@@ -186,7 +186,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         The subspace.
-    boost::shared_ptr<FunctionSpace>
+    std::shared_ptr<FunctionSpace>
     extract_sub_space(const std::vector<std::size_t>& component) const;
 
     /// Collapse a subspace and return a new function space
@@ -194,7 +194,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         The new function space.
-    boost::shared_ptr<FunctionSpace> collapse() const;
+    std::shared_ptr<FunctionSpace> collapse() const;
 
     /// Collapse a subspace and return a new function space and a map
     /// from new to old dofs
@@ -206,7 +206,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///       The new function space.
-    boost::shared_ptr<FunctionSpace>
+    std::shared_ptr<FunctionSpace>
     collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
 
     /// Check if function space has given cell
@@ -257,20 +257,20 @@ namespace dolfin
   private:
 
     // The mesh
-    boost::shared_ptr<const Mesh> _mesh;
+    std::shared_ptr<const Mesh> _mesh;
 
     // The finite element
-    boost::shared_ptr<const FiniteElement> _element;
+    std::shared_ptr<const FiniteElement> _element;
 
     // The dofmap
-    boost::shared_ptr<const GenericDofMap> _dofmap;
+    std::shared_ptr<const GenericDofMap> _dofmap;
 
     // The component (for sub spaces)
     std::vector<std::size_t> _component;
 
     // Cache of sub spaces
     mutable std::map<std::vector<std::size_t>,
-      boost::shared_ptr<FunctionSpace> > subspaces;
+      std::shared_ptr<FunctionSpace> > subspaces;
 
   };
 

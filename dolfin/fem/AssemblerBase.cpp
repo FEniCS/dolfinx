@@ -60,7 +60,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     Timer t0("Build sparsity");
 
     // Create layout for initialising tensor
-    boost::shared_ptr<TensorLayout> tensor_layout;
+    std::shared_ptr<TensorLayout> tensor_layout;
     tensor_layout = A.factory().create_layout(a.rank());
     dolfin_assert(tensor_layout);
 
@@ -158,7 +158,7 @@ void AssemblerBase::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<boost::shared_ptr<const GenericFunction> >
+  const std::vector<std::shared_ptr<const GenericFunction> >
     coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients

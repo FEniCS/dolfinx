@@ -123,7 +123,7 @@ PETScLUSolver::PETScLUSolver(std::string method) : _ksp(NULL)
   init_solver(method);
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
+PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
                              std::string method) : _ksp(NULL), _A(A)
 {
   // Check dimensions
@@ -147,13 +147,14 @@ PETScLUSolver::~PETScLUSolver()
     KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+void
+PETScLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   _A = as_type<const PETScMatrix>(require_matrix(A));
   dolfin_assert(_A);
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
+void PETScLUSolver::set_operator(std::shared_ptr<const PETScMatrix> A)
 {
   _A = A;
   dolfin_assert(_A);
@@ -263,7 +264,7 @@ std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
 std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                  const PETScVector& b)
 {
-  boost::shared_ptr<const PETScMatrix> Atmp(&A, NoDeleter());
+  std::shared_ptr<const PETScMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }
@@ -287,7 +288,7 @@ std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A,
                                            PETScVector& x,
                                            const PETScVector& b)
 {
-  boost::shared_ptr<const PETScMatrix> _A(&A, NoDeleter());
+  std::shared_ptr<const PETScMatrix> _A(&A, NoDeleter());
   set_operator(_A);
   return solve_transpose(x, b);
 }

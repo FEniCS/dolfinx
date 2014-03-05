@@ -32,7 +32,7 @@
 
 using namespace dolfin;
 
-static boost::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geometry)
+static std::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geometry)
 {
   #ifdef HAS_CGAL
 
@@ -42,7 +42,7 @@ static boost::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geomet
     csg::Polyhedron_3 p;
     GeometryToCGALConverter::convert(geometry, p, false);
 
-    boost::shared_ptr<dolfin::Mesh> mesh(new Mesh);
+    std::shared_ptr<dolfin::Mesh> mesh(new Mesh);
 
     // copy the boundary of polyhedron to a dolfin mesh
     dolfin::cout << "Building surface mesh from cgal polyhedron" << dolfin::endl;
@@ -61,17 +61,17 @@ static boost::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geomet
     Mesh m;
     CSGCGALMeshGenerator2D generator(geometry);
     generator.generate(m);
-    return boost::shared_ptr<dolfin::Mesh>(new BoundaryMesh(m, "exterior"));
+    return std::shared_ptr<dolfin::Mesh>(new BoundaryMesh(m, "exterior"));
   }
 
   #else
-    return boost::shared_ptr<dolfin::Mesh>(new Mesh);
+    return std::shared_ptr<dolfin::Mesh>(new Mesh);
   #endif
 }
 //-----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-VTKPlottableCSGGeometry::VTKPlottableCSGGeometry(boost::shared_ptr<const CSGGeometry> geometry) :
+VTKPlottableCSGGeometry::VTKPlottableCSGGeometry(std::shared_ptr<const CSGGeometry> geometry) :
   VTKPlottableMesh(getBoundaryMesh(*geometry)),
   _geometry(geometry)
 {
@@ -83,19 +83,19 @@ bool VTKPlottableCSGGeometry::is_compatible(const Variable &var) const
   return dynamic_cast<const CSGGeometry*>(&var);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableCSGGeometry::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
+void VTKPlottableCSGGeometry::update(std::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
 {
   if (var)
   {
-    _geometry = boost::dynamic_pointer_cast<const CSGGeometry>(var);
+    _geometry = std::dynamic_pointer_cast<const CSGGeometry>(var);
     dolfin_assert(_geometry);
-    boost::shared_ptr<dolfin::Mesh> mesh = getBoundaryMesh(*_geometry);
+    std::shared_ptr<dolfin::Mesh> mesh = getBoundaryMesh(*_geometry);
 
     VTKPlottableMesh::update(mesh, parameters, framecounter);
   }
 }
 //----------------------------------------------------------------------------
-VTKPlottableCSGGeometry *dolfin::CreateVTKPlottable(boost::shared_ptr<const CSGGeometry> geometry)
+VTKPlottableCSGGeometry *dolfin::CreateVTKPlottable(std::shared_ptr<const CSGGeometry> geometry)
 {
   return new VTKPlottableCSGGeometry(geometry);
 }

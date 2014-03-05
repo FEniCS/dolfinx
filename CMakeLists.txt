@@ -127,9 +127,14 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
-if (HAVE_STD AND CMAKE_COMPILER_IS_GNUCXX)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++98 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
+if (HAVE_STD_CPP11)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+  CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
+  if (HAVE_STD_CPP0x)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  endif()
 endif()
 
 # Debug flags
@@ -244,26 +249,18 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
+set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
-find_package(Boost 1.36 QUIET REQUIRED)
+find_package(Boost 1.48 QUIET REQUIRED)
 
 set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
-if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
-endif()
-
-# Boost timer was not a separate Boost component until version 1.48
-if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  list(APPEND DOLFIN_BOOST_COMPONENTS timer chrono)
-endif()
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 2.3.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.3.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 2.3.0.\n"
+    "compatible with requested version 1.3.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -332,12 +329,15 @@ endif()
 # Check for PETSc, SLEPc, TAO and petsc4py
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc 3.2)
+
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc 3.2)
   endif()
+
   if (PETSC_FOUND AND DOLFIN_ENABLE_TAO)
     find_package(TAO)
   endif()
+
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
     if (PETSC4PY_FOUND)
@@ -348,6 +348,12 @@ if (DOLFIN_ENABLE_PETSC)
       endif()
     endif()
   endif()
+
+  # Enable PETSc SNES for PETSc verion > 3.2
+  if (PETSC_VERSION VERSION_GREATER 3.2.100)
+    set(PETSC_ENABLE_SNES TRUE)
+  endif()
+
 endif()
 
 # Check for ParMETIS and SCOTCH
@@ -484,6 +490,16 @@ endif()
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit)
+
+  # Older version of CPPUNIT use std::auto_ptr, which is deprecated
+  if (${CPPUNIT_VERSION} LESS 1.13.1)
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
+    if (HAVE_NO_DEPRECATED)
+      set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-deprecated")
+    endif()
+  endif()
+
 endif()
 
 # Check for Sphinx
@@ -609,7 +625,7 @@ if (PYTHONINTERP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN Python module
+# Installation of DOLFIN and FEniCS Python modules
 
 if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(DIRECTORY
@@ -626,6 +642,14 @@ if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(FILES ${CMAKE_BINARY_DIR}/globalparameters.py
     DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/common/
     COMPONENT RuntimeLibraries
+    )
+
+  install(DIRECTORY
+    ${CMAKE_SOURCE_DIR}/site-packages/fenics
+    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+    USE_SOURCE_PERMISSIONS
+    COMPONENT RuntimeLibraries
+    PATTERN "*.in" EXCLUDE
     )
 endif()
 

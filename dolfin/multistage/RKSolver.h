@@ -16,13 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-30
+// Last changed: 2014-03-05
 
 #ifndef __RKSOLVER_H
 #define __RKSOLVER_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/fem/Assembler.h>
@@ -42,7 +42,7 @@ namespace dolfin
 
     /// Constructor
     /// FIXME: Include version where one can pass a Solver and/or Parameters
-    RKSolver(boost::shared_ptr<MultiStageScheme> scheme);
+    RKSolver(std::shared_ptr<MultiStageScheme> scheme);
 
     /// Step solver with time step dt
     void step(double dt);
@@ -51,17 +51,17 @@ namespace dolfin
     void step_interval(double t0, double t1, double dt);
 
     /// Return the MultiStageScheme
-    boost::shared_ptr<MultiStageScheme> scheme() const 
+    std::shared_ptr<MultiStageScheme> scheme() const 
     {return _scheme;}
 
   private:
 
     // The MultiStageScheme
-    boost::shared_ptr<MultiStageScheme> _scheme;
+    std::shared_ptr<MultiStageScheme> _scheme;
 
     // Temp vector for final stage
     // FIXME: Add this as a Function called previous step or something
-    boost::shared_ptr<GenericVector> _tmp;
+    std::shared_ptr<GenericVector> _tmp;
 
     // Assembler for explicit stages
     Assembler _assembler;

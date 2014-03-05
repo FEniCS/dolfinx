@@ -25,7 +25,7 @@
 
 #include <set>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "ublas.h"
@@ -63,12 +63,12 @@ namespace dolfin
     ~uBLASKrylovSolver();
 
     /// Solve the operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A)
     { set_operators(A, A); }
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                       const boost::shared_ptr<const GenericLinearOperator> P)
+    void set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                       std::shared_ptr<const GenericLinearOperator> P)
     { _A = A; _P = P; }
 
 
@@ -102,27 +102,29 @@ namespace dolfin
 
   private:
 
-    /// Select solver and solve linear system Ax = b and return number of iterations
+    /// Select solver and solve linear system Ax = b and return number
+    /// of iterations
     template<typename MatA, typename MatP>
-    std::size_t solve_krylov(const MatA& A,
-                      uBLASVector& x,
-                      const uBLASVector& b,
-                      const MatP& P);
+      std::size_t solve_krylov(const MatA& A,
+                               uBLASVector& x,
+                               const uBLASVector& b,
+                               const MatP& P);
 
     /// Solve linear system Ax = b using CG
     template<typename Mat>
-    std::size_t solveCG(const Mat& A, uBLASVector& x, const uBLASVector& b,
-                 bool& converged) const;
+      std::size_t solveCG(const Mat& A, uBLASVector& x, const uBLASVector& b,
+                          bool& converged) const;
 
     /// Solve linear system Ax = b using restarted GMRES
     template<typename Mat>
-    std::size_t solveGMRES(const Mat& A, uBLASVector& x, const uBLASVector& b,
-                        bool& converged) const;
+      std::size_t solveGMRES(const Mat& A, uBLASVector& x, const uBLASVector& b,
+                             bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
     template<typename Mat>
-    std::size_t solveBiCGStab(const Mat& A, uBLASVector& x, const uBLASVector& b,
-                        bool& converged) const;
+      std::size_t solveBiCGStab(const Mat& A, uBLASVector& x,
+                                const uBLASVector& b,
+                                bool& converged) const;
 
     /// Select and create named preconditioner
     void select_preconditioner(std::string preconditioner);
@@ -134,7 +136,7 @@ namespace dolfin
     std::string _method;
 
     /// Preconditioner
-    boost::shared_ptr<uBLASPreconditioner> _pc;
+    std::shared_ptr<uBLASPreconditioner> _pc;
 
     /// Solver parameters
     double rtol, atol, div_tol;
@@ -142,20 +144,20 @@ namespace dolfin
     bool report;
 
     /// Operator (the matrix)
-    boost::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _A;
 
     /// Matrix used to construct the preconditoner
-    boost::shared_ptr<const GenericLinearOperator> _P;
+    std::shared_ptr<const GenericLinearOperator> _P;
 
   };
   //---------------------------------------------------------------------------
   // Implementation of template functions
   //---------------------------------------------------------------------------
   template<typename MatA, typename MatP>
-  std::size_t uBLASKrylovSolver::solve_krylov(const MatA& A,
-                                               uBLASVector& x,
-                                               const uBLASVector& b,
-                                               const MatP& P)
+    std::size_t uBLASKrylovSolver::solve_krylov(const MatA& A,
+                                                uBLASVector& x,
+                                                const uBLASVector& b,
+                                                const MatP& P)
   {
     // Check dimensions
     std::size_t M = A.size(0);
@@ -220,21 +222,21 @@ namespace dolfin
 
     return iterations;
   }
-  //-----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   template<typename Mat>
-  std::size_t uBLASKrylovSolver::solveCG(const Mat& A,
-                                         uBLASVector& x,
-                                         const uBLASVector& b,
-                                         bool& converged) const
+    std::size_t uBLASKrylovSolver::solveCG(const Mat& A,
+                                           uBLASVector& x,
+                                           const uBLASVector& b,
+                                           bool& converged) const
   {
     warning("Conjugate-gradient method not yet programmed for uBLASKrylovSolver. Using GMRES.");
     return solveGMRES(A, x, b, converged);
   }
-  //-----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   template<typename Mat>
-  std::size_t uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
-                                            const uBLASVector& b,
-                                            bool& converged) const
+    std::size_t uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
+                                              const uBLASVector& b,
+                                              bool& converged) const
   {
     // Get underlying uBLAS vectors
     ublas_vector& _x = x.vec();
@@ -305,7 +307,8 @@ namespace dolfin
       // Modified Gram-Schmidt procedure
       std::size_t subiteration = 0;
       std::size_t j = 0;
-      while (subiteration < restart && iteration < max_it && !converged && r_norm/beta < div_tol)
+      while (subiteration < restart && iteration < max_it && !converged
+             && r_norm/beta < div_tol)
       {
         // Compute product w = A*V_j (use r for temporary storage)
         //axpy_prod(A, column(V, j), w, true);
@@ -391,12 +394,12 @@ namespace dolfin
     }
     return iteration;
   }
-  //-----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   template<typename Mat>
-  std::size_t uBLASKrylovSolver::solveBiCGStab(const Mat& A,
-                                               uBLASVector& x,
-                                               const uBLASVector& b,
-                                               bool& converged) const
+    std::size_t uBLASKrylovSolver::solveBiCGStab(const Mat& A,
+                                                 uBLASVector& x,
+                                                 const uBLASVector& b,
+                                                 bool& converged) const
   {
     // Get uderlying uBLAS vectors
     ublas_vector& _x = x.vec();
@@ -439,9 +442,10 @@ namespace dolfin
     _v.clear();
     _p.clear();
 
-    // Apply preconditioner to r^start. This is a trick to avoid problems in which
-    // (r^start, r) = 0  after the first iteration (such as PDE's with homogeneous
-    // Neumann bc's and no forcing/source term.
+    // Apply preconditioner to r^start. This is a trick to avoid
+    // problems in which (r^start, r) = 0 after the first iteration
+    // (such as PDE's with homogeneous Neumann bc's and no
+    // forcing/source term.
     _pc->solve(rstar, r);
 
     // Right-preconditioned Bi-CGSTAB
@@ -508,7 +512,7 @@ namespace dolfin
 
     return iteration;
   }
-  //-----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
 }
 
 #endif

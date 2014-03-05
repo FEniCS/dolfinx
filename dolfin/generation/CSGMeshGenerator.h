@@ -24,7 +24,7 @@
 #ifndef __CSG_MESH_GENERATOR_H
 #define __CSG_MESH_GENERATOR_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "CSGGeometry.h"
 namespace dolfin
 {

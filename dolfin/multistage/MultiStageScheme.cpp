@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-02-25
+// Last changed: 2014-03-05
 
 #include <sstream>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/log/log.h>
 
 #include "MultiStageScheme.h"
@@ -28,12 +28,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiStageScheme::MultiStageScheme(
-    std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
-    boost::shared_ptr<const Form> last_stage, 
-    std::vector<boost::shared_ptr<Function> > stage_solutions,
-    boost::shared_ptr<Function> u, 
-    boost::shared_ptr<Constant> t, 
-    boost::shared_ptr<Constant> dt,
+    std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms, 
+    std::shared_ptr<const Form> last_stage, 
+    std::vector<std::shared_ptr<Function> > stage_solutions,
+    std::shared_ptr<Function> u, 
+    std::shared_ptr<Constant> t, 
+    std::shared_ptr<Constant> dt,
     std::vector<double> dt_stage_offset, 
     std::vector<int> jacobian_indices,
     unsigned int order,
@@ -48,12 +48,12 @@ MultiStageScheme::MultiStageScheme(
 }
 //-----------------------------------------------------------------------------
 MultiStageScheme::MultiStageScheme(
-    std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
-    boost::shared_ptr<const Form> last_stage, 
-    std::vector<boost::shared_ptr<Function> > stage_solutions,
-    boost::shared_ptr<Function> u, 
-    boost::shared_ptr<Constant> t, 
-    boost::shared_ptr<Constant> dt,
+    std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms, 
+    std::shared_ptr<const Form> last_stage, 
+    std::vector<std::shared_ptr<Function> > stage_solutions,
+    std::shared_ptr<Function> u, 
+    std::shared_ptr<Constant> t, 
+    std::shared_ptr<Constant> dt,
     std::vector<double> dt_stage_offset, 
     std::vector<int> jacobian_indices,
     unsigned int order,
@@ -68,38 +68,38 @@ MultiStageScheme::MultiStageScheme(
   _check_arguments();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<boost::shared_ptr<const Form> > >&
+std::vector<std::vector<std::shared_ptr<const Form> > >&
 MultiStageScheme::stage_forms()
 {
   return _stage_forms;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Form> MultiStageScheme::last_stage()
+std::shared_ptr<const Form> MultiStageScheme::last_stage()
 {
   return _last_stage;
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<Function> >& MultiStageScheme::stage_solutions()
+std::vector<std::shared_ptr<Function> >& MultiStageScheme::stage_solutions()
 {
   return _stage_solutions;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Function> MultiStageScheme::solution()
+std::shared_ptr<Function> MultiStageScheme::solution()
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Function> MultiStageScheme::solution() const
+std::shared_ptr<const Function> MultiStageScheme::solution() const
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Constant> MultiStageScheme::t()
+std::shared_ptr<Constant> MultiStageScheme::t()
 {
   return _t;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Constant> MultiStageScheme::dt()
+std::shared_ptr<Constant> MultiStageScheme::dt()
 {
   return _dt;
 }

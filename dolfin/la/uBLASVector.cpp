@@ -61,7 +61,7 @@ uBLASVector::uBLASVector(const uBLASVector& x) : _x(new ublas_vector(*(x._x)))
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(boost::shared_ptr<ublas_vector> x) : _x(x)
+uBLASVector::uBLASVector(std::shared_ptr<ublas_vector> x) : _x(x)
 {
   // Do nothing
 }
@@ -71,9 +71,9 @@ uBLASVector::~uBLASVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> uBLASVector::copy() const
+std::shared_ptr<GenericVector> uBLASVector::copy() const
 {
-  boost::shared_ptr<GenericVector> y(new uBLASVector(*this));
+  std::shared_ptr<GenericVector> y(new uBLASVector(*this));
   return y;
 }
 //-----------------------------------------------------------------------------

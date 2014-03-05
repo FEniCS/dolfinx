@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2013-10-22
+// Last changed: 2014-02-03
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
@@ -49,7 +49,7 @@ std::size_t CCFEMDofMap::num_parts() const
   return _dofmaps.size();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericDofMap> CCFEMDofMap::part(std::size_t i) const
+std::shared_ptr<const GenericDofMap> CCFEMDofMap::part(std::size_t i) const
 {
   dolfin_assert(i < _dofmaps.size());
   return _dofmaps[i];
@@ -61,7 +61,7 @@ void CCFEMDofMap::set_current_part(std::size_t part) const
   _current_part = part; // mutable
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::add(boost::shared_ptr<const GenericDofMap> dofmap)
+void CCFEMDofMap::add(std::shared_ptr<const GenericDofMap> dofmap)
 {
   _dofmaps.push_back(dofmap);
   log(PROGRESS, "Added dofmap to CCFEM dofmap; dofmap has %d part(s).",
@@ -75,8 +75,6 @@ void CCFEMDofMap::add(const GenericDofMap& dofmap)
 //-----------------------------------------------------------------------------
 void CCFEMDofMap::build(const CCFEMFunctionSpace& function_space)
 {
-  begin(PROGRESS, "Building CCFEM dofmap.");
-
   // Compute global dimension
   begin(PROGRESS, "Computing total dimension.");
   _global_dimension = 0;
@@ -127,8 +125,6 @@ void CCFEMDofMap::build(const CCFEMFunctionSpace& function_space)
     // Increase offset
     offset += _dofmaps[part]->global_dimension();
   }
-
-  end();
 }
 //-----------------------------------------------------------------------------
 void CCFEMDofMap::clear()
@@ -181,7 +177,7 @@ std::size_t CCFEMDofMap::num_facet_dofs() const
   return _dofmaps[_current_part]->num_facet_dofs();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Restriction> CCFEMDofMap::restriction() const
+std::shared_ptr<const Restriction> CCFEMDofMap::restriction() const
 {
   // FIXME: Restrictions are unhandled but we need to return something
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
@@ -254,19 +250,19 @@ CCFEMDofMap::tabulate_all_coordinates(const Mesh& mesh) const
   return _dofmaps[_current_part]->tabulate_all_coordinates(mesh);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap> CCFEMDofMap::copy() const
+std::shared_ptr<GenericDofMap> CCFEMDofMap::copy() const
 {
-  return boost::shared_ptr<GenericDofMap>(new CCFEMDofMap(*this));
+  return std::shared_ptr<GenericDofMap>(new CCFEMDofMap(*this));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap>
+std::shared_ptr<GenericDofMap>
 CCFEMDofMap::create(const Mesh& new_mesh) const
 {
   dolfin_not_implemented();
   return copy(); // need to return something
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap>
+std::shared_ptr<GenericDofMap>
 CCFEMDofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                                 const Mesh& mesh) const
 {
@@ -274,7 +270,7 @@ CCFEMDofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
   return copy(); // need to return something
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap>
+std::shared_ptr<GenericDofMap>
 CCFEMDofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                       const Mesh& mesh) const
 {

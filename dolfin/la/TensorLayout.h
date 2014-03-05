@@ -24,7 +24,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "dolfin/common/types.h"
 #include "dolfin/common/MPI.h"
@@ -70,11 +70,11 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
 
     /// Return sparsity pattern (possibly null)
-    boost::shared_ptr<GenericSparsityPattern> sparsity_pattern()
+    std::shared_ptr<GenericSparsityPattern> sparsity_pattern()
     { return _sparsity_pattern; }
 
     /// Return sparsity pattern (possibly null), const version
-    const boost::shared_ptr<GenericSparsityPattern> sparsity_pattern() const
+    std::shared_ptr<const GenericSparsityPattern> sparsity_pattern() const
     { return _sparsity_pattern; }
 
     /// Return informal string representation (pretty-print)
@@ -103,7 +103,7 @@ namespace dolfin
     std::vector<std::pair<std::size_t, std::size_t> > _ownership_range;
 
     // Sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> _sparsity_pattern;
+    std::shared_ptr<GenericSparsityPattern> _sparsity_pattern;
 
   };
 

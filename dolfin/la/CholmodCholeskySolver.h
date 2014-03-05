@@ -23,7 +23,7 @@
 #ifndef __CHOLMOD_CHOLESKY_SOLVER_H
 #define __CHOLMOD_CHOLESKY_SOLVER_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "GenericLinearSolver.h"
 
 #ifdef HAS_CHOLMOD
@@ -53,13 +53,13 @@ namespace dolfin
     CholmodCholeskySolver();
 
     /// Constructor
-    CholmodCholeskySolver(boost::shared_ptr<const GenericLinearOperator> A);
+    CholmodCholeskySolver(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Destructor
     ~CholmodCholeskySolver();
 
     /// Solve the operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A)
     {
       dolfin_error("CholmodCholeskySolver.h",
                    "set operator for CHOLMOD Cholesky solver",
@@ -84,7 +84,7 @@ namespace dolfin
   private:
 
     // Operator (the matrix)
-    boost::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _A;
 
 #ifdef HAS_CHOLMOD
     // Data for Cholesky factorization of sparse ublas matrix (cholmod only)

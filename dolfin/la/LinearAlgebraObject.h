@@ -22,7 +22,7 @@
 #ifndef __LINEAR_ALGEBRA_OBJECT_H
 #define __LINEAR_ALGEBRA_OBJECT_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -78,10 +78,10 @@ namespace dolfin
     /// Cast shared pointer object to its derived class, if possible.
     /// Caller must check for success (returns null if cast fails).
     template<typename X, typename Y>
-    static boost::shared_ptr<X> down_cast(const boost::shared_ptr<Y> A)
+    static std::shared_ptr<X> down_cast(std::shared_ptr<Y> A)
     {
       // Try to down cast shared pointer
-      boost::shared_ptr<X> _A = boost::dynamic_pointer_cast<X>(A);
+      std::shared_ptr<X> _A = std::dynamic_pointer_cast<X>(A);
 
       // If down cast fails, try to get shared ptr instance to
       // unwrapped object
@@ -89,7 +89,7 @@ namespace dolfin
       {
         // Try to get instance to unwrapped object and cast
         if (A->shared_instance())
-          _A = boost::dynamic_pointer_cast<X>(A->shared_instance());
+          _A = std::dynamic_pointer_cast<X>(A->shared_instance());
       }
       return _A;
     }
@@ -103,12 +103,12 @@ namespace dolfin
     { return this; }
 
     /// Return concrete shared ptr instance / unwrap (const version)
-    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
-    { return boost::shared_ptr<const LinearAlgebraObject>(); }
+    virtual std::shared_ptr<const LinearAlgebraObject> shared_instance() const
+    { return std::shared_ptr<const LinearAlgebraObject>(); }
 
     /// Return concrete shared ptr instance / unwrap (non-const version)
-    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
-    { return boost::shared_ptr<LinearAlgebraObject>(); }
+    virtual std::shared_ptr<LinearAlgebraObject> shared_instance()
+    { return std::shared_ptr<LinearAlgebraObject>(); }
 
   };
 
@@ -143,24 +143,24 @@ namespace dolfin
   // and compiler and Boost updates should be tested.
   #if defined __INTEL_COMPILER
   template<class T, class U>
-  boost::shared_ptr<T>
-    dolfin_dynamic_pointer_cast(boost::shared_ptr<U> const & r )
+  std::shared_ptr<T>
+    dolfin_dynamic_pointer_cast(std::shared_ptr<U> const & r )
   {
       // Below give error with icpc 13.0.1 20121010
       //(void) dynamic_cast< T* >( static_cast< U* >( 0 ) );
-      typedef typename boost::shared_ptr<T>::element_type E;
+      typedef typename std::shared_ptr<T>::element_type E;
       E * p = dynamic_cast< E* >( r.get() );
-      return p? boost::shared_ptr<T>( r, p ): boost::shared_ptr<T>();
+      return p? std::shared_ptr<T>( r, p ): std::shared_ptr<T>();
   }
   #endif
 
   /// Cast shared pointer object to its derived class, if possible.
   /// Caller must check for success (returns null if cast fails).
   template<typename Y, typename X>
-  boost::shared_ptr<Y> as_type(const boost::shared_ptr<X> x)
+  std::shared_ptr<Y> as_type(std::shared_ptr<X> x)
   {
     // Try to down cast shared pointer
-    boost::shared_ptr<Y> y = boost::dynamic_pointer_cast<Y>(x);
+    std::shared_ptr<Y> y = std::dynamic_pointer_cast<Y>(x);
 
     // If down cast fails, try to get shared ptr instance to unwrapped object
     if (!y)
@@ -173,7 +173,7 @@ namespace dolfin
         #if defined __INTEL_COMPILER
         y = dolfin_dynamic_pointer_cast<Y>(x->shared_instance());
         #else
-        y = boost::dynamic_pointer_cast<Y>(x->shared_instance());
+        y = std::dynamic_pointer_cast<Y>(x->shared_instance());
         #endif
       }
     }

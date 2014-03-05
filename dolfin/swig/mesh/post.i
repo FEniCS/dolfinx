@@ -97,7 +97,6 @@ def mark(self, *args):
                             "Expected a MeshFunction of type \"size_t\", \"int\", \"double\" or \"bool\"")
 
     self._mark(*args)
-
 %}
 }
 
@@ -168,6 +167,11 @@ def __setitem__(self, index, value):
 
 def __len__(self):
     return self.size()
+
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
 %}
 }
 
@@ -227,7 +231,7 @@ class MeshFunction(object):
         if tp == "int":
             return MeshFunctionInt(*args)
         if tp == "uint":
-            common.deprecation("uint-valued MeshFunction", "1.1.0",
+            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshFunctionSizet(*args)
         elif tp == "size_t":
@@ -351,7 +355,7 @@ class MeshValueCollection(object):
         if tp == "int":
             return MeshValueCollectionInt(*args)
         if tp == "uint":
-            common.deprecation("uint-valued MeshFunction", "1.1.0",
+            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshValueCollectionSizet(*args)
         elif tp == "size_t":
@@ -367,23 +371,11 @@ del _meshvaluecollection_doc_string
 %}
 
 //-----------------------------------------------------------------------------
-// Extend Mesh interface with ufl cell method
+// Extend Mesh interface with some convenient data access methods
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
 %pythoncode
 %{
-def ufl_cell(self):
-    """
-    Returns the ufl cell of the mesh
-
-    The cell corresponds to the topological dimension of the mesh.
-    """
-    import ufl
-    tdim = self.topology().dim()
-    gdim = self.geometry().dim()
-    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    return ufl.Cell(dim2domain[tdim], geometric_dimension=gdim)
-
 def coordinates(self):
     """
     * coordinates\ ()
@@ -453,6 +445,69 @@ def cells(self):
 
     return cells
 
+%}
+}
+
+//-----------------------------------------------------------------------------
+// Extend Mesh interface with some ufl_* methods
+//-----------------------------------------------------------------------------
+%extend dolfin::Mesh {
+%pythoncode
+%{
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
+def ufl_cell(self):
+    """
+    Returns the ufl cell of the mesh.
+
+    The cell corresponds to the topological dimension of the mesh.
+    """
+    import ufl
+    tdim = self.topology().dim()
+    gdim = self.geometry().dim()
+    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
+    cellname = dim2domain[tdim]
+    return ufl.Cell(cellname, geometric_dimension=gdim)
+
+def ufl_domain(self):
+    """Returns the ufl Domain corresponding to the mesh."""
+    import ufl
+    label = "dolfin_mesh_with_id_%d" % self.id()
+    return ufl.Domain(self.ufl_cell(), label=label, data=self)
+%}
+}
+
+//-----------------------------------------------------------------------------
+// Extend SubMesh interface with some ufl_* methods
+//-----------------------------------------------------------------------------
+// TODO: It would be nice if this was inherited from the Mesh extension above!
+%extend dolfin::SubMesh {
+%pythoncode
+%{
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
+def ufl_cell(self):
+    """
+    Returns the ufl cell of the mesh.
+
+    The cell corresponds to the topological dimension of the mesh.
+    """
+    import ufl
+    tdim = self.topology().dim()
+    gdim = self.geometry().dim()
+    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
+    cellname = dim2domain[tdim]
+    return ufl.Cell(cellname, geometric_dimension=gdim)
+
+def ufl_domain(self):
+    """Returns the ufl Domain corresponding to the mesh."""
+    import ufl
+    label = "dolfin_mesh_with_id_%d" % self.id()
+    return ufl.Domain(self.ufl_cell(), label=label, data=self)
 %}
 }
 

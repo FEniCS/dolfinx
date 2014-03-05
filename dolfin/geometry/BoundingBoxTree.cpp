@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-08-28
+// Last changed: 2014-02-06
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/geometry/Point.h>

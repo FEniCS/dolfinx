@@ -24,7 +24,7 @@
 #define __GENERIC_LINEAR_SOLVER_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 
@@ -45,12 +45,12 @@ namespace dolfin
 
     /// Set operator (matrix)
     virtual void
-      set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
+      set_operator(std::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Set operator (matrix) and preconditioner matrix
     virtual void
-      set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                    const boost::shared_ptr<const GenericLinearOperator> P)
+      set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                    std::shared_ptr<const GenericLinearOperator> P)
     {
       dolfin_error("GenericLinearSolver.h",
                    "set operator and preconditioner for linear solver",
@@ -137,8 +137,8 @@ namespace dolfin
     // Down-cast GenericLinearOperator to GenericMatrix when an actual
     // matrix is required, not only a linear operator. This is the
     // const reference version of the down-cast.
-    static boost::shared_ptr<const GenericMatrix>
-    require_matrix(const boost::shared_ptr<const GenericLinearOperator> A);
+    static std::shared_ptr<const GenericMatrix>
+    require_matrix(std::shared_ptr<const GenericLinearOperator> A);
 
   };
 

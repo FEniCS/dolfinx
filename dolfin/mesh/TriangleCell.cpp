@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,9 +20,10 @@
 // Modified by Dag Lindbo 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Jan Blechta 2013
+// Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2013-12-09
+// Last changed: 2014-03-03
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -166,7 +167,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
     double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
     // Formula for volume from http://mathworld.wolfram.com
-    return v2 = 0.5 * std::abs(v2);
+    return 0.5 * std::abs(v2);
   }
   else if (geometry.dim() == 3)
   {
@@ -476,91 +477,18 @@ void TriangleCell::order(Cell& cell,
 //-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const Point& point) const
 {
-  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
-  // See also "Real-Time Collision Detection" by Christer Ericson.
-  //
-  // We express AP as a linear combination of the vectors AB and
-  // AC. Point is inside triangle iff AP is a convex combination.
-  //
-  // Note: This function may be optimized to take into account that
-  // only 2D vectors and inner products need to be computed.
-
-  // Get the vertices as points
-  const MeshGeometry& geometry = cell.mesh().geometry();
-  const unsigned int* vertices = cell.entities(0);
-  const Point p0 = geometry.point(vertices[0]);
-  const Point p1 = geometry.point(vertices[1]);
-  const Point p2 = geometry.point(vertices[2]);
-
-  // Compute vectors
-  const Point v1 = p1 - p0;
-  const Point v2 = p2 - p0;
-  const Point v = point - p0;
-
-  // Compute entries of linear system
-  const double a11 = v1.dot(v1);
-  const double a12 = v1.dot(v2);
-  const double a22 = v2.dot(v2);
-  const double b1 = v.dot(v1);
-  const double b2 = v.dot(v2);
-
-  // Solve linear system
-  const double inv_det = 1.0 / (a11*a22 - a12*a12);
-  const double x1 = inv_det*( a22*b1 - a12*b2);
-  const double x2 = inv_det*(-a12*b1 + a11*b2);
-
-  // Tolerance for numeric test (using vector v1)
-  const double dx = std::abs(v1.x());
-  const double dy = std::abs(v1.y());
-  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*std::max(dx, dy));
-
-  // Check if point is inside
-  return x1 >= -eps && x2 >= -eps && x1 + x2 <= 1.0 + eps;
+  return CollisionDetection::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  // This is only implemented for triangle-triangle collisions at this point
-  if (entity.dim() != 2)
-  {
-    dolfin_error("TriangleCell.cpp",
-                 "compute collision with entity",
-                 "Only know how to compute triangle-triangle collisions");
-  }
-
-  // Get the vertices as points
-  const MeshGeometry& geometry_p = cell.mesh().geometry();
-  const unsigned int* vertices_p = cell.entities(0);
-  const Point p0 = geometry_p.point(vertices_p[0]);
-  const Point p1 = geometry_p.point(vertices_p[1]);
-  const Point p2 = geometry_p.point(vertices_p[2]);
-
-  // Get the vertices as points
-  const MeshGeometry& geometry_q = entity.mesh().geometry();
-  const unsigned int* vertices_q = entity.entities(0);
-  const Point q0 = geometry_q.point(vertices_q[0]);
-  const Point q1 = geometry_q.point(vertices_q[1]);
-  const Point q2 = geometry_q.point(vertices_q[2]);
-
-  // First check if triangles are completely overlapping (necessary
-  // since tests below will fail for collinear edges). Note that this
-  // test will also cover a few other cases with coinciding midpoints.
-  const double eps2 = DOLFIN_EPS_LARGE*DOLFIN_EPS_LARGE*p0.squared_distance(p1);
-  if (cell.midpoint().squared_distance(entity.midpoint()) < eps2)
-    return true;
-
-  // Check for pairwise collisions between the edges
-  if (collides(p0, p1, q0, q1)) return true;
-  if (collides(p0, p1, q1, q2)) return true;
-  if (collides(p0, p1, q2, q0)) return true;
-  if (collides(p1, p2, q0, q1)) return true;
-  if (collides(p1, p2, q1, q2)) return true;
-  if (collides(p1, p2, q2, q0)) return true;
-  if (collides(p2, p0, q0, q1)) return true;
-  if (collides(p2, p0, q1, q2)) return true;
-  //if (collides(p2, p0, q2, q0)) return true; // optimization, not needed
-
-  return false;
+  return CollisionDetection::collides(cell, entity);
+}
+//-----------------------------------------------------------------------------
+std::vector<double>
+TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
+{
+  return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const
@@ -592,26 +520,5 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
                "find specified edge in cell",
                "Edge really not found");
   return 0;
-}
-//-----------------------------------------------------------------------------
-bool TriangleCell::collides(const Point& a, const Point& b,
-                            const Point& c, const Point& d) const
-{
-  // Algorithm from Real-time collision detection by Christer Ericson:
-  // Test2DSegmentSegment on page 152, Section 5.1.9.
-
-  // Compute signed areas of abd and abc
-  double abd = signed_area(a, b, d);
-  double abc = signed_area(a, b, c);
-
-  // Return false if not intersecting (or collinear)
-  if (abd*abc >= 0.0)
-    return false;
-
-  // Compute signed area of cda
-  double cda = signed_area(c, d, a);
-
-  // Check whether segments collide
-  return cda*(cda + abc - abd) < 0.0;
 }
 //-----------------------------------------------------------------------------

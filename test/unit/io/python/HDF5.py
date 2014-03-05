@@ -18,9 +18,6 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Chris Richardson 2013
-#
-# First added:  2012-09-14
-# Last changed: 2013-06-03
 
 import unittest
 from dolfin import *
@@ -32,7 +29,7 @@ if has_hdf5():
         def test_save_vector(self):
             x = Vector(mpi_comm_world(), 305)
             x[:] = 1.0
-            vector_file = HDF5File(x.mpi_comm(), "x.h5", "w")
+            vector_file = HDF5File(x.mpi_comm(), "new_folder/x.h5", "w")
             vector_file.write(x, "/my_vector")
 
         def test_save_and_read_vector(self):
@@ -46,7 +43,7 @@ if has_hdf5():
             # Read from file
             y = Vector()
             vector_file = HDF5File(x.mpi_comm(), "vector.h5", "r")
-            vector_file.read(y, "/my_vector")
+            vector_file.read(y, "/my_vector", False)
             self.assertEqual(y.size(), x.size())
             self.assertEqual((x - y).norm("l1"), 0.0)
 
@@ -158,7 +155,7 @@ if has_hdf5():
             # Read from file
             mesh1 = Mesh()
             mesh_file = HDF5File(mesh0.mpi_comm(), "mesh.h5", "r")
-            mesh_file.read(mesh1, "/my_mesh")
+            mesh_file.read(mesh1, "/my_mesh", False)
 
             self.assertEqual(mesh0.size_global(0), mesh1.size_global(0))
             dim = mesh0.topology().dim()
@@ -174,7 +171,7 @@ if has_hdf5():
             # Read from file
             mesh1 = Mesh()
             mesh_file = HDF5File(mesh0.mpi_comm(), "mesh.h5", "r")
-            mesh_file.read(mesh1, "/my_mesh")
+            mesh_file.read(mesh1, "/my_mesh", False)
 
             self.assertEqual(mesh0.size_global(0), mesh1.size_global(0))
             dim = mesh0.topology().dim()

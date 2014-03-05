@@ -21,7 +21,7 @@
 #ifndef __LINEAR_VARIATIONAL_PROBLEM_H
 #define __LINEAR_VARIATIONAL_PROBLEM_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/Hierarchical.h>
 
 namespace dolfin
@@ -64,31 +64,31 @@ namespace dolfin
 
     /// Create linear variational problem with a list of boundary conditions
     /// (shared pointer version)
-    LinearVariationalProblem(boost::shared_ptr<const Form> a,
-                             boost::shared_ptr<const Form> L,
-                             boost::shared_ptr<Function> u,
-                             std::vector<boost::shared_ptr<const DirichletBC> > bcs);
+    LinearVariationalProblem(std::shared_ptr<const Form> a,
+                             std::shared_ptr<const Form> L,
+                             std::shared_ptr<Function> u,
+                             std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
     /// Return bilinear form
-    boost::shared_ptr<const Form> bilinear_form() const;
+    std::shared_ptr<const Form> bilinear_form() const;
 
     /// Return linear form
-    boost::shared_ptr<const Form> linear_form() const;
+    std::shared_ptr<const Form> linear_form() const;
 
     /// Return solution variable
-    boost::shared_ptr<Function> solution();
+    std::shared_ptr<Function> solution();
 
     /// Return solution variable (const version)
-    boost::shared_ptr<const Function> solution() const;
+    std::shared_ptr<const Function> solution() const;
 
     /// Return boundary conditions
-    std::vector<boost::shared_ptr<const DirichletBC> > bcs() const;
+    std::vector<std::shared_ptr<const DirichletBC> > bcs() const;
 
     /// Return trial space
-    boost::shared_ptr<const FunctionSpace> trial_space() const;
+    std::shared_ptr<const FunctionSpace> trial_space() const;
 
     /// Return test space
-    boost::shared_ptr<const FunctionSpace> test_space() const;
+    std::shared_ptr<const FunctionSpace> test_space() const;
 
   private:
 
@@ -96,16 +96,16 @@ namespace dolfin
     void check_forms() const;
 
     // The bilinear form
-    boost::shared_ptr<const Form> _a;
+    std::shared_ptr<const Form> _a;
 
     // The linear form
-    boost::shared_ptr<const Form> _L;
+    std::shared_ptr<const Form> _L;
 
     // The solution
-    boost::shared_ptr<Function> _u;
+    std::shared_ptr<Function> _u;
 
     // The Dirichlet boundary conditions
-    std::vector<boost::shared_ptr<const DirichletBC> > _bcs;
+    std::vector<std::shared_ptr<const DirichletBC> > _bcs;
 
   };
 

@@ -57,7 +57,7 @@ LogStream& LogStream::operator<< (const LogStream& stream)
     buffer.str("");
   }
   else
-    buffer << stream.buffer;
+    buffer << stream.buffer.str();
 
   return *this;
 }

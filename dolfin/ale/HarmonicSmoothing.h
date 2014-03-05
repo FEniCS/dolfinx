@@ -21,7 +21,7 @@
 #ifndef __HARMONIC_SMOOTHING_H
 #define __HARMONIC_SMOOTHING_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "MeshDisplacement.h"
 
 namespace dolfin
@@ -41,7 +41,7 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     /// and return the displacement
-    static boost::shared_ptr<MeshDisplacement> move(Mesh& mesh, 
+    static std::shared_ptr<MeshDisplacement> move(Mesh& mesh, 
                                         const BoundaryMesh& new_boundary);
 
   };

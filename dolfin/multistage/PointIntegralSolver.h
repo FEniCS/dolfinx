@@ -23,8 +23,7 @@
 
 #include <vector>
 #include <set>
-#include <Eigen/Dense>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/Assembler.h>
@@ -47,7 +46,7 @@ namespace dolfin
 
     /// Constructor
     /// FIXME: Include version where one can pass a Solver and/or Parameters
-    PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme);
+    PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme);
 
     /// Destructor
     ~PointIntegralSolver();
@@ -59,7 +58,7 @@ namespace dolfin
     void step_interval(double t0, double t1, double dt);
 
     /// Return the MultiStageScheme
-    boost::shared_ptr<MultiStageScheme> scheme() const
+    std::shared_ptr<MultiStageScheme> scheme() const
     { return _scheme; }
 
     /// Default parameter values
@@ -135,9 +134,6 @@ namespace dolfin
     // Compute the norm of a vector
     double _norm(const std::vector<double>& vec) const;
 
-    // Update ghost values
-    void _update_ghost_values();
-
     // Check the forms making sure they only include piecewise linear
     // test functions
     void _check_forms();
@@ -160,7 +156,7 @@ namespace dolfin
 				  const std::vector<double>& vertex_coordinates);
 
     // The MultiStageScheme
-    boost::shared_ptr<MultiStageScheme> _scheme;
+    std::shared_ptr<MultiStageScheme> _scheme;
 
     // Reference to mesh
     const Mesh& _mesh;
@@ -197,10 +193,10 @@ namespace dolfin
     std::vector<double> _dx;
       
     // UFC objects, one for each form
-    std::vector<std::vector<boost::shared_ptr<UFC> > > _ufcs;
+    std::vector<std::vector<std::shared_ptr<UFC> > > _ufcs;
 
     // UFC objects for the last form
-    boost::shared_ptr<UFC> _last_stage_ufc;
+    std::shared_ptr<UFC> _last_stage_ufc;
 
     // Solution coefficient index in form
     std::vector<std::vector<int> > _coefficient_index;

@@ -185,14 +185,14 @@ double _get_vector_single_item(dolfin::GenericVector* self, int index)
 }
 
 // Get item for slice, list, or numpy array object
-boost::shared_ptr<dolfin::GenericVector>
+std::shared_ptr<dolfin::GenericVector>
 _get_vector_sub_vector(const dolfin::GenericVector* self,
                        PyObject* op )
 {
   Indices* inds;
   dolfin::la_index* range;
   dolfin::la_index* indices;
-  boost::shared_ptr<dolfin::GenericVector> return_vec;
+  std::shared_ptr<dolfin::GenericVector> return_vec;
   std::size_t m;
 
   // Get the correct Indices
@@ -393,7 +393,7 @@ double _get_matrix_single_item(const dolfin::GenericMatrix* self, int m, int n)
  }
 
 // Get items for slice, list, or numpy array object
-boost::shared_ptr<dolfin::GenericVector>
+std::shared_ptr<dolfin::GenericVector>
 _get_matrix_sub_vector(dolfin::GenericMatrix* self, dolfin::la_index single,
                        PyObject* op, bool row )
 {
@@ -430,7 +430,7 @@ _get_matrix_sub_vector(dolfin::GenericMatrix* self, dolfin::la_index single,
   }
 
   // Create the return vector and set the values
-  boost::shared_ptr<dolfin::GenericVector> return_vec
+  std::shared_ptr<dolfin::GenericVector> return_vec
     = self->factory().create_vector();
   self->init_vector(*return_vec, 1);
 
