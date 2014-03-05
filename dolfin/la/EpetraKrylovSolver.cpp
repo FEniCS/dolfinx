@@ -170,7 +170,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Check dimensions
   const std::size_t M = _A->size(0);
   const std::size_t N = _A->size(1);
-  if (N != b.size())
+  if (M != b.size())
   {
     dolfin_error("EpetraKrylovSolver.cpp",
                  "solve linear system using Epetra Krylov solver",
