@@ -771,8 +771,14 @@ double EpetraVector::norm(std::string norm_type) const
     err = _x->Norm1(&value);
   else if (norm_type == "l2")
     err = _x->Norm2(&value);
-  else
+  else if (norm_type == "linf")
     err = _x->NormInf(&value);
+  else
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "compute norm of Epetra vector",
+                 "Illegal norm type \"%s\".", norm_type.c_str());
+  }
 
   if (err != 0)
   {
