@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
   {
     // Update for next time step
     t += dt;
-    dolfin::cout << "Time: " << t << dolfin::endl;
+    cout << "Time: " << t << endl;
 
     // Solve
     solve(a_form == L, u, bc);

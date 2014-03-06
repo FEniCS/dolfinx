@@ -119,7 +119,7 @@ int main()
   interactive();
 
   #else
-  dolfin::cout << "This demo requires DOLFIN to be confugured with PETSc." << dolfin::endl;
+  cout << "This demo requires DOLFIN to be confugured with PETSc." << endl;
   #endif
 
   return 0;

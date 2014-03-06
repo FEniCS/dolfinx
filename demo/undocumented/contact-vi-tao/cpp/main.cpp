@@ -125,7 +125,7 @@ int main()
 
   #else
 
-  dolfin::cout << "This demo requires DOLFIN to be configured with TAO" << dolfin::endl;
+  cout << "This demo requires DOLFIN to be configured with TAO" << endl;
 
   #endif
 

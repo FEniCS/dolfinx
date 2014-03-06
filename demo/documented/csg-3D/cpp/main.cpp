@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 
   // Generate and plot mesh
   Mesh mesh3d(g3d, 24);
-  dolfin::cout << "Done generating mesh" << dolfin::endl;
+  cout << "Done generating mesh" << endl;
   info(mesh3d);
   plot(mesh3d, "3D mesh");
 

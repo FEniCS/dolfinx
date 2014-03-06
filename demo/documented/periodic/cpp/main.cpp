@@ -119,7 +119,7 @@ int main()
   Function u(V);
   solve(a == L, u, bcs);
 
-  dolfin::cout << "Solution vector norm: " << u.vector()->norm("l2") << dolfin::endl;
+  cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
 
   // Save solution in VTK format
   File file_u("periodic.pvd");

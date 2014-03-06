@@ -52,7 +52,7 @@ int main()
   PETScVector rx, cx;
   esolver.get_eigenpair(r, c, rx, cx, 0);
 
-  dolfin::cout << "Largest eigenvalue: " << r << dolfin::endl;
+  cout << "Largest eigenvalue: " << r << endl;
 
   // Initialize function with eigenvector
   Function u(V);
