@@ -408,9 +408,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
   nonlinear_problem->form(A_wrap, f, x_wrap);
   nonlinear_problem->J(A_wrap, x_wrap);
 
-  #if PETSC_VERSION_RELEASE
   *flag = SAME_NONZERO_PATTERN;
-  #endif
 
   return 0;
 }
