@@ -415,7 +415,6 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
 #else
 PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
                                              void* ctx)
-#endif
 {
   // Interface does not presently support a preconditioner that
   // differs from operator A
@@ -441,6 +440,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
 
   return 0;
 }
+#endif
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::set_linear_solver_parameters()
 {
