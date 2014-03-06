@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2013-10-25
+// Last changed: 2014-03-03
 
 #include <algorithm>
 #include <map>
@@ -727,6 +727,8 @@ void Function::init_vector()
                  "Cannot re-initialize a non-empty vector. Consider creating a new function");
 
   }
+
+  // Set vector to zero
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

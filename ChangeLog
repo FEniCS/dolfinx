@@ -1,3 +1,8 @@
+ - Force all global dofs to be ordered last and to be on the last process
+	in parallel
+ - Speed up dof reordering of mixed space including global dofs by removing
+	the latter from graph reordering
+ - Force all dofs on a shared facet to be owned by the same process
  - Add FEniCS ('fenics') Python module, identical with DOLFIN Python module
  - Add function Form::set_some_coefficients()
  - Remove Boost.MPI dependency

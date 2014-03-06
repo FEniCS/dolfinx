@@ -19,10 +19,39 @@
 // Last changed: 2014-03-06
 
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshGeometry.h>
 #include "SimplexQuadrature.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+std::pair<std::vector<double>, std::vector<double> >
+SimplexQuadrature::compute_quadrature_rule(const Cell& cell, std::size_t order)
+{
+  // FIXME: Use function cell.get_vertex_coordinates which does exactly
+  // the same thing as the code here.
+
+  // Extract dimensions
+  const std::size_t tdim = cell.mesh().topology().dim();
+  const std::size_t gdim = cell.mesh().geometry().dim();
+
+  // Extract vertex coordinates
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const std::size_t num_vertices = cell.num_entities(0);
+  std::vector<double> coordinates(num_vertices*gdim);
+  for (unsigned int i = 0; i < num_vertices; i++)
+  {
+    const double* x = geometry.x(vertices[i]);
+    for (unsigned int j = 0; j < gdim; j++)
+      coordinates[i*gdim + j] = x[j];
+  }
+
+  // Call function to compute quadrature rule
+  return compute_quadrature_rule(&coordinates[0], tdim, gdim, order);
+}
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double> >
 SimplexQuadrature::compute_quadrature_rule(const double* coordinates,
@@ -147,8 +176,28 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
         + p[i][1]*coordinates[gdim+d]
         + p[i][2]*coordinates[2*gdim+d];
 
+  // FIXME: Temporary implementation just so we have something to work with
 
-  return quadrature_rule;
+  // // Compute area of triangle
+  // const double* x0 = coordinates;
+  // const double* x1 = coordinates + 2;
+  // const double* x2 = coordinates + 4;
+  // const double A = 0.5*std::abs((x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) -
+  //                               (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]));
+
+  // // Quadrature weights
+  // std::vector<double> w;
+  // w.push_back(A / 3);
+  // w.push_back(A / 3);
+  // w.push_back(A / 3);
+
+  // // Quadrature points
+  // std::vector<double> x;
+  // x.push_back(x0[0]); x.push_back(x0[1]);
+  // x.push_back(x1[0]); x.push_back(x1[1]);
+  // x.push_back(x2[0]); x.push_back(x2[1]);
+
+  // return std::make_pair(w, x);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double> >
@@ -196,7 +245,6 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
         + p[i][1]*coordinates[gdim+d]
         + p[i][2]*coordinates[2*gdim+d]
         + p[i][3]*coordinates[3*gdim+d];
-
 
   return quadrature_rule;
 }

@@ -21,59 +21,59 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/CCFEMFunctionSpace.h>
-#include "CCFEMDofMap.h"
+#include <dolfin/function/MultiMeshFunctionSpace.h>
+#include "MultiMeshDofMap.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMDofMap::CCFEMDofMap()
+MultiMeshDofMap::MultiMeshDofMap()
 {
   clear();
 }
 //-----------------------------------------------------------------------------
-CCFEMDofMap::CCFEMDofMap(const CCFEMDofMap& dofmap)
+MultiMeshDofMap::MultiMeshDofMap(const MultiMeshDofMap& dofmap)
 {
   _global_dimension = dofmap._global_dimension;
   _dofmaps = dofmap._dofmaps;
   _current_part = dofmap._current_part;
 }
 //-----------------------------------------------------------------------------
-CCFEMDofMap::~CCFEMDofMap()
+MultiMeshDofMap::~MultiMeshDofMap()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMDofMap::num_parts() const
+std::size_t MultiMeshDofMap::num_parts() const
 {
   return _dofmaps.size();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const GenericDofMap> CCFEMDofMap::part(std::size_t i) const
+std::shared_ptr<const GenericDofMap> MultiMeshDofMap::part(std::size_t i) const
 {
   dolfin_assert(i < _dofmaps.size());
   return _dofmaps[i];
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::set_current_part(std::size_t part) const
+void MultiMeshDofMap::set_current_part(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   _current_part = part; // mutable
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::add(std::shared_ptr<const GenericDofMap> dofmap)
+void MultiMeshDofMap::add(std::shared_ptr<const GenericDofMap> dofmap)
 {
   _dofmaps.push_back(dofmap);
-  log(PROGRESS, "Added dofmap to CCFEM dofmap; dofmap has %d part(s).",
+  log(PROGRESS, "Added dofmap to MultiMesh dofmap; dofmap has %d part(s).",
       _dofmaps.size());
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::add(const GenericDofMap& dofmap)
+void MultiMeshDofMap::add(const GenericDofMap& dofmap)
 {
   add(reference_to_no_delete_pointer(dofmap));
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::build(const CCFEMFunctionSpace& function_space)
+void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space)
 {
   // Compute global dimension
   begin(PROGRESS, "Computing total dimension.");
@@ -127,7 +127,7 @@ void CCFEMDofMap::build(const CCFEMFunctionSpace& function_space)
   }
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::clear()
+void MultiMeshDofMap::clear()
 {
   _global_dimension = 0;
   _dofmaps.clear();
@@ -137,81 +137,81 @@ void CCFEMDofMap::clear()
 //-----------------------------------------------------------------------------
 // Implementation of the GenericDofMap interface
 //-----------------------------------------------------------------------------
-bool CCFEMDofMap::is_view() const
+bool MultiMeshDofMap::is_view() const
 {
   return false;
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMDofMap::global_dimension() const
+std::size_t MultiMeshDofMap::global_dimension() const
 {
   return _global_dimension;
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMDofMap::cell_dimension(std::size_t index) const
+std::size_t MultiMeshDofMap::cell_dimension(std::size_t index) const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->cell_dimension(index);
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMDofMap::max_cell_dimension() const
+std::size_t MultiMeshDofMap::max_cell_dimension() const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->max_cell_dimension();
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMDofMap::num_entity_dofs(std::size_t dim) const
+std::size_t MultiMeshDofMap::num_entity_dofs(std::size_t dim) const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->num_entity_dofs(dim);
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMDofMap::geometric_dimension() const
+std::size_t MultiMeshDofMap::geometric_dimension() const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->geometric_dimension();
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMDofMap::num_facet_dofs() const
+std::size_t MultiMeshDofMap::num_facet_dofs() const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->num_facet_dofs();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Restriction> CCFEMDofMap::restriction() const
+std::shared_ptr<const Restriction> MultiMeshDofMap::restriction() const
 {
   // FIXME: Restrictions are unhandled but we need to return something
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->restriction();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> CCFEMDofMap::ownership_range() const
+std::pair<std::size_t, std::size_t> MultiMeshDofMap::ownership_range() const
 {
   // FIXME: Does not run in parallel
   return std::make_pair<std::size_t, std::size_t>(0, global_dimension());
 }
 //-----------------------------------------------------------------------------
 const boost::unordered_map<std::size_t, unsigned int>&
-CCFEMDofMap::off_process_owner() const
+MultiMeshDofMap::off_process_owner() const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->off_process_owner();
 }
 //-----------------------------------------------------------------------------
 const std::vector<dolfin::la_index>&
-CCFEMDofMap::cell_dofs(std::size_t cell_index) const
+MultiMeshDofMap::cell_dofs(std::size_t cell_index) const
 {
   dolfin_assert(cell_index < _dofmap[_current_part].size());
   return _dofmap[_current_part][cell_index];
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
+void MultiMeshDofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                                       std::size_t local_facet) const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->tabulate_facet_dofs(dofs, local_facet);
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
+void MultiMeshDofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
                                        std::size_t dim,
                                        std::size_t local_entity) const
 {
@@ -220,21 +220,21 @@ void CCFEMDofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index>
-CCFEMDofMap::dof_to_vertex_map(const Mesh& mesh) const
+MultiMeshDofMap::dof_to_vertex_map(const Mesh& mesh) const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->dof_to_vertex_map(mesh);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
-CCFEMDofMap::vertex_to_dof_map(const Mesh& mesh) const
+MultiMeshDofMap::vertex_to_dof_map(const Mesh& mesh) const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->vertex_to_dof_map(mesh);
 }
 //-----------------------------------------------------------------------------
 void
-CCFEMDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+MultiMeshDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                   const std::vector<double>& vertex_coordinates,
                                   const Cell& cell) const
 {
@@ -244,26 +244,26 @@ CCFEMDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-CCFEMDofMap::tabulate_all_coordinates(const Mesh& mesh) const
+MultiMeshDofMap::tabulate_all_coordinates(const Mesh& mesh) const
 {
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->tabulate_all_coordinates(mesh);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericDofMap> CCFEMDofMap::copy() const
+std::shared_ptr<GenericDofMap> MultiMeshDofMap::copy() const
 {
-  return std::shared_ptr<GenericDofMap>(new CCFEMDofMap(*this));
+  return std::shared_ptr<GenericDofMap>(new MultiMeshDofMap(*this));
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericDofMap>
-CCFEMDofMap::create(const Mesh& new_mesh) const
+MultiMeshDofMap::create(const Mesh& new_mesh) const
 {
   dolfin_not_implemented();
   return copy(); // need to return something
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericDofMap>
-CCFEMDofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
+MultiMeshDofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                                 const Mesh& mesh) const
 {
   dolfin_not_implemented();
@@ -271,32 +271,32 @@ CCFEMDofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericDofMap>
-CCFEMDofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
+MultiMeshDofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                       const Mesh& mesh) const
 {
   dolfin_not_implemented();
   return copy(); // need to return something
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> CCFEMDofMap::dofs() const
+std::vector<dolfin::la_index> MultiMeshDofMap::dofs() const
 {
   dolfin_not_implemented();
   return std::vector<dolfin::la_index>();
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::set(GenericVector& x, double value) const
+void MultiMeshDofMap::set(GenericVector& x, double value) const
 {
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-void CCFEMDofMap::set_x(GenericVector& x, double value, std::size_t component,
+void MultiMeshDofMap::set_x(GenericVector& x, double value, std::size_t component,
            const Mesh& mesh) const
 {
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 const boost::unordered_map<std::size_t,
-                           std::vector<unsigned int> >& CCFEMDofMap::shared_dofs() const
+                           std::vector<unsigned int> >& MultiMeshDofMap::shared_dofs() const
 {
   dolfin_not_implemented();
 
@@ -305,7 +305,7 @@ const boost::unordered_map<std::size_t,
   return _dofmaps[_current_part]->shared_dofs();
 }
 //-----------------------------------------------------------------------------
-const std::set<std::size_t>& CCFEMDofMap::neighbours() const
+const std::set<std::size_t>& MultiMeshDofMap::neighbours() const
 {
   dolfin_not_implemented();
 
@@ -314,10 +314,10 @@ const std::set<std::size_t>& CCFEMDofMap::neighbours() const
   return _dofmaps[_current_part]->neighbours();
 }
 //-----------------------------------------------------------------------------
-std::string CCFEMDofMap::str(bool verbose) const
+std::string MultiMeshDofMap::str(bool verbose) const
 {
   std::stringstream s;
-  s << "<CCFEMDofMap with "
+  s << "<MultiMeshDofMap with "
     << num_parts()
     << " parts and total global dimension "
     << global_dimension()

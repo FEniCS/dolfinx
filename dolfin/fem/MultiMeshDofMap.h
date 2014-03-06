@@ -18,8 +18,8 @@
 // First added:  2013-09-19
 // Last changed: 2013-10-22
 
-#ifndef __CCFEM_DOF_MAP_H
-#define __CCFEM_DOF_MAP_H
+#ifndef __MultiMesh_DOF_MAP_H
+#define __MultiMesh_DOF_MAP_H
 
 #include "GenericDofMap.h"
 
@@ -27,29 +27,29 @@ namespace dolfin
 {
 
   // Forward declarations
-  class CCFEMFunctionSpace;
+  class MultiMeshFunctionSpace;
 
-  /// This class handles the mapping of degrees of freedom for CCFEM
+  /// This class handles the mapping of degrees of freedom for MultiMesh
   /// function spaces.
 
-  class CCFEMDofMap : public GenericDofMap
+  class MultiMeshDofMap : public GenericDofMap
   {
   public:
 
     /// Constructor
-    CCFEMDofMap();
+    MultiMeshDofMap();
 
     // Copy constructor
-    CCFEMDofMap(const CCFEMDofMap& dofmap);
+    MultiMeshDofMap(const MultiMeshDofMap& dofmap);
 
     /// Destructor
-    ~CCFEMDofMap();
+    ~MultiMeshDofMap();
 
-    /// Return the number dofmaps (parts) of the CCFEM dofmap
+    /// Return the number dofmaps (parts) of the MultiMesh dofmap
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The number of dofmaps (parts) of the CCFEM dofmap
+    ///         The number of dofmaps (parts) of the MultiMesh dofmap
     std::size_t num_parts() const;
 
     /// Return dofmap (part) number i
@@ -59,8 +59,8 @@ namespace dolfin
     ///         Dofmap (part) number i
     std::shared_ptr<const GenericDofMap> part(std::size_t i) const;
 
-    /// Set current part. This will make the CCFEM dofmap act as a
-    /// dofmap for the part of the CCFEM function space defined on the
+    /// Set current part. This will make the MultiMesh dofmap act as a
+    /// dofmap for the part of the MultiMesh function space defined on the
     /// current part (mesh).
     ///
     /// *Arguments*
@@ -82,10 +82,10 @@ namespace dolfin
     ///         The dofmap.
     void add(const GenericDofMap& dofmap);
 
-    /// Build CCFEM dofmap
-    void build(const CCFEMFunctionSpace& function_space);
+    /// Build MultiMesh dofmap
+    void build(const MultiMeshFunctionSpace& function_space);
 
-    /// Clear CCFEM dofmap
+    /// Clear MultiMesh dofmap
     void clear();
 
     //--- Implementation of GenericDofMap interface (incomplete) ---

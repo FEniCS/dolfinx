@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-02-24
+// Last changed: 2014-03-04
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -24,63 +24,48 @@
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
-#include <dolfin/fem/CCFEMDofMap.h>
-#include "FunctionSpace.h"
-#include "CCFEMFunctionSpace.h"
+#include "MultiMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMFunctionSpace::CCFEMFunctionSpace() : _dofmap(new CCFEMDofMap())
+MultiMesh::MultiMesh()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-CCFEMFunctionSpace::~CCFEMFunctionSpace()
+MultiMesh::~MultiMesh()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMFunctionSpace::dim() const
+std::size_t MultiMesh::num_parts() const
 {
-  dolfin_assert(_dofmap);
-  return _dofmap->global_dimension();
+  return _meshes.size();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const CCFEMDofMap> CCFEMFunctionSpace::dofmap() const
+std::shared_ptr<const Mesh> MultiMesh::part(std::size_t i) const
 {
-  dolfin_assert(_dofmap);
-  return _dofmap;
-}
-//-----------------------------------------------------------------------------
-std::size_t CCFEMFunctionSpace::num_parts() const
-{
-  return _function_spaces.size();
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace>
-CCFEMFunctionSpace::part(std::size_t i) const
-{
-  dolfin_assert(i < _function_spaces.size());
-  return _function_spaces[i];
+  dolfin_assert(i < _meshes.size());
+  return _meshes[i];
 }
 //-----------------------------------------------------------------------------
 const std::vector<unsigned int>&
-CCFEMFunctionSpace::uncut_cells(std::size_t part) const
+MultiMesh::uncut_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _uncut_cells[part];
 }
 //-----------------------------------------------------------------------------
 const std::vector<unsigned int>&
-CCFEMFunctionSpace::cut_cells(std::size_t part) const
+MultiMesh::cut_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _cut_cells[part];
 }
 //-----------------------------------------------------------------------------
 const std::vector<unsigned int>&
-CCFEMFunctionSpace::covered_cells(std::size_t part) const
+MultiMesh::covered_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _covered_cells[part];
@@ -88,36 +73,36 @@ CCFEMFunctionSpace::covered_cells(std::size_t part) const
 //-----------------------------------------------------------------------------
 const std::map<unsigned int,
                std::vector<std::pair<std::size_t, unsigned int> > >&
-  CCFEMFunctionSpace::collision_map_cut_cells(std::size_t part) const
+MultiMesh::collision_map_cut_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
-  return _collision_map_cut_cells[part];
+  return _collision_maps_cut_cells[part];
 }
 //-----------------------------------------------------------------------------
-void
-CCFEMFunctionSpace::add(std::shared_ptr<const FunctionSpace> function_space)
-{
-  _function_spaces.push_back(function_space);
-  log(PROGRESS, "Added function space to CCFEM space; space has %d part(s).",
-      _function_spaces.size());
-}
-//-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::add(const FunctionSpace& function_space)
-{
-  add(reference_to_no_delete_pointer(function_space));
-}
-//-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::build()
-{
-  begin(PROGRESS, "Building CCFEM function space.");
+const std::map<unsigned int,
+               std::pair<std::vector<double>, std::vector<double> > > &
+MultiMesh::quadrature_rule_cut_cells(std::size_t part) const
 
-  // Extract meshes
-  _meshes.clear();
-  for (std::size_t i = 0; i < num_parts(); i++)
-    _meshes.push_back(_function_spaces[i]->mesh());
-
-  // Build dofmap
-  _build_dofmap();
+{
+  dolfin_assert(part < num_parts());
+  return _quadrature_rules_cut_cells[part];
+}
+//-----------------------------------------------------------------------------
+void MultiMesh::add(std::shared_ptr<const Mesh> mesh)
+{
+  _meshes.push_back(mesh);
+  log(PROGRESS, "Added mesh to multimesh; multimesh has %d part(s).",
+      _meshes.size());
+}
+//-----------------------------------------------------------------------------
+void MultiMesh::add(const Mesh& mesh)
+{
+  add(reference_to_no_delete_pointer(mesh));
+}
+//-----------------------------------------------------------------------------
+void MultiMesh::build()
+{
+  begin(PROGRESS, "Building multimesh.");
 
   // Build boundary meshes
   _build_boundary_meshes();
@@ -134,25 +119,19 @@ void CCFEMFunctionSpace::build()
   end();
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::_build_dofmap()
+void MultiMesh::clear()
 {
-  begin(PROGRESS, "Building CCFEM dofmap.");
-
-  // Clear dofmap
-  dolfin_assert(_dofmap);
-  _dofmap->clear();
-
-  // Add dofmap for each part
-  for (std::size_t i = 0; i < num_parts(); i++)
-    _dofmap->add(_function_spaces[i]->dofmap());
-
-  // Call function to build dofmap
-  _dofmap->build(*this);
-
-  end();
+  _boundary_meshes.clear();
+  _trees.clear();
+  _boundary_trees.clear();
+  _uncut_cells.clear();
+  _cut_cells.clear();
+  _covered_cells.clear();
+  _collision_maps_cut_cells.clear();
+  _quadrature_rules_cut_cells.clear();
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::_build_boundary_meshes()
+void MultiMesh::_build_boundary_meshes()
 {
   begin(PROGRESS, "Building boundary meshes.");
 
@@ -170,7 +149,7 @@ void CCFEMFunctionSpace::_build_boundary_meshes()
   end();
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::_build_bounding_box_trees()
+void MultiMesh::_build_bounding_box_trees()
 {
   begin(PROGRESS, "Building bounding box trees for all meshes.");
 
@@ -195,7 +174,7 @@ void CCFEMFunctionSpace::_build_bounding_box_trees()
   end();
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::_build_collision_maps()
+void MultiMesh::_build_collision_maps()
 {
   begin(PROGRESS, "Building collision maps.");
 
@@ -203,7 +182,7 @@ void CCFEMFunctionSpace::_build_collision_maps()
   _uncut_cells.clear();
   _cut_cells.clear();
   _covered_cells.clear();
-  _collision_map_cut_cells.clear();
+  _collision_maps_cut_cells.clear();
 
   // Iterate over all parts
   for (std::size_t i = 0; i < num_parts(); i++)
@@ -281,7 +260,7 @@ void CCFEMFunctionSpace::_build_collision_maps()
     _uncut_cells.push_back(uncut_cells);
     _cut_cells.push_back(cut_cells);
     _covered_cells.push_back(covered_cells);
-    _collision_map_cut_cells.push_back(collision_map_cut_cells);
+    _collision_maps_cut_cells.push_back(collision_map_cut_cells);
 
     // Report results
     log(PROGRESS, "Part %d has %d uncut cells, %d cut cells, and %d covered cells.",
@@ -291,7 +270,7 @@ void CCFEMFunctionSpace::_build_collision_maps()
   end();
 }
 //-----------------------------------------------------------------------------
-void CCFEMFunctionSpace::_build_quadrature_rules()
+void MultiMesh::_build_quadrature_rules()
 {
   begin(PROGRESS, "Building quadrature rules.");
 
@@ -300,6 +279,7 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
 
   // Clear quadrature rules
   _quadrature_rules_cut_cells.clear();
+  _quadrature_rules_cut_cells.resize(num_parts());
 
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
@@ -309,11 +289,15 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
       // Get cut cell
-      const Cell cut_cell(*(_meshes[cut_part]), it->first);
+      const unsigned int cut_cell_index = it->first;
+      const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
       // Get dimensions
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
+
+      // Compute quadrature rule for the cell itself
+      auto quadrature_rule = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
 
       // Iterate over cutting cells
       auto cutting_cells = it->second;
@@ -332,13 +316,26 @@ void CCFEMFunctionSpace::_build_quadrature_rules()
         for (std::size_t k = 0; k < num_intersections; k++)
         {
           // Get coordinates for current simplex in triangulation
-          const double* coordinates = &triangulation[0] + k*offset;
+          const double* x = &triangulation[0] + k*offset;
 
           // Compute quadrature rule for simplex
-          auto quadrature_rule
-            = SimplexQuadrature::compute_quadrature_rule(coordinates, tdim, gdim, order);
+          auto q = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
+
+          // Subtract quadrature rule for intersection from quadrature
+          // rule for the cut cell itself
+          dolfin_assert(gdim*q.first.size() == q.second.size());
+          const std::size_t num_points = q.first.size();
+          for (std::size_t i = 0; i < num_points; i++)
+          {
+            quadrature_rule.first.push_back(-q.first[i]);
+            for (std::size_t j = 0; j < gdim; j++)
+              quadrature_rule.second.push_back(q.second[i*gdim + j]);
+          }
         }
       }
+
+      // Store quadrature rule for cut cell
+      _quadrature_rules_cut_cells[cut_part][cut_cell_index] = quadrature_rule;
     }
   }
 

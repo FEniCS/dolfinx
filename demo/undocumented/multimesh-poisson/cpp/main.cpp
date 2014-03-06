@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-02-03
+// Last changed: 2014-03-03
 //
 // This demo program solves Poisson's equation using a Cut and
-// Composite Finite Element Method (CCFEM) on a domain defined by
+// Composite Finite Element Method (MultiMesh) on a domain defined by
 // three overlapping and non-matching meshes.
 
 #include <dolfin.h>
@@ -44,9 +44,9 @@ int main()
   set_log_level(DBG);
 
   // Create meshes
-  UnitSquareMesh square(16, 16);
-  RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 4, 4);
-  RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 4, 4);
+  UnitSquareMesh square(32, 32);
+  RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
+  RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
 
   // Create function spaces
   Poisson::FunctionSpace V0(square);
@@ -70,20 +70,20 @@ int main()
   L1.f = f;
   L2.f = f;
 
-  // Build CCFEM function space
-  CCFEMFunctionSpace V;
+  // Build MultiMesh function space
+  MultiMeshFunctionSpace V;
   V.add(V0);
   V.add(V1);
   V.add(V2);
   V.build();
 
-  // Build CCFEM forms
-  CCFEMForm a(V, V);
+  // Build MultiMesh forms
+  MultiMeshForm a(V, V);
   a.add(a0);
   a.add(a1);
   a.add(a2);
   a.build();
-  CCFEMForm L(V);
+  MultiMeshForm L(V);
   L.add(L0);
   L.add(L1);
   L.add(L2);
@@ -92,13 +92,18 @@ int main()
   // Assemble linear system
   Matrix A;
   Vector b;
-  CCFEMAssembler assembler;
+  MultiMeshAssembler assembler;
   assembler.assemble(A, a);
   assembler.assemble(b, L);
 
   // Compute solution
-  CCFEMFunction u(V);
+  MultiMeshFunction u(V);
   solve(A, *u.vector(), b);
+
+  plot(u.part(0), "u_0");
+  plot(u.part(1), "u_1");
+  plot(u.part(2), "u_2");
+  interactive();
 
   //cout << "A = " << endl; info(A, true);
   //cout << "b = " << endl; info(b, true);

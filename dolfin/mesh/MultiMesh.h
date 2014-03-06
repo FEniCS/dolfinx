@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,76 +15,56 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2013-08-05
-// Last changed: 2014-02-16
+// First added:  2014-03-03
+// Last changed: 2014-03-03
 
-#ifndef __CCFEM_FUNCTION_SPACE_H
-#define __CCFEM_FUNCTION_SPACE_H
+#ifndef __MULTI_MESH_H
+#define __MULTI_MESH_H
 
 #include <vector>
 #include <map>
-#include <memory>
 
 namespace dolfin
 {
 
   // Forward declarations
-  class FunctionSpace;
-  class CCFEMDofMap;
   class Mesh;
-  class BoundingBoxTree;
   class BoundaryMesh;
+  class BoundingBoxTree;
 
-  /// This class represents a cut and composite finite element
-  /// function space (CCFEM) defined on one or more possibly
-  /// intersecting meshes.
-  ///
-  /// A CCFEM function space may be created from a set of standard
-  /// function spaces by repeatedly calling add(), followed by a call
-  /// to build(). Note that a CCFEM function space is not useful and
-  /// its data structures are empty until build() has been called.
+  /// This class represents a collection of meshes with arbitrary
+  /// overlaps. A multimesh may be created from a set of standard
+  /// meshes spaces by repeatedly calling add(), followed by a call to
+  /// build(). Note that a multimesh is not useful until build() has
+  /// been called.
 
-  class CCFEMFunctionSpace
+  class MultiMesh
   {
   public:
 
-    /// Create empty CCFEM function space
-    CCFEMFunctionSpace();
+    /// Create empty multimesh
+    MultiMesh();
 
     /// Destructor
-    ~CCFEMFunctionSpace();
+    ~MultiMesh();
 
-    /// Return dimension of the CCFEM function space
+    /// Return the number of meshes (parts) of the multimesh
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The dimension of the CCFEM function space.
-    std::size_t dim() const;
-
-    /// Return CCFEM dofmap
-    ///
-    /// *Returns*
-    ///     _CCFEMDofMap_
-    ///         The dofmap.
-    std::shared_ptr<const CCFEMDofMap> dofmap() const;
-
-    /// Return the number function spaces (parts) of the CCFEM function space
-    ///
-    /// *Returns*
-    ///     std::size_t
-    ///         The number of function spaces (parts) of the CCFEM function space.
+    ///         The number of meshes (parts) of the multimesh.
     std::size_t num_parts() const;
 
-    /// Return function space (part) number i
+    /// Return mesh (part) number i
     ///
     /// *Arguments*
     ///     i (std::size_t)
     ///         The part number
     ///
     /// *Returns*
-    ///     _FunctionSpace_
-    ///         Function space (part) number i
-    std::shared_ptr<const FunctionSpace> part(std::size_t i) const;
+    ///     _Mesh_
+    ///         Mesh (part) number i
+    std::shared_ptr<const Mesh> part(std::size_t i) const;
 
     /// Return the list of uncut cells for given part. The uncut cells
     /// are defined as all cells that don't collide with any cells in
@@ -148,30 +128,42 @@ namespace dolfin
                    std::vector<std::pair<std::size_t, unsigned int> > >&
     collision_map_cut_cells(std::size_t part) const;
 
-    /// Add function space (shared pointer version)
+    /// Return quadrature rules for cut cells of the given part
     ///
     /// *Arguments*
-    ///     function_space (_FunctionSpace_)
-    ///         The function space.
-    void add(std::shared_ptr<const FunctionSpace> function_space);
+    ///     part (std::size_t)
+    ///         The part number
+    ///
+    /// *Returns*
+    ///     std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >
+    ///         A map from cell indices of cut cells to a quadrature
+    ///         rules. Each quadrature rule is represented as a pair
+    ///         of an array of quadrature weights and a corresponding
+    ///         flattened array of quadrature points.
+    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > > &
+    quadrature_rule_cut_cells(std::size_t part) const;
 
-    /// Add function space (reference version)
+    /// Add mesh (shared pointer version)
     ///
     /// *Arguments*
-    ///     function_space (_FunctionSpace_)
-    ///         The function space.
-    void add(const FunctionSpace& function_space);
+    ///     mesh (_Mesh_)
+    ///         The mesh
+    void add(std::shared_ptr<const Mesh> mesh);
 
-    /// Build CCFEM function space
+    /// Add mesh (reference version)
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh
+    void add(const Mesh& mesh);
+
+    /// Build multimesh
     void build();
 
+    /// Clear multimesh
+    void clear();
+
   private:
-
-    // List of function spaces
-    std::vector<std::shared_ptr<const FunctionSpace> > _function_spaces;
-
-    // CCFEM dofmap
-    std::shared_ptr<CCFEMDofMap> _dofmap;
 
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;
@@ -225,9 +217,9 @@ namespace dolfin
     // here, if we find that this is important for performance.
     //
     // Developer note 2: Quadrature points are naturally a part of a
-    // form (or a term in a form) and not a part of a mesh or function
-    // space. However, for now we use a global (to the function space)
-    // quadrature rule for all cut cells, for simplicity.
+    // form (or a term in a form) and not a part of a mesh. However,
+    // for now we use a global (to the multimesh) quadrature rule for
+    // all cut cells, for simplicity.
 
     // Collision map for cut cells. Access data by
     //
@@ -242,7 +234,7 @@ namespace dolfin
     //            k = the collision number (in the list of cutting cells)
     std::vector<std::map<unsigned int,
                          std::vector<std::pair<std::size_t, unsigned int> > > >
-    _collision_map_cut_cells;
+    _collision_maps_cut_cells;
 
     // Quadrature rules for cut cells. Access data by
     //
@@ -257,9 +249,6 @@ namespace dolfin
     std::vector<std::map<unsigned int,
                          std::pair<std::vector<double>, std::vector<double> > > >
     _quadrature_rules_cut_cells;
-
-    // Build dofmap
-    void _build_dofmap();
 
     // Build boundary meshes
     void _build_boundary_meshes();

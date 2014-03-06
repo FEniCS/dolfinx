@@ -23,7 +23,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-02-13
+// Last changed: 2014-03-03
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -167,7 +167,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
     double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
     // Formula for volume from http://mathworld.wolfram.com
-    return v2 = 0.5 * std::abs(v2);
+    return 0.5 * std::abs(v2);
   }
   else if (geometry.dim() == 3)
   {

@@ -22,6 +22,7 @@
 
 import unittest
 from dolfin import *
+import numpy as np
 
 mesh = UnitCubeMesh(8, 8, 8)
 V = FunctionSpace(mesh, "CG", 1)
@@ -76,65 +77,67 @@ class Creation(unittest.TestCase):
 
         assigner = FunctionAssigner(W.sub(0), V)
         assigner.assign(self.w.sub(0), self.u0)
-
-        self.assertEqual(self.w.vector().sum(), 2*4*V.dim()+1*V.dim())
+        
+        self.assertTrue(np.all(self.w.sub(0, deepcopy=True).vector().array() == \
+                               self.u0.vector().array()))
+        
+        assign(self.w.sub(2), self.u2)
+        self.assertTrue(np.all(self.w.sub(2, deepcopy=True).vector().array() == \
+                               self.u2.vector().array()))
 
         assigner = FunctionAssigner(V, W.sub(2))
         assigner.assign(self.u0, self.w.sub(2))
 
-        self.assertEqual(self.u0.vector().sum(), 4*V.dim())
-
-        assign(self.w.sub(2), self.u2)
-        self.assertEqual(self.w.vector().sum(), (4+3+1)*V.dim())
+        self.assertTrue(np.all(self.u0.vector().array() == \
+                               self.w.sub(2, deepcopy=True).vector().array()))
 
         assign(self.u1, self.w.sub(1))
-        self.assertEqual(self.u1.vector().sum(), 4.0*V.dim())
-
-        # FIXME: With better block detection it should be OK to run the
-        # FIXME: rest of the tests in parallel too
-        if MPI.size(mesh.mpi_comm()) > 1:
-            return
+        self.assertTrue(np.all(self.u1.vector().array() == \
+                               self.w.sub(1, deepcopy=True).vector().array()))
 
         assigner = FunctionAssigner(WW.sub(0), W)
         assigner.assign(self.ww.sub(0), self.w)
 
-        self.assertEqual(self.ww.vector().sum(), 5*W.dim()+(4+3+1)*V.dim())
-
         assign(self.wr.sub(0), self.w)
-        self.assertEqual(self.wr.vector().sum(), (4+3+1)*V.dim() + 6)
+        self.assertTrue(np.all(self.wr.sub(0, deepcopy=True).vector().array() == \
+                               self.w.vector().array()))
 
         assign(self.wr.sub(1), self.r)
-        self.assertEqual(self.wr.vector().sum(), (4+3+1)*V.dim() + 3)
+        self.assertTrue(np.all(self.wr.sub(1, deepcopy=True).vector().array() == \
+                               self.r.vector().array()))
 
         assign(self.qqv.sub(0).sub(0), self.q)
-        self.assertEqual(self.qqv.vector().sum(), \
-                         (2*3*Q.dim()+1*Q.dim()+3*V.dim()))
+        self.assertTrue(np.all(self.qqv.sub(0).sub(0, deepcopy=True).vector().array() == \
+                               self.q.vector().array()))
 
         self.assertRaises(RuntimeError, lambda : assign(self.qqv.sub(0), self.q))
         self.assertRaises(RuntimeError, lambda : assign(self.qqv.sub(1), self.q))
         self.assertRaises(RuntimeError, lambda : assign(self.wrr.sub(1), self.w))
-        self.assertRaises(RuntimeError, lambda : assign(self.wrr.sub(1), self.r))
 
     def test_N_1_assigner(self):
 
         vv = Function(W)
         assigner = FunctionAssigner(W, [V,V,V])
         assigner.assign(vv, [self.u0, self.u1, self.u2])
-
-        self.assertEqual(vv.vector().sum(), (1+2+3)*V.dim())
-
-        # FIXME: With better block detection it should be OK to run the
-        # FIXME: rest of the tests in parallel too
-        if MPI.size(mesh.mpi_comm()) > 1:
-            return
+        
+        self.assertTrue(np.all(vv.sub(0, deepcopy=True).vector().array() == \
+                               self.u0.vector().array()))
+        self.assertTrue(np.all(vv.sub(1, deepcopy=True).vector().array() == \
+                               self.u1.vector().array()))
+        self.assertTrue(np.all(vv.sub(2, deepcopy=True).vector().array() == \
+                               self.u2.vector().array()))
 
         assign(self.qqv, [self.qq, self.u1])
-        self.assertEqual(self.qqv.vector().sum(), 2*QQV.dim())
+        self.assertTrue(np.all(self.qqv.sub(0, deepcopy=True).vector().array() == \
+                              self.qq.vector().array()))
+        self.assertTrue(np.all(self.qqv.sub(1, deepcopy=True).vector().array() == \
+                               self.u1.vector().array()))
 
         assign(self.wrr, [self.w, self.rr])
-        self.assertEqual(self.wrr.vector().sum(), self.w.vector().sum() + \
-                         self.rr.vector().sum())
-
+        self.assertTrue(np.all(self.wrr.sub(0, deepcopy=True).vector().array() ==
+                               self.w.vector().array()))
+        self.assertTrue(np.all(self.wrr.sub(1, deepcopy=True).vector().array() ==
+                               self.rr.vector().array()))
 
         self.assertRaises(RuntimeError, lambda : assign(self.qqv, \
                                                         [self.qq, self.u1, self.u1]))
@@ -147,17 +150,19 @@ class Creation(unittest.TestCase):
         assigner = FunctionAssigner([V,V,V], W)
         assigner.assign([self.u0, self.u1, self.u2], self.w)
 
-        self.assertEqual(self.u0.vector().sum() + self.u1.vector().sum() + \
-                         self.u2.vector().sum(), self.w.vector().sum())
-
-        # FIXME: With better block detection it should be OK to run the
-        # FIXME: rest of the tests in parallel too
-        if MPI.size(mesh.mpi_comm()) > 1:
-            return
+        self.assertTrue(np.all(self.w.sub(0, deepcopy=True).vector().array() == \
+                               self.u0.vector().array()))
+        self.assertTrue(np.all(self.w.sub(1, deepcopy=True).vector().array() == \
+                               self.u1.vector().array()))
+        self.assertTrue(np.all(self.w.sub(2, deepcopy=True).vector().array() == \
+                               self.u2.vector().array()))
 
         assign([self.qq, self.u1], self.qqv)
-        self.assertEqual(self.qqv.vector().sum(), self.qq.vector().sum() + \
-                         self.u1.vector().sum())
+
+        self.assertTrue(np.all(self.qqv.sub(0, deepcopy=True).vector().array() == \
+                              self.qq.vector().array()))
+        self.assertTrue(np.all(self.qqv.sub(1, deepcopy=True).vector().array() == \
+                               self.u1.vector().array()))
 
 if __name__ == "__main__":
     unittest.main()

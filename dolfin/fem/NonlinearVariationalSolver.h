@@ -132,7 +132,7 @@ namespace dolfin
 
       p.add(NewtonSolver::default_parameters());
 
-      #ifdef HAS_PETSC
+      #ifdef ENABLE_PETSC_SNES
       p.add(PETScSNESSolver::default_parameters());
       nonlinear_solvers.insert("snes");
       #endif
@@ -180,7 +180,7 @@ namespace dolfin
     // The Newton solver
     std::shared_ptr<NewtonSolver> newton_solver;
 
-    #ifdef HAS_PETSC
+    #ifdef ENABLE_PETSC_SNES
     // Or, alternatively, the SNES solver
     std::shared_ptr<PETScSNESSolver> snes_solver;
     #endif

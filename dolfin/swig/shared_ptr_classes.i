@@ -75,7 +75,7 @@
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
 %shared_ptr(dolfin::GenericDofMap)
 %shared_ptr(dolfin::DofMap)
-%shared_ptr(dolfin::CCFEMDofMap)
+%shared_ptr(dolfin::MultiMeshDofMap)
 %shared_ptr(dolfin::Form)
 %shared_ptr(dolfin::FiniteElement)
 %shared_ptr(dolfin::BasisFunction)

@@ -255,8 +255,8 @@ namespace dolfin
   {
     #ifdef HAS_MPI
     // Broadcast cast size
-    int bsize = value.size();
-    MPI_Bcast(&bsize, 1, mpi_type<T>(), broadcaster, comm);
+    std::size_t bsize = value.size();
+    MPI_Bcast(&bsize, 1, mpi_type<std::size_t>(), broadcaster, comm);
 
     // Broadcast
     value.resize(bsize);

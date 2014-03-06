@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-19
+// Last changed: 2014-03-03
 
-#ifndef __CCFEM_FORM_H
-#define __CCFEM_FORM_H
+#ifndef __MULTI_MESH_FORM_H
+#define __MULTI_MESH_FORM_H
 
 #include <vector>
 #include <memory>
@@ -28,35 +28,34 @@ namespace dolfin
 {
 
   // Forward declarations
-  class CCFEMFunctionSpace;
+  class MultiMeshFunctionSpace;
+  class MultiMesh;
   class Form;
 
   /// This class represents a variational form on a cut and composite
-  /// finite element function space (CCFEM) defined on one or more
+  /// finite element function space (MultiMesh) defined on one or more
   /// possibly intersecting meshes.
-  ///
-  /// FIXME: Document usage of class with add() followed by build()
 
-  class CCFEMForm
+  class MultiMeshForm
   {
   public:
 
-    /// Create empty linear CCFEM variational form (shared pointer version)
-    CCFEMForm(std::shared_ptr<const CCFEMFunctionSpace> function_space);
+    /// Create empty linear MultiMesh variational form (shared pointer version)
+    MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space);
 
-    /// Create empty linear CCFEM variational form (reference version)
-    CCFEMForm(const CCFEMFunctionSpace& function_space);
+    /// Create empty linear MultiMesh variational form (reference version)
+    MultiMeshForm(const MultiMeshFunctionSpace& function_space);
 
-    /// Create empty bilinear CCFEM variational form (shared pointer version)
-    CCFEMForm(std::shared_ptr<const CCFEMFunctionSpace> function_space_0,
-              std::shared_ptr<const CCFEMFunctionSpace> function_space_1);
+    /// Create empty bilinear MultiMesh variational form (shared pointer version)
+    MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space_0,
+              std::shared_ptr<const MultiMeshFunctionSpace> function_space_1);
 
-    /// Create empty bilinear CCFEM variational form (reference version)
-    CCFEMForm(const CCFEMFunctionSpace& function_space_0,
-              const CCFEMFunctionSpace& function_space_1);
+    /// Create empty bilinear MultiMesh variational form (reference version)
+    MultiMeshForm(const MultiMeshFunctionSpace& function_space_0,
+              const MultiMeshFunctionSpace& function_space_1);
 
     /// Destructor
-    ~CCFEMForm();
+    ~MultiMeshForm();
 
     /// Return rank of form (bilinear form = 2, linear form = 1,
     /// functional = 0, etc)
@@ -66,12 +65,19 @@ namespace dolfin
     ///         The rank of the form.
     std::size_t rank() const;
 
-    /// Return the number of forms (parts) of the CCFEM form
+    /// Return the number of forms (parts) of the MultiMesh form
     ///
     /// *Returns*
     ///     std::size_t
-    ///         The number of forms (parts) of the CCFEM form.
+    ///         The number of forms (parts) of the MultiMesh form.
     std::size_t num_parts() const;
+
+    /// Extract common multimesh from form
+    ///
+    /// *Returns*
+    ///     _MultiMesh_
+    ///         The mesh.
+    std::shared_ptr<const MultiMesh> multimesh() const;
 
     /// Return form (part) number i
     ///
@@ -87,9 +93,9 @@ namespace dolfin
     ///         Index
     ///
     /// *Returns*
-    ///     _CCFEMFunctionSpace_
+    ///     _MultiMeshFunctionSpace_
     ///         Function space shared pointer.
-    std::shared_ptr<const CCFEMFunctionSpace> function_space(std::size_t i) const;
+    std::shared_ptr<const MultiMeshFunctionSpace> function_space(std::size_t i) const;
 
     /// Add form (shared pointer version)
     ///
@@ -105,10 +111,10 @@ namespace dolfin
     ///         The form.
     void add(const Form& form);
 
-    /// Build CCFEM form
+    /// Build MultiMesh form
     void build();
 
-    /// Clear CCFEM form
+    /// Clear MultiMesh form
     void clear();
 
   private:
@@ -117,7 +123,7 @@ namespace dolfin
     std::size_t _rank;
 
     // Function spaces (one for each argument)
-    std::vector<std::shared_ptr<const CCFEMFunctionSpace> > _function_spaces;
+    std::vector<std::shared_ptr<const MultiMeshFunctionSpace> > _function_spaces;
 
     // List of forms (one for each part)
     std::vector<std::shared_ptr<const Form> > _forms;

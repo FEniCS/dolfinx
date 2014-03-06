@@ -28,9 +28,9 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/CCFEMFunctionSpace.h>
-#include "CCFEMForm.h"
-#include "CCFEMDofMap.h"
+#include <dolfin/function/MultiMeshFunctionSpace.h>
+#include "MultiMeshForm.h"
+#include "MultiMeshDofMap.h"
 #include "SparsityPatternBuilder.h"
 
 #include <dolfin/log/dolfin_log.h>
@@ -195,7 +195,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build_ccfem(GenericSparsityPattern& sparsity_pattern,
-                                         const CCFEMForm& form)
+                                         const MultiMeshForm& form)
 {
   // Build list of dofmaps
   std::vector<const GenericDofMap*> dofmaps;
@@ -207,7 +207,7 @@ void SparsityPatternBuilder::build_ccfem(GenericSparsityPattern& sparsity_patter
   {
     // Set current part for each dofmap. Note that these will be the
     // same dofmaps as in the list created above but accessed here as
-    // CCFEMDofMaps and not GenericDofMaps.
+    // MultiMeshDofMaps and not GenericDofMaps.
     for (std::size_t i = 0; i < form.rank(); i++)
       form.function_space(i)->dofmap()->set_current_part(part);
 

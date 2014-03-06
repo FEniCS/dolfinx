@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-24
+// Last changed: 2014-03-03
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -153,24 +153,6 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
     }
   }
 
-  // Special case: no points found
-  std::vector<double> triangulation;
-  if (points.size() < 3)
-    return triangulation;
-
-  // Find left-most point (smallest x-coordinate)
-  std::size_t i_min = 0;
-  double x_min = points[0].x();
-  for (std::size_t i = 1; i < points.size(); i++)
-  {
-    const double x = points[i].x();
-    if (x < x_min)
-    {
-      x_min = x;
-      i_min = i;
-    }
-  }
-
   // Remove duplicate points
   std::vector<Point> tmp;
   tmp.reserve(points.size());
@@ -189,6 +171,23 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   }
   points = tmp;
 
+  // Special case: no points found
+  std::vector<double> triangulation;
+  if (points.size() < 3)
+    return triangulation;
+
+  // Find left-most point (smallest x-coordinate)
+  std::size_t i_min = 0;
+  double x_min = points[0].x();
+  for (std::size_t i = 1; i < points.size(); i++)
+  {
+    const double x = points[i].x();
+    if (x < x_min)
+    {
+      x_min = x;
+      i_min = i;
+    }
+  }
 
   // Compute signed squared cos of angle with (0, 1) from i_min to all points
   std::vector<std::pair<double, std::size_t> > order;
