@@ -435,11 +435,13 @@ void PETScLUSolver::set_petsc_operators()
 
   PetscErrorCode ierr;
 
+  #if PETSC_VERSION_RELEASE
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
   const bool same_pattern = parameters["same_nonzero_pattern"];
 
   // Set operators with appropriate preconditioner option
+
   if (reuse_fact)
   {
     ierr = KSPSetOperators(_ksp, _A->mat(), _A->mat(), SAME_PRECONDITIONER);
@@ -456,6 +458,10 @@ void PETScLUSolver::set_petsc_operators()
                            DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
+  #else
+  ierr = KSPSetOperators(_ksp, _A->mat(), _A->mat());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::pre_report(const PETScMatrix& A) const
