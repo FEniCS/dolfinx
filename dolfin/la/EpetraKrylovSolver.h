@@ -27,8 +27,8 @@
 #define __EPETRA_KRYLOV_SOLVER_H
 
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
@@ -45,15 +45,15 @@ namespace dolfin
   class EpetraUserPreconditioner;
   class TrilinosPreconditioner;
 
-  /// This class implements Krylov methods for linear systems
-  /// of the form Ax = b. It is a wrapper for the Krylov solvers
-  /// of Epetra.
+  /// This class implements Krylov methods for linear systems of the
+  /// form Ax = b. It is a wrapper for the Krylov solvers of Epetra.
 
   class EpetraKrylovSolver : public GenericLinearSolver
   {
   public:
 
-    /// Create Krylov solver for a particular method and preconditioner
+    /// Create Krylov solver for a particular method and
+    /// preconditioner
     EpetraKrylovSolver(std::string method = "default",
                        std::string preconditioner = "default");
 
