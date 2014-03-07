@@ -27,14 +27,11 @@
 #define __EPETRA_KRYLOV_SOLVER_H
 
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
-
-// Forward declarations
-class AztecOO;
 
 namespace dolfin
 {
@@ -48,15 +45,15 @@ namespace dolfin
   class EpetraUserPreconditioner;
   class TrilinosPreconditioner;
 
-  /// This class implements Krylov methods for linear systems
-  /// of the form Ax = b. It is a wrapper for the Krylov solvers
-  /// of Epetra.
+  /// This class implements Krylov methods for linear systems of the
+  /// form Ax = b. It is a wrapper for the Krylov solvers of Epetra.
 
   class EpetraKrylovSolver : public GenericLinearSolver
   {
   public:
 
-    /// Create Krylov solver for a particular method and preconditioner
+    /// Create Krylov solver for a particular method and
+    /// preconditioner
     EpetraKrylovSolver(std::string method = "default",
                        std::string preconditioner = "default");
 
@@ -107,16 +104,13 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Return pointer to Aztec00
-    std::shared_ptr<AztecOO> aztecoo() const;
-
   private:
 
     // Solver type
     std::string _method;
 
     // Available solvers
-    static const std::map<std::string, int> _methods;
+    static const std::map<std::string, std::string> _methods;
 
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> >
@@ -131,12 +125,9 @@ namespace dolfin
     // Preconditioner
     std::shared_ptr<TrilinosPreconditioner> _preconditioner;
 
-    // Underlying solver
-    std::shared_ptr<AztecOO> solver;
-
     // Residuals
-    double relative_residual;
-    double absolute_residual;
+    double _relative_residual;
+    double _absolute_residual;
 
   };
 

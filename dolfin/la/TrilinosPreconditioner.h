@@ -15,13 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
-//
-// First added:  2010-02-25
-// Last changed: 2011-10-19
-
-#ifndef __DOFLIN_TRILINOS_PRECONDITIONER_H
-#define __DOFLIN_TRILINOS_PRECONDITIONER_H
+#ifndef __DOLFIN_TRILINOS_PRECONDITIONER_H
+#define __DOLFIN_TRILINOS_PRECONDITIONER_H
 
 #ifdef HAS_TRILINOS
 
@@ -39,15 +34,30 @@
 // Trilinos forward declarations
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
+class Epetra_Operator;
 class Ifpack_Preconditioner;
+namespace Belos
+{
+  template<class ScalarType, class MV, class OP>
+  class LinearProblem;
+}
+
 namespace ML_Epetra
 {
   class MultiLevelPreconditioner;
 }
+
 namespace Teuchos
 {
   class ParameterList;
 }
+
+// some typdefs for Belos
+typedef double BelosScalarType;
+typedef Epetra_MultiVector BelosMultiVector;
+typedef Epetra_Operator BelosOperator;
+typedef Belos::LinearProblem<BelosScalarType, BelosMultiVector, BelosOperator>
+  BelosLinearProblem;
 
 namespace dolfin
 {
@@ -74,7 +84,9 @@ namespace dolfin
     virtual ~TrilinosPreconditioner();
 
     /// Set the precondtioner and matrix used in preconditioner
-    virtual void set(EpetraKrylovSolver& solver, const EpetraMatrix& P);
+    virtual void set(BelosLinearProblem& problem,
+                     const EpetraMatrix& P
+                     );
 
     /// Set the Trilonos preconditioner parameters list
     void set_parameters(std::shared_ptr<const Teuchos::ParameterList> list);
@@ -83,8 +95,8 @@ namespace dolfin
     /// Python)
     void set_parameters(Teuchos::RCP<Teuchos::ParameterList> list);
 
-    /// Set basis for the null space of the operator. Setting this
-    /// is critical to the performance of some preconditioners, e.g. ML.
+    /// Set basis for the null space of the operator. Setting this is
+    /// critical to the performance of some preconditioners, e.g. ML.
     /// The vectors spanning the null space are copied.
     void set_nullspace(const VectorSpaceBasis& null_space);
 
@@ -103,7 +115,8 @@ namespace dolfin
   private:
 
     /// Setup the ML precondtioner
-    void set_ml(AztecOO& solver, const Epetra_RowMatrix& P);
+    void set_ml(BelosLinearProblem& problem,
+                const Epetra_RowMatrix& P);
 
     /// Named preconditioner
     std::string _preconditioner;
@@ -116,8 +129,8 @@ namespace dolfin
       _preconditioners_descr;
 
     // The Preconditioner
-    std::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
-    std::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
+    std::shared_ptr<Ifpack_Preconditioner> _ifpack_preconditioner;
+    std::shared_ptr<ML_Epetra::MultiLevelPreconditioner> _ml_preconditioner;
 
     // Parameter list
     std::shared_ptr<const Teuchos::ParameterList> parameter_list;
