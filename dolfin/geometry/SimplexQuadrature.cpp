@@ -190,7 +190,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   }
 
   // Find the determinant of the Jacobian (inspired by ufc_geometry.h)
-  double det=0;
+  double det = 0; // To keep compiler happy
 
   switch (gdim)
   {
@@ -304,7 +304,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
   }
 
   // Find the determinant of the Jacobian (from ufc_geometry.h)
-  double det=0;
+  double det = 0; // To keep compiler happy
 
   switch (gdim)
   {
