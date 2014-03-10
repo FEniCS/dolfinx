@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-03-06
+// Last changed: 2014-03-10
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -176,7 +176,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
     break;
   case 2:
     // Assign weight 1/3
-    w.assign(2, 1./3);
+    w.assign(3, 1./3);
 
     // Assign points corresponding to 2/3, 1/6, 1/6
     p.assign(3, std::vector<double>(3, 1./6));
@@ -190,7 +190,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   }
 
   // Find the determinant of the Jacobian (inspired by ufc_geometry.h)
-  double det;
+  double det=0;
 
   switch (gdim)
   {
@@ -214,11 +214,6 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
       const double d_0 = J[2]*J[5] - J[4]*J[3];
       const double d_1 = J[4]*J[1] - J[0]*J[5];
       const double d_2 = J[0]*J[3] - J[2]*J[1];
-
-      // const double c[] = {J[0]*J[0] + J[2]*J[2] + J[4]*J[4],
-      //                     J[1]*J[1] + J[3]*J[3] + J[5]*J[5],
-      //                     J[0]*J[1] + J[2]*J[3] + J[4]*J[5]};
-      // const double den = c[0]*c[1] - c[2]*c[2];
       const double det2 = d_0*d_0 + d_1*d_1 + d_2*d_2;
       det = std::sqrt(det2);
 
@@ -232,7 +227,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
 
 
   // Store weights
-  quadrature_rule.first.assign(w.size(),det);
+  quadrature_rule.first.assign(w.size(), 0.5*det);
   for (std::size_t i = 0; i < w.size(); ++i)
     quadrature_rule.first[i] *= w[i];
 
@@ -241,7 +236,8 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
 
   for (std::size_t i = 0; i < p.size(); ++i)
     for (std::size_t d = 0; d < gdim; ++d)
-      quadrature_rule.second[d+i*gdim] = p[i][0]*coordinates[d]
+      quadrature_rule.second[d+i*gdim]
+        = p[i][0]*coordinates[d]
         + p[i][1]*coordinates[gdim+d]
         + p[i][2]*coordinates[2*gdim+d];
 
@@ -296,7 +292,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
     w.assign(4, 0.25);
 
     // Assign points corresponding to 0.585410196624969,
-    // 0.138196601125011, 0.138196601125011, 0.138196601125011
+    // 0.138196601125011, 0.138196601125011 and 0.138196601125011
     p.assign(4, std::vector<double>(4, 0.138196601125011));
     p[0][0] = p[1][1] = p[2][2] = p[3][3] = 0.585410196624969;
 
@@ -307,21 +303,22 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
                  "Not implemented for order ",order);
   }
 
-  double det;
+  // Find the determinant of the Jacobian (from ufc_geometry.h)
+  double det=0;
 
   switch (gdim)
   {
   case 3:
     {
-      const double J[]={coordinates[3]  - coordinates[0],
-                        coordinates[6]  - coordinates[0],
-                        coordinates[9]  - coordinates[0],
-                        coordinates[4]  - coordinates[1],
-                        coordinates[7]  - coordinates[1],
-                        coordinates[10] - coordinates[1],
-                        coordinates[5]  - coordinates[2],
-                        coordinates[8]  - coordinates[2],
-                        coordinates[11] - coordinates[2]};
+      const double J[] = {coordinates[3]  - coordinates[0],
+                          coordinates[6]  - coordinates[0],
+                          coordinates[9]  - coordinates[0],
+                          coordinates[4]  - coordinates[1],
+                          coordinates[7]  - coordinates[1],
+                          coordinates[10] - coordinates[1],
+                          coordinates[5]  - coordinates[2],
+                          coordinates[8]  - coordinates[2],
+                          coordinates[11] - coordinates[2]};
       double d[9];
       d[0*3 + 0] = J[4]*J[8] - J[5]*J[7];
       // d[0*3 + 1] = J[5]*J[6] - J[3]*J[8];
@@ -334,6 +331,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
       // d[2*3 + 2] = J[0]*J[4] - J[1]*J[3];
 
       det = J[0]*d[0*3 + 0] + J[3]*d[1*3 + 0] + J[6]*d[2*3 + 0];
+      break;
     }
   default:
     dolfin_error("SimplexQuadrature.cpp",
@@ -342,7 +340,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
   }
 
   // Store weights
-  quadrature_rule.first.assign(w.size(),det);
+  quadrature_rule.first.assign(w.size(), det/6.);
   for (std::size_t i = 0; i < w.size(); ++i)
     quadrature_rule.first[i] *= w[i];
 
@@ -351,7 +349,8 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
 
   for (std::size_t i = 0; i < p.size(); ++i)
     for (std::size_t d = 0; d < gdim; ++d)
-      quadrature_rule.second[d+i*gdim] = p[i][0]*coordinates[d]
+      quadrature_rule.second[d+i*gdim]
+        = p[i][0]*coordinates[d]
         + p[i][1]*coordinates[gdim+d]
         + p[i][2]*coordinates[2*gdim+d]
         + p[i][3]*coordinates[3*gdim+d];

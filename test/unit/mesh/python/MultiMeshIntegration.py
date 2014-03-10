@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-03-04
-# Last changed: 2014-03-07
+# Last changed: 2014-03-10
 
 import unittest
 import numpy
@@ -50,17 +50,31 @@ class TriangleIntegrationTest(unittest.TestCase):
         # Create two meshes of the unit square
         mesh_0 = UnitSquareMesh(10, 10)
         mesh_1 = UnitSquareMesh(11, 11)
-        mesh_1.translate(Point(0.632350,0.278498))
 
+        # Translate
+        pt = Point(0.632350,0.278498)
+        mesh_1.translate(pt)
+        exactarea = 2-(1-pt[0])*(1-pt[1])
 
         multimesh = MultiMesh()
         multimesh.add(mesh_0)
         multimesh.add(mesh_1)
         multimesh.build()
 
-        print multimesh.num_parts()
-
-
+        for part in range(0, multimesh.num_parts()):
+            print part
+            covered = multimesh.covered_cells(part)
+            uncut = multimesh.uncut_cells(part)
+            cut = multimesh.cut_cells(part)
+            qr = multimesh.quadrature_rule_cut_cells(part)
+            print "covered"
+            print covered
+            print "uncut"
+            print uncut
+            print "cut"
+            print cut
+            print "quadrature"
+            print qr
 
         V_0 = FunctionSpace(mesh_0, "CG", 1)
         V_1 = FunctionSpace(mesh_1, "CG", 1)
@@ -68,10 +82,28 @@ class TriangleIntegrationTest(unittest.TestCase):
         V_multi = MultiMeshFunctionSpace()
         V_multi.add(V_0)
         V_multi.add(V_1)
+        V_multi.build()
 
         u = MultiMeshFunction(V_multi)
         u.vector()[:] = 1.
 
+        v_0 = Function(V_0)
+        v_1 = Function(V_1)
+        v_0.vector()[:] = 1.
+        v_1.vector()[:] = 1.
+
+        L_multi = MultiMeshForm(V_multi)
+        L_0 = Form(v_0*dx)
+        L_1 = Form(v_1*dx)
+        L_multi.add(L_0)
+        L_multi.add(L_1)
+        L_multi.build()
+
+        # area = assemble(L_0) + assemble(L_1)
+        # MMA = MultiMeshAssembler()
+        # area = MMA.assemble(L_multi)
+        # area = assemble(L_multi)
+        # self.assertAlmostEqual(area, exactarea)
 
 
         # # Translate second mesh randomly
