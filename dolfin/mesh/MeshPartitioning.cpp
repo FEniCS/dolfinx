@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Niclas Jansson, Ola Skavhaug, Anders Logg
+// Copyright (C) 2008-2014 Niclas Jansson, Ola Skavhaug, Anders Logg
 // Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
@@ -19,7 +19,7 @@
 // Modified by Kent-Andre Mardal 2011
 // Modified by Anders Logg 2011
 // Modified by Garth N. Wells 2011-2012
-// Modified by Chris Richardson 2013
+// Modified by Chris Richardson 2013-2014
 //
 
 #include <algorithm>
@@ -188,11 +188,16 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // Get all cells, ghost and regular onto correct processes
   std::vector<std::size_t> global_cell_indices;
   boost::multi_array<std::size_t, 2> cell_vertices;
+
   // Keep tabs on ghost cell ownership
-  std::vector<std::size_t> ghost_remote_process;
+  // FIXME: this may later become a Mesh member variable
+  mesh.data().create_array("ghost_owner", mesh_data.tdim);
+  std::vector<std::size_t>& ghost_cell_owner 
+    = mesh.data().array("ghost_owner", mesh_data.tdim);
+
   distribute_ghost_cells(mesh.mpi_comm(), mesh_data,
                    ghost_procs, global_cell_indices,
-                   ghost_remote_process,
+                   ghost_cell_owner,
                    cell_vertices);
 
   // Distribute vertices
@@ -212,32 +217,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
              vertex_coordinates, vertex_global_to_local,
              mesh_data.tdim, mesh_data.gdim, mesh_data.num_global_cells,
              mesh_data.num_global_vertices);
-
-  // Attach ghost cell ownership data to Mesh
-  // FIXME: this may later become a Mesh member variable
-  mesh.data().create_array("ghost_owner", mesh_data.tdim);
-  std::vector<std::size_t>& ghost_cell_owner 
-    = mesh.data().array("ghost_owner", mesh_data.tdim);
-  // Copy over ghost cell ownership data
-  ghost_cell_owner.insert(ghost_cell_owner.begin(),
-                          ghost_remote_process.begin(),
-                          ghost_remote_process.end());
-
-  // Attach ghost vertex mask to Mesh, marking vertices which are in cells
-  // belonging to other processes - maybe not needed
-  mesh.data().create_array("ghost_mask", 0);
-  std::vector<std::size_t>& ghost_vertex_mask = mesh.data().array("ghost_mask", 0);
-  ghost_vertex_mask.resize(mesh.num_vertices());
-  const unsigned int rank = MPI::rank(mesh.mpi_comm());
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    if (ghost_cell_owner[c->index()] != rank)
-    {
-      for (VertexIterator v(*c); !v.end(); ++v)
-        ghost_vertex_mask[v->index()] = 1;
-    }
-  }
-
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::ghost_build_shared_vertices(Mesh& mesh,
