@@ -1001,7 +1001,6 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   MeshConnectivity& cf = topology(D, D - 1);
   MeshConnectivity& fc = topology(D - 1, D);
   MeshConnectivity& fv = topology(D - 1, 0);
-
   
   // Check if entities have already been computed
   dolfin_assert(topology.size(D - 1) == 0);
@@ -1059,7 +1058,8 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
       std::sort(facet->begin(), facet->end());
 
       // Insert into map
-      std::pair<std::map<std::vector<unsigned int>, unsigned int>::iterator, bool>
+      std::pair<std::map<std::vector<unsigned int>, 
+                         unsigned int>::iterator, bool>
         it = fvertices_to_index.insert(std::make_pair(*facet, current_facet));
 
       // Facet index
@@ -1092,6 +1092,8 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
     }
   }
 
+  // FIXME: Use cell dual graph here to reorder
+
   // Now go through connectivity_fc and pick out facets
   // which have the following connectivity:
   // 1) i-i or i- (local)
@@ -1099,10 +1101,15 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   // 3) j-j, j-, j-k (remote-remote)
   // and do global numbering accordingly...
 
-  topology.init_global_indices(D - 1, current_facet);
+  // Cells which are also on other processes
+  const std::map<unsigned int, std::set<unsigned int> >& shared_cells 
+    = mesh.topology().shared_entities(D);
 
-  const std::vector<std::size_t>& ghost_owner 
+  // Ownership of cells
+  const std::vector<std::size_t>& ghost_owner
     = mesh.data().array("ghost_owner", D);
+
+  topology.init_global_indices(D - 1, current_facet);
 
   const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
   const unsigned int mpi_size = MPI::size(mesh.mpi_comm());
@@ -1110,106 +1117,142 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   // Count facets shared with other processes
   std::vector<std::size_t> facet_count(mpi_size);
 
-  for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
-  {
-    const std::vector<unsigned int>& cfc = connectivity_fc[facet_i];
-
-    // Create vector of ownership of cells attached to facet (one or two)
-    unsigned int cfc_owner[2];
-    cfc_owner[0] = ghost_owner[cfc[0]];
-    cfc_owner[1] = (cfc.size() == 2) ? ghost_owner[cfc[1]] : 0 ;
-        
-    if ( (cfc.size() == 1 && cfc_owner[0] == mpi_rank)  
-      || (cfc.size() == 2 && cfc_owner[0] == mpi_rank && cfc_owner[1] == mpi_rank) )
-    {
-      // Locally connected 
-      facet_count[mpi_rank]++;
-    }
-    else if (cfc.size() == 2 && 
-             (cfc_owner[0] == mpi_rank || cfc_owner[1] == mpi_rank))
-    {
-      // Connected to a cell on another process
-      const unsigned int cell_owner = (cfc_owner[0] == mpi_rank) ? 
-                                       cfc_owner[1] : cfc_owner[0];
-      facet_count[cell_owner]++;
-    }  
-  }
-
   // Add up all facets which are numbered locally
   // i.e. local facets, plus all facets shared with a higher rank process.
+
   std::size_t fcount = 0;
-  for (unsigned int i = mpi_rank; i < facet_count.size(); ++i)
-    fcount += facet_count[i];
+  for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
+  {
+    const std::vector<unsigned int>& cfc = connectivity_fc[facet_i];
+
+    // Ownership of cells attached to facet (one or two)
+    const unsigned int cfc_owner_0 = ghost_owner[cfc[0]];
+        
+    if (cfc.size() == 1 && cfc_owner_0 == mpi_rank)
+      fcount ++;
+    else if (cfc.size() == 2)
+    {
+      const unsigned int cfc_owner_1 = ghost_owner[cfc[1]];
+      if( (cfc_owner_0 == mpi_rank && cfc_owner_1 >= mpi_rank) 
+       || (cfc_owner_1 == mpi_rank && cfc_owner_0 >= mpi_rank) )
+        fcount++;
+    }
+  }
 
   // This should be the total number of facets in the mesh
-  std::cout << "Total of fcount = " << MPI::sum(mesh.mpi_comm(), fcount) << "\n";
+  std::cout << "Total facets = " 
+            << MPI::sum(mesh.mpi_comm(), fcount) << "\n";
 
-  for (unsigned int i = 0; i < facet_count.size(); ++i)
-    std::cout << mpi_rank << "-" << i << " = " << facet_count[i] <<" \n";
+  // Calculate local offset for numbering facets
+  std::size_t local_offset 
+    = MPI::global_offset(mesh.mpi_comm(), fcount, true);
 
-  std::size_t offset = MPI::global_offset(mesh.mpi_comm(), fcount, true);
+  // Communicate ghost cell facets
+  std::vector<std::vector<std::size_t> > send_ghost_facets(mpi_size);
+  std::vector<std::vector<std::size_t> > recv_ghost_facets(mpi_size);
 
-  std::cout << mpi_rank << "] " << offset <<" \n";
+  // Map from facet vertices to local facet index 
+  // used to look up received facets
+  std::map<std::vector<unsigned int>, unsigned int> non_local_facet_map;
   
-  std::vector<std::size_t> global_facet_indices(current_facet);
+  const std::vector<std::size_t>& global_vertex_indices 
+    = mesh.topology().global_indices(0);
 
-  // Go through all facets again, numbering local facets
-  std::vector<std::size_t> local_offset(mpi_size);
-
-  local_offset[mpi_rank] = offset;
-  for (unsigned int i = mpi_rank + 1; i < mpi_size; ++i)
-    local_offset[i] = local_offset[i - 1] + facet_count[i - 1];
-
-  std::vector<std::size_t> recv_offset(mpi_size);
-  // FIXME: replace with all_to_all
-  // FIXME: optimise - some of these communications are not needed
-  for (unsigned int i = 0; i != mpi_size; ++i)
-    MPI::scatter(mesh.mpi_comm(), local_offset, recv_offset[i], i);
-
-  // Fill in offsets for processes with lower rank
-  for (unsigned int i = 0; i != mpi_rank; ++i)
-    local_offset[i] = recv_offset[i];
-
-  // Check offsets
-  for (unsigned int i = 0; i < mpi_size; ++i)
-    std::cout << mpi_rank << "-" << i << " >> " << local_offset[i] <<" \n";
-
+  // Number all local facets with global indices
+  // and send numbering off process where needed
   for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
   {
     const std::vector<unsigned int>& cfc = connectivity_fc[facet_i];
-    unsigned int cfc_owner[2];
-    cfc_owner[0] = ghost_owner[cfc[0]];
-    cfc_owner[1] = (cfc.size() == 2) ? ghost_owner[cfc[1]] : 0 ;
-    
-    if ( (cfc.size() == 1 && cfc_owner[0] == mpi_rank)  
-      || (cfc.size() == 2 && cfc_owner[0] == mpi_rank && cfc_owner[1] == mpi_rank) )
-    {
-      topology.set_global_index(D - 1, facet_i, local_offset[mpi_rank]++);
-    }
-  }
+    std::vector<unsigned int> cfv = connectivity_fv[facet_i];
+    // Convert vertex indices to global indexing
+    for (unsigned int i = 0; i != cfv.size(); ++i)
+      cfv[i] = global_vertex_indices[cfv[i]];
 
-  // Go through all facets again, numbering facets shared with other processes
-  for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
-  {
-    const std::vector<unsigned int>& cfc = connectivity_fc[facet_i];
-
-    if (cfc.size() == 2)
+    const unsigned int cfc_owner_0 
+      = ghost_owner[cfc[0]];
+    const unsigned int cfc_owner_1 
+      = (cfc.size() == 2) ? ghost_owner[cfc[1]] : 0;
+      
+    if (cfc.size() == 1 && cfc_owner_0 == mpi_rank)
     {
-      // Create vector of ownership of cells attached to facet 
-      unsigned int cfc_owner[2];
-      cfc_owner[0] = ghost_owner[cfc[0]];
-      cfc_owner[1] = ghost_owner[cfc[1]];
-    
-      if (cfc_owner[0] == mpi_rank && cfc_owner[1] != mpi_rank)
-        topology.set_global_index(D - 1, facet_i, local_offset[cfc_owner[1]]++);
-      else if (cfc_owner[1] == mpi_rank && cfc_owner[0] != mpi_rank) 
-        topology.set_global_index(D - 1, facet_i, local_offset[cfc_owner[0]]++);
+      // External local facet "i-"
+      // But can still be in a shared cell, 
+      // which must be communicated off process
+      std::set<unsigned int> all_procs_this_facet;
+      const auto map_it0 = shared_cells.find(cfc[0]);
+      if (map_it0 != shared_cells.end())
+        all_procs_this_facet = map_it0->second;
+
+      // Don't send to self
+      all_procs_this_facet.erase(mpi_rank);
+
+      for (auto proc = all_procs_this_facet.begin();
+           proc != all_procs_this_facet.end(); ++proc)
+      {
+        // Send global facet index
+        send_ghost_facets[*proc].push_back(local_offset);
+        // Send global vertex indices of facet
+        for (unsigned int j = 0; j != n; ++j)
+          send_ghost_facets[*proc].push_back(cfv[j]);
+      }
+            
+      topology.set_global_index(D - 1, facet_i, local_offset++);
     }
+    else if (cfc.size() == 2 && 
+             ( (cfc_owner_0 == mpi_rank && cfc_owner_1 >= mpi_rank) || 
+               (cfc_owner_1 == mpi_rank && cfc_owner_0 >= mpi_rank) ) )
+      {
+        // Local facet "i-i" or "i-j" where j > i
+
+        // Look up any sharing data for cells on either side
+        // of this facet
+        std::set<unsigned int> all_procs_this_facet;
+        const auto map_it0 = shared_cells.find(cfc[0]);
+        if (map_it0 != shared_cells.end())
+          all_procs_this_facet.insert
+            (map_it0->second.begin(), map_it0->second.end());
+        
+        const auto map_it1 = shared_cells.find(cfc[1]);
+        if (map_it1 != shared_cells.end())
+          all_procs_this_facet.insert
+            (map_it1->second.begin(), map_it1->second.end());
+
+        // Don't send to self
+        all_procs_this_facet.erase(mpi_rank);
+
+        for (auto proc = all_procs_this_facet.begin();
+             proc != all_procs_this_facet.end(); ++proc)
+        {
+          // Send global facet index
+          send_ghost_facets[*proc].push_back(local_offset);
+          // Send global vertex indices of facet
+          for (unsigned int j = 0; j != n; ++j)
+            send_ghost_facets[*proc].push_back(cfv[j]);
+        }
+        topology.set_global_index(D - 1, facet_i, local_offset++);
+      }
+    else
+    {
+      // Non-local facet
+      non_local_facet_map.insert(std::make_pair(cfv, facet_i));
+    }
+    
   }
   
-  // FIXME: need to communicate numbering of j-, j-j and j-k facets which are totally
-  // unknown locally - NB these only appear in ghost cells
-    
+  MPI::all_to_all(mesh.mpi_comm(), send_ghost_facets, recv_ghost_facets);
+
+  // Retrieve facet locations from non_local_facet_map and set global index
+  for (auto p = recv_ghost_facets.begin(); p != recv_ghost_facets.end();
+       ++p)
+    for (auto q = p->begin(); q != p->end(); q += (n + 1))
+    {
+      const std::vector<unsigned int> facet(q + 1, q + 1 + n);
+      const auto it = non_local_facet_map.find(facet);
+      dolfin_assert(it != non_local_facet_map.end());
+      topology.set_global_index(D - 1, it->second, *q);
+      non_local_facet_map.erase(it);
+    }
+
   // Initialise connectivity data structure
   topology.init(D - 1, connectivity_fv.size(), connectivity_fv.size());
 

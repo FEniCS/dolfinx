@@ -193,10 +193,12 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 
   // Keep tabs on ghost cell ownership
   std::vector<std::size_t> ghost_remote_process;
+  std::map<unsigned int, std::set<unsigned int> > shared_cells;
   distribute_ghost_cells(mesh.mpi_comm(), mesh_data,
                          cell_partition,
                          ghost_procs, global_cell_indices,
                          ghost_remote_process,
+                         shared_cells,
                          cell_vertices);
 
   // Distribute vertices
@@ -225,6 +227,10 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   ghost_cell_owner.insert(ghost_cell_owner.begin(),
                           ghost_remote_process.begin(),
                           ghost_remote_process.end());
+
+  // Assign map
+  mesh.topology().shared_entities(mesh_data.tdim) = shared_cells;
+
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::ghost_build_shared_vertices(Mesh& mesh,
@@ -339,6 +345,7 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
       const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
       std::vector<std::size_t>& global_cell_indices,
       std::vector<std::size_t>& ghost_remote_process,
+      std::map<unsigned int, std::set<unsigned int> >& shared_cells,
       boost::multi_array<std::size_t, 2>& cell_vertices)
 {
   // This function takes the partition computed by the partitioner
@@ -439,19 +446,27 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
-    for (std::size_t i = 1; i < received_data.size();
-         i += (num_cell_vertices + 2 + received_data[i]) )
+    for (auto it = received_data.begin() + 1;
+         it != received_data.end();
+         it += (*it + num_cell_vertices + 2))
     {
-      const unsigned int num_ghosts = received_data[i];
+      auto tmp_it = it;
+      const unsigned int num_ghosts = *tmp_it++;
+      
       if (num_ghosts == 0)
         ghost_remote_process[c] = mpi_rank;
       else
-        ghost_remote_process[c] = received_data[i + 1];
-      // FIXME: do more stuff with ghost proc information...
+      {
+        ghost_remote_process[c] = *tmp_it;
+        std::set<unsigned int> proc_set(tmp_it, tmp_it + num_ghosts);
+        shared_cells.insert(std::make_pair(c, proc_set));
+      }
 
-      global_cell_indices[c] = received_data[i + num_ghosts + 1];
+      tmp_it += num_ghosts;
+      global_cell_indices[c] = *tmp_it++;
+
       for (std::size_t j = 0; j < num_cell_vertices; ++j)
-        cell_vertices[c][j] = received_data[i + num_ghosts + 2 + j];
+        cell_vertices[c][j] = *tmp_it++;
       ++c;
     }
   }

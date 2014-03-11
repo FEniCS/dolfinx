@@ -121,6 +121,7 @@ namespace dolfin
         const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
         std::vector<std::size_t>& ghost_global_cell_indices,
         std::vector<std::size_t>& ghost_remote_process,
+        std::map<unsigned int, std::set<unsigned int> >& shared_cells,
         boost::multi_array<std::size_t, 2>& ghost_cell_vertices);
 
     // Distribute vertices
