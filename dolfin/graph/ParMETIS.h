@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <vector>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Set.h>
 
 namespace dolfin
 {
@@ -48,19 +49,19 @@ namespace dolfin
     /// partitioned, it can be advantageous to use
     /// "adaptive_repartition" or "refine".
     static void compute_partition(const MPI_Comm mpi_comm,
-               std::vector<std::size_t>& cell_partition,
-               std::vector<std::vector<std::size_t> >& ghost_procs,
-               const LocalMeshData& mesh_data,
-               std::string mode="partition");
+            std::vector<std::size_t>& cell_partition,
+            std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+            const LocalMeshData& mesh_data,
+            std::string mode="partition");
 
   private:
 
 #ifdef HAS_PARMETIS
     // Standard ParMETIS partition
     static void partition(MPI_Comm mpi_comm, 
-               std::vector<std::size_t>& cell_partition,
-               std::vector<std::vector<std::size_t> >& ghost_procs,
-               ParMETISDualGraph& g);
+       std::vector<std::size_t>& cell_partition,
+       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+       ParMETISDualGraph& g);
 
     // ParMETIS adaptive repartition
     static void adaptive_repartition(MPI_Comm mpi_comm,

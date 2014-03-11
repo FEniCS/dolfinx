@@ -44,7 +44,7 @@ namespace dolfin
     /// processes that need ghost copies of cells in ghost_procs
     static void compute_partition(const MPI_Comm mpi_comm,
           std::vector<std::size_t>& cell_partition,
-          std::vector<std::vector<std::size_t> >& ghost_procs,
+          std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
           const LocalMeshData& mesh_data);
     
     /// Compute reordering (map[old] -> new) using
@@ -74,7 +74,7 @@ namespace dolfin
                      const std::vector<std::size_t>& global_cell_indices,
                      const std::size_t num_global_vertices,
                      std::vector<std::size_t>& cell_partition,
-                     std::vector<std::vector<std::size_t> >& ghost_procs);
+                     std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
 
   };
 

@@ -20,8 +20,8 @@ x,y = M.coordinates().transpose()
 
 cell_ownership = M.data().array("ghost_owner", M.topology().dim())
 process_number = MPI.rank(M.mpi_comm())
-vmask_array = M.data().array("ghost_mask", 0) == 0
-vmask_array_g = M.data().array("ghost_mask", 0) == 1
+# vmask_array = M.data().array("ghost_mask", 0) == 0
+# vmask_array_g = M.data().array("ghost_mask", 0) == 1
 
 cells_store=[]
 colors=[]
@@ -45,9 +45,9 @@ fig, ax = plt.subplots()
 coll = PolyCollection(cells_store, facecolors=colors, edgecolors='black')
 ax.add_collection(coll)
 
-plt.plot(x[vmask_array], y[vmask_array], marker='o', color='red', linestyle='none')
-plt.plot(x[shared_vertices], y[shared_vertices], marker='o', color='green', linestyle='none')
-plt.plot(x[vmask_array_g], y[vmask_array_g], marker='o', color='blue', linestyle='none')
+plt.plot(x, y, marker='o', color='black', linestyle='none')
+# plt.plot(x[shared_vertices], y[shared_vertices], marker='o', color='green', linestyle='none')
+# plt.plot(x[vmask_array_g], y[vmask_array_g], marker='o', color='blue', linestyle='none')
 plt.xlim((-0.1,1.1))
 plt.ylim((-0.1,1.1))
 

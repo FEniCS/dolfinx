@@ -51,11 +51,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
               std::vector<std::size_t>& cell_partition,
-              std::vector<std::vector<std::size_t> >& ghost_procs,
+              std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
               const LocalMeshData& mesh_data)
 {
-  // FIXME: Use std::set or std::vector?
-
   // Create data structures to hold graph
   std::vector<std::set<std::size_t> > local_graph;
   std::set<std::size_t> ghost_vertices;
@@ -203,7 +201,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::vector<std::size_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
                        std::vector<std::size_t>& cell_partition,
-                       std::vector<std::vector<std::size_t> >& ghost_procs)
+                       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs)
 {
   Timer timer("Partition graph (calling SCOTCH)");
 
@@ -407,21 +405,30 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
 
   // Iterate through SCOTCH's local compact graph to find partition
   // boundaries and save to map
-  ghost_procs.resize(vertlocnbr);  
   for(SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
     const std::size_t proc_this =  _cell_partition[i];
-    ghost_procs[i] = std::vector<std::size_t>(1, proc_this);
     
     for(SCOTCH_Num j = vertloctab[i]; j < vertloctab[i + 1]; ++j)
     {
       const std::size_t proc_other 
         = _cell_partition[edge_ghost_tab[j]];
       if(proc_this != proc_other)
-          ghost_procs[i].push_back(proc_other);
+      {
+        auto map_it = ghost_procs.find(i);
+        if (map_it == ghost_procs.end())
+        {
+          dolfin::Set<unsigned int> sharing_processes;
+          sharing_processes.insert(proc_this);
+          sharing_processes.insert(proc_other);
+          ghost_procs.insert(std::make_pair(i, sharing_processes));
+        }
+        else
+          map_it->second.insert(proc_other);
+      }
     }
   }
-
+  
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);

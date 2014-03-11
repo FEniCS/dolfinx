@@ -77,8 +77,8 @@ namespace dolfin
 }
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
-                                 std::vector<std::size_t>& cell_partition,
-             std::vector<std::vector<std::size_t> >& ghost_procs,
+             std::vector<std::size_t>& cell_partition,
+             std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
              const LocalMeshData& mesh_data,
              std::string mode)
 {
@@ -110,9 +110,9 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
 }
 //-----------------------------------------------------------------------------
 void ParMETIS::partition(MPI_Comm mpi_comm,
-                         std::vector<std::size_t>& cell_partition,
-                         std::vector<std::vector<std::size_t> >& ghost_procs,
-                         ParMETISDualGraph& g)
+           std::vector<std::size_t>& cell_partition,
+           std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+           ParMETISDualGraph& g)
 {
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
 
@@ -199,12 +199,11 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
 
   // Generate mapping for where new boundary cells need to be sent
   //  std::map<std::size_t, std::vector<std::size_t> > ghost_procs;
-  ghost_procs.resize(ncells);
+  //  ghost_procs.resize(ncells);
 
   for(unsigned int i = 0; i < ncells; i++)
   {
     const std::size_t proc_this = part[i];
-    ghost_procs[i] = std::vector<std::size_t>(1, proc_this);
 
     for(idx_t j = g.xadj[i]; j != g.xadj[i + 1]; ++j)
     {
@@ -222,7 +221,18 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
         proc_other = part[other_cell - elm_begin];
 
       if(proc_this != proc_other)
-        ghost_procs[i].push_back(proc_other);
+      {
+        auto map_it = ghost_procs.find(i);
+        if (map_it == ghost_procs.end())
+        {
+          dolfin::Set<unsigned int> sharing_processes;
+          sharing_processes.insert(proc_this);
+          sharing_processes.insert(proc_other);
+          ghost_procs.insert(std::make_pair(i, sharing_processes));
+        }
+        else
+          map_it->second.insert(proc_other);
+      }
     }
   }
 
