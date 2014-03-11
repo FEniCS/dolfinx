@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2005
-// Last changed: 2011-09-21
 
 #include <dolfin.h>
 #include "Poisson2D_1.h"
@@ -28,7 +25,6 @@
 #include "Poisson3D_2.h"
 #include "Poisson3D_3.h"
 #include "Poisson3D_4.h"
-#include "Poisson3D_5.h"
 
 using namespace dolfin;
 
@@ -173,11 +169,6 @@ double solve3D(int q, int n)
     a = new Poisson3D_4::BilinearForm(*V, *V);
     L = new Poisson3D_4::LinearForm(*V, f);
     break;
-  case 5:
-    V = new Poisson3D_5::FunctionSpace(mesh);
-    a = new Poisson3D_5::BilinearForm(*V, *V);
-    L = new Poisson3D_5::LinearForm(*V, f);
-    break;
   default:
     error("Forms not compiled for q = %d.", q);
   }
@@ -221,13 +212,16 @@ int main()
 {
   set_log_active(false);
 
-  const int qmax = 5;
+  const int qmax_2D = 5;
+  const int qmax_3D = 5;
   const int num_meshes = 3;
-  double e2D[qmax][num_meshes];
-  double e3D[qmax][num_meshes];
+  std::vector<std::vector<double>> e2D(qmax_2D,
+                                       std::vector<double>(num_meshes));
+  std::vector<std::vector<double>> e3D(qmax_3D,
+                                       std::vector<double>(num_meshes));
 
   // Compute errors in 2D
-  for (int q = 1; q <= qmax; q++)
+  for (int q = 1; q <= qmax_2D; q++)
   {
     int n = 2;
     for (int i = 0; i < num_meshes; i++)
@@ -238,7 +232,7 @@ int main()
   }
 
   // Compute errors in 3D
-  for (int q = 1; q <= qmax; q++)
+  for (int q = 1; q <= qmax_3D; q++)
   {
     int n = 2;
     for (int i = 0; i < num_meshes; i++)
@@ -251,7 +245,7 @@ int main()
   // Write errors in 2D
   printf("\nMaximum norm error in 2D:\n");
   printf("-------------------------\n");
-  for (int q = 1; q <= qmax; q++)
+  for (int q = 1; q <= qmax_2D; q++)
   {
     printf("q = %d:", q);
     for (int i = 0; i < num_meshes; i++)
@@ -262,7 +256,7 @@ int main()
   // Write errors in 3D
   printf("\nMaximum norm error in 3D:\n");
   printf("-------------------------\n");
-  for (int q = 1; q <= qmax; q++)
+  for (int q = 1; q <= qmax_3D; q++)
   {
     printf("q = %d:", q);
     for (int i = 0; i < num_meshes; i++)
