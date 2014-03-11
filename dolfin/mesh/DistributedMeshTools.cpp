@@ -23,6 +23,7 @@
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/Timer.h"
 #include "dolfin/graph/Graph.h"
+#include "dolfin/graph/SCOTCH.h"
 #include "dolfin/log/log.h"
 #include "BoundaryMesh.h"
 #include "Facet.h"
@@ -1092,7 +1093,11 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
     }
   }
 
-  // FIXME: Use cell dual graph here to reorder
+#ifdef HAS_SCOTCH
+  std::vector<std::size_t> reindex = SCOTCH::compute_gps(g_dual);
+  // FIXME: do reordering of cells
+#endif
+
 
   // Now go through connectivity_fc and pick out facets
   // which have the following connectivity:
@@ -1151,7 +1156,7 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   std::vector<std::vector<std::size_t> > send_ghost_facets(mpi_size);
   std::vector<std::vector<std::size_t> > recv_ghost_facets(mpi_size);
 
-  // Map from facet vertices to local facet index 
+  // Map from facet global vertices to local facet index 
   // used to look up received facets
   std::map<std::vector<unsigned int>, unsigned int> non_local_facet_map;
   
