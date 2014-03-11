@@ -122,11 +122,11 @@ boundary of the domain, which is derived from the
 .. code-block:: c++
 
     // Sub domain for Dirichlet boundary condition
-    class EssentialBoundary : public SubDomain
+    class DirichletBoundary : public SubDomain
     {
       bool inside(const Array<double>& x, bool on_boundary) const
       {
-        return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
+        return x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS;
       }
     };
 
