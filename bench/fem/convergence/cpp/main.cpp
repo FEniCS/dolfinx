@@ -213,7 +213,7 @@ int main()
   set_log_active(false);
 
   const int qmax_2D = 5;
-  const int qmax_3D = 5;
+  const int qmax_3D = 4;
   const int num_meshes = 3;
   std::vector<std::vector<double>> e2D(qmax_2D,
                                        std::vector<double>(num_meshes));
