@@ -1123,46 +1123,8 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   const std::vector<std::size_t>& global_vertex_indices 
     = mesh.topology().global_indices(0);
 
-  topology.init_global_indices(D - 1, current_facet);
-
   const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
   const unsigned int mpi_size = MPI::size(mesh.mpi_comm());
-
-  // Count facets shared with other processes
-  std::vector<std::size_t> facet_count(mpi_size);
-
-  // Add up all facets which are numbered locally
-
-  std::size_t fcount = 0;
-  for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
-  {
-    const std::vector<unsigned int>& facet_cells
-      = connectivity_fc[facet_i];
-
-    // Get cell ownership on side(s) of facet
-    std::vector<std::size_t> cell_owner;
-    for (auto f_cell = facet_cells.begin();
-              f_cell != facet_cells.end(); ++f_cell)
-      cell_owner.push_back(ghost_owner[*f_cell]);
-
-    // Get facet vertices using global indexing
-    std::vector<std::size_t> facet_vertices;
-    for (auto vtx = connectivity_fv[facet_i].begin();
-              vtx != connectivity_fv[facet_i].end(); ++vtx)
-      facet_vertices.push_back(global_vertex_indices[*vtx]);
-
-    if (is_local_facet(mpi_rank, facet_vertices, cell_owner))
-      fcount++;
-
-  }
-
-  // This should be the total number of facets in the mesh
-  std::cout << "sum(fcount) = "  <<
-    MPI::sum(mesh.mpi_comm(), fcount) << "\n";
-
-  // Calculate local offset for numbering facets
-  std::size_t local_offset 
-    = MPI::global_offset(mesh.mpi_comm(), fcount, true);
 
   // Communicate ghost cell facets
   std::vector<std::vector<std::size_t> > send_ghost_facets(mpi_size);
@@ -1173,7 +1135,10 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   std::map<std::vector<std::size_t>, unsigned int> non_local_facet_map;
   
   // Number all local facets with global indices
-  // and send numbering off process where needed
+  std::vector<std::size_t> facet_global_indices(current_facet);
+
+  // Initially index from zero, add offset later
+  std::size_t fcount = 0;
   for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
   {
     const std::vector<unsigned int>& facet_cells
@@ -1210,13 +1175,13 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
         std::vector<std::size_t>& send_facets_to_proc 
           = send_ghost_facets[*proc];
         // Send global facet index
-        send_facets_to_proc.push_back(local_offset);
+        send_facets_to_proc.push_back(fcount);
         // Send global vertex indices of facet
         send_facets_to_proc.insert(send_facets_to_proc.end(),
                   facet_vertices.begin(), facet_vertices.end());
       }
             
-      topology.set_global_index(D - 1, facet_i, local_offset++);
+      facet_global_indices[facet_i] = fcount++;
     }
     else
     {
@@ -1227,6 +1192,26 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
     }
     
   }
+
+  // This should be the total number of facets in the mesh
+  std::cout << "fcount, sum(fcount) = "  << mpi_rank << ": "
+            << fcount << ", " <<  MPI::sum(mesh.mpi_comm(), fcount) << "\n";
+
+  // Calculate local offset for numbering facets
+  std::size_t local_offset 
+    = MPI::global_offset(mesh.mpi_comm(), fcount, true);
+
+  // Add local_offset to global facet indices and store
+  topology.init_global_indices(D - 1, current_facet);
+  for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
+    topology.set_global_index(D - 1, facet_i, 
+                    facet_global_indices[facet_i] + local_offset);
+  
+  // Also add local_offset to facets indices to send
+  for (auto p = send_ghost_facets.begin(); 
+       p != send_ghost_facets.end(); ++p)
+    for (auto q = p->begin(); q != p->end(); q += (num_facet_vertices + 1))
+      *q += local_offset;
   
   MPI::all_to_all(mesh.mpi_comm(), send_ghost_facets, recv_ghost_facets);
 
