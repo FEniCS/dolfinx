@@ -151,6 +151,14 @@ namespace dolfin
                                   std::size_t num_processes,
                                   std::size_t process_number);
 
+    // Decide whether facet should be local or not, 
+    // based on attached cell ownership and global vertex indices
+    static bool
+      is_local_facet(unsigned int mpi_rank,
+                     const std::vector<std::size_t>& vertices,
+                     const std::vector<std::size_t>& cell_owner);
+    
+
   };
 
 }

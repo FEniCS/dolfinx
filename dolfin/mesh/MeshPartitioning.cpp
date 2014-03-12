@@ -143,8 +143,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // necessary to distinguish between facets on an exterior boundary and
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
-  
-  std::cout << "Calling init by ghost\n";
 
   DistributedMeshTools::init_facet_cell_connections_by_ghost(mesh);
 }
