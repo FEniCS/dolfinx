@@ -459,6 +459,8 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
       {
         ghost_remote_process[c] = *tmp_it;
         std::set<unsigned int> proc_set(tmp_it, tmp_it + num_ghosts);
+        // Remove self from set of sharing processes
+        proc_set.erase(mpi_rank);
         shared_cells.insert(std::make_pair(c, proc_set));
       }
 
