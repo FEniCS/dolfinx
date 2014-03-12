@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-04
+// Last changed: 2014-03-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -187,6 +187,9 @@ void MultiMesh::_build_collision_maps()
   // Iterate over all parts
   for (std::size_t i = 0; i < num_parts(); i++)
   {
+    // Array of covered_cells
+    std::vector<unsigned int> covered_cells;
+
     // Collision map for cut cells in mesh `i`
     std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int> > >
       collision_map_cut_cells;
@@ -195,10 +198,16 @@ void MultiMesh::_build_collision_maps()
     std::vector<bool> markers_domain(_meshes[i]->num_cells());
     std::fill(markers_domain.begin(), markers_domain.end(), false);
 
+    // Local array for marking boundary intersections
+    std::vector<bool> markers_boundary(_meshes[i]->num_cells());
+
     // Iterate over covering parts (with higher part number)
     for (std::size_t j = i + 1; j < num_parts(); j++)
     {
       log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
+
+      // Initialize boundary intersection markers to false
+      std::fill(markers_boundary.begin(), markers_boundary.end(), false);
 
       // Compute boundary collisions
       auto boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
@@ -207,6 +216,9 @@ void MultiMesh::_build_collision_maps()
       for (auto it = boundary_collisions.first.begin();
            it != boundary_collisions.first.end(); ++it)
       {
+        // Colliding with boundary
+        markers_boundary[*it] = true;
+
         // Add empty list of collisions into map if it does not exist
         if (collision_map_cut_cells.find(*it) == collision_map_cut_cells.end())
         {
@@ -229,10 +241,42 @@ void MultiMesh::_build_collision_maps()
         // Mark collision for first cell
         markers_domain[cell_i] = true;
 
-        // Add to collision map if we find a cut cell
-        auto it = collision_map_cut_cells.find(cell_i);
-        if (it != collision_map_cut_cells.end())
-          it->second.push_back(std::make_pair(j, cell_j));
+        // // Add to collision map if we find a cut cell
+        // auto it = collision_map_cut_cells.find(cell_i);
+        // if (it != collision_map_cut_cells.end())
+        //   it->second.push_back(std::make_pair(j, cell_j));
+
+        // // Add to covered if not marked in the collision with boundary array
+        // if (!markers_boundary[cell_i])
+        // {
+        //   covered_cells.push_back(cell_i);
+
+        //   // Remove from collision map if previously marked as as cut cell
+        //   std::cout << "part "<<i<<" sub part " << j << " removing "<< cell_i<<'\n';
+        //   collision_map_cut_cells.erase(cell_i);
+        // }
+
+        if (markers_boundary[cell_i])
+        {
+          // Add to collision map if we find a cut cell
+          auto it = collision_map_cut_cells.find(cell_i);
+          if (it != collision_map_cut_cells.end())
+            it->second.push_back(std::make_pair(j, cell_j));
+          else { std::cout<<"\nabort!!!\n"; exit(1); }
+        }
+        else
+        {
+          // Add to covered if not marked in the collision with boundary array
+          covered_cells.push_back(cell_i);
+
+          // Remove from collision map if previously marked as as cut cell
+          std::cout << "part "<<i<<" sub part " << j << " removing "<< cell_i<<'\n';
+          collision_map_cut_cells.erase(cell_i);
+        }
+
+
+
+
       }
     }
 
@@ -245,16 +289,27 @@ void MultiMesh::_build_collision_maps()
     // Iterate over cells and check markers
     std::vector<unsigned int> uncut_cells;
     std::vector<unsigned int> cut_cells;
-    std::vector<unsigned int> covered_cells;
+    //std::vector<unsigned int> covered_cells;
+
     for (unsigned int c = 0; c < _meshes[i]->num_cells(); c++)
     {
       if (!markers_domain[c])
+      {
+        std::cout<<"uncut " << c<<'\n';
         uncut_cells.push_back(c);
+      }
       else if (collision_map_cut_cells.find(c) != collision_map_cut_cells.end())
+      {
         cut_cells.push_back(c);
-      else
-        covered_cells.push_back(c);
+        std::cout<<"cut "<< c<<'\n';
+      }
     }
+
+    std::cout<<"covered:\n";
+    for (std::size_t c = 0; c < covered_cells.size(); ++c)
+      std::cout << covered_cells[c]<<' ';
+    std::cout<<'\n';
+
 
     // Store data for this mesh
     _uncut_cells.push_back(uncut_cells);
