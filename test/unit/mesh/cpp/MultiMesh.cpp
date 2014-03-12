@@ -151,7 +151,7 @@ public:
     mesh_2.translate(b);
 
     // Exact volume is known
-    const double exact_volume = 3 - (1-a[0]) * (1-a[1]) - (1-b[0]) * (1-b[1]) - std::abs(a[0]-b[0])*std::abs(a[1]-b[1]);
+    const double exact_volume = 2.15;
 
 
 
