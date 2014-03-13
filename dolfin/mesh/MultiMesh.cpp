@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-04
+// Last changed: 2014-03-13
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -292,10 +292,6 @@ void MultiMesh::_build_quadrature_rules()
       const unsigned int cut_cell_index = it->first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
-      // Get dimensions
-      const std::size_t tdim = cut_cell.mesh().topology().dim();
-      const std::size_t gdim = cut_cell.mesh().geometry().dim();
-
       // Compute quadrature rule for the cell itself
       auto quadrature_rule = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
 
@@ -307,31 +303,8 @@ void MultiMesh::_build_quadrature_rules()
         const std::size_t cutting_part = jt->first;
         const Cell cutting_cell(*(_meshes[cutting_part]), jt->second);
 
-        // Compute triangulation of intersection between cut and cutting cell
-        auto triangulation = cut_cell.triangulate_intersection(cutting_cell);
-
-        // Iterate over simplices in triangulation
-        const std::size_t offset = (tdim + 1)*gdim; // coordinates per simplex
-        const std::size_t num_intersections = triangulation.size() / offset;
-        for (std::size_t k = 0; k < num_intersections; k++)
-        {
-          // Get coordinates for current simplex in triangulation
-          const double* x = &triangulation[0] + k*offset;
-
-          // Compute quadrature rule for simplex
-          auto q = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
-
-          // Subtract quadrature rule for intersection from quadrature
-          // rule for the cut cell itself
-          dolfin_assert(gdim*q.first.size() == q.second.size());
-          const std::size_t num_points = q.first.size();
-          for (std::size_t i = 0; i < num_points; i++)
-          {
-            quadrature_rule.first.push_back(-q.first[i]);
-            for (std::size_t j = 0; j < gdim; j++)
-              quadrature_rule.second.push_back(q.second[i*gdim + j]);
-          }
-        }
+        // Subtract quadrature rule for intersection
+        _add_quadrature_rule(quadrature_rule, cut_cell, cutting_cell, order, -1);
       }
 
       // Store quadrature rule for cut cell
@@ -340,5 +313,43 @@ void MultiMesh::_build_quadrature_rules()
   }
 
   end();
+}
+//-----------------------------------------------------------------------------
+void
+MultiMesh::_add_quadrature_rule(std::pair<std::vector<double>,
+                                          std::vector<double> > quadrature_rule,
+                                const Cell& cell_0,
+                                const Cell& cell_1,
+                                std::size_t order,
+                                double factor) const
+{
+  // Get dimensions
+  const std::size_t tdim = cell_0.mesh().topology().dim();
+  const std::size_t gdim = cell_1.mesh().geometry().dim();
+
+  // Compute triangulation of intersection between cells
+  auto triangulation = cell_0.triangulate_intersection(cell_1);
+
+  // Iterate over simplices in triangulation
+  const std::size_t offset = (tdim + 1)*gdim; // coordinates per simplex
+  const std::size_t num_intersections = triangulation.size() / offset;
+  for (std::size_t k = 0; k < num_intersections; k++)
+  {
+    // Get coordinates for current simplex in triangulation
+    const double* x = &triangulation[0] + k*offset;
+
+    // Compute quadrature rule for simplex
+    auto q = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
+
+    // Add quadrature rule
+    dolfin_assert(gdim*q.first.size() == q.second.size());
+    const std::size_t num_points = q.first.size();
+    for (std::size_t i = 0; i < num_points; i++)
+    {
+      quadrature_rule.first.push_back(factor*q.first[i]);
+      for (std::size_t j = 0; j < gdim; j++)
+        quadrature_rule.second.push_back(q.second[i*gdim + j]);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
