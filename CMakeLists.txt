@@ -63,6 +63,11 @@ option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #------------------------------------------------------------------------------
+# This should be removed when petsc version > 3.4 is out 
+
+option(DOLFIN_ENABLE_TAO "Enable TAO solver." OFF)
+
+#------------------------------------------------------------------------------
 # Enable or disable optional packages
 
 # List optional packages

@@ -18,9 +18,7 @@
 // First added : 2012-12-03
 // Last changed: 2013-04-04
 
-#ifdef HAS_PETSC
-
-#ifdef PETSC_ENABLE_TAO
+#ifdef ENABLE_PETSC_TAO
 
 #include <petsclog.h>
 
@@ -442,6 +440,4 @@ PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(Tao tao, void *ctx)
   return 0;
 }
 //------------------------------------------------------------------------------
-#endif
-
 #endif

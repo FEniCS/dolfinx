@@ -60,7 +60,7 @@ public:
 
 int main()
 {
-  #ifdef HAS_TAO
+  #ifdef ENABLE_PETSC_TAO
   // Read mesh
   Mesh mesh("../circle_yplane.xml.gz");
 
@@ -107,7 +107,7 @@ int main()
   PETScVector& xu = (*xu_f.vector()).down_cast<PETScVector>(); // Upper bound
 
   // Solve the problem with the TAO Solver
-  TAOLinearBoundSolver TAOSolver("tao_tron","tfqmr");
+  TAOLinearBoundSolver TAOSolver("tron","stcg");
 
   // Set some parameters
   TAOSolver.parameters["monitor_convergence"]=true;
