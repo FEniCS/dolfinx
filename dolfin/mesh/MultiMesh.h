@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-03-13
+// Last changed: 2014-03-14
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -265,9 +265,11 @@ namespace dolfin
 
     // Add quadrature rule for intersection between cell_0 and cell_1
     void _add_quadrature_rule(std::pair<std::vector<double>,
-                                        std::vector<double> > quadrature_rule,
+                                        std::vector<double> >& quadrature_rule,
                               const Cell& cell_0,
                               const Cell& cell_1,
+                              std::size_t tdim,
+                              std::size_t gdim,
                               std::size_t order,
                               double factor) const;
 

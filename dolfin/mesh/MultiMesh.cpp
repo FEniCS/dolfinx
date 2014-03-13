@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-13
+// Last changed: 2014-03-14
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -331,6 +331,10 @@ void MultiMesh::_build_quadrature_rules()
       const unsigned int cut_cell_index = it->first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
+      // Get dimensions
+      const std::size_t tdim = cut_cell.mesh().topology().dim();
+      const std::size_t gdim = cut_cell.mesh().geometry().dim();
+
       // Compute quadrature rule for the cell itself
       auto quadrature_rule = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
 
@@ -343,7 +347,8 @@ void MultiMesh::_build_quadrature_rules()
         const Cell cutting_cell(*(_meshes[cutting_part]), jt->second);
 
         // Subtract quadrature rule for intersection
-        _add_quadrature_rule(quadrature_rule, cut_cell, cutting_cell, order, -1);
+        _add_quadrature_rule(quadrature_rule, cut_cell, cutting_cell,
+                             tdim, gdim, order, -1);
       }
 
       // Store quadrature rule for cut cell
@@ -356,17 +361,15 @@ void MultiMesh::_build_quadrature_rules()
 //-----------------------------------------------------------------------------
 void
 MultiMesh::_add_quadrature_rule(std::pair<std::vector<double>,
-                                          std::vector<double> > quadrature_rule,
+                                          std::vector<double> >& quadrature_rule,
                                 const Cell& cell_0,
                                 const Cell& cell_1,
+                                std::size_t tdim,
+                                std::size_t gdim,
                                 std::size_t order,
                                 double factor) const
 {
-  // Get dimensions
-  const std::size_t tdim = cell_0.mesh().topology().dim();
-  const std::size_t gdim = cell_1.mesh().geometry().dim();
-
-  // Compute triangulation of intersection between cells
+  // Compute triangulation of intersection between cut and cutting cell
   auto triangulation = cell_0.triangulate_intersection(cell_1);
 
   // Iterate over simplices in triangulation
@@ -380,12 +383,13 @@ MultiMesh::_add_quadrature_rule(std::pair<std::vector<double>,
     // Compute quadrature rule for simplex
     auto q = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
 
-    // Add quadrature rule
+    // Subtract quadrature rule for intersection from quadrature
+    // rule for the cut cell itself
     dolfin_assert(gdim*q.first.size() == q.second.size());
     const std::size_t num_points = q.first.size();
     for (std::size_t i = 0; i < num_points; i++)
     {
-      quadrature_rule.first.push_back(factor*q.first[i]);
+      quadrature_rule.first.push_back(-q.first[i]);
       for (std::size_t j = 0; j < gdim; j++)
         quadrature_rule.second.push_back(q.second[i*gdim + j]);
     }
