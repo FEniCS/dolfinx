@@ -30,6 +30,7 @@ class MultiMeshes : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE(MultiMeshes);
   CPPUNIT_TEST(test_integrate_triangles);
   CPPUNIT_TEST(test_integrate_triangles_three_meshes);
+  CPPUNIT_TEST(test_integrate_covered_meshes);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -130,6 +131,79 @@ public:
         for (std::size_t i = 0; i < qr[*it].first.size(); ++i)
           volume += qr[*it].first[i];
       }
+    }
+
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+  }
+
+std::string drawtriangle(const Cell &cell)
+{
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const Point a = geometry.point(vertices[0]);
+  const Point b = geometry.point(vertices[1]);
+  const Point c = geometry.point(vertices[2]);
+  //Point av = (a+b+c)/3.;
+  //std::cout << av[0]<<' '<<av[1]<<' '<<av[2]<<std::endl;
+  std::stringstream ss;
+  ss << "drawtriangle("
+     << "["<<a[0]<<' '<<a[1]<<"],"
+     << "["<<b[0]<<' '<<b[1]<<"],"
+     << "["<<c[0]<<' '<<c[1]<<"]);";
+  return ss.str();
+}
+
+
+  void test_integrate_covered_meshes()
+  {
+    set_log_level(PROGRESS);
+
+    // Create MultiMesh from three triangle meshes of the unit square
+    //UnitSquareMesh mesh_0(3, 3), mesh_1(4, 4), mesh_2(5, 5);
+    UnitSquareMesh mesh_0(3, 3);
+    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 4, 4);
+    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 5, 5);
+
+    // Exact volume is known
+    const double exact_volume = 1;
+
+    // Build the multimesh
+    MultiMesh multimesh;
+    multimesh.add(mesh_0);
+    multimesh.add(mesh_1);
+    multimesh.add(mesh_2);
+    multimesh.build();
+
+    // For part 0, compute area of uncut, cut and covered cells
+    double volume = 0;
+
+    for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
+    {
+      std::cout<<"part "<<part<<'\n';
+
+      // Uncut cell volume given by function volume
+      auto uncut_cells = multimesh.uncut_cells(part);
+      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+      {
+        const Cell cell(*multimesh.part(part), *it);
+        volume += cell.volume();
+     }
+
+      // Cut cell volume given by quadrature rule
+      auto cut_cells = multimesh.cut_cells(part);
+      auto qr = multimesh.quadrature_rule_cut_cells(part);
+      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+      {
+        const Cell cell(*multimesh.part(part), *it);
+        volume += cell.volume();
+
+        std::cout<<drawtriangle(cell);
+
+        // Loop over weights
+        for (std::size_t i = 0; i < qr[*it].first.size(); ++i)
+          volume += qr[*it].first[i];
+      }
+      std::cout<<'\n';
     }
 
     CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
