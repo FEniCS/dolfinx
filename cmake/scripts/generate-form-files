@@ -39,7 +39,7 @@ special = {"CahnHilliard2D.ufl":       "-fsplit",
            "AdaptiveNavierStokes.ufl": "-e"}
 
 # Forms for which we should skip optimization
-skip_optimization = ["HyperElasticity.ufl"]
+skip_optimization = ["HyperElasticity.ufl", "MultiMeshPoisson.ufl"]
 
 # Directories to scan
 subdirs = ["dolfin", "demo", "bench", "test"]

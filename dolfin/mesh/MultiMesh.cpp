@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-12
+// Last changed: 2014-03-13
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>

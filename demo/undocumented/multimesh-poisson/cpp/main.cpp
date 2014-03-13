@@ -16,14 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-03-03
+// Last changed: 2014-03-13
 //
-// This demo program solves Poisson's equation using a Cut and
+// This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
 // three overlapping and non-matching meshes.
 
 #include <dolfin.h>
-#include "Poisson.h"
+#include "MultiMeshPoisson.h"
 
 using namespace dolfin;
 
@@ -49,20 +49,20 @@ int main()
   RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
 
   // Create function spaces
-  Poisson::FunctionSpace V0(square);
-  Poisson::FunctionSpace V1(rectangle_1);
-  Poisson::FunctionSpace V2(rectangle_2);
+  MultiMeshPoisson::FunctionSpace V0(square);
+  MultiMeshPoisson::FunctionSpace V1(rectangle_1);
+  MultiMeshPoisson::FunctionSpace V2(rectangle_2);
 
   // Some of this stuff may be wrapped or automated later to avoid
   // needing to explicitly call add() and build()
 
   // Create forms
-  Poisson::BilinearForm a0(V0, V0);
-  Poisson::BilinearForm a1(V1, V1);
-  Poisson::BilinearForm a2(V2, V2);
-  Poisson::LinearForm L0(V0);
-  Poisson::LinearForm L1(V1);
-  Poisson::LinearForm L2(V2);
+  MultiMeshPoisson::BilinearForm a0(V0, V0);
+  MultiMeshPoisson::BilinearForm a1(V1, V1);
+  MultiMeshPoisson::BilinearForm a2(V2, V2);
+  MultiMeshPoisson::LinearForm L0(V0);
+  MultiMeshPoisson::LinearForm L1(V1);
+  MultiMeshPoisson::LinearForm L2(V2);
 
   // Set coefficients
   Source f;
