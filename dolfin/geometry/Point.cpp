@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2013-05-22
+// Last changed: 2014-01-06
 
 #include <cmath>
 #include <dolfin/common/constants.h>
@@ -37,11 +37,6 @@ double Point::squared_distance(const Point& p) const
   const double dz = p._x[2] - _x[2];
 
   return dx*dx + dy*dy + dz*dz;
-}
-//-----------------------------------------------------------------------------
-double Point::norm() const
-{
-  return std::sqrt(_x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]);
 }
 //-----------------------------------------------------------------------------
 const Point Point::cross(const Point& p) const

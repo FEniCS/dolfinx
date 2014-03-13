@@ -2,12 +2,12 @@
 equation:
 
     sigma - grad(u) = 0
-         div(sigma) = f
+       - div(sigma) = f
 
 The corresponding weak (variational problem)
 
     <sigma, tau> + <div(tau), u>   = 0       for all tau
-                   <div(sigma), v> = <f, v>  for all v
+                 - <div(sigma), v> = <f, v>  for all v
 
 is solved using BDM (Brezzi-Douglas-Marini) elements of degree k for
 (sigma, tau) and DG (discontinuous Galerkin) elements of degree k - 1

@@ -329,12 +329,15 @@ endif()
 # Check for PETSc, SLEPc, TAO and petsc4py
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc 3.2)
+
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc 3.2)
   endif()
+
   if (PETSC_FOUND AND DOLFIN_ENABLE_TAO)
     find_package(TAO)
   endif()
+
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
     if (PETSC4PY_FOUND)
@@ -345,6 +348,12 @@ if (DOLFIN_ENABLE_PETSC)
       endif()
     endif()
   endif()
+
+  # Enable PETSc SNES for PETSc verion > 3.2
+  if (PETSC_VERSION VERSION_GREATER 3.2.100)
+    set(PETSC_ENABLE_SNES TRUE)
+  endif()
+
 endif()
 
 # Check for ParMETIS and SCOTCH
@@ -400,7 +409,7 @@ endif()
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
-  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos;Belos")
 
   if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
     set(Trilinos_FOUND FALSE)

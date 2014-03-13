@@ -513,11 +513,13 @@ void PETScKrylovSolver::set_petsc_operators()
   dolfin_assert(_P);
   dolfin_assert(_ksp);
 
+  PetscErrorCode ierr;
+
   // Get parameter
+  #if PETSC_VERSION_RELEASE
   const std::string mat_structure = parameters("preconditioner")["structure"];
 
   // Set operators with appropriate option
-  PetscErrorCode ierr;
   if (mat_structure == "same")
   {
     ierr = KSPSetOperators(_ksp, _A->mat(), _P->mat(), SAME_PRECONDITIONER);
@@ -541,6 +543,10 @@ void PETScKrylovSolver::set_petsc_operators()
                  "Preconditioner re-use paramrter \"%s \" is unknown",
                  mat_structure.c_str());
   }
+  #else
+  ierr = KSPSetOperators(_ksp, _A->mat(), _P->mat());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_ksp_options()
