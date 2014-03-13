@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2005
-# Last changed: 2014-03-11
+# Last changed: 2013-09-25
 #
 # The bilinear form a(u, v) and linear form L(v) for
 # Poisson's equation.
