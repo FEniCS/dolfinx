@@ -347,8 +347,31 @@ void MultiMesh::_build_quadrature_rules()
         const Cell cutting_cell(*(_meshes[cutting_part]), jt->second);
 
         // Subtract quadrature rule for intersection
-        _add_quadrature_rule(quadrature_rule, cut_cell, cutting_cell,
-                             tdim, gdim, order, -1);
+        _add_quadrature_rule(quadrature_rule,
+                             cut_cell, cutting_cell,
+                             tdim, gdim, order, 1);
+
+        // Add back quadrature rule for intersection with previously
+        // visited cutting cells on other meshes. This is necessary
+        // since we might otherwise subtract intersected regions twice
+        // if the cut cell is intersected by cells from different
+        // meshes and those cells are not disjoint...
+        for (auto kt = cutting_cells.begin(); kt != jt; kt++)
+        {
+          // Get cutting part and cutting cell
+          const std::size_t other_cutting_part = kt->first;
+          const Cell other_cutting_cell(*(_meshes[other_cutting_part]), kt->second);
+
+          // FIXME: This intersection needs to be also intersected
+          // FIXME: with the cut_cell, so we need to handle triangulation
+          // FIXME: of the intersection between three cells.
+
+          // Add quadrature rule for intersection
+          if (other_cutting_part != cutting_part)
+            _add_quadrature_rule(quadrature_rule,
+                                 cutting_cell, other_cutting_cell,
+                                 tdim, gdim, order, 1);
+        }
       }
 
       // Store quadrature rule for cut cell
@@ -389,7 +412,7 @@ MultiMesh::_add_quadrature_rule(std::pair<std::vector<double>,
     const std::size_t num_points = q.first.size();
     for (std::size_t i = 0; i < num_points; i++)
     {
-      quadrature_rule.first.push_back(-q.first[i]);
+      quadrature_rule.first.push_back(factor*q.first[i]);
       for (std::size_t j = 0; j < gdim; j++)
         quadrature_rule.second.push_back(q.second[i*gdim + j]);
     }
