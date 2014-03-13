@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-03-04
+// Last changed: 2014-03-06
 
 #ifndef __SIMPLEX_QUADRATURE_H
 #define __SIMPLEX_QUADRATURE_H

@@ -1,0 +1,216 @@
+// Copyright (C) 2014 August Johansson and Anders Logg
+//
+// This file is part of DOLFIN.
+//
+// DOLFIN is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// DOLFIN is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+//
+// First added:  2014-03-10
+// Last changed: 2014-03-13
+//
+// Unit tests for MultiMesh
+
+#include <dolfin.h>
+#include <dolfin/common/unittest.h>
+
+using namespace dolfin;
+
+class MultiMeshes : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE(MultiMeshes);
+  CPPUNIT_TEST(test_integrate_triangles);
+  CPPUNIT_TEST(test_integrate_triangles_three_meshes);
+  CPPUNIT_TEST(test_integrate_covered_meshes);
+  CPPUNIT_TEST_SUITE_END();
+
+public:
+
+  void test_integrate_triangles()
+  {
+    // Create multimesh from two triangle meshes of the unit square
+    UnitSquareMesh mesh_0(3, 3);
+    UnitSquareMesh mesh_1(4, 4);
+
+    // Translate some random distance
+    Point point(0.632350, 0.278498);
+    mesh_1.translate(point);
+
+    // Exact volume is known
+    const double exact_volume = 2 - (1 - point[0]) * (1 - point[1]);
+
+    // Build the multimesh
+    MultiMesh multimesh;
+    multimesh.add(mesh_0);
+    multimesh.add(mesh_1);
+    multimesh.build();
+
+    // Sum contributions from all parts
+    double volume = 0;
+    for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
+    {
+      // Uncut cell volume given by function volume
+      auto uncut_cells = multimesh.uncut_cells(part);
+      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+      {
+        const Cell cell(*multimesh.part(part), *it);
+        volume += cell.volume();
+      }
+
+      // Cut cell volume given by quadrature rule
+      auto cut_cells = multimesh.cut_cells(part);
+      auto qr = multimesh.quadrature_rule_cut_cells(part);
+      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+      {
+        for (std::size_t i = 0; i < qr[*it].first.size(); ++i)
+          volume += qr[*it].first[i];
+      }
+    }
+
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+  }
+
+  void test_integrate_triangles_three_meshes()
+  {
+    // Create multimesh from three triangle meshes of the unit square
+    UnitSquareMesh mesh_0(3, 3), mesh_1(4, 4), mesh_2(5, 5);
+
+    // Translate some random distance
+    const Point a(0.1, 0.1);
+    const Point b(0.9, 0.9);
+    mesh_1.translate(a);
+    mesh_2.translate(b);
+
+    // Exact volume is known
+    const double exact_volume = 2.15;
+
+    // Build the multimesh
+    MultiMesh multimesh;
+    multimesh.add(mesh_0);
+    multimesh.add(mesh_1);
+    multimesh.add(mesh_2);
+    multimesh.build();
+
+    // Sum contributions from all parts
+    double volume = 0;
+    for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
+    {
+      // Uncut cell volume given by function volume
+      auto uncut_cells = multimesh.uncut_cells(part);
+      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+      {
+        const Cell cell(*multimesh.part(part), *it);
+        volume += cell.volume();
+      }
+
+      // Cut cell volume given by quadrature rule
+      auto cut_cells = multimesh.cut_cells(part);
+      auto qr = multimesh.quadrature_rule_cut_cells(part);
+      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+      {
+        for (std::size_t i = 0; i < qr[*it].first.size(); ++i)
+          volume += qr[*it].first[i];
+      }
+    }
+
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+  }
+
+  std::string drawtriangle(const Cell &cell)
+  {
+    const MeshGeometry& geometry = cell.mesh().geometry();
+    const unsigned int* vertices = cell.entities(0);
+    const Point a = geometry.point(vertices[0]);
+    const Point b = geometry.point(vertices[1]);
+    const Point c = geometry.point(vertices[2]);
+    //Point av = (a+b+c)/3.;
+    //std::cout << av[0]<<' '<<av[1]<<' '<<av[2]<<std::endl;
+    std::stringstream ss;
+    ss << "drawtriangle("
+       << "["<<a[0]<<' '<<a[1]<<"],"
+       << "["<<b[0]<<' '<<b[1]<<"],"
+       << "["<<c[0]<<' '<<c[1]<<"]);";
+    return ss.str();
+  }
+
+  void test_integrate_covered_meshes()
+  {
+    // Create multimesh from three triangle meshes of the unit square
+    UnitSquareMesh mesh_0(1, 1);
+    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
+    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+
+    // Exact volume is known
+    const double exact_volume = 1;
+
+    // Build the multimesh
+    MultiMesh multimesh;
+    multimesh.add(mesh_0);
+    multimesh.add(mesh_1);
+    multimesh.add(mesh_2); // works if this line is commented out!
+    multimesh.build();
+
+    // Sum contributions from all parts
+    double volume = 0;
+    double v_uncut = 0;
+    for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
+    {
+      std::cout<<"part "<<part<<'\n';
+
+      cout << "uncut:";
+
+      // Uncut cell volume given by function volume
+      auto uncut_cells = multimesh.uncut_cells(part);
+      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+      {
+        cout << " " << *it;
+        const Cell cell(*multimesh.part(part), *it);
+        volume += cell.volume();
+        v_uncut += cell.volume();
+      }
+      cout << " V = " << v_uncut << endl;
+
+      cout << "cut:";
+
+      // Cut cell volume given by quadrature rule
+      auto cut_cells = multimesh.cut_cells(part);
+      auto qr = multimesh.quadrature_rule_cut_cells(part);
+      double v_cut = 0;
+      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+      {
+        cout << " " << *it;
+        //const Cell cell(*multimesh.part(part), *it);
+        //volume += cell.volume();
+        //std::cout<<drawtriangle(cell);
+
+        // Loop over weights
+        for (std::size_t i = 0; i < qr[*it].first.size(); ++i)
+        {
+          volume += qr[*it].first[i];
+          v_cut += qr[*it].first[i];
+        }
+      }
+      cout << " V = " << v_cut << endl << endl;
+
+
+    }
+
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+  }
+
+};
+
+int main()
+{
+  CPPUNIT_TEST_SUITE_REGISTRATION(MultiMeshes);
+  DOLFIN_TEST;
+}
