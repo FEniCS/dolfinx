@@ -19,7 +19,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2014-02-14
+// Last changed: 2014-03-16
 
 #include <algorithm>
 #include <map>
@@ -488,7 +488,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::vector<std::size_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
                        std::vector<std::size_t>& cell_partition,
-                       std::vector<std::vector<std::size_t> >& ghost_procs)
+                       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",

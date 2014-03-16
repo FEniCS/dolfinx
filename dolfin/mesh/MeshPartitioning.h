@@ -21,7 +21,7 @@
 // Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2014-01-17
+// Last changed: 2014-03-16
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -119,10 +119,8 @@ namespace dolfin
         const LocalMeshData& data,
         const std::vector<std::size_t>& cell_partition,
         const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
-        std::vector<std::size_t>& ghost_global_cell_indices,
-        std::vector<std::size_t>& ghost_remote_process,
         std::map<unsigned int, std::set<unsigned int> >& shared_cells,
-        boost::multi_array<std::size_t, 2>& ghost_cell_vertices);
+        LocalMeshData& new_mesh_data);
 
     // Distribute vertices
     static void 
@@ -135,13 +133,8 @@ namespace dolfin
 
     // Build mesh
     static void build_mesh(Mesh& mesh,
-      const std::vector<std::size_t>& global_cell_indices,
-      const boost::multi_array<std::size_t, 2>& cell_vertices,
-      const std::vector<std::size_t>& vertex_indices,
-      const boost::multi_array<double, 2>& vertex_coordinates,
       const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-      std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
-      std::size_t num_global_vertices);
+      const LocalMeshData& new_mesh_data);
     
     // Get boundary vertices of local mesh
     static std::vector<std::size_t> boundary_vertices(Mesh& mesh,
