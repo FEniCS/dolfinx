@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-14
+// Last changed: 2014-03-17
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -217,7 +217,7 @@ void MultiMesh::_build_collision_maps()
       std::fill(collides_with_boundary.begin(), collides_with_boundary.end(), false);
 
       // Compute domain-boundary collisions
-      auto boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
+      const auto& boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
 
       // Iterate over boundary collisions
       for (auto it = boundary_collisions.first.begin();
@@ -242,7 +242,7 @@ void MultiMesh::_build_collision_maps()
       }
 
       // Compute domain-domain collisions
-      auto domain_collisions = _trees[i]->compute_collisions(*_trees[j]);
+      const auto& domain_collisions = _trees[i]->compute_collisions(*_trees[j]);
 
       // Iterate over domain collisions
       dolfin_assert(domain_collisions.first.size() == domain_collisions.second.size());
@@ -324,7 +324,7 @@ void MultiMesh::_build_quadrature_rules()
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
     // Iterate over cut cells for current part
-    const auto cmap = collision_map_cut_cells(cut_part);
+    const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
       // Get cut cell
@@ -339,7 +339,7 @@ void MultiMesh::_build_quadrature_rules()
       auto quadrature_rule = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
 
       // Iterate over cutting cells
-      auto cutting_cells = it->second;
+      const auto& cutting_cells = it->second;
       for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
       {
         // Get cutting part and cutting cell
