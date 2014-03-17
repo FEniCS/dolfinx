@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-03-04
+// Last changed: 2014-03-17
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -106,61 +106,80 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a
     if (!ufc_part.form.has_cell_integrals())
       return;
 
-    // Cell integral
-    ufc::cell_integral* integral = ufc_part.default_cell_integral.get();
+    // Get integrals
+    ufc::cell_integral* cell_integral = ufc_part.default_cell_integral.get();
+    ufc::quadrature_cell_integral* quadrature_cell_integral = ufc_part.default_quadrature_cell_integral.get();
 
     // Iterate over uncut cells
-    const std::vector<unsigned int>& uncut_cells = multimesh->uncut_cells(part);
-    for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+    if (cell_integral)
     {
-      // Create cell
-      Cell cell(mesh_part, *it);
+      log(PROGRESS, "Assembling multimesh form over uncut cells.");
+      const std::vector<unsigned int>& uncut_cells = multimesh->uncut_cells(part);
+      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+      {
+        // Create cell
+        Cell cell(mesh_part, *it);
 
-      // Update to current cell
-      cell.get_vertex_coordinates(vertex_coordinates);
-      cell.get_cell_data(ufc_cell);
-      ufc_part.update(cell, vertex_coordinates, ufc_cell);
+        // Update to current cell
+        cell.get_vertex_coordinates(vertex_coordinates);
+        cell.get_cell_data(ufc_cell);
+        ufc_part.update(cell, vertex_coordinates, ufc_cell);
 
-      // Get local-to-global dof maps for cell
-      for (std::size_t i = 0; i < form_rank; ++i)
-        dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
+        // Get local-to-global dof maps for cell
+        for (std::size_t i = 0; i < form_rank; ++i)
+          dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
 
-      // Tabulate cell tensor
-      integral->tabulate_tensor(ufc_part.A.data(), ufc_part.w(),
-                                vertex_coordinates.data(),
-                                ufc_cell.orientation);
+        // Tabulate cell tensor
+        cell_integral->tabulate_tensor(ufc_part.A.data(),
+                                       ufc_part.w(),
+                                       vertex_coordinates.data(),
+                                       ufc_cell.orientation);
 
-      // Add entries to global tensor
-      A.add(ufc_part.A.data(), dofs);
+        // Add entries to global tensor
+        A.add(ufc_part.A.data(), dofs);
+      }
     }
 
     // Iterate over cut cells
-    const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
-    auto quadrature_rules = multimesh->quadrature_rule_cut_cells(part);
-    for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+    if (quadrature_cell_integral)
     {
-      // Create cell
-      Cell cell(mesh_part, *it);
+      log(PROGRESS, "Assembling multimesh form over cut cells.");
+      const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
+      auto quadrature_rules = multimesh->quadrature_rule_cut_cells(part);
+      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+      {
+        // Create cell
+        Cell cell(mesh_part, *it);
 
-      // Update to current cell
-      cell.get_vertex_coordinates(vertex_coordinates);
-      cell.get_cell_data(ufc_cell);
-      ufc_part.update(cell, vertex_coordinates, ufc_cell);
+        // Update to current cell
+        cell.get_vertex_coordinates(vertex_coordinates);
+        cell.get_cell_data(ufc_cell);
+        ufc_part.update(cell, vertex_coordinates, ufc_cell);
 
-      // Get local-to-global dof maps for cell
-      for (std::size_t i = 0; i < form_rank; ++i)
-        dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
+        // Get local-to-global dof maps for cell
+        for (std::size_t i = 0; i < form_rank; ++i)
+          dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
 
-      // Get quadrature rule for cut cell
-      auto q = quadrature_rules[*it];
+        // Get quadrature rule for cut cell
+        const auto& quadrature_rule = quadrature_rules[*it];
+        const auto& quadrature_points = quadrature_rule.second;
+        const auto& quadrature_weights = quadrature_rule.first;
+        std::size_t num_quadrature_points = quadrature_weights.size();
 
-      // Tabulate cell tensor
-      //integral->tabulate_tensor(ufc_part.A.data(), ufc_part.w(),
-      //                          vertex_coordinates.data(),
-      //                          ufc_cell.orientation);
+        // FIXME: Change order of points and weights (points first) in simplex quadrature
+        // so that it is the same order as in UFC
 
-      // Add entries to global tensor
-      //A.add(ufc_part.A.data(), dofs);
+        // Tabulate cell tensor
+        quadrature_cell_integral->tabulate_tensor(ufc_part.A.data(),
+                                                  ufc_part.w(),
+                                                  vertex_coordinates.data(),
+                                                  num_quadrature_points,
+                                                  quadrature_points.data(),
+                                                  quadrature_weights.data());
+
+        // Add entries to global tensor
+        A.add(ufc_part.A.data(), dofs);
+      }
     }
   }
 }

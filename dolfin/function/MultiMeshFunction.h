@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-03-03
+// Last changed: 2014-03-17
 
-#ifndef __MultiMesh_FUNCTION_H
-#define __MultiMesh_FUNCTION_H
+#ifndef __MULTI_MESH_FUNCTION_H
+#define __MULTI_MESH_FUNCTION_H
 
 #include <memory>
 #include <boost/ptr_container/ptr_map.hpp>
