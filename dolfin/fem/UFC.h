@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2007-01-17
-// Last changed: 2013-02-26
+// Last changed: 2014-03-17
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -109,6 +109,10 @@ namespace dolfin
     // proper fallback to default)
     std::vector<std::shared_ptr<ufc::point_integral> > point_integrals;
 
+    // Quadrature cell integrals (access through get_quadrature_cell_integral to get
+    // proper fallback to default)
+    std::vector<std::shared_ptr<ufc::quadrature_cell_integral> > quadrature_cell_integrals;
+
   public:
 
     // Default cell integral
@@ -124,6 +128,9 @@ namespace dolfin
 
     // Default point integral
     std::shared_ptr<ufc::point_integral> default_point_integral;
+
+    // Default quadrature cell integral
+    std::shared_ptr<ufc::quadrature_cell_integral> default_quadrature_cell_integral;
 
     /// Get cell integral over a given domain, falling back to the
     /// default if necessary
@@ -179,6 +186,19 @@ namespace dolfin
           return integral;
       }
       return default_point_integral.get();
+    }
+
+    /// Get quadrature cell integral over a given domain, falling back
+    /// to the default if necessary
+    ufc::quadrature_cell_integral * get_quadrature_cell_integral(std::size_t domain)
+    {
+      if (domain < form.num_point_domains())
+      {
+        ufc::quadrature_cell_integral * integral = quadrature_cell_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_quadrature_cell_integral.get();
     }
 
     // Form
