@@ -20,6 +20,8 @@
 // First added:  2011-09-17
 // Last changed: 2014-02-14
 
+#include <boost/multi_array.hpp>
+
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/Timer.h"
 #include "dolfin/graph/Graph.h"
@@ -1097,7 +1099,19 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
 
 #ifdef HAS_SCOTCH
   
-  std::vector<std::size_t> reindex = SCOTCH::compute_gps(g_dual);
+  std::vector<std::size_t> perm = SCOTCH::compute_gps(g_dual);
+
+  const std::size_t num_cell_vertices = cell_type.num_vertices(D);
+  boost::multi_array<std::size_t, 2> new_cell_vertices
+    (boost::extents[mesh.num_cells()][num_cell_vertices]);
+  
+  //  for (CellIterator c(mesh); !c.end(); ++c)
+  //  {
+  //    const std::size_t idx = perm[c->index()];
+    //    new_cell_vertices[idx] = c->entities(0);
+  //    
+  //  }
+
   // FIXME: do actual reordering of cells
   // Also updating connectivity_cf and connectivity_fc
   
