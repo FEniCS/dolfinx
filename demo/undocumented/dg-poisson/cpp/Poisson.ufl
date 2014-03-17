@@ -39,9 +39,9 @@ u0 = Coefficient(element)
 g = Coefficient(element)
 
 # Normal component, cell size and right-hand side
-h = 2.0*triangle.circumradius
+h = 2.0*Circumradius(triangle)
 h_avg = (h('+') + h('-'))/2
-n = element.cell().n
+n = FacetNormal(triangle) 
 
 # Parameters
 alpha = 4.0
