@@ -162,20 +162,14 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a
 
         // Get quadrature rule for cut cell
         const auto& quadrature_rule = quadrature_rules[*it];
-        const auto& quadrature_points = quadrature_rule.second;
-        const auto& quadrature_weights = quadrature_rule.first;
-        std::size_t num_quadrature_points = quadrature_weights.size();
-
-        // FIXME: Change order of points and weights (points first) in simplex quadrature
-        // so that it is the same order as in UFC
 
         // Tabulate cell tensor
         quadrature_cell_integral->tabulate_tensor(ufc_part.A.data(),
                                                   ufc_part.w(),
                                                   vertex_coordinates.data(),
-                                                  num_quadrature_points,
-                                                  quadrature_points.data(),
-                                                  quadrature_weights.data());
+                                                  quadrature_rule.second.size(),
+                                                  quadrature_rule.first.data(),
+                                                  quadrature_rule.second.data());
 
         // Add entries to global tensor
         A.add(ufc_part.A.data(), dofs);

@@ -408,13 +408,13 @@ MultiMesh::_add_quadrature_rule(std::pair<std::vector<double>,
 
     // Subtract quadrature rule for intersection from quadrature
     // rule for the cut cell itself
-    dolfin_assert(gdim*q.first.size() == q.second.size());
-    const std::size_t num_points = q.first.size();
+    dolfin_assert(q.first.size() == gdim*q.second.size());
+    const std::size_t num_points = q.second.size();
     for (std::size_t i = 0; i < num_points; i++)
     {
-      quadrature_rule.first.push_back(factor*q.first[i]);
+      quadrature_rule.second.push_back(factor*q.second[i]);
       for (std::size_t j = 0; j < gdim; j++)
-        quadrature_rule.second.push_back(q.second[i*gdim + j]);
+        quadrature_rule.first.push_back(q.first[i*gdim + j]);
     }
   }
 }
