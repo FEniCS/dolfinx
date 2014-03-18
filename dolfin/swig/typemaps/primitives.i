@@ -29,6 +29,7 @@
 
 //-----------------------------------------------------------------------------
 // Fragment for bool (after SWIG 3.0)
+// Allow Python bool, scalar numpy booleans and 1 sized boolean arrays
 //-----------------------------------------------------------------------------
 %fragment(SWIG_AsVal_frag(bool2),"header",
 	  fragment=SWIG_AsVal_frag(long)) {
@@ -36,7 +37,7 @@ SWIGINTERN int
 SWIG_AsVal_dec(bool2)(PyObject *obj, bool *val)
 {
   int r;
-  if (!(PyBool_Check(obj)||PyArray_IsScalar(obj, Bool)))
+  if (!(PyBool_Check(obj)||PyArray_IsScalar(obj, Bool)||(PyArray_Check(obj)&&PyArray_SIZE(reinterpret_cast<PyArrayObject*>(obj))==1)&&PyArray_TYPE(reinterpret_cast<PyArrayObject*>(obj))==NPY_BOOL))
     return SWIG_ERROR;
   r = PyObject_IsTrue(obj);
   if (r == -1)
