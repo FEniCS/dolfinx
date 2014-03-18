@@ -327,26 +327,6 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
       // Fill in sharing details later
       shared_cells.insert(std::make_pair(*c, std::set<unsigned int>()));
 
-      // // Update local sharing data
-      // auto cell_it = shared_cells.find(*c);
-      // if (cell_it == shared_cells.end())
-      // {
-      //   // Cell is now shared with remote, add to shared cells
-      //   std::set<unsigned int> rproc_set;
-      //   rproc_set.insert(dest);
-      //   shared_cells.insert(std::make_pair(*c, rproc_set));
-      // }
-      // else
-      // {
-      //   // Check if already shared with destination
-      //   auto find_it = cell_it->second.find(dest);
-      //   if (find_it == cell_it->second.end())
-      //   {
-      //     // Newly shared with dest - update local data
-      //     cell_it->second.insert(dest);
-      //   }
-      // }
-
       // Send cell global index
       send_dest.push_back(new_mesh_data.global_cell_indices[*c]);
       

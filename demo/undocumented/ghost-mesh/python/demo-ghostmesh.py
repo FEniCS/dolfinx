@@ -64,10 +64,10 @@ plt.ylim((-0.1,1.1))
 
 for note in cells_note:
     plt.text(note[0], note[1], note[2], verticalalignment='center',
-             horizontalalignment='center', size=10)
+             horizontalalignment='center', size=6)
 
 for note in verts_note:
-    plt.text(note[0], note[1], note[2], size=10, verticalalignment='center')
+    plt.text(note[0], note[1], note[2], size=6, verticalalignment='center')
 
 plt.show()
 
