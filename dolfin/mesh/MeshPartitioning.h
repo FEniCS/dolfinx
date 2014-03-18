@@ -100,13 +100,14 @@ namespace dolfin
      const std::vector<std::size_t>& cell_partition,
      const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
 
+    // Distribute a layer of cells attached by vertex to boundary
+    // updating new_mesh_data 
     static void distribute_cell_layer(MPI_Comm mpi_comm,
-                                      const std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global,
-                                      const std::map<unsigned int, std::set<unsigned int> > shared_cells,
-                                                 LocalMeshData& new_mesh_data);
+      const std::map<std::size_t, std::set<unsigned int> >& 
+                                      shared_vertices_global,
+      const std::map<unsigned int, std::set<unsigned int> > shared_cells,
+                                      LocalMeshData& new_mesh_data);
     
-
-
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
     // LocalMeshData on this process belongs) and sends the cells
@@ -143,11 +144,10 @@ namespace dolfin
     
     // Convert ghost cell information to shared vertices in mesh
     static void ghost_build_shared_vertices(MPI_Comm mpi_comm,
-      const LocalMeshData& mesh_data,
-      const std::vector<std::size_t>& cell_partition,
-      const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+      const LocalMeshData& new_mesh_data,
+      const std::map<unsigned int, std::set<unsigned int> > shared_cells,
       std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global);
-    
+        
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh,
       const LocalMeshData& local_data);

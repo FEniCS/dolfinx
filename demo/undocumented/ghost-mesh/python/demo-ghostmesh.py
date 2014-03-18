@@ -7,16 +7,17 @@ from dolfin import *
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 import matplotlib as mpl
+import numpy as np
 
 if(MPI.size(mpi_comm_world()) == 1):
     print "Only works with MPI"
     quit()
 
 # parameters["mesh_partitioner"] = "ParMETIS"
-M = UnitSquareMesh(25, 25)
+M = UnitSquareMesh(8, 8)
 shared_vertices = M.topology().shared_entities(0).keys()
+shared_cells = M.topology().shared_entities(M.topology().dim())
 
-print shared_vertices
 
 x,y = M.coordinates().transpose()
 
@@ -24,6 +25,7 @@ cell_ownership = M.data().array("ghost_owner", M.topology().dim())
 process_number = MPI.rank(M.mpi_comm())
 
 cells_store=[]
+cells_note=[]
 colors=[]
 cmap=['red', 'green', 'blue', 'yellow', 'purple', 'grey', 'pink','brown']
 
@@ -34,6 +36,12 @@ for c in cells(M):
     for v in vertices(c):
         xc.append(v.point().x())
         yc.append(v.point().y())
+    xavg = np.mean(np.array(xc))
+    yavg = np.mean(np.array(yc))
+    cell_str='x'
+    if c.index() in shared_cells.keys():
+        cell_str = shared_cells[c.index()] 
+    cells_note.append((xavg, yavg, cell_str))
     cells_store.append(zip(xc,yc))
     
     colors.append(cmap[cell_ownership[idx]])
@@ -49,6 +57,10 @@ plt.plot(x, y, marker='o', color='black', linestyle='none')
 plt.plot(x[shared_vertices], y[shared_vertices], marker='o', color='green', linestyle='none')
 plt.xlim((-0.1,1.1))
 plt.ylim((-0.1,1.1))
+
+for note in cells_note:
+    plt.text(note[0], note[1], note[2], verticalalignment='center',
+             horizontalalignment='center')
 
 plt.show()
 
