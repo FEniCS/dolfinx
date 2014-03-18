@@ -218,7 +218,7 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 
     def __str__(self):
         """Pretty print of MeshEntity"""
-        return self.str(0)
+        return self.str(False)
 %}
 }
 

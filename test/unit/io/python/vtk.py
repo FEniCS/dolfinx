@@ -27,6 +27,7 @@ from dolfin import *
 file_options = ["ascii", "base64", "compressed"]
 mesh_functions = [CellFunction, FacetFunction, FaceFunction, EdgeFunction, VertexFunction]
 mesh_function_types = ["size_t", "int", "double", "bool"]
+type_conv = dict(size_t=int, int=int, double=float, bool=bool)
 
 class VTK_MeshFunction_Output(unittest.TestCase):
     """Test output of MeshFunctions to VTK files"""
@@ -35,7 +36,7 @@ class VTK_MeshFunction_Output(unittest.TestCase):
         for F in mesh_functions:
             if F in [FaceFunction, EdgeFunction]: continue
             for t in mesh_function_types:
-                mf = F(t, mesh, 1)
+                mf = F(t, mesh, type_conv[t](1))
                 File("mf.pvd") << mf
                 f = File("mf.pvd")
                 f << (mf, 0.)
@@ -47,7 +48,7 @@ class VTK_MeshFunction_Output(unittest.TestCase):
         mesh = UnitSquareMesh(32, 32)
         for F in mesh_functions:
             for t in mesh_function_types:
-                mf = F(t, mesh, 1)
+                mf = F(t, mesh, type_conv[t](1))
                 File("mf.pvd") << mf
                 f = File("mf.pvd")
                 f << (mf, 0.)
@@ -59,7 +60,7 @@ class VTK_MeshFunction_Output(unittest.TestCase):
         mesh = UnitCubeMesh(8, 8, 8)
         for F in mesh_functions:
             for t in mesh_function_types:
-                mf = F(t, mesh, 1)
+                mf = F(t, mesh, type_conv[t](1))
                 File("mf.pvd") << mf
                 f = File("mf.pvd")
                 f << (mf, 0.)
