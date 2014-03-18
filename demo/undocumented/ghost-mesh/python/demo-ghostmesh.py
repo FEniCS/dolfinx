@@ -27,7 +27,7 @@ process_number = MPI.rank(M.mpi_comm())
 cells_store=[]
 cells_note=[]
 colors=[]
-cmap=['red', 'green', 'blue', 'yellow', 'purple', 'grey', 'pink','brown']
+cmap=['red', 'green', 'yellow', 'purple', 'pink', 'grey', 'blue', 'brown']
 
 idx = 0
 for c in cells(M):

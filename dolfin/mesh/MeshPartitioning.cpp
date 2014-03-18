@@ -144,7 +144,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
-  // FIXME: make it work again
   //  DistributedMeshTools::init_facet_cell_connections_by_ghost(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -202,14 +201,18 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                          cell_partition, ghost_procs, 
                          shared_cells, new_mesh_data);
 
-  // Create map of shared vertices before distribution.
-  // Use global indexing, since at this point, 
-  // the local vertex indexing is not yet assigned.
+  // Create map of shared vertices, needed to get ghost layer.
+  // Use global indexing, since at this point, the local vertex indexing 
+  // is not yet assigned. 
   std::map<std::size_t, std::set<unsigned int> > shared_vertices_global;
   ghost_build_shared_vertices(mesh.mpi_comm(), new_mesh_data,
                               shared_cells,
                               shared_vertices_global);
 
+  // Send and receive cells connected via shared vertices, constituting
+  // the shared layer of cells between processes. This function
+  // adds "shared cells via vertex" to the already existing 
+  // "shared cells via facet"
   distribute_cell_layer(mesh.mpi_comm(), 
                         shared_vertices_global,
                         shared_cells,
@@ -259,7 +262,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   const std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global,
-  const std::map<unsigned int, std::set<unsigned int> > shared_cells,
+  std::map<unsigned int, std::set<unsigned int> >& shared_cells,
   LocalMeshData& new_mesh_data)
 {
   const unsigned int mpi_size = MPI::size(mpi_comm);
@@ -297,11 +300,15 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
 
     for (auto p = v_procs.begin(); p != v_procs.end(); ++p)
     {
-      auto pc_it = proc_cells.find(*p);
-      if (pc_it == proc_cells.end())
-        proc_cells.insert(std::make_pair(*p, v_cells));
-      else
-        pc_it->second.insert(v_cells.begin(), v_cells.end());
+      // Don't send to self
+      if (*p != mpi_rank)
+      {
+        auto pc_it = proc_cells.find(*p);
+        if (pc_it == proc_cells.end())
+          proc_cells.insert(std::make_pair(*p, v_cells));
+        else
+          pc_it->second.insert(v_cells.begin(), v_cells.end());
+      }
     }
   }
 
@@ -312,7 +319,8 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
 
   for (auto p = proc_cells.begin(); p != proc_cells.end(); ++p)
   {
-    std::vector<std::size_t>& send_dest = send_cells[p->first];
+    const unsigned int dest = p->first;
+    std::vector<std::size_t>& send_dest = send_cells[dest];
     for (auto c = p->second.begin(); c != p->second.end(); ++c)
     {
       // Get list of processes this cell is already shared with,
@@ -322,14 +330,24 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
       if (cell_it == shared_cells.end())
       {
         proc_set.insert(mpi_rank);
-        // FIXME: cell is now shared 
-        // add send_dest to shared_cells
+        // Cell is now shared with remote, add to shared cells
+        std::set<unsigned int> rproc_set;
+        rproc_set.insert(dest);
+        shared_cells.insert(std::make_pair(*c, rproc_set));
       }
       else
       {
         proc_set = cell_it->second;
-        // FIXME: check if send_dest is already in proc_set
-        // If so, no need to send
+
+        // Check if already shared with destination
+        auto find_it = cell_it->second.find(dest);
+        if (find_it == cell_it->second.end())
+        {
+          // Newly shared with dest - update local data
+          cell_it->second.insert(dest);
+        }
+        // ... else probably no need to send - already on dest
+        // FIXME: check this
       }
 
       // Send cell global index
@@ -404,9 +422,12 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     const std::vector<std::size_t>& cell_data = p->second;
     new_mesh_data.cell_partition[c] = cell_data.back();
     const unsigned int nghosts = cell_data[0];
+    const std::set<unsigned int> ghost_set(cell_data.begin() + 1,
+                                 cell_data.begin() + nghosts + 1);
     for (unsigned int j = 0; j != num_cell_vertices; ++j)
       new_mesh_data.cell_vertices[c][j]
         = cell_data[nghosts + 1 + j];
+    shared_cells.insert(std::make_pair(c, ghost_set));
     ++c;
   }
   
@@ -450,7 +471,6 @@ void MeshPartitioning::ghost_build_shared_vertices(MPI_Comm mpi_comm,
   auto map_it = global_vertex_to_procs.begin();
   while (map_it != global_vertex_to_procs.end())
   {
-    std::cout << map_it->second.size() << "\n";
     if (map_it->second.size() == 1)
       global_vertex_to_procs.erase(map_it++);
     else

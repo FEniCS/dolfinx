@@ -101,11 +101,11 @@ namespace dolfin
      const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
 
     // Distribute a layer of cells attached by vertex to boundary
-    // updating new_mesh_data 
+    // updating new_mesh_data and shared_cells
     static void distribute_cell_layer(MPI_Comm mpi_comm,
       const std::map<std::size_t, std::set<unsigned int> >& 
                                       shared_vertices_global,
-      const std::map<unsigned int, std::set<unsigned int> > shared_cells,
+      std::map<unsigned int, std::set<unsigned int> >& shared_cells,
                                       LocalMeshData& new_mesh_data);
     
     // This function takes the partition computed by the partitioner
