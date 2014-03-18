@@ -14,10 +14,14 @@ if(MPI.size(mpi_comm_world()) == 1):
     quit()
 
 # parameters["mesh_partitioner"] = "ParMETIS"
-M = UnitSquareMesh(8, 8)
+M = UnitSquareMesh(12, 12)
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())
 
+verts_note = []
+for k,val in M.topology().shared_entities(0).iteritems():
+    vtx = Vertex(M, k)
+    verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 
 x,y = M.coordinates().transpose()
 
@@ -50,7 +54,7 @@ for c in cells(M):
 fig, ax = plt.subplots()
 
 # Make the collection and add it to the plot.
-coll = PolyCollection(cells_store, facecolors=colors, edgecolors='black')
+coll = PolyCollection(cells_store, facecolors=colors, edgecolors='#cccccc')
 ax.add_collection(coll)
 
 plt.plot(x, y, marker='o', color='black', linestyle='none')
@@ -60,7 +64,10 @@ plt.ylim((-0.1,1.1))
 
 for note in cells_note:
     plt.text(note[0], note[1], note[2], verticalalignment='center',
-             horizontalalignment='center')
+             horizontalalignment='center', size=10)
+
+for note in verts_note:
+    plt.text(note[0], note[1], note[2], size=10, verticalalignment='center')
 
 plt.show()
 
