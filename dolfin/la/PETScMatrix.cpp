@@ -68,37 +68,27 @@ PETScMatrix::PETScMatrix(bool use_gpu) : PETScBaseMatrix(NULL),
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A), _use_gpu(false)
 {
-  // Do nothing
+  // Do nothing (reference count to A is incremented in base class)
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix(NULL),
                                                  _use_gpu(false)
 {
-  *this = A;
+  if (A.mat())
+  {
+    PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_A);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
+  }
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
 {
-  // Do nothing.
+  // Do nothing (PETSc matrix is destroyed in base class)
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericMatrix> PETScMatrix::copy() const
 {
-  std::shared_ptr<GenericMatrix> B;
-  if (!_A)
-    B.reset(new PETScMatrix());
-  else
-  {
-    // Create copy of PETSc matrix
-    Mat _Acopy = NULL;
-    PetscErrorCode ierr = MatDuplicate(_A, MAT_COPY_VALUES, &_Acopy);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
-
-    // Create PETScMatrix
-    B.reset(new PETScMatrix(_Acopy));
-  }
-
-  return B;
+  return std::shared_ptr<GenericMatrix>(new PETScMatrix(*this));
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const TensorLayout& tensor_layout)
@@ -115,7 +105,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     = tensor_layout.local_range(1);
   const std::size_t m = row_range.second - row_range.first;
   const std::size_t n = col_range.second - col_range.first;
-  dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
 
   // Get sparsity pattern
   dolfin_assert(tensor_layout.sparsity_pattern());

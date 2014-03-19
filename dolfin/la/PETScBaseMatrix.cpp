@@ -43,6 +43,13 @@ PETScBaseMatrix::~PETScBaseMatrix()
     MatDestroy(&_A);
 }
 //-----------------------------------------------------------------------------
+PETScBaseMatrix::PETScBaseMatrix(const PETScBaseMatrix& A)
+{
+  dolfin_error("PETScBaseMatrix.cpp",
+               "copy constructor",
+               "PETScBaseMatrix does not provide a copy constructor");
+}
+//-----------------------------------------------------------------------------
 std::size_t PETScBaseMatrix::size(std::size_t dim) const
 {
   if (dim > 1)
