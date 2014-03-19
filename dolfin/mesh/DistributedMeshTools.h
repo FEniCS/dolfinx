@@ -43,6 +43,10 @@ namespace dolfin
   public:
 
     /// Create global entity indices for entities of dimension d
+    /// using ghost cells to get the sharing information
+    static void ghost_number_entities(const Mesh& mesh, std::size_t d);
+    
+    /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, std::size_t d);
 
     /// Create global entity indices for entities of dimension d for

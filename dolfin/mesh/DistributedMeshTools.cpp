@@ -39,6 +39,187 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+void DistributedMeshTools::ghost_number_entities(const Mesh& mesh, std::size_t d)
+{
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+  const unsigned int tdim = mesh.topology().dim();
+
+  // Return if global entity indices have already been calculated
+  if (mesh.topology().have_global_indices(d))
+    return;
+
+  // Const-cast to allow data to be attached
+  Mesh& _mesh = const_cast<Mesh&>(mesh);
+
+  if (MPI::size(mesh.mpi_comm()) == 1)
+  {
+    mesh.init(d);
+
+    // Set global entity numbers in mesh
+    _mesh.topology().init(d, mesh.num_entities(d), mesh.num_entities(d));
+    _mesh.topology().init_global_indices(d, mesh.num_entities(d));
+    for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+      _mesh.topology().set_global_index(d, e->index(), e->index());
+
+    return;
+  }
+
+  // Cells which are also on other processes
+  const std::map<unsigned int, std::set<unsigned int> >& shared_cells 
+    = mesh.topology().shared_entities(tdim);
+  dolfin_assert(!shared_cells.empty());
+
+  // Ownership of cells
+  const std::vector<std::size_t>& ghost_owner
+    = mesh.data().array("ghost_owner", tdim);
+  dolfin_assert(!ghost_owner.empty());
+
+  // Global vertex indices
+  const std::vector<std::size_t>& global_vertex_indices 
+    = mesh.topology().global_indices(0);
+  dolfin_assert(!global_vertex_indices.empty());
+
+  const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
+  const unsigned int mpi_size = MPI::size(mesh.mpi_comm());
+
+  // Communicate ghost entities
+  std::vector<std::vector<std::size_t> > send_ghost_entities(mpi_size);
+  std::vector<std::vector<std::size_t> > recv_ghost_entities(mpi_size);
+
+  // Map from entity global vertices to local entity index 
+  // used to look up received entities
+  std::map<std::vector<std::size_t>, unsigned int> non_local_entity_map;
+  
+  // Number all local entities with global indices 
+  // (leaving other entries blank)
+  const std::size_t num_global_vertices = mesh.topology().size_global(0);
+  const std::size_t num_local_entities = mesh.topology().size(d);
+  std::vector<std::size_t> global_entity_indices(num_local_entities);
+
+  // Initially index from zero, add offset later
+  std::size_t ecount = 0;
+  for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+  {
+    // Get cell ownership around entity
+    dolfin::Set<unsigned int> cell_owner;
+    for (CellIterator c(*e); !c.end(); ++c)
+      cell_owner.insert(ghost_owner[c->index()]);
+
+    // Get entity vertices using global indexing
+    std::vector<std::size_t> entity_vertices;
+    for (VertexIterator v(*e); !v.end(); ++v)
+      entity_vertices.push_back(v->global_index());
+
+    // Ensure consistent ordering
+    std::sort(entity_vertices.begin(), entity_vertices.end());
+
+    if (cell_owner.size() == 1 && cell_owner[0] == mpi_rank)
+      global_entity_indices[e->index()] = ecount++;
+    else
+    {
+      // Non-local entity - save to map,
+      // ready to receive from another process
+      non_local_entity_map.insert(std::make_pair
+                                 (entity_vertices, e->index()));
+      // Send to match-making process
+      unsigned int dest = MPI::index_owner(mpi_comm,
+                                           entity_vertices[0],
+                                           num_global_vertices);
+      std::vector<std::size_t>& send_dest = send_ghost_entities[dest];
+      send_dest.insert(send_dest.end(), entity_vertices.begin(), 
+                       entity_vertices.end());
+    }
+  }
+
+  // Send all unlabelled entities to the index_owner of the first
+  // vertex of that entity
+  MPI::all_to_all(mpi_comm, send_ghost_entities, recv_ghost_entities);
+
+  const CellType& cell_type = mesh.type();
+  const std::size_t num_entity_vertices = cell_type.num_vertices(d);  
+
+  // Collect incoming entities into a map (for uniqueness)
+  std::map<std::vector<std::size_t>, std::size_t> shared_entity_numbering;
+  for (auto p = recv_ghost_entities.begin(); p != recv_ghost_entities.end(); ++p)
+  {
+    for (auto q = p->begin(); q != p->end(); q += num_entity_vertices)
+    {
+      const std::vector<std::size_t> qvec(q, q + num_entity_vertices);
+      shared_entity_numbering.insert(std::make_pair(qvec, 0));
+    }
+  }
+
+  // Number shared entities locally 
+  for (auto ent = shared_entity_numbering.begin(); 
+       ent != shared_entity_numbering.end(); ++ent)
+    ent->second = ecount++;
+
+  // Now all entities are numbered, get offset for this process and add on to
+  // all entities
+  std::size_t local_offset = MPI::global_offset(mpi_comm, ecount, true);
+
+  // Check total
+  std::size_t num_global_entities = MPI::sum(mpi_comm, ecount);
+  std::cout << "local entities (" << mpi_rank << ", " 
+            << d << ") = " << ecount << "\n";
+
+  if (mpi_rank == 0)
+    std::cout << "total entities (" << d << ") = " << num_global_entities << "\n";
+
+  // Add local offset to all indices generated locally
+  for (auto ent = global_entity_indices.begin(); 
+       ent != global_entity_indices.end(); ++ent)
+    *ent += local_offset;
+
+  for (auto ent = shared_entity_numbering.begin(); 
+       ent != shared_entity_numbering.end(); ++ent)
+    ent->second += local_offset;
+
+  // Get ready to send entity numbering back to requesting processes
+  std::vector<std::vector<std::size_t> > send_global_idx(mpi_size);
+  std::vector<std::vector<std::size_t> > recv_global_idx(mpi_size);
+
+  // For each received entity, reflect back the global index
+  for (unsigned int i = 0; i != mpi_size; ++i)
+  {
+    for (auto q = recv_ghost_entities[i].begin(); 
+         q != recv_ghost_entities[i].end(); q += num_entity_vertices)
+    {
+      std::vector<std::size_t> qvec(q, q + num_entity_vertices);
+      auto map_it = shared_entity_numbering.find(qvec);
+      dolfin_assert(map_it != shared_entity_numbering.end());
+      send_global_idx[i].push_back(map_it->second);
+    }
+  }
+
+  MPI::all_to_all(mpi_comm, send_global_idx, recv_global_idx);
+
+  // Match up incoming global indices with entries in the
+  // non_local_entity_map to place in correct local entry
+  for (unsigned int i = 0; i != mpi_size; ++i)
+  {
+    unsigned int j = 0;
+    dolfin_assert(send_ghost_entities[i].size() 
+                  == recv_global_idx[i].size() * num_entity_vertices);
+    
+    for (auto q = send_ghost_entities[i].begin(); 
+         q != send_ghost_entities[i].end(); q += num_entity_vertices)
+    {
+      std::vector<std::size_t> qvec(q, q + num_entity_vertices);
+      auto map_it = non_local_entity_map.find(qvec);
+      dolfin_assert(map_it != non_local_entity_map.end());
+      global_entity_indices[map_it->second] = recv_global_idx[i][j++];
+    }
+  }
+
+  // Set global entity numbers in mesh
+  _mesh.topology().init(d, mesh.num_entities(d), num_global_entities);
+  _mesh.topology().init_global_indices(d, global_entity_indices.size());
+  for (std::size_t i = 0; i < global_entity_indices.size(); ++i)
+    _mesh.topology().set_global_index(d, i, global_entity_indices[i]);
+
+}
+//-----------------------------------------------------------------------------
 void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
 {
   Timer timer("Build mesh number mesh entities");
