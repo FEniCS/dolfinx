@@ -409,7 +409,7 @@ endif()
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
-  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos;Belos")
 
   if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
     set(Trilinos_FOUND FALSE)

@@ -382,6 +382,7 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   return 0;
 }
 //-----------------------------------------------------------------------------
+#if PETSC_VERSION_RELEASE
 PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
                                              MatStructure* flag, void* ctx)
 {
@@ -411,6 +412,35 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
 
   return 0;
 }
+#else
+PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
+                                             void* ctx)
+{
+  // Interface does not presently support a preconditioner that
+  // differs from operator A
+  if (A != P)
+  {
+    dolfin_error("PETScSNESSolver.cpp",
+                 "for Jacobian",
+                 "Matrix object incompatibility. The Jacobian matrix must not be reset when using PETSc SNES.");
+  }
+
+  // Get nonlinear problem object
+  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
+  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
+
+  // Wrap the PETSc objects
+  PETScMatrix A_wrap(P);
+  PETScVector x_wrap(x);
+
+  // Form Jacobian
+  PETScVector f;
+  nonlinear_problem->form(A_wrap, f, x_wrap);
+  nonlinear_problem->J(A_wrap, x_wrap);
+
+  return 0;
+}
+#endif
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::set_linear_solver_parameters()
 {

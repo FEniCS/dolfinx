@@ -112,7 +112,7 @@ public:
     // Create distributed vector layout
     TensorLayout layout_distributed(0, false);
     std::vector<std::pair<std::size_t, std::size_t> >
-      ownership_range(1, MPI::local_range(MPI_COMM_WORLD, 203));
+      ownership_range(1, dolfin::MPI::local_range(MPI_COMM_WORLD, 203));
     layout_distributed.init(MPI_COMM_WORLD, dims, 1, ownership_range);
 
     // Vector

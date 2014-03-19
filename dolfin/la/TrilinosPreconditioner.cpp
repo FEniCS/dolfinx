@@ -15,17 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011-2012
-//
-// First added:  2010-02-25
-// Last changed: 2013-06-25
-
 #ifdef HAS_TRILINOS
 
 #include <dolfin/common/MPI.h>
 #include <boost/assign/list_of.hpp>
 
-#include <AztecOO.h>
 #include <Epetra_CombineMode.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_FEVector.h>
@@ -37,6 +31,8 @@
 #include <ml_epetra_utils.h>
 #include <ml_MultiLevelPreconditioner.h>
 #include <Teuchos_ParameterList.hpp>
+#include <BelosEpetraAdapter.hpp>
+#include <BelosLinearProblem.hpp>
 
 #include <dolfin/log/log.h>
 #include "EpetraKrylovSolver.h"
@@ -51,27 +47,24 @@ using namespace dolfin;
 
 // Mapping from preconditioner string to Trilinos
 const std::map<std::string, int> TrilinosPreconditioner::_preconditioners
-  = boost::assign::map_list_of("default",   AZ_ilu)
-                              ("none",      AZ_none)
-                              ("ilu",       AZ_ilu)
-                              ("icc",       AZ_icc)
-                              ("jacobi",    AZ_Jacobi)
-                              ("sor",       AZ_sym_GS)
-                              ("amg",       -1)
-                              ("ml_amg",    -1);
+  = boost::assign::map_list_of
+  ("default", -1)
+  ("none",    -1)
+  ("ilu",     -1)
+  ("icc",     -1)
+  ("amg",     -1)
+  ("ml_amg",  -1);
 
 // Mapping from preconditioner string to Trilinos
 const std::vector<std::pair<std::string, std::string> >
 TrilinosPreconditioner::_preconditioners_descr
   = boost::assign::pair_list_of
-    ("default",   "default preconditioner")
-    ("none",      "No preconditioner")
-    ("ilu",       "Incomplete LU factorization")
-    ("icc",       "Incomplete Cholesky factorization")
-    ("jacobi",    "Jacobi iteration")
-    ("sor",       "Successive over-relaxation")
-    ("amg",       "Algebraic multigrid")
-    ("ml_amg",    "ML algebraic multigrid");
+  ("default",   "default preconditioner")
+  ("none",      "no preconditioner")
+  ("ilu",       "Incomplete LU factorization")
+  ("icc",       "Incomplete Cholesky factorization")
+  ("amg",       "Algebraic multigrid")
+  ("ml_amg",    "ML algebraic multigrid");
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
@@ -122,16 +115,13 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
+void TrilinosPreconditioner::set(BelosLinearProblem& problem,
                                  const EpetraMatrix& P)
 {
   // Pointer to preconditioner matrix
+  // TODO const?!
   Epetra_RowMatrix* _P = P.mat().get();
   dolfin_assert(_P);
-
-  // Get underlying solver object
-  dolfin_assert(solver.aztecoo());
-  AztecOO& _solver = *(solver.aztecoo());
 
   // Set preconditioner
   if (_preconditioner == "default" || _preconditioner == "ilu"
@@ -148,37 +138,55 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     plist.set("schwarz: reordering type", reordering);
 
     // Create preconditioner
+    std::string ifpack_name;
     if (_preconditioner == "icc")
-      _preconditioner = "IC";
+      ifpack_name = "IC";
     else
-      _preconditioner = "ILU";
+      ifpack_name = "ILU";
+
     Ifpack ifpack_factory;
-    ifpack_preconditioner.reset(ifpack_factory.Create(_preconditioner, _P,
-                                                      overlap));
-    dolfin_assert(ifpack_preconditioner != 0);
+    _ifpack_preconditioner.reset(ifpack_factory.Create(ifpack_name, _P,
+                                                       overlap));
+    dolfin_assert(_ifpack_preconditioner != 0);
 
     // Set any user-provided parameters
     if (parameter_list)
       plist.setParameters(*parameter_list);
 
     // Set up preconditioner
-    ifpack_preconditioner->SetParameters(plist);
-    ifpack_preconditioner->Initialize();
-    ifpack_preconditioner->Compute();
-    _solver.SetPrecOperator(ifpack_preconditioner.get());
+    _ifpack_preconditioner->SetParameters(plist);
+    _ifpack_preconditioner->Initialize();
+    _ifpack_preconditioner->Compute();
+
+    // Create the Belos preconditioned operator from the Ifpack
+    // preconditioner.  This is necessary because Belos expects an
+    // operator to apply the preconditioner with Apply() NOT
+    // ApplyInverse().
+    Teuchos::RCP<Belos::EpetraPrecOp> belosPrec =
+      Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ifpack_preconditioner.get(),
+                                                        false)));
+
+    // Using a *left* preconditioner messes with Belos' norm computation and
+    // can cause funny behavior at places. Stick with right preconditioning for
+    // now.
+    problem.setRightPrec(belosPrec);
   }
   else if (_preconditioner == "hypre_amg")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
-    set_ml(_solver, *_P);
+    set_ml(problem, *_P);
   }
   else if (_preconditioner == "ml_amg" || _preconditioner == "amg")
-    set_ml(_solver, *_P);
+    set_ml(problem, *_P);
+  else if (_preconditioner == "none")
+  {
+    // Do nothing.
+  }
   else
   {
-    _solver.SetAztecOption(AZ_precond,
-                           _preconditioners.find(_preconditioner)->second);
-    _solver.SetPrecMatrix(_P);
+    dolfin_error("TrilinosPreconditioner.cpp",
+                 "create Trilinos preconditioner",
+                 "Unknown preconditioner \"%s\"", _preconditioner.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -234,7 +242,9 @@ std::string TrilinosPreconditioner::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
+void
+TrilinosPreconditioner::set_ml(BelosLinearProblem& problem,
+                               const Epetra_RowMatrix& P)
 {
 
   Teuchos::ParameterList mlist;
@@ -280,11 +290,14 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   }
 
   // Create preconditioner
-  ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist,
-                                                                  true));
+  _ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist,
+                                                                   true));
+  Teuchos::RCP<Belos::EpetraPrecOp> belosPrec =
+    Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ml_preconditioner.get(),
+                                                      false)));
 
-  // Set this operator as preconditioner for AztecOO
-  solver.SetPrecOperator(ml_preconditioner.get());
+  // Set this operator as preconditioner for the linear problem
+  problem.setLeftPrec(belosPrec);
 }
 //-----------------------------------------------------------------------------
 
