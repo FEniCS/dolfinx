@@ -47,10 +47,13 @@ namespace dolfin
   public:
 
     /// Constructor
-  PETScBaseMatrix() : _A(NULL) {}
+    PETScBaseMatrix() : _A(NULL) {}
 
     /// Constructor
-    PETScBaseMatrix(Mat A);
+    explicit PETScBaseMatrix(Mat A);
+
+    /// Copy constructor
+    PETScBaseMatrix(const PETScBaseMatrix& A);
 
     /// Destructor
     ~PETScBaseMatrix();

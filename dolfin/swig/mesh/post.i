@@ -259,6 +259,7 @@ def _new_closure(MeshType):
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
+            value = bool(value) if isinstance(value, int) else value
             return eval("%sBool(mesh, value)"%MeshType)
         else:
             raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
