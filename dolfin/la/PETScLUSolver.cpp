@@ -50,7 +50,7 @@ using namespace dolfin;
 // List of available LU solvers
 const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
   = boost::assign::map_list_of("default", "")
-                              #if PETSC_HAVE_UMFPACK
+                              #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
                               ("umfpack",      MAT_SOLVER_UMFPACK)
                               #endif
                               #if PETSC_HAVE_MUMPS
@@ -79,7 +79,7 @@ PETScLUSolver::_methods_cholesky
 const std::vector<std::pair<std::string, std::string> >
 PETScLUSolver::_methods_descr
   = boost::assign::pair_list_of("default", "default LU solver")
-    #if PETSC_HAVE_UMFPACK
+    #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
     ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)")
     #endif
     #if PETSC_HAVE_MUMPS
@@ -329,7 +329,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   {
     if (MPI::size(MPI_COMM_WORLD) == 1)
     {
-      #if PETSC_HAVE_UMFPACK
+      #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
       method = "umfpack";
       #elif PETSC_HAVE_MUMPS
       method = "mumps";
