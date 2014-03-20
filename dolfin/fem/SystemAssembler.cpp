@@ -463,8 +463,9 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
             // Tabulate exterior facet tensor
             exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                             ufc[form]->w(),
-                                                      vertex_coordinates.data(),
-                                                      local_facet);
+                                                            vertex_coordinates.data(),
+                                                            local_facet,
+                                                            ufc_cell.orientation);
             for (std::size_t i = 0; i < data.Ae[form].size(); i++)
               data.Ae[form][i] += ufc[form]->A[i];
           }
@@ -638,7 +639,9 @@ assembler");
                                                    vertex_coordinates[0].data(),
                                                    vertex_coordinates[1].data(),
                                                    local_facet[0],
-                                                   local_facet[1]);
+                                                   local_facet[1],
+                                                   ufc_cell[0].orientation,
+                                                   ufc_cell[1].orientation);
         }
 
         // If we have local facet 0 for cell[i], compute cell
@@ -674,9 +677,9 @@ assembler");
             {
               ufc[form]->update(cell[c], vertex_coordinates[c], ufc_cell[c]);
               cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
-                                                  ufc[form]->w(),
-                                                  vertex_coordinates[c].data(),
-                                                  ufc_cell[c].orientation);
+                                                    ufc[form]->w(),
+                                                    vertex_coordinates[c].data(),
+                                                    ufc_cell[c].orientation);
 
               // FIXME: Can the below two block be consolidated?
               const std::size_t nn = cell_dofs[form][c][0]->size();
@@ -759,7 +762,7 @@ assembler");
                 {
                   for (std::size_t j = 0; j < nn; j++)
                   {
-                    data.Ae[form][i*nn + j] 
+                    data.Ae[form][i*nn + j]
                        = ufc[form]->macro_A[2*nn*mm*c + num_cells*i*nn + nn*c +j];
                   }
                 }
@@ -802,7 +805,7 @@ assembler");
         // Reset some temp data
         std::fill(ufc[form]->A.begin(), ufc[form]->A.end(), 0.0);
 
-        // Get exterior facer integral
+        // Get exterior facet integral
         exterior_facet_integrals[form]
           = ufc[form]->default_exterior_facet_integral.get();
 
@@ -833,9 +836,10 @@ assembler");
           // Update UFC object
           ufc[form]->update(cell, vertex_coordinates[0], ufc_cell[0]);
           exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
-                                                  ufc[form]->w(),
-                                                  vertex_coordinates[0].data(),
-                                                  local_facet);
+                                                          ufc[form]->w(),
+                                                          vertex_coordinates[0].data(),
+                                                          local_facet,
+                                                          ufc_cell[0].orientation);
           for (std::size_t i = 0; i < data.Ae[form].size(); i++)
             data.Ae[form][i] += ufc[form]->A[i];
         }
