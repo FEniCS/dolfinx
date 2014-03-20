@@ -84,11 +84,6 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
     = mesh.data().array("ghost_owner", tdim);
   dolfin_assert(!ghost_owner.empty());
 
-  // Global vertex indices
-  const std::vector<std::size_t>& global_vertex_indices 
-    = mesh.topology().global_indices(0);
-  dolfin_assert(!global_vertex_indices.empty());
-
   const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
   const unsigned int mpi_size = MPI::size(mesh.mpi_comm());
 
@@ -99,7 +94,7 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   std::vector<std::vector<std::size_t> > recv_unnumbered_entities(mpi_size);
 
   // Map from entity global vertices to local entity index 
-  // used to look up received entities
+  // which will be used later to look up received entities
   std::map<std::vector<std::size_t>, unsigned int> non_local_entity_map;
 
   // Number all local entities with global indices 
@@ -112,23 +107,19 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   std::size_t ecount = 0;
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
   {
-    // Get cell ownership and sharing around entity
+    // Get cell ownership around entity
     dolfin::Set<unsigned int> cell_owner;
     for (CellIterator c(*e); !c.end(); ++c)
-    {
       cell_owner.insert(ghost_owner[c->index()]);
-    }
 
     if (cell_owner.size() == 1 && cell_owner[0] == mpi_rank)
       global_entity_indices[e->index()] = ecount++;
     else
     {
-      const std::vector<std::size_t> e_key = entity_key(*e);
-      
       // Non-local entity - save to map,
       // ready to receive from another process
       non_local_entity_map.insert(std::make_pair
-                                  (e_key, e->index()));
+                                  (entity_key(*e), e->index()));
     }
   }
 
@@ -136,18 +127,16 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   const unsigned int local_offset = MPI::global_offset(mpi_comm, ecount, true);
   const unsigned int sum_local_numbered = MPI::sum(mpi_comm, ecount);
 
-  std::cout << "ecount = " << mpi_rank << " : " << ecount << "\n";
-  if (mpi_rank == 0)
-    std::cout << "sum(ecount) = " << sum_local_numbered << "\n";
-
-
+  // FIXME: use std::transform?
   for (auto it = global_entity_indices.begin(); 
        it != global_entity_indices.end(); ++it)
     *it += local_offset;
 
-  // Send entities to matching process
+  // Send shared entities to matching process based on 
+  // MPI::index_owner of first vertex
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
   {
+    // Get set of cell sharing processes around entity
     dolfin::Set<std::size_t> cell_share;
     for (CellIterator c(*e); !c.end(); ++c)
     {
@@ -164,23 +153,21 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
       auto map_it = non_local_entity_map.find(e_key);
       if (map_it == non_local_entity_map.end())
       {
+        // Already numbered locally, but needed remotely
         std::vector<std::size_t>& send_dest = send_numbered_entities[dest];
         send_dest.push_back(global_entity_indices[e->index()]);
         send_dest.insert(send_dest.end(), e_key.begin(), e_key.end());
       }
       else
       {
+        // Unknown numbering, may be numbered elsewhere
+        // or globally unnumbered
         std::vector<std::size_t>& send_dest = send_unnumbered_entities[dest];   
         send_dest.insert(send_dest.end(), e_key.begin(), e_key.end());
-      }
-      
+      }    
     }
   }
 
-  std::cout << "non_local = " << mpi_rank << " : " << non_local_entity_map.size() << "\n";
-
-  // Send shared entities to the index_owner of 
-  // the first vertex of the entity
   MPI::all_to_all(mpi_comm, 
                   send_numbered_entities, recv_numbered_entities);
   MPI::all_to_all(mpi_comm, 
@@ -189,7 +176,7 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   const CellType& cell_type = mesh.type();
   const std::size_t num_entity_vertices = cell_type.num_vertices(d);  
 
-  // Collect incoming entities into a map 
+  // Collect incoming numbered entities into a map 
   std::map<std::vector<std::size_t>, std::size_t> shared_entity_numbering;
   for (auto p = recv_numbered_entities.begin(); 
        p != recv_numbered_entities.end(); ++p)
@@ -202,8 +189,6 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
       shared_entity_numbering.insert(std::make_pair(qvec, *q));
     }
   }
-
-  std::cout << "shared(known) = " << mpi_rank << " : " << shared_entity_numbering.size() << "\n";
 
   // Reset counter and number remaining unclaimed entities in a new
   // map, which will be merged with the main map after adding an
@@ -226,28 +211,29 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
     }
   }
 
-  std::cout << "shared(unknown) = " << mpi_rank << " : " << new_shared_numbering.size() << " " << ecount <<  "\n";
-  
   const unsigned int map_offset = sum_local_numbered 
     + MPI::global_offset(mpi_comm, ecount, true);
   const std::size_t num_global_entities = sum_local_numbered 
     + MPI::sum(mpi_comm, ecount);
   
-  std::cout << "num_global_entities = " << num_global_entities << "\n";
-
   // Add offset to new entity indices and merge into main map
   for (auto map_it = new_shared_numbering.begin(); 
        map_it != new_shared_numbering.end(); ++map_it)
+  {
     map_it->second += map_offset;
+    if(shared_entity_numbering.insert(*map_it).second == false)
+    {
+      dolfin_error("DistributedMeshTools.cpp",
+                   "number entity",
+                   "Index clash");
+    }
+  }
   
-  shared_entity_numbering.insert(new_shared_numbering.begin(),
-                                 new_shared_numbering.end());
-
   // Get ready to send entity numbering back to requesting processes
   std::vector<std::vector<std::size_t> > send_global_idx(mpi_size);
   std::vector<std::vector<std::size_t> > recv_global_idx(mpi_size);
 
-  // For each received entity, reflect back the global index
+  // For each received unnumbered entity, reflect back the global index
   for (unsigned int i = 0; i != mpi_size; ++i)
   {
     for (auto q = recv_unnumbered_entities[i].begin(); 
@@ -1346,158 +1332,8 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
         g_dual[cell_index].insert(other_cell);
         g_dual[other_cell].insert(cell_index);
       }
-      
     }
   }
-
-#ifdef HAS_SCOTCH
-  
-  std::vector<std::size_t> perm = SCOTCH::compute_gps(g_dual);
-
-  const std::size_t num_cell_vertices = cell_type.num_vertices(D);
-  boost::multi_array<std::size_t, 2> new_cell_vertices
-    (boost::extents[mesh.num_cells()][num_cell_vertices]);
-  
-  //  for (CellIterator c(mesh); !c.end(); ++c)
-  //  {
-  //    const std::size_t idx = perm[c->index()];
-    //    new_cell_vertices[idx] = c->entities(0);
-  //    
-  //  }
-
-  // FIXME: do actual reordering of cells
-  // Also updating connectivity_cf and connectivity_fc
-  
-#endif
-
-  // // Now go through connectivity_fc and pick out facets
-  // // which have the following connectivity:
-  // // 1) i-i or i- (local)
-  // // 2) i-j (local-remote)
-  // // 3) j-j, j-, j-k (remote-remote)
-  // // and do global numbering accordingly...
-
-  // // Cells which are also on other processes
-  // // FIXME: assert this exists
-  // const std::map<unsigned int, std::set<unsigned int> >& shared_cells 
-  //   = mesh.topology().shared_entities(D);
-
-  // // Ownership of cells
-  // const std::vector<std::size_t>& ghost_owner
-  //   = mesh.data().array("ghost_owner", D);
-
-  // // Global vertex indices
-  // const std::vector<std::size_t>& global_vertex_indices 
-  //   = mesh.topology().global_indices(0);
-
-  // const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
-  // const unsigned int mpi_size = MPI::size(mesh.mpi_comm());
-
-  // // Communicate ghost cell facets
-  // std::vector<std::vector<std::size_t> > send_ghost_facets(mpi_size);
-  // std::vector<std::vector<std::size_t> > recv_ghost_facets(mpi_size);
-
-  // // Map from facet global vertices to local facet index 
-  // // used to look up received facets
-  // std::map<std::vector<std::size_t>, unsigned int> non_local_facet_map;
-  
-  // // Number all local facets with global indices
-  // std::vector<std::size_t> facet_global_indices(current_facet);
-
-  // // Initially index from zero, add offset later
-  // std::size_t fcount = 0;
-  // for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
-  // {
-  //   const std::vector<unsigned int>& facet_cells
-  //     = connectivity_fc[facet_i];
-
-  //   // Get cell ownership on side(s) of facet
-  //   std::vector<std::size_t> cell_owner;
-  //   for (auto f_cell = facet_cells.begin();
-  //        f_cell != facet_cells.end(); ++f_cell)
-  //     cell_owner.push_back(ghost_owner[*f_cell]);
-
-  //   // Get facet vertices using global indexing
-  //   std::vector<std::size_t> facet_vertices;
-  //   for (auto vtx = connectivity_fv[facet_i].begin();
-  //        vtx !=  connectivity_fv[facet_i].end(); ++vtx)
-  //     facet_vertices.push_back(global_vertex_indices[*vtx]);
-
-  //   if (is_local_facet(mpi_rank, facet_vertices, cell_owner))
-  //   {
-  //     std::set<unsigned int> all_procs_this_facet;
-
-  //     for (auto cell_it = facet_cells.begin(); 
-  //          cell_it != facet_cells.end(); ++cell_it)
-  //     {
-  //       const auto map_it = shared_cells.find(*cell_it);
-  //       if (map_it != shared_cells.end())
-  //         all_procs_this_facet.insert
-  //           (map_it->second.begin(), map_it->second.end());
-  //     }
-      
-  //     for (auto proc = all_procs_this_facet.begin();
-  //          proc != all_procs_this_facet.end(); ++proc)
-  //     {
-  //       std::vector<std::size_t>& send_facets_to_proc 
-  //         = send_ghost_facets[*proc];
-  //       // Send global facet index
-  //       send_facets_to_proc.push_back(fcount);
-  //       // Send global vertex indices of facet
-  //       send_facets_to_proc.insert(send_facets_to_proc.end(),
-  //                 facet_vertices.begin(), facet_vertices.end());
-  //     }
-            
-  //     facet_global_indices[facet_i] = fcount++;
-  //   }
-  //   else
-  //   {
-  //     // Non-local facet - save to map,
-  //     // ready to receive from another process
-  //     non_local_facet_map.insert(std::make_pair
-  //                                (facet_vertices, facet_i));
-  //   }
-    
-  // }
-
-  // // This should be the total number of facets in the mesh
-  // std::cout << "fcount, sum(fcount) = "  << mpi_rank << ": "
-  //           << fcount << ", " <<  MPI::sum(mesh.mpi_comm(), fcount) << "\n";
-
-  // // Calculate local offset for numbering facets
-  // std::size_t local_offset 
-  //   = MPI::global_offset(mesh.mpi_comm(), fcount, true);
-
-  // // Add local_offset to global facet indices and store
-  // topology.init_global_indices(D - 1, current_facet);
-  // for (unsigned int facet_i = 0; facet_i != current_facet; ++facet_i)
-  //   topology.set_global_index(D - 1, facet_i, 
-  //                   facet_global_indices[facet_i] + local_offset);
-  
-  // // Also add local_offset to facets indices to send
-  // for (auto p = send_ghost_facets.begin(); 
-  //      p != send_ghost_facets.end(); ++p)
-  //   for (auto q = p->begin(); q != p->end(); q += (num_facet_vertices + 1))
-  //     *q += local_offset;
-  
-  // MPI::all_to_all(mesh.mpi_comm(), send_ghost_facets, recv_ghost_facets);
-
-  // // Retrieve facet locations from non_local_facet_map and set global index
-  // for (auto p = recv_ghost_facets.begin();
-  //      p != recv_ghost_facets.end(); ++p)
-  //   for (auto q = p->begin();
-  //        q != p->end(); q += (num_facet_vertices + 1))
-  //   {
-  //     const std::vector<std::size_t> facet(q + 1, 
-  //                                          q + num_facet_vertices + 1);
-  //     const auto it = non_local_facet_map.find(facet);
-  //     dolfin_assert(it != non_local_facet_map.end());
-  //     topology.set_global_index(D - 1, it->second, *q);
-  //     non_local_facet_map.erase(it);
-  //   }
-
-  // // Sanity check - all facets have been numbered
-  // dolfin_assert(non_local_facet_map.size() == 0);
 
   // Initialise connectivity data structure
   topology.init(D - 1, connectivity_fv.size(), connectivity_fv.size());
@@ -1507,8 +1343,7 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   fc.set(connectivity_fc);
   fv.set(connectivity_fv);
 
-  ghost_number_entities(mesh, D - 1);
-  
+  ghost_number_entities(mesh, D - 1);  
 }
 //-----------------------------------------------------------------------------
 bool DistributedMeshTools::is_local_facet(

@@ -59,8 +59,12 @@ ax.add_collection(coll)
 
 plt.plot(x, y, marker='o', color='black', linestyle='none')
 plt.plot(x[shared_vertices], y[shared_vertices], marker='o', color='green', linestyle='none')
-plt.xlim((-0.1,1.1))
-plt.ylim((-0.1,1.1))
+
+xlim = ax.get_xlim()
+ylim = ax.get_ylim()
+
+plt.xlim((xlim[0] - 0.1, xlim[1] + 0.1))
+plt.ylim((ylim[0] - 0.1, ylim[1] + 0.1))
 
 for note in cells_note:
     plt.text(note[0], note[1], note[2], verticalalignment='center',
