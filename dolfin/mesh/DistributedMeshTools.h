@@ -162,6 +162,7 @@ namespace dolfin
                      const std::vector<std::size_t>& vertices,
                      const std::vector<std::size_t>& cell_owner);
     
+    static std::vector<std::size_t> entity_key(const MeshEntity& e);
 
   };
 

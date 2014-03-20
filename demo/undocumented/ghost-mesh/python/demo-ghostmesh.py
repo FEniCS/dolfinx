@@ -14,7 +14,7 @@ if(MPI.size(mpi_comm_world()) == 1):
     quit()
 
 # parameters["mesh_partitioner"] = "ParMETIS"
-M = UnitSquareMesh(12, 12)
+M = UnitSquareMesh(20, 20)
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())
 
