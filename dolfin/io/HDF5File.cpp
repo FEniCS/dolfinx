@@ -279,17 +279,30 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     std::vector<std::size_t> topological_data;
     topological_data.reserve(mesh.num_entities(cell_dim)*(cell_dim + 1));
 
+    const std::size_t my_rank = MPI::rank(_mpi_comm);
+    std::vector<std::size_t> global_cell_indices;
+
     if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
       // Get/build topology data
+      
+      const std::vector<std::size_t>& cell_owner 
+        = mesh.data().array("ghost_owner", cell_dim);
+
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-        for (VertexIterator v(*c); !v.end(); ++v)
-          topological_data.push_back(v->global_index());
+        if (cell_owner[c->index()] == my_rank)
+        {
+          for (VertexIterator v(*c); !v.end(); ++v)
+            topological_data.push_back(v->global_index());
+          global_cell_indices.push_back(c->global_index());
+        }
     }
     else
     {
+      // FIXME: probably borken with ghost-mesh
+      
       // Drop duplicate topology for shared entities of less than mesh
       // dimension
 
@@ -297,7 +310,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       // we can get shared_entities
       DistributedMeshTools::number_entities(mesh, cell_dim);
 
-      const std::size_t my_rank = MPI::rank(_mpi_comm);
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
@@ -340,10 +352,9 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     {
       const std::string cell_index_dataset = name + "/cell_indices";
       global_size.pop_back();
-      const std::vector<std::size_t>& cells =
-        mesh.topology().global_indices(mesh.topology().dim());
       const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
-      write_data(cell_index_dataset, cells, global_size, mpi_io);
+      write_data(cell_index_dataset, 
+                 global_cell_indices, global_size, mpi_io);
     }
 
     // Add cell type attribute
@@ -657,18 +668,27 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   // Storage for output values
   std::vector<T> data_values;
 
-  if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
+  if (MPI::size(_mpi_comm) == 1)
   {
     // No duplicates
     data_values.assign(meshfunction.values(),
                        meshfunction.values() + meshfunction.size());
+  }
+  else if (cell_dim == mesh.topology().dim())
+  {
+    const std::size_t mpi_rank = MPI::rank(_mpi_comm);
+    const std::vector<std::size_t>& cell_owner
+      = mesh.data().array("ghost_owner", cell_dim);
+    for (std::size_t i = 0; i < meshfunction.size(); ++i)
+      if (cell_owner[i] == mpi_rank)
+        data_values.push_back(meshfunction[i]);
   }
   else
   {
     data_values.reserve(mesh.size(cell_dim));
 
     // Drop duplicate data
-    const std::size_t my_rank = MPI::rank(_mpi_comm);
+    const std::size_t mpi_rank = MPI::rank(_mpi_comm);
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
@@ -683,7 +703,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       else
       {
         std::set<unsigned int>::iterator lowest_proc = sh->second.begin();
-        if (*lowest_proc > my_rank)
+        if (*lowest_proc > mpi_rank)
           data_values.push_back(meshfunction[i]);
       }
     }
