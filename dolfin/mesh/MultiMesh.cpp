@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-14
+// Last changed: 2014-03-21
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -335,8 +335,12 @@ void MultiMesh::_build_quadrature_rules()
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
-      // Compute quadrature rule for the cell itself
+      // Compute quadrature rule for the cell itself. We will later
+      // fill this structure with more quadrature rules.
       auto quadrature_rule = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
+
+      // Data structure for the total triangulation of the cut_cell
+      std::vector<double> total_triangulation;
 
       // Iterate over cutting cells
       auto cutting_cells = it->second;
@@ -346,55 +350,82 @@ void MultiMesh::_build_quadrature_rules()
         const std::size_t cutting_part = jt->first;
         const Cell cutting_cell(*(_meshes[cutting_part]), jt->second);
 
-        // Subtract quadrature rule for intersection
+        // Compute triangulation of intersection of cut and cutting cells
+        const auto triangulation_cut_cutting
+          = cut_cell.triangulate_intersection(cutting_cell);
+
+        // Compute triangulation of intersection of cutting cell and
+        // the (previous) total triangulation
+        const auto triangulation_cutting_prev
+          = IntersectionTriangulation::triangulate_intersection(cutting_cell, total_triangulation);
+
+        // Add these new triangulations
+        total_triangulation.insert(total_triangulation.end(),
+                                   triangulation_cut_cutting.begin(),
+                                   triangulation_cut_cutting.end());
+        total_triangulation.insert(total_triangulation.end(),
+                                   triangulation_cutting_prev.begin(),
+                                   triangulation_cutting_prev.end());
+
+        // Add quadrature rule with weights corresponding to the two
+        // triangulations
         _add_quadrature_rule(quadrature_rule,
-                             cut_cell, cutting_cell,
+                             triangulation_cut_cutting,
+                             tdim, gdim, order, -1);
+        _add_quadrature_rule(quadrature_rule,
+                             triangulation_cutting_prev,
                              tdim, gdim, order, 1);
-
-        // Add back quadrature rule for intersection with previously
-        // visited cutting cells on other meshes. This is necessary
-        // since we might otherwise subtract intersected regions twice
-        // if the cut cell is intersected by cells from different
-        // meshes and those cells are not disjoint...
-        for (auto kt = cutting_cells.begin(); kt != jt; kt++)
-        {
-          // Get cutting part and cutting cell
-          const std::size_t other_cutting_part = kt->first;
-          const Cell other_cutting_cell(*(_meshes[other_cutting_part]), kt->second);
-
-          // FIXME: This intersection needs to be also intersected
-          // FIXME: with the cut_cell, so we need to handle triangulation
-          // FIXME: of the intersection between three cells.
-
-          // Add quadrature rule for intersection
-          if (other_cutting_part != cutting_part)
-            _add_quadrature_rule(quadrature_rule,
-                                 cutting_cell, other_cutting_cell,
-                                 tdim, gdim, order, 1);
-        }
       }
-
-      // Store quadrature rule for cut cell
-      _quadrature_rules_cut_cells[cut_part][cut_cell_index] = quadrature_rule;
     }
   }
+
+
+
+  //       // Subtract quadrature rule for intersection
+  //       _add_quadrature_rule(quadrature_rule,
+  //                            cut_cell, cutting_cell,
+  //                            tdim, gdim, order, 1);
+
+  //       // Add back quadrature rule for intersection with previously
+  //       // visited cutting cells on other meshes. This is necessary
+  //       // since we might otherwise subtract intersected regions twice
+  //       // if the cut cell is intersected by cells from different
+  //       // meshes and those cells are not disjoint...
+  //       for (auto kt = cutting_cells.begin(); kt != jt; kt++)
+  //       {
+  //         // Get cutting part and cutting cell
+  //         const std::size_t other_cutting_part = kt->first;
+  //         const Cell other_cutting_cell(*(_meshes[other_cutting_part]), kt->second);
+
+  //         // FIXME: This intersection needs to be also intersected
+  //         // FIXME: with the cut_cell, so we need to handle triangulation
+  //         // FIXME: of the intersection between three cells.
+
+  //         // Add quadrature rule for intersection
+  //         if (other_cutting_part != cutting_part)
+  //           _add_quadrature_rule(quadrature_rule,
+  //                                cutting_cell, other_cutting_cell,
+  //                                tdim, gdim, order, 1);
+  //       }
+  //     }
+
+  //     // Store quadrature rule for cut cell
+  //     _quadrature_rules_cut_cells[cut_part][cut_cell_index] = quadrature_rule;
+  //   }
+  // }
 
   end();
 }
 //-----------------------------------------------------------------------------
 void
-MultiMesh::_add_quadrature_rule(std::pair<std::vector<double>,
-                                          std::vector<double> >& quadrature_rule,
-                                const Cell& cell_0,
-                                const Cell& cell_1,
-                                std::size_t tdim,
-                                std::size_t gdim,
-                                std::size_t order,
-                                double factor) const
+MultiMesh::_add_quadrature_rule
+(std::pair<std::vector<double>, std::vector<double> >& quadrature_rule,
+ const std::vector<double>& triangulation,
+ std::size_t tdim,
+ std::size_t gdim,
+ std::size_t order,
+ double factor) const
 {
-  // Compute triangulation of intersection between cut and cutting cell
-  auto triangulation = cell_0.triangulate_intersection(cell_1);
-
   // Iterate over simplices in triangulation
   const std::size_t offset = (tdim + 1)*gdim; // coordinates per simplex
   const std::size_t num_intersections = triangulation.size() / offset;
@@ -404,17 +435,16 @@ MultiMesh::_add_quadrature_rule(std::pair<std::vector<double>,
     const double* x = &triangulation[0] + k*offset;
 
     // Compute quadrature rule for simplex
-    auto q = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
+    const auto qr = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
 
-    // Subtract quadrature rule for intersection from quadrature
-    // rule for the cut cell itself
-    dolfin_assert(gdim*q.first.size() == q.second.size());
-    const std::size_t num_points = q.first.size();
+    // Add the quadrature rules in a with modified weight factor to
+    // the ones in b
+    const std::size_t num_points = qr.first.size();
     for (std::size_t i = 0; i < num_points; i++)
     {
-      quadrature_rule.first.push_back(factor*q.first[i]);
+      quadrature_rule.first.push_back(factor*qr.first[i]);
       for (std::size_t j = 0; j < gdim; j++)
-        quadrature_rule.second.push_back(q.second[i*gdim + j]);
+        quadrature_rule.second.push_back(qr.second[i*gdim + j]);
     }
   }
 }

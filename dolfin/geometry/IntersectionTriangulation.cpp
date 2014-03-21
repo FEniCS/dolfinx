@@ -863,6 +863,60 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   // return triangulation;
 }
 //-----------------------------------------------------------------------------
+std::vector<double>
+IntersectionTriangulation::triangulate_intersection
+(const MeshEntity &cell,
+ const std::vector<double> &triangulation)
+{
+  std::vector<double> total_triangulation;
+
+  // Get dimensions
+  const std::size_t tdim = cell.mesh().topology().dim();
+  const std::size_t gdim = cell.mesh().geometry().dim();
+  const std::size_t no_nodes = tdim+1;
+  const std::size_t offset = no_nodes*gdim;
+
+  std::vector<Point> simplex_cell(no_nodes), simplex(no_nodes);
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+
+  // Loop over all simplices
+  for (std::size_t i = 0; i < triangulation.size()/offset; ++i)
+  {
+
+    // Store simplices as std::vector<Point>
+    for (std::size_t j = 0; j < no_nodes; ++j)
+    {
+      simplex_cell[j] = geometry.point(vertices[j]);
+
+      for (std::size_t d = 0; d < gdim; ++d)
+        simplex[j][d] = triangulation[offset*i+gdim*j+d];
+    }
+
+    // Compute intersection triangulation
+    std::vector<double> local_triangulation;
+    switch(tdim) {
+    case 2:
+      local_triangulation = IntersectionTriangulation::triangulate_intersection_triangle_triangle(simplex_cell, simplex);
+      break;
+    case 3:
+      local_triangulation = IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(simplex_cell, simplex);
+      break;
+    default:
+      dolfin_error("IntersectionTriangulation.cpp",
+                   "triangulate intersection of cell and triangulation array",
+                   "unknown dimension of triangulation array");
+    }
+
+    // Add these to the net triangulation
+    total_triangulation.insert(total_triangulation.end(),
+                               local_triangulation.begin(),
+                               local_triangulation.end());
+  }
+
+  return total_triangulation;
+}
+//-----------------------------------------------------------------------------
 bool
 IntersectionTriangulation::intersection_edge_edge(const Point& a,
 						  const Point& b,

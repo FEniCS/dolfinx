@@ -131,6 +131,10 @@ namespace dolfin
     triangulate_intersection_tetrahedron_tetrahedron(const std::vector<Point>& tet_0,
                                                      const std::vector<Point>& tet_1);
 
+    static std::vector<double>
+    triangulate_intersection(const MeshEntity& cell,
+                             const std::vector<double> &triangulation);
+
   private:
 
     // Helper function
