@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-03-03
+// Last changed: 2014-03-21
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -112,9 +112,9 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   dolfin_assert(c0.mesh().topology().dim() == 2);
   dolfin_assert(c1.mesh().topology().dim() == 2);
 
-  // Tolerance for duplicate points (p and q are the same if
-  // (p-q).norm() < same_point_tol)
-  const double same_point_tol = DOLFIN_EPS_LARGE;
+  // // Tolerance for duplicate points (p and q are the same if
+  // // (p-q).norm() < same_point_tol)
+  // const double same_point_tol = DOLFIN_EPS_LARGE;
 
   // Get geometry and vertex data
   const MeshGeometry& geometry_0 = c0.mesh().geometry();
@@ -122,110 +122,120 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   const unsigned int* vertices_0 = c0.entities(0);
   const unsigned int* vertices_1 = c1.entities(0);
 
-  // Create empty list of collision points
-  std::vector<Point> points;
+  std::vector<Point> tri_0(3), tri_1(3);
 
-  // Find all vertex-cell collisions
-  for (std::size_t i = 0; i < 3; i++)
+  for (std::size_t i = 0; i < 3; ++i)
   {
-    const Point p0 = geometry_0.point(vertices_0[i]);
-    const Point p1 = geometry_1.point(vertices_1[i]);
-    if (CollisionDetection::collides_triangle_point(c1, p0))
-      points.push_back(p0);
-    if (CollisionDetection::collides_triangle_point(c0, p1))
-      points.push_back(p1);
+    tri_0[i] = geometry_0.point(vertices_0[i]);
+    tri_1[i] = geometry_1.point(vertices_1[i]);
   }
 
-  // Find all edge-edge collisions (not needed?)
-  for (std::size_t i0 = 0; i0 < 3; i0++)
-  {
-    const std::size_t j0 = (i0 + 1) % 3;
-    const Point p0 = geometry_0.point(vertices_0[i0]);
-    const Point q0 = geometry_0.point(vertices_0[j0]);
-    for (std::size_t i1 = 0; i1 < 3; i1++)
-    {
-      const std::size_t j1 = (i1 + 1) % 3;
-      const Point p1 = geometry_1.point(vertices_1[i1]);
-      const Point q1 = geometry_1.point(vertices_1[j1]);
-      Point point;
-      if (intersection_edge_edge(p0, q0, p1, q1, point))
-        points.push_back(point);
-    }
-  }
+  return triangulate_intersection_triangle_triangle(tri_0, tri_1);
 
-  // Remove duplicate points
-  std::vector<Point> tmp;
-  tmp.reserve(points.size());
+  // // Create empty list of collision points
+  // std::vector<Point> points;
 
-  for (std::size_t i = 0; i < points.size(); ++i)
-  {
-    bool different = true;
-    for (std::size_t j = i+1; j < points.size(); ++j)
-      if ((points[i] - points[j]).norm() < same_point_tol)
-      {
-	different = false;
-	break;
-      }
-    if (different)
-      tmp.push_back(points[i]);
-  }
-  points = tmp;
+  // // Find all vertex-cell collisions
+  // for (std::size_t i = 0; i < 3; i++)
+  // {
+  //   const Point p0 = geometry_0.point(vertices_0[i]);
+  //   const Point p1 = geometry_1.point(vertices_1[i]);
+  //   if (CollisionDetection::collides_triangle_point(c1, p0))
+  //     points.push_back(p0);
+  //   if (CollisionDetection::collides_triangle_point(c0, p1))
+  //     points.push_back(p1);
+  // }
 
-  // Special case: no points found
-  std::vector<double> triangulation;
-  if (points.size() < 3)
-    return triangulation;
+  // // Find all edge-edge collisions (not needed?)
+  // for (std::size_t i0 = 0; i0 < 3; i0++)
+  // {
+  //   const std::size_t j0 = (i0 + 1) % 3;
+  //   const Point p0 = geometry_0.point(vertices_0[i0]);
+  //   const Point q0 = geometry_0.point(vertices_0[j0]);
+  //   for (std::size_t i1 = 0; i1 < 3; i1++)
+  //   {
+  //     const std::size_t j1 = (i1 + 1) % 3;
+  //     const Point p1 = geometry_1.point(vertices_1[i1]);
+  //     const Point q1 = geometry_1.point(vertices_1[j1]);
+  //     Point point;
+  //     if (intersection_edge_edge(p0, q0, p1, q1, point))
+  //       points.push_back(point);
+  //   }
+  // }
 
-  // Find left-most point (smallest x-coordinate)
-  std::size_t i_min = 0;
-  double x_min = points[0].x();
-  for (std::size_t i = 1; i < points.size(); i++)
-  {
-    const double x = points[i].x();
-    if (x < x_min)
-    {
-      x_min = x;
-      i_min = i;
-    }
-  }
+  // // Remove duplicate points
+  // std::vector<Point> tmp;
+  // tmp.reserve(points.size());
 
-  // Compute signed squared cos of angle with (0, 1) from i_min to all points
-  std::vector<std::pair<double, std::size_t> > order;
-  for (std::size_t i = 0; i < points.size(); i++)
-  {
-    // Skip left-most point used as origin
-    if (i == i_min)
-      continue;
+  // for (std::size_t i = 0; i < points.size(); ++i)
+  // {
+  //   bool different = true;
+  //   for (std::size_t j = i+1; j < points.size(); ++j)
+  //     if ((points[i] - points[j]).norm() < same_point_tol)
+  //     {
+  //       different = false;
+  //       break;
+  //     }
+  //   if (different)
+  //     tmp.push_back(points[i]);
+  // }
+  // points = tmp;
 
-    // Compute vector to point
-    const Point v = points[i] - points[i_min];
+  // // Special case: no points found
+  // std::vector<double> triangulation;
+  // if (points.size() < 3)
+  //   return triangulation;
 
-    // Compute square cos of angle
-    const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
+  // // Find left-most point (smallest x-coordinate)
+  // std::size_t i_min = 0;
+  // double x_min = points[0].x();
+  // for (std::size_t i = 1; i < points.size(); i++)
+  // {
+  //   const double x = points[i].x();
+  //   if (x < x_min)
+  //   {
+  //     x_min = x;
+  //     i_min = i;
+  //   }
+  // }
 
-    // Store for sorting
-    order.push_back(std::make_pair(cos2, i));
-  }
+  // // Compute signed squared cos of angle with (0, 1) from i_min to all points
+  // std::vector<std::pair<double, std::size_t> > order;
+  // for (std::size_t i = 0; i < points.size(); i++)
+  // {
+  //   // Skip left-most point used as origin
+  //   if (i == i_min)
+  //     continue;
 
-  // Sort points based on angle
-  std::sort(order.begin(), order.end());
+  //   // Compute vector to point
+  //   const Point v = points[i] - points[i_min];
 
-  // Triangulate polygon by connecting i_min with the ordered points
-  triangulation.reserve((points.size() - 2)*3*2);
-  const Point& p0 = points[i_min];
-  for (std::size_t i = 0; i < points.size() - 2; i++)
-  {
-    const Point& p1 = points[order[i].second];
-    const Point& p2 = points[order[i + 1].second];
-    triangulation.push_back(p0.x());
-    triangulation.push_back(p0.y());
-    triangulation.push_back(p1.x());
-    triangulation.push_back(p1.y());
-    triangulation.push_back(p2.x());
-    triangulation.push_back(p2.y());
-  }
+  //   // Compute square cos of angle
+  //   const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
 
-  return triangulation;
+  //   // Store for sorting
+  //   order.push_back(std::make_pair(cos2, i));
+  // }
+
+  // // Sort points based on angle
+  // std::sort(order.begin(), order.end());
+
+  // // Triangulate polygon by connecting i_min with the ordered points
+  // triangulation.reserve((points.size() - 2)*3*2);
+  // const Point& p0 = points[i_min];
+  // for (std::size_t i = 0; i < points.size() - 2; i++)
+  // {
+  //   const Point& p1 = points[order[i].second];
+  //   const Point& p2 = points[order[i + 1].second];
+  //   triangulation.push_back(p0.x());
+  //   triangulation.push_back(p0.y());
+  //   triangulation.push_back(p1.x());
+  //   triangulation.push_back(p1.y());
+  //   triangulation.push_back(p2.x());
+  //   triangulation.push_back(p2.y());
+  // }
+
+  // return triangulation;
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -964,3 +974,125 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
   return true;
 }
 //-----------------------------------------------------------------------------
+std::vector<double>
+IntersectionTriangulation::triangulate_intersection_triangle_triangle
+(const std::vector<Point>& tri_0,
+ const std::vector<Point>& tri_1)
+{
+  // Tolerance for duplicate points (p and q are the same if
+  // (p-q).norm() < same_point_tol)
+  const double same_point_tol = DOLFIN_EPS_LARGE;
+
+
+  // Create empty list of collision points
+  std::vector<Point> points;
+
+  // Find all vertex-cell collisions
+  for (std::size_t i = 0; i < 3; i++)
+  {
+    const Point p0 = tri_0[i];//geometry_0.point(vertices_0[i]);
+    const Point p1 = tri_1[i]; //geometry_1.point(vertices_1[i]);
+    // Note: this routine is changed to being public:
+    if (CollisionDetection::collides_triangle_point(tri_1[0],
+                                                    tri_1[1],
+                                                    tri_1[2],
+                                                    p0))
+      points.push_back(p0);
+    if (CollisionDetection::collides_triangle_point(tri_0[0],
+                                                    tri_0[1],
+                                                    tri_0[2],
+                                                    p1))
+      points.push_back(p1);
+  }
+
+  // Find all edge-edge collisions (not needed?)
+  for (std::size_t i0 = 0; i0 < 3; i0++)
+  {
+    const std::size_t j0 = (i0 + 1) % 3;
+    const Point p0 = tri_0[i0]; //geometry_0.point(vertices_0[i0]);
+    const Point q0 = tri_0[j0]; //geometry_0.point(vertices_0[j0]);
+    for (std::size_t i1 = 0; i1 < 3; i1++)
+    {
+      const std::size_t j1 = (i1 + 1) % 3;
+      const Point p1 = tri_1[i1];//geometry_1.point(vertices_1[i1]);
+      const Point q1 = tri_1[j1];//geometry_1.point(vertices_1[j1]);
+      Point point;
+      if (intersection_edge_edge(p0, q0, p1, q1, point))
+        points.push_back(point);
+    }
+  }
+
+  // Remove duplicate points
+  std::vector<Point> tmp;
+  tmp.reserve(points.size());
+
+  for (std::size_t i = 0; i < points.size(); ++i)
+  {
+    bool different = true;
+    for (std::size_t j = i+1; j < points.size(); ++j)
+      if ((points[i] - points[j]).norm() < same_point_tol)
+      {
+	different = false;
+	break;
+      }
+    if (different)
+      tmp.push_back(points[i]);
+  }
+  points = tmp;
+
+  // Special case: no points found
+  std::vector<double> triangulation;
+  if (points.size() < 3)
+    return triangulation;
+
+  // Find left-most point (smallest x-coordinate)
+  std::size_t i_min = 0;
+  double x_min = points[0].x();
+  for (std::size_t i = 1; i < points.size(); i++)
+  {
+    const double x = points[i].x();
+    if (x < x_min)
+    {
+      x_min = x;
+      i_min = i;
+    }
+  }
+
+  // Compute signed squared cos of angle with (0, 1) from i_min to all points
+  std::vector<std::pair<double, std::size_t> > order;
+  for (std::size_t i = 0; i < points.size(); i++)
+  {
+    // Skip left-most point used as origin
+    if (i == i_min)
+      continue;
+
+    // Compute vector to point
+    const Point v = points[i] - points[i_min];
+
+    // Compute square cos of angle
+    const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
+
+    // Store for sorting
+    order.push_back(std::make_pair(cos2, i));
+  }
+
+  // Sort points based on angle
+  std::sort(order.begin(), order.end());
+
+  // Triangulate polygon by connecting i_min with the ordered points
+  triangulation.reserve((points.size() - 2)*3*2);
+  const Point& p0 = points[i_min];
+  for (std::size_t i = 0; i < points.size() - 2; i++)
+  {
+    const Point& p1 = points[order[i].second];
+    const Point& p2 = points[order[i + 1].second];
+    triangulation.push_back(p0.x());
+    triangulation.push_back(p0.y());
+    triangulation.push_back(p1.x());
+    triangulation.push_back(p1.y());
+    triangulation.push_back(p2.x());
+    triangulation.push_back(p2.y());
+  }
+
+  return triangulation;
+}

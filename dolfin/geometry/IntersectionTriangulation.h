@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-15
+// Last changed: 2014-03-17
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -121,6 +121,11 @@ namespace dolfin
     static std::vector<double>
     triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
                                                      const MeshEntity& tetrahedron_1);
+
+    // Test.
+    static std::vector<double>
+    triangulate_intersection_triangle_triangle(const std::vector<Point>& tri_0,
+                                               const std::vector<Point>& tri_1);
 
   private:
 
