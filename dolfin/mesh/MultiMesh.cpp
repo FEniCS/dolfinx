@@ -376,6 +376,9 @@ void MultiMesh::_build_quadrature_rules()
                              triangulation_cutting_prev,
                              tdim, gdim, order, 1);
       }
+
+      // Store quadrature rule for cut cell
+      _quadrature_rules_cut_cells[cut_part][cut_cell_index] = quadrature_rule;
     }
   }
 

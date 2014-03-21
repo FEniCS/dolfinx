@@ -31,6 +31,7 @@ class MultiMeshes : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(MultiMeshes);
   CPPUNIT_TEST(test_multiple_meshes);
+  //CPPUNIT_TEST(test_multiple_meshes_manual_qr);
   //CPPUNIT_TEST(test_integrate_triangles);
   // CPPUNIT_TEST(test_integrate_triangles_three_meshes);
   // CPPUNIT_TEST(test_integrate_covered_meshes);
@@ -79,6 +80,77 @@ public:
 
 #define Pause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
 
+
+
+  void test_multiple_meshes()
+  {
+
+    // Create multimesh from three triangle meshes of the unit square
+
+    // const std::size_t gdim = 2;
+    // const std::size_t tdim = 2;
+    // UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 2, 2);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
+    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+
+    // const std::size_t gdim = 2;
+    // const std::size_t tdim = 2;
+    // UnitSquareMesh mesh_0(31, 17);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
+    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
+    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+
+    const std::size_t gdim = 3;
+    const std::size_t tdim = 3;
+    UnitCubeMesh mesh_0(2, 3, 4);
+    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
+    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
+    BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
+    BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
+
+    // Build the multimesh
+    MultiMesh multimesh;
+    multimesh.add(mesh_0);
+    multimesh.add(mesh_1);
+    multimesh.add(mesh_2);
+    multimesh.add(mesh_3);
+    multimesh.add(mesh_4);
+    multimesh.build();
+
+    // Exact volume is known
+    const double exact_volume = 1;
+    double volume = 0;
+
+    // Sum contribution from all parts
+    for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+    {
+      std::cout << "% part " << part << '\n';
+
+      // Uncut cell volume given by function volume
+      const auto uncut_cells = multimesh.uncut_cells(part);
+      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+      {
+        const Cell cell(*multimesh.part(part), *it);
+        volume += cell.volume();
+      }
+
+      // Cut cell volume given by quadrature rule
+      const auto cut_cells = multimesh.cut_cells(part);
+      auto qr = multimesh.quadrature_rule_cut_cells(part);
+      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+      {
+        for (std::size_t i = 0; i < qr[*it].first.size(); ++i)
+          volume += qr[*it].first[i];
+      }
+    }
+
+    std::cout << "exact volume " << exact_volume<<'\n'
+              << "volume " << volume<<std::endl;
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+  }
 
 
 
@@ -180,7 +252,7 @@ public:
     return net_triangulation;
   }
 
-  void test_multiple_meshes()
+  void test_multiple_meshes_manual_qr()
   {
     // Create multimesh from three triangle meshes of the unit square
 
