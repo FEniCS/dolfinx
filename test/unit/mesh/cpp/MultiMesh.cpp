@@ -23,8 +23,7 @@
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 
-#include </home/august/Projects/fenicsBB/dolfin/dolfin/geometry/IntersectionTriangulation.h>
-#include </home/august/Projects/fenicsBB/dolfin/dolfin/geometry/SimplexQuadrature.h>
+#include <dolfin/geometry/SimplexQuadrature.h>
 
 using namespace dolfin;
 
@@ -84,30 +83,30 @@ public:
 
 
 
-  void add_triangles(const std::vector<double> &a,
+  void add_simplices(const std::vector<double> &a,
                      std::vector<double> &b)
   {
     // Add the triangles in a to the ones in b
     b.insert(b.end(), a.begin(), a.end());
   }
 
-  double add_qr(const std::vector<double> &triangles,
-                double factor,
-                std::pair<std::vector<double>, std::vector<double> > &qr)
+  void add_qr(const std::vector<double> &simplices,
+              std::size_t gdim,
+              std::size_t tdim,
+              std::size_t order,
+              double factor,
+              std::pair<std::vector<double>, std::vector<double> > &qr)
   {
-    if (triangles.size())
+    if (simplices.size())
     {
-      // Get quadrature rules of flat triangles
-      const std::size_t gdim = 2;
-      const std::size_t tdim = 2;
-      const std::size_t order = 1;
+      const std::size_t offset = (tdim+1)*gdim;
 
-      double sum = 0;
-      for (std::size_t tri = 0; tri < triangles.size()/6; ++tri)
+      // Get quadrature rule for each simplex in the array
+      for (std::size_t s = 0; s < simplices.size()/offset; ++s)
       {
         auto local_qr =
-          SimplexQuadrature::compute_quadrature_rule(&triangles[0]+6*tri,
-                                                     tdim,gdim,order);
+          SimplexQuadrature::compute_quadrature_rule(&simplices[0] + offset*s,
+                                                     tdim, gdim, order);
 
         // Add the quadrature rules in a with modified weight factor to
         // the ones in b
@@ -115,16 +114,11 @@ public:
         for (std::size_t i = 0; i < num_points; i++)
         {
           qr.first.push_back(factor*local_qr.first[i]);
-          sum += factor*local_qr.first[i];
           for (std::size_t j = 0; j < gdim; j++)
             qr.second.push_back(local_qr.second[i*gdim + j]);
         }
       }
-
-      return sum;
     }
-
-    return 0;
   }
 
   double
@@ -139,37 +133,49 @@ public:
 
   std::vector<double>
   triangulate_intersection(const Cell& cell,
-                           const std::vector<double> &triangles)
+                           const std::vector<double> &simplices)
   {
     std::vector<double> net_triangulation;
 
-    std::vector<Point> tri_cell(3), tri(3);
+    // Get dimensions
+    const std::size_t tdim = cell.mesh().topology().dim();
+    const std::size_t gdim = cell.mesh().geometry().dim();
+    const std::size_t no_nodes = tdim+1;
+    const std::size_t offset = no_nodes*gdim;
+
+    std::vector<Point> simplex_cell(no_nodes), simplex(no_nodes);
     const MeshGeometry& geometry = cell.mesh().geometry();
     const unsigned int* vertices = cell.entities(0);
 
-    // dimension 2
-    // three nodes per triangle
-
-    for (std::size_t i = 0; i < triangles.size()/6; ++i)
+    // Loop over all simplices
+    for (std::size_t i = 0; i < simplices.size()/offset; ++i)
     {
-      for (std::size_t j = 0; j < 3; ++j)
-        tri_cell[j] = geometry.point(vertices[j]);
 
-      tri[0] = Point(triangles[6*i], triangles[6*i+1]);
-      tri[1] = Point(triangles[6*i+2], triangles[6*i+3]);
-      tri[2] = Point(triangles[6*i+4], triangles[6*i+5]);
+      // Store simplices as std::vector<Point>
+      for (std::size_t j = 0; j < no_nodes; ++j)
+      {
+        simplex_cell[j] = geometry.point(vertices[j]);
+
+        for (std::size_t d = 0; d < gdim; ++d)
+          simplex[j][d] = simplices[offset*i+gdim*j+d];
+      }
 
       // Compute intersection triangulation
-      auto local_tris = IntersectionTriangulation::triangulate_intersection_triangle_triangle(tri_cell, tri);
+      std::vector<double> local_tris;
+      switch(tdim) {
+      case 2:
+        local_tris = IntersectionTriangulation::triangulate_intersection_triangle_triangle(simplex_cell, simplex);
+        break;
+      case 3:
+        local_tris = IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron(simplex_cell, simplex);
+        break;
+      default:
+        Pause;
+      }
 
       // Add these to the net triangulation
-      add_triangles(local_tris, net_triangulation);
+      add_simplices(local_tris, net_triangulation);
     }
-
-    // if (net_triangulation.size()) {
-    //   std::cout << drawtriangulation(net_triangulation);
-    //   Pause;
-    // }
 
     return net_triangulation;
   }
@@ -177,13 +183,30 @@ public:
   void test_multiple_meshes()
   {
     // Create multimesh from three triangle meshes of the unit square
-    UnitSquareMesh mesh_0(31, 17);
-    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
-    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
-    RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
 
-    // Exact volume is known
-    const double exact_volume = 1;
+    // const std::size_t gdim = 2;
+    // const std::size_t tdim = 2;
+    // UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 2, 2);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // //RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
+    // //RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+
+    // const std::size_t gdim = 2;
+    // const std::size_t tdim = 2;
+    // UnitSquareMesh mesh_0(31, 17);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
+    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
+    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+
+    const std::size_t gdim = 3;
+    const std::size_t tdim = 3;
+    UnitCubeMesh mesh_0(2, 3, 4);
+    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
+    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
+    BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
+    BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
 
     // Build the multimesh
     MultiMesh multimesh;
@@ -191,18 +214,15 @@ public:
     multimesh.add(mesh_1);
     multimesh.add(mesh_2);
     multimesh.add(mesh_3);
+    multimesh.add(mesh_4);
     multimesh.build();
 
-    // Take a cut cell
-    // Loop over all cutting cells
-    // compute tri_cut_cut = intersection_triangulation{cut, cutting}
-    // compute tri_prev_cut = intersection_triangulation{prev_triangulation, cutting}
-    // new_triangulation = prev_triangulation + tri_cut_cut + tri_prev_cut
-    // new_qr weights are new_qr = prev_qr + qr{cut, cutting} - qr{prev_triangulation, cutting}
-    // update: prev_qr = new_qr and prev_triangulation = new_triangulation
 
+    // Exact volume is known
+    const double exact_volume = 1;
 
-
+    // Quadrature order
+    const std::size_t order = 1;
 
     double cut_volume = 0;
 
@@ -218,13 +238,14 @@ public:
         const unsigned int cut_cell_index = it->first;
         const Cell cut_cell(*multimesh.part(cut_part), cut_cell_index);
 
-        std::cout << drawtriangle(cut_cell)<<std::endl;
+        //std::cout << drawtriangle(cut_cell)<<std::endl;
 
         // Data structures for storing triangulations
-        std::vector<double> net_triangulation;
+        std::vector<double> total_triangulation;
 
         // Data structures for storing quadrature rules
-        std::pair<std::vector<double>, std::vector<double> > net_qr;
+        std::pair<std::vector<double>, std::vector<double> > total_qr
+          = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
 
         // Loop over cutting cells
         const auto cutting_cells = it->second;
@@ -233,42 +254,58 @@ public:
           // Get cutting part and cutting cell
           const std::size_t cutting_part = jt->first;
           const Cell cutting_cell(*multimesh.part(cutting_part), jt->second);
-          std::cout<<drawtriangle(cutting_cell)<<' ';
 
+          Point center;
+          {
+            // Get mesh geometry
+            const MeshGeometry& geometry = cutting_cell.mesh().geometry();
+
+            // Get the coordinates of the three vertices
+            const unsigned int* vertices = cutting_cell.entities(0);
+            const double* x0 = geometry.x(vertices[0]);
+            const double* x1 = geometry.x(vertices[1]);
+            const double* x2 = geometry.x(vertices[2]);
+            for (int d = 0; d<2; ++d)
+              center[d] = (x0[d]+x1[d]+x2[d])/3.;
+          }
+
+          // std::cout<<drawtriangle(cutting_cell)<<' '<<plot(center)
+          //          <<" % "<<CollisionDetection::collides(cut_cell, cutting_cell)<<'\n';
 
           // Compute triangulation of intersection of cut and cutting cells
-          auto intersection_cut_cutting = cut_cell.triangulate_intersection(cutting_cell);
+          auto triangulation_cut_cutting = cut_cell.triangulate_intersection(cutting_cell);
 
           // Compute triangulation of intersection of cutting cell and
-          // the previous triangulation
-          auto intersection_cutting_old = triangulate_intersection(cutting_cell, net_triangulation);
+          // the previous total triangulation
+          auto triangulation_cutting_prev = triangulate_intersection(cutting_cell,
+                                                                     total_triangulation);
 
           // Add new triangulations to previous to form new_triangulation
-          add_triangles(intersection_cut_cutting, net_triangulation);
-          add_triangles(intersection_cutting_old, net_triangulation);
+          add_simplices(triangulation_cut_cutting, total_triangulation);
+          add_simplices(triangulation_cutting_prev, total_triangulation);
 
           // Add qr with modified weights
-          double vcc = add_qr(intersection_cut_cutting, -1., net_qr);
-          double vco = add_qr(intersection_cutting_old, 1., net_qr);
+          add_qr(triangulation_cut_cutting, gdim, tdim, order, -1., total_qr);
+          add_qr(triangulation_cutting_prev, gdim, tdim, order, 1., total_qr);
 
-          std::cout <<" % "<< vcc<<' '<<vco<<' '<<qrsum(net_qr)<<'\n';
+          //std::cout <<" % "<< vcc<<' '<<vco<<' '<<qrsum(total_qr)<<'\n';
         }
 
         double localvol = cut_cell.volume();
-        cut_volume += cut_cell.volume();
-        for (std::size_t i = 0; i < net_qr.first.size(); ++i)
+        //cut_volume += cut_cell.volume();
+        for (std::size_t i = 0; i < total_qr.first.size(); ++i)
         {
-          localvol += net_qr.first[i];
-          cut_volume += net_qr.first[i];
+          localvol += total_qr.first[i];
+          cut_volume += total_qr.first[i];
         }
 
-        std::cout<<"\n% local volume "<<localvol<< std::endl;
-        std::cout << "% qr sum " << qrsum(net_qr)<<std::endl;
+        // std::cout<<"\n% local volume "<<localvol<< std::endl;
+        // std::cout << "% qr sum " << qrsum(total_qr)<<std::endl;
         //Pause;
       }
     }
 
-    std::cout << "\ncut volume " << cut_volume << std::endl;
+    std::cout << "cut volume " << cut_volume << std::endl;
 
 
 
@@ -276,7 +313,7 @@ public:
     double uncut_volume = 0;
     for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
     {
-      // Uncut cell volume given by function volume
+      // Uncut cell volume
       auto uncut_cells = multimesh.uncut_cells(part);
       for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
       {

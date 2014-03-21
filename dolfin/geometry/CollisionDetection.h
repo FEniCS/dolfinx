@@ -173,6 +173,13 @@ namespace dolfin
 					const Point& p1,
 					const Point& p2,
 					const Point& point);
+
+    // The implementation of collides_tetrahedron_point
+    static bool collides_tetrahedron_point(const Point& p0,
+					   const Point& p1,
+					   const Point& p2,
+					   const Point& p3,
+					   const Point& point);
   private:
 
     // The implementation of collides_triangle_triangle
@@ -183,12 +190,6 @@ namespace dolfin
 					   const Point& q1,
 					   const Point& q2);
 
-    // The implementation of collides_tetrahedron_point
-    static bool collides_tetrahedron_point(const Point& p0,
-					   const Point& p1,
-					   const Point& p2,
-					   const Point& p3,
-					   const Point& point);
 
     // The implementation of collides_tetrahedron_triangle
     static bool collides_tetrahedron_triangle(const Point& p0,
