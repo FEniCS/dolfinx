@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-03-21
+// Last changed: 2014-03-24
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -122,15 +122,22 @@ namespace dolfin
     triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
                                                      const MeshEntity& tetrahedron_1);
 
-    // Test.
+    // Function for computing the intersection of two triangles given
+    // by std::vector<Point>.
     static std::vector<double>
     triangulate_intersection_triangle_triangle(const std::vector<Point>& tri_0,
                                                const std::vector<Point>& tri_1);
 
+    // Function for computing the intersection of two tetrahedra given
+    // by std::vector<Point>.
     static std::vector<double>
     triangulate_intersection_tetrahedron_tetrahedron(const std::vector<Point>& tet_0,
                                                      const std::vector<Point>& tet_1);
 
+    // Function for computing the intersection of a cell with a flat
+    // vector of simplices. The function assumes that the simplices in
+    // the triangulation vector are of the same topological and
+    // geometrical dimension as of the cell.
     static std::vector<double>
     triangulate_intersection(const MeshEntity& cell,
                              const std::vector<double> &triangulation);

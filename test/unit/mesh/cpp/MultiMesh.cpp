@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2014-03-21
+// Last changed: 2014-03-24
 //
 // Unit tests for MultiMesh
 
@@ -30,7 +30,7 @@ using namespace dolfin;
 class MultiMeshes : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(MultiMeshes);
-  CPPUNIT_TEST(test_multiple_meshes);
+  CPPUNIT_TEST(test_multiple_meshes_quadrature);
   //CPPUNIT_TEST(test_multiple_meshes_manual_qr);
   //CPPUNIT_TEST(test_integrate_triangles);
   // CPPUNIT_TEST(test_integrate_triangles_three_meshes);
@@ -82,7 +82,7 @@ public:
 
 
 
-  void test_multiple_meshes()
+  void test_multiple_meshes_quadrature()
   {
 
     // Create multimesh from three triangle meshes of the unit square
@@ -95,21 +95,21 @@ public:
     // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
     // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
 
-    // const std::size_t gdim = 2;
-    // const std::size_t tdim = 2;
-    // UnitSquareMesh mesh_0(31, 17);
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
-    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
-    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+    const std::size_t gdim = 2;
+    const std::size_t tdim = 2;
+    UnitSquareMesh mesh_0(31, 17);
+    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
+    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
+    RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
+    RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
 
-    const std::size_t gdim = 3;
-    const std::size_t tdim = 3;
-    UnitCubeMesh mesh_0(2, 3, 4);
-    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
-    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
-    BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
-    BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
+    // const std::size_t gdim = 3;
+    // const std::size_t tdim = 3;
+    // UnitCubeMesh mesh_0(2, 3, 4);
+    // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
+    // BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
+    // BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
+    // BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
 
     // Build the multimesh
     MultiMesh multimesh;
