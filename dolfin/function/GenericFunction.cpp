@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-28
-// Last changed: 2013-02-27
+// Last changed: 2014-03-25
 
 #include <string>
 #include <dolfin/fem/FiniteElement.h>
@@ -196,8 +196,7 @@ void GenericFunction::restrict_as_ufc_function(double* w,
   dolfin_assert(w);
 
   // Evaluate dofs to get the expansion coefficients
-  const int cell_orientation = 0;
-  element.evaluate_dofs(w, *this, vertex_coordinates, cell_orientation,
+  element.evaluate_dofs(w, *this, vertex_coordinates, ufc_cell.orientation,
                         ufc_cell);
 }
 //-----------------------------------------------------------------------------
