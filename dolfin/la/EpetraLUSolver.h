@@ -103,7 +103,7 @@ namespace dolfin
     bool symbolic_factorized, numeric_factorized;
 
     // Operator (the matrix)
-    std::shared_ptr<const EpetraMatrix> _A;
+    std::shared_ptr<const EpetraMatrix> _matA;
 
     // Epetra linear problem
     boost::scoped_ptr<Epetra_LinearProblem> linear_problem;

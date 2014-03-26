@@ -28,19 +28,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScBaseMatrix::PETScBaseMatrix(Mat A) : _A(A)
+PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A)
 {
   // Increase reference count
-  if (_A)
-    PetscObjectReference((PetscObject)_A);
+  if (_matA)
+    PetscObjectReference((PetscObject)_matA);
 }
 //-----------------------------------------------------------------------------
 PETScBaseMatrix::~PETScBaseMatrix()
 {
   // Decrease reference count (PETSc will destroy object once
   // reference counts reached zero)
-  if (_A)
-    MatDestroy(&_A);
+  if (_matA)
+    MatDestroy(&_matA);
 }
 //-----------------------------------------------------------------------------
 PETScBaseMatrix::PETScBaseMatrix(const PETScBaseMatrix& A)
@@ -59,10 +59,10 @@ std::size_t PETScBaseMatrix::size(std::size_t dim) const
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
 
-  if (_A)
+  if (_matA)
   {
     PetscInt m(0), n(0);
-    PetscErrorCode ierr = MatGetSize(_A, &m, &n);
+    PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MetGetSize");
     if (dim == 0)
       return m;
@@ -84,10 +84,10 @@ PETScBaseMatrix::local_range(std::size_t dim) const
                  "Only local row range is available for PETSc matrices");
   }
 
-  if (_A)
+  if (_matA)
   {
     PetscInt m(0), n(0);
-    PetscErrorCode ierr = MatGetOwnershipRange(_A, &m, &n);
+    PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
     return std::make_pair(m, n);
   }
@@ -97,7 +97,7 @@ PETScBaseMatrix::local_range(std::size_t dim) const
 //-----------------------------------------------------------------------------
 void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
 {
-  dolfin_assert(_A);
+  dolfin_assert(_matA);
 
   PetscErrorCode ierr;
 
@@ -108,12 +108,12 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   Vec x = NULL;
   if (dim == 0)
   {
-    ierr = MatGetVecs(_A, PETSC_NULL, &x);
+    ierr = MatGetVecs(_matA, PETSC_NULL, &x);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
   }
   else if (dim == 1)
   {
-    ierr = MatGetVecs(_A, &x, PETSC_NULL);
+    ierr = MatGetVecs(_matA, &x, PETSC_NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
   }
   else

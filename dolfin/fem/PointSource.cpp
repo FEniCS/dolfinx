@@ -36,7 +36,7 @@ using namespace dolfin;
 PointSource::PointSource(const FunctionSpace& V,
                          const Point& p,
                          double magnitude)
-  : _V(reference_to_no_delete_pointer(V)), _p(p), _magnitude(magnitude)
+  : _function_space(reference_to_no_delete_pointer(V)), _p(p), _magnitude(magnitude)
 {
   // Check that function space is scalar
   check_is_scalar(V);
@@ -45,7 +45,7 @@ PointSource::PointSource(const FunctionSpace& V,
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
                          const Point& p,
                          double magnitude)
-  : _V(V), _p(p), _magnitude(magnitude)
+  : _function_space(V), _p(p), _magnitude(magnitude)
 {
   // Check that function space is scalar
   check_is_scalar(*V);
@@ -58,15 +58,15 @@ PointSource::~PointSource()
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericVector& b)
 {
-  dolfin_assert(_V);
+  dolfin_assert(_function_space);
 
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
   // Find the cell containing the point (may be more than one cell but
   // we only care about the first). Well-defined if the basis
   // functions are continuous but may give unexpected results for DG.
-  dolfin_assert(_V->mesh());
-  const Mesh& mesh = *_V->mesh();
+  dolfin_assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
   std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int cell_index = tree->compute_first_entity_collision(_p);
 
@@ -103,28 +103,28 @@ void PointSource::apply(GenericVector& b)
       vertex_coordinates[i*gdim + j] = mesh.geometry().x(vertices[i])[j];
 
   // Evaluate all basis functions at the point()
-  dolfin_assert(_V->element());
-  dolfin_assert(_V->element()->value_rank() == 0);
-  std::vector<double> values(_V->element()->space_dimension());
+  dolfin_assert(_function_space->element());
+  dolfin_assert(_function_space->element()->value_rank() == 0);
+  std::vector<double> values(_function_space->element()->space_dimension());
   const int cell_orientation = 0;
-  _V->element()->evaluate_basis_all(values.data(),
+  _function_space->element()->evaluate_basis_all(values.data(),
                                    _p.coordinates(),
                                     vertex_coordinates.data(),
                                     cell_orientation);
 
   // Scale by magnitude
-  for (std::size_t i = 0; i < _V->element()->space_dimension(); i++)
+  for (std::size_t i = 0; i < _function_space->element()->space_dimension(); i++)
     values[i] *= _magnitude;
 
   // Compute local-to-global mapping
-  dolfin_assert(_V->dofmap());
+  dolfin_assert(_function_space->dofmap());
   const std::vector<dolfin::la_index>& dofs
-    = _V->dofmap()->cell_dofs(cell.index());
+    = _function_space->dofmap()->cell_dofs(cell.index());
 
   // Add values to vector
-  dolfin_assert(_V->element()->space_dimension()
-                == _V->dofmap()->cell_dimension(cell.index()));
-  b.add(values.data(), _V->element()->space_dimension(), dofs.data());
+  dolfin_assert(_function_space->element()->space_dimension()
+                == _function_space->dofmap()->cell_dimension(cell.index()));
+  b.add(values.data(), _function_space->element()->space_dimension(), dofs.data());
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
