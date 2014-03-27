@@ -80,11 +80,10 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   dolfin_assert(!shared_cells.empty());
 
   // Ownership of cells
-  const std::vector<std::size_t>& ghost_owner
-    = mesh.data().array("ghost_owner", tdim);
-  dolfin_assert(!ghost_owner.empty());
+  const std::map<unsigned int, unsigned int>& cell_owner
+    = mesh.topology().cell_owner();
+  dolfin_assert(!cell_owner.empty());
 
-  const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
   const unsigned int mpi_size = MPI::size(mesh.mpi_comm());
 
   // Communicate shared entities
@@ -108,18 +107,24 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
   {
     // Get cell ownership around entity
-    dolfin::Set<unsigned int> cell_owner;
+    dolfin::Set<unsigned int> cell_ownership;
     for (CellIterator c(*e); !c.end(); ++c)
-      cell_owner.insert(ghost_owner[c->index()]);
-
-    if (cell_owner.size() == 1 && cell_owner[0] == mpi_rank)
+    {
+      auto owner_it = cell_owner.find(c->index());
+      // If it is in map, then it is not a local cell
+      if (owner_it != cell_owner.end())
+        cell_ownership.insert(owner_it->second);
+    }
+    
+    if (cell_ownership.size() == 0)
+      // All neighbouring cells are local - can be numbered here
       global_entity_indices[e->index()] = ecount++;
     else
     {
       // Non-local entity - save to map,
       // ready to receive from another process
       non_local_entity_map.insert(std::make_pair
-                                  (entity_key(*e), e->index()));
+                                 (entity_key(*e), e->index()));
     }
   }
 
@@ -132,8 +137,12 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
        it != global_entity_indices.end(); ++it)
     *it += local_offset;
 
-  // Send shared entities to matching process based on 
+  // Send shared entities to matching process based on
   // MPI::index_owner of first vertex
+  // NB: need to iterate over all entities, as
+  // even local entities (all surrounding cells local)
+  // may be shared, if one or more of the cells is shared.
+  // FIXME: could iterate over all shared cells instead?
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
   {
     // Get set of cell sharing processes around entity

@@ -288,12 +288,13 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       // process.
       // Get/build topology data
       
-      const std::vector<std::size_t>& cell_owner 
-        = mesh.data().array("ghost_owner", cell_dim);
+      const std::map<unsigned int, unsigned int>& cell_owner 
+        = mesh.topology().cell_owner();
 
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-        if (cell_owner[c->index()] == my_rank)
+        if (cell_owner.find(c->index()) == cell_owner.end())
         {
+          // Not in 'cell_owner' map, so must be local
           for (VertexIterator v(*c); !v.end(); ++v)
             topological_data.push_back(v->global_index());
           global_cell_indices.push_back(c->global_index());
@@ -301,14 +302,14 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     }
     else
     {
-      // FIXME: probably borken with ghost-mesh
+      // FIXME: probably broken with ghost-mesh
       
       // Drop duplicate topology for shared entities of less than mesh
       // dimension
 
       // If not already numbered, number entities of order cell_dim so
       // we can get shared_entities
-      DistributedMeshTools::number_entities(mesh, cell_dim);
+      DistributedMeshTools::ghost_number_entities(mesh, cell_dim);
 
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
@@ -500,7 +501,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   }
 
   // Ensure size_global(cell_dim) is set
-  DistributedMeshTools::number_entities(mesh, cell_dim);
+  DistributedMeshTools::ghost_number_entities(mesh, cell_dim);
 
   if (num_global_cells != mesh.size_global(cell_dim))
   {
@@ -676,15 +677,18 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   }
   else if (cell_dim == mesh.topology().dim())
   {
-    const std::size_t mpi_rank = MPI::rank(_mpi_comm);
-    const std::vector<std::size_t>& cell_owner
-      = mesh.data().array("ghost_owner", cell_dim);
+    const std::map<unsigned int, unsigned int>& cell_owner
+      = mesh.topology().cell_owner();
+
+    // Check if cell 'i' is in cell_owner map - if not, it is local
     for (std::size_t i = 0; i < meshfunction.size(); ++i)
-      if (cell_owner[i] == mpi_rank)
+      if (cell_owner.find(i) == cell_owner.end())
         data_values.push_back(meshfunction[i]);
   }
   else
   {
+    // FIXME: probably broken with ghost mesh
+    
     data_values.reserve(mesh.size(cell_dim));
 
     // Drop duplicate data

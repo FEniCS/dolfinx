@@ -241,21 +241,23 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
        map_it != shared_vertices_global.end(); ++map_it)
   {
     const std::size_t g_index = map_it->first;
-    dolfin_assert(vertex_global_to_local.find(g_index) 
-                  != vertex_global_to_local.end());
-    const unsigned int l_index = vertex_global_to_local[g_index];
+    auto index_it = vertex_global_to_local.find(g_index);
+    dolfin_assert(index_it != vertex_global_to_local.end());
+    const unsigned int l_index = index_it->second;
     shared_vertices_local.insert
       (std::make_pair(l_index, map_it->second));
   }
 
-  // FIXME: this may later become a Mesh member variable  
-  mesh.data().create_array("ghost_owner", mesh_data.tdim);
-  // Copy array over
-  std::vector<std::size_t>& ghost_cell_owner = 
-    mesh.data().array("ghost_owner", mesh_data.tdim);
-  ghost_cell_owner.insert(ghost_cell_owner.begin(),
-                          new_mesh_data.cell_partition.begin(),
-                          new_mesh_data.cell_partition.end());
+  // Copy cell ownership to map
+  const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
+  std::map<unsigned int, unsigned int>& cell_owner = 
+    mesh.topology().cell_owner();
+  for (unsigned int i = 0; i != new_mesh_data.cell_partition.size(); ++i)
+  {
+    const unsigned int proc = new_mesh_data.cell_partition[i];
+    if (proc != mpi_rank)
+      cell_owner.insert(std::make_pair(i, proc));
+  }
 
   // Assign map of shared cells
   mesh.topology().shared_entities(mesh_data.tdim) = shared_cells;

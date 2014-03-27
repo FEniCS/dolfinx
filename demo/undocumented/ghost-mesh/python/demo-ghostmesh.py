@@ -27,8 +27,15 @@ for k,val in M.topology().shared_entities(0).iteritems():
 
 x,y = M.coordinates().transpose()
 
-cell_ownership = M.data().array("ghost_owner", M.topology().dim())
 process_number = MPI.rank(M.mpi_comm())
+
+cell_ownership = np.zeros(M.num_cells(),dtype='int')
+cell_owner = M.topology().cell_owner()
+for i in range(M.num_cells()):
+    if i in cell_owner.keys():
+        cell_ownership[i] = cell_owner[i]
+    else:
+        cell_ownership[i] = process_number
 
 cells_store=[]
 cells_note=[]
@@ -50,7 +57,7 @@ for c in cells(M):
     cells_note.append((xavg, yavg, cell_str))
     cells_store.append(zip(xc,yc))
     
-    colors.append(cmap[cell_ownership[idx]])
+    colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
 
 fig, ax = plt.subplots()

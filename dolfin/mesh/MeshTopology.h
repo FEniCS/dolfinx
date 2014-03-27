@@ -113,10 +113,18 @@ namespace dolfin
     std::map<unsigned int, std::set<unsigned int> >&
       shared_entities(unsigned int dim);
 
-    /// Return map from shared entiies (local index) to process that
+    /// Return map from shared entities (local index) to process that
     /// share the entity (const version)
     const std::map<unsigned int, std::set<unsigned int> >&
       shared_entities(unsigned int dim) const;
+
+    /// Return map from local cell index to owning process
+    std::map<unsigned int, unsigned int>& cell_owner()
+    { return _cell_owner; }
+
+    /// Return map from local cell index to owning process (const version)
+    const std::map<unsigned int, unsigned int>& cell_owner() const
+    { return _cell_owner; }
 
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1);
@@ -163,6 +171,10 @@ namespace dolfin
     // (local index) to a list of the processes sharing the vertex
     std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >
       _shared_entities;
+
+    // For cells which are "ghosted", map to the owning process
+    // Cells not in this map are locally owned
+    std::map<unsigned int, unsigned int> _cell_owner;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;
