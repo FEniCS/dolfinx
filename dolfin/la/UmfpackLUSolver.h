@@ -111,7 +111,7 @@ namespace dolfin
     std::shared_ptr<void> numeric;
 
     // Operator (the matrix)
-    std::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _matA;
 
   };
 

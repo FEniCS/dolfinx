@@ -117,10 +117,10 @@ namespace dolfin
       _methods_descr;
 
     // Operator (the matrix)
-    std::shared_ptr<const EpetraMatrix> _A;
+    std::shared_ptr<const EpetraMatrix> _matA;
 
     // Matrix used to construct the preconditoner
-    std::shared_ptr<const EpetraMatrix> _P;
+    std::shared_ptr<const EpetraMatrix> _matP;
 
     // Preconditioner
     std::shared_ptr<TrilinosPreconditioner> _preconditioner;

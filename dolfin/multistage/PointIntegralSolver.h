@@ -189,7 +189,7 @@ namespace dolfin
 
     // Local solutions
     std::vector<double> _u0;
-    std::vector<double> _F;
+    std::vector<double> _residual;
     std::vector<double> _y;
     std::vector<double> _dx;
 
