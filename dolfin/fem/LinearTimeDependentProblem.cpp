@@ -32,7 +32,7 @@ LinearTimeDependentProblem(const TensorProductForm& a,
                            Function& u)
   : Hierarchical<LinearTimeDependentProblem>(*this),
     _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L)),
+    _l(reference_to_no_delete_pointer(L)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Check forms
@@ -46,7 +46,7 @@ LinearTimeDependentProblem(const TensorProductForm& a,
                            const BoundaryCondition& bc)
   : Hierarchical<LinearTimeDependentProblem>(*this),
     _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L)),
+    _l(reference_to_no_delete_pointer(L)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary condition
@@ -63,7 +63,7 @@ LinearTimeDependentProblem(const TensorProductForm& a,
                            std::vector<const BoundaryCondition*> bcs)
   : Hierarchical<LinearTimeDependentProblem>(*this),
     _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L)),
+    _l(reference_to_no_delete_pointer(L)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary conditions
@@ -80,7 +80,7 @@ LinearTimeDependentProblem(std::shared_ptr<const TensorProductForm> a,
                            std::shared_ptr<Function> u,
                            std::vector<std::shared_ptr<const BoundaryCondition> > bcs)
   : Hierarchical<LinearTimeDependentProblem>(*this),
-    _a(a), _L(L), _u(u)
+    _a(a), _l(L), _u(u)
 {
   // Store boundary conditions
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -99,7 +99,7 @@ LinearTimeDependentProblem::bilinear_form() const
 std::shared_ptr<const TensorProductForm>
 LinearTimeDependentProblem::linear_form() const
 {
-  return _L;
+  return _l;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<Function> LinearTimeDependentProblem::solution()
@@ -145,13 +145,13 @@ void LinearTimeDependentProblem::check_forms() const
   }
 
   // Check rank of linear form L
-  dolfin_assert(_L);
-  if (_L->rank() != 1)
+  dolfin_assert(_l);
+  if (_l->rank() != 1)
   {
     dolfin_error("LinearTimeDependentProblem.cpp",
                  "define linear variational problem a(u, v) = L(v) for all v",
                  "Expecting the right-hand side to be a linear form (not rank %d)",
-                 _L->rank());
+                 _l->rank());
   }
 
   // Check that function space of solution variable matches trial space

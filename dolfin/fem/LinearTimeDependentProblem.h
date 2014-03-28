@@ -103,7 +103,7 @@ namespace dolfin
     std::shared_ptr<const TensorProductForm> _a;
 
     // The linear form
-    std::shared_ptr<const TensorProductForm> _L;
+    std::shared_ptr<const TensorProductForm> _l;
 
     // The solution
     std::shared_ptr<Function> _u;

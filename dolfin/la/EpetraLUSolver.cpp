@@ -138,8 +138,8 @@ EpetraLUSolver::EpetraLUSolver(std::shared_ptr<const GenericLinearOperator> A,
   parameters = default_parameters();
 
   // Set operator
-  _A = as_type<const EpetraMatrix>(require_matrix(A));
-  dolfin_assert(_A);
+  _matA = as_type<const EpetraMatrix>(require_matrix(A));
+  dolfin_assert(_matA);
 
   // Choose method
   _method = choose_method(method);
@@ -168,9 +168,9 @@ EpetraLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(linear_problem);
 
-  _A = as_type<const EpetraMatrix>(require_matrix(A));
-  dolfin_assert(_A);
-  linear_problem->SetOperator(_A->mat().get());
+  _matA = as_type<const EpetraMatrix>(require_matrix(A));
+  dolfin_assert(_matA);
+  linear_problem->SetOperator(_matA->mat().get());
 
   symbolic_factorized = false;
   numeric_factorized  = false;
@@ -178,13 +178,13 @@ EpetraLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& EpetraLUSolver::get_operator() const
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("EpetraLUSolver.cpp",
                  "access operator for Epetra LU solver",
                  "Operator has not been set");
   }
-  return *_A;
+  return *_matA;
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
@@ -200,12 +200,12 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
     if (solver->UseTranspose())
     {
       info("Solving linear system transposed of size %d x %d using Epetra LU solver (%s).",
-           _A->size(0), _A->size(1), _method.c_str());
+           _matA->size(0), _matA->size(1), _method.c_str());
     }
     else
     {
       info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
-           _A->size(0), _A->size(1), _method.c_str());
+           _matA->size(0), _matA->size(1), _method.c_str());
     }
   }
 
@@ -233,7 +233,7 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Initialize solution vector
   if (x.empty())
   {
-    _A->init_vector(x, 1);
+    _matA->init_vector(x, 1);
     x.zero();
   }
 
