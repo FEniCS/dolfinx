@@ -214,8 +214,8 @@ public:
     // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
 
     UnitCubeMesh mesh_0(2, 4, 4);
-    //BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
-    BoxMesh mesh_1(-0.1, -0.1, -0.1,    1.1, 1.1, 0.1,   4, 4, 2);
+    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
+    //BoxMesh mesh_1(-0.1, -0.1, -0.1,    1.1, 1.1, 0.1,   4, 4, 2);
 
 
     // Build the multimesh
@@ -228,7 +228,7 @@ public:
     multimesh.build();
 
     // Exact volume of the interface is known
-    const double exact_volume = 1;//0.8*0.8*6; // for mesh_0 and mesh_1
+    const double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
     double volume = 0;
 
 
@@ -249,7 +249,7 @@ public:
           Point pt(quadrature_rule[*it].second[i*gdim],
                    quadrature_rule[*it].second[i*gdim+1],
                    quadrature_rule[*it].second[i*gdim+2]);
-	  std::cout << "plot3("<<pt[0]<<','<<pt[1]<<','<<pt[2]<<",'.');";
+	  //std::cout << "plot3("<<pt[0]<<','<<pt[1]<<','<<pt[2]<<",'.');";
 	}
       }
     }

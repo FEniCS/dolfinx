@@ -605,6 +605,8 @@ void MultiMesh::_build_quadrature_rules_cut_cells_interface()
   _quadrature_rules_cut_cells_interface.clear();
   _quadrature_rules_cut_cells_interface.resize(num_parts());
 
+  //double total_volume = 0;
+
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
@@ -680,8 +682,6 @@ void MultiMesh::_build_quadrature_rules_cut_cells_interface()
 	    _add_quadrature_rule(quadrature_rule,
 				 triangulation,
 				 tdim_boundary, gdim, order, 1);
-
-	    break;
 	  }
 
 	  //std::cout << full_mesh_facet<<std::endl;
@@ -733,71 +733,75 @@ void MultiMesh::_build_quadrature_rules_cut_cells_interface()
       }
 
 
-      {
-        std::vector<double> triangles = total_triangulation;
-        std::string str;
-        std::vector<Point> tri(3);
+      // {
+      //   std::vector<double> triangles = total_triangulation;
+      //   std::string str;
+      //   std::vector<Point> tri(3);
 
-        for (std::size_t i = 0; i < triangles.size()/9; ++i)
-        {
-          tri[0]= Point(triangles[9*i], triangles[9*i+1], triangles[9*i+2]);
-          tri[1]= Point(triangles[9*i+3], triangles[9*i+4], triangles[9*i+5]);
-          tri[2]= Point(triangles[9*i+6], triangles[9*i+7], triangles[9*i+8]);
+      //   for (std::size_t i = 0; i < triangles.size()/9; ++i)
+      //   {
+      //     tri[0]= Point(triangles[9*i], triangles[9*i+1], triangles[9*i+2]);
+      //     tri[1]= Point(triangles[9*i+3], triangles[9*i+4], triangles[9*i+5]);
+      //     tri[2]= Point(triangles[9*i+6], triangles[9*i+7], triangles[9*i+8]);
 
-          //str += drawsimplex(tri);
+      //     //str += drawsimplex(tri);
 
-          std::vector<Point> simplex = tri;
+      //     std::vector<Point> simplex = tri;
 
-          std::stringstream ss;
-          switch(simplex.size())
-          {
-          case 2:
-            ss << "drawline(";
-            break;
-          case 3:
-            ss << "drawtriangle(";
-            break;
-          case 4:
-            ss << "drawtet(";
-            break;
-          default: ss<<"fdsafsdafdsa\n";
-          }
+      //     std::stringstream ss;
+      //     switch(simplex.size())
+      //     {
+      //     case 2:
+      //       ss << "drawline(";
+      //       break;
+      //     case 3:
+      //       ss << "drawtriangle(";
+      //       break;
+      //     case 4:
+      //       ss << "drawtet(";
+      //       break;
+      //     default: ss<<"fdsafsdafdsa\n";
+      //     }
 
-          const std::string color = "'b'";
+      //     const std::string color = "'b'";
 
-          for (std::size_t i = 0; i < simplex.size(); ++i)
-          {
-            ss << "[";
-            for (int d = 0; d < 3; ++d)
-              ss << simplex[i][d] <<' ';
-            ss << "],";
-          }
-          ss << color<< ");";
-          //return ss.str();
-          std::cout << ss.str();
-        }
+      //     for (std::size_t i = 0; i < simplex.size(); ++i)
+      //     {
+      //       ss << "[";
+      //       for (int d = 0; d < 3; ++d)
+      //         ss << simplex[i][d] <<' ';
+      //       ss << "],";
+      //     }
+      //     ss << color<< ");";
+      //     //return ss.str();
+      //     std::cout << ss.str();
+      //   }
 
-        std::cout<<std::endl;
+      //   std::cout<<std::endl;
 
-	double v = 0;
-        for (std::size_t i = 0; i < quadrature_rule.first.size(); ++i) {
-          v += quadrature_rule.first[i];
-          const int gdim = 3;
-          Point pt(quadrature_rule.second[i*gdim],
-                   quadrature_rule.second[i*gdim+1],
-                   quadrature_rule.second[i*gdim+2]);
-          //std::cout << plot(pt);
-          //std::cout << pt[0]<<' '<<pt[1]<<' '<<pt[2]<<std::endl;
-	  std::cout << "plot3("<<pt[0]<<','<<pt[1]<<','<<pt[2]<<",'.');";
-	}
+      // 	double v = 0;
+      //   for (std::size_t i = 0; i < quadrature_rule.first.size(); ++i) {
+      //     v += quadrature_rule.first[i];
+      //     const int gdim = 3;
+      //     Point pt(quadrature_rule.second[i*gdim],
+      //              quadrature_rule.second[i*gdim+1],
+      //              quadrature_rule.second[i*gdim+2]);
+      //     //std::cout << plot(pt);
+      //     //std::cout << pt[0]<<' '<<pt[1]<<' '<<pt[2]<<std::endl;
+      // 	  std::cout << "plot3("<<pt[0]<<','<<pt[1]<<','<<pt[2]<<",'.');";
+      // 	}
 
-        //std::cout << "%pause, v="<<v<<std::endl; char apa; std::cin >> apa;
-      }
+      // 	//total_volume += v;
+
+      //   //std::cout << "%pause, v="<<v<<std::endl; char apa; std::cin >> apa;
+      // }
 
       // Store quadrature rule for cut cell
       _quadrature_rules_cut_cells_interface[cut_part][cut_cell_index] = quadrature_rule;
     }
   }
+
+  //std::cout << "\n\n"<<total_volume<<"\n\n";
 
   end();
 }
