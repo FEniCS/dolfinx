@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2014-03-28
+// Last changed: 2014-03-31
 //
 // Unit tests for MultiMesh
 
@@ -30,8 +30,8 @@ using namespace dolfin;
 class MultiMeshes : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(MultiMeshes);
-  CPPUNIT_TEST(test_multiple_meshes_quadrature);
-  //CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
+  //CPPUNIT_TEST(test_multiple_meshes_quadrature);
+  CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -205,13 +205,18 @@ public:
 
   void test_multiple_meshes_interface_quadrature()
   {
-    const std::size_t gdim = 2;
-    const std::size_t tdim = 2;
-    UnitSquareMesh mesh_0(31, 17);
-    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
-    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
-    RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
-    RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+    // const std::size_t gdim = 2;
+    // const std::size_t tdim = 2;
+    // UnitSquareMesh mesh_0(31, 17);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
+    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
+    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+
+    UnitCubeMesh mesh_0(2, 4, 4);
+    //BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
+    BoxMesh mesh_1(-0.1, -0.1, -0.1,    1.1, 1.1, 0.1,   4, 4, 2);
+
 
     // Build the multimesh
     MultiMesh multimesh;
@@ -223,21 +228,29 @@ public:
     multimesh.build();
 
     // Exact volume of the interface is known
-    const double exact_volume = 0.8*4; // for mesh_0 and mesh_1
+    const double exact_volume = 1;//0.8*0.8*6; // for mesh_0 and mesh_1
     double volume = 0;
+
 
     // Sum contribution from all parts
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
       std::cout << "% part " << part << '\n';
 
-      // Cut cell interface volume given by quadrature rule
+      // Cut cell
       const auto cut_cells = multimesh.cut_cells(part);
-      auto qr = multimesh.quadrature_rule_cut_cells_interface(part);
+      auto quadrature_rule = multimesh.quadrature_rule_cut_cells_interface(part);
       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
       {
-        for (std::size_t i = 0; i < qr[*it].first.size(); ++i)
-          volume += qr[*it].first[i];
+        for (std::size_t i = 0; i < quadrature_rule[*it].first.size(); ++i)
+	{
+          volume += quadrature_rule[*it].first[i];
+          const int gdim = 3;
+          Point pt(quadrature_rule[*it].second[i*gdim],
+                   quadrature_rule[*it].second[i*gdim+1],
+                   quadrature_rule[*it].second[i*gdim+2]);
+	  std::cout << "plot3("<<pt[0]<<','<<pt[1]<<','<<pt[2]<<",'.');";
+	}
       }
     }
 
