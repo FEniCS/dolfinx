@@ -1,3 +1,4 @@
+ - Feature: Add set_diagonal (with GenericVector) to GenericMatrix
  - Force all global dofs to be ordered last and to be on the last process
 	in parallel
  - Speed up dof reordering of mixed space including global dofs by removing

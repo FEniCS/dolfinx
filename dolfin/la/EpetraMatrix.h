@@ -156,6 +156,9 @@ namespace dolfin
     // Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x);
+
     /// Multiply matrix by given number
     virtual const EpetraMatrix& operator*= (double a);
 
