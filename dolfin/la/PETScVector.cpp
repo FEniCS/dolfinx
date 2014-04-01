@@ -163,8 +163,7 @@ bool PETScVector::distributed() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> PETScVector::copy() const
 {
-  std::shared_ptr<GenericVector> v(new PETScVector(*this));
-  return v;
+  return std::shared_ptr<GenericVector>(new PETScVector(*this));
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(MPI_Comm comm, std::size_t N)

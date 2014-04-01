@@ -138,16 +138,16 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     // RHS sub-vector
     GenericVector& _y = *(y.get_block(row));
 
-    const GenericMatrix& _A = *matrices[row][0];
+    const GenericMatrix& _matA = *matrices[row][0];
 
     // Resize y and zero
     if (_y.empty())
-      _A.init_vector(_y, 0);
+      _matA.init_vector(_y, 0);
     _y.zero();
 
     // Loop over block columns
     std::shared_ptr<GenericVector>
-      z_tmp = _A.factory().create_vector();
+      z_tmp = _matA.factory().create_vector();
     for(std::size_t col = 0; col < matrices.shape()[1]; ++col)
     {
       const GenericVector& _x = *(x.get_block(col));

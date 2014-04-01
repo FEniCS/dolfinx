@@ -184,7 +184,7 @@ namespace dolfin
   private:
 
     // Epetra_FECrsMatrix pointer
-    std::shared_ptr<Epetra_FECrsMatrix> _A;
+    std::shared_ptr<Epetra_FECrsMatrix> _matA;
 
     // Epetra_FECrsMatrix pointer, used when initialized with a
     // Teuchos::RCP shared_ptr

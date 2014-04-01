@@ -77,17 +77,17 @@ ErrorControl::ErrorControl(std::shared_ptr<Form> a_star,
   // Extract and store additional function spaces
   const std::size_t improved_dual = _residual->num_coefficients() - 1;
   const Function& e_tmp = dynamic_cast<const Function&>(*_residual->coefficient(improved_dual));
-  _E = e_tmp.function_space();
+  _extrapolation_space = e_tmp.function_space();
 
   const Function& bubble = dynamic_cast<const Function&>(*_a_R_T->coefficient(0));
-  _B = bubble.function_space();
-  _cell_bubble.reset(new Function(_B));
+  _bubble_space = bubble.function_space();
+  _cell_bubble.reset(new Function(_bubble_space));
   dolfin_assert(_cell_bubble->vector());
   *(_cell_bubble->vector()) = 1.0;
 
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
-  _C = cone.function_space();
-  _cell_cone.reset(new Function(_C));
+  _cone_space = cone.function_space();
+  _cell_cone.reset(new Function(_cone_space));
 
   // Set parameters
   parameters = default_parameters();
@@ -164,8 +164,8 @@ void ErrorControl::compute_extrapolation(const Function& z,
   log(PROGRESS, "Extrapolating dual solution.");
 
   // Extrapolate
-  dolfin_assert(_E);
-  _Ez_h.reset(new Function(_E));
+  dolfin_assert(_extrapolation_space);
+  _Ez_h.reset(new Function(_extrapolation_space));
   _Ez_h->extrapolate(z);
 
   // Apply appropriate boundary conditions to extrapolation
@@ -346,8 +346,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const int dim = mesh.topology().dim();
 
   // Extract dimension of cell cone space (DG_{dim})
-  dolfin_assert(_C->element());
-  const int local_cone_dim = _C->element()->space_dimension();
+  dolfin_assert(_cone_space->element());
+  const int local_cone_dim = _cone_space->element()->space_dimension();
 
   // Extract number of coefficients on right-hand side (for use with
   // attaching coefficients)
@@ -480,13 +480,13 @@ const std::vector<std::shared_ptr<const DirichletBC> > bcs)
     if (component.empty())
     {
       if (sub_domain)
-        e_bc.reset(new DirichletBC(_E, bcs[i]->value(), sub_domain, bcs[i]->method()));
+        e_bc.reset(new DirichletBC(_extrapolation_space, bcs[i]->value(), sub_domain, bcs[i]->method()));
       else
-        e_bc.reset(new DirichletBC(_E, bcs[i]->value(), bcs[i]->markers(), bcs[i]->method()));
+        e_bc.reset(new DirichletBC(_extrapolation_space, bcs[i]->value(), bcs[i]->markers(), bcs[i]->method()));
     }
     else
     {
-      std::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
+      std::shared_ptr<SubSpace> S(new SubSpace(*_extrapolation_space, component));
       if (sub_domain)
         e_bc.reset(new DirichletBC(S, bcs[i]->value(), sub_domain, bcs[i]->method()));
       else

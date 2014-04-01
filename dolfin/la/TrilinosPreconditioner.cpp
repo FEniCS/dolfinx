@@ -120,8 +120,8 @@ void TrilinosPreconditioner::set(BelosLinearProblem& problem,
 {
   // Pointer to preconditioner matrix
   // TODO const?!
-  Epetra_RowMatrix* _P = P.mat().get();
-  dolfin_assert(_P);
+  Epetra_RowMatrix* _matP = P.mat().get();
+  dolfin_assert(_matP);
 
   // Set preconditioner
   if (_preconditioner == "default" || _preconditioner == "ilu"
@@ -145,7 +145,7 @@ void TrilinosPreconditioner::set(BelosLinearProblem& problem,
       ifpack_name = "ILU";
 
     Ifpack ifpack_factory;
-    _ifpack_preconditioner.reset(ifpack_factory.Create(ifpack_name, _P,
+    _ifpack_preconditioner.reset(ifpack_factory.Create(ifpack_name, _matP,
                                                        overlap));
     dolfin_assert(_ifpack_preconditioner != 0);
 
@@ -174,10 +174,10 @@ void TrilinosPreconditioner::set(BelosLinearProblem& problem,
   else if (_preconditioner == "hypre_amg")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
-    set_ml(problem, *_P);
+    set_ml(problem, *_matP);
   }
   else if (_preconditioner == "ml_amg" || _preconditioner == "amg")
-    set_ml(problem, *_P);
+    set_ml(problem, *_matP);
   else if (_preconditioner == "none")
   {
     // Do nothing.

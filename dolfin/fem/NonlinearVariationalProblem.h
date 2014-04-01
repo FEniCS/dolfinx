@@ -164,10 +164,10 @@ namespace dolfin
     void check_forms() const;
 
     // The residual form
-    std::shared_ptr<const Form> _F;
+    std::shared_ptr<const Form> _residual;
 
     // The Jacobian form (pointer may be zero if not provided)
-    std::shared_ptr<const Form> _J;
+    std::shared_ptr<const Form> _jacobian;
 
     // The solution
     std::shared_ptr<Function> _u;
