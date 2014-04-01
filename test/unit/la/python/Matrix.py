@@ -265,7 +265,7 @@ class AbstractBaseTest(object):
 
         A.mult(ones, resultsA)
         B.mult(ones, resultsB)
-        self.assertEqual(resultsA.norm("l2"), resultsB.norm("l2"))
+        self.assertAlmostEqual(resultsA.norm("l2"), resultsB.norm("l2"))
         
     def test_setting_diagonal_with_backend(self):
         self.test_setting_diagonal(True)

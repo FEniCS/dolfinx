@@ -447,7 +447,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_diagonal(const GenericVector& x)
 {
-  dolfin_assert(_A);
+  dolfin_assert(_matA);
 
   const PETScVector& xx = x.down_cast<PETScVector>();
   if (size(1) != size(0) || size(0) != xx.size())
@@ -455,7 +455,7 @@ void PETScMatrix::set_diagonal(const GenericVector& x)
                  "set diagonal of a PETSc matrix",
                  "Matrix and vector dimensions don't match for matrix-vector set");
 
-  PetscErrorCode ierr = MatDiagonalSet(_A, xx.vec(), INSERT_VALUES);
+  PetscErrorCode ierr = MatDiagonalSet(_matA, xx.vec(), INSERT_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatDiagonalSet");
   apply("insert");
 }

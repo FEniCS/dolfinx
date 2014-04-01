@@ -675,7 +675,7 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 //-----------------------------------------------------------------------------
 void EpetraMatrix::set_diagonal(const GenericVector& x)
 {
-  dolfin_assert(_A);
+  dolfin_assert(_matA);
 
   const EpetraVector& x_ = x.down_cast<EpetraVector>();
 
@@ -686,7 +686,7 @@ void EpetraMatrix::set_diagonal(const GenericVector& x)
   
   const Epetra_Vector xx(View, *(x_.vec().get()), 0);
 
-  const int err = _A->ReplaceDiagonalValues(xx);
+  const int err = _matA->ReplaceDiagonalValues(xx);
   if (err != 0)
     dolfin_error("EpetraMatrix.cpp",
 		 "set the diagonal of an Epetra matrix",

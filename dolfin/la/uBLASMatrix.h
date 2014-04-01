@@ -535,7 +535,7 @@ namespace dolfin
     typename Mat::iterator2 entry;  // Iterator over entries
 
     // FIXME: Cannot be a good way to do it for a dense matrices
-    for (row = _A.begin1(); row != _A.end1(); ++row)
+    for (row = _matA.begin1(); row != _matA.end1(); ++row)
     {
       for (entry = row.begin(); entry != row.end(); ++entry)
       {
