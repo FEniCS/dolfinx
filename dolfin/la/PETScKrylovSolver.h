@@ -176,10 +176,10 @@ namespace dolfin
     std::shared_ptr<PETScPreconditioner> _preconditioner;
 
     // Operator (the matrix)
-    std::shared_ptr<const PETScBaseMatrix> _A;
+    std::shared_ptr<const PETScBaseMatrix> _matA;
 
     // Matrix used to construct the preconditoner
-    std::shared_ptr<const PETScBaseMatrix> _P;
+    std::shared_ptr<const PETScBaseMatrix> _matP;
 
     // Null space vectors
     std::vector<PETScVector> _nullspace;

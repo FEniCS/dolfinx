@@ -29,11 +29,11 @@ LinearOperator::LinearOperator(const GenericVector& x,
 {
   // Create concrete implementation
   DefaultFactory factory;
-  _A = factory.create_linear_operator();
-  dolfin_assert(_A);
+  _matA = factory.create_linear_operator();
+  dolfin_assert(_matA);
 
   // Initialize implementation
-  _A->init_layout(x, y, this);
+  _matA->init_layout(x, y, this);
 }
 //-----------------------------------------------------------------------------
 LinearOperator::LinearOperator()
@@ -51,21 +51,21 @@ std::string LinearOperator::str(bool verbose) const
 //-----------------------------------------------------------------------------
 const GenericLinearOperator* LinearOperator::instance() const
 {
-  return _A.get();
+  return _matA.get();
 }
 //-----------------------------------------------------------------------------
 GenericLinearOperator* LinearOperator::instance()
 {
-  return _A.get();
+  return _matA.get();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const LinearAlgebraObject> LinearOperator::shared_instance() const
 {
-  return _A;
+  return _matA;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<LinearAlgebraObject> LinearOperator::shared_instance()
 {
-  return _A;
+  return _matA;
 }
 //-----------------------------------------------------------------------------
