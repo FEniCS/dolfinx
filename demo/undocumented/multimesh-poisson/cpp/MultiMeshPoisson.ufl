@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2005
-# Last changed: 2013-09-25
+# Last changed: 2014-04-02
 #
 # The bilinear form a(u, v) and linear form L(v) for
 # Poisson's equation.
@@ -29,5 +29,8 @@ u = TrialFunction(element)
 v = TestFunction(element)
 f = Coefficient(element)
 
-a = u*v*dx + inner(grad(u), grad(v))*dx + inner(grad(u), grad(v))*dQ
+dc0 = dc(0, metadata={"num_cells": 1})
+dc1 = dc(1, metadata={"num_cells": 2})
+
+a = u*v*dx + inner(grad(u), grad(v))*dx + inner(grad(u), grad(v))*dc0 + jump(u)*jump(v)*dc1
 L = f*v*dx
