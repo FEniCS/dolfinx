@@ -138,9 +138,9 @@ formulation. We also define the bilinear form ``a`` and linear form
 .. code-block:: c++
 
     // Construct function space
-    MixedPoisson::FunctionSpace W(mesh);
-    MixedPoisson::BilinearForm a(W, W);
-    MixedPoisson::LinearForm L(W);
+    MixedPoissonDual::FunctionSpace W(mesh);
+    MixedPoissonDual::BilinearForm a(W, W);
+    MixedPoissonDual::LinearForm L(W);
 
 Then we create the sources (:math:`f`, :math:`g`) and assign it to the
 linear form.
