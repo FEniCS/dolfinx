@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -35,6 +36,64 @@ namespace dolfin
   // Forward declarations
   class GenericTensor;
   class Form;
+
+  /// This class provides type compatible with boolean used for announcing
+  /// deprecation warning for deprecated bool member variable
+
+  // TODO: Remove when not needed.
+  class bool_deprecated
+  {
+  public:
+
+    bool_deprecated(const bool& value, const std::string& what,
+                    const std::string& ver_deprecated,
+                    const std::string& ver_removed,
+                    const std::string& reason)
+      : _value(value), _what(what),
+        _ver_deprecated(ver_deprecated),
+        _ver_removed(ver_removed), _reason(reason)
+    { }
+
+    bool_deprecated(const bool_deprecated& that)
+      : _value(that._value), _what(that._what),
+        _ver_deprecated(that._ver_deprecated),
+        _ver_removed(that._ver_removed), _reason(that._reason)
+    { }
+
+    ~bool_deprecated() { }
+
+    bool_deprecated& operator=(const bool_deprecated& that)
+    { 
+      _value          = that._value;
+      _what           = that._what;
+      _ver_deprecated = that._ver_deprecated;
+      _ver_removed    = that._ver_removed;
+      _reason         = that._reason;
+      return *this;
+    }
+
+    bool_deprecated& operator=(const bool& value)
+    {
+      deprecation(_what,
+                  _ver_deprecated,
+                  _ver_removed,
+                  _reason);
+      _value = value;
+      return *this;
+    }
+
+    operator bool() const { return _value; }
+
+  private:
+
+    bool _value;
+
+    std::string _what;
+    std::string _ver_deprecated;
+    std::string _ver_removed;
+    std::string _reason;
+
+  };
 
   /// This class provides some common functions used in
   /// assembler classes.
@@ -45,16 +104,17 @@ namespace dolfin
 
     // Check form
     AssemblerBase() :
-      reset_sparsity(true),
+      reset_sparsity(true, "Parameter reset_sparsity of assembler",
+                     "1.4", "1.5", "Parameter reset_sparsity of assembler"
+                     " is no longer used. Tensor is reset iff empty()."),
       add_values(false),
       finalize_tensor(true),
       keep_diagonal(false) {}
 
     /// reset_sparsity (bool)
-    ///     Default value is true.
-    ///     This controls whether the sparsity pattern of the
-    ///     given tensor is reset prior to assembly.
-    bool reset_sparsity;
+    ///     Deprecated. Sparsity pattern of the tensor is reset
+    ///     iff the tensor is empty().
+    bool_deprecated reset_sparsity;
 
     /// add_values (bool)
     ///     Default value is false.
