@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2007-01-17
-// Last changed: 2014-03-17
+// Last changed: 2014-04-03
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -88,11 +88,11 @@ void UFC::init(const Form& a)
   for (std::size_t i = 0; i < this->form.num_point_domains(); i++)
     point_integrals.push_back(std::shared_ptr<ufc::point_integral>(this->form.create_point_integral(i)));
 
-  // Create quadrature cell integrals
-  default_quadrature_cell_integral
-    = std::shared_ptr<ufc::quadrature_cell_integral>(this->form.create_default_quadrature_cell_integral());
-  for (std::size_t i = 0; i < this->form.num_quadrature_cell_domains(); i++)
-    quadrature_cell_integrals.push_back(std::shared_ptr<ufc::quadrature_cell_integral>(this->form.create_quadrature_cell_integral(i)));
+  // Create custom integrals
+  default_custom_integral
+    = std::shared_ptr<ufc::custom_integral>(this->form.create_default_custom_integral());
+  for (std::size_t i = 0; i < this->form.num_custom_domains(); i++)
+    custom_integrals.push_back(std::shared_ptr<ufc::custom_integral>(this->form.create_custom_integral(i)));
 
   // Get maximum local dimensions
   std::vector<std::size_t> max_local_dimension;

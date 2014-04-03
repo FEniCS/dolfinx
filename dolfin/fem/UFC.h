@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2007-01-17
-// Last changed: 2014-03-17
+// Last changed: 2014-04-03
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -109,9 +109,9 @@ namespace dolfin
     // proper fallback to default)
     std::vector<std::shared_ptr<ufc::point_integral> > point_integrals;
 
-    // Quadrature cell integrals (access through get_quadrature_cell_integral to get
+    // Custom integrals (access through get_custom_integral to get
     // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::quadrature_cell_integral> > quadrature_cell_integrals;
+    std::vector<std::shared_ptr<ufc::custom_integral> > custom_integrals;
 
   public:
 
@@ -129,8 +129,8 @@ namespace dolfin
     // Default point integral
     std::shared_ptr<ufc::point_integral> default_point_integral;
 
-    // Default quadrature cell integral
-    std::shared_ptr<ufc::quadrature_cell_integral> default_quadrature_cell_integral;
+    // Default custom integral
+    std::shared_ptr<ufc::custom_integral> default_custom_integral;
 
     /// Get cell integral over a given domain, falling back to the
     /// default if necessary
@@ -188,17 +188,17 @@ namespace dolfin
       return default_point_integral.get();
     }
 
-    /// Get quadrature cell integral over a given domain, falling back
-    /// to the default if necessary
-    ufc::quadrature_cell_integral * get_quadrature_cell_integral(std::size_t domain)
+    /// Get custom integral over a given domain, falling back to the
+    /// default if necessary
+    ufc::custom_integral * get_custom_integral(std::size_t domain)
     {
       if (domain < form.num_point_domains())
       {
-        ufc::quadrature_cell_integral * integral = quadrature_cell_integrals[domain].get();
+        ufc::custom_integral * integral = custom_integrals[domain].get();
         if (integral)
           return integral;
       }
-      return default_quadrature_cell_integral.get();
+      return default_custom_integral.get();
     }
 
     // Form

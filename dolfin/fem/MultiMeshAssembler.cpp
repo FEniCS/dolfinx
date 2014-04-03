@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-03-17
+// Last changed: 2014-04-03
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -108,7 +108,7 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a
 
     // Get integrals
     ufc::cell_integral* cell_integral = ufc_part.default_cell_integral.get();
-    ufc::quadrature_cell_integral* quadrature_cell_integral = ufc_part.default_quadrature_cell_integral.get();
+    ufc::custom_integral* custom_integral = ufc_part.default_custom_integral.get();
 
     // Iterate over uncut cells
     if (cell_integral)
@@ -141,7 +141,7 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a
     }
 
     // Iterate over cut cells
-    if (quadrature_cell_integral)
+    if (custom_integral)
     {
       log(PROGRESS, "Assembling multimesh form over cut cells.");
       const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
@@ -164,12 +164,12 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a
         const auto& quadrature_rule = quadrature_rules[*it];
 
         // Tabulate cell tensor
-        quadrature_cell_integral->tabulate_tensor(ufc_part.A.data(),
-                                                  ufc_part.w(),
-                                                  vertex_coordinates.data(),
-                                                  quadrature_rule.second.size(),
-                                                  quadrature_rule.first.data(),
-                                                  quadrature_rule.second.data());
+        custom_integral->tabulate_tensor(ufc_part.A.data(),
+                                         ufc_part.w(),
+                                         vertex_coordinates.data(),
+                                         quadrature_rule.second.size(),
+                                         quadrature_rule.first.data(),
+                                         quadrature_rule.second.data());
 
         // Add entries to global tensor
         A.add(ufc_part.A.data(), dofs);
