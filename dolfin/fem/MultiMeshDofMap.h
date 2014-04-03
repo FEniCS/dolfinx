@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2013-10-22
+// Last changed: 2014-03-17
 
-#ifndef __MultiMesh_DOF_MAP_H
-#define __MultiMesh_DOF_MAP_H
+#ifndef __MULTI_MESH_DOF_MAP_H
+#define __MULTI_MESH_DOF_MAP_H
 
 #include "GenericDofMap.h"
 
