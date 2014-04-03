@@ -88,7 +88,7 @@ namespace dolfin
 
     /// Return true if empty
     virtual bool empty() const
-    { return this->size(0); }
+    { return size(0) == 0; }
 
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const;

@@ -93,7 +93,7 @@ EpetraMatrix::~EpetraMatrix()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const TensorLayout& tensor_layout)
 {
-  if (this->empty())
+  if (!empty())
   {
     #ifdef DOLFIN_DEPRECATION_ERROR
     error("EpetraMatrix cannot be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
@@ -201,7 +201,7 @@ std::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
 //-----------------------------------------------------------------------------
 bool EpetraMatrix::empty() const
 {
-  return _matA ? true : false;
+  return _matA ? false : true;
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraMatrix::size(std::size_t dim) const
