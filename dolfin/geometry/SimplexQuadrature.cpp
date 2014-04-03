@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-03-13
+// Last changed: 2014-04-03
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -138,7 +138,7 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
   }
 
   // Store weights
-  quadrature_rule.first.assign(w.size(), std::abs(det));
+  quadrature_rule.first.assign(w.size(), 0.5*std::abs(det));
   for (std::size_t i = 0; i < w.size(); ++i)
     quadrature_rule.first[i] *= w[i];
 

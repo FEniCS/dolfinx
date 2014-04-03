@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2014-03-31
+// Last changed: 2014-04-03
 //
 // Unit tests for MultiMesh
 
@@ -24,6 +24,9 @@
 #include <dolfin/common/unittest.h>
 
 #include <dolfin/geometry/SimplexQuadrature.h>
+
+#include </home/august/Projects/fenicsBB/dolfin/dolfin/mesh/plotstuff.h>
+
 
 using namespace dolfin;
 
@@ -35,102 +38,6 @@ class MultiMeshes : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE_END();
 
 public:
-
-#define Pause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
-
-  std::string drawsimplex(const std::vector<Point>& simplex,
-                          const std::string& color = "'b'")
-  {
-    std::stringstream ss;
-    switch(simplex.size())
-    {
-    case 2:
-      ss << "drawline(";
-      break;
-    case 3:
-      ss << "drawtriangle(";
-      break;
-    case 4:
-      ss << "drawtet(";
-      break;
-    default: Pause;
-    }
-
-    for (std::size_t i = 0; i < simplex.size(); ++i)
-    {
-      ss << "[";
-      for (int d = 0; d < 3; ++d)
-        ss << simplex[i][d] <<' ';
-      ss << "],";
-    }
-    ss << color<< ");";
-    return ss.str();
-  }
-
-  std::string drawcell(const Cell &cell,
-                       const std::string color = "'b'")
-  {
-    const std::size_t nnodes = cell.mesh().topology().dim()+1;
-    std::vector<Point> simplex(nnodes);
-    for (std::size_t i = 0; i < nnodes; ++i)
-      simplex[i] = cell.mesh().geometry().point(cell.entities(0)[i]);
-    return drawsimplex(simplex, color);
-  }
-
-  std::string plot(const Point& p,const std::string m="'.'")
-  {
-    std::stringstream ss;
-    ss<<"plot3("<<p[0]<<','<<p[1]<<','<<p[2]<<','<<m<<");";
-    return ss.str();
-  }
-
-  std::string drawtriangulation(const std::vector<double> &triangles,
-                                const std::size_t gdim)
-  {
-    std::string str;
-    std::vector<Point> tri(3);
-
-    if (gdim == 2)
-    {
-      for (std::size_t i = 0; i < triangles.size()/6; ++i)
-      {
-        tri[0] = Point(triangles[6*i], triangles[6*i+1]);
-        tri[1] = Point(triangles[6*i+2], triangles[6*i+3]);
-        tri[2] = Point(triangles[6*i+4], triangles[6*i+5]);
-        str += drawsimplex(tri);
-      }
-      return str;
-    }
-
-    if (gdim == 3)
-    {
-      for (std::size_t i = 0; i < triangles.size()/9; ++i)
-      {
-        tri[0]= Point(triangles[9*i], triangles[9*i+1], triangles[9*i+2]);
-        tri[1]= Point(triangles[9*i+3], triangles[9*i+4], triangles[9*i+5]);
-        tri[2]= Point(triangles[9*i+6], triangles[9*i+7], triangles[9*i+8]);
-
-        str += drawsimplex(tri);
-      }
-      return str;
-    }
-  }
-
-  std::string drawtriangulation3D(const std::vector<double> &triangles)
-  {
-    std::string str;
-    std::vector<Point> tri(3);
-    for (std::size_t i = 0; i < triangles.size()/6; ++i)
-    {
-      tri[0] = Point(triangles[6*i], triangles[6*i+1]);
-      tri[1] = Point(triangles[6*i+2], triangles[6*i+3]);
-      tri[2] = Point(triangles[6*i+4], triangles[6*i+5]);
-      str += drawsimplex(tri);
-    }
-    return str;
-  }
-
-
 
   void test_multiple_meshes_quadrature()
   {
@@ -145,21 +52,21 @@ public:
     // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
     // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
 
-    const std::size_t gdim = 2;
-    const std::size_t tdim = 2;
-    UnitSquareMesh mesh_0(31, 17);
-    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
-    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
-    RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
-    RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+    // const std::size_t gdim = 2;
+    // const std::size_t tdim = 2;
+    // UnitSquareMesh mesh_0(31, 17);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
+    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
+    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
 
-    // const std::size_t gdim = 3;
-    // const std::size_t tdim = 3;
-    // UnitCubeMesh mesh_0(2, 3, 4);
-    // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
-    // BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
-    // BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
-    // BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
+    const std::size_t gdim = 3;
+    const std::size_t tdim = 3;
+    UnitCubeMesh mesh_0(2, 3, 4);
+    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
+    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
+    BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
+    BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
 
     // Build the multimesh
     MultiMesh multimesh;
@@ -213,45 +120,157 @@ public:
     // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
     // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
 
-    UnitCubeMesh mesh_0(2, 4, 4);
-    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
-    //BoxMesh mesh_1(-0.1, -0.1, -0.1,    1.1, 1.1, 0.1,   4, 4, 2);
+    // UnitCubeMesh mesh_0(1, 2, 3);
+    // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   2,3,4);//2, 3, 4);
+    // BoxMesh mesh_2(-0.1, -0.1, -0.1,    0.7, 0.7, 0.7,   4, 3, 2);
+    // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
+    // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
 
+    // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
+    // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
+    // double volume = 0;
+
+
+    // UnitCubeMesh mesh_0(1, 1, 1);
+    // MeshEditor editor;
+    // Mesh mesh_1;
+    // editor.open(mesh_1, 3, 3);
+    // editor.init_vertices(4);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(0.7, 0.1, -0.1));
+    // editor.add_vertex(1, Point(0.7, 0.3, -0.1));
+    // editor.add_vertex(2, Point(0.5, 0.1, -0.1));
+    // editor.add_vertex(3, Point(0.7, 0.1, 0.1));
+    // editor.add_cell(0, 0,1,2,3);
+    // editor.close();
+
+    // Mesh mesh_2;
+    // editor.open(mesh_2, 3,3);
+    // editor.init_vertices(4);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(0.7, 0.1, -0.2));
+    // editor.add_vertex(1, Point(0.7, 0.3, -0.2));
+    // editor.add_vertex(2, Point(0.5, 0.1, -0.2));
+    // editor.add_vertex(3, Point(0.7, 0.1, 0.05));
+    // editor.add_cell(0, 0,1,2,3);
+    // editor.close();
+
+    // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
+    // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
+    // double volume = 0;
+
+
+    // MeshEditor editor;
+    // Mesh mesh_0;
+    // editor.open(mesh_0, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(0.,0.));
+    // editor.add_vertex(1, Point(2.,0.));
+    // editor.add_vertex(2, Point(1.,2.));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
+
+    // Mesh mesh_1;
+    // editor.open(mesh_1, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(0.,-0.5));
+    // editor.add_vertex(1, Point(2.,-0.5));
+    // editor.add_vertex(2, Point(1.,1.5));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
+
+    // Mesh mesh_2;
+    // editor.open(mesh_2, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(0.,-1.));
+    // editor.add_vertex(1, Point(2.,-1.));
+    // editor.add_vertex(2, Point(1.,1.));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
+
+    // double exact_volume = 2*std::sqrt(0.75*0.75 + 1.5*1.5); // mesh_0 and mesh_1
+    // exact_volume += 2*std::sqrt(0.5*0.5 + 1*1); // mesh_0 and mesh_2
+    // exact_volume += 2*std::sqrt(0.75*0.75 + 1.5*1.5); // mesh_1and mesh_2
+    // double volume = 0;
+
+
+    MeshEditor editor;
+    Mesh mesh_0;
+    editor.open(mesh_0, 2, 2);
+    editor.init_vertices(3);
+    editor.init_cells(1);
+    editor.add_vertex(0, Point(0.,0.));
+    editor.add_vertex(1, Point(2.,0.));
+    editor.add_vertex(2, Point(1.,2.));
+    editor.add_cell(0, 0,1,2);
+    editor.close();
+
+    Mesh mesh_1;
+    editor.open(mesh_1, 2, 2);
+    editor.init_vertices(3);
+    editor.init_cells(1);
+    editor.add_vertex(0, Point(1.5,-2.));
+    editor.add_vertex(1, Point(4.,0.));
+    editor.add_vertex(2, Point(1.5,2));
+    editor.add_cell(0, 0,1,2);
+    editor.close();
+
+    Mesh mesh_2;
+    editor.open(mesh_2, 2, 2);
+    editor.init_vertices(3);
+    editor.init_cells(1);
+    editor.add_vertex(0, Point(3.,0.5));
+    editor.add_vertex(1, Point(-1.,0.5));
+    editor.add_vertex(2, Point(1.,-1.5));
+    editor.add_cell(0, 0,1,2);
+    editor.close();
+
+    double exact_volume = (1.5-0.25) + (1-0.5); // mesh_0, mesh_1 and mesh_2
+    exact_volume += 1.5 + std::sqrt(1.5*1.5 + 1.5*1.5); // mesh_1 and mesh_2
+
+    File("mesh_0.xml") << mesh_0;
+    File("mesh_1.xml") << mesh_1;
 
     // Build the multimesh
     MultiMesh multimesh;
     multimesh.add(mesh_0);
     multimesh.add(mesh_1);
-    //multimesh.add(mesh_2);
+    multimesh.add(mesh_2);
     //multimesh.add(mesh_3);
     //multimesh.add(mesh_4);
     multimesh.build();
 
-    // Exact volume of the interface is known
-    const double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
-    double volume = 0;
-
 
     // Sum contribution from all parts
+    std::cout << "\n\n Sum up\n\n";
+    double volume = 0;
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
       std::cout << "% part " << part << '\n';
+      double partvolume = 0;
 
       // Cut cell
-      const auto cut_cells = multimesh.cut_cells(part);
+      const std::size_t gdim = mesh_0.geometry().dim();
+      const auto& cut_cells = multimesh.cut_cells(part);
       auto quadrature_rule = multimesh.quadrature_rule_cut_cells_interface(part);
       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
       {
+        std::cout << "% cut cell " << (*it)<<'\n';
         for (std::size_t i = 0; i < quadrature_rule[*it].first.size(); ++i)
 	{
           volume += quadrature_rule[*it].first[i];
-          const int gdim = 3;
-          Point pt(quadrature_rule[*it].second[i*gdim],
-                   quadrature_rule[*it].second[i*gdim+1],
-                   quadrature_rule[*it].second[i*gdim+2]);
-	  //std::cout << "plot3("<<pt[0]<<','<<pt[1]<<','<<pt[2]<<",'.');";
+          partvolume += quadrature_rule[*it].first[i];
+          //std::cout << drawqr(quadrature_rule[*it]);
+          for (std::size_t d = 0; d < gdim; ++d)
+            std::cout << quadrature_rule[*it].second[i*gdim+d]<<' ';
+          std::cout << "    "<<quadrature_rule[*it].first[i]<<'\n';
 	}
       }
+
+      std::cout<<"part volume " << partvolume<<std::endl;
     }
 
     std::cout << "exact volume " << exact_volume<<'\n'

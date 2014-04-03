@@ -16,13 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-03-28
+// Last changed: 2014-04-02
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
 
 #include <vector>
 #include <map>
+
+
 
 namespace dolfin
 {
@@ -194,6 +196,7 @@ namespace dolfin
     /// Clear multimesh
     void clear();
 
+
   private:
 
     // List of meshes
@@ -347,7 +350,7 @@ namespace dolfin
     // Build quadrature rules for the interface in the cut cells
     // FIXME: unnecessary to have both cut_cells and interface in the
     // name
-    void _build_quadrature_rules_cut_cells_interface();
+    //void _build_quadrature_rules_cut_cells_interface();
 
     // Build 'special' quadrature rules if the meshes are of different
     // topolgy...
