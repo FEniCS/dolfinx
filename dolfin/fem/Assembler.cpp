@@ -63,7 +63,6 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   if (num_threads > 0)
   {
     OpenMpAssembler assembler;
-    assembler.reset_sparsity = reset_sparsity;
     assembler.add_values = add_values;
     assembler.finalize_tensor = finalize_tensor;
     assembler.keep_diagonal = keep_diagonal;
