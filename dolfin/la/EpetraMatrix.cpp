@@ -680,17 +680,21 @@ void EpetraMatrix::set_diagonal(const GenericVector& x)
   const EpetraVector& x_ = x.down_cast<EpetraVector>();
 
   if (size(1) != size(0) || size(0) != x_.size())
+  {
     dolfin_error("EpetraMatrix.cpp",
 		 "set the diagonal of an Epetra matrix",
 		 "Matrix and vector dimensions don't match for matrix-vector set");
+  }
   
   const Epetra_Vector xx(View, *(x_.vec().get()), 0);
 
   const int err = _matA->ReplaceDiagonalValues(xx);
   if (err != 0)
+  {
     dolfin_error("EpetraMatrix.cpp",
 		 "set the diagonal of an Epetra matrix",
 		 "Did not manage to perform Epetra_CrsMatrix::ReplaceDiagonalValues");
+  }
  }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,

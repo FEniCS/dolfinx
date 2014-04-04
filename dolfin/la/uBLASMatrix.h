@@ -528,7 +528,11 @@ namespace dolfin
   void uBLASMatrix<Mat>::set_diagonal(const GenericVector& x)
   {
     if (size(1) != size(0) || size(0) != x.size())
-      error("Matrix and vector dimensions don't match for matrix-vector set.");
+    {
+      dolfin_error("uBLASMatrix.h",
+                   "Set diagonal of a uBLAS Matrix",
+                   "Matrix and vector dimensions don't match");
+    }
 
     const double* xx = x.down_cast<uBLASVector>().data();
     typename Mat::iterator1 row;    // Iterator over rows

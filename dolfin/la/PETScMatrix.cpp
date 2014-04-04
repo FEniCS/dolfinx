@@ -451,9 +451,11 @@ void PETScMatrix::set_diagonal(const GenericVector& x)
 
   const PETScVector& xx = x.down_cast<PETScVector>();
   if (size(1) != size(0) || size(0) != xx.size())
+  {
     dolfin_error("PETScMatrix.cpp",
                  "set diagonal of a PETSc matrix",
                  "Matrix and vector dimensions don't match for matrix-vector set");
+  }
 
   PetscErrorCode ierr = MatDiagonalSet(_matA, xx.vec(), INSERT_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatDiagonalSet");
