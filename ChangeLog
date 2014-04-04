@@ -1,3 +1,4 @@
+ - Feature: Add set_diagonal (with GenericVector) to GenericMatrix
  - Fix many bugs associated with cell orientations on manifolds
  - Force all global dofs to be ordered last and to be on the last process
 	in parallel
