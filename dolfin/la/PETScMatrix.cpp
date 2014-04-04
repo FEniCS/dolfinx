@@ -250,7 +250,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  return _matA ? true : false;
+  return _matA ? false : true;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
