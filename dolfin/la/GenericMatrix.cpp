@@ -81,20 +81,12 @@ void GenericMatrix::compressed(GenericMatrix& B) const
 
   // Create new layout
   std::shared_ptr<TensorLayout>
-    new_layout = factory().create_layout(2);
+    new_layout = B.factory().create_layout(2);
   dolfin_assert(new_layout);
 
-  // Check that we get a full sparsity pattern
-  if (!new_layout->sparsity_pattern())
-  {
-    warning("Linear algebra backend does not supply a sparsity pattern, "
-            "ignoring call to compress().");
-    return;
-  }
-
-  // Access sparsity pattern
-  GenericSparsityPattern& new_sparsity_pattern
-    = *(new_layout->sparsity_pattern());
+  // Pointer to sparsity pattern
+  GenericSparsityPattern* new_sparsity_pattern
+    = new_layout->sparsity_pattern().get();
 
   // Retrieve global and local matrix info
   std::vector<std::size_t> global_dimensions(2);
@@ -119,8 +111,9 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   new_layout->init(MPI_COMM_WORLD, global_dimensions, 1, local_range);
 
   // Initialize sparsity pattern
-  new_sparsity_pattern.init(MPI_COMM_WORLD, global_dimensions, local_range,
-                            off_process_owner);
+  if (new_sparsity_pattern)
+    new_sparsity_pattern->init(MPI_COMM_WORLD, global_dimensions, local_range,
+                               off_process_owner);
 
   // Declare some variables used to extract matrix information
   std::vector<std::size_t> columns;
@@ -167,11 +160,13 @@ void GenericMatrix::compressed(GenericMatrix& B) const
     offset[i + 1] = offset[i] + count;
 
     // Build new compressed sparsity pattern
-    new_sparsity_pattern.insert(dofs);
+    if (new_sparsity_pattern)
+      new_sparsity_pattern->insert(dofs);
   }
 
   // Finalize sparsity pattern
-  new_sparsity_pattern.apply();
+  if (new_sparsity_pattern)
+    new_sparsity_pattern->apply();
 
   // Create matrix with the new layout
   B.init(*new_layout);
