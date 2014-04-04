@@ -37,8 +37,7 @@ using namespace dolfin;
 RKSolver::RKSolver(std::shared_ptr<MultiStageScheme> scheme) : 
   _scheme(scheme), _tmp(scheme->solution()->vector()->copy())
 {
-  // Set default values for assembler
-  _assembler.reset_sparsity = false;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void RKSolver::step(double dt)

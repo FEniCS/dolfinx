@@ -118,13 +118,6 @@ class TestSystemAssembler(unittest.TestCase):
         assembler.assemble(b)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-        # Do not reset sparsity
-        assemble.reset_sparsity = False
-        assembler.assemble(A)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        assembler.assemble(b)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
 
     def test_facet_assembly(self):
 
