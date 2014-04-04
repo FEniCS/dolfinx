@@ -40,6 +40,7 @@
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_FEVector.h>
+#include <Epetra_Vector.h>
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 #include <EpetraExt_MatrixMatrix.h>
@@ -671,6 +672,30 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
                  "Did not manage to perform Epetra_FECrsMatrix::Multiply");
   }
 }
+//-----------------------------------------------------------------------------
+void EpetraMatrix::set_diagonal(const GenericVector& x)
+{
+  dolfin_assert(_matA);
+
+  const EpetraVector& x_ = x.down_cast<EpetraVector>();
+
+  if (size(1) != size(0) || size(0) != x_.size())
+  {
+    dolfin_error("EpetraMatrix.cpp",
+		 "set the diagonal of an Epetra matrix",
+		 "Matrix and vector dimensions don't match for matrix-vector set");
+  }
+  
+  const Epetra_Vector xx(View, *(x_.vec().get()), 0);
+
+  const int err = _matA->ReplaceDiagonalValues(xx);
+  if (err != 0)
+  {
+    dolfin_error("EpetraMatrix.cpp",
+		 "set the diagonal of an Epetra matrix",
+		 "Did not manage to perform Epetra_CrsMatrix::ReplaceDiagonalValues");
+  }
+ }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
                           std::vector<double>& values) const
