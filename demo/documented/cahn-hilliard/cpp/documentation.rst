@@ -176,7 +176,6 @@ function ``init``:
     // Constructor
     CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
                          const Constant& theta, const Constant& lambda)
-                       : reset_b(true), reset_A(true)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
@@ -204,18 +203,11 @@ assembly of the form ``L``:
       {
         // Assemble RHS (Neumann boundary conditions)
         Assembler assembler;
-        assembler.reset_sparsity = reset_b;
         assembler.assemble(b, *L);
-        reset_b = false;
       }
 
 The function ``J`` computes the Jacobian matrix, which corresponds to
-the assembly of the form ``a``. The variable ``reset_Jacobian``, which
-was set set equal to ``true`` in the constructor, instructs the
-assembler whether or not the sparse matrix structure needs to be
-reset. Since the sparsity structure does not change for this problem,
-``reset_Jacobian`` is set to ``false`` after the first assembly
-operation.
+the assembly of the form ``a``.
 
 .. code-block:: c++
 
@@ -224,9 +216,7 @@ operation.
       {
         // Assemble system
         Assembler assembler;
-        assembler.reset_sparsity = reset_A;
         assembler.assemble(A, *a);
-        reset_A = false;
       }
 
 The following two functions are helper functions which allow access to
@@ -296,8 +286,6 @@ computing the residual vector and the Jacobian matrix as private data:
       boost::scoped_ptr<Form> L;
       boost::scoped_ptr<Function> _u;
       boost::scoped_ptr<Function> _u0;
-      bool reset_b;
-      bool reset_A;
   };
 
 The main program is started, and declared such that it can accept
