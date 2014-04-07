@@ -328,10 +328,10 @@ endif()
 
 # Check for PETSc, SLEPc, TAO and petsc4py
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.2)
+  find_package(PETSc 3.3)
 
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.2)
+    find_package(SLEPc 3.3)
   endif()
 
   if (PETSC_FOUND AND DOLFIN_ENABLE_TAO)
@@ -349,8 +349,8 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
-  # Enable PETSc SNES for PETSc verion > 3.2
-  if (PETSC_VERSION VERSION_GREATER 3.2.100)
+  # Enable PETSc SNES for PETSc verion > 3.3
+  if (PETSC_VERSION VERSION_GREATER 3.3.100)
     set(PETSC_ENABLE_SNES TRUE)
   endif()
 
