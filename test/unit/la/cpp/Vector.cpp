@@ -30,6 +30,7 @@ class TestVector : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE(TestVector);
   CPPUNIT_TEST(test_backends);
   CPPUNIT_TEST(test_init);
+  CPPUNIT_TEST(test_get_local_empty);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -163,6 +164,49 @@ public:
     #endif
 
   }
+
+  void test_get_local_empty()
+  {
+    // Create local and distributed vector layouts
+    const std::vector<std::size_t> dims(1, 203);
+
+    // Create local vector layout
+    TensorLayout layout_local(0, false);
+    std::vector<std::pair<std::size_t, std::size_t> >
+      local_range(1, std::make_pair(0, 203));
+    layout_local.init(MPI_COMM_SELF, dims, 1, local_range);
+
+    // Create distributed vector layout
+    TensorLayout layout_distributed(0, false);
+    std::vector<std::pair<std::size_t, std::size_t> >
+      ownership_range(1, dolfin::MPI::local_range(MPI_COMM_WORLD, 203));
+    layout_distributed.init(MPI_COMM_WORLD, dims, 1, ownership_range);
+
+    // Vector
+    #ifdef HAS_PETSC
+    parameters["linear_algebra_backend"] = "PETSc";
+    {
+      Vector x;
+      x.init(layout_local);
+      CPPUNIT_ASSERT(x.size() == 203);
+
+      Vector y;
+      y.init(layout_distributed);
+      CPPUNIT_ASSERT(y.size() == 203);
+
+      //:get_local(double* block, std::size_t m,
+      //           const dolfin::la_index* rows) const
+
+      double* block;
+      dolfin::la_index* rows;
+      x.get_local(block, 0, rows);
+      y.get_local(block, 0, rows);
+
+    }
+    #endif
+
+  }
+
 
 };
 
