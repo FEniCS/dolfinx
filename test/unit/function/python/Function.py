@@ -365,9 +365,9 @@ class Interpolate(unittest.TestCase):
         ft.interpolate(f0)
         gt = project(f1+f0, Vt)
 
-        f0v = assemble(f0*dx(1, domain_data=sd0))
-        f1v = assemble(f1*dx(2, domain_data=sd1))
-        ftv = assemble(ft*dx(1, domain_data=sd0))
+        f0v = assemble(f0*dx(1, subdomain_data=sd0))
+        f1v = assemble(f1*dx(2, subdomain_data=sd1))
+        ftv = assemble(ft*dx(1, subdomain_data=sd0))
         gtv = assemble(gt*dx)
 
         self.assertAlmostEqual(f0v, ftv)
