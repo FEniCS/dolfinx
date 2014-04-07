@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-17
+// Last changed: 2014-04-07
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -88,6 +88,14 @@ MultiMesh::quadrature_rule_cut_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _quadrature_rules_cut_cells[part];
+}
+//-----------------------------------------------------------------------------
+std::pair<std::vector<double>, std::vector<double> >
+MultiMesh::quadrature_rule_cut_cell(std::size_t part,
+                                    unsigned int cell_index) const
+{
+  auto q = quadrature_rule_cut_cells(part);
+  return q[cell_index];
 }
 //-----------------------------------------------------------------------------
 void MultiMesh::add(std::shared_ptr<const Mesh> mesh)
@@ -349,7 +357,7 @@ void MultiMesh::_build_quadrature_rules()
         // Subtract quadrature rule for intersection
         _add_quadrature_rule(quadrature_rule,
                              cut_cell, cutting_cell,
-                             tdim, gdim, order, 1);
+                             tdim, gdim, order, -1);
 
         // Add back quadrature rule for intersection with previously
         // visited cutting cells on other meshes. This is necessary
