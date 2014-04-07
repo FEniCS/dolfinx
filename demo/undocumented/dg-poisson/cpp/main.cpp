@@ -15,11 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2006-12-05
-// Last changed: 2014-03-16
-//
-// Modified by Miroslav Kuchta 2014
-//
 // This demo program solves Poisson's equation,
 //
 //     - div grad u(x, y) = f(x, y)
@@ -36,7 +31,7 @@
 // where
 //
 //     u0 = x + 0.25*sin(2*pi*x)
-//     g = (y - 0.5)**2            
+//     g = (y - 0.5)**2
 //
 // using a discontinuous Galerkin formulation (interior penalty method).
 
@@ -57,7 +52,7 @@ int main()
       values[0] = -100.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };
-  
+
   // Dirichlet term
   class BoundaryValue : public Expression
   {
@@ -81,18 +76,14 @@ int main()
   class DirichletBoundary : public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return on_boundary and near(x[0]*(1 - x[0]), 0);
-    }
+    { return on_boundary and near(x[0]*(1 - x[0]), 0); }
   };
 
   // Sub domain for Neumann boundary condition, y = 1 and y = 0
   class NeumannBoundary : public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return on_boundary and near(x[1]*(1 - x[1]), 0);
-    }
+    { return on_boundary and near(x[1]*(1 - x[1]), 0); }
   };
 
   // Create mesh
@@ -109,7 +100,7 @@ int main()
   // Mark facets of the mesh
   NeumannBoundary neumann_boundary;
   DirichletBoundary dirichlet_boundary;
-  
+
   FacetFunction<std::size_t> boundaries(mesh, 0);
   neumann_boundary.mark(boundaries, 2);
   dirichlet_boundary.mark(boundaries, 1);
@@ -117,9 +108,9 @@ int main()
   // Define variational problem
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
-  L.f = f;
+  L.f  = f;
   L.u0 = u0;
-  L.g = g;
+  L.g  = g;
 
   // Attach marked facets to bilinear and linear form
   a.ds = boundaries;

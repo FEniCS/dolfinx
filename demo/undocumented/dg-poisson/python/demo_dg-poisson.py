@@ -14,7 +14,7 @@ and boundary conditions given by
 where
 
     u0 = x + 0.25*sin(2*pi*x)
-    g = (y - 0.5)**2 
+    g = (y - 0.5)**2
 
 using a discontinuous Galerkin formulation (interior penalty method).
 """
@@ -35,11 +35,6 @@ using a discontinuous Galerkin formulation (interior penalty method).
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# Modified by Anders Logg 2008-2011
-#             Miroslav Kuchta 2014
-# First added:  2007-10-02
-# Last changed: 2014-03-16
 
 from dolfin import *
 
@@ -67,7 +62,7 @@ h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2
 
 # Define the source term f, Dirichlet term u0 and Neumann term g
-f = Expression('-100*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)')
+f = Expression('-100.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)')
 u0 = Expression('x[0] + 0.25*sin(2*pi*x[1])')
 g = Expression('(x[1] - 0.5)*(x[1] - 0.5)')
 
@@ -90,8 +85,8 @@ a = dot(grad(v), grad(u))*dx \
    + alpha/h_avg*dot(jump(v, n), jump(u, n))*dS \
    - dot(grad(v), u*n)*ds(1) \
    - dot(v*n, grad(u))*ds(1) \
-   + gamma/h*v*u*ds(1)
-L = v*f*dx - u0*dot(grad(v), n)*ds(1) + gamma/h*u0*v*ds(1) + g*v*ds(2)
+   + (gamma/h)*v*u*ds(1)
+L = v*f*dx - u0*dot(grad(v), n)*ds(1) + (gamma/h)*u0*v*ds(1) + g*v*ds(2)
 
 # Compute solution
 u = Function(V)
