@@ -63,7 +63,7 @@ option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #------------------------------------------------------------------------------
-# This should be removed when petsc version > 3.4 is out 
+# This should be removed when petsc version > 3.4 is out
 
 option(DOLFIN_ENABLE_TAO "Enable TAO solver." OFF)
 
@@ -332,10 +332,10 @@ endif()
 
 # Check for PETSc, SLEPc and petsc4py
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.2)
+  find_package(PETSc 3.3)
 
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.2)
+    find_package(SLEPc 3.3)
   endif()
 
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
@@ -349,8 +349,8 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
-  # Enable PETSc SNES for PETSc version > 3.2
-  if (PETSC_VERSION VERSION_GREATER 3.2.100)
+  # Enable PETSc SNES for PETSc verion > 3.3
+  if (PETSC_VERSION VERSION_GREATER 3.3.100)
     set(PETSC_ENABLE_SNES TRUE)
   endif()
   if ((PETSC_VERSION VERSION_GREATER 3.4.3) OR (DOLFIN_ENABLE_TAO))
