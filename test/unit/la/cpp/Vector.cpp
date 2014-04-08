@@ -197,8 +197,8 @@ public:
       //:get_local(double* block, std::size_t m,
       //           const dolfin::la_index* rows) const
 
-      double* block;
-      dolfin::la_index* rows;
+      double* block = NULL;
+      dolfin::la_index* rows = NULL;
       x.get_local(block, 0, rows);
       y.get_local(block, 0, rows);
 
