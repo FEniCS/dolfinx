@@ -595,7 +595,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
     if (_matA)
     {
       // Get reference count to _matA
-      int ref_count = 0;
+      PetscInt ref_count = 0;
       PetscObjectGetReference((PetscObject)_matA, &ref_count);
       if (ref_count > 1)
       {
