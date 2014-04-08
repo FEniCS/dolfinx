@@ -481,7 +481,8 @@ void PETScSNESSolver::set_linear_solver_parameters()
     Parameters krylov_parameters = parameters("krylov_solver");
 
     // GMRES restart parameter
-    KSPGMRESSetRestart(ksp,krylov_parameters("gmres")["restart"]);
+    const int gmres_restart = krylov_parameters("gmres")["restart"];
+    KSPGMRESSetRestart(ksp, gmres_restart);
 
     // Non-zero initial guess
     const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
@@ -494,10 +495,12 @@ void PETScSNESSolver::set_linear_solver_parameters()
       KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
     // Set tolerances
-    KSPSetTolerances(ksp, krylov_parameters["relative_tolerance"],
+    const int max_iters = krylov_parameters["maximum_iterations"];
+    KSPSetTolerances(ksp,
+                     krylov_parameters["relative_tolerance"],
                      krylov_parameters["absolute_tolerance"],
                      krylov_parameters["divergence_limit"],
-                     krylov_parameters["maximum_iterations"]);
+                     max_iters);
   }
   else if (linear_solver == "lu"
            || PETScLUSolver::_methods.count(linear_solver) != 0)
