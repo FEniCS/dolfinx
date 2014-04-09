@@ -220,7 +220,7 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
   TaoGetConvergedReason(_tao, &reason);
 
   // Get the number of iterations
-  int num_iterations = 0;
+  PetscInt num_iterations = 0;
   TaoGetMaximumIterations(_tao, &num_iterations);
 
   // Report number of iterations
@@ -349,7 +349,8 @@ void TAOLinearBoundSolver::set_ksp_options()
     Parameters krylov_parameters = parameters("krylov_solver");
 
     // GMRES restart parameter
-    KSPGMRESSetRestart(ksp, krylov_parameters("gmres")["restart"]);
+    const int gmres_restart = krylov_parameters("gmres")["restart"];
+    KSPGMRESSetRestart(ksp, gmres_restart);
 
     // Non-zero initial guess
     const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
@@ -362,10 +363,12 @@ void TAOLinearBoundSolver::set_ksp_options()
       KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
     // Set tolerances
-    KSPSetTolerances(ksp, krylov_parameters["relative_tolerance"],
+    const int max_ksp_it = krylov_parameters["maximum_iterations"];
+    KSPSetTolerances(ksp,
+                     krylov_parameters["relative_tolerance"],
 		     krylov_parameters["absolute_tolerance"],
 		     krylov_parameters["divergence_limit"],
-		     krylov_parameters["maximum_iterations"]);
+		     max_ksp_it);
 
     // Set preconditioner
     if (preconditioner && !preconditioner_set)
@@ -433,7 +436,7 @@ PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(Tao tao, void *ctx)
   PetscReal f, gnorm, cnorm, xdiff;
   TaoConvergedReason reason;
   TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
-  if (!(its%5)) 
+  if (!(its%5))
   {
     PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n",its,(double)f);
   }
