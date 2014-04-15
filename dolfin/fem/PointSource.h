@@ -60,7 +60,7 @@ namespace dolfin
     void check_is_scalar(const FunctionSpace& V);
 
     // The function space
-    std::shared_ptr<const FunctionSpace> _V;
+    std::shared_ptr<const FunctionSpace> _function_space;
 
     // The point
     Point _p;

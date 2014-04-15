@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2006-12-05
-# Last changed: 2011-05-11
-#
 # The bilinear form a(u, v) and linear form L(v) for
 # Poisson's equation in a discontinuous Galerkin (DG)
 # formulation.
@@ -30,7 +27,11 @@ element = FiniteElement("Discontinuous Lagrange", triangle, 1)
 # Trial and test functions
 u = TrialFunction(element)
 v = TestFunction(element)
-f = Coefficient(element)
+
+# Source term, Dirichlet term, Neumann term
+f  = Coefficient(element)
+u0 = Coefficient(element)
+g  = Coefficient(element)
 
 # Normal component, cell size and right-hand side
 h = 2.0*Circumradius(triangle)
@@ -42,14 +43,13 @@ alpha = 4.0
 gamma = 8.0
 
 # Bilinear form
-a = dot(grad(u), grad(v))*dx \
-   - dot(jump(u, n), avg(grad(v)))*dS \
-   - dot(avg(grad(u)), jump(v, n))*dS \
-   + (alpha/h_avg)*dot(jump(u, n), jump(v, n))*dS \
-   - dot(u*n, grad(v))*ds \
-   - dot(grad(u), v*n)*ds \
-   + (gamma/h)*u*v*ds
+a = dot(grad(v), grad(u))*dx \
+   - dot(avg(grad(v)), jump(u, n))*dS \
+   - dot(jump(v, n), avg(grad(u)))*dS \
+   + alpha/h_avg*dot(jump(v, n), jump(u, n))*dS \
+   - dot(grad(v), u*n)*ds(1) \
+   - dot(v*n, grad(u))*ds(1) \
+   + (gamma/h)*v*u*ds(1)
 
 # Linear form
-L = f*v*dx
-
+L = v*f*dx - u0*dot(grad(v), n)*ds(1) + (gamma/h)*u0*v*ds(1) + g*v*ds(2)

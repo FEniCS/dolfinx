@@ -130,7 +130,7 @@ namespace dolfin
     std::shared_ptr<GenericLinearSolver> _solver;
 
     // Jacobian matrix
-    std::shared_ptr<GenericMatrix> _A;
+    std::shared_ptr<GenericMatrix> _matA;
 
     // Solution vector
     std::shared_ptr<GenericVector> _dx;

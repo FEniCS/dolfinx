@@ -47,7 +47,7 @@ class TestLinearOperator(unittest.TestCase):
                 self.u.vector()[:] = x
 
                 # Assemble action
-                assemble(self.a_action, tensor=y, reset_sparsity=False)
+                assemble(self.a_action, tensor=y)
 
         # Iterate over backends supporting linear operators
         for backend in backends:

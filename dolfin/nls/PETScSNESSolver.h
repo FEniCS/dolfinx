@@ -91,8 +91,8 @@ namespace dolfin
     std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
                                        GenericVector& x);
 
-    /// Set up the SNES object, but don't do anything yet, in case the user wants
-    /// to access the SNES object directly
+    /// Set up the SNES object, but don't do anything yet, in case the
+    /// user wants to access the SNES object directly
     void init(NonlinearProblem& nonlinear_problem, GenericVector& x);
 
     /// Return a list of available solver methods
@@ -133,8 +133,13 @@ namespace dolfin
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);
 
     // The callback for PETSc to compute A, the Jacobian
+    #if PETSC_VERSION_RELEASE
     static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
                                        MatStructure* flag, void* ctx);
+    #else
+    static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat A, Mat B,
+                                       void* ctx);
+    #endif
 
     // Set the bounds on the problem from the parameters, if desired
     // Here, x is passed in as a model vector from which we make our

@@ -63,6 +63,11 @@ option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #------------------------------------------------------------------------------
+# This should be removed when petsc version > 3.4 is out
+
+option(DOLFIN_ENABLE_TAO "Enable TAO solver." OFF)
+
+#------------------------------------------------------------------------------
 # Enable or disable optional packages
 
 # List optional packages
@@ -72,7 +77,6 @@ list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "PETSc4py")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
-list(APPEND OPTIONAL_PACKAGES "TAO")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
@@ -326,16 +330,12 @@ if (DOLFIN_ENABLE_PYTHON)
 
 endif()
 
-# Check for PETSc, SLEPc, TAO and petsc4py
+# Check for PETSc, SLEPc and petsc4py
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.2)
+  find_package(PETSc 3.3)
 
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.2)
-  endif()
-
-  if (PETSC_FOUND AND DOLFIN_ENABLE_TAO)
-    find_package(TAO)
+    find_package(SLEPc 3.3)
   endif()
 
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
@@ -349,9 +349,14 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
-  # Enable PETSc SNES for PETSc verion > 3.2
-  if (PETSC_VERSION VERSION_GREATER 3.2.100)
+  # Enable PETSc SNES for PETSc verion > 3.3
+  if (PETSC_VERSION VERSION_GREATER 3.3.100)
     set(PETSC_ENABLE_SNES TRUE)
+  endif()
+
+  # Enable TAO from PETSc for PETSc verion > 3.4
+  if ((PETSC_VERSION VERSION_GREATER 3.4.100) OR (DOLFIN_ENABLE_TAO))
+    set(PETSC_ENABLE_TAO TRUE)
   endif()
 
 endif()
@@ -409,7 +414,7 @@ endif()
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
-  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos;Belos")
 
   if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
     set(Trilinos_FOUND FALSE)

@@ -52,7 +52,7 @@ int main()
   PETScVector rx, cx;
   esolver.get_eigenpair(r, c, rx, cx, 0);
 
-  std::cout << "Largest eigenvalue: " << r << std::endl;
+  cout << "Largest eigenvalue: " << r << endl;
 
   // Initialize function with eigenvector
   Function u(V);
@@ -64,7 +64,7 @@ int main()
 
   #else
 
-    cout << "SLEPc must be installed to run this demo." << endl;
+  dolfin::cout << "SLEPc must be installed to run this demo." << dolfin::endl;
 
   #endif
 

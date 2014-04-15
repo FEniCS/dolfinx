@@ -33,7 +33,7 @@ NUM_REPS = 10
 SIZE = 3
 
 # Create mesh
-mesh = UnitCube(SIZE, SIZE, SIZE)
+mesh = UnitCubeMesh(SIZE, SIZE, SIZE)
 
 # Create form (velocity equation for "G2")
 V = VectorFunctionSpace(mesh, "Lagrange", 1)

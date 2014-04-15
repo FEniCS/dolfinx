@@ -67,14 +67,10 @@ use in the Newton solver is now defined. It is a subclass of
             NonlinearProblem.__init__(self)
             self.L = L
             self.a = a
-            self.reset_sparsity_b = True
-            self.reset_sparsity_A = True
         def F(self, b, x):
-            assemble(self.L, tensor=b, reset_sparsity=self.reset_sparsity_b)
-            self.reset_sparsity_b = False
+            assemble(self.L, tensor=b)
         def J(self, A, x):
-            assemble(self.a, tensor=A, reset_sparsity=self.reset_sparsity_A)
-            self.reset_sparsity_A = False
+            assemble(self.a, tensor=A)
 
 The constructor (``__init__``) stores references to the bilinear
 (``a``) and linear (``L``) forms. These will used to compute the
@@ -83,12 +79,7 @@ Newton solver.  The function ``F`` and ``J`` are virtual member
 functions of :py:class:`NonlinearProblem
 <dolfin.cpp.NonlinearProblem>`. The function ``F`` computes the
 residual vector ``b``, and the function ``J`` computes the Jacobian
-matrix ``A``. For the Cahn-Hilliard equation, the pattern of non-zero
-values in the Jacobian matrix ``A`` will remain fixed, so the argument
-``reset_sparsity`` is set to ``True`` the first time ``A`` is
-assembled, and thereafter it is set to ``False``. This has some
-performance advantages as the non-zero structure of ``A`` will only be
-computed once.
+matrix ``A``.
 
 Next, various model parameters are defined:
 

@@ -55,7 +55,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
   for (std::size_t i = 0; i < a.rank(); ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
-  if (A.size(0) == 0)
+  if (A.empty())
   {
     Timer t0("Build sparsity");
 
@@ -113,7 +113,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     if (A.rank() == 2 && keep_diagonal)
     {
       // Down cast to GenericMatrix
-      GenericMatrix& _A = A.down_cast<GenericMatrix>();
+      GenericMatrix& _matA = A.down_cast<GenericMatrix>();
 
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;
@@ -122,7 +122,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       for (std::size_t i = row_range.first; i < range; i++)
       {
         dolfin::la_index _i = i;
-        _A.set(&block, 1, &_i, 1, &_i);
+        _matA.set(&block, 1, &_i, 1, &_i);
       }
       A.apply("flush");
     }

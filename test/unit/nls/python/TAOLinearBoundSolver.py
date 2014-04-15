@@ -53,17 +53,17 @@ if has_petsc():
 
     # Define Dirichlet boundaries
     def left(x,on_boundary):
-        return on_boundary and x[0] == 0.0
+        return on_boundary and near(x[0], 0.0)
 
     def right(x,on_boundary):
-        return on_boundary and x[0] == 10.
+        return on_boundary and near(x[0], Lx)
 
     # Define boundary conditions
     zero = Constant(0.0)
     one  = Constant(1.0)
     bc_l = DirichletBC(V, zero, left)
     bc_r = DirichletBC(V, one, right)
-    bc=[bc_l, bc_r]
+    bc = [bc_l, bc_r]
 
     # Define variational problem
     usol = Function(V)
@@ -73,8 +73,8 @@ if has_petsc():
     ell = Constant(0.5) # This should be smaller than Lx
     F = cv*(ell/2.0*inner(grad(usol), grad(usol))*dx + 2.0/ell*usol*dx)
     # Weak form
-    a  = cv*ell*inner(grad(u), grad(v))*dx
-    L  = -cv*2*v/ell*dx
+    a = cv*ell*inner(grad(u), grad(v))*dx
+    L = -cv*2*v/ell*dx
 
     # Assemble the linear system
     A, b = assemble_system(a, L, bc)
@@ -88,17 +88,17 @@ if has_petsc():
     # Take the PETScVector of the solution function
     xsol = usol.vector()
 
-if has_tao():
+if has_petsc_tao():
 
     class TAOLinearBoundSolverTester(unittest.TestCase):
 
         def test_tao_linear_bound_solver(self):
             "Test TAOLinearBoundSolver"
-            solver = TAOLinearBoundSolver("tao_tron","gmres")
+            solver = TAOLinearBoundSolver("tron","stcg")
             solver.solve(A,xsol,b,xl,xu)
 
             # Test that F(usol) = Ly
-            self.assertAlmostEqual(assemble(F), Ly, 5)
+            self.assertAlmostEqual(assemble(F), Ly, 4)
 
 if __name__ == "__main__":
 

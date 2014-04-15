@@ -69,7 +69,7 @@ namespace dolfin
   private:
 
     // Operator (the matrix)
-    std::shared_ptr<const CoordinateMatrix> _A;
+    std::shared_ptr<const CoordinateMatrix> _matA;
 
   };
 

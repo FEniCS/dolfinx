@@ -411,7 +411,8 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         facet_integral->tabulate_tensor(ufc.A_facet.data(),
                                         ufc.w(),
                                         vertex_coordinates.data(),
-                                        local_facet);
+                                        local_facet,
+                                        ufc_cell.orientation);
 
         // Add facet contribution
         for (std::size_t i = 0; i < dim; ++i)
@@ -617,7 +618,9 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                                 vertex_coordinates0.data(),
                                 vertex_coordinates1.data(),
                                 local_facet0,
-                                local_facet1);
+                                local_facet1,
+                                ufc_cell0.orientation,
+                                ufc_cell1.orientation);
 
       // Add entries to global tensor
       A.add(ufc.macro_A.data(), macro_dofs);

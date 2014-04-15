@@ -64,7 +64,6 @@ public:
 
         // Assemble action
         Assembler assembler;
-        assembler.reset_sparsity = false;
         assembler.assemble(y, a_action);
       }
 
@@ -130,6 +129,7 @@ int main()
 {
   // Add backends supporting the LinearOperator interface
   backends.push_back("PETSc");
+  backends.push_back("Epetra");
   backends.push_back("uBLAS");
 
   DOLFIN_TEST;

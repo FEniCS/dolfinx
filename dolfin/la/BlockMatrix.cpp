@@ -131,8 +131,6 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
 
   // Create tempory vector
   dolfin_assert(matrices[0][0]);
-  std::shared_ptr<GenericVector>
-    z_tmp = matrices[0][0]->factory().create_vector();
 
   // Loop over block rows
   for(std::size_t row = 0; row < matrices.shape()[0]; row++)
@@ -140,18 +138,16 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     // RHS sub-vector
     GenericVector& _y = *(y.get_block(row));
 
-    const GenericMatrix& _A = *matrices[row][0];
+    const GenericMatrix& _matA = *matrices[row][0];
 
     // Resize y and zero
-    dolfin_assert(matrices[row][0]);
     if (_y.empty())
-      _A.init_vector(_y, 0);
+      _matA.init_vector(_y, 0);
     _y.zero();
 
-    // Resize z_tmp
-    _A.init_vector(*z_tmp, 0);
-
     // Loop over block columns
+    std::shared_ptr<GenericVector>
+      z_tmp = _matA.factory().create_vector();
     for(std::size_t col = 0; col < matrices.shape()[1]; ++col)
     {
       const GenericVector& _x = *(x.get_block(col));
