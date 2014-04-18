@@ -21,12 +21,12 @@
 // Last changed: 2014-02-06
 
 #include <map>
+#include <memory>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <memory>
 
 #include "pugixml.hpp"
@@ -92,7 +92,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   const std::size_t gdim = mesh_node.attribute("dim").as_uint();
 
   // Get topological dimension
-  boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
   const std::size_t tdim = cell_type->dim();
 
   // Create mesh for editing

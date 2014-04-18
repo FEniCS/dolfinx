@@ -1211,7 +1211,7 @@ void DofMapBuilder::compute_global_dofs(std::set<std::size_t>& global_dofs,
       }
 
       // Create dummy cell argument to tabulate single global dof
-      boost::scoped_ptr<ufc::cell> ufc_cell(new ufc::cell);
+      std::unique_ptr<ufc::cell> ufc_cell(new ufc::cell);
       std::size_t dof = 0;
       ufc_dofmap->tabulate_dofs(&dof, dofmap.num_global_mesh_entities,
                                 *ufc_cell);
@@ -1280,7 +1280,7 @@ std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
   for (std::size_t i = 0; i < component[0]; i++)
   {
     // Extract sub dofmap
-    boost::scoped_ptr<ufc::dofmap>
+    std::unique_ptr<ufc::dofmap>
       ufc_tmp_dofmap(ufc_dofmap.create_sub_dofmap(i));
     dolfin_assert(ufc_tmp_dofmap);
 
@@ -1320,7 +1320,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
   if (ufc_dofmap.num_sub_dofmaps() > 1)
   {
     // Create UFC first sub-dofmap
-    boost::scoped_ptr<ufc::dofmap>
+    std::unique_ptr<ufc::dofmap>
       ufc_sub_dofmap0(ufc_dofmap.create_sub_dofmap(0));
     dolfin_assert(ufc_sub_dofmap0);
 
@@ -1337,7 +1337,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
       // same number of dofs per entity
       for (std::size_t i = 1; i < ufc_dofmap.num_sub_dofmaps(); ++i)
       {
-        boost::scoped_ptr<ufc::dofmap>
+        std::unique_ptr<ufc::dofmap>
           ufc_sub_dofmap(ufc_dofmap.create_sub_dofmap(i));
         dolfin_assert(ufc_sub_dofmap);
         for (std::size_t d = 0; d <= ufc_dofmap.topological_dimension(); ++d)

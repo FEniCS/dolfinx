@@ -25,7 +25,7 @@
 #ifndef __EPETRA_LU_SOLVER_H
 #define __EPETRA_LU_SOLVER_H
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include "GenericLUSolver.h"
 
 /// Forward declaration
@@ -106,10 +106,10 @@ namespace dolfin
     std::shared_ptr<const EpetraMatrix> _matA;
 
     // Epetra linear problem
-    boost::scoped_ptr<Epetra_LinearProblem> linear_problem;
+    std::unique_ptr<Epetra_LinearProblem> linear_problem;
 
     // Linear solver
-    boost::scoped_ptr<Amesos_BaseSolver> solver;
+    std::unique_ptr<Amesos_BaseSolver> solver;
 
     // Solver method
     std::string _method;

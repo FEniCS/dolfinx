@@ -27,7 +27,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <boost/scoped_ptr.hpp>
 #include "GenericLinearSolver.h"
 
 namespace dolfin

@@ -24,7 +24,6 @@
 // First added:  2007-01-17
 // Last changed: 2013-09-19
 
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
