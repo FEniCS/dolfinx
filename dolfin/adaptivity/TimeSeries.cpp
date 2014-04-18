@@ -20,8 +20,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <sstream>
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>

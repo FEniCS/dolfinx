@@ -21,8 +21,9 @@
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
 
-#include <vector>
+#include <memory>
 #include <set>
+#include <vector>
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin
@@ -104,7 +105,7 @@ namespace dolfin
     std::vector<double> _bbox_coordinates;
 
     // Point search tree used to accelerate distance queries
-    mutable boost::scoped_ptr<GenericBoundingBoxTree> _point_search_tree;
+    mutable std::unique_ptr<GenericBoundingBoxTree> _point_search_tree;
 
     // Clear existing data if any
     void clear();

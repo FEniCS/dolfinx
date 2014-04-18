@@ -23,6 +23,8 @@
 
 #ifdef ENABLE_PETSC_TAO
 
+#include <memory>
+
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
@@ -30,8 +32,6 @@
 #include <petscksp.h>
 #include <petscpc.h>
 #include <petsctao.h>
-#include <memory>
-#include <boost/scoped_ptr.hpp>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/KrylovSolver.h>
 
