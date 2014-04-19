@@ -266,15 +266,6 @@ void PETScVector::get_local(double* block, std::size_t m,
   PetscInt _m = m;
   const dolfin::la_index* _rows = rows;
 
-  // Handle case that m = 0 (VecGetValues is collective -> must be
-  // called be all processes)
-  if (m == 0)
-  {
-    _rows = &_m;
-    double tmp = 0.0;
-    block = &tmp;
-  }
-
   // Use VecGetValues if no ghost points, otherwise check for ghost
   // values
   if (ghost_global_to_local.empty() || m == 0)

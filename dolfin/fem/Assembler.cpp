@@ -24,7 +24,6 @@
 // First added:  2007-01-17
 // Last changed: 2013-09-19
 
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -63,7 +62,6 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   if (num_threads > 0)
   {
     OpenMpAssembler assembler;
-    assembler.reset_sparsity = reset_sparsity;
     assembler.add_values = add_values;
     assembler.finalize_tensor = finalize_tensor;
     assembler.keep_diagonal = keep_diagonal;

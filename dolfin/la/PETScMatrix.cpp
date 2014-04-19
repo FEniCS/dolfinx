@@ -250,7 +250,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  return _matA ? true : false;
+  return _matA ? false : true;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
@@ -595,7 +595,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
     if (_matA)
     {
       // Get reference count to _matA
-      int ref_count = 0;
+      PetscInt ref_count = 0;
       PetscObjectGetReference((PetscObject)_matA, &ref_count);
       if (ref_count > 1)
       {

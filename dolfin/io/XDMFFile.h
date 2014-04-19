@@ -22,10 +22,10 @@
 
 #ifdef HAS_HDF5
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
@@ -109,7 +109,7 @@ namespace dolfin
     MPI_Comm _mpi_comm;
 
     // HDF5 data file
-    boost::scoped_ptr<HDF5File> hdf5_file;
+    std::unique_ptr<HDF5File> hdf5_file;
 
     // HDF5 filename
     std::string hdf5_filename;

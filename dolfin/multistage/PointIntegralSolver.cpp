@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-03-10
+// Last changed: 2014-04-09
 
 #include <cmath>
 #include <algorithm>
@@ -660,7 +660,7 @@ void PointIntegralSolver::_simplified_newton_solve(
 
     residual = _norm(_residual);
     if (newton_iterations == 0)
-      initial_residual = residual;
+      initial_residual = residual;//std::max(residual, DOLFIN_EPS);
 
     relative_residual = residual/initial_residual;
 
@@ -782,7 +782,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     // No convergence
     if (newton_iterations > max_iterations)
     {
-      if ((report && vert_ind == report_vertex) || verbose_report)
+      if (report)
 	info("Newton solver did not converge after %d iterations. vertex: %d, "	\
 	     "relative_previous_residual: %.3f, "			\
 	     "relative_residual: %.3e, residual: %.3e.", max_iterations, vert_ind,
