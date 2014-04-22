@@ -119,10 +119,10 @@ TAOLinearBoundSolver::set_operators(std::shared_ptr<const GenericMatrix> A,
                                     std::shared_ptr<const GenericVector> b)
 {
   std::shared_ptr<const PETScMatrix>
-    _A = GenericTensor::down_cast<const PETScMatrix>(A);
+    _matA = GenericTensor::down_cast<const PETScMatrix>(A);
   std::shared_ptr<const PETScVector>
     _b = GenericTensor::down_cast<const PETScVector>(b);
-  set_operators(_A, _b);
+  set_operators(_matA, _b);
 }
 //-----------------------------------------------------------------------------
 void
@@ -159,9 +159,9 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
   dolfin_assert(A1.size(0) == A1.size(1));
 
   // Set operators (A and b)
-  std::shared_ptr<const PETScMatrix> _A(&A1, NoDeleter());
+  std::shared_ptr<const PETScMatrix> _matA(&A1, NoDeleter());
   std::shared_ptr<const PETScVector> _b(&b1, NoDeleter());
-  set_operators(_A,_b);
+  set_operators(_matA,_b);
   dolfin_assert(A->mat());
   //dolfin_assert(b->vec());
 

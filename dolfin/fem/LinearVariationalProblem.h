@@ -99,7 +99,7 @@ namespace dolfin
     std::shared_ptr<const Form> _a;
 
     // The linear form
-    std::shared_ptr<const Form> _L;
+    std::shared_ptr<const Form> _l;
 
     // The solution
     std::shared_ptr<Function> _u;
