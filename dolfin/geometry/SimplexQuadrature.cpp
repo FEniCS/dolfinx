@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-03-17
+// Last changed: 2014-04-03
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -143,8 +143,8 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
   {
     for (std::size_t d = 0; d < gdim; ++d)
     {
-      quadrature_rule.first[d+i*gdim]
-        = 0.5*(coordinates[d]*(1 - p[i]) + coordinates[gdim+d]*(1 + p[i]));
+      quadrature_rule.first[d + i*gdim]
+        = 0.5*(coordinates[d]*(1 - p[i]) + coordinates[gdim + d]*(1 + p[i]));
     }
   }
 
@@ -207,12 +207,12 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
     }
   case 3:
     {
-      const double J[]={coordinates[3] - coordinates[0],
-                        coordinates[6] - coordinates[0],
-                        coordinates[4] - coordinates[1],
-                        coordinates[7] - coordinates[1],
-                        coordinates[5] - coordinates[2],
-                        coordinates[8] - coordinates[2]};
+      const double J[] = {coordinates[3] - coordinates[0],
+                          coordinates[6] - coordinates[0],
+                          coordinates[4] - coordinates[1],
+                          coordinates[7] - coordinates[1],
+                          coordinates[5] - coordinates[2],
+                          coordinates[8] - coordinates[2]};
       const double d_0 = J[2]*J[5] - J[4]*J[3];
       const double d_1 = J[4]*J[1] - J[0]*J[5];
       const double d_2 = J[0]*J[3] - J[2]*J[1];
@@ -231,10 +231,10 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   quadrature_rule.first.resize(gdim*p.size());
   for (std::size_t i = 0; i < p.size(); ++i)
     for (std::size_t d = 0; d < gdim; ++d)
-      quadrature_rule.first[d+i*gdim]
+      quadrature_rule.first[d + i*gdim]
         = p[i][0]*coordinates[d]
-        + p[i][1]*coordinates[gdim+d]
-        + p[i][2]*coordinates[2*gdim+d];
+        + p[i][1]*coordinates[gdim + d]
+        + p[i][2]*coordinates[2*gdim + d];
 
   // Store weights
   quadrature_rule.second.assign(w.size(), 0.5*std::abs(det));
@@ -320,7 +320,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
   quadrature_rule.first.resize(gdim*p.size());
   for (std::size_t i = 0; i < p.size(); ++i)
     for (std::size_t d = 0; d < gdim; ++d)
-      quadrature_rule.first[d+i*gdim]
+      quadrature_rule.first[d + i*gdim]
         = p[i][0]*coordinates[d]
         + p[i][1]*coordinates[gdim + d]
         + p[i][2]*coordinates[2*gdim + d]
