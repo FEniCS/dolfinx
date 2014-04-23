@@ -21,8 +21,9 @@
 // First added:  2007-12-10
 // Last changed: 2014-03-03
 
+#include <memory>
 #include <string>
-#include <boost/scoped_ptr.hpp>
+
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -364,7 +365,7 @@ void Form::check() const
   // Check argument function spaces
   for (std::size_t i = 0; i < _function_spaces.size(); ++i)
   {
-    boost::scoped_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
+    std::unique_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
     dolfin_assert(element);
     dolfin_assert(_function_spaces[i]->element());
     if (element->signature() != _function_spaces[i]->element()->signature())

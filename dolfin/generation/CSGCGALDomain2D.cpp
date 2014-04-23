@@ -106,7 +106,7 @@ Polygon_2 make_rectangle(const Rectangle* r)
   pts.push_back(Point_2(x0, y1));
 
   Polygon_2 p(pts.begin(), pts.end());
-  
+
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -123,7 +123,7 @@ Polygon_2 make_polygon(const Polygon* p)
 CSGCGALDomain2D::CSGCGALDomain2D()
   : impl(new CSGCGALDomain2DImpl)
 {
-  
+
 }
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D::~CSGCGALDomain2D()
@@ -133,7 +133,7 @@ CSGCGALDomain2D::~CSGCGALDomain2D()
 CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
 : impl(new CSGCGALDomain2DImpl)
 {
-  switch (geometry->getType()) 
+  switch (geometry->getType())
   {
     case CSGGeometry::Union:
     {
@@ -144,7 +144,7 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
       CSGCGALDomain2D b(u->_g1.get());
 
       impl.swap(a.impl);
-      impl->polygon_set.join(b.impl->polygon_set);    
+      impl->polygon_set.join(b.impl->polygon_set);
       break;
     }
     case CSGGeometry::Intersection:
@@ -154,7 +154,7 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
 
       CSGCGALDomain2D a(u->_g0.get());
       CSGCGALDomain2D b(u->_g1.get());
-      
+
       impl.swap(a.impl);
       impl->polygon_set.intersection(b.impl->polygon_set);
       break;
@@ -165,7 +165,7 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
       dolfin_assert(u);
       CSGCGALDomain2D a(u->_g0.get());
       CSGCGALDomain2D b(u->_g1.get());
-      
+
       impl.swap(a.impl);
       impl->polygon_set.difference(b.impl->polygon_set);
       break;
@@ -212,8 +212,8 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGCGALDomain2D &other)
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D &CSGCGALDomain2D::operator=(const CSGCGALDomain2D &other)
 {
-  boost::scoped_ptr<CSGCGALDomain2DImpl> tmp(new CSGCGALDomain2DImpl(other.impl->polygon_set));
-  
+  std::unique_ptr<CSGCGALDomain2DImpl> tmp(new CSGCGALDomain2DImpl(other.impl->polygon_set));
+
   impl.swap(tmp);
 
   return *this;
@@ -228,7 +228,7 @@ double CSGCGALDomain2D::compute_boundingcircle_radius() const
 
   for (std::list<Polygon_with_holes_2>::const_iterator pit = polygon_list.begin();
        pit != polygon_list.end(); ++pit)
-    for (Polygon_2::Vertex_const_iterator vit = pit->outer_boundary().vertices_begin(); 
+    for (Polygon_2::Vertex_const_iterator vit = pit->outer_boundary().vertices_begin();
          vit != pit->outer_boundary().vertices_end(); ++vit)
       points.push_back(*vit);
 
@@ -260,7 +260,7 @@ bool CSGCGALDomain2D::point_in_domain(Point p) const
   return impl->polygon_set.oriented_side(p_) == CGAL::ON_POSITIVE_SIDE;
 }
 //-----------------------------------------------------------------------------
-void CSGCGALDomain2D::get_vertices(std::list<std::vector<Point> >& l, 
+void CSGCGALDomain2D::get_vertices(std::list<std::vector<Point> >& l,
                                    double truncate_threshold) const
 {
   l.clear();
@@ -269,7 +269,7 @@ void CSGCGALDomain2D::get_vertices(std::list<std::vector<Point> >& l,
 
   std::list<Polygon_with_holes_2> polygon_list;
   impl->polygon_set.polygons_with_holes(std::back_inserter(polygon_list));
-  
+
   std::list<Polygon_with_holes_2>::const_iterator pit;
   for (pit = polygon_list.begin(); pit != polygon_list.end(); ++pit)
   {
@@ -279,7 +279,7 @@ void CSGCGALDomain2D::get_vertices(std::list<std::vector<Point> >& l,
     std::vector<Point> &v = l.back();
     v.reserve(outer.size());
 
-    Polygon_2::Vertex_const_iterator prev = outer.vertices_begin(); 
+    Polygon_2::Vertex_const_iterator prev = outer.vertices_begin();
     Polygon_2::Vertex_const_iterator current = prev;
     ++current;
     for (; current != outer.vertices_end(); ++current)
@@ -293,10 +293,10 @@ void CSGCGALDomain2D::get_vertices(std::list<std::vector<Point> >& l,
 
       prev = current;
     }
-  
+
     current = outer.vertices_begin();
     if ( (*current - *prev).squared_length() > truncate_threshold)
-      v.push_back(Point(CGAL::to_double(current->x()), 
+      v.push_back(Point(CGAL::to_double(current->x()),
                         CGAL::to_double(current->y())));
   }
 }
@@ -319,7 +319,7 @@ void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h,
       std::vector<Point> &v = h.back();
       v.reserve(hit->size());
 
-      Polygon_2::Vertex_const_iterator prev = hit->vertices_begin(); 
+      Polygon_2::Vertex_const_iterator prev = hit->vertices_begin();
       Polygon_2::Vertex_const_iterator current = prev;
       ++current;
 
@@ -336,7 +336,7 @@ void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h,
       }
       current = hit->vertices_begin();
       if ( (*current - *prev).squared_length() > truncate_threshold)
-        v.push_back(Point(CGAL::to_double(current->x()), 
+        v.push_back(Point(CGAL::to_double(current->x()),
                           CGAL::to_double(current->y())));
     }
   }

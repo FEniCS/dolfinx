@@ -45,19 +45,12 @@ IntervalMesh::IntervalMesh(MPI_Comm comm, std::size_t nx, double a, double b)
 //-----------------------------------------------------------------------------
 void IntervalMesh::build(std::size_t nx, double a, double b)
 {
-  std::cout << "Building mesh" << std::endl;
-  std::cout << "Building mesh: " << MPI::size(this->mpi_comm()) <<  std::endl;
-
   // Receive mesh according to parallel policy
   if (MPI::is_receiver(this->mpi_comm()))
   {
-    std::cout << "Building mesh (dist 1a)" << std::endl;
     MeshPartitioning::build_distributed_mesh(*this);
-    std::cout << "Building mesh (dist 1b)" << std::endl;
     return;
   }
-
-  std::cout << "Building mesh here" << std::endl;
 
   if (std::abs(a - b) < DOLFIN_EPS)
   {

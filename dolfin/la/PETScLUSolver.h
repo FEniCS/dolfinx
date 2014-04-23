@@ -145,7 +145,7 @@ namespace dolfin
     KSP _ksp;
 
     // Operator (the matrix)
-    std::shared_ptr<const PETScMatrix> _A;
+    std::shared_ptr<const PETScMatrix> _matA;
 
   };
 

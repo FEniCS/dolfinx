@@ -27,6 +27,27 @@
 // General typemaps for PyDOLFIN
 //=============================================================================
 
+//-----------------------------------------------------------------------------
+// Fragment for bool (after SWIG 3.0)
+// Allow Python bool, scalar numpy booleans and 1 sized boolean arrays
+//-----------------------------------------------------------------------------
+%fragment(SWIG_AsVal_frag(bool2),"header",
+	  fragment=SWIG_AsVal_frag(long)) {
+SWIGINTERN int
+SWIG_AsVal_dec(bool2)(PyObject *obj, bool *val)
+{
+  int r;
+  if (!(PyBool_Check(obj)||PyArray_IsScalar(obj, Bool)||(PyArray_Check(obj)&&PyArray_SIZE(reinterpret_cast<PyArrayObject*>(obj))==1)&&PyArray_TYPE(reinterpret_cast<PyArrayObject*>(obj))==NPY_BOOL))
+    return SWIG_ERROR;
+  r = PyObject_IsTrue(obj);
+  if (r == -1)
+    return SWIG_ERROR;
+  if (val) *val = r ? true : false;
+  return SWIG_OK;
+}
+}
+
+// Include limit header
 %fragment("limits_header", "header") 
 {
   // Include the limits header
@@ -276,6 +297,30 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
   if (!Py_convert_int($input, $1))
     SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
 }
+//-----------------------------------------------------------------------------
+// The typecheck (bool) Needed after SWIG 3.0
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_BOOL) book
+{
+  $1 = PyBool_Check(obj)||PyArray_IsScalar(obj, Bool);
+}
+
+//-----------------------------------------------------------------------------
+// The typemaps (bool)
+//-----------------------------------------------------------------------------
+%typemap(in, fragment=SWIG_AsVal_frag(bool2)) bool 
+{
+  int swig_res = SWIG_AsVal_dec(bool2)($input, &$1);
+  if (!SWIG_IsOK(swig_res))
+    SWIG_exception(SWIG_TypeError, "expected 'bool' for argument $argnum");
+}
+
+%typemap(directorout, fragment=SWIG_AsVal_frag(bool2)) bool
+{
+  int swig_res = SWIG_AsVal_dec(bool2)($1, &$result);
+  if (!SWIG_IsOK(swig_res))
+    Swig::DirectorTypeMismatchException::raise(SWIG_ErrorType(SWIG_ArgError(swig_res)), "expected 'bool' as the output argument of '$symname'");
+}
 
 //-----------------------------------------------------------------------------
 // Ensure typefragments
@@ -289,3 +334,4 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
 %fragment("Py_convert_int");
 %fragment("Py_convert_uint");
 %fragment("Py_convert_std_size_t");
+

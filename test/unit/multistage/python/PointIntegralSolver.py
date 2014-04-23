@@ -38,71 +38,114 @@ def convergence_order(errors, base = 2):
 
     return orders
 
+def function_closure(Scheme):
+
+    def scalar_time(self):
+
+        mesh = UnitSquareMesh(10, 10)
+        V = FunctionSpace(mesh, "CG", 1)
+        v = TestFunction(V)
+        time = Constant(0.0)
+        u0=10.0
+        tstop = 1.0
+        weight = Constant(2)
+        u_true = Expression("u0 + 2*t + pow(t, 2)/2. + weight*pow(t, 3)/3. - "\
+                            "pow(t, 5)/5.", t=tstop, u0=u0, weight=weight)
+
+        u = Function(V)
+        compound_time_expr = Expression("weight*time*time", weight=weight, \
+                                        element=time.element(), time=time)
+        form = (2+time+compound_time_expr-time**4)*v*dP
+        
+        scheme = Scheme(form, u, time)
+        info(scheme)
+        solver = PointIntegralSolver(scheme)
+        u_errors = []
+        for dt in [0.05, 0.025, 0.0125]:
+            solver.reset_newton_solver()
+            solver.reset_stage_solutions()
+            u.interpolate(Constant(u0))
+            solver.step_interval(0., tstop, dt)
+            u_errors.append(errornorm(u_true, u))
+
+        self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+
+    def scalar(self):
+
+        mesh = UnitSquareMesh(10, 10)
+        V = FunctionSpace(mesh, "CG", 1)
+        v = TestFunction(V)
+
+        tstop = 1.0
+        u_true = Expression("exp(t)", t=tstop)
+
+        u = Function(V)
+        form = u*v*dP
+
+        scheme = Scheme(form, u)
+        info(scheme)
+        u_errors = []
+        solver = PointIntegralSolver(scheme)
+        for dt in [0.05, 0.025, 0.0125]:
+            solver.reset_newton_solver()
+            solver.reset_stage_solutions()
+            u.interpolate(Constant(1.0))
+            solver.step_interval(0., tstop, dt)
+            u_errors.append(errornorm(u_true, u))
+        self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+
+    def vector(self):
+
+        mesh = UnitSquareMesh(10, 10)
+        V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
+        v = TestFunction(V)
+        tstop = 1.0
+        u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
+
+        u = Function(V)
+        form = inner(as_vector((-u[1], u[0])), v)*dP
+
+        scheme = Scheme(form, u)
+        info(scheme)
+        solver = PointIntegralSolver(scheme)
+        u_errors = []
+        for dt in [0.05, 0.025, 0.0125]:
+            solver.reset_newton_solver()
+            solver.reset_stage_solutions()
+            u.interpolate(Constant((1.0, 0.0)))
+            scheme.t().assign(0.0)
+            next_dt = dt
+            while float(scheme.t()) + next_dt <= tstop:
+                if next_dt < 1000*DOLFIN_EPS:
+                    break
+
+                solver.step(next_dt)
+                next_dt = min(tstop-float(scheme.t()), dt)
+
+            u_errors.append(errornorm(u_true, u))
+
+        self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+
+    return scalar_time, scalar, vector
+
 class PointIntegralSolverTest(unittest.TestCase):
+    pass
 
-    def xtest_butcher_schemes_scalar(self):
+# Build test methods using function closure so 1 test is generated per Scheme and
+# test case
+for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
+               BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
 
-        for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
-                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
+    scalar_time, scalar, vector = function_closure(Scheme)
+    
+    setattr(PointIntegralSolverTest,
+            "test_butcher_schemes_scalar_time_{0}".format(Scheme), scalar_time)
 
-            mesh = UnitSquareMesh(10, 10)
-            V = FunctionSpace(mesh, "CG", 1)
-            u = Function(V)
-            v = TestFunction(V)
-            form = u*v*dP
+    setattr(PointIntegralSolverTest,
+            "test_butcher_schemes_scalar_{0}".format(Scheme), scalar)
 
-            tstop = 1.0
-            u_true = Expression("exp(t)", t=tstop)
-
-            scheme = Scheme(form, u)
-            info(scheme)
-            solver = PointIntegralSolver(scheme)
-            solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.iterations_to_retabulate_jacobian = 5
-            solver.parameters.newton_solver.maximum_iterations = 12
-            u_errors = []
-            for dt in [0.05, 0.025, 0.0125]:
-                u.interpolate(Constant(1.0))
-                solver.step_interval(0., tstop, dt)
-                u_errors.append(errornorm(u_true, u))
-
-            self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
-
-    def xtest_butcher_schemes_vector(self):
-
-        for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
-                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
-
-            mesh = UnitSquareMesh(10, 10)
-            V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
-            u = Function(V)
-            v = TestFunction(V)
-            form = inner(as_vector((-u[1], u[0])), v)*dP
-
-            tstop = 1.0
-            u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
-
-            scheme = Scheme(form, u)
-            info(scheme)
-            solver = PointIntegralSolver(scheme)
-            solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.iterations_to_retabulate_jacobian = 5
-            solver.parameters.newton_solver.maximum_iterations = 12
-            u_errors = []
-            for dt in [0.05, 0.025, 0.0125]:
-                u.interpolate(Constant((1.0, 0.0)))
-                scheme.t().assign(0.0)
-                next_dt = dt
-                while float(scheme.t()) + next_dt <= tstop:
-                    if next_dt < 1000*DOLFIN_EPS:
-                        break
-
-                    solver.step(next_dt)
-                    next_dt = min(tstop-float(scheme.t()), dt)
-
-                u_errors.append(errornorm(u_true, u))
-
-            self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+    setattr(PointIntegralSolverTest,
+            "test_butcher_schemes_vector_{0}".format(Scheme), vector)
 
 if __name__ == "__main__":
     print ""

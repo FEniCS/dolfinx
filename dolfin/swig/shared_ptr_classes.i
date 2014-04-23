@@ -258,10 +258,9 @@
 // nls
 %shared_ptr(dolfin::NewtonSolver)
 %shared_ptr(dolfin::PETScSNESSolver)
-#ifdef HAS_TAO
+#ifdef ENABLE_PETSC_TAO
 %shared_ptr(dolfin::TAOLinearBoundSolver)
 #endif
-
 // plot
 %shared_ptr(dolfin::VTKPlotter)
 %shared_ptr(dolfin::GenericVTKPlottable)

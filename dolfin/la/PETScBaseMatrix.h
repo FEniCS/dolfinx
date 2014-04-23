@@ -47,10 +47,13 @@ namespace dolfin
   public:
 
     /// Constructor
-  PETScBaseMatrix() : _A(NULL) {}
+    PETScBaseMatrix() : _matA(NULL) {}
 
     /// Constructor
-    PETScBaseMatrix(Mat A);
+    explicit PETScBaseMatrix(Mat A);
+
+    /// Copy constructor
+    PETScBaseMatrix(const PETScBaseMatrix& A);
 
     /// Destructor
     ~PETScBaseMatrix();
@@ -72,7 +75,7 @@ namespace dolfin
 
     /// Return PETSc Mat pointer
     Mat mat() const
-    { return _A; }
+    { return _matA; }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
@@ -80,7 +83,7 @@ namespace dolfin
   protected:
 
     // PETSc Mat pointer
-    Mat _A;
+    Mat _matA;
 
   };
 

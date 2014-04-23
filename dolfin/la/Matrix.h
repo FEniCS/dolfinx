@@ -163,6 +163,10 @@ namespace dolfin
     virtual void transpmult(const GenericVector& x, GenericVector& y) const
     { matrix->transpmult(x, y); }
 
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x)
+    { matrix->set_diagonal(x); }
+
     /// Multiply matrix by given number
     virtual const Matrix& operator*= (double a)
     { *matrix *= a; return *this; }

@@ -26,9 +26,9 @@
 #define __LOGGER_H
 
 #include <map>
+#include <memory>
 #include <ostream>
 #include <string>
-#include <boost/scoped_ptr.hpp>
 #include "Table.h"
 #include "LogLevel.h"
 
@@ -150,7 +150,7 @@ namespace dolfin
     std::map<std::string, std::pair<std::size_t, double> > _timings;
 
     // Thread used for monitoring memory usage
-    boost::scoped_ptr<boost::thread> _thread_monitor_memory_usage;
+    std::unique_ptr<boost::thread> _thread_monitor_memory_usage;
 
     // Maximum memory usage so far
     long int _maximum_memory_usage;

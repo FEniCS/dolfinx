@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-02
+// Last changed: 2014-03-05
 
 #ifndef __BUTCHERSCHEME_H
 #define __BUTCHERSCHEME_H
@@ -25,7 +25,6 @@
 #include <memory>
 
 #include <dolfin/common/Variable.h>
-#include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/fem/Form.h>
 
@@ -48,24 +47,26 @@ namespace dolfin
     /// Constructor
     /// FIXME: This constructor is a MESS. Needs clean up...
     MultiStageScheme(std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms, 
-		  const FunctionAXPY& last_stage, 
+		  std::shared_ptr<const Form> last_stage, 
 		  std::vector<std::shared_ptr<Function> > stage_solutions,
 		  std::shared_ptr<Function> u, 
 		  std::shared_ptr<Constant> t, 
 		  std::shared_ptr<Constant> dt,
 		  std::vector<double> dt_stage_offset, 
+		  std::vector<int> jacobian_indices,
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form);
 
     /// Constructor with Boundary conditions
     MultiStageScheme(std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms, 
-		  const FunctionAXPY& last_stage, 
+		  std::shared_ptr<const Form> last_stage, 
 		  std::vector<std::shared_ptr<Function> > stage_solutions,
 		  std::shared_ptr<Function> u, 
 		  std::shared_ptr<Constant> t, 
 		  std::shared_ptr<Constant> dt, 
 		  std::vector<double> dt_stage_offset, 
+		  std::vector<int> jacobian_indices,
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form,
@@ -75,7 +76,7 @@ namespace dolfin
     std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms();
 
     /// Return the last stage
-    FunctionAXPY& last_stage();
+    std::shared_ptr<const Form> last_stage();
 
     /// Return stage solutions
     std::vector<std::shared_ptr<Function> >& stage_solutions();
@@ -107,6 +108,10 @@ namespace dolfin
     /// Return true if the whole scheme is implicit
     bool implicit() const;
 
+    // Return a distinct jacobian index for a given stage if negative the 
+    // stage is explicit and hence no jacobian needed.
+    int jacobian_index(unsigned int stage) const;
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
@@ -119,7 +124,7 @@ namespace dolfin
     std::vector<std::vector<std::shared_ptr<const Form> > > _stage_forms;
 
     // A linear combination of solutions for the last stage
-    FunctionAXPY _last_stage;
+    std::shared_ptr<const Form> _last_stage;
     
     // Solutions for the different stages
     std::vector<std::shared_ptr<Function> > _stage_solutions;
@@ -135,6 +140,9 @@ namespace dolfin
     
     // The time step offset. (c from the ButcherTableau)
     std::vector<double> _dt_stage_offset;
+
+    // Map for distinct storage of jacobians
+    std::vector<int> _jacobian_indices;
 
     // The order of the scheme
     unsigned int _order;

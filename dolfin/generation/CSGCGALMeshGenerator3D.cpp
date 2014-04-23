@@ -21,6 +21,8 @@
 // Last changed: 2014-02-06
 
 
+#include <memory>
+
 #include "CSGCGALMeshGenerator3D.h"
 #include "CSGGeometry.h"
 #include "GeometryToCGALConverter.h"
@@ -28,7 +30,6 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <boost/scoped_ptr.hpp>
 
 using namespace dolfin;
 
@@ -136,7 +137,7 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
 
   // Workaround, cgal segfaulted when assigning new mesh criterias
   // within the if-else blocks.
-  boost::scoped_ptr<csg::Mesh_criteria> criteria;
+  std::unique_ptr<csg::Mesh_criteria> criteria;
 
   int mesh_resolution = parameters["mesh_resolution"];
   if (mesh_resolution > 0)

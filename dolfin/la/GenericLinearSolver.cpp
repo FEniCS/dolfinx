@@ -47,19 +47,19 @@ std::shared_ptr<const GenericMatrix>
 GenericLinearSolver::require_matrix(std::shared_ptr<const GenericLinearOperator> A)
 {
   // Try to down cast shared pointer
-  std::shared_ptr<const GenericMatrix> _A
+  std::shared_ptr<const GenericMatrix> _matA
     = std::dynamic_pointer_cast<const GenericMatrix>(A);
 
   // Check results. Note the difference from the as_type functions
   // in LinearAlgebraObject in that we check the return value here
   // and throw an error if the cast fails.
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("GenericLinearSolver.h",
                  "use linear operator as a matrix (real matrix required)",
                  "Dynamic cast failed");
   }
 
-  return _A;
+  return _matA;
 }
 //-----------------------------------------------------------------------------

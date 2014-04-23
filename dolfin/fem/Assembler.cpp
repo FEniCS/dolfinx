@@ -24,7 +24,6 @@
 // First added:  2007-01-17
 // Last changed: 2014-03-03
 
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -63,7 +62,6 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   if (num_threads > 0)
   {
     OpenMpAssembler assembler;
-    assembler.reset_sparsity = reset_sparsity;
     assembler.add_values = add_values;
     assembler.finalize_tensor = finalize_tensor;
     assembler.keep_diagonal = keep_diagonal;
@@ -277,7 +275,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     integral->tabulate_tensor(ufc.A.data(),
                               ufc.w(),
                               vertex_coordinates.data(),
-                              local_facet);
+                              local_facet,
+                              ufc_cell.orientation);
 
     // Add entries to global tensor
     add_to_global_tensor(A, ufc.A, dofs);
@@ -312,12 +311,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dofs for cells, and a vector holding pointers to same
-  std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
   std::vector<const std::vector<dolfin::la_index>* > macro_dof_ptrs(form_rank);
+  std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
   for (std::size_t i = 0; i < form_rank; i++)
-  {
     macro_dof_ptrs[i] = &macro_dofs[i];
-  }
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral
@@ -410,7 +407,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                               vertex_coordinates[0].data(),
                               vertex_coordinates[1].data(),
                               local_facet0,
-                              local_facet1);
+                              local_facet1,
+                              ufc_cell[0].orientation,
+                              ufc_cell[1].orientation);
 
     // Add entries to global tensor
     add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);

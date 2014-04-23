@@ -23,7 +23,6 @@
 
 #include <limits>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 #include <memory>
 
 namespace dolfin
@@ -232,7 +231,7 @@ namespace dolfin
     void check_built() const;
 
     // Dimension-dependent implementation
-    boost::scoped_ptr<GenericBoundingBoxTree> _tree;
+    std::unique_ptr<GenericBoundingBoxTree> _tree;
 
     // Pointer to the mesh. We all know that we don't really want
     // to store a pointer to the mesh here, but without it we will

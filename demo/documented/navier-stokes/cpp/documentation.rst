@@ -385,7 +385,7 @@ pressure equation if available:
     assemble(b2, L2);
     for (std::size_t i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, *p1.vector(), b2, "gmres", prec);
+    solve(A2, *p1.vector(), b2, "cg", prec);
     end();
 
     // Velocity correction

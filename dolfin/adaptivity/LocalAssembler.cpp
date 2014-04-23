@@ -135,7 +135,8 @@ void LocalAssembler::assemble_exterior_facet(Eigen::MatrixXd& A,
   integral->tabulate_tensor(ufc.A.data(),
                             ufc.w(),
                             vertex_coordinates.data(),
-                            local_facet);
+                            local_facet,
+                            ufc_cell.orientation);
 
   // Stuff a_ufc.A into A
   const std::size_t M = A.rows();
@@ -178,7 +179,9 @@ void LocalAssembler::assemble_interior_facet(Eigen::MatrixXd& A,
   integral->tabulate_tensor(ufc.macro_A.data(), ufc.macro_w(),
                             vertex_coordinates.data(),
                             vertex_coordinates.data(),
-                            local_facet, local_facet);
+                            local_facet, local_facet,
+                            ufc_cell.orientation,
+                            ufc_cell.orientation);
 
   // Stuff upper left quadrant (corresponding to this cell) into A
   const std::size_t M = A.rows();

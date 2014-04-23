@@ -69,19 +69,19 @@ namespace dolfin
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P)
-    { _A = A; _P = P; }
+    { _matA = A; _matP = P; }
 
 
     /// Return the operator (matrix)
     const GenericLinearOperator& get_operator() const
     {
-      if (!_A)
+      if (!_matA)
       {
         dolfin_error("uBLASKrylovSolver.cpp",
                      "access operator for uBLAS Krylov solver",
                      "Operator has not been set");
       }
-      return *_A;
+      return *_matA;
     }
 
     /// Solve linear system Ax = b and return number of iterations
@@ -144,10 +144,10 @@ namespace dolfin
     bool report;
 
     /// Operator (the matrix)
-    std::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _matA;
 
     /// Matrix used to construct the preconditoner
-    std::shared_ptr<const GenericLinearOperator> _P;
+    std::shared_ptr<const GenericLinearOperator> _matP;
 
   };
   //---------------------------------------------------------------------------
