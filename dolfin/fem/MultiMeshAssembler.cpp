@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-04-03
+// Last changed: 2014-04-23
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -169,7 +169,8 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A, const MultiMeshForm& a
                                          vertex_coordinates.data(),
                                          quadrature_rule.second.size(),
                                          quadrature_rule.first.data(),
-                                         quadrature_rule.second.data());
+                                         quadrature_rule.second.data(),
+                                         ufc_cell.orientation);
 
         // Add entries to global tensor
         A.add(ufc_part.A.data(), dofs);
