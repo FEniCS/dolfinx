@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-04-03
+// Last changed: 2014-04-23
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -496,7 +496,8 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
 
           if (triangulation_cut_boundary.size())
           {
-            std::cout << "triangulation_cut_boundary\n"<<drawtriangulation(triangulation_cut_boundary,gdim,tdim_boundary)<<std::endl;
+            // FIXME: Cleanout debugging
+            //std::cout << "triangulation_cut_boundary\n"<<drawtriangulation(triangulation_cut_boundary,gdim,tdim_boundary)<<std::endl;
 
             _add_quadrature_rule(interface_qr,
                                  triangulation_cut_boundary,
@@ -512,8 +513,8 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
 
           if (triangulation_boundary_prev_volume.size())
           {
-            std::cout << "triangulation_boundary_prev_volume\n"
-                      <<drawtriangulation(triangulation_boundary_prev_volume,gdim,tdim_boundary,"'r'")<<std::endl;
+            //std::cout << "triangulation_boundary_prev_volume\n"
+            //          <<drawtriangulation(triangulation_boundary_prev_volume,gdim,tdim_boundary,"'r'")<<std::endl;
 
             _add_quadrature_rule(interface_qr,
                                  triangulation_boundary_prev_volume,
@@ -535,7 +536,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
 
         if (triangulation_prev_cutting.size())
         {
-          std::cout << "triangulation_prev_cutting\n"<<drawtriangulation(triangulation_prev_cutting,gdim,tdim_boundary,"'r'")<<std::endl;
+          //std::cout << "triangulation_prev_cutting\n"<<drawtriangulation(triangulation_prev_cutting,gdim,tdim_boundary,"'r'")<<std::endl;
           _add_quadrature_rule(interface_qr,
                                triangulation_prev_cutting,
                                tdim_boundary, gdim, order, -1);
