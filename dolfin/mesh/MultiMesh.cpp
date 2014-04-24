@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-04-23
+// Last changed: 2014-04-24
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -426,7 +426,6 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
   {
     // std::cout << "\n\npart "<< cut_part<<std::endl;
 
-
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
@@ -441,9 +440,6 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
-
-
-
       // Data structure for the quadrature rule of this cell
       std::pair<std::vector<double>, std::vector<double> > volume_qr;
 
@@ -455,10 +451,6 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
 
       // Data structure for the interface triangulation
       std::vector<double> interface_triangulation;
-
-
-
-
 
       // Iterate over cutting cells
       const auto& cutting_cells = it->second;
@@ -476,7 +468,6 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
 
         // Must have the same topology at the moment (FIXME)
         dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
-
 
         std::vector<double> local_interface_triangulation;
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-04-03
+// Last changed: 2014-04-24
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -188,7 +188,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   default:
     dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for triangle",
-                 "Not implemented for order ",order);
+                 "Not implemented for order ", order);
   }
 
   // Find the determinant of the Jacobian (inspired by ufc_geometry.h)
@@ -277,7 +277,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
   default:
     dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for triangle",
-                 "Not implemented for order ",order);
+                 "Not implemented for order ", order);
   }
 
   // Find the determinant of the Jacobian (from ufc_geometry.h)
@@ -327,7 +327,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates
         + p[i][3]*coordinates[3*gdim + d];
 
   // Store weights
-  quadrature_rule.second.assign(w.size(), std::abs(det)/6.);
+  quadrature_rule.second.assign(w.size(), std::abs(det) / 6.);
   for (std::size_t i = 0; i < w.size(); ++i)
     quadrature_rule.second[i] *= w[i];
 
