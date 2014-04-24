@@ -88,10 +88,6 @@ for frame in range(num_frames):
     # Plot quadrature points
     for c in cut_cells:
         points, weights = multimesh.quadrature_rule_cut_cell(0, c)
-
-        print "p =", points
-        print "w =", weights
-
         for i in range(len(weights)):
             w = weights[i]
             x = points[2*i]

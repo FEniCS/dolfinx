@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-04-02
+// Last changed: 2014-04-24
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -375,14 +375,21 @@ namespace dolfin
     // void _build_quadrature_rules_cut_cells_....
 
     // Add quadrature rule for simplices in the triangulation array
-    void
-    _add_quadrature_rule
+    void _add_quadrature_rule
     (std::pair<std::vector<double>,std::vector<double> >& quadrature_rule,
      const std::vector<double>& triangulation,
      std::size_t tdim,
      std::size_t gdim,
      std::size_t order,
      double factor) const;
+
+    // Add quadrature rule to existing quadrature rule
+    void _add_quadrature_rule
+    (std::pair<std::vector<double>, std::vector<double> >& quadrature_rule,
+     const std::pair<std::vector<double>, std::vector<double> >& qr,
+     std::size_t gdim,
+     double factor) const;
+
   };
 
 }

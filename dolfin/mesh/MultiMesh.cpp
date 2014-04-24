@@ -627,27 +627,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 
       // Add the quadrature rule for the overlapping part to the
       // quadrature rule of the cut cell with flipped sign
-      for (std::size_t i = 0; i < qr_overlap.first.size(); ++i)
-      {
-        qr.first.push_back(-qr_overlap.first[i]);
-        for (std::size_t j = 0; j < gdim; ++j)
-          qr.second.push_back(qr_overlap.second[i*gdim + j]);
-      }
-
-
-      // {
-      //   std::cout<<std::endl;
-      //   for (std::size_t i = 0; i < qr.first.size(); ++i) {
-      //     //volume += qr.first[i];
-
-      //     const int gdim = 3;
-      //     Point pt(qr.second[i*gdim],
-      //              qr.second[i*gdim+1],
-      //              qr.second[i*gdim+2]);
-      //     //std::cout << plot(pt);
-      //     std::cout << pt[0]<<' '<<pt[1]<<' '<<pt[2]<<std::endl;
-      //   }
-      // }
+      _add_quadrature_rule(qr, qr_overlap, gdim, -1);
 
       // Store quadrature rule for cut cell
       _quadrature_rules_cut_cells[cut_part][cut_cell_index] = qr;
@@ -750,8 +730,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 //   end();
 // }
 //-----------------------------------------------------------------------------
-void
-MultiMesh::_add_quadrature_rule
+void MultiMesh::_add_quadrature_rule
 (std::pair<std::vector<double>, std::vector<double> >& quadrature_rule,
  const std::vector<double>& triangulation,
  std::size_t tdim,
@@ -768,15 +747,35 @@ MultiMesh::_add_quadrature_rule
     const double* x = &triangulation[0] + k*offset;
 
     // Compute quadrature rule for simplex
-    const auto qr = SimplexQuadrature::compute_quadrature_rule(x, tdim, gdim, order);
+    const auto qr = SimplexQuadrature::compute_quadrature_rule(x,
+                                                               tdim,
+                                                               gdim,
+                                                               order);
 
-    const std::size_t num_points = qr.first.size();
-    for (std::size_t i = 0; i < num_points; i++)
-    {
-      quadrature_rule.first.push_back(factor*qr.first[i]);
-      for (std::size_t j = 0; j < gdim; j++)
-        quadrature_rule.second.push_back(qr.second[i*gdim + j]);
-    }
+    // Add quadrature rule
+    _add_quadrature_rule(quadrature_rule, qr, gdim, factor);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMesh::_add_quadrature_rule
+(std::pair<std::vector<double>, std::vector<double> >& quadrature_rule,
+ const std::pair<std::vector<double>, std::vector<double> >& qr,
+ std::size_t gdim,
+ double factor) const
+{
+  // Get the number of points
+  dolfin_assert(qr.first.size() == gdim*qr.second.size());
+  const std::size_t num_points = qr.second.size();
+
+  // Append points and weights
+  for (std::size_t i = 0; i < num_points; i++)
+  {
+    // Add point
+    for (std::size_t j = 0; j < gdim; j++)
+      quadrature_rule.first.push_back(qr.second[i*gdim + j]);
+
+    // Add weight
+    quadrature_rule.second.push_back(factor*qr.first[i]);
   }
 }
 //-----------------------------------------------------------------------------
