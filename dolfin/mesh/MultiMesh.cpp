@@ -772,10 +772,10 @@ void MultiMesh::_add_quadrature_rule
   {
     // Add point
     for (std::size_t j = 0; j < gdim; j++)
-      quadrature_rule.first.push_back(qr.second[i*gdim + j]);
+      quadrature_rule.first.push_back(qr.first[i*gdim + j]);
 
     // Add weight
-    quadrature_rule.second.push_back(factor*qr.first[i]);
+    quadrature_rule.second.push_back(factor*qr.second[i]);
   }
 }
 //-----------------------------------------------------------------------------
