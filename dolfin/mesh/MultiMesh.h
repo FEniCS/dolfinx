@@ -141,7 +141,7 @@ namespace dolfin
     ///         rules. Each quadrature rule is represented as a pair
     ///         of a flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
-    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > > &
+    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >&
     quadrature_rule_cut_cells(std::size_t part) const;
 
     /// Return quadrature rule for a given cut cell on the given part
@@ -177,7 +177,7 @@ namespace dolfin
     ///         rules. Each quadrature rule is represented as a pair
     ///         of an array of quadrature points and a corresponding
     ///         flattened array of quadrature weights.
-    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > > &
+    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >&
     quadrature_rule_overlap(std::size_t part) const;
 
     /// Return quadrature rules for the interface on the given part
@@ -192,7 +192,7 @@ namespace dolfin
     ///         rules. Each quadrature rule is represented as a pair
     ///         of an array of quadrature points and a corresponding
     ///         flattened array of quadrature weights.
-    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > > &
+    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >&
     quadrature_rule_interface(std::size_t part) const;
 
     /// Add mesh (shared pointer version)
