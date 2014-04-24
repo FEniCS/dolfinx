@@ -100,18 +100,18 @@ MultiMesh::quadrature_rule_cut_cell(std::size_t part,
 //-----------------------------------------------------------------------------
 const std::map<unsigned int,
                std::pair<std::vector<double>, std::vector<double> > > &
-MultiMesh::quadrature_rule_cut_cells_overlap(std::size_t part) const
+MultiMesh::quadrature_rule_overlap(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
-  return _quadrature_rules_cut_cells_overlap[part];
+  return _quadrature_rules_overlap[part];
 }
 //-----------------------------------------------------------------------------
 const std::map<unsigned int,
                std::pair<std::vector<double>, std::vector<double> > > &
-MultiMesh::quadrature_rule_cut_cells_interface(std::size_t part) const
+MultiMesh::quadrature_rule_interface(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
-  return _quadrature_rules_cut_cells_interface[part];
+  return _quadrature_rules_interface[part];
 }
 //-----------------------------------------------------------------------------
 void MultiMesh::add(std::shared_ptr<const Mesh> mesh)
@@ -145,13 +145,13 @@ void MultiMesh::build()
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells_overlap();
+  _build_quadrature_rules_overlap();
 
   // Build quadrature rules of the cut cells
   _build_quadrature_rules_cut_cells();
 
   // Build quadrature rules of the interface in the cut cells
-  //_build_quadrature_rules_cut_cells_interface();
+  //_build_quadrature_rules_interface();
 
   end();
 }
@@ -167,8 +167,8 @@ void MultiMesh::clear()
   _collision_maps_cut_cells.clear();
   _collision_maps_cut_cells_boundary.clear();
   _quadrature_rules_cut_cells.clear();
-  _quadrature_rules_cut_cells_overlap.clear();
-  _quadrature_rules_cut_cells_interface.clear();
+  _quadrature_rules_overlap.clear();
+  _quadrature_rules_interface.clear();
 }
 //-----------------------------------------------------------------------------
 void MultiMesh::_build_boundary_meshes()
@@ -351,7 +351,7 @@ void MultiMesh::_build_collision_maps()
   end();
 }
 //-----------------------------------------------------------------------------
-void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
+void MultiMesh::_build_quadrature_rules_overlap()
 {
   begin(PROGRESS, "Building quadrature rules of cut cells' overlap.");
 
@@ -359,12 +359,12 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
   const std::size_t order = 1;
 
   // Clear quadrature rules
-  _quadrature_rules_cut_cells_overlap.clear();
-  _quadrature_rules_cut_cells_interface.clear();
+  _quadrature_rules_overlap.clear();
+  _quadrature_rules_interface.clear();
 
   // Resize quadrature rules
-  _quadrature_rules_cut_cells_overlap.resize(num_parts());
-  _quadrature_rules_cut_cells_interface.resize(num_parts());
+  _quadrature_rules_overlap.resize(num_parts());
+  _quadrature_rules_interface.resize(num_parts());
 
   // FIXME: test prebuild map from boundary facets to full mesh cells
   // for all meshes: Loop over all boundary mesh facets to find the
@@ -540,8 +540,8 @@ void MultiMesh::_build_quadrature_rules_cut_cells_overlap()
       }
 
       // Store quadrature rules for cut cell
-      _quadrature_rules_cut_cells_overlap[cut_part][cut_cell_index] = volume_qr;
-      _quadrature_rules_cut_cells_interface[cut_part][cut_cell_index] = interface_qr;
+      _quadrature_rules_overlap[cut_part][cut_cell_index] = volume_qr;
+      _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
     }
   }
 
@@ -578,7 +578,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
       auto qr = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
 
       // Get the quadrature rule for the overlapping part
-      const auto& qr_overlap = _quadrature_rules_cut_cells_overlap[cut_part][cut_cell_index];
+      const auto& qr_overlap = _quadrature_rules_overlap[cut_part][cut_cell_index];
 
       // Add the quadrature rule for the overlapping part to the
       // quadrature rule of the cut cell with flipped sign
@@ -592,7 +592,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
   end();
 }
 // //-----------------------------------------------------------------------------
-// void MultiMesh::_build_quadrature_rules_cut_cells_interface()
+// void MultiMesh::_build_quadrature_rules_interface()
 // {
 //   begin(PROGRESS, "Building quadrature rules of the interface in the cut cells.");
 
@@ -600,8 +600,8 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 //   const std::size_t order = 1;
 
 //   // Clear quadrature rules
-//   _quadrature_rules_cut_cells_interface.clear();
-//   _quadrature_rules_cut_cells_interface.resize(num_parts());
+//   _quadrature_rules_interface.clear();
+//   _quadrature_rules_interface.resize(num_parts());
 
 //   //double total_volume = 0;
 
@@ -676,7 +676,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 //       }
 
 //       // Store quadrature rule for cut cell
-//       _quadrature_rules_cut_cells_interface[cut_part][cut_cell_index] = quadrature_rule;
+//       _quadrature_rules_interface[cut_part][cut_cell_index] = quadrature_rule;
 //     }
 //   }
 
