@@ -192,10 +192,13 @@ namespace dolfin
     /// *Returns*
     ///     std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >
     ///         A map from cell indices of cut cells to quadrature
-    ///         rules. Each quadrature rule is represented as a pair
-    ///         of an array of quadrature points and a corresponding
+    ///         rules on an interface part cutting through the cell.
+    ///         A separate quadrature rule is given for each cutting
+    ///         cell and stored in the same order as in the collision
+    ///         map.  Each quadrature rule is represented as a pair of
+    ///         an array of quadrature points and a corresponding
     ///         flattened array of quadrature weights.
-    const std::map<unsigned int, quadrature_rule>&
+    const std::map<unsigned int, std::vector<quadrature_rule> >&
     quadrature_rule_interface(std::size_t part) const;
 
     /// Add mesh (shared pointer version)
@@ -307,8 +310,7 @@ namespace dolfin
     //     q.second = quadrature points, flattened num_points x gdim array
     //            i = the part (mesh) number
     //            j = the cell number (local cell index)
-    std::vector<std::map<unsigned int,
-                         std::pair<std::vector<double>, std::vector<double> > > >
+    std::vector<std::map<unsigned int, quadrature_rule> >
     _quadrature_rules_cut_cells;
 
     // Quadrature rules for overlap. Access data by
@@ -321,8 +323,7 @@ namespace dolfin
     //     q.second = quadrature points, flattened num_points x gdim array
     //            i = the part (mesh) number
     //            j = the cell number (local cell index)
-    std::vector<std::map<unsigned int,
-                         std::pair<std::vector<double>, std::vector<double> > > >
+    std::vector<std::map<unsigned int, quadrature_rule> >
     _quadrature_rules_overlap;
 
     // Quadrature rules for interface. Access data by
@@ -336,8 +337,7 @@ namespace dolfin
     //            i = the part (mesh) number
     //            j = the cell number (local cell index)
     //            k = the collision number (in the list of cutting cells)
-    std::vector<std::map<unsigned int,
-                         std::pair<std::vector<double>, std::vector<double> > > >
+    std::vector<std::map<unsigned int, std::vector<quadrature_rule> > >
     _quadrature_rules_interface;
 
     // Build boundary meshes

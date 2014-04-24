@@ -104,7 +104,7 @@ MultiMesh::quadrature_rule_overlap(std::size_t part) const
   return _quadrature_rules_overlap[part];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, quadrature_rule>&
+const std::map<unsigned int, std::vector<quadrature_rule> >&
 MultiMesh::quadrature_rule_interface(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
@@ -426,7 +426,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
       quadrature_rule volume_qr;
 
       // Data structure for the interface quadrature rule
-      quadrature_rule interface_qr;
+      std::vector<quadrature_rule> interface_qr;
 
       // Data structure for the interface triangulation
       std::vector<double> interface_triangulation;
@@ -449,6 +449,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
         // Data structure for local interface triangulation
         std::vector<double> local_interface_triangulation;
 
+        // Data structure for the interface part quadrature rule
+        quadrature_rule interface_part_qr;
+
         // Iterate over boundary cells
         for (auto boundary_cell_index : full_to_bdry[cutting_part][cutting_cell_index])
         {
@@ -462,7 +465,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
           // Add quadrature rule for triangulation
           if (triangulation_cut_boundary.size())
           {
-            _add_quadrature_rule(interface_qr,
+            _add_quadrature_rule(interface_part_qr,
                                  triangulation_cut_boundary,
                                  tdim_boundary, gdim, order, 1);
           }
@@ -476,7 +479,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
           // Add quadrature rule for triangulation
           if (triangulation_boundary_prev_volume.size())
           {
-            _add_quadrature_rule(interface_qr,
+            _add_quadrature_rule(interface_part_qr,
                                  triangulation_boundary_prev_volume,
                                  tdim_boundary, gdim, order, -1);
           }
@@ -497,7 +500,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
         // Add quadrature rule for triangulation
         if (triangulation_prev_cutting.size())
         {
-          _add_quadrature_rule(interface_qr,
+          _add_quadrature_rule(interface_part_qr,
                                triangulation_prev_cutting,
                                tdim_boundary, gdim, order, -1);
         }
@@ -534,6 +537,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
                              triangulation_cutting_prev,
                              tdim, gdim, order, -1);
 
+        // Add quadrature rule for interface part
+        interface_qr.push_back(interface_part_qr);
       }
 
       // Store quadrature rules for cut cell

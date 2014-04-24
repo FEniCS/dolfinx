@@ -252,7 +252,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
 
       // Get cut cells and quadrature rules
       const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
-      const auto& quadrature_rules = multimesh->quadrature_rule_interface(part);
+      //const auto& quadrature_rules = multimesh->quadrature_rule_interface(part);
 
       // Iterate over cut cells
       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
@@ -272,8 +272,8 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
         */
 
         // Get quadrature rule for cut cell
-        const auto& quadrature_rule = quadrature_rules.at(*it);
-        cout << "number of points: " << quadrature_rule.second.size() << endl;
+        //const auto& quadrature_rule = quadrature_rules.at(*it);
+        //cout << "number of points: " << quadrature_rule.second.size() << endl;
 
         /*
         // Tabulate cell tensor
