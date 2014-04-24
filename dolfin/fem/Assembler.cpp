@@ -24,7 +24,6 @@
 // First added:  2007-01-17
 // Last changed: 2014-03-03
 
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -312,12 +311,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dofs for cells, and a vector holding pointers to same
-  std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
   std::vector<const std::vector<dolfin::la_index>* > macro_dof_ptrs(form_rank);
+  std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
   for (std::size_t i = 0; i < form_rank; i++)
-  {
     macro_dof_ptrs[i] = &macro_dofs[i];
-  }
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral
