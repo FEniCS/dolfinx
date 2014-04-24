@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Anders Logg
+# Copyright (C) 2014 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -18,10 +18,10 @@
 # First added:  2005
 # Last changed: 2014-04-24
 #
-# The bilinear form a(u, v) and linear form L(v) for
-# Poisson's equation.
+# The bilinear form a(u, v) and linear form L(v) for a multimesh
+# formulation of Poisson's equation.
 #
-# Compile this form with FFC: ffc -l dolfin Poisson.ufl.
+# Compile this form with FFC: ffc -l dolfin MultiMeshPoisson.ufl.
 
 element = FiniteElement("Lagrange", triangle, 1)
 
@@ -29,8 +29,13 @@ u = TrialFunction(element)
 v = TestFunction(element)
 f = Coefficient(element)
 
+# Define custom measures (FIXME: prettify this)
 dc0 = dc(0, metadata={"num_cells": 1})
 dc1 = dc(1, metadata={"num_cells": 2})
 
-a = u*v*dx + inner(grad(u), grad(v))*dx + inner(grad(u), grad(v))*dc0 + jump(u)*jump(v)*dc1
+# Define measures for integration
+dx = dx + dc0 # domain integral
+di = dc1      # interface integral
+
+a = u*v*dx + inner(grad(u), grad(v))*dx + jump(u)*jump(v)*di
 L = f*v*dx
