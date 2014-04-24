@@ -179,15 +179,15 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
           dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
 
         // Get quadrature rule for cut cell
-        const auto& quadrature_rule = quadrature_rules.at(*it);
+        const auto& qr = quadrature_rules.at(*it);
 
         // Tabulate cell tensor
         custom_integral->tabulate_tensor(ufc_part.A.data(),
                                          ufc_part.w(),
                                          vertex_coordinates.data(),
-                                         quadrature_rule.second.size(),
-                                         quadrature_rule.first.data(),
-                                         quadrature_rule.second.data(),
+                                         qr.second.size(),
+                                         qr.first.data(),
+                                         qr.second.data(),
                                          ufc_cell.orientation);
 
         // Add entries to global tensor
@@ -231,9 +231,6 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
     // Create data structure for local assembly data
     UFC ufc_part(a_part);
 
-    // Extract mesh
-    const Mesh& mesh_part = a_part.mesh();
-
     // FIXME: We assume that the custom integral associated with the interface is number 1.
     // FIXME: This needs to be sorted out in the UFL-UFC
 
@@ -250,44 +247,40 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
     {
       log(PROGRESS, "Assembling multimesh form over interface for part %d.", part);
 
-      // Get cut cells and quadrature rules
-      const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
-      //const auto& quadrature_rules = multimesh->quadrature_rule_interface(part);
+      // Get quadrature rules
+      const auto& quadrature_rules = multimesh->quadrature_rule_interface(part);
 
-      // Iterate over cut cells
-      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+      // Get collision map
+      const auto& cmap = multimesh->collision_map_cut_cells(part);
+      for (auto it = cmap.begin(); it != cmap.end(); ++it)
       {
-        // Create cell
-        Cell cell(mesh_part, *it);
+        // Get cut cell
+        const unsigned int cut_cell_index = it->first;
+        const Cell cut_cell(*multimesh->part(part), cut_cell_index);
 
-        /*
-        // Update to current cell
-        cell.get_vertex_coordinates(vertex_coordinates);
-        cell.get_cell_data(ufc_cell);
-        ufc_part.update(cell, vertex_coordinates, ufc_cell);
+        // Iterate over cutting cells
+        const auto& cutting_cells = it->second;
+        for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+        {
+          // Get cutting part and cutting cell
+          const std::size_t cutting_part = jt->first;
+          const std::size_t cutting_cell_index = jt->second;
+          const Cell cutting_cell(*multimesh->part(cutting_part), cutting_cell_index);
 
-        // Get local-to-global dof maps for cell
-        for (std::size_t i = 0; i < form_rank; ++i)
-          dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
-        */
+          // Get quadrature rule for interface part defined by
+          // intersection of the cut and cutting cells
+          const std::size_t k = jt - cutting_cells.begin();
+          dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
+          const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+          const std::size_t num_points = qr.second.size();
+          cout << "number of points: " << num_points << endl;
 
-        // Get quadrature rule for cut cell
-        //const auto& quadrature_rule = quadrature_rules.at(*it);
-        //cout << "number of points: " << quadrature_rule.second.size() << endl;
+          // Skip if there are no quadrature points
+          if (num_points == 0)
+            continue;
 
-        /*
-        // Tabulate cell tensor
-        custom_integral->tabulate_tensor(ufc_part.A.data(),
-                                         ufc_part.w(),
-                                         vertex_coordinates.data(),
-                                         quadrature_rule.second.size(),
-                                         quadrature_rule.first.data(),
-                                         quadrature_rule.second.data(),
-                                         ufc_cell.orientation);
 
-        // Add entries to global tensor
-        A.add(ufc_part.A.data(), dofs);
-        */
+        }
       }
     }
   }

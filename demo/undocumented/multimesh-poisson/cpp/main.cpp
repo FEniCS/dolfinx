@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-03-13
+// Last changed: 2014-04-24
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -100,10 +100,10 @@ int main()
   MultiMeshFunction u(V);
   solve(A, *u.vector(), b);
 
-  plot(u.part(0), "u_0");
-  plot(u.part(1), "u_1");
-  plot(u.part(2), "u_2");
-  interactive();
+  //plot(u.part(0), "u_0");
+  //plot(u.part(1), "u_1");
+  //plot(u.part(2), "u_2");
+  //interactive();
 
   //cout << "A = " << endl; info(A, true);
   //cout << "b = " << endl; info(b, true);
