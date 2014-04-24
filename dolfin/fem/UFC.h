@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2007-01-17
-// Last changed: 2014-04-03
+// Last changed: 2014-04-24
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -192,7 +192,7 @@ namespace dolfin
     /// default if necessary
     ufc::custom_integral * get_custom_integral(std::size_t domain)
     {
-      if (domain < form.num_point_domains())
+      if (domain < form.num_custom_domains())
       {
         ufc::custom_integral * integral = custom_integrals[domain].get();
         if (integral)

@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-03-03
+// Last changed: 2014-04-24
 
 #ifndef __MultiMesh_ASSEMBLER_H
 #define __MultiMesh_ASSEMBLER_H
@@ -54,6 +54,9 @@ namespace dolfin
 
     // Assemble over cells
     void assemble_cells(GenericTensor& A, const MultiMeshForm& a);
+
+    // Assemble over interface
+    void assemble_interface(GenericTensor& A, const MultiMeshForm& a);
 
     // Initialize global tensor
     void init_global_tensor(GenericTensor& A, const MultiMeshForm& a);
