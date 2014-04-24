@@ -88,9 +88,11 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
   // Vector to hold dof map for a cell
   std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
-  // Iterate over parts
+  // Initialize variables that will be reused throughout assembly
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
+
+  // Iterate over parts
   for (std::size_t part = 0; part < a.num_parts(); part++)
   {
     // Get form for current part
@@ -181,11 +183,16 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
         // Get quadrature rule for cut cell
         const auto& qr = quadrature_rules.at(*it);
 
+        // Skip if there are no quadrature points
+        const std::size_t num_quadrature_points = qr.second.size();
+        if (num_quadrature_points == 0)
+          continue;
+
         // Tabulate cell tensor
         custom_integral->tabulate_tensor(ufc_part.A.data(),
                                          ufc_part.w(),
                                          vertex_coordinates.data(),
-                                         qr.second.size(),
+                                         num_quadrature_points,
                                          qr.first.data(),
                                          qr.second.data(),
                                          ufc_cell.orientation);
@@ -216,9 +223,18 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
   // Vector to hold dof map for a cell
   std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
+  // Initialize variables that will be reused throughout assembly
+  ufc::cell ufc_cell[2];
+  std::vector<double> vertex_coordinates[2];
+  std::vector<double> macro_vertex_coordinates;
+
+  // Vector to hold dofs for cells, and a vector holding pointers to same
+  std::vector<const std::vector<dolfin::la_index>* > macro_dof_ptrs(form_rank);
+  std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
+  for (std::size_t i = 0; i < form_rank; i++)
+    macro_dof_ptrs[i] = &macro_dofs[i];
+
   // Iterate over parts
-  ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
   for (std::size_t part = 0; part < a.num_parts(); part++)
   {
     // Get form for current part
@@ -233,8 +249,10 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
 
     // FIXME: We assume that the custom integral associated with the interface is number 1.
     // FIXME: This needs to be sorted out in the UFL-UFC
+    // FIXME: We also assume that we have exactly two cells, while the UFC
+    // FIXME: interface (but not FFC...) allows an arbitrary number of cells.
 
-    // Get integral for cut cells
+    // Get integral
     ufc::custom_integral* custom_integral = 0;
     if (a_part.ufc_form()->num_custom_domains() > 1)
     {
@@ -272,14 +290,67 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           const std::size_t k = jt - cutting_cells.begin();
           dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
           const auto& qr = quadrature_rules.at(cut_cell_index)[k];
-          const std::size_t num_points = qr.second.size();
-          cout << "number of points: " << num_points << endl;
 
           // Skip if there are no quadrature points
-          if (num_points == 0)
+          const std::size_t num_quadrature_points = qr.second.size();
+          if (num_quadrature_points == 0)
             continue;
 
+          // Create aliases for cells to simplify notation
+          const Cell& cell0 = cut_cell;
+          const Cell& cell1 = cutting_cell;
 
+          // Update to current pair of cells
+          cell0.get_cell_data(ufc_cell[0], 0);
+          cell1.get_cell_data(ufc_cell[1], 0);
+          cell0.get_vertex_coordinates(vertex_coordinates[0]);
+          cell1.get_vertex_coordinates(vertex_coordinates[1]);
+          ufc_part.update(cell0, vertex_coordinates[0], ufc_cell[0],
+                          cell1, vertex_coordinates[1], ufc_cell[1]);
+
+          // Collect vertex coordinates
+          macro_vertex_coordinates.resize(vertex_coordinates[0].size() +
+                                          vertex_coordinates[0].size());
+          std::copy(vertex_coordinates[0].begin(),
+                    vertex_coordinates[0].end(),
+                    macro_vertex_coordinates.begin());
+          std::copy(vertex_coordinates[1].begin(),
+                    vertex_coordinates[1].end(),
+                    macro_vertex_coordinates.begin() + vertex_coordinates[0].size());
+
+          // Tabulate dofs for each dimension on macro element
+          for (std::size_t i = 0; i < form_rank; i++)
+          {
+            // Get dofs for each cell
+            const std::vector<dolfin::la_index>& cell_dofs0
+              = dofmaps[i]->cell_dofs(cell0.index());
+            const std::vector<dolfin::la_index>& cell_dofs1
+              = dofmaps[i]->cell_dofs(cell1.index());
+
+            // Create space in macro dof vector
+            macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
+
+            // Copy cell dofs into macro dof vector
+            std::copy(cell_dofs0.begin(), cell_dofs0.end(),
+                      macro_dofs[i].begin());
+            std::copy(cell_dofs1.begin(), cell_dofs1.end(),
+                      macro_dofs[i].begin() + cell_dofs0.size());
+          }
+
+          // FIXME: Cell orientation not supported
+          const int cell_orientation = ufc_cell[0].orientation;
+
+          // Tabulate interface tensor on macro element
+          custom_integral->tabulate_tensor(ufc_part.macro_A.data(),
+                                           ufc_part.macro_w(),
+                                           macro_vertex_coordinates.data(),
+                                           num_quadrature_points,
+                                           qr.first.data(),
+                                           qr.second.data(),
+                                           cell_orientation);
+
+          // Add entries to global tensor
+          //A.add(ufc_part.macro_A.data(), macro_dof_ptrs);
         }
       }
     }

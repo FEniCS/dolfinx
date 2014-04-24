@@ -22,7 +22,7 @@
 // Modified by Martin Alnaes 2013
 //
 // First added:  2007-01-17
-// Last changed: 2014-03-03
+// Last changed: 2014-04-24
 
 
 #include <dolfin/log/dolfin_log.h>
@@ -375,10 +375,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     // Update to current pair of cells
     cell0.get_cell_data(ufc_cell[0], local_facet0);
-    cell0.get_vertex_coordinates(vertex_coordinates[0]);
     cell1.get_cell_data(ufc_cell[1], local_facet1);
+    cell0.get_vertex_coordinates(vertex_coordinates[0]);
     cell1.get_vertex_coordinates(vertex_coordinates[1]);
-
     ufc.update(cell0, vertex_coordinates[0], ufc_cell[0],
                cell1, vertex_coordinates[1], ufc_cell[1]);
 
