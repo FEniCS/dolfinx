@@ -106,16 +106,8 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
     // Extract mesh
     const Mesh& mesh_part = a_part.mesh();
 
-    // Skip assembly if there are no cell integrals
-    if (!ufc_part.form.has_cell_integrals())
-      return;
-
-    // FIXME: We assume that the custom integral associated with cut cells is number 0.
-    // FIXME: This needs to be sorted out in the UFL-UFC
-
-    // Get integrals
+    // Get integral for uncut cells
     ufc::cell_integral* cell_integral = ufc_part.default_cell_integral.get();
-    ufc::custom_integral* custom_integral = ufc_part.default_custom_integral.get();
 
     // Iterate over uncut cells
     if (cell_integral)
@@ -146,6 +138,14 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
         A.add(ufc_part.A.data(), dofs);
       }
     }
+
+    // FIXME: We assume that the custom integral associated with cut cells is number 0.
+    // FIXME: This needs to be sorted out in the UFL-UFC
+
+    // Get integral for cut cells
+    ufc::custom_integral* custom_integral = 0;
+    if (a_part.ufc_form()->num_custom_domains() > 0)
+      custom_integral = ufc_part.get_custom_integral(0);
 
     // Iterate over cut cells
     if (custom_integral)
