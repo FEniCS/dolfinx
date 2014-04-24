@@ -33,6 +33,9 @@ namespace dolfin
   class BoundaryMesh;
   class BoundingBoxTree;
 
+  // Typedefs
+  typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+
   /// This class represents a collection of meshes with arbitrary
   /// overlaps. A multimesh may be created from a set of standard
   /// meshes spaces by repeatedly calling add(), followed by a call to
@@ -141,7 +144,7 @@ namespace dolfin
     ///         rules. Each quadrature rule is represented as a pair
     ///         of a flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
-    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >&
+    const std::map<unsigned int, quadrature_rule >&
     quadrature_rule_cut_cells(std::size_t part) const;
 
     /// Return quadrature rule for a given cut cell on the given part
@@ -162,7 +165,7 @@ namespace dolfin
     /// Developer note: this function is mainly useful from Python and
     /// could be replaced by a suitable typemap that would make the
     /// previous more general function accessible from Python.
-    std::pair<std::vector<double>, std::vector<double> >
+    quadrature_rule
     quadrature_rule_cut_cell(std::size_t part, unsigned int cell_index) const;
 
     /// Return quadrature rules for the overlap on the given part.
@@ -177,7 +180,7 @@ namespace dolfin
     ///         rules. Each quadrature rule is represented as a pair
     ///         of an array of quadrature points and a corresponding
     ///         flattened array of quadrature weights.
-    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >&
+    const std::map<unsigned int, quadrature_rule>&
     quadrature_rule_overlap(std::size_t part) const;
 
     /// Return quadrature rules for the interface on the given part
@@ -192,7 +195,7 @@ namespace dolfin
     ///         rules. Each quadrature rule is represented as a pair
     ///         of an array of quadrature points and a corresponding
     ///         flattened array of quadrature weights.
-    const std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >&
+    const std::map<unsigned int, quadrature_rule>&
     quadrature_rule_interface(std::size_t part) const;
 
     /// Add mesh (shared pointer version)
@@ -282,7 +285,7 @@ namespace dolfin
     //     c.first  = part number for the cutting mesh
     //     c.second = cell index for the cutting cell
     //            i = the part (mesh) number
-    //            j = the cell number (local cell index)
+    //            j = the cell number (local cell index
     //            k = the collision number (in the list of cutting cells)
     std::vector<std::map<unsigned int,
                          std::vector<std::pair<std::size_t, unsigned int> > > >
@@ -308,7 +311,7 @@ namespace dolfin
                          std::pair<std::vector<double>, std::vector<double> > > >
     _quadrature_rules_cut_cells;
 
-    // Quadrature rules for cut cells' overlap. Access data by
+    // Quadrature rules for overlap. Access data by
     //
     //     q = _quadrature_rules_overlap[i][j]
     //
@@ -322,10 +325,9 @@ namespace dolfin
                          std::pair<std::vector<double>, std::vector<double> > > >
     _quadrature_rules_overlap;
 
-    // Quadrature rules for the interface in the cut cells. Access
-    // data by
+    // Quadrature rules for interface. Access data by
     //
-    //     q = _quadrature_rules_interface[i][j]
+    //     q = _quadrature_rules_interface[i][j][k]
     //
     // where
     //
@@ -333,6 +335,7 @@ namespace dolfin
     //     q.second = quadrature points, flattened num_points x gdim array
     //            i = the part (mesh) number
     //            j = the cell number (local cell index)
+    //            k = the collision number (in the list of cutting cells)
     std::vector<std::map<unsigned int,
                          std::pair<std::vector<double>, std::vector<double> > > >
     _quadrature_rules_interface;
@@ -358,20 +361,18 @@ namespace dolfin
     //void _build_quadrature_rules_interface();
 
     // Add quadrature rule for simplices in the triangulation array
-    void _add_quadrature_rule
-    (std::pair<std::vector<double>,std::vector<double> >& quadrature_rule,
-     const std::vector<double>& triangulation,
-     std::size_t tdim,
-     std::size_t gdim,
-     std::size_t order,
-     double factor) const;
+    void _add_quadrature_rule(quadrature_rule& qr,
+                              const std::vector<double>& triangulation,
+                              std::size_t tdim,
+                              std::size_t gdim,
+                              std::size_t order,
+                              double factor) const;
 
-    // Add quadrature rule to existing quadrature rule
-    void _add_quadrature_rule
-    (std::pair<std::vector<double>, std::vector<double> >& quadrature_rule,
-     const std::pair<std::vector<double>, std::vector<double> >& qr,
-     std::size_t gdim,
-     double factor) const;
+    // Add quadrature rule to existing quadrature rule (append dqr to qr)
+    void _add_quadrature_rule(quadrature_rule& qr,
+                              const quadrature_rule& dqr,
+                              std::size_t gdim,
+                              double factor) const;
 
   };
 

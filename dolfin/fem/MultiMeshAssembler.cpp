@@ -109,11 +109,15 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
     // Get integral for uncut cells
     ufc::cell_integral* cell_integral = ufc_part.default_cell_integral.get();
 
-    // Iterate over uncut cells
+    // Assemble over uncut cells
     if (cell_integral)
     {
       log(PROGRESS, "Assembling multimesh form over uncut cells on part %d.", part);
+
+      // Get uncut cells
       const std::vector<unsigned int>& uncut_cells = multimesh->uncut_cells(part);
+
+      // Iterate over uncut cell
       for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
       {
         // Create cell
@@ -150,12 +154,16 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
       dolfin_assert(custom_integral->num_cells() == 1);
     }
 
-    // Iterate over cut cells
+    // Assemble over cut cells
     if (custom_integral)
     {
       log(PROGRESS, "Assembling multimesh form over cut cells on part %d.", part);
+
+      // Get cut cells and quadrature rules
       const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
       const auto& quadrature_rules = multimesh->quadrature_rule_cut_cells(part);
+
+      // Iterate over cut cells
       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
       {
         // Create cell
@@ -193,8 +201,6 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                                             const MultiMeshForm& a)
 {
   log(PROGRESS, "Assembling multimesh form over interface.");
-
-  return;
 
   // Extract multimesh
   std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
@@ -239,19 +245,22 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
       dolfin_assert(custom_integral->num_cells() == 2);
     }
 
-    // Iterate over cut cells
+    // Assemble over interface
     if (custom_integral)
     {
       log(PROGRESS, "Assembling multimesh form over interface for part %d.", part);
-      const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
-      const auto& quadrature_rules = multimesh->quadrature_rule_cut_cells(part);
 
-      return;
+      // Get cut cells and quadrature rules
+      const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
+      const auto& quadrature_rules = multimesh->quadrature_rule_interface(part);
+
+      // Iterate over cut cells
       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
       {
         // Create cell
         Cell cell(mesh_part, *it);
 
+        /*
         // Update to current cell
         cell.get_vertex_coordinates(vertex_coordinates);
         cell.get_cell_data(ufc_cell);
@@ -260,10 +269,13 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
         // Get local-to-global dof maps for cell
         for (std::size_t i = 0; i < form_rank; ++i)
           dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
+        */
 
         // Get quadrature rule for cut cell
         const auto& quadrature_rule = quadrature_rules.at(*it);
+        cout << "number of points: " << quadrature_rule.second.size() << endl;
 
+        /*
         // Tabulate cell tensor
         custom_integral->tabulate_tensor(ufc_part.A.data(),
                                          ufc_part.w(),
@@ -275,6 +287,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
 
         // Add entries to global tensor
         A.add(ufc_part.A.data(), dofs);
+        */
       }
     }
   }
