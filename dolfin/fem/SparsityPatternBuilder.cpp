@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug 2007
-// Modified by Anders Logg 2008-2013
+// Modified by Anders Logg 2008-2014
 //
 // First added:  2007-05-24
-// Last changed: 2013-09-24
+// Last changed: 2014-04-25
 
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
@@ -27,6 +27,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 #include "MultiMeshForm.h"
@@ -194,8 +195,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     sparsity_pattern.apply();
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::build_ccfem(GenericSparsityPattern& sparsity_pattern,
-                                         const MultiMeshForm& form)
+void SparsityPatternBuilder::build_multimesh_sparsity_pattern
+(GenericSparsityPattern& sparsity_pattern,
+ const MultiMeshForm& form)
 {
   // Build list of dofmaps
   std::vector<const GenericDofMap*> dofmaps;
@@ -214,13 +216,88 @@ void SparsityPatternBuilder::build_ccfem(GenericSparsityPattern& sparsity_patter
     // Get mesh on current part (assume it's the same for all arguments)
     const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
 
-    // Check whether to initialize or finalize sparsity pattern
+    // Check whether to initialize sparsity pattern
     const bool init = part == 0;
-    const bool finalize = part == form.num_parts() - 1;
 
-    // Build sparsity pattern for part
-    build(sparsity_pattern, mesh, dofmaps, true, false, false, true,
-          init, finalize);
+    // Build sparsity pattern for part by calling the regular dofmap
+    // builder. This builds the sparsity pattern for all interacting
+    // dofs on the current part.
+    build(sparsity_pattern, mesh, dofmaps,
+          true, false, false, true, init, false);
+
+    // Build sparsity pattern for interface. This builds the sparsity
+    // pattern for all dofs that may interact across the interface
+    // between cutting meshes.
+    _build_multimesh_sparsity_pattern_interface(sparsity_pattern, form, part);
+  }
+
+  // Finalize sparsity pattern
+  sparsity_pattern.apply();
+}
+//-----------------------------------------------------------------------------
+void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
+(GenericSparsityPattern& sparsity_pattern,
+ const MultiMeshForm& form,
+ std::size_t part)
+{
+  // Get multimesh
+  const auto multimesh = form.multimesh();
+
+  // Get collision map
+  const auto& cmap = multimesh->collision_map_cut_cells(part);
+
+  // Data structures for storing dofs on cut (0) and cutting cell (1)
+  std::vector<std::vector<dolfin::la_index>* > dofs_0(form.rank());
+  std::vector<std::vector<dolfin::la_index>* > dofs_1(form.rank());
+
+  // Data structure for storing dofs on macro cell (0 + 1)
+  std::vector<std::vector<dolfin::la_index> > dofs(form.rank());
+
+  // Iterate over all cut cells in collision map
+  for (auto it = cmap.begin(); it != cmap.end(); ++it)
+  {
+    // Get cut cell
+    const unsigned int cut_cell_index = it->first;
+    const Cell cut_cell(*multimesh->part(part), cut_cell_index);
+
+    // Add dofs for cut cell
+    for (std::size_t i = 0; i < form.rank(); i++)
+    {
+      // Set current part to cut mesh
+      form.function_space(i)->dofmap()->set_current_part(part);
+
+      // Get dofs for cut cell
+      //dofs_0[i] = form.function_space(i)->dofmap()->cell_dofs(cut_cell_index);
+    }
+
+    // Add dofs for cut cell to macro dofs
+    // FIXME: Not yet implemented
+
+    // Iterate over cutting cells
+    const auto& cutting_cells = it->second;
+    for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+    {
+      // Get cutting part and cutting cell
+      const std::size_t cutting_part = jt->first;
+      const std::size_t cutting_cell_index = jt->second;
+      const Cell cutting_cell(*multimesh->part(cutting_part), cutting_cell_index);
+
+      // Add dofs for cuting cell
+      for (std::size_t i = 0; i < form.rank(); i++)
+      {
+        // Set current part to cuting mesh
+        form.function_space(i)->dofmap()->set_current_part(cutting_part);
+
+        // Get dofs for cutting cell
+        //dofs_1[i] = form.function_space(i)->dofmap()->cell_dofs(cutting_cell_index);
+      }
+
+      // Append dofs on cutting cell to macro dofs
+      // FIXME: Not yet implemented
+
+      // Insert into sparsity pattern
+      // FIXME: Not yet implemented
+    }
   }
 }
 //-----------------------------------------------------------------------------

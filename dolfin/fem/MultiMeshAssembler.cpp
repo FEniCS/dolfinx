@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-04-24
+// Last changed: 2014-04-25
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -270,6 +270,8 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
 
       // Get collision map
       const auto& cmap = multimesh->collision_map_cut_cells(part);
+
+      // Iterate over all cut cells in collision map
       for (auto it = cmap.begin(); it != cmap.end(); ++it)
       {
         // Get cut cell
@@ -394,7 +396,7 @@ void MultiMeshAssembler::init_global_tensor(GenericTensor& A, const MultiMeshFor
   if (tensor_layout->sparsity_pattern())
   {
     GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-    SparsityPatternBuilder::build_ccfem(pattern, a);
+    SparsityPatternBuilder::build_multimesh_sparsity_pattern(pattern, a);
   }
 
   // Initialize tensor
