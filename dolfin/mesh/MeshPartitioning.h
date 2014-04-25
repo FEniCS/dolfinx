@@ -145,7 +145,7 @@ namespace dolfin
     // Convert ghost cell information to shared vertices in mesh
     static void ghost_build_shared_vertices(MPI_Comm mpi_comm,
       const LocalMeshData& new_mesh_data,
-      const std::map<unsigned int, std::set<unsigned int> > shared_cells,
+      const std::map<unsigned int, std::set<unsigned int> >& shared_cells,
       std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global);
         
     // Create and attach distributed MeshDomains from local_data

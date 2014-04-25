@@ -419,6 +419,8 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
         if (map_it == ghost_procs.end())
         {
           dolfin::Set<unsigned int> sharing_processes;
+          // Owning process goes first into dolfin::Set
+          // (unordered set) so will always be first.
           sharing_processes.insert(proc_this);
           sharing_processes.insert(proc_other);
           ghost_procs.insert(std::make_pair(i, sharing_processes));

@@ -15,7 +15,7 @@ if(MPI.size(mpi_comm_world()) == 1):
 
 mpi_rank = MPI.rank(mpi_comm_world())
 
-# parameters["mesh_partitioner"] = "ParMETIS"
+parameters["mesh_partitioner"] = "ParMETIS"
 M = UnitSquareMesh(40, 40)
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())
