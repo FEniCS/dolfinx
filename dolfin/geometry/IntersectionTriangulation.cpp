@@ -326,7 +326,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
   std::vector<double> triangulation;
   std::vector<Point> points;
 
-  // Detect intersection points
+  // Detect edge intersection points
   Point pt;
   if (intersection_edge_edge(triangle[0], triangle[1],
                              interval[0], interval[1],
@@ -343,6 +343,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
 
   // If we get zero intersection points, then both interval ends must
   // be inside
+  // FIXME: can we really use two different types of intersection tests: intersection_edge_edge above and Collides here?
   if (points.size() == 0)
   {
     if (CollisionDetection::collides_triangle_point(triangle[0],
@@ -365,15 +366,19 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
   }
 
   // If we get one intersection point, find the interval end point
-  // which is inside the triangle
+  // which is inside the triangle. Note that this points should
+  // absolutely not be the same point as we found above. This can
+  // happen since we use different types of tests here and above.
   if (points.size() == 1)
   {
     for (std::size_t k = 0; k < 2; ++k)
     {
-      if (CollisionDetection::collides_triangle_point(triangle[0],
-                                                      triangle[1],
-                                                      triangle[2],
-                                                      interval[k]))
+      // Make sure the point interval[k] is not points[0]
+      if ((interval[k]-points[0]).norm() > DOLFIN_EPS_LARGE and
+	  CollisionDetection::collides_triangle_point(triangle[0],
+						      triangle[1],
+						      triangle[2],
+						      interval[k]))
       {
         triangulation.resize(2*gdim);
         for (std::size_t d = 0; d < gdim; ++d)
