@@ -116,22 +116,12 @@ public:
 
   void test_multiple_meshes_interface_quadrature()
   {
-
-
-    // // UnitSquareMesh mesh_0(11, 11);
-    // // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 31, 13);
-    // // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
-    // // RectangleMesh mesh_3(0.77, 0.01, 0.91, 0.99, 12,12);//2, 55);
-    // // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
-    // UnitSquareMesh mesh_0(1, 1);
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    // RectangleMesh mesh_3(0.77, 0.01, 0.91, 0.99, 1,1);//2, 55);
-    // //RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
-    // double exact_volume = (0.77-0.1)*2 + 0.8; // mesh1\mesh3
-    // exact_volume += (0.77-0.2)*2 + 0.6; // mesh2\mesh3
-    // exact_volume += (0.91-0.77)*2 + (0.99-0.01)*2; // mesh3
-    // //exact_volume += (0.02-0.01)*4; // mesh4
+    // These three meshes are ok
+    UnitSquareMesh mesh_0(1, 1);
+    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
+    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    double exact_volume = 4*(0.9-0.1); // mesh0 and mesh1
+    exact_volume += 4*(0.8-0.2); // mesh1 and mesh2
 
 
     // UnitCubeMesh mesh_0(1, 2, 3);
@@ -208,40 +198,40 @@ public:
 
 
 
-    // These three meshes are ok.
-    MeshEditor editor;
-    Mesh mesh_0;
-    editor.open(mesh_0, 2, 2);
-    editor.init_vertices(3);
-    editor.init_cells(1);
-    editor.add_vertex(0, Point(0.,0.));
-    editor.add_vertex(1, Point(2.,0.));
-    editor.add_vertex(2, Point(1.,2.));
-    editor.add_cell(0, 0,1,2);
-    editor.close();
+    // // These three meshes are ok.
+    // MeshEditor editor;
+    // Mesh mesh_0;
+    // editor.open(mesh_0, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(0.,0.));
+    // editor.add_vertex(1, Point(2.,0.));
+    // editor.add_vertex(2, Point(1.,2.));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
 
-    Mesh mesh_1;
-    editor.open(mesh_1, 2, 2);
-    editor.init_vertices(3);
-    editor.init_cells(1);
-    editor.add_vertex(0, Point(1.5,-2.));
-    editor.add_vertex(1, Point(4.,0.));
-    editor.add_vertex(2, Point(1.5,2));
-    editor.add_cell(0, 0,1,2);
-    editor.close();
+    // Mesh mesh_1;
+    // editor.open(mesh_1, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(1.5,-2.));
+    // editor.add_vertex(1, Point(4.,0.));
+    // editor.add_vertex(2, Point(1.5,2));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
 
-    Mesh mesh_2;
-    editor.open(mesh_2, 2, 2);
-    editor.init_vertices(3);
-    editor.init_cells(1);
-    editor.add_vertex(0, Point(3.,0.5));
-    editor.add_vertex(1, Point(-1.,0.5));
-    editor.add_vertex(2, Point(1.,-1.5));
-    editor.add_cell(0, 0,1,2);
-    editor.close();
+    // Mesh mesh_2;
+    // editor.open(mesh_2, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(3.,0.5));
+    // editor.add_vertex(1, Point(-1.,0.5));
+    // editor.add_vertex(2, Point(1.,-1.5));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
 
-    double exact_volume = (1.5-0.25) + (1-0.5); // mesh_0, mesh_1 and mesh_2
-    exact_volume += 1.5 + std::sqrt(1.5*1.5 + 1.5*1.5); // mesh_1 and mesh_2
+    // double exact_volume = (1.5-0.25) + (1-0.5); // mesh_0, mesh_1 and mesh_2
+    // exact_volume += (3-1.5) + std::sqrt(1.5*1.5 + 1.5*1.5); // mesh_1 and mesh_2
 
 
     File("mesh_0.xml") << mesh_0;
