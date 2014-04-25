@@ -29,8 +29,8 @@ using namespace dolfin;
 class MultiMeshes : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(MultiMeshes);
-  CPPUNIT_TEST(test_multiple_meshes_quadrature);
-  //CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
+  //CPPUNIT_TEST(test_multiple_meshes_quadrature);
+  CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -116,24 +116,31 @@ public:
 
   void test_multiple_meshes_interface_quadrature()
   {
-    // const std::size_t gdim = 2;
-    // const std::size_t tdim = 2;
-    // UnitSquareMesh mesh_0(31, 17);
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
-    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
-    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+
+
+    // // UnitSquareMesh mesh_0(11, 11);
+    // // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 31, 13);
+    // // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
+    // // RectangleMesh mesh_3(0.77, 0.01, 0.91, 0.99, 12,12);//2, 55);
+    // // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+    // UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // RectangleMesh mesh_3(0.77, 0.01, 0.91, 0.99, 1,1);//2, 55);
+    // //RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+    // double exact_volume = (0.77-0.1)*2 + 0.8; // mesh1\mesh3
+    // exact_volume += (0.77-0.2)*2 + 0.6; // mesh2\mesh3
+    // exact_volume += (0.91-0.77)*2 + (0.99-0.01)*2; // mesh3
+    // //exact_volume += (0.02-0.01)*4; // mesh4
+
 
     // UnitCubeMesh mesh_0(1, 2, 3);
     // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   2,3,4);//2, 3, 4);
     // BoxMesh mesh_2(-0.1, -0.1, -0.1,    0.7, 0.7, 0.7,   4, 3, 2);
     // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
     // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
-
     // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
     // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
-    // double volume = 0;
-
 
     // UnitCubeMesh mesh_0(1, 1, 1);
     // MeshEditor editor;
@@ -159,9 +166,8 @@ public:
     // editor.add_cell(0, 0,1,2,3);
     // editor.close();
 
-    // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
-    // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
-    // double volume = 0;
+    //double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
+    //exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
 
 
     // MeshEditor editor;
@@ -201,6 +207,8 @@ public:
     // double volume = 0;
 
 
+
+    // These three meshes are ok.
     MeshEditor editor;
     Mesh mesh_0;
     editor.open(mesh_0, 2, 2);
@@ -235,14 +243,16 @@ public:
     double exact_volume = (1.5-0.25) + (1-0.5); // mesh_0, mesh_1 and mesh_2
     exact_volume += 1.5 + std::sqrt(1.5*1.5 + 1.5*1.5); // mesh_1 and mesh_2
 
+
     File("mesh_0.xml") << mesh_0;
     File("mesh_1.xml") << mesh_1;
+    File("mesh_2.xml") << mesh_2;
 
     // Build the multimesh
     MultiMesh multimesh;
     multimesh.add(mesh_0);
     multimesh.add(mesh_1);
-    // multimesh.add(mesh_2);
+    multimesh.add(mesh_2);
     //multimesh.add(mesh_3);
     //multimesh.add(mesh_4);
     multimesh.build();
@@ -256,40 +266,35 @@ public:
       std::cout << "% part " << part << '\n';
       double part_volume = 0;
 
-      const auto& qri = multimesh.quadrature_rule_interface(part);
+      const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
 
-      for (auto it = qri.begin(); it != qri.end(); ++it)
+      // Get collision map
+      const auto& cmap = multimesh.collision_map_cut_cells(part);
+      for (auto it = cmap.begin(); it != cmap.end(); ++it)
       {
-        std::cout << it->first<<'\n';
-        for (std::size_t i = 0; i < it->second.size(); ++i)
+        const unsigned int cut_cell_index = it->first;
+
+        // Iterate over cutting cells
+        const auto& cutting_cells = it->second;
+        for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
         {
-          const auto& qr = it->second[i];
+          const std::size_t cutting_part = jt->first;
+          const std::size_t cutting_cell_index = jt->second;
+
+          // Get quadrature rule for interface part defined by
+          // intersection of the cut and cutting cells
+          const std::size_t k = jt - cutting_cells.begin();
+          dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
+          const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+
           for (std::size_t j = 0; j < qr.second.size(); ++j)
           {
             volume += qr.second[j];
-            part_volume += qr.second[i];
+            part_volume += qr.second[j];
           }
+
         }
       }
-
-
-      // for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
-      // {
-      //   std::cout << "% cut cell " << (*it)<<'\n';
-
-      //   auto qq = test.first;
-
-      //   // for (std::size_t i = 0; i < quadrature_rule.size(); ++i)
-      //   // {
-      //   //   const auto& qr = quadrature_rule[
-      //   //   //   volume += quadrature_rule[*it][i].second;
-      //   //   //   partvolume += quadrature_rule[*it][i].second;
-      //   //   //   //std::cout << drawqr(quadrature_rule[*it]);
-      //   //   //   for (std::size_t d = 0; d < gdim; ++d)
-      //   //   //     std::cout << quadrature_rule[*it].first[i*gdim+d]<<' ';
-      //   //   //   std::cout << "    "<<quadrature_rule[*it].second[i]<<'\n';
-      //   // }
-      // }
 
       std::cout<<"part volume " << part_volume<<std::endl;
     }
