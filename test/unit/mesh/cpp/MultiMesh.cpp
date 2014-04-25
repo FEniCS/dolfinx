@@ -116,12 +116,12 @@ public:
 
   void test_multiple_meshes_interface_quadrature()
   {
-    // These three meshes are ok
-    UnitSquareMesh mesh_0(1, 1);
-    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
-    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    double exact_volume = 4*(0.9-0.1); // mesh0 and mesh1
-    exact_volume += 4*(0.8-0.2); // mesh1 and mesh2
+    // // These three meshes are ok
+    // UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // double exact_volume = 4*(0.9-0.1); // mesh0 and mesh1
+    // exact_volume += 4*(0.8-0.2); // mesh1 and mesh2
 
 
     // UnitCubeMesh mesh_0(1, 2, 3);
@@ -131,6 +131,17 @@ public:
     // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
     // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
     // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
+
+
+    UnitCubeMesh mesh_0(1, 1, 1);
+    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   1, 1, 1);
+    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   1, 1, 1);
+    // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
+    // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
+    double exact_volume = (0.9-0.1)*(0.9-0.1)*6; // for mesh_0 and mesh_1
+    exact_volume += (0.8-0.2)*(0.8-0.2)*6; // mesh_1 and mesh_2
+
+
 
     // UnitCubeMesh mesh_0(1, 1, 1);
     // MeshEditor editor;
