@@ -332,6 +332,9 @@ void PETScVector::apply(std::string mode)
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecAssemblyBegin");
   ierr = VecAssemblyEnd(_x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecAssemblyEnd");
+
+  // Update any ghost values
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScVector::mpi_comm() const
@@ -448,11 +451,21 @@ void PETScVector::update_ghost_values()
   if (dolfin::MPI::size(mpi_comm()) > 1)
   #endif
   {
-    PetscErrorCode ierr;
-    ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
-    ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
+    // Check of vector is ghosted
+    Vec local_vec;
+    VecGhostGetLocalForm(_x, &local_vec);
+
+    // If ghosted, update
+    if (local_vec)
+    {
+      PetscErrorCode ierr;
+      ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
+      ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
+    }
+
+    VecDestroy(&local_vec);
   }
 }
 //-----------------------------------------------------------------------------

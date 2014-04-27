@@ -212,20 +212,6 @@ subdomains in SystemAssembler. Taking subdomains from bilinear form");
                  "expected forms (a, L) to share a FunctionSpace");
   }
 
-  // FIXME: This may update coefficients twice. Checked for shared
-  //        coefficients
-
-  // Update off-process coefficients for a
-  std::vector<std::shared_ptr<const GenericFunction> > coefficients
-    = _a->coefficients();
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->update();
-
-  // Update off-process coefficients for L
-  coefficients = _l->coefficients();
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->update();
-
   // Create data structures for local assembly data
   UFC A_ufc(*_a), b_ufc(*_l);
 

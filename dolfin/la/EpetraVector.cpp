@@ -305,6 +305,9 @@ void EpetraVector::apply(std::string mode)
 
   // Clear map of off-process set values
   off_process_set_values.clear();
+
+  // Update ghost values
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 MPI_Comm EpetraVector::mpi_comm() const
