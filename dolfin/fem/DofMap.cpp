@@ -568,9 +568,12 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
 //-----------------------------------------------------------------------------
 void DofMap::add_offset(dolfin::la_index offset)
 {
-  for (auto it : _dofmap)
-    for (auto jt : it)
-      jt += offset;
+  std::vector<std::vector<dolfin::la_index> >::iterator it;
+  std::vector<dolfin::la_index>::iterator jt;
+
+  for (it = _dofmap.begin(); it != _dofmap.end(); ++it)
+    for (jt = it->begin(); jt != it->end(); ++jt)
+      *jt += offset;
 }
 //-----------------------------------------------------------------------------
 void DofMap::check_provided_entities(const ufc::dofmap& dofmap,

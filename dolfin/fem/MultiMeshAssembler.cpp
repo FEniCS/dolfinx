@@ -62,7 +62,7 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   // FIXME: Testing
 
   // Assemble over interface
-  assemble_interface(A, a);
+  //assemble_interface(A, a);
 
   // Finalize assembly of global tensor
   if (finalize_tensor)

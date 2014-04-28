@@ -260,11 +260,10 @@ MultiMeshDofMap::tabulate_all_coordinates(const Mesh& mesh) const
   return _dofmaps[_current_part]->tabulate_all_coordinates(mesh);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericDofMap> MultiMeshDofMap::copy() const
-{
-  return std::shared_ptr<GenericDofMap>(new MultiMeshDofMap(*this));
-}
-//-----------------------------------------------------------------------------
+
+
+
+/*
 std::shared_ptr<GenericDofMap>
 MultiMeshDofMap::create(const Mesh& new_mesh) const
 {
@@ -323,6 +322,9 @@ const std::set<std::size_t>& MultiMeshDofMap::neighbours() const
   dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
   return _dofmaps[_current_part]->neighbours();
 }
+
+*/
+
 //-----------------------------------------------------------------------------
 std::string MultiMeshDofMap::str(bool verbose) const
 {

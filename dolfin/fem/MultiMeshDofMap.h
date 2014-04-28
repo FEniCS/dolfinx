@@ -32,7 +32,7 @@ namespace dolfin
   /// This class handles the mapping of degrees of freedom for MultiMesh
   /// function spaces.
 
-  class MultiMeshDofMap : public GenericDofMap
+  class MultiMeshDofMap
   {
   public:
 
@@ -163,6 +163,8 @@ namespace dolfin
     std::vector<double>
       tabulate_all_coordinates(const Mesh& mesh) const;
 
+    /*
+
     /// Create a copy of the dof map
     std::shared_ptr<GenericDofMap> copy() const;
 
@@ -206,6 +208,8 @@ namespace dolfin
 
     /// Return set of processes that share dofs with the this process
     const std::set<std::size_t>& neighbours() const;
+
+    */
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

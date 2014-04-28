@@ -49,9 +49,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                                    bool init,
                                    bool finalize)
 {
-  const std::size_t rank = dofmaps.size();
-
   // Get global dimensions and local range
+  const std::size_t rank = dofmaps.size();
   std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
   std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(rank);
@@ -199,10 +198,23 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
 (GenericSparsityPattern& sparsity_pattern,
  const MultiMeshForm& form)
 {
-  // Build list of dofmaps
-  std::vector<const GenericDofMap*> dofmaps;
-  for (std::size_t i = 0; i < form.rank(); i++)
-    dofmaps.push_back(&*form.function_space(i)->dofmap());
+   // Get global dimensions and local range
+  const std::size_t rank = form.rank();
+  std::vector<std::size_t> global_dimensions(rank);
+  std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
+  std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(rank);
+  for (std::size_t i = 0; i < rank; ++i)
+  {
+    global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
+    local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
+    off_process_owner[i] = &form.function_space(i)->dofmap()->off_process_owner();
+  }
+
+  // Initialize sparsity pattern
+  sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
+                        global_dimensions,
+                        local_range,
+                        off_process_owner);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
@@ -210,14 +222,16 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
     // Get mesh on current part (assume it's the same for all arguments)
     const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
 
-    // Check whether to initialize sparsity pattern
-    const bool init = part == 0;
+    // Build list of dofmaps
+    std::vector<const GenericDofMap*> dofmaps;
+    for (std::size_t i = 0; i < form.rank(); i++)
+      dofmaps.push_back(&*form.function_space(i)->dofmap()->part(part));
 
     // Build sparsity pattern for part by calling the regular dofmap
     // builder. This builds the sparsity pattern for all interacting
     // dofs on the current part.
     build(sparsity_pattern, mesh, dofmaps,
-          true, false, false, true, init, false);
+          true, false, false, true, false, false);
 
     // Build sparsity pattern for interface. This builds the sparsity
     // pattern for all dofs that may interact across the interface

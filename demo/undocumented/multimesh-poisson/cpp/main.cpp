@@ -43,7 +43,7 @@ class Source : public Expression
 int main()
 {
   // Increase log level
-  //set_log_level(DBG);
+  set_log_level(DBG);
 
   // Create meshes
   UnitSquareMesh square(32, 32);
