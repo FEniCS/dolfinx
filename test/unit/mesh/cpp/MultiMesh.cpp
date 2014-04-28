@@ -16,17 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2014-04-03
+// Last changed: 2014-04-25
 //
 // Unit tests for MultiMesh
 
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
-
 #include <dolfin/geometry/SimplexQuadrature.h>
-
-#include </home/august/Projects/fenicsBB/dolfin/dolfin/mesh/plotstuff.h>
-
 
 using namespace dolfin;
 
@@ -41,32 +37,31 @@ public:
 
   void test_multiple_meshes_quadrature()
   {
+    set_log_level(DEBUG);
 
     // Create multimesh from three triangle meshes of the unit square
 
-    // const std::size_t gdim = 2;
-    // const std::size_t tdim = 2;
+    // Many meshes, but not more than three overlap => this works
+    UnitCubeMesh mesh_0(11, 12, 13);
+    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,     13, 11, 12);
+    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.95, 0.95, 0.8,   11, 13, 11);
+    BoxMesh mesh_3(0.94, 0.01, 0.01,  0.98, 0.99, 0.99, 1, 11, 11);
+    BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02,  1, 1, 1);
+
+    // // Completely nested 2D: can't do no more than three meshes
     // UnitSquareMesh mesh_0(1, 1);
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 2, 2);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
     // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
-    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+    // RectangleMesh mesh_3(0.3, 0.3, 0.7, 0.7, 1, 1);
+    // RectangleMesh mesh_4(0.4, 0.4, 0.6, 0.6, 1, 1);
 
-    // const std::size_t gdim = 2;
-    // const std::size_t tdim = 2;
-    // UnitSquareMesh mesh_0(31, 17);
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
-    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
-    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+    // // Completely nested 3D: can't do no more than three meshes
+    // UnitCubeMesh mesh_0(2, 3, 4);
+    // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
+    // BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
+    // BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
+    // BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
 
-    const std::size_t gdim = 3;
-    const std::size_t tdim = 3;
-    UnitCubeMesh mesh_0(2, 3, 4);
-    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
-    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
-    BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
-    BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
 
     // Build the multimesh
     MultiMesh multimesh;
@@ -82,9 +77,11 @@ public:
     double volume = 0;
 
     // Sum contribution from all parts
+    std::cout << "Sum contributions\n";
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
-      //std::cout << "% part " << part << '\n';
+      std::cout << "% part " << part;
+      double part_volume = 0;
 
       // Uncut cell volume given by function volume
       const auto uncut_cells = multimesh.uncut_cells(part);
@@ -92,19 +89,26 @@ public:
       {
         const Cell cell(*multimesh.part(part), *it);
         volume += cell.volume();
+        part_volume += cell.volume();
       }
+
+      std::cout << "\t uncut volume "<< part_volume<<' ';
 
       // Cut cell volume given by quadrature rule
-      const auto cut_cells = multimesh.cut_cells(part);
-      auto qr = multimesh.quadrature_rule_cut_cells(part);
+      const auto& cut_cells = multimesh.cut_cells(part);
       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
       {
-        for (std::size_t i = 0; i < qr[*it].first.size(); ++i)
-          volume += qr[*it].first[i];
+        const auto& qr = multimesh.quadrature_rule_cut_cell(part, *it);
+        for (std::size_t i = 0; i < qr.second.size(); ++i)
+        {
+          volume += qr.second[i];
+          part_volume += qr.second[i];
+        }
       }
+      std::cout << "\ttotal volume " << part_volume<< std::endl;
     }
 
-    std::cout << "exact volume " << exact_volume<<'\n'
+    std::cout<<std::setprecision(13) << "exact volume " << exact_volume<<'\n'
               << "volume " << volume<<std::endl;
     CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
   }
@@ -112,23 +116,31 @@ public:
 
   void test_multiple_meshes_interface_quadrature()
   {
-    // const std::size_t gdim = 2;
-    // const std::size_t tdim = 2;
-    // UnitSquareMesh mesh_0(31, 17);
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 21, 12);
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 11, 31);
-    // RectangleMesh mesh_3(0.8, 0.01, 0.9, 0.99, 3, 55);
-    // RectangleMesh mesh_4(0.01, 0.01, 0.02, 0.02, 1, 1);
+    // // These three meshes are ok
+    // UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // double exact_volume = 4*(0.9-0.1); // mesh0 and mesh1
+    // exact_volume += 4*(0.8-0.2); // mesh1 and mesh2
+
 
     // UnitCubeMesh mesh_0(1, 2, 3);
     // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   2,3,4);//2, 3, 4);
     // BoxMesh mesh_2(-0.1, -0.1, -0.1,    0.7, 0.7, 0.7,   4, 3, 2);
     // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
     // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
-
     // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
     // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
-    // double volume = 0;
+
+
+    UnitCubeMesh mesh_0(1, 1, 1);
+    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   1, 1, 1);
+    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   1, 1, 1);
+    // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
+    // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
+    double exact_volume = (0.9-0.1)*(0.9-0.1)*6; // for mesh_0 and mesh_1
+    exact_volume += (0.8-0.2)*(0.8-0.2)*6; // mesh_1 and mesh_2
+
 
 
     // UnitCubeMesh mesh_0(1, 1, 1);
@@ -155,9 +167,8 @@ public:
     // editor.add_cell(0, 0,1,2,3);
     // editor.close();
 
-    // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
-    // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
-    // double volume = 0;
+    //double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
+    //exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
 
 
     // MeshEditor editor;
@@ -197,42 +208,46 @@ public:
     // double volume = 0;
 
 
-    MeshEditor editor;
-    Mesh mesh_0;
-    editor.open(mesh_0, 2, 2);
-    editor.init_vertices(3);
-    editor.init_cells(1);
-    editor.add_vertex(0, Point(0.,0.));
-    editor.add_vertex(1, Point(2.,0.));
-    editor.add_vertex(2, Point(1.,2.));
-    editor.add_cell(0, 0,1,2);
-    editor.close();
 
-    Mesh mesh_1;
-    editor.open(mesh_1, 2, 2);
-    editor.init_vertices(3);
-    editor.init_cells(1);
-    editor.add_vertex(0, Point(1.5,-2.));
-    editor.add_vertex(1, Point(4.,0.));
-    editor.add_vertex(2, Point(1.5,2));
-    editor.add_cell(0, 0,1,2);
-    editor.close();
+    // // These three meshes are ok.
+    // MeshEditor editor;
+    // Mesh mesh_0;
+    // editor.open(mesh_0, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(0.,0.));
+    // editor.add_vertex(1, Point(2.,0.));
+    // editor.add_vertex(2, Point(1.,2.));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
 
-    Mesh mesh_2;
-    editor.open(mesh_2, 2, 2);
-    editor.init_vertices(3);
-    editor.init_cells(1);
-    editor.add_vertex(0, Point(3.,0.5));
-    editor.add_vertex(1, Point(-1.,0.5));
-    editor.add_vertex(2, Point(1.,-1.5));
-    editor.add_cell(0, 0,1,2);
-    editor.close();
+    // Mesh mesh_1;
+    // editor.open(mesh_1, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(1.5,-2.));
+    // editor.add_vertex(1, Point(4.,0.));
+    // editor.add_vertex(2, Point(1.5,2));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
 
-    double exact_volume = (1.5-0.25) + (1-0.5); // mesh_0, mesh_1 and mesh_2
-    exact_volume += 1.5 + std::sqrt(1.5*1.5 + 1.5*1.5); // mesh_1 and mesh_2
+    // Mesh mesh_2;
+    // editor.open(mesh_2, 2, 2);
+    // editor.init_vertices(3);
+    // editor.init_cells(1);
+    // editor.add_vertex(0, Point(3.,0.5));
+    // editor.add_vertex(1, Point(-1.,0.5));
+    // editor.add_vertex(2, Point(1.,-1.5));
+    // editor.add_cell(0, 0,1,2);
+    // editor.close();
+
+    // double exact_volume = (1.5-0.25) + (1-0.5); // mesh_0, mesh_1 and mesh_2
+    // exact_volume += (3-1.5) + std::sqrt(1.5*1.5 + 1.5*1.5); // mesh_1 and mesh_2
+
 
     File("mesh_0.xml") << mesh_0;
     File("mesh_1.xml") << mesh_1;
+    File("mesh_2.xml") << mesh_2;
 
     // Build the multimesh
     MultiMesh multimesh;
@@ -250,27 +265,39 @@ public:
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
       std::cout << "% part " << part << '\n';
-      double partvolume = 0;
+      double part_volume = 0;
 
-      // Cut cell
-      const std::size_t gdim = mesh_0.geometry().dim();
-      const auto& cut_cells = multimesh.cut_cells(part);
-      auto quadrature_rule = multimesh.quadrature_rule_cut_cells_interface(part);
-      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+      const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
+
+      // Get collision map
+      const auto& cmap = multimesh.collision_map_cut_cells(part);
+      for (auto it = cmap.begin(); it != cmap.end(); ++it)
       {
-        std::cout << "% cut cell " << (*it)<<'\n';
-        for (std::size_t i = 0; i < quadrature_rule[*it].first.size(); ++i)
-	{
-          volume += quadrature_rule[*it].first[i];
-          partvolume += quadrature_rule[*it].first[i];
-          //std::cout << drawqr(quadrature_rule[*it]);
-          for (std::size_t d = 0; d < gdim; ++d)
-            std::cout << quadrature_rule[*it].second[i*gdim+d]<<' ';
-          std::cout << "    "<<quadrature_rule[*it].first[i]<<'\n';
-	}
+        const unsigned int cut_cell_index = it->first;
+
+        // Iterate over cutting cells
+        const auto& cutting_cells = it->second;
+        for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+        {
+          const std::size_t cutting_part = jt->first;
+          const std::size_t cutting_cell_index = jt->second;
+
+          // Get quadrature rule for interface part defined by
+          // intersection of the cut and cutting cells
+          const std::size_t k = jt - cutting_cells.begin();
+          dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
+          const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+
+          for (std::size_t j = 0; j < qr.second.size(); ++j)
+          {
+            volume += qr.second[j];
+            part_volume += qr.second[j];
+          }
+
+        }
       }
 
-      std::cout<<"part volume " << partvolume<<std::endl;
+      std::cout<<"part volume " << part_volume<<std::endl;
     }
 
     std::cout << "exact volume " << exact_volume<<'\n'

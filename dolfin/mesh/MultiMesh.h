@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-04-24
+// Last changed: 2014-04-25
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -356,9 +356,6 @@ namespace dolfin
 
     // Build quadrature rules for the overlap
     void _build_quadrature_rules_overlap();
-
-    // Build quadrature rules for the interface
-    //void _build_quadrature_rules_interface();
 
     // Add quadrature rule for simplices in the triangulation array
     void _add_quadrature_rule(quadrature_rule& qr,

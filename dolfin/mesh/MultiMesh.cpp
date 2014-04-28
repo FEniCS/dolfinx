@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-04-24
+// Last changed: 2014-04-25
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -593,99 +593,6 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 
   end();
 }
-// //-----------------------------------------------------------------------------
-// void MultiMesh::_build_quadrature_rules_interface()
-// {
-//   begin(PROGRESS, "Building quadrature rules of the interface in the cut cells.");
-
-//   // FIXME: Make this a parameters
-//   const std::size_t order = 1;
-
-//   // Clear quadrature rules
-//   _quadrature_rules_interface.clear();
-//   _quadrature_rules_interface.resize(num_parts());
-
-//   //double total_volume = 0;
-
-//   // Iterate over all parts
-//   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
-//   {
-//     //std::cout << "% part " << cut_part << '\n';
-
-//     // Iterate over cut cells for current part
-//     const auto& cmap = collision_map_cut_cells(cut_part);
-//     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-//     {
-//       // Get cut cell
-//       const unsigned int cut_cell_index = it->first;
-//       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-
-//       //std::cout << "% cut cell " << cut_cell_index << '\n';
-
-//       // Get dimensions
-//       const std::size_t gdim = cut_cell.mesh().geometry().dim();
-
-//       // Data structure for the quadrature rule of this cell
-//       quadrature_rule quadrature_rule;
-
-//       // Data structure for the total triangulation of the cut_cell
-//       std::vector<double> total_triangulation;
-
-//       // Iterate over cutting cells
-//       const auto& cutting_cells = it->second;
-//       for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
-//       {
-//         // Get cutting part and cutting cell
-//         const std::size_t cutting_part = jt->first;
-// 	const std::size_t cutting_cell_no = jt->second;
-//         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_no);
-
-// 	//std::cout << "% cutting part and cutting cell no " << cutting_part <<' '<<cutting_cell_no<<'\n';
-
-// 	const std::size_t tdim = cutting_cell.mesh().topology().dim(); // FIXME?
-
-// 	// Get map from boundary mesh to facets of full mesh
-// 	const std::size_t tdim_boundary = _boundary_meshes[cutting_part]->topology().dim();
-// 	const auto& boundary_cell_map = _boundary_meshes[cutting_part]->entity_map(tdim_boundary);
-
-// 	// Generate facet -> cell connectivity
-// 	_meshes[cutting_part]->init(tdim_boundary, tdim);
-// 	const MeshConnectivity& full_facet_cell_map = _meshes[cutting_part]->topology()(tdim_boundary, tdim);
-
-// 	for (std::size_t facet = 0; facet < boundary_cell_map.size(); ++facet)
-// 	{
-// 	  const std::size_t full_mesh_facet = boundary_cell_map[facet];
-// 	  const auto size = full_facet_cell_map.size(full_mesh_facet);
-// 	  dolfin_assert(size == 1);
-// 	  const auto& full_cells = full_facet_cell_map(full_mesh_facet);
-
-// 	  if (full_cells[0] == cutting_cell_no)
-// 	  {
-// 	    const Cell boundary_cell(*_boundary_meshes[cutting_part], facet);
-
-// 	    // Triangulate the intersection of cut_cell and save
-// 	    const auto triangulation = IntersectionTriangulation::triangulate_intersection(cut_cell, boundary_cell);
-// 	    total_triangulation.insert(total_triangulation.end(),
-// 				       triangulation.begin(),
-// 				       triangulation.end());
-
-// 	    // Create quadrature rules
-// 	    _add_quadrature_rule(quadrature_rule,
-// 				 triangulation,
-// 				 tdim_boundary, gdim, order, 1);
-// 	  }
-// 	}
-//       }
-
-//       // Store quadrature rule for cut cell
-//       _quadrature_rules_interface[cut_part][cut_cell_index] = quadrature_rule;
-//     }
-//   }
-
-//   //std::cout << "\n\n"<<total_volume<<"\n\n";
-
-//   end();
-// }
 //-----------------------------------------------------------------------------
 void MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
                                      const std::vector<double>& triangulation,
