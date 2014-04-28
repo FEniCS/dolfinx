@@ -364,7 +364,8 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void MultiMeshAssembler::init_global_tensor(GenericTensor& A, const MultiMeshForm& a)
+void MultiMeshAssembler::init_global_tensor(GenericTensor& A,
+                                            const MultiMeshForm& a)
 {
   log(PROGRESS, "Initializing global tensor.");
 
