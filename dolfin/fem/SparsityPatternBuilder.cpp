@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2014
 //
 // First added:  2007-05-24
-// Last changed: 2014-04-27
+// Last changed: 2014-04-28
 
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
@@ -265,7 +265,7 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
     const unsigned int cut_cell_index = it->first;
     const Cell cut_cell(*multimesh->part(part), cut_cell_index);
 
-    // Add dofs for cut cell
+    // Get dofs for cut cell
     for (std::size_t i = 0; i < form.rank(); i++)
     {
       // Set current part to cut mesh
@@ -298,12 +298,6 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
         std::copy(dofs_0[i]->begin(), dofs_0[i]->end(), dofs[i].begin());
         std::copy(dofs_1[i]->begin(), dofs_1[i]->end(), dofs[i].begin() + dofs_0[i]->size());
         _dofs[i] = &dofs[i]; // Silly extra step, fix GenericSparsityPattern interface
-
-        cout << "i = " << i << ":";
-        for (std::size_t j = 0; j < dofs[i].size(); j++)
-          cout << " " << dofs[i][j];;
-        cout << endl;
-
       }
 
       // Insert into sparsity pattern

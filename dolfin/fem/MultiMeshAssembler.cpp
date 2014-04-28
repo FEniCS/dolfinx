@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-04-27
+// Last changed: 2014-04-28
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -240,10 +240,6 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
     // Get form for current part
     const Form& a_part = *a.part(part);
 
-    // Set current part for dofmaps
-    for (std::size_t i = 0; i < form_rank; i++)
-      dofmaps[i]->set_current_part(part);
-
     // Create data structure for local assembly data
     UFC ufc_part(a_part);
 
@@ -323,9 +319,15 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           // Tabulate dofs for each dimension on macro element
           for (std::size_t i = 0; i < form_rank; i++)
           {
-            // Get dofs for each cell
+            // Get dofs for cut mesh
+            for (std::size_t i = 0; i < form_rank; i++)
+              dofmaps[i]->set_current_part(part);
             const std::vector<dolfin::la_index>& cell_dofs0
               = dofmaps[i]->cell_dofs(cell0.index());
+
+            // Get dofs for cutting mesh
+            for (std::size_t i = 0; i < form_rank; i++)
+              dofmaps[i]->set_current_part(cutting_part);
             const std::vector<dolfin::la_index>& cell_dofs1
               = dofmaps[i]->cell_dofs(cell1.index());
 
