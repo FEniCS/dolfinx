@@ -672,7 +672,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values)
 void Function::update() const
 {
   deprecation("Function::update()", "1.4", "1.5",
-              "Calling Function::update to update ghist values is no longer required.");
+              "Calling Function::update to update ghost values is no longer required.");
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()
