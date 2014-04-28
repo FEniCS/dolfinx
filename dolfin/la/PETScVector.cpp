@@ -361,6 +361,9 @@ void PETScVector::apply(std::string mode)
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecAssemblyBegin");
   ierr = VecAssemblyEnd(_x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecAssemblyEnd");
+
+  // Update any ghost values
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScVector::mpi_comm() const
@@ -477,11 +480,21 @@ void PETScVector::update_ghost_values()
   if (dolfin::MPI::size(mpi_comm()) > 1)
   #endif
   {
-    PetscErrorCode ierr;
-    ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
-    ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
+    // Check of vector is ghosted
+    Vec local_vec;
+    VecGhostGetLocalForm(_x, &local_vec);
+
+    // If ghosted, update
+    if (local_vec)
+    {
+      PetscErrorCode ierr;
+      ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
+      ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
+    }
+
+    VecDestroy(&local_vec);
   }
 }
 //-----------------------------------------------------------------------------
@@ -517,6 +530,10 @@ const PETScVector& PETScVector::operator*= (const double a)
   dolfin_assert(_x);
   PetscErrorCode ierr = VecScale(_x, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecScale");
+
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -534,6 +551,10 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
 
   PetscErrorCode ierr = VecPointwiseMult(_x, _x, v._x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecPointwiseMult");
+
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -572,12 +593,18 @@ void PETScVector::axpy(double a, const GenericVector& y)
 
   PetscErrorCode ierr = VecAXPY(_x, a, _y._x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecAXPY");
+
+  // Update ghost values
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 void PETScVector::abs()
 {
   dolfin_assert(_x);
   VecAbs(_x);
+
+  // Update ghost values
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 double PETScVector::norm(std::string norm_type) const

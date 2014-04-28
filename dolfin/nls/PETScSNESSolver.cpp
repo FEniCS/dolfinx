@@ -329,6 +329,10 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   this->init(nonlinear_problem, x);
   SNESSolve(_snes, PETSC_NULL, _snes_ctx.x->vec());
 
+  // Update any ghost values
+  PETScVector& _x = x.down_cast<PETScVector>();
+  _x.update_ghost_values();
+
   SNESGetIterationNumber(_snes, &its);
   SNESGetConvergedReason(_snes, &reason);
 
@@ -374,6 +378,9 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   // the end of solve. We should find a better solution.
   *_x = x_wrap;
 
+  // Update ghost values
+  _x ->update_ghost_values();
+
   // Compute F(u)
   PETScMatrix A;
   nonlinear_problem->form(A, f_wrap, *_x);
@@ -402,6 +409,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
   // Wrap the PETSc objects
   PETScMatrix A_wrap(*P);
   PETScVector x_wrap(x);
+
 
   // Form Jacobian
   PETScVector f;

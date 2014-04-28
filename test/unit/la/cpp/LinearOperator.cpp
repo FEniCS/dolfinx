@@ -59,9 +59,6 @@ public:
 
       void mult(const GenericVector& x, GenericVector& y) const
       {
-        // Update coefficient vector
-        *u.vector() = x;
-
         // Assemble action
         Assembler assembler;
         assembler.assemble(y, a_action);

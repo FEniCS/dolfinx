@@ -416,6 +416,9 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
   }
 
+  // Update ghost values
+  x.update_ghost_values();
+
   // Get the number of iterations
   PetscInt num_iterations = 0;
   ierr = KSPGetIterationNumber(_ksp, &num_iterations);
