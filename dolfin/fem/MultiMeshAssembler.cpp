@@ -146,9 +146,6 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
       }
     }
 
-    // FIXME: Testing
-    return;
-
     // FIXME: We assume that the custom integral associated with cut cells is number 0.
     // FIXME: This needs to be sorted out in the UFL-UFC
 

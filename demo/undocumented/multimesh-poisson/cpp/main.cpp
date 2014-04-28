@@ -100,7 +100,7 @@ int main()
   assembler.assemble(b, L);
 
   // Lock inactive dofs
-  //A.ident_zeros();
+  A.ident_zeros();
 
   // Compute solution
   MultiMeshFunction u(V);

@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-03-03
+// Last changed: 2014-04-28
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/MultiMeshDofMap.h>
 #include "Function.h"
+#include "FunctionSpace.h"
 #include "MultiMeshFunctionSpace.h"
 #include "MultiMeshFunction.h"
 
@@ -58,8 +59,13 @@ const Function& MultiMeshFunction::part(std::size_t i) const
   if (it != _function_parts.end())
     return *(it->second);
 
-  // Extract function space for part
-  std::shared_ptr<const FunctionSpace> V = _function_space->part(i);
+  // Create function space for part
+  auto mesh    = _function_space->part(i)->mesh();
+  auto element = _function_space->part(i)->element();
+  auto dofmap  = _function_space->dofmap()->part(i);
+  std::shared_ptr<const FunctionSpace> V(new FunctionSpace(mesh,
+                                                           element,
+                                                           dofmap));
 
   // Insert into cache and return reference
   _function_parts.insert(i, new Function(V, _vector));
