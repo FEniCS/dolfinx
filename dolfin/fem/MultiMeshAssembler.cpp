@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-04-25
+// Last changed: 2014-04-27
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -352,7 +352,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                                            cell_orientation);
 
           // Add entries to global tensor
-          //A.add(ufc_part.macro_A.data(), macro_dof_ptrs);
+          A.add(ufc_part.macro_A.data(), macro_dof_ptrs);
         }
       }
     }

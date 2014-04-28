@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2014
 //
 // First added:  2007-05-24
-// Last changed: 2014-04-25
+// Last changed: 2014-04-27
 
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
@@ -247,11 +247,16 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
   const auto& cmap = multimesh->collision_map_cut_cells(part);
 
   // Data structures for storing dofs on cut (0) and cutting cell (1)
-  std::vector<std::vector<dolfin::la_index>* > dofs_0(form.rank());
-  std::vector<std::vector<dolfin::la_index>* > dofs_1(form.rank());
+  std::vector<const std::vector<dolfin::la_index>* > dofs_0(form.rank());
+  std::vector<const std::vector<dolfin::la_index>* > dofs_1(form.rank());
+
+  // FIXME: We need two different lists here because the interface
+  // FIXME: of insert() requires a list of pointers to dofs. Consider
+  // FIXME: improving the interface of GenericSparsityPattern.
 
   // Data structure for storing dofs on macro cell (0 + 1)
   std::vector<std::vector<dolfin::la_index> > dofs(form.rank());
+  std::vector<const std::vector<dolfin::la_index>* > _dofs(form.rank());
 
   // Iterate over all cut cells in collision map
   for (auto it = cmap.begin(); it != cmap.end(); ++it)
@@ -267,11 +272,8 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
       form.function_space(i)->dofmap()->set_current_part(part);
 
       // Get dofs for cut cell
-      //dofs_0[i] = form.function_space(i)->dofmap()->cell_dofs(cut_cell_index);
+      dofs_0[i] = &form.function_space(i)->dofmap()->cell_dofs(cut_cell_index);
     }
-
-    // Add dofs for cut cell to macro dofs
-    // FIXME: Not yet implemented
 
     // Iterate over cutting cells
     const auto& cutting_cells = it->second;
@@ -282,22 +284,35 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
       const std::size_t cutting_cell_index = jt->second;
       const Cell cutting_cell(*multimesh->part(cutting_part), cutting_cell_index);
 
-      // Add dofs for cuting cell
+      // Add dofs for cutting cell
       for (std::size_t i = 0; i < form.rank(); i++)
       {
         // Set current part to cuting mesh
         form.function_space(i)->dofmap()->set_current_part(cutting_part);
 
         // Get dofs for cutting cell
-        //dofs_1[i] = form.function_space(i)->dofmap()->cell_dofs(cutting_cell_index);
+        dofs_1[i] = &form.function_space(i)->dofmap()->cell_dofs(cutting_cell_index);
+
+        // Collect dofs for cut and cutting cell
+        dofs[i].resize(dofs_0[i]->size() + dofs_1[i]->size());
+        std::copy(dofs_0[i]->begin(), dofs_0[i]->end(), dofs[i].begin());
+        std::copy(dofs_1[i]->begin(), dofs_1[i]->end(), dofs[i].begin() + dofs_0[i]->size());
+        _dofs[i] = &dofs[i]; // Silly extra step, fix GenericSparsityPattern interface
+
+        cout << "i = " << i << ":";
+        for (std::size_t j = 0; j < dofs[i].size(); j++)
+          cout << " " << dofs[i][j];;
+        cout << endl;
+
       }
 
-      // Append dofs on cutting cell to macro dofs
-      // FIXME: Not yet implemented
-
       // Insert into sparsity pattern
-      // FIXME: Not yet implemented
+      sparsity_pattern.insert(_dofs);
     }
   }
+
+  // Reset active part for dofmaps so we don't mess that up
+  for (std::size_t i = 0; i < form.rank(); i++)
+    form.function_space(i)->dofmap()->set_current_part(part);
 }
 //-----------------------------------------------------------------------------
