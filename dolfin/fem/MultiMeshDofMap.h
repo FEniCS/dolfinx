@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2014-03-17
+// Last changed: 2014-04-28
 
 #ifndef __MULTI_MESH_DOF_MAP_H
 #define __MULTI_MESH_DOF_MAP_H
@@ -197,6 +197,8 @@ namespace dolfin
     void set_x(GenericVector& x, double value, std::size_t component,
                        const Mesh& mesh) const;
 
+    void add_offset(dolfin::la_index offset) {}
+
     /// Return map from shared dofs to the processes (not including
     /// the current process) that share it.
     const boost::unordered_map<std::size_t,
@@ -213,14 +215,18 @@ namespace dolfin
     // Total global dimension (sum of parts)
     std::size_t _global_dimension;
 
-    // List of dofmaps
+    // List of original dofmaps
     std::vector<std::shared_ptr<const GenericDofMap> > _dofmaps;
+
+    // List of dofmaps
+    std::vector<std::shared_ptr<GenericDofMap> > _new_dofmaps;
 
     // Current part (mesh)
     mutable std::size_t _current_part;
 
     // Local-to-global dof map for all parts
     std::vector<std::vector<std::vector<dolfin::la_index> > > _dofmap;
+
 
   };
 

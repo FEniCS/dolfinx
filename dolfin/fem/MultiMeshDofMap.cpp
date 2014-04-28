@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2014-02-03
+// Last changed: 2014-04-28
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
@@ -52,7 +52,7 @@ std::size_t MultiMeshDofMap::num_parts() const
 std::shared_ptr<const GenericDofMap> MultiMeshDofMap::part(std::size_t i) const
 {
   dolfin_assert(i < _dofmaps.size());
-  return _dofmaps[i];
+  return _new_dofmaps[i];
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDofMap::set_current_part(std::size_t part) const
@@ -90,6 +90,9 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space)
   // For now, we build the simplest possible dofmap by reusing the
   // dofmaps for each part and adding offsets in between.
 
+  // Clear old dofmaps if any
+  _new_dofmaps.clear();
+
   // Build dofmap
   _dofmap.clear();
   dolfin::la_index offset = 0;
@@ -103,7 +106,14 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space)
     // Get mesh on current part
     const Mesh& mesh = *function_space.part(part)->mesh();
 
-    // Add all dofs for current part with offset
+    // Create new dofmap for part (copy of original dofmap)
+    std::shared_ptr<GenericDofMap> new_dofmap = _dofmaps[part]->copy();
+    _new_dofmaps.push_back(new_dofmap);
+
+    // Add offset
+    new_dofmap->add_offset(offset);
+
+    // Modify all dofs in copy by adding an offset
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Get dofs from dofmap on part

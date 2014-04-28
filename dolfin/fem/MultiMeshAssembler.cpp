@@ -59,6 +59,8 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   // Assemble over cells
   assemble_cells(A, a);
 
+  // FIXME: Testing
+
   // Assemble over interface
   assemble_interface(A, a);
 
@@ -98,10 +100,6 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
     // Get form for current part
     const Form& a_part = *a.part(part);
 
-    // Set current part for dofmaps
-    for (std::size_t i = 0; i < form_rank; i++)
-      dofmaps[i]->set_current_part(part);
-
     // Create data structure for local assembly data
     UFC ufc_part(a_part);
 
@@ -132,7 +130,10 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
 
         // Get local-to-global dof maps for cell
         for (std::size_t i = 0; i < form_rank; ++i)
-          dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
+        {
+          const auto dofmap = a.function_space(i)->dofmap()->part(part);
+          dofs[i] = &dofmap->cell_dofs(cell.index());
+        }
 
         // Tabulate cell tensor
         cell_integral->tabulate_tensor(ufc_part.A.data(),
@@ -144,6 +145,9 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
         A.add(ufc_part.A.data(), dofs);
       }
     }
+
+    // FIXME: Testing
+    return;
 
     // FIXME: We assume that the custom integral associated with cut cells is number 0.
     // FIXME: This needs to be sorted out in the UFL-UFC
@@ -178,7 +182,10 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
 
         // Get local-to-global dof maps for cell
         for (std::size_t i = 0; i < form_rank; ++i)
-          dofs[i] = &(dofmaps[i]->cell_dofs(cell.index()));
+        {
+          const auto dofmap = a.function_space(i)->dofmap()->part(part);
+          dofs[i] = &dofmap->cell_dofs(cell.index());
+        }
 
         // Get quadrature rule for cut cell
         const auto& qr = quadrature_rules.at(*it);
@@ -295,16 +302,16 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
             continue;
 
           // Create aliases for cells to simplify notation
-          const Cell& cell0 = cut_cell;
-          const Cell& cell1 = cutting_cell;
+          const Cell& cell_0 = cut_cell;
+          const Cell& cell_1 = cutting_cell;
 
           // Update to current pair of cells
-          cell0.get_cell_data(ufc_cell[0], 0);
-          cell1.get_cell_data(ufc_cell[1], 0);
-          cell0.get_vertex_coordinates(vertex_coordinates[0]);
-          cell1.get_vertex_coordinates(vertex_coordinates[1]);
-          ufc_part.update(cell0, vertex_coordinates[0], ufc_cell[0],
-                          cell1, vertex_coordinates[1], ufc_cell[1]);
+          cell_0.get_cell_data(ufc_cell[0], 0);
+          cell_1.get_cell_data(ufc_cell[1], 0);
+          cell_0.get_vertex_coordinates(vertex_coordinates[0]);
+          cell_1.get_vertex_coordinates(vertex_coordinates[1]);
+          ufc_part.update(cell_0, vertex_coordinates[0], ufc_cell[0],
+                          cell_1, vertex_coordinates[1], ufc_cell[1]);
 
           // Collect vertex coordinates
           macro_vertex_coordinates.resize(vertex_coordinates[0].size() +
@@ -320,25 +327,21 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           for (std::size_t i = 0; i < form_rank; i++)
           {
             // Get dofs for cut mesh
-            for (std::size_t i = 0; i < form_rank; i++)
-              dofmaps[i]->set_current_part(part);
-            const std::vector<dolfin::la_index>& cell_dofs0
-              = dofmaps[i]->cell_dofs(cell0.index());
+            const auto dofmap_0 = a.function_space(i)->dofmap()->part(part);
+            const auto dofs_0 = dofmap_0->cell_dofs(cell_0.index());
 
             // Get dofs for cutting mesh
-            for (std::size_t i = 0; i < form_rank; i++)
-              dofmaps[i]->set_current_part(cutting_part);
-            const std::vector<dolfin::la_index>& cell_dofs1
-              = dofmaps[i]->cell_dofs(cell1.index());
+            const auto dofmap_1 = a.function_space(i)->dofmap()->part(cutting_part);
+            const auto dofs_1 = dofmap_1->cell_dofs(cell_1.index());
 
             // Create space in macro dof vector
-            macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
+            macro_dofs[i].resize(dofs_0.size() + dofs_1.size());
 
             // Copy cell dofs into macro dof vector
-            std::copy(cell_dofs0.begin(), cell_dofs0.end(),
+            std::copy(dofs_0.begin(), dofs_0.end(),
                       macro_dofs[i].begin());
-            std::copy(cell_dofs1.begin(), cell_dofs1.end(),
-                      macro_dofs[i].begin() + cell_dofs0.size());
+            std::copy(dofs_1.begin(), dofs_1.end(),
+                      macro_dofs[i].begin() + dofs_0.size());
           }
 
           // FIXME: Cell orientation not supported

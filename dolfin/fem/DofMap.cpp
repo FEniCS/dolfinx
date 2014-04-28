@@ -24,7 +24,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-09-19
+// Last changed: 2014-04-28
 
 #include <boost/unordered_map.hpp>
 
@@ -564,6 +564,13 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
     // Set x[component] values in vector
     x.set(x_values.data(), dofs.size(), dofs.data());
   }
+}
+//-----------------------------------------------------------------------------
+void DofMap::add_offset(dolfin::la_index offset)
+{
+  for (auto it : _dofmap)
+    for (auto jt : it)
+      jt += offset;
 }
 //-----------------------------------------------------------------------------
 void DofMap::check_provided_entities(const ufc::dofmap& dofmap,

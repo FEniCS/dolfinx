@@ -207,12 +207,6 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
   {
-    // Set current part for each dofmap. Note that these will be the
-    // same dofmaps as in the list created above but accessed here as
-    // MultiMeshDofMaps and not GenericDofMaps.
-    for (std::size_t i = 0; i < form.rank(); i++)
-      form.function_space(i)->dofmap()->set_current_part(part);
-
     // Get mesh on current part (assume it's the same for all arguments)
     const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
 
@@ -261,37 +255,30 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
   // Iterate over all cut cells in collision map
   for (auto it = cmap.begin(); it != cmap.end(); ++it)
   {
-    // Get cut cell
+    // Get cut cell index
     const unsigned int cut_cell_index = it->first;
-    const Cell cut_cell(*multimesh->part(part), cut_cell_index);
 
     // Get dofs for cut cell
     for (std::size_t i = 0; i < form.rank(); i++)
     {
-      // Set current part to cut mesh
-      form.function_space(i)->dofmap()->set_current_part(part);
-
-      // Get dofs for cut cell
-      dofs_0[i] = &form.function_space(i)->dofmap()->cell_dofs(cut_cell_index);
+      const auto dofmap = form.function_space(i)->dofmap()->part(part);
+      dofs_0[i] = &dofmap->cell_dofs(cut_cell_index);
     }
 
     // Iterate over cutting cells
     const auto& cutting_cells = it->second;
     for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
     {
-      // Get cutting part and cutting cell
+      // Get cutting part and cutting cell index
       const std::size_t cutting_part = jt->first;
       const std::size_t cutting_cell_index = jt->second;
-      const Cell cutting_cell(*multimesh->part(cutting_part), cutting_cell_index);
 
       // Add dofs for cutting cell
       for (std::size_t i = 0; i < form.rank(); i++)
       {
-        // Set current part to cuting mesh
-        form.function_space(i)->dofmap()->set_current_part(cutting_part);
-
         // Get dofs for cutting cell
-        dofs_1[i] = &form.function_space(i)->dofmap()->cell_dofs(cutting_cell_index);
+        const auto dofmap = form.function_space(i)->dofmap()->part(cutting_part);
+        dofs_1[i] = &dofmap->cell_dofs(cutting_cell_index);
 
         // Collect dofs for cut and cutting cell
         dofs[i].resize(dofs_0[i]->size() + dofs_1[i]->size());
@@ -304,9 +291,5 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
       sparsity_pattern.insert(_dofs);
     }
   }
-
-  // Reset active part for dofmaps so we don't mess that up
-  for (std::size_t i = 0; i < form.rank(); i++)
-    form.function_space(i)->dofmap()->set_current_part(part);
 }
 //-----------------------------------------------------------------------------
