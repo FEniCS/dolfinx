@@ -501,6 +501,10 @@ const PETScVector& PETScVector::operator*= (const double a)
   dolfin_assert(_x);
   PetscErrorCode ierr = VecScale(_x, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecScale");
+
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -518,6 +522,10 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
 
   PetscErrorCode ierr = VecPointwiseMult(_x, _x, v._x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecPointwiseMult");
+
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -556,12 +564,18 @@ void PETScVector::axpy(double a, const GenericVector& y)
 
   PetscErrorCode ierr = VecAXPY(_x, a, _y._x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecAXPY");
+
+  // Update ghost values
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 void PETScVector::abs()
 {
   dolfin_assert(_x);
   VecAbs(_x);
+
+  // Update ghost values
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 double PETScVector::norm(std::string norm_type) const
