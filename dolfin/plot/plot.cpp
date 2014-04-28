@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg and Fredrik Valdmanis
+// Copyright (C) 2007-2014 Anders Logg and Fredrik Valdmanis
 //
 // This file is part of DOLFIN.
 //
@@ -20,13 +20,14 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2013-09-19
+// Last changed: 2014-04-28
 
 #include <cstdlib>
 #include <sstream>
 #include <list>
 
 #include <dolfin/common/utils.h>
+#include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -50,11 +51,12 @@ static std::list<std::shared_ptr<VTKPlotter> > stored_plotters;
 //-----------------------------------------------------------------------------
 // Function for getting already instantiated VTKPlotter for
 // the given object. If none is found, a new one is created.
-std::shared_ptr<VTKPlotter> get_plotter(std::shared_ptr<const Variable> obj, std::string key)
+std::shared_ptr<VTKPlotter> get_plotter(std::shared_ptr<const Variable> obj,
+                                        std::string key)
 {
   log(TRACE, "Looking for cached VTKPlotter [%s].", key.c_str());
 
-  for (std::list<std::shared_ptr<VTKPlotter> >::iterator it = stored_plotters.begin(); it != stored_plotters.end(); it++)
+  for (auto it = stored_plotters.begin(); it != stored_plotters.end(); it++)
   {
     if ( (*it)->key() == key && (*it)->is_compatible(obj) )
     {
@@ -112,49 +114,49 @@ void dolfin::interactive(bool really)
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
-					   std::string title,
-					   std::string mode)
+                                         std::string title,
+                                         std::string mode)
 {
   return plot(reference_to_no_delete_pointer(var), title, mode);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Variable> var,
-					   std::string title, std::string mode)
+                                         std::string title, std::string mode)
 {
   return plot(var, new_parameters(title, mode));
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
-					   const Parameters& p)
+                                         const Parameters& p)
 {
   return plot(reference_to_no_delete_pointer(var),
 	      reference_to_no_delete_pointer(p));
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Variable> var,
-					   std::shared_ptr<const Parameters> p)
+                                         std::shared_ptr<const Parameters> p)
 {
   return plot_object(var, p, VTKPlotter::to_key(*var));
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
-					   const Mesh& mesh,
-					   std::string title, std::string mode)
+                                         const Mesh& mesh,
+                                         std::string title, std::string mode)
 {
   return plot(reference_to_no_delete_pointer(expression),
 	      reference_to_no_delete_pointer(mesh), title, mode);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Expression> expression,
-					   std::shared_ptr<const Mesh> mesh,
-					   std::string title, std::string mode)
+                                         std::shared_ptr<const Mesh> mesh,
+                                         std::string title, std::string mode)
 {
   return plot(expression, mesh, new_parameters(title, mode));
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
-                                           const Mesh& mesh,
-                                            const Parameters& p)
+                                         const Mesh& mesh,
+                                         const Parameters& p)
 {
   return plot(reference_to_no_delete_pointer(expression),
 	      reference_to_no_delete_pointer(mesh),
@@ -162,11 +164,22 @@ std::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Expression> expression,
-					   std::shared_ptr<const Mesh> mesh,
-					   std::shared_ptr<const Parameters> p)
+                                         std::shared_ptr<const Mesh> mesh,
+                                         std::shared_ptr<const Parameters> p)
 {
   std::shared_ptr<const ExpressionWrapper>
     wrapper(new ExpressionWrapper(expression, mesh));
   return plot_object(wrapper, p, VTKPlotter::to_key(*expression));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MultiMesh& multimesh)
+{
+  plot(reference_to_no_delete_pointer(multimesh));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(std::shared_ptr<const MultiMesh> multimesh)
+{
+  dolfin_assert(multimesh);
+  multimesh->_plot();
 }
 //-----------------------------------------------------------------------------

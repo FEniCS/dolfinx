@@ -43,12 +43,13 @@ class Source : public Expression
 int main()
 {
   // Increase log level
-  set_log_level(DBG);
+  //set_log_level(DBG);
 
   // Create meshes
   UnitSquareMesh square(32, 32);
-  RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
-  RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
+  RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, 16, 16);
+  //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
+  //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
 
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(square);
@@ -99,7 +100,7 @@ int main()
   assembler.assemble(b, L);
 
   // Lock inactive dofs
-  A.ident_zeros();
+  //A.ident_zeros();
 
   // Compute solution
   MultiMeshFunction u(V);
@@ -108,6 +109,7 @@ int main()
   cout << endl;
   cout << "||x|| = " << u.vector()->norm("l2") << endl;
 
+  plot(V.multimesh());
   plot(u.part(0), "u_0");
   plot(u.part(1), "u_1");
   //plot(u.part(2), "u_2");

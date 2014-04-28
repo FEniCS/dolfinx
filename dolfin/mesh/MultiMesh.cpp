@@ -18,14 +18,16 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-04-25
+// Last changed: 2014-04-28
 
 #include <dolfin/log/log.h>
+#include <dolfin/plot/plot.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
+#include "Cell.h"
+#include "BoundaryMesh.h"
+#include "MeshFunction.h"
 #include "MultiMesh.h"
 
 using namespace dolfin;
@@ -638,6 +640,45 @@ void MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
 
     // Add weight
     qr.second.push_back(factor*dqr.second[i]);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMesh::_plot() const
+{
+  cout << "Plotting multimesh with " << num_parts() << " parts" << endl;
+
+  // Iterate over parts
+  for (std::size_t p = 0; p < num_parts(); ++p)
+  {
+    // Create a cell function and mark cells
+    std::shared_ptr<MeshFunction<std::size_t> >
+      f(new MeshFunction<std::size_t>(part(p),
+                                      part(p)->topology().dim()));
+
+    // Set all entries to 0 (uncut cells)
+    f->set_all(0);
+
+    // Mark cut cells as 1
+    for (auto it : cut_cells(p))
+      f->set_value(it, 1);
+
+    // Mart covered cells as 2
+    for (auto it : covered_cells(p))
+      f->set_value(it, 2);
+
+    // Write some debug data
+    const std::size_t num_cut = cut_cells(p).size();
+    const std::size_t num_covered = covered_cells(p).size();
+    const std::size_t num_uncut = part(p)->num_cells() - num_cut - num_covered;
+    cout << "Part " << p << " has "
+         << num_uncut   << " uncut cells (0), "
+         << num_cut     << " cut cells (1), and "
+         << num_covered << " covered cells (2)." << endl;
+
+    // Plot
+    std::stringstream s;
+    s << "Map of cell types for multimesh part " << p;
+    plot(f, s.str());
   }
 }
 //-----------------------------------------------------------------------------

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-03-17
+// Last changed: 2014-04-28
 
 #ifndef __SIMPLEX_QUADRATURE_H
 #define __SIMPLEX_QUADRATURE_H
@@ -26,6 +26,9 @@
 
 namespace dolfin
 {
+
+  // Forward declarations
+  class Cell;
 
   class SimplexQuadrature
   {

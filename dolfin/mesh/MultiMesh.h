@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-04-25
+// Last changed: 2014-04-28
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -223,6 +223,9 @@ namespace dolfin
 
   private:
 
+    // Friends
+    friend void dolfin::plot(std::shared_ptr<const MultiMesh>);
+
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;
 
@@ -370,6 +373,9 @@ namespace dolfin
                               const quadrature_rule& dqr,
                               std::size_t gdim,
                               double factor) const;
+
+    // Plot multimesh
+    void _plot() const;
 
   };
 
