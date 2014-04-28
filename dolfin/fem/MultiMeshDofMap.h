@@ -101,14 +101,10 @@ namespace dolfin
     std::size_t _global_dimension;
 
     // List of original dofmaps
-    std::vector<std::shared_ptr<const GenericDofMap> > _dofmaps;
+    std::vector<std::shared_ptr<const GenericDofMap> > _original_dofmaps;
 
-    // List of dofmaps
+    // List of modified dofmaps
     std::vector<std::shared_ptr<GenericDofMap> > _new_dofmaps;
-
-    // Local-to-global dof map for all parts
-    std::vector<std::vector<std::vector<dolfin::la_index> > > _dofmap;
-
 
   };
 
