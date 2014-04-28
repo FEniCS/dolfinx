@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-04-24
+// Last changed: 2014-04-28
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -32,9 +32,11 @@ class Source : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    double dx = x[0] - 0.5;
-    double dy = x[1] - 0.5;
-    values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
+    const double x0 = 1.0;
+    const double y0 = 1.0;
+    double dx = x[0] - x0;
+    double dy = x[1] - y0;
+    values[0] = 100*exp(-(dx*dx + dy*dy) / 0.02);
   }
 };
 
@@ -51,7 +53,7 @@ int main()
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(square);
   MultiMeshPoisson::FunctionSpace V1(rectangle_1);
-  MultiMeshPoisson::FunctionSpace V2(rectangle_2);
+  //MultiMeshPoisson::FunctionSpace V2(rectangle_2);
 
   // Some of this stuff may be wrapped or automated later to avoid
   // needing to explicitly call add() and build()
@@ -59,34 +61,34 @@ int main()
   // Create forms
   MultiMeshPoisson::BilinearForm a0(V0, V0);
   MultiMeshPoisson::BilinearForm a1(V1, V1);
-  MultiMeshPoisson::BilinearForm a2(V2, V2);
+  //MultiMeshPoisson::BilinearForm a2(V2, V2);
   MultiMeshPoisson::LinearForm L0(V0);
   MultiMeshPoisson::LinearForm L1(V1);
-  MultiMeshPoisson::LinearForm L2(V2);
+  //MultiMeshPoisson::LinearForm L2(V2);
 
   // Set coefficients
   Source f;
   L0.f = f;
   L1.f = f;
-  L2.f = f;
+  //L2.f = f;
 
   // Build MultiMesh function space
   MultiMeshFunctionSpace V;
   V.add(V0);
   V.add(V1);
-  V.add(V2);
+  //V.add(V2);
   V.build();
 
   // Build MultiMesh forms
   MultiMeshForm a(V, V);
   a.add(a0);
   a.add(a1);
-  a.add(a2);
+  //a.add(a2);
   a.build();
   MultiMeshForm L(V);
   L.add(L0);
   L.add(L1);
-  L.add(L2);
+  //L.add(L2);
   L.build();
 
   // Assemble linear system
@@ -96,14 +98,20 @@ int main()
   assembler.assemble(A, a);
   assembler.assemble(b, L);
 
+  // Lock inactive dofs
+  A.ident_zeros();
+
   // Compute solution
   MultiMeshFunction u(V);
   solve(A, *u.vector(), b);
 
-  //plot(u.part(0), "u_0");
-  //plot(u.part(1), "u_1");
+  cout << endl;
+  cout << "||x|| = " << u.vector()->norm("l2") << endl;
+
+  plot(u.part(0), "u_0");
+  plot(u.part(1), "u_1");
   //plot(u.part(2), "u_2");
-  //interactive();
+  interactive();
 
   //cout << "A = " << endl; info(A, true);
   //cout << "b = " << endl; info(b, true);
