@@ -432,6 +432,9 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
     dolfin_assert(_x);
     PetscErrorCode ierr = VecCopy(v._x, _x);
     if (ierr != 0) petsc_error(ierr, __FILE__, "VecCopy");
+
+    // Update ghost values
+    update_ghost_values();
   }
   return *this;
 }
@@ -480,6 +483,10 @@ const PETScVector& PETScVector::operator+= (double a)
   dolfin_assert(_x);
   PetscErrorCode ierr = VecShift(_x, a);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecShift");
+
+  // Update any ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
