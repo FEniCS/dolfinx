@@ -85,7 +85,7 @@ namespace // anonymous
 //----------------------------------------------------------------------------
 namespace dolfin
 {
-  GenericVTKPlottable *CreateVTKPlottable(std::shared_ptr<const Variable> var)
+  GenericVTKPlottable* CreateVTKPlottable(std::shared_ptr<const Variable> var)
   {
 #define DISPATCH(T) do                                                  \
     {                                                                   \
