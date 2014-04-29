@@ -45,18 +45,14 @@ class NoslipDomain : public SubDomain
 class InflowDomain : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return x[1] > 1.0 - DOLFIN_EPS;
-  }
+  { return x[1] > 1.0 - DOLFIN_EPS; }
 };
 
 // Define inflow domain
 class OutflowDomain : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return x[0] > 1.0 - DOLFIN_EPS;
-  }
+  { return x[0] > 1.0 - DOLFIN_EPS; }
 };
 
 // Define pressure boundary value at inflow
@@ -69,9 +65,7 @@ public:
 
   // Evaluate pressure at inflow
   void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = sin(3.0*t);
-  }
+  { values[0] = sin(3.0*t); }
 
   // Current time
   double t;
