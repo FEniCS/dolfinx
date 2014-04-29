@@ -185,20 +185,24 @@ void PETScVector::init(MPI_Comm comm,
 void PETScVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(_x);
-  const std::size_t n0 = local_range().first;
+  //const std::size_t n0 = local_range().first;
   const std::size_t local_size = local_range().second - local_range().first;
   values.resize(local_size);
 
   if (local_size == 0)
     return;
 
-  std::vector<PetscInt> rows(local_size, n0);
-  for (std::size_t i = 0; i < local_size; ++i)
-    rows[i] += i;
+  // Get pointer to PETSc vector data
+  const PetscScalar* data;
+  PetscErrorCode ierr = VecGetArrayRead(_x, &data);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetArrayRead");
 
-  PetscErrorCode ierr = VecGetValues(_x, local_size, rows.data(),
-                                     values.data());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetValues");
+  // Copy data into vector
+  std::copy(data, data + local_size, values.begin());
+
+  // Restore array
+  ierr = VecRestoreArrayRead(_x, &data);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecRestoreArrayRead");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const std::vector<double>& values)
@@ -264,12 +268,23 @@ void PETScVector::get_local(double* block, std::size_t m,
   ierr = VecGhostGetLocalForm(_x, &xg);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostGetLocalForm");
 
+  const std::size_t offset = local_range().first;
+
   // Use VecGetValues if no ghost points, otherwise check for ghost
   // values
   if (!xg)
   {
-    ierr = VecGetValues(_x, m, rows, block);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetValues");
+    // Get pointer to PETSc vector data
+    const PetscScalar* data;
+    PetscErrorCode ierr = VecGetArrayRead(_x, &data);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetArrayRead");
+
+    for (std::size_t i = 0; i < m; ++i)
+      block[i] = data[rows[i] - offset];
+
+    // Restor array
+    ierr = VecRestoreArrayRead(_x, &data);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecRestoreArrayRead");
   }
   else
   {
