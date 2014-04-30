@@ -213,6 +213,17 @@ if (Fortran_language_works)
 endif()
 
 #------------------------------------------------------------------------------
+# Check type sizes
+
+include(CheckTypeSize)
+
+# Check size of size_t
+check_type_size("size_t" size_t_size)
+if (size_t_size)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_SIZE_T=${size_t_size}")
+endif()
+
+#------------------------------------------------------------------------------
 # Check for MPI and OpenMP
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?

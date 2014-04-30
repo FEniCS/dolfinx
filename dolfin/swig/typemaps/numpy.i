@@ -258,12 +258,21 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 // NOTE: If a typemap is not used an error will be issued as the generated
 //       typemap function will not be used
 //-----------------------------------------------------------------------------
+
+#if (DOLFIN_SIZE_T==4)
 UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT32, NPY_UINTP, size_t, uintp)
+#else
+UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT64, NPY_UINTP, size_t, uintp)
+#endif
 UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_UINT,dolfin_index,intc)
 //UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
 
+#if (DOLFIN_SIZE_T==4)
 SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,size_t,uintp)
+#else
+SAFE_NUMPY_TYPEMAPS(std::size_t,INT64,NPY_UINTP,size_t,uintp)
+#endif
 SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT,dolfin_index,intc)
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
