@@ -16,7 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-09-21
-// Last changed:
 
 #ifndef __DOLFIN_HDF5_INTERFACE_H
 #define __DOLFIN_HDF5_INTERFACE_H
@@ -53,7 +52,8 @@ namespace dolfin
     /// Close HDF5 file
     static void close_file(const hid_t hdf5_file_handle);
 
-    /// Flush data to file to improve data integrity after interruption
+    /// Flush data to file to improve data integrity after
+    /// interruption
     static void flush_file(const hid_t hdf5_file_handle);
 
     /// Write data to existing HDF file as defined by range blocks on
@@ -71,10 +71,9 @@ namespace dolfin
                               const std::vector<std::size_t> global_size,
                               bool use_mpio, bool use_chunking);
 
-    /// Read data from a HDF5 dataset "dataset_name"
-    /// as defined by range blocks on each process
-    /// range: the local range on this processor
-    /// data: a flattened 1D array of values
+    /// Read data from a HDF5 dataset "dataset_name" as defined by
+    /// range blocks on each process range: the local range on this
+    /// processor data: a flattened 1D array of values
     template <typename T>
     static void read_dataset(const hid_t file_handle,
                              const std::string dataset_name,
@@ -204,6 +203,9 @@ namespace dolfin
     return 0;
   }
   //---------------------------------------------------------------------------
+  template <> inline hid_t HDF5Interface::hdf5_type<int64_t>()
+  { return H5T_NATIVE_INT64; }
+  //---------------------------------------------------------------------------
   template <typename T>
   inline void
     HDF5Interface::write_dataset(const hid_t file_handle,
@@ -237,9 +239,6 @@ namespace dolfin
 
     // Dataset dimensions
     const std::vector<hsize_t> dimsf(global_size.begin(), global_size.end());
-
-    // Check sizes
-    //dolfin_assert(MPI::sum(count[0]) == global_size[0]);
 
     // Generic status report
     herr_t status;
@@ -357,7 +356,8 @@ namespace dolfin
     std::vector<hsize_t> count(dimensions_size);
     count[0] = range.second - range.first;
 
-    // Select a block in the dataset beginning at offset[], with size=count[]
+    // Select a block in the dataset beginning at offset[], with
+    // size=count[]
     herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
                                         offset.data(), NULL, count.data(),
                                         NULL);
@@ -599,9 +599,8 @@ namespace dolfin
     dolfin_assert(status != HDF5_FAIL);
 
     // FIXME: messy
-    // Copy string value into temporary vector
-    // std::vector::data can be copied into
-    // (std::string::data cannot)
+    // Copy string value into temporary vector std::vector::data can
+    // be copied into (std::string::data cannot)
     std::vector<char> attribute_data(string_length);
     status = H5Aread(attr_id, memtype, attribute_data.data());
     dolfin_assert(status != HDF5_FAIL);
