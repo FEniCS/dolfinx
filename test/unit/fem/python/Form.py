@@ -250,7 +250,7 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
 
         # Compare various results
         self.assertAlmostEqual((w2.vector() - pw2.vector()).norm("l2"), 0.0, \
-                               places=6)
+                               places=5)
         self.assertAlmostEqual(a3, 5.0)
         self.assertAlmostEqual(a2, a3)
         self.assertAlmostEqual(pa2, a2)
