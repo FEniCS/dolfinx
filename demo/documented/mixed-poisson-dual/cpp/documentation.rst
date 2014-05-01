@@ -110,9 +110,7 @@ Then follows the definition of the coefficient functions (for
    class BoundarySource : public Expression
    {
      void eval(Array<double>& values, const Array<double>& x) const
-     {
-       values[0] = sin(5.0*x[0]);
-     }
+     { values[0] = sin(5.0*x[0]); }
    };
 
 Then follows the definition of the essential boundary part of the
@@ -125,9 +123,7 @@ boundary of the domain, which is derived from the
     class DirichletBoundary : public SubDomain
     {
       bool inside(const Array<double>& x, bool on_boundary) const
-      {
-        return x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS;
-      }
+      { return x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS; }
     };
 
 Inside the ``main()`` function we first create the ``mesh`` and then
@@ -147,7 +143,7 @@ linear form.
 
 .. code-block:: c++
 
-    // Create source and assign to L
+    // Create sources and assign to L
     Source f;
     BoundarySource g;
     L.f = f;
