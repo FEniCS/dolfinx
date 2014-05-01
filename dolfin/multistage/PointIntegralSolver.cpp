@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-03-10
+// Last changed: 2014-04-09
 
 #include <cmath>
 #include <algorithm>
@@ -51,7 +51,7 @@ PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> schem
   _num_stages(_scheme->stage_forms().size()), _local_to_local_dofs(_system_size),
   _vertex_map(), _local_to_global_dofs(_system_size),
   _local_stage_solutions(_scheme->stage_solutions().size()),
-  _u0(_system_size), _F(_system_size), _y(_system_size), _dx(_system_size),
+  _u0(_system_size), _residual(_system_size), _y(_system_size), _dx(_system_size),
   _ufcs(), _coefficient_index(), _recompute_jacobian(),
   _jacobians(), _eta(1.0), _num_jacobian_computations(0)
 {
@@ -656,11 +656,11 @@ void PointIntegralSolver::_simplified_newton_solve(
     // Extract vertex dofs from tabulated tensor, together with the old stage
     // solution
     for (unsigned int row=0; row < _system_size; row++)
-      _F[row] = loc_ufc_F.A[_local_to_local_dofs[row]];
+      _residual[row] = loc_ufc_F.A[_local_to_local_dofs[row]];
 
-    residual = _norm(_F);
+    residual = _norm(_residual);
     if (newton_iterations == 0)
-      initial_residual = residual;
+      initial_residual = residual;//std::max(residual, DOLFIN_EPS);
 
     relative_residual = residual/initial_residual;
 
@@ -678,7 +678,7 @@ void PointIntegralSolver::_simplified_newton_solve(
 
     // Perform linear solve By forward backward substitution
     //Timer forward_backward_substitution("Implicit stage: fb substituion");
-    _forward_backward_subst(jac, _F, _dx);
+    _forward_backward_subst(jac, _residual, _dx);
     //forward_backward_substitution.stop();
 
     // Newton_Iterations == 0
@@ -782,7 +782,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     // No convergence
     if (newton_iterations > max_iterations)
     {
-      if ((report && vert_ind == report_vertex) || verbose_report)
+      if (report)
 	info("Newton solver did not converge after %d iterations. vertex: %d, "	\
 	     "relative_previous_residual: %.3f, "			\
 	     "relative_residual: %.3e, residual: %.3e.", max_iterations, vert_ind,

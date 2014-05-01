@@ -53,12 +53,12 @@ namespace dolfin
   public:
 
     explicit
-    VTKPlottableGenericFunction(std::shared_ptr<const Function> function);
+      VTKPlottableGenericFunction(std::shared_ptr<const Function> function);
 
     VTKPlottableGenericFunction(std::shared_ptr<const Expression> expression,
                                 std::shared_ptr<const Mesh> mesh);
 
-    virtual ~VTKPlottableGenericFunction() {}
+    virtual ~VTKPlottableGenericFunction();
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
@@ -105,7 +105,7 @@ namespace dolfin
     void update_vector();
 
     // The function to visualize
-    std::shared_ptr<const GenericFunction> _function;
+    std::weak_ptr<const GenericFunction> _function;
 
     // The scalar warp filter
     vtkSmartPointer<vtkWarpScalar> _warpscalar;

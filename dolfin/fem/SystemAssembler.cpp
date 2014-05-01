@@ -49,19 +49,19 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(const Form& a, const Form& L)
   : _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L))
+    _l(reference_to_no_delete_pointer(L))
 {
   // Check arity of forms
-  check_arity(_a, _L);
+  check_arity(_a, _l);
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(const Form& a, const Form& L,
                                  const DirichletBC& bc)
   : _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L))
+    _l(reference_to_no_delete_pointer(L))
 {
   // Check arity of forms
-  check_arity(_a, _L);
+  check_arity(_a, _l);
 
   // Store Dirichlet boundary condition
   _bcs.push_back(&bc);
@@ -70,27 +70,27 @@ SystemAssembler::SystemAssembler(const Form& a, const Form& L,
 SystemAssembler::SystemAssembler(const Form& a, const Form& L,
                                  const std::vector<const DirichletBC*> bcs)
   : _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L)), _bcs(bcs)
+    _l(reference_to_no_delete_pointer(L)), _bcs(bcs)
 {
   // Check arity of forms
-  check_arity(_a, _L);
+  check_arity(_a, _l);
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
                                  std::shared_ptr<const Form> L)
-  : _a(a), _L(L)
+  : _a(a), _l(L)
 {
   // Check arity of forms
-  check_arity(_a, _L);
+  check_arity(_a, _l);
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
                                  std::shared_ptr<const Form> L,
                                  const DirichletBC& bc)
-  : _a(a), _L(L)
+  : _a(a), _l(L)
 {
   // Check arity of forms
-  check_arity(_a, _L);
+  check_arity(_a, _l);
 
   // Store Dirichlet boundary condition
   _bcs.push_back(&bc);
@@ -99,10 +99,10 @@ SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
 SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
                                  std::shared_ptr<const Form> L,
                                  const std::vector<const DirichletBC*> bcs)
-  : _a(a), _L(L), _bcs(bcs)
+  : _a(a), _l(L), _bcs(bcs)
 {
   // Check arity of forms
-  check_arity(_a, _L);
+  check_arity(_a, _l);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b)
@@ -161,7 +161,7 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
                                const GenericVector* x0)
 {
   dolfin_assert(_a);
-  dolfin_assert(_L);
+  dolfin_assert(_l);
 
   // Set timer
   Timer timer("Assemble system");
@@ -172,7 +172,7 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
 
   // Get cell domains
   const MeshFunction<std::size_t>* cell_domains = _a->cell_domains().get();
-  if (cell_domains != _L->cell_domains().get())
+  if (cell_domains != _l->cell_domains().get())
   {
     warning("Bilinear and linear forms do not have same cell facet subdomains \
 in SystemAssembler. Taking subdomains from bilinear form");
@@ -181,7 +181,7 @@ in SystemAssembler. Taking subdomains from bilinear form");
   // Get exterior facet domains
   const MeshFunction<std::size_t>* exterior_facet_domains
     = _a->exterior_facet_domains().get();
-  if (exterior_facet_domains != _L->exterior_facet_domains().get())
+  if (exterior_facet_domains != _l->exterior_facet_domains().get())
   {
     warning("Bilinear and linear forms do not have same exterior facet \
 subdomains in SystemAssembler. Taking subdomains from bilinear form");
@@ -190,7 +190,7 @@ subdomains in SystemAssembler. Taking subdomains from bilinear form");
   // Get interior facet domains
   const MeshFunction<std::size_t>* interior_facet_domains
     = _a->interior_facet_domains().get();
-  if (interior_facet_domains != _L->interior_facet_domains().get())
+  if (interior_facet_domains != _l->interior_facet_domains().get())
   {
     warning("Bilinear and linear forms do not have same interior facet \
 subdomains in SystemAssembler. Taking subdomains from bilinear form");
@@ -198,36 +198,22 @@ subdomains in SystemAssembler. Taking subdomains from bilinear form");
 
   // Check forms
   AssemblerBase::check(*_a);
-  AssemblerBase::check(*_L);
+  AssemblerBase::check(*_l);
 
   // Check that we have a bilinear and a linear form
   dolfin_assert(_a->rank() == 2);
-  dolfin_assert(_L->rank() == 1);
+  dolfin_assert(_l->rank() == 1);
 
   // Check that forms share a function space
-  if (*_a->function_space(1) != *_L->function_space(0))
+  if (*_a->function_space(1) != *_l->function_space(0))
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",
                  "expected forms (a, L) to share a FunctionSpace");
   }
 
-  // FIXME: This may update coefficients twice. Checked for shared
-  //        coefficients
-
-  // Update off-process coefficients for a
-  std::vector<std::shared_ptr<const GenericFunction> > coefficients
-    = _a->coefficients();
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->update();
-
-  // Update off-process coefficients for L
-  coefficients = _L->coefficients();
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->update();
-
   // Create data structures for local assembly data
-  UFC A_ufc(*_a), b_ufc(*_L);
+  UFC A_ufc(*_a), b_ufc(*_l);
 
   // Gather UFC  objects
   boost::array<UFC*, 2> ufc = { { &A_ufc, &b_ufc} } ;
@@ -236,13 +222,13 @@ subdomains in SystemAssembler. Taking subdomains from bilinear form");
   if (A)
     init_global_tensor(*A, *_a);
   if (b)
-    init_global_tensor(*b, *_L);
+    init_global_tensor(*b, *_l);
 
   // Gather tensors
   boost::array<GenericTensor*, 2> tensors = { {A, b} };
 
   // Allocate data
-  Scratch data(*_a, *_L);
+  Scratch data(*_a, *_l);
 
   // Get Dirichlet dofs and values for local mesh
   DirichletBC::Map boundary_values;
@@ -908,33 +894,33 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   // Wrap matrix and vector using Eigen
   Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                            Eigen::RowMajor> >
-    _A(A, global_dofs0.size(), global_dofs1.size());
+    _matA(A, global_dofs0.size(), global_dofs1.size());
   Eigen::Map<Eigen::VectorXd>
     _b(b, global_dofs1.size());
 
   // Loop over rows
-  //for (std::size_t i = 0; i < _A.n_rows; ++i)
-  for (int i = 0; i < _A.cols(); ++i)
+  //for (std::size_t i = 0; i < _matA.n_rows; ++i)
+  for (int i = 0; i < _matA.cols(); ++i)
   {
     const std::size_t ii = global_dofs1[i];
     DirichletBC::Map::const_iterator bc_value = boundary_values.find(ii);
     if (bc_value != boundary_values.end())
     {
       // Zero row
-      //_A.unsafe_col(i).fill(0.0);
-      _A.row(i).setZero();
+      //_matA.unsafe_col(i).fill(0.0);
+      _matA.row(i).setZero();
 
       // Modify RHS (subtract (bc_column(A))*bc_val from b)
-      //_b -= _A.row(i)*bc_value->second;
-      _b -= _A.col(i)*bc_value->second;
+      //_b -= _matA.row(i)*bc_value->second;
+      _b -= _matA.col(i)*bc_value->second;
 
       // Zero column
-      //_A.row(i).fill(0.0);
-      _A.col(i).setZero();
+      //_matA.row(i).fill(0.0);
+      _matA.col(i).setZero();
 
       // Place 1 on diagonal and bc on RHS (i th row ).
       _b(i)    = bc_value->second;
-      _A(i, i) = 1.0;
+      _matA(i, i) = 1.0;
     }
   }
 }

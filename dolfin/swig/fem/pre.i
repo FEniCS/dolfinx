@@ -293,3 +293,11 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
 //#ifdef IOMODULE // Conditional template instiantiation for IO module
 //%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
 //#endif
+
+//-----------------------------------------------------------------------------
+// Infrastructure for deprecated bools
+// TODO: Remove this when there are no bool_deprecated
+//-----------------------------------------------------------------------------
+%ignore dolfin::bool_deprecated::operator=(const bool_deprecated&);
+%ignore dolfin::bool_deprecated::operator=(const bool&);
+%ignore dolfin::AssemblerBase::reset_sparsity;

@@ -48,16 +48,6 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Update off-process coefficients
-  const std::vector<std::shared_ptr<const GenericFunction> >
-    coefficients_a = a.coefficients();
-  for (std::size_t i = 0; i < coefficients_a.size(); ++i)
-    coefficients_a[i]->update();
-  const std::vector<std::shared_ptr<const GenericFunction> >
-    coefficients_L = L.coefficients();
-  for (std::size_t i = 0; i < coefficients_L.size(); ++i)
-    coefficients_L[i]->update();
-
   // Form ranks
   const std::size_t rank_a = ufc_a.form.rank();
   const std::size_t rank_L = ufc_L.form.rank();

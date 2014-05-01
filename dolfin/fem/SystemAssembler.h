@@ -110,7 +110,7 @@ namespace dolfin
                   const GenericVector* x0);
 
     // Bilinear and linear forms
-    std::shared_ptr<const Form> _a, _L;
+    std::shared_ptr<const Form> _a, _l;
 
     // Boundary conditions
     std::vector<const DirichletBC*> _bcs;

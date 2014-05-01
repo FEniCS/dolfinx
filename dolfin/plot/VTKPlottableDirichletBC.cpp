@@ -63,30 +63,27 @@ bool VTKPlottableDirichletBC::is_compatible(const Variable &var) const
   return VTKPlottableMesh::is_compatible(*V.mesh());
 }
 //----------------------------------------------------------------------------
-void VTKPlottableDirichletBC::update(std::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
+void VTKPlottableDirichletBC::update(std::shared_ptr<const Variable> var,
+                                     const Parameters& parameters,
+                                     int framecounter)
 {
   if (var)
-  {
     _bc = std::dynamic_pointer_cast<const DirichletBC>(var);
-  }
 
-  std::shared_ptr<const Function> func = std::dynamic_pointer_cast<const Function>(_function);
+  dolfin_assert(!_function.expired());
+  std::shared_ptr<const Function> func
+    = std::dynamic_pointer_cast<const Function>(_function.lock());
 
   dolfin_assert(_bc && func);
-
   if (_bc->function_space() != func->function_space())
-  {
     func.reset(new Function(_bc->function_space()));
-  }
 
   // We passed in the Function to begin with, so the const_case is safe
   GenericVector &vec = *const_cast<GenericVector*>(func->vector().get());
 
   double unset_value = 0.0;
   if (func->value_rank() == 0)
-  {
     unset_value = std::numeric_limits<double>::quiet_NaN();
-  }
 
   // Set the function data to all-undefined (zero for vectors, NaN for scalars)
   std::vector<double> data(vec.local_size());

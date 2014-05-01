@@ -46,11 +46,11 @@ namespace dolfin
     // Extract pointer to PETScLinearOperator
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
-    PETScLinearOperator* _A = ((PETScLinearOperator*) ctx);
+    PETScLinearOperator* _matA = ((PETScLinearOperator*) ctx);
 
     // Call user-defined mult function through wrapper
-    dolfin_assert(_A);
-    GenericLinearOperator* wrapper = _A->wrapper();
+    dolfin_assert(_matA);
+    GenericLinearOperator* wrapper = _matA->wrapper();
     dolfin_assert(wrapper);
     wrapper->mult(_x, _y);
 
@@ -127,18 +127,18 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
 
   // Initialize PETSc matrix
   PetscErrorCode ierr;
-  if (_A)
-    MatDestroy(&_A);
+  if (_matA)
+    MatDestroy(&_matA);
 
   // Create shell matrix
   ierr = MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N,
-                        (void*) this, &_A);
+                        (void*) this, &_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateShell");
 
   // Incrase reference count
-  PetscObjectReference((PetscObject)_A);
+  PetscObjectReference((PetscObject)_matA);
 
-  ierr = MatShellSetOperation(_A, MATOP_MULT, (void (*)()) usermult);
+  ierr = MatShellSetOperation(_matA, MATOP_MULT, (void (*)()) usermult);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatShellSetOperation");
 }
 //-----------------------------------------------------------------------------

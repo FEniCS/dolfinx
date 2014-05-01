@@ -120,8 +120,8 @@ void TrilinosPreconditioner::set(BelosLinearProblem& problem,
 {
   // Pointer to preconditioner matrix
   // TODO const?!
-  Epetra_RowMatrix* _P = P.mat().get();
-  dolfin_assert(_P);
+  Epetra_RowMatrix* _matP = P.mat().get();
+  dolfin_assert(_matP);
 
   // Set preconditioner
   if (_preconditioner == "default" || _preconditioner == "ilu"
@@ -145,7 +145,7 @@ void TrilinosPreconditioner::set(BelosLinearProblem& problem,
       ifpack_name = "ILU";
 
     Ifpack ifpack_factory;
-    _ifpack_preconditioner.reset(ifpack_factory.Create(ifpack_name, _P,
+    _ifpack_preconditioner.reset(ifpack_factory.Create(ifpack_name, _matP,
                                                        overlap));
     dolfin_assert(_ifpack_preconditioner != 0);
 
@@ -174,10 +174,10 @@ void TrilinosPreconditioner::set(BelosLinearProblem& problem,
   else if (_preconditioner == "hypre_amg")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
-    set_ml(problem, *_P);
+    set_ml(problem, *_matP);
   }
   else if (_preconditioner == "ml_amg" || _preconditioner == "amg")
-    set_ml(problem, *_P);
+    set_ml(problem, *_matP);
   else if (_preconditioner == "none")
   {
     // Do nothing.
@@ -250,32 +250,6 @@ TrilinosPreconditioner::set_ml(BelosLinearProblem& problem,
   Teuchos::ParameterList mlist;
   ML_Epetra::SetDefaults("SA", mlist);
 
-  //ML_Epetra::SetDefaults("DD", mlist);
-  //mlist.set("increasing or decreasing", "decreasing");
-  //mlist.set("aggregation: type", "ParMETIS");
-  //mlist.set("coarse: max size", 1024);
-
-  //mlist.set("aggregation: nodes per aggregate", 4);
-  //mlist.set("coarse: type","Amesos-KLU");
-  //mlist.set("coarse: type", "Amesos-UMFPACK");
-
-  // Set maximum numer of level
-  //const int max_levels = parameters("ml")["max_levels"];
-  //mlist.set("max levels", max_levels);
-
-  // Set output level
-  //const int output_level = parameters("ml")["output_level"];
-  //mlist.set("ML output", output_level);
-
-  /*
-  mlist.set("smoother: type", "Chebyshev");
-  mlist.set("smoother: sweeps", 2);
-  mlist.set("smoother: pre or post", "both");
-  mlist.set("coarse: type","Chebyshev");
-  mlist.set("coarse: sweeps", 2);
-  mlist.set("coarse: pre or post", "both");
-  */
-
   // Set any user-provided parameters
   if (parameter_list)
     mlist.setParameters(*parameter_list);
@@ -292,12 +266,12 @@ TrilinosPreconditioner::set_ml(BelosLinearProblem& problem,
   // Create preconditioner
   _ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist,
                                                                    true));
-  Teuchos::RCP<Belos::EpetraPrecOp> belosPrec =
-    Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ml_preconditioner.get(),
-                                                      false)));
+  Teuchos::RCP<Belos::EpetraPrecOp> belosPrec
+    = Teuchos::rcp(new Belos::EpetraPrecOp(Teuchos::rcp(_ml_preconditioner.get(),
+                                                        false)));
 
   // Set this operator as preconditioner for the linear problem
-  problem.setLeftPrec(belosPrec);
+  problem.setRightPrec(belosPrec);
 }
 //-----------------------------------------------------------------------------
 

@@ -21,7 +21,6 @@
 #include <iostream>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>

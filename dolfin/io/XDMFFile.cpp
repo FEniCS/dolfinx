@@ -122,10 +122,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   const double time_step = ut.second;
 
-  // FIXME: Can we avoid this?
-  // Update any ghost values
-  u.update();
-
   // Geometric and topological dimension
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();

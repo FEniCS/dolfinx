@@ -24,7 +24,6 @@
 // First added:  2007-01-17
 // Last changed: 2013-09-19
 
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -63,7 +62,6 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   if (num_threads > 0)
   {
     OpenMpAssembler assembler;
-    assembler.reset_sparsity = reset_sparsity;
     assembler.add_values = add_values;
     assembler.finalize_tensor = finalize_tensor;
     assembler.keep_diagonal = keep_diagonal;
@@ -92,8 +90,6 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   // Update off-process coefficients
   const std::vector<std::shared_ptr<const GenericFunction> >
     coefficients = a.coefficients();
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->update();
 
   // Initialize global tensor
   init_global_tensor(A, a);
@@ -316,9 +312,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
   std::vector<const std::vector<dolfin::la_index>* > macro_dof_ptrs(form_rank);
   for (std::size_t i = 0; i < form_rank; i++)
-  {
     macro_dof_ptrs[i] = &macro_dofs[i];
-  }
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral

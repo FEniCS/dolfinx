@@ -137,21 +137,21 @@ void EpetraKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperato
 void EpetraKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
                                        std::shared_ptr<const GenericLinearOperator> P)
 {
-  _A = as_type<const EpetraMatrix>(require_matrix(A));
-  _P = as_type<const EpetraMatrix>(require_matrix(P));
-  dolfin_assert(_A);
-  dolfin_assert(_P);
+  _matA = as_type<const EpetraMatrix>(require_matrix(A));
+  _matP = as_type<const EpetraMatrix>(require_matrix(P));
+  dolfin_assert(_matA);
+  dolfin_assert(_matP);
 }
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& EpetraKrylovSolver::get_operator() const
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("EpetraKrylovSolver.cpp",
                  "access operator for Epetra Krylov solver",
                  "Operator has not been set");
   }
-  return *_A;
+  return *_matA;
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraKrylovSolver::solve(GenericVector& x,
@@ -164,12 +164,12 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 {
   Timer timer("Epetra Krylov solver");
 
-  dolfin_assert(_A);
-  dolfin_assert(_P);
+  dolfin_assert(_matA);
+  dolfin_assert(_matP);
 
   // Check dimensions
-  const std::size_t M = _A->size(0);
-  const std::size_t N = _A->size(1);
+  const std::size_t M = _matA->size(0);
+  const std::size_t N = _matA->size(1);
   if (M != b.size())
   {
     dolfin_error("EpetraKrylovSolver.cpp",
@@ -179,7 +179,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 
   // Write a message
   const bool report = parameters["report"];
-  if (report && _A->mat()->Comm().MyPID() == 0)
+  if (report && _matA->mat()->Comm().MyPID() == 0)
   {
     info("Solving linear system of size %d x %d (Epetra Krylov solver).",
          M, N);
@@ -188,7 +188,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Reinitialize solution vector if necessary
   if (x.empty())
   {
-    _A->init_vector(x, 1);
+    _matA->init_vector(x, 1);
     x.zero();
   }
   else if (!parameters["nonzero_initial_guess"])
@@ -199,7 +199,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // to destroy the object when it goes out of scope.
   Teuchos::RCP<BelosLinearProblem> linear_problem
     = Teuchos::rcp(new BelosLinearProblem(
-                     Teuchos::rcp(_A->mat().get(), false),
+                     Teuchos::rcp(_matA->mat().get(), false),
                      Teuchos::rcp(x.vec().get(), false),
                      Teuchos::rcp(b.vec().get(), false)));
   const bool success = linear_problem->setProblem();
@@ -226,8 +226,8 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   belosList.set("Maximum Iterations", (int)parameters["maximum_iterations"]);
 
   // Set preconditioner
-  dolfin_assert(_P);
-  _preconditioner->set(*linear_problem, *_P);
+  dolfin_assert(_matP);
+  _preconditioner->set(*linear_problem, *_matP);
 
   // Look up the Belos name of the method in _methods. This is a
   // little complicated since std::maps<> don't have const lookup.
@@ -287,6 +287,9 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Update residuals
   //_absolute_residual = solver->TrueResidual();
   //_relative_residual = solver->ScaledResidual();
+
+  // Update ghost values
+  x.update_ghost_values();
 
   // Return number of iterations
   return solver->getNumIters();

@@ -51,14 +51,14 @@ Parameters MUMPSLUSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 MUMPSLUSolver::MUMPSLUSolver(const CoordinateMatrix& A)
-  : _A(reference_to_no_delete_pointer(A))
+  : _matA(reference_to_no_delete_pointer(A))
 {
   // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MUMPSLUSolver::MUMPSLUSolver(std::shared_ptr<const CoordinateMatrix> A)
-  : _A(A)
+  : _matA(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -71,7 +71,7 @@ MUMPSLUSolver::~MUMPSLUSolver()
 //-----------------------------------------------------------------------------
 std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(_A);
+  assert(_matA);
 
   DMUMPS_STRUC_C data;
 
@@ -120,7 +120,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(18) = 3;
 
   // Parallel/serial analysis (0=auto, 1=serial, 2=parallel)
-  if (MPI::size(_A->mpi_comm()) > 1)
+  if (MPI::size(_matA->mpi_comm()) > 1)
     data.ICNTL(28) = 2;
   else
     data.ICNTL(28) = 0;
@@ -129,16 +129,16 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(29) = 0;
 
   // Global size
-  assert(_A->size(0) == _A->size(1));
-  data.n = _A->size(0);
+  assert(_matA->size(0) == _matA->size(1));
+  data.n = _matA->size(0);
 
-  if (!_A->base_one())
+  if (!_matA->base_one())
     error("MUMPS requires a CoordinateMatrix with Fortran-style base 1 indexing.");
 
   // Get matrix coordindate and value data
-  const std::vector<std::size_t>& rows = _A->rows();
-  const std::vector<std::size_t>& cols = _A->columns();
-  const std::vector<double>& vals = _A->values();
+  const std::vector<std::size_t>& rows = _matA->rows();
+  const std::vector<std::size_t>& cols = _matA->columns();
+  const std::vector<double>& vals = _matA->values();
 
   // Number of non-zero entries on this process
   data.nz_loc = rows.size();

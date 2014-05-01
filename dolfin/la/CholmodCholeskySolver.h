@@ -84,7 +84,7 @@ namespace dolfin
   private:
 
     // Operator (the matrix)
-    std::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _matA;
 
 #ifdef HAS_CHOLMOD
     // Data for Cholesky factorization of sparse ublas matrix (cholmod only)

@@ -438,12 +438,11 @@ void Function::eval(Array<double>& values, const Array<double>& x,
     values[j] = 0.0;
 
   // Compute linear combination
-  const int cell_orientation = 0;
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, basis.data(), x.data(),
                            vertex_coordinates.data(),
-                           cell_orientation);
+                           ufc_cell.orientation);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }
@@ -453,9 +452,6 @@ void Function::interpolate(const GenericFunction& v)
 {
   dolfin_assert(_vector);
   dolfin_assert(_function_space);
-
-  // Gather off-process dofs
-  v.update();
 
   // Interpolate
   _function_space->interpolate(*_vector, v);
@@ -604,9 +600,6 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
                  "Non-matching mesh");
   }
 
-  // Update ghosts dofs
-  update();
-
   // Get finite element
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
@@ -650,11 +643,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
              ufc_cell);
 
     // Interpolate values at the vertices
-    const int cell_orientation = 0;
     element.interpolate_vertex_values(cell_vertex_values.data(),
                                       coefficients.data(),
                                       vertex_coordinates.data(),
-                                      cell_orientation,
+                                      ufc_cell.orientation,
                                       ufc_cell);
 
     // Copy values to array of vertex values
@@ -679,7 +671,8 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values)
 //-----------------------------------------------------------------------------
 void Function::update() const
 {
-  _vector->update_ghost_values();
+  deprecation("Function::update()", "1.4", "1.5",
+              "Calling Function::update to update ghost values is no longer required.");
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()

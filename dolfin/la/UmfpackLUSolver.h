@@ -24,7 +24,6 @@
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
 
-#include <boost/scoped_ptr.hpp>
 #include <memory>
 #include <dolfin/common/types.h>
 #include "GenericLUSolver.h"
@@ -111,7 +110,7 @@ namespace dolfin
     std::shared_ptr<void> numeric;
 
     // Operator (the matrix)
-    std::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _matA;
 
   };
 

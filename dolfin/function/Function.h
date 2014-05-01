@@ -26,11 +26,10 @@
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <memory>
 #include <utility>
 #include <vector>
 #include <boost/ptr_container/ptr_map.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <memory>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>

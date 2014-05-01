@@ -200,7 +200,6 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
   // Assemble right-hand side
   dolfin_assert(F);
   Assembler assembler;
-  assembler.reset_sparsity = false;
   assembler.assemble(b, *F);
 
   // Apply boundary conditions
@@ -228,7 +227,6 @@ void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
   // Assemble left-hand side
   dolfin_assert(J);
   Assembler assembler;
-  assembler.reset_sparsity = false;
   assembler.assemble(A, *J);
 
   // Apply boundary conditions
