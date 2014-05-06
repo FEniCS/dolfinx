@@ -41,6 +41,9 @@ special = {"CahnHilliard2D.ufl":       "-fsplit",
 # Forms for which we should skip optimization
 skip_optimization = ["HyperElasticity.ufl"]
 
+# Forms for which we don't want to generate functions for evaluating the basis
+skip_basis = ["Poisson2D_5.ufl", "Poisson3D_4.ufl"]
+
 # Directories to scan
 subdirs = ["dolfin", "demo", "bench", "test"]
 
@@ -66,6 +69,10 @@ for subdir in subdirs:
                 optimization = ""
             else:
                 optimization = "-O"
+
+            if f in skip_basis:
+                options += " -fno-evaluate_basis -fno-evaluate_basis_derivatives"
+
             command = "ffc -v %s -f no_ferari -l dolfin %s %s >> compile.log" % (optimization, options, f)
             print "  " + command
             ret = os.system(command)

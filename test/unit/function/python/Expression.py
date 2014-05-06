@@ -92,10 +92,6 @@ class Eval(unittest.TestCase):
           g0 = interpolate(f2, V=V2)
           g1 = project(f2, V=V2)
 
-          # Update ghost values
-          g0.update()
-          g1.update()
-
           u3 = f2(x)
           u4 = g0(x)
           u5 = g1(x)
@@ -344,9 +340,6 @@ class Instantiation(unittest.TestCase):
           tf = Function(V)
           tf.vector()[:] = 1.0
 
-          # Update ghost values
-          tf.update()
-
           e0 = Expression(["2*t", "-t"], t=tc)
           e1 = Expression(["2*t", "-t"], t=1.0)
           e2 = Expression("t", t=te)
@@ -411,10 +404,10 @@ class Instantiation(unittest.TestCase):
           Expression. If this test breaks and it is fixed the corresponding fixes
           need also be updated in the docstring.
           """
-          
+
           square = UnitSquareMesh(10,10)
           V = VectorFunctionSpace(square, "CG", 1)
-          
+
           f0 = Expression('sin(x[0]) + cos(x[1])')
           f1 = Expression(('cos(x[0])', 'sin(x[1])'), element = V.ufl_element())
           self.assertAlmostEqual(f0(0,0), sum(f1(0,0)))
@@ -433,14 +426,14 @@ class Instantiation(unittest.TestCase):
           f.user_parameters["A"] = 1.0
           f.user_parameters["B"] = Constant(5.0)
           self.assertAlmostEqual(f(pi/4, pi/4), 6./sqrt(2))
-          
+
      def test_doc_string_complex_compiled_expression(self):
           """
           This test tests all features documented in the doc string of
           Expression. If this test breaks and it is fixed the corresponding fixes
           need also be updated in the docstring.
           """
-          
+
           code = '''
           class MyFunc : public Expression
           {
@@ -470,11 +463,11 @@ class Instantiation(unittest.TestCase):
               }
             }
           };'''
-     
+
           cell_data = CellFunction('uint', mesh)
           f = Expression(code)
           f.cell_data = cell_data
-          
+
           CompiledSubDomain("x[0]<=0.25").mark(cell_data, 0)
           CompiledSubDomain("x[0]>0.25 && x[0]<0.75").mark(cell_data, 1)
           CompiledSubDomain("x[0]>=0.75").mark(cell_data, 2)
@@ -494,7 +487,7 @@ class Instantiation(unittest.TestCase):
           # If run in paralell
           if c1 > mesh.num_cells():
               return
-          
+
           p2 = Point(1.0, 1.0, 1.0)
           c2 = bb.compute_first_entity_collision(p2)
 
@@ -506,13 +499,13 @@ class Instantiation(unittest.TestCase):
           c0 = Cell(mesh, c0)
           c1 = Cell(mesh, c1)
           c2 = Cell(mesh, c2)
-          
+
           coords = array([p0.x(), p0.y(), p0.z()], dtype=float_)
           values = zeros(1, dtype=float_)
 
           f.eval_cell(values, coords, c0)
           self.assertEqual(values[0], exp(-p0.x()))
-          
+
           coords = array([p1.x(), p1.y(), p1.z()], dtype=float_)
 
           f.eval_cell(values, coords, c1)
@@ -536,14 +529,14 @@ class Instantiation(unittest.TestCase):
             class Delta : public Expression
             {
             public:
-            
+
               Delta() : Expression() {}
-            
+
               void eval(Array<double>& values, const Array<double>& data,
                         const ufc::cell& cell) const
               { }
-            
-              void update(const std::shared_ptr<const Function> u, 
+
+              void update(const std::shared_ptr<const Function> u,
                           double nu, double dt, double C1,
                           double U_infty, double chord)
               {
@@ -551,25 +544,25 @@ class Instantiation(unittest.TestCase):
                 const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
                 const uint ncells = mesh->num_cells();
                 uint ndofs_per_cell;
-                if (ncells > 0) 
+                if (ncells > 0)
                 {
                   CellIterator cell(*mesh);
                   ndofs_per_cell = dofmap->cell_dimension(cell->index());
-                } 
-                else 
+                }
+                else
                 {
                    return;
                 }
               }
             };
           }'''
-          
+
           e = Expression(code_compile)
           self.assertTrue(hasattr(e, "update"))
 
           if MPI.size(mpi_comm_world()) > 1:
               return
-          
+
           # Test not compile
           code_not_compile = '''
           namespace dolfin
@@ -577,14 +570,14 @@ class Instantiation(unittest.TestCase):
             class Delta : public Expression
             {
             public:
-            
+
               Delta() : Expression() {}
-            
+
               void eval(Array<double>& values, const Array<double>& data,
                         const ufc::cell& cell) const
               { }
-            
-              void update(const std::shared_ptr<const Function> u, 
+
+              void update(const std::shared_ptr<const Function> u,
                           double nu, double dt, double C1,
                           double U_infty, double chord)
               {
@@ -592,19 +585,19 @@ class Instantiation(unittest.TestCase):
                 const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
                 const uint ncells = mesh->num_cells();
                 uint ndofs_per_cell;
-                if (ncells > 0) 
+                if (ncells > 0)
                 {
                   CellIterator cell(*mesh);
                   ndofs_per_cell = dofmap->cell_dimension(cell->index());
-                } 
-                else 
+                }
+                else
                 {
                    return;
                 }
               }
             };
           }'''
-          
+
           self.assertRaises(RuntimeError, Expression, code_not_compile)
 
      def test_doc_string_python_expressions(self):
@@ -613,9 +606,9 @@ class Instantiation(unittest.TestCase):
           Expression. If this test breaks and it is fixed the corresponding fixes
           need also be updated in the docstring.
           """
-          
+
           square = UnitSquareMesh(4,4)
-          
+
           class MyExpression0(Expression):
               def eval(self, value, x):
                   dx = x[0] - 0.5
@@ -629,10 +622,10 @@ class Instantiation(unittest.TestCase):
           values = f0(0.2,0.3)
           dx = 0.2-0.5
           dy = 0.3-0.5
-          
+
           self.assertAlmostEqual(values[0], 500.0*exp(-(dx*dx + dy*dy)/0.02))
           self.assertAlmostEqual(values[1], 250.0*exp(-(dx*dx + dy*dy)/0.01))
-          
+
           ufc_cell_attrs = ["cell_shape", "index", "topological_dimension",
                             "geometric_dimension", "local_facet", "mesh_identifier"]
 
@@ -646,10 +639,10 @@ class Instantiation(unittest.TestCase):
                # Check attributes in ufc cell
                   for attr in ufc_cell_attrs:
                        self.assertTrue(hasattr(ufc_cell, attr))
-          
+
           f1 = MyExpression1()
           assemble(f1*ds(), mesh=square)
-          
+
           class MyExpression2(Expression):
               def __init__(self, mesh, domain):
                   self._mesh = mesh
@@ -658,11 +651,11 @@ class Instantiation(unittest.TestCase):
                   pass
 
           cell_data = CellFunction('uint', square)
-          
+
           f3 = MyExpression2(square, cell_data)
-          
+
           self.assertEqual(id(f3._mesh), id(square))
           self.assertEqual(id(f3._domain), id(cell_data))
-          
+
 if __name__ == "__main__":
     unittest.main()

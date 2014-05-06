@@ -73,6 +73,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   if (rank < 2)
     return;
 
+  // Vector to store macro-dofs, if required (for interior facets)
+  std::vector<std::vector<dolfin::la_index> > macro_dofs(rank);
+
   // Create vector to point to dofs
   std::vector<const std::vector<dolfin::la_index>* > dofs(rank);
 
@@ -114,9 +117,6 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                    "Mesh is not ordered according to the UFC numbering convention. "
                    "Consider calling mesh.order()");
     }
-
-    // Vector to store macro-dofs (for interior facets)
-    std::vector<std::vector<dolfin::la_index> > macro_dofs(rank);
 
     Progress p("Building sparsity pattern over interior facets", mesh.num_facets());
     for (FacetIterator facet(mesh); !facet.end(); ++facet)

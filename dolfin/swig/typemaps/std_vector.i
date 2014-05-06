@@ -581,11 +581,15 @@ TYPEMAPS_STD_VECTOR_OF_POINTERS(GenericVector)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(FunctionSpace)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(Parameters)
 
-//ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
-//ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
+#if (DOLFIN_SIZE_T==4)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, cells, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, columns, NPY_INTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, dofs, NPY_INTP)
+#else
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, cells, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, columns, NPY_INTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, dofs, NPY_INTP)
+#endif
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE)
 
 // TYPE       : The primitive type
@@ -600,20 +604,31 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE, double,
                                     float_)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, INT32, , NPY_INT, int, intc)
-//IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, , NPY_UINT, uint,
-//                                    uintc)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, , NPY_UINT, uint,
                                     uintc)
+#if (DOLFIN_SIZE_T==4)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, , NPY_UINTP, uintp,
+                                    uintp)
+#else
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp,
                                     uintp)
+#endif
 
 // This typemap handles PETSc index typemap. Untested for 64-bit integers
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
 
+#if (DOLFIN_SIZE_T==4)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32,
                                                coloring_type, std_size_t, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, value_shape,
                                                std_size_t, -1)
+#else
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64,
+                                               coloring_type, std_size_t, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64, value_shape,
+                                               std_size_t, -1)
+#endif
+
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double,
                                                -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, dt_stage_offset,
@@ -622,6 +637,8 @@ PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, ellipsoid_dims,
                                                double, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, ellipse_dims,
                                                double, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(int, INT32, jacobian_indices,
+                                               int, -1)
 
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
@@ -639,5 +656,10 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(PetscInt, dolfin_index)
 
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)
+#if (DOLFIN_SIZE_T==4)
 IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, facets,
                                                   std_size_t)
+#else
+IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, facets,
+                                                  std_size_t)
+#endif

@@ -25,9 +25,8 @@
 #define __VTK_PLOTTER_H
 
 #include <list>
-#include <string>
-#include <boost/scoped_ptr.hpp>
 #include <memory>
+#include <string>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parameters.h>
@@ -304,7 +303,7 @@ namespace dolfin
     std::shared_ptr<GenericVTKPlottable> _plottable;
 
     // The output stage
-    boost::scoped_ptr<VTKWindowOutputStage> vtk_pipeline;
+    std::unique_ptr<VTKWindowOutputStage> vtk_pipeline;
 
     // The number of plotted frames
     std::size_t _frame_counter;

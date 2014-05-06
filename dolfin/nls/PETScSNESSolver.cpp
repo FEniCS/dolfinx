@@ -329,6 +329,10 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   this->init(nonlinear_problem, x);
   SNESSolve(_snes, PETSC_NULL, _snes_ctx.x->vec());
 
+  // Update any ghost values
+  PETScVector& _x = x.down_cast<PETScVector>();
+  _x.update_ghost_values();
+
   SNESGetIterationNumber(_snes, &its);
   SNESGetConvergedReason(_snes, &reason);
 
@@ -374,6 +378,9 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   // the end of solve. We should find a better solution.
   *_x = x_wrap;
 
+  // Update ghost values
+  _x ->update_ghost_values();
+
   // Compute F(u)
   PETScMatrix A;
   nonlinear_problem->form(A, f_wrap, *_x);
@@ -382,6 +389,7 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   return 0;
 }
 //-----------------------------------------------------------------------------
+#if PETSC_VERSION_RELEASE
 PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
                                              MatStructure* flag, void* ctx)
 {
@@ -402,6 +410,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
   PETScMatrix A_wrap(*P);
   PETScVector x_wrap(x);
 
+
   // Form Jacobian
   PETScVector f;
   nonlinear_problem->form(A_wrap, f, x_wrap);
@@ -411,6 +420,35 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
 
   return 0;
 }
+#else
+PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
+                                             void* ctx)
+{
+  // Interface does not presently support a preconditioner that
+  // differs from operator A
+  if (A != P)
+  {
+    dolfin_error("PETScSNESSolver.cpp",
+                 "for Jacobian",
+                 "Matrix object incompatibility. The Jacobian matrix must not be reset when using PETSc SNES.");
+  }
+
+  // Get nonlinear problem object
+  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
+  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
+
+  // Wrap the PETSc objects
+  PETScMatrix A_wrap(P);
+  PETScVector x_wrap(x);
+
+  // Form Jacobian
+  PETScVector f;
+  nonlinear_problem->form(A_wrap, f, x_wrap);
+  nonlinear_problem->J(A_wrap, x_wrap);
+
+  return 0;
+}
+#endif
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::set_linear_solver_parameters()
 {
@@ -451,7 +489,8 @@ void PETScSNESSolver::set_linear_solver_parameters()
     Parameters krylov_parameters = parameters("krylov_solver");
 
     // GMRES restart parameter
-    KSPGMRESSetRestart(ksp,krylov_parameters("gmres")["restart"]);
+    const int gmres_restart = krylov_parameters("gmres")["restart"];
+    KSPGMRESSetRestart(ksp, gmres_restart);
 
     // Non-zero initial guess
     const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
@@ -464,10 +503,12 @@ void PETScSNESSolver::set_linear_solver_parameters()
       KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
     // Set tolerances
-    KSPSetTolerances(ksp, krylov_parameters["relative_tolerance"],
+    const int max_iters = krylov_parameters["maximum_iterations"];
+    KSPSetTolerances(ksp,
+                     krylov_parameters["relative_tolerance"],
                      krylov_parameters["absolute_tolerance"],
                      krylov_parameters["divergence_limit"],
-                     krylov_parameters["maximum_iterations"]);
+                     max_iters);
   }
   else if (linear_solver == "lu"
            || PETScLUSolver::_methods.count(linear_solver) != 0)

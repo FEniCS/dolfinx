@@ -27,7 +27,7 @@
 #
 from dolfin import *
 
-if not has_tao():
+if not has_petsc_tao():
     print "DOLFIN must be compiled with TAO to run this demo."
     exit(0)
 
@@ -76,7 +76,7 @@ u_max = interpolate(constraint_u, V)
 usol=Function(V)
 
 # Create the TAOLinearBoundSolver
-solver=TAOLinearBoundSolver("tao_tron","tfqmr")
+solver=TAOLinearBoundSolver("tron","stcg")
 
 # Set some parameters
 solver.parameters["monitor_convergence"]=True

@@ -76,7 +76,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    std::shared_ptr<GenericLinearOperator> _A;
+    std::shared_ptr<GenericLinearOperator> _matA;
 
   };
 

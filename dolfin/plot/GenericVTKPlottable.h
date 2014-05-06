@@ -47,7 +47,7 @@ namespace dolfin
     // This destructor should be uncommented, but it causes a problem
     // in parallel with MPI calls being made after MPI is shutdown. Needs
     // further investigation.
-    //virtual ~GenericVTKPlottable() {}
+    virtual ~GenericVTKPlottable() {}
 
     /// To be redefined in classes that require special parameters. Called
     /// once with the default parameters.

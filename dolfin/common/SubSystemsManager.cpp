@@ -105,7 +105,8 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
   singleton().control_mpi = true;
 
-  const bool print_thread_support = dolfin::parameters["print_mpi_thread_support_level"];
+  const bool print_thread_support
+    = dolfin::parameters["print_mpi_thread_support_level"];
   if (print_thread_support)
   {
     switch (provided)
@@ -245,13 +246,15 @@ void SubSystemsManager::finalize_mpi()
     int mpi_finalized;
     MPI_Finalized(&mpi_finalized);
     if (!mpi_finalized)
-      MPI::Finalize();
+      MPI_Finalize();
     else
     {
       // Use std::cout since log system may fail because MPI has been shut down.
       std::cout << "DOLFIN is responsible for MPI, but it has been finalized elsewhere prematurely." << std::endl;
-      std::cout << "This is usually due to a bug in a 3rd party library, and can lead to unpredictable behaviour." << std::endl;
-      std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are imported before the DOLFIN module." << std::endl;
+      std::cout << "This is usually due to a bug in a 3rd party library, and can lead to unpredictable behaviour."
+                << std::endl;
+      std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are imported before the DOLFIN module."
+                << std::endl;
     }
 
     singleton().control_mpi = false;

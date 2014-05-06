@@ -31,7 +31,7 @@ using namespace dolfin;
 NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
                                                          Function& u)
   : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(reference_to_no_delete_pointer(F)),
+    _residual(reference_to_no_delete_pointer(F)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Check forms
@@ -42,8 +42,8 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
                                                          Function& u,
                                                          const Form& J)
   : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(reference_to_no_delete_pointer(F)),
-    _J(reference_to_no_delete_pointer(J)),
+    _residual(reference_to_no_delete_pointer(F)),
+    _jacobian(reference_to_no_delete_pointer(J)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Check forms
@@ -54,7 +54,7 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
                                                          Function& u,
                                                          const DirichletBC& bc)
   : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(reference_to_no_delete_pointer(F)), _u(reference_to_no_delete_pointer(u))
+    _residual(reference_to_no_delete_pointer(F)), _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary condition
   _bcs.push_back(reference_to_no_delete_pointer(bc));
@@ -68,8 +68,8 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
                                                          const DirichletBC& bc,
                                                          const Form& J)
   : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(reference_to_no_delete_pointer(F)),
-    _J(reference_to_no_delete_pointer(J)),
+    _residual(reference_to_no_delete_pointer(F)),
+    _jacobian(reference_to_no_delete_pointer(J)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary condition
@@ -83,7 +83,7 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
                                                          Function& u,
                                           std::vector<const DirichletBC*> bcs)
   : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(reference_to_no_delete_pointer(F)), _u(reference_to_no_delete_pointer(u))
+    _residual(reference_to_no_delete_pointer(F)), _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary conditions
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -98,8 +98,8 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
                                           std::vector<const DirichletBC*> bcs,
                                           const Form& J)
   : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(reference_to_no_delete_pointer(F)),
-    _J(reference_to_no_delete_pointer(J)),
+    _residual(reference_to_no_delete_pointer(F)),
+    _jacobian(reference_to_no_delete_pointer(J)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary conditions
@@ -114,7 +114,7 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
   std::shared_ptr<const Form> F,
   std::shared_ptr<Function> u,
   std::vector<std::shared_ptr<const DirichletBC> > bcs)
-  : Hierarchical<NonlinearVariationalProblem>(*this), _F(F), _u(u)
+  : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F), _u(u)
 {
   // Store boundary conditions
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -129,7 +129,7 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
   std::shared_ptr<Function> u,
   std::vector<std::shared_ptr<const DirichletBC> > bcs,
   std::shared_ptr<const Form> J)
-  : Hierarchical<NonlinearVariationalProblem>(*this), _F(F), _J(J), _u(u)
+  : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F), _jacobian(J), _u(u)
 {
   // Store boundary conditions
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -171,12 +171,12 @@ void NonlinearVariationalProblem::set_bounds(
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Form> NonlinearVariationalProblem::residual_form() const
 {
-  return _F;
+  return _residual;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Form> NonlinearVariationalProblem::jacobian_form() const
 {
-  return _J;
+  return _jacobian;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<Function> NonlinearVariationalProblem::solution()
@@ -205,8 +205,8 @@ NonlinearVariationalProblem::trial_space() const
 std::shared_ptr<const FunctionSpace>
 NonlinearVariationalProblem::test_space() const
 {
-  dolfin_assert(_F);
-  return _F->function_space(0);
+  dolfin_assert(_residual);
+  return _residual->function_space(0);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const GenericVector>
@@ -225,7 +225,7 @@ NonlinearVariationalProblem::upper_bound() const
 //-----------------------------------------------------------------------------
 bool NonlinearVariationalProblem::has_jacobian() const
 {
-  return _J ?  true : false;
+  return _jacobian ?  true : false;
 }
 //-----------------------------------------------------------------------------
 bool NonlinearVariationalProblem::has_lower_bound() const
@@ -241,22 +241,22 @@ bool NonlinearVariationalProblem::has_upper_bound() const
 void NonlinearVariationalProblem::check_forms() const
 {
   // Check rank of residual F
-  dolfin_assert(_F);
-  if (_F->rank() != 1)
+  dolfin_assert(_residual);
+  if (_residual->rank() != 1)
   {
    dolfin_error("NonlinearVariationalProblem.cpp",
                  "define nonlinear variational problem F(u; v) = 0 for all v",
                  "Expecting the residual F to be a linear form (not rank %d)",
-                 _F->rank());
+                 _residual->rank());
   }
 
   // Check rank of Jacobian J
-  if (_J && _J->rank() != 2)
+  if (_jacobian && _jacobian->rank() != 2)
   {
     dolfin_error("NonlinearVariationalProblem.cpp",
                  "define nonlinear variational problem F(u; v) = 0 for all v",
                  "Expecting the Jacobian J to be a bilinear form (not rank %d)",
-                 _J->rank());
+                 _jacobian->rank());
   }
 
   // FIXME: Should we add a check here that matches the function space

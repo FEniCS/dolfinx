@@ -20,6 +20,10 @@
 
 from dolfin import *
 
+if not has_cgal():
+    print "DOLFIN must be compiled with CGAL to run this demo."
+    exit(0)
+
 # Some parameters
 L = 10.0
 h = 0.1
