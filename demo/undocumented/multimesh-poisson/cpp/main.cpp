@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-04-28
+// Last changed: 2014-05-07
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -46,8 +46,8 @@ int main()
   set_log_level(DBG);
 
   // Create meshes
-  UnitSquareMesh square(32, 32);
-  RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, 16, 16);
+  UnitSquareMesh square(2, 2);
+  RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, 2, 2);
   //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
   //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-04-28
+// Last changed: 2014-05-07
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -57,12 +57,12 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   init_global_tensor(A, a);
 
   // Assemble over cells
-  assemble_cells(A, a);
+  //assemble_cells(A, a);
 
   // FIXME: Testing
 
   // Assemble over interface
-  //assemble_interface(A, a);
+  assemble_interface(A, a);
 
   // Finalize assembly of global tensor
   if (finalize_tensor)
@@ -278,6 +278,8 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
         const unsigned int cut_cell_index = it->first;
         const Cell cut_cell(*multimesh->part(part), cut_cell_index);
 
+        cout << "cut cell: " << cut_cell_index << endl;
+
         // Iterate over cutting cells
         const auto& cutting_cells = it->second;
         for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
@@ -293,10 +295,21 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
           const auto& qr = quadrature_rules.at(cut_cell_index)[k];
 
+          // FIXME: There might be quite a few cases when we skip cuttingg
+          // FIXME: cells because there are no quadrature points. Perhaps
+          // FIXME: we can rewrite this inner loop to avoid unnecessary
+          // FIXME: iterations.
+
           // Skip if there are no quadrature points
           const std::size_t num_quadrature_points = qr.second.size();
           if (num_quadrature_points == 0)
             continue;
+
+          cout << "  cutting cell: " << cutting_cell << endl;
+          for (std::size_t i = 0; i < num_quadrature_points; i++)
+            cout << "  x = " << qr.first[2*i] << " " << qr.first[2*i + 1] << endl;
+          for (std::size_t i = 0; i < num_quadrature_points; i++)
+            cout << "  w = " << qr.second[i] << endl;
 
           // Create aliases for cells to simplify notation
           const Cell& cell_0 = cut_cell;
