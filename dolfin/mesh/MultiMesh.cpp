@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-04-28
+// Last changed: 2014-05-07
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -630,6 +630,13 @@ void MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   // Get the number of points
   dolfin_assert(dqr.first.size() == gdim*dqr.second.size());
   const std::size_t num_points = dqr.second.size();
+
+  // Skip if sum of weights is too small
+  double wsum = 0.0;
+    for (std::size_t i = 0; i < num_points; i++)
+    wsum += std::abs(dqr.second[i]);
+  if (wsum < DOLFIN_EPS)
+    return;
 
   // Append points and weights
   for (std::size_t i = 0; i < num_points; i++)
