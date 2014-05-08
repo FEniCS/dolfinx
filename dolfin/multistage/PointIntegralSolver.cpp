@@ -304,12 +304,13 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
 					    int coefficient_index,
 					    const std::vector<double>& vertex_coordinates)
 {
+  const ufc::point_integral& J_integral = *loc_ufc.default_point_integral;
+
   //Timer _timer_compute_jac("Implicit stage: Compute jacobian");
   //Timer t_impl_update("Update_cell");
   loc_ufc.update(cell, vertex_coordinates, ufc_cell);
+                 //J_integral.enabled_coefficients());
   //t_impl_update.stop();
-
-  const ufc::point_integral& J_integral = *loc_ufc.default_point_integral;
 
   // If there is a solution coefficient in the jacobian form
   if (coefficient_index>0)

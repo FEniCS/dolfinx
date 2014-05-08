@@ -93,7 +93,9 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
     ufc_a.update(*cell, vertex_coordinates, ufc_cell);
+                 //integral_a->enabled_coefficients());
     ufc_L.update(*cell, vertex_coordinates, ufc_cell);
+                 //integral_L->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
     const std::vector<dolfin::la_index>& dofs_a0

@@ -216,6 +216,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
       cell.get_cell_data(ufc_cell);
       cell.get_vertex_coordinates(vertex_coordinates);
       ufc.update(cell, vertex_coordinates, ufc_cell);
+                 //integral->enabled_coefficients());
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
@@ -355,6 +356,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       cell.get_cell_data(ufc_cell);
       cell.get_vertex_coordinates(vertex_coordinates);
       ufc.update(cell, vertex_coordinates, ufc_cell);
+                 //cell_integral->enabled_coefficients());
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
@@ -406,6 +408,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         // Update UFC object
         ufc_cell.local_facet = local_facet;
         ufc.update(cell, vertex_coordinates, ufc_cell);
+                  //facet_integral->enabled_coefficients());
 
         // Tabulate tensor
         facet_integral->tabulate_tensor(ufc.A_facet.data(),
@@ -593,6 +596,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       // Update to current pair of cells
       ufc.update(cell0, vertex_coordinates0, ufc_cell0,
                  cell1, vertex_coordinates1, ufc_cell1);
+                 //integral->enabled_coefficients());
 
       // Tabulate dofs for each dimension on macro element
       for (std::size_t i = 0; i < form_rank; i++)

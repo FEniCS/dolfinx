@@ -88,6 +88,7 @@ void LocalAssembler::assemble_cell(Eigen::MatrixXd& A,
 
   // Update to current cell
   ufc.update(cell, vertex_coordinates, ufc_cell);
+             //integral->enabled_coefficients());
 
   // Tabulate cell tensor
   integral->tabulate_tensor(ufc.A.data(),
@@ -130,6 +131,7 @@ void LocalAssembler::assemble_exterior_facet(Eigen::MatrixXd& A,
 
   // Update to current cell
   ufc.update(cell, vertex_coordinates, ufc_cell);
+             //integral->enabled_coefficients());
 
   // Tabulate exterior facet tensor
   integral->tabulate_tensor(ufc.A.data(),
@@ -174,6 +176,7 @@ void LocalAssembler::assemble_interior_facet(Eigen::MatrixXd& A,
   // Update to current pair of cells and facets
   ufc.update(cell, vertex_coordinates, ufc_cell,
              cell, vertex_coordinates, ufc_cell);
+             //integral->enabled_coefficients());
 
   // Tabulate interior facet tensor on macro element
   integral->tabulate_tensor(ufc.macro_A.data(), ufc.macro_w(),
