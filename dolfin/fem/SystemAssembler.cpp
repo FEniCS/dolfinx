@@ -397,8 +397,8 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
       {
         // Update to current cell
         cell->get_cell_data(ufc_cell);
-        ufc[form]->update(*cell, vertex_coordinates, ufc_cell);
-                          //cell_integrals[form]->enabled_coefficients());
+        ufc[form]->update(*cell, vertex_coordinates, ufc_cell,
+                          cell_integrals[form]->enabled_coefficients());
 
         // Tabulate cell tensor
         cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
@@ -453,8 +453,8 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
           {
             // Update to current cell
             cell->get_cell_data(ufc_cell);
-            ufc[form]->update(*cell, vertex_coordinates, ufc_cell);
-                             //exterior_facet_integrals[form]->enabled_coefficients());
+            ufc[form]->update(*cell, vertex_coordinates, ufc_cell,
+                             exterior_facet_integrals[form]->enabled_coefficients());
 
             // Tabulate exterior facet tensor
             exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
@@ -595,9 +595,11 @@ assembler");
         std::fill(ufc[form]->macro_A.begin(), ufc[form]->macro_A.end(), 0.0);
 
         // Update UFC object
-        //ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
-        //                  cell[1], vertex_coordinates[1], ufc_cell[1]);
-        //                  //interior_facet_integrals[form]->enabled_coefficients());
+        // TODO: Removed this? It seems to be unused, update is called
+        //       before each tabulate_tensor below...
+        ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
+                          cell[1], vertex_coordinates[1], ufc_cell[1],
+                          interior_facet_integrals[form]->enabled_coefficients());
 
         // Compute number of dofs in macro dofmap
         std::fill(num_dofs.begin(), num_dofs.begin() + rank, 0);
@@ -640,8 +642,8 @@ assembler");
         {
           // Update to current pair of cells
           ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
-                            cell[1], vertex_coordinates[1], ufc_cell[1]);
-                            //interior_facet->enabled_coefficients());
+                            cell[1], vertex_coordinates[1], ufc_cell[1],
+                            interior_facet_integrals[form]->enabled_coefficients());
           // Integrate over facet
           interior_facet_integrals[form]->tabulate_tensor(ufc[form]->macro_A.data(),
                                                    ufc[form]->macro_w(),
@@ -685,8 +687,8 @@ assembler");
             // Compute cell tensor, if required
             if (cell_tensor_required)
             {
-              ufc[form]->update(cell[c], vertex_coordinates[c], ufc_cell[c]);
-                                //cell_integrals[form]->enabled_coefficients());
+              ufc[form]->update(cell[c], vertex_coordinates[c], ufc_cell[c],
+                                cell_integrals[form]->enabled_coefficients());
               cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                     ufc[form]->w(),
                                                     vertex_coordinates[c].data(),
@@ -841,8 +843,8 @@ assembler");
         if (facet_tensor_required)
         {
           // Update UFC object
-          ufc[form]->update(cell, vertex_coordinates[0], ufc_cell[0]);
-                            //exterior_facet_integrals[form]->enabled_coefficients());
+          ufc[form]->update(cell, vertex_coordinates[0], ufc_cell[0],
+                            exterior_facet_integrals[form]->enabled_coefficients());
           exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                           ufc[form]->w(),
                                                           vertex_coordinates[0].data(),
@@ -880,8 +882,8 @@ assembler");
           // Compute cell integral, if required
           if (cell_tensor_required)
           {
-            ufc[form]->update(cell, vertex_coordinates[0], ufc_cell[0]);
-                             //cell_integrals[form]->enabled_coefficients());
+            ufc[form]->update(cell, vertex_coordinates[0], ufc_cell[0],
+                             cell_integrals[form]->enabled_coefficients());
             cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                   ufc[form]->w(),
                                                   vertex_coordinates[0].data(),

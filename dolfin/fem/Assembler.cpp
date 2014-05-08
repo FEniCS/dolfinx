@@ -159,8 +159,8 @@ void Assembler::assemble_cells(GenericTensor& A,
     // Update to current cell
     cell->get_cell_data(ufc_cell);
     cell->get_vertex_coordinates(vertex_coordinates);
-    ufc.update(*cell, vertex_coordinates, ufc_cell);
-               //integral->enabled_coefficients());
+    ufc.update(*cell, vertex_coordinates, ufc_cell,
+               integral->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
     bool empty_dofmap = false;
@@ -264,8 +264,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     mesh_cell.get_vertex_coordinates(vertex_coordinates);
 
     // Update UFC object
-    ufc.update(mesh_cell, vertex_coordinates, ufc_cell);
-               //integral->enabled_coefficients());
+    ufc.update(mesh_cell, vertex_coordinates, ufc_cell,
+               integral->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
     for (std::size_t i = 0; i < form_rank; ++i)
@@ -380,8 +380,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     cell1.get_vertex_coordinates(vertex_coordinates[1]);
 
     ufc.update(cell0, vertex_coordinates[0], ufc_cell[0],
-               cell1, vertex_coordinates[1], ufc_cell[1]);
-               //integral->enabled_coefficients());
+               cell1, vertex_coordinates[1], ufc_cell[1],
+               integral->enabled_coefficients());
 
     // Tabulate dofs for each dimension on macro element
     for (std::size_t i = 0; i < form_rank; i++)

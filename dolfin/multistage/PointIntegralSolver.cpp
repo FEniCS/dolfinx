@@ -161,7 +161,9 @@ void PointIntegralSolver::step(double dt)
     {
 
       // Update cell
+      // TODO: Pass suitable bool vector here to avoid tabulating all coefficient dofs:
       _ufcs[stage][0]->update(cell, vertex_coordinates, ufc_cell);
+                              //some_integral.enabled_coefficients());
 
       // Check if we have an explicit stage (only 1 form)
       if (_ufcs[stage].size() == 1)
@@ -179,11 +181,13 @@ void PointIntegralSolver::step(double dt)
 
     Timer t_last_stage("Last stage: tabulate_tensor");
 
-    // Update coeffcients for last stage
-    _last_stage_ufc->update(cell, vertex_coordinates, ufc_cell);
-
     // Last stage point integral
     const ufc::point_integral& integral = *_last_stage_ufc->default_point_integral;
+
+    // Update coeffcients for last stage
+    // TODO: Pass suitable bool vector here to avoid tabulating all coefficient dofs:
+    _last_stage_ufc->update(cell, vertex_coordinates, ufc_cell);
+                            //integral.enabled_coefficients());
 
     // Tabulate cell tensor
     integral.tabulate_tensor(_last_stage_ufc->A.data(), _last_stage_ufc->w(),
@@ -308,6 +312,7 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
 
   //Timer _timer_compute_jac("Implicit stage: Compute jacobian");
   //Timer t_impl_update("Update_cell");
+  // TODO: Pass suitable bool vector here to avoid tabulating all coefficient dofs:
   loc_ufc.update(cell, vertex_coordinates, ufc_cell);
                  //J_integral.enabled_coefficients());
   //t_impl_update.stop();
