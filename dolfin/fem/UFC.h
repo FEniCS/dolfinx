@@ -63,6 +63,7 @@ namespace dolfin
     void update(const Cell& cell,
                 const std::vector<double>& vertex_coordinates0,
                 const ufc::cell& ufc_cell);
+                //const std::vector<bool> enabled_coefficients);
 
     /// Update current pair of cells for macro element
     void update(const Cell& cell0,
@@ -71,6 +72,7 @@ namespace dolfin
                 const Cell& cell1,
                 const std::vector<double>& vertex_coordinates1,
                 const ufc::cell& ufc_cell1);
+                //const std::vector<bool> enabled_coefficients);
 
     /// Pointer to coefficient data. Used to support UFC interface.
     const double* const * w() const
