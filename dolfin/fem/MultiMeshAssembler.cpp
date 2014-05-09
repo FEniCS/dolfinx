@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-05-07
+// Last changed: 2014-05-09
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -57,9 +57,7 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   init_global_tensor(A, a);
 
   // Assemble over cells
-  //assemble_cells(A, a);
-
-  // FIXME: Testing
+  assemble_cells(A, a);
 
   // Assemble over interface
   assemble_interface(A, a);
@@ -305,7 +303,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           if (num_quadrature_points == 0)
             continue;
 
-          cout << "  cutting cell: " << cutting_cell << endl;
+          cout << "  cutting cell: " << cutting_cell_index << endl;
           for (std::size_t i = 0; i < num_quadrature_points; i++)
             cout << "  x = " << qr.first[2*i] << " " << qr.first[2*i + 1] << endl;
           for (std::size_t i = 0; i < num_quadrature_points; i++)
@@ -344,6 +342,18 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
             const auto dofmap_1 = a.function_space(i)->dofmap()->part(cutting_part);
             const auto dofs_1 = dofmap_1->cell_dofs(cell_1.index());
 
+            /*
+            cout << "dofs_0 =";
+            for (std::size_t j = 0; j < 3; j++)
+              cout << " " << dofs_0[j];
+            cout << endl;
+
+            cout << "dofs_1 =";
+            for (std::size_t j = 0; j < 3; j++)
+              cout << " " << dofs_1[j];
+            cout << endl;
+            */
+
             // Create space in macro dof vector
             macro_dofs[i].resize(dofs_0.size() + dofs_1.size());
 
@@ -352,6 +362,13 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                       macro_dofs[i].begin());
             std::copy(dofs_1.begin(), dofs_1.end(),
                       macro_dofs[i].begin() + dofs_0.size());
+
+            /*
+            cout << "macro_dofs =";
+            for (std::size_t j = 0; j < 6; j++)
+              cout << " " << macro_dofs[i][j];
+            cout << endl;
+            */
           }
 
           // FIXME: Cell orientation not supported
@@ -365,6 +382,15 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                                            qr.first.data(),
                                            qr.second.data(),
                                            cell_orientation);
+
+          /*
+          for (std::size_t i = 0; i < 36; i++)
+          {
+            std::size_t j = i / 6;
+            std::size_t k = i % 6;
+            cout << "  A(" << (*macro_dof_ptrs[0])[j] << ", " << (*macro_dof_ptrs[1])[k] << ") += " << ufc_part.macro_A[i] << endl;
+          }
+          */
 
           // Add entries to global tensor
           A.add(ufc_part.macro_A.data(), macro_dof_ptrs);

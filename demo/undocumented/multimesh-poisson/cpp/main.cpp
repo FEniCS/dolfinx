@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-07
+// Last changed: 2014-05-09
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -44,6 +44,9 @@ int main()
 {
   // Increase log level
   set_log_level(DBG);
+
+  // Don't reorder dofs (simplifies debugging)
+  parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
   UnitSquareMesh square(2, 2);
@@ -101,6 +104,8 @@ int main()
 
   // Lock inactive dofs
   A.ident_zeros();
+
+  info(A, true);
 
   // Compute solution
   MultiMeshFunction u(V);
