@@ -40,6 +40,40 @@ class Source : public Expression
   }
 };
 
+// FIXME: Normal vector should not have be supplied manually
+
+// x-component of normal to interface
+class NormalX : public Expression
+{
+  void eval(Array<double>& values, const Array<double>& x) const
+  {
+    if (std::abs(x[0] - 0.25) < DOLFIN_EPS)
+      values[0] = 1.0;
+    else if (std::abs(x[0] - 0.75) < DOLFIN_EPS)
+      values[0] = -1.0;
+    else if (std::abs(x[1] - 0.25) < DOLFIN_EPS)
+      values[0] = 0.0;
+    else
+      values[0] = 0.0;
+  }
+};
+
+// y-component of normal to interface
+class NormalY : public Expression
+{
+  void eval(Array<double>& values, const Array<double>& x) const
+  {
+    if (std::abs(x[0] - 0.25) < DOLFIN_EPS)
+      values[0] = 0.0;
+    else if (std::abs(x[0] - 0.75) < DOLFIN_EPS)
+      values[0] = 0.0;
+    else if (std::abs(x[1] - 0.25) < DOLFIN_EPS)
+      values[0] = 1.0;
+    else
+      values[0] = -1.0;
+  }
+};
+
 int main()
 {
   // Increase log level
@@ -49,8 +83,9 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  UnitSquareMesh square(2, 2);
-  RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, 2, 2);
+  int N = 16;
+  UnitSquareMesh square(N, N);
+  RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, N, N);
   //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
   //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
 
@@ -71,6 +106,12 @@ int main()
   //MultiMeshPoisson::LinearForm L2(V2);
 
   // Set coefficients
+  NormalX nx;
+  NormalY ny;
+  a0.nx = nx;
+  a0.ny = ny;
+  a1.nx = nx;
+  a1.ny = ny;
   Source f;
   L0.f = f;
   L1.f = f;
@@ -105,7 +146,7 @@ int main()
   // Lock inactive dofs
   A.ident_zeros();
 
-  info(A, true);
+  //info(A, true);
 
   // Compute solution
   MultiMeshFunction u(V);

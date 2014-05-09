@@ -144,6 +144,9 @@ void MultiMeshAssembler::assemble_cells(GenericTensor& A,
       }
     }
 
+    // FIXME: Testing
+    //continue;
+
     // FIXME: We assume that the custom integral associated with cut cells is number 0.
     // FIXME: This needs to be sorted out in the UFL-UFC
 
@@ -293,7 +296,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
           const auto& qr = quadrature_rules.at(cut_cell_index)[k];
 
-          // FIXME: There might be quite a few cases when we skip cuttingg
+          // FIXME: There might be quite a few cases when we skip cutting
           // FIXME: cells because there are no quadrature points. Perhaps
           // FIXME: we can rewrite this inner loop to avoid unnecessary
           // FIXME: iterations.
