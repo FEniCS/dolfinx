@@ -22,7 +22,7 @@
 // Modified by Mikael Mortensen, 2013
 //
 // First added:  2007-04-10
-// Last changed: 2014-01-23
+// Last changed: 2014-05-11
 
 #include <map>
 #include <utility>
@@ -70,8 +70,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
   : Hierarchical<DirichletBC>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
     _g(reference_to_no_delete_pointer(g)),
-    _method(method),
     _user_sub_domain(reference_to_no_delete_pointer(sub_domain)),
+    _method(method),
     _check_midpoint(check_midpoint)
 {
   check();
@@ -85,23 +85,26 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          bool check_midpoint)
   : Hierarchical<DirichletBC>(*this),
     _function_space(V),
-    _g(g), _method(method),
+    _g(g),
     _user_sub_domain(sub_domain),
+    _method(method),
     _check_midpoint(check_midpoint)
 {
   check();
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
+DirichletBC::DirichletBC(const FunctionSpace& V,
+                         const GenericFunction& g,
                          const MeshFunction<std::size_t>& sub_domains,
-                         std::size_t sub_domain, std::string method)
+                         std::size_t sub_domain,
+                         std::string method)
   : Hierarchical<DirichletBC>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
     _g(reference_to_no_delete_pointer(g)),
-    _method(method),
     _user_mesh_function(reference_to_no_delete_pointer(sub_domains)),
     _user_sub_domain_marker(sub_domain),
+    _method(method),
     _check_midpoint(true)
 {
   check();
@@ -113,9 +116,12 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const MeshFunction<std::size_t> > sub_domains,
                          std::size_t sub_domain,
                          std::string method)
-  : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
-    _method(method), _user_mesh_function(sub_domains),
+  : Hierarchical<DirichletBC>(*this),
+    _function_space(V),
+    _g(g),
+    _user_mesh_function(sub_domains),
     _user_sub_domain_marker(sub_domain),
+    _method(method),
     _check_midpoint(true)
 {
   check();
@@ -126,8 +132,9 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          std::size_t sub_domain, std::string method)
   : Hierarchical<DirichletBC>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
-    _g(reference_to_no_delete_pointer(g)), _method(method),
+    _g(reference_to_no_delete_pointer(g)),
     _user_sub_domain_marker(sub_domain),
+    _method(method),
     _check_midpoint(true)
 {
   check();
@@ -140,8 +147,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
   : Hierarchical<DirichletBC>(*this),
     _function_space(V),
     _g(g),
-    _method(method),
     _user_sub_domain_marker(sub_domain),
+    _method(method),
     _check_midpoint(true)
 {
   check();
@@ -155,8 +162,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
   : Hierarchical<DirichletBC>(*this),
     _function_space(V),
     _g(g),
-    _method(method),
     _facets(markers),
+    _method(method),
     _check_midpoint(true)
 {
   check();
