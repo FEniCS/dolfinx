@@ -72,6 +72,12 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   if (finalize_tensor)
     A.apply("add");
 
+  // FIXME: This shouldn't be necessary
+
+  // Lock any remaining inactive dofs
+  if (A.rank() == 2)
+    static_cast<GenericMatrix&>(A).ident_zeros();
+
   end();
 }
 //-----------------------------------------------------------------------------
@@ -80,11 +86,11 @@ void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
 {
   log(PROGRESS, "Assembling multimesh form over uncut cells.");
 
-  // Extract multimesh
-  std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
-
   // Get form rank
   const std::size_t form_rank = a.rank();
+
+  // Extract multimesh
+  std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
 
   // Collect pointers to dof maps
   std::vector<const MultiMeshDofMap*> dofmaps;
@@ -157,11 +163,11 @@ void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
 {
   log(PROGRESS, "Assembling multimesh form over cut cells.");
 
-  // Extract multimesh
-  std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
-
   // Get form rank
   const std::size_t form_rank = a.rank();
+
+  // Extract multimesh
+  std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
 
   // Collect pointers to dof maps
   std::vector<const MultiMeshDofMap*> dofmaps;
@@ -252,7 +258,80 @@ void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
 void MultiMeshAssembler::assemble_covered_cells(GenericTensor& A,
                                                 const MultiMeshForm& a)
 {
+  // This function inserts 1 on the diagonal for completely covered
+  // cells to lock the corresponding degrees of freedom.
 
+  log(PROGRESS, "Assembling multimesh form over covered cells.");
+
+  // Get form rank
+  const std::size_t form_rank = a.rank();
+
+  // Skip if we are not assembling a matrix
+  if (form_rank != 2)
+    return;
+
+  // Extract multimesh
+  std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
+
+  // Collect pointers to dof maps
+  std::vector<const MultiMeshDofMap*> dofmaps;
+  for (std::size_t i = 0; i < form_rank; i++)
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
+
+  // Vector to hold dof map for a cell
+  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
+
+  // Initialize variables that will be reused throughout assembly
+  ufc::cell ufc_cell;
+
+  // Iterate over parts
+  for (std::size_t part = 0; part < a.num_parts(); part++)
+  {
+    log(PROGRESS, "Assembling on part %d.", part);
+
+    // Get form for current part
+    const Form& a_part = *a.part(part);
+
+    // Create data structure for local assembly data
+    UFC ufc_part(a_part);
+
+    // Extract mesh
+    const Mesh& mesh_part = a_part.mesh();
+
+    // Get covered cells
+    const std::vector<unsigned int>& covered_cells = multimesh->covered_cells(part);
+
+    // Iterate over cut cells
+    for (auto it = covered_cells.begin(); it != covered_cells.end(); ++it)
+    {
+      // Create cell
+      Cell cell(mesh_part, *it);
+
+      // Get local-to-global dof maps for cell
+      for (std::size_t i = 0; i < form_rank; ++i)
+      {
+        const auto dofmap = a.function_space(i)->dofmap()->part(part);
+        dofs[i] = &dofmap->cell_dofs(cell.index());
+      }
+
+      // Insert 1 on the diagonal
+      dolfin_assert(form_rank == 2);
+      for (std::size_t i = 0; i < dofs[0]->size(); i++)
+      {
+        for (std::size_t j = 0; j < dofs[1]->size(); j++)
+        {
+          const std::size_t k = i*dofs[1]->size() + j;
+          if (i == j)
+            ufc_part.A[k] = 1.0;
+          else
+            ufc_part.A[k] = 0.0;
+        }
+      }
+
+      // Add entries to global tensor
+      A.add(ufc_part.A.data(), dofs);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshAssembler::assemble_interface(GenericTensor& A,

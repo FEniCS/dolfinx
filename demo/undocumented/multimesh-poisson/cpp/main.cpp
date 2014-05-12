@@ -167,27 +167,16 @@ int main()
   // Apply boundary condition
   bc.apply(A, b);
 
-  // Lock inactive dofs
-  A.ident_zeros();
-
-  //info(A, true);
-
   // Compute solution
   MultiMeshFunction u(V);
   solve(A, *u.vector(), b);
 
-  cout << endl;
-  cout << "||x|| = " << u.vector()->norm("l2") << endl;
-
+  // Plot solution
   plot(V.multimesh());
   plot(u.part(0), "u_0");
   plot(u.part(1), "u_1");
   //plot(u.part(2), "u_2");
   interactive();
-
-  //cout << "A = " << endl; info(A, true);
-  //cout << "b = " << endl; info(b, true);
-  //cout << "x = " << endl; info(*u.vector(), true);
 
   return 0;
 }
