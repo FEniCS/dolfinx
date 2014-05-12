@@ -98,6 +98,10 @@ int main()
   //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
   //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
 
+  // FIXME: Testing whether a slight translation gets rid of a corner case
+  //Point dx(0.017, 0.023);
+  //rectangle_1.translate(dx);
+
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(square);
   MultiMeshPoisson::FunctionSpace V1(rectangle_1);
