@@ -92,7 +92,7 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 32;
+  int N = 16;
   UnitSquareMesh square(N, N);
   RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, N, N);
   //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
@@ -103,7 +103,7 @@ int main()
   //rectangle_1.translate(dx);
 
   // FIXME: Testing rotation
-  rectangle_1.rotate(15);
+  //rectangle_1.rotate(15);
 
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(square);

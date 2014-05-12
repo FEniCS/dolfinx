@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-04-24
+// Last changed: 2014-05-12
 
 #ifndef __MultiMesh_ASSEMBLER_H
 #define __MultiMesh_ASSEMBLER_H
@@ -52,8 +52,14 @@ namespace dolfin
 
   private:
 
-    // Assemble over cells
-    void assemble_cells(GenericTensor& A, const MultiMeshForm& a);
+    // Assemble over uncut cells
+    void assemble_uncut_cells(GenericTensor& A, const MultiMeshForm& a);
+
+    // Assemble over cut cells
+    void assemble_cut_cells(GenericTensor& A, const MultiMeshForm& a);
+
+    // Assemble over covered cells
+    void assemble_covered_cells(GenericTensor& A, const MultiMeshForm& a);
 
     // Assemble over interface
     void assemble_interface(GenericTensor& A, const MultiMeshForm& a);
