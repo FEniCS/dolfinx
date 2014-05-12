@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-09
+// Last changed: 2014-05-12
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -37,6 +37,15 @@ class Source : public Expression
     double dx = x[0] - x0;
     double dy = x[1] - y0;
     values[0] = 100*exp(-(dx*dx + dy*dy) / 0.02);
+  }
+};
+
+// Sub domain for Dirichlet boundary condition
+class DirichletBoundary : public SubDomain
+{
+  bool inside(const Array<double>& x, bool on_boundary) const
+  {
+    return on_boundary;
   }
 };
 
@@ -136,12 +145,20 @@ int main()
   //L.add(L2);
   L.build();
 
+  // Create boundary condition
+  Constant zero(0);
+  DirichletBoundary boundary;
+  MultiMeshDirichletBC bc(V, zero, boundary);
+
   // Assemble linear system
   Matrix A;
   Vector b;
   MultiMeshAssembler assembler;
   assembler.assemble(A, a);
   assembler.assemble(b, L);
+
+  // Apply boundary condition
+  bc.apply(A, b);
 
   // Lock inactive dofs
   A.ident_zeros();
