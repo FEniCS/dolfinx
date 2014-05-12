@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2014-02-06
+// Last changed: 2014-05-12
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/geometry/Point.h>
@@ -104,7 +104,7 @@ std::vector<unsigned int>
 BoundingBoxTree::compute_collisions(const Point& point) const
 {
   // Check that tree has been built
-  check_built();
+  _check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -115,7 +115,7 @@ std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
 BoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
 {
   // Check that tree has been built
-  check_built();
+  _check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -127,7 +127,7 @@ std::vector<unsigned int>
 BoundingBoxTree::compute_entity_collisions(const Point& point) const
 {
   // Check that tree has been built
-  check_built();
+  _check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -139,7 +139,7 @@ std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
 BoundingBoxTree::compute_entity_collisions(const BoundingBoxTree& tree) const
 {
   // Check that tree has been built
-  check_built();
+  _check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -153,7 +153,7 @@ unsigned int
 BoundingBoxTree::compute_first_collision(const Point& point) const
 {
   // Check that tree has been built
-  check_built();
+  _check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -164,7 +164,7 @@ unsigned int
 BoundingBoxTree::compute_first_entity_collision(const Point& point) const
 {
   // Check that tree has been built
-  check_built();
+  _check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -176,7 +176,7 @@ std::pair<unsigned int, double>
 BoundingBoxTree::compute_closest_entity(const Point& point) const
 {
   // Check that tree has been built
-  check_built();
+  _check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -188,14 +188,24 @@ std::pair<unsigned int, double>
 BoundingBoxTree::compute_closest_point(const Point& point) const
 {
   // Check that tree has been built
-  check_built();
+  _check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
   return _tree->compute_closest_point(point);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::check_built() const
+bool BoundingBoxTree::collides(const Point& point) const
+{
+  return compute_first_collision(point) != std::numeric_limits<unsigned int>::max();
+}
+//-----------------------------------------------------------------------------
+bool BoundingBoxTree::collides_entity(const Point& point) const
+{
+  return compute_first_entity_collision(point) != std::numeric_limits<unsigned int>::max();
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree::_check_built() const
 {
   if (!_tree)
   {
