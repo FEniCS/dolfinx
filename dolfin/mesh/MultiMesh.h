@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-04-28
+// Last changed: 2014-05-12
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -200,6 +200,31 @@ namespace dolfin
     ///         flattened array of quadrature weights.
     const std::map<unsigned int, std::vector<quadrature_rule> >&
     quadrature_rule_interface(std::size_t part) const;
+
+    /// Return the bounding box tree for the mesh of the given part
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The part number
+    ///
+    /// *Returns*
+    ///     std::shared_ptr<const BoundingBoxTree>
+    ///         The bounding box tree
+    std::shared_ptr<const BoundingBoxTree>
+    bounding_box_tree(std::size_t part) const;
+
+    /// Return the bounding box tree for the boundary mesh of the
+    /// given part
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The part number
+    ///
+    /// *Returns*
+    ///     std::shared_ptr<const BoundingBoxTree>
+    ///         The bounding box tree
+    std::shared_ptr<const BoundingBoxTree>
+    bounding_box_tree_boundary(std::size_t part) const;
 
     /// Add mesh (shared pointer version)
     ///
