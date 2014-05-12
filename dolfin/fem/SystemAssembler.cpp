@@ -541,14 +541,14 @@ assembler");
 
   // Holders for UFC integrals
   boost::array<const ufc::cell_integral*, 2> cell_integrals =
-    { ufc[0]->default_cell_integral.get(),
-      ufc[1]->default_cell_integral.get() };
+    { { ufc[0]->default_cell_integral.get(),
+        ufc[1]->default_cell_integral.get() } };
   boost::array<const ufc::exterior_facet_integral*, 2> exterior_facet_integrals =
-    { ufc[0]->default_exterior_facet_integral.get(),
-      ufc[1]->default_exterior_facet_integral.get() };
+    { { ufc[0]->default_exterior_facet_integral.get(),
+        ufc[1]->default_exterior_facet_integral.get() } };
   boost::array<const ufc::interior_facet_integral*, 2> interior_facet_integrals =
-    { ufc[0]->default_interior_facet_integral.get(),
-      ufc[1]->default_interior_facet_integral.get() };
+    { { ufc[0]->default_interior_facet_integral.get(),
+        ufc[1]->default_interior_facet_integral.get() } };
 
   // Check whether integrals are domain-dependent
   bool use_cell_domains = cell_domains && !cell_domains->empty();
