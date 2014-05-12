@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <memory>
+#include <dolfin/mesh/SubDomain.h>
 
 namespace dolfin
 {
@@ -130,6 +131,37 @@ namespace dolfin
 
   private:
 
+    // Subclass of SubDomain wrapping user-defined subdomain
+    class MultiMeshSubDomain : public SubDomain
+    {
+    public:
+
+      // Constructor
+      MultiMeshSubDomain(std::shared_ptr<const SubDomain> sub_domain,
+                         std::shared_ptr<const MultiMesh> multimesh);
+
+      // Destructor
+      ~MultiMeshSubDomain();
+
+      // Callback for checking whether point is in domain
+      bool inside(const Array<double>& x, bool on_boundary) const;
+
+      // Set current part
+      void set_current_part(std::size_t current_part);
+
+    private:
+
+      // User-defined subdomain
+      std::shared_ptr<const SubDomain> _user_sub_domain;
+
+      // Multimesh
+      std::shared_ptr<const MultiMesh> _multimesh;
+
+      // Current part
+      std::size_t _current_part;
+
+    };
+
     // Initialize boundary conditions for parts
     void init(std::shared_ptr<const MultiMeshFunctionSpace> V,
               std::shared_ptr<const GenericFunction> g,
@@ -139,6 +171,9 @@ namespace dolfin
 
     // List of boundary conditions for parts
     std::vector<std::shared_ptr<const DirichletBC> > _bcs;
+
+    // Wrapper of user-defined subdomain
+    mutable std::shared_ptr<MultiMeshSubDomain> _sub_domain;
 
   };
 

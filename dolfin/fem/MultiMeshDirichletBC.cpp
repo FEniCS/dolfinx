@@ -18,9 +18,13 @@
 // First added:  2014-05-12
 // Last changed: 2014-05-12
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
+#include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/function/MultiMeshFunctionSpace.h>
+#include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/geometry/Point.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "DirichletBC.h"
 #include "MultiMeshDirichletBC.h"
 
@@ -57,41 +61,76 @@ MultiMeshDirichletBC::~MultiMeshDirichletBC()
 //-----------------------------------------------------------------------------
 void MultiMeshDirichletBC::apply(GenericMatrix& A) const
 {
-  // Iterate over boundary conditions for parts and apply
-  for (auto bc : _bcs)
-    bc->apply(A);
+  // Iterate over boundary conditions
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+  {
+    // Set current part for subdomain wrapper
+    dolfin_assert(_sub_domain);
+    _sub_domain->set_current_part(part);
+
+    // Apply boundary condition
+    _bcs[part]->apply(A);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDirichletBC::apply(GenericVector& b) const
 {
-  // Iterate over boundary conditions for parts and apply
-  for (auto bc : _bcs)
-    bc->apply(b);
+  // Iterate over boundary conditions
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+  {
+    // Set current part for subdomain wrapper
+    dolfin_assert(_sub_domain);
+    _sub_domain->set_current_part(part);
+
+    // Apply boundary condition
+    _bcs[part]->apply(b);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDirichletBC::apply(GenericMatrix& A,
                                  GenericVector& b) const
 {
-  // Iterate over boundary conditions for parts and apply
-  for (auto bc : _bcs)
-    bc->apply(A, b);
+  // Iterate over boundary conditions
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+  {
+    // Set current part for subdomain wrapper
+    dolfin_assert(_sub_domain);
+    _sub_domain->set_current_part(part);
+
+    // Apply boundary condition
+    _bcs[part]->apply(A, b);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDirichletBC::apply(GenericVector& b,
                                  const GenericVector& x) const
 {
-  // Iterate over boundary conditions for parts and apply
-  for (auto bc : _bcs)
-    bc->apply(b, x);
+  // Iterate over boundary conditions
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+  {
+    // Set current part for subdomain wrapper
+    dolfin_assert(_sub_domain);
+    _sub_domain->set_current_part(part);
+
+    // Apply boundary condition
+    _bcs[part]->apply(b, x);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDirichletBC::apply(GenericMatrix& A,
                                  GenericVector& b,
                                  const GenericVector& x) const
 {
-  // Iterate over boundary conditions for parts and apply
-  for (auto bc : _bcs)
-    bc->apply(A, b, x);
+  // Iterate over boundary conditions
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+  {
+    // Set current part for subdomain wrapper
+    dolfin_assert(_sub_domain);
+    _sub_domain->set_current_part(part);
+
+    // Apply boundary condition
+    _bcs[part]->apply(A, b, x);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDirichletBC::init(std::shared_ptr<const MultiMeshFunctionSpace> V,
@@ -105,16 +144,19 @@ void MultiMeshDirichletBC::init(std::shared_ptr<const MultiMeshFunctionSpace> V,
   // Clear old data if any
   _bcs.clear();
 
+  // Initialize subdomain wrapper
+  _sub_domain.reset(new MultiMeshSubDomain(sub_domain, V->multimesh()));
+
   // Iterate over parts
-  for (std::size_t i = 0; i < V->num_parts(); i++)
+  for (std::size_t part = 0; part < V->num_parts(); part++)
   {
     // Get view of function space for part
-    std::shared_ptr<const FunctionSpace> V_i = V->view(i);
+    std::shared_ptr<const FunctionSpace> V_part = V->view(part);
 
     // Create Dirichlet boundary condition for part
-    std::shared_ptr<DirichletBC> bc(new DirichletBC(V_i,
+    std::shared_ptr<DirichletBC> bc(new DirichletBC(V_part,
                                                     g,
-                                                    sub_domain,
+                                                    _sub_domain,
                                                     method,
                                                     check_midpoint));
 
@@ -123,3 +165,54 @@ void MultiMeshDirichletBC::init(std::shared_ptr<const MultiMeshFunctionSpace> V,
   }
 }
 //-----------------------------------------------------------------------------
+MultiMeshDirichletBC::MultiMeshSubDomain::MultiMeshSubDomain
+(std::shared_ptr<const SubDomain> sub_domain,
+ std::shared_ptr<const MultiMesh> multimesh)
+  : _user_sub_domain(sub_domain),
+    _multimesh(multimesh),
+    _current_part(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+MultiMeshDirichletBC::MultiMeshSubDomain::~MultiMeshSubDomain()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+bool MultiMeshDirichletBC::MultiMeshSubDomain::inside(const Array<double>& x,
+                                                      bool on_boundary) const
+{
+  dolfin_assert(_user_sub_domain);
+
+  // If point is on boundary, check that it really is on the boundary,
+  // which it may not be if it is contained in some other mesh.
+  if (on_boundary)
+  {
+    for (std::size_t part = 0; part < _multimesh->num_parts(); part++)
+    {
+      // Skip current part
+      if (part == _current_part)
+        continue;
+
+      // Check whether point is contained in other mesh
+      const Point point(x.size(), x.data());
+      if (_multimesh->bounding_box_tree(part)->collides_entity(point))
+      {
+        on_boundary = false;
+        break;
+      }
+    }
+  }
+
+  // Call user-defined function with possibly modified on_boundary
+  return _user_sub_domain->inside(x, on_boundary);
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::MultiMeshSubDomain::set_current_part
+(std::size_t current_part)
+{
+  _current_part = current_part;
+}
+//-----------------------------------------------------------------------------
+
