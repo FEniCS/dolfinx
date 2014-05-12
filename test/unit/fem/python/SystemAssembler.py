@@ -290,7 +290,7 @@ class TestSystemAssembler(unittest.TestCase):
         c_t = TestFunction(c_f)
         c_a = TrialFunction(c_f)
 
-        n = c_f.cell().n
+        n = FacetNormal(mesh)
         vn = dot(v, n)
         vout = 0.5*(vn + abs(vn))
 
