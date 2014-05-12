@@ -595,11 +595,11 @@ assembler");
         std::fill(ufc[form]->macro_A.begin(), ufc[form]->macro_A.end(), 0.0);
 
         // Update UFC object
-        // TODO: Removed this? It seems to be unused, update is called
+        // TODO: Remove this? It seems to be unused, update is called
         //       before each tabulate_tensor below...
-        ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
-                          cell[1], vertex_coordinates[1], ufc_cell[1],
-                          interior_facet_integrals[form]->enabled_coefficients());
+        //ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
+        //                 cell[1], vertex_coordinates[1], ufc_cell[1],
+        //                 interior_facet_integrals[form]->enabled_coefficients());
 
         // Compute number of dofs in macro dofmap
         std::fill(num_dofs.begin(), num_dofs.begin() + rank, 0);
