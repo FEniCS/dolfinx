@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-03
+// Last changed: 2014-05-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -73,6 +73,13 @@ MultiMeshFunctionSpace::part(std::size_t i) const
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const FunctionSpace>
+MultiMeshFunctionSpace::view(std::size_t i) const
+{
+  dolfin_assert(i < _function_space_views.size());
+  return _function_space_views[i];
+}
+//-----------------------------------------------------------------------------
 void
 MultiMeshFunctionSpace::add(std::shared_ptr<const FunctionSpace> function_space)
 {
@@ -95,6 +102,9 @@ void MultiMeshFunctionSpace::build()
 
   // Build dofmap
   _build_dofmap();
+
+  // Build views
+  _build_views();
 
   end();
 }
@@ -129,5 +139,28 @@ void MultiMeshFunctionSpace::_build_dofmap()
   _dofmap->build(*this);
 
   end();
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunctionSpace::_build_views()
+{
+  // Clear old views
+  _function_space_views.clear();
+
+  // Iterate over parts
+  for (std::size_t i = 0; i < num_parts(); i++)
+  {
+    // Extract data
+    auto mesh    = this->part(i)->mesh();
+    auto element = this->part(i)->element();
+    auto dofmap  = this->dofmap()->part(i);
+
+    // Create function space
+    std::shared_ptr<const FunctionSpace> V(new FunctionSpace(mesh,
+                                                             element,
+                                                             dofmap));
+
+    // Add view
+    _function_space_views.push_back(V);
+  }
 }
 //-----------------------------------------------------------------------------

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-03-17
+// Last changed: 2014-05-12
 
 #ifndef __MULTI_MESH_FUNCTION_SPACE_H
 #define __MULTI_MESH_FUNCTION_SPACE_H
@@ -88,6 +88,21 @@ namespace dolfin
     ///         Function space (part) number i
     std::shared_ptr<const FunctionSpace> part(std::size_t i) const;
 
+    /// Return view of multimesh function space for part number i.
+    /// This function differs from the part() function in that it does
+    /// not return the original function space for a part, but rather
+    /// a view of the common multimesh function space (dofs global to
+    /// the collection of parts).
+    ///
+    /// *Arguments*
+    ///     i (std::size_t)
+    ///         The part number
+    ///
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         Function space (part) number i
+    std::shared_ptr<const FunctionSpace> view(std::size_t i) const;
+
     /// Add function space (shared pointer version)
     ///
     /// *Arguments*
@@ -110,6 +125,9 @@ namespace dolfin
     // List of function spaces
     std::vector<std::shared_ptr<const FunctionSpace> > _function_spaces;
 
+    // List of function space views
+    std::vector<std::shared_ptr<const FunctionSpace> > _function_space_views;
+
     // Multimesh
     std::shared_ptr<MultiMesh> _multimesh;
 
@@ -121,6 +139,9 @@ namespace dolfin
 
     // Build dofmap
     void _build_dofmap();
+
+    // Build views
+    void _build_views();
 
   };
 
