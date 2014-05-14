@@ -157,6 +157,19 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   }
 }
 //-----------------------------------------------------------------------------
+const MeshFunction<std::size_t> * _pick_one_meshfunction(std::string name,
+                                                         const MeshFunction<std::size_t> * a,
+                                                         const MeshFunction<std::size_t> * b)
+{
+  if (a && b)
+  {
+      warning("Bilinear and linear forms do not have same %s subdomains \
+in SystemAssembler. Taking %s subdomains from bilinear form", name.c_str(), name.c_str());
+      return a;
+  }
+  return a ? a: b;
+}
+//-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
                                const GenericVector* x0)
 {
@@ -171,30 +184,16 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
-  const MeshFunction<std::size_t>* cell_domains = _a->cell_domains().get();
-  if (cell_domains != _l->cell_domains().get())
-  {
-    warning("Bilinear and linear forms do not have same cell facet subdomains \
-in SystemAssembler. Taking subdomains from bilinear form");
-  }
+  const MeshFunction<std::size_t>* cell_domains
+    = _pick_one_meshfunction("cell_domains", _a->cell_domains().get(), _l->cell_domains().get());
 
   // Get exterior facet domains
   const MeshFunction<std::size_t>* exterior_facet_domains
-    = _a->exterior_facet_domains().get();
-  if (exterior_facet_domains != _l->exterior_facet_domains().get())
-  {
-    warning("Bilinear and linear forms do not have same exterior facet \
-subdomains in SystemAssembler. Taking subdomains from bilinear form");
-  }
+    = _pick_one_meshfunction("exterior_facet_domains", _a->exterior_facet_domains().get(), _l->exterior_facet_domains().get());
 
   // Get interior facet domains
   const MeshFunction<std::size_t>* interior_facet_domains
-    = _a->interior_facet_domains().get();
-  if (interior_facet_domains != _l->interior_facet_domains().get())
-  {
-    warning("Bilinear and linear forms do not have same interior facet \
-subdomains in SystemAssembler. Taking subdomains from bilinear form");
-  }
+    = _pick_one_meshfunction("interior_facet_domains", _a->interior_facet_domains().get(), _l->interior_facet_domains().get());
 
   // Check forms
   AssemblerBase::check(*_a);
