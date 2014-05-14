@@ -1,6 +1,6 @@
 """Unit tests for the fem interface"""
 
-# Copyright (C) 2011 Johan Hake
+# Copyright (C) 2011-2014 Johan Hake
 #
 # This file is part of DOLFIN.
 #
@@ -17,10 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2011-12-02
-# Last changed: 2012-12-11
-#
 # Modified by Marie E. Rognes (meg@simula.no), 2012
+# Modified by Martin S. Alnaes (martinal@simula.no), 2014
 
 import unittest
 import numpy
@@ -30,8 +28,8 @@ from dolfin import *
 class FormTest(unittest.TestCase):
 
     def setUp(self):
-        self.mesh = UnitSquareMesh(10, 10)
-        self.V = FunctionSpace(self.mesh, "CG", 1)
+        self.square = UnitSquareMesh(10, 10)
+        self.V = FunctionSpace(self.square, "CG", 1)
         self.f = Expression("sin(pi*x[0]*x[1])")
         self.v = TestFunction(self.V)
         self.u = TrialFunction(self.V)
@@ -56,17 +54,17 @@ class FormTestsOverManifolds(unittest.TestCase):
 
         # 1D in 2D spaces
         self.square = UnitSquareMesh(2, 2)
-        self.mesh1 = BoundaryMesh(self.square, "exterior")
-        self.V1 = FunctionSpace(self.mesh1, "CG", 1)
-        self.VV1 = VectorFunctionSpace(self.mesh1, "CG", 1)
-        self.Q1 = FunctionSpace(self.mesh1, "DG", 0)
+        self.square_boundary = BoundaryMesh(self.square, "exterior")
+        self.V1 = FunctionSpace(self.square_boundary, "CG", 1)
+        self.VV1 = VectorFunctionSpace(self.square_boundary, "CG", 1)
+        self.Q1 = FunctionSpace(self.square_boundary, "DG", 0)
 
         # 2D in 3D spaces
         self.cube = UnitCubeMesh(2, 2, 2)
-        self.mesh2 = BoundaryMesh(self.cube, "exterior")
-        self.V2 = FunctionSpace(self.mesh2, "CG", 1)
-        self.VV2 = VectorFunctionSpace(self.mesh2, "CG", 1)
-        self.Q2 = FunctionSpace(self.mesh2, "DG", 0)
+        self.cube_boundary = BoundaryMesh(self.cube, "exterior")
+        self.V2 = FunctionSpace(self.cube_boundary, "CG", 1)
+        self.VV2 = VectorFunctionSpace(self.cube_boundary, "CG", 1)
+        self.Q2 = FunctionSpace(self.cube_boundary, "DG", 0)
 
     def test_assemble_functional(self):
 
@@ -95,7 +93,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         u = Function(self.V1)
         w = TestFunction(self.Q1)
         u.vector()[:] = 0.5
-        facetareas = MPI.sum(self.mesh1.mpi_comm(),
+        facetareas = MPI.sum(self.square_boundary.mpi_comm(),
                              assemble(u*w*dx).array().sum())
         self.assertAlmostEqual(facetareas, 2.0)
 
@@ -104,7 +102,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         u.vector()[:] = 0.5
         a = u*w*dx
         b = assemble(a)
-        facetareas = MPI.sum(self.mesh2.mpi_comm(),
+        facetareas = MPI.sum(self.cube_boundary.mpi_comm(),
                              assemble(u*w*dx).array().sum())
         self.assertAlmostEqual(facetareas, 3.0)
 
@@ -127,7 +125,7 @@ class FormTestsOverManifolds(unittest.TestCase):
     def test_assemble_bilinear_1D_2D(self):
 
         # SubMesh not running in parallel
-        if MPI.size(self.cube.mpi_comm()) > 1:
+        if MPI.size(self.square.mpi_comm()) > 1:
             return
 
         V = FunctionSpace(self.square, 'CG', 1)
@@ -139,19 +137,28 @@ class FormTestsOverManifolds(unittest.TestCase):
 
         a = MPI.sum(self.square.mpi_comm(),
                     assemble(inner(u, v)*ds).array().sum())
-        b = MPI.sum(self.mesh1.mpi_comm(),
+        b = MPI.sum(self.square_boundary.mpi_comm(),
                     assemble(inner(bu, bv)*dx).array().sum())
         self.assertAlmostEqual(a, b)
 
-        bottom = CompiledSubDomain("near(x[1], 0.0)")
+        # Assemble over subset of mesh facets
+        subdomain = CompiledSubDomain("near(x[1], 0.0)")
+        bottom = FacetFunctionSizet(self.square)
+        bottom.set_all(0)
+        subdomain.mark(bottom, 1)
         foo = MPI.sum(self.square.mpi_comm(),
-                      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
+                      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(1),
                                    exterior_facet_domains=bottom).array()).sum())
-        BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
+        # Assemble over all cells of submesh created from subset of boundary mesh
+        bottom2 = CellFunctionSizet(self.square_boundary)
+        bottom2.set_all(0)
+        subdomain.mark(bottom2, 1)
+        BV = FunctionSpace(SubMesh(self.square_boundary, bottom2, 1), "CG", 1)
         bu = TrialFunction(BV)
         bv = TestFunction(BV)
-        bar = MPI.sum(self.mesh1.mpi_comm(),
-                      abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum())
+        bar = MPI.sum(self.square_boundary.mpi_comm(),
+                      abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
+        # Should give same result
         self.assertAlmostEqual(bar, foo)
 
     def test_assemble_bilinear_2D_3D(self):
@@ -164,24 +171,34 @@ class FormTestsOverManifolds(unittest.TestCase):
         u = TrialFunction(V)
         v = TestFunction(V)
 
+        # V2 is a FunctionSpace over self.cube_boundary
         bu = TrialFunction(self.V2)
         bv = TestFunction(self.V2)
 
-        a = MPI.sum(self.mesh1.mpi_comm(),
+        a = MPI.sum(self.cube.mpi_comm(),
                     assemble(inner(u, v)*ds).array().sum())
-        b = MPI.sum(self.mesh2.mpi_comm(),
+        b = MPI.sum(self.cube_boundary.mpi_comm(),
                     assemble(inner(bu, bv)*dx).array().sum())
         self.assertAlmostEqual(a, b)
 
-        bottom = CompiledSubDomain("near(x[1], 0.0)")
-        foo = MPI.sum(self.mesh1.mpi_comm(),
-                      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
+        # Assemble over subset of mesh facets
+        subdomain = CompiledSubDomain("near(x[1], 0.0)")
+        bottom = FacetFunctionSizet(self.cube)
+        bottom.set_all(0)
+        subdomain.mark(bottom, 1)
+        foo = MPI.sum(self.cube.mpi_comm(),
+                      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(1),
                                    exterior_facet_domains=bottom).array()).sum())
-        BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
+        # Assemble over all cells of submesh created from subset of boundary mesh
+        bottom2 = CellFunctionSizet(self.cube_boundary)
+        bottom2.set_all(0)
+        subdomain.mark(bottom2, 1)
+        BV = FunctionSpace(SubMesh(self.cube_boundary, bottom2, 1), "CG", 1)
         bu = TrialFunction(BV)
         bv = TestFunction(BV)
-        bar = MPI.sum(self.mesh1.mpi_comm(),
-                      abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum())
+        bar = MPI.sum(self.cube_boundary.mpi_comm(),
+                      abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
+        # Should give same result
         self.assertAlmostEqual(bar, foo)
 
 class FormTestsOverFunnySpaces(unittest.TestCase):
@@ -290,26 +307,28 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
 
         m = 3
         self.m = m
-        self.mesh2 = BoundaryMesh(UnitCubeMesh(m, m, m), "exterior")
+        self.cube = UnitCubeMesh(m, m, m)
+        self.cube_boundary = BoundaryMesh(self.cube, "exterior")
 
         # SubMesh not running in parallel
-        if MPI.size(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
             return
 
         plane = CompiledSubDomain("near(x[1], 0.0)")
-        self.mesh1 = BoundaryMesh(UnitSquareMesh(m, m), "exterior")
-        self.bottom1 = SubMesh(self.mesh1, plane)
+        self.square = UnitSquareMesh(m, m)
+        self.square_boundary = BoundaryMesh(self.square, "exterior")
+        self.bottom1 = SubMesh(self.square_boundary, plane)
 
-        self.bottom2 = SubMesh(self.mesh2, plane)
+        self.bottom2 = SubMesh(self.cube_boundary, plane)
         line = CompiledSubDomain("near(x[0], 0.0)")
-        self.mesh3 = BoundaryMesh(SubMesh(self.mesh2, plane), "exterior")
+        self.mesh3 = BoundaryMesh(SubMesh(self.cube_boundary, plane), "exterior")
         self.bottom3 = SubMesh(self.mesh3, line)
 
     def test_normals_2D_1D(self):
         "Testing assembly of normals for 1D meshes embedded in 2D"
 
         # SubMesh not running in parallel
-        if MPI.size(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
             return
 
         n = FacetNormal(self.bottom1)
@@ -327,7 +346,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of normals for 1D meshes embedded in 3D"
 
         # SubMesh not running in parallel
-        if MPI.size(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
             return
 
         n = FacetNormal(self.bottom3)
@@ -345,7 +364,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of normals for 2D meshes embedded in 3D"
 
         # SubMesh not running in parallel
-        if MPI.size(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
             return
 
         n = FacetNormal(self.bottom2)
@@ -363,7 +382,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of volume for embedded meshes"
 
         # SubMesh not running in parallel
-        if MPI.size(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
             return
 
         volume = CellVolume(self.bottom1)
@@ -385,7 +404,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of circumradius for embedded meshes"
 
         # SubMesh not running in parallel
-        if MPI.size(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
             return
 
         r = Circumradius(self.bottom1)
@@ -412,7 +431,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         "Testing assembly of facet area for embedded meshes"
 
         # SubMesh not running in parallel
-        if MPI.size(self.mesh2.mpi_comm()) > 1:
+        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
             return
 
         area = FacetArea(self.bottom1)
