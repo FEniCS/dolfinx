@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2013-12-10
+# Last changed: 2014-02-24
 
 import sys, os, re
 import platform
@@ -39,9 +39,10 @@ tests = {
     "function":       ["Constant", "ConstrainedFunctionSpace", \
                        "Expression", "Function", "FunctionAssigner", \
                        "FunctionSpace", "SpecialFunctions", \
-                       "nonmatching_interpolation", \
-                       "LagrangeInterpolator"],
-    "geometry":       ["BoundingBoxTree", "Intersection", "Issues"],
+                       "LagrangeInterpolator", \
+                       "nonmatching_interpolation"],
+    "geometry":       ["BoundingBoxTree", "CollisionDetection", "Intersection",
+                       "IntersectionTriangulation", "Issues"],
     "graph":          ["GraphBuild"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
                        "XMLMeshValueCollection", "XMLVector", \

@@ -69,7 +69,7 @@ namespace dolfin
   {
   public:
 
-    /// Interpolate function (on possibly non-matching meshes)
+    /// Interpolate Expression
     ///
     /// *Arguments*
     ///     u  (_Function_)
