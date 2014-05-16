@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-05-13
+// Last changed: 2014-05-16
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -73,10 +73,9 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
     A.apply("add");
 
   // FIXME: This shouldn't be necessary
-
   // Lock any remaining inactive dofs
-  if (A.rank() == 2)
-    static_cast<GenericMatrix&>(A).ident_zeros();
+  //if (A.rank() == 2)
+  //  static_cast<GenericMatrix&>(A).ident_zeros();
 
   end();
 }
