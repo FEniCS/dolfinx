@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-07
+// Last changed: 2014-05-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -111,6 +111,20 @@ MultiMesh::quadrature_rule_interface(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _quadrature_rules_interface[part];
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const BoundingBoxTree>
+MultiMesh::bounding_box_tree(std::size_t part) const
+{
+  dolfin_assert(part < num_parts());
+  return _trees[part];
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const BoundingBoxTree>
+MultiMesh::bounding_box_tree_boundary(std::size_t part) const
+{
+  dolfin_assert(part < num_parts());
+  return _boundary_trees[part];
 }
 //-----------------------------------------------------------------------------
 void MultiMesh::add(std::shared_ptr<const Mesh> mesh)

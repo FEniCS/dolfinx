@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2005
-# Last changed: 2014-05-09
+# Last changed: 2014-05-12
 #
 # The bilinear form a(u, v) and linear form L(v) for a multimesh
 # formulation of Poisson's equation.
@@ -50,9 +50,8 @@ dc1 = dc(1, metadata={"num_cells": 2})
 dx = dx + dc0 # domain integral
 di = dc1      # interface integral
 
-a = 0.1*u*v*dx \
-    + inner(grad(u), grad(v))*dx \
-    - dot(avg(grad(u)), jump(v, n))*di \
-    - dot(avg(grad(v)), jump(u, n))*di \
-    + jump(u)*jump(v)*di
+a = inner(grad(u), grad(v))*dx \
+  - dot(avg(grad(u)), jump(v, n))*di \
+  - dot(avg(grad(v)), jump(u, n))*di \
+  + jump(u)*jump(v)*di
 L = f*v*dx

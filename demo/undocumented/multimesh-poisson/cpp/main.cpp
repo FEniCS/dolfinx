@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-09
+// Last changed: 2014-05-12
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -37,6 +37,15 @@ class Source : public Expression
     double dx = x[0] - x0;
     double dy = x[1] - y0;
     values[0] = 100*exp(-(dx*dx + dy*dy) / 0.02);
+  }
+};
+
+// Sub domain for Dirichlet boundary condition
+class DirichletBoundary : public SubDomain
+{
+  bool inside(const Array<double>& x, bool on_boundary) const
+  {
+    return on_boundary;
   }
 };
 
@@ -89,6 +98,13 @@ int main()
   //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
   //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
 
+  // FIXME: Testing whether a slight translation gets rid of a corner case
+  //Point dx(0.017, 0.023);
+  //rectangle_1.translate(dx);
+
+  // FIXME: Testing rotation
+  //rectangle_1.rotate(15);
+
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(square);
   MultiMeshPoisson::FunctionSpace V1(rectangle_1);
@@ -136,6 +152,11 @@ int main()
   //L.add(L2);
   L.build();
 
+  // Create boundary condition
+  Constant zero(0);
+  DirichletBoundary boundary;
+  MultiMeshDirichletBC bc(V, zero, boundary);
+
   // Assemble linear system
   Matrix A;
   Vector b;
@@ -143,27 +164,19 @@ int main()
   assembler.assemble(A, a);
   assembler.assemble(b, L);
 
-  // Lock inactive dofs
-  A.ident_zeros();
-
-  //info(A, true);
+  // Apply boundary condition
+  bc.apply(A, b);
 
   // Compute solution
   MultiMeshFunction u(V);
   solve(A, *u.vector(), b);
 
-  cout << endl;
-  cout << "||x|| = " << u.vector()->norm("l2") << endl;
-
+  // Plot solution
   plot(V.multimesh());
   plot(u.part(0), "u_0");
   plot(u.part(1), "u_1");
   //plot(u.part(2), "u_2");
   interactive();
-
-  //cout << "A = " << endl; info(A, true);
-  //cout << "b = " << endl; info(b, true);
-  //cout << "x = " << endl; info(*u.vector(), true);
 
   return 0;
 }

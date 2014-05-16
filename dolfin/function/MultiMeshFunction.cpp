@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-04-28
+// Last changed: 2014-05-12
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -59,13 +59,8 @@ const Function& MultiMeshFunction::part(std::size_t i) const
   if (it != _function_parts.end())
     return *(it->second);
 
-  // Create function space for part
-  auto mesh    = _function_space->part(i)->mesh();
-  auto element = _function_space->part(i)->element();
-  auto dofmap  = _function_space->dofmap()->part(i);
-  std::shared_ptr<const FunctionSpace> V(new FunctionSpace(mesh,
-                                                           element,
-                                                           dofmap));
+  // Get view of function space for part
+  std::shared_ptr<const FunctionSpace> V = _function_space->view(i);
 
   // Insert into cache and return reference
   _function_parts.insert(i, new Function(V, _vector));
