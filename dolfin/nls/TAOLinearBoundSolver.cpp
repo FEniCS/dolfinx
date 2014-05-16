@@ -175,7 +175,8 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
   TaoSetObjectiveAndGradientRoutine(_tao,
                                     __TAOFormFunctionGradientQuadraticProblem,
                                     this);
-  TaoSetHessianRoutine(_tao, A->mat(), A->mat(), __TAOFormHessianQuadraticProblem, this);
+  TaoSetHessianRoutine(_tao, A->mat(), A->mat(),
+                       __TAOFormHessianQuadraticProblem, this);
 
   // Set parameters from local parameters, including ksp parameters
   read_parameters();
@@ -209,7 +210,11 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
   log(PROGRESS, "Tao solver %s starting to solve %i x %i system", tao_type,
       A->size(0), A->size(1));
 
+  // Solve
   TaoSolve(_tao);
+
+  // Update ghost values
+  x.update_ghost_values();
 
   // Print the report on convergences and methods used
   if (parameters["report"])
@@ -437,9 +442,8 @@ PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(Tao tao, void *ctx)
   TaoConvergedReason reason;
   TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
   if (!(its%5))
-  {
     PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n",its,(double)f);
-  }
+
   return 0;
 }
 //------------------------------------------------------------------------------
