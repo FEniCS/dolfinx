@@ -131,13 +131,27 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
-if (HAVE_STD_CPP11)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+if (CYGWIN OR (WIN32 AND UNIX))
+  # Use -std=gnu++11 instead of -std=c++11 on Cygwin to work around
+  # problem when using vsnprintf.
+  CHECK_CXX_COMPILER_FLAG(-std=gnu++11 HAVE_STD_GNUPP11)
+  if (HAVE_STD_GNUPP11)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+  else()
+    CHECK_CXX_COMPILER_FLAG(-std=gnu++0x HAVE_STD_GNUPP0x)
+    if (HAVE_STD_GNUPP0x)
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
+    endif()
+  endif()
 else()
-  CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
-  if (HAVE_STD_CPP0x)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
+  if (HAVE_STD_CPP11)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  else()
+    CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
+    if (HAVE_STD_CPP0x)
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    endif()
   endif()
 endif()
 
@@ -210,6 +224,17 @@ include(language_support_v2)
 workaround_9220(Fortran Fortran_language_works)
 if (Fortran_language_works)
   enable_language(Fortran OPTIONAL)
+endif()
+
+#------------------------------------------------------------------------------
+# Check type sizes
+
+include(CheckTypeSize)
+
+# Check size of size_t
+check_type_size("size_t" size_t_size)
+if (size_t_size)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_SIZE_T=${size_t_size}")
 endif()
 
 #------------------------------------------------------------------------------

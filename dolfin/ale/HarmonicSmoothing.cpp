@@ -163,9 +163,6 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
     // Solve system
     solve(A, *x, b, "cg", prec);
 
-    // Update_ghost_values()
-    x->update_ghost_values();
-
     // Get displacement
     std::vector<double> _displacement(num_vertices);
     x->get_local(_displacement.data(), num_vertices, all_global_dofs.data());

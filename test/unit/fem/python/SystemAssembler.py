@@ -195,7 +195,6 @@ class TestSystemAssembler(unittest.TestCase):
             u = Function(V)
             x = u.vector()
             x[:] = 30.0
-            u.update()
 
             # Assemble incremental system
             assembler = SystemAssembler(a, -L, bc)
@@ -209,13 +208,11 @@ class TestSystemAssembler(unittest.TestCase):
 
             # Update solution
             x[:] -= Dx[:]
-            u.update()
 
             # Check solution
             u_true = Function(V)
             solve(a == L, u_true, bc)
             u.vector()[:] -= u_true.vector()[:]
-            u.update()
             error = norm(u.vector(), 'linf')
             self.assertAlmostEqual(error, 0.0)
 
@@ -243,7 +240,6 @@ class TestSystemAssembler(unittest.TestCase):
         # the numerical answer (initialized to some number)
         x = Function(V)
         x.vector()[:] = 30.0
-        x.update()
 
         dx = Measure("dx")[sub_domains]
         # the forms
@@ -260,7 +256,6 @@ class TestSystemAssembler(unittest.TestCase):
 
         # check solution
         x.vector()[:] -= 1.0
-        x.update()
         error = norm(x.vector(), 'linf')
         self.assertAlmostEqual(error, 0.0)
 
@@ -277,7 +272,6 @@ class TestSystemAssembler(unittest.TestCase):
 
         # check solution
         x.vector()[:] -= 1.0
-        x.update()
         error = norm(x.vector(), 'linf')
         self.assertAlmostEqual(error, 0.0)
 
@@ -296,7 +290,7 @@ class TestSystemAssembler(unittest.TestCase):
         c_t = TestFunction(c_f)
         c_a = TrialFunction(c_f)
 
-        n = c_f.cell().n
+        n = FacetNormal(mesh)
         vn = dot(v, n)
         vout = 0.5*(vn + abs(vn))
 
@@ -316,11 +310,9 @@ class TestSystemAssembler(unittest.TestCase):
 
         x = Function(c_f)
         x.vector()[:] = 30.0
-        x.update()
         solve(A, x.vector(), b)
-    
+
         x.vector()[:] -= 10.0
-        x.update()
         error = norm(x.vector(), 'linf')
         self.assertAlmostEqual(error, 0.0)
 
