@@ -124,8 +124,6 @@
 %shared_ptr(dolfin::IntervalMesh)
 %shared_ptr(dolfin::UnitTriangleMesh)
 %shared_ptr(dolfin::UnitSquareMesh)
-%shared_ptr(dolfin::UnitCircleMesh)
-%shared_ptr(dolfin::UnitCircle)
 %shared_ptr(dolfin::BoxMesh)
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
