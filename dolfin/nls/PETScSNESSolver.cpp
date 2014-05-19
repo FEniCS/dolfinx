@@ -140,7 +140,8 @@ Parameters PETScSNESSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScSNESSolver::PETScSNESSolver(std::string nls_type) : _snes(NULL)
+PETScSNESSolver::PETScSNESSolver(std::string nls_type) :
+  _snes(NULL)
 {
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
@@ -149,6 +150,11 @@ PETScSNESSolver::PETScSNESSolver(std::string nls_type) : _snes(NULL)
                  "create PETSc SNES solver",
                  "Unknown SNES method \"%s\"", nls_type.c_str());
   }
+
+  _snes_ctx.nonlinear_problem = NULL;
+  _snes_ctx.x = NULL;
+  _snes_ctx.xl = NULL;
+  _snes_ctx.xu = NULL;
 
   // Set parameter values
   parameters = default_parameters();
