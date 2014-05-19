@@ -288,36 +288,6 @@ namespace dolfin
     ///         The dof coordinates (x0, y0, x1, y1, . . .)
     std::vector<double> tabulate_all_coordinates(const Mesh& mesh) const;
 
-    /// Return a map between vertices and dofs
-    /// (dof_ind = dof_to_vertex_map[vert_ind*dofs_per_vertex + local_dof],
-    /// where local_dof = 0, ..., dofs_per_vertex)
-    /// Ghost dofs are included - then dof_ind gets negative value
-    /// or value greater than process-local number of dofs.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create the map between
-    ///
-    /// *Returns*
-    ///     std::vector<dolfin::la_index>
-    ///         The dof to vertex map
-    std::vector<dolfin::la_index> dof_to_vertex_map(const Mesh& mesh) const;
-
-    /// Return a map between vertices and dofs
-    /// (vert_ind*dofs_per_vertex + local_dof = vertex_to_dof_map[dof_ind],
-    /// where local_dof = 0, ..., dofs_per_vertex)
-    /// Ghost dofs are not included. This map is
-    /// an inversion of dof_to_vertex_map.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create the map between
-    ///
-    /// *Returns*
-    ///     std::vector<std::size_t>
-    ///         The vertex to dof map
-    std::vector<std::size_t> vertex_to_dof_map(const Mesh& mesh) const;
-
     /// Create a copy of the dof map
     ///
     /// *Returns*

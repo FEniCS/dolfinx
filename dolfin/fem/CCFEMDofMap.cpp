@@ -219,20 +219,6 @@ void CCFEMDofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
   return _dofmaps[_current_part]->tabulate_entity_dofs(dofs, dim, local_entity);
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index>
-CCFEMDofMap::dof_to_vertex_map(const Mesh& mesh) const
-{
-  dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
-  return _dofmaps[_current_part]->dof_to_vertex_map(mesh);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::size_t>
-CCFEMDofMap::vertex_to_dof_map(const Mesh& mesh) const
-{
-  dolfin_assert(_current_part < _dofmaps.size() && _dofmaps[_current_part]);
-  return _dofmaps[_current_part]->vertex_to_dof_map(mesh);
-}
-//-----------------------------------------------------------------------------
 void
 CCFEMDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                   const std::vector<double>& vertex_coordinates,
