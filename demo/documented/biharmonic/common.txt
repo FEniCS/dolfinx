@@ -55,21 +55,21 @@ a weak formulation of the biharmonic reads: find :math:`u \in V` such that
 
 .. math::
    \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \, dx \
-  - \int_{\Gamma} \left<\nabla^{2} u \right> \llbracket\nabla v \rrbracket \, ds
-  - \int_{\Gamma} \llbracket\nabla u \rrbracket \left<\nabla^{2} v \right>  \, ds
-  + \int_{\Gamma} \frac{\alpha}{h} \llbracket \nabla u \rrbracket \llbracket \nabla v \rrbracket \, ds
+  - \int_{\Gamma} \left<\nabla^{2} u \right>  [\!\![ \nabla v ]\!\!] \, ds
+  - \int_{\Gamma}[\!\![  \nabla u ]\!\!]  \left<\nabla^{2} v \right>  \, ds
+  + \int_{\Gamma} \frac{\alpha}{h}[\!\![ \nabla u ]\!\!]  [\!\![ \nabla v ]\!\!]  \, ds
   = \int_{\Omega} vf \, dx \quad \forall \ v \in V
 
-where :math:`\left< u \right> = (1/2) (u_{+} + u_{-})`, :math:`\llbracket w
-\rrbracket = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}`, :math:`\alpha \ge 0`
+where :math:`\left< u \right> = (1/2) (u_{+} + u_{-})`, :math:`[\!\![  w
+]\!\!]  = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}`, :math:`\alpha \ge 0`
 is a penalty term and :math:`h` is a measure of the cell size.  For the
 implementation, it is useful to identify the bilinear form
 
 .. math::
    a(u, v) = \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \, dx \
-  - \int_{\Gamma} \left<\nabla^{2} u \right> \llbracket\nabla v \rrbracket \, ds
-  - \int_{\Gamma} \llbracket\nabla u \rrbracket \left<\nabla^{2} v \right>  \, ds
-  + \int_{\Gamma} \frac{\alpha}{h} \llbracket \nabla u \rrbracket \llbracket \nabla v \rrbracket \, ds
+  - \int_{\Gamma} \left<\nabla^{2} u \right>[\!\![ \nabla v ]\!\!]  \, ds
+  - \int_{\Gamma} [\!\![ \nabla u ]\!\!]  \left<\nabla^{2} v \right>  \, ds
+  + \int_{\Gamma} \frac{\alpha}{h} [\!\![ \nabla u ]\!\!] [\!\![ \nabla v ]\!\!] \, ds
 
 and the linear form
 
