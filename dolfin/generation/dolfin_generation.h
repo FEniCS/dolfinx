@@ -21,8 +21,6 @@
 #include <dolfin/generation/UnitTriangleMesh.h>
 #include <dolfin/generation/UnitSquareMesh.h>
 #include <dolfin/generation/UnitSquare.h>
-#include <dolfin/generation/UnitCircleMesh.h>
-#include <dolfin/generation/UnitCircle.h>
 #include <dolfin/generation/CSGGeometry.h>
 #include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/generation/CSGCGALMeshGenerator2D.h>
