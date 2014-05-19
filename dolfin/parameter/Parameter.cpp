@@ -229,7 +229,7 @@ void Parameter::check_key(std::string key)
 // class IntParameter
 //-----------------------------------------------------------------------------
 IntParameter::IntParameter(std::string key)
-  : Parameter(key), _min(0), _max(0)
+  : Parameter(key), _value(0), _min(0), _max(0)
 {
   // Do nothing
 }
@@ -371,7 +371,7 @@ std::string IntParameter::str() const
 // class DoubleParameter
 //-----------------------------------------------------------------------------
 DoubleParameter::DoubleParameter(std::string key)
-  : Parameter(key), _min(0.0), _max(0.0)
+  : Parameter(key), _value(0.0),_min(0.0), _max(0.0)
 {
   // Do nothing
 }
@@ -628,7 +628,7 @@ std::string StringParameter::str() const
 //-----------------------------------------------------------------------------
 // class BoolParameter
 //-----------------------------------------------------------------------------
-BoolParameter::BoolParameter(std::string key) : Parameter(key)
+BoolParameter::BoolParameter(std::string key) : Parameter(key), _value(false)
 {
   // Do nothing
 }

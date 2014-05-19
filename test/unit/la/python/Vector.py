@@ -116,8 +116,6 @@ class AbstractBaseTest(object):
         in_range = local_range[0] <= n < local_range[1]
         self.assertEqual(v0.owns_index(n), in_range)
 
-    #def test_get_local(self):
-
     #def test_set(self):
 
     #def test_add(self):

@@ -41,16 +41,16 @@ uBLASILUPreconditioner::~uBLASILUPreconditioner()
 //-----------------------------------------------------------------------------
 void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
 {
-  ublas_sparse_matrix& _M = M.mat();
+  ublas_sparse_matrix& _matM = M.mat();
 
   const std::size_t size = P.size(0);
-  _M.resize(size, size, false);
-  _M.assign(P.mat());
+  _matM.resize(size, size, false);
+  _matM.assign(P.mat());
 
   // Add term to diagonal to avoid negative pivots
   const double zero_shift = parameters("preconditioner")["shift_nonzero"];
   if(zero_shift > 0.0)
-    _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
+    _matM.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
 
   /*
   // Straightforward and very slow implementation. This is used for verification
@@ -111,35 +111,35 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
 
   for (std::size_t k = 0; k < size ; ++k)        // i (rows)
   {
-    j0 = _M.index1_data () [k];    // ia
-    j1 = _M.index1_data () [k+1]-1;
+    j0 = _matM.index1_data () [k];    // ia
+    j1 = _matM.index1_data () [k+1]-1;
 
     // Initialise working array iw
     for (std::size_t i = j0;  i <= j1; ++i)
-      iw[ _M.index2_data () [i] ] = i;  // ja
+      iw[ _matM.index2_data () [i] ] = i;  // ja
 
     // Move along row looking for diagonal
     j=j0;
     while(j <= j1)
     {
-      jrow = _M.index2_data () [j];  // ja
+      jrow = _matM.index2_data () [j];  // ja
 
       if( jrow >= k ) // passed or found diagonal, therefore break
         break;
 
-      t1 = (_M.value_data() [j])/(_M.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(j,j)
-      _M.value_data() [j] = t1;
-      for(std::size_t jj = diagonal[jrow]+1; jj <= _M.index1_data () [jrow+1]-1; ++jj)
+      t1 = (_matM.value_data() [j])/(_matM.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(j,j)
+      _matM.value_data() [j] = t1;
+      for(std::size_t jj = diagonal[jrow]+1; jj <= _matM.index1_data () [jrow+1]-1; ++jj)
       {
-        jw = iw[ _M.index2_data () [jj] ];
+        jw = iw[ _matM.index2_data () [jj] ];
         if(jw != 0)
-          _M.value_data() [jw] = _M.value_data() [jw] -t1*(_M.value_data() [jj]);
+          _matM.value_data() [jw] = _matM.value_data() [jw] -t1*(_matM.value_data() [jj]);
       } // jj
       ++j;
     }
     diagonal[k] = j;
 
-    if (jrow != k || fabs( _M.value_data() [j] ) < DOLFIN_EPS)
+    if (jrow != k || fabs( _matM.value_data() [j] ) < DOLFIN_EPS)
     {
       dolfin_error("uBLASILUPreconditioner.cpp",
                    "initialize uBLAS ILU preconditioner",
@@ -147,7 +147,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
     }
 
     for(std::size_t i=j0; i <= j1; ++i)
-      iw[ _M.index2_data () [i] ] = 0;
+      iw[ _matM.index2_data () [i] ] = 0;
   } // k
 }
 //-----------------------------------------------------------------------------
@@ -156,29 +156,29 @@ void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
   // Get uderlying uBLAS matrices and vectors
   ublas_vector& _x = x.vec();
   const ublas_vector& _b = b.vec();
-  const ublas_sparse_matrix & _M = M.mat();
+  const ublas_sparse_matrix & _matM = M.mat();
 
-  dolfin_assert(_M.size1() > 0 && _M.size2() > 0);
-  dolfin_assert( _x.size() == _M.size1() );
+  dolfin_assert(_matM.size1() > 0 && _matM.size2() > 0);
+  dolfin_assert( _x.size() == _matM.size1() );
   dolfin_assert( _x.size() == _b.size());
 
   // Solve in-place
   _x.assign(_b);
 
   // Perform substutions for compressed row storage. This is the fastest.
-  const std::size_t size = _M.size1();
+  const std::size_t size = _matM.size1();
   for(std::size_t i =0; i < size; ++i)
   {
     std::size_t k;
-    for(k = _M.index1_data () [i]; k < diagonal[i]; ++k)
-      _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
+    for(k = _matM.index1_data () [i]; k < diagonal[i]; ++k)
+      _x(i) -= ( _matM.value_data () [k] )*x[ _matM.index2_data () [k] ];
   }
   for(int i =size-1; i >= 0; --i)
   {
     std::size_t k;
-    for(k = _M.index1_data () [i+1]-1; k > diagonal[i]; --k)
-      _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
-    _x(i) /= ( _M.value_data () [k] );
+    for(k = _matM.index1_data () [i+1]-1; k > diagonal[i]; --k)
+      _x(i) -= ( _matM.value_data () [k] )*x[ _matM.index2_data () [k] ];
+    _x(i) /= ( _matM.value_data () [k] );
   }
 }
 //-----------------------------------------------------------------------------

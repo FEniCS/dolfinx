@@ -305,6 +305,9 @@ void EpetraVector::apply(std::string mode)
 
   // Clear map of off-process set values
   off_process_set_values.clear();
+
+  // Update ghost values
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 MPI_Comm EpetraVector::mpi_comm() const
@@ -614,6 +617,8 @@ void EpetraVector::axpy(double a, const GenericVector& y)
                  "perform axpy operation with Epetra vector",
                  "Did not manage to perform Epetra_Vector::Update");
   }
+
+  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::abs()
@@ -637,21 +642,27 @@ const EpetraVector& EpetraVector::operator= (double a)
 {
   dolfin_assert(_x);
   _x->PutScalar(a);
+
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::update_ghost_values()
 {
-  dolfin_assert(_x);
-  dolfin_assert(x_ghost);
-  dolfin_assert(x_ghost->MyLength()
-                == (dolfin::la_index) ghost_global_to_local.size());
+  if (x_ghost)
+  {
+    dolfin_assert(_x);
+    dolfin_assert(x_ghost->MyLength()
+                  == (dolfin::la_index) ghost_global_to_local.size());
 
-  // Create importer
-  Epetra_Import importer(x_ghost->Map(), _x->Map());
+    // Create importer
+    Epetra_Import importer(x_ghost->Map(), _x->Map());
 
-  // Import into ghost vector
-  x_ghost->Import(*_x, importer, Insert);
+    // Import into ghost vector
+    x_ghost->Import(*_x, importer, Insert);
+  }
 }
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
@@ -679,6 +690,9 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
   // Assign values
   *_x = *v._x;
 
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -694,6 +708,10 @@ const EpetraVector& EpetraVector::operator+= (double a)
   Epetra_FEVector y(*_x);
   y.PutScalar(a);
   _x->Update(1.0, y, 1.0);
+
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -709,6 +727,10 @@ const EpetraVector& EpetraVector::operator-= (double a)
   Epetra_FEVector y(*_x);
   y.PutScalar(-a);
   _x->Update(1.0, y, 1.0);
+
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -722,6 +744,10 @@ const EpetraVector& EpetraVector::operator*= (double a)
                  "multiply Epetra vector by scalar",
                  "Did not manage to perform Epetra_Vector::Scale");
   }
+
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -752,6 +778,9 @@ const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
                  "Did not manage to perform Epetra_Vector::Multiply");
   }
 
+  // Update ghost values
+  update_ghost_values();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -771,8 +800,14 @@ double EpetraVector::norm(std::string norm_type) const
     err = _x->Norm1(&value);
   else if (norm_type == "l2")
     err = _x->Norm2(&value);
-  else
+  else if (norm_type == "linf")
     err = _x->NormInf(&value);
+  else
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "compute norm of Epetra vector",
+                 "Illegal norm type \"%s\".", norm_type.c_str());
+  }
 
   if (err != 0)
   {

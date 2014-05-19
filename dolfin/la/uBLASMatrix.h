@@ -88,7 +88,7 @@ namespace dolfin
 
     /// Return true if empty
     virtual bool empty() const
-    { return this->size(0); }
+    { return size(0) == 0; }
 
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const;
@@ -170,6 +170,9 @@ namespace dolfin
     /// Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x);
+
     /// Multiply matrix by given number
     virtual const uBLASMatrix<Mat>& operator*= (double a);
 
@@ -194,11 +197,11 @@ namespace dolfin
 
     /// Return reference to uBLAS matrix (const version)
     const Mat& mat() const
-    { return _A; }
+    { return _matA; }
 
     /// Return reference to uBLAS matrix (non-const version)
     Mat& mat()
-    { return _A; }
+    { return _matA; }
 
     /// Solve Ax = b out-of-place using uBLAS (A is not destroyed)
     void solve(uBLASVector& x, const uBLASVector& b) const;
@@ -217,7 +220,7 @@ namespace dolfin
 
     /// Access value of given entry
     double operator() (dolfin::la_index i, dolfin::la_index j) const
-    { return _A(i, j); }
+    { return _matA(i, j); }
 
     /// Assignment operator
     const uBLASMatrix<Mat>& operator= (const uBLASMatrix<Mat>& A);
@@ -230,7 +233,7 @@ namespace dolfin
     void solve_in_place(B& X);
 
     // uBLAS matrix object
-    Mat _A;
+    Mat _matA;
 
   };
 
@@ -238,21 +241,21 @@ namespace dolfin
   // Implementation of uBLASMatrix
   //---------------------------------------------------------------------------
   template <typename Mat>
-  uBLASMatrix<Mat>::uBLASMatrix() : GenericMatrix(), _A(0, 0)
+  uBLASMatrix<Mat>::uBLASMatrix() : GenericMatrix(), _matA(0, 0)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
   uBLASMatrix<Mat>::uBLASMatrix(std::size_t M, std::size_t N)
-    : GenericMatrix(), _A(M, N)
+    : GenericMatrix(), _matA(M, N)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
   uBLASMatrix<Mat>::uBLASMatrix(const uBLASMatrix& A)
-    : GenericMatrix(), _A(A._A)
+    : GenericMatrix(), _matA(A._matA)
   {
     // Do nothing
   }
@@ -275,7 +278,7 @@ namespace dolfin
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
-      _A.Mat::resize(M, N, false);
+      _matA.Mat::resize(M, N, false);
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
@@ -289,18 +292,18 @@ namespace dolfin
     }
 
     dolfin_assert(dim < 2);
-    return (dim == 0 ? _A.Mat::size1() : _A.Mat::size2());
+    return (dim == 0 ? _matA.Mat::size1() : _matA.Mat::size2());
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
   double uBLASMatrix<Mat>::norm(std::string norm_type) const
   {
     if (norm_type == "l1")
-      return norm_1(_A);
+      return norm_1(_matA);
     else if (norm_type == "linf")
-      return norm_inf(_A);
+      return norm_inf(_matA);
     else if (norm_type == "frobenius")
-      return norm_frobenius(_A);
+      return norm_frobenius(_matA);
     else
     {
       dolfin_error("uBLASMatrix.h",
@@ -319,7 +322,7 @@ namespace dolfin
     dolfin_assert(row_idx < this->size(0));
 
     // Reference to matrix row
-    const ublas::matrix_row<const Mat> row(_A, row_idx);
+    const ublas::matrix_row<const Mat> row(_matA, row_idx);
 
     // Insert values into std::vectors
     columns.clear();
@@ -340,7 +343,7 @@ namespace dolfin
     dolfin_assert(columns.size() == values.size());
     dolfin_assert(row_idx < this->size(0));
 
-    ublas::matrix_row<Mat> row(_A, row_idx);
+    ublas::matrix_row<Mat> row(_matA, row_idx);
     dolfin_assert(columns.size() <= row.size());
 
     row *= 0;
@@ -361,7 +364,7 @@ namespace dolfin
   {
     for (std::size_t i = 0; i < m; i++)
       for (std::size_t j = 0; j < n; j++)
-        _A(rows[i] , cols[j]) = block[i*n + j];
+        _matA(rows[i] , cols[j]) = block[i*n + j];
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
@@ -370,7 +373,7 @@ namespace dolfin
   {
     for (std::size_t i = 0; i < m; i++)
       for (std::size_t j = 0; j < n; j++)
-        _A(rows[i] , cols[j]) += block[i*n + j];
+        _matA(rows[i] , cols[j]) += block[i*n + j];
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
@@ -380,7 +383,7 @@ namespace dolfin
   {
     for(std::size_t i = 0; i < m; ++i)
       for(std::size_t j = 0; j < n; ++j)
-        block[i*n + j] = _A(rows[i], cols[j]);
+        block[i*n + j] = _matA(rows[i], cols[j]);
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
@@ -390,7 +393,7 @@ namespace dolfin
     m.init(mpi_comm(), n);
     m.zero();
     ublas::scalar_vector<double> one(n, 1.0);
-    ublas::axpy_prod(_A, one, m.vec(), true);
+    ublas::axpy_prod(_matA, one, m.vec(), true);
   }
   //----------------------------------------------------------------------------
   template <typename Mat>
@@ -399,7 +402,7 @@ namespace dolfin
     // Make copy of matrix and vector
     uBLASMatrix<Mat> Atemp;
     Atemp.mat().resize(size(0), size(1));
-    Atemp.mat().assign(_A);
+    Atemp.mat().assign(_matA);
     x.vec().resize(b.vec().size());
     x.vec().assign(b.vec());
 
@@ -410,7 +413,7 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::solve_in_place(uBLASVector& x, const uBLASVector& b)
   {
-    const std::size_t M = _A.size1();
+    const std::size_t M = _matA.size1();
     dolfin_assert(M == b.size());
 
     // Initialise solution vector
@@ -425,8 +428,8 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::invert()
   {
-    const std::size_t M = _A.size1();
-    dolfin_assert(M == _A.size2());
+    const std::size_t M = _matA.size1();
+    dolfin_assert(M == _matA.size2());
 
     // Create indentity matrix
     Mat X(M, M);
@@ -434,7 +437,7 @@ namespace dolfin
 
     // Solve
     solve_in_place(X);
-    _A.assign_temporary(X);
+    _matA.assign_temporary(X);
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
@@ -443,7 +446,7 @@ namespace dolfin
     // Iterate through no-zero pattern and zero entries
     typename Mat::iterator1 row;    // Iterator over rows
     typename Mat::iterator2 entry;  // Iterator over entries
-    for (row = _A.begin1(); row != _A.end1(); ++row)
+    for (row = _matA.begin1(); row != _matA.end1(); ++row)
       for (entry = row.begin(); entry != row.end(); ++entry)
         *entry = 0;
   }
@@ -452,7 +455,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::zero(std::size_t m, const dolfin::la_index* rows)
   {
     for(std::size_t i = 0; i < m; ++i)
-      ublas::row(_A, rows[i]) *= 0.0;
+      ublas::row(_matA, rows[i]) *= 0.0;
   }
   //----------------------------------------------------------------------------
   template <typename Mat>
@@ -465,7 +468,7 @@ namespace dolfin
     bool diagonal_missing = true;
     typename Mat::iterator1 row;    // Iterator over rows
     typename Mat::iterator2 entry;  // Iterator over entries
-    for (row = _A.begin1(); row != _A.end1(); ++row)
+    for (row = _matA.begin1(); row != _matA.end1(); ++row)
     {
       entry = row.begin();
       if (std::find(_rows.begin(), _rows.end(), entry.index1()) != _rows.end())
@@ -518,7 +521,34 @@ namespace dolfin
                    "Vector for matrix-vector result has wrong size");
     }
 
-    ublas::axpy_prod(_A, xx.vec(), yy.vec(), true);
+    ublas::axpy_prod(_matA, xx.vec(), yy.vec(), true);
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>
+  void uBLASMatrix<Mat>::set_diagonal(const GenericVector& x)
+  {
+    if (size(1) != size(0) || size(0) != x.size())
+    {
+      dolfin_error("uBLASMatrix.h",
+                   "Set diagonal of a uBLAS Matrix",
+                   "Matrix and vector dimensions don't match");
+    }
+
+    const double* xx = x.down_cast<uBLASVector>().data();
+    typename Mat::iterator1 row;    // Iterator over rows
+    typename Mat::iterator2 entry;  // Iterator over entries
+
+    // FIXME: Cannot be a good way to do it for a dense matrices
+    for (row = _matA.begin1(); row != _matA.end1(); ++row)
+    {
+      for (entry = row.begin(); entry != row.end(); ++entry)
+      {
+	if (entry.index2() > entry.index1())
+	  break;
+	if (entry.index2() == entry.index1())
+	  *entry = xx[entry.index1()];
+      }
+    }
   }
   //----------------------------------------------------------------------------
   template <typename Mat>
@@ -533,14 +563,14 @@ namespace dolfin
   template <typename Mat>
   const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator*= (double a)
    {
-    _A *= a;
+    _matA *= a;
     return *this;
   }
   //----------------------------------------------------------------------------
   template <typename Mat>
   const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator/= (double a)
   {
-    _A /= a;
+    _matA /= a;
     return *this;
   }
   //----------------------------------------------------------------------------
@@ -560,7 +590,7 @@ namespace dolfin
     {
       // Assume uBLAS take care of deleting an existing Matrix
       // using its assignment operator
-      _A = A.mat();
+      _matA = A.mat();
     }
     return *this;
   }
@@ -569,8 +599,8 @@ namespace dolfin
   inline void uBLASMatrix<Mat>::compress()
   {
     Mat A_temp(this->size(0), this->size(1));
-    A_temp.assign(_A);
-    _A.swap(A_temp);
+    A_temp.assign(_matA);
+    _matA.swap(A_temp);
   }
   //----------------------------------------------------------------------------
   template <typename Mat>
@@ -584,7 +614,7 @@ namespace dolfin
     if (verbose)
     {
       s << str(false) << std::endl << std::endl;
-      for (it1 = _A.begin1(); it1 != _A.end1(); ++it1)
+      for (it1 = _matA.begin1(); it1 != _matA.end1(); ++it1)
       {
         s << "|";
         for (it2 = it1.begin(); it2 != it1.end(); ++it2)
@@ -613,7 +643,7 @@ namespace dolfin
     uBLASMatrix<ublas_sparse_matrix>::init(const TensorLayout& tensor_layout)
   {
     resize(tensor_layout.size(0), tensor_layout.size(1));
-    _A.clear();
+    _matA.clear();
 
     // Get sparsity pattern
     dolfin_assert(tensor_layout.sparsity_pattern());
@@ -627,7 +657,7 @@ namespace dolfin
     }
 
     // Reserve space for non-zeroes and get non-zero pattern
-    _A.reserve(pattern_pointer->num_nonzeros());
+    _matA.reserve(pattern_pointer->num_nonzeros());
     const std::vector<std::vector<std::size_t> > pattern
       = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
@@ -636,14 +666,14 @@ namespace dolfin
     Set<std::size_t>::const_iterator element;
     for(row = pattern.begin(); row != pattern.end(); ++row)
       for(element = row->begin(); element != row->end(); ++element)
-        _A.push_back(row - pattern.begin(), *element, 0.0);
+        _matA.push_back(row - pattern.begin(), *element, 0.0);
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
   inline void uBLASMatrix<Mat>::init(const TensorLayout& tensor_layout)
   {
     resize(tensor_layout.size(0), tensor_layout.size(1));
-    _A.clear();
+    _matA.clear();
   }
   //---------------------------------------------------------------------------
   template <>
@@ -652,7 +682,7 @@ namespace dolfin
     Timer timer("Apply (matrix)");
 
     // Make sure matrix assembly is complete
-    _A.complete_index1_data();
+    _matA.complete_index1_data();
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
@@ -673,7 +703,7 @@ namespace dolfin
                    "Dimensions don't match");
     }
 
-    _A += (a)*(as_type<const uBLASMatrix>(A).mat());
+    _matA += (a)*(as_type<const uBLASMatrix>(A).mat());
   }
   //---------------------------------------------------------------------------
   template <>
@@ -683,8 +713,8 @@ namespace dolfin
   {
     typedef boost::tuples::tuple<const std::size_t*, const std::size_t*,
       const double*, int> tuple;
-    return tuple(&_A.index1_data()[0], &_A.index2_data()[0],
-                 &_A.value_data()[0], _A.nnz());
+    return tuple(&_matA.index1_data()[0], &_matA.index2_data()[0],
+                 &_matA.value_data()[0], _matA.nnz());
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
@@ -703,14 +733,14 @@ namespace dolfin
   template<typename Mat> template<typename B>
   void uBLASMatrix<Mat>::solve_in_place(B& X)
   {
-    const std::size_t M = _A.size1();
-    dolfin_assert(M == _A.size2());
+    const std::size_t M = _matA.size1();
+    dolfin_assert(M == _matA.size2());
 
     // Create permutation matrix
     ublas::permutation_matrix<std::size_t> pmatrix(M);
 
     // Factorise (with pivoting)
-    std::size_t singular = ublas::lu_factorize(_A, pmatrix);
+    std::size_t singular = ublas::lu_factorize(_matA, pmatrix);
     if (singular > 0)
     {
       dolfin_error("uBLASMatrix.h",
@@ -720,7 +750,7 @@ namespace dolfin
     }
 
     // Back substitute
-    ublas::lu_substitute(_A, pmatrix, X);
+    ublas::lu_substitute(_matA, pmatrix, X);
   }
   //----------------------------------------------------------------------------
 }

@@ -23,7 +23,8 @@
 // First added:  2007-01-17
 // Last changed: 2013-09-19
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
+
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
@@ -55,7 +56,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
   for (std::size_t i = 0; i < a.rank(); ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
-  if (A.size(0) == 0)
+  if (A.empty())
   {
     Timer t0("Build sparsity");
 
@@ -113,7 +114,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     if (A.rank() == 2 && keep_diagonal)
     {
       // Down cast to GenericMatrix
-      GenericMatrix& _A = A.down_cast<GenericMatrix>();
+      GenericMatrix& _matA = A.down_cast<GenericMatrix>();
 
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;
@@ -122,7 +123,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       for (std::size_t i = row_range.first; i < range; i++)
       {
         dolfin::la_index _i = i;
-        _A.set(&block, 1, &_i, 1, &_i);
+        _matA.set(&block, 1, &_i, 1, &_i);
       }
       A.apply("flush");
     }
@@ -181,8 +182,8 @@ void AssemblerBase::check(const Form& a)
                    i, a.coefficient_name(i).c_str());
     }
 
-    // auto_ptr deletes its object when it exits its scope
-    boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
+    // unique_ptr deletes its object when it exits its scope
+    std::unique_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
 
     // Checks out-commented since they only work for Functions, not Expressions
     const std::size_t r = coefficients[i]->value_rank();
@@ -212,7 +213,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   // Check that the cell dimension matches the mesh dimension
   if (a.rank() + a.ufc_form()->num_coefficients() > 0)
   {
-    boost::scoped_ptr<ufc::finite_element> element(a.ufc_form()->create_finite_element(0));
+    std::unique_ptr<ufc::finite_element> element(a.ufc_form()->create_finite_element(0));
     dolfin_assert(element);
     if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
     {

@@ -38,18 +38,14 @@ class Source : public Expression
 class BoundarySource : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = sin(5.0*x[0]);
-  }
+  { values[0] = sin(5.0*x[0]); }
 };
 
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
-  }
+  { return x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS; }
 };
 
 int main()

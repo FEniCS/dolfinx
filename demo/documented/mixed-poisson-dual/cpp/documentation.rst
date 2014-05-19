@@ -110,9 +110,7 @@ Then follows the definition of the coefficient functions (for
    class BoundarySource : public Expression
    {
      void eval(Array<double>& values, const Array<double>& x) const
-     {
-       values[0] = sin(5.0*x[0]);
-     }
+     { values[0] = sin(5.0*x[0]); }
    };
 
 Then follows the definition of the essential boundary part of the
@@ -122,12 +120,10 @@ boundary of the domain, which is derived from the
 .. code-block:: c++
 
     // Sub domain for Dirichlet boundary condition
-    class EssentialBoundary : public SubDomain
+    class DirichletBoundary : public SubDomain
     {
       bool inside(const Array<double>& x, bool on_boundary) const
-      {
-        return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
-      }
+      { return x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS; }
     };
 
 Inside the ``main()`` function we first create the ``mesh`` and then
@@ -138,16 +134,16 @@ formulation. We also define the bilinear form ``a`` and linear form
 .. code-block:: c++
 
     // Construct function space
-    MixedPoisson::FunctionSpace W(mesh);
-    MixedPoisson::BilinearForm a(W, W);
-    MixedPoisson::LinearForm L(W);
+    MixedPoissonDual::FunctionSpace W(mesh);
+    MixedPoissonDual::BilinearForm a(W, W);
+    MixedPoissonDual::LinearForm L(W);
 
 Then we create the sources (:math:`f`, :math:`g`) and assign it to the
 linear form.
 
 .. code-block:: c++
 
-    // Create source and assign to L
+    // Create sources and assign to L
     Source f;
     BoundarySource g;
     L.f = f;

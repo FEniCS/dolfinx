@@ -157,6 +157,9 @@ namespace dolfin
     /// zero-sized or have correct size and parallel layout.
     virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
 
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x) = 0;
+
     /// Multiply matrix by given number
     virtual const GenericMatrix& operator*= (double a) = 0;
 

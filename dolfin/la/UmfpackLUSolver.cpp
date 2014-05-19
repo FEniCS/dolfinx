@@ -22,6 +22,8 @@
 // Last changed: 2012-08-20
 
 
+#include <memory>
+
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "UmfpackLUSolver.h"
@@ -112,7 +114,7 @@ UmfpackLUSolver::UmfpackLUSolver()
 }
 //-----------------------------------------------------------------------------
 UmfpackLUSolver::UmfpackLUSolver(std::shared_ptr<const GenericLinearOperator> A)
-  : _A(A)
+  : _matA(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -128,24 +130,24 @@ UmfpackLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   symbolic.reset();
   numeric.reset();
-  _A = A;
-  dolfin_assert(_A);
+  _matA = A;
+  dolfin_assert(_matA);
 }
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& UmfpackLUSolver::get_operator() const
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("UmfpackLUSolver.cpp",
                  "access operator for PETSc Krylov solver",
                  "Operator has not been set");
   }
-  return *_A;
+  return *_matA;
 }
 //-----------------------------------------------------------------------------
 std::size_t UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  dolfin_assert(_A);
+  dolfin_assert(_matA);
 
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
@@ -178,7 +180,7 @@ UmfpackLUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::symbolic_factorize()
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("UmfpackLUSolver.cpp",
                  "factorize matrix with UMFPACK LU solver (symbolic)",
@@ -190,7 +192,7 @@ void UmfpackLUSolver::symbolic_factorize()
   numeric.reset();
 
   // Need matrix data
-  std::shared_ptr<const GenericMatrix> A = require_matrix(_A);
+  std::shared_ptr<const GenericMatrix> A = require_matrix(_matA);
 
   // Get matrix data
   boost::tuples::tuple<const std::size_t*, const std::size_t*,
@@ -215,7 +217,7 @@ void UmfpackLUSolver::symbolic_factorize()
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::numeric_factorize()
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("UmfpackLUSolver.cpp",
                  "factorize matrix with UMFPACK LU solver (numeric)",
@@ -223,7 +225,7 @@ void UmfpackLUSolver::numeric_factorize()
   }
 
   // Need matrix data
-  std::shared_ptr<const GenericMatrix> A = require_matrix(_A);
+  std::shared_ptr<const GenericMatrix> A = require_matrix(_matA);
 
   // Get matrix data
   boost::tuples::tuple<const std::size_t*, const std::size_t*,
@@ -252,7 +254,7 @@ void UmfpackLUSolver::numeric_factorize()
 std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
                                               const GenericVector& b) const
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("UmfpackLUSolver.cpp",
                  "solve linear system with UMFPACK LU solver",
@@ -260,7 +262,7 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   }
 
   // Need matrix data
-  std::shared_ptr<const GenericMatrix> A = require_matrix(_A);
+  std::shared_ptr<const GenericMatrix> A = require_matrix(_matA);
 
   dolfin_assert(A->size(0) == A->size(0));
   dolfin_assert(A->size(0) == b.size());
@@ -313,7 +315,7 @@ UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
   dolfin_assert(Ax);
 
   void* symbolic = 0;
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Symbolic factorisation step (reordering, etc)
   if (sizeof(std::size_t) == sizeof(int))
@@ -356,7 +358,7 @@ UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
   dolfin_assert(symbolic);
 
   void* numeric = 0;
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Factorization step
   long int status = 0;
@@ -400,7 +402,7 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
   dolfin_assert(b);
   dolfin_assert(numeric);
 
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Solve system. We assume CSR storage, but UMFPACK expects CSC, so solve
   // for the transpose

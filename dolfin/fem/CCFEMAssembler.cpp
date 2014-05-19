@@ -107,7 +107,8 @@ void CCFEMAssembler::assemble_cells(GenericTensor& A, const CCFEMForm& a)
       // Update to current cell
       cell->get_vertex_coordinates(vertex_coordinates);
       cell->get_cell_data(ufc_cell);
-      ufc.update(*cell, vertex_coordinates, ufc_cell);
+      ufc.update(*cell, vertex_coordinates, ufc_cell,
+                 integral->enabled_coefficients());
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
@@ -174,7 +175,7 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
   if (A.rank() == 2)
   {
     // Down cast to GenericMatrix
-    GenericMatrix& _A = A.down_cast<GenericMatrix>();
+    GenericMatrix& _matA = A.down_cast<GenericMatrix>();
 
     // Loop over rows and insert 0.0 on the diagonal
     const double block = 0.0;
@@ -183,7 +184,7 @@ void CCFEMAssembler::init_global_tensor(GenericTensor& A, const CCFEMForm& a)
     for (std::size_t i = row_range.first; i < range; i++)
     {
       dolfin::la_index _i = i;
-      _A.set(&block, 1, &_i, 1, &_i);
+      _matA.set(&block, 1, &_i, 1, &_i);
     }
     A.apply("flush");
   }

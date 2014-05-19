@@ -80,13 +80,11 @@ int main()
   class DirichletBoundary: public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return on_boundary;
-    }
+    { return on_boundary; }
   };
 
   // Create sphere mesh
-  SphereMesh mesh(Point(0.0, 0.0, 0.0), 1.0, 0.1);
+  SphereMesh mesh(Point(0.0, 0.0, 0.0), 1.0, 0.2);
 
   // Define functions
   Source dbdt;

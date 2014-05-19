@@ -23,10 +23,10 @@
 #include <iostream>
 
 #include <map>
+#include <memory>
 #include <utility>
 #include <vector>
 #include <boost/assign/list_of.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -320,7 +320,7 @@ void XMLLocalMeshSAX::read_mesh(const xmlChar* name, const xmlChar** attrs,
                                                   num_attributes);
 
   // Create cell type to get topological dimension
-  boost::scoped_ptr<CellType> cell_type(CellType::create(type));
+  std::unique_ptr<CellType> cell_type(CellType::create(type));
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0

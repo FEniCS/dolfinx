@@ -58,9 +58,10 @@ namespace dolfin
   private:
 
     std::shared_ptr<const DirichletBC> _bc;
+
   };
 
-  VTKPlottableDirichletBC *CreateVTKPlottable(std::shared_ptr<const DirichletBC>);
+  VTKPlottableDirichletBC* CreateVTKPlottable(std::shared_ptr<const DirichletBC>);
 
 }
 
