@@ -10,17 +10,12 @@
 #include <dolfin/generation/BoxMesh.h>
 #include <dolfin/generation/EllipseMesh.h>
 #include <dolfin/generation/EllipsoidMesh.h>
-#include <dolfin/generation/IntervalMesh.h>
-#include <dolfin/generation/Interval.h>
 #include <dolfin/generation/RectangleMesh.h>
 #include <dolfin/generation/UnitTetrahedronMesh.h>
 #include <dolfin/generation/UnitCubeMesh.h>
-#include <dolfin/generation/UnitCube.h>
 #include <dolfin/generation/UnitIntervalMesh.h>
-#include <dolfin/generation/UnitInterval.h>
 #include <dolfin/generation/UnitTriangleMesh.h>
 #include <dolfin/generation/UnitSquareMesh.h>
-#include <dolfin/generation/UnitSquare.h>
 #include <dolfin/generation/UnitCircleMesh.h>
 #include <dolfin/generation/UnitCircle.h>
 #include <dolfin/generation/CSGGeometry.h>
