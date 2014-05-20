@@ -58,16 +58,10 @@ class NormalX : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = 0.0;
-    return;
-
-
-    if (std::abs(x[0] - 0.25) < DOLFIN_EPS)
+    if (std::abs(x[1] - 0.25) < DOLFIN_EPS)
       values[0] = 1.0;
-    else if (std::abs(x[0] - 0.75) < DOLFIN_EPS)
+    else if (std::abs(x[1] - 0.75) < DOLFIN_EPS)
       values[0] = -1.0;
-    else if (std::abs(x[1] - 0.25) < DOLFIN_EPS)
-      values[0] = 0.0;
     else
       values[0] = 0.0;
   }
@@ -78,17 +72,12 @@ class NormalY : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = 1.0;
-    return;
-
     if (std::abs(x[0] - 0.25) < DOLFIN_EPS)
-      values[0] = 0.0;
-    else if (std::abs(x[0] - 0.75) < DOLFIN_EPS)
-      values[0] = 0.0;
-    else if (std::abs(x[1] - 0.25) < DOLFIN_EPS)
       values[0] = 1.0;
-    else
+    else if (std::abs(x[1] - 0.75) < DOLFIN_EPS)
       values[0] = -1.0;
+    else
+      values[0] = 0.0;
   }
 };
 
@@ -101,24 +90,28 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 4;
-  //UnitSquareMesh square(N, N);
-  UnitSquareMesh square(1, 2);
-  const double e = 0.0000001;
+  int N = 64;
+  UnitSquareMesh square(N, N);
+  RectangleMesh rectangle_1(0.25, 0.25, 0.75, 0.75, N, N);
+
   //RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, 2, 2);
   //RectangleMesh rectangle_1(0.01, 0.01, 0.99, 0.99, N, N);
   //RectangleMesh rectangle_1(0.25 + e, 0.25 + e, 0.75 - e, 0.75 - e, 2, 2);
   //RectangleMesh rectangle_1(0.0 + e, 0.25 + e, 1.0 - e, 0.75 - e, 2, 2);
-  RectangleMesh rectangle_1(-e, 0.5 - e, 1.0 + e, 1.0 + e, 1, 1);
+
   //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, N, N);
   //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, N, N);
+
+  //UnitSquareMesh square(1, 2);
+  //const double e = 0.0000001;
+  //RectangleMesh rectangle_1(-e, 0.5 - e, 1.0 + e, 1.0 + e, 1, 1);
 
   // FIXME: Testing whether a slight translation gets rid of a corner case
   //Point dx(0.017, 0.023);
   //rectangle_1.translate(dx);
 
   // FIXME: Testing rotation
-  //rectangle_1.rotate(15);
+  rectangle_1.rotate(15);
 
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(square);
@@ -181,22 +174,24 @@ int main()
   assembler.assemble(b, L);
 
   // Apply boundary condition
-  //bc.apply(A, b);
+  bc.apply(A, b);
 
   // Compute solution
   MultiMeshFunction u(V);
   solve(A, *u.vector(), b);
 
-  info(A, true);
+  // Save to file
+  File u0_file("u0.pvd");
+  File u1_file("u1.pvd");
+  u0_file << u.part(0);
+  u1_file << u.part(1);
 
-  /*
   // Plot solution
   plot(V.multimesh());
   plot(u.part(0), "u_0");
   plot(u.part(1), "u_1");
   //plot(u.part(2), "u_2");
   interactive();
-  */
 
   return 0;
 }
