@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-10
-// Last changed: 2013-05-10
+// Last changed: 2014-05-20
 
 // ===========================================================================
 // SWIG directives for the DOLFIN geometry kernel module (pre)
@@ -37,3 +37,14 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::BoundingBoxTree::BoundingBoxTree(const Mesh&);
 %ignore dolfin::BoundingBoxTree::BoundingBoxTree(const Mesh&, unsigned int);
+
+//-----------------------------------------------------------------------------
+// Ignore nested classes. They are not supported by SWIG
+//-----------------------------------------------------------------------------
+%warnfilter(325) dolfin::GenericBoundingBoxTree::BBox;
+%warnfilter(325) dolfin::GenericBoundingBoxTree::less_x_point;
+%warnfilter(325) dolfin::GenericBoundingBoxTree::less_y_point;
+%warnfilter(325) dolfin::GenericBoundingBoxTree::less_z_point;
+%warnfilter(325) dolfin::GenericBoundingBoxTree::less_x_bbox;
+%warnfilter(325) dolfin::GenericBoundingBoxTree::less_y_bbox;
+%warnfilter(325) dolfin::GenericBoundingBoxTree::less_z_bbox;
