@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2014-02-13
+// Last changed: 2014-05-20
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -644,7 +644,30 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, NPY_UINT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, NPY_UINTP)
-OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT64)
+
+%typemap(out) std::vector<dolfin::la_index>
+{
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT32)
+  npy_intp adims = $1.size();
+
+  if (sizeof(dolfin::la_index) == 4)
+  {
+    $result = PyArray_SimpleNew(1, &adims, NPY_INT32);
+  }
+  else if (sizeof(dolfin::la_index) == 8)
+  {
+    $result = PyArray_SimpleNew(1, &adims, NPY_INT64);
+  }
+  else
+    SWIG_exception(SWIG_TypeError, "sizeof(dolfin::la_index) incompatible NumPy types");
+
+  dolfin::la_index* data = static_cast<dolfin::la_index*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
+  std::copy($1.begin(), $1.end(), data);
+
+}
+
+// Need specialized typemap for dolfin::la_index
+//OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, dolfin_index)
 
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(double, double)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(int, int)
