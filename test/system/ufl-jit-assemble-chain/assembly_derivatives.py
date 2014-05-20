@@ -139,9 +139,6 @@ class IntegrateDerivatives(unittest.TestCase):
             # Apply integration with DOLFIN
             # (also passes through form compilation and jit)
             M = f*dx
-            if debug:
-                print M
-                print M.compute_form_data().preprocessed_form
             f_integral = assemble(M, mesh=mesh)
 
             # Compute integral of f manually from anti-derivative F
