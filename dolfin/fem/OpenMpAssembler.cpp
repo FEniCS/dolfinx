@@ -90,12 +90,6 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
   // Create data structure for local assembly data
   UFC ufc(a);
 
-  // Update off-process coefficients
-  const std::vector<std::shared_ptr<const GenericFunction> >
-    coefficients = a.coefficients();
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->update();
-
   // Initialize global tensor
   init_global_tensor(A, a);
 
