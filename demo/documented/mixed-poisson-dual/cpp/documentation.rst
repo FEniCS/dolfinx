@@ -164,7 +164,7 @@ class.
     // Define boundary condition
     Constant zero(0.0);
     SubSpace W1(W, 1);
-    DirichletbBoundary boundary;
+    DirichletBoundary boundary;
     DirichletBC bc(W1, zero, boundary);
 
 To compute the solution we use the bilinear and linear forms, and the
