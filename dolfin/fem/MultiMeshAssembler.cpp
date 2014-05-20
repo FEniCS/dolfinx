@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-05-16
+// Last changed: 2014-05-20
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -57,13 +57,13 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   init_global_tensor(A, a);
 
   // Assemble over uncut cells
-  assemble_uncut_cells(A, a);
+  // assemble_uncut_cells(A, a);
 
   // Assemble over cut cells
-  assemble_cut_cells(A, a);
+  //  assemble_cut_cells(A, a);
 
   // Assemble over covered cells
-  assemble_covered_cells(A, a);
+  // assemble_covered_cells(A, a);
 
   // Assemble over interface
   assemble_interface(A, a);
@@ -132,6 +132,12 @@ void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
     {
       // Create cell
       Cell cell(mesh_part, *it);
+
+      /* FIXME: Testing
+    for (unsigned int cell_index = 0; cell_index < mesh_part.num_cells(); cell_index++)
+    {
+      Cell cell(mesh_part, cell_index);
+      */
 
       // Update to current cell
       cell.get_vertex_coordinates(vertex_coordinates);
@@ -471,6 +477,27 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                       macro_dofs[i].begin() + dofs_0.size());
           }
 
+          cout << endl;
+
+          cout << "x =";
+          for (std::size_t k = 0; k < num_quadrature_points; k++)
+            cout << " " << qr.first[2*k] << " " << qr.first[2*k + 1];
+          cout << endl;
+
+          cout << "w =";
+          for (std::size_t k = 0; k < num_quadrature_points; k++)
+            cout << " " << qr.second[k];
+          cout << endl;
+
+          cout << "dofs_0 =";
+          for (std::size_t k = 0; k < macro_dofs[0].size(); k++)
+            cout << " " << macro_dofs[0][k];
+          cout << endl;
+          cout << "dofs_1 =";
+          for (std::size_t k = 0; k < macro_dofs[1].size(); k++)
+            cout << " " << macro_dofs[1][k];
+          cout << endl;
+
           // FIXME: Cell orientation not supported
           const int cell_orientation = ufc_cell[0].orientation;
 
@@ -482,6 +509,14 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                                            qr.first.data(),
                                            qr.second.data(),
                                            cell_orientation);
+
+          cout << "A =" << endl;
+          for (std::size_t i = 0; i < 6; i++)
+          {
+            for (std::size_t j = 0; j < 6; j++)
+              cout << " " << ufc_part.macro_A[i*6 + j];
+            cout << endl;
+          }
 
           // Add entries to global tensor
           A.add(ufc_part.macro_A.data(), macro_dof_ptrs);

@@ -24,7 +24,7 @@
 // Modified by Andre Massing, 2013.
 //
 // First added:  2007-11-25
-// Last changed: 2013-10-30
+// Last changed: 2014-05-20
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -105,6 +105,7 @@
 %shared_ptr(dolfin::FacetArea)
 %shared_ptr(dolfin::Constant)
 %shared_ptr(dolfin::MeshCoordinates)
+%shared_ptr(dolfin::MultiMeshFunctionSpace)
 
 // geometry
 %shared_ptr(dolfin::BoundingBoxTree)
@@ -137,8 +138,9 @@
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
 %shared_ptr(dolfin::Rectangle)
+%shared_ptr(dolfin::MultiMesh)
 
- //csg
+// csg
 %shared_ptr(dolfin::CSGGeometry)
 %shared_ptr(dolfin::CSGOperator)
 %shared_ptr(dolfin::CSGUnion)

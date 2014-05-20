@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-12
+// Last changed: 2014-05-20
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -32,11 +32,13 @@ class Source : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    const double x0 = 1.0;
-    const double y0 = 1.0;
-    double dx = x[0] - x0;
-    double dy = x[1] - y0;
-    values[0] = 100*exp(-(dx*dx + dy*dy) / 0.02);
+    //const double x0 = 1.0;
+    //const double y0 = 1.0;
+    //double dx = x[0] - x0;
+    //double dy = x[1] - y0;
+    //values[0] = 100*exp(-(dx*dx + dy*dy) / 0.25);
+
+    values[0] = 2*x[0]*(1 - x[0]) + 2*x[1]*(1 - x[1]);
   }
 };
 
@@ -56,6 +58,10 @@ class NormalX : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
+    values[0] = 0.0;
+    return;
+
+
     if (std::abs(x[0] - 0.25) < DOLFIN_EPS)
       values[0] = 1.0;
     else if (std::abs(x[0] - 0.75) < DOLFIN_EPS)
@@ -72,6 +78,9 @@ class NormalY : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
+    values[0] = 1.0;
+    return;
+
     if (std::abs(x[0] - 0.25) < DOLFIN_EPS)
       values[0] = 0.0;
     else if (std::abs(x[0] - 0.75) < DOLFIN_EPS)
@@ -92,11 +101,17 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 16;
-  UnitSquareMesh square(N, N);
-  RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, N, N);
-  //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, 16, 16);
-  //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, 16, 16);
+  int N = 4;
+  //UnitSquareMesh square(N, N);
+  UnitSquareMesh square(1, 2);
+  const double e = 0.0000001;
+  //RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, 2, 2);
+  //RectangleMesh rectangle_1(0.01, 0.01, 0.99, 0.99, N, N);
+  //RectangleMesh rectangle_1(0.25 + e, 0.25 + e, 0.75 - e, 0.75 - e, 2, 2);
+  //RectangleMesh rectangle_1(0.0 + e, 0.25 + e, 1.0 - e, 0.75 - e, 2, 2);
+  RectangleMesh rectangle_1(-e, 0.5 - e, 1.0 + e, 1.0 + e, 1, 1);
+  //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, N, N);
+  //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, N, N);
 
   // FIXME: Testing whether a slight translation gets rid of a corner case
   //Point dx(0.017, 0.023);
@@ -135,6 +150,7 @@ int main()
 
   // Build MultiMesh function space
   MultiMeshFunctionSpace V;
+  V.parameters("multimesh")["quadrature_order"] = 2;
   V.add(V0);
   V.add(V1);
   //V.add(V2);
@@ -165,18 +181,22 @@ int main()
   assembler.assemble(b, L);
 
   // Apply boundary condition
-  bc.apply(A, b);
+  //bc.apply(A, b);
 
   // Compute solution
   MultiMeshFunction u(V);
   solve(A, *u.vector(), b);
 
+  info(A, true);
+
+  /*
   // Plot solution
   plot(V.multimesh());
   plot(u.part(0), "u_0");
   plot(u.part(1), "u_1");
   //plot(u.part(2), "u_2");
   interactive();
+  */
 
   return 0;
 }
