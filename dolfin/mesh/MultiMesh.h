@@ -16,13 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-05-12
+// Last changed: 2014-05-20
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
 
 #include <vector>
 #include <map>
+
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -42,7 +44,7 @@ namespace dolfin
   /// build(). Note that a multimesh is not useful until build() has
   /// been called.
 
-  class MultiMesh
+  class MultiMesh : public Variable
   {
   public:
 
@@ -195,7 +197,7 @@ namespace dolfin
     ///         rules on an interface part cutting through the cell.
     ///         A separate quadrature rule is given for each cutting
     ///         cell and stored in the same order as in the collision
-    ///         map.  Each quadrature rule is represented as a pair of
+    ///         map. Each quadrature rule is represented as a pair of
     ///         an array of quadrature points and a corresponding
     ///         flattened array of quadrature weights.
     const std::map<unsigned int, std::vector<quadrature_rule> >&
@@ -245,6 +247,16 @@ namespace dolfin
 
     /// Clear multimesh
     void clear();
+
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("multimesh");
+
+      p.add("quadrature_order", 1);
+
+      return p;
+    }
 
   private:
 
@@ -390,7 +402,7 @@ namespace dolfin
                               const std::vector<double>& triangulation,
                               std::size_t tdim,
                               std::size_t gdim,
-                              std::size_t order,
+                              std::size_t quadrature_order,
                               double factor) const;
 
     // Add quadrature rule to existing quadrature rule (append dqr to qr)

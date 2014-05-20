@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-12
+// Last changed: 2014-05-20
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -35,7 +35,8 @@ using namespace dolfin;
 MultiMeshFunctionSpace::MultiMeshFunctionSpace()
   : _multimesh(new MultiMesh()), _dofmap(new MultiMeshDofMap())
 {
-  // Do nothing
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MultiMeshFunctionSpace::~MultiMeshFunctionSpace()
@@ -114,6 +115,9 @@ void MultiMeshFunctionSpace::_build_multimesh()
   // Clear multimesh
   dolfin_assert(_multimesh);
   _multimesh->clear();
+
+  // Propagate parameters
+  _multimesh->parameters.update(parameters("multimesh"));
 
   // Add meshes
   for (std::size_t i = 0; i < num_parts(); i++)

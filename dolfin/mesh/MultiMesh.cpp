@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-12
+// Last changed: 2014-05-20
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -35,7 +35,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiMesh::MultiMesh()
 {
-  // Do nothing
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MultiMesh::~MultiMesh()
@@ -368,8 +369,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
 {
   begin(PROGRESS, "Building quadrature rules of cut cells' overlap.");
 
-  // FIXME: Make this a parameters
-  const std::size_t order = 1;
+  // Get quadrature order
+  const std::size_t quadrature_order = parameters["quadrature_order"];
 
   // Clear quadrature rules
   _quadrature_rules_overlap.clear();
@@ -483,7 +484,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
           {
             _add_quadrature_rule(interface_part_qr,
                                  triangulation_cut_boundary,
-                                 tdim_boundary, gdim, order, 1);
+                                 tdim_boundary, gdim, quadrature_order, 1);
           }
 
           // Triangulate intersection of boundary cell and previous volume triangulation
@@ -497,7 +498,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
           {
             _add_quadrature_rule(interface_part_qr,
                                  triangulation_boundary_prev_volume,
-                                 tdim_boundary, gdim, order, -1);
+                                 tdim_boundary, gdim, quadrature_order, -1);
           }
 
           // Update triangulation
@@ -518,7 +519,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
         {
           _add_quadrature_rule(interface_part_qr,
                                triangulation_prev_cutting,
-                               tdim_boundary, gdim, order, -1);
+                               tdim_boundary, gdim, quadrature_order, -1);
         }
 
         // Update triangulation
@@ -548,10 +549,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
         // triangulations
         _add_quadrature_rule(volume_qr,
                              triangulation_cut_cutting,
-                             tdim, gdim, order, 1);
+                             tdim, gdim, quadrature_order, 1);
         _add_quadrature_rule(volume_qr,
                              triangulation_cutting_prev,
-                             tdim, gdim, order, -1);
+                             tdim, gdim, quadrature_order, -1);
 
         // Add quadrature rule for interface part
         interface_qr.push_back(interface_part_qr);
@@ -570,9 +571,11 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 {
   begin(PROGRESS, "Building quadrature rules of cut cells.");
 
-  // FIXME: Make this a parameter. Do we want to check to make sure we
+  // FIXME: Do we want to check to make sure we
   // have the same order in the overlapping part?
-  const std::size_t order = 1;
+
+  // Get quadrature order
+  const std::size_t quadrature_order = parameters["quadrature_order"];
 
   // Clear quadrature rules
   _quadrature_rules_cut_cells.clear();
@@ -593,7 +596,8 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
       // Compute quadrature rule for the cell itself.
-      auto qr = SimplexQuadrature::compute_quadrature_rule(cut_cell, order);
+      auto qr = SimplexQuadrature::compute_quadrature_rule(cut_cell,
+                                                           quadrature_order);
 
       // Get the quadrature rule for the overlapping part
       const auto& qr_overlap = _quadrature_rules_overlap[cut_part][cut_cell_index];
@@ -614,7 +618,7 @@ void MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
                                      const std::vector<double>& triangulation,
                                      std::size_t tdim,
                                      std::size_t gdim,
-                                     std::size_t order,
+                                     std::size_t quadrature_order,
                                      double factor) const
 {
   // Iterate over simplices in triangulation
@@ -629,7 +633,7 @@ void MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
     const auto dqr = SimplexQuadrature::compute_quadrature_rule(x,
                                                                tdim,
                                                                gdim,
-                                                               order);
+                                                               quadrature_order);
 
     // Add quadrature rule
     _add_quadrature_rule(qr, dqr, gdim, factor);

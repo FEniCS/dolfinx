@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-12
+// Last changed: 2014-05-20
 
 #ifndef __MULTI_MESH_FUNCTION_SPACE_H
 #define __MULTI_MESH_FUNCTION_SPACE_H
@@ -25,13 +25,15 @@
 #include <map>
 #include <memory>
 
+#include <dolfin/common/Variable.h>
+#include <dolfin/mesh/MultiMesh.h>
+
 namespace dolfin
 {
 
   // Forward declarations
   class FunctionSpace;
   class MultiMeshDofMap;
-  class MultiMesh;
 
   /// This class represents a function space on a multimesh. It may
   /// may be created from a set of standard function spaces by
@@ -39,7 +41,7 @@ namespace dolfin
   /// that a multimesh function space is not useful and its data
   /// structures are empty until build() has been called.
 
-  class MultiMeshFunctionSpace
+  class MultiMeshFunctionSpace : public Variable
   {
   public:
 
@@ -119,6 +121,16 @@ namespace dolfin
 
     /// Build multimesh function space
     void build();
+
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("multimesh_functionspace");
+
+      p.add(MultiMesh::default_parameters());
+
+      return p;
+    }
 
   private:
 
