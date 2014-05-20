@@ -238,7 +238,7 @@ class AbstractBaseTest(object):
         self.test_ident_zeros(use_backend=True)
 
     def test_setting_diagonal(self, use_backend=False):
-        
+
         mesh = UnitSquareMesh(21, 23)
 
         V = FunctionSpace(mesh, "Lagrange", 2)
@@ -250,7 +250,7 @@ class AbstractBaseTest(object):
         B = self.assemble(u*v*dx(), use_backend=use_backend, keep_diagonal=True)
 
         b = assemble(action(u*v*dx()), coefficients=[Constant(1)])
-        
+
         A = B.copy()
         A.zero()
         A.set_diagonal(b)
@@ -266,7 +266,7 @@ class AbstractBaseTest(object):
         A.mult(ones, resultsA)
         B.mult(ones, resultsB)
         self.assertAlmostEqual(resultsA.norm("l2"), resultsB.norm("l2"))
-        
+
     def test_setting_diagonal_with_backend(self):
         self.test_setting_diagonal(True)
 
