@@ -454,7 +454,8 @@ class Assembly(unittest.TestCase):
         x = SpatialCoordinate(mesh)
         n = FacetNormal(mesh)
 
-        # Geometry with just cell (no reference to mesh, for backwards compatibility)
+        # Geometry with just cell (no reference to mesh, for backwards
+        # compatibility)
         x2 = SpatialCoordinate(mesh.ufl_cell())
         n2 = FacetNormal(mesh.ufl_cell())
 

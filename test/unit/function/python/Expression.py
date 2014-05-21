@@ -326,8 +326,8 @@ class Instantiation(unittest.TestCase):
      def test_name_space_usage(self):
           e0 = Expression("std::sin(x[0])*cos(x[1])")
           e1 = Expression("sin(x[0])*std::cos(x[1])")
-          self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
-                                 assemble(e1*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(e0*dx(mesh)), \
+                                 assemble(e1*dx(mesh)))
 
      def test_generic_function_attributes(self):
           tc = Constant(2.0)
@@ -345,29 +345,29 @@ class Instantiation(unittest.TestCase):
           e2 = Expression("t", t=te)
           e3 = Expression("t", t=tf)
 
-          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                                 assemble(inner(e1,e1)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx(mesh)), \
+                                 assemble(inner(e1,e1)*dx(mesh)))
 
-          self.assertAlmostEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                                 assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                                 assemble(inner(e3,e3)*dx(mesh)))
 
           tc.assign(3.0)
           e1.t = float(tc)
 
-          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                                 assemble(inner(e1,e1)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx(mesh)), \
+                                 assemble(inner(e1,e1)*dx(mesh)))
           tc.assign(5.0)
 
-          self.assertNotEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                              assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertNotEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                              assemble(inner(e3,e3)*dx(mesh)))
 
-          self.assertAlmostEqual(assemble(e0[0]*dx, mesh=mesh), \
-                                 assemble(2*e2*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(e0[0]*dx(mesh)), \
+                                 assemble(2*e2*dx(mesh)))
 
           e2.t = e3.t
 
-          self.assertEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                           assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                           assemble(inner(e3,e3)*dx(mesh)))
 
           # Test wrong kwargs
           self.assertRaises(TypeError, lambda : Expression("t", t=Constant((1,0))))
@@ -641,7 +641,7 @@ class Instantiation(unittest.TestCase):
                        self.assertTrue(hasattr(ufc_cell, attr))
 
           f1 = MyExpression1()
-          assemble(f1*ds(), mesh=square)
+          assemble(f1*ds(square))
 
           class MyExpression2(Expression):
               def __init__(self, mesh, domain):

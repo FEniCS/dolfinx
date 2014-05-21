@@ -25,29 +25,6 @@ import numpy
 import ufl
 from dolfin import *
 
-class FormTest(unittest.TestCase):
-
-    def setUp(self):
-        self.square = UnitSquareMesh(10, 10)
-        self.V = FunctionSpace(self.square, "CG", 1)
-        self.f = Expression("sin(pi*x[0]*x[1])")
-        self.v = TestFunction(self.V)
-        self.u = TrialFunction(self.V)
-
-    def test_assemble(self):
-        ufl_form = self.f*self.u*self.v*dx
-
-        dolfin_form = Form(ufl_form)
-        ufc_form = dolfin_form._compiled_form
-
-        A_ufl_norm = assemble(ufl_form).norm("frobenius")
-        A_dolfin_norm = assemble(dolfin_form).norm("frobenius")
-        A_ufc_norm = assemble(ufc_form, coefficients=[self.f],
-                              function_spaces=[self.V, self.V]).norm("frobenius")
-
-        self.assertAlmostEqual(A_ufl_norm, A_dolfin_norm)
-        self.assertAlmostEqual(A_ufl_norm, A_ufc_norm)
-
 class FormTestsOverManifolds(unittest.TestCase):
 
     def setUp(self):
@@ -146,9 +123,9 @@ class FormTestsOverManifolds(unittest.TestCase):
         bottom = FacetFunctionSizet(self.square)
         bottom.set_all(0)
         subdomain.mark(bottom, 1)
+        dss = ds[bottom]
         foo = MPI.sum(self.square.mpi_comm(),
-                      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(1),
-                                   exterior_facet_domains=bottom).array()).sum())
+                      abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
         # Assemble over all cells of submesh created from subset of boundary mesh
         bottom2 = CellFunctionSizet(self.square_boundary)
         bottom2.set_all(0)
@@ -186,9 +163,12 @@ class FormTestsOverManifolds(unittest.TestCase):
         bottom = FacetFunctionSizet(self.cube)
         bottom.set_all(0)
         subdomain.mark(bottom, 1)
+        dss = ds[bottom]
         foo = MPI.sum(self.cube.mpi_comm(),
-                      abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(1),
-                                   exterior_facet_domains=bottom).array()).sum())
+                      abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
+        #foo = MPI.sum(self.cube.mpi_comm(),
+        #              abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(1),
+        #                           exterior_facet_domains=bottom).array()).sum())
         # Assemble over all cells of submesh created from subset of boundary mesh
         bottom2 = CellFunctionSizet(self.cube_boundary)
         bottom2.set_all(0)
