@@ -116,7 +116,8 @@ class CahnHilliardEquation : public NonlinearProblem
       // Create forms and attach functions
       Y* _a = new Y(V, V);
       Z* _L = new Z(V);
-      _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
+      _a->u = *_u; _a->u0 = *_u0;
+      _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
       _L->u = *_u; _L->u0 = *_u0;
       _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
 

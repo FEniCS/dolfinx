@@ -92,7 +92,7 @@ int main()
 
   // Create Jacobian form J = F' (for use in nonlinear solver).
   NonlinearPoisson::JacobianForm J(V, V);
-  J.u = u;
+  J.u = u; J.f = f;
 
   // Create solver Parameters
   Parameters params("nonlinear_variational_solver");

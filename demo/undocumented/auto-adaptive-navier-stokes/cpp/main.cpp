@@ -82,6 +82,7 @@ int main()
 
   // Initialize Jacobian dF
   AdaptiveNavierStokes::BilinearForm dF(W, W);
+  dF.p0 = p0;
   dF.nu = nu;
   dF.w = w;
 

@@ -132,7 +132,7 @@ int main()
 
   // Create jacobian dF = F' (for use in nonlinear solver).
   HyperElasticity::JacobianForm J(V, V);
-  J.mu = mu; J.lmbda = lambda; J.u = u;
+  J.mu = mu; J.lmbda = lambda; J.B = B; J.T = T; J.u = u;
 
   // Solve nonlinear variational problem F(u; v) = 0
   solve(F == 0, u, bcs, J);
