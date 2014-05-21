@@ -41,13 +41,10 @@
 //-----------------------------------------------------------------------------
 // Make DOLFIN aware of the types defined in UFC
 //-----------------------------------------------------------------------------
-%shared_ptr(ufc::cell_integral)
-%shared_ptr(ufc::dofmap)
-%shared_ptr(ufc::finite_element)
-%shared_ptr(ufc::function)
-%shared_ptr(ufc::form)
-%shared_ptr(ufc::exterior_facet_integral)
-%shared_ptr(ufc::interior_facet_integral)
+%{
+#include <ufc.h>
+%}
+%include <swig/ufc_shared_ptr_classes.i>
 %import(module="ufc") "ufc.h"
 
 //-----------------------------------------------------------------------------
@@ -87,7 +84,6 @@
 %shared_ptr(dolfin::NonlinearVariationalProblem)
 %shared_ptr(dolfin::LinearVariationalSolver)
 %shared_ptr(dolfin::NonlinearVariationalSolver)
-%shared_ptr(dolfin::VariationalProblem)
 %shared_ptr(dolfin::PointIntegralSolver)
 
 %shared_ptr(dolfin::Hierarchical<dolfin::DirichletBC>)
@@ -120,19 +116,11 @@
 %shared_ptr(dolfin::SphereMesh)
 %shared_ptr(dolfin::SubMesh)
 %shared_ptr(dolfin::UnitTetrahedronMesh)
-%shared_ptr(dolfin::UnitTetrahedron)
 %shared_ptr(dolfin::UnitCubeMesh)
-%shared_ptr(dolfin::UnitCube)
 %shared_ptr(dolfin::UnitIntervalMesh)
-%shared_ptr(dolfin::UnitInterval)
 %shared_ptr(dolfin::IntervalMesh)
-%shared_ptr(dolfin::Interval)
 %shared_ptr(dolfin::UnitTriangleMesh)
-%shared_ptr(dolfin::UnitTriangle)
 %shared_ptr(dolfin::UnitSquareMesh)
-%shared_ptr(dolfin::UnitSquare)
-%shared_ptr(dolfin::UnitCircleMesh)
-%shared_ptr(dolfin::UnitCircle)
 %shared_ptr(dolfin::BoxMesh)
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
