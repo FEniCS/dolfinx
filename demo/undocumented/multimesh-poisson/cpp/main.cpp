@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-20
+// Last changed: 2014-05-21
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -52,15 +52,28 @@ class DirichletBoundary : public SubDomain
 };
 
 // FIXME: Normal vector should not have be supplied manually
+// FIXME: Very hacky and ugly implementation here...
 
 // x-component of normal to interface
 class NormalX : public Expression
 {
-  void eval(Array<double>& values, const Array<double>& x) const
+public:
+
+  const MultiMesh& multimesh;
+  NormalX(const MultiMesh& multimesh) : multimesh(multimesh) {}
+
+  void eval(Array<double>& values,
+            const Array<double>& x,
+            const ufc::cell& cell) const
   {
-    if (std::abs(x[1] - 0.25) < DOLFIN_EPS)
+    const double dx0 = std::abs(x[0] - 0.25);
+    const double dx1 = std::abs(x[0] - 0.75);
+    const double dy0 = std::abs(x[1] - 0.25);
+    const double dy1 = std::abs(x[1] - 0.75);
+
+    if (dx0 < dx1 && dx0 < dy0 && dx0 < dy1)
       values[0] = 1.0;
-    else if (std::abs(x[1] - 0.75) < DOLFIN_EPS)
+    else if (dx1 < dy0 && dx1 < dy1)
       values[0] = -1.0;
     else
       values[0] = 0.0;
@@ -70,11 +83,23 @@ class NormalX : public Expression
 // y-component of normal to interface
 class NormalY : public Expression
 {
-  void eval(Array<double>& values, const Array<double>& x) const
+public:
+
+  const MultiMesh& multimesh;
+  NormalY(const MultiMesh& multimesh) : multimesh(multimesh) {}
+
+  void eval(Array<double>& values,
+            const Array<double>& x,
+            const ufc::cell& cell) const
   {
-    if (std::abs(x[0] - 0.25) < DOLFIN_EPS)
+    const double dx0 = std::abs(x[0] - 0.25);
+    const double dx1 = std::abs(x[0] - 0.75);
+    const double dy0 = std::abs(x[1] - 0.25);
+    const double dy1 = std::abs(x[1] - 0.75);
+
+    if (dy0 < dy1 && dy0 < dx0 && dy0 < dx1)
       values[0] = 1.0;
-    else if (std::abs(x[1] - 0.75) < DOLFIN_EPS)
+    else if (dy1 < dx0 && dy1 < dx1)
       values[0] = -1.0;
     else
       values[0] = 0.0;
@@ -111,7 +136,7 @@ int main()
   //rectangle_1.translate(dx);
 
   // FIXME: Testing rotation
-  rectangle_1.rotate(15);
+  //square.rotate(15);
 
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(square);
@@ -129,9 +154,17 @@ int main()
   MultiMeshPoisson::LinearForm L1(V1);
   //MultiMeshPoisson::LinearForm L2(V2);
 
+  // Build MultiMesh function space
+  MultiMeshFunctionSpace V;
+  V.parameters("multimesh")["quadrature_order"] = 2;
+  V.add(V0);
+  V.add(V1);
+  //V.add(V2);
+  V.build();
+
   // Set coefficients
-  NormalX nx;
-  NormalY ny;
+  NormalX nx(*V.multimesh());
+  NormalY ny(*V.multimesh());
   a0.nx = nx;
   a0.ny = ny;
   a1.nx = nx;
@@ -140,14 +173,6 @@ int main()
   L0.f = f;
   L1.f = f;
   //L2.f = f;
-
-  // Build MultiMesh function space
-  MultiMeshFunctionSpace V;
-  V.parameters("multimesh")["quadrature_order"] = 2;
-  V.add(V0);
-  V.add(V1);
-  //V.add(V2);
-  V.build();
 
   // Build MultiMesh forms
   MultiMeshForm a(V, V);

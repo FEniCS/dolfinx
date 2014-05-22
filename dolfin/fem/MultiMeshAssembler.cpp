@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-05-20
+// Last changed: 2014-05-21
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -140,8 +140,8 @@ void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
       */
 
       // Update to current cell
-      cell.get_vertex_coordinates(vertex_coordinates);
       cell.get_cell_data(ufc_cell);
+      cell.get_vertex_coordinates(vertex_coordinates);
       ufc_part.update(cell, vertex_coordinates, ufc_cell);
 
       // Get local-to-global dof maps for cell
@@ -226,8 +226,8 @@ void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
       Cell cell(mesh_part, *it);
 
       // Update to current cell
-      cell.get_vertex_coordinates(vertex_coordinates);
       cell.get_cell_data(ufc_cell);
+      cell.get_vertex_coordinates(vertex_coordinates);
       ufc_part.update(cell, vertex_coordinates, ufc_cell);
 
       // Get local-to-global dof maps for cell
@@ -445,6 +445,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           cell_1.get_vertex_coordinates(vertex_coordinates[1]);
           ufc_part.update(cell_0, vertex_coordinates[0], ufc_cell[0],
                           cell_1, vertex_coordinates[1], ufc_cell[1]);
+
 
           // Collect vertex coordinates
           macro_vertex_coordinates.resize(vertex_coordinates[0].size() +

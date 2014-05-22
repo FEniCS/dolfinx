@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2005
-# Last changed: 2014-05-20
+# Last changed: 2014-05-21
 #
 # The bilinear form a(u, v) and linear form L(v) for a multimesh
 # formulation of Poisson's equation.
@@ -32,8 +32,8 @@ v = TestFunction(element)
 f = Coefficient(element)
 
 # Define normal component and cell size
-#h = 2.0*Circumradius(triangle)
-#h = (h('+') + h('-'))/2
+h = 2.0*Circumradius(triangle)
+h = (h('+') + h('-')) / 2
 
 # FIXME: Vector elements currently not supported
 # Define normal component (needs to be supplied as a coefficient)
@@ -50,15 +50,15 @@ dc1 = dc(1, metadata={"num_cells": 2})
 dx = dx + dc0 # domain integral
 di = dc1      # interface integral
 
-a = inner(grad(u), grad(v))*dx \
+# Parameters
+alpha = 4.0
+
+# Bilinear form
+a = dot(grad(u), grad(v))*dx \
   - dot(avg(grad(u)), jump(v, n))*di \
   - dot(avg(grad(v)), jump(u, n))*di \
-  + 10*jump(u)*jump(v)*di
+  + alpha/h*jump(u)*jump(v)*di
+#  + alpha/h*dot(jump(u, n), jump(v, n))*di
 
-#a0 = - dot(avg(grad(u)), jump(v, n))*di
-#a1 = - dot(avg(grad(v)), jump(u, n))*di
-#a2 = jump(u)*jump(v)*di
-#a3 = a0 + a1 + a2
-#a = a0
-
+# Linear form
 L = f*v*dx
