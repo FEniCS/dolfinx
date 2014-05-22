@@ -88,11 +88,12 @@ int main()
 
   // Create residual form defining (nonlinear) variational problem
   NonlinearPoisson::LinearForm F(V);
-  F.u = u; F.f = f;
+  F.u = u;
+  F.f = f;
 
   // Create Jacobian form J = F' (for use in nonlinear solver).
   NonlinearPoisson::JacobianForm J(V, V);
-  J.u = u; J.f = f;
+  J.u = u;
 
   // Create solver Parameters
   Parameters params("nonlinear_variational_solver");
