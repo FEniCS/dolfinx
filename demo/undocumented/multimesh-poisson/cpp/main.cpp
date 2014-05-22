@@ -180,10 +180,10 @@ int main()
   // Set coefficients
   NormalX nx(*V.multimesh());
   NormalY ny(*V.multimesh());
-  a0.nx = nx;
-  a0.ny = ny;
-  a1.nx = nx;
-  a1.ny = ny;
+  //a0.nx = nx;
+  //a0.ny = ny;
+  //a1.nx = nx;
+  //a1.ny = ny;
   Source f;
   L0.f = f;
   L1.f = f;

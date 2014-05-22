@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2005
-# Last changed: 2014-05-21
+# Last changed: 2014-05-22
 #
 # The bilinear form a(u, v) and linear form L(v) for a multimesh
 # formulation of Poisson's equation.
@@ -40,7 +40,9 @@ h = (h('+') + h('-')) / 2
 DG = FiniteElement("DG", triangle, 0)
 nx = Coefficient(DG)
 ny = Coefficient(DG)
-n = as_vector((nx, ny))
+#n = as_vector((nx, ny))
+
+n = FacetNormal(triangle)
 
 # Define custom measures (FIXME: prettify this)
 dc0 = dc(0, metadata={"num_cells": 1})
