@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-05-20
+// Last changed: 2014-05-22
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -25,6 +25,7 @@
 #include <map>
 
 #include <dolfin/common/Variable.h>
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
@@ -203,6 +204,26 @@ namespace dolfin
     const std::map<unsigned int, std::vector<quadrature_rule> >&
     quadrature_rule_interface(std::size_t part) const;
 
+    /// Return facet normals for the interface on the given part
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The part number
+    ///
+    /// *Returns*
+    ///     std::map<unsigned int, std::vector<std::vector<double> > >
+    ///         A map from cell indices of cut cells to facet normals
+    ///         on an interface part cutting through the cell. A
+    ///         separate list of facet normals, one for each
+    ///         quadrature point, is given for each cutting cell and
+    ///         stored in the same order as in the collision map. The
+    ///         facet normals for each set of quadrature points is
+    ///         stored as a contiguous flattened array, the length of
+    ///         which should be equal to the number of quadrature
+    ///         points multiplied by the geometric dimension. Puh!
+    const std::map<unsigned int, std::vector<std::vector<double> > >&
+    facet_normals(std::size_t part) const;
+
     /// Return the bounding box tree for the mesh of the given part
     ///
     /// *Arguments*
@@ -379,6 +400,20 @@ namespace dolfin
     //            k = the collision number (in the list of cutting cells)
     std::vector<std::map<unsigned int, std::vector<quadrature_rule> > >
     _quadrature_rules_interface;
+
+    // Facet normals for interface. Access data by
+    //
+    //     n = _facet_normals_interface[i][j][k][
+    //
+    // where
+    //
+    //     n = a flattened array vector of facet normals, one point for
+    //         each quadrature point
+    //     i = the part (mesh) number
+    //     j = the cell number (local cell index)
+    //     k = the collision number (in the list of cutting cells)
+    std::vector<std::map<unsigned int, std::vector<std::vector<double> > > >
+    _facet_normals;
 
     // Build boundary meshes
     void _build_boundary_meshes();

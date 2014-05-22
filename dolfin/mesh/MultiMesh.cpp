@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-20
+// Last changed: 2014-05-22
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -112,6 +112,13 @@ MultiMesh::quadrature_rule_interface(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _quadrature_rules_interface[part];
+}
+//-----------------------------------------------------------------------------
+const std::map<unsigned int, std::vector<std::vector<double> > >&
+MultiMesh::facet_normals(std::size_t part) const
+{
+  dolfin_assert(part < num_parts());
+  return _facet_normals[part];
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const BoundingBoxTree>
@@ -380,6 +387,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
   _quadrature_rules_overlap.resize(num_parts());
   _quadrature_rules_interface.resize(num_parts());
 
+  // Clear and resize facet normals
+  _facet_normals.clear();
+  _facet_normals.resize(num_parts());
+
   // FIXME: test prebuild map from boundary facets to full mesh cells
   // for all meshes: Loop over all boundary mesh facets to find the
   // full mesh cell which contains the facet. This is done in two
@@ -445,6 +456,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
       // Data structure for the interface quadrature rule
       std::vector<quadrature_rule> interface_qr;
 
+      // Data structure for the facet normals of the interface
+      std::vector<std::vector<double> > interface_n;
+
       // Data structure for the interface triangulation
       std::vector<double> interface_triangulation;
 
@@ -469,9 +483,13 @@ void MultiMesh::_build_quadrature_rules_overlap()
         // Data structure for the interface part quadrature rule
         quadrature_rule interface_part_qr;
 
+        // Data structure for the interface part facet normals
+        std::vector<double> interface_part_n;
+
         // Iterate over boundary cells
         for (auto boundary_cell_index : full_to_bdry[cutting_part][cutting_cell_index])
         {
+          // Get the boundary facet as a cell on the boundary mesh
           const Cell boundary_cell(*_boundary_meshes[cutting_part],
                                    boundary_cell_index);
 
@@ -505,6 +523,19 @@ void MultiMesh::_build_quadrature_rules_overlap()
           local_interface_triangulation.insert(local_interface_triangulation.end(),
                                                triangulation_cut_boundary.begin(),
                                                triangulation_cut_boundary.end());
+
+          // Add facet normal for part. Note that we need to add the
+          // normal once for each quadrature point, since this is how
+          // the data are grouped during assembly: for each pair of
+          // colliding cells, we build a list of quadrature points and
+          // a corresponding list of facet normals.
+          Point n = boundary_cell.cell_normal();
+          const std::size_t num_quadrature_points = interface_part_qr.second.size();
+          for (std::size_t i = 0; i < num_quadrature_points; i++)
+          {
+            for (std::size_t j = 0; j < gdim; j++)
+              interface_part_n.push_back(n[j]);
+          }
         }
 
         // Triangulate the intersection of the previous interface
@@ -556,11 +587,17 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
         // Add quadrature rule for interface part
         interface_qr.push_back(interface_part_qr);
+
+        // Add facet normal for interface part
+        interface_n.push_back(interface_part_n);
       }
 
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = volume_qr;
       _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
+
+      // Store facet normals for cut cell
+      _facet_normals[cut_part][cut_cell_index] = interface_n;
     }
   }
 

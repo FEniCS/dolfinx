@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-21
+// Last changed: 2014-05-22
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -54,6 +54,8 @@ class DirichletBoundary : public SubDomain
 // FIXME: Normal vector should not have be supplied manually
 // FIXME: Very hacky and ugly implementation here...
 
+
+
 // x-component of normal to interface
 class NormalX : public Expression
 {
@@ -64,17 +66,29 @@ public:
 
   void eval(Array<double>& values,
             const Array<double>& x,
-            const ufc::cell& cell) const
+            const ufc::cell& ufc_cell) const
   {
+    const std::size_t part = 1;
+
+    Cell cell(*multimesh.part(part), ufc_cell.index);
+    Point point(x);
+    cout << point << endl;
+
+    for (FacetIterator facet(cell); !facet.end(); ++facet)
+    {
+      cout << "  d^2 = " << facet->squared_distance(point);
+    }
+    cout << endl;
+
     const double dx0 = std::abs(x[0] - 0.25);
     const double dx1 = std::abs(x[0] - 0.75);
     const double dy0 = std::abs(x[1] - 0.25);
     const double dy1 = std::abs(x[1] - 0.75);
 
     if (dx0 < dx1 && dx0 < dy0 && dx0 < dy1)
-      values[0] = 1.0;
-    else if (dx1 < dy0 && dx1 < dy1)
       values[0] = -1.0;
+    else if (dx1 < dy0 && dx1 < dy1)
+      values[0] = 1.0;
     else
       values[0] = 0.0;
   }
@@ -98,9 +112,9 @@ public:
     const double dy1 = std::abs(x[1] - 0.75);
 
     if (dy0 < dy1 && dy0 < dx0 && dy0 < dx1)
-      values[0] = 1.0;
-    else if (dy1 < dx0 && dy1 < dx1)
       values[0] = -1.0;
+    else if (dy1 < dx0 && dy1 < dx1)
+      values[0] = 1.0;
     else
       values[0] = 0.0;
   }
@@ -115,7 +129,7 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 64;
+  int N = 16;
   UnitSquareMesh square(N, N);
   RectangleMesh rectangle_1(0.25, 0.25, 0.75, 0.75, N, N);
 
@@ -136,7 +150,8 @@ int main()
   //rectangle_1.translate(dx);
 
   // FIXME: Testing rotation
-  //square.rotate(15);
+  //square.rotate(45);
+  rectangle_1.rotate(45);
 
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(square);

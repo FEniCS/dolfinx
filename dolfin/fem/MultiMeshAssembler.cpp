@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-05-21
+// Last changed: 2014-05-22
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -379,7 +379,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
     UFC ufc_part(a_part);
 
     // FIXME: We assume that the custom integral associated with the interface is number 1.
-    // FIXME: This needs to be sorted out in the UFL-UFC
+    // FIXME: This needs to be sorted out in the UFL-UFC interfaces
     // FIXME: We also assume that we have exactly two cells, while the UFC
     // FIXME: interface (but not FFC...) allows an arbitrary number of cells.
 
@@ -401,6 +401,9 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
 
       // Get collision map
       const auto& cmap = multimesh->collision_map_cut_cells(part);
+
+      // Get facet normals
+      const auto& facet_normals = multimesh->facet_normals(part);
 
       // Iterate over all cut cells in collision map
       for (auto it = cmap.begin(); it != cmap.end(); ++it)
@@ -477,6 +480,11 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
             std::copy(dofs_1.begin(), dofs_1.end(),
                       macro_dofs[i].begin() + dofs_0.size());
           }
+
+          // Get facet normals
+          const double* n = facet_normals.at(cut_cell_index)[k].data();
+          for (std::size_t i = 0; i < num_quadrature_points; i++)
+            cout << "n = " << n[2*i] << " " << n[2*i + 1] << endl;
 
           // FIXME: Cell orientation not supported
           const int cell_orientation = ufc_cell[0].orientation;
