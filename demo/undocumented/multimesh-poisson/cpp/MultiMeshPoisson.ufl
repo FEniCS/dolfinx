@@ -49,12 +49,17 @@ do = dc2      # overlap integral
 # Parameters
 alpha = 4.0
 
+c0 = Constant(triangle)
+c1 = Constant(triangle)
+c2 = Constant(triangle)
+c3 = Constant(triangle)
+
 # Bilinear form
 a = dot(grad(u), grad(v))*dx \
-  - dot(avg(grad(u)), jump(v, n))*di \
-  - dot(avg(grad(v)), jump(u, n))*di \
-  + alpha/h*jump(u)*jump(v)*di \
-  + dot(jump(grad(u)), jump(grad(v)))*do
+  - c0*dot(avg(grad(u)), jump(v, n))*di \
+  - c1*dot(avg(grad(v)), jump(u, n))*di \
+  + c2*alpha/h*jump(u)*jump(v)*di \
+  + c3*dot(jump(grad(u)), jump(grad(v)))*do
 
 # Linear form
 L = f*v*dx

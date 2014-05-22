@@ -32,12 +32,6 @@ class Source : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    //const double x0 = 1.0;
-    //const double y0 = 1.0;
-    //double dx = x[0] - x0;
-    //double dy = x[1] - y0;
-    //values[0] = 100*exp(-(dx*dx + dy*dy) / 0.25);
-
     values[0] = 2*x[0]*(1 - x[0]) + 2*x[1]*(1 - x[1]);
   }
 };
@@ -51,7 +45,7 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-int main()
+int main(int argc, char* argv[])
 {
   // Increase log level
   set_log_level(DBG);
@@ -60,28 +54,11 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 64;
+  int N = 32;
   UnitSquareMesh square(N, N);
   RectangleMesh rectangle_1(0.25, 0.25, 0.75, 0.75, N, N);
 
-  //RectangleMesh rectangle_1(0.250, 0.250, 0.75, 0.75, 2, 2);
-  //RectangleMesh rectangle_1(0.01, 0.01, 0.99, 0.99, N, N);
-  //RectangleMesh rectangle_1(0.25 + e, 0.25 + e, 0.75 - e, 0.75 - e, 2, 2);
-  //RectangleMesh rectangle_1(0.0 + e, 0.25 + e, 1.0 - e, 0.75 - e, 2, 2);
-
-  //RectangleMesh rectangle_1(0.250, 0.250, 0.625, 0.625, N, N);
-  //RectangleMesh rectangle_2(0.375, 0.375, 0.750, 0.750, N, N);
-
-  //UnitSquareMesh square(1, 2);
-  //const double e = 0.0000001;
-  //RectangleMesh rectangle_1(-e, 0.5 - e, 1.0 + e, 1.0 + e, 1, 1);
-
-  // FIXME: Testing whether a slight translation gets rid of a corner case
-  //  Point dx(0.017, 0.023);
-  //rectangle_1.translate(dx);
-
-  // FIXME: Testing rotation
-  //square.rotate(45);
+  // Rotate overlapping mesh
   rectangle_1.rotate(45);
 
   // Create function spaces
@@ -113,6 +90,22 @@ int main()
   L0.f = f;
   L1.f = f;
   //L2.f = f;
+
+  // FIXME: Testing
+  Parameters p;
+  p.add("c0", 1.0);
+  p.add("c1", 0.0); // For some reason, including this term gives a kink in the solution
+  p.add("c2", 1.0);
+  p.add("c3", 1.0);
+  p.parse(argc, argv);
+  a0.c0 = static_cast<double>(p["c0"]);
+  a0.c1 = static_cast<double>(p["c1"]);
+  a0.c2 = static_cast<double>(p["c2"]);
+  a0.c3 = static_cast<double>(p["c3"]);
+  a1.c0 = static_cast<double>(p["c0"]);
+  a1.c1 = static_cast<double>(p["c1"]);
+  a1.c2 = static_cast<double>(p["c2"]);
+  a1.c3 = static_cast<double>(p["c3"]);
 
   // Build MultiMesh forms
   MultiMeshForm a(V, V);
