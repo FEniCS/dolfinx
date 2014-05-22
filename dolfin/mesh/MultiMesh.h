@@ -180,10 +180,12 @@ namespace dolfin
     /// *Returns*
     ///     std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >
     ///         A map from cell indices of cut cells to quadrature
-    ///         rules. Each quadrature rule is represented as a pair
-    ///         of an array of quadrature points and a corresponding
-    ///         flattened array of quadrature weights.
-    const std::map<unsigned int, quadrature_rule>&
+    ///         rules.  A separate quadrature rule is given for each
+    ///         cutting cell and stored in the same order as in the
+    ///         collision map. Each quadrature rule is represented as
+    ///         a pair of an array of quadrature points and a
+    ///         corresponding flattened array of quadrature weights.
+    const std::map<unsigned int, std::vector<quadrature_rule> >&
     quadrature_rule_overlap(std::size_t part) const;
 
     /// Return quadrature rules for the interface on the given part
@@ -376,7 +378,7 @@ namespace dolfin
 
     // Quadrature rules for overlap. Access data by
     //
-    //     q = _quadrature_rules_overlap[i][j]
+    //     q = _quadrature_rules_overlap[i][j][k]
     //
     // where
     //
@@ -384,7 +386,8 @@ namespace dolfin
     //     q.second = quadrature points, flattened num_points x gdim array
     //            i = the part (mesh) number
     //            j = the cell number (local cell index)
-    std::vector<std::map<unsigned int, quadrature_rule> >
+    //            k = the collision number (in the list of cutting cells)
+    std::vector<std::map<unsigned int, std::vector<quadrature_rule> > >
     _quadrature_rules_overlap;
 
     // Quadrature rules for interface. Access data by

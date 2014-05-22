@@ -499,10 +499,6 @@ void MultiMeshAssembler::assemble_overlap(GenericTensor& A,
         const unsigned int cut_cell_index = it->first;
         const Cell cut_cell(*multimesh->part(part), cut_cell_index);
 
-        // Get quadrature rule for overlap part defined by
-        // intersection of the cut and cutting cells
-        const auto& qr = quadrature_rules.at(cut_cell_index);
-
         // Iterate over cutting cells
         const auto& cutting_cells = it->second;
         for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
@@ -511,6 +507,12 @@ void MultiMeshAssembler::assemble_overlap(GenericTensor& A,
           const std::size_t cutting_part = jt->first;
           const std::size_t cutting_cell_index = jt->second;
           const Cell cutting_cell(*multimesh->part(cutting_part), cutting_cell_index);
+
+          // Get quadrature rule for interface part defined by
+          // intersection of the cut and cutting cells
+          const std::size_t k = jt - cutting_cells.begin();
+          dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
+          const auto& qr = quadrature_rules.at(cut_cell_index)[k];
 
           // FIXME: There might be quite a few cases when we skip cutting
           // FIXME: cells because there are no quadrature points. Perhaps

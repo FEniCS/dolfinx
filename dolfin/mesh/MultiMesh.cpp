@@ -100,7 +100,7 @@ MultiMesh::quadrature_rule_cut_cell(std::size_t part,
   return q[cell_index];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, quadrature_rule>&
+const std::map<unsigned int, std::vector<quadrature_rule> >&
 MultiMesh::quadrature_rule_overlap(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
@@ -450,8 +450,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
       // Data structure for the volume triangulation of the cut_cell
       std::vector<double> volume_triangulation;
 
-      // Data structure for the quadrature rule of this cell
-      quadrature_rule volume_qr;
+      // Data structure for the overlap quadrature rule
+      std::vector<quadrature_rule> overlap_qr;
 
       // Data structure for the interface quadrature rule
       std::vector<quadrature_rule> interface_qr;
@@ -479,6 +479,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
         // Data structure for local interface triangulation
         std::vector<double> local_interface_triangulation;
+
+        // Data structure for the overlap part quadrature rule
+        quadrature_rule overlap_part_qr;
 
         // Data structure for the interface part quadrature rule
         quadrature_rule interface_part_qr;
@@ -578,12 +581,15 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
         // Add quadrature rule with weights corresponding to the two
         // triangulations
-        _add_quadrature_rule(volume_qr,
+        _add_quadrature_rule(overlap_part_qr,
                              triangulation_cut_cutting,
                              tdim, gdim, quadrature_order, 1);
-        _add_quadrature_rule(volume_qr,
+        _add_quadrature_rule(overlap_part_qr,
                              triangulation_cutting_prev,
                              tdim, gdim, quadrature_order, -1);
+
+        // Add quadrature rule for overlap part
+        overlap_qr.push_back(overlap_part_qr);
 
         // Add quadrature rule for interface part
         interface_qr.push_back(interface_part_qr);
@@ -593,7 +599,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
       }
 
       // Store quadrature rules for cut cell
-      _quadrature_rules_overlap[cut_part][cut_cell_index] = volume_qr;
+      _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
       _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
 
       // Store facet normals for cut cell
@@ -641,7 +647,8 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 
       // Add the quadrature rule for the overlapping part to the
       // quadrature rule of the cut cell with flipped sign
-      _add_quadrature_rule(qr, qr_overlap, gdim, -1);
+      for (std::size_t k = 0; k < qr_overlap.size(); k++)
+        _add_quadrature_rule(qr, qr_overlap[k], gdim, -1);
 
       // Store quadrature rule for cut cell
       _quadrature_rules_cut_cells[cut_part][cut_cell_index] = qr;
