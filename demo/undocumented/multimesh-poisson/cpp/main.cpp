@@ -51,75 +51,6 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-// FIXME: Normal vector should not have be supplied manually
-// FIXME: Very hacky and ugly implementation here...
-
-
-
-// x-component of normal to interface
-class NormalX : public Expression
-{
-public:
-
-  const MultiMesh& multimesh;
-  NormalX(const MultiMesh& multimesh) : multimesh(multimesh) {}
-
-  void eval(Array<double>& values,
-            const Array<double>& x,
-            const ufc::cell& ufc_cell) const
-  {
-    const std::size_t part = 1;
-
-    Cell cell(*multimesh.part(part), ufc_cell.index);
-    Point point(x);
-    cout << point << endl;
-
-    for (FacetIterator facet(cell); !facet.end(); ++facet)
-    {
-      cout << "  d^2 = " << facet->squared_distance(point);
-    }
-    cout << endl;
-
-    const double dx0 = std::abs(x[0] - 0.25);
-    const double dx1 = std::abs(x[0] - 0.75);
-    const double dy0 = std::abs(x[1] - 0.25);
-    const double dy1 = std::abs(x[1] - 0.75);
-
-    if (dx0 < dx1 && dx0 < dy0 && dx0 < dy1)
-      values[0] = -1.0;
-    else if (dx1 < dy0 && dx1 < dy1)
-      values[0] = 1.0;
-    else
-      values[0] = 0.0;
-  }
-};
-
-// y-component of normal to interface
-class NormalY : public Expression
-{
-public:
-
-  const MultiMesh& multimesh;
-  NormalY(const MultiMesh& multimesh) : multimesh(multimesh) {}
-
-  void eval(Array<double>& values,
-            const Array<double>& x,
-            const ufc::cell& cell) const
-  {
-    const double dx0 = std::abs(x[0] - 0.25);
-    const double dx1 = std::abs(x[0] - 0.75);
-    const double dy0 = std::abs(x[1] - 0.25);
-    const double dy1 = std::abs(x[1] - 0.75);
-
-    if (dy0 < dy1 && dy0 < dx0 && dy0 < dx1)
-      values[0] = -1.0;
-    else if (dy1 < dx0 && dy1 < dx1)
-      values[0] = 1.0;
-    else
-      values[0] = 0.0;
-  }
-};
-
 int main()
 {
   // Increase log level
@@ -129,7 +60,7 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 16;
+  int N = 64;
   UnitSquareMesh square(N, N);
   RectangleMesh rectangle_1(0.25, 0.25, 0.75, 0.75, N, N);
 
@@ -178,12 +109,6 @@ int main()
   V.build();
 
   // Set coefficients
-  NormalX nx(*V.multimesh());
-  NormalY ny(*V.multimesh());
-  //a0.nx = nx;
-  //a0.ny = ny;
-  //a1.nx = nx;
-  //a1.ny = ny;
   Source f;
   L0.f = f;
   L1.f = f;

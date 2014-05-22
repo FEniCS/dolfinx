@@ -63,7 +63,7 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   assemble_cut_cells(A, a);
 
   // Assemble over covered cells
-  assemble_covered_cells(A, a);
+  //assemble_covered_cells(A, a);
 
   // Assemble over interface
   assemble_interface(A, a);
@@ -74,8 +74,8 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
 
   // FIXME: This shouldn't be necessary
   // Lock any remaining inactive dofs
-  //if (A.rank() == 2)
-  //  static_cast<GenericMatrix&>(A).ident_zeros();
+  if (A.rank() == 2)
+    static_cast<GenericMatrix&>(A).ident_zeros();
 
   end();
 }
@@ -307,7 +307,7 @@ void MultiMeshAssembler::assemble_covered_cells(GenericTensor& A,
     // Get covered cells
     const std::vector<unsigned int>& covered_cells = multimesh->covered_cells(part);
 
-    // Iterate over cut cells
+    // Iterate over covered cells
     for (auto it = covered_cells.begin(); it != covered_cells.end(); ++it)
     {
       // Create cell
@@ -484,8 +484,6 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
 
           // Get facet normals
           const double* n = facet_normals.at(cut_cell_index)[k].data();
-          for (std::size_t i = 0; i < num_quadrature_points; i++)
-            cout << "n = " << n[2*i] << " " << n[2*i + 1] << endl;
 
           // FIXME: Cell orientation not supported
           const int cell_orientation = ufc_cell[0].orientation;

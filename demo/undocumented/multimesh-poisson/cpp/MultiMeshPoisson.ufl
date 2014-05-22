@@ -31,18 +31,10 @@ u = TrialFunction(element)
 v = TestFunction(element)
 f = Coefficient(element)
 
-# Define normal component and cell size
+# Define facet normal and mesh size
+n = FacetNormal(triangle)
 h = 2.0*Circumradius(triangle)
 h = (h('+') + h('-')) / 2
-
-# FIXME: Vector elements currently not supported
-# Define normal component (needs to be supplied as a coefficient)
-DG = FiniteElement("DG", triangle, 0)
-nx = Coefficient(DG)
-ny = Coefficient(DG)
-#n = as_vector((nx, ny))
-
-n = FacetNormal(triangle)
 
 # Define custom measures (FIXME: prettify this)
 dc0 = dc(0, metadata={"num_cells": 1})
@@ -60,7 +52,6 @@ a = dot(grad(u), grad(v))*dx \
   - dot(avg(grad(u)), jump(v, n))*di \
   - dot(avg(grad(v)), jump(u, n))*di \
   + alpha/h*jump(u)*jump(v)*di
-#  + alpha/h*dot(jump(u, n), jump(v, n))*di
 
 # Linear form
 L = f*v*dx
