@@ -132,12 +132,6 @@ void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
       // Create cell
       Cell cell(mesh_part, *it);
 
-      /* FIXME: Testing
-    for (unsigned int cell_index = 0; cell_index < mesh_part.num_cells(); cell_index++)
-    {
-      Cell cell(mesh_part, cell_index);
-      */
-
       // Update to current cell
       cell.get_cell_data(ufc_cell);
       cell.get_vertex_coordinates(vertex_coordinates);
