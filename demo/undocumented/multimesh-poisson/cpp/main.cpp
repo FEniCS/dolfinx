@@ -60,7 +60,7 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 64;
+  int N = 16;
   UnitSquareMesh square(N, N);
   RectangleMesh rectangle_1(0.25, 0.25, 0.75, 0.75, N, N);
 
