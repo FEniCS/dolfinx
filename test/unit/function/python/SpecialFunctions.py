@@ -36,10 +36,10 @@ class SpecialFunctions(unittest.TestCase):
                 c = Constant(1, mesh.ufl_cell()) # FIXME
                 c0 = ufl.FacetArea(mesh)
                 c1 = dolfin.FacetArea(mesh)
-                self.assertAlmostEqual(assemble(c*dx, mesh=mesh), 1)
-                self.assertAlmostEqual(assemble(c*ds, mesh=mesh), surface)
-                self.assertAlmostEqual(assemble(c0*ds, mesh=mesh), ref_int)
-                self.assertAlmostEqual(assemble(c1*ds, mesh=mesh), ref_int)
+                self.assertAlmostEqual(assemble(c*dx(mesh)), 1)
+                self.assertAlmostEqual(assemble(c*ds(mesh)), surface)
+                self.assertAlmostEqual(assemble(c0*ds(mesh)), ref_int)
+                self.assertAlmostEqual(assemble(c1*ds(mesh)), ref_int)
 
 if __name__ == "__main__":
     unittest.main()

@@ -40,10 +40,10 @@ V = FunctionSpace(mesh, "CG", 2)
 v = Expression("sin(x[0]) + cos(x[1])", element=FiniteElement("CG", triangle, 2))
 
 # Define functional
-M = (v*v + dot(grad(v), grad(v)))*dx
+M = (v*v + dot(grad(v), grad(v)))*dx(mesh)
 
 # Evaluate functional
-value = assemble(M, mesh=mesh)
+value = assemble(M)
 
 exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0))
 print "The energy norm of v is: %.15g" % value
