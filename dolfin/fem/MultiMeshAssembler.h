@@ -61,6 +61,9 @@ namespace dolfin
     // Assemble over interface
     void assemble_interface(GenericTensor& A, const MultiMeshForm& a);
 
+    // Assemble over overlap
+    void assemble_overlap(GenericTensor& A, const MultiMeshForm& a);
+
     // Initialize global tensor
     void init_global_tensor(GenericTensor& A, const MultiMeshForm& a);
 
