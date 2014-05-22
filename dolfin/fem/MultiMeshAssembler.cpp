@@ -252,6 +252,7 @@ void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
                                        num_quadrature_points,
                                        qr.first.data(),
                                        qr.second.data(),
+                                       0,
                                        ufc_cell.orientation);
 
       // Add entries to global tensor
@@ -496,6 +497,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                                            num_quadrature_points,
                                            qr.first.data(),
                                            qr.second.data(),
+                                           n,
                                            cell_orientation);
 
           // Add entries to global tensor
