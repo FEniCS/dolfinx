@@ -60,7 +60,7 @@ int main()
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 16;
+  int N = 64;
   UnitSquareMesh square(N, N);
   RectangleMesh rectangle_1(0.25, 0.25, 0.75, 0.75, N, N);
 
@@ -77,7 +77,7 @@ int main()
   //RectangleMesh rectangle_1(-e, 0.5 - e, 1.0 + e, 1.0 + e, 1, 1);
 
   // FIXME: Testing whether a slight translation gets rid of a corner case
-  //Point dx(0.017, 0.023);
+  //  Point dx(0.017, 0.023);
   //rectangle_1.translate(dx);
 
   // FIXME: Testing rotation
