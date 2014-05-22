@@ -366,8 +366,8 @@ if (DOLFIN_ENABLE_PETSC)
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
     if (PETSC4PY_FOUND)
-      if (NOT (${PETSC4PY_VERSION_MAJOR} EQUAL ${PETSC_VERSION_MAJOR}
-               AND ${PETSC4PY_VERSION_MINOR} EQUAL ${PETSC_VERSION_MINOR}))
+      if (NOT ("${PETSC4PY_VERSION_MAJOR}" EQUAL "${PETSC_VERSION_MAJOR}"
+               AND "${PETSC4PY_VERSION_MINOR}" EQUAL "${PETSC_VERSION_MINOR}"))
         message(WARNING "PETSc version ${PETSC_VERSION} and petsc4py version ${PETSC4PY_VERSION} do not match.  Disabling petsc4py support")
         set(PETSC4PY_FOUND FALSE)
       endif()
