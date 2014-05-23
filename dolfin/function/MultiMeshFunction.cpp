@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-05-12
+// Last changed: 2014-05-23
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -49,7 +49,7 @@ MultiMeshFunction::~MultiMeshFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const Function& MultiMeshFunction::part(std::size_t i) const
+std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i) const
 {
   // Developer note: This function has a similar role as operator[] of
   // the regular Function class.
@@ -57,15 +57,16 @@ const Function& MultiMeshFunction::part(std::size_t i) const
   // Return function part if it exists in the cache
   auto it = _function_parts.find(i);
   if (it != _function_parts.end())
-    return *(it->second);
+    return it->second;
 
   // Get view of function space for part
   std::shared_ptr<const FunctionSpace> V = _function_space->view(i);
 
   // Insert into cache and return reference
-  _function_parts.insert(i, new Function(V, _vector));
+  std::shared_ptr<const Function> ui(new Function(V, _vector));
+  _function_parts[i] = ui;
 
-  return *(_function_parts.find(i)->second);
+  return _function_parts.find(i)->second;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> MultiMeshFunction::vector()

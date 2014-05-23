@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-03-17
+// Last changed: 2014-05-23
 
 #ifndef __MULTI_MESH_FUNCTION_H
 #define __MULTI_MESH_FUNCTION_H
@@ -69,7 +69,7 @@ namespace dolfin
     /// *Returns*
     ///     _Function_
     ///         Function (part) number i
-    const Function& part(std::size_t i) const;
+    std::shared_ptr<const Function> part(std::size_t i) const;
 
     /// Return vector of expansion coefficients (non-const version)
     ///
@@ -101,7 +101,7 @@ namespace dolfin
     std::shared_ptr<GenericVector> _vector;
 
     // Cache of regular functions for the parts
-    mutable boost::ptr_map<std::size_t, Function> _function_parts;
+    mutable std::map<std::size_t, std::shared_ptr<const Function> > _function_parts;
 
   };
 
