@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-22
+// Last changed: 2014-05-23
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -26,6 +26,7 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
 #include "Cell.h"
+#include "Facet.h"
 #include "BoundaryMesh.h"
 #include "MeshFunction.h"
 #include "MultiMesh.h"
@@ -401,7 +402,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
   // the cutting_cell_no.
 
   // Build map from boundary facets to full mesh
-  std::vector<std::vector<std::vector<std::size_t> > > full_to_bdry(num_parts());
+  std::vector<std::vector<std::vector<std::pair<std::size_t, std::size_t> > > >
+    full_to_bdry(num_parts());
   for (std::size_t part = 0; part < num_parts(); ++part)
   {
     full_to_bdry[part].resize(_meshes[part]->num_cells());
@@ -428,7 +430,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
       // can have 2 facets, but here we should only have 1)
       dolfin_assert(full_facet_cell_map.size(full_mesh_facet) == 1);
       const auto& full_cells = full_facet_cell_map(full_mesh_facet);
-      full_to_bdry[part][full_cells[0]].push_back(boundary_facet);
+      full_to_bdry[part][full_cells[0]].push_back(std::make_pair(boundary_facet,
+                                                                 full_mesh_facet));
     }
   }
 
@@ -492,9 +495,13 @@ void MultiMesh::_build_quadrature_rules_overlap()
         // Iterate over boundary cells
         for (auto boundary_cell_index : full_to_bdry[cutting_part][cutting_cell_index])
         {
-          // Get the boundary facet as a cell on the boundary mesh
+          // Get the boundary facet as a cell in the boundary mesh
           const Cell boundary_cell(*_boundary_meshes[cutting_part],
-                                   boundary_cell_index);
+                                   boundary_cell_index.first);
+
+          // Get the boundary facet as a facet in the full mesh
+          const Facet boundary_facet(*_meshes[cutting_part],
+                                     boundary_cell_index.second);
 
           // Triangulate intersection of cut cell and boundary cell
           const auto triangulation_cut_boundary
@@ -532,7 +539,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
           // the data are grouped during assembly: for each pair of
           // colliding cells, we build a list of quadrature points and
           // a corresponding list of facet normals.
-          Point n = boundary_cell.cell_normal();
+          const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
+          Point n = -cutting_cell.normal(local_facet_index);
           const std::size_t num_quadrature_points = interface_part_qr.second.size();
           for (std::size_t i = 0; i < num_quadrature_points; i++)
           {

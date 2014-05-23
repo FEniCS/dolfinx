@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-22
+// Last changed: 2014-05-23
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -141,8 +141,8 @@ int main(int argc, char* argv[])
   // Save to file
   File u0_file("u0.pvd");
   File u1_file("u1.pvd");
-  u0_file << u.part(0);
-  u1_file << u.part(1);
+  u0_file << *u.part(0);
+  u1_file << *u.part(1);
 
   // Plot solution
   plot(V.multimesh());
