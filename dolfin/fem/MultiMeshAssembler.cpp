@@ -396,10 +396,10 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           const auto& n = facet_normals.at(cut_cell_index)[k];
 
           // FIXME: We would like to use this assertion (but it fails for 2 meshes)
-          // dolfin_assert(n.size() == a_part.mesh().geometry().dim()*num_quadrature_points);
+          dolfin_assert(n.size() == a_part.mesh().geometry().dim()*num_quadrature_points);
 
           // FIXME: For now, use this assertion (which fails for 3 meshes)
-          dolfin_assert(n.size() > 0);
+          //dolfin_assert(n.size() > 0);
 
           // FIXME: Cell orientation not supported
           const int cell_orientation = ufc_cell[0].orientation;
