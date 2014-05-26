@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-05-22
+// Last changed: 2014-05-26
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -82,8 +82,6 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
 void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
                                               const MultiMeshForm& a)
 {
-  log(PROGRESS, "Assembling multimesh form over uncut cells.");
-
   // Get form rank
   const std::size_t form_rank = a.rank();
 
@@ -105,7 +103,7 @@ void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
   // Iterate over parts
   for (std::size_t part = 0; part < a.num_parts(); part++)
   {
-    log(PROGRESS, "Assembling on part %d.", part);
+    log(PROGRESS, "Assembling multimesh form over uncut cells on part %d.", part);
 
     // Get form for current part
     const Form& a_part = *a.part(part);
@@ -159,8 +157,6 @@ void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
 void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
                                             const MultiMeshForm& a)
 {
-  log(PROGRESS, "Assembling multimesh form over cut cells.");
-
   // Get form rank
   const std::size_t form_rank = a.rank();
 
@@ -182,7 +178,7 @@ void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
   // Iterate over parts
   for (std::size_t part = 0; part < a.num_parts(); part++)
   {
-    log(PROGRESS, "Assembling on part %d.", part);
+    log(PROGRESS, "Assembling multimesh form over cut cells on part %d.", part);
 
     // Get form for current part
     const Form& a_part = *a.part(part);
@@ -257,8 +253,6 @@ void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
 void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                                             const MultiMeshForm& a)
 {
-  log(PROGRESS, "Assembling multimesh form over interface.");
-
   // Extract multimesh
   std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
 
@@ -309,7 +303,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
     // Assemble over interface
     if (custom_integral)
     {
-      log(PROGRESS, "Assembling multimesh form over interface for part %d.", part);
+      log(PROGRESS, "Assembling multimesh form over interface on part %d.", part);
 
       // Get quadrature rules
       const auto& quadrature_rules = multimesh->quadrature_rule_interface(part);
@@ -319,6 +313,8 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
 
       // Get facet normals
       const auto& facet_normals = multimesh->facet_normals(part);
+
+      cout << "Number of cut cells on interface: " << cmap.size() << endl;
 
       // Iterate over all cut cells in collision map
       for (auto it = cmap.begin(); it != cmap.end(); ++it)
@@ -397,7 +393,13 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
           }
 
           // Get facet normals
-          const double* n = facet_normals.at(cut_cell_index)[k].data();
+          const auto& n = facet_normals.at(cut_cell_index)[k];
+
+          // FIXME: We would like to use this assertion (but it fails for 2 meshes)
+          // dolfin_assert(n.size() == a_part.mesh().geometry().dim()*num_quadrature_points);
+
+          // FIXME: For now, use this assertion (which fails for 3 meshes)
+          dolfin_assert(n.size() > 0);
 
           // FIXME: Cell orientation not supported
           const int cell_orientation = ufc_cell[0].orientation;
@@ -409,7 +411,7 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
                                            num_quadrature_points,
                                            qr.first.data(),
                                            qr.second.data(),
-                                           n,
+                                           n.data(),
                                            cell_orientation);
 
           // Add entries to global tensor
@@ -425,8 +427,6 @@ void MultiMeshAssembler::assemble_overlap(GenericTensor& A,
 {
   // FIXME: This functiono and assemble_interface are very similar.
   // FIXME: Refactor to improve code reuse.
-
-  log(PROGRESS, "Assembling multimesh form over overlap.");
 
   // Extract multimesh
   std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
@@ -478,7 +478,7 @@ void MultiMeshAssembler::assemble_overlap(GenericTensor& A,
     // Assemble over overlap
     if (custom_integral)
     {
-      log(PROGRESS, "Assembling multimesh form over overlap for part %d.", part);
+      log(PROGRESS, "Assembling multimesh form over overlop on part %d.", part);
 
       // Get quadrature rules
       const auto& quadrature_rules = multimesh->quadrature_rule_overlap(part);

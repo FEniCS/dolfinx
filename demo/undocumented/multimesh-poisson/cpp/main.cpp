@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-23
+// Last changed: 2014-05-26
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -50,21 +50,25 @@ int main(int argc, char* argv[])
   // Increase log level
   set_log_level(DBG);
 
+  // FIXME: Testing, set to 3 to test 3 meshes
+  const std::size_t num_meshes = 2;
+
   // Don't reorder dofs (simplifies debugging)
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
   int N = 32;
-  UnitSquareMesh square(N, N);
-  RectangleMesh rectangle_1(0.25, 0.25, 0.75, 0.75, N, N);
+  UnitSquareMesh mesh_0(N, N);
+  RectangleMesh  mesh_1(0.2, 0.2, 0.6, 0.6, N, N);
+  RectangleMesh  mesh_2(0.4, 0.4, 0.8, 0.8, N, N);
 
   // Rotate overlapping mesh
-  rectangle_1.rotate(45);
+  //rectangle_1.rotate(45);
 
   // Create function spaces
-  MultiMeshPoisson::FunctionSpace V0(square);
-  MultiMeshPoisson::FunctionSpace V1(rectangle_1);
-  //MultiMeshPoisson::FunctionSpace V2(rectangle_2);
+  MultiMeshPoisson::FunctionSpace V0(mesh_0);
+  MultiMeshPoisson::FunctionSpace V1(mesh_1);
+  MultiMeshPoisson::FunctionSpace V2(mesh_2);
 
   // Some of this stuff may be wrapped or automated later to avoid
   // needing to explicitly call add() and build()
@@ -72,51 +76,35 @@ int main(int argc, char* argv[])
   // Create forms
   MultiMeshPoisson::BilinearForm a0(V0, V0);
   MultiMeshPoisson::BilinearForm a1(V1, V1);
-  //MultiMeshPoisson::BilinearForm a2(V2, V2);
+  MultiMeshPoisson::BilinearForm a2(V2, V2);
   MultiMeshPoisson::LinearForm L0(V0);
   MultiMeshPoisson::LinearForm L1(V1);
-  //MultiMeshPoisson::LinearForm L2(V2);
+  MultiMeshPoisson::LinearForm L2(V2);
 
   // Build MultiMesh function space
   MultiMeshFunctionSpace V;
   V.parameters("multimesh")["quadrature_order"] = 2;
   V.add(V0);
   V.add(V1);
-  //V.add(V2);
+  if (num_meshes == 3) V.add(V2);
   V.build();
 
   // Set coefficients
   Source f;
   L0.f = f;
   L1.f = f;
-  //L2.f = f;
-
-  // FIXME: Testing
-  Parameters p;
-  p.add("c0", 1.0);
-  p.add("c1", 0.0); // For some reason, including this term gives a kink in the solution
-  p.add("c2", 1.0);
-  p.add("c3", 1.0);
-  p.parse(argc, argv);
-  a0.c0 = static_cast<double>(p["c0"]);
-  a0.c1 = static_cast<double>(p["c1"]);
-  a0.c2 = static_cast<double>(p["c2"]);
-  a0.c3 = static_cast<double>(p["c3"]);
-  a1.c0 = static_cast<double>(p["c0"]);
-  a1.c1 = static_cast<double>(p["c1"]);
-  a1.c2 = static_cast<double>(p["c2"]);
-  a1.c3 = static_cast<double>(p["c3"]);
+  L2.f = f;
 
   // Build MultiMesh forms
   MultiMeshForm a(V, V);
   a.add(a0);
   a.add(a1);
-  //a.add(a2);
+  if (num_meshes == 3) a.add(a2);
   a.build();
   MultiMeshForm L(V);
   L.add(L0);
   L.add(L1);
-  //L.add(L2);
+  if (num_meshes == 3) L.add(L2);
   L.build();
 
   // Create boundary condition
@@ -141,8 +129,10 @@ int main(int argc, char* argv[])
   // Save to file
   File u0_file("u0.pvd");
   File u1_file("u1.pvd");
+  File u2_file("u2.pvd");
   u0_file << *u.part(0);
   u1_file << *u.part(1);
+  //u2_file << *u.part(2);
 
   // Plot solution
   plot(V.multimesh());
