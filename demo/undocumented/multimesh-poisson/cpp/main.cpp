@@ -132,13 +132,13 @@ int main(int argc, char* argv[])
   File u2_file("u2.pvd");
   u0_file << *u.part(0);
   u1_file << *u.part(1);
-  //u2_file << *u.part(2);
+  u2_file << *u.part(2);
 
   // Plot solution
   plot(V.multimesh());
   plot(u.part(0), "u_0");
   plot(u.part(1), "u_1");
-  //plot(u.part(2), "u_2");
+  plot(u.part(2), "u_2");
   interactive();
 
   return 0;

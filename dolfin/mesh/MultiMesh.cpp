@@ -465,8 +465,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
       // Data structure for the interface triangulation
       std::vector<double> interface_triangulation;
 
-      // FIXME
-      std::vector<Point> interface_normals; // should match interface_triangulation and contain the corresponding global facet number so we can get the normal. This means we need a local_interface_normals that corresponds to local_interface_triangulation.
+      // Data structure for normals to the interface. The numbering
+      // should match the numbering of interface_triangulation.
+      std::vector<Point> interface_normals;
 
       // Iterate over cutting cells
       const auto& cutting_cells = it->second;
@@ -488,7 +489,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
         // Data structure for local interface triangulation
         std::vector<double> local_interface_triangulation;
 
-        std::vector<Point> local_interface_normals; // see interface_normals
+        // Data structure for the local interface normals. The
+        // numbering should match the numbering of
+        // local_interface_triangulation.
+        std::vector<Point> local_interface_normals;
 
         // Data structure for the overlap part quadrature rule
         quadrature_rule overlap_part_qr;
@@ -521,24 +525,35 @@ void MultiMesh::_build_quadrature_rules_overlap()
           if (triangulation_cut_boundary.size())
           {
             dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-            const std::size_t nq_0 = interface_part_qr.second.size();
 
-            _add_quadrature_rule(interface_part_qr,
-                                 triangulation_cut_boundary,
-                                 tdim_boundary, gdim, quadrature_order, 1);
+            const auto num_qr_points
+              = _add_quadrature_rule(interface_part_qr,
+                                     triangulation_cut_boundary,
+                                     tdim_boundary, gdim,
+                                     quadrature_order, 1);
 
-            const std::size_t nq = interface_part_qr.second.size()-nq_0;
-            //interface_part_n.resize(interface_part_qr.first.size());
             const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
             const Point n = -cutting_cell.normal(local_facet_index);
-            _add_normal(interface_part_n, n, nq, gdim);
+            for (std::size_t i = 0; i < num_qr_points.size(); ++i)
+            {
+              _add_normal(interface_part_n,
+                          n,
+                          num_qr_points[i],
+                          gdim);
+              normals_cut_boundary.push_back(n);
+            }
+
+            // const std::size_t num_points = interface_part_qr.second.size()-num_points_0;
+            // const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
+            // _add_normal(interface_part_n, n, num_points, gdim);
 
             dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
 
             // Update normals_cut_boundary
-            const std::size_t coords_per_simplex = (tdim_boundary+1)*gdim;
-            const std::size_t num_simplices = triangulation_cut_boundary.size() / coords_per_simplex;
-            normals_cut_boundary.assign(num_simplices, n);
+            // const std::size_t coords_per_simplex = (tdim_boundary+1)*gdim;
+            // const std::size_t num_simplices = triangulation_cut_boundary.size() / coords_per_simplex;
+            // normals_cut_boundary.assign(num_simplices, n);
+
           }
 
           // Triangulate intersection of boundary cell and previous volume triangulation
@@ -551,16 +566,38 @@ void MultiMesh::_build_quadrature_rules_overlap()
           if (triangulation_boundary_prev_volume.size())
           {
             dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-            const std::size_t nq_0 = interface_part_qr.second.size();
 
-            _add_quadrature_rule(interface_part_qr,
-                                 triangulation_boundary_prev_volume,
-                                 tdim_boundary, gdim, quadrature_order, -1);
-            const std::size_t nq = interface_part_qr.second.size() - nq_0;
+            const auto num_qr_points
+              = _add_quadrature_rule(interface_part_qr,
+                                     triangulation_boundary_prev_volume,
+                                     tdim_boundary, gdim,
+                                     quadrature_order, 1);
+
             const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
             const Point n = -cutting_cell.normal(local_facet_index);
-            _add_normal(interface_part_n, n, nq, gdim);
+            for (std::size_t i = 0; i < num_qr_points.size(); ++i)
+              _add_normal(interface_part_n,
+                          n,
+                          num_qr_points[i],
+                          gdim);
+
             dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
+
+
+
+            // dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
+            // const std::size_t nq_0 = interface_part_qr.second.size();
+
+            // _add_quadrature_rule(interface_part_qr,
+            //                      triangulation_boundary_prev_volume,
+            //                      tdim_boundary, gdim, quadrature_order, -1);
+
+            // const std::size_t nq = interface_part_qr.second.size() - nq_0;
+            // const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
+            // const Point n = -cutting_cell.normal(local_facet_index);
+            // _add_normal(interface_part_n, n, nq, gdim);
+
+            // dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
           }
 
           // Update triangulation
@@ -600,63 +637,22 @@ void MultiMesh::_build_quadrature_rules_overlap()
                                                             normals_prev_cutting,
                                                             tdim_boundary);
 
-        {
-          const std::size_t offset = (tdim_boundary+1)*gdim;
-          std::size_t numtris = triangulation_prev_cutting.size()/offset;
-          if (normals_prev_cutting.size() != numtris) {
-            std::cout<<"\n\n\n\n\n\n" << numtris <<' '<< normals_prev_cutting.size()<<"\n\n\n\n"<<std::endl;
-          }
-        }
-
-
         // Add quadrature rule for triangulation
         if (triangulation_prev_cutting.size())
         {
           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-          //const std::size_t nq_0 = interface_part_qr.second.size();
-
           const auto num_qr_points
             = _add_quadrature_rule(interface_part_qr,
                                    triangulation_prev_cutting,
-                                   tdim_boundary,
-                                   gdim,
-                                   quadrature_order,
-                                   -1);
+                                   tdim_boundary, gdim,
+                                   quadrature_order, -1);
 
-          // const std::size_t nq = interface_part_qr.second.size() - nq_0;
-          const std::size_t num_simplices = num_qr_points.size();
-          // const std::size_t nqr_per_simplex = nq / num_simplices;
-
-          for (std::size_t i = 0; i < num_simplices; ++i)
+          for (std::size_t i = 0; i < num_qr_points.size(); ++i)
             _add_normal(interface_part_n,
                         normals_prev_cutting[i],
                         num_qr_points[i],
                         gdim);
 
-
-          // const std::size_t num_simplices = normals_prev_cutting.size();
-          // const std::size_t nqr_per_simplex = nq / num_simplices;
-
-          // std::cout << "nq nq_0:   " << nq << ' '<< nq_0 <<'\n'
-          //           <<"qr " << interface_part_qr.first.size()<<' '<<interface_part_qr.second.size()<<'\n'
-          //           << "tris pre cut "<< triangulation_prev_cutting.size()<<'\n'
-          //           << "normal pre cut " << normals_prev_cutting.size() <<'\n'
-          //           << "normal "<<interface_part_n.size()<<'\n'
-          //           << "nqr_per_simplex " << nqr_per_simplex<<'\n'
-          //           <<"num simplices " << num_simplices<<std::endl;
-
-
-          // // number of tris inconsistent?
-          // const std::size_t offset = (tdim_boundary+1)*gdim;
-          // std::cout << normals_prev_cutting.size()<<' '<<triangulation_prev_cutting.size()/offset << std::endl;
-
-          // for (std::size_t i = 0; i < num_simplices; ++i)
-          //   _add_normal(interface_part_n,
-          //               normals_prev_cutting[i],
-          //               nqr_per_simplex,
-          //               gdim);
-
-          std::cout << interface_part_n.size() <<' '<<interface_part_qr.first.size()<<std::endl;
           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
         }
 
