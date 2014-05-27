@@ -571,7 +571,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
               = _add_quadrature_rule(interface_part_qr,
                                      triangulation_boundary_prev_volume,
                                      tdim_boundary, gdim,
-                                     quadrature_order, 1);
+                                     quadrature_order, -1);
 
             const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
             const Point n = -cutting_cell.normal(local_facet_index);
