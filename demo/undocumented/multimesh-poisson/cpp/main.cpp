@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-26
+// Last changed: 2014-05-27
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   set_log_level(DBG);
 
   // FIXME: Testing, set to 3 to test 3 meshes
-  const std::size_t num_meshes = 2;
+  const std::size_t num_meshes = 3;
 
   // Don't reorder dofs (simplifies debugging)
   parameters["reorder_dofs_serial"] = false;

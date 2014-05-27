@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-04-03
+// Last changed: 2014-05-27
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -1175,6 +1175,67 @@ IntersectionTriangulation::triangulate_intersection
   }
 
   return total_triangulation;
+}
+//-----------------------------------------------------------------------------
+void
+IntersectionTriangulation::triangulate_intersection
+(const MeshEntity &cell,
+ const std::vector<double> &triangulation,
+ const std::vector<Point>& normals,
+ std::vector<double>& intersection_triangulation,
+ std::vector<Point>& intersection_normals,
+ std::size_t tri_tdim)
+{
+  // Compute the triangulation of the intersection of the cell and the
+  // simplices of the flat triangulation vector with topology tdim.
+
+  // std::vector<double> total_triangulation;
+  // std::vector<Point> total_normals;
+
+  // FIXME: clear or not?
+  intersection_triangulation.clear();
+  intersection_normals.clear();
+
+  // Get dimensions (geometrical dimension assumed to be the same)
+  const std::size_t cell_tdim = cell.mesh().topology().dim();
+  const std::size_t gdim = cell.mesh().geometry().dim();
+
+  // Store cell as std::vector<Point>
+  // FIXME: Store as Point& ?
+  std::vector<Point> simplex_cell(cell_tdim+1);
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  for (std::size_t j = 0; j < cell_tdim+1; ++j)
+    simplex_cell[j] = geometry.point(vertices[j]);
+
+  // Simplex in triangulation
+  std::vector<Point> simplex(tri_tdim+1);
+  const std::size_t offset = (tri_tdim+1)*gdim;
+
+  // Loop over all simplices
+  for (std::size_t i = 0; i < triangulation.size()/offset; ++i)
+  {
+    // Store simplices as std::vector<Point>
+    for (std::size_t j = 0; j < tri_tdim+1; ++j)
+      for (std::size_t d = 0; d < gdim; ++d)
+        simplex[j][d] = triangulation[offset*i+gdim*j+d];
+
+    // Compute intersection
+    std::vector<double> local_triangulation
+      = triangulate_intersection(simplex_cell, cell_tdim,
+                                 simplex, tri_tdim,
+                                 gdim);
+
+    // Add these to the net triangulation
+    intersection_triangulation.insert(intersection_triangulation.end(),
+                                      local_triangulation.begin(),
+                                      local_triangulation.end());
+
+    // Add the normal
+    intersection_normals.resize(intersection_normals.size() + local_triangulation.size()/offset,
+                                normals[i]);
+  }
+
 }
 //-----------------------------------------------------------------------------
 bool

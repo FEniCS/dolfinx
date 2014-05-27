@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-04-03
+// Last changed: 2014-05-27
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -156,6 +156,14 @@ namespace dolfin
     static std::vector<double>
     triangulate_intersection(const MeshEntity& cell,
                              const std::vector<double> &triangulation,
+                             std::size_t tdim);
+
+    static void
+    triangulate_intersection(const MeshEntity& cell,
+                             const std::vector<double>& triangulation,
+                             const std::vector<Point>& normals,
+                             std::vector<double>& intersection_triangulation,
+                             std::vector<Point>& intersection_normals,
                              std::size_t tdim);
 
   private:

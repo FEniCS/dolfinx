@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-05-22
+// Last changed: 2014-05-27
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -435,19 +435,28 @@ namespace dolfin
     // Build quadrature rules for the overlap
     void _build_quadrature_rules_overlap();
 
-    // Add quadrature rule for simplices in the triangulation array
-    void _add_quadrature_rule(quadrature_rule& qr,
-                              const std::vector<double>& triangulation,
-                              std::size_t tdim,
-                              std::size_t gdim,
-                              std::size_t quadrature_order,
-                              double factor) const;
+    // Add quadrature rule for simplices in the triangulation
+    // array. Returns the number of points generated for each simplex.
+    std::vector<std::size_t>
+    _add_quadrature_rule(quadrature_rule& qr,
+                         const std::vector<double>& triangulation,
+                         std::size_t tdim,
+                         std::size_t gdim,
+                         std::size_t quadrature_order,
+                         double factor) const;
 
-    // Add quadrature rule to existing quadrature rule (append dqr to qr)
-    void _add_quadrature_rule(quadrature_rule& qr,
-                              const quadrature_rule& dqr,
-                              std::size_t gdim,
-                              double factor) const;
+    // Add quadrature rule to existing quadrature rule (append dqr to
+    // qr). Returns number of points added.
+    std::size_t _add_quadrature_rule(quadrature_rule& qr,
+                                     const quadrature_rule& dqr,
+                                     std::size_t gdim,
+                                     double factor) const;
+
+    // Append normal to list of normals npts times
+    void _add_normal(std::vector<double>& normals,
+                     const Point& normal,
+                     const std::size_t npts,
+                     const std::size_t gdim) const;
 
     // Plot multimesh
     void _plot() const;
