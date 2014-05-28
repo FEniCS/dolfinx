@@ -1,5 +1,4 @@
 """Unit tests for assembly"""
-
 # Copyright (C) 2011 Garth N. Wells
 #
 # This file is part of DOLFIN.
@@ -21,7 +20,7 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-03-12
-# Last changed: 2011-03-12
+# Last changed: 2014-05-28
 
 import unittest
 import numpy
@@ -91,14 +90,11 @@ class Assembly(unittest.TestCase):
             self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
             parameters["num_threads"] = 0
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_facet_assembly(self):
 
         mesh = UnitSquareMesh(24, 24)
         V = FunctionSpace(mesh, "DG", 1)
-
-        if MPI.size(mesh.mpi_comm()) > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
 
         # Define test and trial functions
         v = TestFunction(V)
@@ -211,14 +207,11 @@ class Assembly(unittest.TestCase):
                 #print sub[k] + full, subplusfull[k]
                 self.assertAlmostEqual(sub[k] + full, subplusfull[k])
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_subdomain_assembly_form_1(self):
         "Test assembly over subdomains with markers stored as part of form"
 
         mesh = UnitSquareMesh(4, 4)
-
-        # Skip in parallel
-        if MPI.size(mesh.mpi_comm()) > 1:
-            return
 
         # Define some haphazardly chosen cell/facet function
         subdomains = CellFunction("size_t", mesh)
@@ -347,13 +340,10 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(a0, mesh=mesh), 0.25)
         self.assertAlmostEqual(assemble(a1, mesh=mesh), 1.0)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_colored_cell_assembly(self):
 
         old_mesh = UnitCubeMesh(4, 4, 4)
-
-        # Coloring and renumbering not supported in parallel
-        if MPI.size(old_mesh.mpi_comm()) != 1:
-            return
 
         # Create mesh, then color and renumber
         old_mesh.color("vertex")
@@ -532,7 +522,6 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(0.0, assemble(n2[0]*ds(mesh)))
         self.assertAlmostEqual(0.0, assemble(n2[0]*ds(mesh), mesh=mesh))
         self.assertAlmostEqual(0.0, assemble(n2[0]*ds, mesh=mesh))
-
 
 if __name__ == "__main__":
     print ""
