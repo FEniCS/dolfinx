@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2013-12-04
+// Last changed: 2014-05-27
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
@@ -73,19 +73,19 @@ namespace dolfin
       return p;
     }
 
+    /// Update solver parameters (pass parameters down to wrapped implementation)
+    virtual void update_parameters(const Parameters& parameters)
+    {
+      this->parameters.update(parameters);
+      solver->update_parameters(parameters);
+    }
+
     // FIXME: This should not be needed. Need to cleanup linear solver
     // name jungle: default, lu, iterative, direct, krylov, etc
     /// Return parameter type: "krylov_solver" or "lu_solver"
     std::string parameter_type() const
     {
       return _parameter_type;
-    }
-
-    /// Update solver parameters (pass parameters down to wrapped implementation)
-    virtual void update_parameters(const Parameters& parameters)
-    {
-      this->parameters.update(parameters);
-      solver->update_parameters(parameters);
     }
 
   private:
