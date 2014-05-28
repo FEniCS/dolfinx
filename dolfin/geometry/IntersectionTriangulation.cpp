@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-05-27
+// Last changed: 2014-05-28
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -1189,12 +1189,9 @@ IntersectionTriangulation::triangulate_intersection
   // Compute the triangulation of the intersection of the cell and the
   // simplices of the flat triangulation vector with topology tdim.
 
-  // std::vector<double> total_triangulation;
-  // std::vector<Point> total_normals;
-
   // FIXME: clear or not?
-  intersection_triangulation.clear();
-  intersection_normals.clear();
+  // intersection_triangulation.clear();
+  // intersection_normals.clear();
 
   // Get dimensions (geometrical dimension assumed to be the same)
   const std::size_t cell_tdim = cell.mesh().topology().dim();

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-27
+// Last changed: 2014-05-28
 //
 // This demo program solves MultiMeshPoisson's equation using a Cut and
 // Composite Finite Element Method (MultiMesh) on a domain defined by
@@ -61,6 +61,8 @@ int main(int argc, char* argv[])
   UnitSquareMesh mesh_0(N, N);
   RectangleMesh  mesh_1(0.2, 0.2, 0.6, 0.6, N, N);
   RectangleMesh  mesh_2(0.4, 0.4, 0.8, 0.8, N, N);
+  // RectangleMesh  mesh_1(0.5*DOLFIN_PI/10, 0.5*DOLFIN_PI/10, 1.5*DOLFIN_PI/10, 1.5*DOLFIN_PI/10, N, N);
+  // RectangleMesh  mesh_2(DOLFIN_PI/10, DOLFIN_PI/10, 2*DOLFIN_PI/10, 2*DOLFIN_PI/10, N, N);
 
   // Rotate overlapping mesh
   //rectangle_1.rotate(45);

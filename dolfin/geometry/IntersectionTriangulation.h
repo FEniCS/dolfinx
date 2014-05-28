@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-05-27
+// Last changed: 2014-05-28
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -158,6 +158,10 @@ namespace dolfin
                              const std::vector<double> &triangulation,
                              std::size_t tdim);
 
+    // Function for computing the intersection of a cell with a flat
+    // vector of simplices with topological dimension tdim. The
+    // geometrical dimension is assumed to be the same as for the
+    // cell. The corresponding normals are also saved.
     static void
     triangulate_intersection(const MeshEntity& cell,
                              const std::vector<double>& triangulation,
