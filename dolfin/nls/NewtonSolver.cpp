@@ -235,7 +235,15 @@ double NewtonSolver::relative_residual() const
 //-----------------------------------------------------------------------------
 GenericLinearSolver& NewtonSolver::linear_solver() const
 {
-  dolfin_assert(_solver);
+  if (!_solver)
+  {
+    dolfin_error("NewtonSolver.cpp",
+                 "access linear solver for Newton solver",
+                 "The linear solver will not be initialized until solve() "
+                 "has been called. For control of the linear solver, pass "
+                 "a linear solver to the constructor of NewtonSolver");
+  }
+
   return *_solver;
 }
 //-----------------------------------------------------------------------------
