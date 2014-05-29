@@ -671,10 +671,24 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
   MPI::all_to_all(mpi_comm, send_cell_vertices, received_cell_vertices);
 
   // Count number of received cells (first entry in vector)
+  // and find out how many ghost cells there are...
   std::size_t num_new_local_cells = 0;
+  std::size_t ghost_count = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
-    num_new_local_cells += received_cell_vertices[p][0]; 
+  {
+    std::vector<std::size_t>& received_data = received_cell_vertices[p];
+    num_new_local_cells += received_data[0]; 
+    for (auto it = received_data.begin() + 1;
+         it != received_data.end();
+         it += (*it + num_cell_vertices + 2))
+    {
+      if (*it != 0) 
+        ++ghost_count;
+    }
+  }
 
+  std::cout << "ghost = " << ghost_count << "/" << num_new_local_cells << "\n";
+    
   // Put received mesh data into new_mesh_data structure
   new_mesh_data.cell_vertices.resize(boost::extents[num_new_local_cells]
                                      [num_cell_vertices]);
@@ -683,8 +697,9 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
 
   // Unpack received data
   // Create a map from cells which are shared, to the remote processes which
-  // share them
+  // share them - corral ghost cells to end of range
   std::size_t c = 0;
+  std::size_t gc = num_new_local_cells - ghost_count;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
@@ -696,25 +711,32 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
       const unsigned int num_ghosts = *tmp_it++;
       
       if (num_ghosts == 0)
+      {
         new_mesh_data.cell_partition[c] = mpi_rank;
+        new_mesh_data.global_cell_indices[c] = *tmp_it++;
+        for (std::size_t j = 0; j < num_cell_vertices; ++j)
+          new_mesh_data.cell_vertices[c][j] = *tmp_it++;       
+        ++c;
+      }
       else
       {
         // First entry of sharing processes is the owner.
-        new_mesh_data.cell_partition[c] = *tmp_it;
+        new_mesh_data.cell_partition[gc] = *tmp_it;
         std::set<unsigned int> proc_set(tmp_it, tmp_it + num_ghosts);
         // Remove self from set of sharing processes
         proc_set.erase(mpi_rank);
-        shared_cells.insert(std::make_pair(c, proc_set));
+        shared_cells.insert(std::make_pair(gc, proc_set));
         tmp_it += num_ghosts;
+        new_mesh_data.global_cell_indices[gc] = *tmp_it++;
+        for (std::size_t j = 0; j < num_cell_vertices; ++j)
+          new_mesh_data.cell_vertices[gc][j] = *tmp_it++;
+        ++gc;
       }
-
-      new_mesh_data.global_cell_indices[c] = *tmp_it++;
-
-      for (std::size_t j = 0; j < num_cell_vertices; ++j)
-        new_mesh_data.cell_vertices[c][j] = *tmp_it++;
-      ++c;
     }
   }
+
+  dolfin_assert(c == num_new_local_cells - ghost_count);
+  dolfin_assert(gc == num_new_local_cells);
 
 }
 //-----------------------------------------------------------------------------

@@ -16,7 +16,7 @@ if(MPI.size(mpi_comm_world()) == 1):
 mpi_rank = MPI.rank(mpi_comm_world())
 
 parameters["mesh_partitioner"] = "ParMETIS"
-M = UnitSquareMesh(40, 40)
+M = UnitSquareMesh(15, 15)
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())
 
@@ -53,7 +53,8 @@ for c in cells(M):
     yavg = np.mean(np.array(yc))
     cell_str=str(mpi_rank)
     if c.index() in shared_cells.keys():
-        cell_str = shared_cells[c.index()] 
+        cell_str = str(shared_cells[c.index()])
+    cell_str = str(c.index())
     cells_note.append((xavg, yavg, cell_str))
     cells_store.append(zip(xc,yc))
     
