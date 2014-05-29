@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-03-10
+// Last changed: 2014-04-09
 
 #include <cmath>
 #include <algorithm>
@@ -161,7 +161,9 @@ void PointIntegralSolver::step(double dt)
     {
 
       // Update cell
+      // TODO: Pass suitable bool vector here to avoid tabulating all coefficient dofs:
       _ufcs[stage][0]->update(cell, vertex_coordinates, ufc_cell);
+                              //some_integral.enabled_coefficients());
 
       // Check if we have an explicit stage (only 1 form)
       if (_ufcs[stage].size() == 1)
@@ -179,11 +181,13 @@ void PointIntegralSolver::step(double dt)
 
     Timer t_last_stage("Last stage: tabulate_tensor");
 
-    // Update coeffcients for last stage
-    _last_stage_ufc->update(cell, vertex_coordinates, ufc_cell);
-
     // Last stage point integral
     const ufc::point_integral& integral = *_last_stage_ufc->default_point_integral;
+
+    // Update coeffcients for last stage
+    // TODO: Pass suitable bool vector here to avoid tabulating all coefficient dofs:
+    _last_stage_ufc->update(cell, vertex_coordinates, ufc_cell);
+                            //integral.enabled_coefficients());
 
     // Tabulate cell tensor
     integral.tabulate_tensor(_last_stage_ufc->A.data(), _last_stage_ufc->w(),
@@ -304,12 +308,14 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
 					    int coefficient_index,
 					    const std::vector<double>& vertex_coordinates)
 {
+  const ufc::point_integral& J_integral = *loc_ufc.default_point_integral;
+
   //Timer _timer_compute_jac("Implicit stage: Compute jacobian");
   //Timer t_impl_update("Update_cell");
+  // TODO: Pass suitable bool vector here to avoid tabulating all coefficient dofs:
   loc_ufc.update(cell, vertex_coordinates, ufc_cell);
+                 //J_integral.enabled_coefficients());
   //t_impl_update.stop();
-
-  const ufc::point_integral& J_integral = *loc_ufc.default_point_integral;
 
   // If there is a solution coefficient in the jacobian form
   if (coefficient_index>0)
@@ -660,7 +666,7 @@ void PointIntegralSolver::_simplified_newton_solve(
 
     residual = _norm(_residual);
     if (newton_iterations == 0)
-      initial_residual = residual;
+      initial_residual = residual;//std::max(residual, DOLFIN_EPS);
 
     relative_residual = residual/initial_residual;
 
@@ -782,7 +788,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     // No convergence
     if (newton_iterations > max_iterations)
     {
-      if ((report && vert_ind == report_vertex) || verbose_report)
+      if (report)
 	info("Newton solver did not converge after %d iterations. vertex: %d, "	\
 	     "relative_previous_residual: %.3f, "			\
 	     "relative_residual: %.3e, residual: %.3e.", max_iterations, vert_ind,

@@ -16,5 +16,6 @@
 #include <dolfin/function/FunctionAssigner.h>
 #include <dolfin/function/assign.h>
 #include <dolfin/function/CCFEMFunction.h>
+#include <dolfin/function/LagrangeInterpolator.h>
 
 #endif

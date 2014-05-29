@@ -39,6 +39,7 @@ tests = {
     "function":       ["Constant", "ConstrainedFunctionSpace", \
                        "Expression", "Function", "FunctionAssigner", \
                        "FunctionSpace", "SpecialFunctions", \
+                       "LagrangeInterpolator", \
                        "nonmatching_interpolation"],
     "geometry":       ["BoundingBoxTree", "CollisionDetection", "Intersection",
                        "IntersectionTriangulation", "Issues"],

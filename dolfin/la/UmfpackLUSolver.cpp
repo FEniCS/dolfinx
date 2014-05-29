@@ -22,6 +22,8 @@
 // Last changed: 2012-08-20
 
 
+#include <memory>
+
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "UmfpackLUSolver.h"
@@ -313,7 +315,7 @@ UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
   dolfin_assert(Ax);
 
   void* symbolic = 0;
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Symbolic factorisation step (reordering, etc)
   if (sizeof(std::size_t) == sizeof(int))
@@ -356,7 +358,7 @@ UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
   dolfin_assert(symbolic);
 
   void* numeric = 0;
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Factorization step
   long int status = 0;
@@ -400,7 +402,7 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
   dolfin_assert(b);
   dolfin_assert(numeric);
 
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Solve system. We assume CSR storage, but UMFPACK expects CSC, so solve
   // for the transpose

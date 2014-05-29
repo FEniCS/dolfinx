@@ -53,25 +53,25 @@ namespace dolfin
     ~ParMETISDualGraph();
 
     // ParMETIS data
-    std::vector<int> elmdist;
-    std::vector<int> eptr;
-    std::vector<int> eind;
-    int numflag;
+    std::vector<idx_t> elmdist;
+    std::vector<idx_t> eptr;
+    std::vector<idx_t> eind;
+    idx_t numflag;
     idx_t* xadj;
     idx_t* adjncy;
 
     // Number of partitions (one for each process)
-    int nparts;
+    idx_t nparts;
 
     // Strange weight arrays needed by ParMETIS
-    int ncon;
+    idx_t ncon;
     std::vector<real_t> tpwgts;
     std::vector<real_t> ubvec;
 
     // Prepare remaining arguments for ParMETIS
-    int* elmwgt;
-    int wgtflag;
-    int edgecut;
+    idx_t* elmwgt;
+    idx_t wgtflag;
+    idx_t edgecut;
 
   };
 }
@@ -103,7 +103,8 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
   {
     dolfin_error("ParMETIS.cpp",
                  "compute mesh partitioning using ParMETIS",
-                 "partition model %s is unknown. Must be \"partition\", \"adactive_partition\" or \"refine\"", mode.c_str());
+                 "partition model %s is unknown. Must be \"partition\", \"adactive_partition\" or \"refine\"",
+                 mode.c_str());
   }
 
   MPI_Comm_free(&comm);
@@ -117,7 +118,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
 
   // Options for ParMETIS
-  int options[3];
+  idx_t options[3];
   options[0] = 1;
   options[1] = 0;
   options[2] = 15;
@@ -128,7 +129,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
 
   // Call ParMETIS to partition graph
   const std::size_t num_local_cells = g.eptr.size() - 1;
-  std::vector<int> part(num_local_cells);
+  std::vector<idx_t> part(num_local_cells);
   dolfin_assert(!part.empty());
   int err = ParMETIS_V3_PartKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
                                  NULL, &g.wgtflag, &g.numflag, &g.ncon,
@@ -247,7 +248,7 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS Adaptive Repartition)");
 
   // Options for ParMETIS
-  int options[4];
+  idx_t options[4];
   options[0] = 1;
   options[1] = 0;
   options[2] = 15;
@@ -263,7 +264,7 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
   // Call ParMETIS to partition graph
   const double itr = parameters["ParMETIS_repartitioning_weight"];
   real_t _itr = itr;
-  std::vector<int> part(g.eptr.size() - 1);
+  std::vector<idx_t> part(g.eptr.size() - 1);
   std::vector<idx_t> vsize(part.size(), 1);
   dolfin_assert(!part.empty());
   int err = ParMETIS_V3_AdaptiveRepart(g.elmdist.data(), g.xadj, g.adjncy,
@@ -288,7 +289,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   const std::size_t process_number = MPI::rank(mpi_comm);
 
   // Options for ParMETIS
-  int options[4];
+  idx_t options[4];
   options[0] = 1;
   options[1] = 0;
   options[2] = 15;
@@ -305,7 +306,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   // Partitioning array to be computed by ParMETIS. Prefill with
   // process_number.
   const std::size_t num_local_cells = g.eptr.size() - 1;
-  std::vector<int> part(num_local_cells, process_number);
+  std::vector<idx_t> part(num_local_cells, process_number);
   dolfin_assert(!part.empty());
 
   // Call ParMETIS to partition graph
@@ -362,7 +363,7 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
   dolfin_assert(!eind.empty());
 
   // Number of nodes shared for dual graph (partition along facets)
-  int ncommonnodes = num_cell_vertices - 1;
+  idx_t ncommonnodes = num_cell_vertices - 1;
   numflag = 0;
   xadj = 0;
   adjncy = 0;

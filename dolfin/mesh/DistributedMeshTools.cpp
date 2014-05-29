@@ -1231,12 +1231,13 @@ DistributedMeshTools::compute_num_global_entities(const MPI_Comm mpi_comm,
   // Compute offset
   const std::size_t offset
     = std::accumulate(num_entities_to_number.begin(),
-                      num_entities_to_number.begin() + process_number, 0);
+                      num_entities_to_number.begin() + process_number, 
+                      (std::size_t)0);
 
   // Compute number of global entities
   const std::size_t num_global = std::accumulate(num_entities_to_number.begin(),
                                                  num_entities_to_number.end(),
-                                                 0);
+                                                 (std::size_t)0);
 
   return std::make_pair(num_global, offset);
 }

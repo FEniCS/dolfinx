@@ -206,7 +206,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   Timer timer("Partition graph (calling SCOTCH)");
 
   // C-style array indexing
-  const int baseval = 0;
+  const SCOTCH_Num baseval = 0;
 
   // Number of processes
   const std::size_t num_processes = MPI::size(mpi_comm);
@@ -230,7 +230,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   // (number of local + ghost graph vertices (cells),
   // number of local edges + edges connecting to ghost vertices)
   SCOTCH_Num edgelocnbr = 0;
-  vertloctab.push_back(0);
+  vertloctab.push_back((SCOTCH_Num) 0);
   std::vector<std::set<std::size_t> >::const_iterator vertex;
   for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
   {
@@ -256,7 +256,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   for (std::size_t i = 0; i < num_processes; ++i)
   {
     procvrttab[i] = std::accumulate(proccnttab.begin(),
-                                    proccnttab.begin() + i, 0);
+                                    proccnttab.begin() + i, (std::size_t) 0);
   }
   procvrttab[num_processes] = procvrttab[num_processes - 1]
     + proccnttab[num_processes - 1];
@@ -349,7 +349,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   #endif
 
   // Number of partitions (set equal to number of processes)
-  const int npart = num_processes;
+  const SCOTCH_Num npart = num_processes;
 
   // Partitioning strategy
   SCOTCH_Strat strat;

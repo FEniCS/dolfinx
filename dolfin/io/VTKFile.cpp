@@ -118,7 +118,6 @@ void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Function& u)
 {
-  u.update();
   write_function(u, counter);
 }
 //----------------------------------------------------------------------------
@@ -156,7 +155,6 @@ void VTKFile::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 void VTKFile::operator<<(const std::pair<const Function*, double> u)
 {
   dolfin_assert(u.first);
-  u.first->update();
   write_function(*(u.first), u.second);
 }
 //----------------------------------------------------------------------------

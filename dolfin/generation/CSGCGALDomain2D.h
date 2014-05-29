@@ -20,10 +20,11 @@
 
 #ifdef HAS_CGAL
 
-#include "CSGGeometry.h"
+#include <memory>
 
+#include "CSGGeometry.h"
 #include <dolfin/geometry/Point.h>
-#include <boost/scoped_ptr.hpp>
+
 
 struct CSGCGALDomain2DImpl;
 
@@ -53,17 +54,17 @@ class CSGCGALDomain2D
 
   bool point_in_domain(Point p) const;
   double compute_boundingcircle_radius() const ;
-  
+
   // TODO: Replace this with a more C++-ish
   // implementation, ie, take an outputiterator as arugment
   // or define iterator
-  void get_vertices(std::list<std::vector<Point> >& v, 
+  void get_vertices(std::list<std::vector<Point> >& v,
                     double truncate_threshold) const;
 
-  void get_holes(std::list<std::vector<Point> >& h, 
+  void get_holes(std::list<std::vector<Point> >& h,
                  double truncate_threshold) const;
 
-  boost::scoped_ptr<CSGCGALDomain2DImpl> impl;
+  std::unique_ptr<CSGCGALDomain2DImpl> impl;
 
 };
 }

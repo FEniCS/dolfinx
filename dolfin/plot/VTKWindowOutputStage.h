@@ -21,7 +21,6 @@
 #ifndef __VTK_WINDOW_OUTPUT_STAGE_H
 #define __VTK_WINDOW_OUTPUT_STAGE_H
 
-#include <boost/scoped_ptr.hpp>
 #include <vtkSmartPointer.h>
 
 // Forward declarations

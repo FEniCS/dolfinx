@@ -53,17 +53,15 @@ class AbstractBaseTest(object):
         a = dot(grad(u), grad(v))*ds
         b = v*s*dx
 
-        if use_backend:
-            if self.backend == "uBLAS":
-                backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
-            else:
-                backend = globals()[self.backend + 'Factory'].instance()
-            return assemble(a, backend=backend, keep_diagonal=keep_diagonal), \
-                   assemble(b, backend=backend, keep_diagonal=keep_diagonal)
-        else:
-            return assemble(a, keep_diagonal=keep_diagonal), \
-                   assemble(b, keep_diagonal=keep_diagonal)
+        return self.assemble(a, use_backend=use_backend, keep_diagonal=keep_diagonal), \
+               self.assemble(b, use_backend=use_backend, keep_diagonal=keep_diagonal)
 
+    def assemble(self, form, use_backend=False, keep_diagonal=False):
+        if use_backend:
+            backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
+            return assemble(form, backend=backend, keep_diagonal=keep_diagonal)
+        else:
+            return assemble(form, keep_diagonal=keep_diagonal)
 
     def test_basic_la_operations(self, use_backend=False):
         from numpy import ndarray, array, ones, sum
@@ -239,6 +237,38 @@ class AbstractBaseTest(object):
     def test_ident_zeros_with_backend(self):
         self.test_ident_zeros(use_backend=True)
 
+    def test_setting_diagonal(self, use_backend=False):
+
+        mesh = UnitSquareMesh(21, 23)
+
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        W = FunctionSpace(mesh, "Lagrange", 1)
+
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        B = self.assemble(u*v*dx(), use_backend=use_backend, keep_diagonal=True)
+
+        b = assemble(action(u*v*dx(), Constant(1)))
+        A = B.copy()
+        A.zero()
+        A.set_diagonal(b)
+
+        resultsA = Vector()
+        resultsB = Vector()
+        A.init_vector(resultsA, 1)
+        B.init_vector(resultsB, 1)
+
+        ones = b.copy()
+        ones[:] = 1.0
+
+        A.mult(ones, resultsA)
+        B.mult(ones, resultsB)
+        self.assertAlmostEqual(resultsA.norm("l2"), resultsB.norm("l2"))
+
+    def test_setting_diagonal_with_backend(self):
+        self.test_setting_diagonal(True)
+
     #def test_create_from_sparsity_pattern(self):
 
     #def test_size(self):
@@ -311,14 +341,17 @@ if MPI.size(mpi_comm_world()) == 1:
     if has_linear_algebra_backend("PETScCusp"):
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
             backend    = "PETScCusp"
+            sub_backend = ""
 
 if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "PETSc"
+        sub_backend = ""
 
 if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "Epetra"
+        sub_backend = ""
 
 #class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
 #    backend    = "STL"

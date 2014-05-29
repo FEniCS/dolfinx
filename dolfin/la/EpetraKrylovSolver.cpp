@@ -288,6 +288,9 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   //_absolute_residual = solver->TrueResidual();
   //_relative_residual = solver->ScaledResidual();
 
+  // Update ghost values
+  x.update_ghost_values();
+
   // Return number of iterations
   return solver->getNumIters();
 }

@@ -30,7 +30,4 @@
 // Move up when ready or merge with Assembler.h
 #include <dolfin/fem/OpenMpAssembler.h>
 
-// Remove when no longer needed, here to give deprecation warning
-#include <dolfin/fem/VariationalProblem.h>
-
 #endif

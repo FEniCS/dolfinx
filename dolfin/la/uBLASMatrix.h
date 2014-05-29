@@ -88,7 +88,7 @@ namespace dolfin
 
     /// Return true if empty
     virtual bool empty() const
-    { return this->size(0); }
+    { return size(0) == 0; }
 
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const;
@@ -169,6 +169,9 @@ namespace dolfin
 
     /// Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const;
+
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x);
 
     /// Multiply matrix by given number
     virtual const uBLASMatrix<Mat>& operator*= (double a);
@@ -519,6 +522,33 @@ namespace dolfin
     }
 
     ublas::axpy_prod(_matA, xx.vec(), yy.vec(), true);
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>
+  void uBLASMatrix<Mat>::set_diagonal(const GenericVector& x)
+  {
+    if (size(1) != size(0) || size(0) != x.size())
+    {
+      dolfin_error("uBLASMatrix.h",
+                   "Set diagonal of a uBLAS Matrix",
+                   "Matrix and vector dimensions don't match");
+    }
+
+    const double* xx = x.down_cast<uBLASVector>().data();
+    typename Mat::iterator1 row;    // Iterator over rows
+    typename Mat::iterator2 entry;  // Iterator over entries
+
+    // FIXME: Cannot be a good way to do it for a dense matrices
+    for (row = _matA.begin1(); row != _matA.end1(); ++row)
+    {
+      for (entry = row.begin(); entry != row.end(); ++entry)
+      {
+	if (entry.index2() > entry.index1())
+	  break;
+	if (entry.index2() == entry.index1())
+	  *entry = xx[entry.index1()];
+      }
+    }
   }
   //----------------------------------------------------------------------------
   template <typename Mat>

@@ -249,8 +249,8 @@ class Assembly(unittest.TestCase):
         dss = ds[boundaries]
         self.assertEqual(dxs.domain(), None)
         self.assertEqual(dss.domain(), None)
-        self.assertEqual(dxs.domain_data(), subdomains)
-        self.assertEqual(dss.domain_data(), boundaries)
+        self.assertEqual(dxs.subdomain_data(), subdomains)
+        self.assertEqual(dss.subdomain_data(), boundaries)
 
         M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
         self.assertEqual(M.domains(), (mesh.ufl_domain(),))
@@ -454,7 +454,8 @@ class Assembly(unittest.TestCase):
         x = SpatialCoordinate(mesh)
         n = FacetNormal(mesh)
 
-        # Geometry with just cell (no reference to mesh, for backwards compatibility)
+        # Geometry with just cell (no reference to mesh, for backwards
+        # compatibility)
         x2 = SpatialCoordinate(mesh.ufl_cell())
         n2 = FacetNormal(mesh.ufl_cell())
 

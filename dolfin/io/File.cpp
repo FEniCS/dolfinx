@@ -112,7 +112,6 @@ void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)
 {
-  u.first->update();
   file->write(MPI::rank(_mpi_comm));
   *file << u;
 }

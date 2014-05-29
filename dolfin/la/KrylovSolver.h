@@ -19,7 +19,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2013-11-25
+// Last changed: 2014-05-27
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -27,7 +27,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <boost/scoped_ptr.hpp>
 #include "GenericLinearSolver.h"
 
 namespace dolfin
@@ -83,6 +82,14 @@ namespace dolfin
     {
       this->parameters.update(parameters);
       solver->parameters.update(parameters);
+    }
+
+    // FIXME: This should not be needed. Need to cleanup linear solver
+    // name jungle: default, lu, iterative, direct, krylov, etc
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    {
+      return "krylov_solver";
     }
 
   private:

@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2009-2013
 //
 // First added:  2008-08-26
-// Last changed: 2013-12-04
+// Last changed: 2014-05-27
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
