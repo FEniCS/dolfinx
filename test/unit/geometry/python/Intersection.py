@@ -25,7 +25,7 @@ import unittest
 from dolfin import intersect
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh
 from dolfin import Point, FunctionSpace, Expression, interpolate
-from dolfin import MPI
+from dolfin import MPI, mpi_comm_world
 
 @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class BoundingBoxTreeTest(unittest.TestCase):

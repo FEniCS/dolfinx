@@ -346,18 +346,18 @@ if has_linear_algebra_backend("Epetra"):
                        unittest.TestCase):
         backend    = "Epetra"
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)")
 class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
     backend     = "uBLAS"
     sub_backend = "Sparse"
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)")
 class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
     backend     = "uBLAS"
     sub_backend = "Dense"
 
 if has_linear_algebra_backend("PETScCusp"):
-    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)"
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)")
     class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "PETScCusp"
 
