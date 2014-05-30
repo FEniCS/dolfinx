@@ -118,25 +118,6 @@ class AbstractBaseTest(object):
         A.axpy(10,C,True)
         self.assertAlmostEqual(A.norm('frobenius'), 41*unit_norm)
 
-        # Test to NumPy array
-        print "***************"
-        if MPI.size(A.mpi_comm()) == 1:
-            print "-------------"
-            A2 = A.array()
-            self.assertTrue(isinstance(A2,ndarray))
-            self.assertEqual(A2.shape, (2021, 2021))
-            self.assertAlmostEqual(sqrt(sum(A2**2)), A.norm('frobenius'))
-
-            if self.backend == 'uBLAS' and self.sub_backend == 'Sparse':
-                try:
-                    import scipy.sparse
-                    import numpy.linalg
-                    A3 = A.sparray()
-                    self.assertTrue(isinstance(A3, scipy.sparse.csr_matrix))
-                    self.assertAlmostEqual(numpy.linalg.norm(A3.todense() - A2), 0.0)
-                except ImportError:
-                    pass
-
         # Test expected size of rectangular array
         self.assertEqual(A.size(0), B.size(0))
         self.assertEqual(B.size(1), 528)
@@ -145,6 +126,32 @@ class AbstractBaseTest(object):
         #A[5,5] = 15
         #self.assertEqual(A[5,5],15)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_numpy_array(self, use_backend=False):
+        from numpy import ndarray, array, ones, sum
+
+        # Tests bailout for this choice
+        if self.backend == "uBLAS" and not use_backend:
+            return
+
+        # Assemble matrices
+        A, B = self.assemble_matrices(use_backend)
+
+        # Test to NumPy array
+        A2 = A.array()
+        self.assertTrue(isinstance(A2,ndarray))
+        self.assertEqual(A2.shape, (2021, 2021))
+        self.assertAlmostEqual(sqrt(sum(A2**2)), A.norm('frobenius'))
+
+        if self.backend == 'uBLAS' and self.sub_backend == 'Sparse':
+            try:
+                import scipy.sparse
+                import numpy.linalg
+                A3 = A.sparray()
+                self.assertTrue(isinstance(A3, scipy.sparse.csr_matrix))
+                self.assertAlmostEqual(numpy.linalg.norm(A3.todense() - A2), 0.0)
+            except ImportError:
+                pass
 
     def test_basic_la_operations_with_backend(self):
         self.test_basic_la_operations(True)

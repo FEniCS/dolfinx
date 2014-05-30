@@ -30,7 +30,7 @@ import tempfile
 
 from dolfin_utils.meshconvert import meshconvert
 from dolfin_utils.meshconvert.meshconvert import DataHandler
-
+from dolfin import MPI
 
 class TestCase(_TestCase):
     def _get_tempfname(self, suffix=None):
