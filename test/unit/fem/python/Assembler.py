@@ -20,7 +20,7 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-03-12
-# Last changed: 2014-05-28
+# Last changed: 2014-05-30
 
 import unittest
 import numpy
@@ -52,13 +52,27 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
-        # Assemble A and b multi-threaded
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(a).norm("frobenius"),
-                                   A_frobenius_norm, 10)
-            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
-            parameters["num_threads"] = 0
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_cell_assembly_1D_multithreaded(self):
+
+        mesh = UnitIntervalMesh(48)
+        V = FunctionSpace(mesh, "CG", 1)
+
+        v = TestFunction(V)
+        u = TrialFunction(V)
+        f = Constant(10.0)
+
+        a = inner(grad(v), grad(u))*dx
+        L = inner(v, f)*dx
+
+        A_frobenius_norm = 811.75365721381274397572
+        b_l2_norm = 1.43583841167606474087
+
+        # Assemble A and b
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+        parameters["num_threads"] = 0
 
     def test_cell_assembly(self):
 
@@ -82,15 +96,31 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
-        # Assemble A and b multi-threaded
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(a).norm("frobenius"),
-                                   A_frobenius_norm, 10)
-            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
-            parameters["num_threads"] = 0
-
     @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_cell_assembly_multithreaded(self):
+
+        mesh = UnitCubeMesh(4, 4, 4)
+        V = VectorFunctionSpace(mesh, "DG", 1)
+
+        v = TestFunction(V)
+        u = TrialFunction(V)
+        f = Constant((10, 20, 30))
+
+        def epsilon(v):
+            return 0.5*(grad(v) + grad(v).T)
+
+        a = inner(epsilon(v), epsilon(u))*dx
+        L = inner(v, f)*dx
+
+        A_frobenius_norm =  4.3969686527582512
+        b_l2_norm = 0.95470326978246278
+
+        # Assemble A and b
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+        parameters["num_threads"] = 0
+
     def test_facet_assembly(self):
 
         mesh = UnitSquareMesh(24, 24)
@@ -126,13 +156,43 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
-        # Assemble A and b (multi-threaded)
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(a).norm("frobenius"),
-                                   A_frobenius_norm, 10)
-            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
-            parameters["num_threads"] = 0
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_facet_assembly_multithreaded(self):
+
+        mesh = UnitSquareMesh(24, 24)
+        V = FunctionSpace(mesh, "DG", 1)
+
+        # Define test and trial functions
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        # Define normal component, mesh size and right-hand side
+        n = FacetNormal(mesh)
+        h = CellSize(mesh)
+        h_avg = (h('+') + h('-'))/2
+        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+
+        # Define bilinear form
+        a = dot(grad(v), grad(u))*dx \
+            - dot(avg(grad(v)), jump(u, n))*dS \
+            - dot(jump(v, n), avg(grad(u)))*dS \
+            + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+            - dot(grad(v), u*n)*ds \
+            - dot(v*n, grad(u))*ds \
+            + 8.0/h*v*u*ds
+
+        # Define linear form
+        L = v*f*dx
+
+        # Reference values
+        A_frobenius_norm = 157.867392938645
+        b_l2_norm = 1.48087142738768
+
+        # Assemble A and b
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+        parameters["num_threads"] = 0
 
     def test_functional_assembly(self):
 
@@ -145,12 +205,21 @@ class Assembly(unittest.TestCase):
         M1 = f*ds
         self.assertAlmostEqual(assemble(M1, mesh=mesh), 4.0)
 
-        # Assemble A and b (multi-threaded)
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(M0, mesh=mesh), 1.0)
-            #self.assertAlmostEqual(assemble(M1, mesh=mesh), 4.0)
-            parameters["num_threads"] = 0
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_functional_assembly_multithreaded(self):
+
+        mesh = UnitSquareMesh(24, 24)
+
+        f = Constant(1.0)
+        M0 = f*dx
+        self.assertAlmostEqual(assemble(M0, mesh=mesh), 1.0)
+
+        M1 = f*ds
+        self.assertAlmostEqual(assemble(M1, mesh=mesh), 4.0)
+
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(M0, mesh=mesh), 1.0)
+        parameters["num_threads"] = 0
 
     def test_subdomain_and_fulldomain_assembly_meshdomains(self):
         """Test assembly over subdomains AND the full domain with markers
@@ -207,7 +276,6 @@ class Assembly(unittest.TestCase):
                 #print sub[k] + full, subplusfull[k]
                 self.assertAlmostEqual(sub[k] + full, subplusfull[k])
 
-    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_subdomain_assembly_form_1(self):
         "Test assembly over subdomains with markers stored as part of form"
 
@@ -255,11 +323,79 @@ class Assembly(unittest.TestCase):
         reference = 7.33040364583
         self.assertAlmostEqual(assemble(M), reference, 10)
 
+        # Check that given exterior_facet_domains override
+        new_boundaries = FacetFunction("size_t", mesh)
+        new_boundaries.set_all(0)
+        reference2 = 6.2001953125
+        value2 = assemble(M, exterior_facet_domains=new_boundaries)
+        self.assertAlmostEqual(value2, reference2, 10)
+
+        # Check that the form itself assembles as before
+        self.assertAlmostEqual(assemble(M), reference, 10)
+
+        # Take action of derivative of M on f
+        df = TestFunction(V)
+        L = derivative(M, f, df)
+        dg = TrialFunction(V)
+        F = derivative(L, g, dg)
+        b = action(F, f)
+
+        # Check that domain data carries across transformations:
+        reference = 0.0626219513355
+        self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
+
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_subdomain_assembly_form_1_multithreaded(self):
+        "Test assembly over subdomains with markers stored as part of form"
+
+        mesh = UnitSquareMesh(4, 4)
+
+        # Define some haphazardly chosen cell/facet function
+        subdomains = CellFunction("size_t", mesh)
+        subdomains.set_all(0)
+        subdomains[0] = 1
+        subdomains[1] = 1
+
+        boundaries = FacetFunction("size_t", mesh)
+        boundaries.set_all(0)
+        boundaries[0] = 1
+        boundaries[1] = 1
+        boundaries[2] = 1
+        boundaries[3] = 1
+
+        V = FunctionSpace(mesh, "CG", 2)
+        f = Expression("x[0] + 2")
+        g = Expression("x[1] + 1")
+
+        f = interpolate(f, V)
+        g = interpolate(g, V)
+
+        mesh1 = subdomains.mesh()
+        mesh2 = boundaries.mesh()
+        self.assertEqual(mesh1.id(), mesh2.id())
+        self.assertEqual(mesh1.ufl_domain().label(), mesh2.ufl_domain().label())
+
+        dxs = dx[subdomains]
+        dss = ds[boundaries]
+        self.assertEqual(dxs.domain(), None)
+        self.assertEqual(dss.domain(), None)
+        self.assertEqual(dxs.subdomain_data(), subdomains)
+        self.assertEqual(dss.subdomain_data(), boundaries)
+
+        M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
+        self.assertEqual(M.domains(), (mesh.ufl_domain(),))
+        sd = M.compute_form_data().subdomain_data[mesh.ufl_domain().label()]
+        self.assertEqual(sd["cell"], subdomains)
+        self.assertEqual(sd["exterior_facet"], boundaries)
+
+        # Check that subdomains are respected
+        reference = 7.33040364583
+        self.assertAlmostEqual(assemble(M), reference, 10)
+
         # Assemble form (multi-threaded)
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(M), reference, 10)
-            parameters["num_threads"] = 0
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(M), reference, 10)
+        parameters["num_threads"] = 0
 
         # Check that given exterior_facet_domains override
         new_boundaries = FacetFunction("size_t", mesh)
@@ -269,20 +405,18 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(value2, reference2, 10)
 
         # Assemble form (multi-threaded)
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(M, exterior_facet_domains=new_boundaries),\
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(M, exterior_facet_domains=new_boundaries),\
                                    reference2, 10)
-            parameters["num_threads"] = 0
+        parameters["num_threads"] = 0
 
         # Check that the form itself assembles as before
         self.assertAlmostEqual(assemble(M), reference, 10)
 
         # Assemble form  (multi-threaded)
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(M), reference, 10)
-            parameters["num_threads"] = 0
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(M), reference, 10)
+        parameters["num_threads"] = 0
 
         # Take action of derivative of M on f
         df = TestFunction(V)
@@ -296,10 +430,9 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
 
         # Assemble form  (multi-threaded)
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
-            parameters["num_threads"] = 0
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
+        parameters["num_threads"] = 0
 
     def test_subdomain_assembly_form_2(self):
         "Test assembly over subdomains with markers stored as part of form"
@@ -389,53 +522,67 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(a).norm("frobenius"),
                                A_frobenius_norm, 10)
 
-        if MPI.size(mesh.mpi_comm()) == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(a).norm("frobenius"),
-                                   A_frobenius_norm, 10)
-            parameters["num_threads"] = 0
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_nonsquare_assembly_multithreaded(self):
+        """Test assembly of a rectangular matrix"""
 
+        mesh = UnitSquareMesh(16, 16)
+
+        V = VectorFunctionSpace(mesh, "CG", 2)
+        Q = FunctionSpace(mesh, "CG", 1)
+        W = V*Q
+
+        (v, q) = TestFunctions(W)
+        (u, p) = TrialFunctions(W)
+
+        a = div(v)*p*dx
+        A_frobenius_norm = 9.6420303878382718e-01
+
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(a).norm("frobenius"),
+                               A_frobenius_norm, 10)
+        parameters["num_threads"] = 0
+
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_reference_assembly(self):
         "Test assembly against a reference solution"
 
-        if MPI.size(mpi_comm_world()) == 1:
+        # NOTE: This test is not robust as it relies on specific
+        #       DOF order, which cannot be guaranteed
+        reorder_dofs = parameters["reorder_dofs_serial"]
+        parameters["reorder_dofs_serial"] = False
 
-            # NOTE: This test is not robust as it relies on specific
-            #       DOF order, which cannot be guaranteed
-            reorder_dofs = parameters["reorder_dofs_serial"]
-            parameters["reorder_dofs_serial"] = False
+        # Load reference mesh (just a simple tetrahedron)
+        mesh = Mesh("tetrahedron.xml.gz");
 
-            # Load reference mesh (just a simple tetrahedron)
-            mesh = Mesh("tetrahedron.xml.gz");
+        # Assemble stiffness and mass matrices
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        u, v = TrialFunction(V), TestFunction(V)
+        A, M = uBLASDenseMatrix(), uBLASDenseMatrix()
+        assemble(dot(grad(v), grad(u))*dx, tensor=A)
+        assemble(v*u*dx, tensor=M)
 
-            # Assemble stiffness and mass matrices
-            V = FunctionSpace(mesh, "Lagrange", 1)
-            u, v = TrialFunction(V), TestFunction(V)
-            A, M = uBLASDenseMatrix(), uBLASDenseMatrix()
-            assemble(dot(grad(v), grad(u))*dx, tensor=A)
-            assemble(v*u*dx, tensor=M)
+        # Create reference matrices and set entries
+        A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
+        pos = numpy.array([0, 1, 2, 3], dtype=numpy.intc)
+        A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
+                            [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
+                            [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
+                            [-1.0/6.0, 0.0, 0.0, 1.0/6.0]]), pos, pos)
 
-            # Create reference matrices and set entries
-            A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
-            pos = numpy.array([0, 1, 2, 3], dtype=numpy.intc)
-            A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
-                          [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
-                          [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
-                          [-1.0/6.0, 0.0, 0.0, 1.0/6.0]]), pos, pos)
+        M0.set(numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
+                            [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
+                            [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
+                            [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]]), pos, pos)
+        A0.apply("insert")
+        M0.apply("insert")
 
-            M0.set(numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
-                          [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
-                          [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
-                          [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]]), pos, pos)
-            A0.apply("insert")
-            M0.apply("insert")
+        C = A - A0
+        self.assertAlmostEqual(C.norm("frobenius"), 0.0)
+        D = M - M0
+        self.assertAlmostEqual(D.norm("frobenius"), 0.0)
 
-            C = A - A0
-            self.assertAlmostEqual(C.norm("frobenius"), 0.0)
-            D = M - M0
-            self.assertAlmostEqual(D.norm("frobenius"), 0.0)
-
-            parameters["reorder_dofs_serial"] = reorder_dofs
+        parameters["reorder_dofs_serial"] = reorder_dofs
 
     def test_ways_to_pass_mesh_to_assembler(self):
         mesh = UnitSquareMesh(16, 16)

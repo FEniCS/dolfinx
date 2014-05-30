@@ -25,14 +25,12 @@ from dolfin import *
 
 class MeshRefinement(unittest.TestCase):
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_uniform_refine1D(self):
-            mesh = UnitIntervalMesh(20)
-
-            # Distributed refinment in 1D is not supported
-            if (MPI.size(mesh.mpi_comm()) == 1):
-                mesh2 = refine(mesh)
-                self.assertAlmostEqual(mesh.hmax(), 0.05)
-                self.assertAlmostEqual(mesh2.hmax(), 0.025)
+        mesh = UnitIntervalMesh(20)
+        mesh2 = refine(mesh)
+        self.assertAlmostEqual(mesh.hmax(), 0.05)
+        self.assertAlmostEqual(mesh2.hmax(), 0.025)
 
     def test_uniform_refine2D(self):
             mesh = UnitSquareMesh(4, 6)

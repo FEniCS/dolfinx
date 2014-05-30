@@ -22,7 +22,7 @@
 # Modified by Jan Blechta 2013
 #
 # First added:  2011-03-03
-# Last changed: 2013-03-30
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -329,19 +329,21 @@ class DataNotWorkingTester:
         A = as_backend_type(A)
         self.assertRaises(RuntimeError, A.data)
 
-if MPI.size(mpi_comm_world()) == 1:
-    class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Sparse"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
+    backend     = "uBLAS"
+    sub_backend = "Sparse"
 
-    class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Dense"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
+    backend     = "uBLAS"
+    sub_backend = "Dense"
 
-    if has_linear_algebra_backend("PETScCusp"):
-        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-            backend    = "PETScCusp"
-            sub_backend = ""
+if has_linear_algebra_backend("PETScCusp"):
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "PETScCusp"
+        sub_backend = ""
 
 if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
