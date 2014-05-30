@@ -121,8 +121,8 @@ endif()
 set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES} ${PTSCOTCHERR_LIBRARY})
 
 # Basic check of SCOTCH_VERSION which does not require compilation
-file(STRINGS ${SCOTCH_INCLUDE_DIRS}/ptscotch.h PTSCOTCH_H)
-string(REGEX MATCH "SCOTCH_VERSION [0-9]+" SCOTCH_VERSION ${PTSCOTCH_H})
+file(STRINGS ${SCOTCH_INCLUDE_DIRS}/scotch.h SCOTCH_H)
+string(REGEX MATCH "SCOTCH_VERSION [0-9]+" SCOTCH_VERSION ${SCOTCH_H})
 string(REGEX MATCH "[0-9]+" SCOTCH_VERSION ${SCOTCH_VERSION})
 
 # For SCOTCH version > 6, need to add libraries scotch and ptscotch
