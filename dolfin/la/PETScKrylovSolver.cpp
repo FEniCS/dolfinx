@@ -300,7 +300,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Write a message
   const bool report = parameters["report"];
   if (report && dolfin::MPI::rank(PETSC_COMM_WORLD) == 0)
-    info("Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
+    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
   if (x.empty())

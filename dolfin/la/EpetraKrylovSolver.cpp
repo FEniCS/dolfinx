@@ -181,7 +181,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   const bool report = parameters["report"];
   if (report && _matA->mat()->Comm().MyPID() == 0)
   {
-    info("Solving linear system of size %d x %d (Epetra Krylov solver).",
+    info("Solving linear system of size %ld x %ld (Epetra Krylov solver).",
          M, N);
   }
 

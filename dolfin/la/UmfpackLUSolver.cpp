@@ -292,7 +292,7 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   const std::size_t* Ai  = boost::tuples::get<1>(data);
   const double*      Ax  = boost::tuples::get<2>(data);
 
-  log(PROGRESS, "Solving linear system of size %d x %d (UMFPACK LU solver).",
+  log(PROGRESS, "Solving linear system of size %ld x %ld (UMFPACK LU solver).",
       A->size(0), A->size(1));
 
   // Solve for tranpose since we use compressed rows and UMFPACK

@@ -204,7 +204,7 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
     }
     else
     {
-      info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
+      info("Solving linear system of size %ld x %ld using Epetra LU solver (%s).",
            _matA->size(0), _matA->size(1), _method.c_str());
     }
   }

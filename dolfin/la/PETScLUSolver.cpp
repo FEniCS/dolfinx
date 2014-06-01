@@ -487,7 +487,7 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
 
   if (report && dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
   {
-    log(PROGRESS,"Solving linear system of size %d x %d (PETSc LU solver, %s).",
+    log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver, %s).",
         A.size(0), A.size(1), solver_type);
   }
 }
