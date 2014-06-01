@@ -20,7 +20,7 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-03-12
-# Last changed: 2014-05-30
+# Last changed: 2014-06-01
 
 import unittest
 import numpy
@@ -121,6 +121,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
         parameters["num_threads"] = 0
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_facet_assembly(self):
 
         mesh = UnitSquareMesh(24, 24)
@@ -276,6 +277,7 @@ class Assembly(unittest.TestCase):
                 #print sub[k] + full, subplusfull[k]
                 self.assertAlmostEqual(sub[k] + full, subplusfull[k])
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_subdomain_assembly_form_1(self):
         "Test assembly over subdomains with markers stored as part of form"
 
