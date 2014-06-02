@@ -20,7 +20,7 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2007-05-24
-# Last changed: 2012-11-12
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -472,7 +472,6 @@ class Instantiation(unittest.TestCase):
           CompiledSubDomain("x[0]>0.25 && x[0]<0.75").mark(cell_data, 1)
           CompiledSubDomain("x[0]>=0.75").mark(cell_data, 2)
 
-
           bb = mesh.bounding_box_tree()
           p0 = Point(0.1, 1.0, 0)
           c0 = bb.compute_first_entity_collision(p0)
@@ -514,6 +513,7 @@ class Instantiation(unittest.TestCase):
           f.eval_cell(values, coords, c2)
           self.assertEqual(values[0], 0.0)
 
+     @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
      def test_doc_string_compiled_expression_with_system_headers(self):
           """
           This test tests all features documented in the doc string of
@@ -559,9 +559,6 @@ class Instantiation(unittest.TestCase):
 
           e = Expression(code_compile)
           self.assertTrue(hasattr(e, "update"))
-
-          if MPI.size(mpi_comm_world()) > 1:
-              return
 
           # Test not compile
           code_not_compile = '''

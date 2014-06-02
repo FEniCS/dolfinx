@@ -18,15 +18,16 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-18
-# Last changed: 2013-12-09
+# Last changed: 2014-05-30
 
 import unittest
 
 from dolfin import intersect
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh
 from dolfin import Point, FunctionSpace, Expression, interpolate
-from dolfin import MPI
+from dolfin import MPI, mpi_comm_world
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class BoundingBoxTreeTest(unittest.TestCase):
 
     def test_mesh_point_1d(self):
@@ -37,8 +38,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        if MPI.size(mesh.mpi_comm()) == 1:
-            self.assertEqual(intersection.intersected_cells(), [1])
+        self.assertEqual(intersection.intersected_cells(), [1])
 
     def test_mesh_point_2d(self):
         "Test mesh-point intersection in 2D"
@@ -48,8 +48,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        if MPI.size(mesh.mpi_comm()) == 1:
-            self.assertEqual(intersection.intersected_cells(), [98])
+        self.assertEqual(intersection.intersected_cells(), [98])
 
     def test_mesh_point_3d(self):
         "Test mesh-point intersection in 3D"
@@ -59,8 +58,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        if MPI.size(mesh.mpi_comm()) == 1:
-            self.assertEqual(intersection.intersected_cells(), [816])
+        self.assertEqual(intersection.intersected_cells(), [816])
 
 if __name__ == "__main__":
     print ""

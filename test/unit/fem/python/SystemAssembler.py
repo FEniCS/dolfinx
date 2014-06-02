@@ -21,7 +21,7 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-10-04
-# Last changed: 2013-06-02
+# Last changed: 2014-05-28
 
 import unittest
 import numpy
@@ -118,14 +118,10 @@ class TestSystemAssembler(unittest.TestCase):
         assembler.assemble(b)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_facet_assembly(self):
 
         mesh = UnitSquareMesh(24, 24)
-
-        if MPI.size(mesh.mpi_comm()) > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
 
         V = FunctionSpace(mesh, "DG", 1)
 
@@ -216,11 +212,8 @@ class TestSystemAssembler(unittest.TestCase):
             error = norm(u.vector(), 'linf')
             self.assertAlmostEqual(error, 0.0)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_domains(self):
-
-        if MPI.size(mpi_comm_world()) > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
 
         class RightSubDomain(SubDomain):
             def inside(self, x, on_boundary):
@@ -275,11 +268,8 @@ class TestSystemAssembler(unittest.TestCase):
         error = norm(x.vector(), 'linf')
         self.assertAlmostEqual(error, 0.0)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_facet_assembly_cellwise_insertion(self):
-
-        if MPI.size(mpi_comm_world()) > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
 
         mesh = UnitIntervalMesh(10)
 

@@ -136,14 +136,14 @@ class VTK_Point_Function_Output(unittest.TestCase):
             File("u.pvd", file_option) << u
 
     # FFC fails for vector spaces in 1D
+    #@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     #def test_save_1d_vector(self):
-    #    if MPI.size() == 1:
-    #        mesh = UnitIntervalMesh(32)
-    #        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-    #        u.vector()[:] = 1.0
-    #        File("u.pvd") << u
-    #        for file_option in file_options:
-    #            File("u.pvd", file_option) << u
+    #    mesh = UnitIntervalMesh(32)
+    #    u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+    #    u.vector()[:] = 1.0
+    #    File("u.pvd") << u
+    #    for file_option in file_options:
+    #        File("u.pvd", file_option) << u
 
     def test_save_2d_vector(self):
         mesh = UnitSquareMesh(16, 16)
@@ -168,14 +168,14 @@ class VTK_Point_Function_Output(unittest.TestCase):
             File("u.pvd", file_option) << u
 
     # FFC fails for tensor spaces in 1D
+    #@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     #def test_save_1d_tensor(self):
-    #    if MPI.size() == 1:
-    #        mesh = UnitIntervalMesh(32)
-    #        u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
-    #        u.vector()[:] = 1.0
-    #        File("u.pvd") << u
-    #        for file_option in file_options:
-    #            File("u.pvd", file_option) << u
+    #    mesh = UnitIntervalMesh(32)
+    #    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+    #    u.vector()[:] = 1.0
+    #    File("u.pvd") << u
+    #    for file_option in file_options:
+    #        File("u.pvd", file_option) << u
 
     def test_save_2d_tensor(self):
         mesh = UnitSquareMesh(16, 16)

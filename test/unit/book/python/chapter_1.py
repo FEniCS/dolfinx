@@ -20,7 +20,7 @@ Unit tests for Chapter 1 (A FEniCS tutorial).
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-10-20
-# Last changed: 2011-11-17
+# Last changed: 2014-05-28
 
 import unittest
 import inspect, os, sys
@@ -51,18 +51,8 @@ def run_path(path, args):
         if not status == 0:
             raise RuntimeError, "Python script failed"
 
-def skip_in_parallel():
-    "Skip test in parallel"
-    if MPI.size(mpi_comm_world()) > 1:
-        print "FIXME: This unit test does not work in parallel, skipping"
-        return True
-    return False
-
 def run_test(path, args=[]):
     "Run test script implied by name of calling function, neat trick..."
-
-    # Skip tests in parallel for now
-    if skip_in_parallel(): return
 
     # Figure out name of script to be run
     script_name = inspect.stack()[1][3].split("test_")[1] + ".py"
@@ -102,6 +92,7 @@ def run_test(path, args=[]):
     # Reset parameters
     parameters.update(dolfin_parameters)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPoisson(unittest.TestCase):
 
     def test_dn3_p2D(self):
@@ -159,6 +150,7 @@ class TestPoisson(unittest.TestCase):
     def test_membrane1(self):
         run_test(["stationary", "poisson"])
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestNonlinearPoisson(unittest.TestCase):
 
     def test_pde_newton_np(self):
@@ -176,6 +168,7 @@ class TestNonlinearPoisson(unittest.TestCase):
     def test_alg_newton_np(self):
         run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestDiffusion(unittest.TestCase):
 
     def test_d1_d2D(self):
