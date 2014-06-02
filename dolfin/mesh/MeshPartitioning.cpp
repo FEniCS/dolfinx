@@ -682,7 +682,7 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
          it != received_data.end();
          it += (*it + num_cell_vertices + 2))
     {
-      if (*it != 0) 
+      if (*it != 0 && *(it + 1) != mpi_rank) 
         ++ghost_count;
     }
   }
@@ -710,30 +710,38 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
       auto tmp_it = it;
       const unsigned int num_ghosts = *tmp_it++;
       
+      std::size_t owner;
       if (num_ghosts == 0)
-      {
-        new_mesh_data.cell_partition[c] = mpi_rank;
-        new_mesh_data.global_cell_indices[c] = *tmp_it++;
-        for (std::size_t j = 0; j < num_cell_vertices; ++j)
-          new_mesh_data.cell_vertices[c][j] = *tmp_it++;       
-        ++c;
-      }
+        owner = mpi_rank;
       else
-      {
         // First entry of sharing processes is the owner.
-        new_mesh_data.cell_partition[gc] = *tmp_it;
+        owner = *tmp_it;
+
+      std::size_t idx;
+      if (owner == mpi_rank)
+        idx = c;
+      else
+        idx = gc;
+          
+      new_mesh_data.cell_partition[idx] = owner;
+      if (num_ghosts != 0)
+      {
         std::set<unsigned int> proc_set(tmp_it, tmp_it + num_ghosts);
         // Remove self from set of sharing processes
         proc_set.erase(mpi_rank);
-        shared_cells.insert(std::make_pair(gc, proc_set));
+        shared_cells.insert(std::make_pair(idx, proc_set));
         tmp_it += num_ghosts;
-        new_mesh_data.global_cell_indices[gc] = *tmp_it++;
-        for (std::size_t j = 0; j < num_cell_vertices; ++j)
-          new_mesh_data.cell_vertices[gc][j] = *tmp_it++;
-        ++gc;
       }
+      new_mesh_data.global_cell_indices[idx] = *tmp_it++;
+      for (std::size_t j = 0; j < num_cell_vertices; ++j)
+        new_mesh_data.cell_vertices[idx][j] = *tmp_it++;
+      if (owner == mpi_rank)
+        ++c;
+      else
+        ++gc;
     }
   }
+
 
   dolfin_assert(c == num_new_local_cells - ghost_count);
   dolfin_assert(gc == num_new_local_cells);
