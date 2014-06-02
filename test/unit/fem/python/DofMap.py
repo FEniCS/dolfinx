@@ -279,7 +279,7 @@ class DofMapTest(unittest.TestCase):
             dofs = V.dofmap().tabulate_entity_dofs(0, i)
             self.assertTrue(all(d==cd for d, cd in zip(dofs, cdofs)))
 
-    @unittest.skipIf(!(MPI.size(mpi_comm_world()) > 1), "This test should only be run in parallel.")
+    @unittest.skipIf(not MPI.size(mpi_comm_world()) > 1, "This test should only be run in parallel.")
     def test_mpi_dofmap_stats(self):
 
         V = FunctionSpace(self.mesh, "CG", 1)
