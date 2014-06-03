@@ -175,21 +175,3 @@ HIERARCHICAL_FEM_EXTENDS(LinearVariationalProblem)
 HIERARCHICAL_FEM_EXTENDS(NonlinearVariationalProblem)
 HIERARCHICAL_FEM_EXTENDS(Form)
 HIERARCHICAL_FEM_EXTENDS(DirichletBC)
-
-//-----------------------------------------------------------------------------
-// Reveal reset_sparsity as bool in python
-// TODO: Remove this when reset_sparsity is removed
-//-----------------------------------------------------------------------------
-%rename(reset_sparsity) dolfin::AssemblerBase::_reset_sparsity;
-%extend dolfin::AssemblerBase {
-    bool _reset_sparsity;
-}
-%{
-bool dolfin_AssemblerBase__reset_sparsity_get(dolfin::AssemblerBase* obj) {
-    return obj->reset_sparsity;
-}
-bool dolfin_AssemblerBase__reset_sparsity_set(dolfin::AssemblerBase* obj, bool value) {
-    obj->reset_sparsity = value;
-    return value;
-}
-%}

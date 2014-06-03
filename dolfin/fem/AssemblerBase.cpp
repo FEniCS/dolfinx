@@ -139,7 +139,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       {
         dolfin_error("AssemblerBase.cpp",
                      "assemble form",
-                     "Reset of tensor in assembly not requested, but dim %d of tensor does not match form", i);
+                     "Dim %d of tensor does not match form", i);
       }
     }
   }
