@@ -240,9 +240,6 @@ namespace dolfin
     // PETSc Vec pointer
     Vec _x;
 
-    // PETSc Vec pointer (local ghosted)
-    mutable Vec x_ghosted;
-
     // Global-to-local map for ghost values
     boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
 

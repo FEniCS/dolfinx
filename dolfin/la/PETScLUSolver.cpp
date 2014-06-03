@@ -35,6 +35,7 @@
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LUSolver.h"
 #include "PETScMatrix.h"
+#include "PETScOptions.h"
 #include "PETScVector.h"
 #include "PETScLUSolver.h"
 
@@ -249,6 +250,9 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolveTranspose");
   }
 
+  // Update ghost values
+  _x.update_ghost_values();
+
   return 1;
 }
 //-----------------------------------------------------------------------------
@@ -333,6 +337,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
       method = "umfpack";
       #elif PETSC_HAVE_MUMPS
       method = "mumps";
+      PETScOptions::set("mat_mumps_icntl_7", 0);
       #elif PETSC_HAVE_PASTIX
       method = "pastix";
       #elif PETSC_HAVE_SUPERLU
@@ -346,10 +351,11 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
     }
     else
     {
-      #if PETSC_HAVE_SUPERLU_DIST
-      method = "superlu_dist";
-      #elif PETSC_HAVE_MUMPS
+      #if PETSC_HAVE_MUMPS
       method = "mumps";
+      PETScOptions::set("mat_mumps_icntl_7", 0);
+      #elif PETSC_HAVE_SUPERLU_DIST
+      method = "superlu_dist";
       #elif PETSC_HAVE_PASTIX
       method = "pastix";
       #else

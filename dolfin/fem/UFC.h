@@ -62,9 +62,24 @@ namespace dolfin
     /// Update current cell
     void update(const Cell& cell,
                 const std::vector<double>& vertex_coordinates0,
-                const ufc::cell& ufc_cell);
+                const ufc::cell& ufc_cell,
+                const std::vector<bool> & enabled_coefficients);
 
     /// Update current pair of cells for macro element
+    void update(const Cell& cell0,
+                const std::vector<double>& vertex_coordinates0,
+                const ufc::cell& ufc_cell0,
+                const Cell& cell1,
+                const std::vector<double>& vertex_coordinates1,
+                const ufc::cell& ufc_cell1,
+                const std::vector<bool> & enabled_coefficients);
+
+    /// Update current cell (TODO: Remove this when PointIntegralSolver supports the version with enabled_coefficients)
+    void update(const Cell& cell,
+                const std::vector<double>& vertex_coordinates0,
+                const ufc::cell& ufc_cell);
+
+    /// Update current pair of cells for macro element (TODO: Remove this when PointIntegralSolver supports the version with enabled_coefficients)
     void update(const Cell& cell0,
                 const std::vector<double>& vertex_coordinates0,
                 const ufc::cell& ufc_cell0,
@@ -91,9 +106,10 @@ namespace dolfin
     // Finite elements for coefficients
     std::vector<FiniteElement> coefficient_elements;
 
-    // Cell integrals (access through get_cell_integral to get proper
-    // fallback to default)
-    std::vector<std::shared_ptr<ufc::cell_integral> > cell_integrals;
+    // Cell integrals (access through
+    // get_cell_integral to get proper fallback to default)
+    std::vector<std::shared_ptr<ufc::cell_integral> >
+      cell_integrals;
 
     // Exterior facet integrals (access through
     // get_exterior_facet_integral to get proper fallback to default)
@@ -105,9 +121,10 @@ namespace dolfin
     std::vector<std::shared_ptr<ufc::interior_facet_integral> >
       interior_facet_integrals;
 
-    // Point integrals (access through get_point_integral to get
-    // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::point_integral> > point_integrals;
+    // Point integrals (access through
+    // get_point_integral to get proper fallback to default)
+    std::vector<std::shared_ptr<ufc::point_integral> >
+      point_integrals;
 
     // Custom integrals (access through get_custom_integral to get
     // proper fallback to default)
@@ -116,7 +133,8 @@ namespace dolfin
   public:
 
     // Default cell integral
-    std::shared_ptr<ufc::cell_integral> default_cell_integral;
+    std::shared_ptr<ufc::cell_integral>
+      default_cell_integral;
 
     // Default exterior facet integral
     std::shared_ptr<ufc::exterior_facet_integral>
@@ -127,18 +145,21 @@ namespace dolfin
       default_interior_facet_integral;
 
     // Default point integral
-    std::shared_ptr<ufc::point_integral> default_point_integral;
+    std::shared_ptr<ufc::point_integral>
+      default_point_integral;
 
     // Default custom integral
     std::shared_ptr<ufc::custom_integral> default_custom_integral;
 
     /// Get cell integral over a given domain, falling back to the
     /// default if necessary
-    ufc::cell_integral * get_cell_integral(std::size_t domain)
+    ufc::cell_integral*
+      get_cell_integral(std::size_t domain)
     {
       if (domain < form.num_cell_domains())
       {
-        ufc::cell_integral * integral = cell_integrals[domain].get();
+        ufc::cell_integral * integral
+          = cell_integrals[domain].get();
         if (integral)
           return integral;
       }
@@ -177,11 +198,13 @@ namespace dolfin
 
     /// Get point integral over a given domain, falling back to the
     /// default if necessary
-    ufc::point_integral * get_point_integral(std::size_t domain)
+    ufc::point_integral*
+      get_point_integral(std::size_t domain)
     {
       if (domain < form.num_point_domains())
       {
-        ufc::point_integral * integral = point_integrals[domain].get();
+        ufc::point_integral * integral
+          = point_integrals[domain].get();
         if (integral)
           return integral;
       }

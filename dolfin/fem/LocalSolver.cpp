@@ -48,16 +48,6 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Update off-process coefficients
-  const std::vector<std::shared_ptr<const GenericFunction> >
-    coefficients_a = a.coefficients();
-  for (std::size_t i = 0; i < coefficients_a.size(); ++i)
-    coefficients_a[i]->update();
-  const std::vector<std::shared_ptr<const GenericFunction> >
-    coefficients_L = L.coefficients();
-  for (std::size_t i = 0; i < coefficients_L.size(); ++i)
-    coefficients_L[i]->update();
-
   // Form ranks
   const std::size_t rank_a = ufc_a.form.rank();
   const std::size_t rank_L = ufc_L.form.rank();
@@ -102,8 +92,10 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     // Update to current cell
     cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
-    ufc_a.update(*cell, vertex_coordinates, ufc_cell);
-    ufc_L.update(*cell, vertex_coordinates, ufc_cell);
+    ufc_a.update(*cell, vertex_coordinates, ufc_cell,
+                 integral_a->enabled_coefficients());
+    ufc_L.update(*cell, vertex_coordinates, ufc_cell,
+                 integral_L->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
     const std::vector<dolfin::la_index>& dofs_a0

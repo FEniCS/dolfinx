@@ -20,24 +20,23 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-06-17
-# Last changed: 2011-09-02
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class XMLMesh(unittest.TestCase):
 
     def test_save_plain_mesh2D(self):
         mesh = UnitSquareMesh(8, 8)
-        if MPI.size(mesh.mpi_comm()) == 1:
-            f = File("unit_square.xml")
-            f << mesh
+        f = File("unit_square.xml")
+        f << mesh
 
     def test_save_plain_mesh3D(self):
         mesh = UnitCubeMesh(8, 8, 8)
-        if MPI.size(mesh.mpi_comm()) == 1:
-            f = File("unit_cube.xml")
-            f << mesh
+        f = File("unit_cube.xml")
+        f << mesh
 
     def test_mesh_domains_io(self):
         "Test input/output for mesh domains"
@@ -95,24 +94,23 @@ class XMLMesh(unittest.TestCase):
         s1.mark_cells(output_mesh, 1)
 
         # Write to file
-        if (MPI.size(output_mesh.mpi_comm()) == 1):
-            output_file = File("XMLMesh_test_mesh_domains_io.xml")
-            output_file << output_mesh
+        output_file = File("XMLMesh_test_mesh_domains_io.xml")
+        output_file << output_mesh
 
-            # Read from file
-            input_file = File("XMLMesh_test_mesh_domains_io.xml")
-            input_mesh = Mesh()
-            input_file >> input_mesh
+        # Read from file
+        input_file = File("XMLMesh_test_mesh_domains_io.xml")
+        input_mesh = Mesh()
+        input_file >> input_mesh
 
-            # Get some data and check that it matches
-            self.assertEqual(len(input_mesh.domains().markers(0)),
-                             len(output_mesh.domains().markers(0)));
-            self.assertEqual(len(input_mesh.domains().markers(1)),
-                             len(output_mesh.domains().markers(1)));
-            self.assertEqual(len(input_mesh.domains().markers(2)),
-                             len(output_mesh.domains().markers(2)));
-            self.assertEqual(len(input_mesh.domains().markers(3)),
-                             len(output_mesh.domains().markers(3)));
+        # Get some data and check that it matches
+        self.assertEqual(len(input_mesh.domains().markers(0)),
+                         len(output_mesh.domains().markers(0)));
+        self.assertEqual(len(input_mesh.domains().markers(1)),
+                         len(output_mesh.domains().markers(1)));
+        self.assertEqual(len(input_mesh.domains().markers(2)),
+                         len(output_mesh.domains().markers(2)));
+        self.assertEqual(len(input_mesh.domains().markers(3)),
+                         len(output_mesh.domains().markers(3)));
 
 class LocalMeshDataXML_IO(unittest.TestCase):
 

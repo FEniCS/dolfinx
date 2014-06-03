@@ -387,7 +387,6 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     }
     else
     {
-      cout << point << endl;
       dolfin_error("Function.cpp",
                    "evaluate function at point",
                    "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
@@ -452,9 +451,6 @@ void Function::interpolate(const GenericFunction& v)
 {
   dolfin_assert(_vector);
   dolfin_assert(_function_space);
-
-  // Gather off-process dofs
-  v.update();
 
   // Interpolate
   _function_space->interpolate(*_vector, v);
@@ -603,9 +599,6 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
                  "Non-matching mesh");
   }
 
-  // Update ghosts dofs
-  update();
-
   // Get finite element
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
@@ -677,7 +670,8 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values)
 //-----------------------------------------------------------------------------
 void Function::update() const
 {
-  _vector->update_ghost_values();
+  deprecation("Function::update()", "1.4", "1.5",
+              "Calling Function::update to update ghost values is no longer required.");
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()

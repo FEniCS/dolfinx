@@ -267,9 +267,6 @@ namespace dolfin
       return 0;
     }
 
-    /// Update ghost values
-    virtual void update_ghost_values() {}
-
     //--- Convenience functions ---
 
     /// Get value of given entry

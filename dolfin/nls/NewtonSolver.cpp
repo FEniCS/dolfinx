@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2005-2009.
-// Modified by Martin Alnes, 2008.
-// Modified by Johan Hake, 2010.
+// Modified by Anders Logg 2005-2009
+// Modified by Martin Alnes 2008
+// Modified by Johan Hake 2010
 //
 // First added:  2005-10-23
-// Last changed: 2013-12-04
+// Last changed: 2014-05-27
 
 #include <iostream>
 #include <dolfin/common/constants.h>
@@ -235,7 +235,15 @@ double NewtonSolver::relative_residual() const
 //-----------------------------------------------------------------------------
 GenericLinearSolver& NewtonSolver::linear_solver() const
 {
-  dolfin_assert(_solver);
+  if (!_solver)
+  {
+    dolfin_error("NewtonSolver.cpp",
+                 "access linear solver for Newton solver",
+                 "The linear solver will not be initialized until solve() "
+                 "has been called. For control of the linear solver, pass "
+                 "a linear solver to the constructor of NewtonSolver");
+  }
+
   return *_solver;
 }
 //-----------------------------------------------------------------------------

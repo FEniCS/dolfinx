@@ -416,8 +416,11 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
     {
       if (global_dofs.find(dofs0[i]) == global_dofs.end())
       {
-        dofs_tmp[i] = dofs1[i] % num_nodes;
-        ++dof_counter;
+        if ((dofs0[i] % num_nodes) != (dofs1[i] % num_nodes))
+        {
+          dofs_tmp[i] = dofs1[i] % num_nodes;
+          ++dof_counter;
+        }
       }
     }
 

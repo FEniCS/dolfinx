@@ -35,14 +35,14 @@ class JIT(unittest.TestCase):
 
             parameters["form_compiler"]["representation"] = representation
 
-            M1 = assemble(Constant(1.0)*dx, mesh=UnitSquareMesh(4, 4))
-            M2 = assemble(Constant(1.0)*dx, mesh=UnitCubeMesh(4, 4, 4))
+            M1 = assemble(Constant(1.0)*dx(UnitSquareMesh(4, 4)))
+            M2 = assemble(Constant(1.0)*dx(UnitCubeMesh(4, 4, 4)))
 
             self.assertAlmostEqual(M1, 1.0)
             self.assertAlmostEqual(M2, 1.0)
 
     def test_compile_extension_module(self):
-      
+
         # This test should do basically the same as the docstring of
         # the compile_extension_module function in compilemodule.py.
         # Remember to update the docstring if the test is modified!

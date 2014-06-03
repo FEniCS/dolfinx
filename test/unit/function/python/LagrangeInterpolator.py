@@ -1,6 +1,6 @@
-"""Unit tests for evaluating functions on non-matching meshes"""
+"""Unit tests for interpolation using LagrangeInterpolator"""
 
-# Copyright (C) 2013 Garth N. Wells
+# Copyright (C) 2014 Mikael Mortensen
 #
 # This file is part of DOLFIN.
 #
@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2013-12-14
+# First added:  2014-02-18
 # Last changed:
 
 import unittest
@@ -32,31 +32,32 @@ class Quadratic3D(Expression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + x[2]*x[2] + 1.0
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class NonmatchingFunctionInterpolationTest(unittest.TestCase):
+class LagrangeInterpolatorTest(unittest.TestCase):
 
     def test_functional2D(self):
         """Test integration of function interpolated in non-matching meshes"""
 
         f = Quadratic2D()
+        
+        ll = LagrangeInterpolator()
 
         # Interpolate quadratic function on course mesh
         mesh0 = UnitSquareMesh(8, 8)
         V0 = FunctionSpace(mesh0, "Lagrange", 2)
         u0 = Function(V0)
-        u0.interpolate(f)
+        ll.interpolate(u0, f)
 
         # Interpolate FE function on finer mesh
         mesh1 = UnitSquareMesh(31, 31)
         V1 = FunctionSpace(mesh1, "Lagrange", 2)
         u1 = Function(V1)
-        u1.interpolate(u0)
+        ll.interpolate(u1, u0)
         self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
         mesh1 = UnitSquareMesh(30, 30)
         V1 = FunctionSpace(mesh1, "Lagrange", 2)
         u1 = Function(V1)
-        u1.interpolate(u0)
+        ll.interpolate(u1, u0)
         self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
     def test_functional3D(self):
@@ -64,23 +65,25 @@ class NonmatchingFunctionInterpolationTest(unittest.TestCase):
 
         f = Quadratic3D()
 
+        ll = LagrangeInterpolator()
+
         # Interpolate quadratic function on course mesh
         mesh0 = UnitCubeMesh(4, 4, 4)
         V0 = FunctionSpace(mesh0, "Lagrange", 2)
         u0 = Function(V0)
-        u0.interpolate(f)
+        ll.interpolate(u0, f)
 
         # Interpolate FE function on finer mesh
         mesh1 = UnitCubeMesh(11, 11, 11)
         V1 = FunctionSpace(mesh1, "Lagrange", 2)
         u1 = Function(V1)
-        u1.interpolate(u0)
+        ll.interpolate(u1, u0)
         self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
         mesh1 = UnitCubeMesh(10, 11, 10)
         V1 = FunctionSpace(mesh1, "Lagrange", 2)
         u1 = Function(V1)
-        u1.interpolate(u0)
+        ll.interpolate(u1, u0)
         self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
 if __name__ == "__main__":

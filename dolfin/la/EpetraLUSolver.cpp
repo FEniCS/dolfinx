@@ -272,6 +272,9 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Solve
   AMESOS_CHK_ERR(solver->Solve());
 
+  // Update ghost values
+  _x.update_ghost_values();
+
   return 1;
 }
 //-----------------------------------------------------------------------------

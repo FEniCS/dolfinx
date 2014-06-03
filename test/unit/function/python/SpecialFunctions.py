@@ -18,28 +18,29 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-11-28
-# Last changed: 2011-11-28
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
 import ufl
 import dolfin
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class SpecialFunctions(unittest.TestCase):
 
     def testFacetArea(self):
-        if MPI.size(mpi_comm_world()) == 1:
-            references = [(UnitIntervalMesh(1), 2, 2),\
-                          (UnitSquareMesh(1,1), 4, 4),\
-                          (UnitCubeMesh(1,1,1), 6, 3)]
-            for mesh, surface, ref_int in references:
-                c = Constant(1, mesh.ufl_cell()) # FIXME
-                c0 = ufl.FacetArea(mesh)
-                c1 = dolfin.FacetArea(mesh)
-                self.assertAlmostEqual(assemble(c*dx, mesh=mesh), 1)
-                self.assertAlmostEqual(assemble(c*ds, mesh=mesh), surface)
-                self.assertAlmostEqual(assemble(c0*ds, mesh=mesh), ref_int)
-                self.assertAlmostEqual(assemble(c1*ds, mesh=mesh), ref_int)
+
+        references = [(UnitIntervalMesh(1), 2, 2),\
+                      (UnitSquareMesh(1,1), 4, 4),\
+                      (UnitCubeMesh(1,1,1), 6, 3)]
+        for mesh, surface, ref_int in references:
+            c = Constant(1, mesh.ufl_cell()) # FIXME
+            c0 = ufl.FacetArea(mesh)
+            c1 = dolfin.FacetArea(mesh)
+            self.assertAlmostEqual(assemble(c*dx(mesh)), 1)
+            self.assertAlmostEqual(assemble(c*ds(mesh)), surface)
+            self.assertAlmostEqual(assemble(c0*ds(mesh)), ref_int)
+            self.assertAlmostEqual(assemble(c1*ds(mesh)), ref_int)
 
 if __name__ == "__main__":
     unittest.main()

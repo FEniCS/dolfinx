@@ -21,7 +21,7 @@ embedded in higher dimensional spaces."""
 # Modified by David Ham 2012
 #
 # First added:  2012-12-06
-# Last changed: 2012-12-06
+# Last changed: 2014-05-28
 
 # MER: The solving test should be moved into test/regression/..., the
 # evaluatebasis part should be moved into test/unit/FiniteElement.py
@@ -162,16 +162,13 @@ def rotate_2d_mesh(theta):
 
     return mesh
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class ManifoldSolving(unittest.TestCase):
 
     def test_poisson2D_in_3D(self):
         """This test solves Poisson's equation on a unit square in 2D,
         and then on a unit square embedded in 3D and rotated pi/4
         radians about each of the z and x axes."""
-
-        # SubMesh not working in parallel
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         u_2D = poisson_2d()
         u_manifold = poisson_manifold()
@@ -185,13 +182,10 @@ class ManifoldSolving(unittest.TestCase):
 
 class ManifoldBasisEvaluation(unittest.TestCase):
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_basis_evaluation_2D_in_3D(self):
         """This test checks that basis functions and their derivatives are
         unaffected by rotations."""
-
-        # SubMesh not working in parallel
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         self.basemesh = rotate_2d_mesh(0.0)
         self.rotmesh  = rotate_2d_mesh(numpy.pi/4)

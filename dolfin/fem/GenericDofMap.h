@@ -110,14 +110,6 @@ namespace dolfin
 				      std::size_t dim,
                                       std::size_t local_entity) const = 0;
 
-    /// Return a map between vertices and dofs
-    virtual std::vector<dolfin::la_index>
-      dof_to_vertex_map(const Mesh& mesh) const = 0;
-
-    /// Return a map between vertices and dofs
-    virtual std::vector<std::size_t>
-      vertex_to_dof_map(const Mesh& mesh) const = 0;
-
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     virtual
       void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
