@@ -21,7 +21,7 @@ Page numbering starts at 1 and is relative to the chapter (not the book).
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-10-20
-# Last changed: 2014-02-06
+# Last changed: 2014-05-28
 
 import unittest
 from dolfin import *
@@ -42,83 +42,68 @@ def create_data(A=None):
     x = Vector()
     return A, x, b
 
-def skip_in_parallel():
-    "Skip test in parallel"
-    if MPI.size(mpi_comm_world()) > 1:
-        print "FIXME: This unit test does not work in parallel, skipping"
-        return True
-    return False
-
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage4(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         x = Vector()
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         A = Matrix()
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage5(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         x = Vector(mpi_comm_world(), 100)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         A, x, b = create_data()
         solve(A, x, b)
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         A, x, b = create_data()
         solve(A, x, b, "lu")
         solve(A, x, b, "gmres", "ilu")
 
     def test_box_4(self):
-        if skip_in_parallel(): return
         list_lu_solver_methods()
         list_krylov_solver_methods()
         list_krylov_solver_preconditioners()
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage6(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         A, x, b = create_data()
         solver = LUSolver(A)
         solver.solve(x, b)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         A, x, b = create_data()
         solver = LUSolver()
         solver.set_operator(A)
         solver.solve(x, b)
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         solver = LUSolver()
         solver.parameters["same_nonzero_pattern"] = True
 
     def test_box_4(self):
-        if skip_in_parallel(): return
         A, x, b = create_data()
         solver = KrylovSolver(A)
         solver.solve(x, b)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage7(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         A, x, b = create_data()
         solver = KrylovSolver()
         solver.set_operator(A)
         solver.solve(x, b)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         A, x, b = create_data()
         P = A
         solver = KrylovSolver()
@@ -126,7 +111,6 @@ class TestPage7(unittest.TestCase):
         solver.solve(x, b)
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         solver = KrylovSolver()
         solver.parameters["relative_tolerance"] = 1.0e-6
         solver.parameters["absolute_tolerance"] = 1.0e-15
@@ -136,19 +120,17 @@ class TestPage7(unittest.TestCase):
         solver.parameters["nonzero_initial_guess"] = False
 
     def test_box_4(self):
-        if skip_in_parallel(): return
         solver = KrylovSolver()
         solver.parameters["report"] = True
         solver.parameters["monitor_convergence"] = True
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage8(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         solver = KrylovSolver("gmres", "ilu")
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         if not has_linear_algebra_backend("PETSc") or not has_slepc() : return
         A = PETScMatrix()
         A, x, b = create_data(A)
@@ -156,10 +138,10 @@ class TestPage8(unittest.TestCase):
         eigensolver.solve()
         lambda_r, lambda_c, x_real, x_complex = eigensolver.get_eigenpair(0)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage9(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         if not has_linear_algebra_backend("PETSc") or not has_slepc() : return
         A = PETScMatrix()
         M = PETScMatrix()
@@ -168,7 +150,6 @@ class TestPage9(unittest.TestCase):
         eigensolver = SLEPcEigenSolver(A, M)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         if not has_linear_algebra_backend("PETSc"): return
         parameters["linear_algebra_backend"] = "PETSc"
 
@@ -176,15 +157,14 @@ class TestPage9(unittest.TestCase):
         parameters.update(default_parameters)
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         if not has_linear_algebra_backend("PETSc"): return
         x = PETScVector()
         solver = PETScLUSolver()
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage10(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
 
         class MyNonlinearProblem(NonlinearProblem):
             def __init__(self, L, a, bc):
@@ -201,10 +181,10 @@ class TestPage10(unittest.TestCase):
                 assemble(self.a, tensor=A)
                 self.bc.apply(A)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage11(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
 
         class MyNonlinearProblem(NonlinearProblem):
             def __init__(self, L, a, bc):
@@ -235,7 +215,6 @@ class TestPage11(unittest.TestCase):
         newton_solver.solve(problem, u.vector())
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         newton_solver = NewtonSolver()
         newton_solver.parameters["maximum_iterations"] = 20
         newton_solver.parameters["relative_tolerance"] = 1.0e-6
@@ -243,14 +222,13 @@ class TestPage11(unittest.TestCase):
         newton_solver.parameters["error_on_nonconvergence"] = False
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         unit_square = UnitSquareMesh(16, 16)
         unit_cube = UnitCubeMesh(16, 16, 16)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage12(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = Mesh();
         editor = MeshEditor();
         editor.open(mesh, 2, 2)
@@ -265,45 +243,42 @@ class TestPage12(unittest.TestCase):
         editor.close()
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = Mesh("mesh.xml")
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage14(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         entity = MeshEntity(mesh, 0, 33)
         vertex = Vertex(mesh, 33)
         cell = Cell(mesh, 25)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         gdim = mesh.topology().dim()
         tdim = mesh.geometry().dim()
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage15(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         mesh.init(2)
         mesh.init(0, 0)
         mesh.init(1, 1)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         for c in cells(mesh):
             for v0 in vertices(c):
                 for v1 in vertices(v0):
                     print v1
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage16(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         D = mesh.topology().dim()
         for c in entities(mesh, D):
@@ -312,7 +287,6 @@ class TestPage16(unittest.TestCase):
                     print v1
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
 
         sub_domains = CellFunction("size_t", mesh)
@@ -329,10 +303,10 @@ class TestPage16(unittest.TestCase):
             if near(p.y(), 0.0) or near(p.y(), 1.0):
                 boundary_markers[facet] = 1
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage17(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         # Note: MeshData no longer returns MeshFunctions. This was
         #       necessary to remove a circular code dependency.
@@ -344,7 +318,6 @@ class TestPage17(unittest.TestCase):
         sub_domains = mesh.data().array("sub_domains", 2)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
 
         mesh = refine(mesh)
@@ -358,10 +331,10 @@ class TestPage17(unittest.TestCase):
                 cell_markers[cell] = True
         mesh = refine(mesh, cell_markers)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage19(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         element = FiniteElement("Lagrange", tetrahedron, 5)
         element = FiniteElement("CG", tetrahedron, 5)
         element = FiniteElement("Brezzi-Douglas-Marini", triangle, 3)
@@ -369,42 +342,39 @@ class TestPage19(unittest.TestCase):
         element = FiniteElement("Nedelec 1st kind H(curl)", tetrahedron, 2)
         element = FiniteElement("N1curl", tetrahedron, 2)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage20(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         element = FiniteElement("Lagrange", triangle, 1)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         V = VectorElement("Lagrange", triangle, 2)
         Q = FiniteElement("Lagrange", triangle, 1)
         W = V*Q
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage21(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
         Q = FunctionSpace(mesh, "Lagrange", 1)
         W = V*Q
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = Function(V)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage22(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -415,7 +385,6 @@ class TestPage22(unittest.TestCase):
         solve(A, u.vector(), b)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitCubeMesh(2, 2, 2)
 
         V = FunctionSpace(mesh, "Lagrange", 1)
@@ -426,10 +395,10 @@ class TestPage22(unittest.TestCase):
         u = Function(V)
         vector = u(0.1, 0.2, 0.3)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage23(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
         Q = FunctionSpace(mesh, "Lagrange", 1)
@@ -440,10 +409,10 @@ class TestPage23(unittest.TestCase):
 
         uu, pp = w.split(deepcopy=True)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage24(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         class MyExpression(Expression):
             def eval(self, values, x):
                 values[0] = sin(x[0])*cos(x[1])
@@ -451,7 +420,6 @@ class TestPage24(unittest.TestCase):
         print f((0.5, 0.5))
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         class MyExpression(Expression):
             def eval(self, values, x):
                 values[0] = sin(x[0])
@@ -462,14 +430,13 @@ class TestPage24(unittest.TestCase):
         print g((0.5, 0.5))
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         f = Expression("sin(x[0])*cos(x[1])")
         g = Expression(("sin(x[0])", "cos(x[1])"))
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage25(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         t = 0.0
         T = 1.0
         dt = 0.5
@@ -479,10 +446,10 @@ class TestPage25(unittest.TestCase):
             h.t = t
             t += dt
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage26(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         V = VectorFunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -501,10 +468,10 @@ class TestPage26(unittest.TestCase):
         a = inner(sigma(u), sym(grad(v)))*dx
         L = dot(f, v)*dx
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage27(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = TrialFunction(V)
@@ -518,10 +485,10 @@ class TestPage27(unittest.TestCase):
         b = assemble(L)
         A = assemble(a)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage29(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         class NeumannBoundary(SubDomain):
             def inside(self, x, on_boundary):
@@ -531,10 +498,10 @@ class TestPage29(unittest.TestCase):
         exterior_facet_domains.set_all(1)
         neumann_boundary.mark(exterior_facet_domains, 0)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage30(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
@@ -549,7 +516,6 @@ class TestPage30(unittest.TestCase):
         a = g*v*dss(0) + h*v*dss(1)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         class DirichletValue(Expression):
@@ -562,17 +528,16 @@ class TestPage30(unittest.TestCase):
         Gamma_D = DirichletBoundary()
         bc = DirichletBC(V, u_0, Gamma_D)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage31(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u_0 = Expression("sin(x[0])")
         bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         A, x, b = create_data()
@@ -583,10 +548,10 @@ class TestPage31(unittest.TestCase):
         bc.apply(A, b)
         bc.apply(u.vector())
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage32(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u_0 = Expression("sin(x[0])")
@@ -603,7 +568,6 @@ class TestPage32(unittest.TestCase):
         solve(a == L, u, bcs=bcs)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         f = Expression("0.0")
@@ -624,7 +588,6 @@ class TestPage32(unittest.TestCase):
         solve(F == 0, u, bcs=bcs, J=J)
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         f = Expression("0.0")
@@ -647,10 +610,10 @@ class TestPage32(unittest.TestCase):
         solver.parameters["newton_solver"]["preconditioner"] = "ilu"
         solver.solve()
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage33(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         f = Expression("0.0")
@@ -671,13 +634,12 @@ class TestPage33(unittest.TestCase):
         info(solver.parameters, True)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = Mesh("mesh.xml")
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage34(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -688,7 +650,6 @@ class TestPage34(unittest.TestCase):
         #plot(mesh_function)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -700,10 +661,10 @@ class TestPage34(unittest.TestCase):
         # Disabled since it claims the terminal
         #plot(element)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage35(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -712,7 +673,6 @@ class TestPage35(unittest.TestCase):
         file << u
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -721,10 +681,10 @@ class TestPage35(unittest.TestCase):
         file = File("solution.pvd", "compressed");
         file << (u, t)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage36(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         matrix, x, vector = create_data()
 
@@ -741,10 +701,10 @@ class TestPage36(unittest.TestCase):
         # Reset parameter again so we don't mess with other tests
         parameters.update(default_parameters)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage37(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -759,7 +719,6 @@ class TestPage37(unittest.TestCase):
             t += dt
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         time_series = TimeSeries("simulation_data")
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
@@ -770,15 +729,14 @@ class TestPage37(unittest.TestCase):
         #time_series.retrieve(mesh, t)
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         M = 100
         N = 100
         info("Assembling system of size %d x %d." % (M, N))
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage38(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         info("Test message")
         log(DEBUG, "Test message")
         log(15, "Test message")
@@ -791,10 +749,10 @@ class TestPage38(unittest.TestCase):
         warning("Test message")
         print "Test message"
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage39(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         matrix, vector, b = create_data()
         solver = KrylovSolver()
         mesh = UnitSquareMesh(2, 2)
@@ -812,14 +770,13 @@ class TestPage39(unittest.TestCase):
         info(parameters)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         info(mesh, True)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage40(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         t = 0.0
         T = 1.0
@@ -841,17 +798,16 @@ class TestPage40(unittest.TestCase):
             q.update(t / T)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         def solve(A, b):
             timer = Timer("Linear solve")
             x = 1
             return x
         solve(None, None)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage41(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         info(parameters, True)
         num_threads = parameters["num_threads"]
         allow_extrapolation = parameters["allow_extrapolation"]
@@ -862,7 +818,6 @@ class TestPage41(unittest.TestCase):
         parameters.update(default_parameters)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         solver = KrylovSolver()
         solver.parameters["absolute_tolerance"] = 1e-6
         solver.parameters["report"] = True
@@ -870,16 +825,15 @@ class TestPage41(unittest.TestCase):
         #solver.parameters["preconditioner"]["reuse"] = True
         solver.parameters["preconditioner"]["structure"] = "same"
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage42(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         my_parameters = Parameters("my_parameters")
         my_parameters.add("foo", 3)
         my_parameters.add("bar", 0.1)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
         parameters.update(d)
 
@@ -887,21 +841,19 @@ class TestPage42(unittest.TestCase):
         parameters.update(default_parameters)
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         my_parameters = Parameters("my_parameters", foo=3, bar=0.1,
                                    nested=Parameters("nested", baz=True))
 
     def test_box_4(self):
-        if skip_in_parallel(): return
         parameters.parse()
 
         # Reset parameter again so we don't mess with other tests
         parameters.update(default_parameters)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage43(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         file = File("parameters.xml")
         file << parameters
         file >> parameters
@@ -909,39 +861,36 @@ class TestPage43(unittest.TestCase):
         # Reset parameter again so we don't mess with other tests
         parameters.update(default_parameters)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage45(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         parameters["mesh_partitioner"] = "ParMETIS"
 
         # Reset parameter again so we don't mess with other tests
         parameters.update(default_parameters)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         from dolfin import cpp
         Function = cpp.Function
         assemble = cpp.assemble
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage46(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
 
 class TestPage47(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
         v = TestFunction(V)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(2, 2)
         V = FunctionSpace(mesh, "Lagrange", 1)
         class Source(Expression):
@@ -952,16 +901,16 @@ class TestPage47(unittest.TestCase):
         L = f*v*dx
         assemble(L)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage48(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         e = Expression("sin(x[0])")
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage49(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -970,17 +919,16 @@ class TestPage49(unittest.TestCase):
         a = c*dot(grad(u), grad(v))*dx
         A = assemble(a)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage50(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         parameters["form_compiler"]["name"] = "sfc"
 
         # Reset parameter again so we don't mess with other tests
         parameters.update(default_parameters)
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -991,7 +939,6 @@ class TestPage50(unittest.TestCase):
         AA = A.array()
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         v = TestFunction(V)
@@ -1006,7 +953,6 @@ class TestPage50(unittest.TestCase):
         parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
     def test_box_4(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -1023,10 +969,10 @@ class TestPage50(unittest.TestCase):
         # Reset linear algebra backend so that other tests work
         parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage51(unittest.TestCase):
 
     def test_box_1(self):
-        if skip_in_parallel(): return
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -1048,7 +994,6 @@ class TestPage51(unittest.TestCase):
         parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
     def test_box_2(self):
-        if skip_in_parallel(): return
         b = Vector(mpi_comm_world(), 10)
         c = Vector(mpi_comm_world(), 10)
         b_copy = b[:]
@@ -1057,7 +1002,6 @@ class TestPage51(unittest.TestCase):
         b2 = b[::2]
 
     def test_box_3(self):
-        if skip_in_parallel(): return
         from numpy import array
         b = Vector(mpi_comm_world(), 20)
         b1 = b[[0, 4, 7, 10]]

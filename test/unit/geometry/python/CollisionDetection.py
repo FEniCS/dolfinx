@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2014-02-24
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -38,12 +38,11 @@ def create_triangular_mesh_3D():
     editor.close()
     return mesh;
 
-# Test class for collision with interval
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class IntervalTest(unittest.TestCase):
+    "Test class for collision with interval"
 
     def test_collides_point(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         mesh = UnitIntervalMesh(1)
         cell = Cell(mesh, 0)
@@ -51,12 +50,11 @@ class IntervalTest(unittest.TestCase):
         self.assertEqual(cell.collides(Point(0.5)), True)
         self.assertEqual(cell.collides(Point(1.5)), False)
 
-# Test class for collision with triangle
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TriangleTest(unittest.TestCase):
+    "Test class for collision with triangle"
 
     def test_collides_point(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         mesh = UnitSquareMesh(1, 1)
         cell = Cell(mesh, 0)
@@ -65,8 +63,6 @@ class TriangleTest(unittest.TestCase):
         self.assertEqual(cell.collides(Point(1.5)), False)
 
     def test_collides_triangle(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         m0 = UnitSquareMesh(8, 8)
         c0 = Cell(m0, 0)
@@ -86,12 +82,11 @@ class TriangleTest(unittest.TestCase):
         self.assertEqual(c2.collides(c1), False)
         self.assertEqual(c2.collides(c2), True)
 
-# Test class for collision with tetrahedron
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TetrahedronTest(unittest.TestCase):
+    "Test class for collision with tetrahedron"
 
     def test_collides_point(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         mesh = UnitCubeMesh(1, 1, 1)
         cell = Cell(mesh, 0)
@@ -100,8 +95,6 @@ class TetrahedronTest(unittest.TestCase):
         self.assertEqual(cell.collides(Point(1.5)), False)
 
     def test_collides_triangle(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         tetmesh = UnitCubeMesh(2, 2, 2)
         trimesh = create_triangular_mesh_3D()
@@ -129,8 +122,6 @@ class TetrahedronTest(unittest.TestCase):
         self.assertEqual(tri0.collides(tet1), True)
 
     def test_collides_tetrahedron(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         m0 = UnitCubeMesh(2, 2, 2)
         c19 = Cell(m0, 19)

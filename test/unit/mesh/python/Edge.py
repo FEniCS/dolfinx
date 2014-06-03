@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-02-26
-# Last changed: 2011-02-26
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -29,21 +29,21 @@ meshes = [cube, square]
 
 class EdgeFunctions(unittest.TestCase):
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test2DEdgeLength(self):
         """Iterate over edges and sum length."""
         length = 0.0
         for e in edges(square):
             length += e.length()
-        if MPI.size(square.mpi_comm()) == 1:
-            self.assertAlmostEqual(length, 19.07106781186544708362)
+        self.assertAlmostEqual(length, 19.07106781186544708362)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test3DEdgeLength(self):
         """Iterate over edges and sum length."""
         length = 0.0
         for e in edges(cube):
             length += e.length()
-        if MPI.size(cube.mpi_comm()) == 1:
-            self.assertAlmostEqual(length, 278.58049080280125053832)
+        self.assertAlmostEqual(length, 278.58049080280125053832)
 
     def testEdgeDot(self):
         """Iterate over edges compute dot product with self."""
