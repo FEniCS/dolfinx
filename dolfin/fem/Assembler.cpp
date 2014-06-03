@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,10 +19,7 @@
 // Modified by Ola Skavhaug 2007-2009
 // Modified by Kent-Andre Mardal 2008
 // Modified by Joachim B Haga 2012
-// Modified by Martin Alnaes 2013
-//
-// First added:  2007-01-17
-// Last changed: 2013-09-19
+// Modified by Martin Alnaes 2013-2014
 
 
 #include <dolfin/log/dolfin_log.h>
