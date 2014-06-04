@@ -591,8 +591,8 @@ class Assembly(unittest.TestCase):
 
         # Geometry with just cell (no reference to mesh, for backwards
         # compatibility)
-        x2 = SpatialCoordinate(mesh.ufl_cell())
-        n2 = FacetNormal(mesh.ufl_cell())
+        x2 = SpatialCoordinate(mesh)
+        n2 = FacetNormal(mesh)
 
         # A function equal to x[0] for comparison
         V = FunctionSpace(mesh, "CG", 1)
