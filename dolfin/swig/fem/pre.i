@@ -300,4 +300,3 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
 //-----------------------------------------------------------------------------
 %ignore dolfin::bool_deprecated::operator=(const bool_deprecated&);
 %ignore dolfin::bool_deprecated::operator=(const bool&);
-%ignore dolfin::AssemblerBase::reset_sparsity;
