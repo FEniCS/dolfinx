@@ -77,8 +77,8 @@ def compute(nx, ny, degree):
         # More efficient computation (avoids the rhs array result above)
         #e_Ve.assign(u_e_Ve)                      # e_Ve = u_e_Ve
         #e_Ve.vector().axpy(-1.0, u_Ve.vector())  # e_Ve += -1.0*u_Ve
-        error = e_Ve**2*dx
-        return sqrt(assemble(error, mesh=Ve.mesh())), e_Ve
+        error = e_Ve**2*dx(Ve.mesh())
+        return sqrt(assemble(error)), e_Ve
     E4, e_Ve = errornorm(u_e, u, Ve)
 
     # Infinity norm based on nodal values

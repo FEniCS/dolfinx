@@ -1,6 +1,6 @@
 """Unit tests for the Matrix interface"""
 
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011-2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -20,9 +20,6 @@
 # Modified by Anders Logg 2011
 # Modified by Mikael Mortensen 2011
 # Modified by Jan Blechta 2013
-#
-# First added:  2011-03-03
-# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
