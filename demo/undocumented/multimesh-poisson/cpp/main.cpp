@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,10 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-05-28
+// Last changed: 2014-06-04
 //
-// This demo program solves MultiMeshPoisson's equation using a Cut and
-// Composite Finite Element Method (MultiMesh) on a domain defined by
+// This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes.
 
 #include <dolfin.h>
@@ -47,22 +46,23 @@ class DirichletBoundary : public SubDomain
 
 int main(int argc, char* argv[])
 {
+  if (MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    info("Sorry, this demo does not (yet) run in parallel.");
+    return 0;
+  }
+
   // Increase log level
   set_log_level(DBG);
-
-  // FIXME: Testing, set to 3 to test 3 meshes
-  const std::size_t num_meshes = 3;
 
   // Don't reorder dofs (simplifies debugging)
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 32;
+  int N = 16;
   UnitSquareMesh mesh_0(N, N);
   RectangleMesh  mesh_1(0.2, 0.2, 0.6, 0.6, N, N);
   RectangleMesh  mesh_2(0.4, 0.4, 0.8, 0.8, N, N);
-  // RectangleMesh  mesh_1(0.5*DOLFIN_PI/10, 0.5*DOLFIN_PI/10, 1.5*DOLFIN_PI/10, 1.5*DOLFIN_PI/10, N, N);
-  // RectangleMesh  mesh_2(DOLFIN_PI/10, DOLFIN_PI/10, 2*DOLFIN_PI/10, 2*DOLFIN_PI/10, N, N);
 
   // Rotate overlapping mesh
   //rectangle_1.rotate(45);
@@ -72,8 +72,8 @@ int main(int argc, char* argv[])
   MultiMeshPoisson::FunctionSpace V1(mesh_1);
   MultiMeshPoisson::FunctionSpace V2(mesh_2);
 
-  // Some of this stuff may be wrapped or automated later to avoid
-  // needing to explicitly call add() and build()
+  // FIXME: Some of this stuff may be wrapped or automated later to
+  // avoid needing to explicitly call add() and build()
 
   // Create forms
   MultiMeshPoisson::BilinearForm a0(V0, V0);
@@ -83,12 +83,12 @@ int main(int argc, char* argv[])
   MultiMeshPoisson::LinearForm L1(V1);
   MultiMeshPoisson::LinearForm L2(V2);
 
-  // Build MultiMesh function space
+  // Build multimesh function space
   MultiMeshFunctionSpace V;
   V.parameters("multimesh")["quadrature_order"] = 2;
   V.add(V0);
   V.add(V1);
-  if (num_meshes == 3) V.add(V2);
+  V.add(V2);
   V.build();
 
   // Set coefficients
@@ -97,16 +97,16 @@ int main(int argc, char* argv[])
   L1.f = f;
   L2.f = f;
 
-  // Build MultiMesh forms
+  // Build multimesh forms
   MultiMeshForm a(V, V);
+  MultiMeshForm L(V);
   a.add(a0);
   a.add(a1);
-  if (num_meshes == 3) a.add(a2);
-  a.build();
-  MultiMeshForm L(V);
+  a.add(a2);
   L.add(L0);
   L.add(L1);
-  if (num_meshes == 3) L.add(L2);
+  L.add(L2);
+  a.build();
   L.build();
 
   // Create boundary condition
@@ -134,15 +134,13 @@ int main(int argc, char* argv[])
   File u2_file("u2.pvd");
   u0_file << *u.part(0);
   u1_file << *u.part(1);
-  if (num_meshes == 3)
-    u2_file << *u.part(2);
+  u2_file << *u.part(2);
 
   // Plot solution
   plot(V.multimesh());
   plot(u.part(0), "u_0");
   plot(u.part(1), "u_1");
-  if (num_meshes == 3)
-    plot(u.part(2), "u_2");
+  plot(u.part(2), "u_2");
   interactive();
 
   return 0;

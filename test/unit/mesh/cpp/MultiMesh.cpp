@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2014-04-25
+// Last changed: 2014-06-04
 //
 // Unit tests for MultiMesh
 
@@ -310,6 +310,10 @@ public:
 
 int main()
 {
+  // Test not workin in parallel
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+    return 0;
+
   CPPUNIT_TEST_SUITE_REGISTRATION(MultiMeshes);
   DOLFIN_TEST;
 }
