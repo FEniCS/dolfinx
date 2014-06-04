@@ -23,14 +23,18 @@ UFL form files
 
 The UFL code for this problem in two and three dimensions are in
 :download:`CahnHilliard2D.ufl` and :download:`CahnHilliard3D.ufl` respectively.
-However, only the two dimensional case is explained in detail in the following.
+They differ only in the first line setting the cell:
+
+.. code-block:: python
+
+    cell = triangle
 
 First, a mixed function spaces of linear Lagrange functions on triangles
 is created:
 
 .. code-block:: python
 
-    P1 = FiniteElement("Lagrange", triangle, 1)
+    P1 = FiniteElement("Lagrange", cell, 1)
     ME = P1*P1
 
 On the mixed space, trial and test functions are defined:
@@ -64,9 +68,9 @@ without recompiling the UFL file.  Lastly, the value of
 
 .. code-block:: python
 
-    lmbda    = Constant(triangle) # surface energy parameter
-    dt       = Constant(triangle) # time step
-    theta    = Constant(triangle) # time stepping parameter
+    lmbda    = Constant(cell) # surface energy parameter
+    dt       = Constant(cell) # time step
+    theta    = Constant(cell) # time stepping parameter
 
     # mu_(n+theta)
     mu_mid = (1-theta)*mu0 + theta*mu
@@ -263,7 +267,8 @@ initial condition (by interpolation).
       // Create forms and attach functions
       Y* _a = new Y(V, V);
       Z* _L = new Z(V);
-      _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
+      _a->u = *_u;
+      _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
       _L->u = *_u; _L->u0 = *_u0;
       _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
 

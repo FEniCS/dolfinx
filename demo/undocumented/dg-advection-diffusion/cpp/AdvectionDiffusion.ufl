@@ -45,9 +45,9 @@ un = (dot(u, n) + abs(dot(u, n)))/2.0
 # Bilinear form
 a_int = dot(kappa*grad(phi) - u*phi, grad(v))*dx
 
-a_fac = (kappa('+')*(alpha('+')/h_avg)*dot(jump(phi, n), jump(v, n))*dS
-         - kappa('+')*dot(jump(phi, n), avg(grad(v)))*dS
-         - kappa('+')*dot(avg(grad(phi)), jump(v, n))*dS)
+a_fac = (kappa*(alpha/h_avg)*dot(jump(phi, n), jump(v, n))*dS
+         - kappa*dot(jump(phi, n), avg(grad(v)))*dS
+         - kappa*dot(avg(grad(phi)), jump(v, n))*dS)
 
 a_vel = (dot(un('+')*phi('+') - un('-')*phi('-'), jump(v))*dS
          + dot(un*phi, v)*ds)
