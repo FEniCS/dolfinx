@@ -16,10 +16,15 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-04-07
-# Last changed: 2014-04-24
+# Last changed: 2014-06-05
 
 from dolfin import *
-import pylab as pl
+import os
+
+# Don't plot when DOLFIN_NOPLOT is set
+plot = os.environ.get("DOLFIN_NOPLOT") is None
+if plot:
+    import pylab as pl
 
 # Colors for plotting
 red    = "#ff3c00"
@@ -29,14 +34,36 @@ blue   = "#b4d8e7"
 white  = "#ffffff"
 black  = "#000000"
 
-# Function for plotting a triangle (using matplotlib)
 def plot_triangle(c, mesh, color=None, alpha_fill=None, alpha_line=None):
+    if not plot: return
     cell = Cell(mesh, c)
     xy = cell.get_vertex_coordinates()
     x = [xy[0], xy[2], xy[4]]
     y = [xy[1], xy[3], xy[5]]
     if not color is None: pl.fill(x, y, color=color, alpha=alpha_fill)
     pl.plot(x + [x[0]], y + [y[0]], color='k', alpha=alpha_line)
+
+def plot_point_red(x, y):
+    if not plot: return
+    pl.plot(x, y, '.', markersize=5, color=red)
+
+def plot_point_black(x, y):
+    if not plot: return
+    pl.plot(x, y, '.', markersize=2, color=black)
+
+def clear_plot():
+    if not plot: return
+    pl.clf()
+
+def save_plot(frame):
+    if not plot: return
+    pl.axis("equal")
+    pl.axis("off")
+    pl.savefig("multimesh_propeller_%.4d.png" % frame, dpi=300)
+
+def show_plot():
+    if not plot: return
+    pl.show()
 
 # Parameters
 N  = 20
@@ -71,7 +98,7 @@ for frame in range(num_frames):
     covered_cells = multimesh.covered_cells(0)
 
     # Clear plot
-    pl.clf()
+    clear_plot()
 
     # Plot cells in background mesh
     for c in cut_cells:
@@ -93,16 +120,15 @@ for frame in range(num_frames):
             x = points[2*i]
             y = points[2*i + 1]
             if w > 0:
-                pl.plot(x, y, '.', markersize=5, color=red)
+                plot_point_red(x, y)
             else:
-                pl.plot(x, y, '.', markersize=2, color=black)
+                plot_point_black(x, y)
 
-    pl.axis("equal")
-    pl.axis("off")
-    pl.savefig("multimesh_propeller_%.4d.png" % frame, dpi=300)
+    # Save plot
+    save_plot(frame)
 
 # Show last frame
-pl.show()
+show_plot()
 
 # Generate movie using
 #ffmpeg -r 25 -b 1800 -i multimesh_propeller_%04d.png multimesh_propeller.mp4
