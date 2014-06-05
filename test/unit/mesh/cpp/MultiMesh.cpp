@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2014-06-04
+// Last changed: 2014-06-05
 //
 // Unit tests for MultiMesh
 
@@ -279,8 +279,8 @@ public:
         const auto& cutting_cells = it->second;
         for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
         {
-          const std::size_t cutting_part = jt->first;
-          const std::size_t cutting_cell_index = jt->second;
+          //const std::size_t cutting_part = jt->first;
+          //const std::size_t cutting_cell_index = jt->second;
 
           // Get quadrature rule for interface part defined by
           // intersection of the cut and cutting cells
