@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-24
+// Last changed: 2014-04-03
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -167,13 +167,24 @@ namespace dolfin
     static bool collides_edge_edge(const Point& a, const Point& b,
 				   const Point& c, const Point& d);
 
-  private:
+
+    // The implementation of collides_interval_point
+    static bool collides_interval_point(const Point& p0, const Point& p1,
+                                        const Point& point);
 
     // The implementation of collides_triangle_point
     static bool collides_triangle_point(const Point& p0,
 					const Point& p1,
 					const Point& p2,
 					const Point& point);
+
+    // The implementation of collides_tetrahedron_point
+    static bool collides_tetrahedron_point(const Point& p0,
+					   const Point& p1,
+					   const Point& p2,
+					   const Point& p3,
+					   const Point& point);
+  private:
 
     // The implementation of collides_triangle_triangle
     static bool collides_triangle_triangle(const Point& p0,
@@ -183,12 +194,6 @@ namespace dolfin
 					   const Point& q1,
 					   const Point& q2);
 
-    // The implementation of collides_tetrahedron_point
-    static bool collides_tetrahedron_point(const Point& p0,
-					   const Point& p1,
-					   const Point& p2,
-					   const Point& p3,
-					   const Point& point);
 
     // The implementation of collides_tetrahedron_triangle
     static bool collides_tetrahedron_triangle(const Point& p0,

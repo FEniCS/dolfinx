@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2006.
-// Modified by Andre Massing, 2009.
+// Modified by Garth N. Wells 2006
+// Modified by Andre Massing 2009
 //
 // First added:  2006-06-12
-// Last changed: 2014-01-06
+// Last changed: 2014-05-22
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -27,6 +27,7 @@
 #include <cmath>
 #include <iostream>
 #include <dolfin/log/log.h>
+#include <dolfin/common/Array.h>
 
 namespace dolfin
 {
@@ -60,6 +61,13 @@ namespace dolfin
     ///         The array to create a Point from.
     Point(std::size_t dim, const double* x)
     { for (std::size_t i = 0; i < 3; i++) _x[i] = (i < dim ? x[i] : 0.0); }
+
+    /// Create point from Array
+    ///
+    /// *Arguments*
+    ///     x (Array<double>)
+    ///         Array of coordinates.
+    Point(const Array<double>& x) : Point(x.size(), x.data()) {}
 
     /// Copy constructor
     ///

@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2007-03-13
-// Last changed: 2011-01-02
+// Last changed: 2014-04-28
 
 #include <algorithm>
 
@@ -460,7 +460,7 @@ void SparsityPattern::info_statistics() const
     num_nonzeros_off_diagonal += off_diagonal[i].size();
 
   // Count nonzeros in non-local block
-  const std::size_t num_nonzeros_non_local = non_local.size()/2;
+  const std::size_t num_nonzeros_non_local = non_local.size() / 2;
 
   // Count total number of nonzeros
   const std::size_t num_nonzeros_total = num_nonzeros_diagonal

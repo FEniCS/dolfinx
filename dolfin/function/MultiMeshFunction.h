@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2013-10-22
+// Last changed: 2014-05-23
 
-#ifndef __CCFEM_FUNCTION_H
-#define __CCFEM_FUNCTION_H
+#ifndef __MULTI_MESH_FUNCTION_H
+#define __MULTI_MESH_FUNCTION_H
 
 #include <memory>
 #include <boost/ptr_container/ptr_map.hpp>
@@ -28,48 +28,48 @@ namespace dolfin
 {
 
   // Forward declacations
-  class CCFEMFunctionSpace;
+  class MultiMeshFunctionSpace;
   class GenericVector;
   class Function;
 
   /// This class represents a function on a cut and composite finite
-  /// element function space (CCFEM) defined on one or more possibly
+  /// element function space (MultiMesh) defined on one or more possibly
   /// intersecting meshes.
 
-  class CCFEMFunction
+  class MultiMeshFunction
   {
   public:
 
-    /// Create CCFEM function on given CCFEM function space
+    /// Create MultiMesh function on given MultiMesh function space
     ///
     /// *Arguments*
-    ///     V (_CCFEMFunctionSpace_)
-    ///         The CCFEM function space.
+    ///     V (_MultiMeshFunctionSpace_)
+    ///         The MultiMesh function space.
     ///
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         CCFEMFunction u(V);
+    ///         MultiMeshFunction u(V);
     ///
-    explicit CCFEMFunction(const CCFEMFunctionSpace& V);
+    explicit MultiMeshFunction(const MultiMeshFunctionSpace& V);
 
-    /// Create CCFEM function on given CCFEM function space (shared
+    /// Create MultiMesh function on given MultiMesh function space (shared
     /// pointer version)
     ///
     /// *Arguments*
-    ///     V (_CCFEMFunctionSpace_)
-    ///         The CCFEM function space.
-    explicit CCFEMFunction(std::shared_ptr<const CCFEMFunctionSpace> V);
+    ///     V (_MultiMeshFunctionSpace_)
+    ///         The MultiMesh function space.
+    explicit MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V);
 
     /// Destructor
-    virtual ~CCFEMFunction();
+    virtual ~MultiMeshFunction();
 
     /// Return function (part) number i
     ///
     /// *Returns*
     ///     _Function_
     ///         Function (part) number i
-    const Function& part(std::size_t i) const;
+    std::shared_ptr<const Function> part(std::size_t i) const;
 
     /// Return vector of expansion coefficients (non-const version)
     ///
@@ -90,14 +90,18 @@ namespace dolfin
     // Initialize vector
     void init_vector();
 
+    // Compute ghost indices
+    void compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
+                               std::vector<la_index>& ghost_indices) const;
+
     // The function space
-    std::shared_ptr<const CCFEMFunctionSpace> _function_space;
+    std::shared_ptr<const MultiMeshFunctionSpace> _function_space;
 
     // The vector of expansion coefficients (local)
     std::shared_ptr<GenericVector> _vector;
 
-    // Collection of functions for parts which share data
-    mutable boost::ptr_map<std::size_t, Function> _function_parts;
+    // Cache of regular functions for the parts
+    mutable std::map<std::size_t, std::shared_ptr<const Function> > _function_parts;
 
   };
 
