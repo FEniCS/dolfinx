@@ -63,7 +63,7 @@ namespace dolfin
     ~bool_deprecated() { }
 
     bool_deprecated& operator=(const bool_deprecated& that)
-    { 
+    {
       _value          = that._value;
       _what           = that._what;
       _ver_deprecated = that._ver_deprecated;
@@ -95,26 +95,16 @@ namespace dolfin
 
   };
 
-  /// This class provides some common functions used in
-  /// assembler classes.
+  /// This class provides some common functions used in assembler
+  /// classes.
 
   class AssemblerBase
   {
   public:
 
-    // Check form
-    AssemblerBase() :
-      reset_sparsity(true, "Parameter reset_sparsity of assembler",
-                     "1.4", "1.5", "Parameter reset_sparsity of assembler"
-                     " is no longer used. Tensor is reset iff empty()."),
-      add_values(false),
-      finalize_tensor(true),
+    /// Constructor
+    AssemblerBase() : add_values(false), finalize_tensor(true),
       keep_diagonal(false) {}
-
-    /// reset_sparsity (bool)
-    ///     Deprecated. Sparsity pattern of the tensor is reset
-    ///     iff the tensor is empty().
-    bool_deprecated reset_sparsity;
 
     /// add_values (bool)
     ///     Default value is false.
@@ -145,7 +135,8 @@ namespace dolfin
     static void check(const Form& a);
 
     // Pretty-printing for progress bar
-    static std::string progress_message(std::size_t rank, std::string integral_type);
+    static std::string progress_message(std::size_t rank,
+                                        std::string integral_type);
 
   };
 

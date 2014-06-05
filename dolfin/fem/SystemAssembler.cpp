@@ -161,11 +161,10 @@ const MeshFunction<std::size_t> * _pick_one_meshfunction(std::string name,
                                                          const MeshFunction<std::size_t> * a,
                                                          const MeshFunction<std::size_t> * b)
 {
-  if (a && b)
+  if ((a && b) && a != b)
   {
       warning("Bilinear and linear forms do not have same %s subdomains \
 in SystemAssembler. Taking %s subdomains from bilinear form", name.c_str(), name.c_str());
-      return a;
   }
   return a ? a: b;
 }

@@ -17,9 +17,7 @@
 //
 // Modified by Ola Skavhaug, 2009
 // Modified by Garth N. Wells, 2010
-//
-// First added:  2007-01-17
-// Last changed: 2014-04-28
+// Modified by Martin Alnaes, 2013-2014
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>

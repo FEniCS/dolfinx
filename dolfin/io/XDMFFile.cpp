@@ -843,32 +843,18 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   // Working data structure for formatting XML file
   std::string s;
   pugi::xml_document xml_doc;
+  pugi::xml_node xdmf_domain;
   pugi::xml_node xdmf_timegrid;
   pugi::xml_node xdmf_timedata;
 
   if (counter == 0)
   {
-    // First time step - create document template, adding a mesh and
-    // an empty time-series
+    // First time step - create document template
     xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
     pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
     xdmf.append_attribute("Version") = "2.0";
     xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-    pugi::xml_node xdmf_domain = xdmf.append_child("Domain");
-
-    //  /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
-    xdmf_timegrid = xdmf_domain.append_child("Grid");
-    xdmf_timegrid.append_attribute("Name") = "TimeSeries";
-    xdmf_timegrid.append_attribute("GridType") = "Collection";
-    xdmf_timegrid.append_attribute("CollectionType") = "Temporal";
-
-    //  /Xdmf/Domain/Grid/Time
-    pugi::xml_node xdmf_time = xdmf_timegrid.append_child("Time");
-    xdmf_time.append_attribute("TimeType") = "List";
-    xdmf_timedata = xdmf_time.append_child("DataItem");
-    xdmf_timedata.append_attribute("Format") = "XML";
-    xdmf_timedata.append_attribute("Dimensions") = "1";
-    xdmf_timedata.append_child(pugi::node_pcdata);
+    xdmf_domain = xdmf.append_child("Domain");
   }
   else
   {
@@ -880,18 +866,51 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
                    "write data to XDMF file",
                    "XML parsing error when reading from existing file");
     }
-
-    // Get data node
-    xdmf_timegrid = xml_doc.child("Xdmf").child("Domain").child("Grid");
-    dolfin_assert(xdmf_timegrid);
-
-    // Get time series node
-    xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
-    dolfin_assert(xdmf_timedata);
+    xdmf_domain = xml_doc.child("Xdmf").child("Domain");
   }
+  
+  dolfin_assert(xdmf_domain);
+  const std::string ts_name = "TimeSeries_" + name;
+  for (pugi::xml_node grid = xdmf_domain.first_child(); 
+       grid; grid = grid.next_sibling())
+  {
+    if (grid.attribute("Name").value() == ts_name)
+    {
+      xdmf_timegrid = grid;
+      break;
+    }
+  }
+    
+  // If not found, create a new TimeSeries
+  if (!xdmf_timegrid)
+  {
+    //  /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
+    xdmf_timegrid = xdmf_domain.append_child("Grid");
+    xdmf_timegrid.append_attribute("Name") = ts_name.c_str();
+    xdmf_timegrid.append_attribute("GridType") = "Collection";
+    xdmf_timegrid.append_attribute("CollectionType") = "Temporal";
+
+    //  /Xdmf/Domain/Grid/Time
+    pugi::xml_node xdmf_time = xdmf_timegrid.append_child("Time");
+    xdmf_time.append_attribute("TimeType") = "List";
+    xdmf_timedata = xdmf_time.append_child("DataItem");
+    xdmf_timedata.append_attribute("Format") = "XML";
+    xdmf_timedata.append_attribute("Dimensions") = "0";
+    xdmf_timedata.append_child(pugi::node_pcdata);
+  }
+    
+  dolfin_assert(xdmf_timegrid);
+
+  // Get time series node
+  xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
+  dolfin_assert(xdmf_timedata);
 
   //  Add a time step to the TimeSeries List
-  xdmf_timedata.attribute("Dimensions").set_value(static_cast<unsigned int>(counter + 1));
+  const unsigned int last_count = boost::lexical_cast<unsigned int>
+    (xdmf_timedata.attribute("Dimensions").value());
+  xdmf_timedata.attribute("Dimensions").set_value(static_cast<unsigned int>
+                                                  (last_count + 1));
+
   s = boost::lexical_cast<std::string>(xdmf_timedata.first_child().value())
     + " " + boost::str((boost::format("%d") % time_step));
   xdmf_timedata.first_child().set_value(s.c_str());
