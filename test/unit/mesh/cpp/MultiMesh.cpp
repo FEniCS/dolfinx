@@ -312,7 +312,11 @@ int main()
 {
   // Test not workin in parallel
   if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    info("Skipping unit test in parallel.");
+    info("OK");
     return 0;
+  }
 
   CPPUNIT_TEST_SUITE_REGISTRATION(MultiMeshes);
   DOLFIN_TEST;
