@@ -73,12 +73,14 @@ bcs = [DirichletBC(V, u_L, boundary_parts, 2),
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Constant(-6.0)
-a = inner(nabla_grad(u), nabla_grad(v))*dx + p*u*v*ds(0)
-L = f*v*dx - g*v*ds(1) + p*q*v*ds(0)
+a = inner(nabla_grad(u), nabla_grad(v))*dx \
+    + p*u*v*ds(0, subdomain_data=boundary_parts)
+L = f*v*dx - g*v*ds(1, subdomain_data=boundary_parts) \
+    + p*q*v*ds(0, subdomain_data=boundary_parts)
 
 # Compute solution
-A = assemble(a, exterior_facet_domains=boundary_parts)
-b = assemble(L, exterior_facet_domains=boundary_parts)
+A = assemble(a)
+b = assemble(L)
 for condition in bcs: condition.apply(A, b)
 
 # Alternative is not yet supported
