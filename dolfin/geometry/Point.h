@@ -19,7 +19,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2006-06-12
-// Last changed: 2014-05-22
+// Last changed: 2014-06-06
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -67,7 +67,8 @@ namespace dolfin
     /// *Arguments*
     ///     x (Array<double>)
     ///         Array of coordinates.
-    Point(const Array<double>& x) : Point(x.size(), x.data()) {}
+    Point(const Array<double>& x)
+    { for (std::size_t i = 0; i < 3; i++) _x[i] = (i < x.size() ? x[i] : 0.0); }
 
     /// Copy constructor
     ///

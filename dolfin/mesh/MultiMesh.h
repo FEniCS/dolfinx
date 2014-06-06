@@ -16,11 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-05-27
+// Last changed: 2014-06-06
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
 
+#include <memory>
 #include <vector>
 #include <map>
 
