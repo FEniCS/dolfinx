@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-06-04
+// Last changed: 2014-06-06
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes.
@@ -46,7 +46,7 @@ class DirichletBoundary : public SubDomain
 
 int main(int argc, char* argv[])
 {
-  if (MPI::size(MPI_COMM_WORLD) > 1)
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
   {
     info("Sorry, this demo does not (yet) run in parallel.");
     return 0;
