@@ -21,7 +21,7 @@
 // Modified by Mikael Mortensen, 2014
 //
 // First added:  2007-04-10
-// Last changed: 2014-01-23
+// Last changed: 2014-05-11
 //
 // FIXME: This class needs some cleanup, in particular collecting
 //        all data from different representations into a common
@@ -78,7 +78,7 @@ namespace dolfin
   /// object, using the inside() function to specify on which facets
   /// the boundary conditions should be applied. The boundary facets
   /// will then be searched for and marked *only* on the first call to
-  /// apply. This means that the mesh could be moved after the first 
+  /// apply. This means that the mesh could be moved after the first
   /// apply and the boundary markers would still remain intact.
   ///
   /// Alternatively, the boundary may be specified by a _MeshFunction_
@@ -490,12 +490,6 @@ namespace dolfin
     // The function
     std::shared_ptr<const GenericFunction> _g;
 
-    // Search method
-    std::string _method;
-
-    // Possible search methods
-    static const std::set<std::string> methods;
-
   public:
 
     // User defined sub domain
@@ -505,7 +499,7 @@ namespace dolfin
 
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;
-    
+
     // Cells attached to boundary, stored by cell index with map to local dof number
     mutable std::map<std::size_t, std::vector<std::size_t> > _cells_to_localdofs;
 
@@ -514,6 +508,12 @@ namespace dolfin
 
     // User defined sub domain marker for mesh or mesh function
     std::size_t _user_sub_domain_marker;
+
+    // Search method
+    std::string _method;
+
+    // Possible search methods
+    static const std::set<std::string> methods;
 
     // Flag for whether midpoints should be checked
     bool _check_midpoint;

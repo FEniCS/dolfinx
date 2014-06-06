@@ -23,7 +23,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-09-19
+// Last changed: 2014-04-28
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -306,7 +306,6 @@ namespace dolfin
     ///         The new Dofmap copy.
     std::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const;
 
-
     /// Extract subdofmap component
     ///
     /// *Arguments*
@@ -369,6 +368,9 @@ namespace dolfin
     ///         The mesh.
     void set_x(GenericVector& x, double value, std::size_t component,
                const Mesh& mesh) const;
+
+    /// Add given offset to all dofs
+    void add_offset(dolfin::la_index offset);
 
     /// Return the underlying dof map data. Intended for internal library
     /// use only.

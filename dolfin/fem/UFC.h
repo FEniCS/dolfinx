@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2007-01-17
-// Last changed: 2013-02-26
+// Last changed: 2014-04-24
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -126,6 +126,10 @@ namespace dolfin
     std::vector<std::shared_ptr<ufc::point_integral> >
       point_integrals;
 
+    // Custom integrals (access through get_custom_integral to get
+    // proper fallback to default)
+    std::vector<std::shared_ptr<ufc::custom_integral> > custom_integrals;
+
   public:
 
     // Default cell integral
@@ -143,6 +147,9 @@ namespace dolfin
     // Default point integral
     std::shared_ptr<ufc::point_integral>
       default_point_integral;
+
+    // Default custom integral
+    std::shared_ptr<ufc::custom_integral> default_custom_integral;
 
     /// Get cell integral over a given domain, falling back to the
     /// default if necessary
@@ -202,6 +209,19 @@ namespace dolfin
           return integral;
       }
       return default_point_integral.get();
+    }
+
+    /// Get custom integral over a given domain, falling back to the
+    /// default if necessary
+    ufc::custom_integral * get_custom_integral(std::size_t domain)
+    {
+      if (domain < form.num_custom_domains())
+      {
+        ufc::custom_integral * integral = custom_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_custom_integral.get();
     }
 
     // Form

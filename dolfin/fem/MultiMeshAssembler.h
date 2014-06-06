@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-24
+// Last changed: 2014-05-22
 
-#ifndef __CCFEM_ASSEMBLER_H
-#define __CCFEM_ASSEMBLER_H
+#ifndef __MultiMesh_ASSEMBLER_H
+#define __MultiMesh_ASSEMBLER_H
 
 #include "AssemblerBase.h"
 #include "Assembler.h"
@@ -29,17 +29,17 @@ namespace dolfin
 
   // Forward declarations
   class GenericTensor;
-  class CCFEMForm;
+  class MultiMeshForm;
 
   /// This class implements functionality for finite element assembly
-  /// over cut and composite finite element (CCFEM) function spaces.
+  /// over cut and composite finite element (MultiMesh) function spaces.
 
-  class CCFEMAssembler
+  class MultiMeshAssembler : public AssemblerBase
   {
   public:
 
     /// Constructor
-    CCFEMAssembler();
+    MultiMeshAssembler();
 
     /// Assemble tensor from given form
     ///
@@ -48,15 +48,24 @@ namespace dolfin
     ///         The tensor to assemble.
     ///     a (_Form_)
     ///         The form to assemble the tensor from.
-    void assemble(GenericTensor& A, const CCFEMForm& a);
+    void assemble(GenericTensor& A, const MultiMeshForm& a);
 
   private:
 
-    // Assemble over cells
-    void assemble_cells(GenericTensor& A, const CCFEMForm& a);
+    // Assemble over uncut cells
+    void assemble_uncut_cells(GenericTensor& A, const MultiMeshForm& a);
+
+    // Assemble over cut cells
+    void assemble_cut_cells(GenericTensor& A, const MultiMeshForm& a);
+
+    // Assemble over interface
+    void assemble_interface(GenericTensor& A, const MultiMeshForm& a);
+
+    // Assemble over overlap
+    void assemble_overlap(GenericTensor& A, const MultiMeshForm& a);
 
     // Initialize global tensor
-    void init_global_tensor(GenericTensor& A, const CCFEMForm& a);
+    void init_global_tensor(GenericTensor& A, const MultiMeshForm& a);
 
   };
 

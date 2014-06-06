@@ -21,7 +21,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-02-13
+// Last changed: 2014-05-22
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -156,56 +156,40 @@ double IntervalCell::diameter(const MeshEntity& interval) const
   return volume(interval);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::squared_distance(const Cell& cell, const Point& point) const
+double IntervalCell::squared_distance(const Cell& cell,
+                                      const Point& point) const
 {
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
   const unsigned int* vertices = cell.entities(0);
-  const Point p0 = geometry.point(vertices[0]);
-  const Point p1 = geometry.point(vertices[1]);
+  const Point a = geometry.point(vertices[0]);
+  const Point b = geometry.point(vertices[1]);
 
+  // Call function to compute squared distance
+  return squared_distance(point, a, b);
+}
+//-----------------------------------------------------------------------------
+double IntervalCell::squared_distance(const Point& point,
+                                      const Point& a,
+                                      const Point& b)
+{
   // Compute vector
-  const Point v0  = point - p0;
-  const Point v1  = point - p1;
-  const Point v01 = p1 - p0;
+  const Point v0  = point - a;
+  const Point v1  = point - b;
+  const Point v01 = b - a;
 
-  // Check if p0 is closest point (outside of interval)
+  // Check if a is closest point (outside of interval)
   const double a0 = v0.dot(v01);
   if (a0 < 0.0)
     return v0.dot(v0);
 
-  // Check if p1 is closest point (outside the interval)
+  // Check if b is closest point (outside the interval)
   const double a1 = - v1.dot(v01);
   if (a1 < 0.0)
     return v1.dot(v1);
 
   // Inside interval, so use Pythagoras to subtract length of projection
   return std::max(v0.dot(v0) - a0*a0 / v01.dot(v01), 0.0);
-
-  /*
-
-  // Old implementation that only looks at x-coordinate. Faster for 1D
-  // meshes but speed is rarely an issue in 1D so we might as well use
-  // the more general implementation also in 1D.
-
-  // Get x-coordinates of point
-  const double x = point.x();
-  const double x0 = p0.x();
-  const double x1 = p1.x();
-
-  // Compute min and max
-  const double a = std::min(x0, x1);
-  const double b = std::max(x0, x1);
-
-  // Check if point is left of a
-  if (x < a) return (x - a)*(x - a);
-
-  // Check if point is right of b
-  if (x > b) return (x - b)*(x - b);
-
-  // Point is inside interval so distance is zero
-  return 0.0;
-  */
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const

@@ -63,25 +63,34 @@ void UFC::init(const Form& a)
   }
 
   // Create cell integrals
-  default_cell_integral =
-    std::shared_ptr<ufc::cell_integral>(form.create_default_cell_integral());
+  default_cell_integral
+    = std::shared_ptr<ufc::cell_integral>(form.create_default_cell_integral());
   for (std::size_t i = 0; i < form.num_cell_domains(); i++)
     cell_integrals.push_back(std::shared_ptr<ufc::cell_integral>(form.create_cell_integral(i)));
 
   // Create exterior facet integrals
-  default_exterior_facet_integral = std::shared_ptr<ufc::exterior_facet_integral>(form.create_default_exterior_facet_integral());
+  default_exterior_facet_integral
+    = std::shared_ptr<ufc::exterior_facet_integral>(form.create_default_exterior_facet_integral());
   for (std::size_t i = 0; i < form.num_exterior_facet_domains(); i++)
     exterior_facet_integrals.push_back(std::shared_ptr<ufc::exterior_facet_integral>(form.create_exterior_facet_integral(i)));
 
   // Create interior facet integrals
-  default_interior_facet_integral = std::shared_ptr<ufc::interior_facet_integral>(form.create_default_interior_facet_integral());
+  default_interior_facet_integral
+    = std::shared_ptr<ufc::interior_facet_integral>(form.create_default_interior_facet_integral());
   for (std::size_t i = 0; i < form.num_interior_facet_domains(); i++)
     interior_facet_integrals.push_back(std::shared_ptr<ufc::interior_facet_integral>(form.create_interior_facet_integral(i)));
 
   // Create point integrals
-  default_point_integral = std::shared_ptr<ufc::point_integral>(this->form.create_default_point_integral());
+  default_point_integral
+    = std::shared_ptr<ufc::point_integral>(this->form.create_default_point_integral());
   for (std::size_t i = 0; i < this->form.num_point_domains(); i++)
     point_integrals.push_back(std::shared_ptr<ufc::point_integral>(this->form.create_point_integral(i)));
+
+  // Create custom integrals
+  default_custom_integral
+    = std::shared_ptr<ufc::custom_integral>(this->form.create_default_custom_integral());
+  for (std::size_t i = 0; i < this->form.num_custom_domains(); i++)
+    custom_integrals.push_back(std::shared_ptr<ufc::custom_integral>(this->form.create_custom_integral(i)));
 
   // Get maximum local dimensions
   std::vector<std::size_t> max_local_dimension;
