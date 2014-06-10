@@ -15,21 +15,23 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2013-06-26
+# First added:  2014-06-10
 # Last changed: 2014-06-10
 #
 # The bilinear form a(u, v) and linear form L(v) for a multimesh
-# formulation of Poisson's equation.
+# formulation of the Stokes equations.
 #
-# Compile this form with FFC: ffc -l dolfin MultiMeshPoisson.ufl.
+# Compile this form with FFC: ffc -l dolfin MultiMeshStokes.ufl.
 
 # Define element
-element = FiniteElement("Lagrange", triangle, 1)
+P2 = VectorElement("Lagrange", triangle, 2)
+P1 = FiniteElement("Lagrange", triangle, 1)
+TH = P2 * P1
 
 # Define trial and test functions and right-hand side
-u = TrialFunction(element)
-v = TestFunction(element)
-f = Coefficient(element)
+(u, p) = TrialFunctions(TH)
+(v, q) = TestFunctions(TH)
+f = Coefficient(P2)
 
 # Define facet normal and mesh size
 n = FacetNormal(triangle)
@@ -49,12 +51,22 @@ do = dc2      # overlap integral
 # Parameters
 alpha = 4.0
 
+def tensor_jump(v, n):
+    return outer(v('+'), n('+')) + outer(v('-'), n('-'))
+
+def a_h(v, w):
+    return inner(grad(v), grad(w))*dx \
+         - inner(avg(grad(v)), tensor_jump(w, n))*di \
+         - inner(avg(grad(w)), tensor_jump(v, n))*di
+
+def b_h(v, q):
+    return -div(v)*q*dx + jump(v, n)*avg(q)*di
+
+def s_h(v, w):
+    return inner(jump(grad(v)), jump(grad(w)))*do
+
 # Bilinear form
-a = dot(grad(u), grad(v))*dx \
-  - dot(avg(grad(u)), jump(v, n))*di \
-  - dot(avg(grad(v)), jump(u, n))*di \
-  + alpha/h*jump(u)*jump(v)*di \
-  + dot(jump(grad(u)), jump(grad(v)))*do
+a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_h(u, v)
 
 # Linear form
-L = f*v*dx
+L = dot(f, v)*dx
