@@ -97,7 +97,6 @@ double bench(std::string form, std::shared_ptr<const Form> a)
 
   // Assemble once to initialize matrix
   Assembler assembler;
-  assembler.reset_sparsity = false;
   assemble(A, *a);
 
   // Run timing

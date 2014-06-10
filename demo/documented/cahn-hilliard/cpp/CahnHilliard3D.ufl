@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2010 Garth N. Wells
+# Copyright (C) 2006-2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -15,15 +15,17 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2006
-# Last changed: 2011-06-30
+# Modified by Anders Logg 2011
+# Modified by Martin Alnaes 2014
 #
 # The linearised bilinear form a(du, v) and linear form L(v) for
 # the Cahn-Hilliard equation.
 #
 # Compile this form with FFC: ffc -l dolfin -O -f split CahnHilliard3D.ufl
 
-P1 = FiniteElement("Lagrange", tetrahedron, 1)
+cell = tetrahedron
+
+P1 = FiniteElement("Lagrange", cell, 1)
 ME = P1*P1
 
 du   = TrialFunction(ME)
@@ -37,16 +39,16 @@ dc, dmu = split(du)
 c,  mu  = split(u)
 c0, mu0 = split(u0)
 
-lmbda    = Constant(tetrahedron) # surface energy parameter
-dt       = Constant(tetrahedron) # time step
-theta    = Constant(tetrahedron) # time stepping parameter
+lmbda = Constant(cell) # surface energy parameter
+dt = Constant(cell) # time step
+theta = Constant(cell) # time stepping parameter
 
 # mu_(n+theta)
 mu_mid = (1-theta)*mu0 + theta*mu
 
 # Compute the chemical potential df/dc
 c = variable(c)
-f    = 100*c**2*(1-c)**2
+f = 100*c**2*(1-c)**2
 dfdc = diff(f, c)
 
 F0 = c*q*dx  - c0*q*dx   + dt*dot(grad(mu_mid), grad(q))*dx
