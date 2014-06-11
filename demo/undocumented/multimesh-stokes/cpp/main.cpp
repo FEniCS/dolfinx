@@ -16,13 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-10
-// Last changed: 2014-06-10
+// Last changed: 2014-06-11
 //
 // This demo program solves the Stokes equations on a domain defined
 // by three overlapping and non-matching meshes.
 
 #include <dolfin.h>
 #include "MultiMeshStokes.h"
+
+// FIXME: Remove after testing
+#include "reference.h"
 
 using namespace dolfin;
 
@@ -54,6 +57,14 @@ int main(int argc, char* argv[])
   if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
   {
     info("Sorry, this demo does not (yet) run in parallel.");
+    return 0;
+  }
+
+  // FIXME: Remove after testing
+  // Run reference case if requested
+  if (argc > 1 && strcasecmp(argv[1], "--reference") == 0)
+  {
+    run_reference();
     return 0;
   }
 
