@@ -101,8 +101,23 @@ void MultiMeshFunctionSpace::build()
   // Build multimesh
   _build_multimesh();
 
+  // Build dofmap using empty list of offsets (will be computed)
+  std::vector<dolfin::la_index> offsets;
+  _build_dofmap(offsets);
+
+  // Build views
+  _build_views();
+
+  end();
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunctionSpace::build(std::shared_ptr<MultiMesh> multimesh,
+                                   const std::vector<dolfin::la_index>& offsets)
+{
+  begin(PROGRESS, "Building multimesh subspace.");
+
   // Build dofmap
-  _build_dofmap();
+  _build_dofmap(offsets);
 
   // Build views
   _build_views();
@@ -127,7 +142,7 @@ void MultiMeshFunctionSpace::_build_multimesh()
   _multimesh->build();
 }
 //-----------------------------------------------------------------------------
-void MultiMeshFunctionSpace::_build_dofmap()
+void MultiMeshFunctionSpace::_build_dofmap(const std::vector<dolfin::la_index>& offsets)
 {
   begin(PROGRESS, "Building multimesh dofmap.");
 
@@ -140,7 +155,7 @@ void MultiMeshFunctionSpace::_build_dofmap()
     _dofmap->add(_function_spaces[i]->dofmap());
 
   // Call function to build dofmap
-  _dofmap->build(*this);
+  _dofmap->build(*this, offsets);
 
   end();
 }

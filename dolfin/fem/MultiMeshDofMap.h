@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2014-04-28
+// Last changed: 2014-06-11
 
 #ifndef __MULTI_MESH_DOF_MAP_H
 #define __MULTI_MESH_DOF_MAP_H
@@ -74,7 +74,8 @@ namespace dolfin
     void add(const GenericDofMap& dofmap);
 
     /// Build MultiMesh dofmap
-    void build(const MultiMeshFunctionSpace& function_space);
+    void build(const MultiMeshFunctionSpace& function_space,
+               const std::vector<dolfin::la_index>& offsets);
 
     /// Clear MultiMesh dofmap
     void clear();

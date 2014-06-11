@@ -22,7 +22,7 @@
 // Modified by Martin Alnaes, 2013
 //
 // First added:  2008-08-12
-// Last changed: 2013-01-08
+// Last changed: 2014-06-11
 
 #include <ufc.h>
 #include <boost/random.hpp>
@@ -78,7 +78,7 @@ void DofMapBuilder::build(
 
   // Build set of dofs that are not associated with a mesh entity
   // (global dofs)
-  const std::set<std::size_t>  global_dofs = compute_global_dofs(dofmap);
+  const std::set<std::size_t> global_dofs = compute_global_dofs(dofmap);
 
   // Determine and set dof block size
   dolfin_assert(dofmap._ufc_dofmap);

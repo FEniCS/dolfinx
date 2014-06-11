@@ -27,7 +27,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiMeshSubSpace::MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
+MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                                      std::size_t component)
   : MultiMeshFunctionSpace()
 {
@@ -39,7 +39,7 @@ MultiMeshSubSpace::MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
   _build(V, c);
 }
 //-----------------------------------------------------------------------------
-MultiMeshSubSpace::MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
+MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                                      std::size_t component,
                                      std::size_t sub_component)
   : MultiMeshFunctionSpace()
@@ -53,7 +53,7 @@ MultiMeshSubSpace::MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
   _build(V, c);
 }
 //-----------------------------------------------------------------------------
-MultiMeshSubSpace::MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
+MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                                      const std::vector<std::size_t>& component)
   : MultiMeshFunctionSpace()
 {
@@ -61,9 +61,16 @@ MultiMeshSubSpace::MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
   _build(V, component);
 }
 //-----------------------------------------------------------------------------
-void MultiMeshSubSpace::_build(const MultiMeshFunctionSpace& V,
+void MultiMeshSubSpace::_build(MultiMeshFunctionSpace& V,
                                const std::vector<std::size_t>& component)
 {
+  // Vector of offsets. Note that offsets need to be computed here and
+  // not inside the dofmap builder since it does not know about the
+  // offsets of the subdofmaps relative to the multimesh function
+  // space on all parts.
+  std::vector<dolfin::la_index> offsets;
+  offsets.push_back(0);
+
   // Extract proper subspaces for each part and add
   for (std::size_t part = 0; part < V.num_parts(); part++)
   {
@@ -75,9 +82,12 @@ void MultiMeshSubSpace::_build(const MultiMeshFunctionSpace& V,
 
     // Add the subspace
     this->add(part_subspace);
+
+    // Add to offsets
+    offsets.push_back(offsets[part] + part_space->dim());
   }
 
-  // Build multimesh functions space from subspaces
-  this->build();
+  // Build multimesh function space from subspaces
+  this->build(V._multimesh, offsets);
 }
 //-----------------------------------------------------------------------------

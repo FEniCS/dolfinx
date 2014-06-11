@@ -44,21 +44,21 @@ namespace dolfin
   public:
 
     /// Create subspace for given component (one level)
-    MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
+    MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                       std::size_t component);
 
     /// Create subspace for given component (two levels)
-    MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
+    MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                       std::size_t component, std::size_t sub_component);
 
     /// Create subspace for given component (n levels)
-    MultiMeshSubSpace(const MultiMeshFunctionSpace& V,
+    MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                       const std::vector<std::size_t>& component);
 
   private:
 
     // Build subspace
-    void _build(const MultiMeshFunctionSpace& V,
+    void _build(MultiMeshFunctionSpace& V,
                 const std::vector<std::size_t>& component);
 
   };

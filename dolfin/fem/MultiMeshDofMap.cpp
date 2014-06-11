@@ -18,6 +18,7 @@
 // First added:  2013-09-19
 // Last changed: 2014-06-11
 
+#include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -67,7 +68,8 @@ void MultiMeshDofMap::add(const GenericDofMap& dofmap)
   add(reference_to_no_delete_pointer(dofmap));
 }
 //-----------------------------------------------------------------------------
-void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space)
+void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,
+                            const std::vector<dolfin::la_index>& offsets)
 {
   // Compute global dimension
   begin(PROGRESS, "Computing total dimension.");
@@ -97,10 +99,14 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space)
     std::shared_ptr<GenericDofMap> new_dofmap = _original_dofmaps[part]->copy();
     _new_dofmaps.push_back(new_dofmap);
 
-    cout << "Adding offset: " << offset << endl;
-
-    // Add offset
-    new_dofmap->add_offset(offset);
+    // Add offset, either using computed offset or given offset
+    dolfin::la_index _offset = 0;
+    if (offsets.size() > 0)
+      _offset = offsets[part];
+    else
+      _offset = offset;
+    cout << "Adding offset: " << _offset << endl;
+    new_dofmap->add_offset(_offset);
 
     // Increase offset
     offset += _original_dofmaps[part]->global_dimension();

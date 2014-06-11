@@ -25,6 +25,7 @@
 #include <map>
 #include <memory>
 
+#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/MultiMesh.h>
 
@@ -122,6 +123,12 @@ namespace dolfin
     /// Build multimesh function space
     void build();
 
+    /// Build multimesh function space. This function reuses an
+    /// existing multimesh and uses offsets computed from the full
+    /// function spaces on each part.
+    void build(std::shared_ptr<MultiMesh> multimesh,
+               const std::vector<dolfin::la_index>& offsets);
+
     /// Default parameter values
     static Parameters default_parameters()
     {
@@ -133,6 +140,9 @@ namespace dolfin
     }
 
   private:
+
+    // Friends
+    friend class MultiMeshSubSpace;
 
     // List of function spaces
     std::vector<std::shared_ptr<const FunctionSpace> > _function_spaces;
@@ -150,7 +160,7 @@ namespace dolfin
     void _build_multimesh();
 
     // Build dofmap
-    void _build_dofmap();
+    void _build_dofmap(const std::vector<dolfin::la_index>& offsets);
 
     // Build views
     void _build_views();
