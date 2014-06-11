@@ -22,7 +22,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2014-04-28
+// Last changed: 2014-06-11
 
 #include <vector>
 #include <dolfin/common/utils.h>
@@ -205,8 +205,8 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
   // Check if sub space is already in the cache
   std::map<std::vector<std::size_t>,
            std::shared_ptr<FunctionSpace> >::const_iterator subspace;
-  subspace = subspaces.find(component);
-  if (subspace != subspaces.end())
+  subspace = _subspaces.find(component);
+  if (subspace != _subspaces.end())
     return subspace->second;
   else
   {
@@ -228,9 +228,9 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
       new_sub_space->_component[i] = component[i];
 
     // Insert new sub space into cache
-    subspaces.insert(std::pair<std::vector<std::size_t>,
+    _subspaces.insert(std::pair<std::vector<std::size_t>,
                      std::shared_ptr<FunctionSpace> >(component,
-                                                        new_sub_space));
+                                                      new_sub_space));
 
     return new_sub_space;
   }

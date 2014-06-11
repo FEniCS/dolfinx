@@ -24,24 +24,7 @@
 #include <dolfin.h>
 #include "MultiMeshStokes.h"
 
-// FIXME: Remove after testing
-#include "reference.h"
-
 using namespace dolfin;
-
-// Source term (right-hand side)
-class Source : public Expression
-{
-public:
-
-  Source() : Expression(2) {}
-
-  void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = -x[1];
-    values[1] = x[0];
-  }
-};
 
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
@@ -51,6 +34,51 @@ class DirichletBoundary : public SubDomain
     return on_boundary;
   }
 };
+
+// Value for inflow boundary condition for velocity
+class InflowValue : public Expression
+{
+public:
+
+  InflowValue() : Expression(2) {}
+
+  void eval(Array<double>& values, const Array<double>& x) const
+  {
+    values[0] = sin(x[1]*DOLFIN_PI);
+    values[1] = 0.0;
+  }
+
+};
+
+// Subdomain for no-slip boundary
+class NoslipBoundary : public SubDomain
+{
+  bool inside(const Array<double>& x, bool on_boundary) const
+  {
+    return on_boundary && (near(x[1], 0.0) || near(x[1], 1.0));
+  }
+};
+
+// Subdomain for inflow boundary
+class InflowBoundary : public SubDomain
+{
+  bool inside(const Array<double>& x, bool on_boundary) const
+  {
+    return on_boundary && near(x[0], 0.0);
+  }
+};
+
+// Subdomain for outflow boundary
+class OutflowBoundary : public SubDomain
+{
+  bool inside(const Array<double>& x, bool on_boundary) const
+  {
+    return on_boundary && near(x[0], 1.0);
+  }
+};
+
+// FIXME: Remove after testing
+#include "reference.h"
 
 int main(int argc, char* argv[])
 {
@@ -84,38 +112,38 @@ int main(int argc, char* argv[])
   //rectangle_1.rotate(45);
 
   // Create function spaces
-  MultiMeshStokes::FunctionSpace V0(mesh_0);
-  MultiMeshStokes::FunctionSpace V1(mesh_1);
-  MultiMeshStokes::FunctionSpace V2(mesh_2);
+  MultiMeshStokes::FunctionSpace W0(mesh_0);
+  MultiMeshStokes::FunctionSpace W1(mesh_1);
+  MultiMeshStokes::FunctionSpace W2(mesh_2);
 
   // FIXME: Some of this stuff may be wrapped or automated later to
   // avoid needing to explicitly call add() and build()
 
   // Create forms
-  MultiMeshStokes::BilinearForm a0(V0, V0);
-  MultiMeshStokes::BilinearForm a1(V1, V1);
-  MultiMeshStokes::BilinearForm a2(V2, V2);
-  MultiMeshStokes::LinearForm L0(V0);
-  MultiMeshStokes::LinearForm L1(V1);
-  MultiMeshStokes::LinearForm L2(V2);
+  MultiMeshStokes::BilinearForm a0(W0, W0);
+  MultiMeshStokes::BilinearForm a1(W1, W1);
+  MultiMeshStokes::BilinearForm a2(W2, W2);
+  MultiMeshStokes::LinearForm L0(W0);
+  MultiMeshStokes::LinearForm L1(W1);
+  MultiMeshStokes::LinearForm L2(W2);
 
   // Build multimesh function space
-  MultiMeshFunctionSpace V;
-  V.parameters("multimesh")["quadrature_order"] = 2;
-  V.add(V0);
-  V.add(V1);
-  V.add(V2);
-  V.build();
+  MultiMeshFunctionSpace W;
+  W.parameters("multimesh")["quadrature_order"] = 2;
+  W.add(W0);
+  W.add(W1);
+  W.add(W2);
+  W.build();
 
   // Set coefficients
-  Source f;
+  Constant f(0, 0);
   L0.f = f;
   L1.f = f;
   L2.f = f;
 
   // Build multimesh forms
-  MultiMeshForm a(V, V);
-  MultiMeshForm L(V);
+  MultiMeshForm a(W, W);
+  MultiMeshForm L(W);
   a.add(a0);
   a.add(a1);
   a.add(a2);
@@ -125,10 +153,24 @@ int main(int argc, char* argv[])
   a.build();
   L.build();
 
-  // Create boundary condition
-  Constant zero(0, 0, 0);
-  DirichletBoundary boundary;
-  MultiMeshDirichletBC bc(V, zero, boundary);
+  // Create boundary values
+  Constant noslip_value(0, 0);
+  InflowValue inflow_value;
+  Constant outflow_value(0);
+
+  // Create subdomains for boundary conditions
+  NoslipBoundary noslip_boundary;
+  InflowBoundary inflow_boundary;
+  OutflowBoundary outflow_boundary;
+
+  // Create subspaces for boundary conditions
+  MultiMeshSubSpace V(W, 0);
+  MultiMeshSubSpace Q(W, 1);
+
+  // Create boundary conditions
+  MultiMeshDirichletBC bc0(V, noslip_value,  noslip_boundary);
+  MultiMeshDirichletBC bc1(V, inflow_value,  inflow_boundary);
+  MultiMeshDirichletBC bc2(Q, outflow_value, outflow_boundary);
 
   // Assemble linear system
   Matrix A;
@@ -137,11 +179,13 @@ int main(int argc, char* argv[])
   assembler.assemble(A, a);
   assembler.assemble(b, L);
 
-  // Apply boundary condition
-  bc.apply(A, b);
+  // Apply boundary conditions
+  bc0.apply(A, b);
+  bc1.apply(A, b);
+  bc2.apply(A, b);
 
   // Compute solution
-  MultiMeshFunction u(V);
+  MultiMeshFunction u(W);
   solve(A, *u.vector(), b);
 
   // Save to file
@@ -153,7 +197,7 @@ int main(int argc, char* argv[])
   u2_file << *u.part(2);
 
   // Plot solution
-  plot(V.multimesh());
+  plot(W.multimesh());
   plot(u.part(0), "u_0");
   plot(u.part(1), "u_1");
   plot(u.part(2), "u_2");

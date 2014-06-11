@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-20
+// Last changed: 2014-06-11
 
 #ifndef __MULTI_MESH_FUNCTION_SPACE_H
 #define __MULTI_MESH_FUNCTION_SPACE_H

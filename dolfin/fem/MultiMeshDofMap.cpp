@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2014-04-28
+// Last changed: 2014-06-11
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
@@ -96,6 +96,8 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space)
     // Create new dofmap for part (copy of original dofmap)
     std::shared_ptr<GenericDofMap> new_dofmap = _original_dofmaps[part]->copy();
     _new_dofmaps.push_back(new_dofmap);
+
+    cout << "Adding offset: " << offset << endl;
 
     // Add offset
     new_dofmap->add_offset(offset);
