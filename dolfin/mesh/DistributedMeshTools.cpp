@@ -77,12 +77,10 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   // Cells which are also on other processes
   const std::map<unsigned int, std::set<unsigned int> >& shared_cells 
     = mesh.topology().shared_entities(tdim);
-  dolfin_assert(!shared_cells.empty());
 
   // Ownership of cells
   const std::map<unsigned int, unsigned int>& cell_owner
     = mesh.topology().cell_owner();
-  dolfin_assert(!cell_owner.empty());
 
   const unsigned int mpi_size = MPI::size(mesh.mpi_comm());
 

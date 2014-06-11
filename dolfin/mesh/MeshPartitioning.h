@@ -116,7 +116,7 @@ namespace dolfin
     // A new LocalMeshData object is populated with the redistributed
     // cells.
     static void 
-      distribute_ghost_cells(const MPI_Comm mpi_comm,
+      distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<std::size_t>& cell_partition,
         const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,

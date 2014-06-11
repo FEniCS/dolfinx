@@ -8,6 +8,13 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 import matplotlib as mpl
 import numpy as np
+import sys
+
+if(len(sys.argv) == 2):
+    try:
+        n = int(sys.argv[1])
+    except:
+        n = 0
 
 if(MPI.size(mpi_comm_world()) == 1):
     print "Only works with MPI"
@@ -21,9 +28,16 @@ shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())
 
 verts_note = []
-for k,val in M.topology().shared_entities(0).iteritems():
-    vtx = Vertex(M, k)
-    verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
+if (n == 0):
+    for k,val in M.topology().shared_entities(0).iteritems():
+        vtx = Vertex(M, k)
+        verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
+else:
+    for i in range(M.num_vertices()):
+        vtx = Vertex(M, i)
+        val = vtx.global_index()
+        verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
+
 
 x,y = M.coordinates().transpose()
 

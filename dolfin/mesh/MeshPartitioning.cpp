@@ -190,7 +190,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // Keep tabs on ghost cell ownership
   std::map<unsigned int, std::set<unsigned int> > shared_cells;
   // Send cells to processes that need them
-  distribute_ghost_cells(mesh.mpi_comm(), mesh_data,
+  distribute_cells(mesh.mpi_comm(), mesh_data,
                          cell_partition, ghost_procs, 
                          shared_cells, new_mesh_data);
 
@@ -207,9 +207,27 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // adds "shared cells via vertex" to the already existing 
   // "shared cells via facet"
 
-  // FIXME - call this based on a user option
+  // FIXME - call these based on a user option
   bool ghost_by_vertex = true;
-
+  bool drop_ghost_cells = false;
+  
+  if (drop_ghost_cells == true)
+  {
+    const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
+    std::size_t count = 0;
+    for (auto it = new_mesh_data.cell_partition.begin();
+         it != new_mesh_data.cell_partition.end(); ++it)
+      if (*it == mpi_rank)
+        ++count;
+    std::cout << "[" << mpi_rank << "] COUNT = " << count << "\n";
+    new_mesh_data.cell_partition.resize(count);
+    
+    const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
+    new_mesh_data.cell_vertices.resize
+      (boost::extents[count][num_cell_vertices]);
+    shared_cells.clear();
+  }
+  
   if (ghost_by_vertex == true)
   {
     distribute_cell_layer(mesh.mpi_comm(), 
@@ -561,7 +579,7 @@ MeshPartitioning::cell_attachment(const std::vector<std::size_t> vertex_list,
   return attachment_map;
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
+void MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
       const LocalMeshData& mesh_data,
       const std::vector<std::size_t>& cell_partition,
       const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
@@ -597,9 +615,10 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
   }
 
   // Send all cells to their destinations including their global indices. 
-  // First element of vector is cell count.
-  std::vector<std::vector<std::size_t> > send_cell_vertices(num_processes,
-                               std::vector<std::size_t>(1, 0) );
+  // First element of vector is cell count of unghosted cells,
+  // second element is count of ghost cells.
+  std::vector<std::vector<std::size_t>> 
+    send_cell_vertices(num_processes, std::vector<std::size_t>(2, 0) );
   
   for (unsigned int i = 0; i != cell_partition.size(); ++i)
   {
@@ -632,7 +651,12 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
         send_cell_dest.insert(send_cell_dest.end(),
                               mesh_data.cell_vertices[i].begin(),
                               mesh_data.cell_vertices[i].end());
-        send_cell_dest[0]++;
+        // First entry is the owner, so this counts as a 'local' cell
+        // subsequent entries are 'remote ghosts'
+        if (dest == destinations.begin())
+          send_cell_dest[0]++;
+        else
+          send_cell_dest[1]++;
       }
     }
     else
@@ -657,56 +681,43 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
 
   // Count number of received cells (first entry in vector)
   // and find out how many ghost cells there are...
-  std::size_t num_new_local_cells = 0;
+  std::size_t local_count = 0;
   std::size_t ghost_count = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
-    num_new_local_cells += received_data[0]; 
-    for (auto it = received_data.begin() + 1;
-         it != received_data.end();
-         it += (*it + num_cell_vertices + 2))
-    {
-      if (*it != 0 && *(it + 1) != mpi_rank) 
-        ++ghost_count;
-    }
+    local_count += received_data[0]; 
+    ghost_count += received_data[1]; 
   }
-
-  std::cout << "ghost = " << ghost_count << "/" << num_new_local_cells << "\n";
+    
+  const std::size_t all_count = ghost_count + local_count;
+  std::cout << "ghost = " << ghost_count << "/" << local_count << "/" << all_count << "\n";
     
   // Put received mesh data into new_mesh_data structure
-  new_mesh_data.cell_vertices.resize(boost::extents[num_new_local_cells]
+  new_mesh_data.cell_vertices.resize(boost::extents[all_count]
                                      [num_cell_vertices]);
-  new_mesh_data.global_cell_indices.resize(num_new_local_cells);
-  new_mesh_data.cell_partition.resize(num_new_local_cells);
+  new_mesh_data.global_cell_indices.resize(all_count);
+  new_mesh_data.cell_partition.resize(all_count);
 
   // Unpack received data
   // Create a map from cells which are shared, to the remote processes which
   // share them - corral ghost cells to end of range
   std::size_t c = 0;
-  std::size_t gc = num_new_local_cells - ghost_count;
+  std::size_t gc = local_count;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
-    for (auto it = received_data.begin() + 1;
+    for (auto it = received_data.begin() + 2;
          it != received_data.end();
          it += (*it + num_cell_vertices + 2))
     {
       auto tmp_it = it;
       const unsigned int num_ghosts = *tmp_it++;
-      
-      std::size_t owner;
-      if (num_ghosts == 0)
-        owner = mpi_rank;
-      else
-        // First entry of sharing processes is the owner.
-        owner = *tmp_it;
 
-      std::size_t idx;
-      if (owner == mpi_rank)
-        idx = c;
-      else
-        idx = gc;
+      // Determine owner, and indexing.
+      // Note that *tmp_it may be equal to mpi_rank
+      const std::size_t owner = (num_ghosts == 0) ? mpi_rank : *tmp_it ;
+      const std::size_t idx = (owner == mpi_rank) ? c : gc ;
           
       new_mesh_data.cell_partition[idx] = owner;
       if (num_ghosts != 0)
@@ -727,9 +738,8 @@ void MeshPartitioning::distribute_ghost_cells(const MPI_Comm mpi_comm,
     }
   }
 
-
-  dolfin_assert(c == num_new_local_cells - ghost_count);
-  dolfin_assert(gc == num_new_local_cells);
+  dolfin_assert(c == local_count);
+  dolfin_assert(gc == all_count);
 
 }
 //-----------------------------------------------------------------------------
