@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-10
-// Last changed: 2014-06-11
+// Last changed: 2014-06-13
 //
 // This demo program solves the Stokes equations on a domain defined
 // by three overlapping and non-matching meshes.
@@ -77,6 +77,14 @@ class OutflowBoundary : public SubDomain
   }
 };
 
+class AllDomain : public SubDomain
+{
+  bool inside(const Array<double>& x, bool on_boundary) const
+  {
+    return true;
+  }
+};
+
 // FIXME: Remove after testing
 #include "reference.h"
 
@@ -103,13 +111,13 @@ int main(int argc, char* argv[])
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
-  int N = 16;
+  int N = 32;
   UnitSquareMesh mesh_0(N, N);
   RectangleMesh  mesh_1(0.2, 0.2, 0.6, 0.6, N, N);
   RectangleMesh  mesh_2(0.4, 0.4, 0.8, 0.8, N, N);
 
   // Rotate overlapping mesh
-  //rectangle_1.rotate(45);
+  //mesh_2.rotate(45);
 
   // Create function spaces
   MultiMeshStokes::FunctionSpace W0(mesh_0);
@@ -185,22 +193,54 @@ int main(int argc, char* argv[])
   bc2.apply(A, b);
 
   // Compute solution
-  MultiMeshFunction u(W);
-  solve(A, *u.vector(), b);
+  MultiMeshFunction w(W);
+  solve(A, *w.vector(), b);
+
+  /*
+
+  // Extract solution parts and components
+  Function u0 = (*w.part(0))[0];
+  Function u1 = (*w.part(1))[0];
+  Function u2 = (*w.part(2))[0];
+  Function p0 = (*w.part(0))[1];
+  Function p1 = (*w.part(1))[1];
+  Function p2 = (*w.part(2))[1];
 
   // Save to file
   File u0_file("u0.pvd");
   File u1_file("u1.pvd");
   File u2_file("u2.pvd");
-  u0_file << *u.part(0);
-  u1_file << *u.part(1);
-  u2_file << *u.part(2);
+  File p0_file("p0.pvd");
+  File p1_file("p1.pvd");
+  File p2_file("p2.pvd");
+  u0_file << u0;
+  u1_file << u1;
+  u2_file << u2;
+  p0_file << p0;
+  p1_file << p1;
+  p2_file << p2;
 
   // Plot solution
   plot(W.multimesh());
-  plot(u.part(0), "u_0");
-  plot(u.part(1), "u_1");
-  plot(u.part(2), "u_2");
+  plot(u0, "u_0");
+  plot(u1, "u_1");
+  plot(u2, "u_2");
+  plot(p0, "p_0");
+  plot(p1, "p_1");
+  plot(p2, "p_2");
+
+  */
+
+  // FIXME: Temporary fix until extraction of subdofmaps works
+  AllDomain all_domain;
+  Constant c(0);
+  MultiMeshDirichletBC bc(Q, c, all_domain);
+  bc.apply(*w.vector());
+  plot(w.part(0), "u_0");
+  plot(w.part(1), "u_1");
+  plot(w.part(2), "u_2");
+  plot(W.multimesh());
+
   interactive();
 
   return 0;
