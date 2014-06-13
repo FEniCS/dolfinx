@@ -27,17 +27,25 @@ M = UnitSquareMesh(15, 15)
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())
 
+num_regular_vertices = M.topology().size(0) - len(M.topology().entity_owner(0))
+
+ghost_vertices = range(num_regular_vertices, M.topology().size(0))
+
 verts_note = []
 if (n == 0):
     for k,val in M.topology().shared_entities(0).iteritems():
         vtx = Vertex(M, k)
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
-else:
+elif (n == 1):
     for i in range(M.num_vertices()):
         vtx = Vertex(M, i)
         val = vtx.global_index()
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
-
+else:
+    for i in range(M.num_vertices()):
+        vtx = Vertex(M, i)
+        val = vtx.index()
+        verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 
 x,y = M.coordinates().transpose()
 
@@ -80,6 +88,7 @@ ax.add_collection(coll)
 
 plt.plot(x, y, marker='o', color='black', linestyle='none')
 plt.plot(x[shared_vertices], y[shared_vertices], marker='o', color='green', linestyle='none')
+plt.plot(x[ghost_vertices], y[ghost_vertices], marker='o', color='yellow', linestyle='none')
 
 xlim = ax.get_xlim()
 ylim = ax.get_ylim()
