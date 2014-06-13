@@ -120,8 +120,27 @@ if (PTESMUMPS_LIBRARY)
 endif()
 set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES} ${PTSCOTCHERR_LIBRARY})
 
+# Basic check of SCOTCH_VERSION which does not require compilation
+file(STRINGS "${SCOTCH_INCLUDE_DIRS}/ptscotch.h" PTSCOTCH_H)
+string(REGEX MATCH "SCOTCH_VERSION [0-9]+" SCOTCH_VERSION "${PTSCOTCH_H}")
+string(REGEX MATCH "[0-9]+" SCOTCH_VERSION "${SCOTCH_VERSION}")
+
+# If SCOTCH_VERSION was not found in ptscotch.h, look in scotch.h
+if (NOT SCOTCH_VERSION)
+  file(STRINGS "${SCOTCH_INCLUDE_DIRS}/scotch.h" SCOTCH_H)
+  string(REGEX MATCH "SCOTCH_VERSION [0-9]+" SCOTCH_VERSION "${SCOTCH_H}")
+  string(REGEX MATCH "[0-9]+" SCOTCH_VERSION "${SCOTCH_VERSION}")
+endif()
+
+# For SCOTCH version > 6, need to add libraries scotch and ptscotch
+if (NOT "${SCOTCH_VERSION}" VERSION_LESS "6")
+  set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY} ${SCOTCH_LIBRARY} ${PTSCOTCHERR_LIBRARY})
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARY})
+endif()
+
 # Try compiling and running test program
 if (DOLFIN_SKIP_BUILD_TESTS)
+  message(STATUS "Found SCOTCH (version ${SCOTCH_VERSION})")
   set(SCOTCH_TEST_RUNS TRUE)
 elseif (SCOTCH_INCLUDE_DIRS AND SCOTCH_LIBRARIES)
   if (SCOTCH_DEBUG)
@@ -181,12 +200,6 @@ int main() {
   if (SCOTCH_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
     set(SCOTCH_VERSION ${OUTPUT} CACHE TYPE STRING)
     message(STATUS "Found SCOTCH (version ${SCOTCH_VERSION})")
-  endif()
-
-  # For SCOTCH version > 6, need to add libraries scotch and ptscotch
-  if (NOT ${SCOTCH_VERSION} VERSION_LESS "6")
-    set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY} ${SCOTCH_LIBRARY} ${PTSCOTCHERR_LIBRARY})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARY})
   endif()
 
   # PT-SCOTCH was first introduced in SCOTCH version 5.0

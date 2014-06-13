@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2013-10-25
+// Last changed: 2014-06-04
 
 #include <algorithm>
 #include <map>
@@ -382,8 +382,8 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     if (allow_extrapolation)
     {
       id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
-      cout << "Extrapolating function value at x = " << point
-           << " (not inside domain)." << endl;
+      //cout << "Extrapolating function value at x = " << point
+      //     << " (not inside domain)." << endl;
     }
     else
     {
@@ -719,6 +719,8 @@ void Function::init_vector()
                  "Cannot re-initialize a non-empty vector. Consider creating a new function");
 
   }
+
+  // Set vector to zero
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

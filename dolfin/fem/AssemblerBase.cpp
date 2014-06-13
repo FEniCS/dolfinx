@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,7 @@
 // Modified by Ola Skavhaug, 2007-2009
 // Modified by Kent-Andre Mardal, 2008
 // Modified by Johannes Ring, 2012
-//
-// First added:  2007-01-17
-// Last changed: 2013-09-19
+// Modified by Martin Alnaes, 2014
 
 #include <memory>
 
@@ -141,7 +139,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       {
         dolfin_error("AssemblerBase.cpp",
                      "assemble form",
-                     "Reset of tensor in assembly not requested, but dim %d of tensor does not match form", i);
+                     "Dim %d of tensor does not match form", i);
       }
     }
   }
