@@ -276,25 +276,26 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
   // ---------- Topology
   {
+    const std::size_t tdim = mesh.topology().dim();
     std::vector<std::size_t> topological_data;
     topological_data.reserve(mesh.num_entities(cell_dim)*(cell_dim + 1));
 
     const std::size_t my_rank = MPI::rank(_mpi_comm);
     std::vector<std::size_t> global_cell_indices;
 
-    if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
+    if (cell_dim == tdim || MPI::size(_mpi_comm) == 1)
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
       // Get/build topology data
-      
-      const std::map<unsigned int, unsigned int>& cell_owner 
-        = mesh.topology().cell_owner();
+
+      // Cut off ghost cells
+      const unsigned int num_regular_cells 
+        = mesh.topology().size(tdim) - mesh.topology().entity_owner(tdim).size();
 
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-        if (cell_owner.find(c->index()) == cell_owner.end())
+        if (c->index() < num_regular_cells)
         {
-          // Not in 'cell_owner' map, so must be local
           for (VertexIterator v(*c); !v.end(); ++v)
             topological_data.push_back(v->global_index());
           global_cell_indices.push_back(c->global_index());
@@ -660,6 +661,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   }
 
   const Mesh& mesh = *meshfunction.mesh();
+  const unsigned int tdim = mesh.topology().dim();
   const std::size_t cell_dim = meshfunction.dim();
 
   // Write a mesh for the MeshFunction - this will also globally
@@ -675,14 +677,15 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     data_values.assign(meshfunction.values(),
                        meshfunction.values() + meshfunction.size());
   }
-  else if (cell_dim == mesh.topology().dim())
+  else if (cell_dim == tdim)
   {
-    const std::map<unsigned int, unsigned int>& cell_owner
-      = mesh.topology().cell_owner();
-
+    // Cut off ghost cells
+    const unsigned int num_regular_cells 
+      = mesh.topology().size(tdim) - mesh.topology().entity_owner(tdim).size();
+    
     // Check if cell 'i' is in cell_owner map - if not, it is local
     for (std::size_t i = 0; i < meshfunction.size(); ++i)
-      if (cell_owner.find(i) == cell_owner.end())
+      if (i < num_regular_cells)
         data_values.push_back(meshfunction[i]);
   }
   else

@@ -122,6 +122,9 @@ void MeshTopology::init(std::size_t dim)
   // Initialize storage for global indices
   _global_indices.resize(dim + 1);
 
+  // Initialize storage for entity owners
+  _entity_owner.resize(dim + 1);
+
   // Initialize mesh connectivity
   connectivity.resize(dim + 1);
   for (std::size_t d0 = 0; d0 <= dim; d0++)

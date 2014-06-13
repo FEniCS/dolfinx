@@ -74,14 +74,6 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
     return;
   }
 
-  // Cells which are also on other processes
-  const std::map<unsigned int, std::set<unsigned int> >& shared_cells 
-    = mesh.topology().shared_entities(tdim);
-
-  // Ownership of cells
-  const std::map<unsigned int, unsigned int>& cell_owner
-    = mesh.topology().cell_owner();
-
   const unsigned int mpi_size = MPI::size(mesh.mpi_comm());
 
   // Communicate shared entities
@@ -100,18 +92,26 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   const std::size_t num_local_entities = mesh.topology().size(d);
   std::vector<std::size_t> global_entity_indices(num_local_entities);
 
+  // Cells which are also on other processes
+  const std::map<unsigned int, std::set<unsigned int> >& shared_cells 
+    = mesh.topology().shared_entities(tdim);
+  // Ownership of cells
+  const std::vector<unsigned int>& cell_owner
+    = mesh.topology().entity_owner(tdim);
+
   // Initially index from zero, add offset later
   std::size_t ecount = 0;
+  const std::size_t num_regular_cells 
+    = mesh.topology().size(tdim) - cell_owner.size();
+  
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
   {
     // Get cell ownership around entity
     dolfin::Set<unsigned int> cell_ownership;
     for (CellIterator c(*e); !c.end(); ++c)
     {
-      auto owner_it = cell_owner.find(c->index());
-      // If it is in map, then it is not a local cell
-      if (owner_it != cell_owner.end())
-        cell_ownership.insert(owner_it->second);
+      if (c->index() >= num_regular_cells)
+        cell_ownership.insert(cell_owner[c->index() - num_regular_cells]);
     }
     
     if (cell_ownership.size() == 0)

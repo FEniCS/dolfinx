@@ -114,8 +114,8 @@ namespace dolfin
     // to the appropriate owning process. Ghost cells are also sent,
     // along with the list of sharing processes.
     // A new LocalMeshData object is populated with the redistributed
-    // cells.
-    static void 
+    // cells. Return the number of non-ghost cells on this process.
+    static unsigned int 
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<std::size_t>& cell_partition,

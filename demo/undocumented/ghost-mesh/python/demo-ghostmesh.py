@@ -43,13 +43,9 @@ x,y = M.coordinates().transpose()
 
 process_number = MPI.rank(M.mpi_comm())
 
-cell_ownership = np.zeros(M.num_cells(),dtype='int')
-cell_owner = M.topology().cell_owner()
-for i in range(M.num_cells()):
-    if i in cell_owner.keys():
-        cell_ownership[i] = cell_owner[i]
-    else:
-        cell_ownership[i] = process_number
+cell_ownership = np.ones(M.num_cells(),dtype='int')*process_number
+cell_owner = M.topology().entity_owner(M.topology().dim())
+cell_ownership[-len(cell_owner):] = cell_owner
 
 cells_store=[]
 cells_note=[]
@@ -68,7 +64,8 @@ for c in cells(M):
     cell_str=str(mpi_rank)
     if c.index() in shared_cells.keys():
         cell_str = str(shared_cells[c.index()])
-    cell_str = str(c.index())
+    else:
+        cell_str = str(c.index())
     cells_note.append((xavg, yavg, cell_str))
     cells_store.append(zip(xc,yc))
     

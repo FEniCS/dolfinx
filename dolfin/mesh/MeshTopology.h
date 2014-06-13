@@ -118,13 +118,19 @@ namespace dolfin
     const std::map<unsigned int, std::set<unsigned int> >&
       shared_entities(unsigned int dim) const;
 
-    /// Return map from local cell index to owning process
-    std::map<unsigned int, unsigned int>& cell_owner()
-    { return _cell_owner; }
+    /// Return mapping from local ghost cell index to owning process
+    std::vector<unsigned int>& entity_owner(unsigned int dim)
+    { 
+      dolfin_assert(dim < _entity_owner.size());
+      return _entity_owner[dim]; 
+    }
 
-    /// Return map from local cell index to owning process (const version)
-    const std::map<unsigned int, unsigned int>& cell_owner() const
-    { return _cell_owner; }
+    /// Return mapping from local ghost cell index to owning process (const version)
+    const std::vector<unsigned int>& entity_owner(unsigned int dim) const
+    { 
+      dolfin_assert(dim < _entity_owner.size());
+      return _entity_owner[dim]; 
+    }
 
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1);
@@ -172,9 +178,10 @@ namespace dolfin
     std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >
       _shared_entities;
 
-    // For cells which are "ghosted", map to the owning process
-    // Cells not in this map are locally owned
-    std::map<unsigned int, unsigned int> _cell_owner;
+    // For entities which are "ghosted", locate the owning process,
+    // using a vector rather than a map,
+    // since ghost entities are always at the end of the range.
+    std::vector<std::vector<unsigned int> > _entity_owner;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;
