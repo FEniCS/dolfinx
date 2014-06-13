@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-15
+// Last changed: 2014-05-28
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -71,6 +71,23 @@ namespace dolfin
     triangulate_intersection_interval_interval(const MeshEntity& interval_0,
                                                const MeshEntity& interval_1);
 
+    /// Compute triangulation of intersection of a triangle and an interval
+    ///
+    /// *Arguments*
+    ///     T0 (_MeshEntity_)
+    ///         The triangle.
+    ///     T1 (_MeshEntity_)
+    ///         The interval.
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         A flattened array of simplices of dimension
+    ///         num_simplices x num_vertices x gdim =
+    ///         num_simplices x (tdim + 1) x gdim
+    static std::vector<double>
+    triangulate_intersection_triangle_interval(const MeshEntity& triangle,
+                                               const MeshEntity& interval);
+
     /// Compute triangulation of intersection of two triangles
     ///
     /// *Arguments*
@@ -122,7 +139,70 @@ namespace dolfin
     triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
                                                      const MeshEntity& tetrahedron_1);
 
+    // Function for general intersection computation of two simplices
+    // with different topological dimension but the same geometrical
+    // dimension
+    static std::vector<double>
+    triangulate_intersection(const std::vector<Point>& s0,
+                             std::size_t tdim0,
+                             const std::vector<Point>& s1,
+                             std::size_t tdim1,
+                             std::size_t gdim);
+
+    // Function for computing the intersection of a cell with a flat
+    // vector of simplices with topological dimension tdim. The
+    // geometrical dimension is assumed to be the same as for the
+    // cell.
+    static std::vector<double>
+    triangulate_intersection(const MeshEntity& cell,
+                             const std::vector<double> &triangulation,
+                             std::size_t tdim);
+
+    // Function for computing the intersection of a cell with a flat
+    // vector of simplices with topological dimension tdim. The
+    // geometrical dimension is assumed to be the same as for the
+    // cell. The corresponding normals are also saved.
+    static void
+    triangulate_intersection(const MeshEntity& cell,
+                             const std::vector<double>& triangulation,
+                             const std::vector<Point>& normals,
+                             std::vector<double>& intersection_triangulation,
+                             std::vector<Point>& intersection_normals,
+                             std::size_t tdim);
+
   private:
+
+    // Function for computing the intersection of two triangles given
+    // by std::vector<Point>.
+    static std::vector<double>
+    triangulate_intersection_interval_interval(const std::vector<Point>& interval_0,
+                                               const std::vector<Point>& interval_1,
+                                               std::size_t gdim);
+
+    // Function for computing the intersection of a triangle and an interval
+    // by std::vector<Point>.
+    static std::vector<double>
+    triangulate_intersection_triangle_interval(const std::vector<Point>& triangle,
+                                               const std::vector<Point>& interval,
+                                               std::size_t gdim);
+
+    // Function for computing the intersection of two triangles given
+    // by std::vector<Point>.
+    static std::vector<double>
+    triangulate_intersection_triangle_triangle(const std::vector<Point>& tri_0,
+                                               const std::vector<Point>& tri_1);
+
+    // Function for computing the intersection of two tetrahedra given
+    // by std::vector<Point>.
+    static std::vector<double>
+    triangulate_intersection_tetrahedron_tetrahedron(const std::vector<Point>& tet_0,
+                                                     const std::vector<Point>& tet_1);
+
+    // Function for computing the intersection of a tetrahedron with a
+    // triangle given by std::vector<Point>.
+    static std::vector<double>
+    triangulate_intersection_tetrahedron_triangle(const std::vector<Point>& tet,
+                                                  const std::vector<Point>& tri);
 
     // Helper function
     static bool intersection_edge_edge(const Point& a,

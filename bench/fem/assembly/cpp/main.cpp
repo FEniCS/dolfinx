@@ -45,7 +45,6 @@ double reassemble_form(Form& form)
 
   // Reassemble
   const double t0 = time();
-  assembler.reset_sparsity = false;
   assembler.assemble(A, form);
   return time() - t0;
 }

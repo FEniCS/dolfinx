@@ -69,7 +69,7 @@ internal facets are indicated by ``*dS``.
     a = inner(div(grad(u)), div(grad(v)))*dx \
       - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
       - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
-      + alpha('+')/h_avg*inner(jump(grad(u), n), jump(grad(v),n))*dS
+      + alpha/h_avg*inner(jump(grad(u), n), jump(grad(v),n))*dS
 
     # Linear form
     L = f*v*dx

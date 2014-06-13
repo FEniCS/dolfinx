@@ -19,10 +19,7 @@
 // Modified by Ola Skavhaug 2007-2009
 // Modified by Kent-Andre Mardal 2008
 // Modified by Joachim B Haga 2012
-// Modified by Martin Alnaes 2013
-//
-// First added:  2007-01-17
-// Last changed: 2013-09-19
+// Modified by Martin Alnaes 2013-2014
 
 
 #include <dolfin/log/dolfin_log.h>
@@ -124,7 +121,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Form rank
+  // Get form rank
   const std::size_t form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
@@ -375,10 +372,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     // Update to current pair of cells
     cell0.get_cell_data(ufc_cell[0], local_facet0);
-    cell0.get_vertex_coordinates(vertex_coordinates[0]);
     cell1.get_cell_data(ufc_cell[1], local_facet1);
+    cell0.get_vertex_coordinates(vertex_coordinates[0]);
     cell1.get_vertex_coordinates(vertex_coordinates[1]);
-
     ufc.update(cell0, vertex_coordinates[0], ufc_cell[0],
                cell1, vertex_coordinates[1], ufc_cell[1],
                integral->enabled_coefficients());

@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug 2007
-// Modified by Anders Logg 2008-2013
+// Modified by Anders Logg 2008-2014
 //
 // First added:  2007-05-24
-// Last changed: 2013-09-24
+// Last changed: 2014-04-28
 
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
@@ -27,10 +27,11 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/CCFEMFunctionSpace.h>
-#include "CCFEMForm.h"
-#include "CCFEMDofMap.h"
+#include <dolfin/function/MultiMeshFunctionSpace.h>
+#include "MultiMeshForm.h"
+#include "MultiMeshDofMap.h"
 #include "SparsityPatternBuilder.h"
 
 #include <dolfin/log/dolfin_log.h>
@@ -48,9 +49,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                                    bool init,
                                    bool finalize)
 {
-  const std::size_t rank = dofmaps.size();
-
   // Get global dimensions and local range
+  const std::size_t rank = dofmaps.size();
   std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
   std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(rank);
@@ -194,33 +194,116 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     sparsity_pattern.apply();
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::build_ccfem(GenericSparsityPattern& sparsity_pattern,
-                                         const CCFEMForm& form)
+void SparsityPatternBuilder::build_multimesh_sparsity_pattern
+(GenericSparsityPattern& sparsity_pattern,
+ const MultiMeshForm& form)
 {
-  // Build list of dofmaps
-  std::vector<const GenericDofMap*> dofmaps;
-  for (std::size_t i = 0; i < form.rank(); i++)
-    dofmaps.push_back(&*form.function_space(i)->dofmap());
+   // Get global dimensions and local range
+  const std::size_t rank = form.rank();
+  std::vector<std::size_t> global_dimensions(rank);
+  std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
+  std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(rank);
+  for (std::size_t i = 0; i < rank; ++i)
+  {
+    global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
+    local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
+    off_process_owner[i] = &form.function_space(i)->dofmap()->off_process_owner();
+  }
+
+  // Initialize sparsity pattern
+  sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
+                        global_dimensions,
+                        local_range,
+                        off_process_owner);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
   {
-    // Set current part for each dofmap. Note that these will be the
-    // same dofmaps as in the list created above but accessed here as
-    // CCFEMDofMaps and not GenericDofMaps.
-    for (std::size_t i = 0; i < form.rank(); i++)
-      form.function_space(i)->dofmap()->set_current_part(part);
-
     // Get mesh on current part (assume it's the same for all arguments)
     const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
 
-    // Check whether to initialize or finalize sparsity pattern
-    const bool init = part == 0;
-    const bool finalize = part == form.num_parts() - 1;
+    // Build list of dofmaps
+    std::vector<const GenericDofMap*> dofmaps;
+    for (std::size_t i = 0; i < form.rank(); i++)
+      dofmaps.push_back(&*form.function_space(i)->dofmap()->part(part));
 
-    // Build sparsity pattern for part
-    build(sparsity_pattern, mesh, dofmaps, true, false, false, true,
-          init, finalize);
+    // Build sparsity pattern for part by calling the regular dofmap
+    // builder. This builds the sparsity pattern for all interacting
+    // dofs on the current part.
+    build(sparsity_pattern, mesh, dofmaps,
+          true, false, false, true, false, false);
+
+    // Build sparsity pattern for interface. This builds the sparsity
+    // pattern for all dofs that may interact across the interface
+    // between cutting meshes.
+    _build_multimesh_sparsity_pattern_interface(sparsity_pattern, form, part);
+  }
+
+  // Finalize sparsity pattern
+  sparsity_pattern.apply();
+}
+//-----------------------------------------------------------------------------
+void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
+(GenericSparsityPattern& sparsity_pattern,
+ const MultiMeshForm& form,
+ std::size_t part)
+{
+  // Get multimesh
+  const auto multimesh = form.multimesh();
+
+  // Get collision map
+  const auto& cmap = multimesh->collision_map_cut_cells(part);
+
+  // Data structures for storing dofs on cut (0) and cutting cell (1)
+  std::vector<const std::vector<dolfin::la_index>* > dofs_0(form.rank());
+  std::vector<const std::vector<dolfin::la_index>* > dofs_1(form.rank());
+
+  // FIXME: We need two different lists here because the interface
+  // FIXME: of insert() requires a list of pointers to dofs. Consider
+  // FIXME: improving the interface of GenericSparsityPattern.
+
+  // Data structure for storing dofs on macro cell (0 + 1)
+  std::vector<std::vector<dolfin::la_index> > dofs(form.rank());
+  std::vector<const std::vector<dolfin::la_index>* > _dofs(form.rank());
+
+  // Iterate over all cut cells in collision map
+  for (auto it = cmap.begin(); it != cmap.end(); ++it)
+  {
+    // Get cut cell index
+    const unsigned int cut_cell_index = it->first;
+
+    // Get dofs for cut cell
+    for (std::size_t i = 0; i < form.rank(); i++)
+    {
+      const auto dofmap = form.function_space(i)->dofmap()->part(part);
+      dofs_0[i] = &dofmap->cell_dofs(cut_cell_index);
+    }
+
+    // Iterate over cutting cells
+    const auto& cutting_cells = it->second;
+    for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+    {
+      // Get cutting part and cutting cell index
+      const std::size_t cutting_part = jt->first;
+      const std::size_t cutting_cell_index = jt->second;
+
+      // Add dofs for cutting cell
+      for (std::size_t i = 0; i < form.rank(); i++)
+      {
+        // Get dofs for cutting cell
+        const auto dofmap = form.function_space(i)->dofmap()->part(cutting_part);
+        dofs_1[i] = &dofmap->cell_dofs(cutting_cell_index);
+
+        // Collect dofs for cut and cutting cell
+        dofs[i].resize(dofs_0[i]->size() + dofs_1[i]->size());
+        std::copy(dofs_0[i]->begin(), dofs_0[i]->end(), dofs[i].begin());
+        std::copy(dofs_1[i]->begin(), dofs_1[i]->end(), dofs[i].begin() + dofs_0[i]->size());
+        _dofs[i] = &dofs[i]; // Silly extra step, fix GenericSparsityPattern interface
+      }
+
+      // Insert into sparsity pattern
+      sparsity_pattern.insert(_dofs);
+    }
   }
 }
 //-----------------------------------------------------------------------------

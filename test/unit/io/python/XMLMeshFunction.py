@@ -20,11 +20,12 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-09-13
-# Last changed: 2011-09-13
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class XMLMeshFunction(unittest.TestCase):
 
     def test_io_size_t(self):
@@ -32,96 +33,92 @@ class XMLMeshFunction(unittest.TestCase):
 
         # Write some data
         mesh = UnitSquareMesh(5, 5)
-        if (MPI.size(mesh.mpi_comm()) == 1):
-            f = MeshFunction("size_t", mesh, 1)
-            f.set_all(0)
-            f[2] = 3
-            f[5] = 7
+        f = MeshFunction("size_t", mesh, 1)
+        f.set_all(0)
+        f[2] = 3
+        f[5] = 7
 
-            # Write
-            output_file = File("XMLMeshFunction_test_io_size_t.xml")
-            output_file << f
+        # Write
+        output_file = File("XMLMeshFunction_test_io_size_t.xml")
+        output_file << f
 
-            # Read from file
-            g = MeshFunction("size_t", mesh, 1)
-            input_file = File("XMLMeshFunction_test_io_size_t.xml")
-            input_file >> g
+        # Read from file
+        g = MeshFunction("size_t", mesh, 1)
+        input_file = File("XMLMeshFunction_test_io_size_t.xml")
+        input_file >> g
 
-            # Check values
-            for i in xrange(f.size()):
-                self.assertEqual(f[i], g[i])
+        # Check values
+        for i in xrange(f.size()):
+            self.assertEqual(f[i], g[i])
 
     def test_io_int(self):
         "Test input/output for int"
 
         # Write some data
         mesh = UnitSquareMesh(5, 5)
-        if (MPI.size(mesh.mpi_comm()) == 1):
-            f = MeshFunction("int", mesh, 1)
-            f.set_all(0)
-            f[2] = -3
-            f[5] = 7
+        f = MeshFunction("int", mesh, 1)
+        f.set_all(0)
+        f[2] = -3
+        f[5] = 7
 
-            # Write
-            output_file = File("XMLMeshFunction_test_io_int.xml")
-            output_file << f
+        # Write
+        output_file = File("XMLMeshFunction_test_io_int.xml")
+        output_file << f
 
-            # Read from file
-            g = MeshFunction("int", mesh, 1)
-            input_file = File("XMLMeshFunction_test_io_int.xml")
-            input_file >> g
+        # Read from file
+        g = MeshFunction("int", mesh, 1)
+        input_file = File("XMLMeshFunction_test_io_int.xml")
+        input_file >> g
 
-            # Check values
-            for i in xrange(f.size()):
-                self.assertEqual(f[i], g[i])
+        # Check values
+        for i in xrange(f.size()):
+            self.assertEqual(f[i], g[i])
 
     def test_io_double(self):
         "Test input/output for double"
 
         # Write some data
         mesh = UnitSquareMesh(5, 5)
-        if (MPI.size(mesh.mpi_comm()) == 1):
-            f = MeshFunction("double", mesh, 1)
-            f.set_all(0.0)
-            f[2] = 3.14
-            f[5] = 10000000.0
+        f = MeshFunction("double", mesh, 1)
+        f.set_all(0.0)
+        f[2] = 3.14
+        f[5] = 10000000.0
 
-            # Write
-            output_file = File("XMLMeshFunction_test_io_double.xml")
-            output_file << f
+        # Write
+        output_file = File("XMLMeshFunction_test_io_double.xml")
+        output_file << f
 
-            # Read from file
-            g = MeshFunction("double", mesh, 1)
-            input_file = File("XMLMeshFunction_test_io_double.xml")
-            input_file >> g
+        # Read from file
+        g = MeshFunction("double", mesh, 1)
+        input_file = File("XMLMeshFunction_test_io_double.xml")
+        input_file >> g
 
-            # Check values
-            for i in xrange(f.size()):
-                self.assertEqual(f[i], g[i])
+        # Check values
+        for i in xrange(f.size()):
+            self.assertEqual(f[i], g[i])
 
     def test_io_bool(self):
         "Test input/output for bool"
 
+        # Write some data
         mesh = UnitSquareMesh(5, 5)
-        if (MPI.size(mesh.mpi_comm()) == 1):
-            # Write some data
-            f = MeshFunction("bool", mesh, 1)
-            f.set_all(False)
-            f[2] = True
-            f[5] = False
+        f = MeshFunction("bool", mesh, 1)
+        f.set_all(False)
+        f[2] = True
+        f[5] = False
 
-            # Write
-            output_file = File("XMLMeshFunction_test_io_bool.xml")
-            output_file << f
+        # Write
+        output_file = File("XMLMeshFunction_test_io_bool.xml")
+        output_file << f
 
-            # Read from file
-            g = MeshFunction("bool", mesh, 1)
-            input_file = File("XMLMeshFunction_test_io_bool.xml")
-            input_file >> g
+        # Read from file
+        g = MeshFunction("bool", mesh, 1)
+        input_file = File("XMLMeshFunction_test_io_bool.xml")
+        input_file >> g
 
-            # Check values
-            for i in xrange(f.size()):
-                self.assertEqual(f[i], g[i])
+        # Check values
+        for i in xrange(f.size()):
+            self.assertEqual(f[i], g[i])
 
 if __name__ == "__main__":
     unittest.main()

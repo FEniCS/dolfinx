@@ -19,7 +19,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2010-05-26
-// Last changed: 2013-03-04
+// Last changed: 2014-04-28
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -110,14 +110,6 @@ namespace dolfin
 				      std::size_t dim,
                                       std::size_t local_entity) const = 0;
 
-    /// Return a map between vertices and dofs
-    virtual std::vector<dolfin::la_index>
-      dof_to_vertex_map(const Mesh& mesh) const = 0;
-
-    /// Return a map between vertices and dofs
-    virtual std::vector<std::size_t>
-      vertex_to_dof_map(const Mesh& mesh) const = 0;
-
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     virtual
       void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
@@ -141,13 +133,13 @@ namespace dolfin
 
     /// Extract sub dofmap component
     virtual std::shared_ptr<GenericDofMap>
-        extract_sub_dofmap(const std::vector<std::size_t>& component,
-                           const Mesh& mesh) const = 0;
+      extract_sub_dofmap(const std::vector<std::size_t>& component,
+                         const Mesh& mesh) const = 0;
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
     virtual std::shared_ptr<GenericDofMap>
-        collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
-                 const Mesh& mesh) const = 0;
+      collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
+               const Mesh& mesh) const = 0;
 
     /// Return list of global dof indices on this process
     virtual std::vector<dolfin::la_index> dofs() const = 0;
@@ -165,6 +157,9 @@ namespace dolfin
     /// body rotations.
     virtual void set_x(GenericVector& x, double value, std::size_t component,
                        const Mesh& mesh) const = 0;
+
+    /// Add given offset to all dofs
+    virtual void add_offset(dolfin::la_index offset) = 0;
 
     /// Return map from shared dofs to the processes (not including
     /// the current process) that share it.

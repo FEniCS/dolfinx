@@ -20,7 +20,7 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2007-05-24
-# Last changed: 2012-11-12
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -186,7 +186,7 @@ class Eval(unittest.TestCase):
 
           mesh = UnitCubeMesh(3,3,3)
           f1 = F1()
-          self.assertRaises(StandardError, lambda : assemble(f1*dx, mesh=mesh))
+          self.assertRaises(StandardError, lambda : assemble(f1*dx(mesh)))
 
 class MeshEvaluation(unittest.TestCase):
 
@@ -326,8 +326,8 @@ class Instantiation(unittest.TestCase):
      def test_name_space_usage(self):
           e0 = Expression("std::sin(x[0])*cos(x[1])")
           e1 = Expression("sin(x[0])*std::cos(x[1])")
-          self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
-                                 assemble(e1*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(e0*dx(mesh)), \
+                                 assemble(e1*dx(mesh)))
 
      def test_generic_function_attributes(self):
           tc = Constant(2.0)
@@ -345,29 +345,29 @@ class Instantiation(unittest.TestCase):
           e2 = Expression("t", t=te)
           e3 = Expression("t", t=tf)
 
-          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                                 assemble(inner(e1,e1)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx(mesh)), \
+                                 assemble(inner(e1,e1)*dx(mesh)))
 
-          self.assertAlmostEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                                 assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                                 assemble(inner(e3,e3)*dx(mesh)))
 
           tc.assign(3.0)
           e1.t = float(tc)
 
-          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                                 assemble(inner(e1,e1)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx(mesh)), \
+                                 assemble(inner(e1,e1)*dx(mesh)))
           tc.assign(5.0)
 
-          self.assertNotEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                              assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertNotEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                              assemble(inner(e3,e3)*dx(mesh)))
 
-          self.assertAlmostEqual(assemble(e0[0]*dx, mesh=mesh), \
-                                 assemble(2*e2*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(e0[0]*dx(mesh)), \
+                                 assemble(2*e2*dx(mesh)))
 
           e2.t = e3.t
 
-          self.assertEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                           assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                           assemble(inner(e3,e3)*dx(mesh)))
 
           # Test wrong kwargs
           self.assertRaises(TypeError, lambda : Expression("t", t=Constant((1,0))))
@@ -472,7 +472,6 @@ class Instantiation(unittest.TestCase):
           CompiledSubDomain("x[0]>0.25 && x[0]<0.75").mark(cell_data, 1)
           CompiledSubDomain("x[0]>=0.75").mark(cell_data, 2)
 
-
           bb = mesh.bounding_box_tree()
           p0 = Point(0.1, 1.0, 0)
           c0 = bb.compute_first_entity_collision(p0)
@@ -514,6 +513,7 @@ class Instantiation(unittest.TestCase):
           f.eval_cell(values, coords, c2)
           self.assertEqual(values[0], 0.0)
 
+     @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
      def test_doc_string_compiled_expression_with_system_headers(self):
           """
           This test tests all features documented in the doc string of
@@ -559,9 +559,6 @@ class Instantiation(unittest.TestCase):
 
           e = Expression(code_compile)
           self.assertTrue(hasattr(e, "update"))
-
-          if MPI.size(mpi_comm_world()) > 1:
-              return
 
           # Test not compile
           code_not_compile = '''
@@ -641,7 +638,7 @@ class Instantiation(unittest.TestCase):
                        self.assertTrue(hasattr(ufc_cell, attr))
 
           f1 = MyExpression1()
-          assemble(f1*ds(), mesh=square)
+          assemble(f1*ds(square))
 
           class MyExpression2(Expression):
               def __init__(self, mesh, domain):
