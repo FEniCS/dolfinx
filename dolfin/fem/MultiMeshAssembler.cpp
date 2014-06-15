@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-05-26
+// Last changed: 2014-06-15
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -313,8 +313,6 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
 
       // Get facet normals
       const auto& facet_normals = multimesh->facet_normals(part);
-
-      cout << "Number of cut cells on interface: " << cmap.size() << endl;
 
       // Iterate over all cut cells in collision map
       for (auto it = cmap.begin(); it != cmap.end(); ++it)

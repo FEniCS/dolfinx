@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2014-06-11
+// Last changed: 2014-06-15
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
@@ -105,7 +105,6 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,
       _offset = offsets[part];
     else
       _offset = offset;
-    cout << "Adding offset: " << _offset << endl;
     new_dofmap->add_offset(_offset);
 
     // Increase offset
