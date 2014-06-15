@@ -16,10 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-06-06
+// Last changed: 2014-06-15
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes.
+
+#include <cmath>
 
 #include <dolfin.h>
 #include "MultiMeshPoisson.h"
@@ -31,7 +33,7 @@ class Source : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = 2*x[0]*(1 - x[0]) + 2*x[1]*(1 - x[1]);
+    values[0] = 1.0;
   }
 };
 
@@ -44,25 +46,22 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-int main(int argc, char* argv[])
+// Files for storing solution
+File u0_file("u0.pvd");
+File u1_file("u1.pvd");
+File u2_file("u2.pvd");
+
+// Compute solution for given mesh configuration
+void solve(double x1, double y1, double x2, double y2, bool plot_solution)
 {
-  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
-  {
-    info("Sorry, this demo does not (yet) run in parallel.");
-    return 0;
-  }
-
-  // Increase log level
-  set_log_level(DBG);
-
-  // Don't reorder dofs (simplifies debugging)
-  parameters["reorder_dofs_serial"] = false;
-
   // Create meshes
   int N = 16;
-  UnitSquareMesh mesh_0(N, N);
-  RectangleMesh  mesh_1(0.2, 0.2, 0.6, 0.6, N, N);
-  RectangleMesh  mesh_2(0.4, 0.4, 0.8, 0.8, N, N);
+  Point p1(x1+10, y1+10);
+  double r = 0.5;
+  double h = 0.1;
+  RectangleMesh mesh_0(-r, -r, r, r, N, N);
+  RectangleMesh mesh_1(x2 - r, y2 - r, x2 + r, y2 + r, N, N);
+  CircleMesh mesh_2(p1, r, h);
 
   // Rotate overlapping mesh
   //rectangle_1.rotate(45);
@@ -129,19 +128,53 @@ int main(int argc, char* argv[])
   solve(A, *u.vector(), b);
 
   // Save to file
-  File u0_file("u0.pvd");
-  File u1_file("u1.pvd");
-  File u2_file("u2.pvd");
   u0_file << *u.part(0);
   u1_file << *u.part(1);
   u2_file << *u.part(2);
 
-  // Plot solution
-  plot(V.multimesh());
-  plot(u.part(0), "u_0");
-  plot(u.part(1), "u_1");
-  plot(u.part(2), "u_2");
-  interactive();
+  // Plot solution (last time)
+  if (plot_solution)
+  {
+    plot(V.multimesh());
+    plot(u.part(0), "u_0");
+    plot(u.part(1), "u_1");
+    plot(u.part(2), "u_2");
+    interactive();
+  }
+  }
+
+int main(int argc, char* argv[])
+{
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    info("Sorry, this demo does not (yet) run in parallel.");
+    return 0;
+  }
+
+  // FIXME: Testing
+  //  set_log_level(DBG);
+  parameters["reorder_dofs_serial"] = false;
+
+  // Parameters
+  const double T = 40.0;
+  const int N = 400;
+  const double dt = T / N;
+
+  // Iterate over configurations
+  for (std::size_t n = 0; n < N; n++)
+  {
+    info("Computing solution, step %d / %d.", n + 1, N);
+
+    // Compute coordinates for meshes
+    const double t = dt*n;
+    const double x1 = sin(t)*cos(2*t);
+    const double y1 = cos(t)*cos(2*t);
+    const double x2 = cos(t)*cos(2*t);
+    const double y2 = sin(t)*cos(2*t);
+
+    // Compute solution
+    solve(x1, y1, x2, y2, n == N - 1);
+  }
 
   return 0;
 }
