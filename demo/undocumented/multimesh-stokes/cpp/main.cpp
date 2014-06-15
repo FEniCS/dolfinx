@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-10
-// Last changed: 2014-06-13
+// Last changed: 2014-06-15
 //
 // This demo program solves the Stokes equations on a domain defined
 // by three overlapping and non-matching meshes.
@@ -240,6 +240,12 @@ int main(int argc, char* argv[])
   plot(w.part(1), "u_1");
   plot(w.part(2), "u_2");
   plot(W.multimesh());
+  File u0_file("u0.pvd");
+  File u1_file("u1.pvd");
+  File u2_file("u2.pvd");
+  u0_file << *w.part(0);
+  u1_file << *w.part(1);
+  u2_file << *w.part(2);
 
   interactive();
 

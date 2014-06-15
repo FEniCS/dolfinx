@@ -56,7 +56,7 @@ void solve(double x1, double y1, double x2, double y2, bool plot_solution)
 {
   // Create meshes
   int N = 16;
-  Point p1(x1+10, y1+10);
+  Point p1(x1, y1);
   double r = 0.5;
   double h = 0.1;
   RectangleMesh mesh_0(-r, -r, r, r, N, N);
