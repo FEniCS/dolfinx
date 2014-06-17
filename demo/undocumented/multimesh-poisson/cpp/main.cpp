@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-06-15
+// Last changed: 2014-06-17
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes.
@@ -46,25 +46,21 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-// Files for storing solution
-File u0_file("u0.pvd");
-File u1_file("u1.pvd");
-File u2_file("u2.pvd");
-
 // Compute solution for given mesh configuration
-void solve(double x1, double y1, double x2, double y2, bool plot_solution)
+void solve(double t,
+           double x1, double y1,
+           double x2, double y2,
+           bool plot_solution,
+           File& u0_file, File& u1_file, File& u2_file)
 {
   // Create meshes
-  int N = 16;
-  Point p1(x1, y1);
   double r = 0.5;
   double h = 0.1;
-  RectangleMesh mesh_0(-r, -r, r, r, N, N);
-  RectangleMesh mesh_1(x2 - r, y2 - r, x2 + r, y2 + r, N, N);
-  CircleMesh mesh_2(p1, r, h);
-
-  // Rotate overlapping mesh
-  //rectangle_1.rotate(45);
+  RectangleMesh mesh_0(-r, -r, r, r, 16, 16);
+  RectangleMesh mesh_1(x1 - r, y1 - r, x1 + r, y1 + r, 8, 8);
+  RectangleMesh mesh_2(x2 - r, y2 - r, x2 + r, y2 + r, 8, 8);
+  mesh_1.rotate(70*t);
+  mesh_2.rotate(-70*t);
 
   // Create function spaces
   MultiMeshPoisson::FunctionSpace V0(mesh_0);
@@ -152,13 +148,18 @@ int main(int argc, char* argv[])
   }
 
   // FIXME: Testing
-  //  set_log_level(DBG);
+  //set_log_level(DBG);
   parameters["reorder_dofs_serial"] = false;
 
   // Parameters
   const double T = 40.0;
   const int N = 400;
   const double dt = T / N;
+
+  // Files for storing solution
+  File u0_file("u0.pvd");
+  File u1_file("u1.pvd");
+  File u2_file("u2.pvd");
 
   // Iterate over configurations
   for (std::size_t n = 0; n < N; n++)
@@ -173,7 +174,8 @@ int main(int argc, char* argv[])
     const double y2 = sin(t)*cos(2*t);
 
     // Compute solution
-    solve(x1, y1, x2, y2, n == N - 1);
+    solve(t, x1, y1, x2, y2, n == N - 1,
+          u0_file, u1_file, u2_file);
   }
 
   return 0;
