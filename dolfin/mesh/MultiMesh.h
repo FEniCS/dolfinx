@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-06-06
+// Last changed: 2014-06-17
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -25,6 +25,7 @@
 #include <vector>
 #include <map>
 
+#include <dolfin/plot/plot.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/Point.h>
 
