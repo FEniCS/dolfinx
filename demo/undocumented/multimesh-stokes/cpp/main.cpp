@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-10
-// Last changed: 2014-06-15
+// Last changed: 2014-06-17
 //
 // This demo program solves the Stokes equations on a domain defined
 // by three overlapping and non-matching meshes.
@@ -85,8 +85,6 @@ class AllDomain : public SubDomain
   }
 };
 
-// FIXME: Remove after testing
-#include "reference.h"
 
 int main(int argc, char* argv[])
 {
@@ -96,18 +94,8 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  // FIXME: Remove after testing
-  // Run reference case if requested
-  if (argc > 1 && strcasecmp(argv[1], "--reference") == 0)
-  {
-    run_reference();
-    return 0;
-  }
-
-  // Increase log level
-  set_log_level(DBG);
-
-  // Don't reorder dofs (simplifies debugging)
+  // FIXME: Testing
+  //set_log_level(DBG);
   parameters["reorder_dofs_serial"] = false;
 
   // Create meshes
@@ -115,9 +103,6 @@ int main(int argc, char* argv[])
   UnitSquareMesh mesh_0(N, N);
   RectangleMesh  mesh_1(0.2, 0.2, 0.6, 0.6, N, N);
   RectangleMesh  mesh_2(0.4, 0.4, 0.8, 0.8, N, N);
-
-  // Rotate overlapping mesh
-  //mesh_2.rotate(45);
 
   // Create function spaces
   MultiMeshStokes::FunctionSpace W0(mesh_0);
