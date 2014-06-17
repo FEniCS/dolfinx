@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-06-15
+// Last changed: 2014-06-17
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -54,19 +54,19 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   begin(PROGRESS, "Assembling tensor over multimesh function space.");
 
   // Initialize global tensor
-  init_global_tensor(A, a);
+  _init_global_tensor(A, a);
 
   // Assemble over uncut cells
-  assemble_uncut_cells(A, a);
+  _assemble_uncut_cells(A, a);
 
   // Assemble over cut cells
-  assemble_cut_cells(A, a);
+  _assemble_cut_cells(A, a);
 
   // Assemble over interface
-  assemble_interface(A, a);
+  _assemble_interface(A, a);
 
   // Assemble over overlap
-  assemble_overlap(A, a);
+  _assemble_overlap(A, a);
 
   // Finalize assembly of global tensor
   if (finalize_tensor)
@@ -79,8 +79,8 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   end();
 }
 //-----------------------------------------------------------------------------
-void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
-                                              const MultiMeshForm& a)
+void MultiMeshAssembler::_assemble_uncut_cells(GenericTensor& A,
+                                               const MultiMeshForm& a)
 {
   // Get form rank
   const std::size_t form_rank = a.rank();
@@ -154,8 +154,8 @@ void MultiMeshAssembler::assemble_uncut_cells(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
-                                            const MultiMeshForm& a)
+void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
+                                             const MultiMeshForm& a)
 {
   // Get form rank
   const std::size_t form_rank = a.rank();
@@ -250,8 +250,8 @@ void MultiMeshAssembler::assemble_cut_cells(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void MultiMeshAssembler::assemble_interface(GenericTensor& A,
-                                            const MultiMeshForm& a)
+void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
+                                             const MultiMeshForm& a)
 {
   // Extract multimesh
   std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
@@ -420,8 +420,8 @@ void MultiMeshAssembler::assemble_interface(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void MultiMeshAssembler::assemble_overlap(GenericTensor& A,
-                                          const MultiMeshForm& a)
+void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
+                                           const MultiMeshForm& a)
 {
   // FIXME: This functiono and assemble_interface are very similar.
   // FIXME: Refactor to improve code reuse.
@@ -581,8 +581,8 @@ void MultiMeshAssembler::assemble_overlap(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void MultiMeshAssembler::init_global_tensor(GenericTensor& A,
-                                            const MultiMeshForm& a)
+void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
+                                             const MultiMeshForm& a)
 {
   log(PROGRESS, "Initializing global tensor.");
 
