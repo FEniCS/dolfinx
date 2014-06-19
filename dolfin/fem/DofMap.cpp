@@ -444,7 +444,6 @@ void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_gl
 
   for (std::size_t node = 0; node < _local_to_global_unowned.size(); ++node)
   {
-    error("Should not be here");
     for (std::size_t component = 0; component < block_size; ++component)
     {
       local_to_global_map[block_size*node + component + _local_ownership_size]

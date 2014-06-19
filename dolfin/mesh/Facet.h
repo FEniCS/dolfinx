@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2009-2011.
 //
 // First added:  2006-06-02
-// Last changed: 2011-04-07
+// Last changed: 2014-05-22
 
 #ifndef __FACET_H
 #define __FACET_H
@@ -54,6 +54,29 @@ namespace dolfin
 
     /// Compute normal to the facet
     Point normal() const;
+
+    /// Compute squared distance to given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    /// *Returns*
+    ///     double
+    ///         The squared distance to the point.
+    double squared_distance(const Point& point) const;
+
+    /// Compute distance to given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    /// *Returns*
+    ///     double
+    ///         The distance to the point.
+    double distance(const Point& point) const
+    {
+      return sqrt(squared_distance(point));
+    }
 
     /// Return true if facet is an exterior facet (relative to global mesh,
     /// so this function will return false for facets on partition

@@ -21,8 +21,8 @@
 // Last changed: 2014-01-12
 
 #include <algorithm>
-#include <boost/unordered_map.hpp>
 #include <vector>
+#include <boost/unordered_map.hpp>
 #include <boost/version.hpp>
 
 #include <dolfin/common/Timer.h>

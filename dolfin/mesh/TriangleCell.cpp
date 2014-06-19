@@ -23,7 +23,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-03-03
+// Last changed: 2014-05-22
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -224,7 +224,8 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
   return 0.5*a*b*c / volume(triangle);
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::squared_distance(const Cell& cell, const Point& point) const
+double TriangleCell::squared_distance(const Cell& cell,
+                                      const Point& point) const
 {
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();

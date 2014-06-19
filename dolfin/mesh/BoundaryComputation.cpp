@@ -28,7 +28,6 @@
 #include <dolfin/log/dolfin_log.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
-#include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "Mesh.h"
 #include "MeshData.h"
@@ -78,12 +77,10 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   // Generate facet - cell connectivity if not generated
   mesh.init(D - 1, D);
 
-  // Temporary arrays for assignment of indices to vertices on the
-  // boundary
+  // Temporary arrays for assignment of indices to vertices on the boundary
   std::map<std::size_t, std::size_t> boundary_vertices;
 
-  // Map of index "owners" (process responsible for assigning global
-  // index)
+  // Map of index "owners" (process responsible for assigning global index)
   std::map< std::size_t, std::size_t > global_index_owner;
 
   // Shared vertices for full mesh
@@ -99,11 +96,11 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
     // exterior facet.
     std::vector<std::size_t> boundary_global_indices;
     for (std::map<unsigned int, std::set<unsigned int> >::const_iterator
-           sv_it = shared_vertices.begin(); sv_it != shared_vertices.end();
-         ++sv_it)
+        sv_it=shared_vertices.begin(); sv_it != shared_vertices.end(); ++sv_it)
     {
       std::size_t local_mesh_index = sv_it->first;
       Vertex v(mesh, local_mesh_index);
+
       for (FacetIterator f(v); !f.end(); ++f)
       {
         if (f->num_global_entities(D) == 1)
@@ -120,10 +117,10 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
     // Distribute all shared boundary vertices
     std::vector<std::vector<std::size_t> > boundary_global_indices_all;
     MPI::all_gather(mesh.mpi_comm(), boundary_global_indices,
-                    boundary_global_indices_all);
+                     boundary_global_indices_all);
 
-    // Identify and clean up discrepancies between shared vertices of
-    // full mesh and shared vertices of boundary mesh
+    // Identify and clean up discrepancies between shared vertices of full mesh
+    // and shared vertices of boundary mesh
     for (auto sbv_it = shared_boundary_vertices.begin();
          sbv_it != shared_boundary_vertices.end(); )
     {
@@ -134,15 +131,14 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
       // Check if this vertex is identified as boundary vertex on
       // other processes sharing this vertex
       std::set<unsigned int> &other_processes = sbv_it->second;
-      for (auto op_it=other_processes.begin();
+      for (auto  op_it=other_processes.begin();
            op_it != other_processes.end(); )
       {
-        // Check if vertex is identified as boundary vertex on process
-        // *op_it
+        // Check if vertex is identified as boundary vertex on process *op_it
         bool is_boundary_vertex
           = (std::find(boundary_global_indices_all[*op_it].begin(),
-                       boundary_global_indices_all[*op_it].end(),
-                       global_mesh_index)
+                      boundary_global_indices_all[*op_it].end(),
+                      global_mesh_index)
              != boundary_global_indices_all[*op_it].end());
 
         // Erase item if this is not identified as a boundary vertex
@@ -188,9 +184,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
     // Boundary facets are connected to exactly one cell
     if (f->num_entities(D) == 1)
     {
-      //std::cout << "Testing bmesh: " << D << ", " << f->num_global_entities(D)
-      //          << std::endl;
-      const bool global_exterior_facet = (f->num_global_entities(D) == 1);
+      const bool global_exterior_facet =  (f->num_global_entities(D) == 1);
       if (global_exterior_facet && exterior)
         boundary_facet[*f] = true;
       else if (!global_exterior_facet && interior)
@@ -246,11 +240,19 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
     }
   }
 
-  // Specify number of vertices and cells
-  editor.init_vertices_global(num_boundary_vertices,
-                              MPI::sum(mesh.mpi_comm(), num_owned_vertices));
-  editor.init_cells_global(num_boundary_cells,
+  // Initiate boundary topology
+  /*
+  boundary.topology().init(0, num_boundary_vertices,
+                           MPI::sum(mesh.mpi_comm(), num_owned_vertices));
+  boundary.topology().init(D - 1, num_boundary_cells,
                            MPI::sum(mesh.mpi_comm(), num_boundary_cells));
+  */
+
+  // Specify number of vertices and cells
+  editor.init_vertices_global(num_boundary_vertices, MPI::sum(mesh.mpi_comm(),
+                                                              num_owned_vertices));
+  editor.init_cells_global(num_boundary_cells, MPI::sum(mesh.mpi_comm(),
+                                                        num_boundary_cells));
 
   // Write vertex map
   MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
@@ -340,16 +342,14 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
                              v.point());
   }
 
-  // Find global index to start cell numbering from for current
-  // process
+  // Find global index to start cell numbering from for current process
   std::vector<std::size_t> cell_distribution(num_processes);
   MPI::all_gather(mesh.mpi_comm(), num_boundary_cells, cell_distribution);
   std::size_t start_cell_index = 0;
   for (std::size_t i = 0; i < my_rank; i++)
     start_cell_index += cell_distribution[i];
 
-  // Create cells (facets) and map between boundary mesh cells and
-  // facets parent
+  // Create cells (facets) and map between boundary mesh cells and facets parent
   MeshFunction<std::size_t>& cell_map = boundary.entity_map(D - 1);
   if (num_boundary_cells > 0)
     cell_map.init(boundary, D - 1, num_boundary_cells);
