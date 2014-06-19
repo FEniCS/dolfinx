@@ -197,20 +197,16 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                      cell_partition, ghost_procs, 
                      shared_cells, new_mesh_data);
 
-  // Create map of shared vertices, needed to get ghost layer.
-  // Use global indexing, since the local vertex indexing 
-  // is not yet assigned. 
-  // Does not count remote vertices which are not on the boundary
+  // Send vertices to processes that need them, informing all
+  // sharing processes of their destinations
   std::map<std::size_t, std::set<unsigned int> > shared_vertices_global;
-  ghost_build_shared_vertices(mesh.mpi_comm(), new_mesh_data,
-                              shared_cells,
-                              shared_vertices_global);
-
-  // Send and receive cells connected via shared vertices, constituting
-  // the shared layer of cells between processes. This function
-  // adds "shared cells via vertex" to the already existing 
-  // "shared cells via facet"
-
+  std::map<std::size_t, std::size_t> vertex_global_to_local;
+  const std::size_t num_regular_vertices 
+    = distribute_vertices(mesh.mpi_comm(), mesh_data, 
+                          num_regular_cells, new_mesh_data,
+                          vertex_global_to_local,
+                          shared_vertices_global);
+  
   // FIXME - call these based on a user option
   bool ghost_by_vertex = false;
   bool drop_ghost_cells = false;
@@ -242,19 +238,17 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                           num_regular_cells,
                           shared_cells,
                           new_mesh_data);
-  }
 
-  // Distribute vertices into new_mesh_data structure
-  std::map<std::size_t, std::size_t> vertex_global_to_local;
-  const std::size_t num_regular_vertices 
-    = distribute_vertices(mesh.mpi_comm(), mesh_data, 
-                          num_regular_cells, new_mesh_data,
-                          vertex_global_to_local);
+    // FIXME: not working - need to fix extra cell/vertex distribution in this case
+  }
 
   timer.stop();
 
   // Build mesh from new_mesh_data
   build_mesh(mesh, vertex_global_to_local, new_mesh_data);
+
+  // Fix up some of the ancilliary data about sharing and ownership
+  // now that the mesh has been initialised
 
   // Convert shared_vertices to local indexing
   std::map<unsigned int, std::set<unsigned int> >& 
@@ -481,136 +475,6 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::ghost_build_shared_vertices(MPI_Comm mpi_comm,
-  const LocalMeshData& new_mesh_data,
-  const std::map<unsigned int, std::set<unsigned int> >& shared_cells,
-  std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global)
-
-{
-  // Generate the 'shared_vertices'. At the moment, this just
-  // represents the boundary vertices.
-
-  const unsigned int mpi_rank = MPI::rank(mpi_comm);
-
-  Timer timer("Ghost build shared vertices");
-
-  const boost::multi_array<std::size_t, 2>& cell_vertices 
-    = new_mesh_data.cell_vertices;
-  
-  std::map<std::size_t, dolfin::Set<unsigned int> > global_vertex_to_procs;
-
-  // Iterate over all vertices of each cell in the shared_cells map
-  // transferring the cell owner to the vertex map.
-  for (auto map_it = shared_cells.begin(); 
-       map_it != shared_cells.end(); ++map_it)
-  {
-    const std::size_t cell_i = map_it->first;
-    const unsigned int cell_owner = new_mesh_data.cell_partition[cell_i];
-    
-    for (auto q = cell_vertices[cell_i].begin(); 
-         q != cell_vertices[cell_i].end(); ++q)
-    {
-      auto vtx_it = global_vertex_to_procs.find(*q);
-      if (vtx_it == global_vertex_to_procs.end())
-      {
-        dolfin::Set<unsigned int> proc_set;
-        proc_set.insert(mpi_rank);
-        proc_set.insert(cell_owner);
-        global_vertex_to_procs.insert(std::make_pair(*q, proc_set));
-      }
-      else
-        vtx_it->second.insert(cell_owner);
-    }
-  }
-
-  // Erase any entries which are 'local'
-  // FIXME: Is this important, or more efficient?
-  auto map_it = global_vertex_to_procs.begin();
-  while (map_it != global_vertex_to_procs.end())
-  {
-    if (map_it->second.size() == 1)
-      global_vertex_to_procs.erase(map_it++);
-    else
-      map_it++;
-  }
-
-  // N.B. there are some special cases where care must be taken,
-  // particularly where vertices are shared between multiple (>2)
-  // processes. The safest approach (?) is to send all vertex information
-  // to a sorting process, which then redistributes to the sharing
-  // processes.
-  
-  const unsigned int mpi_size = MPI::size(mpi_comm);
-
-  std::vector<std::vector<std::size_t> > send_vertex(mpi_size);
-  std::vector<std::vector<std::size_t> > recv_vertex(mpi_size);
-  
-  for (auto map_it = global_vertex_to_procs.begin();
-       map_it != global_vertex_to_procs.end(); ++map_it)
-  {
-    const std::size_t vertex_i = map_it->first;
-    const unsigned int dest = MPI::index_owner(mpi_comm, vertex_i, 
-                                    new_mesh_data.num_global_vertices);
-    std::vector<std::size_t>& send_dest = send_vertex[dest];
-    
-    send_dest.push_back(vertex_i);
-    send_dest.push_back(map_it->second.size());
-    send_dest.insert(send_dest.end(), map_it->second.begin(),
-                     map_it->second.end());    
-  }
-
-  // Send vertex map to sorting process (vertex index owner)
-  MPI::all_to_all(mpi_comm, send_vertex, recv_vertex);
-
-  // Clear send vector to send vertices back out
-  send_vertex = std::vector<std::vector<std::size_t> >(mpi_size);
-  
-  // Send vertices to all processes which share them
-  // with list of sharing processes
-  for (auto p = recv_vertex.begin(); p != recv_vertex.end(); ++p)
-  {
-      auto q = p->begin();
-    while (q != p->end())
-    {
-      const std::size_t v_index = *q++;
-      const unsigned int nprocs = *q++;
-      for (auto proc_it = q; proc_it != q + nprocs; ++proc_it)
-      {
-        std::vector<std::size_t>& send_dest = send_vertex[*proc_it];
-        send_dest.push_back(v_index);
-        send_dest.push_back(nprocs);
-        send_dest.insert(send_dest.end(), q, q + nprocs);
-      }
-      q += nprocs;
-    }
-  }
-  
-  MPI::all_to_all(mpi_comm, send_vertex, recv_vertex);
-  
-  // Insert received vertex sharing information into map
-  for (auto p = recv_vertex.begin(); p != recv_vertex.end(); ++p)
-  {
-    auto q = p->begin();
-    while (q != p->end())
-    {
-      const std::size_t v_index = *q++;
-      const unsigned int nprocs = *q++;
-      auto map_it = shared_vertices_global.find(v_index);
-      std::set<unsigned int> proc_set(q, q + nprocs);
-      // Erase self if present
-      proc_set.erase(mpi_rank);
-      
-      if (map_it == shared_vertices_global.end())
-        shared_vertices_global.insert(std::make_pair(v_index, proc_set));
-      else
-        map_it->second.insert(proc_set.begin(), proc_set.end());
-      
-      q += nprocs;
-    }
-  }
-
-}
-//-----------------------------------------------------------------------------
 std::map<std::size_t, dolfin::Set<std::size_t> >
 MeshPartitioning::cell_attachment(const std::vector<std::size_t> vertex_list,
                                   const LocalMeshData& mesh_data)
@@ -807,7 +671,8 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
  const LocalMeshData& mesh_data,
  const unsigned int num_regular_cells,
  LocalMeshData& new_mesh_data,
- std::map<std::size_t, std::size_t>& vertex_global_to_local)
+ std::map<std::size_t, std::size_t>& vertex_global_to_local,
+ std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global)
 {
   // This function distributes all vertices (coordinates and
   // local-to-global mapping) according to the cells that are stored on
@@ -883,6 +748,55 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
   std::vector<std::vector<std::size_t> > received_vertex_indices;
   MPI::all_to_all(mpi_comm, send_vertex_indices, received_vertex_indices);
 
+  // FIXME: spin out sharing into separate function here
+
+  // Generate vertex sharing information
+  std::map<std::size_t, std::set<unsigned int> > vertex_to_proc;
+  for (std::size_t p = 0; p < num_processes; ++p)
+    for (auto q = received_vertex_indices[p].begin(); q != received_vertex_indices[p].end(); ++q)
+    {
+      auto map_it = vertex_to_proc.find(*q);
+      if (map_it == vertex_to_proc.end())
+      {
+        std::set<unsigned int> proc_set;
+        proc_set.insert(p);
+        vertex_to_proc.insert(std::make_pair(*q, proc_set));
+      }
+      else
+        map_it->second.insert(p);
+    }
+
+  std::vector<std::vector<std::size_t> > send_sharing(num_processes);
+  std::vector<std::vector<std::size_t> > recv_sharing(num_processes);
+  for (auto map_it = vertex_to_proc.begin(); map_it != vertex_to_proc.end(); ++map_it)
+  {
+    if (map_it->second.size() != 1)
+    {
+      for (auto proc = map_it->second.begin(); proc != map_it->second.end(); ++proc)
+      {
+        std::vector<std::size_t>& ss = send_sharing[*proc];
+        ss.push_back(map_it->second.size() - 1);
+        ss.push_back(map_it->first);
+        for (auto p =  map_it->second.begin(); p != map_it->second.end(); ++p)
+          if (*p != *proc)
+            ss.push_back(*p);
+      }
+    }
+  }
+
+  MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
+  
+  for (std::size_t p = 0; p < num_processes; ++p)
+    for (auto q = recv_sharing[p].begin(); q != recv_sharing[p].end(); q += (*q + 2))
+    {
+      const std::size_t num_sharing = *q;
+      const std::size_t global_vertex_index = *(q + 1);
+      dolfin_assert(shared_vertices_global.find(global_vertex_index) 
+                    == shared_vertices_global.end());
+      std::set<unsigned int> sharing_processes(q + 2, q + 2 + num_sharing);
+      shared_vertices_global.insert(std::make_pair(global_vertex_index, sharing_processes));
+    }
+    
   // Distribute vertex coordinates
   std::vector<std::vector<double> > send_vertex_coordinates(num_processes);
   const std::pair<std::size_t, std::size_t> local_vertex_range
@@ -903,6 +817,7 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
     }
   }
 
+  // Send actual coordinates to destinations
   std::vector<std::vector<double> > received_vertex_coordinates;
   MPI::all_to_all(mpi_comm, send_vertex_coordinates,
                   received_vertex_coordinates);
