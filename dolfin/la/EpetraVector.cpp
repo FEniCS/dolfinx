@@ -108,18 +108,21 @@ void EpetraVector::init(MPI_Comm comm, std::size_t N)
   const std::pair<std::size_t, std::size_t> range = MPI::local_range(comm, N);
 
   // Initialize vector
-  init(comm, range, ghost_indices);
+  std::vector<std::size_t> local_to_global_map;
+  init(comm, range, local_to_global_map, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::init(MPI_Comm comm,
                         std::pair<std::size_t, std::size_t> range)
 {
   std::vector<la_index> ghost_indices;
-  init(comm, range, ghost_indices);
+  std::vector<std::size_t> local_to_global_map;
+  init(comm, range, local_to_global_map, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::init(MPI_Comm comm,
                         std::pair<std::size_t, std::size_t> range,
+                        const std::vector<std::size_t>& local_to_global_map,
                         const std::vector<la_index>& ghost_indices)
 {
   if (!this->empty())
@@ -250,7 +253,7 @@ void EpetraVector::apply(std::string mode)
     non_local_indices.reserve(off_process_set_values.size());
     std::vector<double> non_local_values;
     non_local_values.reserve(off_process_set_values.size());
-    boost::unordered_map<std::size_t, double>::const_iterator entry;
+    std::unordered_map<std::size_t, double>::const_iterator entry;
     for (entry = off_process_set_values.begin();
          entry != off_process_set_values.end(); ++entry)
     {
@@ -413,8 +416,52 @@ void EpetraVector::set(const double* block, std::size_t m,
   }
 }
 //-----------------------------------------------------------------------------
+void EpetraVector::set_local(const double* block, std::size_t m,
+                             const dolfin::la_index* rows)
+{
+  // FIXME: Need to handle off-process values
+
+  dolfin_assert(_x);
+  const Epetra_BlockMap& map = _x->Map();
+  dolfin_assert(_x->Map().LinearMap());
+  const dolfin::la_index n0 = map.MinMyGID64();
+  const dolfin::la_index n1 = map.MaxMyGID64();
+
+  // Set local values, or add to off-process cache for later communication
+  for (std::size_t i = 0; i < m; ++i)
+  {
+    if (rows[i] >= n0 && rows[i] <= n1)
+      (*_x)[0][rows[i]] = block[i];
+    else
+      off_process_set_values[rows[i]] = block[i];
+  }
+}
+//-----------------------------------------------------------------------------
 void EpetraVector::add(const double* block, std::size_t m,
                        const dolfin::la_index* rows)
+{
+  dolfin_not_implemented();
+
+  if (!off_process_set_values.empty())
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "add block of values to Epetra vector",
+                 "apply() must be called between calling EpetraVector::set and EpetraVector::add");
+  }
+
+  dolfin_assert(_x);
+  int err = _x->SumIntoGlobalValues(m, rows, block);
+
+  if (err != 0)
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "add block of values to Epetra vector",
+                 "Did not manage to perform Epetra_Vector::SumIntoGlobalValues");
+  }
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::add_local(const double* block, std::size_t m,
+                             const dolfin::la_index* rows)
 {
   if (!off_process_set_values.empty())
   {
@@ -464,7 +511,7 @@ void EpetraVector::get_local(double* block, std::size_t m,
         const dolfin::la_index local_index = ghost_map.LID(rows[i]);
         dolfin_assert(local_index != -1);
 
-        //boost::unordered_map<std::size_t, std::size_t>::const_iterator
+        //std::unordered_map<std::size_t, std::size_t>::const_iterator
         //  _local_index = ghost_global_to_local.find(rows[i]);
         //dolfin_assert(_local_index != ghost_global_to_local.end());
         //const int local_index = _local_index->second;

@@ -204,24 +204,33 @@ const Function& Function::operator= (const Function& v)
   else
   {
     // Create new collapsed FunctionSpace
-    boost::unordered_map<std::size_t, std::size_t> collapsed_map;
+    std::unordered_map<std::size_t, std::size_t> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
 
     // Get row indices of original and new vectors
-    boost::unordered_map<std::size_t, std::size_t>::const_iterator entry;
+    std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
     std::vector<dolfin::la_index> new_rows(collapsed_map.size());
     std::vector<dolfin::la_index> old_rows(collapsed_map.size());
     std::size_t i = 0;
+    //const std::size_t local_owned_size
+    //  = v._function_space->dofmap()->ownership_range().second
+    //  - v._function_space->dofmap()->ownership_range().first;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
       new_rows[i]   = entry->first;
       old_rows[i++] = entry->second;
     }
+    MPI::barrier(MPI_COMM_WORLD);
 
     // Gather values into a vector
-    std::vector<double> gathered_values;
+    //std::vector<double> gathered_values;
+    //dolfin_assert(v.vector());
+    //v.vector()->gather(gathered_values, old_rows);
+
     dolfin_assert(v.vector());
-    v.vector()->gather(gathered_values, old_rows);
+    std::vector<double> gathered_values(collapsed_map.size());
+    v.vector()->get_local(gathered_values.data(), gathered_values.size(),
+                          old_rows.data());
 
     // Initial new vector (global)
     init_vector();
@@ -229,9 +238,10 @@ const Function& Function::operator= (const Function& v)
     dolfin_assert(_vector->size()
                   == _function_space->dofmap()->global_dimension());
 
+    // FIXME (local): Check this for local or global
     // Set values in vector
-    this->_vector->set(gathered_values.data(), collapsed_map.size(),
-                       new_rows.data());
+    this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
+                             new_rows.data());
     this->_vector->apply("insert");
   }
 
@@ -249,6 +259,7 @@ const Function& Function::operator= (const Expression& v)
 //-----------------------------------------------------------------------------
 Function& Function::operator[] (std::size_t i) const
 {
+
   // Check if sub-Function is in the cache, otherwise create and add
   // to cache
   boost::ptr_map<std::size_t, Function>::iterator sub_function
@@ -687,18 +698,19 @@ void Function::init_vector()
                  "Cannot be created from subspace. Consider collapsing the function space");
   }
 
-  // Get global size
-  const std::size_t N = _function_space->dofmap()->global_dimension();
+  // Get dof map
+  dolfin_assert(_function_space->dofmap());
+  const GenericDofMap& dofmap = *(_function_space->dofmap());
 
   // Get local range
-  const std::pair<std::size_t, std::size_t> range
-    = _function_space->dofmap()->ownership_range();
-  const std::size_t local_size = range.second - range.first;
+  const std::pair<std::size_t, std::size_t> range = dofmap.ownership_range();
 
   // Determine ghost vertices if dof map is distributed
-  std::vector<la_index> ghost_indices;
-  if (N > local_size)
-    compute_ghost_indices(range, ghost_indices);
+  const std::size_t bs = dofmap.block_size;
+  std::vector<la_index> ghost_indices(bs*dofmap.local_to_global_unowned().size());
+  for (std::size_t i = 0; i < dofmap.local_to_global_unowned().size(); ++i)
+    for (std::size_t j = 0; j < bs; ++j)
+      ghost_indices[bs*i + j] = bs*dofmap.local_to_global_unowned()[i] + j;
 
   // Create vector of dofs
   if (!_vector)
@@ -708,10 +720,17 @@ void Function::init_vector()
   }
   dolfin_assert(_vector);
 
+  // Tabulate local-to-global map for dofs
+  std::vector<std::size_t> local_to_global_map;
+  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+
   // Initialize vector of dofs
   dolfin_assert(_function_space->mesh());
   if (_vector->empty())
-    _vector->init(_function_space->mesh()->mpi_comm(), range, ghost_indices);
+  {
+    _vector->init(_function_space->mesh()->mpi_comm(), range,
+                  local_to_global_map, ghost_indices);
+  }
   else
   {
     dolfin_error("Function.cpp",
@@ -719,8 +738,6 @@ void Function::init_vector()
                  "Cannot re-initialize a non-empty vector. Consider creating a new function");
 
   }
-
-  // Set vector to zero
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
@@ -738,7 +755,7 @@ Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
 
   // Get dof map
   dolfin_assert(_function_space->dofmap());
-  const GenericDofMap& dofmap = *_function_space->dofmap();
+  const GenericDofMap& dofmap = *(_function_space->dofmap());
 
   // Get local range
   const std::size_t n0 = range.first;

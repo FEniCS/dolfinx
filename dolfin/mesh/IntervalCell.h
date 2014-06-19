@@ -18,7 +18,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2014-05-22
+// Last changed: 2014-01-06
 
 #ifndef __INTERVAL_CELL_H
 #define __INTERVAL_CELL_H
@@ -69,16 +69,8 @@ namespace dolfin
     /// Compute diameter of interval
     double diameter(const MeshEntity& interval) const;
 
-    /// Compute squared distance to given point (3D enabled)
+    /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
-
-    /// Compute squared distance to given point. This version takes
-    /// the two vertex coordinates as 3D points. This makes it
-    /// possible to reuse this function for computing the (squared)
-    /// distance to a triangle.
-    static double squared_distance(const Point& point,
-                                   const Point& a,
-                                   const Point& b);
 
     /// Compute component i of normal of given facet with respect to the cell
     double normal(const Cell& cell, std::size_t facet, std::size_t i) const;

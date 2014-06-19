@@ -180,7 +180,7 @@ double _get_vector_single_item(dolfin::GenericVector* self, int index)
     throw std::runtime_error("index must belong to this process, cannot "\
 			     "index off-process entries in a GenericVector");
 
-  self->get_local(&value, 1, &i);
+  self->get(&value, 1, &i);
   return value;
 }
 
@@ -226,7 +226,7 @@ _get_vector_sub_vector(const dolfin::GenericVector* self,
   range = inds->range();
 
   std::vector<double> values(m);
-  self->get_local(values.data(), m, indices);
+  self->get(values.data(), m, indices);
 
   return_vec->set(values.data(), m, range);
   return_vec->apply("insert");
@@ -273,7 +273,7 @@ void _set_vector_items_vector(dolfin::GenericVector* self, PyObject* op,
   std::vector<double> values(m);
 
   // Get and set values
-  other.get_local(&values[0], m, range);
+  other.get(&values[0], m, range);
   self->set(&values[0], m, indices);
   self->apply("insert");
 

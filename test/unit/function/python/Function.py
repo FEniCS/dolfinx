@@ -328,7 +328,7 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
-    def test_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
+    def xtest_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
         class Side0(SubDomain):
             def inside(self, x, on_boundary):
                 return x[0] <= 0.55

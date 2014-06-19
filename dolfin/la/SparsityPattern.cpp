@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2007-03-13
-// Last changed: 2014-04-28
+// Last changed: 2011-01-02
 
 #include <algorithm>
 
@@ -42,7 +42,7 @@ SparsityPattern::SparsityPattern(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner,
+  const std::vector<const std::unordered_map<std::size_t, unsigned int>* > off_process_owner,
   std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
@@ -53,7 +53,7 @@ void SparsityPattern::init(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner)
+  const std::vector<const std::unordered_map<std::size_t, unsigned int>* > off_process_owner)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
@@ -140,7 +140,11 @@ void SparsityPattern::insert(const std::vector<const std::vector<dolfin::la_inde
     // Sequential mode, do simple insertion
     std::vector<dolfin::la_index>::const_iterator i_index;
     for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
+    {
+      //std::cout << "Size: " << *i_index << ", " << diagonal.size() << std::endl;
+      //std::cout << "Size: " << diagonal[*i_index].size() << std::endl;
       diagonal[*i_index].insert(map_j->begin(), map_j->end());
+    }
   }
   else
   {
@@ -329,7 +333,7 @@ void SparsityPattern::apply()
       const std::size_t J = non_local[i + 1];
 
       // Figure out which process owns the row
-      boost::unordered_map<std::size_t, unsigned int>::const_iterator
+      std::unordered_map<std::size_t, unsigned int>::const_iterator
         non_local_index = _off_process_owner[_primary_dim].find(I);
       dolfin_assert(non_local_index != _off_process_owner[_primary_dim].end());
       const std::size_t p = non_local_index->second;
@@ -460,7 +464,7 @@ void SparsityPattern::info_statistics() const
     num_nonzeros_off_diagonal += off_diagonal[i].size();
 
   // Count nonzeros in non-local block
-  const std::size_t num_nonzeros_non_local = non_local.size() / 2;
+  const std::size_t num_nonzeros_non_local = non_local.size()/2;
 
   // Count total number of nonzeros
   const std::size_t num_nonzeros_total = num_nonzeros_diagonal

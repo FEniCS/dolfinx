@@ -348,6 +348,29 @@ void EpetraMatrix::set(const double* block,
   }
 }
 //-----------------------------------------------------------------------------
+void EpetraMatrix::set_local(const double* block,
+                       std::size_t m, const dolfin::la_index* rows,
+                       std::size_t n, const dolfin::la_index* cols)
+{
+  dolfin_not_implemented();
+
+  // FIXME for local indices
+
+  // This function is awkward and somewhat restrictive because of the
+  // poor support for setting off-process values in Epetra
+
+  dolfin_assert(_matA);
+
+  const int err = _matA->ReplaceGlobalValues(m, rows, n, cols, block,
+                                          Epetra_FECrsMatrix::ROW_MAJOR);
+  if (err != 0)
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "set block of values for Epetra matrix",
+                 "Did not manage to perform Epetra_FECrsMatrix::ReplaceGlobalValues");
+  }
+}
+//-----------------------------------------------------------------------------
 void EpetraMatrix::add(const double* block,
                        std::size_t m, const dolfin::la_index* rows,
                        std::size_t n, const dolfin::la_index* cols)
@@ -355,6 +378,23 @@ void EpetraMatrix::add(const double* block,
   dolfin_assert(_matA);
   const int err = _matA->SumIntoGlobalValues(m, rows, n, cols, block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
+  if (err != 0)
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "add block of values to Epetra matrix",
+                 "Did not manage to perform Epetra_FECrsMatrix::SumIntoGlobalValues");
+  }
+}
+//-----------------------------------------------------------------------------
+void EpetraMatrix::add_local(const double* block,
+                             std::size_t m, const dolfin::la_index* rows,
+                             std::size_t n, const dolfin::la_index* cols)
+{
+  dolfin_not_implemented();
+
+  dolfin_assert(_matA);
+  const int err = _matA->SumIntoGlobalValues(m, rows, n, cols, block,
+                                             Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -490,7 +530,7 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   // computation). This function only work for locally owned rows (the
   // PETSc version works for any row).
 
-  typedef boost::unordered_set<std::size_t> MySet;
+  typedef std::unordered_set<std::size_t> MySet;
 
   // Number of MPI processes
   const std::size_t num_processes = _matA->Comm().NumProc();
@@ -685,7 +725,7 @@ void EpetraMatrix::set_diagonal(const GenericVector& x)
 		 "set the diagonal of an Epetra matrix",
 		 "Matrix and vector dimensions don't match for matrix-vector set");
   }
-  
+
   const Epetra_Vector xx(View, *(x_.vec().get()), 0);
 
   const int err = _matA->ReplaceDiagonalValues(xx);

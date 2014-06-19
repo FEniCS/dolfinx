@@ -66,7 +66,8 @@ void GenericMatrix::ident_zeros()
   }
 
   // Write a message
-  log(TRACE, "Found %d zero row(s), inserting ones on the diagonal.", zero_rows.size());
+  log(TRACE, "Found %d zero row(s), inserting ones on the diagonal.",
+      zero_rows.size());
 
   // Insert one on the diagonal for rows with only zeros.
   ident(zero_rows.size(), zero_rows.data());
@@ -99,9 +100,9 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   // With the row-by-row algorithm used here there is no need for
   // inserting non_local rows and as such we can simply use a dummy
   // for off_process_owner
-  std::vector<const boost::unordered_map<std::size_t, unsigned int>* >
+  std::vector<const std::unordered_map<std::size_t, unsigned int>* >
     off_process_owner(2);
-  const boost::unordered_map<std::size_t, unsigned int> dummy;
+  const std::unordered_map<std::size_t, unsigned int> dummy;
   off_process_owner[0] = &dummy;
   off_process_owner[1] = &dummy;
   const std::pair<std::size_t, std::size_t> row_range = local_range[0];

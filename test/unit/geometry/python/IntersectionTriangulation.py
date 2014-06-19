@@ -80,7 +80,7 @@ class TriangulateTest(unittest.TestCase):
 
         # Translate second mesh randomly
         #dx = Point(numpy.random.rand(),numpy.random.rand())
-        dx = Point(0.278498, 0.546881)
+        dx = Point(0.278498, 0.546881, 0.957506)
         mesh_1.translate(dx)
 
         exactvolume = (1 - abs(dx[0]))*(1 - abs(dx[1]))

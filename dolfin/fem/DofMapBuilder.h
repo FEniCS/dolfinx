@@ -25,14 +25,12 @@
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
+#include <memory>
 #include <map>
 #include <set>
-#include <boost/array.hpp>
-#include <memory>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
-#include <dolfin/common/types.h>
-#include <dolfin/common/Set.h>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace ufc
 {
@@ -52,123 +50,150 @@ namespace dolfin
   class DofMapBuilder
   {
 
-    // FIXME: Test which 'map' is most efficient
-    typedef std::map<dolfin::la_index, dolfin::la_index> map;
-    typedef std::map<dolfin::la_index, dolfin::la_index>::const_iterator
-      map_iterator;
-    //typedef std::set<std::size_t> set;
-    //typedef std::set<std::size_t>::const_iterator set_iterator;
-
-    typedef boost::unordered_set<std::size_t> set;
-    typedef boost::unordered_set<std::size_t>::const_iterator set_iterator;
-    //typedef std::set<std::size_t> set;
-    //typedef std::set<std::size_t>::const_iterator set_iterator;
-
-    typedef std::vector<std::size_t>::const_iterator vector_it;
-    typedef boost::unordered_map<std::size_t, std::vector<unsigned int> >
-      vec_map;
-
-    typedef std::pair<std::size_t, std::size_t> facet_data;
-    typedef std::map<std::size_t, std::size_t> periodic_map;
-    typedef std::vector<facet_data> vector_of_pairs;
-    typedef periodic_map::iterator periodic_map_iterator;
-    typedef std::vector<std::pair<facet_data, facet_data> > facet_pair_type;
-
   public:
 
-    /// Build dofmap. The restriction may be a null pointer, in which
-    /// case it is ignored.
+    /// Build dofmap. The constrained domain and/or restriction may be
+    /// null pointers, in which case they are ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-        std::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
-          std::pair<unsigned int, unsigned int> > > > slave_master_entities,
-        std::shared_ptr<const Restriction> restriction);
+                      std::shared_ptr<const SubDomain> constrained_domain,
+                      std::shared_ptr<const Restriction> restriction);
 
-    /// Build sub-dofmap
-    static void build_sub_map(DofMap& sub_dofmap,
-                              const DofMap& parent_dofmap,
-                              const std::vector<std::size_t>& component,
-                              const Mesh& mesh);
+    /// Build sub-dofmap. This is a view into the parent dofmap.
+    static void build_sub_map_view(DofMap& sub_dofmap,
+                                   const DofMap& parent_dofmap,
+                                   const std::vector<std::size_t>& component,
+                                   const Mesh& mesh);
 
   private:
 
-    // Build UFC-based dofmap
-    static void build_ufc_dofmap(DofMap& dofmap, map& restricted_dofs_inverse,
+    // Build modified global entity indices that account for periodic
+    // bcs
+    static std::size_t build_constrained_vertex_indices(
       const Mesh& mesh,
-      std::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
-        std::pair<unsigned int, unsigned int> > > > slave_master_entities,
-      std::shared_ptr<const Restriction> restriction);
+      const std::map<unsigned int, std::pair<unsigned int, unsigned int>>& slave_to_master_vertices,
+      std::vector<std::size_t>& modified_vertex_indices_global);
 
-    // Build modified global entity indices that account for periodic bcs
-    static std::size_t build_constrained_vertex_indices(const Mesh& mesh,
-        const std::map<unsigned int, std::pair<unsigned int, unsigned int> >& slave_to_master_vertices,
-        std::vector<std::size_t>& modified_global_indices);
-
-    // Re-order local dofmap for dof spatial locality. Re-ordering is
-    // optional, but re-ordering can make other algorithms (e.g.,
-    // matrix-vector products) significantly faster.
-    static void reorder_local(DofMap& dofmap, const Mesh& mesh,
-                              std::size_t block_size,
-                              const std::set<std::size_t>& global_dofs);
-
-    // Re-order distributed dof map for process locality
+    // Build simple local UFC-based dofmap data structure (does not
+    // account for master/slave constraints)
     static void
-      reorder_distributed(DofMap& dofmap,
-                          const Mesh& mesh,
-                          std::shared_ptr<const Restriction> restriction,
-                          const map& restricted_dofs_inverse,
-                          std::size_t block_size,
-                          const std::set<std::size_t>& global_dofs);
+      build_local_ufc_dofmap(std::vector<std::vector<int>>& dofmap,
+                             const ufc::dofmap& ufc_dofmap,
+                             const Mesh& mesh);
 
     // Compute which process 'owns' each node (point at which dofs live)
-    //   node_ownership[0] -> all dofs owned by this process (will
-    //   intersect dof_ownership[1])
-    //   node_ownership[1] -> dofs shared with other processes and
-    //   owned by this process
-    //   node_ownership[2] -> dofs shared with other processes and
-    //   owned by another process
-    static void
-      compute_node_ownership(boost::array<set, 3>& node_ownership,
-                             vec_map& shared_node_processes,
-                             DofMap& dofmap,
-                             const std::set<std::size_t>& global_dofs,
-                             const Mesh& mesh,
-                             std::shared_ptr<const Restriction> restriction,
-                             const map& restricted_dofs_inverse,
-                             std::size_t block_size);
+    //   - node_ownership = -1 -> dof shared but not 'owned' by this
+    //     process
+    //   - node_ownership = 0  -> dof owned by this process and shared
+    //     with other processes
+    //   - node_ownership = 1  -> dof >owned bu this process and not
+    //     shared
+    //
+    // Also computes map from shared node to sharing processes and a
+    // set of process that share dofs on this process.
+    // Returns: number of locally owned nodes
+    static int compute_node_ownership    (
+      std::vector<short int>& node_ownership,
+      std::unordered_map<int, std::vector<int>>& shared_node_to_processes,
+      std::set<int>& neighbours,
+      const std::vector<std::vector<la_index>>& node_dofmap,
+      const std::vector<int>& boundary_nodes,
+      const std::set<std::size_t>& global_nodes,
+      const std::vector<std::size_t>& node_local_to_global,
+      const Mesh& mesh);
 
-    // Re-order distributed dofmap for process locality based on
-    // ownership data
+
+    // Build dofmap based on re-ordered nodes
     static void
-      parallel_renumber(const boost::array<set, 3>& node_ownership,
-                        const vec_map& shared_node_processes,
-                        DofMap& dofmap,
-                        const std::set<std::size_t>& global_dofs,
-                        const Mesh& mesh,
-                        std::shared_ptr<const Restriction> restriction,
-                        const map& restricted_dofs_inverse,
-                        std::size_t block_size);
+      build_dofmap(std::vector<std::vector<la_index>>& dofmap,
+                   const std::vector<std::vector<la_index>>& node_dofmap,
+                   const std::vector<int>& old_to_new_node_local,
+                   const std::size_t block_size);
 
     // Compute set of global dofs (e.g. Reals associated with global
     // Lagrange multipliers) based on UFC numbering. Global dofs are
-    // not associated with any mesh entity.
-    static std::set<std::size_t> compute_global_dofs(const DofMap& dofmap);
+    // not associated with any mesh entity. The returned indices are
+    // local to the process.
+    static std::set<std::size_t>
+      compute_global_dofs(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+                     const std::vector<std::size_t>& num_mesh_entities_local);
 
     // Iterate recursively over all sub-dof maps to find global
     // degrees of freedom
-    static void compute_global_dofs(std::set<std::size_t>& global_dofs,
-                                    std::size_t& offset,
-                            std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-                            const DofMap& dofmap);
+    static void
+      compute_global_dofs(std::set<std::size_t>& global_dofs,
+                       std::size_t& offset_local,
+                       std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+                       const std::vector<std::size_t>& num_mesh_entities_local);
 
     // Recursively extract UFC sub-dofmap and compute offset
-    static std::shared_ptr<ufc::dofmap>
-        extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                               std::size_t& offset,
-                               const std::vector<std::size_t>& component,
-                               const std::vector<std::size_t>& num_global_mesh_entities);
+    static std::shared_ptr<ufc::dofmap> extract_ufc_sub_dofmap(
+      const ufc::dofmap& ufc_dofmap,
+      std::size_t& offset,
+      const std::vector<std::size_t>& component,
+      const std::vector<std::size_t>& num_global_mesh_entities);
 
     // Compute block size, e.g. in 3D elasticity block_size = 3
     static std::size_t compute_blocksize(const ufc::dofmap& ufc_dofmap);
+
+    static void compute_constrained_mesh_indices(
+      std::vector<std::vector<std::size_t>>& global_entity_indices,
+      std::vector<std::size_t>& num_mesh_entities_global,
+      const std::vector<bool>& needs_mesh_entities,
+      const Mesh& mesh,
+      const SubDomain& constrained_domain);
+
+    static std::shared_ptr<const ufc::dofmap>
+      build_ufc_node_graph(
+        std::vector<std::vector<la_index>>& node_dofmap,
+        std::vector<std::size_t>& node_local_to_global,
+        std::vector<std::size_t>& num_mesh_entities_global,
+        std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+        const Mesh& mesh,
+        std::shared_ptr<const SubDomain> constrained_domain,
+        const std::size_t block_size);
+
+    static std::shared_ptr<const ufc::dofmap>
+      build_ufc_node_graph_constrained(
+        std::vector<std::vector<la_index>>& node_dofmap,
+        std::vector<std::size_t>& node_local_to_global,
+        std::vector<int>& node_ufc_local_to_local,
+        std::vector<std::size_t>& num_mesh_entities_global,
+        std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+        const Mesh& mesh,
+        std::shared_ptr<const SubDomain> constrained_domain,
+        const std::size_t block_size);
+
+    static void compute_boundary_nodes(
+      std::vector<int>& boundary_nodes,
+      const std::vector<std::vector<la_index>>& node_dofmap,
+      const std::size_t num_nodes_local,
+      const ufc::dofmap& ufc_dofmap,
+      const Mesh& mesh,
+      const std::size_t seed);
+
+    static void compute_node_reodering(
+      std::vector<std::size_t>& local_to_global_unowned,
+      std::vector<int>& off_process_owner,
+      std::vector<std::size_t>& local_to_global,
+      std::vector<int>& old_to_new_local,
+      const std::vector<std::size_t>& old_local_to_global,
+      const std::vector<std::vector<la_index>>& node_dofmap,
+      const std::vector<short int>& node_ownership,
+      const std::set<std::size_t>& global_nodes,
+      const MPI_Comm mpi_comm);
+
+    static void get_cell_data_local(ufc::cell& ufc_cell,
+                                    const Cell& cell);
+
+    static void get_cell_data_global_constrained(
+      ufc::cell& ufc_cell, const Cell& cell,
+      const std::vector<std::vector<std::size_t>>& global_entity_indices);
+
+    // Compute number of mesh entities for dimensions required by
+    // dofmap
+    static std::vector<std::size_t>
+      compute_num_mesh_entities_local(const Mesh& mesh,
+                                      const ufc::dofmap& ufc_dofmap);
 
   };
 }

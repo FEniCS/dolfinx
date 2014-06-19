@@ -20,7 +20,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2014-04-24
+// Last changed: 2014-01-06
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -77,10 +77,6 @@ namespace dolfin
 
     /// Return number of entitites of given topological dimension
     virtual std::size_t num_entities(std::size_t dim) const = 0;
-
-    /// Return number of vertices for cell
-    std::size_t num_vertices() const
-    { return num_vertices(dim()); }
 
     /// Return number of vertices for entity of given topological dimension
     virtual std::size_t num_vertices(std::size_t dim) const = 0;

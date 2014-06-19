@@ -26,8 +26,8 @@
 #define __GENERIC_SPARSITY_PATTERN_H
 
 #include <utility>
+#include <unordered_map>
 #include <vector>
-#include <boost/unordered_map.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
@@ -57,7 +57,7 @@ namespace dolfin
       init(const MPI_Comm mpi_comm,
            const std::vector<std::size_t>& dims,
            const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-           const std::vector<const boost::unordered_map<std::size_t,
+           const std::vector<const std::unordered_map<std::size_t,
            unsigned int>* > off_process_owner) = 0;
 
     /// Insert non-zero entries
@@ -116,7 +116,7 @@ namespace dolfin
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const = 0;
 
-  private:
+   private:
 
     // Primary sparsity pattern storage dimension
     // (e.g., 0=row partition, 1=column partition)

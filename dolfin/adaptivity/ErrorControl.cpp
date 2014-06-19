@@ -30,7 +30,6 @@
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/fem/LinearVariationalProblem.h>

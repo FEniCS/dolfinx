@@ -24,13 +24,13 @@
 #define __SPARSITY_PATTERN_H
 
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
 #include "GenericSparsityPattern.h"
-#include <boost/unordered_map.hpp>
 
 namespace dolfin
 {
@@ -56,7 +56,7 @@ namespace dolfin
                     const std::vector<std::size_t>& dims,
                     const std::vector<std::pair<std::size_t,
                     std::size_t> >& ownership_range,
-                    const std::vector<const boost::unordered_map<std::size_t,
+                    const std::vector<const std::unordered_map<std::size_t,
                     unsigned int>* > off_process_owner,
                     std::size_t primary_dim);
 
@@ -65,7 +65,7 @@ namespace dolfin
               const std::vector<std::size_t>& dims,
               const std::vector<std::pair<std::size_t,
               std::size_t> >& ownership_range,
-              const std::vector<const boost::unordered_map<std::size_t,
+              const std::vector<const std::unordered_map<std::size_t,
               unsigned int>* > off_process_owner);
 
     /// Insert non-zero entries
@@ -141,7 +141,7 @@ namespace dolfin
     std::vector<std::size_t> non_local;
 
     // Map from non-local vertex to owning process index
-    std::vector<boost::unordered_map<std::size_t, unsigned int> >
+    std::vector<std::unordered_map<std::size_t, unsigned int> >
       _off_process_owner;
 
   };

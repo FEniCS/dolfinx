@@ -113,7 +113,10 @@ void MultiMeshFunction::init_vector()
   if (_vector->empty())
   {
     //_vector->init(_function_space->mesh()->mpi_comm(), range, ghost_indices);
-    _vector->init(MPI_COMM_WORLD, range, ghost_indices);
+    std::vector<std::size_t> local_to_global(local_size);
+    for (std::size_t i = 0; i < local_size; ++i)
+      local_to_global[i] = i;
+    _vector->init(MPI_COMM_WORLD, range, local_to_global, ghost_indices);
   }
   else
   {

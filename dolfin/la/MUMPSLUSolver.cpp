@@ -71,7 +71,7 @@ MUMPSLUSolver::~MUMPSLUSolver()
 //-----------------------------------------------------------------------------
 std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(_matA);
+  dolfin_assert(_matA);
 
   DMUMPS_STRUC_C data;
 
@@ -129,7 +129,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(29) = 0;
 
   // Global size
-  assert(_matA->size(0) == _matA->size(1));
+  dolfin_assert(_matA->size(0) == _matA->size(1));
   data.n = _matA->size(0);
 
   if (!_matA->base_one())

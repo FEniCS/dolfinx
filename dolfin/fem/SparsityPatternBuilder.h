@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2013
 //
 // First added:  2007-05-24
-// Last changed: 2014-04-25
+// Last changed: 2013-09-24
 
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
@@ -51,20 +51,21 @@ namespace dolfin
                       bool exterior_facets,
                       bool diagonal,
                       bool init=true,
-                      bool finalize=true);
+                      bool finalize=true,
+                      int global_dim=-1);
 
     /// Build sparsity pattern for assembly of given multimesh form
     static void build_multimesh_sparsity_pattern
-    (GenericSparsityPattern& sparsity_pattern,
-     const MultiMeshForm& form);
+      (GenericSparsityPattern& sparsity_pattern,
+       const MultiMeshForm& form);
 
   private:
 
     /// Build sparsity pattern for interface part of multimesh form
     static void _build_multimesh_sparsity_pattern_interface
-    (GenericSparsityPattern& sparsity_pattern,
-     const MultiMeshForm& form,
-     std::size_t part);
+      (GenericSparsityPattern& sparsity_pattern,
+       const MultiMeshForm& form,
+       std::size_t part);
 
   };
 

@@ -25,11 +25,11 @@
 #define __MESH_FUNCTION_H
 
 #include <map>
-#include <vector>
-
-#include <boost/scoped_array.hpp>
 #include <memory>
-#include <boost/unordered_set.hpp>
+#include <unordered_set>
+#include <vector>
+#include <boost/scoped_array.hpp>
+
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -592,7 +592,7 @@ namespace dolfin
     set_all(std::numeric_limits<T>::max());
 
     // Iterate over all values
-    boost::unordered_set<std::size_t> entities_values_set;
+    std::unordered_set<std::size_t> entities_values_set;
     typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it;
     const std::map<std::pair<std::size_t, std::size_t>, T>& values
       = mesh_value_collection.values();

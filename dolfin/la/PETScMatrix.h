@@ -121,15 +121,25 @@ namespace dolfin
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols) const;
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block,
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols);
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block,
+                           std::size_t m, const dolfin::la_index* rows,
+                           std::size_t n, const dolfin::la_index* cols);
+
+    /// Add block of values using global indices
     virtual void add(const double* block,
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols);
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           std::size_t m, const dolfin::la_index* rows,
+                           std::size_t n, const dolfin::la_index* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -150,6 +160,9 @@ namespace dolfin
 
     /// Set given rows to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows (local indices) to identity matrix
+    virtual void ident_local(std::size_t m, const dolfin::la_index* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;

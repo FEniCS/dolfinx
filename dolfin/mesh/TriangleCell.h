@@ -19,7 +19,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2014-05-22
+// Last changed: 2014-01-06
 
 #ifndef __TRIANGLE_CELL_H
 #define __TRIANGLE_CELL_H
@@ -66,7 +66,7 @@ namespace dolfin
     /// Compute diameter of triangle
     double diameter(const MeshEntity& triangle) const;
 
-    /// Compute squared distance to given point (3D enabled)
+    /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
 
     /// Compute squared distance to given point. This version takes

@@ -31,8 +31,8 @@
 #include <utility>
 #include <vector>
 #include <memory>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <dolfin/common/types.h>
 #include "GenericVector.h"
@@ -108,6 +108,7 @@ namespace dolfin
     /// values
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
+                      const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
@@ -125,13 +126,25 @@ namespace dolfin
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(std::size_t i) const;
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows);
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows);
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows);
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows);
+
+    virtual void get(double* block, std::size_t m,
+                     const dolfin::la_index* rows) const
+    { get_local(block, m, rows); }
 
     virtual void get_local(double* block, std::size_t m,
                            const dolfin::la_index* rows) const;
@@ -237,11 +250,11 @@ namespace dolfin
     std::shared_ptr<Epetra_Vector> x_ghost;
 
     // Global-to-local map for ghost values
-    boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
+    std::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
 
     // Cache of off-process 'set' values (versus 'add') to be
     // communicated
-    boost::unordered_map<std::size_t, double> off_process_set_values;
+    std::unordered_map<std::size_t, double> off_process_set_values;
 
   };
 
