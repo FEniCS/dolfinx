@@ -748,54 +748,10 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
   std::vector<std::vector<std::size_t> > received_vertex_indices;
   MPI::all_to_all(mpi_comm, send_vertex_indices, received_vertex_indices);
 
-  // FIXME: spin out sharing into separate function here
-
-  // Generate vertex sharing information
-  std::map<std::size_t, std::set<unsigned int> > vertex_to_proc;
-  for (std::size_t p = 0; p < num_processes; ++p)
-    for (auto q = received_vertex_indices[p].begin(); q != received_vertex_indices[p].end(); ++q)
-    {
-      auto map_it = vertex_to_proc.find(*q);
-      if (map_it == vertex_to_proc.end())
-      {
-        std::set<unsigned int> proc_set;
-        proc_set.insert(p);
-        vertex_to_proc.insert(std::make_pair(*q, proc_set));
-      }
-      else
-        map_it->second.insert(p);
-    }
-
-  std::vector<std::vector<std::size_t> > send_sharing(num_processes);
-  std::vector<std::vector<std::size_t> > recv_sharing(num_processes);
-  for (auto map_it = vertex_to_proc.begin(); map_it != vertex_to_proc.end(); ++map_it)
-  {
-    if (map_it->second.size() != 1)
-    {
-      for (auto proc = map_it->second.begin(); proc != map_it->second.end(); ++proc)
-      {
-        std::vector<std::size_t>& ss = send_sharing[*proc];
-        ss.push_back(map_it->second.size() - 1);
-        ss.push_back(map_it->first);
-        for (auto p =  map_it->second.begin(); p != map_it->second.end(); ++p)
-          if (*p != *proc)
-            ss.push_back(*p);
-      }
-    }
-  }
-
-  MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
-  
-  for (std::size_t p = 0; p < num_processes; ++p)
-    for (auto q = recv_sharing[p].begin(); q != recv_sharing[p].end(); q += (*q + 2))
-    {
-      const std::size_t num_sharing = *q;
-      const std::size_t global_vertex_index = *(q + 1);
-      dolfin_assert(shared_vertices_global.find(global_vertex_index) 
-                    == shared_vertices_global.end());
-      std::set<unsigned int> sharing_processes(q + 2, q + 2 + num_sharing);
-      shared_vertices_global.insert(std::make_pair(global_vertex_index, sharing_processes));
-    }
+  // Redistribute received_vertex_indices as vertex sharing information
+  build_shared_vertices_global(mpi_comm, 
+                               shared_vertices_global,
+                               received_vertex_indices);
     
   // Distribute vertex coordinates
   std::vector<std::vector<double> > send_vertex_coordinates(num_processes);
@@ -857,6 +813,60 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
   // Return number of vertices, excluding those
   // which only appear in ghost cells
   return num_regular_vertices;
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::build_shared_vertices_global(MPI_Comm mpi_comm,
+     std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global,
+     const std::vector<std::vector<std::size_t> >& received_vertex_indices)
+{
+  std::size_t num_processes = MPI::size(mpi_comm);
+  
+  // Generate vertex sharing information
+  std::map<std::size_t, std::set<unsigned int> > vertex_to_proc;
+  for (std::size_t p = 0; p < num_processes; ++p)
+    for (auto q = received_vertex_indices[p].begin(); q != received_vertex_indices[p].end(); ++q)
+    {
+      auto map_it = vertex_to_proc.find(*q);
+      if (map_it == vertex_to_proc.end())
+      {
+        std::set<unsigned int> proc_set;
+        proc_set.insert(p);
+        vertex_to_proc.insert(std::make_pair(*q, proc_set));
+      }
+      else
+        map_it->second.insert(p);
+    }
+
+  std::vector<std::vector<std::size_t> > send_sharing(num_processes);
+  std::vector<std::vector<std::size_t> > recv_sharing(num_processes);
+  for (auto map_it = vertex_to_proc.begin(); map_it != vertex_to_proc.end(); ++map_it)
+  {
+    if (map_it->second.size() != 1)
+    {
+      for (auto proc = map_it->second.begin(); proc != map_it->second.end(); ++proc)
+      {
+        std::vector<std::size_t>& ss = send_sharing[*proc];
+        ss.push_back(map_it->second.size() - 1);
+        ss.push_back(map_it->first);
+        for (auto p =  map_it->second.begin(); p != map_it->second.end(); ++p)
+          if (*p != *proc)
+            ss.push_back(*p);
+      }
+    }
+  }
+
+  MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
+  
+  for (std::size_t p = 0; p < num_processes; ++p)
+    for (auto q = recv_sharing[p].begin(); q != recv_sharing[p].end(); q += (*q + 2))
+    {
+      const std::size_t num_sharing = *q;
+      const std::size_t global_vertex_index = *(q + 1);
+      dolfin_assert(shared_vertices_global.find(global_vertex_index) 
+                    == shared_vertices_global.end());
+      std::set<unsigned int> sharing_processes(q + 2, q + 2 + num_sharing);
+      shared_vertices_global.insert(std::make_pair(global_vertex_index, sharing_processes));
+    }
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh(Mesh& mesh,

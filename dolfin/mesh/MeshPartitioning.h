@@ -129,7 +129,14 @@ namespace dolfin
       cell_attachment(const std::vector<std::size_t> vertex_list,
                       const LocalMeshData& mesh_data);
 
-    // Distribute vertices
+    // Utility to convert received_vertex_indices into
+    // vertex sharing information
+    static void build_shared_vertices_global(MPI_Comm mpi_comm,
+     std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global,
+     const std::vector<std::vector<std::size_t> >& received_vertex_indices);
+
+    // Distribute vertices and vertex sharing information,
+    // returning the number of vertices which are not ghosted.
     static std::size_t
       distribute_vertices(const MPI_Comm mpi_comm,
         const LocalMeshData& mesh_data,
@@ -142,13 +149,7 @@ namespace dolfin
     static void build_mesh(Mesh& mesh,
       const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
       const LocalMeshData& new_mesh_data);
-    
-    // Convert ghost cell information to shared vertices in mesh
-    static void ghost_build_shared_vertices(MPI_Comm mpi_comm,
-      const LocalMeshData& new_mesh_data,
-      const std::map<unsigned int, std::set<unsigned int> >& shared_cells,
-      std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global);
-        
+            
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh,
       const LocalMeshData& local_data);
