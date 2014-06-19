@@ -103,8 +103,8 @@ namespace dolfin
     // Distribute a layer of cells attached by vertex to boundary
     // updating new_mesh_data and shared_cells
     static void distribute_cell_layer(MPI_Comm mpi_comm,
-      const std::map<std::size_t, std::set<unsigned int> >& 
-                                      shared_vertices_global,
+      const std::map<unsigned int, std::set<unsigned int> >& 
+                                      shared_vertices,
       const unsigned int num_regular_cells,
       std::map<unsigned int, std::set<unsigned int> >& shared_cells,
                                       LocalMeshData& new_mesh_data);
@@ -131,8 +131,9 @@ namespace dolfin
 
     // Utility to convert received_vertex_indices into
     // vertex sharing information
-    static void build_shared_vertices_global(MPI_Comm mpi_comm,
-     std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global,
+    static void build_shared_vertices(MPI_Comm mpi_comm,
+     std::map<unsigned int, std::set<unsigned int> >& shared_vertices,
+     const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
      const std::vector<std::vector<std::size_t> >& received_vertex_indices);
 
     // Distribute vertices and vertex sharing information,
@@ -143,7 +144,7 @@ namespace dolfin
         const unsigned int num_regular_cells,
         LocalMeshData& new_mesh_data,
         std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-        std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global);
+        std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local);
 
     // Build mesh
     static void build_mesh(Mesh& mesh,
