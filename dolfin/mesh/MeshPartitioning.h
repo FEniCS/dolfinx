@@ -105,6 +105,7 @@ namespace dolfin
     static void distribute_cell_layer(MPI_Comm mpi_comm,
       const std::map<std::size_t, std::set<unsigned int> >& 
                                       shared_vertices_global,
+      const unsigned int num_regular_cells,
       std::map<unsigned int, std::set<unsigned int> >& shared_cells,
                                       LocalMeshData& new_mesh_data);
     

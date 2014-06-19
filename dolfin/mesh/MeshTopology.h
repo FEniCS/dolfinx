@@ -65,6 +65,9 @@ namespace dolfin
     /// Return global number of entities for given dimension
     std::size_t size_global(std::size_t dim) const;
 
+    /// Return number of ghost entities for given dimension
+    std::size_t size_ghost(std::size_t dim) const;
+
     /// Clear all data
     void clear();
 
@@ -81,6 +84,9 @@ namespace dolfin
     /// Initialize storage for global entity numbering for entities of
     /// dimension dim
     void init_global_indices(std::size_t dim, std::size_t size);
+
+    /// Initialise the number of ghost entities for this dimension
+    void init_ghost(std::size_t dim, std::size_t size);
 
     /// Set global index for entity of dimension dim and with local
     /// index
@@ -119,18 +125,16 @@ namespace dolfin
       shared_entities(unsigned int dim) const;
 
     /// Return mapping from local ghost cell index to owning process
-    std::vector<unsigned int>& entity_owner(unsigned int dim)
-    { 
-      dolfin_assert(dim < _entity_owner.size());
-      return _entity_owner[dim]; 
-    }
+    /// Since ghost cells are at the end of the range, this is just
+    /// a vector over those cells
+    std::vector<unsigned int>& cell_owner()
+    { return _cell_owner;  }
 
     /// Return mapping from local ghost cell index to owning process (const version)
-    const std::vector<unsigned int>& entity_owner(unsigned int dim) const
-    { 
-      dolfin_assert(dim < _entity_owner.size());
-      return _entity_owner[dim]; 
-    }
+    /// Since ghost cells are at the end of the range, this is just
+    /// a vector over those cells
+    const std::vector<unsigned int>& cell_owner() const
+    { return _cell_owner;  }
 
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1);
@@ -167,6 +171,9 @@ namespace dolfin
     // Number of mesh entities for each topological dimension
     std::vector<unsigned int> num_entities;
 
+    // Number of ghost indices for each topological dimension 
+    std::vector<std::size_t> ghost_num_entities;
+
     // Global number of mesh entities for each topological dimension
     std::vector<std::size_t> global_num_entities;
 
@@ -178,10 +185,10 @@ namespace dolfin
     std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >
       _shared_entities;
 
-    // For entities which are "ghosted", locate the owning process,
+    // For cells which are "ghosted", locate the owning process,
     // using a vector rather than a map,
-    // since ghost entities are always at the end of the range.
-    std::vector<std::vector<unsigned int> > _entity_owner;
+    // since ghost cells are always at the end of the range.
+    std::vector<unsigned int> _cell_owner;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

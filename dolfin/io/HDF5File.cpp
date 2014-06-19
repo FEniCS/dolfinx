@@ -291,7 +291,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
       // Cut off ghost cells
       const unsigned int num_regular_cells 
-        = mesh.topology().size(tdim) - mesh.topology().entity_owner(tdim).size();
+        = mesh.topology().size(tdim) - mesh.topology().cell_owner().size();
 
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
         if (c->index() < num_regular_cells)
@@ -681,7 +681,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   {
     // Cut off ghost cells
     const unsigned int num_regular_cells 
-      = mesh.topology().size(tdim) - mesh.topology().entity_owner(tdim).size();
+      = mesh.topology().size(tdim) - mesh.topology().cell_owner().size();
     
     // Check if cell 'i' is in cell_owner map - if not, it is local
     for (std::size_t i = 0; i < meshfunction.size(); ++i)

@@ -27,7 +27,7 @@ M = UnitSquareMesh(15, 15)
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())
 
-num_regular_vertices = M.topology().size(0) - len(M.topology().entity_owner(0))
+num_regular_vertices = M.topology().size(0) - M.topology().size_ghost(0)
 
 ghost_vertices = range(num_regular_vertices, M.topology().size(0))
 
@@ -52,7 +52,7 @@ x,y = M.coordinates().transpose()
 process_number = MPI.rank(M.mpi_comm())
 
 cell_ownership = np.ones(M.num_cells(),dtype='int')*process_number
-cell_owner = M.topology().entity_owner(M.topology().dim())
+cell_owner = M.topology().cell_owner()
 cell_ownership[-len(cell_owner):] = cell_owner
 
 cells_store=[]

@@ -97,7 +97,7 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
     = mesh.topology().shared_entities(tdim);
   // Ownership of cells
   const std::vector<unsigned int>& cell_owner
-    = mesh.topology().entity_owner(tdim);
+    = mesh.topology().cell_owner();
 
   // Initially index from zero, add offset later
   std::size_t ecount = 0;

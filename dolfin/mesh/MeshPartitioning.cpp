@@ -217,6 +217,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   
   if (drop_ghost_cells == true)
   {
+    // FIXME: need to fix shared vertices too.
     const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
     std::size_t count = 0;
     for (auto it = new_mesh_data.cell_partition.begin();
@@ -238,6 +239,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     // defined by connectivity to the shared vertices
     distribute_cell_layer(mesh.mpi_comm(), 
                           shared_vertices_global,
+                          num_regular_cells,
                           shared_cells,
                           new_mesh_data);
   }
@@ -269,27 +271,30 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   }
 
   // Copy cell ownership
-  std::vector<unsigned int>& cell_owner = 
-    mesh.topology().entity_owner(mesh_data.tdim);
+  std::vector<unsigned int>& cell_owner = mesh.topology().cell_owner();
   cell_owner.clear();
   cell_owner.insert(cell_owner.begin(),
                     new_mesh_data.cell_partition.begin() + num_regular_cells,
                     new_mesh_data.cell_partition.end());
 
-  // Fix up vertex owners
-  // FIXME: Is this the right way? Maybe vertices don't need owners, 
-  // just an indication of whether they are 'ghost' or not.
-  std::vector<unsigned int>& vertex_owner = 
-    mesh.topology().entity_owner(0);
-  vertex_owner.clear();
-  for (auto it = shared_vertices_local.begin();
-       it != shared_vertices_local.end(); ++it)
-  {
-    if (it->first >= num_regular_vertices)
-    {
-      vertex_owner.push_back(*(it->second.begin()));
-    }
-  }
+
+  std::cout << "All/regular cells = " << new_mesh_data.global_cell_indices.size() 
+            << "/" << num_regular_cells << "\n";
+
+  // Set the number of ghost cells
+  mesh.topology().init_ghost(mesh_data.tdim, 
+                             new_mesh_data.global_cell_indices.size()
+                             - num_regular_cells);
+
+
+  std::cout << "All/regular vertices = " << new_mesh_data.vertex_indices.size() 
+            << "/" << num_regular_vertices << "\n";
+
+  // Set the number of ghost vertices
+  mesh.topology().init_ghost(0, 
+                             new_mesh_data.vertex_indices.size()
+                             - num_regular_vertices);
+
     
   // Assign map of shared cells
   mesh.topology().shared_entities(mesh_data.tdim) = shared_cells;
@@ -298,6 +303,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   const std::map<std::size_t, std::set<unsigned int> >& shared_vertices_global,
+  const unsigned int num_regular_cells,
   std::map<unsigned int, std::set<unsigned int> >& shared_cells,
   LocalMeshData& new_mesh_data)
 {
@@ -306,11 +312,33 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   const unsigned int mpi_size = MPI::size(mpi_comm);
   const unsigned int mpi_rank = MPI::rank(mpi_comm);
 
-  // Make a simple list of shared vertices (global indexing)
-  std::vector<std::size_t> sh_vert_list;
-  for (auto v = shared_vertices_global.begin();
-       v != shared_vertices_global.end(); ++v)
-    sh_vert_list.push_back(v->first);
+  // Iterate through vertices in shared cells
+  const boost::multi_array<std::size_t, 2>& cell_vertices 
+    = new_mesh_data.cell_vertices;
+  std::set<std::size_t> sh_v_1;
+  for (auto c = shared_cells.begin(); c != shared_cells.end(); ++c)
+  {
+    if(c->first < num_regular_cells)
+      for (auto q=cell_vertices[c->first].begin(); 
+           q != cell_vertices[c->first].end(); ++q)
+        sh_v_1.insert(*q);
+  }
+  // Repeat, picking ghost cells
+  std::set<std::size_t> sh_v_2;
+  for (auto c = shared_cells.begin(); c != shared_cells.end(); ++c)
+  {
+    if(c->first >= num_regular_cells)
+      for (auto q=cell_vertices[c->first].begin(); 
+           q != cell_vertices[c->first].end(); ++q)
+      {
+        if(sh_v_1.find(*q) != sh_v_1.end())
+        {
+          sh_v_2.insert(*q);
+        }
+      }
+  }
+  
+  std::vector<std::size_t> sh_vert_list(sh_v_2.begin(), sh_v_2.end());
 
   // Find all local cells (local indexing) attached to vertices
   std::map<std::size_t, dolfin::Set<std::size_t> >

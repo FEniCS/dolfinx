@@ -92,12 +92,22 @@ std::size_t MeshTopology::size_global(std::size_t dim) const
   return global_num_entities[dim];
 }
 //-----------------------------------------------------------------------------
+std::size_t MeshTopology::size_ghost(std::size_t dim) const
+{
+  if (ghost_num_entities.empty())
+    return 0;
+
+  dolfin_assert(dim < ghost_num_entities.size());
+  return ghost_num_entities[dim];
+}
+//-----------------------------------------------------------------------------
 void MeshTopology::clear()
 {
   // Clear data
   coloring.clear();
   num_entities.clear();
   global_num_entities.clear();
+  ghost_num_entities.clear();
   _global_indices.clear();
   _shared_entities.clear();
   connectivity.clear();
@@ -118,12 +128,10 @@ void MeshTopology::init(std::size_t dim)
   // Initialize number of mesh entities
   num_entities = std::vector<unsigned int>(dim + 1, 0);
   global_num_entities = std::vector<std::size_t>(dim + 1, 0);
+  ghost_num_entities = std::vector<std::size_t>(dim + 1, 0);
 
   // Initialize storage for global indices
   _global_indices.resize(dim + 1);
-
-  // Initialize storage for entity owners
-  _entity_owner.resize(dim + 1);
 
   // Initialize mesh connectivity
   connectivity.resize(dim + 1);
@@ -145,6 +153,13 @@ void MeshTopology::init(std::size_t dim, std::size_t local_size,
   // If mesh is local, make shared vertices empty
   if (dim == 0 && (local_size == global_size))
     shared_entities(0);
+}
+//-----------------------------------------------------------------------------
+void MeshTopology::init_ghost(std::size_t dim, std::size_t size)
+{
+  dolfin_assert(dim < ghost_num_entities.size());
+  // FIXME: assert(ghost_num_entites[dim] == 0) to prevent reinitialisation?
+  ghost_num_entities[dim] = size;
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
