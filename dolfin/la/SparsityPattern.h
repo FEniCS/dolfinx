@@ -56,8 +56,8 @@ namespace dolfin
                     const std::vector<std::size_t>& dims,
                     const std::vector<std::pair<std::size_t,
                     std::size_t> >& ownership_range,
-                    const std::vector<const std::unordered_map<std::size_t,
-                    unsigned int>* > off_process_owner,
+                    const std::vector<const std::vector<std::size_t>* > local_to_global,
+                    const std::vector<const std::vector<int>* > off_process_owner,
                     std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
@@ -65,8 +65,8 @@ namespace dolfin
               const std::vector<std::size_t>& dims,
               const std::vector<std::pair<std::size_t,
               std::size_t> >& ownership_range,
-              const std::vector<const std::unordered_map<std::size_t,
-              unsigned int>* > off_process_owner);
+              const std::vector<const std::vector<std::size_t>* > local_to_global,
+              const std::vector<const std::vector<int>* > off_process_owner);
 
     /// Insert non-zero entries
     void
@@ -140,9 +140,11 @@ namespace dolfin
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<std::size_t> non_local;
 
+    // Array map from un-owned local indices to global indcies
+    std::vector<std::vector<std::size_t> > _local_to_global;
+
     // Map from non-local vertex to owning process index
-    std::vector<std::unordered_map<std::size_t, unsigned int> >
-      _off_process_owner;
+    std::vector<std::vector<int> > _off_process_owner;
 
   };
 

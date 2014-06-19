@@ -100,11 +100,14 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   // With the row-by-row algorithm used here there is no need for
   // inserting non_local rows and as such we can simply use a dummy
   // for off_process_owner
-  std::vector<const std::unordered_map<std::size_t, unsigned int>* >
-    off_process_owner(2);
-  const std::unordered_map<std::size_t, unsigned int> dummy;
-  off_process_owner[0] = &dummy;
-  off_process_owner[1] = &dummy;
+  std::vector<const std::vector<std::size_t>* > local_to_global(2);
+  std::vector<const std::vector<int>* > off_process_owner(2);
+  const std::vector<int> dummy0;
+  off_process_owner[0] = &dummy0;
+  off_process_owner[1] = &dummy0;
+  const std::vector<std::size_t> dummy1;
+  local_to_global[0] = &dummy1;
+  local_to_global[1] = &dummy1;
   const std::pair<std::size_t, std::size_t> row_range = local_range[0];
   const std::size_t m = row_range.second - row_range.first;
 
@@ -113,8 +116,10 @@ void GenericMatrix::compressed(GenericMatrix& B) const
 
   // Initialize sparsity pattern
   if (new_sparsity_pattern)
+  {
     new_sparsity_pattern->init(MPI_COMM_WORLD, global_dimensions, local_range,
-                               off_process_owner);
+                               local_to_global, off_process_owner);
+  }
 
   // Declare some variables used to extract matrix information
   std::vector<std::size_t> columns;
