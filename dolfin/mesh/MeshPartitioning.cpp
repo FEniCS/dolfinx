@@ -402,8 +402,15 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     for (auto c = p->second.begin(); c != p->second.end(); ++c)
     {
       // Make sure this cell is listed as shared
-      // Fill in sharing details later
-      shared_cells.insert(std::make_pair(*c, std::set<unsigned int>()));
+      auto sc_it = shared_cells.find(*c);
+      if (sc_it == shared_cells.end())
+      {
+        std::set<unsigned int> sharing_procs;
+        sharing_procs.insert(dest);
+        shared_cells.insert(std::make_pair(*c, sharing_procs));
+      }
+      else
+        sc_it->second.insert(dest);
 
       // Send cell global index
       send_dest.push_back(new_mesh_data.global_cell_indices[*c]);
@@ -416,14 +423,6 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   }
 
   MPI::all_to_all(mpi_comm, send_cells, recv_cells);
-
-  for (unsigned int i = 0; i != mpi_size; ++i)
-  {
-    std::cout << mpi_rank << " <- " << i << ":";
-    for (auto p = recv_cells[i].begin(); p != recv_cells[i].end(); ++p)
-      std::cout << *p << " ";
-    std::cout <<" \n";
-  }
 
   const unsigned int num_cells
     = new_mesh_data.cell_vertices.shape()[0];
@@ -483,49 +482,26 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   // Finally, iterate over all shared cells, making sure sharing data
   // is consistent with shared_vertices
 
-  for (auto c = shared_cells.begin(); c != shared_cells.end(); ++c)
-  {
-    const unsigned int c_index = c->first;
-    for (auto v = new_mesh_data.cell_vertices[c_index].begin();
-         v != new_mesh_data.cell_vertices[c_index].end(); ++v)
-    {
-      auto v_it = shared_vertices.find(*v);
-      if (v_it != shared_vertices.end())
-      {
-        std::set<unsigned int> sh_procs = v_it->second;
-        // Remove reference to self
-        sh_procs.erase(mpi_rank); 
-        c->second.insert(sh_procs.begin(), sh_procs.end());
-      }
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-std::map<std::size_t, dolfin::Set<std::size_t> >
-MeshPartitioning::cell_attachment(const std::vector<std::size_t> vertex_list,
-                                  const LocalMeshData& mesh_data)
-{
-  const boost::multi_array<std::size_t, 2>& cell_vertices
-    = mesh_data.cell_vertices;
-
-  std::map<std::size_t, dolfin::Set<std::size_t> > attachment_map;
-
-  // Initialise empty map
-  for (auto v = vertex_list.begin(); v != vertex_list.end(); ++v)
-    attachment_map.insert(std::make_pair(*v, dolfin::Set<std::size_t>()));
-
-  // Go through all cell vertices, looking for any in list
-  for (unsigned int i = 0; i != cell_vertices.size(); ++i)
-  {
-    for (auto v = cell_vertices[i].begin(); 
-         v != cell_vertices[i].end(); ++v)
-    {
-      auto map_it = attachment_map.find(*v);
-      if (map_it != attachment_map.end())
-        map_it->second.insert(i);
-    }
-  }
-  return attachment_map;
+  // for (auto c = shared_cells.begin(); c != shared_cells.end(); ++c)
+  // {
+  //   const unsigned int c_index = c->first;
+  //   for (auto v = new_mesh_data.cell_vertices[c_index].begin();
+  //        v != new_mesh_data.cell_vertices[c_index].end(); ++v)
+  //   {
+  //     auto vmap_it = vertex_global_to_local.find(*v);
+  //     if (vmap_it != vertex_global_to_local.end())
+  //     {
+  //       auto v_it = shared_vertices.find(vmap_it->second);
+  //       if (v_it != shared_vertices.end())
+  //       {
+  //         std::set<unsigned int> sh_procs = v_it->second;
+  //         // Remove reference to self
+  //         sh_procs.erase(mpi_rank); 
+  //         c->second.insert(sh_procs.begin(), sh_procs.end());
+  //       }
+  //     }
+  //   }
+  // }
 }
 //-----------------------------------------------------------------------------
 unsigned int MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,

@@ -124,11 +124,6 @@ namespace dolfin
         std::map<unsigned int, std::set<unsigned int> >& shared_cells,
         LocalMeshData& new_mesh_data);
 
-    // Utility to get attachment of cells to vertices from mesh_data
-    static std::map<std::size_t, dolfin::Set<std::size_t> >
-      cell_attachment(const std::vector<std::size_t> vertex_list,
-                      const LocalMeshData& mesh_data);
-
     // Utility to convert received_vertex_indices into
     // vertex sharing information
     static void build_shared_vertices(MPI_Comm mpi_comm,
