@@ -63,12 +63,21 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     off_process_owner[i] = &(dofmaps[i]->off_process_owner());
   }
 
+  dolfin_assert(!dofmaps.empty());
+  dolfin_assert(dofmaps[0]);
+  const std::size_t block_size = dofmaps[0]->block_size;
+  for (std::size_t i = 0; i < rank; ++i)
+  {
+    if (dofmaps[i]->block_size != block_size)
+      error("All dofmaps must have same block size (for now)");
+  }
+
   // Initialise sparsity pattern
   if (init)
   {
     sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, local_range,
                           local_to_global,
-                          off_process_owner);
+                          off_process_owner, block_size);
   }
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
@@ -98,7 +107,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         dofs[i] = &dofmaps[i]->cell_dofs(cell->index());
 
       // Insert non-zeroes in sparsity pattern
-      sparsity_pattern.insert(dofs);
+      sparsity_pattern.insert_local(dofs);
       p++;
     }
   }
@@ -140,7 +149,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
           dofs[i] = &dofmaps[i]->cell_dofs(cell.index());
 
         // Insert dofs
-        sparsity_pattern.insert(dofs);
+        sparsity_pattern.insert_local(dofs);
       }
       else if (interior_facets && !exterior_facet)
       {
@@ -152,22 +161,26 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         for (std::size_t i = 0; i < rank; i++)
         {
           // Get dofs for each cell
-          const std::vector<dolfin::la_index>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-          const std::vector<dolfin::la_index>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+          const std::vector<dolfin::la_index>& cell_dofs0
+            = dofmaps[i]->cell_dofs(cell0.index());
+          const std::vector<dolfin::la_index>& cell_dofs1
+            = dofmaps[i]->cell_dofs(cell1.index());
 
           // Create space in macro dof vector
           macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
 
           // Copy cell dofs into macro dof vector
-          std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
-          std::copy(cell_dofs1.begin(), cell_dofs1.end(), macro_dofs[i].begin() + cell_dofs0.size());
+          std::copy(cell_dofs0.begin(), cell_dofs0.end(),
+                    macro_dofs[i].begin());
+          std::copy(cell_dofs1.begin(), cell_dofs1.end(),
+                    macro_dofs[i].begin() + cell_dofs0.size());
 
           // Store pointer to macro dofs
           dofs[i] = &macro_dofs[i];
         }
 
         // Insert dofs
-        sparsity_pattern.insert(dofs);
+        sparsity_pattern.insert_local(dofs);
       }
 
       p++;
@@ -176,18 +189,20 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    Progress p("Building sparsity pattern over diagonal", local_range[0].second-local_range[0].first);
+    std::size_t local_size = local_range[0].second - local_range[0].first;
+    Progress p("Building sparsity pattern over diagonal", local_size);
 
     std::vector<dolfin::la_index> diagonal_dof(1, 0);
     for (std::size_t i = 0; i < rank; ++i)
       dofs[i] = &diagonal_dof;
 
-    for (std::size_t j = local_range[0].first; j < local_range[0].second; j++)
+    //for (std::size_t j = local_range[0].first; j < local_range[0].second; j++)
+    for (std::size_t j = 0; j < local_size; j++)
     {
       diagonal_dof[0] = j;
 
       // Insert diagonal non-zeroes in sparsity pattern
-      sparsity_pattern.insert(dofs);
+      sparsity_pattern.insert_local(dofs);
       p++;
     }
   }
@@ -206,19 +221,21 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
   std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
   std::vector<const std::vector<std::size_t>* > local_to_global(rank);
+  std::vector<std::vector<std::size_t> > tmp_local_to_global(rank);
   std::vector<const std::vector<int>* > off_process_owner(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
     local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
     off_process_owner[i] = &form.function_space(i)->dofmap()->off_process_owner();
+    local_to_global[i] = &tmp_local_to_global[i];
   }
 
   // Initialize sparsity pattern
   sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
                         global_dimensions,
                         local_range, local_to_global,
-                        off_process_owner);
+                        off_process_owner, 1);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
@@ -301,12 +318,13 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
         // Collect dofs for cut and cutting cell
         dofs[i].resize(dofs_0[i]->size() + dofs_1[i]->size());
         std::copy(dofs_0[i]->begin(), dofs_0[i]->end(), dofs[i].begin());
-        std::copy(dofs_1[i]->begin(), dofs_1[i]->end(), dofs[i].begin() + dofs_0[i]->size());
+        std::copy(dofs_1[i]->begin(), dofs_1[i]->end(),
+                  dofs[i].begin() + dofs_0[i]->size());
         _dofs[i] = &dofs[i]; // Silly extra step, fix GenericSparsityPattern interface
       }
 
       // Insert into sparsity pattern
-      sparsity_pattern.insert(_dofs);
+      sparsity_pattern.insert_local(_dofs);
     }
   }
 }

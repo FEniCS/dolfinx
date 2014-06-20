@@ -44,10 +44,12 @@ SparsityPattern::SparsityPattern(
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
   const std::vector<const std::vector<std::size_t>* > local_to_global,
   const std::vector<const std::vector<int>* > off_process_owner,
+  const std::size_t block_size,
   std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
-  init(mpi_comm, dims, local_range, local_to_global, off_process_owner);
+  init(mpi_comm, dims, local_range, local_to_global, off_process_owner,
+    block_size);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(
@@ -55,7 +57,8 @@ void SparsityPattern::init(
   const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
   const std::vector<const std::vector<std::size_t>* > local_to_global,
-  const std::vector<const std::vector<int>* > off_process_owner)
+  const std::vector<const std::vector<int>* > off_process_owner,
+  const std::size_t block_size)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
@@ -75,6 +78,9 @@ void SparsityPattern::init(
   non_local.clear();
   _off_process_owner.clear();
 
+  // Set block size
+  _block_size = block_size;
+
   // Set ownership range
   _local_range = local_range;
 
@@ -82,8 +88,6 @@ void SparsityPattern::init(
   for (std::size_t i = 0; i < off_process_owner.size(); ++i)
   {
     dolfin_assert(local_to_global[i]);
-    std::cout << "!!!: " << MPI::rank(MPI_COMM_WORLD) << ", "
-              << local_to_global[i]->size() << std::endl;
     _local_to_global.push_back(*local_to_global[i]);
 
     dolfin_assert(off_process_owner[i]);
@@ -109,7 +113,8 @@ void SparsityPattern::init(
                       - _local_range[_primary_dim].first);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const std::vector<const std::vector<dolfin::la_index>* >& entries)
+void SparsityPattern::insert_global(
+  const std::vector<const std::vector<dolfin::la_index>* >& entries)
 {
   dolfin_assert(entries.size() == 2);
   dolfin_assert(entries[0]);
@@ -134,18 +139,87 @@ void SparsityPattern::insert(const std::vector<const std::vector<dolfin::la_inde
     map_j = entries[0];
   }
 
-  /*
   const std::pair<dolfin::la_index, dolfin::la_index>
     local_range0(_local_range[_primary_dim].first,
                  _local_range[_primary_dim].second);
   const std::pair<dolfin::la_index, dolfin::la_index>
     local_range1(_local_range[primary_codim].first,
                  _local_range[primary_codim].second);
-  */
+
+  // Check local range
+  if (MPI::size(_mpi_comm) == 1)
+  {
+    // Sequential mode, do simple insertion
+    std::vector<dolfin::la_index>::const_iterator i_index;
+    for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
+      diagonal[*i_index].insert(map_j->begin(), map_j->end());
+  }
+  else
+  {
+    // Parallel mode, use either diagonal, off_diagonal or non_local
+    std::vector<dolfin::la_index>::const_iterator i_index;
+    for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
+    {
+      if (local_range0.first <= *i_index && *i_index < local_range0.second)
+      {
+        // Subtract offset
+        const std::size_t I = *i_index - local_range0.first;
+
+        // Store local entry in diagonal or off-diagonal block
+        std::vector<dolfin::la_index>::const_iterator j_index;
+        for (j_index = map_j->begin(); j_index != map_j->end(); ++j_index)
+        {
+          if (local_range1.first <= *j_index && *j_index < local_range1.second)
+          {
+            dolfin_assert(I < diagonal.size());
+            diagonal[I].insert(*j_index);
+          }
+          else
+          {
+            dolfin_assert(I < off_diagonal.size());
+            off_diagonal[I].insert(*j_index);
+          }
+        }
+      }
+      else
+      {
+        error("Row index in SparsityPattern::insert_global must be local to process.");
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void SparsityPattern::insert_local(
+  const std::vector<const std::vector<dolfin::la_index>* >& entries)
+{
+  dolfin_assert(entries.size() == 2);
+  dolfin_assert(entries[0]);
+  dolfin_assert(entries[1]);
+
+  const std::size_t _primary_dim = primary_dim();
+
+  const std::vector<dolfin::la_index>* map_i;
+  const std::vector<dolfin::la_index>* map_j;
+  std::size_t primary_codim;
+  dolfin_assert(_primary_dim < 2);
+  if (_primary_dim == 0)
+  {
+    primary_codim = 1;
+    map_i = entries[0];
+    map_j = entries[1];
+  }
+  else
+  {
+    primary_codim = 0;
+    map_i = entries[1];
+    map_j = entries[0];
+  }
+
   const la_index local_size0 = _local_range[_primary_dim].second
     - _local_range[_primary_dim].first;
   const la_index local_size1 = _local_range[primary_codim].second
     - _local_range[primary_codim].first;
+  const la_index offset1 = _local_range[primary_codim].first;
 
   // Check local range
   if (MPI::size(_mpi_comm) == 1)
@@ -170,13 +244,18 @@ void SparsityPattern::insert(const std::vector<const std::vector<dolfin::la_inde
           if (*j_index < local_size1)
           {
             dolfin_assert(*i_index < (int) diagonal.size());
-            diagonal[*i_index].insert(*j_index + local_size1);
+            diagonal[*i_index].insert(*j_index + offset1);
           }
           else
           {
             dolfin_assert(*i_index < (int) off_diagonal.size());
-            const std::size_t J
-              = _local_to_global[primary_codim][*j_index - local_size1];
+            const std::div_t div
+              = std::div(*j_index - local_size1, _block_size);
+            const int j_node = div.quot;
+            const int j_component = div.rem;
+
+            const std::size_t J_node = _local_to_global[primary_codim][j_node];
+            const std::size_t J = _block_size*J_node + j_component;
             off_diagonal[*i_index].insert(J);
           }
         }
@@ -187,12 +266,22 @@ void SparsityPattern::insert(const std::vector<const std::vector<dolfin::la_inde
         std::vector<dolfin::la_index>::const_iterator j_index;
         for (j_index = map_j->begin(); j_index != map_j->end(); ++j_index)
         {
+          // Get global index
           std::size_t J = 0;
           if (*j_index < local_size1)
-            J = *j_index + local_size1;
+            J = *j_index + offset1;
           else
-            J = _local_to_global[primary_codim][*j_index - local_size1];
+          {
+            const std::div_t div
+              = std::div(*j_index - local_size1, _block_size);
+            const int j_node = div.quot;
+            const int j_component = div.rem;
 
+            const std::size_t J_node = _local_to_global[primary_codim][j_node];
+            J = _block_size*J_node + j_component;
+          }
+
+          // Store indices
           non_local.push_back(*i_index);
           non_local.push_back(J);
         }
@@ -205,7 +294,6 @@ void SparsityPattern::add_edges(const std::pair<dolfin::la_index,
                                                 std::size_t>& vertex,
                                 const std::vector<dolfin::la_index>& edges)
 {
-  error("SparsityPattern::add_edges not working");
   /*
   const std::size_t _primary_dim = primary_dim();
   const dolfin::la_index vertex_index = vertex.first;
@@ -324,7 +412,6 @@ void SparsityPattern::get_edges(std::size_t vertex,
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
-  std::cout << "Calling apply" << std::endl;
   const std::size_t _primary_dim = primary_dim();
 
   std::size_t primary_codim;
@@ -342,8 +429,7 @@ void SparsityPattern::apply()
                  _local_range[primary_codim].second);
   const std::size_t local_size0 = _local_range[_primary_dim].second
     - _local_range[_primary_dim].first;
-  //const std::size_t local_size1 = _local_range[primary_codim].second
-  //  - _local_range[primary_codim].first;
+  const std::size_t offset0 = _local_range[_primary_dim].first;
 
   const std::size_t num_processes = MPI::size(_mpi_comm);
   const std::size_t proc_number = MPI::rank(_mpi_comm);
@@ -351,18 +437,6 @@ void SparsityPattern::apply()
   // Print some useful information
   if (get_log_level() <= DBG)
     info_statistics();
-
-  /*
-  if (MPI::rank(MPI_COMM_WORLD) == 1)
-  {
-    std::cout << "Local to global map: " << std::endl;
-    for (std::size_t i = 0; i < _local_to_global[0].size(); ++i)
-    {
-      std::cout << "  Map: " << _local_to_global[0][i] << std::endl;
-    }
-  }
-  MPI::barrier(MPI_COMM_WORLD);
-  */
 
   // Communicate non-local blocks if any
   if (MPI::size(_mpi_comm) > 1)
@@ -379,21 +453,26 @@ void SparsityPattern::apply()
 
       // Figure out which process owns the row
       dolfin_assert(i_index >= local_size0);
-      const int i_offset = i_index - local_size0;
-      dolfin_assert(i_offset < (int) _off_process_owner[_primary_dim].size());
+      const std::size_t i_offset = (i_index - local_size0)/_block_size;
+      dolfin_assert(i_offset < _off_process_owner[_primary_dim].size());
       const std::size_t p = _off_process_owner[_primary_dim][i_offset];
 
       dolfin_assert(p < num_processes);
       dolfin_assert(p != proc_number);
 
-      // Get global indices
+      // Get global I index
       la_index I = 0;
       if (i_index < local_size0)
-        I = i_index + local_range0.first;
+        I = i_index + offset0;
       else
       {
-        dolfin_assert(i_offset < (int) _local_to_global[_primary_dim].size());
-        I = _local_to_global[_primary_dim][i_offset];
+        std::size_t tmp = i_index - local_size0;
+        const std::div_t div = std::div((int) tmp, (int) _block_size);
+        const int i_node = div.quot;
+        const int i_component = div.rem;
+
+        const std::size_t I_node = _local_to_global[_primary_dim][i_node];
+        I = _block_size*I_node + i_component;
       }
 
       // Buffer local/global index pair to send
@@ -417,8 +496,6 @@ void SparsityPattern::apply()
         // Get global row and column
         const std::size_t I = non_local_received_p[i];
         const std::size_t J = non_local_received_p[i + 1];
-        std::cout << "*** J received: " << MPI::rank(MPI_COMM_WORLD)
-                  << ", " << J << std::endl;
 
         // Sanity check
         if (I < _local_range[_primary_dim].first
@@ -432,15 +509,13 @@ void SparsityPattern::apply()
         }
 
         // Get local I index
-        const std::size_t i_index = I - _local_range[_primary_dim].first;
-        std::cout << "Local i: " << I << ", " << i_index << std::endl;
+        const std::size_t i_index = I - offset0;
 
         // Insert in diagonal or off-diagonal block
         if (_local_range[primary_codim].first <= J &&
             J < _local_range[primary_codim].second)
         {
           dolfin_assert(i_index < diagonal.size());
-          //const std::size_t j_index = J - _local_range[primary_codim].first;
           diagonal[i_index].insert(J);
         }
         else
@@ -454,7 +529,6 @@ void SparsityPattern::apply()
 
   // Clear non-local entries
   non_local.clear();
-  info_statistics();
 }
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str(bool verbose) const
@@ -531,8 +605,8 @@ void SparsityPattern::info_statistics() const
   const std::size_t num_nonzeros_total = num_nonzeros_diagonal
     + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
-  std::size_t size0 = _local_range[0].second;
-  std::size_t size1 = _local_range[1].second;
+  std::size_t size0 = _local_range[0].second; //- _local_range[0].first;
+  std::size_t size1 = _local_range[1].second; //- _local_range[1].first;
   size0 = MPI::max(_mpi_comm, size0);
   size1 = MPI::max(_mpi_comm, size1);
 
@@ -553,5 +627,7 @@ void SparsityPattern::info_statistics() const
          << "%)";
     cout << endl;
   }
+
+  MPI::barrier(MPI_COMM_WORLD);
 }
 //-----------------------------------------------------------------------------

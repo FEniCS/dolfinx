@@ -118,7 +118,7 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   if (new_sparsity_pattern)
   {
     new_sparsity_pattern->init(MPI_COMM_WORLD, global_dimensions, local_range,
-                               local_to_global, off_process_owner);
+                               local_to_global, off_process_owner, 1);
   }
 
   // Declare some variables used to extract matrix information
@@ -167,7 +167,7 @@ void GenericMatrix::compressed(GenericMatrix& B) const
 
     // Build new compressed sparsity pattern
     if (new_sparsity_pattern)
-      new_sparsity_pattern->insert(dofs);
+      new_sparsity_pattern->insert_global(dofs);
   }
 
   // Finalize sparsity pattern

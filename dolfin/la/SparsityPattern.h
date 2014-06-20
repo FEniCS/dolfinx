@@ -58,7 +58,8 @@ namespace dolfin
                     std::size_t> >& ownership_range,
                     const std::vector<const std::vector<std::size_t>* > local_to_global,
                     const std::vector<const std::vector<int>* > off_process_owner,
-                    std::size_t primary_dim);
+                    const std::size_t block_size,
+                    const std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
     void init(const MPI_Comm mpi_comm,
@@ -66,11 +67,16 @@ namespace dolfin
               const std::vector<std::pair<std::size_t,
               std::size_t> >& ownership_range,
               const std::vector<const std::vector<std::size_t>* > local_to_global,
-              const std::vector<const std::vector<int>* > off_process_owner);
+              const std::vector<const std::vector<int>* > off_process_owner,
+              const std::size_t block_size);
 
-    /// Insert non-zero entries
-    void
-      insert(const std::vector<const std::vector<dolfin::la_index>* >& entries);
+    /// Insert non-zero entries using global indices
+    void insert_global(const std::vector<
+                      const std::vector<dolfin::la_index>* >& entries);
+
+    /// Insert non-zero entries using local (process-wise) indices
+    void insert_local(const std::vector<
+                      const std::vector<dolfin::la_index>* >& entries);
 
     /// Add edges (vertex = [index, owning process])
     void add_edges(const std::pair<dolfin::la_index, std::size_t>& vertex,
@@ -145,6 +151,9 @@ namespace dolfin
 
     // Map from non-local vertex to owning process index
     std::vector<std::vector<int> > _off_process_owner;
+
+    // Block size
+    std::size_t _block_size;
 
   };
 

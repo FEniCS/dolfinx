@@ -58,10 +58,16 @@ namespace dolfin
            const std::vector<std::size_t>& dims,
            const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
            const std::vector<const std::vector<std::size_t>* > local_to_global,
-           const std::vector<const std::vector<int>* > off_process_owner) = 0;
+           const std::vector<const std::vector<int>* > off_process_owner,
+           const std::size_t block_size) = 0;
 
-    /// Insert non-zero entries
-    virtual void insert(const std::vector<const std::vector<dolfin::la_index>* >& entries) = 0;
+    /// Insert non-zero entries using global indices
+    virtual void insert_global(const std::vector<
+                        const std::vector<dolfin::la_index>* >& entries) = 0;
+
+    /// Insert non-zero entries using local (process-wise) entries
+    virtual void insert_local(const std::vector<
+                        const std::vector<dolfin::la_index>* >& entries) = 0;
 
     /// Add edges (vertex = [index, owning process])
     virtual void
@@ -71,7 +77,8 @@ namespace dolfin
     /// Return rank
     virtual std::size_t rank() const = 0;
 
-    /// Return primary dimension (e.g., 0=row partition, 1=column partition)
+    /// Return primary dimension (e.g., 0=row partition, 1=column
+    /// partition)
     std::size_t primary_dim() const
     { return _primary_dim; }
 
@@ -89,10 +96,10 @@ namespace dolfin
 
     /// Fill vector with number of nonzeros for off-diagonal block in
     /// local_range for primary dimemsion
-    virtual void num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const = 0;
+    virtual void  num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const = 0;
 
     /// Fill vector with number of nonzeros in local_range for
-    /// primary dimemsion
+    /// primary dimension
     virtual void
       num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const = 0;
 
