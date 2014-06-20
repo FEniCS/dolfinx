@@ -21,7 +21,7 @@
 // Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2014-03-16
+// Last changed: 2014-06-20
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -103,11 +103,11 @@ namespace dolfin
     // Distribute a layer of cells attached by vertex to boundary
     // updating new_mesh_data and shared_cells
     static void distribute_cell_layer(MPI_Comm mpi_comm,
-      const std::map<unsigned int, std::set<unsigned int> >& 
-                                      shared_vertices,
+      const std::map<unsigned int, std::set<unsigned int> >& shared_vertices,
       const unsigned int num_regular_cells,
+      const std::map<std::size_t, std::size_t> vertex_global_to_local,
       std::map<unsigned int, std::set<unsigned int> >& shared_cells,
-                                      LocalMeshData& new_mesh_data);
+      LocalMeshData& new_mesh_data);
     
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
