@@ -404,76 +404,78 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   
   MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
   
-  // Collect up cells by shared vertex on receiving procs
-  // FIXME: map not really needed
-  // FIXME: precalculate number of new cells
-  std::map<std::size_t, std::vector<std::size_t> > new_cells;
+  // Count up new cells, assign local index, set owner
+  // and initialise shared_cells
+  
+  const unsigned int num_cells
+    = new_mesh_data.cell_vertices.shape()[0];
+  unsigned int count = num_cells;
 
   for (auto p = recv_vertcells.begin(); p != recv_vertcells.end(); ++p)
     for (auto q = p->begin(); q != p->end(); 
          q += num_cell_vertices + 2)
     {
-      const std::size_t shared_vertex = *(q + 2);      
-      const std::vector<std::size_t> qvec(q,
-                                          q + num_cell_vertices + 2);
-      
-      auto it = new_cells.find(shared_vertex);
-      if (it == new_cells.end())
-      {
-        new_cells.insert(std::make_pair
-                         (shared_vertex, qvec));
-      }
-      else
-        it->second.insert(it->second.end(),
-                                  qvec.begin(), qvec.end());
-      
-    }
-
-  const unsigned int num_cells
-    = new_mesh_data.cell_vertices.shape()[0];
-  unsigned int count = num_cells;
-  
-  for (auto v=new_cells.begin(); v != new_cells.end(); ++v)
-  {
-    std::set<unsigned int> sharing_procs;
-    for (auto q = v->second.begin(); q != v->second.end();
-         q += num_cell_vertices + 2)
-      sharing_procs.insert(*q);
-    for (auto q = v->second.begin(); q != v->second.end(); 
-         q += num_cell_vertices + 2)
-    {
       const std::size_t owner = *q;
-      const std::size_t cell_index = *(q + 1);
+      const std::size_t cell_index = *(q + 1);  
       auto cell_it = cell_global_to_local.find(cell_index);
-      
       if (cell_it == cell_global_to_local.end())
       {
-        // New cell
-        shared_cells.insert(std::make_pair(count, sharing_procs));
+        cell_global_to_local.insert(std::make_pair(count, cell_index));
+        shared_cells.insert(std::make_pair(count, std::set<unsigned int>()));
         new_mesh_data.global_cell_indices.push_back(cell_index);
         new_mesh_data.cell_partition.push_back(owner);
-        // FIXME: get rid of resize
-        cell_vertices.resize(boost::extents[count + 1]
-                                          [num_cell_vertices]);
-        for (unsigned int j = 0; j != num_cell_vertices; ++j)
-          cell_vertices[count][j] = *(q + j + 2);
-        
         ++count;
       }
-      else
-      { 
-        // Existing cell - update sharing
-        const std::size_t local_cell_index
-          = cell_it->second;
-                      
-        auto sh_it = shared_cells.find(local_cell_index);
-        if (sh_it == shared_cells.end())
-          shared_cells.insert(std::make_pair(cell_index, sharing_procs));
-        else
-          sh_it->second.insert(sharing_procs.begin(), sharing_procs.end());
-      }
     }
-  }
+
+  cell_vertices.resize(boost::extents[count]
+                       [num_cell_vertices]);
+  
+  std::set<unsigned int> sharing_procs;
+  std::vector<std::size_t> sharing_cells;
+  
+  std::size_t last_vertex = std::numeric_limits<std::size_t>::max();
+  for (auto p = recv_vertcells.begin(); p != recv_vertcells.end(); ++p)
+    for (auto q = p->begin(); q != p->end(); 
+         q += num_cell_vertices + 2)
+    {
+      const std::size_t shared_vertex = *(q + 2);      
+      const std::size_t owner = *q;
+      const std::size_t cell_index = *(q + 1);  
+      const std::size_t local_index = cell_global_to_local.find(cell_index)->second;
+      
+      // Add vertices to new cells
+      if (local_index >= num_cells)
+      {
+        for (unsigned int j = 0; j != num_cell_vertices; ++j)
+          cell_vertices[local_index][j] = *(q + j + 2);
+      }
+
+      // If starting on a new shared vertex, dump old data
+      // into shared_cells
+      if (shared_vertex != last_vertex)
+      {
+        last_vertex = shared_vertex;
+        for (auto c = sharing_cells.begin(); c != sharing_cells.end(); ++c)
+        {
+          auto it = shared_cells.find(*c);
+          dolfin_assert(it != shared_cells.end());
+          it->second.insert(sharing_procs.begin(), sharing_procs.end());
+        }        
+        sharing_procs.clear();
+        sharing_cells.clear();
+      }
+      
+      sharing_procs.insert(owner);
+      sharing_cells.push_back(local_index);
+    }
+
+  for (auto c = sharing_cells.begin(); c != sharing_cells.end(); ++c)
+  {
+    auto it = shared_cells.find(*c);
+    dolfin_assert(it != shared_cells.end());
+    it->second.insert(sharing_procs.begin(), sharing_procs.end());
+  }        
 
 }
 //-----------------------------------------------------------------------------
