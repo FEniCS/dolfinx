@@ -291,17 +291,22 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   // FIXME: some cell sharing data is not being set properly
 
   const unsigned int mpi_size = MPI::size(mpi_comm);
-  //  const unsigned int mpi_rank = MPI::rank(mpi_comm);
 
   // Get set of vertices in ghost shared cells
-  const boost::multi_array<std::size_t, 2>& cell_vertices 
+  boost::multi_array<std::size_t, 2>& cell_vertices 
     = new_mesh_data.cell_vertices;
   std::set<std::size_t> sh_ghost;
+  std::map<std::size_t, unsigned int> cell_global_to_local;
   for (auto c = shared_cells.begin(); c != shared_cells.end(); ++c)
   {
     if(c->first >= num_regular_cells)
+    {
       sh_ghost.insert(cell_vertices[c->first].begin(),
-                    cell_vertices[c->first].end());
+                      cell_vertices[c->first].end());
+      cell_global_to_local.insert(std::make_pair
+                                  (new_mesh_data.global_cell_indices[c->first],
+                                   c->first));
+    }
   }
 
   // Reduce set to those which also appear in local cells
@@ -319,6 +324,9 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     {
       if (sh_ghost.find(*v) != sh_ghost.end())
       {        
+        cell_global_to_local.insert(std::make_pair       
+                                    (new_mesh_data.global_cell_indices[i], i));
+        
         auto map_it = sh_vert_to_cell.find(*v);
         if (map_it == sh_vert_to_cell.end())
         {
@@ -427,9 +435,6 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   const unsigned int num_cells
     = new_mesh_data.cell_vertices.shape()[0];
   unsigned int count = num_cells;
-
-  std::set<std::size_t> global_set(new_mesh_data.global_cell_indices.begin(),
-                                   new_mesh_data.global_cell_indices.end());
   
   for (auto v=new_cells.begin(); v != new_cells.end(); ++v)
   {
@@ -442,17 +447,19 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     {
       const std::size_t owner = *q;
       const std::size_t cell_index = *(q + 1);
-      if (global_set.find(cell_index) == global_set.end())
+      auto cell_it = cell_global_to_local.find(cell_index);
+      
+      if (cell_it == cell_global_to_local.end())
       {
         // New cell
         shared_cells.insert(std::make_pair(count, sharing_procs));
         new_mesh_data.global_cell_indices.push_back(cell_index);
         new_mesh_data.cell_partition.push_back(owner);
         // FIXME: get rid of resize
-        new_mesh_data.cell_vertices.resize(boost::extents[count + 1]
+        cell_vertices.resize(boost::extents[count + 1]
                                           [num_cell_vertices]);
         for (unsigned int j = 0; j != num_cell_vertices; ++j)
-          new_mesh_data.cell_vertices[count][j] = *(q + j + 2);
+          cell_vertices[count][j] = *(q + j + 2);
         
         ++count;
       }
@@ -460,10 +467,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
       { 
         // Existing cell - update sharing
         const std::size_t local_cell_index
-          = std::find(new_mesh_data.global_cell_indices.begin(),
-                      new_mesh_data.global_cell_indices.end(),
-                      cell_index) 
-          - new_mesh_data.global_cell_indices.begin();
+          = cell_it->second;
                       
         auto sh_it = shared_cells.find(local_cell_index);
         if (sh_it == shared_cells.end())
