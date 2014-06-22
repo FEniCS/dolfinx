@@ -197,16 +197,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     distribute_cells(mesh.mpi_comm(), mesh_data,
                      cell_partition, ghost_procs, 
                      shared_cells, new_mesh_data);
-
-  // Send vertices to processes that need them, informing all
-  // sharing processes of their destinations
-  std::map<unsigned int, std::set<unsigned int> > shared_vertices;
-  std::map<std::size_t, std::size_t> vertex_global_to_local;
-  const std::size_t num_regular_vertices 
-    = distribute_vertices(mesh.mpi_comm(), mesh_data, 
-                          num_regular_cells, new_mesh_data,
-                          vertex_global_to_local,
-                          shared_vertices);
   
   // FIXME - call these based on a user option
   bool ghost_by_vertex = true;
@@ -239,15 +229,17 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                           num_regular_cells,
                           shared_cells,
                           new_mesh_data);
-
-    // Distribute extra vertices (only ghost)
-    distribute_vertices(mesh.mpi_comm(), mesh_data, 
-                        num_regular_cells, new_mesh_data,
-                        vertex_global_to_local,
-                        shared_vertices);
-
   }
 
+  // Send vertices to processes that need them, informing all
+  // sharing processes of their destinations
+  std::map<unsigned int, std::set<unsigned int> > shared_vertices;
+  std::map<std::size_t, std::size_t> vertex_global_to_local;
+  const std::size_t num_regular_vertices 
+    = distribute_vertices(mesh.mpi_comm(), mesh_data, 
+                          num_regular_cells, new_mesh_data,
+                          vertex_global_to_local,
+                          shared_vertices);
   timer.stop();
 
   // Build mesh from new_mesh_data
@@ -316,42 +308,26 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   // giving the effective boundary vertices.
   // Make a map from these vertices to the set of connected cells
   // (but only adding locally owned cells)
-  std::map<std::size_t, dolfin::Set<std::size_t> > sh_vert_to_cell;
-  for (auto c = shared_cells.begin(); c != shared_cells.end(); ++c)
-  {
-    // Local cell?
-    if(c->first < num_regular_cells)
-      for (auto q=cell_vertices[c->first].begin(); 
-           q != cell_vertices[c->first].end(); ++q)
-      {
-        // Vertex is also shared with a ghost cell?
-        if (sh_ghost.find(*q) != sh_ghost.end())
-        {
-          auto map_it = sh_vert_to_cell.find(*q);
-          if (map_it == sh_vert_to_cell.end())
-          {
-            // New vertex, add to map.
-            // Add cell to map value.
-            dolfin::Set<std::size_t> cell_set;
-            cell_set.insert(c->first);
-            sh_vert_to_cell.insert(std::make_pair(*q, cell_set));
-          }
-          else
-            map_it->second.insert(c->first);
-        }
-      }
-  }
-  
-  // Go through all regular cells, looking for any vertices in set.
-  // This adds any previously unshared cells.
+  std::map<std::size_t, std::vector<std::size_t> > sh_vert_to_cell;
+    
+  // Go through all regular cells
+  // to add any previously unshared cells.
   for (unsigned int i = 0; i != num_regular_cells; ++i)
   {
     for (auto v = cell_vertices[i].begin(); 
          v != cell_vertices[i].end(); ++v)
     {
-      auto map_it = sh_vert_to_cell.find(*v);
-      if (map_it != sh_vert_to_cell.end())
-        map_it->second.insert(i);
+      if (sh_ghost.find(*v) != sh_ghost.end())
+      {        
+        auto map_it = sh_vert_to_cell.find(*v);
+        if (map_it == sh_vert_to_cell.end())
+        {
+          std::vector<std::size_t> cell_set(1, i);
+          sh_vert_to_cell.insert(std::make_pair(*v, cell_set));
+        }
+        else
+          map_it->second.push_back(i);
+      }
     }
   }
 
@@ -395,11 +371,12 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     for (auto q = recv_i.begin(); q != recv_i.end(); 
          q += num_cell_vertices + 1)
     {
-      const std::size_t vertex_index= *(q + 1);
+      const std::size_t vertex_index = *(q + 1);
       std::vector<std::size_t> cell_set(1, i);
       cell_set.insert(cell_set.end(), q,
                       q + num_cell_vertices + 1);
             
+      // Packing: [owner, cell_index, this_vertex, [other_vertices]]
       // Look for vertex in map, and add the attached cell
       auto it = vertex_to_cells.find(vertex_index);
       if (it == vertex_to_cells.end())
@@ -413,7 +390,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   send_vertcells = std::vector<std::vector<std::size_t> >(mpi_size);
   
   // Send back out to all processes which share the same vertex
-  // Fixme: avoid sending back own cells to owner
+  // Fixme: avoid sending back own cells to owner?
   for (auto p = vertex_to_cells.begin(); p != vertex_to_cells.end(); ++p)
   {
     for (auto q = p->second.begin(); q != p->second.end();
@@ -424,58 +401,77 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   
   MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
   
-  // Collect up cells by global index
+  // Collect up cells by shared vertex on receiving procs
   std::map<std::size_t, std::vector<std::size_t> > new_cells;
 
   for (auto p = recv_vertcells.begin(); p != recv_vertcells.end(); ++p)
     for (auto q = p->begin(); q != p->end(); 
          q += num_cell_vertices + 2)
     {
-      const std::size_t global_index = *(q + 1);
-      std::vector<std::size_t> qvec(q + 2,
-                                    q + 2 + num_cell_vertices);
-      // push owning process on back
-      qvec.push_back(*q);
+      const std::size_t shared_vertex = *(q + 2);      
+      const std::vector<std::size_t> qvec(q,
+                                          q + num_cell_vertices + 2);
       
-      new_cells.insert(std::make_pair
-                       (global_index, qvec));
+      auto it = new_cells.find(shared_vertex);
+      if (it == new_cells.end())
+      {
+        new_cells.insert(std::make_pair
+                         (shared_vertex, qvec));
+      }
+      else
+        it->second.insert(it->second.end(),
+                                  qvec.begin(), qvec.end());
+      
     }
 
   const unsigned int num_cells
     = new_mesh_data.cell_vertices.shape()[0];
+  unsigned int count = num_cells;
 
-  // Remove any received cells which already exist locally
-  for (auto c = new_mesh_data.global_cell_indices.begin();
-        c != new_mesh_data.global_cell_indices.end(); ++c)
-  {
-    auto map_it = new_cells.find(*c);
-    if (map_it != new_cells.end())
-      new_cells.erase(map_it);
-  }
-
-  const unsigned int num_new_cells = new_cells.size();
-
-  // Add extra data to new_mesh_data
-  new_mesh_data.cell_vertices.resize
-    (boost::extents[num_cells + num_new_cells][num_cell_vertices]);
-  new_mesh_data.cell_partition.resize
-    (num_cells + num_new_cells);
-  new_mesh_data.global_cell_indices.resize
-    (num_cells + num_new_cells);
+  std::set<std::size_t> global_set(new_mesh_data.global_cell_indices.begin(),
+                                   new_mesh_data.global_cell_indices.end());
   
-  unsigned int c = num_cells;
-  for (auto p = new_cells.begin(); p != new_cells.end(); ++p)
+  for (auto v=new_cells.begin(); v != new_cells.end(); ++v)
   {
-    new_mesh_data.global_cell_indices[c] = p->first;
-    const std::vector<std::size_t>& qvec = p->second;
-    const unsigned int cell_owner = qvec.back();
-    new_mesh_data.cell_partition[c] = cell_owner;
-    for (unsigned int j = 0; j != num_cell_vertices; ++j)
-      new_mesh_data.cell_vertices[c][j] = qvec[j];
-    std::set<unsigned int> ghost_set;
-    ghost_set.insert(cell_owner);
-    shared_cells.insert(std::make_pair(c, ghost_set));
-    ++c;
+    std::set<unsigned int> sharing_procs;
+    for (auto q = v->second.begin(); q != v->second.end();
+         q += num_cell_vertices + 2)
+      sharing_procs.insert(*q);
+    for (auto q = v->second.begin(); q != v->second.end(); 
+         q += num_cell_vertices + 2)
+    {
+      const std::size_t owner = *q;
+      const std::size_t cell_index = *(q + 1);
+      if (global_set.find(cell_index) == global_set.end())
+      {
+        // New cell
+        shared_cells.insert(std::make_pair(count, sharing_procs));
+        new_mesh_data.global_cell_indices.push_back(cell_index);
+        new_mesh_data.cell_partition.push_back(owner);
+        // FIXME: get rid of resize
+        new_mesh_data.cell_vertices.resize(boost::extents[count + 1]
+                                          [num_cell_vertices]);
+        for (unsigned int j = 0; j != num_cell_vertices; ++j)
+          new_mesh_data.cell_vertices[count][j] = *(q + j + 2);
+        
+        ++count;
+      }
+      else
+      { 
+        // Existing cell - update sharing
+        const std::size_t local_cell_index
+          = std::find(new_mesh_data.global_cell_indices.begin(),
+                      new_mesh_data.global_cell_indices.end(),
+                      cell_index) 
+          - new_mesh_data.global_cell_indices.begin();
+                      
+        auto sh_it = shared_cells.find(local_cell_index);
+        if (sh_it == shared_cells.end())
+          shared_cells.insert(std::make_pair(cell_index, sharing_procs));
+        else
+          sh_it->second.insert(sharing_procs.begin(), sharing_procs.end());
+      }
+    }
   }
 
 }
