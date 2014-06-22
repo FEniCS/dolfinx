@@ -291,6 +291,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   // FIXME: some cell sharing data is not being set properly
 
   const unsigned int mpi_size = MPI::size(mpi_comm);
+  const unsigned int mpi_rank = MPI::rank(mpi_comm);
 
   boost::multi_array<std::size_t, 2>& cell_vertices 
     = new_mesh_data.cell_vertices;
@@ -420,7 +421,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
       auto cell_it = cell_global_to_local.find(cell_index);
       if (cell_it == cell_global_to_local.end())
       {
-        cell_global_to_local.insert(std::make_pair(count, cell_index));
+        cell_global_to_local.insert(std::make_pair(cell_index, count));
         shared_cells.insert(std::make_pair(count, std::set<unsigned int>()));
         new_mesh_data.global_cell_indices.push_back(cell_index);
         new_mesh_data.cell_partition.push_back(owner);
@@ -459,22 +460,28 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
         for (auto c = sharing_cells.begin(); c != sharing_cells.end(); ++c)
         {
           auto it = shared_cells.find(*c);
-          dolfin_assert(it != shared_cells.end());
-          it->second.insert(sharing_procs.begin(), sharing_procs.end());
+          if (it == shared_cells.end())
+            shared_cells.insert(std::make_pair(*c, sharing_procs));
+          else
+            it->second.insert(sharing_procs.begin(), sharing_procs.end());
         }        
         sharing_procs.clear();
         sharing_cells.clear();
       }
-      
-      sharing_procs.insert(owner);
+
+      // Don't include self in sharing processes
+      if (owner != mpi_rank)
+        sharing_procs.insert(owner);
       sharing_cells.push_back(local_index);
     }
 
   for (auto c = sharing_cells.begin(); c != sharing_cells.end(); ++c)
   {
     auto it = shared_cells.find(*c);
-    dolfin_assert(it != shared_cells.end());
-    it->second.insert(sharing_procs.begin(), sharing_procs.end());
+    if (it == shared_cells.end())
+      shared_cells.insert(std::make_pair(*c, sharing_procs));
+    else
+      it->second.insert(sharing_procs.begin(), sharing_procs.end());
   }        
 
 }
