@@ -52,12 +52,6 @@ public:
     parameters["linear_algebra_backend"] = "PETSc";
     _test_operators(MPI_COMM_WORLD);
     #endif
-
-    // Epetra
-    #ifdef HAS_EPETRA
-    parameters["linear_algebra_backend"] = "Epetra";
-    _test_operators(MPI_COMM_WORLD);
-    #endif
   }
 
   void _test_operators(MPI_Comm comm)
@@ -145,19 +139,6 @@ public:
       CPPUNIT_ASSERT(x.size() == 203);
 
       PETScVector y;
-      y.init(layout_distributed);
-      CPPUNIT_ASSERT(y.size() == 203);
-    }
-    #endif
-
-    // Epetra
-    #ifdef HAS_EPETRA
-    {
-      EpetraVector x;
-      x.init(layout_local);
-      CPPUNIT_ASSERT(x.size() == 203);
-
-      EpetraVector y;
       y.init(layout_distributed);
       CPPUNIT_ASSERT(y.size() == 203);
     }

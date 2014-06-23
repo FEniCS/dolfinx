@@ -21,7 +21,6 @@
 #ifndef __DOLFIN_STLVECTOR_H
 #define __DOLFIN_STLVECTOR_H
 
-#include "EpetraVector.h"
 #include "PETScVector.h"
 #include "uBLASVector.h"
 
@@ -31,12 +30,8 @@ namespace dolfin
   #ifdef HAS_PETSC
     typedef PETScVector STLVector;
   #else
-   #ifdef HAS_TRILINOS
-    typedef EpetraVector STLVector;
-   #else
     typedef uBLASVector STLVector;
-   #endif 
-  #endif	
+  #endif
 
 }
 

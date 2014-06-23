@@ -87,15 +87,6 @@ bool dolfin::has_slepc()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_trilinos()
-{
-#ifdef HAS_TRILINOS
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
 bool dolfin::has_scotch()
 {
 #ifdef HAS_SCOTCH
