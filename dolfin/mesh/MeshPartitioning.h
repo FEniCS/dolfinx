@@ -127,8 +127,7 @@ namespace dolfin
     static void build_shared_vertices(MPI_Comm mpi_comm,
      std::map<unsigned int, std::set<unsigned int> >& shared_vertices,
      const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-                                      const std::vector<std::vector<std::size_t> >& received_vertex_indices,
-                                      bool debug);
+     const std::vector<std::vector<std::size_t> >& received_vertex_indices);
 
     // Distribute vertices and vertex sharing information,
     // returning the number of vertices which are not ghosted.
