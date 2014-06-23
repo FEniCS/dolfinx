@@ -27,6 +27,9 @@ from dolfin import *
 # experimental and likely to change somewhat in future dolfin
 # versions.
 
+print "Restrictions need updating for DOF map construction changes"
+exit(0)
+
 class Domain (SubDomain):
     def inside(self, x, on_boundary):
         return (x[0] > 0.25 - DOLFIN_EPS and
