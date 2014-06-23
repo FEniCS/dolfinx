@@ -41,9 +41,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 XMLLocalMeshSAX::XMLLocalMeshSAX(MPI_Comm mpi_comm, LocalMeshData& mesh_data,
                                  const std::string filename)
-  : _mpi_comm(mpi_comm), _mesh_data(mesh_data), _filename(filename),
-    state(OUTSIDE), gdim(0), tdim(0), domain_value_counter(0),
-    domain_dim(0)
+  : gdim(0), tdim(0), domain_value_counter(0),
+    domain_dim(0),
+    _mpi_comm(mpi_comm),
+    _mesh_data(mesh_data),
+    _filename(filename),
+    state(OUTSIDE)
 {
   // Do nothing
 }

@@ -60,12 +60,12 @@ Parameters uBLASKrylovSolver::default_parameters()
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      std::string preconditioner) :
   _method(method),
-  report(false),
   rtol(0.0),
   atol(0.0),
   div_tol(0.0),
   max_it(0),
-  restart(0)
+  restart(0),
+  report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -75,8 +75,9 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : _method("default"), _pc(reference_to_no_delete_pointer(pc)), report(false),
-  rtol(0.0), atol(0.0), div_tol(0.0), max_it(0), restart(0)
+  : _method("default"), _pc(reference_to_no_delete_pointer(pc)),
+  rtol(0.0), atol(0.0), div_tol(0.0), max_it(0), restart(0),
+  report(false)
 {
   // Set parameter values
   parameters = default_parameters();
