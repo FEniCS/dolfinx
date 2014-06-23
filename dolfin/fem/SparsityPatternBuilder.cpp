@@ -196,7 +196,6 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     for (std::size_t i = 0; i < rank; ++i)
       dofs[i] = &diagonal_dof;
 
-    //for (std::size_t j = local_range[0].first; j < local_range[0].second; j++)
     for (std::size_t j = 0; j < local_size; j++)
     {
       diagonal_dof[0] = j;

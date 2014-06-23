@@ -72,7 +72,8 @@ namespace dolfin
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values using local indices
-    virtual void set_local(const double* block, const dolfin::la_index* num_rows,
+    virtual void set_local(const double* block,
+                           const dolfin::la_index* num_rows,
                            const dolfin::la_index * const * rows)
     { set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
@@ -82,7 +83,8 @@ namespace dolfin
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values using local indices
-    virtual void add_local(const double* block, const dolfin::la_index* num_rows,
+    virtual void add_local(const double* block,
+                           const dolfin::la_index* num_rows,
                            const dolfin::la_index * const * rows)
     { add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
@@ -113,8 +115,9 @@ namespace dolfin
     }
 
     /// Add block of values using local indices
-    virtual void add_local(const double* block,
-                           const std::vector<std::vector<dolfin::la_index> >& rows)
+    virtual void
+      add_local(const double* block,
+                const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       add_local(block, rows[0].size(), &(rows[0])[0], rows[1].size(),
                 &(rows[1])[0]);

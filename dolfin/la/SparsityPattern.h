@@ -35,8 +35,8 @@
 namespace dolfin
 {
 
-  /// This class implements the GenericSparsityPattern interface.
-  /// It is used by most linear algebra backends.
+  /// This class implements the GenericSparsityPattern interface.  It
+  /// is used by most linear algebra backends.
 
   class SparsityPattern : public GenericSparsityPattern
   {
@@ -52,23 +52,25 @@ namespace dolfin
     SparsityPattern(std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(const MPI_Comm mpi_comm,
-                    const std::vector<std::size_t>& dims,
-                    const std::vector<std::pair<std::size_t,
-                    std::size_t> >& ownership_range,
-                    const std::vector<const std::vector<std::size_t>* > local_to_global,
-                    const std::vector<const std::vector<int>* > off_process_owner,
-                    const std::size_t block_size,
-                    const std::size_t primary_dim);
+    SparsityPattern(
+      const MPI_Comm mpi_comm,
+      const std::vector<std::size_t>& dims,
+      const std::vector<std::pair<std::size_t,
+      std::size_t> >& ownership_range,
+      const std::vector<const std::vector<std::size_t>* > local_to_global,
+      const std::vector<const std::vector<int>* > off_process_owner,
+      const std::size_t block_size,
+      const std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(const MPI_Comm mpi_comm,
-              const std::vector<std::size_t>& dims,
-              const std::vector<std::pair<std::size_t,
-              std::size_t> >& ownership_range,
-              const std::vector<const std::vector<std::size_t>* > local_to_global,
-              const std::vector<const std::vector<int>* > off_process_owner,
-              const std::size_t block_size);
+    void init(
+      const MPI_Comm mpi_comm,
+      const std::vector<std::size_t>& dims,
+      const std::vector<std::pair<std::size_t,
+      std::size_t> >& ownership_range,
+      const std::vector<const std::vector<std::size_t>* > local_to_global,
+      const std::vector<const std::vector<int>* > off_process_owner,
+      const std::size_t block_size);
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<
@@ -77,10 +79,6 @@ namespace dolfin
     /// Insert non-zero entries using local (process-wise) indices
     void insert_local(const std::vector<
                       const std::vector<dolfin::la_index>* >& entries);
-
-    /// Add edges (vertex = [index, owning process])
-    void add_edges(const std::pair<dolfin::la_index, std::size_t>& vertex,
-                   const std::vector<dolfin::la_index>& edges);
 
     /// Return rank
     std::size_t rank() const;
@@ -92,22 +90,19 @@ namespace dolfin
     std::size_t num_nonzeros() const;
 
     /// Fill array with number of nonzeros for diagonal block in
-    /// local_range for dimension 0. For matrices, fill array with number
-    /// of nonzeros per local row for diagonal block
+    /// local_range for dimension 0. For matrices, fill array with
+    /// number of nonzeros per local row for diagonal block
     void num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
     /// Fill array with number of nonzeros for off-diagonal block in
-    /// local_range for dimension 0. For matrices, fill array with number
-    /// of nonzeros per local row for off-diagonal block
+    /// local_range for dimension 0. For matrices, fill array with
+    /// number of nonzeros per local row for off-diagonal block
     void
       num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
-    /// Fill vector with number of nonzeros in local_range for dimension 0
+    /// Fill vector with number of nonzeros in local_range for
+    /// dimension 0
     void num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const;
-
-    /// Fill vector with edges for given vertex
-    void get_edges(std::size_t vertex,
-                   std::vector<dolfin::la_index>& edges) const;
 
     /// Finalize sparsity pattern
     void apply();

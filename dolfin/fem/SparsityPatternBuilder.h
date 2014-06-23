@@ -36,7 +36,8 @@ namespace dolfin
   class Mesh;
   class MultiMeshForm;
 
-  /// This class provides functions to compute the sparsity pattern.
+  /// This class provides functions to compute the sparsity pattern
+  /// based on DOF maps
 
   class SparsityPatternBuilder
   {
@@ -55,16 +56,16 @@ namespace dolfin
 
     /// Build sparsity pattern for assembly of given multimesh form
     static void build_multimesh_sparsity_pattern
-    (GenericSparsityPattern& sparsity_pattern,
-     const MultiMeshForm& form);
+      (GenericSparsityPattern& sparsity_pattern,
+       const MultiMeshForm& form);
 
   private:
 
     /// Build sparsity pattern for interface part of multimesh form
     static void _build_multimesh_sparsity_pattern_interface
-    (GenericSparsityPattern& sparsity_pattern,
-     const MultiMeshForm& form,
-     std::size_t part);
+      (GenericSparsityPattern& sparsity_pattern,
+       const MultiMeshForm& form,
+       std::size_t part);
 
   };
 

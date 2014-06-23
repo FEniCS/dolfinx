@@ -290,32 +290,6 @@ void SparsityPattern::insert_local(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::add_edges(const std::pair<dolfin::la_index,
-                                                std::size_t>& vertex,
-                                const std::vector<dolfin::la_index>& edges)
-{
-  /*
-  const std::size_t _primary_dim = primary_dim();
-  const dolfin::la_index vertex_index = vertex.first;
-
-
-  std::pair<dolfin::la_index, dolfin::la_index>
-    local_range(_local_range[_primary_dim].first,
-                _local_range[_primary_dim].second);
-
-  // Add off-process owner if vertex is not owned by this process
-  if (vertex_index < local_range.first || vertex_index >= local_range.second)
-    _off_process_owner[_primary_dim].insert(vertex);
-
-  // Add edges
-  std::vector<dolfin::la_index> dofs0(1, vertex.first);
-  std::vector<const std::vector<dolfin::la_index>* > entries(2);
-  entries[0] = &dofs0;
-  entries[1] = &edges;
-  insert(entries);
-  */
-}
-//-----------------------------------------------------------------------------
 std::size_t SparsityPattern::rank() const
 {
   return 2;
@@ -378,36 +352,6 @@ void SparsityPattern::num_local_nonzeros(std::vector<std::size_t>& num_nonzeros)
     std::transform(num_nonzeros.begin(), num_nonzeros.end(), tmp.begin(),
                    num_nonzeros.begin(), std::plus<std::size_t>());
   }
-}
-//-----------------------------------------------------------------------------
-void SparsityPattern::get_edges(std::size_t vertex,
-                                std::vector<dolfin::la_index>& edges) const
-{
-  error("SparsityPattern::get_edges not working");
-
-  /*
-  dolfin_assert(vertex >= _local_range[0].first && vertex
-                < _local_range[0].second);
-
-  const std::size_t local_vertex = vertex - _local_range[0].first;
-  dolfin_assert(local_vertex < diagonal.size());
-  std::size_t size = diagonal[local_vertex].size();
-  if (!off_diagonal.empty())
-  {
-    dolfin_assert(local_vertex < off_diagonal.size());
-    size += off_diagonal[local_vertex].size();
-  }
-  edges.resize(size);
-
-  std::copy(diagonal[local_vertex].begin(), diagonal[local_vertex].end(),
-            edges.begin());
-  if (!off_diagonal.empty())
-  {
-    std::copy(off_diagonal[local_vertex].begin(),
-              off_diagonal[local_vertex].end(),
-              edges.begin() + diagonal[local_vertex].size());
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
@@ -555,7 +499,7 @@ std::string SparsityPattern::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::size_t> >
-  SparsityPattern::diagonal_pattern(Type type) const
+SparsityPattern::diagonal_pattern(Type type) const
 {
   std::vector<std::vector<std::size_t> > v(diagonal.size());
   for (std::size_t i = 0; i < diagonal.size(); ++i)

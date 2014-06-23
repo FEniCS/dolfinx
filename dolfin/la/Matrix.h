@@ -163,11 +163,11 @@ namespace dolfin
     virtual void zero(std::size_t m, const dolfin::la_index* rows)
     { matrix->zero(m, rows); }
 
-    /// Set given rows to identity matrix
+    /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows)
     { matrix->ident(m, rows); }
 
-    /// Set given rows to identity matrix
+    /// Set given rows (local row indices) to identity matrix
     virtual void ident_local(std::size_t m, const dolfin::la_index* rows)
     { matrix->ident_local(m, rows); }
 

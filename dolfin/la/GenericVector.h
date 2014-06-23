@@ -124,8 +124,9 @@ namespace dolfin
     { add(block, rows[0].size(), &(rows[0])[0]); }
 
     /// Add block of values using local indices
-    virtual void add_local(const double* block,
-                           const std::vector<std::vector<dolfin::la_index> >& rows)
+    virtual void
+      add_local(const double* block,
+                const std::vector<std::vector<dolfin::la_index> >& rows)
     { add_local(block, rows[0].size(), &(rows[0])[0]); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -159,7 +160,7 @@ namespace dolfin
     /// Deprecated: resize vector to global size N
     virtual void resize(MPI_Comm comm, std::size_t N)
     {
-      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
+      deprecation("GenericVector::resize(...)", "1.4", "1.5",
                   "Use GenericVector::init(...) (can only be called once).");
       init(comm, N);
     }
@@ -168,7 +169,7 @@ namespace dolfin
     virtual void resize(MPI_Comm comm,
                         std::pair<std::size_t, std::size_t> range)
     {
-      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
+      deprecation("GenericVector::resize(...)", "1.4", "1.5",
                   "Use GenericVector::init(...) (can only be called once).");
       init(comm, range);
     }
@@ -179,7 +180,7 @@ namespace dolfin
                         std::pair<std::size_t, std::size_t> range,
                         const std::vector<la_index>& ghost_indices)
     {
-      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
+      deprecation("GenericVector::resize(...)", "1.4", "1.5",
                   "Use GenericVector::init(...) (can only be called once).");
       std::vector<std::size_t> tmp;
       init(comm, range, tmp, ghost_indices);

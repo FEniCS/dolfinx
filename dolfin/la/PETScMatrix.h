@@ -158,10 +158,10 @@ namespace dolfin
     /// Set given rows to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows);
 
-    /// Set given rows to identity matrix
+    /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
 
-    /// Set given rows (local indices) to identity matrix
+    /// Set given rows (local row indices) to identity matrix
     virtual void ident_local(std::size_t m, const dolfin::la_index* rows);
 
     // Matrix-vector product, y = Ax
