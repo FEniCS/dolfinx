@@ -179,6 +179,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     if (tensor_layout.local_to_global_map[0].empty()
         && tensor_layout.local_to_global_map[1].empty())
     {
+      dolfin_assert(bs == 1);
       _map0.resize(M);
       _map1.resize(N);
       for (std::size_t i = 0; i < M; ++i)
@@ -188,37 +189,35 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     }
     else
     {
+      #if PETSC_VERSION_RELEASE
+      _map0.assign(tensor_layout.local_to_global_map[0].begin(),
+                   tensor_layout.local_to_global_map[0].end());
+      _map1.assign(tensor_layout.local_to_global_map[1].begin(),
+                   tensor_layout.local_to_global_map[1].end());
+      #else
       _map0 = std::vector<PetscInt>(tensor_layout.local_to_global_map[0].size()/bs);
       _map1 = std::vector<PetscInt>(tensor_layout.local_to_global_map[1].size()/bs);
       for (std::size_t i = 0; i < _map0.size(); ++i)
         _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
       for (std::size_t i = 0; i < _map1.size(); ++i)
         _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
+      #endif
     }
+    #if PETSC_VERSION_RELEASE
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map0.size(), _map0.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map1.size(), _map1.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
+    #else
     ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map0.size(), _map0.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global0);
     ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map1.size(), _map1.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global1);
+    #endif
     MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                                petsc_local_to_global1);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
-
-    // Set column indices
-    /*
-    const std::vector<std::vector<std::size_t> > _column_indices
-        = sparsity_pattern.diagonal_pattern(SparsityPattern::sorted);
-    std::vector<int> column_indices;
-    column_indices.reserve(sparsity_pattern.num_nonzeros());
-    for (std::size_t i = 0; i < _column_indices.size(); ++i)
-    {
-      //cout << "Row: " << i << endl;
-      //for (std::size_t j = 0; j < _column_indices[i].size(); ++j)
-      //  cout << "  Col: " << _column_indices[i][j] << endl;
-      column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
-    }
-    MatSeqAIJSetColumnIndices(_matA, &column_indices[0]);
-    */
   }
   else
   {
@@ -227,8 +226,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       not_working_in_parallel("Due to limitations in PETSc, "
                               "distributed PETSc Cusp matrices");
     }
-
-    // FIXME: Try using MatStashSetInitialSize to optimise performance
 
     // Get number of nonzeros for each row from sparsity pattern
     std::vector<std::size_t> num_nonzeros_diagonal;
@@ -266,18 +263,25 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatMPIAIJSetPreallocation");
 
 
+    ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+    dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
+
+    std::vector<PetscInt> _map0, _map1;
+    #if PETSC_VERSION_RELEASE
+    _map0.assign(tensor_layout.local_to_global_map[0].begin(),
+                 tensor_layout.local_to_global_map[0].end());
+    _map1.assign(tensor_layout.local_to_global_map[1].begin(),
+                 tensor_layout.local_to_global_map[1].end());
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map0.size(), _map0.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map1.size(), _map1.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
+    #else
     // Block size
     const std::size_t bs = tensor_layout.block_size;
 
-    ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
-    dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
-    //std::vector<PetscInt> _map0(tensor_layout.local_to_global_map[0].begin(),
-    //                            tensor_layout.local_to_global_map[0].end());
-    //std::vector<PetscInt> _map1(tensor_layout.local_to_global_map[1].begin(),
-    //                            tensor_layout.local_to_global_map[1].end());
-
-    std::vector<PetscInt> _map0(tensor_layout.local_to_global_map[0].size()/bs);
-    std::vector<PetscInt> _map1(tensor_layout.local_to_global_map[1].size()/bs);
+    _map0.resize(tensor_layout.local_to_global_map[0].size()/bs);
+    _map1.resize(tensor_layout.local_to_global_map[1].size()/bs);
     for (std::size_t i = 0; i < _map0.size(); ++i)
       _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
     for (std::size_t i = 0; i < _map1.size(); ++i)
@@ -286,24 +290,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
                                  PETSC_COPY_VALUES, &petsc_local_to_global0);
     ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map1.size(), _map1.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global1);
+    #endif
+
     MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                                petsc_local_to_global1);
-    /*
-    // Testing:
-    std::vector<PetscInt> local_indices(tensor_layout.local_to_global_map[0].size());
-    for (std::size_t i = 0; i < local_indices.size(); ++i)
-      local_indices[i] = i;
-    std::vector<PetscInt> global_indices(tensor_layout.local_to_global_map[0].size());
-    ISLocalToGlobalMappingApply(petsc_local_to_global0,
-                                tensor_layout.local_to_global_map[0].size(),
-                                local_indices.data(), global_indices.data());
-    if (MPI::rank(MPI_COMM_WORLD) == 0)
-    {
-      for (std::size_t i = 0; i < local_indices.size(); ++i)
-        std::cout << "PETSc l-to-g: " << local_indices[i] << ", " << global_indices[i]
-                  << ", " << tensor_layout.local_to_global_map[0][i] << std::endl;
-    }
-    */
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   }

@@ -915,8 +915,13 @@ void PETScVector::_init(MPI_Comm comm,
     for (std::size_t i = 0; i < size; ++i)
       _map[i] = i + range.first;
   }
+  #if PETSC_VERSION_RELEASE
+  ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map.size(), _map.data(),
+                               PETSC_COPY_VALUES, &petsc_local_to_global);
+  #else
   ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1, _map.size(), _map.data(),
                                PETSC_COPY_VALUES, &petsc_local_to_global);
+  #endif
   VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
 }
