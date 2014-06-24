@@ -329,7 +329,7 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
   {
     for (auto dof = cell_map->begin(); dof != cell_map->end(); ++dof)
     {
-      const std::div_t  div = std::div(*dof, local_to_local.size());
+      const std::div_t  div = std::div((int) *dof, (int) local_to_local.size());
       const std::size_t node = div.rem;
       const std::size_t component = div.quot;
 
@@ -537,10 +537,10 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   return MPI::sum(mpi_comm, new_index);
 }
 //-----------------------------------------------------------------------------
-void
-DofMapBuilder::build_local_ufc_dofmap(std::vector<std::vector<int>>& dofmap,
-                                      const ufc::dofmap& ufc_dofmap,
-                                      const Mesh& mesh)
+void DofMapBuilder::build_local_ufc_dofmap(
+  std::vector<std::vector<dolfin::la_index>>& dofmap,
+  const ufc::dofmap& ufc_dofmap,
+  const Mesh& mesh)
 {
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
@@ -562,7 +562,7 @@ DofMapBuilder::build_local_ufc_dofmap(std::vector<std::vector<int>>& dofmap,
 
   // Build dofmap from ufc::dofmap
   dofmap.resize(mesh.num_cells(),
-                std::vector<int>(ufc_dofmap.local_dimension()));
+                std::vector<la_index>(ufc_dofmap.local_dimension()));
   std::vector<std::size_t> dof_holder(ufc_dofmap.local_dimension());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {

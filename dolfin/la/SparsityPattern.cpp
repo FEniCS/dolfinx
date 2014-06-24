@@ -250,7 +250,7 @@ void SparsityPattern::insert_local(
           {
             dolfin_assert(*i_index < (int) off_diagonal.size());
             const std::div_t div
-              = std::div(*j_index - local_size1, _block_size);
+              = std::div(int( *j_index - local_size1), (int) _block_size);
             const int j_node = div.quot;
             const int j_component = div.rem;
 
@@ -273,7 +273,7 @@ void SparsityPattern::insert_local(
           else
           {
             const std::div_t div
-              = std::div(*j_index - local_size1, _block_size);
+              = std::div((int) (*j_index - local_size1), (int) _block_size);
             const int j_node = div.quot;
             const int j_component = div.rem;
 
