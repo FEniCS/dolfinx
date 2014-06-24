@@ -719,6 +719,8 @@ void Function::init_vector()
                  "Cannot re-initialize a non-empty vector. Consider creating a new function");
 
   }
+
+  // Set vector to zero
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

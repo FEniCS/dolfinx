@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2013
 //
 // First added:  2007-05-24
-// Last changed: 2013-09-24
+// Last changed: 2014-04-25
 
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
@@ -34,7 +34,7 @@ namespace dolfin
   class GenericDofMap;
   class GenericSparsityPattern;
   class Mesh;
-  class CCFEMForm;
+  class MultiMeshForm;
 
   /// This class provides functions to compute the sparsity pattern.
 
@@ -53,9 +53,18 @@ namespace dolfin
                       bool init=true,
                       bool finalize=true);
 
-    /// Build sparsity pattern for assembly of given CCFEM form
-    static void build_ccfem(GenericSparsityPattern& sparsity_pattern,
-                            const CCFEMForm& form);
+    /// Build sparsity pattern for assembly of given multimesh form
+    static void build_multimesh_sparsity_pattern
+    (GenericSparsityPattern& sparsity_pattern,
+     const MultiMeshForm& form);
+
+  private:
+
+    /// Build sparsity pattern for interface part of multimesh form
+    static void _build_multimesh_sparsity_pattern_interface
+    (GenericSparsityPattern& sparsity_pattern,
+     const MultiMeshForm& form,
+     std::size_t part);
 
   };
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -121,7 +121,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Form rank
+  // Get form rank
   const std::size_t form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
@@ -372,10 +372,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     // Update to current pair of cells
     cell0.get_cell_data(ufc_cell[0], local_facet0);
-    cell0.get_vertex_coordinates(vertex_coordinates[0]);
     cell1.get_cell_data(ufc_cell[1], local_facet1);
+    cell0.get_vertex_coordinates(vertex_coordinates[0]);
     cell1.get_vertex_coordinates(vertex_coordinates[1]);
-
     ufc.update(cell0, vertex_coordinates[0], ufc_cell[0],
                cell1, vertex_coordinates[1], ufc_cell[1],
                integral->enabled_coefficients());

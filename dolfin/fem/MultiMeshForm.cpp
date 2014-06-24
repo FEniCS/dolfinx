@@ -16,87 +16,122 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2013-09-19
+// Last changed: 2014-03-03
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/function/MultiMeshFunctionSpace.h>
 #include "Form.h"
-#include "CCFEMForm.h"
+#include "MultiMeshForm.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMForm::CCFEMForm(std::shared_ptr<const CCFEMFunctionSpace> function_space)
+MultiMeshForm::MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space)
   : _rank(0)
 {
   _function_spaces.push_back(function_space);
 }
 //-----------------------------------------------------------------------------
-CCFEMForm::CCFEMForm(const CCFEMFunctionSpace& function_space)
+MultiMeshForm::MultiMeshForm(const MultiMeshFunctionSpace& function_space)
   : _rank(0)
 {
   _function_spaces.push_back(reference_to_no_delete_pointer(function_space));
 }
 //-----------------------------------------------------------------------------
-CCFEMForm::CCFEMForm(std::shared_ptr<const CCFEMFunctionSpace> function_space_0,
-                     std::shared_ptr<const CCFEMFunctionSpace> function_space_1)
+MultiMeshForm::MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space_0,
+                     std::shared_ptr<const MultiMeshFunctionSpace> function_space_1)
   : _rank(0)
 {
   _function_spaces.push_back(function_space_0);
   _function_spaces.push_back(function_space_1);
 }
 //-----------------------------------------------------------------------------
-CCFEMForm::CCFEMForm(const CCFEMFunctionSpace& function_space_0,
-                     const CCFEMFunctionSpace& function_space_1)
+MultiMeshForm::MultiMeshForm(const MultiMeshFunctionSpace& function_space_0,
+                     const MultiMeshFunctionSpace& function_space_1)
   : _rank(0)
 {
   _function_spaces.push_back(reference_to_no_delete_pointer(function_space_0));
   _function_spaces.push_back(reference_to_no_delete_pointer(function_space_1));
 }
 //-----------------------------------------------------------------------------
-CCFEMForm::~CCFEMForm()
+MultiMeshForm::~MultiMeshForm()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMForm::rank() const
+std::size_t MultiMeshForm::rank() const
 {
   return _rank;
 }
 //-----------------------------------------------------------------------------
-std::size_t CCFEMForm::num_parts() const
+std::size_t MultiMeshForm::num_parts() const
 {
   return _forms.size();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Form> CCFEMForm::part(std::size_t i) const
+std::shared_ptr<const MultiMesh> MultiMeshForm::multimesh() const
+{
+  // Extract meshes from function spaces
+  std::vector<std::shared_ptr<const MultiMesh> > multimeshes;
+  for (std::size_t i = 0; i < _function_spaces.size(); i++)
+  {
+    dolfin_assert(_function_spaces[i]->multimesh());
+    multimeshes.push_back(_function_spaces[i]->multimesh());
+  }
+
+  // Check that we have at least one multimesh
+  if (multimeshes.empty())
+  {
+    dolfin_error("MultiMeshForm.cpp",
+                 "extract multimesh from form",
+                 "No multimesh was found");
+  }
+
+  // Check that all multimeshes are the same
+  for (std::size_t i = 1; i < multimeshes.size(); i++)
+  {
+    if (multimeshes[i] != multimeshes[i - 1])
+    {
+      dolfin_error("MultiMeshForm.cpp",
+                   "extract multimesh from form",
+                   "Non-matching multimeshes for function spaces");
+    }
+  }
+
+  // Return first multimesh
+  dolfin_assert(multimeshes[0]);
+  return multimeshes[0];
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const Form> MultiMeshForm::part(std::size_t i) const
 {
   dolfin_assert(i < _forms.size());
   return _forms[i];
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const CCFEMFunctionSpace>
-CCFEMForm::function_space(std::size_t i) const
+std::shared_ptr<const MultiMeshFunctionSpace>
+MultiMeshForm::function_space(std::size_t i) const
 {
   dolfin_assert(i < _function_spaces.size());
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-void CCFEMForm::add(std::shared_ptr<const Form> form)
+void MultiMeshForm::add(std::shared_ptr<const Form> form)
 {
   _forms.push_back(form);
-  log(PROGRESS, "Added form to CCFEM form; form has %d part(s).",
+  log(PROGRESS, "Added form to MultiMesh form; form has %d part(s).",
       _forms.size());
 }
 //-----------------------------------------------------------------------------
-void CCFEMForm::add(const Form& form)
+void MultiMeshForm::add(const Form& form)
 {
   add(reference_to_no_delete_pointer(form));
 }
 //-----------------------------------------------------------------------------
-void CCFEMForm::build()
+void MultiMeshForm::build()
 {
-  log(PROGRESS, "Building CCFEM form.");
+  log(PROGRESS, "Building MultiMesh form.");
 
   // Check rank
   for (std::size_t i = 1; i < num_parts(); i++)
@@ -105,8 +140,8 @@ void CCFEMForm::build()
     std::size_t r1 = _forms[i]->rank();
     if (r0 != r1)
     {
-      dolfin_error("CCFEMForm.cpp",
-                   "build CCFEM form",
+      dolfin_error("MultiMeshForm.cpp",
+                   "build MultiMesh form",
                    "Non-matching ranks (%d and %d) for forms.", r0, r1);
     }
   }
@@ -115,7 +150,7 @@ void CCFEMForm::build()
   _rank = _forms[0]->rank();
 }
 //-----------------------------------------------------------------------------
-void CCFEMForm::clear()
+void MultiMeshForm::clear()
 {
   _rank = 0;
   _function_spaces.clear();
