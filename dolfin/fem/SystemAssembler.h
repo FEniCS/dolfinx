@@ -23,10 +23,11 @@
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
 
+#include <array>
 #include <map>
-#include <vector>
-#include <boost/array.hpp>
 #include <memory>
+#include <vector>
+
 #include "DirichletBC.h"
 #include "AssemblerBase.h"
 
@@ -118,16 +119,16 @@ namespace dolfin
     class Scratch;
 
     static void
-      cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
-                         boost::array<UFC*, 2>& ufc,
+      cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
+                         std::array<UFC*, 2>& ufc,
                          Scratch& data,
                          const DirichletBC::Map& boundary_values,
                          const MeshFunction<std::size_t>* cell_domains,
                        const MeshFunction<std::size_t>* exterior_facet_domains);
 
     static void
-    facet_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
-                        boost::array<UFC*, 2>& ufc,
+    facet_wise_assembly(std::array<GenericTensor*, 2>& tensors,
+                        std::array<UFC*, 2>& ufc,
                         Scratch& data,
                         const DirichletBC::Map& boundary_values,
                         const MeshFunction<std::size_t>* cell_domains,
@@ -161,7 +162,7 @@ namespace dolfin
 
       void zero_cell();
 
-      boost::array<std::vector<double>, 2> Ae;
+      std::array<std::vector<double>, 2> Ae;
 
     };
 

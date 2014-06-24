@@ -54,10 +54,9 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
   dolfin_assert(V.mesh());
   const Mesh& mesh = *V.mesh();
 
-  std::vector<std::pair<dolfin::la_index, dolfin::la_index> >
-    global_to_cell_dof;
+  std::vector<std::pair<la_index, la_index>> global_to_cell_dof;
   std::vector<double> x;
-  std::vector<dolfin::la_index> indices;
+  std::vector<la_index> indices;
 
   const std::size_t num_dofs = V.dim();
 
@@ -108,23 +107,28 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
     }
   }
 
-  // Build current dof map based on function space V
-  std::vector<std::vector<dolfin::la_index> > dof_map;
+  // Build current dof map based on function space V (empty on all but
+  // process rank 0)
+  std::vector<std::vector<dolfin::la_index>> dof_map;
   build_dof_map(dof_map, V);
 
   // Map old-to-current vector positions
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
+    // Loop over dofs
     for (std::size_t i = 0; i < num_dofs; ++i)
     {
-      // Indices for data from file
+      // Get cell index and local (cell-wise) dof index (indices for
+      // data from file)
       dolfin_assert(i < global_to_cell_dof.size());
       const std::size_t global_cell_index = global_to_cell_dof[i].first;
       const std::size_t local_dof_index   = global_to_cell_dof[i].second;
 
-      // Local dof vector for V
-      const std::vector<dolfin::la_index>& dofs = dof_map[global_cell_index];
+      // Local dof vector for cell in  V
+      const std::vector<la_index>& dofs = dof_map[global_cell_index];
       dolfin_assert(local_dof_index < dofs.size());
+
+      // Get new dof index
       const dolfin::la_index new_index = dofs[local_dof_index];
 
       // File to new
@@ -163,7 +167,7 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
     u.vector()->get_local(x);
 
   // Build map
-  std::vector<std::vector<std::pair<dolfin::la_index, dolfin::la_index> > >
+  std::vector<std::vector<std::pair<dolfin::la_index, dolfin::la_index>>>
     global_dof_to_cell_dof;
   build_global_to_cell_dof(global_dof_to_cell_dof, V);
 
@@ -191,7 +195,7 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
 }
 //-----------------------------------------------------------------------------
 void XMLFunctionData::build_global_to_cell_dof(
-  std::vector<std::vector<std::pair<dolfin::la_index, dolfin::la_index> > >&
+  std::vector<std::vector<std::pair<la_index, la_index>>>&
   global_dof_to_cell_dof,
   const FunctionSpace& V)
 {
@@ -252,15 +256,18 @@ void XMLFunctionData::build_global_to_cell_dof(
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFunctionData::build_dof_map(
-  std::vector<std::vector<dolfin::la_index> >& dof_map,
-  const FunctionSpace& V)
+void XMLFunctionData::build_dof_map(std::vector<std::vector<la_index>>& dof_map,
+                                    const FunctionSpace& V)
 {
   // Get mesh and dofmap
   dolfin_assert(V.mesh());
   dolfin_assert(V.dofmap());
   const Mesh& mesh = *V.mesh();
   const GenericDofMap& dofmap = *V.dofmap();
+
+  // Get local-to-global map
+  std::vector<std::size_t> local_to_global_dof;
+  dofmap.tabulate_local_to_global_dofs(local_to_global_dof);
 
   // Get global number of cells
   const std::size_t num_cells = MPI::sum(mesh.mpi_comm(), mesh.num_cells());
@@ -273,15 +280,24 @@ void XMLFunctionData::build_dof_map(
     dolfin_assert(mesh.topology().have_global_indices(D));
 
     // Build dof map data with global cell indices
+    std::vector<la_index> cell_dofs_global;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const std::size_t local_cell_index = cell->index();
       const std::size_t global_cell_index = cell->global_index();
+
+      const std::vector<la_index>& cell_dofs = dofmap.cell_dofs(local_cell_index);
       local_dofmap.push_back(global_cell_index);
-      local_dofmap.push_back(dofmap.cell_dofs(local_cell_index).size());
+      local_dofmap.push_back(cell_dofs.size());
+
+      cell_dofs_global.resize(cell_dofs.size());
+      for(std::size_t i = 0; i <cell_dofs.size(); ++i)
+        cell_dofs_global[i] = local_to_global_dof[cell_dofs[i]];
+
+      // Insert global dof indices
       local_dofmap.insert(local_dofmap.end(),
-                          dofmap.cell_dofs(local_cell_index).begin(),
-                          dofmap.cell_dofs(local_cell_index).end());
+                          cell_dofs_global.begin(),
+                          cell_dofs_global.end());
     }
   }
   else

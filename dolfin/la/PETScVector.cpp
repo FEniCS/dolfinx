@@ -73,18 +73,20 @@ PETScVector::PETScVector(MPI_Comm comm, std::size_t N, bool use_gpu)
 
   // Empty ghost indices vector
   const std::vector<la_index> ghost_indices;
+  const std::vector<std::size_t> local_to_global_map;
 
   // Compute a local range
   const std::pair<std::size_t, std::size_t> range = MPI::local_range(comm, N);
-  _init(comm, range, ghost_indices);
+  _init(comm, range, local_to_global_map, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
   : _x(NULL), _use_gpu(false)
 {
   std::vector<la_index> ghost_indices;
-  init(sparsity_pattern.mpi_comm(), sparsity_pattern.local_range(0),
-         ghost_indices);
+  std::vector<std::size_t> local_to_global_map;
+  _init(sparsity_pattern.mpi_comm(), sparsity_pattern.local_range(0),
+        local_to_global_map, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x): _x(x), _use_gpu(false)
@@ -167,25 +169,26 @@ void PETScVector::init(MPI_Comm comm, std::size_t N)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range)
+                       std::pair<std::size_t, std::size_t> range)
 {
   // Create empty ghost indices vector
   std::vector<la_index> ghost_indices;
-  init(comm, range, ghost_indices);
+  std::vector<std::size_t> local_to_global_map;
+  init(comm, range, local_to_global_map, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range,
-                         const std::vector<la_index>& ghost_indices)
+                       std::pair<std::size_t, std::size_t> range,
+                       const std::vector<std::size_t>& local_to_global_map,
+                       const std::vector<la_index>& ghost_indices)
 {
   // Re-initialise vector
-  _init(comm, range, ghost_indices);
+  _init(comm, range, local_to_global_map, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(_x);
-  //const std::size_t n0 = local_range().first;
   const std::size_t local_size = local_range().second - local_range().first;
   values.resize(local_size);
 
@@ -208,7 +211,6 @@ void PETScVector::get_local(std::vector<double>& values) const
 void PETScVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(_x);
-  const std::size_t n0 = local_range().first;
   const std::size_t local_size = local_range().second - local_range().first;
   if (values.size() != local_size)
   {
@@ -220,20 +222,19 @@ void PETScVector::set_local(const std::vector<double>& values)
   if (local_size == 0)
     return;
 
-  // Build array of global indices
-  std::vector<PetscInt> rows(local_size, n0);
+  // Build array of local indices
+  std::vector<PetscInt> rows(local_size, 0);
   for (std::size_t i = 0; i < local_size; ++i)
     rows[i] += i;
 
-  PetscErrorCode ierr = VecSetValues(_x, local_size, rows.data(),
-                                     values.data(), INSERT_VALUES);
+  PetscErrorCode ierr = VecSetValuesLocal(_x, local_size, rows.data(),
+                                          values.data(), INSERT_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const Array<double>& values)
 {
   dolfin_assert(_x);
-  const std::size_t n0 = local_range().first;
   const std::size_t local_size = local_range().second - local_range().first;
   if (values.size() != local_size)
   {
@@ -245,14 +246,14 @@ void PETScVector::add_local(const Array<double>& values)
   if (local_size == 0)
     return;
 
-  // Build array of global indices
-  std::vector<PetscInt> rows(local_size, n0);
+  // Build array of local indices
+  std::vector<PetscInt> rows(local_size, 0);
   for (std::size_t i = 0; i < local_size; ++i)
     rows[i] += i;
 
-  PetscErrorCode ierr = VecSetValues(_x, local_size, rows.data(),
+  PetscErrorCode ierr = VecSetValuesLocal(_x, local_size, rows.data(),
                                      values.data(), ADD_VALUES);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, std::size_t m,
@@ -268,10 +269,8 @@ void PETScVector::get_local(double* block, std::size_t m,
   ierr = VecGhostGetLocalForm(_x, &xg);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostGetLocalForm");
 
-  const std::size_t offset = local_range().first;
-
-  // Use VecGetValues if no ghost points, otherwise check for ghost
-  // values
+  // Use array access if no ghost points, otherwise use VecGetValues
+  // on local ghosted form of vector
   if (!xg)
   {
     // Get pointer to PETSc vector data
@@ -280,43 +279,32 @@ void PETScVector::get_local(double* block, std::size_t m,
     if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetArrayRead");
 
     for (std::size_t i = 0; i < m; ++i)
-      block[i] = data[rows[i] - offset];
+      block[i] = data[rows[i]];
 
-    // Restor array
+    // Restore array
     ierr = VecRestoreArrayRead(_x, &data);
     if (ierr != 0) petsc_error(ierr, __FILE__, "VecRestoreArrayRead");
   }
   else
   {
     dolfin_assert(xg);
-
-    // Get local range
-    const PetscInt n0 = local_range().first;
-    const PetscInt n1 = local_range().second;
-    const PetscInt local_size = n1 - n0;
-
-    // Build list of rows, and get from ghosted vector
-    std::vector<PetscInt> local_rows(m);
-    for (std::size_t i = 0; i < m; ++i)
-    {
-      if (rows[i] >= n0 && rows[i] < n1)
-        local_rows[i] = rows[i] - n0;
-      else
-      {
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator
-          local_index = ghost_global_to_local.find(rows[i]);
-        dolfin_assert(local_index != ghost_global_to_local.end());
-        local_rows[i] = local_index->second + local_size;
-      }
-    }
-
-    // Pick values from ghosted vector
-    ierr = VecGetValues(xg, m, local_rows.data(), block);
+    ierr = VecGetValues(xg, m, rows, block);
     if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetValues");
+    ierr = VecGhostRestoreLocalForm(_x, &xg);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostRestoreLocalForm");
   }
+}
+//-----------------------------------------------------------------------------
+void PETScVector::get(double* block, std::size_t m,
+                      const dolfin::la_index* rows) const
+{
+  if (m == 0)
+    return;
 
-  ierr = VecGhostRestoreLocalForm(_x, &xg);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostRestoreLocalForm");
+  dolfin_assert(_x);
+  PetscErrorCode ierr;
+  ierr = VecGetValues(_x, m, rows, block);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, std::size_t m,
@@ -329,6 +317,16 @@ void PETScVector::set(const double* block, std::size_t m,
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
 }
 //-----------------------------------------------------------------------------
+void PETScVector::set_local(const double* block, std::size_t m,
+                            const dolfin::la_index* rows)
+{
+  dolfin_assert(_x);
+  if (m == 0)
+    return;
+  PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, INSERT_VALUES);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValuesLocal");
+}
+//-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, std::size_t m,
                       const dolfin::la_index* rows)
 {
@@ -337,6 +335,16 @@ void PETScVector::add(const double* block, std::size_t m,
     return;
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, ADD_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
+}
+//-----------------------------------------------------------------------------
+void PETScVector::add_local(const double* block, std::size_t m,
+                            const dolfin::la_index* rows)
+{
+  dolfin_assert(_x);
+  if (m == 0)
+    return;
+  PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, ADD_VALUES);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)
@@ -673,11 +681,11 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   const std::size_t process_number = MPI::rank(mpi_comm());
   for (std::size_t i = 1; i < num_processes; ++i)
   {
-    // Receive data from process p - i (i steps to the left), send data to
-    // process p + i (i steps to the right)
+    // Receive data from process p - i (i steps to the left), send
+    // data to process p + i (i steps to the right)
     const std::size_t source
       = (process_number - i + num_processes) % num_processes;
-    const std::size_t dest   = (process_number + i) % num_processes;
+    const std::size_t dest = (process_number + i) % num_processes;
 
     // Send and receive data
     std::vector<std::size_t> received_nonlocal_rows;
@@ -692,9 +700,9 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
     }
   }
 
-  // Get local values
+  // Get local values (using global indices)
   std::vector<double> local_values(local_rows.size());
-  get_local(&local_values[0], local_rows.size(), &local_rows.set()[0]);
+  get(&local_values[0], local_rows.size(), &local_rows.set()[0]);
 
   // Compute local sum
   const double local_sum = std::accumulate(local_values.begin(),
@@ -851,6 +859,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 //-----------------------------------------------------------------------------
 void PETScVector::_init(MPI_Comm comm,
                         std::pair<std::size_t, std::size_t> range,
+                        const std::vector<std::size_t>& local_to_global_map,
                         const std::vector<la_index>& ghost_indices)
 {
   PetscErrorCode ierr;
@@ -865,7 +874,7 @@ void PETScVector::_init(MPI_Comm comm,
   }
 
   // GPU support does not work in parallel
-  if (_use_gpu && MPI::size(comm))
+  if (_use_gpu && MPI::size(comm) > 1)
   {
     not_working_in_parallel("Due to limitations in PETSc, "
                             "distributed PETSc Cusp vectors");
@@ -891,6 +900,25 @@ void PETScVector::_init(MPI_Comm comm,
     ghost_global_to_local.insert(std::pair<std::size_t,
                                  std::size_t>(ghost_indices[i], i));
   }
+
+  ISLocalToGlobalMapping petsc_local_to_global;
+  std::vector<PetscInt> _map;
+  if (!local_to_global_map.empty())
+  {
+    _map = std::vector<PetscInt>(local_to_global_map.begin(),
+                                 local_to_global_map.end());
+  }
+  else
+  {
+    const std::size_t size = range.second - range.first;
+    _map.resize(size);
+    for (std::size_t i = 0; i < size; ++i)
+      _map[i] = i + range.first;
+  }
+  ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1, _map.size(), _map.data(),
+                               PETSC_COPY_VALUES, &petsc_local_to_global);
+  VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
+  ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
 }
 //-----------------------------------------------------------------------------
 Vec PETScVector::vec() const

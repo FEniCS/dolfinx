@@ -44,16 +44,15 @@ std::vector<std::size_t> dolfin::dof_to_vertex_map(const FunctionSpace& space)
 
   // Create return data structure
   const dolfin::la_index num_dofs
-    = dofmap.ownership_range().second  -  dofmap.ownership_range().first;
+    = dofmap.ownership_range().second - dofmap.ownership_range().first;
   std::vector<std::size_t> return_map(num_dofs);
 
   // Invert dof_map
   for (std::size_t i = 0; i < vertex_map.size(); i++)
   {
-    const dolfin::la_index dof = vertex_map[i];
-
     // Skip ghost dofs
-    if (dof >= 0 && dof < num_dofs)
+    const dolfin::la_index dof = vertex_map[i];
+    if (dof < num_dofs)
       return_map[dof] = i;
   }
 
@@ -92,11 +91,9 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
   // Allocate data for tabulating local to local map
   std::vector<std::size_t> local_to_local_map(dofs_per_vertex);
 
-  // Offset of local to global dof numbering
-  const dolfin::la_index n0 = dofmap.ownership_range().first;
-
   // Create return data structure
-  std::vector<dolfin::la_index> return_map(dofs_per_vertex*mesh.num_entities(0));
+  std::vector<dolfin::la_index>
+    return_map(dofs_per_vertex*mesh.num_entities(0));
 
   // Iterate over vertices
   std::size_t local_vertex_ind = 0;
@@ -128,7 +125,7 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
     {
       const dolfin::la_index global_dof
         = cell_dofs[local_to_local_map[local_dof]];
-      return_map[dofs_per_vertex*vertex->index() + local_dof] = global_dof - n0;
+      return_map[dofs_per_vertex*vertex->index() + local_dof] = global_dof;
     }
   }
 

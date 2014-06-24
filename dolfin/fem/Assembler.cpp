@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -85,7 +85,7 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   UFC ufc(a);
 
   // Update off-process coefficients
-  const std::vector<std::shared_ptr<const GenericFunction> >
+  const std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = a.coefficients();
 
   // Initialize global tensor
@@ -121,7 +121,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Get form rank
+  // Form rank
   const std::size_t form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
@@ -308,7 +308,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dofs for cells, and a vector holding pointers to same
-  std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
+  std::vector<std::vector<dolfin::la_index>> macro_dofs(form_rank);
   std::vector<const std::vector<dolfin::la_index>* > macro_dof_ptrs(form_rank);
   for (std::size_t i = 0; i < form_rank; i++)
     macro_dof_ptrs[i] = &macro_dofs[i];
@@ -372,9 +372,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     // Update to current pair of cells
     cell0.get_cell_data(ufc_cell[0], local_facet0);
-    cell1.get_cell_data(ufc_cell[1], local_facet1);
     cell0.get_vertex_coordinates(vertex_coordinates[0]);
+    cell1.get_cell_data(ufc_cell[1], local_facet1);
     cell1.get_vertex_coordinates(vertex_coordinates[1]);
+
     ufc.update(cell0, vertex_coordinates[0], ufc_cell[0],
                cell1, vertex_coordinates[1], ufc_cell[1],
                integral->enabled_coefficients());
@@ -419,6 +420,6 @@ void Assembler::add_to_global_tensor(GenericTensor& A,
                                      std::vector<double>& cell_tensor,
                                      std::vector<const std::vector<dolfin::la_index>* >& dofs)
 {
-  A.add(&cell_tensor[0], dofs);
+  A.add_local(&cell_tensor[0], dofs);
 }
 //-----------------------------------------------------------------------------

@@ -26,9 +26,9 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <unordered_set>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
-#include <boost/unordered_set.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -271,7 +271,7 @@ double uBLASVector::sum() const
 //-----------------------------------------------------------------------------
 double uBLASVector::sum(const Array<std::size_t>& rows) const
 {
-  boost::unordered_set<std::size_t> row_set;
+  std::unordered_set<std::size_t> row_set;
   double _sum = 0.0;
   for (std::size_t i = 0; i < rows.size(); ++i)
   {

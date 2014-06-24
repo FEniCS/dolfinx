@@ -66,7 +66,8 @@ void GenericMatrix::ident_zeros()
   }
 
   // Write a message
-  log(TRACE, "Found %d zero row(s), inserting ones on the diagonal.", zero_rows.size());
+  log(TRACE, "Found %d zero row(s), inserting ones on the diagonal.",
+      zero_rows.size());
 
   // Insert one on the diagonal for rows with only zeros.
   ident(zero_rows.size(), zero_rows.data());
@@ -99,11 +100,14 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   // With the row-by-row algorithm used here there is no need for
   // inserting non_local rows and as such we can simply use a dummy
   // for off_process_owner
-  std::vector<const boost::unordered_map<std::size_t, unsigned int>* >
-    off_process_owner(2);
-  const boost::unordered_map<std::size_t, unsigned int> dummy;
-  off_process_owner[0] = &dummy;
-  off_process_owner[1] = &dummy;
+  std::vector<const std::vector<std::size_t>* > local_to_global(2);
+  std::vector<const std::vector<int>* > off_process_owner(2);
+  const std::vector<int> dummy0;
+  off_process_owner[0] = &dummy0;
+  off_process_owner[1] = &dummy0;
+  const std::vector<std::size_t> dummy1;
+  local_to_global[0] = &dummy1;
+  local_to_global[1] = &dummy1;
   const std::pair<std::size_t, std::size_t> row_range = local_range[0];
   const std::size_t m = row_range.second - row_range.first;
 
@@ -112,8 +116,10 @@ void GenericMatrix::compressed(GenericMatrix& B) const
 
   // Initialize sparsity pattern
   if (new_sparsity_pattern)
+  {
     new_sparsity_pattern->init(MPI_COMM_WORLD, global_dimensions, local_range,
-                               off_process_owner);
+                               local_to_global, off_process_owner, 1);
+  }
 
   // Declare some variables used to extract matrix information
   std::vector<std::size_t> columns;
@@ -161,7 +167,7 @@ void GenericMatrix::compressed(GenericMatrix& B) const
 
     // Build new compressed sparsity pattern
     if (new_sparsity_pattern)
-      new_sparsity_pattern->insert(dofs);
+      new_sparsity_pattern->insert_global(dofs);
   }
 
   // Finalize sparsity pattern
