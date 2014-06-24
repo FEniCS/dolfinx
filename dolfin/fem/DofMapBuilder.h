@@ -76,7 +76,7 @@ namespace dolfin
     // Build simple local UFC-based dofmap data structure (does not
     // account for master/slave constraints)
     static void
-      build_local_ufc_dofmap(std::vector<std::vector<int>>& dofmap,
+      build_local_ufc_dofmap(std::vector<std::vector<dolfin::la_index>>& dofmap,
                              const ufc::dofmap& ufc_dofmap,
                              const Mesh& mesh);
 
