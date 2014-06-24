@@ -53,7 +53,8 @@ process_number = MPI.rank(M.mpi_comm())
 
 cell_ownership = np.ones(M.num_cells(),dtype='int')*process_number
 cell_owner = M.topology().cell_owner()
-cell_ownership[-len(cell_owner):] = cell_owner
+if len(cell_owner) > 0 :
+    cell_ownership[-len(cell_owner):] = cell_owner
 
 cells_store=[]
 cells_note=[]
@@ -80,6 +81,7 @@ for c in cells(M):
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
 
+num_regular_facets = M.topology().size(1) - M.topology().size_ghost(1)
 facet_note = []
 shared_facets = M.topology().shared_entities(1)
 for f in facets(M):
@@ -116,6 +118,10 @@ for note in verts_note:
 
 for note in facet_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor='#eeeeee')
+
+for i in range(num_regular_facets):
+    note = facet_note[i]
+    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor='#80ff80')
 
 plt.show()
 

@@ -204,19 +204,12 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   
   if (drop_ghost_cells == true)
   {
-    // FIXME: need to fix shared vertices too.
-    const unsigned int mpi_rank = MPI::rank(mesh.mpi_comm());
-    std::size_t count = 0;
-    for (auto it = new_mesh_data.cell_partition.begin();
-         it != new_mesh_data.cell_partition.end(); ++it)
-      if (*it == mpi_rank)
-        ++count;
-
     // Resize to remove all ghost cells
-    new_mesh_data.cell_partition.resize(count);    
+    new_mesh_data.cell_partition.resize(num_regular_cells);    
+    new_mesh_data.global_cell_indices.resize(num_regular_cells);    
     const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
     new_mesh_data.cell_vertices.resize
-      (boost::extents[count][num_cell_vertices]);
+      (boost::extents[num_regular_cells][num_cell_vertices]);
     shared_cells.clear();
   }
   
