@@ -398,28 +398,28 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> SCOTCH::compute_gps(const Graph& graph,
-                                             std::size_t num_passes)
+std::vector<int> SCOTCH::compute_gps(const Graph& graph,
+                                     std::size_t num_passes)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");
-  return std::vector<std::size_t>();
+  return std::vector<int>();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t>
+std::vector<int>
 SCOTCH::compute_reordering(const Graph& graph,
                            std::string scotch_strategy)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");
-  return std::vector<std::size_t>();
+  return std::vector<int>();
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_reordering(const Graph& graph,
-                                std::vector<std::size_t>& permutation,
-                                std::vector<std::size_t>& inverse_permutation,
+                                std::vector<int>& permutation,
+                                std::vector<int>& inverse_permutation,
                                 std::string scotch_strategy)
 
 {
