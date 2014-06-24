@@ -81,8 +81,13 @@ for c in cells(M):
     idx += 1
 
 facet_note = []
+shared_facets = M.topology().shared_entities(1)
 for f in facets(M):
-    facet_note.append((f.midpoint().x(), f.midpoint().y(), f.global_index()))
+    if (n < 3):
+        facet_note.append((f.midpoint().x(), f.midpoint().y(), f.global_index()))
+    else:
+        if (f.index() in shared_facets.keys()):
+            facet_note.append((f.midpoint().x(), f.midpoint().y(), shared_facets[f.index()]))
 
 fig, ax = plt.subplots()
 

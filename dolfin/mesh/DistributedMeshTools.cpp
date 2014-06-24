@@ -102,7 +102,7 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
   // Initially index from zero, add offset later
   std::size_t ecount = 0;
   const std::size_t num_regular_cells 
-    = mesh.topology().size(tdim) - cell_owner.size();
+    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
   
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
   {
@@ -151,6 +151,7 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
       if (map_it != shared_cells.end())
         cell_share.insert(map_it->second.begin(), map_it->second.end());
     }
+
     if (cell_share.size() > 0)
     {
       const std::vector<std::size_t> e_key = entity_key(*e);
@@ -213,7 +214,7 @@ void DistributedMeshTools::ghost_number_entities(const Mesh& mesh,
       {
         // If not already in map, insert and increment counter
         if(new_shared_numbering.insert(std::make_pair(qvec, ecount)).second)
-          ecount++;
+          ++ecount;
       }
     }
   }
@@ -1351,51 +1352,8 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   fc.set(connectivity_fc);
   fv.set(connectivity_fv);
 
-  ghost_number_entities(mesh, D - 1);  
-}
-//-----------------------------------------------------------------------------
-bool DistributedMeshTools::is_local_facet(
-      unsigned int mpi_rank,
-      const std::vector<std::size_t>& vertices,
-      const std::vector<std::size_t>& cell_owner)
-{
-  if (cell_owner.size() == 1)
-  { 
-    if (cell_owner[0] == mpi_rank)
-      // Local external facet
-      return true;
-    else
-      // Non-local external facet
-      return false;
-  }
-  
-  dolfin_assert(cell_owner.size() == 2);
-
-  if (cell_owner[0] == mpi_rank
-      && cell_owner[1] == mpi_rank)
-    // Local internal facet
-    return true;
-
-  if (cell_owner[0] != mpi_rank
-      && cell_owner[1] != mpi_rank)
-    // Non-local internal facet
-    return false;
-  
-  // Make decision here about facets shared with other processes.
-  // Must be consistent across processes.
-
-  const unsigned int other_proc 
-    = (cell_owner[0] == mpi_rank) ? cell_owner[1] : cell_owner[0];
-  
-  // FIXME: example switch based on first vertex even or odd.
-  bool vswitch = (vertices[0]%2 == 0);
-
-  if (other_proc > mpi_rank) 
-    return vswitch;
-  else
-    return not vswitch;
-  
-  return false;
+  // ghost_number_entities(mesh, D - 1);  
+  number_entities(mesh, D - 1);  
 }
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
