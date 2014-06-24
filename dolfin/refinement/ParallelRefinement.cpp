@@ -112,17 +112,15 @@ void ParallelRefinement::update_logical_edgefunction()
   // Create a list of edges on this process that are 'true' and copy
   // to remote sharing processes
   std::vector<std::vector<std::size_t> > values_to_send(num_processes);
-  std::unordered_map<unsigned int, std::vector<
-    std::pair<unsigned int, unsigned int> > >::iterator sh_edge;
-   for (sh_edge = shared_edges.begin(); sh_edge != shared_edges.end();
-        sh_edge++)
+  for (auto sh_edge = shared_edges.begin(); sh_edge != shared_edges.end();
+       sh_edge++)
   {
     const std::size_t local_index = sh_edge->first;
     if (marked_edges[local_index] == true)
     {
-      std::vector<std::pair<unsigned int, unsigned int> >::iterator proc_edge;
-      for (proc_edge = sh_edge->second.begin();
-          proc_edge != sh_edge->second.end(); ++proc_edge)
+      for (auto proc_edge = sh_edge->second.begin();
+           proc_edge != sh_edge->second.end();
+           ++proc_edge)
       {
         values_to_send[proc_edge->first].push_back(proc_edge->second);
       }
@@ -134,11 +132,13 @@ void ParallelRefinement::update_logical_edgefunction()
 
   // Flatten received values and set EdgeFunction true at each index
   // received
-  std::vector<std::vector<std::size_t> >::iterator r;
-  for (r = received_values.begin(); r != received_values.end(); ++r)
+  for (auto r = received_values.begin();
+       r != received_values.end();
+       ++r)
   {
-    for (std::vector<std::size_t>::iterator local_index = r->begin();
-         local_index != r->end(); ++local_index)
+    for (auto local_index = r->begin();
+         local_index != r->end();
+         ++local_index)
     {
       marked_edges[*local_index] = true;
     }
@@ -167,9 +167,8 @@ void ParallelRefinement::create_new_vertices()
       if (shared_edges.count(local_i) != 0)
       {
         // check if any other sharing process has a lower rank
-        std::vector<std::pair<unsigned int, unsigned int> >::iterator proc_edge;
-        for (proc_edge = shared_edges.find(local_i)->second.begin();
-              proc_edge != shared_edges.find(local_i)->second.end();
+        for (auto proc_edge = shared_edges.find(local_i)->second.begin();
+             proc_edge != shared_edges.find(local_i)->second.end();
              ++proc_edge)
         {
           if (proc_edge->first < process_number)
@@ -201,9 +200,9 @@ void ParallelRefinement::create_new_vertices()
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
   std::vector<std::vector<std::size_t> > values_to_send(num_processes);
-  for (std::map<std::size_t, std::size_t>::iterator
-       local_edge = local_edge_to_new_vertex.begin();
-       local_edge != local_edge_to_new_vertex.end(); ++local_edge)
+  for (auto local_edge = local_edge_to_new_vertex.begin();
+       local_edge != local_edge_to_new_vertex.end();
+       ++local_edge)
   {
     // Add global_offset to map, to get new global index of new
     // vertices
@@ -213,11 +212,9 @@ void ParallelRefinement::create_new_vertices()
     //shared, but locally owned : remote owned are not in list.
     if (shared_edges.count(local_i) != 0)
     {
-      std::vector<std::pair<unsigned int, unsigned int> >::iterator
-        remote_process_edge;
-      for (remote_process_edge = shared_edges[local_i].begin();
-          remote_process_edge != shared_edges[local_i].end();
-          ++remote_process_edge)
+      for (auto remote_process_edge = shared_edges[local_i].begin();
+           remote_process_edge != shared_edges[local_i].end();
+           ++remote_process_edge)
       {
         const std::size_t remote_proc_num = remote_process_edge->first;
         // send mapping from remote local edge index to new global vertex index

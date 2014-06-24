@@ -57,7 +57,7 @@ namespace dolfin
     ///         IsoSurface isosurface(Sphere(Point(0.0, 0.2, 0.4), 1.0),
     ///                               "manifold_with_boundary");
     ///
-    ImplicitSurface(Sphere s, std::string type);
+    ImplicitSurface(const Sphere& s, const std::string& type);
 
     /// Destructor
     virtual ~ImplicitSurface();

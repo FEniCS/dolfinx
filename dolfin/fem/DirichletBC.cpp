@@ -156,6 +156,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
   : Hierarchical<DirichletBC>(*this),
     _function_space(V),
     _g(g),
+    _facets(markers),
+    _user_sub_domain_marker(0),
     _method(method),
     _facets(markers),
     _check_midpoint(true)
@@ -165,7 +167,9 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc)
-  : Hierarchical<DirichletBC>(*this)
+  : Hierarchical<DirichletBC>(*this),
+   _user_sub_domain_marker(0),
+   _check_midpoint(true)
 {
   // Set default parameters
   parameters = default_parameters();
