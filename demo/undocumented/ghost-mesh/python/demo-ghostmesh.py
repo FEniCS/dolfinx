@@ -85,6 +85,8 @@ shared_facets = M.topology().shared_entities(1)
 for f in facets(M):
     if (n < 3):
         facet_note.append((f.midpoint().x(), f.midpoint().y(), f.global_index()))
+    elif (n == 3):
+        facet_note.append((f.midpoint().x(), f.midpoint().y(), f.index()))
     else:
         if (f.index() in shared_facets.keys()):
             facet_note.append((f.midpoint().x(), f.midpoint().y(), shared_facets[f.index()]))

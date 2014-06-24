@@ -1289,6 +1289,11 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   // for local cell reordering
   Graph g_dual(mesh.num_cells());
 
+  // Get ready to calculate regular/ghost facets
+  const unsigned int num_regular_cells
+    = topology.size(D) - topology.size_ghost(D);
+  unsigned int num_regular_facets = 0;
+
   // Loop over cells
   for (CellIterator c(mesh); !c.end(); ++c)
   {
@@ -1310,7 +1315,7 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
       // Sort (to use as map key)
       std::sort(facet->begin(), facet->end());
 
-      // Insert into map
+      // Insert into map, if not already there
       std::pair<std::map<std::vector<unsigned int>, 
                          unsigned int>::iterator, bool>
         it = fvertices_to_index.insert(std::make_pair(*facet, current_facet));
@@ -1329,7 +1334,11 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
         connectivity_fc.push_back(std::vector<unsigned int>(1, cell_index));
 
         // Increase counter
-        current_facet++;
+        ++current_facet;
+
+        // If cell is still not a ghost, then this is not a ghost facet
+        if (cell_index < num_regular_cells)
+          num_regular_facets = current_facet;
       }
       else
       {
@@ -1346,6 +1355,9 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
 
   // Initialise connectivity data structure
   topology.init(D - 1, connectivity_fv.size(), connectivity_fv.size());
+  
+  // Initialise number of ghost facets
+  topology.init_ghost(D - 1, topology.size(D - 1) - num_regular_facets);
 
   // Copy connectivity data into MeshTopology data structures
   cf.set(connectivity_cf);
