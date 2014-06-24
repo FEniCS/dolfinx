@@ -398,7 +398,7 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> SCOTCH::compute_gps(const Graph& graph,
+std::vector<int> SCOTCH::compute_gps(const Graph& graph,
                                              std::size_t num_passes)
 {
   dolfin_error("SCOTCH.cpp",
@@ -407,7 +407,7 @@ std::vector<std::size_t> SCOTCH::compute_gps(const Graph& graph,
   return std::vector<std::size_t>();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t>
+std::vector<int>
 SCOTCH::compute_reordering(const Graph& graph,
                            std::string scotch_strategy)
 {
