@@ -67,8 +67,8 @@ for c in cells(M):
     for v in vertices(c):
         xc.append(v.point().x())
         yc.append(v.point().y())
-    xavg = np.mean(np.array(xc))
-    yavg = np.mean(np.array(yc))
+    xavg = c.midpoint().x()
+    yavg = c.midpoint().y()
     cell_str=str([mpi_rank])
     if c.index() in shared_cells.keys():
         cell_str = str(shared_cells[c.index()])
@@ -79,6 +79,10 @@ for c in cells(M):
     
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
+
+facet_note = []
+for f in facets(M):
+    facet_note.append((f.midpoint().x(), f.midpoint().y(), f.global_index()))
 
 fig, ax = plt.subplots()
 
@@ -102,6 +106,9 @@ for note in cells_note:
 
 for note in verts_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center')
+
+for note in facet_note:
+    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor='#eeeeee')
 
 plt.show()
 
