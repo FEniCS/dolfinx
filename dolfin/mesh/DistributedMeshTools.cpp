@@ -345,8 +345,6 @@ std::size_t DistributedMeshTools::number_entities(
 
   Timer timer("PARALLEL x: Number mesh entities");
 
-  std::cout << "Numbering entities of dimension "<< d << "\n";
-
   // Check that we're not re-numbering vertices (these are fixed at
   // mesh construction)
   if (d == 0)

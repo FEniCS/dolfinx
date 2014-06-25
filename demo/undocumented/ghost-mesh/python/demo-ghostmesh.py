@@ -10,6 +10,8 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
+parameters["ghost_mode"] = "shared_facet"
+
 if(len(sys.argv) == 2):
     try:
         n = int(sys.argv[1])

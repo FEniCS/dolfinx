@@ -119,6 +119,10 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                   == local_data.global_cell_indices.size());
     dolfin_assert(*std::max_element(cell_partition.begin(), cell_partition.end())
                   < MPI::size(mesh.mpi_comm()));
+  }
+  
+  if (ghost_procs.empty())
+  {
     // FIXME: need to generate ghost cell information here by doing a facet-matching
     // operation "GraphBuilder" style
     warning("Ghost cell information not available");
@@ -198,22 +202,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                      cell_partition, ghost_procs, 
                      shared_cells, new_mesh_data);
   
-  // FIXME - call these based on a user option
-  bool ghost_by_vertex = true;
-  bool drop_ghost_cells = false;
-  
-  if (drop_ghost_cells == true)
-  {
-    // Resize to remove all ghost cells
-    new_mesh_data.cell_partition.resize(num_regular_cells);    
-    new_mesh_data.global_cell_indices.resize(num_regular_cells);    
-    const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
-    new_mesh_data.cell_vertices.resize
-      (boost::extents[num_regular_cells][num_cell_vertices]);
-    shared_cells.clear();
-  }
-  
-  if (ghost_by_vertex == true)
+  const std::string ghost_mode = parameters["ghost_mode"];
+    
+  if (ghost_mode == "shared_vertex")
   {
     // Send/receive additional cells
     // defined by connectivity to the shared vertices.
@@ -222,6 +213,16 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                           num_regular_cells,
                           shared_cells,
                           new_mesh_data);
+  }
+  else if (ghost_mode == "None")
+  {
+    // Resize to remove all ghost cells
+    new_mesh_data.cell_partition.resize(num_regular_cells);    
+    new_mesh_data.global_cell_indices.resize(num_regular_cells);    
+    const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
+    new_mesh_data.cell_vertices.resize
+      (boost::extents[num_regular_cells][num_cell_vertices]);
+    shared_cells.clear();
   }
 
   // Send vertices to processes that need them, informing all
@@ -248,29 +249,19 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                     new_mesh_data.cell_partition.begin() + num_regular_cells,
                     new_mesh_data.cell_partition.end());
 
-
-  std::cout << "All/regular cells = " << new_mesh_data.global_cell_indices.size() 
-            << "/" << num_regular_cells << "\n";
-
   // Set the number of ghost cells
   mesh.topology().init_ghost(mesh_data.tdim, 
                              new_mesh_data.global_cell_indices.size()
                              - num_regular_cells);
 
-
-  std::cout << "All/regular vertices = " << new_mesh_data.vertex_indices.size() 
-            << "/" << num_regular_vertices << "\n";
-
   // Set the number of ghost vertices
   mesh.topology().init_ghost(0, 
                              new_mesh_data.vertex_indices.size()
                              - num_regular_vertices);
-
     
   // Assign map of shared cells and vertices
   mesh.topology().shared_entities(mesh_data.tdim) = shared_cells;
   mesh.topology().shared_entities(0) = shared_vertices;
-
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
@@ -495,7 +486,7 @@ unsigned int MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
   
   Timer timer("Distribute ghost cells");
 
-  const std::size_t num_processes = MPI::size(mpi_comm);
+  const std::size_t mpi_size = MPI::size(mpi_comm);
   const std::size_t mpi_rank = MPI::rank(mpi_comm);
 
   // Get dimensions of local mesh_data
@@ -518,7 +509,7 @@ unsigned int MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
   // First element of vector is cell count of unghosted cells,
   // second element is count of ghost cells.
   std::vector<std::vector<std::size_t>> 
-    send_cell_vertices(num_processes, std::vector<std::size_t>(2, 0) );
+    send_cell_vertices(mpi_size, std::vector<std::size_t>(2, 0) );
   
   for (unsigned int i = 0; i != cell_partition.size(); ++i)
   {
@@ -576,14 +567,14 @@ unsigned int MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
   }
 
   // Distribute cell-vertex connectivity and ownership information
-  std::vector<std::vector<std::size_t> > received_cell_vertices(num_processes);
+  std::vector<std::vector<std::size_t> > received_cell_vertices(mpi_size);
   MPI::all_to_all(mpi_comm, send_cell_vertices, received_cell_vertices);
 
   // Count number of received cells (first entry in vector)
   // and find out how many ghost cells there are...
   std::size_t local_count = 0;
   std::size_t ghost_count = 0;
-  for (std::size_t p = 0; p < num_processes; ++p)
+  for (std::size_t p = 0; p < mpi_size; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
     local_count += received_data[0]; 
@@ -591,7 +582,6 @@ unsigned int MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
   }
     
   const std::size_t all_count = ghost_count + local_count;
-  std::cout << "ghost = " << ghost_count << "/" << local_count << "/" << all_count << "\n";
     
   // Put received mesh data into new_mesh_data structure
   new_mesh_data.cell_vertices.resize(boost::extents[all_count]
@@ -604,7 +594,7 @@ unsigned int MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
   // share them - corral ghost cells to end of range
   std::size_t c = 0;
   std::size_t gc = local_count;
-  for (std::size_t p = 0; p < num_processes; ++p)
+  for (std::size_t p = 0; p < mpi_size; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
     for (auto it = received_data.begin() + 2;
@@ -663,15 +653,19 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
     = new_mesh_data.vertex_indices;
   dolfin_assert(vertex_indices.size() == 0);
 
-  // Get set of unique vertices from non-ghost cells first
+  const boost::multi_array<std::size_t, 2>& cell_vertices
+    = new_mesh_data.cell_vertices;
+  dolfin_assert(cell_vertices.size() != 0);
+
+  // Get set of unique vertices 
   // and start constructing a global_to_local map
-  boost::multi_array<std::size_t, 2>::const_iterator cell_vertices;
+  // Ghost vertices will be at the end of the range (v >= num_regular_vertices)
   std::size_t v = 0;
-  for (cell_vertices = new_mesh_data.cell_vertices.begin(); 
-       cell_vertices != new_mesh_data.cell_vertices.begin() + num_regular_cells;
-       ++cell_vertices)
+  std::size_t num_regular_vertices = 0;
+  for (unsigned int i = 0; i != cell_vertices.size(); ++i)
   {
-    for (auto q = cell_vertices->begin(); q != cell_vertices->end(); ++q)
+    for (auto q = cell_vertices[i].begin(); 
+         q != cell_vertices[i].end(); ++q)
     {
       auto map_it = vertex_global_to_local.find(*q);
       if (map_it == vertex_global_to_local.end())
@@ -679,37 +673,21 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
         vertex_global_to_local.insert(std::make_pair(*q, v));
         vertex_indices.push_back(*q);
         ++v;
+        if (i < num_regular_cells)
+          num_regular_vertices = v;
       }
     }
   }  
-  const std::size_t num_regular_vertices = v;
-
-  // Repeat for ghost cells to put ghost vertices at end of range
-  for (cell_vertices = new_mesh_data.cell_vertices.begin() + num_regular_cells;
-       cell_vertices != new_mesh_data.cell_vertices.end();
-       ++cell_vertices)
-  {
-    for (auto q = cell_vertices->begin(); q != cell_vertices->end(); ++q)
-    {
-      auto map_it = vertex_global_to_local.find(*q);
-      if (map_it == vertex_global_to_local.end())
-      {
-        vertex_global_to_local.insert(std::make_pair(*q, v));
-        vertex_indices.push_back(*q);
-        ++v;
-      }
-    }
-  }
 
   // Get number of processes
-  const std::size_t num_processes = MPI::size(mpi_comm);
+  const std::size_t mpi_size = MPI::size(mpi_comm);
 
   // Get geometric dimension
   const std::size_t gdim = mesh_data.gdim;
 
   // Compute where (process number) the vertices we need are located
   // using MPI::index_owner()
-  std::vector<std::vector<std::size_t> > send_vertex_indices(num_processes);
+  std::vector<std::vector<std::size_t> > send_vertex_indices(mpi_size);
   for (auto required_vertex = vertex_indices.begin();
        required_vertex != vertex_indices.end(); ++required_vertex)
   {
@@ -734,10 +712,10 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
                         received_vertex_indices);
     
   // Distribute vertex coordinates
-  std::vector<std::vector<double> > send_vertex_coordinates(num_processes);
+  std::vector<std::vector<double> > send_vertex_coordinates(mpi_size);
   const std::pair<std::size_t, std::size_t> local_vertex_range
     = MPI::local_range(mpi_comm, mesh_data.num_global_vertices);
-  for (std::size_t p = 0; p < num_processes; ++p)
+  for (std::size_t p = 0; p < mpi_size; ++p)
   {
     send_vertex_coordinates[p].reserve(received_vertex_indices[p].size()*gdim);
     for (auto q = received_vertex_indices[p].begin(); q != received_vertex_indices[p].end(); ++q)
@@ -760,7 +738,7 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
 
   // Count number of received local vertices and check it agrees with map
   std::size_t num_received_vertices = 0;
-  for (std::size_t p = 0; p < num_processes; ++p)
+  for (std::size_t p = 0; p < mpi_size; ++p)
     num_received_vertices += received_vertex_coordinates[p].size()/gdim;
   dolfin_assert(num_received_vertices == vertex_indices.size());
 
@@ -770,7 +748,7 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
   vertex_coordinates.resize(boost::extents[vertex_indices.size()][gdim]);
 
   // Store coordinates according to global_to_local mapping
-  for (std::size_t p = 0; p < num_processes; ++p)
+  for (std::size_t p = 0; p < mpi_size; ++p)
   {
     for (std::size_t i = 0;
          i < received_vertex_coordinates[p].size()/gdim; ++i)
