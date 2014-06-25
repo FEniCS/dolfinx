@@ -1,8 +1,17 @@
-# - Build details for DOLFIN:  Dynamic Object-oriented Library for FINite element computation
+# - Build details for DOLFIN: Dynamic Object-oriented Library for
+# - FINite element computation
 #
 # This file has been automatically generated.
 
 # FIXME: Check that naming conforms to CMake standards
+
+# Library dependencies (contains definitions for IMPORTED targets)
+# FIXME: The argument "OPTIONAL" should not be here, but DOLFIN demo
+# CMakeLists.txt are written to be stand-alone, and the build system
+# adds the demos before DOLFINTargets.cmake has been written to file,
+# which results in an error when DOLFINTargets.cmake is not ready.
+include("@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake/DOLFINTargets.cmake"
+  OPTIONAL)
 
 # Compilers
 set(DOLFIN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
@@ -29,19 +38,7 @@ set(DOLFIN_PYTHON_INCLUDE_DIRS "@NUMPY_INCLUDE_DIR@;@PYTHON_INCLUDE_DIRS@")
 set(DOLFIN_PYTHON_DEFINITIONS "-DNUMPY_VERSION_MAJOR=@NUMPY_VERSION_MAJOR@;-DNUMPY_VERSION_MINOR=@NUMPY_VERSION_MINOR@;-DNUMPY_VERSION_MICRO=@NUMPY_VERSION_MICRO@;-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION")
 
 # DOLFIN library
-set(DOLFIN_LIBRARIES "@DOLFIN_LIBRARY@")
-
-# Third-party library directories
-set(DOLFIN_3RD_PARTY_LIBRARY_DIRS "@DOLFIN_TARGET_LINK_LIBRARIES_DIRS@")
-
-# Third-party libraries
-set(DOLFIN_3RD_PARTY_LIBRARIES "@DOLFIN_TARGET_LINK_LIBRARIES@")
-
-# Third-party libraries that are not required when linking with DOLFIN
-set(DOLFIN_EXTRA_3RD_PARTY_LIBRARIES "@DOLFIN_EXTRA_TARGET_LINK_LIBRARIES@")
-
-# Python libraries
-set(DOLFIN_PYTHON_LIBRARIES "@PYTHON_LIBRARIES@")
+set(DOLFIN_LIBRARIES dolfin)
 
 # Version
 set(DOLFIN_VERSION_MAJOR "@DOLFIN_VERSION_MAJOR@")
