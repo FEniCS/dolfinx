@@ -6,12 +6,12 @@
 # FIXME: Check that naming conforms to CMake standards
 
 # Library dependencies (contains definitions for IMPORTED targets)
-# FIXME: The argument "OPTIONAL" should not be here, but DOLFIN demo
-# CMakeLists.txt are written to be stand-alone, and the build system
-# adds the demos before DOLFINTargets.cmake has been written to file,
-# which results in an error when DOLFINTargets.cmake is not ready.
-include("@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake/DOLFINTargets.cmake"
-  OPTIONAL)
+# NOTE: DOLFIN demo CMakeLists.txt are written to be stand-alone, as
+# well as the build system building the demo. Therefore, we need the
+# below guard to avoid exporting the targets twice.
+if (NOT TARGET dolfin)
+  include("@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake/DOLFINTargets.cmake")
+endif()
 
 # Compilers
 set(DOLFIN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
