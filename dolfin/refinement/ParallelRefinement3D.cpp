@@ -76,7 +76,10 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 
   // Generate new topology
 
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  const unsigned int num_regular_cells 
+    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+
+  for (CellIterator cell(mesh); cell->index() != num_regular_cells; ++cell)
     eightfold_division(*cell, p);
 
   t0.stop();
@@ -165,7 +168,10 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   std::map<std::size_t, std::size_t>::const_iterator it;
 
   // Create new topology
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  const unsigned int num_regular_cells 
+    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+
+  for (CellIterator cell(mesh); cell->index() != num_regular_cells; ++cell)
   {
     VertexIterator v(*cell);
     EdgeIterator e(*cell);
