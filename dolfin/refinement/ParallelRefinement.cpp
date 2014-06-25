@@ -369,6 +369,7 @@ void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
 
   if (!redistribute)
   {
+    // FIXME: broken by ghost mesh
     // Set owning process rank to this process rank
     mesh_data.cell_partition.assign(mesh_data.global_cell_indices.size(),
                                     MPI::rank(_mesh.mpi_comm()));

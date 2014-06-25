@@ -101,7 +101,10 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   std::map<std::size_t, std::size_t>::const_iterator it;
 
   // Generate new topology
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  const unsigned int num_regular_cells 
+    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+
+  for (CellIterator cell(mesh); cell->index() != num_regular_cells; ++cell)
   {
     EdgeIterator e(*cell);
     VertexIterator v(*cell);
@@ -214,7 +217,10 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   // Stage 4 - do refinement
   // FIXME - keep reference edges somehow?...
 
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  const unsigned int num_regular_cells 
+    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+
+  for (CellIterator cell(mesh); cell->index() != num_regular_cells; ++cell)
   {
     std::size_t rgb_count = p.marked_edge_count(*cell);
     EdgeIterator e(*cell);
