@@ -22,7 +22,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2011-05-15
+// Last changed: 2014-04-28
 
 #include <vector>
 #include <dolfin/common/utils.h>

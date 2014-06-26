@@ -42,7 +42,7 @@ copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interf
 
 """
 
-# FIXME: Removed date from copyright form 
+# FIXME: Removed date from copyright form
 """
 %(comment)s First added:  2012-01-18
 %(comment)s Last changed: %(year)d-%(month)0.2d-%(day)0.2d
@@ -92,7 +92,7 @@ project(${SWIG_MODULE_NAME})
 # What does this do?
 get_directory_property(cmake_defs COMPILE_DEFINITIONS)
 
-# Set SWIG flags 
+# Set SWIG flags
 set(CMAKE_SWIG_FLAGS
   -module ${SWIG_MODULE_NAME}
   -shadow
@@ -121,23 +121,33 @@ set_source_files_properties(module.i PROPERTIES SWIG_MODULE_NAME ${SWIG_MODULE_N
 # Tell CMake SWIG has generated a C++ file
 set_source_files_properties(module.i PROPERTIES CPLUSPLUS ON)
 
-# Generate SWIG files in 
+# Generate SWIG files in
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 
-# Tell CMake which SWIG interface files should be checked for changes when recompile
+# Tell CMake which SWIG interface files should be checked for changes
+# when recompile
 set(SWIG_MODULE_${SWIG_MODULE_NAME}_EXTRA_DEPS copy_swig_files ${DOLFIN_SWIG_DEPENDENCIES})
+
+# Work-around for bug in CMake 3.0.0 (see
+# http://www.cmake.org/Bug/view.php?id=14990)
+set(SWIG_MODULE_NAME_ORIG "${SWIG_MODULE_NAME}")
+if (${CMAKE_VERSION} MATCHES "3.0.0")
+  set(SWIG_MODULE_NAME "_${SWIG_MODULE_NAME}")
+endif()
 
 # Tell CMake to run SWIG on module.i and to link against libdolfin
 swig_add_module(${SWIG_MODULE_NAME} python module.i)
 swig_link_libraries(${SWIG_MODULE_NAME} dolfin ${PYTHON_LIBRARIES})
 
-# Install Python .py files
-get_target_property(SWIG_MODULE_LOCATION ${SWIG_MODULE_${SWIG_MODULE_NAME}_REAL_NAME} LOCATION)
+# Install Python targets and .py files
+install(TARGETS
+  ${SWIG_MODULE_${SWIG_MODULE_NAME}_REAL_NAME}
+  DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/cpp
+  COMPONENT RuntimeLibraries
+  )
 install(FILES
-  ${SWIG_MODULE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME}.py
+  ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME_ORIG}.py
   DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/cpp
   COMPONENT RuntimeLibraries
   )
 """
-
-

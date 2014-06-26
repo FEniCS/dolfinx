@@ -21,7 +21,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2014-02-16
+// Last changed: 2014-04-24
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -65,6 +65,10 @@ namespace dolfin
     /// Return type of cell
     CellType::Type type() const
     { return _mesh->type().cell_type(); }
+
+    /// Return number of vertices of cell
+    std::size_t num_vertices() const
+    { return _mesh->type().num_vertices(); }
 
     /// Compute orientation of cell
     ///
@@ -320,10 +324,23 @@ namespace dolfin
 
     // FIXME: This function is part of a UFC transition
     /// Get cell vertex coordinates
+    void get_vertex_coordinates(double* coordinates) const
+    {
+      dolfin_assert(coordinates);
+      const std::size_t gdim = _mesh->geometry().dim();
+      const std::size_t num_vertices = this->num_vertices();
+      const unsigned int* vertices = this->entities(0);
+      for (std::size_t i = 0; i < num_vertices; i++)
+        for (std::size_t j = 0; j < gdim; j++)
+          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+    }
+
+    // FIXME: This function is part of a UFC transition
+    /// Get cell vertex coordinates
     void get_vertex_coordinates(std::vector<double>& coordinates) const
     {
       const std::size_t gdim = _mesh->geometry().dim();
-      const std::size_t num_vertices = this->num_entities(0);
+      const std::size_t num_vertices = this->num_vertices();
       const unsigned int* vertices = this->entities(0);
       coordinates.resize(num_vertices*gdim);
       for (std::size_t i = 0; i < num_vertices; i++)

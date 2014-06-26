@@ -141,7 +141,6 @@ void SLEPcEigenSolver::solve(std::size_t n)
     KSP ksp;
     ST st;
     EPSMonitorSet(eps, EPSMonitorAll, PETSC_NULL, PETSC_NULL);
-    EPSSetType(eps, EPSARPACK);
     EPSGetST(eps, &st);
     STGetKSP(st, &ksp);
     KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
