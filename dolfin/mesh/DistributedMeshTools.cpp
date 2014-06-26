@@ -1287,7 +1287,7 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
 
   // Additionally calculate cell-cell connectivity via facet
   // for local cell reordering
-  Graph g_dual(mesh.num_cells());
+  //  Graph g_dual(mesh.num_cells());
 
   // Get ready to calculate regular/ghost facets
   const unsigned int num_regular_cells
@@ -1345,10 +1345,10 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
         // Second cell connected to this facet - erase map entry
         fvertices_to_index.erase(it.first);
         std::vector<unsigned int>& cfc = connectivity_fc[f_index];
-        const unsigned int other_cell = cfc[0];
         cfc.push_back(cell_index);
-        g_dual[cell_index].insert(other_cell);
-        g_dual[other_cell].insert(cell_index);
+        //        const unsigned int other_cell = cfc[0];
+        //        g_dual[cell_index].insert(other_cell);
+        //        g_dual[other_cell].insert(cell_index);
       }
     }
   }

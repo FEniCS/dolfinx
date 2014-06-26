@@ -10,7 +10,7 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-parameters["ghost_mode"] = "shared_facet"
+parameters["ghost_mode"] = "shared_vertex"
 
 if(len(sys.argv) == 2):
     try:
@@ -26,7 +26,6 @@ mpi_rank = MPI.rank(mpi_comm_world())
 
 # parameters["mesh_partitioner"] = "ParMETIS"
 M = UnitSquareMesh(6, 6)
-M = refine(M, redistribute=True)
 
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())

@@ -100,6 +100,11 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   evertices_to_index.reserve(max_elements);
   #endif
 
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t num_regular_cells 
+    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+  unsigned int num_regular_entities = 0;
+
   // Loop over cells
   for (CellIterator c(mesh); !c.end(); ++c)
   {
@@ -144,13 +149,18 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
                                       connectivity_ce[cell_index].size());
 
         // Increase counter
-        current_entity++;
+        ++current_entity;
+        if (c->index() < num_regular_cells)
+          num_regular_entities = current_entity;
       }
     }
   }
 
   // Initialise connectivity data structure
   topology.init(dim, connectivity_ev.size(), connectivity_ev.size());
+
+  // Initialise number of ghost entities
+  topology.init_ghost(dim, current_entity - num_regular_entities);
 
   // Copy connectivity data into static MeshTopology data structures
   ce.set(connectivity_ce);

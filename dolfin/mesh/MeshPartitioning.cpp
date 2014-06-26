@@ -132,7 +132,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   build(mesh, local_data, cell_partition, ghost_procs);
 
   // Create MeshDomains from local_data
-  // FIXME: not working with ghost cells?
+  // FIXME: probably not working with ghost cells?
   build_mesh_domains(mesh, local_data);
 
   // Initialise number of globally connected cells to each facet. This is
@@ -177,11 +177,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
      const std::vector<std::size_t>& cell_partition,
      const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs)
 {
-  // FIXME: at present, the old way of building the
-  // mesh with no ghost cells is not supported. 
-  // Need to figure out best way of supporting both, and/or
-  // making the ghosting level more general.
-
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
 
@@ -271,9 +266,6 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
 {
   Timer timer("Distribute cell layer");
 
-  // FIXME: simplify where possible
-  // FIXME: some cell sharing data is not being set properly
-
   const unsigned int mpi_size = MPI::size(mpi_comm);
   const unsigned int mpi_rank = MPI::rank(mpi_comm);
 
@@ -282,7 +274,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
 
   // Get set of vertices in ghost cells
   std::map<std::size_t, std::vector<std::size_t> > sh_vert_to_cell;
-  // Make partial global-to-local map
+  // Make global-to-local map of shared cells
   std::map<std::size_t, unsigned int> cell_global_to_local;
   for (unsigned int i = num_regular_cells; i != cell_vertices.size(); ++i)
   {
@@ -484,7 +476,7 @@ unsigned int MeshPartitioning::distribute_cells(const MPI_Comm mpi_comm,
   // its global index, and the cell owner (for ghost cells this
   // will be different from the destination)
   
-  Timer timer("Distribute ghost cells");
+  Timer timer("Distribute cells");
 
   const std::size_t mpi_size = MPI::size(mpi_comm);
   const std::size_t mpi_rank = MPI::rank(mpi_comm);
@@ -649,6 +641,8 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
   // distributed so that each process learns where it needs to send
   // its vertices.
 
+  Timer t("Distribute vertices");
+
   std::vector<std::size_t>& vertex_indices 
     = new_mesh_data.vertex_indices;
   dolfin_assert(vertex_indices.size() == 0);
@@ -657,7 +651,7 @@ std::size_t MeshPartitioning::distribute_vertices(const MPI_Comm mpi_comm,
     = new_mesh_data.cell_vertices;
   dolfin_assert(cell_vertices.size() != 0);
 
-  // Get set of unique vertices 
+  // Get set of unique vertices from cells
   // and start constructing a global_to_local map
   // Ghost vertices will be at the end of the range (v >= num_regular_vertices)
   std::size_t v = 0;
@@ -879,8 +873,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     for (std::size_t j = 0; j < num_cell_vertices; ++j)
     {
       // Get local cell vertex
-      std::map<std::size_t, std::size_t>::const_iterator iter
-          = vertex_global_to_local.find(cell_global_vertices[i][j]);
+      auto iter = vertex_global_to_local.find(cell_global_vertices[i][j]);
       dolfin_assert(iter != vertex_global_to_local.end());
       cell[j] = iter->second;
     }
@@ -892,9 +885,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // (based on local numbers).
   editor.close();
 
-  // Set global number of cells and vertices
-  // mesh.topology().init_global(0, num_global_vertices);
-  //   mesh.topology().init_global(tdim,  num_global_cells);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh_domains(Mesh& mesh,
