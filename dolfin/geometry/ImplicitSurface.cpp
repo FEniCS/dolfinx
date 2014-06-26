@@ -25,7 +25,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ImplicitSurface::ImplicitSurface(Sphere s, std::string type)
+ImplicitSurface::ImplicitSurface(const Sphere& s, const std::string& type)
   : sphere(s), type(type)
 {
   // Checck type
