@@ -11,6 +11,7 @@ import numpy as np
 import sys
 
 parameters["ghost_mode"] = "shared_vertex"
+parameters["reorder_cells_gps"] = True
 
 n = 0
 

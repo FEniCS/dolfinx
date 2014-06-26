@@ -226,8 +226,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 
 #ifdef HAS_SCOTCH
   // FIXME: make optional
-  reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, 
-                    shared_cells, new_mesh_data);
+  if (parameters["reorder_cells_gps"])
+    reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, 
+                      shared_cells, new_mesh_data);
 #endif
 
   // Send vertices to processes that need them, informing all
@@ -294,6 +295,7 @@ void MeshPartitioning::reorder_cells_gps(MPI_Comm mpi_comm,
   // FIXME: make all graphs the same type
   Graph g_dual;
   // Ignore the ghost cells - they will not be reordered
+  // FIXME: reorder ghost cells too
   for (unsigned int i = 0; i != num_regular_cells; ++i)
   {
     dolfin::Set<std::size_t> conn_set;
@@ -308,8 +310,25 @@ void MeshPartitioning::reorder_cells_gps(MPI_Comm mpi_comm,
     }
     g_dual.push_back(conn_set);
   }
-
   std::vector<std::size_t> remap = SCOTCH::compute_gps(g_dual);
+
+  // // Play with reordering ghost cells
+  // Graph g_dual_ghost;
+  // for (unsigned int i = num_regular_cells; i != num_all_cells; ++i)
+  // {
+  //   dolfin::Set<std::size_t> conn_set;
+  //   for (auto q = local_graph[i].begin(); 
+  //        q != local_graph[i].end(); ++q)
+  //   {
+  //     dolfin_assert(*q >= local_cell_offset);
+  //     const unsigned int local_index = *q - local_cell_offset;
+  //     // Ignore non-ghost cells in connectivity
+  //     if (local_index >= num_regular_cells)
+  //       conn_set.insert(local_index - num_regular_cells);
+  //   }
+  //   g_dual_ghost.push_back(conn_set);
+  // }
+  // std::vector<std::size_t> remap_ghost = SCOTCH::compute_gps(g_dual_ghost);
 
   boost::multi_array<std::size_t, 2> remapped_cell_vertices(new_mesh_data.cell_vertices);
   std::vector<std::size_t> remapped_global_cell_indices(new_mesh_data.global_cell_indices);

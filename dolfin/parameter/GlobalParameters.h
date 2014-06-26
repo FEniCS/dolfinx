@@ -99,6 +99,9 @@ namespace dolfin
       allowed_ghost_modes.insert("None");
       p.add("ghost_mode", "None", allowed_ghost_modes);
 
+      // Mesh ordering via SCOTCH and GPS
+      p.add("reorder_cells_gps", false);
+
       // Allowed partitioners (not necessarily installed)
       std::set<std::string> allowed_mesh_partitioners;
       allowed_mesh_partitioners.insert("ParMETIS");
