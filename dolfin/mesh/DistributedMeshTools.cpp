@@ -1001,116 +1001,124 @@ void DistributedMeshTools::init_facet_cell_connections_by_ghost(Mesh& mesh)
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
 
-  // Get mesh topology and connectivity
-  // cell-facet, facet-cell and facet-vertex
-  MeshTopology& topology = mesh.topology();
-  MeshConnectivity& cf = topology(D, D - 1);
-  MeshConnectivity& fc = topology(D - 1, D);
-  MeshConnectivity& fv = topology(D - 1, 0);
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
+
+  // if (false)
+  // {
+    
+  // // Get mesh topology and connectivity
+  // // cell-facet, facet-cell and facet-vertex
+  // MeshTopology& topology = mesh.topology();
+  // MeshConnectivity& cf = topology(D, D - 1);
+  // MeshConnectivity& fc = topology(D - 1, D);
+  // MeshConnectivity& fv = topology(D - 1, 0);
   
-  // Check if entities have already been computed
-  dolfin_assert(topology.size(D - 1) == 0);
+  // // Check if entities have already been computed
+  // dolfin_assert(topology.size(D - 1) == 0);
 
-  // Connectivity should not already exist  
-  dolfin_assert(cf.empty() && fv.empty() && fc.empty());
+  // // Connectivity should not already exist  
+  // dolfin_assert(cf.empty() && fv.empty() && fc.empty());
 
-  const CellType& cell_type = mesh.type();
+  // const CellType& cell_type = mesh.type();
 
-  // Initialize local array of entities
-  const std::size_t m = cell_type.num_entities(D - 1);
-  const std::size_t num_facet_vertices = cell_type.num_vertices(D - 1);
-  std::vector<std::vector<unsigned int> >
-    f_vertices(m, std::vector<unsigned int>(num_facet_vertices, 0));
+  // // Initialize local array of entities
+  // const std::size_t m = cell_type.num_entities(D - 1);
+  // const std::size_t num_facet_vertices = cell_type.num_vertices(D - 1);
+  // std::vector<std::vector<unsigned int> >
+  //   f_vertices(m, std::vector<unsigned int>(num_facet_vertices, 0));
 
-  // List of facet indices connected to cell
-  std::vector<std::vector<unsigned int> > connectivity_cf(mesh.num_cells());
+  // // List of facet indices connected to cell
+  // std::vector<std::vector<unsigned int> > connectivity_cf(mesh.num_cells());
 
-  // List of vertex indices connected to facet
-  std::vector<std::vector<unsigned int> > connectivity_fv;
+  // // List of vertex indices connected to facet
+  // std::vector<std::vector<unsigned int> > connectivity_fv;
 
-  // List of cell indices connected to facet
-  std::vector<std::vector<unsigned int> > connectivity_fc;
+  // // List of cell indices connected to facet
+  // std::vector<std::vector<unsigned int> > connectivity_fc;
 
-  std::size_t current_facet = 0;
-  // At present, there is a maximum of four facets per cell
-  std::size_t max_cf_connections = 4;
+  // std::size_t current_facet = 0;
+  // // At present, there is a maximum of four facets per cell
+  // std::size_t max_cf_connections = 4;
 
-  // Local indexing of facets
-  std::map<std::vector<unsigned int>, unsigned int> fvertices_to_index;
+  // // Local indexing of facets
+  // std::map<std::vector<unsigned int>, unsigned int> fvertices_to_index;
 
-  // Get ready to calculate regular/ghost facets
-  const unsigned int num_regular_cells
-    = topology.size(D) - topology.size_ghost(D);
-  unsigned int num_regular_facets = 0;
+  // // Get ready to calculate regular/ghost facets
+  // const unsigned int num_regular_cells
+  //   = topology.size(D) - topology.size_ghost(D);
+  // unsigned int num_regular_facets = 0;
 
-  // Loop over cells
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    // Cell index
-    const std::size_t cell_index = c->index();
-    connectivity_cf[cell_index].reserve(max_cf_connections);
+  // // Loop over cells
+  // for (CellIterator c(mesh); !c.end(); ++c)
+  // {
+  //   // Cell index
+  //   const std::size_t cell_index = c->index();
+  //   connectivity_cf[cell_index].reserve(max_cf_connections);
 
-    // Get vertices from cell
-    const unsigned int* vertices = c->entities(0);
-    dolfin_assert(vertices);
+  //   // Get vertices from cell
+  //   const unsigned int* vertices = c->entities(0);
+  //   dolfin_assert(vertices);
 
-    // Create facets
-    cell_type.create_entities(f_vertices, D - 1, vertices);
+  //   // Create facets
+  //   cell_type.create_entities(f_vertices, D - 1, vertices);
 
-    // Iterate over the given list of facets
-    std::vector<std::vector<unsigned int> >::iterator facet;
-    for (facet = f_vertices.begin(); facet != f_vertices.end(); ++facet)
-    {
-      // Sort (to use as map key)
-      std::sort(facet->begin(), facet->end());
+  //   // Iterate over the given list of facets
+  //   std::vector<std::vector<unsigned int> >::iterator facet;
+  //   for (facet = f_vertices.begin(); facet != f_vertices.end(); ++facet)
+  //   {
+  //     // Sort (to use as map key)
+  //     std::sort(facet->begin(), facet->end());
 
-      // Insert into map, if not already there
-      std::pair<std::map<std::vector<unsigned int>, 
-                         unsigned int>::iterator, bool>
-        it = fvertices_to_index.insert(std::make_pair(*facet, current_facet));
+  //     // Insert into map, if not already there
+  //     std::pair<std::map<std::vector<unsigned int>, 
+  //                        unsigned int>::iterator, bool>
+  //       it = fvertices_to_index.insert(std::make_pair(*facet, current_facet));
 
-      // Facet index
-      std::size_t f_index = it.first->second;
+  //     // Facet index
+  //     std::size_t f_index = it.first->second;
 
-      // Add facet index to cell-facet connectivity
-      connectivity_cf[cell_index].push_back(f_index);
+  //     // Add facet index to cell-facet connectivity
+  //     connectivity_cf[cell_index].push_back(f_index);
 
-      // If new key was inserted, increment counter
-      if (it.second)
-      {
-        // Add list of new entity vertices
-        connectivity_fv.push_back(*facet);
-        connectivity_fc.push_back(std::vector<unsigned int>(1, cell_index));
+  //     // If new key was inserted, increment counter
+  //     if (it.second)
+  //     {
+  //       // Add list of new entity vertices
+  //       connectivity_fv.push_back(*facet);
+  //       connectivity_fc.push_back(std::vector<unsigned int>(1, cell_index));
 
-        // Increase counter
-        ++current_facet;
+  //       // Increase counter
+  //       ++current_facet;
 
-        // If cell is still not a ghost, then this is not a ghost facet
-        if (cell_index < num_regular_cells)
-          num_regular_facets = current_facet;
-      }
-      else
-      {
-        // Second cell connected to this facet - erase map entry
-        fvertices_to_index.erase(it.first);
-        std::vector<unsigned int>& cfc = connectivity_fc[f_index];
-        cfc.push_back(cell_index);
-      }
-    }
-  }
+  //       // If cell is still not a ghost, then this is not a ghost facet
+  //       if (cell_index < num_regular_cells)
+  //         num_regular_facets = current_facet;
+  //     }
+  //     else
+  //     {
+  //       // Second cell connected to this facet - erase map entry
+  //       fvertices_to_index.erase(it.first);
+  //       std::vector<unsigned int>& cfc = connectivity_fc[f_index];
+  //       cfc.push_back(cell_index);
+  //     }
+  //   }
+  // }
 
-  // Initialise connectivity data structure
-  topology.init(D - 1, connectivity_fv.size(), connectivity_fv.size());
+  // // Initialise connectivity data structure
+  // topology.init(D - 1, connectivity_fv.size(), connectivity_fv.size());
   
-  // Initialise number of ghost facets
-  topology.init_ghost(D - 1, topology.size(D - 1) - num_regular_facets);
+  // // Initialise number of ghost facets
+  // topology.init_ghost(D - 1, topology.size(D - 1) - num_regular_facets);
 
-  // Copy connectivity data into MeshTopology data structures
-  cf.set(connectivity_cf);
-  fc.set(connectivity_fc);
-  fv.set(connectivity_fv);
-
-  // ghost_number_entities(mesh, D - 1);  
+  // // Copy connectivity data into MeshTopology data structures
+  // cf.set(connectivity_cf);
+  // fc.set(connectivity_fc);
+  // fv.set(connectivity_fv);
+  // }
+  
+  
+  // Give entities a global numbering
   number_entities(mesh, D - 1);  
 }
 //-----------------------------------------------------------------------------

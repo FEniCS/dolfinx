@@ -10,7 +10,7 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-parameters["ghost_mode"] = "shared_vertex"
+parameters["ghost_mode"] = "shared_facet"
 parameters["reorder_cells_gps"] = True
 
 n = 0
@@ -30,6 +30,10 @@ mpi_rank = MPI.rank(mpi_comm_world())
 # parameters["mesh_partitioner"] = "ParMETIS"
 M = UnitSquareMesh(5, 5)
 M = refine(M)
+
+for f in facets(M):
+    print f.index(), f.global_index(), f.num_entities(2)
+
 
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())

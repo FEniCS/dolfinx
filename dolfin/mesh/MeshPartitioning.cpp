@@ -141,7 +141,13 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
-  DistributedMeshTools::init_facet_cell_connections_by_ghost(mesh);
+  const unsigned int D = mesh.topology().dim();
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
+  DistributedMeshTools::number_entities(mesh, D - 1);
+
+  // FIXME: is this needed?
+  //   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
@@ -225,7 +231,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   }
 
 #ifdef HAS_SCOTCH
-  // FIXME: make optional
   if (parameters["reorder_cells_gps"])
     reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, 
                       shared_cells, new_mesh_data);
