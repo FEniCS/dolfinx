@@ -225,6 +225,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   }
 
 #ifdef HAS_SCOTCH
+  // FIXME: make optional
   reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, 
                     shared_cells, new_mesh_data);
 #endif
@@ -290,7 +291,6 @@ void MeshPartitioning::reorder_cells_gps(MPI_Comm mpi_comm,
     = MPI::global_offset(mpi_comm, num_all_cells, true);
 
   // Convert between graph types, removing offset
-  // FIXME: make offset optional in compute_local_dual_graph
   // FIXME: make all graphs the same type
   Graph g_dual;
   // Ignore the ghost cells - they will not be reordered
@@ -300,6 +300,7 @@ void MeshPartitioning::reorder_cells_gps(MPI_Comm mpi_comm,
     for (auto q = local_graph[i].begin(); 
          q != local_graph[i].end(); ++q)
     {
+      dolfin_assert(*q >= local_cell_offset);
       const unsigned int local_index = *q - local_cell_offset;
       // Ignore ghost cells in connectivity
       if (local_index < num_regular_cells)

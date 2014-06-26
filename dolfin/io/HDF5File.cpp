@@ -310,7 +310,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
       // If not already numbered, number entities of order cell_dim so
       // we can get shared_entities
-      DistributedMeshTools::ghost_number_entities(mesh, cell_dim);
+      DistributedMeshTools::number_entities(mesh, cell_dim);
 
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
@@ -502,7 +502,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   }
 
   // Ensure size_global(cell_dim) is set
-  DistributedMeshTools::ghost_number_entities(mesh, cell_dim);
+  DistributedMeshTools::number_entities(mesh, cell_dim);
 
   if (num_global_cells != mesh.size_global(cell_dim))
   {

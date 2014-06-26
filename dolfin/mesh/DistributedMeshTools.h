@@ -41,10 +41,6 @@ namespace dolfin
   class DistributedMeshTools
   {
   public:
-
-    /// Create global entity indices for entities of dimension d
-    /// using ghost cells to get the sharing information
-    static void ghost_number_entities(const Mesh& mesh, std::size_t d);
     
     /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, std::size_t d);
@@ -64,6 +60,10 @@ namespace dolfin
     // two cells (with the cells residing on neighboring processes)
     static void init_facet_cell_connections(Mesh& mesh);
 
+    // Compute number of cells connected to each facet
+    // (globally). Facets on internal boundaries will be connected to
+    // two cells (with the cells residing on neighboring processes)
+    // using ghost information
     static void init_facet_cell_connections_by_ghost(Mesh& mesh);
     
     /// Find processes that own or share mesh entities (using entity
@@ -154,11 +154,6 @@ namespace dolfin
                                   std::size_t num_local_entities,
                                   std::size_t num_processes,
                                   std::size_t process_number);
-
-    static std::vector<std::size_t> entity_key(const MeshEntity& e);
-
   };
-
 }
-
 #endif
