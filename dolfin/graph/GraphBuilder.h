@@ -65,6 +65,8 @@ namespace dolfin
 
   private:
 
+    friend class MeshPartitioning;
+
     typedef boost::unordered_map<std::vector<std::size_t>, std::size_t>
       FacetCellMap;
 

@@ -12,6 +12,8 @@ import sys
 
 parameters["ghost_mode"] = "shared_vertex"
 
+n = 0
+
 if(len(sys.argv) == 2):
     try:
         n = int(sys.argv[1])
@@ -25,7 +27,8 @@ if(MPI.size(mpi_comm_world()) == 1):
 mpi_rank = MPI.rank(mpi_comm_world())
 
 # parameters["mesh_partitioner"] = "ParMETIS"
-M = UnitSquareMesh(6, 6)
+M = UnitSquareMesh(5, 5)
+M = refine(M)
 
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())

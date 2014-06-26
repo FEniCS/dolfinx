@@ -103,9 +103,17 @@ namespace dolfin
     // Distribute a layer of cells attached by vertex to boundary
     // updating new_mesh_data and shared_cells
     static void distribute_cell_layer(MPI_Comm mpi_comm,
-      const unsigned int num_regular_cells,
+      unsigned int num_regular_cells,
       std::map<unsigned int, std::set<unsigned int> >& shared_cells,
       LocalMeshData& new_mesh_data);
+
+
+    static void reorder_cells_gps(MPI_Comm mpi_comm,
+     unsigned int num_regular_cells,
+     std::map<unsigned int, std::set<unsigned int> >& shared_cells,
+     LocalMeshData& new_mesh_data);
+    
+
     
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
