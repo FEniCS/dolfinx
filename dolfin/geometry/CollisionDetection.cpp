@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-02-24
+// Last changed: 2014-04-03
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -173,15 +173,9 @@ bool CollisionDetection::collides_interval_point(const MeshEntity& entity,
   // Get coordinates
   const MeshGeometry& geometry = entity.mesh().geometry();
   const unsigned int* vertices = entity.entities(0);
-  const double x0 = geometry.point(vertices[0])[0];
-  const double x1 = geometry.point(vertices[1])[0];
-  const double x = point.x();
-
-  // Check for collision
-  const double dx = std::abs(x1 - x0);
-  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
-  return ((x >= x0 - eps && x <= x1 + eps) ||
-          (x >= x1 - eps && x <= x0 + eps));
+  return collides_interval_point(geometry.point(vertices[0]),
+                                 geometry.point(vertices[1]),
+                                 point);
 }
 //-----------------------------------------------------------------------------
 bool
@@ -455,6 +449,42 @@ CollisionDetection::collides_edge_edge(const Point& a,
 
   return true;
 }
+//-----------------------------------------------------------------------------
+bool CollisionDetection::collides_interval_point(const Point& p0,
+                                                 const Point& p1,
+                                                 const Point& point)
+{
+  // Compute angle between v = p1 - p0 and w = point - p0
+  Point v = p1 - p0;
+  const double vnorm = v.norm();
+
+  // p0 and p1 are the same points
+  if (vnorm < DOLFIN_EPS_LARGE)
+    return false;
+
+  const Point w = point - p0;
+  const double wnorm = w.norm();
+
+  // point and p0 are the same points
+  if (wnorm < DOLFIN_EPS)
+    return true;
+
+  // Compute cosine
+  v /= vnorm;
+  const double a = v.dot(w) / wnorm;
+
+  // Cosine should be 1
+  if (std::abs(1-a) < DOLFIN_EPS_LARGE)
+  {
+    // Check if projected point is between p0 and p1
+    const double t = v.dot(w);
+    if (t >= 0 and t <= 1)
+      return true;
+  }
+
+  return false;
+}
+
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const Point& p0,
                                                  const Point& p1,

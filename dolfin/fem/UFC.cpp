@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -17,9 +17,7 @@
 //
 // Modified by Ola Skavhaug, 2009
 // Modified by Garth N. Wells, 2010
-//
-// First added:  2007-01-17
-// Last changed: 2013-09-24
+// Modified by Martin Alnaes, 2013-2014
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -65,25 +63,34 @@ void UFC::init(const Form& a)
   }
 
   // Create cell integrals
-  default_cell_integral =
-    std::shared_ptr<ufc::cell_integral>(form.create_default_cell_integral());
+  default_cell_integral
+    = std::shared_ptr<ufc::cell_integral>(form.create_default_cell_integral());
   for (std::size_t i = 0; i < form.num_cell_domains(); i++)
     cell_integrals.push_back(std::shared_ptr<ufc::cell_integral>(form.create_cell_integral(i)));
 
   // Create exterior facet integrals
-  default_exterior_facet_integral = std::shared_ptr<ufc::exterior_facet_integral>(form.create_default_exterior_facet_integral());
+  default_exterior_facet_integral
+    = std::shared_ptr<ufc::exterior_facet_integral>(form.create_default_exterior_facet_integral());
   for (std::size_t i = 0; i < form.num_exterior_facet_domains(); i++)
     exterior_facet_integrals.push_back(std::shared_ptr<ufc::exterior_facet_integral>(form.create_exterior_facet_integral(i)));
 
   // Create interior facet integrals
-  default_interior_facet_integral = std::shared_ptr<ufc::interior_facet_integral>(form.create_default_interior_facet_integral());
+  default_interior_facet_integral
+    = std::shared_ptr<ufc::interior_facet_integral>(form.create_default_interior_facet_integral());
   for (std::size_t i = 0; i < form.num_interior_facet_domains(); i++)
     interior_facet_integrals.push_back(std::shared_ptr<ufc::interior_facet_integral>(form.create_interior_facet_integral(i)));
 
   // Create point integrals
-  default_point_integral = std::shared_ptr<ufc::point_integral>(this->form.create_default_point_integral());
+  default_point_integral
+    = std::shared_ptr<ufc::point_integral>(this->form.create_default_point_integral());
   for (std::size_t i = 0; i < this->form.num_point_domains(); i++)
     point_integrals.push_back(std::shared_ptr<ufc::point_integral>(this->form.create_point_integral(i)));
+
+  // Create custom integrals
+  default_custom_integral
+    = std::shared_ptr<ufc::custom_integral>(this->form.create_default_custom_integral());
+  for (std::size_t i = 0; i < this->form.num_custom_domains(); i++)
+    custom_integrals.push_back(std::shared_ptr<ufc::custom_integral>(this->form.create_custom_integral(i)));
 
   // Get maximum local dimensions
   std::vector<std::size_t> max_local_dimension;
@@ -125,6 +132,41 @@ void UFC::init(const Form& a)
     const std::size_t n = 2*coefficient_elements[i].space_dimension();
     _macro_w[i].resize(n);
     macro_w_pointer[i] = &_macro_w[i][0];
+  }
+}
+//-----------------------------------------------------------------------------
+void UFC::update(const Cell& c, const std::vector<double>& vertex_coordinates,
+                 const ufc::cell& ufc_cell,
+                 const std::vector<bool> & enabled_coefficients)
+{
+  // Restrict coefficients to facet
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    if (!enabled_coefficients[i])
+      continue;
+    dolfin_assert(coefficients[i]);
+    coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], c,
+                              vertex_coordinates.data(), ufc_cell);
+  }
+}
+//-----------------------------------------------------------------------------
+void UFC::update(const Cell& c0, const std::vector<double>& vertex_coordinates0,
+                 const ufc::cell& ufc_cell0,
+                 const Cell& c1, const std::vector<double>& vertex_coordinates1,
+                 const ufc::cell& ufc_cell1,
+                 const std::vector<bool> & enabled_coefficients)
+{
+  // Restrict coefficients to facet
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    if (!enabled_coefficients[i])
+      continue;
+    dolfin_assert(coefficients[i]);
+    const std::size_t offset = coefficient_elements[i].space_dimension();
+    coefficients[i]->restrict(&_macro_w[i][0], coefficient_elements[i],
+                              c0, vertex_coordinates0.data(), ufc_cell0);
+    coefficients[i]->restrict(&_macro_w[i][0] + offset, coefficient_elements[i],
+                              c1, vertex_coordinates1.data(), ufc_cell1);
   }
 }
 //-----------------------------------------------------------------------------

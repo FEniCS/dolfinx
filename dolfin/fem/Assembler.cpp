@@ -19,10 +19,7 @@
 // Modified by Ola Skavhaug 2007-2009
 // Modified by Kent-Andre Mardal 2008
 // Modified by Joachim B Haga 2012
-// Modified by Martin Alnaes 2013
-//
-// First added:  2007-01-17
-// Last changed: 2013-09-19
+// Modified by Martin Alnaes 2013-2014
 
 
 #include <dolfin/log/dolfin_log.h>
@@ -124,7 +121,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Form rank
+  // Get form rank
   const std::size_t form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
@@ -159,7 +156,8 @@ void Assembler::assemble_cells(GenericTensor& A,
     // Update to current cell
     cell->get_cell_data(ufc_cell);
     cell->get_vertex_coordinates(vertex_coordinates);
-    ufc.update(*cell, vertex_coordinates, ufc_cell);
+    ufc.update(*cell, vertex_coordinates, ufc_cell,
+               integral->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
     bool empty_dofmap = false;
@@ -263,7 +261,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     mesh_cell.get_vertex_coordinates(vertex_coordinates);
 
     // Update UFC object
-    ufc.update(mesh_cell, vertex_coordinates, ufc_cell);
+    ufc.update(mesh_cell, vertex_coordinates, ufc_cell,
+               integral->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
     for (std::size_t i = 0; i < form_rank; ++i)
@@ -373,12 +372,12 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     // Update to current pair of cells
     cell0.get_cell_data(ufc_cell[0], local_facet0);
-    cell0.get_vertex_coordinates(vertex_coordinates[0]);
     cell1.get_cell_data(ufc_cell[1], local_facet1);
+    cell0.get_vertex_coordinates(vertex_coordinates[0]);
     cell1.get_vertex_coordinates(vertex_coordinates[1]);
-
     ufc.update(cell0, vertex_coordinates[0], ufc_cell[0],
-               cell1, vertex_coordinates[1], ufc_cell[1]);
+               cell1, vertex_coordinates[1], ufc_cell[1],
+               integral->enabled_coefficients());
 
     // Tabulate dofs for each dimension on macro element
     for (std::size_t i = 0; i < form_rank; i++)

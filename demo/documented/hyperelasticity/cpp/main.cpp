@@ -128,7 +128,8 @@ int main()
 
   // Create (linear) form defining (nonlinear) variational problem
   HyperElasticity::ResidualForm F(V);
-  F.mu = mu; F.lmbda = lambda; F.B = B; F.T = T; F.u = u;
+  F.mu = mu; F.lmbda = lambda; F.u = u;
+  F.B = B; F.T = T;
 
   // Create jacobian dF = F' (for use in nonlinear solver).
   HyperElasticity::JacobianForm J(V, V);

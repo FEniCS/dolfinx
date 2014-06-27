@@ -23,7 +23,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-09-19
+// Last changed: 2014-04-28
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -288,36 +288,6 @@ namespace dolfin
     ///         The dof coordinates (x0, y0, x1, y1, . . .)
     std::vector<double> tabulate_all_coordinates(const Mesh& mesh) const;
 
-    /// Return a map between vertices and dofs
-    /// (dof_ind = dof_to_vertex_map[vert_ind*dofs_per_vertex + local_dof],
-    /// where local_dof = 0, ..., dofs_per_vertex)
-    /// Ghost dofs are included - then dof_ind gets negative value
-    /// or value greater than process-local number of dofs.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create the map between
-    ///
-    /// *Returns*
-    ///     std::vector<dolfin::la_index>
-    ///         The dof to vertex map
-    std::vector<dolfin::la_index> dof_to_vertex_map(const Mesh& mesh) const;
-
-    /// Return a map between vertices and dofs
-    /// (vert_ind*dofs_per_vertex + local_dof = vertex_to_dof_map[dof_ind],
-    /// where local_dof = 0, ..., dofs_per_vertex)
-    /// Ghost dofs are not included. This map is
-    /// an inversion of dof_to_vertex_map.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create the map between
-    ///
-    /// *Returns*
-    ///     std::vector<std::size_t>
-    ///         The vertex to dof map
-    std::vector<std::size_t> vertex_to_dof_map(const Mesh& mesh) const;
-
     /// Create a copy of the dof map
     ///
     /// *Returns*
@@ -335,7 +305,6 @@ namespace dolfin
     ///     DofMap
     ///         The new Dofmap copy.
     std::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const;
-
 
     /// Extract subdofmap component
     ///
@@ -399,6 +368,9 @@ namespace dolfin
     ///         The mesh.
     void set_x(GenericVector& x, double value, std::size_t component,
                const Mesh& mesh) const;
+
+    /// Add given offset to all dofs
+    void add_offset(dolfin::la_index offset);
 
     /// Return the underlying dof map data. Intended for internal library
     /// use only.

@@ -140,7 +140,9 @@ Parameters PETScSNESSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScSNESSolver::PETScSNESSolver(std::string nls_type) : _snes(NULL)
+PETScSNESSolver::PETScSNESSolver(std::string nls_type) :
+  _snes(NULL),
+  _snes_ctx({NULL, NULL, NULL, NULL})
 {
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
@@ -455,7 +457,10 @@ void PETScSNESSolver::set_linear_solver_parameters()
   KSP ksp;
   PC pc;
 
-  SNESGetKSP(_snes, &ksp);
+  PetscErrorCode ierr;
+  ierr = SNESGetKSP(_snes, &ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESGetKSP");
+
   KSPGetPC(ksp, &pc);
 
   MPI_Comm comm = MPI_COMM_NULL;

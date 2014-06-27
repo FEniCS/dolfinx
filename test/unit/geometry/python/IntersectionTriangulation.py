@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2014-02-24
+# Last changed: 2014-05-30
 
 import unittest
 import numpy
@@ -69,11 +69,10 @@ def triangulation_to_mesh_3d(triangulation):
     editor.close()
     return mesh
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TriangulateTest(unittest.TestCase):
 
     def test_triangulate_intersection_2d(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         # Create two meshes of the unit square
         mesh_0 = UnitSquareMesh(1, 1)
@@ -81,7 +80,7 @@ class TriangulateTest(unittest.TestCase):
 
         # Translate second mesh randomly
         #dx = Point(numpy.random.rand(),numpy.random.rand())
-        dx = Point(0.278498, 0.546881, 0.957506)
+        dx = Point(0.278498, 0.546881)
         mesh_1.translate(dx)
 
         exactvolume = (1 - abs(dx[0]))*(1 - abs(dx[1]))
@@ -103,8 +102,6 @@ class TriangulateTest(unittest.TestCase):
 
         # Note: this test will fail if the triangle mesh is aligned
         # with the tetrahedron mesh
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         # Create a unit cube
         mesh_0 = UnitCubeMesh(1,1,1)
@@ -148,8 +145,6 @@ class TriangulateTest(unittest.TestCase):
         self.assertAlmostEqual(volume, exactvolume, 7, errorstring)
 
     def test_triangulate_intersection_3d(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         # Create two meshes of the unit cube
         mesh_0 = UnitCubeMesh(1, 1, 1)

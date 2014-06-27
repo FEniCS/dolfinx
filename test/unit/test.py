@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2014-02-24
+# Last changed: 2014-03-10
 
 import sys, os, re
 import platform
@@ -39,6 +39,7 @@ tests = {
     "function":       ["Constant", "ConstrainedFunctionSpace", \
                        "Expression", "Function", "FunctionAssigner", \
                        "FunctionSpace", "SpecialFunctions", \
+                       "LagrangeInterpolator", \
                        "nonmatching_interpolation"],
     "geometry":       ["BoundingBoxTree", "CollisionDetection", "Intersection",
                        "IntersectionTriangulation", "Issues"],
@@ -56,7 +57,8 @@ tests = {
                        "MeshIterator", "MeshMarkers", "MeshQuality", \
                        "MeshValueCollection", "BoundaryMesh", "Mesh", \
                        "SubMesh", "MeshTransformation", "SubDomain", \
-                       "PeriodicBoundaryComputation"],
+                       "PeriodicBoundaryComputation", \
+                           "MultiMesh"],
     "meshconvert":    ["test"],
     "multistage":     ["RKSolver", "PointIntegralSolver"],
     "nls":            ["PETScSNESSolver", "TAOLinearBoundSolver"],

@@ -103,7 +103,12 @@ RivaraRefinement::DCell::DCell() : id(0), parent_id(0), vertices(0),
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-RivaraRefinement::DMesh::DMesh() : vertices(0), cells(0)
+RivaraRefinement::DMesh::DMesh() :
+  vertices(0),
+  cells(0),
+  cell_type(NULL),
+  tdim(0),
+  gdim(0)
 {
   // Do nothing
 }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2014-02-06
+// Last changed: 2014-05-12
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -225,10 +225,29 @@ namespace dolfin
     std::pair<unsigned int, double>
     compute_closest_point(const Point& point) const;
 
+    /// Check whether given point collides with the bounding box tree.
+    /// This is equivalent to calling compute_first_collision and
+    /// checking whether any collision was detected.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff the point is inside the tree.
+    bool collides(const Point& point) const;
+
+    /// Check whether given point collides with any entity contained
+    /// in the bounding box tree. This is equivalent to calling
+    /// compute_first_entity_collision and checking whether any
+    /// collision was detected.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff the point is inside the tree.
+    bool collides_entity(const Point& point) const;
+
   private:
 
     // Check that tree has been built
-    void check_built() const;
+    void _check_built() const;
 
     // Dimension-dependent implementation
     std::unique_ptr<GenericBoundingBoxTree> _tree;
