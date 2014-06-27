@@ -10,7 +10,7 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-parameters["ghost_mode"] = "shared_facet"
+parameters["ghost_mode"] = "shared_vertex"
 parameters["reorder_cells_gps"] = True
 
 n = 0
@@ -30,9 +30,6 @@ mpi_rank = MPI.rank(mpi_comm_world())
 # parameters["mesh_partitioner"] = "ParMETIS"
 M = UnitSquareMesh(5, 5)
 M = refine(M)
-
-for f in facets(M):
-    print f.index(), f.global_index(), f.num_entities(2)
 
 
 shared_vertices = M.topology().shared_entities(0).keys()
@@ -96,13 +93,23 @@ num_regular_facets = M.topology().size(1) - M.topology().size_ghost(1)
 facet_note = []
 shared_facets = M.topology().shared_entities(1)
 for f in facets(M):
+    if (f.num_global_entities(2) == 2):
+        color='#ff8888'
+    else:
+        color='#ff88ff'
+    if (f.index() < num_regular_facets):
+        if (f.num_global_entities(2) == 2):
+            color='#ff0000'
+        else:
+            color='#ff00ff'
+
     if (n < 3):
-        facet_note.append((f.midpoint().x(), f.midpoint().y(), f.global_index()))
+        facet_note.append((f.midpoint().x(), f.midpoint().y(), f.global_index(), color))
     elif (n == 3):
-        facet_note.append((f.midpoint().x(), f.midpoint().y(), f.index()))
+        facet_note.append((f.midpoint().x(), f.midpoint().y(), f.index(), color))
     else:
         if (f.index() in shared_facets.keys()):
-            facet_note.append((f.midpoint().x(), f.midpoint().y(), shared_facets[f.index()]))
+            facet_note.append((f.midpoint().x(), f.midpoint().y(), shared_facets[f.index()], color))
 
 fig, ax = plt.subplots()
 
@@ -128,11 +135,7 @@ for note in verts_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center')
 
 for note in facet_note:
-    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor='#eeeeee')
-
-for i in range(num_regular_facets):
-    note = facet_note[i]
-    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor='#80ff80')
+    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
 plt.show()
 

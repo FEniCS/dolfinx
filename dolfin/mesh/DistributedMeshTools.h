@@ -59,12 +59,6 @@ namespace dolfin
     // (globally). Facets on internal boundaries will be connected to
     // two cells (with the cells residing on neighboring processes)
     static void init_facet_cell_connections(Mesh& mesh);
-
-    // Compute number of cells connected to each facet
-    // (globally). Facets on internal boundaries will be connected to
-    // two cells (with the cells residing on neighboring processes)
-    // using ghost information
-    static void init_facet_cell_connections_by_ghost(Mesh& mesh);
     
     /// Find processes that own or share mesh entities (using entity
     /// global indices). Returns (global_dof, set(process_num,

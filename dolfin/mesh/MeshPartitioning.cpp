@@ -146,8 +146,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   mesh.init(D - 1, D);
   DistributedMeshTools::number_entities(mesh, D - 1);
 
-  // FIXME: is this needed?
-  //   DistributedMeshTools::init_facet_cell_connections(mesh);
+  // FIXME: this gives incorrect answers for num_global_entities(D)
+  // for facets which are shared on the boundary
+  DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
