@@ -52,7 +52,7 @@ class FormOperations(unittest.TestCase):
         self.assertAlmostEqual(n, nl)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing DOLFIN integration of basic UFL form operations"
-    print "-------------------------------------------------------"
+    print("")
+    print("Testing DOLFIN integration of basic UFL form operations")
+    print("-------------------------------------------------------")
     unittest.main()

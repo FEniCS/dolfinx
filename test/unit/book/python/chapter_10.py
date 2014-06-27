@@ -273,7 +273,7 @@ class TestPage15(unittest.TestCase):
         for c in cells(mesh):
             for v0 in vertices(c):
                 for v1 in vertices(v0):
-                    print v1
+                    print(v1)
 
 @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage16(unittest.TestCase):
@@ -284,7 +284,7 @@ class TestPage16(unittest.TestCase):
         for c in entities(mesh, D):
             for v0 in entities(c, 0):
                 for v1 in entities(v0, 0):
-                    print v1
+                    print(v1)
 
     def test_box_2(self):
         mesh = UnitSquareMesh(2, 2)
@@ -417,7 +417,7 @@ class TestPage24(unittest.TestCase):
             def eval(self, values, x):
                 values[0] = sin(x[0])*cos(x[1])
         f = MyExpression()
-        print f((0.5, 0.5))
+        print((f((0.5, 0.5))))
 
     def test_box_2(self):
         class MyExpression(Expression):
@@ -427,7 +427,7 @@ class TestPage24(unittest.TestCase):
             def value_shape(self):
                 return (2,)
         g = MyExpression()
-        print g((0.5, 0.5))
+        print((g((0.5, 0.5))))
 
     def test_box_3(self):
         f = Expression("sin(x[0])*cos(x[1])")
@@ -747,7 +747,7 @@ class TestPage38(unittest.TestCase):
         set_log_level(WARNING)
         info("Test message")
         warning("Test message")
-        print "Test message"
+        print("Test message")
 
 @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestPage39(unittest.TestCase):
@@ -1008,7 +1008,7 @@ class TestPage51(unittest.TestCase):
         b2 = b[array((0, 4, 7, 10))]
 
 if __name__ == "__main__":
-    print ""
-    print "Testing the FEniCS Book, Chapter 10"
-    print "-----------------------------------"
+    print("")
+    print("Testing the FEniCS Book, Chapter 10")
+    print("-----------------------------------")
     unittest.main()

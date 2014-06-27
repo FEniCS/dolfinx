@@ -61,7 +61,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         self.assertEqual(intersection.intersected_cells(), [816])
 
 if __name__ == "__main__":
-    print ""
-    print "Testing intersection computation"
-    print "------------------------------------------------"
+    print("")
+    print("Testing intersection computation")
+    print("------------------------------------------------")
     unittest.main()

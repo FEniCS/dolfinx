@@ -148,9 +148,9 @@ for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
             "test_butcher_schemes_vector_{0}".format(Scheme), vector)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN PointIntegralSolver operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN PointIntegralSolver operations")
+    print("------------------------------------------------")
     unittest.main()
     cpp.set_log_level(INFO)
     list_timings()

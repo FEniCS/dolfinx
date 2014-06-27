@@ -81,7 +81,7 @@ propeller = Mesh("../propeller_2d_coarse.xml.gz")
 # Iterate over rotations
 for frame in range(num_frames):
 
-    print "Frame %d out of %d..." % (frame + 1, num_frames)
+    print(("Frame %d out of %d..." % (frame + 1, num_frames)))
 
     # Rotate propeller
     propeller.rotate(dv)

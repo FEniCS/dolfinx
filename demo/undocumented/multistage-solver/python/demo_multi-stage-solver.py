@@ -36,7 +36,7 @@
 
 from dolfin import *
 
-print "RKSolver is temporarily unavailable"
+print("RKSolver is temporarily unavailable")
 exit(0)
 
 # Load mesh and subdomains

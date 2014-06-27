@@ -43,7 +43,7 @@ class ErrorNorm(unittest.TestCase):
         self.assertAlmostEqual(e, sqrt(1.0/5.0))
 
 if __name__ == "__main__":
-    print ""
-    print "Testing Python extras"
-    print "----------------------------------------------------------------------"
+    print("")
+    print("Testing Python extras")
+    print("----------------------------------------------------------------------")
     unittest.main()

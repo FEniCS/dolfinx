@@ -50,5 +50,5 @@ plotstrings(('exp(x)', 'ln(x)', 'sqrt(x)', 'erf(x)'), mesh2)
 for nu in (0, 1):
     plotstrings(['bessel_%s(%d, x)' % (c, nu) for c in ('J', 'Y', 'I', 'K')], mesh2)
 
-print "Note that you must press 'q' in the first plot window ('cos(x)') to quit."
+print("Note that you must press 'q' in the first plot window ('cos(x)') to quit.")
 interactive()

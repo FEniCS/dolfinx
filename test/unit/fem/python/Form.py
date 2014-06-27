@@ -391,7 +391,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         self.assertAlmostEqual(b0, b1)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN Form operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN Form operations")
+    print("------------------------------------------------")
     unittest.main()

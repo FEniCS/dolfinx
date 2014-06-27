@@ -99,7 +99,7 @@ class RKSolverTest(unittest.TestCase):
         cpp.set_log_level(LEVEL)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN RKSolver operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN RKSolver operations")
+    print("------------------------------------------------")
     unittest.main()

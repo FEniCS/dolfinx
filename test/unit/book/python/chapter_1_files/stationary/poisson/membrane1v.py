@@ -46,7 +46,7 @@ solver.solve()
 # Find maximum real deflection
 max_w = w.vector().array().max()
 max_D = A*max_w/(8*pi*sigma*T)
-print 'Maximum real deflection is', max_D
+print(('Maximum real deflection is', max_D))
 
 # Demonstrate some visualization
 

@@ -28,7 +28,7 @@
 from dolfin import *
 
 if not has_petsc_tao():
-    print "DOLFIN must be compiled with TAO to run this demo."
+    print("DOLFIN must be compiled with TAO to run this demo.")
     exit(0)
 
 # Read mesh

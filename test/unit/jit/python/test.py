@@ -75,7 +75,7 @@ class JIT(unittest.TestCase):
             self.assertTrue((np_vec == vec.array()).all())
 
 if __name__ == "__main__":
-    print ""
-    print "Testing JIT compiler"
-    print "------------------------------------------------"
+    print("")
+    print("Testing JIT compiler")
+    print("------------------------------------------------")
     unittest.main()

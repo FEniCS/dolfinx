@@ -29,9 +29,9 @@ subdomain1.mark(subdomains, 1)
 V0 = FunctionSpace(mesh, 'DG', 0)
 k = Function(V0)
 
-print 'mesh:', mesh
-print 'subdomains:', subdomains
-print 'k:', k
+print(('mesh:', mesh))
+print(('subdomains:', subdomains))
+print(('k:', k))
 
 # Loop over all cell numbers, find corresponding
 # subdomain number and fill cell value in k
@@ -46,7 +46,7 @@ for cell_no in range(len(subdomains.array())):
 help = numpy.asarray(subdomains.array(), dtype=numpy.int32)
 k.vector()[:] = numpy.choose(help, k_values)
 
-print 'k degree of freedoms:', k.vector().array()
+print(('k degree of freedoms:', k.vector().array()))
 
 #plot(subdomains, title='subdomains')
 
@@ -92,7 +92,7 @@ u_nodal_values = u.vector()
 u_array = u_nodal_values.array()
 import numpy
 error = numpy.abs(u_e_array - u_array)
-print 'max error:', error.max()
+print(('max error:', error.max()))
 
 #coor = mesh.coordinates()
 #for i in range(len(u_array)):

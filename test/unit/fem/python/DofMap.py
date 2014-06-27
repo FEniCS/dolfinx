@@ -310,7 +310,7 @@ class DofMapTest(unittest.TestCase):
             self.assertTrue(owner in neighbours)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN DofMap operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN DofMap operations")
+    print("------------------------------------------------")
     unittest.main()

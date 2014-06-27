@@ -314,7 +314,7 @@ class TestSystemAssembler(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print ""
-    print "Testing class SystemAssembler"
-    print "-----------------------------"
+    print("")
+    print("Testing class SystemAssembler")
+    print("-----------------------------")
     unittest.main()

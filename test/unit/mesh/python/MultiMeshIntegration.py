@@ -62,19 +62,19 @@ class TriangleIntegrationTest(unittest.TestCase):
         multimesh.build()
 
         for part in range(0, multimesh.num_parts()):
-            print part
+            print(part)
             covered = multimesh.covered_cells(part)
             uncut = multimesh.uncut_cells(part)
             cut = multimesh.cut_cells(part)
             qr = multimesh.quadrature_rule_cut_cells(part)
-            print "covered"
-            print covered
-            print "uncut"
-            print uncut
-            print "cut"
-            print cut
-            print "quadrature"
-            print qr
+            print("covered")
+            print(covered)
+            print("uncut")
+            print(uncut)
+            print("cut")
+            print(cut)
+            print("quadrature")
+            print(qr)
 
         V_0 = FunctionSpace(mesh_0, "CG", 1)
         V_1 = FunctionSpace(mesh_1, "CG", 1)

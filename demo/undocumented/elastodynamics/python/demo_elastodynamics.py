@@ -162,7 +162,7 @@ vtk_file = File("elasticity.pvd")
 while t <= T:
 
     t += dt
-    print "Time: ", t
+    print(("Time: ", t))
 
     p.t = t
     p0.t = t

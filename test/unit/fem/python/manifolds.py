@@ -268,8 +268,8 @@ class ManifoldBasisEvaluation(unittest.TestCase):
                     self.assertAlmostEqual(abs(values_cmp-values_rot).max(), 0.0, 10)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing solving and evaluate basis over manifolds"
-    print "-------------------------------------------------"
+    print("")
+    print("Testing solving and evaluate basis over manifolds")
+    print("-------------------------------------------------")
 
     unittest.main()

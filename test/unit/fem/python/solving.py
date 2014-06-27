@@ -89,7 +89,7 @@ class Solving(unittest.TestCase):
         # FIXME: Include more tests for this versatile function
 
 if __name__ == "__main__":
-    print ""
-    print "Testing the solve function"
-    print "--------------------------"
+    print("")
+    print("Testing the solve function")
+    print("--------------------------")
     unittest.main()

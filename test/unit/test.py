@@ -27,6 +27,7 @@ import sys, os, re
 import platform
 from instant import get_status_output
 from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
+from six import print_
 
 # Tests to run
 tests = {
@@ -81,8 +82,8 @@ if has_mpi() and (has_parmetis() or has_scotch()) and \
         has_linear_algebra_backend("PETSc")):
     prefixes.append("mpirun -np 3 ")
 else:
-    print "DOLFIN has not been compiled with MPI and/or ParMETIS/SCOTCH. " \
-          "Unit tests will not be run in parallel."
+    print("DOLFIN has not been compiled with MPI and/or ParMETIS/SCOTCH. " \
+          "Unit tests will not be run in parallel.")
 
 # Allow to disable parallel testing
 if "DISABLE_PARALLEL_TESTING" in os.environ:
@@ -94,60 +95,60 @@ os.putenv('DOLFIN_NOPLOT', '1')
 failed = []
 # Run tests in serial, then in parallel
 for prefix in prefixes:
-    for test, subtests in tests.items():
+    for test, subtests in list(tests.items()):
         for subtest in subtests:
-            print "Running unit tests for %s (%s) with prefix '%s'" % (test,  subtest, prefix)
-            print "----------------------------------------------------------------------"
+            print("Running unit tests for %s (%s) with prefix '%s'" % (test,  subtest, prefix))
+            print("----------------------------------------------------------------------")
 
             cpptest_executable = "test_" + subtest
             if platform.system() == 'Windows':
                 cpptest_executable += '.exe'
-            print "C++:   ",
+            print_("C++:   ", end=' ')
             if only_python:
-                print "Skipping tests as requested (--only-python)"
+                print("Skipping tests as requested (--only-python)")
             elif not os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
-                print "This test set does not have a C++ version"
+                print("This test set does not have a C++ version")
             else:
                 os.chdir(os.path.join(test, "cpp"))
                 status, output = get_status_output("%s.%s%s" % \
                                    (prefix, os.path.sep, cpptest_executable))
                 os.chdir(os.path.join(os.pardir, os.pardir))
                 if status == 0 and "OK" in output:
-                    print "OK",
+                    print_("OK", end=' ')
                     match = re.search("OK \((\d+)\)", output)
                     if match:
                         num_tests = int(match.groups()[0])
-                        print "(%d tests)" % num_tests,
-                    print
+                        print_("(%d tests)" % num_tests, end=' ')
+                    print()
                 else:
-                    print "*** Failed"
+                    print("*** Failed")
                     failed += [(test, subtest, "C++", output)]
 
-            print "Python:",
+            print_("Python:", end=' ')
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
                 os.chdir(os.path.join(test,"python"))
                 status, output = get_status_output("%s%s .%s%s.py" % \
                                    (prefix, sys.executable, os.path.sep, subtest))
                 os.chdir(os.path.join(os.pardir, os.pardir))
                 if status == 0 and "OK" in output:
-                    print "OK",
+                    print_("OK", end=' ')
                     match = re.search("Ran (\d+) test", output)
                     if match:
                         num_tests = int(match.groups()[0])
-                        print "(%d tests)" % num_tests,
-                    print
+                        print_("(%d tests)" % num_tests, end=' ')
+                    print()
                 else:
-                    print "*** Failed"
+                    print("*** Failed")
                     failed += [(test, subtest, "Python", output)]
             else:
-                print "Skipping"
+                print("Skipping")
 
-            print ""
+            print("")
 
     # Print output for failed tests
     for (test, subtest, interface, output) in failed:
-        print "One or more unit tests failed for %s (%s, %s):" % (test, subtest, interface)
-        print output
+        print("One or more unit tests failed for %s (%s, %s):" % (test, subtest, interface))
+        print(output)
         open("fail.log", "w").write(output)
 
 # Return error code if tests failed

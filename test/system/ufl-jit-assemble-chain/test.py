@@ -26,16 +26,16 @@ tests = ["assembly_derivatives.py", "form_operations.py"]
 failed = []
 for test in tests:
     command = "%s %s" % (sys.executable,test)
-    print
-    print "Running tests: %s" % test
-    print "----------------------------------------------------------------------"
+    print()
+    print(("Running tests: %s" % test))
+    print("----------------------------------------------------------------------")
     fail, output = get_status_output(command)
 
     if fail:
         failed.append(fail)
-        print "*** %s failed" % test
-        print output
+        print(("*** %s failed" % test))
+        print(output)
     else:
-        print "OK"
+        print("OK")
 
 sys.exit(len(failed))

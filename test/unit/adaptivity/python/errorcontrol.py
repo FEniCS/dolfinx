@@ -125,7 +125,7 @@ class ErrorControlTest(unittest.TestCase):
         self.assertAlmostEqual(assemble(M), reference)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing automated adaptivity operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing automated adaptivity operations")
+    print("------------------------------------------------")
     unittest.main()

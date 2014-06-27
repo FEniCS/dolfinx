@@ -21,10 +21,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Corrado Maurini 2013
-#
-# First added:  2012-09-03
-# Last changed: 2014-08-11
-#
+
 from dolfin import *
 
 # Create mesh

@@ -59,4 +59,4 @@ interactive()
 
 # Build mapping from structure to fluid mesh
 structure_to_fluid = compute_vertex_map(structure_mesh, fluid_mesh)
-print structure_to_fluid
+print(structure_to_fluid)

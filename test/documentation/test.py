@@ -30,9 +30,9 @@ for test in tests:
 
     if fail:
         failed.append(fail)
-        print "*** %s failed" % test
-        print output
+        print(("*** %s failed" % test))
+        print(output)
     else:
-        print "OK"
+        print("OK")
 
 sys.exit(len(failed))

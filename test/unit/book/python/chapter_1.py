@@ -59,9 +59,9 @@ def run_test(path, args=[]):
     file_path = os.path.join(*(["chapter_1_files"] + path + [script_name]))
 
     # Print a message
-    print
-    print "Running tutorial example %s" % file_path
-    print "-------------------------------------------------------------------------"
+    print()
+    print(("Running tutorial example %s" % file_path))
+    print("-------------------------------------------------------------------------")
 
     # Remember default DOLFIN parameters
     dolfin_parameters = {}
@@ -75,14 +75,14 @@ def run_test(path, args=[]):
     try:
         file = File(os.path.join("chapter_1_files", "dolfin_parameters.xml"))
         file >> parameters
-        print
-        print "Running again using stored parameter values"
-        print
+        print()
+        print("Running again using stored parameter values")
+        print()
         new_parameters = True
     except:
-        print
-        print "Unable to read old parameters, skipping this test"
-        print
+        print()
+        print("Unable to read old parameters, skipping this test")
+        print()
         new_parameters = False
 
     # Run script again with book parameters
@@ -182,7 +182,7 @@ class TestDiffusion(unittest.TestCase):
         run_test(["transient", "diffusion"], [1, 1.5, 4, 40])
 
 if __name__ == "__main__":
-    print ""
-    print "Testing the FEniCS Book, Chapter 1"
-    print "----------------------------------"
+    print("")
+    print("Testing the FEniCS Book, Chapter 1")
+    print("----------------------------------")
     unittest.main()

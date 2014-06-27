@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     if len(args) != 3:
         usage= "Usage: python copy_and_split_demo_doc.py input_dir cpp_output_dir python_output_dir"
-        print usage
+        print(usage)
         sys.exit(2)
 
     copy_split_demo_doc(args[0], args[1], args[2])

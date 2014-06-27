@@ -38,7 +38,7 @@ solver.parameters['linear_solver'] = 'cg'
 solver.parameters['preconditioner'] = 'ilu'
 info(solver.parameters, True)
 
-print parameters['linear_algebra_backend']
+print((parameters['linear_algebra_backend']))
 cg_prm = solver.parameters['krylov_solver'] # short form
 cg_prm['absolute_tolerance'] = 1E-7
 cg_prm['relative_tolerance'] = 1E-4

@@ -140,7 +140,7 @@ class DofMapTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN FiniteElement operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN FiniteElement operations")
+    print("------------------------------------------------")
     unittest.main()

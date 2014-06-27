@@ -137,7 +137,7 @@ class DirichletBCTest(unittest.TestCase):
             self.assertAlmostEqual(b0, b1)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing Dirichlet boundary conditions"
-    print "------------------------------------------------"
+    print("")
+    print("Testing Dirichlet boundary conditions")
+    print("------------------------------------------------")
     unittest.main()

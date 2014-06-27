@@ -29,9 +29,9 @@ class HarmonicSmoothingTest(unittest.TestCase):
 
     def test_HarmonicSmoothing(self):
 
-        print ""
-        print "Testing HarmonicSmoothing::move(Mesh& mesh, " \
-              "const BoundaryMesh& new_boundary)"
+        print("")
+        print("Testing HarmonicSmoothing::move(Mesh& mesh, " \
+              "const BoundaryMesh& new_boundary)")
 
         # Create some mesh and its boundary
         mesh = UnitSquareMesh(10, 10)
@@ -52,7 +52,7 @@ class HarmonicSmoothingTest(unittest.TestCase):
         # Check that coordinates are almost equal
         err = sum(sum(abs(boundary.coordinates() \
                         - boundary_new.coordinates()))) / mesh.num_vertices()
-        print "Current CG solver produced error in boundary coordinates", err
+        print(("Current CG solver produced error in boundary coordinates", err))
         self.assertAlmostEqual(err, 0.0, places=5)
 
         # Check mesh quality
@@ -65,8 +65,8 @@ class ALETest(unittest.TestCase):
 
     def test_ale(self):
 
-        print ""
-        print "Testing ALE::move(Mesh& mesh0, const Mesh& mesh1)"
+        print("")
+        print("Testing ALE::move(Mesh& mesh0, const Mesh& mesh1)")
 
         # Create some mesh
         mesh = UnitSquareMesh(4, 5)
@@ -106,7 +106,7 @@ class ALETest(unittest.TestCase):
         self.assertTrue(rmin > magic_number)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing HarmonicSmoothing and ALE operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing HarmonicSmoothing and ALE operations")
+    print("------------------------------------------------")
     unittest.main()

@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     if len(args) != 3:
         usage= "Usage: python generate_main_index.py cpp_output_dir python_output_dir version"
-        print usage
+        print(usage)
         sys.exit(2)
 
     generate_main_index_file(args[0], "C++", args[2])

@@ -36,11 +36,11 @@ solve(a == L, u, bc)
 
 #plot(u)
 
-print """
+print(("""
 Solution of the Poisson problem -Laplace(u) = f,
 with u = u0 on the boundary and a
 %s
-""" % str(mesh)
+""" % str(mesh)))
 
 # Dump solution to the screen
 u_nodal_values = u.vector()
@@ -48,27 +48,27 @@ u_array = u_nodal_values.array()
 coor = mesh.coordinates()
 if coor.shape[0] == u_array.shape[0]:  # degree 1 element
     for i in range(len(u_array)):
-        print 'u(%8g,%8g) = %g' % (coor[i][0], coor[i][1], u_array[i])
+        print(('u(%8g,%8g) = %g' % (coor[i][0], coor[i][1], u_array[i])))
 else:
-    print """\
+    print("""\
 Cannot print vertex coordinates and corresponding values
 because the element is not a first-order Lagrange element.
-"""
+""")
 
 # Note: u_nodal_values.array() returns a copy
-print id(u_nodal_values.array()), id(u_array)
+print((id(u_nodal_values.array()), id(u_array)))
 
 # Verification
 u_e = interpolate(u0, V)
 u_e_array = u_e.vector().array()
-print 'Max error:', numpy.abs(u_e_array - u_array).max()
+print(('Max error:', numpy.abs(u_e_array - u_array).max()))
 
 # Compare numerical and exact solution
 center = (0.5, 0.5)
 u_value = u(center)
 u0_value = u0(center)
-print 'numerical u at the center point:', u_value
-print 'exact     u at the center point:', u0_value
+print(('numerical u at the center point:', u_value))
+print(('exact     u at the center point:', u0_value))
 
 # Normalize solution such that max(u) = 1:
 max_u = u_array.max()
@@ -76,7 +76,7 @@ u_array /= max_u
 #u.vector().set_local(u_array)
 u.vector()[:] = u_array
 #u.vector().set_local(u_array)  # safer for parallel computing
-print '\nNormalized solution:\n', u.vector().array()
+print(('\nNormalized solution:\n', u.vector().array()))
 
 # interactive() always be at the end
 #interactive()

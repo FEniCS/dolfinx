@@ -655,7 +655,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(0.0, assemble(n2[0]*ds(mesh)))
 
 if __name__ == "__main__":
-    print ""
-    print "Testing class Assembler"
-    print "-----------------------"
+    print("")
+    print("Testing class Assembler")
+    print("-----------------------")
     unittest.main()

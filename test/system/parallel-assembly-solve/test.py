@@ -29,10 +29,10 @@ import subprocess
 from dolfin import has_mpi, has_parmetis, has_scotch
 
 if not (has_mpi()):
-    print "DOLFIN has not been compiled with MPI. Test is not run."
+    print("DOLFIN has not been compiled with MPI. Test is not run.")
     sys.exit(0)
 elif not (has_parmetis() or has_scotch()):
-    print "DOLFIN has not been compiled with ParMETIS or SCOTCH. Test is not run."
+    print("DOLFIN has not been compiled with ParMETIS or SCOTCH. Test is not run.")
     sys.exit(0)
 
 # Number of processes
@@ -42,12 +42,12 @@ num_processes = 3
 output = subprocess.check_output(['mpirun', '-np', str(num_processes),
                                   sys.executable, 'solver.py'])
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
-    print output
+    print(output)
 
 # Return exit status
 if "ERROR" in output:
-    print output
+    print(output)
     sys.exit(1)
 else:
-    print "OK"
+    print("OK")
     sys.exit(0)

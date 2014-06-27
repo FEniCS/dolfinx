@@ -37,7 +37,7 @@ prm['absolute_tolerance'] = 1E-5
 prm['relative_tolerance'] = 1E-3
 prm['maximum_iterations'] = 1000
 #prm['preconditioner']['ilu']['fill_level'] = 0
-print parameters['linear_algebra_backend']
+print((parameters['linear_algebra_backend']))
 #set_log_level(PROGRESS)
 set_log_level(DEBUG)
 

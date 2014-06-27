@@ -143,7 +143,7 @@ class InputOutput(unittest.TestCase):
         parameters["lu_solver"]["reuse_factorization"] = reuse_factorization
 
 if __name__ == "__main__":
-    print ""
-    print "Testing parameter library"
-    print "------------------------------------------------"
+    print("")
+    print("Testing parameter library")
+    print("------------------------------------------------")
     unittest.main()

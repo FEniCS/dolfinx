@@ -34,7 +34,7 @@ class AbstractBaseTest(object):
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
-            print "\nRunning:",type(self).__name__
+            print(("\nRunning:",type(self).__name__))
 
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
@@ -361,7 +361,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     #set_log_active(False);
 
-    print ""
-    print "Testing basic PyDOLFIN linear algebra operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing basic PyDOLFIN linear algebra operations")
+    print("------------------------------------------------")
     unittest.main()

@@ -135,7 +135,7 @@ while t < T + DOLFIN_EPS:
     # Move to next time step
     u0.assign(u1)
     t += dt
-    print "t =", t
+    print(("t =", t))
 
 # Hold plot
 interactive()

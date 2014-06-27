@@ -57,7 +57,7 @@ f = interpolate(f, V)
 # Find maximum real deflection
 max_w = w.vector().array().max()
 max_D = A*max_w/(8*pi*sigma*T)
-print 'Maximum real deflection is', max_D
+print(('Maximum real deflection is', max_D))
 
 # Verification for "flat" pressure (large sigma)
 if sigma >= 50:
@@ -66,8 +66,8 @@ if sigma >= 50:
     w_e_array = w_e.vector().array()
     w_array = w.vector().array()
     diff_array = numpy.abs(w_e_array - w_array)
-    print 'Verification of the solution, max difference is %.4E' % \
-          diff_array.max()
+    print(('Verification of the solution, max difference is %.4E' % \
+          diff_array.max()))
 
     # Create finite element field over V and fill with error values
     difference = Function(V)

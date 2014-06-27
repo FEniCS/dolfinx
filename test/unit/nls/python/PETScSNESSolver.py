@@ -119,7 +119,7 @@ if __name__ == "__main__":
   # Turn off DOLFIN output
   set_log_active(False)
 
-  print ""
-  print "Testing DOLFIN nls/PETScSNESSolver interface"
-  print "--------------------------------------------"
+  print("")
+  print("Testing DOLFIN nls/PETScSNESSolver interface")
+  print("--------------------------------------------")
   unittest.main()

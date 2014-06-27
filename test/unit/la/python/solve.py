@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print ""
-    print "Testing DOLFIN la/solve interface"
-    print "------------------------------------------------"
+    print("")
+    print("Testing DOLFIN la/solve interface")
+    print("------------------------------------------------")
     unittest.main()

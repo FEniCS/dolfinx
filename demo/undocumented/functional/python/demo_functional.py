@@ -46,5 +46,5 @@ M = (v*v + dot(grad(v), grad(v)))*dx(mesh)
 value = assemble(M)
 
 exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0))
-print "The energy norm of v is: %.15g" % value
-print "It should be:            %.15g" % exact_value
+print(("The energy norm of v is: %.15g" % value))
+print(("It should be:            %.15g" % exact_value))

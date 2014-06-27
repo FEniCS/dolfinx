@@ -34,14 +34,14 @@ parameters["linear_algebra_backend"] = "uBLAS"
 
 # Print global DOLFIN parameters
 info(parameters, True)
-print
+print()
 
 # Read parameters from file
 file = File("parameters.xml")
 parameters = Parameters("parameters")
 file >> parameters
 info(parameters, True)
-print
+print()
 
 #--- Demo of nested parameter sets ---
 
@@ -90,14 +90,14 @@ bar = application_parameters.bar
 tol = application_parameters.solver_parameters.tolerance
 
 # Print parameter values
-print "foo =", foo
-print "bar =", bar
-print "tol =", tol
-print
+print(("foo =", foo))
+print(("bar =", bar))
+print(("tol =", tol))
+print()
 
 # Print application parameters
 info(application_parameters, True)
-print
+print()
 
 #--- Demo of Krylov solver parameters ---
 
@@ -107,7 +107,7 @@ solver.parameters["relative_tolerance"] = 1e-20
 
 # Print Krylov solver parameters
 info(solver.parameters, True)
-print
+print()
 
 #--- Demo of updating a parameter set ---
 
@@ -131,17 +131,17 @@ parameter_subset = {"foo": 1.5, "solver_parameters": {"max_iterations": 50}}
 application_parameters.update(parameter_subset)
 
 # Print command-line option string
-print "\nCommand-line option string"
-print application_parameters.option_string()
+print("\nCommand-line option string")
+print((application_parameters.option_string()))
 
 # Demostrate access to full info of parameters
 def print_data(par, indent=""):
-    print "\n" + indent + "Content of:", par.name()
+    print(("\n" + indent + "Content of:", par.name()))
     for key, par_info in par.iterdata():
         if isinstance(par_info,Parameters):
             print_data(par_info, indent + "    ")
         else:
-            print indent + key, par_info
+            print((indent + key, par_info))
 
 print_data(application_parameters)
 

@@ -162,7 +162,7 @@ class ConstrainedFunctionSpaceTest(unittest.TestCase):
         self.assertAlmostEqual(u.vector().norm("l2"), 0.3368694028630991, 10)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing constrained (periodic) FunctionSpace"
-    print "------------------------------------------------"
+    print("")
+    print("Testing constrained (periodic) FunctionSpace")
+    print("------------------------------------------------")
     unittest.main()

@@ -53,7 +53,7 @@ class LocalSolver(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print ""
-    print "Testing class LocalSolver"
-    print "-------------------------"
+    print("")
+    print("Testing class LocalSolver")
+    print("-------------------------")
     unittest.main()

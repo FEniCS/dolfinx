@@ -44,10 +44,10 @@ L = f*v*dx
 u = Function(V)
 solve(a == L, u, bcs)
 
-print mesh
+print(mesh)
 
 # Verification
 u_exact = Expression('x[0]*x[0]')
 u_e = interpolate(u_exact, V)
-print 'Max error:', \
-      numpy.abs(u_e.vector().array() - u.vector().array()).max()
+print(('Max error:', \
+      numpy.abs(u_e.vector().array() - u.vector().array()).max()))

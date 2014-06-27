@@ -44,7 +44,7 @@ u = Function(V)   # the unknown at a new time level
 T = 1.9           # total simulation time
 t = dt
 while t <= T:
-    print 'time =', t
+    print(('time =', t))
     b = assemble(L, tensor=b)
     u0.t = t
     bc.apply(A, b)
@@ -53,7 +53,7 @@ while t <= T:
     # Verify
     u_e = interpolate(u0, V)
     maxdiff = numpy.abs(u_e.vector().array() - u.vector().array()).max()
-    print 'Max error, t=%.2f: %-10.3f' % (t, maxdiff)
+    print(('Max error, t=%.2f: %-10.3f' % (t, maxdiff)))
 
     t += dt
     u_1.assign(u)

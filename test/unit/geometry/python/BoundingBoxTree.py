@@ -441,7 +441,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         self.assertAlmostEqual(distance, reference[1])
 
 if __name__ == "__main__":
-    print ""
-    print "Testing BoundingBoxTree"
-    print "------------------------------------------------"
+    print("")
+    print("Testing BoundingBoxTree")
+    print("------------------------------------------------")
     unittest.main()

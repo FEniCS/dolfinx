@@ -11,9 +11,9 @@ q(u) = (1+u)^m
 
 Solution method: Newton method at the PDE level.
 """
-
 from dolfin import *
 import numpy, sys
+from six import print_
 
 # Create mesh and define function space
 degree = int(sys.argv[1])
@@ -76,12 +76,12 @@ maxiter = 25
 # u_k must have right boundary conditions here
 while eps > tol and iter < maxiter:
     iter += 1
-    print iter, 'iteration',
+    print_(iter, 'iteration', end=' ')
     A, b = assemble_system(a, L, bcs_du)
     solve(A, du.vector(), b)
     diff = du.vector().array()
     eps = numpy.linalg.norm(diff, ord=numpy.Inf)
-    print 'Norm:', eps
+    print('Norm:', eps)
     u.vector()[:] = u_k.vector() + omega*du.vector()
     # or
     #u.vector()[:] += omega*du.vector()
@@ -95,15 +95,15 @@ convergence = 'convergence after %d Newton iterations at the PDE level' % iter
 if iter >= maxiter:
     convergence = 'no ' + convergence
 
-print """
+print("""
 Solution of the nonlinear Poisson problem div(q(u)*nabla_grad(u)) = f,
 with f=0, q(u) = (1+u)^m, u=0 at x=0 and u=1 at x=1.
 %s
 %s
-""" % (mesh, convergence)
+""" % (mesh, convergence))
 
 # Find max error
 u_exact = Expression('pow((pow(2, m+1)-1)*x[0] + 1, 1.0/(m+1)) - 1', m=m)
 u_e = interpolate(u_exact, V)
 diff = numpy.abs(u_e.vector().array() - u.vector().array()).max()
-print 'Max error:', diff
+print('Max error:', diff)
