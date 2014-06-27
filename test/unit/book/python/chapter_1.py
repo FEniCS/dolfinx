@@ -40,7 +40,7 @@ def run_path(path, args):
         sys.argv = ["foo"] + [str(arg) for arg in args]
         try:
             runpy_run_path(path)
-        except SystemExit, e:
+        except SystemExit as e:
             if e.args[0] == 0:
                 pass
             else:
@@ -49,7 +49,7 @@ def run_path(path, args):
         status = os.system("python " + path + " " + \
                            " ".join(str(arg) for arg in args))
         if not status == 0:
-            raise RuntimeError, "Python script failed"
+            raise RuntimeError("Python script failed")
 
 def run_test(path, args=[]):
     "Run test script implied by name of calling function, neat trick..."
