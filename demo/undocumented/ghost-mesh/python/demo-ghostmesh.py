@@ -10,7 +10,8 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-parameters["ghost_mode"] = "None"
+parameters["ghost_mode"] = "shared_vertex"
+# parameters["ghost_mode"] = "None"
 parameters["reorder_cells_gps"] = False
 
 n = 0

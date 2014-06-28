@@ -141,86 +141,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
-  const unsigned int D = mesh.topology().dim();
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
-  DistributedMeshTools::number_entities(mesh, D - 1);
-
-  // FIXME: this works when ghost_mode = None
-  // but could be replaced with something better
-  //  DistributedMeshTools::init_facet_cell_connections(mesh);
-
-  // FIXME: integrate this below with above function
-
-  // Create vector to hold number of cells connected to each
-  // facet. Assume facet is internal, then modify for external facets.
-  std::vector<unsigned int> num_global_neighbors(mesh.num_facets());
-
-  const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
-  std::vector<std::vector<std::size_t> > send_facet(mpi_size);
-  std::vector<std::vector<std::size_t> > recv_facet(mpi_size);
-
-  const unsigned int num_regular_facets 
-    = mesh.size(D - 1) - mesh.topology().size_ghost(D - 1);
-  const unsigned int num_regular_cells 
-    = mesh.size(D) - mesh.topology().size_ghost(D);
-
-  // Map shared facets 
-  std::map<std::size_t, std::size_t> global_to_local_facet;
-  std::map<unsigned int, std::set<unsigned int> >& shared_facets
-    = mesh.topology().shared_entities(D - 1);
-  
-  for (FacetIterator f(mesh); !f.end(); ++f)
-  {
-    // Insert shared facets into mapping
-    if (shared_facets.find(f->index()) != shared_facets.end())
-        global_to_local_facet.insert(std::make_pair(f->global_index(),
-                                                    f->index()));
-    // Copy local values
-    const std::size_t n_cells = f->num_entities(D);
-    num_global_neighbors[f->index()] = n_cells;
-
-    if (f->index() >= num_regular_facets && n_cells == 1)
-    {
-      // Singly attached ghost facet - check with owner of attached cell
-      CellIterator c(*f);
-      dolfin_assert(c->index() >= num_regular_cells);
-      const std::size_t cell_owner 
-        = mesh.topology().cell_owner()[c->index() - num_regular_cells];
-      send_facet[cell_owner].push_back(f->global_index());
-    }
-  }
-
-  MPI::all_to_all(mesh.mpi_comm(), send_facet, recv_facet);
-
-  // Convert received global facet index into number of attached
-  // cells and return to sender
-  std::vector<std::vector<std::size_t> > send_response(mpi_size);  
-  for (unsigned int p = 0; p != mpi_size; ++p)
-  {
-    for (auto r = recv_facet[p].begin(); r != recv_facet[p].end(); ++r)
-    {
-      auto map_it = global_to_local_facet.find(*r);
-      dolfin_assert(map_it != global_to_local_facet.end());
-      Facet local_facet(mesh, map_it->second);
-      const std::size_t n_cells = local_facet.num_entities(D);
-      send_response[p].push_back(n_cells);
-    }
-  }
-
-  MPI::all_to_all(mesh.mpi_comm(), send_response, recv_facet);
-  
-  for (unsigned int p = 0; p != mpi_size; ++p)
-  {
-    for (unsigned int i = 0; i != recv_facet[p].size(); ++i)
-    {
-      auto f_it = global_to_local_facet.find(send_facet[p][i]);
-      dolfin_assert(f_it != global_to_local_facet.end());
-      num_global_neighbors[f_it->second] = recv_facet[p][i];
-    }
-  }
-  
-  mesh.topology()(D - 1, D).set_global_size(num_global_neighbors);
+  // FIXME: not working when ghost_mode = None
+  DistributedMeshTools::init_facet_cell_connections(mesh);
 
 }
 //-----------------------------------------------------------------------------
