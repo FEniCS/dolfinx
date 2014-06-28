@@ -146,10 +146,11 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   mesh.init(D - 1, D);
   DistributedMeshTools::number_entities(mesh, D - 1);
 
-  // FIXME: this gives incorrect answers for num_global_entities(D)
-  // for facets which are shared on the boundary
-  
+  // FIXME: this works when ghost_mode = None
+  // but could be replaced with something better
   //  DistributedMeshTools::init_facet_cell_connections(mesh);
+
+  // FIXME: integrate this below with above function
 
   // Create vector to hold number of cells connected to each
   // facet. Assume facet is internal, then modify for external facets.
@@ -302,43 +303,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
       (boost::extents[num_regular_cells][num_cell_vertices]);
     shared_cells.clear();
   }
-
-  // Now that cells are determined, build a facet-cell mapping
-  // FIXME: this should be reused later to add the facet-cell topology
-  std::vector<std::set<std::size_t> > local_graph;
-  GraphBuilder::FacetCellMap facet_cell_map;
-  GraphBuilder::compute_local_dual_graph(mesh.mpi_comm(),
-                                         new_mesh_data,
-                                         local_graph,
-                                         facet_cell_map);
-
-  const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
-  std::vector<std::vector<std::size_t> > send_facet(mpi_size);
-  std::vector<std::vector<std::size_t> > recv_facet(mpi_size);
-  
-  for (auto fcm = facet_cell_map.begin(); 
-       fcm != facet_cell_map.end(); ++fcm)
-  {
-    if (fcm->second >= num_regular_cells)
-    {
-      // Get process which hosts this cell
-      const std::size_t dest = new_mesh_data.cell_partition[fcm->second];
-
-      // Send facet to remote
-      for (auto p = fcm->first.begin(); p != fcm->first.end(); ++p)
-        send_facet[dest].push_back(*p);
-    }
-  }
-
-  MPI::all_to_all(mesh.mpi_comm(), send_facet, recv_facet);
-  
-  for (unsigned int i = 0; i != mpi_size; ++i)
-  {
-    // Need to locate incoming facets and determine whether they
-    // are singly or doubly connected
-  }
-  
-    
   
 #ifdef HAS_SCOTCH
   if (parameters["reorder_cells_gps"])
