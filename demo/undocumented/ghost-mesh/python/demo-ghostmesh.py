@@ -11,7 +11,7 @@ import numpy as np
 import sys
 
 parameters["ghost_mode"] = "shared_vertex"
-parameters["reorder_cells_gps"] = True
+parameters["reorder_cells_gps"] = False
 
 n = 0
 
@@ -28,8 +28,8 @@ if(MPI.size(mpi_comm_world()) == 1):
 mpi_rank = MPI.rank(mpi_comm_world())
 
 # parameters["mesh_partitioner"] = "ParMETIS"
-M = UnitSquareMesh(5, 5)
-M = refine(M)
+M = UnitSquareMesh(15, 15)
+# M = refine(M)
 
 
 shared_vertices = M.topology().shared_entities(0).keys()
@@ -78,11 +78,11 @@ for c in cells(M):
         yc.append(v.point().y())
     xavg = c.midpoint().x()
     yavg = c.midpoint().y()
-    cell_str=str([mpi_rank])
-    if c.index() in shared_cells.keys():
-        cell_str = str(shared_cells[c.index()])
-    else:
-        cell_str = ""
+    cell_str=str(c.index())
+#    if c.index() in shared_cells.keys():
+#        cell_str = str(shared_cells[c.index()])
+#    else:
+#        cell_str = str(c.index())
     cells_note.append((xavg, yavg, cell_str))
     cells_store.append(zip(xc,yc))
     
@@ -94,12 +94,12 @@ facet_note = []
 shared_facets = M.topology().shared_entities(1)
 for f in facets(M):
     if (f.num_global_entities(2) == 2):
-        color='#ff8888'
+        color='#ffff88'
     else:
         color='#ff88ff'
     if (f.index() < num_regular_facets):
         if (f.num_global_entities(2) == 2):
-            color='#ff0000'
+            color='#ffff00'
         else:
             color='#ff00ff'
 

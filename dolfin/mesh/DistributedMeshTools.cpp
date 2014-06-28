@@ -1053,17 +1053,29 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   // Handle facets on internal partition boundaries
   std::map<Entity, EntityData>::const_iterator it;
 
-  for (it = owned_shared_entities.begin();
+  const std::size_t num_regular_facets 
+    = mesh.topology().size(D - 1) - mesh.topology().size_ghost(D - 1);
+
+   for (it = owned_shared_entities.begin();
        it != owned_shared_entities.end(); ++it)
   {
-    num_global_neighbors[entities.find(it->first)->second] = 2;
+    const std::size_t idx = entities.find(it->first)->second;
+    if (idx >= num_regular_facets)
+       num_global_neighbors[idx] = 2;
   }
 
   for (it = unowned_shared_entities.begin();
        it != unowned_shared_entities.end(); ++it)
   {
-    num_global_neighbors[entities.find(it->first)->second] = 2;
+    const std::size_t idx = entities.find(it->first)->second;
+    if (idx >= num_regular_facets)
+      num_global_neighbors[idx] = 2;
   }
+
+
+
+
   mesh.topology()(D - 1, mesh.topology().dim()).set_global_size(num_global_neighbors);
+
 }
 //-----------------------------------------------------------------------------
