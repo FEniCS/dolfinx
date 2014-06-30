@@ -124,8 +124,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   
   if (ghost_procs.empty())
   {
-    // FIXME: need to generate ghost cell information here by doing a facet-matching
-    // operation "GraphBuilder" style
+    // FIXME: need to generate ghost cell information here 
+    // by doing a facet-matching operation "GraphBuilder" style
     warning("Ghost cell information not available");
   }
 
@@ -141,7 +141,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
-  // FIXME: not working when ghost_mode = None
   DistributedMeshTools::init_facet_cell_connections(mesh);
 
 }
@@ -357,6 +356,73 @@ void MeshPartitioning::reorder_cells_gps(MPI_Comm mpi_comm,
   new_mesh_data.cell_vertices = remapped_cell_vertices;
   new_mesh_data.global_cell_indices = remapped_global_cell_indices;
   shared_cells = remapped_shared_cells;
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
+     unsigned int num_regular_vertices,
+     unsigned int num_regular_cells,
+     std::map<unsigned int, std::set<unsigned int> >& shared_vertices,
+     std::map<std::size_t, std::size_t>& vertex_global_to_local,
+     LocalMeshData& new_mesh_data)
+{
+  Timer t("Reorder vertices GPS");
+  
+  //  const std::size_t num_all_vertices
+  //    = new_mesh_data.vertex_indices.size();
+  
+  const unsigned int num_cell_vertices 
+    = new_mesh_data.num_vertices_per_cell;
+
+  // Make graph 
+  Graph g(num_regular_vertices);
+  for (unsigned int i = 0; i != num_regular_cells; ++i)
+  {
+    for (unsigned int j = 0; j != num_cell_vertices; ++j)
+    {
+      const unsigned int vj = vertex_global_to_local[new_mesh_data.cell_vertices[i][j]];
+      if (vj < num_regular_vertices)
+      {      
+        for (unsigned int k = j + 1; k != num_cell_vertices; ++k)
+        {
+          const unsigned int vk = vertex_global_to_local[new_mesh_data.cell_vertices[i][k]];
+          if (vk < num_regular_vertices)
+          {
+            g[vj].insert(vk);
+            g[vk].insert(vj);
+          }
+        }
+      }
+    }
+  }
+
+  std::vector<std::size_t> remap = SCOTCH::compute_gps(g);
+
+  // boost::multi_array<double, 2> remapped_cell_vertices(new_mesh_data.cell_vertices);
+  // std::vector<std::size_t> remapped_global_cell_indices(new_mesh_data.global_cell_indices);
+
+  // for (unsigned int i = 0; i != g_dual.size(); ++i)
+  // {
+  //   // Remap data
+  //   const unsigned int j = remap[i];
+  //   remapped_cell_vertices[j] = new_mesh_data.cell_vertices[i];
+  //   remapped_global_cell_indices[j] = new_mesh_data.global_cell_indices[i];
+  // }
+
+  // std::map<unsigned int, std::set<unsigned int> > remapped_shared_cells;  
+  // for (auto p = shared_cells.begin(); p != shared_cells.end(); ++p)
+  // {
+  //   const unsigned int cell_index = p->first;
+  //   if (cell_index < num_regular_cells)
+  //     remapped_shared_cells.insert(std::make_pair
+  //                                  (remap[cell_index], p->second));
+  //   else
+  //     remapped_shared_cells.insert(*p);
+  // }
+  
+  // // Assign
+  // new_mesh_data.cell_vertices = remapped_cell_vertices;
+  // new_mesh_data.global_cell_indices = remapped_global_cell_indices;
+  // shared_cells = remapped_shared_cells;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,

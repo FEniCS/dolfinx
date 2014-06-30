@@ -107,13 +107,19 @@ namespace dolfin
       std::map<unsigned int, std::set<unsigned int> >& shared_cells,
       LocalMeshData& new_mesh_data);
 
-
+    // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
     static void reorder_cells_gps(MPI_Comm mpi_comm,
      unsigned int num_regular_cells,
      std::map<unsigned int, std::set<unsigned int> >& shared_cells,
      LocalMeshData& new_mesh_data);
     
-
+    // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
+    static void reorder_vertices_gps(MPI_Comm mpi_comm,
+     unsigned int num_regular_vertices,
+     unsigned int num_regular_cells,
+     std::map<unsigned int, std::set<unsigned int> >& shared_vertices,
+     std::map<std::size_t, std::size_t>& vertex_global_to_local,
+     LocalMeshData& new_mesh_data);
     
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in

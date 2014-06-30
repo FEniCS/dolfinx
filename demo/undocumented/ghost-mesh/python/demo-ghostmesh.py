@@ -10,9 +10,9 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-parameters["ghost_mode"] = "shared_vertex"
-# parameters["ghost_mode"] = "None"
-parameters["reorder_cells_gps"] = False
+# parameters["ghost_mode"] = "shared_facet"
+parameters["ghost_mode"] = "None"
+parameters["reorder_cells_gps"] = True
 
 n = 0
 
@@ -29,7 +29,7 @@ if(MPI.size(mpi_comm_world()) == 1):
 mpi_rank = MPI.rank(mpi_comm_world())
 
 # parameters["mesh_partitioner"] = "ParMETIS"
-M = UnitSquareMesh(15, 15)
+M = UnitSquareMesh(10, 10)
 # M = refine(M)
 
 
@@ -135,8 +135,8 @@ for note in cells_note:
 for note in verts_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center')
 
-for note in facet_note:
-    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
+#for note in facet_note:
+#    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
 plt.show()
 
