@@ -23,6 +23,7 @@
 
 import unittest
 from dolfin import *
+from six.moves import range
 
 class AbstractBaseTest(object):
     count = 0
@@ -298,8 +299,8 @@ class DataTester:
         array = A.array()
         rows, cols, values = A.data()
         i = 0
-        for row in xrange(A.size(0)):
-            for col in xrange(rows[row], rows[row+1]):
+        for row in range(A.size(0)):
+            for col in range(rows[row], rows[row+1]):
                 self.assertEqual(array[row, cols[col]],values[i])
                 i += 1
 
@@ -307,15 +308,15 @@ class DataTester:
         rows, cols, values = A.data(False)
         def write_data(data):
             data[0] = 1
-        self.assertRaises(StandardError, write_data, rows)
-        self.assertRaises(StandardError, write_data, cols)
-        self.assertRaises(StandardError, write_data, values)
+        self.assertRaises(Exception, write_data, rows)
+        self.assertRaises(Exception, write_data, cols)
+        self.assertRaises(Exception, write_data, values)
 
         # Test for as_backend_typeed Matrix
         A = as_backend_type(A)
         rows, cols, values = A.data()
-        for row in xrange(A.size(0)):
-            for k in xrange(rows[row], rows[row+1]):
+        for row in range(A.size(0)):
+            for k in range(rows[row], rows[row+1]):
                 self.assertEqual(array[row,cols[k]], values[k])
 
     def test_matrix_data_use_backend(self):

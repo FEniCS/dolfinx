@@ -319,7 +319,7 @@ class DataTester:
         data = v.data(False)
         def write_data(data):
             data[0] = 1
-        self.assertRaises(StandardError, write_data, data)
+        self.assertRaises(Exception, write_data, data)
 
         # Test for as_backend_typeed Vector
         v = as_backend_type(v)

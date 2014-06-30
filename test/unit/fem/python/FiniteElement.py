@@ -23,6 +23,7 @@
 import unittest
 import numpy
 from dolfin import *
+from six.moves import range
 
 class FiniteElementTest(unittest.TestCase):
 
@@ -54,7 +55,7 @@ class FiniteElementTest(unittest.TestCase):
             vx = cell.get_vertex_coordinates()
             orientation = cell.orientation()
             self.V.dofmap().tabulate_coordinates(cell, coords)
-            for i in xrange(coords.shape[0]):
+            for i in range(coords.shape[0]):
                 coord[:] = coords[i,:]
                 values0[i] = e(*coord)
             L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
@@ -97,7 +98,7 @@ class FiniteElementTest(unittest.TestCase):
                 vx = cell.get_vertex_coordinates()
                 orientation = cell.orientation()
                 V.dofmap().tabulate_coordinates(cell, coords)
-                for i in xrange(coords.shape[0]):
+                for i in range(coords.shape[0]):
                     coord[:] = coords[i,:]
                     values0[i] = f(*coord)
                 V.element().evaluate_dofs(values1, f, vx, orientation, cell)

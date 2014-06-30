@@ -355,7 +355,7 @@ class GmshTest(_ConverterTest):
 
         handler = self.__convert("gmsh_test_facet_regions_%dD_%d.msh" % (dim, id), cell_type, dim)
 
-        free_facets = range(size)
+        free_facets = list(range(size))
 
         for i in marked_facets:
             free_facets.remove(i)

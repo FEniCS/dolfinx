@@ -35,6 +35,7 @@ from __future__ import print_function
 from dolfin import *
 from numpy import array, sqrt
 from math import pow
+from six.moves import range
 
 TOL = 5e-4           # Error tolerance
 REFINE_RATIO = 0.50  # Refine 50 % of the cells in each iteration
@@ -46,7 +47,7 @@ source_str = "exp(-100.0*(pow(x[0], 2) + pow(x[1], 2)))"
 source = eval("lambda x: " + source_str)
 
 # Adaptive algorithm
-for level in xrange(MAX_ITER):
+for level in range(MAX_ITER):
 
     # Define variational problem
     V = FunctionSpace(mesh, "CG", 1)

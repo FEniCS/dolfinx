@@ -8,6 +8,7 @@ u0 = u = 1 + x^2 + 2y^2, p = x + y, f = -8x - 10y.
 """
 
 from dolfin import *
+from six.moves import input
 import numpy
 plot = lambda *args, **kwargs: None
 
@@ -167,4 +168,4 @@ u_e_array = u_e.vector().array()
 print(('Max error:', numpy.abs(u_e_array - u_array).max()))
 
 #interactive()
-raw_input('Press Return: ')  # some curve plot engines need this for a lasting plot on the screen
+input('Press Return: ')  # some curve plot engines need this for a lasting plot on the screen

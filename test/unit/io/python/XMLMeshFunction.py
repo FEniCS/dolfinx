@@ -24,6 +24,7 @@
 
 import unittest
 from dolfin import *
+from six.moves import range
 
 @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class XMLMeshFunction(unittest.TestCase):
@@ -48,7 +49,7 @@ class XMLMeshFunction(unittest.TestCase):
         input_file >> g
 
         # Check values
-        for i in xrange(f.size()):
+        for i in range(f.size()):
             self.assertEqual(f[i], g[i])
 
     def test_io_int(self):
@@ -71,7 +72,7 @@ class XMLMeshFunction(unittest.TestCase):
         input_file >> g
 
         # Check values
-        for i in xrange(f.size()):
+        for i in range(f.size()):
             self.assertEqual(f[i], g[i])
 
     def test_io_double(self):
@@ -94,7 +95,7 @@ class XMLMeshFunction(unittest.TestCase):
         input_file >> g
 
         # Check values
-        for i in xrange(f.size()):
+        for i in range(f.size()):
             self.assertEqual(f[i], g[i])
 
     def test_io_bool(self):
@@ -117,7 +118,7 @@ class XMLMeshFunction(unittest.TestCase):
         input_file >> g
 
         # Check values
-        for i in xrange(f.size()):
+        for i in range(f.size()):
             self.assertEqual(f[i], g[i])
 
 if __name__ == "__main__":

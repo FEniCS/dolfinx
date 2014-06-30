@@ -24,6 +24,7 @@ import unittest
 import numpy
 
 from dolfin import *
+from six.moves import range
 
 
 def triangulation_to_mesh_2d(triangulation):
@@ -34,9 +35,9 @@ def triangulation_to_mesh_2d(triangulation):
     num_vertices = len(triangulation) / 2
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
-    for i in xrange(num_cells):
+    for i in range(num_cells):
         editor.add_cell(i, 3*i, 3*i + 1, 3*i + 2)
-    for i in xrange(num_vertices):
+    for i in range(num_vertices):
         editor.add_vertex(i, triangulation[2*i], triangulation[2*i + 1])
     editor.close()
     return mesh

@@ -23,6 +23,7 @@
 import unittest
 import numpy.random
 from dolfin import *
+from six.moves import range
 
 class NamedMeshFunctions(unittest.TestCase):
 
@@ -63,7 +64,7 @@ class NamedMeshFunctions(unittest.TestCase):
                 values = self.funcs[(tp, name)].array()
                 values[:] = numpy.random.rand(len(values))
                 self.assertTrue(all(values[i]==self.funcs[(tp, name)][i]
-                                    for i in xrange(len(values))))
+                                    for i in range(len(values))))
 
     def test_iterate(self):
         for tp in self.tps:
