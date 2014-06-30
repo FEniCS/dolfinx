@@ -28,7 +28,7 @@ embedded in higher dimensional spaces."""
 
 import unittest
 from dolfin import *
-from itertools import izip
+from six.moves import zip
 
 import numpy
 
@@ -219,7 +219,7 @@ class ManifoldBasisEvaluation(unittest.TestCase):
                               [0.3, 0.7, 0.0],
                               [0.4, 0.0, 0.0]])
 
-        for cell_base, cell_rot in izip(cells(self.basemesh), cells(self.rotmesh)):
+        for cell_base, cell_rot in zip(cells(self.basemesh), cells(self.rotmesh)):
 
             values_base = numpy.zeros(f_base.element().value_dimension(0))
             derivs_base = numpy.zeros(f_base.element().value_dimension(0)*3)

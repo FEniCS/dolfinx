@@ -34,7 +34,7 @@ import sys
 mesh = Mesh("../dolfin_fine.xml.gz")
 
 # Decide which demos to run
-demos = map(int, sys.argv[1:]) or [0, 1, 2]
+demos = list(map(int, sys.argv[1:])) or [0, 1, 2]
 
 # Have some fun with the mesh
 if 0 in demos:

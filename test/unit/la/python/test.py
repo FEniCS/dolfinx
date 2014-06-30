@@ -21,6 +21,7 @@
 # Last changed: 2014-05-30
 
 import unittest
+from six import integer_types
 from dolfin import *
 import sys
 
@@ -82,7 +83,7 @@ class AbstractBaseTest(object):
 
         # Test set and access with different integers
         ind = 2
-        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,long]:
+        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,integer_types[1]]:
             v[t(ind)] = 2.0
             if v.owns_index(t(ind)): self.assertAlmostEqual(v[t(ind)], 2.0)
 
