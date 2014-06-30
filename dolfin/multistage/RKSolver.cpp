@@ -34,7 +34,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RKSolver::RKSolver(std::shared_ptr<MultiStageScheme> scheme) : 
+RKSolver::RKSolver(std::shared_ptr<MultiStageScheme> scheme) :
   _scheme(scheme), _tmp(scheme->solution()->vector()->copy())
 {
   // Do nothing
@@ -51,75 +51,73 @@ void RKSolver::step(double dt)
   const double t0 = *_scheme->t();
 
   // Get scheme data
-  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms = \
-    _scheme->stage_forms();
-  std::vector<std::shared_ptr<Function> >& stage_solutions = _scheme->stage_solutions();
+  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
+    =  _scheme->stage_forms();
+  std::vector<std::shared_ptr<Function> >& stage_solutions
+    = _scheme->stage_solutions();
   std::vector<const DirichletBC* > bcs = _scheme->bcs();
-  
+
   // Iterate over stage forms
   for (unsigned int stage=0; stage < stage_forms.size(); stage++)
   {
-
     // Update time
     //*_scheme->t() = t0 + dt*_scheme->dt_stage_offset()[stage];
 
     // Check if we have an explicit stage (only 1 form)
     if (stage_forms[stage].size()==1)
     {
-
       // Just do an assemble
-      _assembler.assemble(*stage_solutions[stage]->vector(), *stage_forms[stage][0]);
-      
+      _assembler.assemble(*stage_solutions[stage]->vector(),
+                          *stage_forms[stage][0]);
+
       // Apply boundary conditions
-      // FIXME: stage solutions are time derivatives and we cannot apply the 
+      // FIXME: stage solutions are time derivatives and we cannot apply the
       // bcs directly on them
       for (unsigned int j = 0; j < bcs.size(); j++)
       {
 	dolfin_assert(bcs[j]);
 	bcs[j]->apply(*stage_solutions[stage]->vector());
       }
-      
     }
-    
+
     // or an implicit stage (2 forms)
     else
     {
       // FIXME: applying the bcs on stage solutions are probably wrong...
       // FIXME: Include solver parameters
       // Do a nonlinear solve
-      solve(*stage_forms[stage][0] == 0, *stage_solutions[stage], bcs, *stage_forms[stage][1]);
+      solve(*stage_forms[stage][0] == 0, *stage_solutions[stage], bcs,
+            *stage_forms[stage][1]);
     }
-
   }
 
   // Update solution with last stage
   GenericVector& solution_vector = *_scheme->solution()->vector();
-  
+
   // Do the last stage (just an assemble)
   _assembler.assemble(*_tmp, *_scheme->last_stage());
   solution_vector = *_tmp;
 
   // Update time
   *_scheme->t() = t0 + dt;
-  
 }
 //-----------------------------------------------------------------------------
 void RKSolver::step_interval(double t0, double t1, double dt)
 {
-  if (dt<=0.0)
+  if (dt <= 0.0)
   {
     dolfin_error("RKSolver.cpp",
 		 "stepping RKSolver",
 		 "Expecting a positive dt");
   }
 
-  if (t0>=t1)
+  if (t0 >= t1)
   {
     dolfin_error("RKSolver.cpp",
 		 "stepping RKSolver",
 		 "Expecting t0 to be smaller than t1");
   }
-  
+
   // Set start time
   *_scheme->t() = t0;
   double t = t0;

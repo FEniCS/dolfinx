@@ -103,6 +103,8 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space)
     // Increase offset
     offset += _original_dofmaps[part]->global_dimension();
   }
+
+
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDofMap::clear()
@@ -123,7 +125,7 @@ std::pair<std::size_t, std::size_t> MultiMeshDofMap::ownership_range() const
   return std::make_pair<std::size_t, std::size_t>(0, global_dimension());
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<std::size_t, unsigned int>&
+const std::vector<int>&
 MultiMeshDofMap::off_process_owner() const
 {
   // FIXME: Does not run in parallel

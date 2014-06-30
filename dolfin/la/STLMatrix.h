@@ -27,8 +27,8 @@
 
 #include <string>
 #include <utility>
-#include <vector>
 #include <boost/unordered_map.hpp>
+#include <vector>
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
@@ -118,16 +118,28 @@ namespace dolfin
                      const dolfin::la_index* cols) const
     { dolfin_not_implemented(); }
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols)
     { dolfin_not_implemented(); }
 
-    /// Add block of values
+    /// Set block of values using local indies
+    virtual void set_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows, std::size_t n,
+                           const dolfin::la_index* cols)
+    { dolfin_not_implemented(); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols);
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows, std::size_t n,
+                           const dolfin::la_index* cols)
+    { dolfin_not_implemented(); }
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -153,6 +165,10 @@ namespace dolfin
 
     /// Set given rows to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows to identity matrix
+    virtual void ident_local(std::size_t m, const dolfin::la_index* rows)
+    { dolfin_not_implemented(); }
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const

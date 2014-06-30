@@ -25,8 +25,8 @@
 #include <set>
 #include <utility>
 #include <vector>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
@@ -89,14 +89,14 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   {
     const std::size_t vertex_entity_index = vertex_entity->index();
 
-    boost::unordered_set<std::size_t> entity_list0;
-    boost::unordered_set<std::size_t> entity_list1;
+    std::unordered_set<std::size_t> entity_list0;
+    std::unordered_set<std::size_t> entity_list1;
     entity_list0.insert(vertex_entity_index);
 
     // Build list of entities, moving between levels
     for (std::size_t level = 1; level < coloring_type.size(); ++level)
     {
-      for (boost::unordered_set<std::size_t>::const_iterator entity_index
+      for (std::unordered_set<std::size_t>::const_iterator entity_index
              = entity_list0.begin(); entity_index != entity_list0.end();
            ++entity_index)
       {
@@ -158,7 +158,7 @@ void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
 {
   FacetCellMap facet_cell_map;
 
-  #ifdef HAS_MPI
+#ifdef HAS_MPI
   compute_local_dual_graph(mpi_comm, mesh_data, local_graph, facet_cell_map);
   compute_nonlocal_dual_graph(mpi_comm, mesh_data, local_graph, facet_cell_map,
                               ghost_vertices);
@@ -276,7 +276,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
 
   // Pack map data and send to match-maker process
   boost::unordered_map<std::vector<std::size_t>,
-                       std::size_t>::const_iterator it;
+                     std::size_t>::const_iterator it;
   for (it = facet_cell_map.begin(); it != facet_cell_map.end(); ++it)
   {
     // FIXME: Could use a better index? First vertex is slightly skewed

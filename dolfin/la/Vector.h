@@ -105,8 +105,9 @@ namespace dolfin
     /// values
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
+                      const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices)
-    { vector->init(comm, range, ghost_indices); }
+    { vector->init(comm, range, local_to_global_map, ghost_indices); }
 
     // Bring init function from GenericVector into scope
     using GenericVector::init;
@@ -131,20 +132,37 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const
     { return vector->owns_index(i); }
 
-    /// Get block of values (values must all live on the local process)
+    /// Get block of values using global indices (values must all live
+    /// on the local process, ghosts are no accessible)
+    virtual void get(double* block, std::size_t m,
+                     const dolfin::la_index* rows) const
+    { vector->get(block, m, rows); }
+
+    /// Get block of values using local indices (values must all live
+    /// on the local process)
     virtual void get_local(double* block, std::size_t m,
                            const dolfin::la_index* rows) const
-    { vector->get_local(block,m,rows); }
+    { vector->get_local(block, m, rows); }
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows)
     { vector->set(block, m, rows); }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, std::size_t m,
+                     const dolfin::la_index* rows)
+    { vector->set_local(block, m, rows); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows)
     { vector->add(block, m, rows); }
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows)
+    { vector->add_local(block, m, rows); }
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const
