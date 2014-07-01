@@ -20,9 +20,9 @@
 // Last Changed: 2013-05-12
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -112,9 +112,8 @@ void ParallelRefinement::update_logical_edgefunction()
   // Create a list of edges on this process that are 'true' and copy
   // to remote sharing processes
   std::vector<std::vector<std::size_t> > values_to_send(num_processes);
-   for (auto sh_edge = shared_edges.begin();
-        sh_edge != shared_edges.end();
-        sh_edge++)
+  for (auto sh_edge = shared_edges.begin(); sh_edge != shared_edges.end();
+       sh_edge++)
   {
     const std::size_t local_index = sh_edge->first;
     if (marked_edges[local_index] == true)

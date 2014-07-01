@@ -19,17 +19,11 @@
 # Modified by Johan Hake, 2008
 # Modified by Garth N. Wells, 2009
 #
-# First added:  2007-11-14
-# Last changed: 2009-10-06
-#
 # This demo solves the time-dependent convection-diffusion equation by
-# a SUPG stabilized method. The velocity field used
-# in the simulation is the output from the Stokes (Taylor-Hood) demo.
-# The sub domains for the different boundary conditions are computed
-# by the demo program in src/demo/subdomains.
-#
-# FIXME: Add shock capturing term and then revert back to the Stokes
-#        velocity
+# a SUPG stabilized method. The velocity field used in the simulation
+# is the output from the Stokes (Taylor-Hood) demo.  The sub domains
+# for the different boundary conditions are computed by the demo
+# program in src/demo/subdomains.
 
 from dolfin import *
 
@@ -69,21 +63,22 @@ u, v = TrialFunction(Q), TestFunction(Q)
 u_mid = 0.5*(u0 + u)
 
 # Residual
-r = u-u0 + dt*(dot(velocity, grad(u_mid)) - c*div(grad(u_mid)) - f)
+r = u - u0 + dt*(dot(velocity, grad(u_mid)) - c*div(grad(u_mid)) - f)
 
 # Galerkin variational problem
-F = v*(u-u0)*dx + dt*(v*dot(velocity, grad(u_mid))*dx + c*dot(grad(v), grad(u_mid))*dx)
+F = v*(u - u0)*dx + dt*(v*dot(velocity, grad(u_mid))*dx \
+                      + c*dot(grad(v), grad(u_mid))*dx)
 
 # Add SUPG stabilisation terms
 vnorm = sqrt(dot(velocity, velocity))
-F += h/(2.0*vnorm)*dot(velocity, grad(v))*r*dx
+F += (h/(2.0*vnorm))*dot(velocity, grad(v))*r*dx
 
 # Create bilinear and linear forms
 a = lhs(F)
 L = rhs(F)
 
 # Set up boundary condition
-g = Constant( boundary_value(0) )
+g = Constant(boundary_value(0))
 bc = DirichletBC(Q, g, sub_domains, 1)
 
 # Assemble matrix
@@ -121,7 +116,7 @@ while t < T:
 
     # Move to next interval and adjust boundary condition
     t += dt
-    g.assign( boundary_value( int(t/dt) ) )
+    g.assign(boundary_value(int(t/dt)))
 
 # Hold plot
-#interactive()
+interactive()

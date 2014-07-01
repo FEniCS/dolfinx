@@ -69,7 +69,7 @@ void LinearVariationalSolver::solve()
   std::shared_ptr<const Form> a(_problem->bilinear_form());
   std::shared_ptr<const Form> L(_problem->linear_form());
   std::shared_ptr<Function> u(_problem->solution());
-  std::vector<std::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
+  std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   dolfin_assert(a);
   dolfin_assert(L);
@@ -142,11 +142,11 @@ void LinearVariationalSolver::solve()
     info(*A, true);
 
   // Get list of available methods
-  std::vector<std::pair<std::string, std::string> >
+  std::vector<std::pair<std::string, std::string>>
     lu_methods = u->vector()->factory().lu_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
+  std::vector<std::pair<std::string, std::string>>
     krylov_methods = u->vector()->factory().krylov_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
+  std::vector<std::pair<std::string, std::string>>
     preconditioners = u->vector()->factory().krylov_solver_preconditioners();
 
   // Choose linear solver

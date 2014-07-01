@@ -68,11 +68,6 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  // Use Trilinos if available
-  #ifdef HAS_TRILINOS
-  parameters["linear_algebra_backend"] = "Epetra";
-  #endif
-
   // Create mesh and define function space
   UnitSquareMesh mesh(16, 16);
   NonlinearPoisson::FunctionSpace V(mesh);

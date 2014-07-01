@@ -205,10 +205,6 @@ class AbstractBaseTest(object):
 
     def test_ident_zeros(self, use_backend=False):
 
-        # EpetraMatrix::ident() is not reliable
-        if self.backend == "Epetra":
-            return
-
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
             A, B = self.assemble_matrices(use_backend=use_backend)
@@ -352,11 +348,6 @@ if has_linear_algebra_backend("PETScCusp"):
 if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "PETSc"
-        sub_backend = ""
-
-if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-        backend    = "Epetra"
         sub_backend = ""
 
 #class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):

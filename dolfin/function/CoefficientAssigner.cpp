@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Anders Logg
+// Copyright (C) 2008-2009 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,15 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Alnes 2008
+// Modified by Martin Alnes, 2008.
 //
 // First added:  2008-10-28
-// Last changed: 2014-05-22
+// Last changed: 2009-10-04
 
 #include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
-#include "Constant.h"
 #include "CoefficientAssigner.h"
 
 using namespace dolfin;
@@ -43,12 +42,6 @@ CoefficientAssigner::~CoefficientAssigner()
 void CoefficientAssigner::operator= (const GenericFunction& coefficient)
 {
   std::shared_ptr<const GenericFunction> c(&coefficient, NoDeleter());
-  _form.set_coefficient(_number, c);
-}
-//-----------------------------------------------------------------------------
-void CoefficientAssigner::operator= (double constant)
-{
-  std::shared_ptr<const Constant> c(new Constant(constant));
   _form.set_coefficient(_number, c);
 }
 //-----------------------------------------------------------------------------

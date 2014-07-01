@@ -44,8 +44,10 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   // Now this works regardless of reorder_dofs_serial value
   const bool reorder_dofs_serial = parameters["reorder_dofs_serial"];
   if (!reorder_dofs_serial)
+  {
     warning("The function HarmonicSmoothing::move no longer needs "
             "parameters[\"reorder_dofs_serial\"] = false");
+  }
 
   const std::size_t D = mesh.topology().dim();
   const std::size_t d = mesh.geometry().dim();
@@ -78,30 +80,32 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   Assembler assembler;
   assembler.assemble(A, *form);
 
+  // Number of mesh vertices (local)
   const std::size_t num_vertices = mesh.num_vertices();
 
   // Dof range
   const dolfin::la_index n0 = V->dofmap()->ownership_range().first;
   const dolfin::la_index n1 = V->dofmap()->ownership_range().second;
-  const dolfin::la_index num_dofs = n1 - n0;
+  const dolfin::la_index num_owned_dofs = n1 - n0;
 
   // Mapping of new_boundary vertex numbers to mesh vertex numbers
-  const MeshFunction<std::size_t>& vertex_map_mesh_func =
-                                     new_boundary.entity_map(0);
+  const MeshFunction<std::size_t>& vertex_map_mesh_func
+    = new_boundary.entity_map(0);
   const std::size_t num_boundary_vertices = vertex_map_mesh_func.size();
-  const std::vector<std::size_t> vertex_map(vertex_map_mesh_func.values(),
-                      vertex_map_mesh_func.values() + num_boundary_vertices);
+  const std::vector<std::size_t>
+    vertex_map(vertex_map_mesh_func.values(),
+               vertex_map_mesh_func.values() + num_boundary_vertices);
 
   // Mapping of mesh vertex numbers to dofs (including ghost dofs)
   const std::vector<dolfin::la_index> vertex_to_dofs = vertex_to_dof_map(*V);
 
-  // Array of all dofs (including ghosts) with global numbering
+  // Array of all dofs (including ghosts) with local numbering
   std::vector<dolfin::la_index> all_global_dofs(num_vertices);
   for (std::size_t i = 0; i < num_vertices; i++)
-    all_global_dofs[i] = vertex_to_dofs[i] + n0;
+    all_global_dofs[i] = vertex_to_dofs[i];
 
-  // Create arrays for setting bcs.
-  // Their indexing does not matter - same ordering does.
+  // Create arrays for setting bcs.  Their indexing does not matter -
+  // same ordering does.
   std::size_t num_boundary_dofs = 0;
   std::vector<dolfin::la_index> boundary_dofs;
   boundary_dofs.reserve(num_boundary_vertices);
@@ -109,10 +113,9 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   boundary_vertices.reserve(num_boundary_vertices);
   for (std::size_t vert = 0; vert < num_boundary_vertices; vert++)
   {
-    const dolfin::la_index dof = vertex_to_dofs[vertex_map[vert]];
-
     // Skip ghosts
-    if (dof >= 0 && dof < num_dofs)
+    const dolfin::la_index dof = vertex_to_dofs[vertex_map[vert]];
+    if (dof < num_owned_dofs)
     {
       // Global dof numbers
       boundary_dofs.push_back(dof + n0);
@@ -134,10 +137,11 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   displacement.reserve(d*num_vertices);
 
   // Pick amg as preconditioner if available
-  const std::string prec(has_krylov_solver_preconditioner("amg")
-                         ? "amg" : "default");
+  const std::string
+    prec(has_krylov_solver_preconditioner("amg") ? "amg" : "default");
 
-  // Displacement solution wrapped in Expression subclass MeshDisplacement
+  // Displacement solution wrapped in Expression subclass
+  // MeshDisplacement
   std::shared_ptr<MeshDisplacement> u(new MeshDisplacement(mesh));
 
   // RHS vector
@@ -154,8 +158,10 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
 
     // Store bc into RHS and solution so that CG solver can be used
     for (std::size_t i = 0; i < num_boundary_dofs; i++)
+    {
       boundary_values[i] = new_boundary.geometry().x(boundary_vertices[i], dim)
-                         - mesh.geometry().x(vertex_map[boundary_vertices[i]], dim);
+        - mesh.geometry().x(vertex_map[boundary_vertices[i]], dim);
+    }
     b.set(boundary_values.data(), num_boundary_dofs, boundary_dofs.data());
     b.apply("insert");
     *x = b;
@@ -166,8 +172,7 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
     // Get displacement
     std::vector<double> _displacement(num_vertices);
     x->get_local(_displacement.data(), num_vertices, all_global_dofs.data());
-    displacement.insert(displacement.end(),
-                        _displacement.begin(),
+    displacement.insert(displacement.end(), _displacement.begin(),
                         _displacement.end());
   }
 
