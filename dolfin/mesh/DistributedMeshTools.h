@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-17
-// Last changed: 2014-02-14
+// Last changed: 2013-01-29
 
 #ifndef __MESH_DISTRIBUTED_TOOLS_H
 #define __MESH_DISTRIBUTED_TOOLS_H
@@ -41,7 +41,7 @@ namespace dolfin
   class DistributedMeshTools
   {
   public:
-    
+
     /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, std::size_t d);
 
@@ -59,7 +59,7 @@ namespace dolfin
     // (globally). Facets on internal boundaries will be connected to
     // two cells (with the cells residing on neighboring processes)
     static void init_facet_cell_connections(Mesh& mesh);
-    
+
     /// Find processes that own or share mesh entities (using entity
     /// global indices). Returns (global_dof, set(process_num,
     /// local_index)). Exclusively local entities will not appear in
@@ -148,6 +148,9 @@ namespace dolfin
                                   std::size_t num_local_entities,
                                   std::size_t num_processes,
                                   std::size_t process_number);
+
   };
+
 }
+
 #endif

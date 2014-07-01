@@ -327,26 +327,10 @@ void MeshPartitioning::reorder_cells_gps(MPI_Comm mpi_comm,
   }
   std::vector<int> remap = SCOTCH::compute_gps(g_dual);
 
-  // // Play with reordering ghost cells
-  // Graph g_dual_ghost;
-  // for (unsigned int i = num_regular_cells; i != num_all_cells; ++i)
-  // {
-  //   dolfin::Set<std::size_t> conn_set;
-  //   for (auto q = local_graph[i].begin(); 
-  //        q != local_graph[i].end(); ++q)
-  //   {
-  //     dolfin_assert(*q >= local_cell_offset);
-  //     const unsigned int local_index = *q - local_cell_offset;
-  //     // Ignore non-ghost cells in connectivity
-  //     if (local_index >= num_regular_cells)
-  //       conn_set.insert(local_index - num_regular_cells);
-  //   }
-  //   g_dual_ghost.push_back(conn_set);
-  // }
-  // std::vector<std::size_t> remap_ghost = SCOTCH::compute_gps(g_dual_ghost);
-
-  boost::multi_array<std::size_t, 2> remapped_cell_vertices(new_mesh_data.cell_vertices);
-  std::vector<std::size_t> remapped_global_cell_indices(new_mesh_data.global_cell_indices);
+  boost::multi_array<std::size_t, 2> 
+    remapped_cell_vertices(new_mesh_data.cell_vertices);
+  std::vector<std::size_t> 
+    remapped_global_cell_indices(new_mesh_data.global_cell_indices);
 
   for (unsigned int i = 0; i != g_dual.size(); ++i)
   {
@@ -390,12 +374,14 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   {
     for (unsigned int j = 0; j != num_cell_vertices; ++j)
     {
-      const unsigned int vj = vertex_global_to_local[new_mesh_data.cell_vertices[i][j]];
+      const unsigned int vj 
+        = vertex_global_to_local[new_mesh_data.cell_vertices[i][j]];
       if (vj < num_regular_vertices)
       {      
         for (unsigned int k = j + 1; k != num_cell_vertices; ++k)
         {
-          const unsigned int vk = vertex_global_to_local[new_mesh_data.cell_vertices[i][k]];
+          const unsigned int vk 
+            = vertex_global_to_local[new_mesh_data.cell_vertices[i][k]];
           if (vk < num_regular_vertices)
           {
             g[vj].insert(vk);
@@ -409,7 +395,8 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   std::vector<int> remap = SCOTCH::compute_gps(g);
 
   // Remap global-to-local mapping
-  for (auto p = vertex_global_to_local.begin(); p != vertex_global_to_local.end(); ++p)
+  for (auto p = vertex_global_to_local.begin(); 
+       p != vertex_global_to_local.end(); ++p)
     if (p->second < num_regular_vertices)
       p->second = (std::size_t)remap[p->second];
   
