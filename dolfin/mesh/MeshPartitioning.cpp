@@ -313,19 +313,19 @@ void MeshPartitioning::reorder_cells_gps(MPI_Comm mpi_comm,
   // FIXME: reorder ghost cells too
   for (unsigned int i = 0; i != num_regular_cells; ++i)
   {
-    dolfin::Set<std::size_t> conn_set;
+    dolfin::Set<int> conn_set;
     for (auto q = local_graph[i].begin(); 
          q != local_graph[i].end(); ++q)
     {
       dolfin_assert(*q >= local_cell_offset);
-      const unsigned int local_index = *q - local_cell_offset;
+      const int local_index = *q - local_cell_offset;
       // Ignore ghost cells in connectivity
-      if (local_index < num_regular_cells)
+      if (local_index < (int)num_regular_cells)
         conn_set.insert(local_index);
     }
     g_dual.push_back(conn_set);
   }
-  std::vector<std::size_t> remap = SCOTCH::compute_gps(g_dual);
+  std::vector<int> remap = SCOTCH::compute_gps(g_dual);
 
   // // Play with reordering ghost cells
   // Graph g_dual_ghost;
@@ -406,12 +406,12 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
     }
   }
 
-  std::vector<std::size_t> remap = SCOTCH::compute_gps(g);
+  std::vector<int> remap = SCOTCH::compute_gps(g);
 
   // Remap global-to-local mapping
   for (auto p = vertex_global_to_local.begin(); p != vertex_global_to_local.end(); ++p)
     if (p->second < num_regular_vertices)
-      p->second = remap[p->second];
+      p->second = (std::size_t)remap[p->second];
   
   // Remap local-to-global mapping
   std::vector<std::size_t> remapped_vertex_indices(new_mesh_data.vertex_indices);
