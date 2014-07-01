@@ -90,11 +90,6 @@ namespace dolfin
          std::vector<std::size_t>& cell_partition,
          std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
 
-    // Get the set of common vertices from a boost::multi_array of cell
-    // vertex indices
-    static std::set<std::size_t> cell_vertex_set(
-       const boost::multi_array<std::size_t, 2>& cell_vertices);
-
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
      const std::vector<std::size_t>& cell_partition,
@@ -117,7 +112,6 @@ namespace dolfin
     static void reorder_vertices_gps(MPI_Comm mpi_comm,
      unsigned int num_regular_vertices,
      unsigned int num_regular_cells,
-     std::map<unsigned int, std::set<unsigned int> >& shared_vertices,
      std::map<std::size_t, std::size_t>& vertex_global_to_local,
      LocalMeshData& new_mesh_data);
     
@@ -145,13 +139,19 @@ namespace dolfin
 
     // Distribute vertices and vertex sharing information,
     // returning the number of vertices which are not ghosted.
-    static std::size_t
+    static void
       distribute_vertices(const MPI_Comm mpi_comm,
         const LocalMeshData& mesh_data,
-        const unsigned int num_regular_cells,
         LocalMeshData& new_mesh_data,
         std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
         std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local);
+
+    // Work out the mapping from global index to local index for the set of
+    // vertices which are on this process
+    static std::size_t compute_vertex_mapping(MPI_Comm mpi_comm, 
+                  unsigned int num_regular_cells,
+                  LocalMeshData& new_mesh_data,
+                  std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
     // Build mesh
     static void build_mesh(Mesh& mesh,

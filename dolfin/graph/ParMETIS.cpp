@@ -199,9 +199,6 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   }
 
   // Generate mapping for where new boundary cells need to be sent
-  //  std::map<std::size_t, std::vector<std::size_t> > ghost_procs;
-  //  ghost_procs.resize(ncells);
-
   for(unsigned int i = 0; i < ncells; i++)
   {
     const std::size_t proc_this = part[i];

@@ -10,9 +10,10 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-# parameters["ghost_mode"] = "shared_facet"
-parameters["ghost_mode"] = "None"
+parameters["ghost_mode"] = "shared_vertex"
+# parameters["ghost_mode"] = "None"
 parameters["reorder_cells_gps"] = True
+parameters["reorder_vertices_gps"] = True
 
 n = 0
 

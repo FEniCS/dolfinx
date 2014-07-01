@@ -101,6 +101,7 @@ namespace dolfin
 
       // Mesh ordering via SCOTCH and GPS
       p.add("reorder_cells_gps", false);
+      p.add("reorder_vertices_gps", false);
 
       // Allowed partitioners (not necessarily installed)
       std::set<std::string> allowed_mesh_partitioners;
