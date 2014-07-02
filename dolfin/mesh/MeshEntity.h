@@ -219,6 +219,27 @@ namespace dolfin
         = _mesh->topology().size(_dim) - _mesh->topology().size_ghost(_dim);
       return (_local_index >= num_regular_entities);
     }
+
+    /// Return set of sharing processes
+    std::set<unsigned int> sharing_processes() const
+    {
+      const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+        = _mesh->topology().shared_entities(_dim);
+      const auto map_it = sharing_map.find(_local_index);
+      if (map_it == sharing_map.end())
+        return std::set<unsigned int>();
+      else
+        return map_it->second;
+    }
+
+    /// Determine if an entity is shared or not    
+    bool is_shared() const
+    {
+      const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+        = _mesh->topology().shared_entities(_dim);
+
+      return (sharing_map.find(_local_index) != sharing_map.end());
+    }
     
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)
