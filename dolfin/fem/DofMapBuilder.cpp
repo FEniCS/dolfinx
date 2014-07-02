@@ -145,10 +145,12 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // for process locality and set local_range
   if (reorder)
   {
-    // Mark boundary nodes. Boundary nodes are assigned a random
-    // positive integer, interior nodes are marked as -1.
-    std::vector<int> boundary_nodes;
-    compute_boundary_nodes(boundary_nodes, node_graph0,
+    // Mark shared nodes. Boundary nodes are assigned a random
+    // positive integer, interior nodes are marked as -1, interior
+    // nodes in ghost layer of other processes are marked -2, and
+    // ghost nodes are marked as -3
+    std::vector<int> shared_nodes;
+    compute_boundary_nodes(shared_nodes, node_graph0,
                            node_local_to_global0.size(), *ufc_node_dofmap,
                            mesh, MPI::rank(mesh.mpi_comm()));
 
@@ -164,7 +166,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                                shared_node_to_processes0,
                                dofmap._neighbours,
                                node_graph0,
-                               boundary_nodes, global_nodes0,
+                               shared_nodes, global_nodes0,
                                node_local_to_global0, mesh);
 
     // Set global offset for dofs owned by this process, and the local
@@ -631,6 +633,8 @@ DofMapBuilder::compute_node_ownership(
       send_buffer.push_back(boundary_nodes[i]);
       global_to_local.insert(std::make_pair(local_to_global[i], i));
     }
+    else if (boundary_nodes[i] == -3)
+      node_ownership[i] = -1;
     else
       node_ownership[i] = 1;
   }
@@ -1298,7 +1302,7 @@ void DofMapBuilder::compute_constrained_mesh_indices(
 }
 //-----------------------------------------------------------------------------
 void
-DofMapBuilder::compute_boundary_nodes(std::vector<int>& boundary_nodes,
+DofMapBuilder::compute_boundary_nodes(std::vector<int>& shared_nodes,
                                       const std::vector<std::vector<la_index>>& node_dofmap,
                                       const std::size_t num_nodes_local,
                                       const ufc::dofmap& ufc_dofmap,
@@ -1310,9 +1314,9 @@ DofMapBuilder::compute_boundary_nodes(std::vector<int>& boundary_nodes,
   mesh.init(D - 1);
   mesh.init(D - 1, D);
 
-  // Allocate data and initialise all facets to -1
-  boundary_nodes.resize(num_nodes_local);
-  std::fill(boundary_nodes.begin(), boundary_nodes.end(), -1);
+  // Allocate data and initialise all facets to -1 (owned and not shared)
+  shared_nodes.resize(num_nodes_local);
+  std::fill(shared_nodes.begin(), shared_nodes.end(), -1);
 
   // Create a random number generator for ownership 'voting'
   std::mt19937 engine(seed);
@@ -1322,27 +1326,41 @@ DofMapBuilder::compute_boundary_nodes(std::vector<int>& boundary_nodes,
   std::vector<std::size_t> facet_nodes(ufc_dofmap.num_facet_dofs());
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
-    // Skip if facet is internal on this partition (i.e., cannot be on
-    // process boundary)
-    if (f->num_entities(D) == 2)
+    if (!f->is_shared())
       continue;
+    dolfin_assert (f->num_entities(D) == 1);
+
+    const bool is_ghost_facet = f->is_ghost();
 
     // Get cell to which facet belongs (pick first)
-    const Cell c(mesh, f->entities(mesh.topology().dim())[0]);
+    const Cell cell0(mesh, f->entities(D)[0]);
+    const Cell cell1(mesh, f->entities(D)[1]);
+
+    // Check for facet on boundary (connected to one ghost cell)
+    bool shared_facet = false;
+    if (cell0.is_ghost() != cell1.is_ghost())
+      shared_facet = true;
 
     // Tabulate dofs (local) on cell
-    const std::vector<la_index>& cell_nodes = node_dofmap[c.index()];
+    const std::vector<la_index>& cell_nodes = node_dofmap[cell0.index()];
 
     // Tabulate which dofs are on the facet
-    ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), c.index(*f));
+    ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), cell0.index(*f));
 
     // Mark boundary nodes and insert into map
     for (std::size_t i = 0; i < facet_nodes.size(); ++i)
     {
       // Get facet node local index and assign votes (positive integer)
       size_t facet_node_local = cell_nodes[facet_nodes[i]];
-      if (boundary_nodes[facet_node_local] < 0)
-        boundary_nodes[facet_node_local] = distribution(engine);
+      if (shared_nodes[facet_node_local] == -1)
+      {
+        if (shared_facet)
+          shared_nodes[facet_node_local] = distribution(engine);
+        else if (!is_ghost_facet)
+          shared_nodes[facet_node_local] = -2;
+        else
+          shared_nodes[facet_node_local] = -3;
+      }
     }
   }
 }

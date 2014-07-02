@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # very rough demo to test out ghost cells
-# run with mpirun 
+# run with mpirun
 #
 from dolfin import *
 import matplotlib.pyplot as plt
@@ -31,39 +31,39 @@ mpi_rank = MPI.rank(mpi_comm_world())
 
 parameters["mesh_partitioner"] = "ParMETIS"
 
-M = UnitSquareMesh(10, 10)
-# M = refine(M)
+mesh = UnitSquareMesh(10, 10)
+# mesh = refine(M)
 
 
-shared_vertices = M.topology().shared_entities(0).keys()
-shared_cells = M.topology().shared_entities(M.topology().dim())
+shared_vertices = mesh.topology().shared_entities(0).keys()
+shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
 
-num_regular_vertices = M.topology().size(0) - M.topology().size_ghost(0)
+num_regular_vertices = mesh.topology().size(0) - mesh.topology().size_ghost(0)
 
-ghost_vertices = range(num_regular_vertices, M.topology().size(0))
+ghost_vertices = range(num_regular_vertices, mesh.topology().size(0))
 
 verts_note = []
 if (n == 0):
-    for k,val in M.topology().shared_entities(0).iteritems():
-        vtx = Vertex(M, k)
+    for k,val in mesh.topology().shared_entities(0).iteritems():
+        vtx = Vertex(mesh, k)
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 elif (n == 1):
-    for i in range(M.num_vertices()):
-        vtx = Vertex(M, i)
+    for i in range(mesh.num_vertices()):
+        vtx = Vertex(mesh, i)
         val = vtx.global_index()
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 else:
-    for i in range(M.num_vertices()):
-        vtx = Vertex(M, i)
+    for i in range(mesh.num_vertices()):
+        vtx = Vertex(mesh, i)
         val = vtx.index()
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 
-x,y = M.coordinates().transpose()
+x,y = mesh.coordinates().transpose()
 
-process_number = MPI.rank(M.mpi_comm())
+process_number = MPI.rank(mesh.mpi_comm())
 
-cell_ownership = np.ones(M.num_cells(),dtype='int')*process_number
-cell_owner = M.topology().cell_owner()
+cell_ownership = np.ones(mesh.num_cells(),dtype='int')*process_number
+cell_owner = mesh.topology().cell_owner()
 if len(cell_owner) > 0 :
     cell_ownership[-len(cell_owner):] = cell_owner
 
@@ -73,7 +73,7 @@ colors=[]
 cmap=['red', 'green', 'yellow', 'purple', 'pink', 'grey', 'blue', 'brown']
 
 idx = 0
-for c in cells(M):
+for c in cells(mesh):
     xc=[]
     yc=[]
     for v in vertices(c):
@@ -88,14 +88,14 @@ for c in cells(M):
 #        cell_str = str(c.index())
     cells_note.append((xavg, yavg, cell_str))
     cells_store.append(zip(xc,yc))
-    
+
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
 
-num_regular_facets = M.topology().size(1) - M.topology().size_ghost(1)
+num_regular_facets = mesh.topology().size(1) - mesh.topology().size_ghost(1)
 facet_note = []
-shared_facets = M.topology().shared_entities(1)
-for f in facets(M):
+shared_facets = mesh.topology().shared_entities(1)
+for f in facets(mesh):
     if (f.num_global_entities(2) == 2):
         color='#ffff88'
     else:
@@ -142,3 +142,6 @@ for note in verts_note:
 
 plt.show()
 
+
+# Create Poisson problem on mesh
+V = FunctionSpace(mesh, "Lagrange", 1)
