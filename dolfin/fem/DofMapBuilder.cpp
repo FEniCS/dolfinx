@@ -615,7 +615,7 @@ DofMapBuilder::compute_node_ownership(
   std::unordered_map<int, std::vector<int>>& shared_node_to_processes,
   std::set<int>& neighbours,
   const std::vector<std::vector<la_index>>& dofmap,
-  const std::vector<int>& boundary_nodes,
+  const std::vector<int>& shared_nodes,
   const std::set<std::size_t>& global_nodes,
   const std::vector<std::size_t>& local_to_global,
   const Mesh& mesh)
@@ -636,32 +636,36 @@ DofMapBuilder::compute_node_ownership(
   std::vector<std::size_t> send_buffer;
 
   // Loop over nodes and buffer nodes on process boundaries
+  std::vector<bool> boundary_node(num_nodes_local, false);
   for (std::size_t i = 0; i < num_nodes_local; ++i)
   {
-    if (boundary_nodes[i] >= 0)
+    if (shared_nodes[i] >= 0)
     {
+      // Possibly shared node
+
       // Mark as provisionally owned and shared (0)
       node_ownership[i] = 0;
+      boundary_node[i] = true;
 
       // Buffer global index and 'vote'
       send_buffer.push_back(local_to_global[i]);
-      send_buffer.push_back(boundary_nodes[i]);
+      send_buffer.push_back(shared_nodes[i]);
 
       // Add to (global node)-to-(local node) map
       global_to_local.insert(std::make_pair(local_to_global[i], i));
     }
-    else if (boundary_nodes[i] == -2)
+    else if (shared_nodes[i] == -2)
     {
       // Owned, but will need to send index to other processes
 
       // Mark as owned
-      node_ownership[i] = 1;
+      node_ownership[i] = 0;
 
       // Buffer global index and trivial 'vote'
-      send_buffer.push_back(local_to_global[i]);
-      send_buffer.push_back(-10);
+      //send_buffer.push_back(local_to_global[i]);
+      //send_buffer.push_back(-10);
     }
-    else if (boundary_nodes[i] == -3)
+    else if (shared_nodes[i] == -3)
     {
       // Ghost, need to get index from other process
       //node_ownership[i] = -1;
@@ -702,14 +706,14 @@ DofMapBuilder::compute_node_ownership(
         const int received_node_local = it->second;
 
         // If received node is shared, decide ownership
-        if (node_ownership[received_node_local] == 0)
+        if (boundary_node[received_node_local] and node_ownership[received_node_local] == 0)
         {
           // Let process with lower 'vote' take ownership
-          if (received_vote < boundary_nodes[received_node_local])
+          if (received_vote < shared_nodes[received_node_local])
           {
             node_ownership[received_node_local] = -1;
           }
-          else if (received_vote == boundary_nodes[received_node_local]
+          else if (received_vote == shared_nodes[received_node_local]
                    && process_number > src)
           {
             // If votes are equal, let lower rank process take ownership
