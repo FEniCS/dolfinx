@@ -17,7 +17,7 @@
 //
 //
 // First Added: 2012-12-19
-// Last Changed: 2013-05-12
+// Last Changed: 2014-07-02
 
 #include <vector>
 #include <map>
@@ -102,7 +102,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 
   // Generate new topology
   const unsigned int num_regular_cells 
-    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+    = mesh.topology().ghost_offset(tdim);
 
   for (CellIterator cell(mesh); cell->index() != num_regular_cells; ++cell)
   {
@@ -218,7 +218,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   // FIXME - keep reference edges somehow?...
 
   const unsigned int num_regular_cells 
-    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+    = mesh.topology().ghost_offset(tdim);
 
   for (CellIterator cell(mesh); cell->index() != num_regular_cells; ++cell)
   {

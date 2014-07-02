@@ -38,7 +38,7 @@ M = UnitSquareMesh(10, 10)
 shared_vertices = M.topology().shared_entities(0).keys()
 shared_cells = M.topology().shared_entities(M.topology().dim())
 
-num_regular_vertices = M.topology().size(0) - M.topology().size_ghost(0)
+num_regular_vertices = M.topology().ghost_offset(0)
 
 ghost_vertices = range(num_regular_vertices, M.topology().size(0))
 
@@ -92,7 +92,7 @@ for c in cells(M):
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
 
-num_regular_facets = M.topology().size(1) - M.topology().size_ghost(1)
+num_regular_facets = M.topology().ghost_offset(1)
 facet_note = []
 shared_facets = M.topology().shared_entities(1)
 for f in facets(M):
@@ -137,7 +137,7 @@ for note in cells_note:
 for note in verts_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center')
 
-#for note in facet_note:
+# for note in facet_note:
 #    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
 plt.show()

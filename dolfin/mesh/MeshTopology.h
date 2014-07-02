@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2012-10-25
+// Last changed: 2014-07-02
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
@@ -65,13 +65,9 @@ namespace dolfin
     /// Return global number of entities for given dimension
     std::size_t size_global(std::size_t dim) const;
 
-    /// Return number of ghost entities for given dimension
-    std::size_t size_ghost(std::size_t dim) const;
-
     /// Return number of regular (non-ghost) entities
     /// or equivalently, the offset of where ghost entities begin
     std::size_t ghost_offset(std::size_t dim) const;
-    
 
     /// Clear all data
     void clear();

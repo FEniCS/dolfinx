@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2011-09-17
-// Last changed: 2014-06-28
+// Last changed: 2014-07-02
 
 #include <boost/multi_array.hpp>
 
@@ -1015,7 +1015,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   std::map<unsigned int, std::set<unsigned int> >& shared_facets
     = mesh.topology().shared_entities(D - 1);
 
-  if (mesh.topology().size_ghost(D) == 0)
+  // Check if no ghost cells
+  if (mesh.topology().ghost_offset(D) == mesh.topology().size(D))
   {
     // Copy local values
     for (FacetIterator f(mesh); !f.end(); ++f)
@@ -1036,9 +1037,9 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     std::vector<std::vector<std::size_t> > recv_facet(mpi_size);
     
     const unsigned int num_regular_facets 
-      = mesh.size(D - 1) - mesh.topology().size_ghost(D - 1);
+      = mesh.topology().ghost_offset(D - 1);
     const unsigned int num_regular_cells 
-      = mesh.size(D) - mesh.topology().size_ghost(D);
+      = mesh.topology().ghost_offset(D);
     
     // Map shared facets 
     std::map<std::size_t, std::size_t> global_to_local_facet;
