@@ -24,7 +24,6 @@
 #include "uBLASFactory.h"
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
-#include "EpetraFactory.h"
 #include "STLFactory.h"
 #include "DefaultFactory.h"
 
@@ -114,16 +113,6 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
     dolfin_error("DefaultFactory.cpp",
                  "access linear algebra backend",
                  "PETScCusp linear algebra backend is not available");
-    #endif
-  }
-  else if (backend == "Epetra")
-  {
-    #ifdef HAS_TRILINOS
-    return EpetraFactory::instance();
-    #else
-    dolfin_error("DefaultFactory.cpp",
-                 "access linear algebra backend",
-                 "Trilinos linear algebra backend is not available");
     #endif
   }
   else if (backend == "STL")

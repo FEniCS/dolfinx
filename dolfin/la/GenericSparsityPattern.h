@@ -26,8 +26,8 @@
 #define __GENERIC_SPARSITY_PATTERN_H
 
 #include <utility>
+#include <unordered_map>
 #include <vector>
-#include <boost/unordered_map.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
@@ -57,21 +57,23 @@ namespace dolfin
       init(const MPI_Comm mpi_comm,
            const std::vector<std::size_t>& dims,
            const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-           const std::vector<const boost::unordered_map<std::size_t,
-           unsigned int>* > off_process_owner) = 0;
+           const std::vector<const std::vector<std::size_t>* > local_to_global,
+           const std::vector<const std::vector<int>* > off_process_owner,
+           const std::size_t block_size) = 0;
 
-    /// Insert non-zero entries
-    virtual void insert(const std::vector<const std::vector<dolfin::la_index>* >& entries) = 0;
+    /// Insert non-zero entries using global indices
+    virtual void insert_global(const std::vector<
+                        const std::vector<dolfin::la_index>* >& entries) = 0;
 
-    /// Add edges (vertex = [index, owning process])
-    virtual void
-      add_edges(const std::pair<dolfin::la_index, std::size_t>& vertex,
-                const std::vector<dolfin::la_index>& edges) = 0;
+    /// Insert non-zero entries using local (process-wise) entries
+    virtual void insert_local(const std::vector<
+                        const std::vector<dolfin::la_index>* >& entries) = 0;
 
     /// Return rank
     virtual std::size_t rank() const = 0;
 
-    /// Return primary dimension (e.g., 0=row partition, 1=column partition)
+    /// Return primary dimension (e.g., 0=row partition, 1=column
+    /// partition)
     std::size_t primary_dim() const
     { return _primary_dim; }
 
@@ -89,10 +91,11 @@ namespace dolfin
 
     /// Fill vector with number of nonzeros for off-diagonal block in
     /// local_range for primary dimemsion
-    virtual void num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const = 0;
+    virtual void num_nonzeros_off_diagonal(
+      std::vector<std::size_t>& num_nonzeros) const = 0;
 
-    /// Fill vector with number of nonzeros in local_range for
-    /// primary dimemsion
+    /// Fill vector with number of nonzeros in local_range for primary
+    /// dimension
     virtual void
       num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const = 0;
 
@@ -101,14 +104,10 @@ namespace dolfin
     virtual std::vector<std::vector<std::size_t> >
       diagonal_pattern(Type type) const = 0;
 
-    /// Return underlying sparsity pattern (off-diagional). Options are
-    /// 'sorted' and 'unsorted'.
+    /// Return underlying sparsity pattern (off-diagional). Options
+    /// are 'sorted' and 'unsorted'.
     virtual std::vector<std::vector<std::size_t> >
       off_diagonal_pattern(Type type) const = 0;
-
-    /// Fill vector with edges for given vertex
-    virtual void get_edges(std::size_t vertex,
-                           std::vector<dolfin::la_index>& edges) const = 0;
 
     /// Finalize sparsity pattern
     virtual void apply() = 0;
@@ -116,10 +115,10 @@ namespace dolfin
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const = 0;
 
-  private:
+   private:
 
-    // Primary sparsity pattern storage dimension
-    // (e.g., 0=row partition, 1=column partition)
+    // Primary sparsity pattern storage dimension (e.g., 0=row
+    // partition, 1=column partition)
     const std::size_t _primary_dim;
 
   };

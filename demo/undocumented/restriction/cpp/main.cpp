@@ -48,6 +48,10 @@ class Boundary : public SubDomain
 
 int main()
 {
+  cout << "Restrictions need updating for DOF map construction changes"
+       << endl;
+  return 0;
+
   // Create mesh
   UnitSquareMesh mesh(32, 32);
 

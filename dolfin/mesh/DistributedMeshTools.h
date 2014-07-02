@@ -16,18 +16,18 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-17
-// Last changed: 2014-02-14
+// Last changed: 2013-01-29
 
 #ifndef __MESH_DISTRIBUTED_TOOLS_H
 #define __MESH_DISTRIBUTED_TOOLS_H
 
+#include <array>
 #include <map>
 #include <numeric>
 #include <set>
 #include <utility>
+#include <unordered_map>
 #include <vector>
-#include <boost/array.hpp>
-#include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
 
 namespace dolfin
@@ -41,7 +41,7 @@ namespace dolfin
   class DistributedMeshTools
   {
   public:
-    
+
     /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, std::size_t d);
 
@@ -59,7 +59,7 @@ namespace dolfin
     // (globally). Facets on internal boundaries will be connected to
     // two cells (with the cells residing on neighboring processes)
     static void init_facet_cell_connections(Mesh& mesh);
-    
+
     /// Find processes that own or share mesh entities (using entity
     /// global indices). Returns (global_dof, set(process_num,
     /// local_index)). Exclusively local entities will not appear in
@@ -73,7 +73,7 @@ namespace dolfin
     /// Compute map from local index of shared entity to list
     /// of sharing process and local index,
     /// i.e. (local index, [(sharing process p, local index on p)])
-    static boost::unordered_map<unsigned int,
+    static std::unordered_map<unsigned int,
       std::vector<std::pair<unsigned int, unsigned int> > >
       compute_shared_entities(const Mesh& mesh, std::size_t d);
 
@@ -120,7 +120,7 @@ namespace dolfin
       const std::vector<std::size_t>& global_vertex_indices,
       std::size_t d,
       std::vector<std::size_t>& owned_entities,
-      boost::array<std::map<Entity, EntityData>, 2>& shared_entities);
+      std::array<std::map<Entity, EntityData>, 2>& shared_entities);
 
     // Build preliminary 'guess' of shared entities. This function does
     // not involve any inter-process communication.
@@ -129,13 +129,13 @@ namespace dolfin
       const std::map<std::size_t, std::set<unsigned int> >& shared_vertices,
       const std::map<Entity, unsigned int>& entities,
       std::vector<std::size_t>& owned_entities,
-      boost::array<std::map<Entity, EntityData>, 2>& entity_ownership);
+      std::array<std::map<Entity, EntityData>, 2>& entity_ownership);
 
     // Communicate with other processes to finalise entity ownership
     static void
       compute_final_entity_ownership(const MPI_Comm mpi_comm,
                                      std::vector<std::size_t>& owned_entities,
-                                     boost::array<std::map<Entity,
+                                     std::array<std::map<Entity,
                                      EntityData>, 2>& entity_ownership);
 
     // Check if all entity vertices are the shared vertices in overlap
@@ -148,6 +148,9 @@ namespace dolfin
                                   std::size_t num_local_entities,
                                   std::size_t num_processes,
                                   std::size_t process_number);
+
   };
+
 }
+
 #endif

@@ -30,10 +30,11 @@
 #ifdef HAS_PETSC
 
 #include <map>
-#include <string>
-#include <utility>
 #include <memory>
-#include <boost/unordered_map.hpp>
+#include <string>
+#include <unordered_map>
+#include <utility>
+
 #include <petscsys.h>
 #include <petscvec.h>
 
@@ -107,6 +108,7 @@ namespace dolfin
     /// Initialize vector with given ownership range and with ghost values
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
+                      const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices);
 
     // Bring init function from GenericVector into scope
@@ -127,17 +129,30 @@ namespace dolfin
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(std::size_t i) const;
 
-    /// Get block of values (values must all live on the local process)
+    /// Get block of values using global indices (all values must be
+    /// owned by local process, ghosts cannot be accessed)
+    virtual void get(double* block, std::size_t m,
+                     const dolfin::la_index* rows) const;
+
+    /// Get block of values using local indices
     virtual void get_local(double* block, std::size_t m,
                            const dolfin::la_index* rows) const;
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows);
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows);
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows);
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows);
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;
@@ -232,6 +247,7 @@ namespace dolfin
 
     // Initialise PETSc vector
     void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+               const std::vector<std::size_t>& local_to_global_map,
                const std::vector<la_index>& ghost_indices);
 
     // Return true if vector is distributed
@@ -241,7 +257,7 @@ namespace dolfin
     Vec _x;
 
     // Global-to-local map for ghost values
-    boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
+    std::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;

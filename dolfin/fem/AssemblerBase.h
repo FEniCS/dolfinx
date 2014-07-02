@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2014-03-03
+// Last changed: 2013-09-19
 
 #ifndef __ASSEMBLER_BASE_H
 #define __ASSEMBLER_BASE_H
@@ -127,7 +127,7 @@ namespace dolfin
     bool keep_diagonal;
 
     // Initialize global tensor
-    virtual void init_global_tensor(GenericTensor& A, const Form& a);
+    void init_global_tensor(GenericTensor& A, const Form& a);
 
   protected:
 

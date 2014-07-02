@@ -89,8 +89,7 @@ namespace dolfin
 
     /// Return map from nonlocal-dofs (that appear in local dof map)
     /// to owning process
-    const boost::unordered_map<std::size_t,
-                               unsigned int>& off_process_owner() const;
+    const std::vector<int>& off_process_owner() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

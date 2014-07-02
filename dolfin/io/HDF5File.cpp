@@ -23,11 +23,12 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/assign.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
+
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -290,8 +291,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       // Get/build topology data
 
       // Cut off ghost cells
-      const unsigned int num_regular_cells 
-        = mesh.topology().size(tdim) - mesh.topology().cell_owner().size();
+      const unsigned int num_regular_cells
+        = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
 
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
         if (c->index() < num_regular_cells)
@@ -681,12 +682,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   {
     // Cut off ghost cells
     const unsigned int num_regular_cells 
-      = mesh.topology().size(tdim) - mesh.topology().cell_owner().size();
+      = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
     
-    // Check if cell 'i' is in cell_owner map - if not, it is local
-    for (std::size_t i = 0; i < meshfunction.size(); ++i)
-      if (i < num_regular_cells)
-        data_values.push_back(meshfunction[i]);
+    for (std::size_t i = 0; i < num_regular_cells; ++i)
+      data_values.push_back(meshfunction[i]);
   }
   else
   {
