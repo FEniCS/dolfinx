@@ -69,7 +69,7 @@ namespace dolfin
 
     /// Create iterator for mesh entities over given topological dimension
     MeshEntityIterator(const Mesh& mesh, std::size_t dim)
-      : _entity(), _pos(0), pos_end(mesh.size(dim)), index(0)
+      : _entity(), _pos(0), pos_end(0), index(0)
     {
       // Check if mesh is empty
       if (mesh.num_vertices() == 0)
@@ -78,9 +78,8 @@ namespace dolfin
       // Initialize mesh entity
       _entity.init(mesh, dim, 0);
 
-      // Update end position if entities need to be generated first
-      if (pos_end == 0)
-        pos_end = mesh.init(dim);
+      mesh.init(dim);
+      pos_end = mesh.topology().size(dim); // - mesh.topology().size_ghost(dim);
     }
 
     /// Create iterator for entities of given dimension connected to

@@ -102,6 +102,15 @@ std::size_t MeshTopology::size_ghost(std::size_t dim) const
   return ghost_num_entities[dim];
 }
 //-----------------------------------------------------------------------------
+std::size_t MeshTopology::ghost_offset(std::size_t dim) const
+{
+  if (ghost_num_entities.empty())
+    return 0;
+
+  dolfin_assert(dim < ghost_num_entities.size());
+  return num_entities[dim] - ghost_num_entities[dim];
+}
+//-----------------------------------------------------------------------------
 void MeshTopology::clear()
 {
   // Clear data

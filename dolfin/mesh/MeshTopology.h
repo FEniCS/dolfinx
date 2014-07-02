@@ -68,6 +68,11 @@ namespace dolfin
     /// Return number of ghost entities for given dimension
     std::size_t size_ghost(std::size_t dim) const;
 
+    /// Return number of regular (non-ghost) entities
+    /// or equivalently, the offset of where ghost entities begin
+    std::size_t ghost_offset(std::size_t dim) const;
+    
+
     /// Clear all data
     void clear();
 

@@ -43,8 +43,11 @@ namespace dolfin
       if (mesh.num_vertices() == 0)
         return;
 
-      // Get number of entities
-      pos_end = mesh.init(_entity.dim());
+      // Get number of entities (excluding ghosts)
+      const std::size_t dim = _entity.dim();
+      mesh.init(dim);
+      pos_end = mesh.topology().size(dim);
+        //        - mesh.topology().size_ghost(dim);
     }
 
     /// Create iterator for entities of given dimension connected to given entity
