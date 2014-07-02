@@ -23,11 +23,12 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/assign.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
+
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>

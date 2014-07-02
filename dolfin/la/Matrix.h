@@ -115,17 +115,29 @@ namespace dolfin
                      std::size_t n, const dolfin::la_index* cols) const
     { matrix->get(block, m, rows, n, cols); }
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block,
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols)
     { matrix->set(block, m, rows, n, cols); }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block,
+                           std::size_t m, const dolfin::la_index* rows,
+                           std::size_t n, const dolfin::la_index* cols)
+    { matrix->set_local(block, m, rows, n, cols); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block,
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols)
     { matrix->add(block, m, rows, n, cols); }
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           std::size_t m, const dolfin::la_index* rows,
+                           std::size_t n, const dolfin::la_index* cols)
+    { matrix->add_local(block, m, rows, n, cols); }
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -151,9 +163,13 @@ namespace dolfin
     virtual void zero(std::size_t m, const dolfin::la_index* rows)
     { matrix->zero(m, rows); }
 
-    /// Set given rows to identity matrix
+    /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows)
     { matrix->ident(m, rows); }
+
+    /// Set given rows (local row indices) to identity matrix
+    virtual void ident_local(std::size_t m, const dolfin::la_index* rows)
+    { matrix->ident_local(m, rows); }
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const

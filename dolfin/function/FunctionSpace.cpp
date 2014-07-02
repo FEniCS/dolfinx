@@ -22,7 +22,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2014-04-28
+// Last changed: 2011-05-15
 
 #include <vector>
 #include <dolfin/common/utils.h>
@@ -179,9 +179,9 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
       = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
-    expansion_coefficients.set(cell_coefficients.data(),
-                               _dofmap->cell_dimension(cell->index()),
-                               cell_dofs.data());
+    expansion_coefficients.set_local(cell_coefficients.data(),
+                                     _dofmap->cell_dimension(cell->index()),
+                                     cell_dofs.data());
   }
 
   // Finalise changes
@@ -238,12 +238,12 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
 {
-  boost::unordered_map<std::size_t, std::size_t> collapsed_dofs;
+  std::unordered_map<std::size_t, std::size_t> collapsed_dofs;
   return collapse(collapsed_dofs);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>FunctionSpace::collapse(
-  boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
+  std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
 {
   dolfin_assert(_mesh);
 

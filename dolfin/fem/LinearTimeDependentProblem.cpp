@@ -78,7 +78,7 @@ LinearTimeDependentProblem::
 LinearTimeDependentProblem(std::shared_ptr<const TensorProductForm> a,
                            std::shared_ptr<const TensorProductForm> L,
                            std::shared_ptr<Function> u,
-                           std::vector<std::shared_ptr<const BoundaryCondition> > bcs)
+                           std::vector<std::shared_ptr<const BoundaryCondition>> bcs)
   : Hierarchical<LinearTimeDependentProblem>(*this),
     _a(a), _l(L), _u(u)
 {
@@ -112,7 +112,7 @@ std::shared_ptr<const Function> LinearTimeDependentProblem::solution() const
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<const BoundaryCondition> >
+std::vector<std::shared_ptr<const BoundaryCondition>>
 LinearTimeDependentProblem::bcs() const
 {
   return _bcs;

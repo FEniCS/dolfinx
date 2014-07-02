@@ -33,9 +33,11 @@ class Interface(unittest.TestCase):
     def test_name_argument(self):
         u = Function(W)
         v = Function(W, name="v")
+        g = Function(v, name="g")
         self.assertEqual(u.name(), "f_%d" % u.count())
         self.assertEqual(v.name(), "v")
         self.assertEqual(str(v), "v")
+        self.assertEqual(g.name(), "g")
 
     def test_in_function_space(self):
         u = Function(W)
@@ -328,7 +330,7 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
-    def test_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
+    def xtest_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
         class Side0(SubDomain):
             def inside(self, x, on_boundary):
                 return x[0] <= 0.55
