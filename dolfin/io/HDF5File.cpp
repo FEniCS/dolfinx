@@ -290,17 +290,18 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       // process.
       // Get/build topology data
 
-      // Cut off ghost cells
-      const unsigned int num_regular_cells
-        = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+      // Cut off ghost entities
+      const unsigned int num_regular_entities
+        = mesh.topology().size(cell_dim) 
+        - mesh.topology().size_ghost(cell_dim);
 
-      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-        if (c->index() < num_regular_cells)
-        {
-          for (VertexIterator v(*c); !v.end(); ++v)
-            topological_data.push_back(v->global_index());
-          global_cell_indices.push_back(c->global_index());
-        }
+      for (MeshEntityIterator c(mesh, cell_dim); 
+           c->index() != num_regular_entities;  ++c)
+      {
+        for (VertexIterator v(*c); !v.end(); ++v)
+          topological_data.push_back(v->global_index());
+        global_cell_indices.push_back(c->global_index());
+      }
     }
     else
     {
@@ -316,7 +317,12 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
-      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+      const std::size_t num_regular_entities =
+        mesh.topology().size(cell_dim) 
+        - mesh.topology().size_ghost(cell_dim);
+
+      for (MeshEntityIterator c(mesh, cell_dim); 
+           c->index() != num_regular_entities; ++c)
       {
         std::map<unsigned int, std::set<unsigned int> >::const_iterator
           sh = shared_entities.find(c->index());
@@ -698,7 +704,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
-    for (std::size_t i = 0; i < meshfunction.size(); ++i)
+    const std::size_t num_regular_entities =
+      mesh.topology().size(cell_dim) - mesh.topology().size_ghost(cell_dim);
+
+    for (std::size_t i = 0; i < num_regular_entities; ++i)
     {
       std::map<unsigned int, std::set<unsigned int> >::const_iterator sh
         = shared_entities.find(i);
@@ -714,6 +723,8 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       }
     }
   }
+
+  cout << "data_values.size() = " << data_values.size() << "\n";
 
   // Write values to HDF5
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,

@@ -29,7 +29,6 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology()
-
 {
   // Do nothing
 }
@@ -63,7 +62,7 @@ MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   // Private data
   num_entities = topology.num_entities;
   global_num_entities = topology.global_num_entities;
-  global_num_entities = topology.ghost_num_entities;
+  ghost_num_entities = topology.ghost_num_entities;
   _global_indices = topology._global_indices;
   _shared_entities = topology._shared_entities;
   connectivity = topology.connectivity;
