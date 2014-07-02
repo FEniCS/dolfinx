@@ -29,9 +29,9 @@ if(MPI.size(mpi_comm_world()) == 1):
 
 mpi_rank = MPI.rank(mpi_comm_world())
 
-parameters["mesh_partitioner"] = "ParMETIS"
+#parameters["mesh_partitioner"] = "ParMETIS"
 
-mesh = UnitSquareMesh(10, 10)
+mesh = UnitSquareMesh(1, 1)
 # mesh = refine(M)
 
 
@@ -140,7 +140,7 @@ for note in verts_note:
 #for note in facet_note:
 #    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
-plt.show()
+#plt.show()
 
 
 # Create Poisson problem on mesh
