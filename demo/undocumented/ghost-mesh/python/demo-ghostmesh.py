@@ -12,7 +12,7 @@ import sys
 
 parameters["ghost_mode"] = "shared_vertex"
 # parameters["ghost_mode"] = "None"
-parameters["reorder_cells_gps"] = False
+parameters["reorder_cells_gps"] = True
 
 n = 0
 
@@ -28,8 +28,8 @@ if(MPI.size(mpi_comm_world()) == 1):
 
 mpi_rank = MPI.rank(mpi_comm_world())
 
-# parameters["mesh_partitioner"] = "ParMETIS"
-M = UnitSquareMesh(15, 15)
+parameters["mesh_partitioner"] = "ParMETIS"
+M = UnitSquareMesh(10, 10)
 # M = refine(M)
 
 
@@ -98,7 +98,7 @@ for f in facets(M):
         color='#ffff88'
     else:
         color='#ff88ff'
-    if (f.index() < num_regular_facets):
+    if (not f.is_ghost()):
         if (f.num_global_entities(2) == 2):
             color='#ffff00'
         else:

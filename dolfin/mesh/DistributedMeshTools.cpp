@@ -1012,17 +1012,6 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   // facet. Initially copy over from local values.
   std::vector<unsigned int> num_global_neighbors(mesh.num_facets());
 
-  const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
-  std::vector<std::vector<std::size_t> > send_facet(mpi_size);
-  std::vector<std::vector<std::size_t> > recv_facet(mpi_size);
-
-  const unsigned int num_regular_facets 
-    = mesh.size(D - 1) - mesh.topology().size_ghost(D - 1);
-  const unsigned int num_regular_cells 
-    = mesh.size(D) - mesh.topology().size_ghost(D);
-  
-  // Map shared facets 
-  std::map<std::size_t, std::size_t> global_to_local_facet;
   std::map<unsigned int, std::set<unsigned int> >& shared_facets
     = mesh.topology().shared_entities(D - 1);
 
@@ -1033,14 +1022,27 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       num_global_neighbors[f->index()] = f->num_entities(D);
     
     // All shared facets must have two cells, if no ghost cells
-    for (auto p = shared_facets.begin(); p != shared_facets.end(); ++p)
-      num_global_neighbors[p->first] = 2;
+    for (auto f_it = shared_facets.begin(); 
+             f_it != shared_facets.end(); ++f_it)
+      num_global_neighbors[f_it->first] = 2;
   }
   else
   {
     // With ghost cells, shared facets may be on an external edge,
     // so need to check connectivity with the cell owner.
 
+    const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
+    std::vector<std::vector<std::size_t> > send_facet(mpi_size);
+    std::vector<std::vector<std::size_t> > recv_facet(mpi_size);
+    
+    const unsigned int num_regular_facets 
+      = mesh.size(D - 1) - mesh.topology().size_ghost(D - 1);
+    const unsigned int num_regular_cells 
+      = mesh.size(D) - mesh.topology().size_ghost(D);
+    
+    // Map shared facets 
+    std::map<std::size_t, std::size_t> global_to_local_facet;
+    
     for (FacetIterator f(mesh); !f.end(); ++f)
     {
       // Insert shared facets into mapping

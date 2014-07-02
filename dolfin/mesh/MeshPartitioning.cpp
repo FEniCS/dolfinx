@@ -141,9 +141,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
-  // FIXME: not working when ghost_mode = None
   DistributedMeshTools::init_facet_cell_connections(mesh);
-
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,

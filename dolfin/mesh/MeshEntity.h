@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2013-06-23
+// Last changed: 2014-07-02
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -211,6 +211,15 @@ namespace dolfin
     ///         The midpoint of the cell.
     Point midpoint() const;
 
+    /// Determine whether an entity is a 'ghost' from another
+    /// process
+    bool is_ghost() const
+    {
+      const unsigned int num_regular_entities 
+        = _mesh->topology().size(_dim) - _mesh->topology().size_ghost(_dim);
+      return (_local_index >= num_regular_entities);
+    }
+    
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)
     ///
