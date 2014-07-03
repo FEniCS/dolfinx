@@ -245,15 +245,25 @@ bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {
+  herr_t status;
   hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
-  htri_t status = H5Lexists(hdf5_file_handle, group_name.c_str(), lapl_id);
-  dolfin_assert(status >= 0);
-  if(status==0)
+  htri_t link_status = H5Lexists(hdf5_file_handle, group_name.c_str(), lapl_id);
+  dolfin_assert(link_status >= 0);
+  if(link_status==0)
+  {
+    // Close link access properties
+    status = H5Pclose(lapl_id);
+    dolfin_assert(status != HDF5_FAIL);
     return false;
+  }
 
   H5O_info_t object_info;
   H5Oget_info_by_name(hdf5_file_handle, group_name.c_str(), &object_info,
                       lapl_id);
+
+  // Close link access properties
+  status = H5Pclose(lapl_id);
+  dolfin_assert(status != HDF5_FAIL);
 
   return (object_info.type == H5O_TYPE_GROUP);
 }

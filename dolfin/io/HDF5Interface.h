@@ -302,6 +302,13 @@ namespace dolfin
                       data.data());
     dolfin_assert(status != HDF5_FAIL);
 
+    if (use_chunking)
+    {
+      // Close chunking properties
+      status = H5Pclose(chunking_properties);
+      dolfin_assert(status != HDF5_FAIL);
+    }
+
     // Close dataset collectively
     status = H5Dclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
@@ -480,6 +487,10 @@ namespace dolfin
     herr_t status = H5Awrite(attribute_id, h5type, &attribute_value);
     dolfin_assert(status != HDF5_FAIL);
 
+    // Close dataspace
+    status = H5Sclose(dataspace_id);
+    dolfin_assert(status != HDF5_FAIL);
+
     // Close attribute
     status = H5Aclose(attribute_id);
     dolfin_assert(status != HDF5_FAIL);
@@ -506,6 +517,10 @@ namespace dolfin
 
     // Write attribute to dataset
     herr_t status = H5Awrite(attribute_id, h5type, &attribute_value[0]);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close dataspace
+    status = H5Sclose(dataspace_id);
     dolfin_assert(status != HDF5_FAIL);
 
     // Close attribute
