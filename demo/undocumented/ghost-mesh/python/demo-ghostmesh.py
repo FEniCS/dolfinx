@@ -34,7 +34,6 @@ mpi_rank = MPI.rank(mpi_comm_world())
 mesh = UnitSquareMesh(32, 32)
 # mesh = refine(M)
 
-
 shared_vertices = mesh.topology().shared_entities(0).keys()
 shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
 
@@ -171,6 +170,9 @@ solve(a == L, u, bc)
 print "Solution norm: ", u.vector().norm("l2")
 """
 
+# Optimization options for the form compiler
+parameters["form_compiler"]["cpp_optimize"] = True
+parameters["form_compiler"]["optimize"] = True
 V = FunctionSpace(mesh, "CG", 2)
 
 # Define Dirichlet boundary
@@ -200,24 +202,27 @@ f = Source()
 alpha = Constant(8.0)
 
 # Define bilinear form
-a = inner(div(grad(u)), div(grad(v)))*dx \
-  - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
-  - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
-  + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
+#a = inner(div(grad(u)), div(grad(v)))*dx \
+#  - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
+#  - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
+#  + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
+a = 0.000000001*inner(div(grad(u)), div(grad(v)))*dx \
+  + inner(jump(grad(u),n), jump(grad(v),n))*dS
 
 # Define linear form
 L = f*v*dx
 
 A = assemble(a)
-bc.apply(A)
-print "Matrix norm:", A.norm("frobenius")
-b = assemble(L)
-print "Vector norm (0):", b.norm("l2")
-bc.apply(b)
-print "Vector norm (1):", b.norm("l2")
+print "Matrix norm (0): {!r}".format(A.norm("frobenius"))
+#bc.apply(A)
+#print "Matrix norm (1): {!r}".format(A.norm("frobenius"))
 
+#b = assemble(L)
+#print "Vector norm (0): {!r}".format(b.norm("l2"))
+#bc.apply(b)
+#print "Vector norm (1): {!r}".format(b.norm("l2"))
 
 # Solve variational problem
-u = Function(V)
-solve(a == L, u, bc)
-print "Solution vector: ", u.vector().norm("l2")
+#u = Function(V)
+#solve(a == L, u, bc)
+#print "Solution vector: ", u.vector().norm("l2")
