@@ -351,7 +351,6 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   std::vector<double> vertex_coordinates[2];
   Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"),
              mesh.num_facets());
-  int counter0(0), counter1(0);
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider interior facets
@@ -447,19 +446,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     // Add entries to global tensor
 
-    ++counter0;
     add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);
 
     p++;
   }
-  std::cout << "Facets   : " << MPI::sum(MPI_COMM_WORLD, counter0)
-            << std::endl;
-  std::cout << "Facets (d): " << MPI::sum(MPI_COMM_WORLD, counter1)
-            << std::endl;
-
-  std::cout << "Facets (t): " << MPI::sum(MPI_COMM_WORLD, counter0)
-    - MPI::sum(MPI_COMM_WORLD, counter1)/2
-            << std::endl;
 }
 //-----------------------------------------------------------------------------
 void Assembler::add_to_global_tensor(GenericTensor& A,
