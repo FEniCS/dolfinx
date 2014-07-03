@@ -299,7 +299,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   if (!ufc.form.has_interior_facet_integrals())
     return;
 
-  not_working_in_parallel("Assembly over interior facets");
+  //not_working_in_parallel("Assembly over interior facets");
 
   // Set timer
   Timer timer("Assemble interior facets");
@@ -354,11 +354,16 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider interior facets
-    if (facet->exterior())
-    {
-      p++;
+    //if (facet->exterior())
+    //{
+    //  p++;
+    //  continue;
+    //}
+    if (facet->num_entities(D) == 1)
       continue;
-    }
+
+    if (facet->is_ghost())
+      continue;
 
     // Get integral for sub domain (if any)
     if (use_domains)
@@ -369,10 +374,13 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       continue;
 
     // Get cells incident with facet
-    std::pair<const Cell, const Cell>
-      cells = facet->adjacent_cells(facet_orientation);
-    const Cell& cell0 = cells.first;
-    const Cell& cell1 = cells.second;
+    //std::pair<const Cell, const Cell>
+    //  cells = facet->adjacent_cells(facet_orientation);
+    //const Cell& cell0 = cells.first;
+    //const Cell& cell1 = cells.second;
+    dolfin_assert(facet->num_entities(D) == 2);
+    const Cell cell0(mesh, facet->entities(D)[0]);
+    const Cell cell1(mesh, facet->entities(D)[1]);
 
     // Get local index of facet with respect to each cell
     std::size_t local_facet0 = cell0.index(*facet);
@@ -416,6 +424,12 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                               local_facet1,
                               ufc_cell[0].orientation,
                               ufc_cell[1].orientation);
+
+    if (cell0.is_ghost() != cell1.is_ghost())
+    {
+      for (std::size_t i = 0; i < ufc.macro_A.size(); ++i)
+        ufc.macro_A[i] *= 0.5;
+    }
 
     // Add entries to global tensor
     add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);

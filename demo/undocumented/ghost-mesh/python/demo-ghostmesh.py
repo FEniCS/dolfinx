@@ -31,7 +31,7 @@ mpi_rank = MPI.rank(mpi_comm_world())
 
 #parameters["mesh_partitioner"] = "ParMETIS"
 
-mesh = UnitSquareMesh(10, 10)
+mesh = UnitSquareMesh(32, 32)
 # mesh = refine(M)
 
 
@@ -143,8 +143,9 @@ for note in verts_note:
 #plt.show()
 
 
+"""
 # Create Poisson problem on mesh
-V = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "Lagrange", 2)
 def boundary(x):
     return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
@@ -161,10 +162,62 @@ L = f*v*dx + g*v*ds
 
 A = assemble(a)
 print "Matrix norm:", A.norm("frobenius")
-
 b = assemble(L)
 print "Vector norm:", b.norm("l2")
 
 # Compute solution
-#u = Function(V)
-#solve(a == L, u, bc)
+u = Function(V)
+solve(a == L, u, bc)
+print "Solution norm: ", u.vector().norm("l2")
+"""
+
+V = FunctionSpace(mesh, "CG", 2)
+
+# Define Dirichlet boundary
+class DirichletBoundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary
+
+class Source(Expression):
+    def eval(self, values, x):
+        values[0] = 4.0*pi**4*sin(pi*x[0])*sin(pi*x[1])
+
+# Define boundary condition
+u0 = Constant(0.0)
+bc = DirichletBC(V, u0, DirichletBoundary())
+
+# Define trial and test functions
+u = TrialFunction(V)
+v = TestFunction(V)
+
+# Define normal component, mesh size and right-hand side
+h = CellSize(mesh)
+h_avg = (h('+') + h('-'))/2.0
+n = FacetNormal(mesh)
+f = Source()
+
+# Penalty parameter
+alpha = Constant(8.0)
+
+# Define bilinear form
+a = inner(div(grad(u)), div(grad(v)))*dx \
+  - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
+  - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
+  + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
+
+# Define linear form
+L = f*v*dx
+
+A = assemble(a)
+bc.apply(A)
+print "Matrix norm:", A.norm("frobenius")
+b = assemble(L)
+print "Vector norm (0):", b.norm("l2")
+bc.apply(b)
+print "Vector norm (1):", b.norm("l2")
+
+
+# Solve variational problem
+u = Function(V)
+solve(a == L, u, bc)
+print "Solution vector: ", u.vector().norm("l2")
