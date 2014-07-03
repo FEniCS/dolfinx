@@ -23,14 +23,21 @@
 
 #ifdef ENABLE_PETSC_TAO
 
-#include "PETScSNESSolver.h"
+#include <map>
+#include <memory>
+#include <dolfin/parameter/Parameters.h>
+#include <dolfin/la/PETScObject.h>
+#include <dolfin/la/PETScVector.h>
 #include <petsctao.h>
 
 namespace dolfin
 {
 
   /// Forward declarations
+  class GenericVector;
+  class PETScMatrix;
   class PETScVector;
+  class OptimisationProblem;
 
   /// This class implements methods for solving nonlinear optimisation
   /// problems via PETSc's TAO interface. It supports unconstrained

@@ -35,7 +35,8 @@
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/PETScPreconditioner.h>
 #include <dolfin/la/PETScVector.h>
-#include "dolfin/la/PETScKrylovSolver.h"
+#include <dolfin/la/PETScKrylovSolver.h>
+#include <dolfin/la/KrylovSolver.h>
 #include "OptimisationProblem.h"
 #include "PETScTAOSolver.h"
 
@@ -66,14 +67,6 @@ Parameters PETScTAOSolver::default_parameters()
 //-----------------------------------------------------------------------------
 PETScTAOSolver::PETScTAOSolver(std::string method) : _tao(NULL)
 {
-  // Check that the requested method is known
-  if (_methods.count(nls_type) == 0)
-  {
-    dolfin_error("PETScTAOSolver.cpp",
-                 "create PETSc TAO solver",
-                 "Unknown TAO method \"%s\"", nls_type.c_str());
-  }
-
   // Set parameter values
   parameters = default_parameters();
 
@@ -104,6 +97,10 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                                   const GenericVector& lb,
                                   const GenericVector& ub)
 {
+  // Form the optimisation problem object
+  _tao_ctx.optimisation_problem = &optimisation_problem;
+  _tao_ctx.x = &x.down_cast<PETScVector>();
+
   // Set initial vector
   TaoSetInitialVector(_tao, x.down_cast<PETScVector>().vec());
 
@@ -114,24 +111,21 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
 
   // Set the user function, gradient and Hessian evaluation routines and
   // data structures
-  TaoSetObjectiveAndGradientRoutine(_tao,
-                                    FormFunctionGradient,
-                                    this);
-  TaoSetHessianRoutine(_tao, _H->mat(), _H->mat(),
-                       FormHessian, this);
+  TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
+  TaoSetHessianRoutine(_tao, _H->mat(), _H->mat(), FormHessian, &_tao_ctx);
 
   // Solve the bound constrained problem
   Timer timer("TAO solver");
   const char* tao_type;
   TaoGetType(_tao, &tao_type);
   log(PROGRESS, "TAO solver %s starting to solve %i x %i system", tao_type,
-      A->size(0), A->size(1));
+      _H->size(0), _H->size(1));
 
   // Solve
   TaoSolve(_tao);
 
   // Update ghost values
-  x.update_ghost_values();
+  x.down_cast<PETScVector>().update_ghost_values();
 
   // Print the report on convergences and methods used
   if (parameters["report"])
@@ -170,7 +164,7 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScTAOSolver::FormFunctionGradient(Tao tao, Vec x,
-                                                    PetscReal *fobj, Vec G,
+                                                    PetscReal *fobj, Vec g,
                                                     void *ctx)
 {
   // Get the optimisation problem object
@@ -179,13 +173,13 @@ PetscErrorCode PETScTAOSolver::FormFunctionGradient(Tao tao, Vec x,
 
   // Wrap the PETSc objects
   PETScVector x_wrap(x);
-  PETScVector G_wrap(G);
+  PETScVector g_wrap(g);
 
-  // Compute the objective function f(x) and its gradient G(x) = f'(x)
+  // Compute the objective function f and its gradient g = f'
   PETScMatrix H;
-  optimisation_problem->f(*fobj, x_wrap)
-  optimisation_problem->form(H, G_wrap, x_wrap);
-  optimisation_problem->F(G_wrap, x_wrap);
+  *fobj = optimisation_problem->f(x_wrap);
+  optimisation_problem->form(H, g_wrap, x_wrap);
+  optimisation_problem->g(g_wrap, x_wrap);
 
   return 0;
 }
@@ -199,17 +193,17 @@ PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
 
   // Wrap the PETSc objects
   PETScVector x_wrap(x);
-  PETScVector H_wrap(H);
+  PETScMatrix H_wrap(H);
 
   // Compute the hessian H(x) = f''(x)
-  PETScVector G;
-  optimisation_problem->form(H_wrap, G, x_wrap);
-  optimisation_problem->J(H_wrap, x_wrap);
+  PETScVector g;
+  optimisation_problem->form(H_wrap, g, x_wrap);
+  optimisation_problem->H(H_wrap, x_wrap);
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-void TAOLinearBoundSolver::set_solver(const std::string& method)
+void PETScTAOSolver::set_solver(const std::string& method)
 {
   dolfin_assert(_tao);
 
@@ -229,8 +223,8 @@ void TAOLinearBoundSolver::set_solver(const std::string& method)
       TaoSetType(_tao, "bqpip");
     else
     {
-      dolfin_error("TAOLinearBoundSolver.cpp",
-       "set solver for TAO solver",
+      dolfin_error("PETScTAOSolver.cpp",
+                   "set solver for TAO solver",
                    "Unknown solver type (\"%s\")", method.c_str());
     }
   }

@@ -21,8 +21,6 @@
 #ifndef __OPTIMISATION_PROBLEM_H
 #define __OPTIMISATION_PROBLEM_H
 
-#include "NonlinearProblem.h"
-
 namespace dolfin
 {
 
@@ -34,7 +32,7 @@ namespace dolfin
   /// the real-valued objective function f(x), its gradient g(x) = f'(x) and
   /// its Hessian H(x) = f''(x)
 
-  class OptimisationProblem : public NonlinearProblem
+  class OptimisationProblem
   {
   public:
 
@@ -45,7 +43,20 @@ namespace dolfin
     virtual ~OptimisationProblem() {}
 
     /// Compute the objective function f at current point x
-    virtual void f(double *fobj, GenericVector& x) = 0;
+    virtual double f(const GenericVector& x) = 0;
+
+    /// Function called by Newton solver before requesting F or J.
+    /// This can be used to compute F and J together
+    virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+    {
+      // Do nothing if not supplied by the user
+    }
+
+    /// Compute the gradient g = f' at current point x
+    virtual void g(GenericVector& b, const GenericVector& x) = 0;
+
+    /// Compute the Hessian H = f'' at current point x
+    virtual void H(GenericMatrix& A, const GenericVector& x) = 0;
 
   };
 

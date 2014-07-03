@@ -24,7 +24,7 @@
 // Modified by Andre Massing, 2013.
 //
 // First added:  2007-11-25
-// Last changed: 2014-05-20
+// Last changed: 2014-06-23
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -250,6 +250,7 @@
 %shared_ptr(dolfin::PETScSNESSolver)
 #ifdef ENABLE_PETSC_TAO
 %shared_ptr(dolfin::TAOLinearBoundSolver)
+%shared_ptr(dolfin::PETScTAOSolver)
 #endif
 // plot
 %shared_ptr(dolfin::VTKPlotter)
