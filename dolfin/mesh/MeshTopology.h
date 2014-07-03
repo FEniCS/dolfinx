@@ -107,13 +107,18 @@ namespace dolfin
       return _global_indices[d];
     }
 
-    /// Check if global indices are available for entiries of
+    /// Check if global indices are available for entities of
     /// dimension dim
     bool have_global_indices(std::size_t dim) const
     {
       dolfin_assert(dim < _global_indices.size());
       return !_global_indices[dim].empty();
     }
+
+    /// Check whether there are any shared entities calculated
+    /// of dimension dim
+    bool have_shared_entities(unsigned int dim) const
+    { return (_shared_entities.find(dim) != _shared_entities.end()); }
 
     /// Return map from shared entities (local index) to processes
     /// that share the entity
