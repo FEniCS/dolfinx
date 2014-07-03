@@ -214,11 +214,7 @@ namespace dolfin
     /// Determine whether an entity is a 'ghost' from another
     /// process
     bool is_ghost() const
-    {
-      const unsigned int num_regular_entities 
-        = _mesh->topology().size(_dim) - _mesh->topology().size_ghost(_dim);
-      return (_local_index >= num_regular_entities);
-    }
+    { return (_local_index >= _mesh->topology().ghost_offset(_dim)); }
 
     /// Return set of sharing processes
     std::set<unsigned int> sharing_processes() const

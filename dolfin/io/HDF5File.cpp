@@ -287,8 +287,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       // Get/build topology data
       
       const std::size_t num_regular_entities 
-        = mesh.topology().size(cell_dim) 
-        - mesh.topology().size_ghost(cell_dim);
+        = mesh.topology().ghost_offset(cell_dim);
 
       for (MeshEntityIterator c(mesh, cell_dim); 
            c->index() != num_regular_entities; ++c)
@@ -309,8 +308,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         = mesh.topology().shared_entities(cell_dim);
 
       const std::size_t num_regular_entities 
-        = mesh.topology().size(cell_dim) 
-        - mesh.topology().size_ghost(cell_dim);
+        = mesh.topology().ghost_offset(cell_dim);
 
       for (MeshEntityIterator c(mesh, cell_dim); 
            c->index() != num_regular_entities; ++c)

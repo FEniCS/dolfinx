@@ -39,6 +39,8 @@ shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
 
 num_regular_vertices = mesh.topology().size(0) - mesh.topology().size_ghost(0)
 
+num_regular_vertices = mesh.topology().ghost_offset(0)
+
 ghost_vertices = range(num_regular_vertices, mesh.topology().size(0))
 
 verts_note = []
@@ -136,7 +138,7 @@ for note in cells_note:
 for note in verts_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center')
 
-#for note in facet_note:
+# for note in facet_note:
 #    plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
 #plt.show()

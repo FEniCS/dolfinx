@@ -18,7 +18,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2006-05-09
-// Last changed: 2013-04-23
+// Last changed: 2014-07-02
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -69,7 +69,7 @@ namespace dolfin
 
     /// Create iterator for mesh entities over given topological dimension
     MeshEntityIterator(const Mesh& mesh, std::size_t dim)
-      : _entity(), _pos(0), pos_end(mesh.size(dim)), index(0)
+      : _entity(), _pos(0), pos_end(0), index(0)
     {
       // Check if mesh is empty
       if (mesh.num_vertices() == 0)
@@ -78,9 +78,29 @@ namespace dolfin
       // Initialize mesh entity
       _entity.init(mesh, dim, 0);
 
-      // Update end position if entities need to be generated first
-      if (pos_end == 0)
-        pos_end = mesh.init(dim);
+      mesh.init(dim);
+      pos_end = mesh.topology().size(dim); 
+      // pos_end = mesh.topology().ghost_offset(dim);
+    }
+
+    /// Iterator over MeshEntity of dimension dim on mesh, with string option
+    /// to iterate over "regular", "ghost" or "all" entities
+    MeshEntityIterator(const Mesh& mesh, std::size_t dim, std::string opt)
+      : _entity(), _pos(0), pos_end(0), index(0)
+    {
+      // Check if mesh is empty
+      if (mesh.num_vertices() == 0)
+        return;
+
+      // Initialize mesh entity
+      _entity.init(mesh, dim, 0);
+      mesh.init(dim);
+
+      pos_end = mesh.topology().size(dim); 
+      if (opt == "regular")
+        pos_end = mesh.topology().ghost_offset(dim);
+      else if (opt == "ghost")
+        _pos = mesh.topology().ghost_offset(dim);
     }
 
     /// Create iterator for entities of given dimension connected to

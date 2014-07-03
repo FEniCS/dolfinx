@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2012.
 //
 // First added:  2006-06-02
-// Last changed: 2014-02-13
+// Last changed: 2014-07-02
 
 #include <algorithm>
 #include <vector>
@@ -101,8 +101,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   #endif
 
   const std::size_t tdim = mesh.topology().dim();
-  const std::size_t num_regular_cells 
-    = mesh.topology().size(tdim) - mesh.topology().size_ghost(tdim);
+  const std::size_t num_regular_cells = mesh.topology().ghost_offset(tdim);
   unsigned int num_regular_entities = 0;
 
   // Loop over cells

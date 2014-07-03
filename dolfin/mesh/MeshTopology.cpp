@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2013-02-03
+// Last changed: 2014-07-02
 
 #include <numeric>
 #include <sstream>
@@ -93,13 +93,13 @@ std::size_t MeshTopology::size_global(std::size_t dim) const
   return global_num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshTopology::size_ghost(std::size_t dim) const
+std::size_t MeshTopology::ghost_offset(std::size_t dim) const
 {
   if (ghost_num_entities.empty())
     return 0;
 
   dolfin_assert(dim < ghost_num_entities.size());
-  return ghost_num_entities[dim];
+  return num_entities[dim] - ghost_num_entities[dim];
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear()
