@@ -10,7 +10,8 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-parameters["ghost_mode"] = "shared_vertex"
+#parameters["ghost_mode"] = "shared_vertex"
+parameters["ghost_mode"] = "shared_facet"
 # parameters["ghost_mode"] = "None"
 parameters["reorder_cells_gps"] = True
 parameters["reorder_vertices_gps"] = True
@@ -31,11 +32,8 @@ mpi_rank = MPI.rank(mpi_comm_world())
 
 #parameters["mesh_partitioner"] = "ParMETIS"
 
-mesh = UnitSquareMesh(10, 10)
-# mesh = UnitSquareMesh(1, 1)
-# mesh = refine(mesh)
-
-quit()
+mesh = UnitSquareMesh(32, 32)
+# mesh = refine(M)
 
 shared_vertices = mesh.topology().shared_entities(0).keys()
 shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
@@ -148,7 +146,3 @@ for note in facet_note:
 # xdmf << Q
 
 # plt.show()
-
-
-# Create Poisson problem on mesh
-# V = FunctionSpace(mesh, "Lagrange", 1)

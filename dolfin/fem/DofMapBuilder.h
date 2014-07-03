@@ -85,7 +85,7 @@ namespace dolfin
     //     process
     //   - node_ownership = 0  -> dof owned by this process and shared
     //     with other processes
-    //   - node_ownership = 1  -> dof >owned bu this process and not
+    //   - node_ownership = 1  -> dof owned by this process and not
     //     shared
     //
     // Also computes map from shared node to sharing processes and a
@@ -163,10 +163,12 @@ namespace dolfin
         std::shared_ptr<const SubDomain> constrained_domain,
         const std::size_t block_size);
 
-    // Mark boundary nodes. Boundary nodes are assigned a random
-    // positive integer, interior nodes are marked as -1 and ghost
-    // nodes are marked as -2
-    static void compute_boundary_nodes(
+
+    // Mark shared nodes. Boundary nodes are assigned a random
+    // positive integer, interior nodes are marked as -1, interior
+    // nodes in ghost layer of other processes are marked -2, and
+    // ghost nodes are marked as -3
+    static void compute_shared_nodes(
       std::vector<int>& boundary_nodes,
       const std::vector<std::vector<la_index>>& node_dofmap,
       const std::size_t num_nodes_local,
