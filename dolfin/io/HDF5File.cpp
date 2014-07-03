@@ -322,21 +322,20 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       else
       {
         // Iterate through ghost cells, adding non-ghost entities which are 
-        // shared with lower rank processes to a set for exclusion from output
+        // in lower rank process cells to a set for exclusion from output
         for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
         {
+          const unsigned int cell_owner = c->owner();
           for (MeshEntityIterator ent(*c, cell_dim); !ent.end(); ++ent)
-            if (!ent->is_ghost())
-            {
-              std::map<unsigned int, std::set<unsigned int> >::const_iterator
-                sh = shared_entities.find(ent->index());
-              dolfin_assert(sh != shared_entities.end());
-              const unsigned int lowest_proc = *(sh->second.begin());
-              if (lowest_proc < mpi_rank)
-              non_local_entities.insert(ent->index());
-            }
+            if (!ent->is_ghost() && cell_owner < mpi_rank)
+                non_local_entities.insert(ent->index());
         }
       }
+
+      std::cout << mpi_rank << ":";
+      for (auto p = non_local_entities.begin(); p != non_local_entities.end(); ++p)
+        std::cout << *p << " ";
+      std::cout << "\n";
 
       for (MeshEntityIterator ent(mesh, cell_dim); 
            ent->index() != num_regular_entities; ++ent)
@@ -693,34 +692,48 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   }
   else
   {
+    // In parallel and not CellFunction
     data_values.reserve(mesh.size(cell_dim));
 
     // Drop duplicate data
-    // FIXME: broken with ghost mesh
-
-    warning("broken with ghost mesh");
-
-    const std::size_t my_rank = MPI::rank(_mpi_comm);
+    const std::size_t tdim = mesh.topology().dim();
+    const std::size_t mpi_rank = MPI::rank(_mpi_comm);
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
       = mesh.topology().shared_entities(cell_dim);
+    const std::size_t num_regular_entities 
+      = mesh.topology().ghost_offset(cell_dim);
 
-    for (std::size_t i = 0; i < meshfunction.size(); ++i)
+    std::set<unsigned int> non_local_entities;
+    if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
     {
-      std::map<unsigned int, std::set<unsigned int> >::const_iterator sh
-        = shared_entities.find(i);
-
-      // If unshared, or shared and locally owned, append to vector
-      if (sh == shared_entities.end())
-        data_values.push_back(meshfunction[i]);
-      else
+      // No ghost cells - exclude shared entities which are on lower rank processes
+      for (auto sh = shared_entities.begin(); sh != shared_entities.end(); ++sh)
       {
-        std::set<unsigned int>::iterator lowest_proc = sh->second.begin();
-        if (*lowest_proc > my_rank)
-          data_values.push_back(meshfunction[i]);
+        const unsigned int lowest_proc = *(sh->second.begin());
+        if (lowest_proc < mpi_rank)
+          non_local_entities.insert(sh->first);
       }
     }
+    else
+    {
+      // Iterate through ghost cells, adding non-ghost entities which are 
+      // shared from lower rank process cells to a set for exclusion from output
+      for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
+      {
+        const unsigned int cell_owner = c->owner();
+        for (MeshEntityIterator ent(*c, cell_dim); !ent.end(); ++ent)
+          if (!ent->is_ghost() && cell_owner < mpi_rank)
+              non_local_entities.insert(ent->index());
+      }
+    }
+    
+    for (std::size_t i = 0; i < num_regular_entities; ++i)
+    {
+      if (non_local_entities.find(i) == non_local_entities.end())
+        data_values.push_back(meshfunction[i]);
+    }
   }
-
+  
   // Write values to HDF5
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
                                                    data_values.size()));

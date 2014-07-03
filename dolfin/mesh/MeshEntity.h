@@ -236,6 +236,9 @@ namespace dolfin
 
       return (sharing_map.find(_local_index) != sharing_map.end());
     }
+
+    /// Get ownership of this entity - only really valid for cells
+    unsigned int owner() const;
     
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)
