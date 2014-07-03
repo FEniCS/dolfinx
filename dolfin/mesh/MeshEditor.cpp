@@ -122,6 +122,7 @@ void MeshEditor::init_vertices_global(std::size_t num_local_vertices,
   // Initialize mesh data
   _num_vertices = num_local_vertices;
   _mesh->_topology.init(0, num_local_vertices, num_global_vertices);
+  _mesh->_topology.init_ghost(0, num_local_vertices);
   _mesh->_topology.init_global_indices(0, num_local_vertices);
   _mesh->_geometry.init(_gdim, num_local_vertices);
 }
