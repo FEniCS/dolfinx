@@ -295,8 +295,6 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                                       const MeshFunction<std::size_t>* domains,
                                       std::vector<double>* values)
 {
-  return;
-
   // Skip assembly if there are no interior facet integrals
   if (!ufc.form.has_interior_facet_integrals())
     return;

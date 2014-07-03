@@ -10,7 +10,8 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-parameters["ghost_mode"] = "shared_vertex"
+#parameters["ghost_mode"] = "shared_vertex"
+parameters["ghost_mode"] = "shared_facet"
 # parameters["ghost_mode"] = "None"
 parameters["reorder_cells_gps"] = True
 parameters["reorder_vertices_gps"] = True
@@ -31,7 +32,7 @@ mpi_rank = MPI.rank(mpi_comm_world())
 
 #parameters["mesh_partitioner"] = "ParMETIS"
 
-mesh = UnitSquareMesh(1, 1)
+mesh = UnitSquareMesh(32, 32)
 # mesh = refine(M)
 
 shared_vertices = mesh.topology().shared_entities(0).keys()
@@ -170,6 +171,7 @@ solve(a == L, u, bc)
 print "Solution norm: ", u.vector().norm("l2")
 """
 
+"""
 # Optimization options for the form compiler
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["optimize"] = True
@@ -202,12 +204,12 @@ f = Source()
 alpha = Constant(8.0)
 
 # Define bilinear form
-#a = inner(div(grad(u)), div(grad(v)))*dx \
-#  - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
-#  - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
-#  + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
-a = 0.000000001*inner(div(grad(u)), div(grad(v)))*dx #\
-  #+ inner(jump(grad(u),n), jump(grad(v),n))*dS
+a = inner(div(grad(u)), div(grad(v)))*dx \
+  - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
+  - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
+  + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
+#a = 0.000000001*inner(div(grad(u)), div(grad(v)))*dx #\
+#  #+ inner(jump(grad(u),n), jump(grad(v),n))*dS
 
 # Define linear form
 L = f*v*dx
@@ -226,3 +228,63 @@ print "Matrix norm (0): {!r}".format(A.norm("frobenius"))
 #u = Function(V)
 #solve(a == L, u, bc)
 #print "Solution vector: ", u.vector().norm("l2")
+"""
+
+# Define class marking Dirichlet boundary (x = 0 or x = 1)
+class DirichletBoundary(SubDomain):
+  def inside(self, x, on_boundary):
+    return on_boundary and near(x[0]*(1 - x[0]), 0)
+
+# Define class marking Neumann boundary (y = 0 or y = 1)
+class NeumanBoundary(SubDomain):
+  def inside(self, x, on_boundary):
+    return on_boundary and near(x[1]*(1 - x[1]), 0)
+
+# Create mesh and define function space
+V = FunctionSpace(mesh, 'DG', 1)
+
+# Define test and trial functions
+u = TrialFunction(V)
+v = TestFunction(V)
+
+# Define normal vector and mesh size
+n = FacetNormal(mesh)
+h = CellSize(mesh)
+h_avg = (h('+') + h('-'))/2
+
+# Define the source term f, Dirichlet term u0 and Neumann term g
+f = Expression('-100.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)')
+u0 = Expression('x[0] + 0.25*sin(2*pi*x[1])')
+g = Expression('(x[1] - 0.5)*(x[1] - 0.5)')
+
+# Mark facets of the mesh
+boundaries = FacetFunction('size_t', mesh, 0)
+NeumanBoundary().mark(boundaries, 2)
+DirichletBoundary().mark(boundaries, 1)
+
+# Define outer surface measure aware of Dirichlet and Neumann boundaries
+ds = Measure('ds')[boundaries]
+
+# Define parameters
+alpha = 4.0
+gamma = 8.0
+
+# Define variational problem
+a = dot(grad(v), grad(u))*dx \
+   - dot(avg(grad(v)), jump(u, n))*dS \
+   - dot(jump(v, n), avg(grad(u)))*dS \
+   + alpha/h_avg*dot(jump(v, n), jump(u, n))*dS \
+   - dot(grad(v), u*n)*ds(1) \
+   - dot(v*n, grad(u))*ds(1) \
+   + (gamma/h)*v*u*ds(1)
+L = v*f*dx - u0*dot(grad(v), n)*ds(1) + (gamma/h)*u0*v*ds(1) + g*v*ds(2)
+
+
+A = assemble(a)
+print "Matrix norm (0): {!r}".format(A.norm("frobenius"))
+
+
+# Compute solution
+u = Function(V)
+solve(a == L, u)
+print "Solution vector norm (0): {!r}".format(u.vector().norm("l2"))
