@@ -31,7 +31,7 @@ mpi_rank = MPI.rank(mpi_comm_world())
 
 #parameters["mesh_partitioner"] = "ParMETIS"
 
-mesh = UnitSquareMesh(2, 2)
+mesh = UnitSquareMesh(10, 10)
 # mesh = refine(M)
 
 
@@ -159,6 +159,12 @@ g = Expression("sin(5*x[0])")
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
+A = assemble(a)
+print "Matrix norm:", A.norm("frobenius")
+
+b = assemble(L)
+print "Vector norm:", b.norm("l2")
+
 # Compute solution
-u = Function(V)
-solve(a == L, u, bc)
+#u = Function(V)
+#solve(a == L, u, bc)

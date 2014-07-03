@@ -153,6 +153,10 @@ void Assembler::assemble_cells(GenericTensor& A,
     if (!integral)
       continue;
 
+    // FIXME: ghost mesh change
+    if (cell->is_ghost())
+      continue;
+
     // Update to current cell
     cell->get_cell_data(ufc_cell);
     cell->get_vertex_coordinates(vertex_coordinates);
@@ -252,6 +256,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
     dolfin_assert(facet->num_entities(D) == 1);
     Cell mesh_cell(mesh, facet->entities(D)[0]);
+
+    // FIXME: ghost mesh change
+    if (mesh_cell.is_ghost())
+      continue;
 
     // Get local index of facet with respect to the cell
     const std::size_t local_facet = mesh_cell.index(*facet);
