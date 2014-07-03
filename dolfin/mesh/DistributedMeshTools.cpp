@@ -143,7 +143,7 @@ std::size_t DistributedMeshTools::number_entities(
   // map. Exclude any slave entities.
   std::map<std::vector<std::size_t>, unsigned int> entities;
   std::pair<std::vector<std::size_t>, unsigned int> entity;
-  for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+  for (MeshEntityIterator e(mesh, d, "all"); !e.end(); ++e)
   {
     const std::size_t local_index = e->index();
     if (!exclude[local_index])
@@ -1044,7 +1044,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Map shared facets 
     std::map<std::size_t, std::size_t> global_to_local_facet;
     
-    for (FacetIterator f(mesh); !f.end(); ++f)
+    for (MeshEntityIterator f(mesh, D - 1, "all"); !f.end(); ++f)
     {
       // Insert shared facets into mapping
       if (shared_facets.find(f->index()) != shared_facets.end())

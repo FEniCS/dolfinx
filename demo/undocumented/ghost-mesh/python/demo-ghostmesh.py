@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # very rough demo to test out ghost cells
-# run with mpirun 
+# run with mpirun
 #
 from dolfin import *
 import matplotlib.pyplot as plt
@@ -29,11 +29,13 @@ if(MPI.size(mpi_comm_world()) == 1):
 
 mpi_rank = MPI.rank(mpi_comm_world())
 
-parameters["mesh_partitioner"] = "ParMETIS"
+#parameters["mesh_partitioner"] = "ParMETIS"
 
 mesh = UnitSquareMesh(10, 10)
-# M = refine(M)
+# mesh = UnitSquareMesh(1, 1)
+# mesh = refine(mesh)
 
+quit()
 
 shared_vertices = mesh.topology().shared_entities(0).keys()
 shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
@@ -88,7 +90,7 @@ for c in cells(mesh):
 #        cell_str = str(c.index())
     cells_note.append((xavg, yavg, cell_str))
     cells_store.append(zip(xc,yc))
-    
+
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
 
@@ -140,10 +142,13 @@ for note in verts_note:
 for note in facet_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
-Q = VertexFunction("double", mesh)
+# Q = FacetFunction("double", mesh)
 
-xdmf = File("a.xdmf")
-xdmf << Q
+# xdmf = File("a.xdmf")
+# xdmf << Q
 
-plt.show()
+# plt.show()
 
+
+# Create Poisson problem on mesh
+# V = FunctionSpace(mesh, "Lagrange", 1)

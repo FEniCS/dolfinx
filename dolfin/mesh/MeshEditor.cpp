@@ -140,6 +140,7 @@ void MeshEditor::init_cells_global(std::size_t num_local_cells,
   // Initialize mesh data
   _num_cells = num_local_cells;
   _mesh->_topology.init(_tdim, num_local_cells, num_global_cells);
+  _mesh->_topology.init_ghost(_tdim, num_local_cells);
   _mesh->_topology.init_global_indices(_tdim, num_local_cells);
   _mesh->_topology(_tdim, 0).init(_num_cells,
                                   _mesh->type().num_vertices(_tdim));

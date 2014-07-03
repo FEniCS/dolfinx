@@ -105,7 +105,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   unsigned int num_regular_entities = 0;
 
   // Loop over cells
-  for (CellIterator c(mesh); !c.end(); ++c)
+  //  for (CellIterator c(mesh); !c.end(); ++c)
+  for (MeshEntityIterator c(mesh, tdim, "all"); !c.end(); ++c)
   {
     // Cell index
     const std::size_t cell_index = c->index();
@@ -216,7 +217,8 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   {
     std::vector<std::vector<std::size_t> >
       connectivity00(topology.size(d0), std::vector<std::size_t>(1));
-    for (MeshEntityIterator v(mesh, d0); !v.end(); ++v)
+    //    for (MeshEntityIterator v(mesh, d0); !v.end(); ++v)
+    for (MeshEntityIterator v(mesh, d0, "all"); !v.end(); ++v)
       connectivity00[v->index()][0] = v->index();
     topology(d0, d0).set(connectivity00);
   }
@@ -269,7 +271,8 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   std::vector<std::size_t> tmp(topology.size(d0), 0);
 
   // Count the number of connections
-  for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
+  //  for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
+  for (MeshEntityIterator e1(mesh, d1, "all"); !e1.end(); ++e1)
     for (MeshEntityIterator e0(*e1, d0); !e0.end(); ++e0)
       tmp[e0->index()]++;
 
@@ -280,7 +283,8 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   std::fill(tmp.begin(), tmp.end(), 0);
 
   // Add the connections
-  for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
+  //  for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
+  for (MeshEntityIterator e1(mesh, d1, "all"); !e1.end(); ++e1)
     for (MeshEntityIterator e0(*e1, d0); !e0.end(); ++e0)
       connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
 }
@@ -313,7 +317,8 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   const std::size_t e1_num_entities = mesh.type().num_vertices(d1);
   std::vector<std::size_t> _e0(e0_num_entities);
   std::vector<std::size_t> _e1(e1_num_entities);
-  for (MeshEntityIterator e0(mesh, d0); !e0.end(); ++e0)
+  //  for (MeshEntityIterator e0(mesh, d0); !e0.end(); ++e0)
+  for (MeshEntityIterator e0(mesh, d0, "all"); !e0.end(); ++e0)
   {
     // Get set of connected entities for current entity
     std::vector<std::size_t>& entities = connectivity[e0->index()];

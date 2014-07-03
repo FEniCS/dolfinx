@@ -79,8 +79,8 @@ namespace dolfin
       _entity.init(mesh, dim, 0);
 
       mesh.init(dim);
-      pos_end = mesh.topology().size(dim); 
-      // pos_end = mesh.topology().ghost_offset(dim);
+      // pos_end = mesh.topology().size(dim); 
+      pos_end = mesh.topology().ghost_offset(dim);
     }
 
     /// Iterator over MeshEntity of dimension dim on mesh, with string option
