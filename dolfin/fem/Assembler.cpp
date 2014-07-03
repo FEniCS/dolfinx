@@ -295,6 +295,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                                       const MeshFunction<std::size_t>* domains,
                                       std::vector<double>* values)
 {
+  return;
+
   // Skip assembly if there are no interior facet integrals
   if (!ufc.form.has_interior_facet_integrals())
     return;
@@ -428,14 +430,26 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     if (cell0.is_ghost() != cell1.is_ghost())
     {
-      ++counter1;
-      for (std::size_t i = 0; i < ufc.macro_A.size(); ++i)
-        ufc.macro_A[i] *= 0.5;
+      int my_rank = MPI::rank(MPI_COMM_WORLD);
+      int ghost_rank = -1;
+      if (cell0.is_ghost())
+        ghost_rank = cell0.owner();
+      else
+        ghost_rank = cell1.owner();
+
+      dolfin_assert(my_rank != ghost_rank);
+      dolfin_assert(ghost_rank != -1);
+      if (ghost_rank < my_rank)
+        continue;
+
+      //++counter1;
+      //for (std::size_t i = 0; i < ufc.macro_A.size(); ++i)
+      //  ufc.macro_A[i] *= 0.5;
     }
 
     // Add entries to global tensor
 
-        ++counter0;
+    ++counter0;
     add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);
 
     p++;

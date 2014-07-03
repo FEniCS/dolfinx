@@ -31,13 +31,11 @@ mpi_rank = MPI.rank(mpi_comm_world())
 
 #parameters["mesh_partitioner"] = "ParMETIS"
 
-mesh = UnitSquareMesh(32, 32)
+mesh = UnitSquareMesh(1, 1)
 # mesh = refine(M)
 
 shared_vertices = mesh.topology().shared_entities(0).keys()
 shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
-
-num_regular_vertices = mesh.topology().size(0) - mesh.topology().size_ghost(0)
 
 num_regular_vertices = mesh.topology().ghost_offset(0)
 
@@ -93,7 +91,7 @@ for c in cells(mesh):
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
 
-num_regular_facets = mesh.topology().size(1) - mesh.topology().size_ghost(1)
+num_regular_facets = mesh.topology().ghost_offset(1)
 facet_note = []
 shared_facets = mesh.topology().shared_entities(1)
 for f in facets(mesh):
@@ -175,7 +173,7 @@ print "Solution norm: ", u.vector().norm("l2")
 # Optimization options for the form compiler
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["optimize"] = True
-V = FunctionSpace(mesh, "CG", 2)
+V = FunctionSpace(mesh, "DG", 1)
 
 # Define Dirichlet boundary
 class DirichletBoundary(SubDomain):
@@ -208,8 +206,8 @@ alpha = Constant(8.0)
 #  - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
 #  - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
 #  + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
-a = 0.000000001*inner(div(grad(u)), div(grad(v)))*dx \
-  + inner(jump(grad(u),n), jump(grad(v),n))*dS
+a = 0.000000001*inner(div(grad(u)), div(grad(v)))*dx #\
+  #+ inner(jump(grad(u),n), jump(grad(v),n))*dS
 
 # Define linear form
 L = f*v*dx

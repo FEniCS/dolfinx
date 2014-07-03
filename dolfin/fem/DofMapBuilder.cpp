@@ -150,13 +150,29 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     // nodes in ghost layer of other processes are marked -2, and
     // ghost nodes are marked as -3
     std::vector<int> shared_nodes;
-    compute_boundary_nodes(shared_nodes, node_graph0,
-                           node_local_to_global0.size(), *ufc_node_dofmap,
-                           mesh, MPI::rank(mesh.mpi_comm()));
-    for (std::size_t i = 0; i < shared_nodes.size(); ++i)
+    compute_shared_nodes(shared_nodes, node_graph0,
+                         node_local_to_global0.size(), *ufc_node_dofmap,
+                         mesh, MPI::rank(mesh.mpi_comm()));
+    if (MPI::rank(mesh.mpi_comm()) == 0)
     {
-      std::cout << "Shared node: " << MPI::rank(mesh.mpi_comm()) << ", "
-                << i << ", "  << shared_nodes[i] << std::endl;
+      for (std::size_t i = 0; i < node_local_to_global0.size(); ++i)
+      {
+        std::cout << "l-to-g: " << i << ", " << node_local_to_global0[i]
+                  << std::endl;
+      }
+      /*
+      for (std::size_t i = 0; i < shared_nodes.size(); ++i)
+      {
+        std::cout << "Shared node: " << node_local_to_global0[i]
+                  << ", "  << shared_nodes[i] << std::endl;
+      }
+      for (CellIterator c(mesh); !c.end(); ++c)
+      {
+        std::cout << "Index: " << c->index() << ", " << c->global_index()
+                  << std::endl;
+        std::cout << c->midpoint().str(true) << std::endl;
+      }
+      */
     }
 
     // Compute
@@ -1017,7 +1033,9 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   }
   else
     dofmaps[0] = ufc_dofmap;
-  offset_local[block_size] = ufc_dofmap->global_dimension(num_mesh_entities_local);
+
+  offset_local[block_size]
+    = ufc_dofmap->global_dimension(num_mesh_entities_local);
 
   num_mesh_entities_global = num_mesh_entities_global_unconstrained;
 
@@ -1060,9 +1078,22 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
     ufc_cell_local.entity_indices[D][0] = cell->index();
     ufc_cell_local.index = cell->index();
 
+    if (MPI::rank(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "Local cell: " << ufc_cell_local.entity_indices[D][0]
+                << ", " << ufc_cell_local.index << std::endl;
+    }
+
     // Get global cell entities/data (global)
     cell->get_cell_data(ufc_cell_global);
     cell->get_cell_topology(ufc_cell_global);
+
+    if (MPI::rank(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "Global cell: " << ufc_cell_global.entity_indices[D][0]
+                << ", " << ufc_cell_global.index << std::endl;
+    }
+
 
     // Get reference to container for cell dofs
     std::vector<la_index>& cell_nodes = node_dofmap[cell->index()];
@@ -1340,12 +1371,12 @@ void DofMapBuilder::compute_constrained_mesh_indices(
 }
 //-----------------------------------------------------------------------------
 void
-DofMapBuilder::compute_boundary_nodes(std::vector<int>& shared_nodes,
-                                      const std::vector<std::vector<la_index>>& node_dofmap,
-                                      const std::size_t num_nodes_local,
-                                      const ufc::dofmap& ufc_dofmap,
-                                      const Mesh& mesh,
-                                      const std::size_t seed)
+DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
+                                    const std::vector<std::vector<la_index>>& node_dofmap,
+                                    const std::size_t num_nodes_local,
+                                    const ufc::dofmap& ufc_dofmap,
+                                    const Mesh& mesh,
+                                    const std::size_t seed)
 {
   // Initialise mesh
   const std::size_t D = mesh.topology().dim();
@@ -1378,7 +1409,6 @@ DofMapBuilder::compute_boundary_nodes(std::vector<int>& shared_nodes,
     bool shared_facet = false;
     if (f->num_entities(D) == 2)
     {
-      //const Cell cell0(mesh, f->entities(D)[0]);
       const Cell cell1(mesh, f->entities(D)[1]);
       if (cell0.is_ghost() != cell1.is_ghost())
         shared_facet = true;
@@ -1417,7 +1447,72 @@ DofMapBuilder::compute_boundary_nodes(std::vector<int>& shared_nodes,
       }
       */
     }
+
+    // Handle cells
+    if (shared_facet)
+    {
+      if (MPI::rank(mesh.mpi_comm()) == 1)
+        std::cout << "!!!! shared facet" << std::endl;
+
+      if (MPI::rank(mesh.mpi_comm()) == 1)
+        std::cout << "  cell0 index: " << cell0.index() << ", "
+                  << cell0.global_index()
+                  << ", " << cell0.is_ghost() << std::endl;
+
+      const std::vector<la_index>& cell_nodes0 = node_dofmap[cell0.index()];
+      for (std::size_t i = 0; i < cell_nodes0.size(); ++i)
+      {
+        const size_t node_local = cell_nodes0[i];
+        if (shared_nodes[node_local] < 0)
+        {
+          if (cell0.is_ghost())
+            shared_nodes[node_local] = -3;
+          else
+            shared_nodes[node_local] = -2;
+        }
+      }
+
+      const Cell cell1(mesh, f->entities(D)[1]);
+      if (MPI::rank(mesh.mpi_comm()) == 1)
+        std::cout << "  cell1 index: " << cell1.index() << ", "
+                  << cell1.global_index()
+                  << ", " << cell1.is_ghost() << std::endl;
+
+      const std::vector<la_index>& cell_nodes1 = node_dofmap[cell1.index()];
+      for (std::size_t i = 0; i < cell_nodes1.size(); ++i)
+      {
+        const size_t node_local = cell_nodes1[i];
+        if (shared_nodes[node_local] < 0)
+        {
+          if (cell1.is_ghost())
+            shared_nodes[node_local] = -3;
+          else
+            shared_nodes[node_local] = -2;
+        }
+      }
+    }
   }
+
+  // FIXME: Need to generalise this code
+  // Mark dofs associated with ghost cells as not owned
+  /*
+  std::vector<std::size_t> e_dofs;
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    if (c->is_ghost())
+    {
+      // Tabulate dofs (local) on cell
+      const std::vector<la_index>& cell_nodes = node_dofmap[c->index()];
+
+      for (std::size_t i = 0; i < cell_nodes.size(); ++i)
+      {
+        size_t node_local = cell_nodes[i];
+        if (shared_nodes[node_local] < 0)
+          shared_nodes[node_local] = -3;
+      }
+    }
+  }
+  */
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_node_reodering(
@@ -1452,12 +1547,19 @@ void DofMapBuilder::compute_node_reodering(
   node_pairs.reserve(unowned_local_size);
   for (std::size_t i = 0; i < node_ownership.size(); ++i)
   {
+    if (MPI::rank(MPI_COMM_WORLD) == 1)
+      std::cout << "Pairs: " << MPI::rank(MPI_COMM_WORLD)
+                << ", " << old_local_to_global[i]  << ", "
+                <<  node_ownership[i]
+                << std::endl;
     if (node_ownership[i] == -1)
     {
-      //if (MPI::rank(MPI_COMM_WORLD) == 1)
-      //  std::cout << "Unowned pairs: " << MPI::rank(MPI_COMM_WORLD)
-      //            << ", " << old_local_to_global[i]  << ", " <<  i
-      //            << std::endl;
+      /*
+      if (MPI::rank(MPI_COMM_WORLD) == 1)
+        std::cout << "Unowned pairs: " << MPI::rank(MPI_COMM_WORLD)
+                  << ", " << old_local_to_global[i]  << ", " <<  i
+                  << std::endl;
+      */
       node_pairs.push_back(std::make_pair(old_local_to_global[i] , i));
     }
   }
@@ -1589,6 +1691,12 @@ void DofMapBuilder::compute_node_reodering(
     if (node_ownership[old_node_index_local] == 0)
     {
       // Buffer old and new global indices to send
+      if (MPI::rank(mpi_comm) == 0)
+      {
+        std::cout << "buffer: " << old_local_to_global[old_node_index_local]
+                  << ", " << process_offset + node_remap[counter]
+                  << std::endl;
+      }
       send_buffer.push_back(old_local_to_global[old_node_index_local]);
       send_buffer.push_back(process_offset + node_remap[counter]);
     }
@@ -1597,7 +1705,7 @@ void DofMapBuilder::compute_node_reodering(
   }
 
   MPI::barrier(mpi_comm);
-  if (MPI::rank(mpi_comm) == 1)
+  if (MPI::rank(mpi_comm) == 0)
   {
     for (std::size_t i = 0; i < old_to_new_local.size(); ++i)
     {
@@ -1639,12 +1747,21 @@ void DofMapBuilder::compute_node_reodering(
       const std::size_t received_old_node_index_global = recv_buffer[i];
       const std::size_t received_new_node_index_global = recv_buffer[i + 1];
 
+      if (MPI::rank(mpi_comm) == 1)
+      {
+        std::cout << "Received: " << received_old_node_index_global << ", "
+                  << received_new_node_index_global  << std::endl;
+      }
+
       // Get local node index (if on this process), and check if this
       // process has shared node (and is not the owner)
       auto it
         = global_to_local_nodes_unowned.find(received_old_node_index_global);
       if (it != global_to_local_nodes_unowned.end())
       {
+        if (MPI::rank(mpi_comm) == 1)
+          std::cout << "Found index" << std::endl;
+
         // Get local index for received dof
         const int received_old_node_index_local = it->second;
         dolfin_assert(received_old_node_index_local
@@ -1655,7 +1772,8 @@ void DofMapBuilder::compute_node_reodering(
         if (test_set.find(received_old_node_index_global) != test_set.end())
          error("Oops, problem in new dofmap code.");
         test_set.insert(received_old_node_index_global);
-        //dolfin_assert(local_to_global_unowned.size() == off_process_node_counter);
+        //dolfin_assert(local_to_global_unowned.size() ==
+        //off_process_node_counter);
 
         // Assign local index to remotely numbered node
         //if (MPI::rank(MPI_COMM_WORLD) ==0)
