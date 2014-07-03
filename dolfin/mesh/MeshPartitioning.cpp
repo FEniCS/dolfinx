@@ -268,21 +268,16 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                     new_mesh_data.cell_partition.begin() + num_regular_cells,
                     new_mesh_data.cell_partition.end());
 
-  // Set the number of ghost cells
-  mesh.topology().init_ghost(mesh_data.tdim, 
-                             new_mesh_data.global_cell_indices.size()
-                             - num_regular_cells);
+  // Set the ghost cell offset
+  mesh.topology().init_ghost(mesh_data.tdim, num_regular_cells);
 
-  // Set the number of ghost vertices
-  mesh.topology().init_ghost(0, 
-                             new_mesh_data.vertex_indices.size()
-                             - num_regular_vertices);
+  // Set the ghost vertex offset
+  mesh.topology().init_ghost(0, num_regular_vertices);
     
   // Assign map of shared cells and vertices
   mesh.topology().shared_entities(mesh_data.tdim) = shared_cells;
   mesh.topology().shared_entities(0) = shared_vertices;
 }
-
 //-----------------------------------------------------------------------------
 void MeshPartitioning::reorder_cells_gps(MPI_Comm mpi_comm,
                                          unsigned int num_regular_cells,

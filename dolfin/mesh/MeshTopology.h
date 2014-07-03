@@ -86,8 +86,8 @@ namespace dolfin
     /// dimension dim
     void init_global_indices(std::size_t dim, std::size_t size);
 
-    /// Initialise the number of ghost entities for this dimension
-    void init_ghost(std::size_t dim, std::size_t size);
+    /// Initialise the offset index of ghost entities for this dimension
+    void init_ghost(std::size_t dim, std::size_t index);
 
     /// Set global index for entity of dimension dim and with local
     /// index
@@ -173,7 +173,7 @@ namespace dolfin
     std::vector<unsigned int> num_entities;
 
     // Number of ghost indices for each topological dimension 
-    std::vector<std::size_t> ghost_num_entities;
+    std::vector<std::size_t> ghost_offset_index;
 
     // Global number of mesh entities for each topological dimension
     std::vector<std::size_t> global_num_entities;
