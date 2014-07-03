@@ -140,10 +140,10 @@ for note in verts_note:
 for note in facet_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
-Q = FacetFunction("double", mesh)
+Q = VertexFunction("double", mesh)
 
 xdmf = File("a.xdmf")
 xdmf << Q
 
-# plt.show()
+plt.show()
 

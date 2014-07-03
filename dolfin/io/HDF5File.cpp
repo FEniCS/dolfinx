@@ -332,11 +332,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         }
       }
 
-      std::cout << mpi_rank << ":";
-      for (auto p = non_local_entities.begin(); p != non_local_entities.end(); ++p)
-        std::cout << *p << " ";
-      std::cout << "\n";
-
       for (MeshEntityIterator ent(mesh, cell_dim); 
            ent->index() != num_regular_entities; ++ent)
       {
@@ -355,7 +350,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     global_size[0] = MPI::sum(_mpi_comm,
                               topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
-    std::cout << global_size[0] << " == " << mesh.size_global(cell_dim) << "\n";
     dolfin_assert(global_size[0] == mesh.size_global(cell_dim));
     const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
