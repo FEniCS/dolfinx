@@ -19,7 +19,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2010-05-26
-// Last changed: 2013-03-04
+// Last changed: 2014-07-04
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -156,9 +156,6 @@ namespace dolfin
     /// body rotations.
     virtual void set_x(GenericVector& x, double value, std::size_t component,
                        const Mesh& mesh) const = 0;
-
-    /// Add given offset to all dofs
-    virtual void add_offset(dolfin::la_index offset) = 0;
 
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;
