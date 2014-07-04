@@ -157,8 +157,15 @@ const std::string HDF5Interface::get_attribute_type(
   status = H5Tclose(attr_type);
   dolfin_assert(status != HDF5_FAIL);
 
+  status = H5Tclose(h5class);
+  dolfin_assert(status != HDF5_FAIL);
+
   // Close attribute
   status = H5Aclose(attr_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close dataspace
+  status = H5Sclose(dataspace);
   dolfin_assert(status != HDF5_FAIL);
 
   // Close dataset or group
@@ -272,9 +279,14 @@ bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
                                 const std::string dataset_name)
 {
   hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
-  htri_t status = H5Lexists(hdf5_file_handle, dataset_name.c_str(), lapl_id);
-  dolfin_assert(status >= 0);
-  return status;
+  htri_t link_status = H5Lexists(hdf5_file_handle, dataset_name.c_str(), lapl_id);
+  dolfin_assert(link_status >= 0);
+
+  // Close link access properties
+  herr_t status = H5Pclose(lapl_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return link_status;
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
