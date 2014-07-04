@@ -239,8 +239,6 @@ class AbstractBaseTest(object):
         self.assertEqual(v0.sum(), n)
 
     def test_scalar_add(self):
-        #if self.backend == "Epetra":
-        #    return
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v1 = Vector(mpi_comm_world(), n)
@@ -358,15 +356,10 @@ if has_linear_algebra_backend("PETSc"):
                       unittest.TestCase):
         backend    = "PETSc"
 
-if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
-                       unittest.TestCase):
-        backend    = "Epetra"
-
-# If we have PETSc or Epetra STL Vector gets typedefed to one of these and
-# data test will not work. If none of these backends are available
+# If we have PETSc, STL Vector gets typedefed to one of these and data
+# test will not work. If none of these backends are available
 # STLVector defaults to uBLASVEctor, which data will work
-if has_linear_algebra_backend("Epetra") or has_linear_algebra_backend("PETSc"):
+if has_linear_algebra_backend("PETSc"):
     class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "STL"
 else:

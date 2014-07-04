@@ -279,17 +279,34 @@ class DofMapTest(unittest.TestCase):
             dofs = V.dofmap().tabulate_entity_dofs(0, i)
             self.assertTrue(all(d==cd for d, cd in zip(dofs, cdofs)))
 
+
+    def test_clear_sub_map_data(self):
+        V = FunctionSpace(self.mesh, "CG", 2)
+        self.assertRaises(ValueError, lambda : V.sub(1))
+
+        V = VectorFunctionSpace(self.mesh, "CG", 2)
+        V1 = V.sub(1)
+
+        # Clean sub-map data
+        V.dofmap().clear_sub_map_data()
+
+        # Can still get previously computed map
+        V1 = V.sub(1)
+
+        # New sub-map should throw an error
+        self.assertRaises(RuntimeError, lambda : V.sub(0))
+
     @unittest.skipIf(not MPI.size(mpi_comm_world()) > 1, "This test should only be run in parallel.")
     def test_mpi_dofmap_stats(self):
 
         V = FunctionSpace(self.mesh, "CG", 1)
-        self.assertTrue(len(V.dofmap().shared_dofs()) > 0)
+        self.assertTrue(len(V.dofmap().shared_nodes()) > 0)
         neighbours = V.dofmap().neighbours()
-        for processes in V.dofmap().shared_dofs().values():
+        for processes in V.dofmap().shared_nodes().values():
             for process in processes:
                 self.assertTrue(process in neighbours)
 
-        for owner in V.dofmap().off_process_owner().values():
+        for owner in V.dofmap().off_process_owner():
             self.assertTrue(owner in neighbours)
 
 if __name__ == "__main__":

@@ -179,9 +179,9 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
       = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
-    expansion_coefficients.set(cell_coefficients.data(),
-                               _dofmap->cell_dimension(cell->index()),
-                               cell_dofs.data());
+    expansion_coefficients.set_local(cell_coefficients.data(),
+                                     _dofmap->cell_dimension(cell->index()),
+                                     cell_dofs.data());
   }
 
   // Finalise changes
@@ -229,8 +229,8 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
 
     // Insert new sub space into cache
     _subspaces.insert(std::pair<std::vector<std::size_t>,
-                     std::shared_ptr<FunctionSpace> >(component,
-                                                      new_sub_space));
+                      std::shared_ptr<FunctionSpace> >(component,
+                                                       new_sub_space));
 
     return new_sub_space;
   }
@@ -238,12 +238,12 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
 {
-  boost::unordered_map<std::size_t, std::size_t> collapsed_dofs;
+  std::unordered_map<std::size_t, std::size_t> collapsed_dofs;
   return collapse(collapsed_dofs);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>FunctionSpace::collapse(
-  boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
+  std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
 {
   dolfin_assert(_mesh);
 

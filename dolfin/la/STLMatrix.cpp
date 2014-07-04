@@ -240,7 +240,7 @@ void STLMatrix::apply(std::string mode)
 
   // Communicate off-process data
   boost::unordered_map<std::pair<std::size_t,
-                                 std::size_t>, double>::const_iterator entry;
+                               std::size_t>, double>::const_iterator entry;
   for (entry = off_processs_data.begin(); entry != off_processs_data.end();
        ++entry)
   {

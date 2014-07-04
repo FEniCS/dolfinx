@@ -29,8 +29,8 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/BasisFunction.h>
-#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>

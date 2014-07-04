@@ -30,7 +30,7 @@
 #include <vector>
 
 #include <memory>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
@@ -200,14 +200,14 @@ namespace dolfin
     /// from new to old dofs
     ///
     /// *Arguments*
-    ///     collapsed_dofs (boost::unordered_map<std::size_t, std::size_t>)
+    ///     collapsed_dofs (std::unordered_map<std::size_t, std::size_t>)
     ///         The map from new to old dofs.
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///       The new function space.
     std::shared_ptr<FunctionSpace>
-    collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
+    collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
 
     /// Check if function space has given cell
     ///

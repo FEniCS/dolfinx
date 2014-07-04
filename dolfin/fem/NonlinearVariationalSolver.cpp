@@ -195,7 +195,7 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
   // Get problem data
   dolfin_assert(_problem);
   std::shared_ptr<const Form> F(_problem->residual_form());
-  std::vector<std::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
+  std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   // Assemble right-hand side
   dolfin_assert(F);
@@ -222,7 +222,7 @@ void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
   // Get problem data
   dolfin_assert(_problem);
   std::shared_ptr<const Form> J(_problem->jacobian_form());
-  std::vector<std::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
+  std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   // Assemble left-hand side
   dolfin_assert(J);

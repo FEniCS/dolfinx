@@ -21,9 +21,9 @@
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
 
-#include <vector>
-#include <set>
 #include <memory>
+#include <set>
+#include <vector>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/Assembler.h>
@@ -45,7 +45,8 @@ namespace dolfin
   public:
 
     /// Constructor
-    /// FIXME: Include version where one can pass a Solver and/or Parameters
+    /// FIXME: Include version where one can pass a Solver and/or
+    /// Parameters
     PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme);
 
     /// Destructor
@@ -125,7 +126,8 @@ namespace dolfin
 				 std::vector<double>& x) const;
 
     // Compute jacobian using passed UFC form
-    void _compute_jacobian(std::vector<double>& jac, const std::vector<double>& u,
+    void _compute_jacobian(std::vector<double>& jac,
+                           const std::vector<double>& u,
 			   unsigned int local_vert, UFC& loc_ufc,
 			   const Cell& cell, const ufc::cell& ufc_cell,
 			   int coefficient_index,
@@ -138,8 +140,8 @@ namespace dolfin
     // test functions
     void _check_forms();
 
-    // Build map between vertices, cells and the correspondning local vertex
-    // and initialize UFC data for each form
+    // Build map between vertices, cells and the correspondning local
+    // vertex and initialize UFC data for each form
     void _init();
 
     // Solve an explicit stage
@@ -152,9 +154,10 @@ namespace dolfin
 			       const Cell& cell, const ufc::cell& ufc_cell,
 			       const std::vector<double>& vertex_coordinates);
 
-    void _simplified_newton_solve(std::size_t vert_ind, unsigned int stage,
-				  const Cell& cell, const ufc::cell& ufc_cell,
-				  const std::vector<double>& vertex_coordinates);
+    void
+      _simplified_newton_solve(std::size_t vert_ind, unsigned int stage,
+                               const Cell& cell, const ufc::cell& ufc_cell,
+                               const std::vector<double>& vertex_coordinates);
 
     // The MultiStageScheme
     std::shared_ptr<MultiStageScheme> _scheme;
@@ -178,10 +181,12 @@ namespace dolfin
     // Local to local dofs to be used in tabulate entity dofs
     std::vector<std::size_t> _local_to_local_dofs;
 
-    // Vertex map between vertices, cells and corresponding local vertex
+    // Vertex map between vertices, cells and corresponding local
+    // vertex
     std::vector<std::pair<std::size_t, unsigned int> > _vertex_map;
 
-    // Local to global dofs used when solution is fanned out to global vector
+    // Local to global dofs used when solution is fanned out to global
+    // vector
     std::vector<dolfin::la_index> _local_to_global_dofs;
 
     // Local stage solutions
@@ -209,7 +214,8 @@ namespace dolfin
     std::vector<std::vector<double> > _jacobians;
 
     // Variable used in the estimation of the error of the newton
-    // iteration for the first iteration (Important for linear problems!)
+    // iteration for the first iteration (important for linear
+    // problems!)
     double _eta;
 
     // Number of computations of Jacobian

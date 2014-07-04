@@ -341,11 +341,6 @@ if has_linear_algebra_backend("PETSc"):
                       unittest.TestCase):
         backend    = "PETSc"
 
-if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
-                       unittest.TestCase):
-        backend    = "Epetra"
-
 @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)")
 class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
     backend     = "uBLAS"

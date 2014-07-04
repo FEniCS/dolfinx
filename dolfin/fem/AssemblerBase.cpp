@@ -65,7 +65,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 
     // Get dimensions
     std::vector<std::size_t> global_dimensions;
-    std::vector<std::pair<std::size_t, std::size_t> > local_range;
+    std::vector<std::pair<std::size_t, std::size_t>> local_range;
     std::vector<std::size_t> block_sizes;
     for (std::size_t i = 0; i < a.rank(); i++)
     {
@@ -86,6 +86,25 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     // Initialise tensor layout
     tensor_layout->init(a.mesh().mpi_comm(), global_dimensions, block_size,
                         local_range);
+
+    if (a.rank() > 0)
+    {
+      tensor_layout->local_to_global_map.resize(a.rank());
+      for (std::size_t i = 0; i < a.rank(); ++i)
+      {
+        const std::size_t bs = dofmaps[i]->block_size;
+        const std::size_t local_size
+          = local_range[i].second - local_range[i].first;
+        std::cout << "Local size, dim: " << local_size << ", " <<
+          global_dimensions[i] << std::endl;
+        const std::vector<std::size_t>& local_to_global_unowned
+          = dofmaps[i]->local_to_global_unowned();
+        tensor_layout->local_to_global_map[i].resize(local_size
+                                                  + bs*local_to_global_unowned.size());
+        for (std::size_t j = 0; j < tensor_layout->local_to_global_map[i].size(); ++j)
+          tensor_layout->local_to_global_map[i][j] = dofmaps[i]->local_to_global_index(j);
+      }
+    }
 
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
@@ -157,7 +176,7 @@ void AssemblerBase::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<std::shared_ptr<const GenericFunction> >
+  const std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients

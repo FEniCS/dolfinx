@@ -20,9 +20,9 @@
 
 #include <limits>
 #include <map>
+#include <unordered_map>
 #include <utility>
 #include <vector>
-#include <boost/unordered_map.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
@@ -309,10 +309,10 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
   MPI::all_to_all(mesh->mpi_comm(), master_dofs_send, master_dofs_recv);
 
   // Build list of sharing processes
-  boost::unordered_map<unsigned int,
+  std::unordered_map<unsigned int,
 std::vector<std::pair<unsigned int, unsigned int> > >
     shared_entities_map = DistributedMeshTools::compute_shared_entities(*mesh, dim);
-  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator e;
+  std::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator e;
   std::vector<std::vector<std::pair<unsigned int, unsigned int> > >
     shared_entities(mesh->num_entities(dim));
   for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
