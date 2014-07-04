@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-06-17
+// Last changed: 2014-07-04
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes.
@@ -55,7 +55,6 @@ void solve(double t,
 {
   // Create meshes
   double r = 0.5;
-  double h = 0.1;
   RectangleMesh mesh_0(-r, -r, r, r, 16, 16);
   RectangleMesh mesh_1(x1 - r, y1 - r, x1 + r, y1 + r, 8, 8);
   RectangleMesh mesh_2(x2 - r, y2 - r, x2 + r, y2 + r, 8, 8);
