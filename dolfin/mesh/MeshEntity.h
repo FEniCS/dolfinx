@@ -231,10 +231,13 @@ namespace dolfin
     /// Determine if an entity is shared or not    
     bool is_shared() const
     {
-      const std::map<unsigned int, std::set<unsigned int> >& sharing_map
-        = _mesh->topology().shared_entities(_dim);
-
-      return (sharing_map.find(_local_index) != sharing_map.end());
+      if (_mesh->topology().have_shared_entities(_dim))
+      {
+        const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+          = _mesh->topology().shared_entities(_dim);
+        return (sharing_map.find(_local_index) != sharing_map.end());
+      }
+      return false;
     }
 
     /// Get ownership of this entity - only really valid for cells
