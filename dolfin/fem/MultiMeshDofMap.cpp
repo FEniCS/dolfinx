@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2014-06-15
+// Last changed: 2014-07-04
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/MultiMeshFunctionSpace.h>
+#include "DofMap.h"
 #include "MultiMeshDofMap.h"
 
 using namespace dolfin;
@@ -99,19 +100,22 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,
     std::shared_ptr<GenericDofMap> new_dofmap = _original_dofmaps[part]->copy();
     _new_dofmaps.push_back(new_dofmap);
 
-    // Add offset, either using computed offset or given offset
+    // Choose offset, either using computed offset or given offset
     dolfin::la_index _offset = 0;
     if (offsets.size() > 0)
       _offset = offsets[part];
     else
       _offset = offset;
-    new_dofmap->add_offset(_offset);
+
+    // Add offset
+    DofMap& dofmap = static_cast<DofMap&>(*new_dofmap);
+    for (auto it = dofmap._dofmap.begin(); it != dofmap._dofmap.end(); ++it)
+      for (auto jt = it->begin(); jt != it->end(); ++jt)
+        *jt += _offset;
 
     // Increase offset
     offset += _original_dofmaps[part]->global_dimension();
   }
-
-
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDofMap::clear()
