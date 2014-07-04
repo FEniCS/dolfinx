@@ -49,7 +49,7 @@ find_package(DOLFIN)
 # Need to get VTK config because VTK uses advanced VTK features which
 # mean it's not enough to just link to the DOLFIN target. See
 # http://www.vtk.org/pipermail/vtk-developers/2013-October/014402.html
-find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} QUIET)
+find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE QUIET)
 
 # Default build type (can be overridden by user)
 if (NOT CMAKE_BUILD_TYPE)
