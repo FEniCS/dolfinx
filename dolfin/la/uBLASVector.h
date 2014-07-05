@@ -90,29 +90,34 @@ namespace dolfin
     /// Create copy of tensor
     virtual std::shared_ptr<GenericVector> copy() const;
 
-    /// Resize vector to size N
+    /// Initialize vector to size N
     virtual void init(MPI_Comm comm, std::size_t N)
     {
+      check_mpi_rank(comm);
       if (!empty())
       {
         dolfin_error("uBLASVector.cpp",
                      "calling uBLASVector::init(...)",
                      "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
       }
-      resize(comm, N);
+      resize(N);
     }
 
     /// Resize vector with given ownership range
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range)
     {
+      check_mpi_rank(comm);
       if (!empty())
       {
         dolfin_error("uBLASVector.cpp",
                      "calling uBLASVector::init(...)",
                      "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
       }
-      resize(comm, range);
+
+      dolfin_assert(range.first == 0);
+      const std::size_t size = range.second - range.first;
+      resize(size);
     }
 
     /// Resize vector with given ownership range and with ghost values
@@ -121,29 +126,28 @@ namespace dolfin
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices)
     {
+      check_mpi_rank(comm);
       if (!empty())
       {
         dolfin_error("uBLASVector.cpp",
                      "calling uBLASVector::init(...)",
                      "Cannot call init for a non-empty vector. Use uBlASVector::resize instead");
       }
-      resize(comm, range, ghost_indices);
+
+      if (!ghost_indices.empty())
+      {
+        dolfin_error("uBLASVector.cpp",
+                     "calling uBLASVector::init(...)",
+                     "uBLASVector does not support ghost values");
+      }
+
+      dolfin_assert(range.first == 0);
+      const std::size_t size = range.second - range.first;
+      resize(size);
     }
 
     // Bring init function from GenericVector into scope
     using GenericVector::init;
-
-    /// Resize vector to size N
-    virtual void resize(MPI_Comm comm, std::size_t N);
-
-    /// Resize vector with given ownership range
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range);
-
-    /// Resize vector with given ownership range and with ghost values
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -275,6 +279,9 @@ namespace dolfin
 
     //--- Special uBLAS functions ---
 
+    /// Resize vector to size N
+    virtual void resize(std::size_t N);
+
     /// Return reference to uBLAS vector (const version)
     const ublas_vector& vec() const
     { return *_x; }
@@ -295,6 +302,16 @@ namespace dolfin
     const uBLASVector& operator= (const uBLASVector& x);
 
   private:
+
+    void check_mpi_rank(const MPI_Comm comm) const
+    {
+      if (dolfin::MPI::size(comm) > 1)
+      {
+        dolfin_error("uBLASVector.cpp",
+                     "creating uBLASVector",
+                     "Distributed uBLASVector is not supported");
+      }
+    }
 
     // Smart pointer to uBLAS vector object
     std::shared_ptr<ublas_vector> _x;
