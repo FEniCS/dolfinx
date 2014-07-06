@@ -189,7 +189,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     }
     else
     {
-      #if PETSC_VERSION_RELEASE
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
       _map0.assign(tensor_layout.local_to_global_map[0].begin(),
                    tensor_layout.local_to_global_map[0].end());
       _map1.assign(tensor_layout.local_to_global_map[1].begin(),
@@ -203,7 +203,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
         _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
       #endif
     }
-    #if PETSC_VERSION_RELEASE
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
     ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map0.size(), _map0.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global0);
     ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map1.size(), _map1.data(),
@@ -267,7 +267,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
 
     std::vector<PetscInt> _map0, _map1;
-    #if PETSC_VERSION_RELEASE
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
     _map0.assign(tensor_layout.local_to_global_map[0].begin(),
                  tensor_layout.local_to_global_map[0].end());
     _map1.assign(tensor_layout.local_to_global_map[1].begin(),
