@@ -172,7 +172,7 @@ namespace dolfin
     // Reinitialise x if necessary
     if (x.size() != b.size())
     {
-      x.resize(b.mpi_comm(), b.local_range());
+      x.resize(b.size());
       x.zero();
     }
 

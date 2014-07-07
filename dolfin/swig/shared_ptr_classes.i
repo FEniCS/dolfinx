@@ -1,4 +1,3 @@
-/* -*- C -*- */
 // Copyright (C) 2007-2012 Johan Hake
 //
 // This file is part of DOLFIN.
@@ -102,6 +101,7 @@
 %shared_ptr(dolfin::Constant)
 %shared_ptr(dolfin::MeshCoordinates)
 %shared_ptr(dolfin::MultiMeshFunctionSpace)
+%shared_ptr(dolfin::MultiMeshSubSpace)
 
 // geometry
 %shared_ptr(dolfin::BoundingBoxTree)
@@ -203,15 +203,6 @@
 
 #ifdef HAS_SLEPC
 %shared_ptr(dolfin::SLEPcEigenSolver)
-#endif
-
-#ifdef HAS_TRILINOS
-%shared_ptr(dolfin::EpetraKrylovSolver)
-%shared_ptr(dolfin::EpetraLUSolver)
-%shared_ptr(dolfin::EpetraMatrix)
-%shared_ptr(dolfin::EpetraSparsityPattern)
-%shared_ptr(dolfin::EpetraVector)
-%shared_ptr(dolfin::TrilinosPreconditioner)
 #endif
 
 #ifdef HAS_PASTIX

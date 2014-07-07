@@ -37,7 +37,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScUserPreconditioner::PETScUserPreconditioner()
+PETScUserPreconditioner::PETScUserPreconditioner():
+  petscpc(NULL)
 {
   // Do nothing
 }

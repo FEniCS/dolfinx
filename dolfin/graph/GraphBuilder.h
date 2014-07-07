@@ -22,9 +22,9 @@
 #define __GRAPH_BUILDER_H
 
 #include <set>
+#include <boost/unordered_map.hpp>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
 #include "Graph.h"
 

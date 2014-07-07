@@ -97,20 +97,30 @@ namespace dolfin
              const dolfin::la_index * const * rows) const
     { block[0] = _value; }
 
-    /// Set block of values
+    /// Set block of values using global indices
     void set(const double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows)
     { _value = block[0]; }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    void set_local(const double* block, const dolfin::la_index* num_rows,
+                   const dolfin::la_index * const * rows)
+    { _value = block[0]; }
+
+    /// Add block of values using global indices
     void add(const double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows)
+    { add_local(block, num_rows, rows); }
+
+    /// Add block of values using local indices
+    void add_local(const double* block, const dolfin::la_index* num_rows,
+                   const dolfin::la_index * const * rows)
     {
       dolfin_assert(block);
       _value += block[0];
     }
 
-    /// Add block of values
+    /// Add block of values using global indices
     void add(const double* block,
              const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
@@ -118,8 +128,24 @@ namespace dolfin
       _value += block[0];
     }
 
-    /// Add block of values
+    /// Add block of values using local indices
+    void add_local(const double* block,
+             const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    {
+      dolfin_assert(block);
+      _value += block[0];
+    }
+
+    /// Add block of values using global indices
     void add(const double* block,
+             const std::vector<std::vector<dolfin::la_index> >& rows)
+    {
+      dolfin_assert(block);
+      _value += block[0];
+    }
+
+    /// Add block of values using local indices
+    void add_local(const double* block,
              const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);

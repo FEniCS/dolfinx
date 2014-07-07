@@ -17,7 +17,7 @@
 //
 //
 // First added:  2014-02-12
-// Last changed: 
+// Last changed:
 
 #ifndef __LAGRANGE_INTERPOLATOR_H
 #define __LAGRANGE_INTERPOLATOR_H
@@ -53,7 +53,7 @@ namespace dolfin
     }
 
     // Tolerance
-    const double TOL;                  
+    const double TOL;
   };
 
   class Expression;
@@ -63,7 +63,7 @@ namespace dolfin
   class FunctionSpace;
 
   /// This class interpolates efficiently from a GenericFunction
-  /// to a Lagrange Function 
+  /// to a Lagrange Function
 
   class LagrangeInterpolator
   {
@@ -76,25 +76,25 @@ namespace dolfin
     ///         The resulting Function
     ///     u0 (_Expression_)
     ///         The Expression to be interpolated.
-    void interpolate(Function& u, const Expression& u0); 
+    void interpolate(Function& u, const Expression& u0);
 
     /// Interpolate function (on possibly non-matching meshes)
     ///
     /// *Arguments*
     ///     u  (_Function_)
-    ///         The resulting Function    
+    ///         The resulting Function
     ///     u0 (_Function_)
     ///         The Function to be interpolated.
-    void interpolate(Function& u, const Function& u0); 
+    void interpolate(Function& u, const Function& u0);
 
   private:
 
     // Create a map from coordinates to a list of dofs that share the coordinate
-    std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate > 
+    std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate >
       tabulate_coordinates_to_dofs(const GenericDofMap& dofmap, const Mesh& mesh);
 
     // Create a map from dof to its component index in Mixed Space
-    void extract_dof_component_map(boost::unordered_map<std::size_t, std::size_t>& 
+    void extract_dof_component_map(std::unordered_map<std::size_t, std::size_t>&
       dof_component_map, const FunctionSpace& V, int* component);
 
     // Return true if point lies within bounding box

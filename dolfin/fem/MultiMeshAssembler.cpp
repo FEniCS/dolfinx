@@ -314,8 +314,6 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
       // Get facet normals
       const auto& facet_normals = multimesh->facet_normals(part);
 
-      cout << "Number of cut cells on interface: " << cmap.size() << endl;
-
       // Iterate over all cut cells in collision map
       for (auto it = cmap.begin(); it != cmap.end(); ++it)
       {
