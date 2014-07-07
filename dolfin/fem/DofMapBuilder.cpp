@@ -211,15 +211,13 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                                node_graph0,
                                shared_nodes, global_nodes0,
                                node_local_to_global0, mesh);
-    /*
-    std::cout << "Share noded to proc size: " << MPI::rank(mesh.mpi_comm())
-              << ", " << shared_node_to_processes0.size() << std::endl;
-    for (std::size_t i = 0; i < node_ownership0.size(); ++i)
-    {
-      std::cout << "Node ownership: " << MPI::rank(mesh.mpi_comm()) << ", "
-                << i << ", "  << node_ownership0[i] << std::endl;
-    }
-    */
+    //std::cout << "Share noded to proc size: " << MPI::rank(mesh.mpi_comm())
+    //          << ", " << shared_node_to_processes0.size() << std::endl;
+    //for (std::size_t i = 0; i < node_ownership0.size(); ++i)
+    //{
+    //  std::cout << "Node ownership: " << MPI::rank(mesh.mpi_comm()) << ", "
+    //            << i << ", "  << node_ownership0[i] << std::endl;
+    //}
 
     // Set global offset for dofs owned by this process, and the local
     // ownership size
@@ -1452,8 +1450,9 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     // Get cell to which facet belongs (pick first)
     const Cell cell0(mesh, f->entities(D)[0]);
 
-    // Determine if we have a shared facet (connected to one owned and
-    // one ghost cell)
+    // Determine if we have a shared facet (if we have ghost mesh
+    // connected to one owned and one ghost cell, if not ghosted only
+    // one local connected cell and two globally connected cells)
     bool shared_facet = false;
     if (f->num_entities(D) == 2)
     {
@@ -1461,6 +1460,8 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
       if (cell0.is_ghost() != cell1.is_ghost())
         shared_facet = true;
     }
+    else if (f->num_entities(D) == 1 and f->num_global_entities(D) == 2)
+      shared_facet = true;
 
     // Tabulate dofs (local) on cell
     const std::vector<la_index>& cell_nodes = node_dofmap[cell0.index()];
@@ -1469,16 +1470,17 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), cell0.index(*f));
 
     // Mark boundary nodes and insert into map
-    for (std::size_t i = 0; i < facet_nodes.size(); ++i)
+    if (shared_facet)
     {
-      // Get facet node local index and assign votes (positive integer)
-      if (shared_facet)
+      for (std::size_t i = 0; i < facet_nodes.size(); ++i)
       {
+        // Get facet node local index and assign votes (positive integer)
         size_t facet_node_local = cell_nodes[facet_nodes[i]];
         if (shared_nodes[facet_node_local] < 0)
           shared_nodes[facet_node_local] = distribution(engine);
       }
     }
+
   }
 }
 //-----------------------------------------------------------------------------
@@ -1627,8 +1629,8 @@ void DofMapBuilder::compute_node_reodering(
     = MPI::global_offset(mpi_comm, owned_local_size, true);
   //std::cout << "Process offset: " << MPI::rank(mpi_comm) << ", "
   //          << process_offset << std::endl;
-  std::cout << "Node ownership size: " << MPI::rank(mpi_comm) << ", "
-            << node_ownership.size() << std::endl;
+  //std::cout << "Node ownership size: " << MPI::rank(mpi_comm) << ", "
+  //          << node_ownership.size() << std::endl;
 
   // Allocate space
   old_to_new_local.clear();

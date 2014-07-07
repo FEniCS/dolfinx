@@ -119,10 +119,11 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
         parameters["num_threads"] = 0
 
-    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_facet_assembly(self):
 
+        parameters["ghost_mode"] = "shared_facet"
         mesh = UnitSquareMesh(24, 24)
+        parameters["ghost_mode"] = "none"
         V = FunctionSpace(mesh, "DG", 1)
 
         # Define test and trial functions

@@ -96,8 +96,8 @@ namespace dolfin
       std::set<std::string> allowed_ghost_modes;
       allowed_ghost_modes.insert("shared_facet");
       allowed_ghost_modes.insert("shared_vertex");
-      allowed_ghost_modes.insert("None");
-      p.add("ghost_mode", "None", allowed_ghost_modes);
+      allowed_ghost_modes.insert("none");
+      p.add("ghost_mode", "none", allowed_ghost_modes);
 
       // Mesh ordering via SCOTCH and GPS
       p.add("reorder_cells_gps", false);
