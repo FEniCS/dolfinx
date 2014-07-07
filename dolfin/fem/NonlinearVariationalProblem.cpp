@@ -113,7 +113,7 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
 NonlinearVariationalProblem::NonlinearVariationalProblem(
   std::shared_ptr<const Form> F,
   std::shared_ptr<Function> u,
-  std::vector<std::shared_ptr<const DirichletBC> > bcs)
+  std::vector<std::shared_ptr<const DirichletBC>> bcs)
   : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F), _u(u)
 {
   // Store boundary conditions
@@ -127,7 +127,7 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
 NonlinearVariationalProblem::NonlinearVariationalProblem(
   std::shared_ptr<const Form> F,
   std::shared_ptr<Function> u,
-  std::vector<std::shared_ptr<const DirichletBC> > bcs,
+  std::vector<std::shared_ptr<const DirichletBC>> bcs,
   std::shared_ptr<const Form> J)
   : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F), _jacobian(J), _u(u)
 {
@@ -189,7 +189,7 @@ std::shared_ptr<const Function> NonlinearVariationalProblem::solution() const
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<const DirichletBC> >
+std::vector<std::shared_ptr<const DirichletBC>>
 NonlinearVariationalProblem::bcs() const
 {
   return _bcs;

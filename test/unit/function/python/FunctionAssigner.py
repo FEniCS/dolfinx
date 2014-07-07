@@ -77,10 +77,10 @@ class Creation(unittest.TestCase):
 
         assigner = FunctionAssigner(W.sub(0), V)
         assigner.assign(self.w.sub(0), self.u0)
-        
+
         self.assertTrue(np.all(self.w.sub(0, deepcopy=True).vector().array() == \
                                self.u0.vector().array()))
-        
+
         assign(self.w.sub(2), self.u2)
         self.assertTrue(np.all(self.w.sub(2, deepcopy=True).vector().array() == \
                                self.u2.vector().array()))
@@ -119,7 +119,7 @@ class Creation(unittest.TestCase):
         vv = Function(W)
         assigner = FunctionAssigner(W, [V,V,V])
         assigner.assign(vv, [self.u0, self.u1, self.u2])
-        
+
         self.assertTrue(np.all(vv.sub(0, deepcopy=True).vector().array() == \
                                self.u0.vector().array()))
         self.assertTrue(np.all(vv.sub(1, deepcopy=True).vector().array() == \

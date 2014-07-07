@@ -127,7 +127,7 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     x_local = A.partialPivLu().solve(b);
 
     // Set solution in global vector
-    x.set(x_local.data(), dofs_a0.size(), dofs_a0.data());
+    x.set_local(x_local.data(), dofs_a0.size(), dofs_a0.data());
 
     p++;
   }

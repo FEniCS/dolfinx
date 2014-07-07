@@ -46,9 +46,6 @@ This is equivalent to solving the variational problem
 
 from dolfin import *
 
-if has_linear_algebra_backend("Epetra"):
-    parameters["linear_algebra_backend"] = "Epetra"
-
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):

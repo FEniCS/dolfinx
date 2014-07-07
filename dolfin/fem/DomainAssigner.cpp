@@ -33,7 +33,7 @@ CellDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
 }
 //-----------------------------------------------------------------------------
 const CellDomainAssigner&
-CellDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains)
+CellDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   _form.set_cell_domains(domains);
   return *this;
@@ -47,7 +47,7 @@ ExteriorFacetDomainAssigner::operator= (const MeshFunction<std::size_t>& domains
 }
 //-----------------------------------------------------------------------------
 const ExteriorFacetDomainAssigner&
-ExteriorFacetDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains)
+ExteriorFacetDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   _form.set_exterior_facet_domains(domains);
   return *this;
@@ -61,7 +61,7 @@ InteriorFacetDomainAssigner::operator= (const MeshFunction<std::size_t>& domains
 }
 //-----------------------------------------------------------------------------
 const InteriorFacetDomainAssigner&
-InteriorFacetDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains)
+InteriorFacetDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   _form.set_interior_facet_domains(domains);
   return *this;
