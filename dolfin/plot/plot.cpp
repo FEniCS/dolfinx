@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2014-04-28
+// Last changed: 2014-06-11
 
 #include <cstdlib>
 #include <sstream>
@@ -76,8 +76,8 @@ std::shared_ptr<VTKPlotter> get_plotter(std::shared_ptr<const Variable> obj,
 //-----------------------------------------------------------------------------
 // Function for plotting objects
 std::shared_ptr<VTKPlotter> plot_object(std::shared_ptr<const Variable> obj,
-                                          std::shared_ptr<const Parameters> p,
-                                          std::string key)
+                                        std::shared_ptr<const Parameters> p,
+                                        std::string key)
 {
   // Get plotter from cache. Key given as parameter takes precedence.
   const Parameter *param_key = p->find_parameter("key");

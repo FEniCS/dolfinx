@@ -95,8 +95,6 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
         const std::size_t bs = dofmaps[i]->block_size;
         const std::size_t local_size
           = local_range[i].second - local_range[i].first;
-        std::cout << "Local size, dim: " << local_size << ", " <<
-          global_dimensions[i] << std::endl;
         const std::vector<std::size_t>& local_to_global_unowned
           = dofmaps[i]->local_to_global_unowned();
         tensor_layout->local_to_global_map[i].resize(local_size

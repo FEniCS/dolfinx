@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2009.
+// Modified by Garth N. Wells 2009
 //
 // First added:  2008-11-03
-// Last changed: 2009-05-17
+// Last changed: 2014-06-11
 
 #include <dolfin/common/NoDeleter.h>
 #include "SubSpace.h"
@@ -26,7 +26,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SubSpace::SubSpace(const FunctionSpace& V, std::size_t component)
+SubSpace::SubSpace(const FunctionSpace& V,
+                   std::size_t component)
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Create array
@@ -38,7 +39,9 @@ SubSpace::SubSpace(const FunctionSpace& V, std::size_t component)
   *static_cast<FunctionSpace*>(this) = *_function_space;
 }
 //-----------------------------------------------------------------------------
-SubSpace::SubSpace(const FunctionSpace& V, std::size_t component, std::size_t sub_component)
+SubSpace::SubSpace(const FunctionSpace& V,
+                   std::size_t component,
+                   std::size_t sub_component)
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Create array
@@ -51,7 +54,8 @@ SubSpace::SubSpace(const FunctionSpace& V, std::size_t component, std::size_t su
   *static_cast<FunctionSpace*>(this) = *_function_space;
 }
 //-----------------------------------------------------------------------------
-SubSpace::SubSpace(const FunctionSpace& V, const std::vector<std::size_t>& component)
+SubSpace::SubSpace(const FunctionSpace& V,
+                   const std::vector<std::size_t>& component)
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Extract subspace and assign
