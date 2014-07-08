@@ -228,9 +228,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     dofmap._local_ownership_size = bs*num_owned_nodes;
 
     // Sanity check
-    //std::cout << "Local (sum), global dof size: "
-    //          << MPI::sum(mesh.mpi_comm(), dofmap._local_ownership_size)
-    //          << ", " << dofmap._global_dimension << std::endl;
+    std::cout << "Local (sum), global dof size: "
+              << MPI::sum(mesh.mpi_comm(), dofmap._local_ownership_size)
+              << ", " << dofmap._global_dimension << std::endl;
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
                            (std::size_t) dofmap._local_ownership_size)
                   == dofmap._global_dimension);
@@ -1463,6 +1463,8 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     //else if (f->num_entities(D) == 1 and f->num_global_entities(D) == 2)
     else //NOTE: above test works for non-periodic problems
       shared_facet = true;
+
+    shared_facet = true;
 
     // Tabulate dofs (local) on cell
     const std::vector<la_index>& cell_nodes = node_dofmap[cell0.index()];

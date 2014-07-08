@@ -41,7 +41,7 @@ using a discontinuous Galerkin formulation (interior penalty method).
 from dolfin import *
 
 # FIXME: Make mesh ghosted
-#parameters["ghost_mode"] = "shared_facet"
+parameters["ghost_mode"] = "shared_facet"
 
 # Optimization options for the form compiler
 parameters["form_compiler"]["cpp_optimize"] = True
