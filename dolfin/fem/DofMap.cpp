@@ -378,7 +378,7 @@ std::vector<dolfin::la_index> DofMap::dofs() const
   {
     for (std::size_t i = 0; i < cell_dofs->size(); ++i)
     {
-      const std::size_t dof = (*cell_dofs)[i];
+      const std::size_t dof = (*cell_dofs)[i] + r0;
       if (dof >= r0 && dof < r1)
         _dofs.push_back(dof);
     }

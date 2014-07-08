@@ -771,7 +771,7 @@ void PETScPreconditioner::set_fieldsplit(PETScKrylovSolver& solver,
     if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
 
     // Add split
-    PCFieldSplitSetIS(pc, split_names[i].c_str(), is);
+    ierr = PCFieldSplitSetIS(pc, split_names[i].c_str(), is);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCFieldSplitSetIS");
 
     // Clean up IndexSet
