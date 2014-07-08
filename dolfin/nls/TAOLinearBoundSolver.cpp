@@ -52,6 +52,7 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
                               ("minres",     KSPMINRES  )
                               ("tfqmr",      KSPTFQMR   )
                               ("richardson", KSPRICHARDSON)
+                              ("nash",       KSPNASH     )
                               ("stcg",       KSPSTCG     )
                               ("bicgstab",   KSPBCGS    );
 //-----------------------------------------------------------------------------
