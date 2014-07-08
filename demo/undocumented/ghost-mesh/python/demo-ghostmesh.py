@@ -10,8 +10,8 @@ import matplotlib as mpl
 import numpy as np
 import sys
 
-#parameters["ghost_mode"] = "shared_vertex"
-parameters["ghost_mode"] = "shared_facet"
+parameters["ghost_mode"] = "shared_vertex"
+#parameters["ghost_mode"] = "shared_facet"
 # parameters["ghost_mode"] = "None"
 parameters["reorder_cells_gps"] = True
 parameters["reorder_vertices_gps"] = True
@@ -32,7 +32,7 @@ mpi_rank = MPI.rank(mpi_comm_world())
 
 #parameters["mesh_partitioner"] = "ParMETIS"
 
-mesh = UnitSquareMesh(32, 32)
+mesh = UnitSquareMesh(8, 8)
 # mesh = refine(M)
 
 shared_vertices = mesh.topology().shared_entities(0).keys()
@@ -145,4 +145,4 @@ for note in facet_note:
 # xdmf = File("a.xdmf")
 # xdmf << Q
 
-# plt.show()
+plt.show()

@@ -228,11 +228,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     dofmap._local_ownership_size = bs*num_owned_nodes;
 
     // Sanity check
-    /*
-    std::cout << "Local (sum), global dof size: "
-              << MPI::sum(mesh.mpi_comm(), dofmap._local_ownership_size)
-              << ", " << dofmap._global_dimension << std::endl;
-    */
+    //std::cout << "Local (sum), global dof size: "
+    //          << MPI::sum(mesh.mpi_comm(), dofmap._local_ownership_size)
+    //          << ", " << dofmap._global_dimension << std::endl;
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
                            (std::size_t) dofmap._local_ownership_size)
                   == dofmap._global_dimension);
@@ -1443,8 +1441,10 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
   std::vector<std::size_t> facet_nodes(ufc_dofmap.num_facet_dofs());
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
-    // Skip is facet is not shared
-    if (!f->is_shared())
+    // Skip if facet is not shared
+    // NOTE: second test is for periodic problems
+    if (!f->is_shared() and f->num_entities(D) == 2)
+    //if (!f->is_shared())
       continue;
 
     // Get cell to which facet belongs (pick first)
@@ -1460,7 +1460,8 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
       if (cell0.is_ghost() != cell1.is_ghost())
         shared_facet = true;
     }
-    else if (f->num_entities(D) == 1 and f->num_global_entities(D) == 2)
+    //else if (f->num_entities(D) == 1 and f->num_global_entities(D) == 2)
+    else //NOTE: above test works for non-periodic problems
       shared_facet = true;
 
     // Tabulate dofs (local) on cell

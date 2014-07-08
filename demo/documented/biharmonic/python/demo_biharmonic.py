@@ -40,6 +40,9 @@ using a discontinuous Galerkin formulation (interior penalty method).
 
 from dolfin import *
 
+# FIXME: Make mesh ghosted
+#parameters["ghost_mode"] = "shared_facet"
+
 # Optimization options for the form compiler
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["optimize"] = True
@@ -47,6 +50,8 @@ parameters["form_compiler"]["optimize"] = True
 # Create mesh and define function space
 mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 2)
+
+exit(0)
 
 # Define Dirichlet boundary
 class DirichletBoundary(SubDomain):
