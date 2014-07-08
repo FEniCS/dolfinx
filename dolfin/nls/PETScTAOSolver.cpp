@@ -97,35 +97,49 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                                   const GenericVector& lb,
                                   const GenericVector& ub)
 {
+  return solve(optimisation_problem,
+               x.down_cast<PETScVector>(),
+               lb.down_cast<PETScVector>(),
+               ub.down_cast<PETScVector>());
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
+                                  PETScVector& x,
+                                  const PETScVector& lb,
+                                  const PETScVector& ub)
+{
   // Form the optimisation problem object
   _tao_ctx.optimisation_problem = &optimisation_problem;
-  _tao_ctx.x = &x.down_cast<PETScVector>();
+  _tao_ctx.x = &x;
+
+  // Initialize the Hessian matrix
+  PETScVector g;
+  optimisation_problem.form(_H, g, x);
+  optimisation_problem.H(_H, x);
 
   // Set initial vector
-  TaoSetInitialVector(_tao, x.down_cast<PETScVector>().vec());
+  TaoSetInitialVector(_tao, _tao_ctx.x->vec());
 
   // Set the bound on the variables
-  TaoSetVariableBounds(_tao,
-                       lb.down_cast<PETScVector>().vec(),
-                       ub.down_cast<PETScVector>().vec());
+  TaoSetVariableBounds(_tao, lb.vec(), ub.vec());
 
   // Set the user function, gradient and Hessian evaluation routines and
   // data structures
   TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
-  TaoSetHessianRoutine(_tao, _H->mat(), _H->mat(), FormHessian, &_tao_ctx);
+  TaoSetHessianRoutine(_tao, _H.mat(), _H.mat(), FormHessian, &_tao_ctx);
 
   // Solve the bound constrained problem
   Timer timer("TAO solver");
   const char* tao_type;
   TaoGetType(_tao, &tao_type);
   log(PROGRESS, "TAO solver %s starting to solve %i x %i system", tao_type,
-      _H->size(0), _H->size(1));
+      _H.size(0), _H.size(1));
 
   // Solve
   TaoSolve(_tao);
 
   // Update ghost values
-  x.down_cast<PETScVector>().update_ghost_values();
+  x.update_ghost_values();
 
   // Print the report on convergences and methods used
   if (parameters["report"])
@@ -155,8 +169,8 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
     }
     else
     {
-      log(WARNING,  "TAO solver %s failed to converge. Try a different TAO method" \
-                    " or adjust some parameters.", tao_type);
+      log(WARNING, "TAO solver %s failed to converge. Try a different TAO method" \
+                   " or adjust some parameters.", tao_type);
     }
   }
 
@@ -170,10 +184,15 @@ PetscErrorCode PETScTAOSolver::FormFunctionGradient(Tao tao, Vec x,
   // Get the optimisation problem object
   struct tao_ctx_t tao_ctx = *(struct tao_ctx_t*) ctx;
   OptimisationProblem* optimisation_problem = tao_ctx.optimisation_problem;
+  // PETScVector* _x = tao_ctx.x;
 
   // Wrap the PETSc objects
   PETScVector x_wrap(x);
   PETScVector g_wrap(g);
+
+  // Update ghost values
+  // *_x = x_wrap;
+  // _x ->update_ghost_values();
 
   // Compute the objective function f and its gradient g = f'
   PETScMatrix H;
@@ -190,10 +209,15 @@ PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
   // Get the optimisation problem object
   struct tao_ctx_t tao_ctx = *(struct tao_ctx_t*) ctx;
   OptimisationProblem* optimisation_problem = tao_ctx.optimisation_problem;
+  // PETScVector* _x = tao_ctx.x;
 
   // Wrap the PETSc objects
   PETScVector x_wrap(x);
   PETScMatrix H_wrap(H);
+
+  // Update ghost values
+  // *_x = x_wrap;
+  // _x ->update_ghosst_values();
 
   // Compute the hessian H(x) = f''(x)
   PETScVector g;

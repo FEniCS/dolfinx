@@ -72,6 +72,25 @@ namespace dolfin
                       const GenericVector& lb,
                       const GenericVector& ub);
 
+    /// Solve a nonlinear bound-constrained optimisation problem
+  
+    /// *Arguments*
+    ///     optimisation_problem (:py:class:`OptimisationProblem`)
+    ///         The nonlinear optimisation problem.
+    ///     x (:py:class:`PETScVector`)
+    ///         The vector.
+    ///     lb (:py:class:`PETScVector`)
+    ///         The lower bound.
+    ///     ub (:py:class:`PETScVector`)
+    ///         The upper bound.
+    
+    /// *Returns*
+    ///     number of iterations
+    std::size_t solve(OptimisationProblem& optimisation_problem,
+                      PETScVector& x,
+                      const PETScVector& lb,
+                      const PETScVector& ub);
+
     /// Return a list of available solver methods
     // static std::vector<std::pair<std::string, std::string> > methods();
 
@@ -99,6 +118,9 @@ namespace dolfin
     /// PETSc solver pointer
     Tao _tao;
 
+    /// Hessian matrix
+    PETScMatrix _H;
+
     /// Initialize TAO solver
     void init(const std::string& method);
 
@@ -111,9 +133,6 @@ namespace dolfin
     // Compute the hessian H(x) = f''(x)
     static PetscErrorCode FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
                                       void *ctx);
-
-    // The Hessian matrix
-    std::shared_ptr<const PETScMatrix> _H;
     
   };
 
