@@ -375,7 +375,7 @@ std::vector<dolfin::la_index> DofMap::dofs() const
     for (std::size_t i = 0; i < cell_dofs->size(); ++i)
     {
       const std::size_t dof = (*cell_dofs)[i];
-      if (dof < _local_ownership_range)
+      if (dof < _local_ownership_size)
         _dofs.push_back(dof + _global_offset);
     }
   }
