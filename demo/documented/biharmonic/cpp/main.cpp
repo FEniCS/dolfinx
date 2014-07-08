@@ -64,6 +64,9 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+  // FIXME: Make mesh ghosted
+  parameters["ghost_mode"] = "shared_facet";
+
   // Create mesh
   UnitSquareMesh mesh(32, 32);
 

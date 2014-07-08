@@ -51,8 +51,6 @@ parameters["form_compiler"]["optimize"] = True
 mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 2)
 
-exit(0)
-
 # Define Dirichlet boundary
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):

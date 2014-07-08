@@ -228,9 +228,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     dofmap._local_ownership_size = bs*num_owned_nodes;
 
     // Sanity check
-    std::cout << "Local (sum), global dof size: "
-              << MPI::sum(mesh.mpi_comm(), dofmap._local_ownership_size)
-              << ", " << dofmap._global_dimension << std::endl;
+    //std::cout << "Local (sum), global dof size: "
+    //          << MPI::sum(mesh.mpi_comm(), dofmap._local_ownership_size)
+    //          << ", " << dofmap._global_dimension << std::endl;
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
                            (std::size_t) dofmap._local_ownership_size)
                   == dofmap._global_dimension);
@@ -1417,6 +1417,9 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
   // Mark dofs associated ghost cells as ghost dofs (provisionally)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
+    //if (MPI::rank(MPI_COMM_WORLD) == 1)
+    //    std::cout << "Cell: " << c->index() << ", " << c->midpoint().str(true)
+    //              << ", " << c->is_ghost() << ", " << c->is_shared()  << std::endl;
     if (c->is_ghost())
     {
       const std::vector<la_index>& cell_nodes = node_dofmap[c->index()];
@@ -1445,26 +1448,27 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     // NOTE: second test is for periodic problems
     if (!f->is_shared() and f->num_entities(D) == 2)
     //if (!f->is_shared())
+    {
       continue;
+    }
 
     // Get cell to which facet belongs (pick first)
     const Cell cell0(mesh, f->entities(D)[0]);
 
-    // Determine if we have a shared facet (if we have ghost mesh
-    // connected to one owned and one ghost cell, if not ghosted only
-    // one local connected cell and two globally connected cells)
+    // Determine if we have a shared facet that needs to 'export' its
+    // dof indices
     bool shared_facet = false;
-    if (f->num_entities(D) == 2)
+    if (f->is_ghost())
     {
-      const Cell cell1(mesh, f->entities(D)[1]);
-      if (cell0.is_ghost() != cell1.is_ghost())
-        shared_facet = true;
+      if (f->num_entities(D) == 2)
+      {
+        const Cell cell1(mesh, f->entities(D)[1]);
+        if (cell0.is_ghost() != cell1.is_ghost())
+          shared_facet = true;
+      }
     }
-    //else if (f->num_entities(D) == 1 and f->num_global_entities(D) == 2)
-    else //NOTE: above test works for non-periodic problems
+    else
       shared_facet = true;
-
-    shared_facet = true;
 
     // Tabulate dofs (local) on cell
     const std::vector<la_index>& cell_nodes = node_dofmap[cell0.index()];
