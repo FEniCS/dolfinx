@@ -133,6 +133,8 @@ Point MeshEntity::midpoint() const
     num_vertices++;
   }
 
+  dolfin_assert(num_vertices > 0);
+
   x /= double(num_vertices);
   y /= double(num_vertices);
   z /= double(num_vertices);

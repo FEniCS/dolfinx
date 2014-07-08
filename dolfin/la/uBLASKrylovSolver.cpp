@@ -82,7 +82,9 @@ uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      uBLASPreconditioner& pc)
-  : _method(method), _pc(reference_to_no_delete_pointer(pc)), report(false)
+  : _method(method), _pc(reference_to_no_delete_pointer(pc)),
+  rtol(0.0), atol(0.0), div_tol(0.0), max_it(0), restart(0),
+  report(false)
 {
   // Set parameter values
   parameters = default_parameters();
