@@ -77,57 +77,6 @@ std::shared_ptr<GenericVector> uBLASVector::copy() const
   return y;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm, std::size_t N)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  if (_x->size() == N)
-    return;
-  _x->resize(N, false);
-
-  // Set vector to zero
-  _x->clear();
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  resize(comm, range.second - range.first);
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range,
-                         const std::vector<la_index>& ghost_indices)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  if (!ghost_indices.empty())
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  resize(comm, range.second - range.first);
-}
-//-----------------------------------------------------------------------------
 bool uBLASVector::empty() const
 {
   return _x->empty();
@@ -410,5 +359,16 @@ std::string uBLASVector::str(bool verbose) const
 GenericLinearAlgebraFactory& uBLASVector::factory() const
 {
   return uBLASFactory<>::instance();
+}
+//-----------------------------------------------------------------------------
+void uBLASVector::resize(std::size_t N)
+{
+  if (_x->size() == N)
+    return;
+  else
+    _x->resize(N, false);
+
+  // Set vector to zero
+  _x->clear();
 }
 //-----------------------------------------------------------------------------

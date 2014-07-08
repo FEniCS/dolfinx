@@ -864,14 +864,7 @@ void PETScVector::_init(MPI_Comm comm,
 {
   PetscErrorCode ierr;
   if (_x)
-  {
-    #ifdef DOLFIN_DEPRECATION_ERROR
-    error("PETScVector cannot be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
-    #else
-    warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error.");
-    #endif
-    VecDestroy(&_x);
-  }
+    error("PETScVector cannot be initialized more than once.");
 
   // GPU support does not work in parallel
   if (_use_gpu && MPI::size(comm) > 1)
@@ -915,7 +908,7 @@ void PETScVector::_init(MPI_Comm comm,
     for (std::size_t i = 0; i < size; ++i)
       _map[i] = i + range.first;
   }
-  #if PETSC_VERSION_RELEASE
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
   ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map.size(), _map.data(),
                                PETSC_COPY_VALUES, &petsc_local_to_global);
   #else

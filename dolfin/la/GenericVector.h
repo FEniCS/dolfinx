@@ -157,35 +157,6 @@ namespace dolfin
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices) = 0;
 
-    /// Deprecated: resize vector to global size N
-    virtual void resize(MPI_Comm comm, std::size_t N)
-    {
-      deprecation("GenericVector::resize(...)", "1.4", "1.5",
-                  "Use GenericVector::init(...) (can only be called once).");
-      init(comm, N);
-    }
-
-    /// Deprecated: resize vector with given ownership range
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range)
-    {
-      deprecation("GenericVector::resize(...)", "1.4", "1.5",
-                  "Use GenericVector::init(...) (can only be called once).");
-      init(comm, range);
-    }
-
-    /// Deprevated: resize vector with given ownership range and with
-    /// ghost values
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices)
-    {
-      deprecation("GenericVector::resize(...)", "1.4", "1.5",
-                  "Use GenericVector::init(...) (can only be called once).");
-      std::vector<std::size_t> tmp;
-      init(comm, range, tmp, ghost_indices);
-    }
-
     /// Return global size of vector
     virtual std::size_t size() const = 0;
 

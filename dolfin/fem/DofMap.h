@@ -23,7 +23,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-09-19
+// Last changed: 2014-07-04
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -376,17 +376,6 @@ namespace dolfin
     void set_x(GenericVector& x, double value, std::size_t component,
                const Mesh& mesh) const;
 
-    // FIXME: This is a stupid function
-    /// Add given offset to all dofs
-    void add_offset(dolfin::la_index offset)
-    {
-      std::vector<std::vector<dolfin::la_index> >::iterator it;
-      std::vector<dolfin::la_index>::iterator jt;
-      for (it = _dofmap.begin(); it != _dofmap.end(); ++it)
-        for (jt = it->begin(); jt != it->end(); ++jt)
-          *jt += offset;
-    }
-
     /// Compute the map from local (this process) dof indices to
     /// global dof indices.
     ///
@@ -494,6 +483,9 @@ namespace dolfin
     { return _local_to_global_unowned; }
 
   private:
+
+    // Temporary until MultiMeshDofMap runs in parallel
+    friend class MultiMeshDofMap;
 
     // Map from local index of un-owned dofs to global dof index
     std::vector<std::size_t> _local_to_global_unowned;
