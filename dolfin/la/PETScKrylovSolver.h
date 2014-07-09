@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2005-2010
 //
 // First added:  2005-12-02
-// Last changed: 2012-08-20
+// Last changed: 2014-07-09
 
 #ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
 #define __DOLFIN_PETSC_KRYLOV_SOLVER_H
@@ -141,6 +141,8 @@ namespace dolfin
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
+
+    friend class PETScTAOSolver;
 
   private:
 
