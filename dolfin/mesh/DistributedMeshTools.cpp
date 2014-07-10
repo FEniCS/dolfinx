@@ -1057,11 +1057,9 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       if (f->index() >= num_regular_facets && n_cells == 1)
       {
         // Singly attached ghost facet - check with owner of attached cell
-        CellIterator c(*f);
-        dolfin_assert(c->index() >= num_regular_cells);
-        const std::size_t cell_owner 
-          = mesh.topology().cell_owner()[c->index() - num_regular_cells];
-        send_facet[cell_owner].push_back(f->global_index());
+        const Cell c(mesh, f->entities(D)[0]);
+        dolfin_assert(c.index() >= num_regular_cells);
+        send_facet[c.owner()].push_back(f->global_index());
       }
     }
     

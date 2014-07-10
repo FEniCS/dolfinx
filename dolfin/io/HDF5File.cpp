@@ -285,7 +285,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
-      for (MeshEntityIterator c(mesh, cell_dim, "regular"); !c.end(); ++c)
+      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
         for (VertexIterator v(*c); !v.end(); ++v)
           topological_data.push_back(v->global_index());
     }
@@ -301,9 +301,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       const std::size_t mpi_rank = MPI::rank(_mpi_comm);
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
-
-      const std::size_t num_regular_entities 
-        = mesh.topology().ghost_offset(cell_dim);
 
       const std::size_t tdim = mesh.topology().dim();
       
@@ -332,8 +329,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         }
       }
 
-      for (MeshEntityIterator ent(mesh, cell_dim); 
-           ent->index() != num_regular_entities; ++ent)
+      for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
       {
         // If not excluded, add to topology
         if (non_local_entities.find(ent->index()) == non_local_entities.end())
@@ -680,7 +676,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
   {
-    // No duplicates
+    // No duplicates - ignore ghost cells if present
     data_values.assign(meshfunction.values(),
                        meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
   }
@@ -694,8 +690,6 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     const std::size_t mpi_rank = MPI::rank(_mpi_comm);
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
       = mesh.topology().shared_entities(cell_dim);
-    const std::size_t num_regular_entities 
-      = mesh.topology().ghost_offset(cell_dim);
 
     std::set<unsigned int> non_local_entities;
     if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
@@ -721,10 +715,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       }
     }
     
-    for (std::size_t i = 0; i < num_regular_entities; ++i)
+    for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
     {
-      if (non_local_entities.find(i) == non_local_entities.end())
-        data_values.push_back(meshfunction[i]);
+      if (non_local_entities.find(ent->index()) == non_local_entities.end())
+        data_values.push_back(meshfunction[*ent]);
     }
   }
   
