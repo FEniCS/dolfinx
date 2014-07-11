@@ -779,11 +779,13 @@ void HDF5File::write(const Function& u, const std::string name)
   // Save data in compressed format with an index to mark out
   // the start of each row
 
+  const std::size_t tdim = mesh.topology().dim();
   std::vector<dolfin::la_index> cell_dofs;
   std::vector<std::size_t> x_cell_dofs;
-  x_cell_dofs.reserve(mesh.num_cells());
+  const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
+  x_cell_dofs.reserve(n_cells);
 
-  for (std::size_t i = 0; i != mesh.num_cells(); ++i)
+  for (std::size_t i = 0; i != n_cells; ++i)
   {
     x_cell_dofs.push_back(cell_dofs.size());
     const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
@@ -805,13 +807,14 @@ void HDF5File::write(const Function& u, const std::string name)
   write_data(name + "/cell_dofs", cell_dofs, global_size, mpi_io);
   if (MPI::rank(_mpi_comm) == MPI::size(_mpi_comm) - 1)
     x_cell_dofs.push_back(global_size[0]);
-  global_size[0] = mesh.size_global(mesh.topology().dim()) + 1;
+  global_size[0] = mesh.size_global(tdim) + 1;
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
 
-  // Save cell ordering
-  const std::vector<std::size_t>& cells =
-    mesh.topology().global_indices(mesh.topology().dim());
-  global_size[0] = mesh.size_global(mesh.topology().dim());
+  // Save cell ordering - copy to local vector and cut off ghosts
+  std::vector<std::size_t> cells(mesh.topology().global_indices(tdim).begin(),
+                       mesh.topology().global_indices(tdim).begin() + n_cells);
+
+  global_size[0] = mesh.size_global(tdim);
   write_data(name + "/cells", cells, global_size, mpi_io);
 
   // Save vector
