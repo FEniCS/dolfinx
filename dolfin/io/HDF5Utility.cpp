@@ -140,6 +140,9 @@ void HDF5Utility::get_global_dof(
   std::vector<std::vector<std::size_t> > receive_cell_dofs(num_processes);
   MPI::all_to_all(mpi_comm, send_cell_dofs, receive_cell_dofs);
 
+  std::vector<std::size_t> local_to_global_map;
+  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+
   // Return back the global dof to the process the request came from
   std::vector<std::vector<dolfin::la_index> >
     send_global_dof_back(num_processes);
@@ -150,7 +153,10 @@ void HDF5Utility::get_global_dof(
     {
       const std::vector<dolfin::la_index>& dmap = dofmap.cell_dofs(rdof[j]);
       dolfin_assert(rdof[j + 1] < dmap.size());
-      send_global_dof_back[i].push_back(dmap[rdof[j + 1]]);
+      const dolfin::la_index local_index = dmap[rdof[j + 1]];
+      dolfin_assert(local_index > 0);
+      dolfin_assert((std::size_t)local_index < local_to_global_map.size());
+      send_global_dof_back[i].push_back(local_to_global_map[local_index]);
     }
   }
 
