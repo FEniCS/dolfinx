@@ -105,7 +105,7 @@ namespace dolfin
 
   private:
 
-    // Convergence critera for simplified Newton solver
+    // Convergence criteria for simplified Newton solver
     enum convergence_criteria_t
     {
 
@@ -120,7 +120,7 @@ namespace dolfin
     void _lu_factorize(std::vector<double>& A);
 
     // Forward backward substitution, assume that mat is already
-    // inplace LU factorized
+    // in place LU factorized
     void _forward_backward_subst(const std::vector<double>& A,
 				 const std::vector<double>& b,
 				 std::vector<double>& x) const;
@@ -140,7 +140,7 @@ namespace dolfin
     // test functions
     void _check_forms();
 
-    // Build map between vertices, cells and the correspondning local
+    // Build map between vertices, cells and the corresponding local
     // vertex and initialize UFC data for each form
     void _init();
 

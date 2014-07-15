@@ -35,7 +35,7 @@ namespace dolfin
 
   class Mesh;
 
-  /// This class provides various funtionality for working with
+  /// This class provides various functionality for working with
   /// distributed meshes.
 
   class DistributedMeshTools

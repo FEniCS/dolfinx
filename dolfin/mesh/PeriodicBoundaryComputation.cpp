@@ -100,7 +100,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   std::map<std::vector<double>, unsigned int, lt_coordinate>
     master_coord_to_entity_index((lt_coordinate(sub_domain.map_tolerance)));
 
-  // Intialise facet-cell connectivity
+  // Initialise facet-cell connectivity
   mesh.init(tdim - 1, tdim);
   mesh.init(dim);
 
@@ -209,7 +209,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
     }
   }
 
-  // Send slave midpoints to possible owners of correspoding master
+  // Send slave midpoints to possible owners of corresponding master
   // entity
   std::vector<std::vector<double> > slave_mapped_coords_recv;
   MPI::all_to_all(mpi_comm,  slave_mapped_coords_send,
@@ -282,7 +282,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
 {
   dolfin_assert(mesh);
 
-  // Create MeshFunction and initialse to zero
+  // Create MeshFunction and initialise to zero
   MeshFunction<std::size_t> mf(*mesh, dim, 0);
 
   // Compute marker
@@ -299,7 +299,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
     // Set slave
     mf[slave->first] = 2;
 
-    // Pack master entity to send to all sharing proceses
+    // Pack master entity to send to all sharing processes
     dolfin_assert(slave->second.first < master_dofs_send.size());
     master_dofs_send[slave->second.first].push_back(slave->second.second);
   }
@@ -321,7 +321,7 @@ std::vector<std::pair<unsigned int, unsigned int> > >
     shared_entities[e->first] = e->second;
   }
 
-  // Mark and pack master to send to all sharing proceses
+  // Mark and pack master to send to all sharing processes
   master_dofs_send.clear();
   master_dofs_send.resize(MPI::size(mesh->mpi_comm()));
   for (std::size_t p = 0; p < master_dofs_recv.size(); ++p)

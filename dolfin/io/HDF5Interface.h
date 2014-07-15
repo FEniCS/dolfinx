@@ -223,7 +223,7 @@ namespace dolfin
     {
       dolfin_error("HDF5Interface.cpp",
                    "write dataset to HDF5 file",
-                   "Only rank 1 and rank 2 datsset are supported");
+                   "Only rank 1 and rank 2 dataset are supported");
     }
 
     // Get HDF5 data type

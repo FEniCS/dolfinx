@@ -837,7 +837,7 @@ bool CollisionDetection::point_in_tri(int i0,
 				      const Point& U2)
 {
   // Helper function for triangle triangle collision
-  // Is T1 completly inside T2?
+  // Is T1 completely inside T2?
   // Check if V0 is inside tri(U0,U1,U2)
   double a = U1[i1] - U0[i1];
   double b = -(U1[i0] - U0[i0]);

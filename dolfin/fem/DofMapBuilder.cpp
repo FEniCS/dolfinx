@@ -63,7 +63,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Check that mesh has been ordered
   if (!mesh.ordered())
   {
-     dolfin_error("DofMapBuiler.cpp",
+     dolfin_error("DofMapBuilder.cpp",
                   "create mapping of degrees of freedom",
                   "Mesh is not ordered according to the UFC numbering convention. "
                   "Consider calling mesh.order()");
@@ -196,7 +196,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                            node_graph0, node_ownership0, global_nodes0,
                            mesh.mpi_comm());
 
-    // Update UFC-locla-to-local map to account for re-ordering
+    // Update UFC-local-to-local map to account for re-ordering
     if (constrained_domain)
     {
       const std::size_t num_ufc_node_local = node_ufc_local_to_local0.size();
@@ -441,7 +441,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
       modified_vertex_indices_global[vertex->index()] = new_index++;
   }
 
-  // Send number of owned entities to compute offeset
+  // Send number of owned entities to compute offset
   std::size_t offset = MPI::global_offset(mpi_comm, new_index, true);
 
   // Add process offset to modified indices
@@ -635,7 +635,7 @@ DofMapBuilder::compute_node_ownership(
       node_ownership[i] = 1;
   }
 
-  // FIXME: The below algortihm can be improved (made more scalable)
+  // FIXME: The below algorithm can be improved (made more scalable)
   //        by distributing (dof, process) pairs to 'owner' range owner,
   //        then letting each process get the sharing process list. This
   //        will avoid interleaving communication and computation.
@@ -796,7 +796,7 @@ void DofMapBuilder::compute_global_dofs(
     // Loop through sub-dofmap looking for global dofs
     for (std::size_t i = 0; i < ufc_dofmap->num_sub_dofmaps(); ++i)
     {
-      // Extract sub-dofmap and intialise
+      // Extract sub-dofmap and initialise
       std::shared_ptr<ufc::dofmap>
         sub_dofmap(ufc_dofmap->create_sub_dofmap(i));
       compute_global_dofs(global_dofs,

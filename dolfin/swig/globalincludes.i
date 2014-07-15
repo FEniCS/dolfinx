@@ -41,7 +41,7 @@
 // function in the SWIG layer. This reduces code bloat.
 // NOTE: Hake Commenting out compactdefaultargs as it creates problems for SWIG 
 // NOTE: to evaluate bool arguments with default values where another method with
-// NOTE: the same number of arguments excists. 
+// NOTE: the same number of arguments exists. 
 //%feature("compactdefaultargs");
 
 // STL SWIG string class

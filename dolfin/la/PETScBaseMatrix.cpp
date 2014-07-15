@@ -119,7 +119,7 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   else
   {
     dolfin_error("PETScBaseMatrix.cpp",
-                 "intialize PETSc vector to match PETSc matrix",
+                 "initialize PETSc vector to match PETSc matrix",
                  "Dimension must be 0 or 1, not %d", dim);
   }
 

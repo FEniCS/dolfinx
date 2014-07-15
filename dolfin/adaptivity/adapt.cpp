@@ -555,7 +555,7 @@ const dolfin::MeshFunction<std::size_t>&
   {
     dolfin_error("adapt.cpp",
                  "adapt mesh function",
-                 "Unable to extract information about parent mesh entites");
+                 "Unable to extract information about parent mesh entities");
   }
 
   // Use very large value as 'undefined'
@@ -594,7 +594,7 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
   {
     dolfin_error("adapt.cpp",
                  "adapt markers",
-                 "Unable to extract information about parent mesh entites");
+                 "Unable to extract information about parent mesh entities");
   }
 
   // Extract parent map from data of refined mesh

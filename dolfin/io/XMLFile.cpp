@@ -260,7 +260,7 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
   }
   else
   {
-    // Read a MeshValueCollection on processs 0, then communicate to
+    // Read a MeshValueCollection on process 0, then communicate to
     // other procs
     std::size_t dim = 0;
     MeshValueCollection<T> mvc(t.mesh());
@@ -336,7 +336,7 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
       tmp_collection.init(dim);
     }
 
-    // Create local data and build value collectio
+    // Create local data and build value collection
     LocalMeshValueCollection<T> local_data(tmp_collection,
                                            tmp_collection.dim());
 

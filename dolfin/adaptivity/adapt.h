@@ -115,7 +115,7 @@ namespace dolfin
   ///         The new mesh
   ///     adapt_coefficients (bool)
   ///         Optional argument, default is true. If false, the form
-  ///         coefficients are not explictly adapted, but pre-adapted
+  ///         coefficients are not explicitly adapted, but pre-adapted
   ///         coefficients will be transferred.
   ///
   /// *Returns*
@@ -144,7 +144,7 @@ namespace dolfin
   ///         The new mesh
   ///     adapt_coefficients (bool)
   ///         Optional argument, default is true. If false, any form
-  ///         coefficients are not explictly adapted, but pre-adapted
+  ///         coefficients are not explicitly adapted, but pre-adapted
   ///         coefficients will be transferred.
   ///
   /// *Returns*

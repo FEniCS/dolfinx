@@ -185,7 +185,7 @@ void PointIntegralSolver::step(double dt)
     const ufc::point_integral& integral
       = *_last_stage_ufc->default_point_integral;
 
-    // Update coeffcients for last stage
+    // Update coefficients for last stage
     // TODO: Pass suitable bool vector here to avoid tabulating all
     // coefficient dofs:
     _last_stage_ufc->update(cell, vertex_coordinates, ufc_cell);
@@ -675,7 +675,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     }
 
     // Perform linear solve By forward backward substitution
-    //Timer forward_backward_substitution("Implicit stage: fb substituion");
+    //Timer forward_backward_substitution("Implicit stage: fb substitution");
     _forward_backward_subst(jac, _residual, _dx);
     //forward_backward_substitution.stop();
 
@@ -788,7 +788,7 @@ void PointIntegralSolver::_simplified_newton_solve(
 	     "relative_residual: %.3e, residual: %.3e.", max_iterations, vert_ind,
 	     relative_previous_residual, relative_residual, residual);
       }
-      error("Newton solver in PointIntegralSolver exeeded maximal iterations.");
+      error("Newton solver in PointIntegralSolver exceeded maximal iterations.");
     }
 
     // Update solution

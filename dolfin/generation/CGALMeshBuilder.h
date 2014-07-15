@@ -37,7 +37,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 
-// This file should not be indlued in any header files to avoid
+// This file should not be included in any header files to avoid
 // polluting DOLFIN with CGAL code.
 
 namespace dolfin
@@ -106,7 +106,7 @@ namespace dolfin
     {
       dolfin_error("CGALMeshBuilder.h",
                    "add CGAL cells to DOLFIN Mesh",
-                   "Cannot find suitable specialized template funtion");
+                   "Cannot find suitable specialized template function");
     }
 
     // Add cells (from 2D CGAL triangulation)
@@ -319,7 +319,7 @@ namespace dolfin
       // Notes:
       // - c->first is the volume cell
       // - c->second is the local facet index. Facet local index is same
-      //   loocal index of opposite vertex
+      //   local index of opposite vertex
 
       typedef typename T::Triangulation::Point Point_3;
       if (surface)
