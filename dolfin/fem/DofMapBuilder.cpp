@@ -643,14 +643,14 @@ DofMapBuilder::compute_node_ownership(
   // Decide ownership of shared nodes
   // Get MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
-  const std::size_t num_prococesses = MPI::size(mpi_comm);
+  const std::size_t num_processes = MPI::size(mpi_comm);
   const std::size_t process_number = MPI::rank(mpi_comm);
   std::vector<std::size_t> recv_buffer;
-  for (std::size_t k = 1; k < num_prococesses; ++k)
+  for (std::size_t k = 1; k < num_processes; ++k)
   {
     const std::size_t src
-      = (process_number - k + num_prococesses) % num_prococesses;
-    const std::size_t dest = (process_number + k) % num_prococesses;
+      = (process_number - k + num_processes) % num_processes;
+    const std::size_t dest = (process_number + k) % num_processes;
     MPI::send_recv(mpi_comm, send_buffer, dest, recv_buffer, src);
     for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
     {
@@ -715,7 +715,7 @@ DofMapBuilder::compute_node_ownership(
        node != global_nodes.end(); ++node)
   {
     dolfin_assert(*node < node_ownership.size());
-    if (process_number == num_prococesses - 1)
+    if (process_number == num_processes - 1)
       node_ownership[*node] = 0;
     else
     {
