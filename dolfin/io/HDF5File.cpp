@@ -945,7 +945,7 @@ void HDF5File::read(Function& u, const std::string name)
   // are actually on.
 
   // Find where the needed cells are held
-  std::vector<std::pair<std::size_t, std::size_t > >
+  std::vector<std::pair<std::size_t, std::size_t> >
     cell_ownership = HDF5Utility::cell_owners(mesh, global_cells);
 
   // Having found the cell location, the actual global_dof index

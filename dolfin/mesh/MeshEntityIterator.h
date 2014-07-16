@@ -79,7 +79,7 @@ namespace dolfin
       _entity.init(mesh, dim, 0);
 
       mesh.init(dim);
-      // pos_end = mesh.topology().size(dim); 
+      // End at ghost cells for normal iterator
       pos_end = mesh.topology().ghost_offset(dim);
     }
 
