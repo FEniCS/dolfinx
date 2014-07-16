@@ -108,8 +108,7 @@ SWIGINTERNINLINE PyObject* return_py_array(PyObject* obj, bool writable)
 // Here TYPE_NAME is used to name the generated C++ function.
 //-----------------------------------------------------------------------------
 %define NUMPY_ARRAY_FRAGMENTS(TYPE, NUMPY_TYPE, TYPE_NAME)
-%fragment(make_numpy_array_frag(2, TYPE_NAME), "header",
-	  fragment="return_py_array") {
+%fragment(make_numpy_array_frag(2, TYPE_NAME), "header", fragment="return_py_array") {
 SWIGINTERNINLINE PyObject* %make_numpy_array(2, TYPE_NAME)
   (int m, int n, const TYPE* dataptr, bool writable = true)
 {
@@ -271,7 +270,7 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
           (PyArray_NDIM(xa)==1))
     {
       _array  = static_cast<TYPE*>(PyArray_DATA(xa));
-      _array_dim = static_cast<unsigned int>(PyArray_DIM(xa,0));
+      _array_dim = static_cast<std::size_t>(PyArray_DIM(xa,0));
       return true;
     }
   }
@@ -307,21 +306,29 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 
 #if (DOLFIN_SIZE_T==4)
 UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT32, NPY_UINTP, size_t, uintp)
-#else
-UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT64, NPY_UINTP, size_t, uintp)
-#endif
-UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
-UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_UINT,dolfin_index,intc)
-//UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
-
-#if (DOLFIN_SIZE_T==4)
 SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,size_t,uintp)
 #else
+UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT64, NPY_UINTP, size_t, uintp)
 SAFE_NUMPY_TYPEMAPS(std::size_t,INT64,NPY_UINTP,size_t,uintp)
 #endif
+UNSAFE_NUMPY_TYPEMAPS(double, DOUBLE, NPY_DOUBLE, double, float_)
+
+#if (DOLFIN_LA_INDEX_SIZE==4)
+UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT,dolfin_index,intc)
 SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT,dolfin_index,intc)
+#else
+UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT64,NPY_INT64,dolfin_index,int64)
+SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT64,NPY_INT64,dolfin_index,int64)
+#endif
+
+UNSAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,intc)
+UNSAFE_NUMPY_TYPEMAPS(long int,INT64,NPY_INT64,long_int,int64)
+
+SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,dolfin_index,intc)
+SAFE_NUMPY_TYPEMAPS(long int,INT64,NPY_INT64,long_int,int64)
+
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
-SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
+SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,intc)
 
 // Instantiate the code used by the make_numpy_array macro.
 // The first argument name the C++ type, the second the corresponding
@@ -333,9 +340,11 @@ NUMPY_ARRAY_FRAGMENTS(int, NPY_INT, int)
 NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)
 NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_UINTP, size_t)
 
- //NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT, dolfin_index)
- //NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT64, dolfin_index)
-
+#if (DOLFIN_LA_INDEX_SIZE==4)
+NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT32, dolfin_index)
+#else
+NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT64, dolfin_index)
+#endif
 //-----------------------------------------------------------------------------
 // Typecheck for function expecting two-dimensional NumPy arrays of double
 //-----------------------------------------------------------------------------
