@@ -11,6 +11,7 @@
 #  PETSC_VERSION_MAJOR - First number in PETSC_VERSION
 #  PETSC_VERSION_MINOR - Second number in PETSC_VERSION
 #  PETSC_VERSION_SUBMINOR - Third number in PETSC_VERSION
+#  PETSC_INT_SIZE - sizeof(PetscInt)
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
@@ -353,6 +354,14 @@ int main()
     message(STATUS "PETSc configured without Cusp support")
   endif()
 
+endif()
+
+# Check sizeof(PetscInt)
+if (PETSC_INCLUDE_DIRS)
+   include(CheckTypeSize)
+   set(CMAKE_EXTRA_INCLUDE_FILES petsc.h)
+   check_type_size("PetscInt" PETSC_INT_SIZE)
+   set(CMAKE_EXTRA_INCLUDE_FILES)
 endif()
 
 # Standard package handling
