@@ -73,7 +73,7 @@ colors=[]
 cmap=['red', 'green', 'yellow', 'purple', 'pink', 'grey', 'blue', 'brown']
 
 idx = 0
-for c in cells(mesh):
+for c in cells(mesh, "all"):
     xc=[]
     yc=[]
     for v in vertices(c):
@@ -95,7 +95,7 @@ for c in cells(mesh):
 num_regular_facets = mesh.topology().ghost_offset(1)
 facet_note = []
 shared_facets = mesh.topology().shared_entities(1)
-for f in facets(mesh):
+for f in facets(mesh, "all"):
     if (f.num_global_entities(2) == 2):
         color='#ffff88'
     else:

@@ -1424,7 +1424,8 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     {
       const std::vector<la_index>& cell_nodes = node_dofmap[c->index()];
       for (std::size_t i = 0; i < cell_nodes.size(); ++i)
-        shared_nodes[cell_nodes[i]] = -3;
+        if (shared_nodes[cell_nodes[i]] == -1) // ensure not already set (for R space)
+          shared_nodes[cell_nodes[i]] = -3;
     }
     else if (c->is_shared())
     {
