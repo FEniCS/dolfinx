@@ -149,7 +149,11 @@ unsigned int MeshEntity::owner() const
                  "Entity ownership is only defined for cells");
 
   const std::size_t offset = _mesh->topology().ghost_offset(_dim);
-  dolfin_assert(_local_index >= offset);
+  if (_local_index < offset)
+    dolfin_error("MeshEntity.cpp",
+                 "get ownership of entity",
+                 "Ownership of non-ghost cells is local process");
+  
   return _mesh->topology().cell_owner()[_local_index - offset];
 }
 //-----------------------------------------------------------------------------

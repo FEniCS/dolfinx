@@ -1008,6 +1008,11 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   // Global numbering
   number_entities(mesh, D - 1);
 
+  // Calculate the number of global cells attached to each facet
+  // essentially defining the exterior surface
+  // FIXME: should this be done earlier, e.g. at partitioning stage
+  // when dual graph is built?
+
   // Create vector to hold number of cells connected to each
   // facet. Initially copy over from local values.
   std::vector<unsigned int> num_global_neighbors(mesh.num_facets());
@@ -1036,32 +1041,25 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     std::vector<std::vector<std::size_t> > send_facet(mpi_size);
     std::vector<std::vector<std::size_t> > recv_facet(mpi_size);
     
-    const unsigned int num_regular_facets 
-      = mesh.topology().ghost_offset(D - 1);
-    const unsigned int num_regular_cells 
-      = mesh.topology().ghost_offset(D);
-    
     // Map shared facets 
     std::map<std::size_t, std::size_t> global_to_local_facet;
     
     for (MeshEntityIterator f(mesh, D - 1, "all"); !f.end(); ++f)
     {
       // Insert shared facets into mapping
-      if (shared_facets.find(f->index()) != shared_facets.end())
+      if (f->is_shared())
         global_to_local_facet.insert(std::make_pair(f->global_index(),
                                                     f->index()));
       // Copy local values
       const std::size_t n_cells = f->num_entities(D);
       num_global_neighbors[f->index()] = n_cells;
       
-      if (f->index() >= num_regular_facets && n_cells == 1)
+      if (f->is_ghost() && n_cells == 1)
       {
         // Singly attached ghost facet - check with owner of attached cell
-        CellIterator c(*f);
-        dolfin_assert(c->index() >= num_regular_cells);
-        const std::size_t cell_owner 
-          = mesh.topology().cell_owner()[c->index() - num_regular_cells];
-        send_facet[cell_owner].push_back(f->global_index());
+        const Cell c(mesh, f->entities(D)[0]);
+        dolfin_assert(c.is_ghost());
+        send_facet[c.owner()].push_back(f->global_index());
       }
     }
     
@@ -1076,7 +1074,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       {
         auto map_it = global_to_local_facet.find(*r);
         dolfin_assert(map_it != global_to_local_facet.end());
-        Facet local_facet(mesh, map_it->second);
+        const Facet local_facet(mesh, map_it->second);
         const std::size_t n_cells = local_facet.num_entities(D);
         send_response[p].push_back(n_cells);
       }

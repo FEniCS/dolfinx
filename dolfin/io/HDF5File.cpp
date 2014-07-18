@@ -285,7 +285,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
-      for (MeshEntityIterator c(mesh, cell_dim, "regular"); !c.end(); ++c)
+      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
         for (VertexIterator v(*c); !v.end(); ++v)
           topological_data.push_back(v->global_index());
     }
@@ -301,9 +301,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       const std::size_t mpi_rank = MPI::rank(_mpi_comm);
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
-
-      const std::size_t num_regular_entities 
-        = mesh.topology().ghost_offset(cell_dim);
 
       const std::size_t tdim = mesh.topology().dim();
       
@@ -332,8 +329,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         }
       }
 
-      for (MeshEntityIterator ent(mesh, cell_dim); 
-           ent->index() != num_regular_entities; ++ent)
+      for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
       {
         // If not excluded, add to topology
         if (non_local_entities.find(ent->index()) == non_local_entities.end())
@@ -680,7 +676,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
   {
-    // No duplicates
+    // No duplicates - ignore ghost cells if present
     data_values.assign(meshfunction.values(),
                        meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
   }
@@ -694,8 +690,6 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     const std::size_t mpi_rank = MPI::rank(_mpi_comm);
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
       = mesh.topology().shared_entities(cell_dim);
-    const std::size_t num_regular_entities 
-      = mesh.topology().ghost_offset(cell_dim);
 
     std::set<unsigned int> non_local_entities;
     if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
@@ -721,10 +715,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       }
     }
     
-    for (std::size_t i = 0; i < num_regular_entities; ++i)
+    for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
     {
-      if (non_local_entities.find(i) == non_local_entities.end())
-        data_values.push_back(meshfunction[i]);
+      if (non_local_entities.find(ent->index()) == non_local_entities.end())
+        data_values.push_back(meshfunction[*ent]);
     }
   }
   
@@ -785,15 +779,24 @@ void HDF5File::write(const Function& u, const std::string name)
   // Save data in compressed format with an index to mark out
   // the start of each row
 
+  const std::size_t tdim = mesh.topology().dim();
   std::vector<dolfin::la_index> cell_dofs;
   std::vector<std::size_t> x_cell_dofs;
-  x_cell_dofs.reserve(mesh.num_cells());
+  const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
+  x_cell_dofs.reserve(n_cells);
 
-  for (std::size_t i = 0; i != mesh.num_cells(); ++i)
+  std::vector<std::size_t> local_to_global_map;
+  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+
+  for (std::size_t i = 0; i != n_cells; ++i)
   {
     x_cell_dofs.push_back(cell_dofs.size());
     const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
-    cell_dofs.insert(cell_dofs.end(), cell_dofs_i.begin(), cell_dofs_i.end());
+    for (auto p = cell_dofs_i.begin(); p != cell_dofs_i.end(); ++p)
+    {
+      dolfin_assert(*p < (dolfin::la_index)local_to_global_map.size());
+      cell_dofs.push_back(local_to_global_map[*p]);
+    }
   }
 
   // Add offset to CSR index to be seamless in parallel
@@ -811,13 +814,14 @@ void HDF5File::write(const Function& u, const std::string name)
   write_data(name + "/cell_dofs", cell_dofs, global_size, mpi_io);
   if (MPI::rank(_mpi_comm) == MPI::size(_mpi_comm) - 1)
     x_cell_dofs.push_back(global_size[0]);
-  global_size[0] = mesh.size_global(mesh.topology().dim()) + 1;
+  global_size[0] = mesh.size_global(tdim) + 1;
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
 
-  // Save cell ordering
-  const std::vector<std::size_t>& cells =
-    mesh.topology().global_indices(mesh.topology().dim());
-  global_size[0] = mesh.size_global(mesh.topology().dim());
+  // Save cell ordering - copy to local vector and cut off ghosts
+  std::vector<std::size_t> cells(mesh.topology().global_indices(tdim).begin(),
+                       mesh.topology().global_indices(tdim).begin() + n_cells);
+
+  global_size[0] = mesh.size_global(tdim);
   write_data(name + "/cells", cells, global_size, mpi_io);
 
   // Save vector
@@ -941,7 +945,7 @@ void HDF5File::read(Function& u, const std::string name)
   // are actually on.
 
   // Find where the needed cells are held
-  std::vector<std::pair<std::size_t, std::size_t > >
+  std::vector<std::pair<std::size_t, std::size_t> >
     cell_ownership = HDF5Utility::cell_owners(mesh, global_cells);
 
   // Having found the cell location, the actual global_dof index

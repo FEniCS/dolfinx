@@ -620,7 +620,7 @@ void DofMapBuilder::build_local_ufc_dofmap(
   dofmap.resize(mesh.num_cells(),
                 std::vector<la_index>(ufc_dofmap.local_dimension()));
   std::vector<std::size_t> dof_holder(ufc_dofmap.local_dimension());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     const std::size_t cell_index = cell->index();
     ufc_cell.orientation = cell->mesh().cell_orientations()[cell_index];
@@ -1081,7 +1081,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   node_local_to_global.resize(offset_local[1]);
 
   // Build dofmaps from ufc::dofmap
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     // Set cell orientation
     const int cell_orientation
@@ -1234,7 +1234,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   node_local_to_global.resize(offset_local[1]);
 
   // Build dofmaps from ufc::dofmap
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     // Get reference to container for cell dofs
     std::vector<la_index>& cell_nodes = node_dofmap[cell->index()];
@@ -1278,7 +1278,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   std::vector<std::size_t> node_local_to_global_mod(offset_local[1]);
   node_ufc_local_to_local.resize(offset_local[1]);
   int counter = 0;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     // Get nodes (local) on cell
     std::vector<la_index>& cell_nodes = node_dofmap[cell->index()];
@@ -1415,7 +1415,7 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
   std::fill(shared_nodes.begin(), shared_nodes.end(), -1);
 
   // Mark dofs associated ghost cells as ghost dofs (provisionally)
-  for (CellIterator c(mesh); !c.end(); ++c)
+  for (CellIterator c(mesh, "all"); !c.end(); ++c)
   {
     //if (MPI::rank(MPI_COMM_WORLD) == 1)
     //    std::cout << "Cell: " << c->index() << ", " << c->midpoint().str(true)
@@ -1424,7 +1424,8 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     {
       const std::vector<la_index>& cell_nodes = node_dofmap[c->index()];
       for (std::size_t i = 0; i < cell_nodes.size(); ++i)
-        shared_nodes[cell_nodes[i]] = -3;
+        if (shared_nodes[cell_nodes[i]] == -1) // ensure not already set (for R space)
+          shared_nodes[cell_nodes[i]] = -3;
     }
     else if (c->is_shared())
     {
@@ -1442,7 +1443,7 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
 
   // Mark nodes on inter-process boundary
   std::vector<std::size_t> facet_nodes(ufc_dofmap.num_facet_dofs());
-  for (FacetIterator f(mesh); !f.end(); ++f)
+  for (FacetIterator f(mesh, "all"); !f.end(); ++f)
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems

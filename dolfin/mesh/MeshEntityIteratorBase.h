@@ -46,28 +46,29 @@ namespace dolfin
       // Get number of entities (excluding ghosts)
       const std::size_t dim = _entity.dim();
       mesh.init(dim);
-      pos_end = mesh.topology().size(dim);
-      // pos_end = mesh.topology().ghost_offset(dim);
+      
+      // End at ghost cells for normal iterator
+      pos_end = mesh.topology().ghost_offset(dim);
     }
 
-    // /// Iterator over MeshEntity of dimension dim on mesh, with string option
-    // /// to iterate over "regular", "ghost" or "all" entities
-    // MeshEntityIteratorBase(const Mesh& mesh, std::string opt)
-    //   : _entity(), _pos(0), pos_end(0), index(0)
-    // {
-    //   // Check if mesh is empty
-    //   if (mesh.num_vertices() == 0)
-    //     return;
+    /// Iterator over MeshEntity of dimension dim on mesh, with string option
+    /// to iterate over "regular", "ghost" or "all" entities
+    MeshEntityIteratorBase(const Mesh& mesh, std::string opt)
+      : _entity(mesh, 0), _pos(0), pos_end(0), index(0)
+    {
+      // Check if mesh is empty
+      if (mesh.num_vertices() == 0)
+        return;
 
-    //   const std::size_t dim = _entity.dim();
-    //   mesh.init(dim);
+      const std::size_t dim = _entity.dim();
+      mesh.init(dim);
 
-    //   pos_end = mesh.topology().size(dim);
-    //   if (opt == "regular")
-    //     pos_end = mesh.topology().ghost_offset(dim);
-    //   else if (opt == "ghost")
-    //     _pos = mesh.topology().ghost_offset(dim);
-    // }
+      pos_end = mesh.topology().size(dim);
+      if (opt == "regular")
+        pos_end = mesh.topology().ghost_offset(dim);
+      else if (opt == "ghost")
+        _pos = mesh.topology().ghost_offset(dim);
+    }
 
     /// Create iterator for entities of given dimension connected to given entity
     explicit MeshEntityIteratorBase(const MeshEntity& entity)
