@@ -45,8 +45,7 @@ namespace dolfin
     /// Compute the objective function f at current point x
     virtual double f(const GenericVector& x) = 0;
 
-    /// Function called by Newton solver before requesting F or J.
-    /// This can be used to compute F and J together
+    /// Compute the Hessian H = f'' and the gragient g = f' at current point x
     virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       // Do nothing if not supplied by the user
