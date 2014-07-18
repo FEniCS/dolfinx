@@ -24,18 +24,18 @@
 #ifdef ENABLE_PETSC_TAO
 
 #include <map>
+#include <petsctao.h>
 #include <memory>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScVector.h>
-#include <petsctao.h>
 
 namespace dolfin
 {
 
   /// Forward declarations
   class GenericVector;
-  class PETScMatrix;
+  // class PETScMatrix;
   class PETScVector;
   class OptimisationProblem;
 
@@ -48,7 +48,9 @@ namespace dolfin
   public:
 
     /// Create TAO solver for a particular method
-    PETScTAOSolver(std::string method="default");
+    PETScTAOSolver(const std::string tao_type="default",
+                   const std::string ksp_type="default",
+                   const std::string pc_type="default");
 
     /// Destructor
     virtual ~PETScTAOSolver();
@@ -95,7 +97,14 @@ namespace dolfin
     // static std::vector<std::pair<std::string, std::string> > methods();
 
     /// Set the TAO solver type
-    void set_solver(const std::string& method);
+    void set_solver(const std::string tao_type="default");
+
+    /// Set PETSc Krylov Solver (KSP) used by TAO
+    void set_ksp_pc(const std::string ksp_type="default",
+                    const std::string pc_type="default");
+
+    /// Return a list of available solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -107,7 +116,7 @@ namespace dolfin
     { return _tao; }
 
   private:
-    /// TAO context
+    /// TAO context for optimisation problems
     struct tao_ctx_t
     {
       OptimisationProblem* optimisation_problem;
@@ -119,10 +128,19 @@ namespace dolfin
     Tao _tao;
 
     /// Hessian matrix
-    PETScMatrix _H;
+    // PETScMatrix _H;
+
+    /// Set options
+    void set_options();
+    void set_ksp_options();
+
+    /// Available solvers
+    static const std::map<std::string, std::pair<std::string, const TaoType> > _methods;
 
     /// Initialize TAO solver
-    void init(const std::string& method);
+    void init(const std::string tao_type="default",
+              const std::string ksp_type="default",
+              const std::string pc_type="default");
 
     /// Compute the nonlinear objective function f(x) as well as
     /// its gradient g(x) = f'(x)
@@ -130,7 +148,7 @@ namespace dolfin
                                                PetscReal *fobj, Vec G,
                                                void *ctx);
 
-    // Compute the hessian H(x) = f''(x)
+    /// Compute the hessian H(x) = f''(x)
     static PetscErrorCode FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
                                       void *ctx);
     
