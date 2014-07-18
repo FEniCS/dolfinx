@@ -122,11 +122,15 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                   < MPI::size(mesh.mpi_comm()));
   }
 
-  if (ghost_procs.empty())
+  const std::string ghost_mode = parameters['ghost_mode'];
+
+  if (ghost_procs.empty() && ghost_mode != "none")
   {
     // FIXME: need to generate ghost cell information here
     // by doing a facet-matching operation "GraphBuilder" style
-    warning("Ghost cell information not available");
+    dolfin_error("MeshPartitioning.cpp",
+                 "build ghost mesh",
+                 "Ghost cell information not available");
   }
 
   // Build mesh from local mesh data and provided cell partition
