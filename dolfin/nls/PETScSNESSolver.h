@@ -133,7 +133,7 @@ namespace dolfin
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);
 
     // The callback for PETSc to compute A, the Jacobian
-    #if PETSC_VERSION_RELEASE
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
     static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
                                        MatStructure* flag, void* ctx);
     #else
