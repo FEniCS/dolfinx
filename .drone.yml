@@ -17,7 +17,7 @@ script:
   - cd ufl
   - sudo python setup.py install
   - cd ..
-  - ./cmake.local
+  - ./cmake.drone
 notify:
   email:
     recipients:
