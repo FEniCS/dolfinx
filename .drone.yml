@@ -1,0 +1,9 @@
+image: gcc4.8
+script:
+  - sudo apt-get -y install libboost-1.48-all-dev
+  - ./cmake.local
+notify:
+  email:
+    recipients:
+      - chris@bpi.cam.ac.uk
+
