@@ -16,10 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-22
-// Last changed: 2014-06-22
+// Last changed: 2014-07-19
 
 #ifndef __OPTIMISATION_PROBLEM_H
 #define __OPTIMISATION_PROBLEM_H
+
+#include "NonlinearProblem.h"
 
 namespace dolfin
 {
@@ -29,10 +31,10 @@ namespace dolfin
   class GenericVector;
 
   /// This is a base class for nonlinear optimisation problems which return
-  /// the real-valued objective function f(x), its gradient g(x) = f'(x) and
-  /// its Hessian H(x) = f''(x)
+  /// the real-valued objective function :math:`f(x)`, its gradient :math:`F(x)=f'(x)`
+  /// and its Hessian :math:`J(x)=f''(x)`
 
-  class OptimisationProblem
+  class OptimisationProblem : public NonlinearProblem
   {
   public:
 
@@ -42,20 +44,20 @@ namespace dolfin
     /// Destructor
     virtual ~OptimisationProblem() {}
 
-    /// Compute the objective function f at current point x
+    /// Compute the objective function :math:`f(x)`
     virtual double f(const GenericVector& x) = 0;
 
-    /// Compute the Hessian H = f'' and the gragient g = f' at current point x
+    /// Compute the Hessian :math:`J(x)=f''(x)` and the gradient :math:`F(x)=f'(x)`
     virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       // Do nothing if not supplied by the user
     }
 
-    /// Compute the gradient g = f' at current point x
-    virtual void g(GenericVector& b, const GenericVector& x) = 0;
+    /// Compute the gradient :math:`F(x)=f'(x)`
+    virtual void F(GenericVector& b, const GenericVector& x) = 0;
 
-    /// Compute the Hessian H = f'' at current point x
-    virtual void H(GenericMatrix& A, const GenericVector& x) = 0;
+    /// Compute the Hessian :math:`J(x)=f''(x)`
+    virtual void J(GenericMatrix& A, const GenericVector& x) = 0;
 
   };
 
