@@ -55,7 +55,7 @@ namespace dolfin
     virtual ~PETScTAOSolver();
 
     /// Solve a nonlinear bound-constrained optimisation problem
-  
+    ///
     /// *Arguments*
     ///     optimisation_problem (_OptimisationProblem_)
     ///         The nonlinear optimisation problem.
@@ -65,24 +65,26 @@ namespace dolfin
     ///         The lower bound.
     ///     ub (_GenericVector_)
     ///         The upper bound.
-    
+    ///
     /// *Returns*
-    ///     number of iterations
+    ///     num_iterations (std::size_t)
+    ///         Number of iterations
     std::size_t solve(OptimisationProblem& optimisation_problem,
                       GenericVector& x,
                       const GenericVector& lb,
                       const GenericVector& ub);
 
     /// Solve a nonlinear unconstrained minimisation problem
-  
+    ///
     /// *Arguments*
     ///     optimisation_problem (_OptimisationProblem_)
     ///         The nonlinear optimisation problem.
     ///     x (_GenericVector_)
     ///         The solution vector (initial guess).
-    
+    ///
     /// *Returns*
-    ///     number of iterations
+    ///     num_iterations (std::size_t)
+    ///         Number of iterations
     std::size_t solve(OptimisationProblem& optimisation_problem,
                       GenericVector& x);
 
@@ -99,6 +101,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Parameters for the PETSc's TAO solver
     Parameters parameters;
 
     /// Return the TAO pointer
@@ -107,7 +110,7 @@ namespace dolfin
 
   private:
     /// Solve a nonlinear bound-constrained minimisation problem
-  
+    ///
     /// *Arguments*
     ///     optimisation_problem (_OptimisationProblem_)
     ///         The nonlinear optimisation problem.
@@ -117,9 +120,10 @@ namespace dolfin
     ///         The lower bound.
     ///     ub (_PETScVector_)
     ///         The upper bound.
-    
+    ///
     /// *Returns*
-    ///     number of iterations
+    ///     num_iterations (std::size_t)
+    ///         Number of iterations
     std::size_t solve(OptimisationProblem& optimisation_problem,
                       PETScVector& x,
                       const PETScVector& lb,
