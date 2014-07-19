@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-22
-// Last changed: 2014-06-22
+// Last changed: 2014-07-19
 
 #ifdef ENABLE_PETSC_TAO
 
@@ -25,10 +25,6 @@
 #include <utility>
 #include <petscsys.h>
 #include <boost/assign/list_of.hpp>
-
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/timing.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
@@ -43,12 +39,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 const std::map<std::string, std::pair<std::string, const TaoType> >
   PETScTAOSolver::_methods
-   = boost::assign::map_list_of
-      ("default", std::make_pair("Default TAO method (tron)",          TAOTRON))
-      ("tron",    std::make_pair("Newton trust region method",             TAOTRON))
-      ("bqpip",   std::make_pair("Interior point newton algorithm",        TAOBQPIP))
-      ("gpcg",    std::make_pair("Gradient Projection Conjugate Gradient", TAOGPCG))
-      ("blmvm",   std::make_pair("Limited memory variable metric method",  TAOBLMVM));
+    = boost::assign::map_list_of
+      ("default", std::make_pair("Default TAO method (ntl or tron)", TAOTRON))
+      ("tron",    std::make_pair("Newton Trust Region method", TAOTRON))
+      ("bqpip",   std::make_pair("Interior-Point Newton's method", TAOBQPIP))
+      ("gpcg",    std::make_pair("Gradient projection conjugate gradient method", TAOGPCG))
+      ("blmvm",   std::make_pair("Limited memory variable metric method", TAOBLMVM))
+      ("nls",     std::make_pair("Newton's method with line search", TAONLS))
+      ("ntr",     std::make_pair("Newton's method with trust region", TAONTR))
+      ("ntl",     std::make_pair("Newton's method with trust region and line search", TAONTL))
+      ("cg",      std::make_pair("Nonlinear conjugate gradient method", TAOCG))
+      ("nm",      std::make_pair("Nelder-Mead algorithm", TAONM));
+
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> > PETScTAOSolver::methods()
 {
@@ -86,23 +88,6 @@ PETScTAOSolver::PETScTAOSolver(const std::string tao_type,
   // Set parameter values
   parameters = default_parameters();
 
-  // Initialize and set the TAO/KSP solvers
-  init(tao_type, ksp_type, pc_type);
-}
-//-----------------------------------------------------------------------------
-PETScTAOSolver::~PETScTAOSolver()
-{
-  if (_tao)
-    TaoDestroy(&_tao);
-}
-//-----------------------------------------------------------------------------
-void PETScTAOSolver::init(const std::string tao_type,
-                          const std::string ksp_type,
-                          const std::string pc_type)
-{
-  if (_tao)
-    TaoDestroy(&_tao);
-
   // Create TAO object
   TaoCreate(PETSC_COMM_WORLD, &_tao);
 
@@ -113,6 +98,12 @@ void PETScTAOSolver::init(const std::string tao_type,
   set_ksp_pc(ksp_type, pc_type);
 }
 //-----------------------------------------------------------------------------
+PETScTAOSolver::~PETScTAOSolver()
+{
+  if (_tao)
+    TaoDestroy(&_tao);
+}
+//-----------------------------------------------------------------------------
 void PETScTAOSolver::set_solver(const std::string tao_type)
 {
   dolfin_assert(_tao);
@@ -121,7 +112,7 @@ void PETScTAOSolver::set_solver(const std::string tao_type)
   if (_methods.count(tao_type) == 0)
   {
     dolfin_error("PETScTAOSolver.cpp",
-                 "set PETSc TAO solver",
+                 "set PETSc's TAO solver",
                  "Unknown TAO method \"%s\"", tao_type.c_str());
   }
 
@@ -146,8 +137,6 @@ void PETScTAOSolver::set_ksp_pc(const std::string ksp_type,
     {
       PC pc;
       KSPGetPC(ksp, &pc);
-      MPI_Comm comm = MPI_COMM_NULL;
-      PetscObjectGetComm((PetscObject)_tao, &comm);
 
       std::map<std::string, const KSPType>::const_iterator ksp_pair
         = PETScKrylovSolver::_methods.find(ksp_type);
@@ -177,45 +166,76 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                                   const GenericVector& lb,
                                   const GenericVector& ub)
 {
-  return solve(optimisation_problem,
-               x.down_cast<PETScVector>(),
-               lb.down_cast<PETScVector>(),
-               ub.down_cast<PETScVector>());
+  // Bound-constrained minimisation problem
+  has_bounds = true;
+
+  return solve(optimisation_problem, x.down_cast<PETScVector>(),
+               lb.down_cast<PETScVector>(), ub.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
-                                  PETScVector& x,
-                                  const PETScVector& lb,
-                                  const PETScVector& ub)
+                                  GenericVector& x)
 {
+  // Unconstrained minimisation problem
+  has_bounds = false;
+  PETScVector lb, ub;
+
+  return solve(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
+}
+//-----------------------------------------------------------------------------
+void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
+                          PETScVector& x,
+                          const PETScVector& lb,
+                          const PETScVector& ub)
+{
+  Timer timer("TAO solver init");
+
   // Form the optimisation problem object
   _tao_ctx.optimisation_problem = &optimisation_problem;
-  // _tao_ctx.x = &x;
+
+  // In case of an unconstrained minimisation problem, reset the TAO method
+  // TAOTRON (by default chosen) to TAONTL
+  if (!has_bounds)
+  {
+    const TaoType tao_type;
+    TaoGetType(_tao, &tao_type);
+    if (strcmp(tao_type, TAOTRON) == 0)
+      TaoSetType(_tao, TAONTL);
+  }
+  
+  // Define the solution vector
+  // It's necessary because if we solve using directly the vector PETScVector& x
+  // passed in arguments, the solution obtained will be incorrect.
+  PETScVector sol(x);
 
   // Initialize the Hessian matrix
   PETScMatrix H;
   PETScVector g;
-  optimisation_problem.form(H, g, x);
-  optimisation_problem.H(H, x);
+  optimisation_problem.form(H, g, sol);
+  optimisation_problem.J(H, sol);
   dolfin_assert(H.mat());
 
   // Set initial vector
-  TaoSetInitialVector(_tao, x.vec());
+  TaoSetInitialVector(_tao, sol.vec());
 
-  // Set the bound on the variables
-  TaoSetVariableBounds(_tao, lb.vec(), ub.vec());
+  // Set the bounds in case of a bound-constrained minimisation problem
+  if (has_bounds)
+    TaoSetVariableBounds(_tao, lb.vec(), ub.vec());
 
   // Set parameters
   set_options();
   set_ksp_options();
 
-  // Set the user function, gradient and Hessian evaluation routines and
-  // data structures
+  // Set the objective function, gradient and Hessian evaluation routines
   TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
   TaoSetHessianRoutine(_tao, H.mat(), H.mat(), FormHessian, &_tao_ctx);
 
   // Clear previous monitors
   TaoCancelMonitors(_tao);
+
+  // Set the monitor
+  if (parameters["monitor_convergence"])
+    TaoSetMonitor(_tao, TaoDefaultMonitor, PETSC_NULL, PETSC_NULL);
 
   // Check for any tao command line options
   std::string prefix = std::string(parameters["options_prefix"]);
@@ -226,25 +246,32 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
     char lastchar = *prefix.rbegin();
     if (lastchar != '_')
       prefix += "_";
-
     TaoSetOptionsPrefix(_tao, prefix.c_str());
   }
   TaoSetFromOptions(_tao);
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
+                                  PETScVector& x,
+                                  const PETScVector& lb,
+                                  const PETScVector& ub)
+{
+  Timer timer("TAO solver execution");
 
-  // Solve the bound constrained problem
-  Timer timer("TAO solver");
-  const char* tao_type;
-  TaoGetType(_tao, &tao_type);
-  log(PROGRESS, "TAO solver %s starting to solve a %i x %i system", tao_type,
-      H.size(0), H.size(1));
+  // Initialise the TAO solver
+  init(optimisation_problem, x, lb, ub);
 
   // Solve
   TaoSolve(_tao);
 
+  // Get solution vector
+  Vec sol = x.vec();
+  TaoGetSolutionVector(_tao, &sol);
+
   // Update ghost values
   x.update_ghost_values();
 
-  // Print the report on convergences and methods used
+  // Print the report on convergence and methods used
   if (parameters["report"])
     TaoView(_tao, PETSC_VIEWER_STDOUT_WORLD);
 
@@ -272,8 +299,8 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
     }
     else
     {
-      log(WARNING, "TAO solver %s failed to converge. Try a different TAO method" \
-                   " or adjust some parameters.", tao_type);
+      log(WARNING, "TAO solver failed to converge. Try a different TAO method" \
+                   " or adjust some parameters.");
     }
   }
 
@@ -287,21 +314,16 @@ PetscErrorCode PETScTAOSolver::FormFunctionGradient(Tao tao, Vec x,
   // Get the optimisation problem object
   struct tao_ctx_t tao_ctx = *(struct tao_ctx_t*) ctx;
   OptimisationProblem* optimisation_problem = tao_ctx.optimisation_problem;
-  // PETScVector* _x = tao_ctx.x;
 
   // Wrap the PETSc objects
   PETScVector x_wrap(x);
   PETScVector g_wrap(g);
 
-  // Update ghost values
-  // *_x = x_wrap;
-  // _x ->update_ghost_values();
-
   // Compute the objective function f and its gradient g = f'
   PETScMatrix H;
   *fobj = optimisation_problem->f(x_wrap);
   optimisation_problem->form(H, g_wrap, x_wrap);
-  optimisation_problem->g(g_wrap, x_wrap);
+  optimisation_problem->F(g_wrap, x_wrap);
 
   return 0;
 }
@@ -320,7 +342,7 @@ PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
   // Compute the hessian H(x) = f''(x)
   PETScVector g;
   optimisation_problem->form(H_wrap, g, x_wrap);
-  optimisation_problem->H(H_wrap, x_wrap);
+  optimisation_problem->J(H_wrap, x_wrap);
 
   return 0;
 }
