@@ -61,7 +61,7 @@ tests = {
                            "MultiMesh"],
     "meshconvert":    ["test"],
     "multistage":     ["RKSolver", "PointIntegralSolver"],
-    "nls":            ["PETScSNESSolver", "TAOLinearBoundSolver"],
+    "nls":            ["PETScSNESSolver", "TAOLinearBoundSolver", "PETScTAOSolver"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
     "refinement":     ["refine"],
