@@ -134,6 +134,52 @@ SWIGINTERNINLINE PyObject* %make_numpy_array(1, TYPE_NAME)
 
 %enddef
 
+// The below fragments are created manually to dynamically handle the type of
+// dolfin::la_index, which can be a 32 bit or a 64 bit integer.
+%fragment(make_numpy_array_frag(2, dolfin_index), "header",
+	  fragment="return_py_array") {
+SWIGINTERNINLINE PyObject* %make_numpy_array(2, dolfin_index)
+  (int m, int n, const dolfin::la_index* dataptr, bool writable = true)
+{
+  npy_intp adims[2] = {m, n};
+  if (sizeof(dolfin::la_index) == 4)
+  {
+    return return_py_array(PyArray_SimpleNewFromData(2, adims, NPY_INT32,
+                                                     (char *)(dataptr)), writable);
+  }
+  else if (sizeof(dolfin::la_index) == 8)
+  {
+    return return_py_array(PyArray_SimpleNewFromData(2, adims, NPY_INT64,
+                                                     (char *)(dataptr)), writable);
+  }
+  else
+    throw std::runtime_error("sizeof(dolfin::la_index) incompatible NumPy types");
+}}
+
+%fragment(make_numpy_array_frag(1, dolfin_index), "header",
+	  fragment="return_py_array") {
+SWIGINTERNINLINE PyObject* %make_numpy_array(1, dolfin_index)
+  (int m, const dolfin::la_index* dataptr, bool writable = true)
+{
+  npy_intp adims[1] = {m};
+  if (sizeof(dolfin::la_index) == 4)
+  {
+    return return_py_array(PyArray_SimpleNewFromData(1, adims, NPY_INT32,
+                                                     (char *)(dataptr)), writable);
+  }
+  else if (sizeof(dolfin::la_index) == 8)
+  {
+    return return_py_array(PyArray_SimpleNewFromData(1, adims, NPY_INT64,
+                                                     (char *)(dataptr)), writable);
+  }
+  else
+    throw std::runtime_error("sizeof(dolfin::la_index) incompatible NumPy types");
+}}
+
+// Force the fragments to be instantiated
+%fragment(make_numpy_array_frag(1, dolfin_index));
+%fragment(make_numpy_array_frag(2, dolfin_index));
+
 //-----------------------------------------------------------------------------
 // Macro for defining an unsafe in-typemap for NumPy arrays -> c arrays
 //
@@ -205,8 +251,8 @@ if (!convert_numpy_to_array_no_check_ ## TYPE_NAME($input,$1))
 // TYPE_UPPER : The SWIG specific name of the type used in the array type checks values
 //              SWIG use: INT32 for integer, DOUBLE for double aso.
 // NUMPY_TYPE : The NumPy type that is going to be checked for
-// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
-//              'dolfin::uint'
+// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'size_t' for
+//              'std::size_t'
 // DESCR      : The char descriptor of the NumPy type
 //-----------------------------------------------------------------------------
 #define convert_numpy_to_array_with_check(Type) "convert_numpy_to_array_with_check_" {Type}
@@ -258,12 +304,21 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 // NOTE: If a typemap is not used an error will be issued as the generated
 //       typemap function will not be used
 //-----------------------------------------------------------------------------
+
+#if (DOLFIN_SIZE_T==4)
 UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT32, NPY_UINTP, size_t, uintp)
+#else
+UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT64, NPY_UINTP, size_t, uintp)
+#endif
 UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_UINT,dolfin_index,intc)
 //UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
 
+#if (DOLFIN_SIZE_T==4)
 SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,size_t,uintp)
+#else
+SAFE_NUMPY_TYPEMAPS(std::size_t,INT64,NPY_UINTP,size_t,uintp)
+#endif
 SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT,dolfin_index,intc)
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
@@ -277,7 +332,9 @@ NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
 NUMPY_ARRAY_FRAGMENTS(int, NPY_INT, int)
 NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)
 NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_UINTP, size_t)
-NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT, dolfin_index)
+
+ //NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT, dolfin_index)
+ //NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT64, dolfin_index)
 
 //-----------------------------------------------------------------------------
 // Typecheck for function expecting two-dimensional NumPy arrays of double

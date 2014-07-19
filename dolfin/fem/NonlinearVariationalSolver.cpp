@@ -137,7 +137,7 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
     dolfin_assert(nonlinear_problem);
     ret = newton_solver->solve(*nonlinear_problem, *u->vector());
   }
-#ifdef HAS_PETSC
+  #ifdef ENABLE_PETSC_SNES
   else if (std::string(parameters["nonlinear_solver"]) == "snes")
   {
     // Create SNES solver and set parameters
@@ -153,14 +153,14 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
     dolfin_assert(nonlinear_problem);
     if (_problem->has_lower_bound() && _problem->has_upper_bound())
     {
-    ret = snes_solver->solve(*nonlinear_problem, *u->vector(), *_problem->lower_bound(), *_problem->upper_bound());
+      ret = snes_solver->solve(*nonlinear_problem, *u->vector(),
+                               *_problem->lower_bound(),
+                               *_problem->upper_bound());
     }
     else
-    {
-    ret = snes_solver->solve(*nonlinear_problem, *u->vector());
-    }
+      ret = snes_solver->solve(*nonlinear_problem, *u->vector());
   }
-#endif
+  #endif
   else
   {
     dolfin_error("NonlinearVariationalSolver.cpp",
@@ -195,12 +195,11 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
   // Get problem data
   dolfin_assert(_problem);
   std::shared_ptr<const Form> F(_problem->residual_form());
-  std::vector<std::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
+  std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   // Assemble right-hand side
   dolfin_assert(F);
   Assembler assembler;
-  assembler.reset_sparsity = false;
   assembler.assemble(b, *F);
 
   // Apply boundary conditions
@@ -223,12 +222,11 @@ void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
   // Get problem data
   dolfin_assert(_problem);
   std::shared_ptr<const Form> J(_problem->jacobian_form());
-  std::vector<std::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
+  std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   // Assemble left-hand side
   dolfin_assert(J);
   Assembler assembler;
-  assembler.reset_sparsity = false;
   assembler.assemble(A, *J);
 
   // Apply boundary conditions

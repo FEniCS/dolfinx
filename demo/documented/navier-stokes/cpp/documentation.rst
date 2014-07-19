@@ -146,18 +146,14 @@ conditions. We do this by defining subclasses of
     class InflowDomain : public SubDomain
     {
       bool inside(const Array<double>& x, bool on_boundary) const
-      {
-        return x[1] > 1.0 - DOLFIN_EPS;
-      }
+      { return x[1] > 1.0 - DOLFIN_EPS; }
     };
 
     // Define inflow domain
     class OutflowDomain : public SubDomain
     {
       bool inside(const Array<double>& x, bool on_boundary) const
-      {
-        return x[0] > 1.0 - DOLFIN_EPS;
-      }
+      { return x[0] > 1.0 - DOLFIN_EPS; }
     };
 
 We also define a subclass of :cpp:class:`Expression` which we will use
@@ -176,9 +172,7 @@ inflow.
 
       // Evaluate pressure at inflow
       void eval(Array<double>& values, const Array<double>& x) const
-      {
-        values[0] = sin(3.0*t);
-      }
+      { values[0] = sin(3.0*t); }
 
       // Current time
       double t;
@@ -385,7 +379,7 @@ pressure equation if available:
     assemble(b2, L2);
     for (std::size_t i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, *p1.vector(), b2, "gmres", prec);
+    solve(A2, *p1.vector(), b2, "cg", prec);
     end();
 
     // Velocity correction

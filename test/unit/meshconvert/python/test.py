@@ -20,7 +20,7 @@
 # Modified by Jan Blechta 2012
 #
 # First added:
-# Last changed: 2012-11-23
+# Last changed: 2014-05-30
 
 from unittest import TestCase as _TestCase
 import unittest
@@ -30,7 +30,7 @@ import tempfile
 
 from dolfin_utils.meshconvert import meshconvert
 from dolfin_utils.meshconvert.meshconvert import DataHandler
-
+from dolfin import MPI, mpi_comm_world
 
 class TestCase(_TestCase):
     def _get_tempfname(self, suffix=None):
@@ -380,14 +380,14 @@ class GmshTest(_ConverterTest):
         meshconvert.convert(fname, handler)
         return handler
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TriangleTester(_TestCase):
+
     def test_convert_triangle(self): # Disabled because it fails, see FIXME below
+
         # test no. 1
         from dolfin import Mesh, MPI, mpi_comm_world
 
-        # MPI_COMM_WORLD wrapper
-        if MPI.size(mpi_comm_world()) != 1:
-            return
         fname = os.path.join("data", "triangle")
         dfname = fname+".xml"
 
@@ -402,13 +402,11 @@ class TriangleTester(_TestCase):
         # Clean up
         os.unlink(dfname)
 
-
         # test no. 2
         from dolfin import MPI, Mesh, MeshFunction, \
                            edges, Edge, faces, Face, \
                            SubsetIterator, facets, CellFunction, mpi_comm_world
-        if MPI.size(mpi_comm_world()) != 1:
-            return
+
         fname = os.path.join("data", "test_Triangle_3")
         dfname = fname+".xml"
         dfname0 = fname+".attr0.xml"
@@ -471,11 +469,12 @@ class TriangleTester(_TestCase):
         os.unlink(dfname)
         os.unlink(dfname0)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class DiffPackTester(_TestCase):
     def test_convert_diffpack(self):
+
         from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
-        if MPI.size(mpi_comm_world()) != 1:
-            return
+
         fname = os.path.join("data", "diffpack_tet")
         dfname = fname+".xml"
 
@@ -491,6 +490,34 @@ class DiffPackTester(_TestCase):
 
         mf_basename = dfname.replace(".xml", "_marker_%d.xml")
         for marker, num in [(3, 9), (6, 9), (7, 3), (8, 1)]:
+
+            mf_name = mf_basename % marker
+            mf = MeshFunction("size_t", mesh, mf_name)
+            self.assertEqual(sum(mf.array()==marker), num)
+            os.unlink(mf_name)
+
+        # Clean up
+        os.unlink(dfname)
+
+    def test_convert_diffpack_2d(self):
+
+        from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
+
+        fname = os.path.join("data", "diffpack_tri")
+        dfname = fname+".xml"
+
+        # Read triangle file and convert to a dolfin xml mesh file
+        meshconvert.diffpack2xml(fname+".grid", dfname)
+
+        # Read in dolfin mesh and check number of cells and vertices
+        mesh = Mesh(dfname)
+
+        self.assertEqual(mesh.num_vertices(), 41)
+        self.assertEqual(mesh.num_cells(), 64)
+        self.assertEqual(len(mesh.domains().markers(2)), 64)
+
+        mf_basename = dfname.replace(".xml", "_marker_%d.xml")
+        for marker, num in [(1,10), (2,5), (3,5)]:
 
             mf_name = mf_basename % marker
             mf = MeshFunction("size_t", mesh, mf_name)

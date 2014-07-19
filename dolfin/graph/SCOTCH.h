@@ -47,19 +47,19 @@ namespace dolfin
 
     /// Compute reordering (map[old] -> new) using
     /// Gibbs-Poole-Stockmeyer re-ordering
-    static std::vector<std::size_t> compute_gps(const Graph& graph,
-                                                std::size_t num_passes=5);
+    static std::vector<int> compute_gps(const Graph& graph,
+                                        std::size_t num_passes=5);
 
     // Compute graph re-ordering
-    static std::vector<std::size_t>
+    static std::vector<int>
       compute_reordering(const Graph& graph,
                          std::string scotch_strategy="");
 
     // Compute graph re-ordering
     static
       void compute_reordering(const Graph& graph,
-                              std::vector<std::size_t>& permutation,
-                              std::vector<std::size_t>& inverse_permutation,
+                              std::vector<int>& permutation,
+                              std::vector<int>& inverse_permutation,
                               std::string scotch_strategy="");
 
   private:

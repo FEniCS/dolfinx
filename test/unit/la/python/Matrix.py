@@ -1,6 +1,6 @@
 """Unit tests for the Matrix interface"""
 
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011-2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -20,9 +20,6 @@
 # Modified by Anders Logg 2011
 # Modified by Mikael Mortensen 2011
 # Modified by Jan Blechta 2013
-#
-# First added:  2011-03-03
-# Last changed: 2013-03-30
 
 import unittest
 from dolfin import *
@@ -53,17 +50,15 @@ class AbstractBaseTest(object):
         a = dot(grad(u), grad(v))*ds
         b = v*s*dx
 
-        if use_backend:
-            if self.backend == "uBLAS":
-                backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
-            else:
-                backend = globals()[self.backend + 'Factory'].instance()
-            return assemble(a, backend=backend, keep_diagonal=keep_diagonal), \
-                   assemble(b, backend=backend, keep_diagonal=keep_diagonal)
-        else:
-            return assemble(a, keep_diagonal=keep_diagonal), \
-                   assemble(b, keep_diagonal=keep_diagonal)
+        return self.assemble(a, use_backend=use_backend, keep_diagonal=keep_diagonal), \
+               self.assemble(b, use_backend=use_backend, keep_diagonal=keep_diagonal)
 
+    def assemble(self, form, use_backend=False, keep_diagonal=False):
+        if use_backend:
+            backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
+            return assemble(form, backend=backend, keep_diagonal=keep_diagonal)
+        else:
+            return assemble(form, keep_diagonal=keep_diagonal)
 
     def test_basic_la_operations(self, use_backend=False):
         from numpy import ndarray, array, ones, sum
@@ -120,25 +115,6 @@ class AbstractBaseTest(object):
         A.axpy(10,C,True)
         self.assertAlmostEqual(A.norm('frobenius'), 41*unit_norm)
 
-        # Test to NumPy array
-        print "***************"
-        if MPI.size(A.mpi_comm()) == 1:
-            print "-------------"
-            A2 = A.array()
-            self.assertTrue(isinstance(A2,ndarray))
-            self.assertEqual(A2.shape, (2021, 2021))
-            self.assertAlmostEqual(sqrt(sum(A2**2)), A.norm('frobenius'))
-
-            if self.backend == 'uBLAS' and self.sub_backend == 'Sparse':
-                try:
-                    import scipy.sparse
-                    import numpy.linalg
-                    A3 = A.sparray()
-                    self.assertTrue(isinstance(A3, scipy.sparse.csr_matrix))
-                    self.assertAlmostEqual(numpy.linalg.norm(A3.todense() - A2), 0.0)
-                except ImportError:
-                    pass
-
         # Test expected size of rectangular array
         self.assertEqual(A.size(0), B.size(0))
         self.assertEqual(B.size(1), 528)
@@ -147,6 +123,32 @@ class AbstractBaseTest(object):
         #A[5,5] = 15
         #self.assertEqual(A[5,5],15)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_numpy_array(self, use_backend=False):
+        from numpy import ndarray, array, ones, sum
+
+        # Tests bailout for this choice
+        if self.backend == "uBLAS" and not use_backend:
+            return
+
+        # Assemble matrices
+        A, B = self.assemble_matrices(use_backend)
+
+        # Test to NumPy array
+        A2 = A.array()
+        self.assertTrue(isinstance(A2,ndarray))
+        self.assertEqual(A2.shape, (2021, 2021))
+        self.assertAlmostEqual(sqrt(sum(A2**2)), A.norm('frobenius'))
+
+        if self.backend == 'uBLAS' and self.sub_backend == 'Sparse':
+            try:
+                import scipy.sparse
+                import numpy.linalg
+                A3 = A.sparray()
+                self.assertTrue(isinstance(A3, scipy.sparse.csr_matrix))
+                self.assertAlmostEqual(numpy.linalg.norm(A3.todense() - A2), 0.0)
+            except ImportError:
+                pass
 
     def test_basic_la_operations_with_backend(self):
         self.test_basic_la_operations(True)
@@ -203,10 +205,6 @@ class AbstractBaseTest(object):
 
     def test_ident_zeros(self, use_backend=False):
 
-        # EpetraMatrix::ident() is not reliable
-        if self.backend == "Epetra":
-            return
-
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
             A, B = self.assemble_matrices(use_backend=use_backend)
@@ -238,6 +236,38 @@ class AbstractBaseTest(object):
 
     def test_ident_zeros_with_backend(self):
         self.test_ident_zeros(use_backend=True)
+
+    def test_setting_diagonal(self, use_backend=False):
+
+        mesh = UnitSquareMesh(21, 23)
+
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        W = FunctionSpace(mesh, "Lagrange", 1)
+
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        B = self.assemble(u*v*dx(), use_backend=use_backend, keep_diagonal=True)
+
+        b = assemble(action(u*v*dx(), Constant(1)))
+        A = B.copy()
+        A.zero()
+        A.set_diagonal(b)
+
+        resultsA = Vector()
+        resultsB = Vector()
+        A.init_vector(resultsA, 1)
+        B.init_vector(resultsB, 1)
+
+        ones = b.copy()
+        ones[:] = 1.0
+
+        A.mult(ones, resultsA)
+        B.mult(ones, resultsB)
+        self.assertAlmostEqual(resultsA.norm("l2"), resultsB.norm("l2"))
+
+    def test_setting_diagonal_with_backend(self):
+        self.test_setting_diagonal(True)
 
     #def test_create_from_sparsity_pattern(self):
 
@@ -299,26 +329,26 @@ class DataNotWorkingTester:
         A = as_backend_type(A)
         self.assertRaises(RuntimeError, A.data)
 
-if MPI.size(mpi_comm_world()) == 1:
-    class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Sparse"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
+    backend     = "uBLAS"
+    sub_backend = "Sparse"
 
-    class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Dense"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
+    backend     = "uBLAS"
+    sub_backend = "Dense"
 
-    if has_linear_algebra_backend("PETScCusp"):
-        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-            backend    = "PETScCusp"
+if has_linear_algebra_backend("PETScCusp"):
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "PETScCusp"
+        sub_backend = ""
 
 if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "PETSc"
-
-if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-        backend    = "Epetra"
+        sub_backend = ""
 
 #class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
 #    backend    = "STL"

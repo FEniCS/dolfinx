@@ -18,19 +18,15 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-03-28
-# Last changed: 2011-03-28
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class InputOutput(unittest.TestCase):
 
     def test_simple(self):
-
-        # Not working in parallel, even if only process 0 writes and
-        # others wait for a barrier. Skipping this in parallel for now.
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         # Create some parameters
         p0 = Parameters("test")
@@ -57,11 +53,6 @@ class InputOutput(unittest.TestCase):
 
     def test_gzipped_simple(self):
 
-        # Not working in parallel, even if only process 0 writes and
-        # others wait for a barrier. Skipping this in parallel for now.
-        if MPI.size(mpi_comm_world()) > 1:
-            return
-
         # Create some parameters
         p0 = Parameters("test")
         p0.add("filename", "foo.txt")
@@ -86,11 +77,6 @@ class InputOutput(unittest.TestCase):
         self.assertEqual(p1["monitor_convergence"], True)
 
     def test_nested(self):
-
-        # Not working in parallel, even if only process 0 writes and
-        # others wait for a barrier. Skipping this in parallel for now.
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         # Create some nested parameters
         p0 = Parameters("test")
@@ -125,11 +111,6 @@ class InputOutput(unittest.TestCase):
     def test_nested_read_existing(self):
         """Test that we can read in a nested parameter database into
         an existing (and matching) parameter database"""
-
-        # Not working in parallel, even if only process 0 writes and
-        # others wait for a barrier. Skipping this in parallel for now.
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         file = File("test_parameters.xml")
         file << parameters

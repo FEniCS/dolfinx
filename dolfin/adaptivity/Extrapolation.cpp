@@ -29,8 +29,8 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/BasisFunction.h>
-#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
@@ -231,10 +231,9 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
       const BasisFunction phi(j, *W.element(), vertex_coordinates0);
 
       // Evaluate dof on basis function
-      const int cell_orientation = 0;
       const double dof_value
         = V.element()->evaluate_dof(i, phi,  vertex_coordinates1.data(),
-                                    cell_orientation, c1);
+                                    c1.orientation, c1);
 
       // Insert dof_value into matrix
       A(row, j) = dof_value;

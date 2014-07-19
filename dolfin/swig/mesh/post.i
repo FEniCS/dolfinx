@@ -231,7 +231,7 @@ class MeshFunction(object):
         if tp == "int":
             return MeshFunctionInt(*args)
         if tp == "uint":
-            common.deprecation("uint-valued MeshFunction", "1.1.0",
+            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshFunctionSizet(*args)
         elif tp == "size_t":
@@ -259,6 +259,7 @@ def _new_closure(MeshType):
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
+            value = bool(value) if isinstance(value, int) else value
             return eval("%sBool(mesh, value)"%MeshType)
         else:
             raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
@@ -355,7 +356,7 @@ class MeshValueCollection(object):
         if tp == "int":
             return MeshValueCollectionInt(*args)
         if tp == "uint":
-            common.deprecation("uint-valued MeshFunction", "1.1.0",
+            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshValueCollectionSizet(*args)
         elif tp == "size_t":

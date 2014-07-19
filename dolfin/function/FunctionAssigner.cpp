@@ -16,10 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-20
-// Last changed: 2013-12-04
+// Last changed: 2014-02-28
 
 #include <utility>
 
+#include <map>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -73,7 +74,6 @@ FunctionAssigner::FunctionAssigner(std::vector<std::shared_ptr<const FunctionSpa
 
   // Build vectors of indices
   _check_and_build_indices(mesh, _receiving_spaces, assigning_sub_spaces);
-
 }
 //-----------------------------------------------------------------------------
 FunctionAssigner::FunctionAssigner(std::shared_ptr<const FunctionSpace> receiving_space,
@@ -210,15 +210,12 @@ void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving
     // Check that the functions are in the FunctionAssigner spaces
     if (_receiving_spaces.size() == 1)
     {
-
       dolfin_assert(_receiving_spaces[0]);
 
       // Check 1-1 assignment
       if (_assigning_spaces.size() == 1)
       {
-
 	dolfin_assert(receiving_funcs[0]);
-
 	if (!receiving_funcs[0]->in(*_receiving_spaces[0]))
 	{
 	  dolfin_error("FunctionAssigner.cpp",
@@ -230,10 +227,8 @@ void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving
       // Check N-1 assignment
       else
       {
-
 	dolfin_assert(receiving_funcs[i]);
 	dolfin_assert((*_receiving_spaces[0])[i]);
-
 	if (!receiving_funcs[i]->in(*(*_receiving_spaces[0])[i]))
 	{
 	  dolfin_error("FunctionAssigner.cpp",
@@ -244,7 +239,6 @@ void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving
     }
     else
     {
-
       // Check 1-N assignment
       if (!receiving_funcs[i]->in(*_receiving_spaces[i]))
       {
@@ -256,15 +250,12 @@ void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving
 
     if (_assigning_spaces.size() == 1)
     {
-
       dolfin_assert(_assigning_spaces[0]);
 
       // Check 1-1 assignment
       if (_receiving_spaces.size() == 1)
       {
-
 	dolfin_assert(assigning_funcs[0]);
-
 	if (!assigning_funcs[0]->in(*_assigning_spaces[0]))
 	{
 	  dolfin_error("FunctionAssigner.cpp",
@@ -276,10 +267,8 @@ void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving
       // Check 1-N assignment
       else
       {
-
 	dolfin_assert(assigning_funcs[i]);
 	dolfin_assert((*_assigning_spaces[0])[i]);
-
 	if (!assigning_funcs[i]->in(*(*_assigning_spaces[0])[i]))
 	{
 	  dolfin_error("FunctionAssigner.cpp",
@@ -290,7 +279,6 @@ void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving
     }
     else
     {
-
       dolfin_assert(assigning_funcs[i]);
       dolfin_assert(_assigning_spaces[i]);
 
@@ -308,7 +296,7 @@ void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving
     {
       dolfin_assert(receiving_funcs[i]->_vector);
       same_receiving_vector
-        = (recieving_vector!=receiving_funcs[i]->_vector.get())
+        = (recieving_vector != receiving_funcs[i]->_vector.get())
 	&& same_receiving_vector;
     }
 
@@ -318,8 +306,9 @@ void FunctionAssigner::_assign(std::vector<std::shared_ptr<Function> > receiving
 					   &_assigning_indices[i][0]);
 
     // Set receiving values
-    receiving_funcs[i]->_vector->set(&_transfer[i][0], _transfer[i].size(),
-                                     &_receiving_indices[i][0]);
+    receiving_funcs[i]->_vector->set_local(&_transfer[i][0],
+                                           _transfer[i].size(),
+                                           &_receiving_indices[i][0]);
 
     // If not same receiving vector
     if (!same_receiving_vector)
@@ -392,14 +381,14 @@ void FunctionAssigner::_check_and_build_indices(const Mesh& mesh,
   // Num spaces
   const std::size_t N = receiving_spaces.size();
 
-  // Check num entity dofs for the receiving and assigning spaces corresponds
+  // Check num entity dofs for the receiving and assigning spaces
+  // corresponds
   for (std::size_t i = 0; i < N; i++)
   {
     // Iterate over all entity dimensions
     for (std::size_t entity_dim=0; entity_dim < mesh.topology().dim();
          entity_dim++)
     {
-
       // Check num entity dofs for assigning spaces
       if (assigning_spaces[i]->dofmap()->num_entity_dofs(entity_dim)
           != receiving_spaces[i]->dofmap()->num_entity_dofs(entity_dim))
@@ -428,14 +417,21 @@ void FunctionAssigner::_check_and_build_indices(const Mesh& mesh,
     dolfin_assert(receiving_spaces[i]->dofmap());
     const GenericDofMap& receiving_dofmap = *receiving_spaces[i]->dofmap();
 
-    std::set<dolfin::la_index> assigning_dofs;
-    std::set<dolfin::la_index> receiving_dofs;
-
     // Get on-process dof ranges
-    const std::size_t assigning_n0 = assigning_dofmap.ownership_range().first;
-    const std::size_t assigning_n1 = assigning_dofmap.ownership_range().second;
-    const std::size_t receiving_n0 = receiving_dofmap.ownership_range().first;
-    const std::size_t receiving_n1 = receiving_dofmap.ownership_range().second;
+    const std::size_t bs_assigning = assigning_dofmap.block_size;
+    const std::size_t assigning_range
+      = assigning_dofmap.ownership_range().second
+      - assigning_dofmap.ownership_range().first
+      + bs_assigning*assigning_dofmap.local_to_global_unowned().size();
+
+    const std::size_t bs_receiving = receiving_dofmap.block_size;
+    const std::size_t receiving_range
+      = (receiving_dofmap.ownership_range().second
+         - receiving_dofmap.ownership_range().first)
+      + bs_receiving*receiving_dofmap.local_to_global_unowned().size();
+
+    // Create a map between receiving and assigning dofs
+    std::map<std::size_t, std::size_t> receiving_assigning_map;
 
     // Iterate over cells and collect cell dofs
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -447,7 +443,7 @@ void FunctionAssigner::_check_and_build_indices(const Mesh& mesh,
         = receiving_dofmap.cell_dofs(cell->index());
 
       // Check that both spaces have the same number of dofs
-      if (assigning_cell_dofs.size()!=receiving_cell_dofs.size())
+      if (assigning_cell_dofs.size() != receiving_cell_dofs.size())
       {
 	dolfin_error("FunctionAssigner.cpp",
 		     "create function assigner",
@@ -456,40 +452,29 @@ void FunctionAssigner::_check_and_build_indices(const Mesh& mesh,
       }
 
       // Iterate over the local dofs and collect on-process dofs
-      for (std::size_t i=0; i<assigning_cell_dofs.size(); i++)
+      for (std::size_t j = 0; j < assigning_cell_dofs.size(); j++)
       {
-	const std::size_t assigning_dof = assigning_cell_dofs[i];
-	if (assigning_dof >= assigning_n0 && assigning_dof < assigning_n1)
-	  assigning_dofs.insert(assigning_dof);
-
-	const std::size_t receiving_dof = receiving_cell_dofs[i];
-	if (receiving_dof >= receiving_n0 && receiving_dof < receiving_n1)
-	  receiving_dofs.insert(receiving_dof);
+	const std::size_t assigning_dof = assigning_cell_dofs[j];
+	const std::size_t receiving_dof = receiving_cell_dofs[j];
+	if (assigning_dof < assigning_range && receiving_dof < receiving_range)
+	  receiving_assigning_map[receiving_dof] = assigning_dof;
       }
     }
 
-    // Check that both spaces have the same number of dofs
-    if (assigning_dofs.size() != receiving_dofs.size())
+    // Transfer dofs to contiguous vectors
+    _assigning_indices[i].reserve(receiving_assigning_map.size());
+    _receiving_indices[i].reserve(receiving_assigning_map.size());
+
+    std::map<std::size_t, std::size_t>::const_iterator it;
+    for (it = receiving_assigning_map.begin();
+         it != receiving_assigning_map.end(); ++it)
     {
-      dolfin_error("FunctionAssigner.cpp",
-		   "create function assigner",
-		   "The receiving and assigning spaces do not have the same "
-		   "number of dofs per space");
+      _receiving_indices[i].push_back(it->first);
+      _assigning_indices[i].push_back(it->second);
     }
 
-    // Transfer dofs to contiguous vectors
-    _assigning_indices[i].reserve(assigning_dofs.size());
-    _receiving_indices[i].reserve(receiving_dofs.size());
-
-    std::set<dolfin::la_index>::const_iterator it;
-    for (it = assigning_dofs.begin(); it != assigning_dofs.end(); ++it)
-      _assigning_indices[i].push_back(*it);
-
-    for (it = receiving_dofs.begin(); it != receiving_dofs.end(); ++it)
-      _receiving_indices[i].push_back(*it);
-
     // Resize transfer vector
-    _transfer[i].resize(assigning_dofs.size());
+    _transfer[i].resize(_receiving_indices[i].size());
   }
 }
 //-----------------------------------------------------------------------------

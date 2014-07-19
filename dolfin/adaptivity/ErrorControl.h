@@ -227,9 +227,9 @@ namespace dolfin
     bool _is_linear;
 
     // Function spaces for extrapolation, cell bubble and cell cone:
-    std::shared_ptr<const FunctionSpace> _E;
-    std::shared_ptr<const FunctionSpace> _B;
-    std::shared_ptr<const FunctionSpace> _C;
+    std::shared_ptr<const FunctionSpace> _extrapolation_space;
+    std::shared_ptr<const FunctionSpace> _bubble_space;
+    std::shared_ptr<const FunctionSpace> _cone_space;
 
     // Functions for cell bubble, cell cone, computed cell residual,
     // computed facet residual, and interpolated extrapolated(!) dual:

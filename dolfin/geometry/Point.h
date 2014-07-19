@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg
+// Copyright (C) 2006-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2006.
-// Modified by Andre Massing, 2009.
+// Modified by Garth N. Wells 2006
+// Modified by Andre Massing 2009
 //
 // First added:  2006-06-12
-// Last changed: 2013-08-26
+// Last changed: 2014-06-06
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -27,6 +27,7 @@
 #include <cmath>
 #include <iostream>
 #include <dolfin/log/log.h>
+#include <dolfin/common/Array.h>
 
 namespace dolfin
 {
@@ -60,6 +61,14 @@ namespace dolfin
     ///         The array to create a Point from.
     Point(std::size_t dim, const double* x)
     { for (std::size_t i = 0; i < 3; i++) _x[i] = (i < dim ? x[i] : 0.0); }
+
+    /// Create point from Array
+    ///
+    /// *Arguments*
+    ///     x (Array<double>)
+    ///         Array of coordinates.
+    Point(const Array<double>& x)
+    { for (std::size_t i = 0; i < 3; i++) _x[i] = (i < x.size() ? x[i] : 0.0); }
 
     /// Copy constructor
     ///
@@ -237,7 +246,31 @@ namespace dolfin
     ///     output::
     ///
     ///         3
-    double norm() const;
+    double norm() const
+    {
+      return std::sqrt(_x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]);
+    }
+
+    /// Compute norm of point representing a vector from the origin
+    ///
+    /// *Returns*
+    ///     double
+    ///         The squared (Euclidean) norm of the vector from the
+    ///         origin of the point.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Point p(1.0, 2.0, 2.0);
+    ///         info("%g", p.squared_norm());
+    ///
+    ///     output::
+    ///
+    ///         9
+    double squared_norm() const
+    {
+      return _x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2];
+    }
 
     /// Compute cross product with given vector
     ///

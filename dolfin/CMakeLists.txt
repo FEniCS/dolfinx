@@ -89,13 +89,6 @@ if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${SLEPC_LIBRARIES})
 endif()
 
-# TAO
-if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_TAO AND TAO_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_TAO")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${TAO_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${TAO_LIBRARIES})
-endif()
-
 # PETSc
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC")
@@ -103,6 +96,14 @@ if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PETSC_LIBRARIES})
   if (PETSC_CUSP_FOUND)
     list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC_CUSP")
+  endif()
+
+  if (PETSC_ENABLE_SNES)
+    list(APPEND DOLFIN_CXX_DEFINITIONS "-DENABLE_PETSC_SNES")
+  endif()
+
+  if (PETSC_ENABLE_TAO)
+    list(APPEND DOLFIN_CXX_DEFINITIONS "-DENABLE_PETSC_TAO")
   endif()
 endif()
 
@@ -391,10 +392,8 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
 
-# Set library location
-get_target_property(DOLFIN_LIBRARY_LOCATION dolfin LOCATION)
-get_filename_component(DOLFIN_LIBRARY_FILENAME ${DOLFIN_LIBRARY_LOCATION} NAME)
-set(DOLFIN_LIBRARY "${CMAKE_INSTALL_PREFIX}/${DOLFIN_LIB_DIR}/${DOLFIN_LIBRARY_FILENAME}")
+# Export targets
+export(TARGETS dolfin FILE ${CMAKE_BINARY_DIR}/dolfin/DOLFINTargets.cmake)
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
@@ -411,6 +410,7 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
 install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
+    ${CMAKE_BINARY_DIR}/dolfin/DOLFINTargets.cmake
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake

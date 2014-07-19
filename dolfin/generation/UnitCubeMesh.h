@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet 2012
+// Modified by Mikael Mortensen, 2014
 //
 // First added:  2005-12-02
-// Last changed: 2012-11-09
+// Last changed: 2014-02-17
 
 #ifndef __UNIT_CUBE_MESH_H
 #define __UNIT_CUBE_MESH_H
@@ -58,6 +59,24 @@ namespace dolfin
     UnitCubeMesh(std::size_t nx, std::size_t ny, std::size_t nz)
         : BoxMesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz) {}
 
+    /// Create a uniform finite element _Mesh_ over the unit cube
+    /// [0,1] x [0,1] x [0,1].
+    ///
+    /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         MPI communicator
+    ///     nx (std::size_t)
+    ///         Number of cells in :math:`x` direction.
+    ///     ny (std::size_t)
+    ///         Number of cells in :math:`y` direction.
+    ///     nz (std::size_t)
+    ///         Number of cells in :math:`z` direction.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitCubeMesh mesh(MPI_COMM_WORLD, 32, 32, 32);
+    ///
     UnitCubeMesh(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz)
       : BoxMesh(comm, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz) {}
 

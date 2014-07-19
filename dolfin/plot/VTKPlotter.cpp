@@ -85,7 +85,7 @@ namespace // anonymous
 //----------------------------------------------------------------------------
 namespace dolfin
 {
-  GenericVTKPlottable *CreateVTKPlottable(std::shared_ptr<const Variable> var)
+  GenericVTKPlottable* CreateVTKPlottable(std::shared_ptr<const Variable> var)
   {
 #define DISPATCH(T) do                                                  \
     {                                                                   \
@@ -792,7 +792,13 @@ namespace dolfin
   class VTKWindowOutputStage {}; // dummy class
 }
 
-VTKPlotter::VTKPlotter(std::shared_ptr<const Variable>, QVTKWidget*) { init(); }
+VTKPlotter::VTKPlotter(std::shared_ptr<const Variable>, QVTKWidget*):
+  _initialized(false),
+  _frame_counter(0),
+  no_plot(false)
+{
+  init();
+}
 VTKPlotter::VTKPlotter(std::shared_ptr<const Expression>,
 		       std::shared_ptr<const Mesh>, QVTKWidget*)  { init(); }
 VTKPlotter::~VTKPlotter() {}

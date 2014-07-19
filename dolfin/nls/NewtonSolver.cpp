@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2005-2009.
-// Modified by Martin Alnes, 2008.
-// Modified by Johan Hake, 2010.
+// Modified by Anders Logg 2005-2009
+// Modified by Martin Alnes 2008
+// Modified by Johan Hake 2010
 //
 // First added:  2005-10-23
-// Last changed: 2013-12-04
+// Last changed: 2014-05-27
 
 #include <iostream>
 #include <dolfin/common/constants.h>
@@ -65,7 +65,7 @@ Parameters NewtonSolver::default_parameters()
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver()
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _A(new Matrix), _dx(new Vector), _b(new Vector),
+    _residual0(0.0), _matA(new Matrix), _dx(new Vector), _b(new Vector),
     _mpi_comm(MPI_COMM_WORLD)
 {
   // Set default parameters
@@ -75,7 +75,7 @@ NewtonSolver::NewtonSolver()
 NewtonSolver::NewtonSolver(std::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _solver(solver), _A(factory.create_matrix()),
+    _residual0(0.0), _solver(solver), _matA(factory.create_matrix()),
     _dx(factory.create_vector()), _b(factory.create_vector()),
     _mpi_comm(MPI_COMM_WORLD)
 {
@@ -96,7 +96,7 @@ std::pair<std::size_t, bool>
 NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                     GenericVector& x)
 {
-  dolfin_assert(_A);
+  dolfin_assert(_matA);
   dolfin_assert(_b);
   dolfin_assert(_dx);
 
@@ -120,7 +120,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
   // Compute F(u)
   nonlinear_problem.F(*_b, x);
-  nonlinear_problem.form(*_A, *_b, x);
+  nonlinear_problem.form(*_matA, *_b, x);
 
   // Check convergence
   bool newton_converged = false;
@@ -140,7 +140,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                  convergence_criterion.c_str());
   }
 
-  _solver->set_operator(_A);
+  _solver->set_operator(_matA);
 
   // Get relaxation parameter
   const double relaxation = parameters["relaxation_parameter"];
@@ -149,11 +149,11 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   while (!newton_converged && _newton_iteration < maxiter)
   {
     // Compute Jacobian
-    nonlinear_problem.J(*_A, x);
+    nonlinear_problem.J(*_matA, x);
 
     // FIXME: This reset is a hack to handle a deficiency in the
     // Trilinos wrappers
-    _solver->set_operator(_A);
+    _solver->set_operator(_matA);
 
     // Perform linear solve and update total number of Krylov
     // iterations
@@ -175,7 +175,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // FIXME: But, this function call may update internal variable, etc.
     // Compute F
     nonlinear_problem.F(*_b, x);
-    nonlinear_problem.form(*_A, *_b, x);
+    nonlinear_problem.form(*_matA, *_b, x);
 
     // Test for convergence
     if (convergence_criterion == "residual")
@@ -235,7 +235,15 @@ double NewtonSolver::relative_residual() const
 //-----------------------------------------------------------------------------
 GenericLinearSolver& NewtonSolver::linear_solver() const
 {
-  dolfin_assert(_solver);
+  if (!_solver)
+  {
+    dolfin_error("NewtonSolver.cpp",
+                 "access linear solver for Newton solver",
+                 "The linear solver will not be initialized until solve() "
+                 "has been called. For control of the linear solver, pass "
+                 "a linear solver to the constructor of NewtonSolver");
+  }
+
   return *_solver;
 }
 //-----------------------------------------------------------------------------

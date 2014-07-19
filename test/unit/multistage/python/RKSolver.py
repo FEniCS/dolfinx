@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-02-20
-# Last changed: 2013-02-20
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -26,16 +26,17 @@ from dolfin import *
 import numpy as np
 
 def convergence_order(errors, base = 2):
-  import math
-  orders = [0.0] * (len(errors)-1)
-  for i in range(len(errors)-1):
-    try:
-      orders[i] = math.log(errors[i]/errors[i+1], base)
-    except ZeroDivisionError:
-      orders[i] = numpy.nan
+    import math
+    orders = [0.0] * (len(errors)-1)
+    for i in range(len(errors)-1):
+        try:
+            orders[i] = math.log(errors[i]/errors[i+1], base)
+        except ZeroDivisionError:
+            orders[i] = numpy.nan
 
-  return orders
+    return orders
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class RKSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_scalar(self):
@@ -43,9 +44,6 @@ class RKSolverTest(unittest.TestCase):
         LEVEL = cpp.get_log_level()
         cpp.set_log_level(cpp.WARNING)
         mesh = UnitSquareMesh(4, 4)
-
-        if cpp.MPI.size(mesh.mpi_comm()) > 1:
-            return
 
         V = FunctionSpace(mesh, "R", 0)
         u = Function(V)
@@ -55,8 +53,8 @@ class RKSolverTest(unittest.TestCase):
         tstop = 1.0
         u_true = Expression("exp(t)", t=tstop)
 
-        for Scheme in [ForwardEuler, BackwardEuler, ExplicitMidPoint,
-                       CN2, RK4]:
+        for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
+                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             scheme = Scheme(form, u)
             solver = RKSolver(scheme)
             u_errors = []
@@ -65,8 +63,7 @@ class RKSolverTest(unittest.TestCase):
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(u_true(0.0, 0.0) - u(0.0, 0.0))
 
-            self.assertAlmostEqual(min(convergence_order(u_errors)),
-                                   scheme.order(), 1)
+            self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
         cpp.set_log_level(LEVEL)
 
@@ -76,9 +73,6 @@ class RKSolverTest(unittest.TestCase):
         cpp.set_log_level(cpp.WARNING)
         mesh = UnitSquareMesh(4, 4)
 
-        if cpp.MPI.size(mesh.mpi_comm()) > 1:
-            return
-
         V = VectorFunctionSpace(mesh, "R", 0, dim=2)
         u = Function(V)
         v = TestFunction(V)
@@ -87,8 +81,8 @@ class RKSolverTest(unittest.TestCase):
         tstop = 1.0
         u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
 
-        for Scheme in [ForwardEuler, BackwardEuler, ExplicitMidPoint,
-                       CN2, RK4]:
+        for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
+                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             scheme = Scheme(form, u)
             solver = RKSolver(scheme)
             u_errors_0 = []
@@ -99,14 +93,10 @@ class RKSolverTest(unittest.TestCase):
                 u_errors_0.append(u_true(0.0, 0.0)[0] - u(0.0, 0.0)[0])
                 u_errors_1.append(u_true(0.0, 0.0)[1] - u(0.0, 0.0)[1])
 
-            self.assertAlmostEqual(min(convergence_order(u_errors_0)),
-                                   scheme.order(), 1)
-            self.assertAlmostEqual(min(convergence_order(u_errors_1)),
-                                   scheme.order(), 1)
+            self.assertTrue(scheme.order()-min(convergence_order(u_errors_0))<0.1)
+            self.assertTrue(scheme.order()-min(convergence_order(u_errors_1))<0.1)
 
         cpp.set_log_level(LEVEL)
-
-
 
 if __name__ == "__main__":
     print ""

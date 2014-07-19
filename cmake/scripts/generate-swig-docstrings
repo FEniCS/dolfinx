@@ -23,11 +23,12 @@ This script assumes that all functions and classes lives in the dolfin namespace
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Johan Hake, 2010.
-# Modified by Anders E. Johansen, 2011.
+# Modified by Johan Hake 2010
+# Modified by Anders E. Johansen 2011
+# Modified by Anders Logg 2014
 #
 # First added:  2010-08-19
-# Last changed: 2013-09-04
+# Last changed: 2014-03-03
 
 import os, shutil, types, sys
 
@@ -192,11 +193,15 @@ def handle_std_vector(cpp_type, classnames):
 
     # Special case: vector of pairs
     if "std::pair" in cpp_type and not cpp_type.startswith("std::pair"):
-        arg1, arg2 = cpp_type.split("<")[2].split(">")[0].split(",")
-        pair = "std::pair<%s,%s>" % (arg1, arg2)
-        if handle_std_pair(pair, classnames) is not None:
-            return "numpy.array(%s)" % handle_std_pair(pair, classnames)
-        else:
+        try:
+            arg1, arg2 = cpp_type.split("<")[2].split(">")[0].split(",")
+            pair = "std::pair<%s,%s>" % (arg1, arg2)
+            if handle_std_pair(pair, classnames) is not None:
+                return "numpy.array(%s)" % handle_std_pair(pair, classnames)
+            else:
+                return None
+        except:
+            # Failed to handle complex type, fail gracefully
             return None
     else:
         arg = cpp_type.split("<")[1].split(">")[0].strip()

@@ -58,8 +58,14 @@ Parameters uBLASKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
-                                     std::string preconditioner)
-  : _method(method), report(false)
+                                     std::string preconditioner) :
+  _method(method),
+  rtol(0.0),
+  atol(0.0),
+  div_tol(0.0),
+  max_it(0),
+  restart(0),
+  report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -69,7 +75,9 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : _method("default"), _pc(reference_to_no_delete_pointer(pc)), report(false)
+  : _method("default"), _pc(reference_to_no_delete_pointer(pc)),
+  rtol(0.0), atol(0.0), div_tol(0.0), max_it(0), restart(0),
+  report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -90,16 +98,16 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
 //-----------------------------------------------------------------------------
 std::size_t uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  dolfin_assert(_A);
-  dolfin_assert(_P);
+  dolfin_assert(_matA);
+  dolfin_assert(_matP);
 
   // Try to first use operator as a uBLAS matrix
-  if (has_type<const uBLASMatrix<ublas_sparse_matrix> >(*_A))
+  if (has_type<const uBLASMatrix<ublas_sparse_matrix> >(*_matA))
   {
     std::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > A
-      = as_type<const uBLASMatrix<ublas_sparse_matrix> >(_A);
+      = as_type<const uBLASMatrix<ublas_sparse_matrix> >(_matA);
     std::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > P
-      = as_type<const uBLASMatrix<ublas_sparse_matrix> >(_P);
+      = as_type<const uBLASMatrix<ublas_sparse_matrix> >(_matP);
 
     dolfin_assert(A);
     dolfin_assert(P);
@@ -111,12 +119,12 @@ std::size_t uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
   }
 
   // If that fails, try to use it as a uBLAS linear operator
-  if (has_type<const uBLASLinearOperator>(*_A))
+  if (has_type<const uBLASLinearOperator>(*_matA))
   {
     std::shared_ptr<const uBLASLinearOperator> A
-      =  as_type<const uBLASLinearOperator>(_A);
+      =  as_type<const uBLASLinearOperator>(_matA);
     std::shared_ptr<const uBLASLinearOperator> P
-      =  as_type<const uBLASLinearOperator>(_P);
+      =  as_type<const uBLASLinearOperator>(_matP);
 
     dolfin_assert(A);
     dolfin_assert(P);

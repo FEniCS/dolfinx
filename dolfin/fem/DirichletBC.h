@@ -37,7 +37,7 @@
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <memory>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
@@ -78,7 +78,7 @@ namespace dolfin
   /// object, using the inside() function to specify on which facets
   /// the boundary conditions should be applied. The boundary facets
   /// will then be searched for and marked *only* on the first call to
-  /// apply. This means that the mesh could be moved after the first 
+  /// apply. This means that the mesh could be moved after the first
   /// apply and the boundary markers would still remain intact.
   ///
   /// Alternatively, the boundary may be specified by a _MeshFunction_
@@ -120,7 +120,7 @@ namespace dolfin
 
   public:
 
-    typedef boost::unordered_map<std::size_t, double> Map;
+    typedef std::unordered_map<std::size_t, double> Map;
 
     /// Create boundary condition for subdomain
     ///
@@ -319,7 +319,7 @@ namespace dolfin
     /// it is necessary to call gather() on the returned boundary values.
     ///
     /// *Arguments*
-    ///     boundary_values (boost::unordered_map<std::size_t, double>)
+    ///     boundary_values (std::unordered_map<std::size_t, double>)
     ///         Map from dof to boundary value.
     ///     method (std::string)
     ///         Optional argument: A string specifying which
@@ -332,7 +332,7 @@ namespace dolfin
     /// marked on all processes.
     ///
     /// *Arguments*
-    ///     boundary_values (boost::unordered_map<std::size_t, double>)
+    ///     boundary_values (std::unordered_map<std::size_t, double>)
     ///         Map from dof to boundary value.
     void gather(Map& boundary_values) const;
 
@@ -505,7 +505,7 @@ namespace dolfin
 
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;
-    
+
     // Cells attached to boundary, stored by cell index with map to local dof number
     mutable std::map<std::size_t, std::vector<std::size_t> > _cells_to_localdofs;
 

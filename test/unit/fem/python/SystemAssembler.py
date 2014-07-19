@@ -21,7 +21,7 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-10-04
-# Last changed: 2013-06-02
+# Last changed: 2014-05-28
 
 import unittest
 import numpy
@@ -118,21 +118,10 @@ class TestSystemAssembler(unittest.TestCase):
         assembler.assemble(b)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-        # Do not reset sparsity
-        assemble.reset_sparsity = False
-        assembler.assemble(A)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        assembler.assemble(b)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
-
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_facet_assembly(self):
 
         mesh = UnitSquareMesh(24, 24)
-
-        if MPI.size(mesh.mpi_comm()) > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
 
         V = FunctionSpace(mesh, "DG", 1)
 
@@ -202,7 +191,6 @@ class TestSystemAssembler(unittest.TestCase):
             u = Function(V)
             x = u.vector()
             x[:] = 30.0
-            u.update()
 
             # Assemble incremental system
             assembler = SystemAssembler(a, -L, bc)
@@ -216,21 +204,16 @@ class TestSystemAssembler(unittest.TestCase):
 
             # Update solution
             x[:] -= Dx[:]
-            u.update()
 
             # Check solution
             u_true = Function(V)
             solve(a == L, u_true, bc)
             u.vector()[:] -= u_true.vector()[:]
-            u.update()
             error = norm(u.vector(), 'linf')
             self.assertAlmostEqual(error, 0.0)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_domains(self):
-
-        if MPI.size(mpi_comm_world()) > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
 
         class RightSubDomain(SubDomain):
             def inside(self, x, on_boundary):
@@ -250,7 +233,6 @@ class TestSystemAssembler(unittest.TestCase):
         # the numerical answer (initialized to some number)
         x = Function(V)
         x.vector()[:] = 30.0
-        x.update()
 
         dx = Measure("dx")[sub_domains]
         # the forms
@@ -267,7 +249,6 @@ class TestSystemAssembler(unittest.TestCase):
 
         # check solution
         x.vector()[:] -= 1.0
-        x.update()
         error = norm(x.vector(), 'linf')
         self.assertAlmostEqual(error, 0.0)
 
@@ -284,7 +265,44 @@ class TestSystemAssembler(unittest.TestCase):
 
         # check solution
         x.vector()[:] -= 1.0
-        x.update()
+        error = norm(x.vector(), 'linf')
+        self.assertAlmostEqual(error, 0.0)
+
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_facet_assembly_cellwise_insertion(self):
+
+        mesh = UnitIntervalMesh(10)
+
+        c_f = FunctionSpace(mesh, "DG", 0)
+        v = Constant((-1.0,))
+        dt = Constant(1.0)
+
+        c_t = TestFunction(c_f)
+        c_a = TrialFunction(c_f)
+
+        n = FacetNormal(mesh)
+        vn = dot(v, n)
+        vout = 0.5*(vn + abs(vn))
+
+        # forms:
+        # a has no facet integrals
+        a = c_t*c_a*dx
+        # L has facet integrals so we end up in facet wise assembly
+        L = c_t('+')*vout('+')*dt('+')*dS + c_t('-')*vout('-')*dt('-')*dS  + c_t*vout*dt*ds
+        # but have to use cell wise insertion because the sparsity pattern doesn't support
+        # the macro element
+
+        A = Matrix()
+        b = Vector()
+
+        assembler = SystemAssembler(a, L)
+        assembler.assemble(A, b)
+
+        x = Function(c_f)
+        x.vector()[:] = 30.0
+        solve(A, x.vector(), b)
+
+        x.vector()[:] -= 10.0
         error = norm(x.vector(), 'linf')
         self.assertAlmostEqual(error, 0.0)
 

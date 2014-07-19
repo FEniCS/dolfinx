@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2008-09-11
-// Last changed: 2013-09-19
+// Last changed: 2014-06-11
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -30,7 +30,7 @@
 #include <vector>
 
 #include <memory>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
@@ -200,14 +200,14 @@ namespace dolfin
     /// from new to old dofs
     ///
     /// *Arguments*
-    ///     collapsed_dofs (boost::unordered_map<std::size_t, std::size_t>)
+    ///     collapsed_dofs (std::unordered_map<std::size_t, std::size_t>)
     ///         The map from new to old dofs.
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///       The new function space.
     std::shared_ptr<FunctionSpace>
-    collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
+    collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
 
     /// Check if function space has given cell
     ///
@@ -265,12 +265,12 @@ namespace dolfin
     // The dofmap
     std::shared_ptr<const GenericDofMap> _dofmap;
 
-    // The component (for sub spaces)
+    // The component (for subspaces)
     std::vector<std::size_t> _component;
 
-    // Cache of sub spaces
+    // Cache of subspaces
     mutable std::map<std::vector<std::size_t>,
-      std::shared_ptr<FunctionSpace> > subspaces;
+      std::shared_ptr<FunctionSpace> > _subspaces;
 
   };
 

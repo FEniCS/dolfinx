@@ -32,6 +32,7 @@ class Quadratic3D(Expression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + x[2]*x[2] + 1.0
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class NonmatchingFunctionInterpolationTest(unittest.TestCase):
 
     def test_functional2D(self):
@@ -45,19 +46,18 @@ class NonmatchingFunctionInterpolationTest(unittest.TestCase):
         u0 = Function(V0)
         u0.interpolate(f)
 
-        if MPI.size(mesh0.mpi_comm()) == 1:
-            # Interpolate FE function on finer mesh
-            mesh1 = UnitSquareMesh(31, 31)
-            V1 = FunctionSpace(mesh1, "Lagrange", 2)
-            u1 = Function(V1)
-            u1.interpolate(u0)
-            self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
+        # Interpolate FE function on finer mesh
+        mesh1 = UnitSquareMesh(31, 31)
+        V1 = FunctionSpace(mesh1, "Lagrange", 2)
+        u1 = Function(V1)
+        u1.interpolate(u0)
+        self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
-            mesh1 = UnitSquareMesh(30, 30)
-            V1 = FunctionSpace(mesh1, "Lagrange", 2)
-            u1 = Function(V1)
-            u1.interpolate(u0)
-            self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
+        mesh1 = UnitSquareMesh(30, 30)
+        V1 = FunctionSpace(mesh1, "Lagrange", 2)
+        u1 = Function(V1)
+        u1.interpolate(u0)
+        self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
     def test_functional3D(self):
         """Test integration of function interpolated in non-matching meshes"""
@@ -70,19 +70,18 @@ class NonmatchingFunctionInterpolationTest(unittest.TestCase):
         u0 = Function(V0)
         u0.interpolate(f)
 
-        if MPI.size(mesh0.mpi_comm()) == 1:
-            # Interpolate FE function on finer mesh
-            mesh1 = UnitCubeMesh(11, 11, 11)
-            V1 = FunctionSpace(mesh1, "Lagrange", 2)
-            u1 = Function(V1)
-            u1.interpolate(u0)
-            self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
+        # Interpolate FE function on finer mesh
+        mesh1 = UnitCubeMesh(11, 11, 11)
+        V1 = FunctionSpace(mesh1, "Lagrange", 2)
+        u1 = Function(V1)
+        u1.interpolate(u0)
+        self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
-            mesh1 = UnitCubeMesh(10, 11, 10)
-            V1 = FunctionSpace(mesh1, "Lagrange", 2)
-            u1 = Function(V1)
-            u1.interpolate(u0)
-            self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
+        mesh1 = UnitCubeMesh(10, 11, 10)
+        V1 = FunctionSpace(mesh1, "Lagrange", 2)
+        u1 = Function(V1)
+        u1.interpolate(u0)
+        self.assertAlmostEqual(assemble(u0*dx), assemble(u1*dx), 10)
 
 if __name__ == "__main__":
     unittest.main()

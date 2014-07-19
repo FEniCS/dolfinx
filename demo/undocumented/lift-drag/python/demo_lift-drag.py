@@ -51,13 +51,14 @@ markers = FacetFunctionSizet(mesh, 1)
 Fish().mark(markers, 1);
 
 # Define functionals for drag and lift
+ds = ds[markers]
 n = FacetNormal(mesh)
 D = -p*n[0]*ds(1)
 L = p*n[1]*ds(1)
 
 # Assemble functionals over sub domain
-drag = assemble(D, mesh=mesh, exterior_facet_domains=markers)
-lift = assemble(L, mesh=mesh, exterior_facet_domains=markers)
+drag = assemble(D)
+lift = assemble(L)
 
 print "Lift: %f" % lift
 print "Drag: %f" % drag

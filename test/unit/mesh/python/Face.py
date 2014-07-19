@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-02-26
-# Last changed: 2011-02-26
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -26,20 +26,21 @@ from dolfin import *
 cube = UnitCubeMesh(5, 5, 5)
 square = UnitSquareMesh(5, 5)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class Area(unittest.TestCase):
 
     def testArea(self):
         """Iterate over faces and sum area."""
+
         area = 0.0
         for f in faces(cube):
             area += f.area()
-        if MPI.size(cube.mpi_comm()) == 1:
-            self.assertAlmostEqual(area, 39.21320343559672494393)
+        self.assertAlmostEqual(area, 39.21320343559672494393)
+
         area = 0.0
         for f in faces(square):
             area += f.area()
-        if MPI.size(square.mpi_comm()) == 1:
-            self.assertAlmostEqual(area, 1.0)
+        self.assertAlmostEqual(area, 1.0)
 
 class Normal(unittest.TestCase):
 
@@ -51,7 +52,6 @@ class Normal(unittest.TestCase):
 
         f = Face(square, 0)
         self.assertRaises(RuntimeError, f.normal)
-
 
     def testNormalComponent(self):
         """Compute normal vector components to each face."""

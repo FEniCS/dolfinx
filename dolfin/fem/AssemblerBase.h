@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -36,25 +37,15 @@ namespace dolfin
   class GenericTensor;
   class Form;
 
-  /// This class provides some common functions used in
-  /// assembler classes.
-
+  /// This class provides some common functions used in assembler
+  /// classes.
   class AssemblerBase
   {
   public:
 
-    // Check form
-    AssemblerBase() :
-      reset_sparsity(true),
-      add_values(false),
-      finalize_tensor(true),
+    /// Constructor
+    AssemblerBase() : add_values(false), finalize_tensor(true),
       keep_diagonal(false) {}
-
-    /// reset_sparsity (bool)
-    ///     Default value is true.
-    ///     This controls whether the sparsity pattern of the
-    ///     given tensor is reset prior to assembly.
-    bool reset_sparsity;
 
     /// add_values (bool)
     ///     Default value is false.
@@ -85,7 +76,8 @@ namespace dolfin
     static void check(const Form& a);
 
     // Pretty-printing for progress bar
-    static std::string progress_message(std::size_t rank, std::string integral_type);
+    static std::string progress_message(std::size_t rank,
+                                        std::string integral_type);
 
   };
 

@@ -81,17 +81,17 @@ namespace dolfin
     static std::shared_ptr<X> down_cast(std::shared_ptr<Y> A)
     {
       // Try to down cast shared pointer
-      std::shared_ptr<X> _A = std::dynamic_pointer_cast<X>(A);
+      std::shared_ptr<X> _matA = std::dynamic_pointer_cast<X>(A);
 
       // If down cast fails, try to get shared ptr instance to
       // unwrapped object
-      if (!_A)
+      if (!_matA)
       {
         // Try to get instance to unwrapped object and cast
         if (A->shared_instance())
-          _A = std::dynamic_pointer_cast<X>(A->shared_instance());
+          _matA = std::dynamic_pointer_cast<X>(A->shared_instance());
       }
-      return _A;
+      return _matA;
     }
 
     /// Return concrete instance / unwrap (const version)

@@ -28,7 +28,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 LinearVariationalProblem::LinearVariationalProblem(const Form& a,
  const Form& L, Function& u) : Hierarchical<LinearVariationalProblem>(*this),
-  _a(reference_to_no_delete_pointer(a)), _L(reference_to_no_delete_pointer(L)),
+  _a(reference_to_no_delete_pointer(a)), _l(reference_to_no_delete_pointer(L)),
   _u(reference_to_no_delete_pointer(u))
 {
   // Check forms
@@ -39,7 +39,7 @@ LinearVariationalProblem::LinearVariationalProblem(const Form& a,
   const Form& L, Function& u, const DirichletBC& bc)
   : Hierarchical<LinearVariationalProblem>(*this),
     _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L)),
+    _l(reference_to_no_delete_pointer(L)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary condition
@@ -56,7 +56,7 @@ LinearVariationalProblem(const Form& a,
                          std::vector<const DirichletBC*> bcs)
   : Hierarchical<LinearVariationalProblem>(*this),
     _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L)),
+    _l(reference_to_no_delete_pointer(L)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary conditions
@@ -71,9 +71,9 @@ LinearVariationalProblem::
 LinearVariationalProblem(std::shared_ptr<const Form> a,
                          std::shared_ptr<const Form> L,
                          std::shared_ptr<Function> u,
-                         std::vector<std::shared_ptr<const DirichletBC> > bcs)
+                         std::vector<std::shared_ptr<const DirichletBC>> bcs)
   : Hierarchical<LinearVariationalProblem>(*this),
-    _a(a), _L(L), _u(u)
+    _a(a), _l(L), _u(u)
 {
   // Store boundary conditions
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -90,7 +90,7 @@ std::shared_ptr<const Form> LinearVariationalProblem::bilinear_form() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Form> LinearVariationalProblem::linear_form() const
 {
-  return _L;
+  return _l;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<Function> LinearVariationalProblem::solution()
@@ -103,8 +103,8 @@ std::shared_ptr<const Function> LinearVariationalProblem::solution() const
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<const DirichletBC> >
-  LinearVariationalProblem::bcs() const
+std::vector<std::shared_ptr<const DirichletBC>>
+LinearVariationalProblem::bcs() const
 {
   return _bcs;
 }
@@ -136,13 +136,13 @@ void LinearVariationalProblem::check_forms() const
   }
 
   // Check rank of linear form L
-  dolfin_assert(_L);
-  if (_L->rank() != 1)
+  dolfin_assert(_l);
+  if (_l->rank() != 1)
   {
     dolfin_error("LinearVariationalProblem.cpp",
                  "define linear variational problem a(u, v) = L(v) for all v",
                  "Expecting the right-hand side to be a linear form (not rank %d)",
-                 _L->rank());
+                 _l->rank());
   }
 
   // Check that function space of solution variable matches trial space

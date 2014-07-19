@@ -23,6 +23,7 @@
 // Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
 
+#include <unordered_set>
 #include <boost/foreach.hpp>
 #include "dolfin/common/Timer.h"
 #include "dolfin/log/log.h"
@@ -171,10 +172,8 @@ void ZoltanInterface::ZoltanGraphInterface::get_all_edges(void* data,
   for (unsigned int i = 0; i < graph.size(); ++i)
   {
     dolfin_assert(graph[i].size() == (unsigned int) num_edges[i]);
-    BOOST_FOREACH(boost::unordered_set<unsigned int>::value_type edge, graph[i])
-    {
+    for (std::unordered_set<unsigned int>::value_type edge : graph[i])
       nbor_global_id[entry++] = edge;
-    }
   }
 }
 //-----------------------------------------------------------------------------
