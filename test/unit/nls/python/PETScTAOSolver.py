@@ -19,7 +19,7 @@
 # First added:  2014-07-19
 
 """This demo uses PETSc's TAO solver for nonlinear (bound-constrained)
-optimisation problems to solve a bulking problem in FEniCS.
+optimisation problems to solve a buckling problem in FEniCS.
 We consider here a hyperelastic beam constrained in a box
 under axial compression.
 
@@ -36,7 +36,7 @@ if has_petsc_tao():
         import sys; sys.exit(0)
 
     # Read mesh
-    mesh = Mesh("bulking.xml.gz")
+    mesh = Mesh("buckling.xml.gz")
 
     # Create function space
     V = VectorFunctionSpace(mesh, "Lagrange", 1)
