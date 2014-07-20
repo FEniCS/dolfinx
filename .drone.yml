@@ -1,5 +1,6 @@
 image: fenicsproject/stable-src
 script:
+  - sudo apt-get update
   - sudo apt-get -y install python-six
   - git clone https://git@bitbucket.org/fenics-project/ffc
   - cd ffc
