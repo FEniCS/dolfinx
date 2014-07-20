@@ -17,6 +17,8 @@ script:
   - cd ufl
   - sudo python setup.py install --prefix=/usr
   - cd ..
+  - export UFC_DIR=/usr
+  - export PYTHONPATH=$PYTHONPATH:/usr/lib/python-2.7/site-packages  
   - ./cmake.drone
 notify:
   email:
