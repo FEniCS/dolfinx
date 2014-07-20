@@ -20,7 +20,6 @@ script:
   - cd ..
   - export PATH=$PATH:/home/fenics/bin
   - export PYTHONPATH=$PYTHONPATH:/home/fenics/lib/python2.7/site-packages
-  - ffc
   - ./cmake.drone
 notify:
   email:
