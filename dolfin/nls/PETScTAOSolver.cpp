@@ -121,11 +121,18 @@ void PETScTAOSolver::set_solver(const std::string tao_type)
                  "Unknown TAO method \"%s\"", tao_type.c_str());
   }
 
-  // Set solver type
-  std::map<std::string, std::pair<std::string, const TaoType> >::const_iterator it;
-  it = _methods.find(tao_type);
-  dolfin_assert(it != _methods.end());
-  TaoSetType(_tao, it->second.second);
+  // In case of an unconstrained minimisation problem, set the TAO method
+  // to TAONTL
+  if (!has_bounds && tao_type == "default")
+    TaoSetType(_tao, TAONTL);
+  else
+  {
+    // Set solver type
+    std::map<std::string, std::pair<std::string, const TaoType> >::const_iterator it;
+    it = _methods.find(tao_type);
+    dolfin_assert(it != _methods.end());
+    TaoSetType(_tao, it->second.second);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::set_ksp_pc(const std::string ksp_type,
@@ -210,16 +217,6 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   // Set TAO/KSP parameters
   set_tao_options();
   set_ksp_options();
-
-  // In case of an unconstrained minimisation problem, reset the TAO method
-  // TAOTRON (by default chosen) to TAONTL
-  if (!has_bounds)
-  {
-    const TaoType tao_type;
-    TaoGetType(_tao, &tao_type);
-    if (strcmp(tao_type, TAOTRON) == 0)
-      TaoSetType(_tao, TAONTL);
-  }
   
   // Define the solution vector
   // It's necessary because if we solve using directly the vector PETScVector& x
