@@ -1,24 +1,24 @@
-image: gcc4.8
+image: fenicsproject/stable-src
 script:
-  - sudo apt-get -y install libboost1.48-all-dev libeigen3-dev python-numpy python-six python-scientific python-ply libptscotch-dev swig
   - git clone https://git@bitbucket.org/fenics-project/ffc
   - cd ffc
-  - sudo python setup.py install --prefix=/usr
+  - sudo python setup.py install --prefix=/home/fenics
   - cd ..
   - git clone https://git@bitbucket.org/fenics-project/fiat
   - cd fiat
-  - sudo python setup.py install --prefix=/usr
+  - sudo python setup.py install --prefix=/home/fenics
   - cd ..
   - git clone https://git@bitbucket.org/fenics-project/instant
   - cd instant
-  - sudo python setup.py install --prefix=/usr
+  - sudo python setup.py install --prefix=/home/fenics
   - cd ..
   - git clone https://git@bitbucket.org/fenics-project/ufl
   - cd ufl
-  - sudo python setup.py install --prefix=/usr
+  - sudo python setup.py install --prefix=/home/fenics
   - cd ..
-  - export UFC_DIR=/usr
-  - export PYTHONPATH=$PYTHONPATH:/usr/lib/python-2.7/site-packages  
+  - export PATH=$PATH:/home/fenics/bin
+  - export PYTHONPATH=$PYTHONPATH:/home/fenics/lib/python2.7/site-packages
+  - ffc
   - ./cmake.drone
 notify:
   email:
