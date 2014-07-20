@@ -111,10 +111,8 @@ if has_petsc_tao():
             u.vector()[:] = x
             assemble(H_elastic_energy, tensor=A)
 
-    ContactPb = ContactProblem()
-
     # Create the PETScTAOSolver
-    solver = PETScTAOSolver('tron', 'stcg')
+    solver = PETScTAOSolver("tron", "stcg")
 
     # Set some parameters
     solver.parameters["monitor_convergence"] = True
@@ -125,7 +123,8 @@ class TAOSolverTester(unittest.TestCase):
     if has_petsc_tao():
 
         def test_tao_solver(self):
-            solver.solve(ContactPb, u.vector(), u_min.vector(), u_max.vector())
+            solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
+            # plot(u, mode="displacement", wireframe=True, title="Displacement field", interactive=True)
             self.assertTrue(u.vector().max() >= 1.0)
 
 if __name__ == "__main__":
