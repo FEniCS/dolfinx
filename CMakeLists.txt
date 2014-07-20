@@ -562,6 +562,15 @@ if (DOLFIN_ENABLE_VTK)
 endif()
 
 #------------------------------------------------------------------------------
+# Set size of dolfin::la_index
+
+if (PETSC_FOUND)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=${PETSC_INT_SIZE}")
+else()
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=4")
+endif()
+
+#------------------------------------------------------------------------------
 # Print summary of found and not found optional packages
 
 # FIXME: Use FeatureSummary.cmake to do this
