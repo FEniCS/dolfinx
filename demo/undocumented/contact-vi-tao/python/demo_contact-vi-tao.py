@@ -37,29 +37,37 @@ mesh = Mesh("../circle_yplane.xml.gz")
 # Create function space
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
-# Create solution, trial and test functions
-u, du, v = Function(V), TrialFunction(V), TestFunction(V)
+# Define functions
+du = TrialFunction(V)            # Incremental displacement
+v  = TestFunction(V)             # Test function
+u  = Function(V)                 # Displacement from previous iteration
+B  = Constant((0.0, -1.0))       # Body force per unit volume
+
+# Kinematics
+I = Identity(u.geometric_dimension())  # Identity tensor
+F = I + grad(u)             # Deformation gradient
+C = F.T*F                   # Right Cauchy-Green tensor
+
+# Invariants of deformation tensors
+Ic = tr(C)
+J  = det(F)
 
 # Elasticity parameters
 E, nu = 10.0, 0.3
-mu = Constant(E/(2.0*(1.0+nu)))
-lmbda = Constant(E*nu/((1.0+nu)*(1.0-2.0*nu)))
+mu, lmbda = Constant(E/(2*(1+nu))), Constant(E*nu/((1+nu)*(1-2*nu)))
 
-# Compressible neo-Hookean model
-I = Identity(mesh.geometry().dim())
-F = I + grad(u)
-C = F.T*F
-Ic = tr(C)
-J  = det(F)
-psi = (mu/2)*(Ic-2)-mu*ln(J)+(lmbda/2)*(ln(J))**2
+# Stored strain energy density (compressible neo-Hookean model)
+psi = (mu/2)*(Ic-2) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 
-# Body force (you can play with its intensity (try -10.0), TAO is robust enough)
-f = Constant((0.0, -1.0))
+# Total potential energy
+Pi = psi*dx - dot(B, u)*dx
 
-# Variational formulation
-elastic_energy = psi*dx - dot(f, u)*dx
-grad_elastic_energy = derivative(elastic_energy, u, v)
-H_elastic_energy = derivative(grad_elastic_energy, u, du)
+# Compute first variation of Pi (directional derivative about u in the
+# direction of v)
+F = derivative(Pi, u, v)
+
+# Compute Jacobian of F
+J = derivative(F, u, du)
 
 # Define the minimisation problem by using OptimisationProblem class
 class ContactProblem(OptimisationProblem):
@@ -70,19 +78,17 @@ class ContactProblem(OptimisationProblem):
     # Objective function
     def f(self, x):
         u.vector()[:] = x
-        return assemble(elastic_energy)
+        return assemble(Pi)
 
     # Gradient of the objective function
     def F(self, b, x):
         u.vector()[:] = x
-        assemble(grad_elastic_energy, tensor=b)
+        assemble(F, tensor=b)
 
     # Hessian of the objective function
     def J(self, A, x):
         u.vector()[:] = x
-        assemble(H_elastic_energy, tensor=A)
-
-ContactPb = ContactProblem()
+        assemble(J, tensor=A)
 
 # The displacement u must be such that the current configuration
 # doesn't escape the box [xmin, xmax] x [ymin, ymax]
@@ -109,7 +115,7 @@ solver.parameters["report"] = True
 # info(parameters, True)
 
 # Solve the problem
-solver.solve(ContactPb, u.vector(), u_min.vector(), u_max.vector())
+solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
 
 # Save solution in XDMF format
 out = File("u.xdmf")
