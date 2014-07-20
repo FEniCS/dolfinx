@@ -105,9 +105,11 @@ bc.apply(u_min.vector())  # BC will be incorporated into the lower
 bc.apply(u_max.vector())  # and upper bounds
 
 # Create the PETScTAOSolver
-solver = PETScTAOSolver("tron", "stcg")
+solver = PETScTAOSolver()
 
 # Set some parameters
+solver.parameters["method"] = "tron"
+solver.parameters["linear_solver"] = "stcg"
 solver.parameters["monitor_convergence"] = True
 solver.parameters["report"] = True
 

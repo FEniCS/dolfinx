@@ -88,13 +88,6 @@ namespace dolfin
     std::size_t solve(OptimisationProblem& optimisation_problem,
                       GenericVector& x);
 
-    /// Set the TAO solver type
-    void set_solver(const std::string tao_type="default");
-
-    /// Set PETSc Krylov Solver (KSP) used by TAO
-    void set_ksp_pc(const std::string ksp_type="default",
-                    const std::string pc_type="default");
-
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
 
@@ -108,7 +101,20 @@ namespace dolfin
     Tao tao() const
     { return _tao; }
 
+    /// Initialise the TAO solver for a bound-constrained minimisation
+    /// problem, in case the user wants to access the TAO object directly
+    void init(OptimisationProblem& optimisation_problem,
+              PETScVector& x,
+              const PETScVector& lb,
+              const PETScVector& ub);
+
+    /// Initialise the TAO solver for a unconstrained minimisation
+    /// problem, in case the user wants to access the TAO object directly
+    void init(OptimisationProblem& optimisation_problem,
+              PETScVector& x);
+
   private:
+
     /// Solve a nonlinear bound-constrained minimisation problem
     ///
     /// *Arguments*
@@ -129,6 +135,13 @@ namespace dolfin
                       const PETScVector& lb,
                       const PETScVector& ub);
 
+    /// Set the TAO solver type
+    void set_solver(const std::string tao_type="default");
+
+    /// Set PETSc Krylov Solver (KSP) used by TAO
+    void set_ksp_pc(const std::string ksp_type="default",
+                    const std::string pc_type="default");
+
     /// TAO context for optimisation problems
     struct tao_ctx_t
     {
@@ -140,7 +153,7 @@ namespace dolfin
     Tao _tao;
 
     /// Set options
-    void set_options();
+    void set_tao_options();
     void set_ksp_options();
 
     /// Flag to indicate if the bounds are set
@@ -148,12 +161,6 @@ namespace dolfin
 
     /// Available solvers
     static const std::map<std::string, std::pair<std::string, const TaoType> > _methods;
-
-    /// Initialize TAO solver
-    void init(OptimisationProblem& optimisation_problem,
-              PETScVector& x,
-              const PETScVector& lb,
-              const PETScVector& ub);
 
     /// Compute the nonlinear objective function :math:`f(x)` as well as
     /// its gradient :math:`F(x)=f'(x)`

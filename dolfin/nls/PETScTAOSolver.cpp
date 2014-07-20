@@ -75,6 +75,9 @@ Parameters PETScTAOSolver::default_parameters()
   p.add("error_on_nonconvergence", true);
   p.add("maximum_iterations"     , 100);
   p.add("options_prefix"         , "default");
+  p.add("method"                 , "default");
+  p.add("linear_solver"          , "default");
+  p.add("preconditioner"         , "default");
 
   p.add(KrylovSolver::default_parameters());
 
@@ -91,11 +94,13 @@ PETScTAOSolver::PETScTAOSolver(const std::string tao_type,
   // Create TAO object
   TaoCreate(PETSC_COMM_WORLD, &_tao);
 
-  // Set the TAO solver
-  set_solver(tao_type);
-
-  // Set the PETSC KSP used by TAO
-  set_ksp_pc(ksp_type, pc_type);
+  // When tao/ksp/pc_types are explictly given
+  if (tao_type != "default")
+    parameters["method"] = tao_type;
+  if (ksp_type != "default")
+    parameters["linear_solver"] = ksp_type;
+  if (pc_type != "default")
+    parameters["preconditioner"] = pc_type;
 }
 //-----------------------------------------------------------------------------
 PETScTAOSolver::~PETScTAOSolver()
@@ -126,7 +131,7 @@ void PETScTAOSolver::set_solver(const std::string tao_type)
 void PETScTAOSolver::set_ksp_pc(const std::string ksp_type,
                                 const std::string pc_type)
 {
-  // Set ksp type
+  // Set KSP type
   if (ksp_type != "default")
   {
     dolfin_assert(_tao);
@@ -145,7 +150,6 @@ void PETScTAOSolver::set_ksp_pc(const std::string ksp_type,
 
       if (pc_type != "default")
       {
-
         std::map<std::string, const PCType>::const_iterator pc_pair
           = PETScPreconditioner::_methods.find(pc_type);
         dolfin_assert(pc_pair != PETScPreconditioner::_methods.end());
@@ -184,6 +188,16 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
+                          PETScVector& x)
+{
+  // Unconstrained minimisation problem
+  has_bounds = false;
+  PETScVector lb, ub;
+
+  init(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
+}
+//-----------------------------------------------------------------------------
+void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
                           PETScVector& x,
                           const PETScVector& lb,
                           const PETScVector& ub)
@@ -192,6 +206,10 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
 
   // Form the optimisation problem object
   _tao_ctx.optimisation_problem = &optimisation_problem;
+
+  // Set TAO/KSP parameters
+  set_tao_options();
+  set_ksp_options();
 
   // In case of an unconstrained minimisation problem, reset the TAO method
   // TAOTRON (by default chosen) to TAONTL
@@ -221,10 +239,6 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   // Set the bounds in case of a bound-constrained minimisation problem
   if (has_bounds)
     TaoSetVariableBounds(_tao, lb.vec(), ub.vec());
-
-  // Set parameters
-  set_options();
-  set_ksp_options();
 
   // Set the objective function, gradient and Hessian evaluation routines
   TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
@@ -347,9 +361,12 @@ PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PETScTAOSolver::set_options()
+void PETScTAOSolver::set_tao_options()
 {
   dolfin_assert(_tao);
+
+  // Set the TAO solver
+  set_solver(parameters["method"]);
 
   // Set tolerances
   TaoSetTolerances(_tao, parameters["function_absolute_tol"],
@@ -366,6 +383,9 @@ void PETScTAOSolver::set_options()
 void PETScTAOSolver::set_ksp_options()
 {
   dolfin_assert(_tao);
+
+  // Set the KSP solver used by TAO
+  set_ksp_pc(parameters["linear_solver"], parameters["preconditioner"]);
 
   KSP ksp;
   TaoGetKSP(_tao, &ksp);
