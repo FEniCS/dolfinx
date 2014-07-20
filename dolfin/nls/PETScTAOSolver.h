@@ -108,7 +108,7 @@ namespace dolfin
               const PETScVector& lb,
               const PETScVector& ub);
 
-    /// Initialise the TAO solver for a unconstrained minimisation
+    /// Initialise the TAO solver for an unconstrained minimisation
     /// problem, in case the user wants to access the TAO object directly
     void init(OptimisationProblem& optimisation_problem,
               PETScVector& x);
