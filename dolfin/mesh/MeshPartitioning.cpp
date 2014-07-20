@@ -495,7 +495,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
   if (domain_data.empty())
     return;
 
-  // Initialse mesh domains
+  // Initialise mesh domains
   const std::size_t D = mesh.topology().dim();
   mesh.domains().init(D);
 
@@ -519,7 +519,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
                                 std::size_t> >& local_value_data
                                 = dim_data->second;
 
-    // Build mesh value vollection
+    // Build mesh value collection
     build_mesh_value_collection(mesh, local_value_data, mvc);
 
     // Get data from mesh value collection

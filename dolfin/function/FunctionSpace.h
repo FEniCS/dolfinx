@@ -121,7 +121,7 @@ namespace dolfin
     ///         Another function space.
     bool operator== (const FunctionSpace& V) const;
 
-    /// Unequality operator
+    /// Inequality operator
     ///
     /// *Arguments*
     ///     V (_FunctionSpace_)

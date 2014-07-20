@@ -135,7 +135,7 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
                         (void*) this, &_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateShell");
 
-  // Incrase reference count
+  // Increase reference count
   PetscObjectReference((PetscObject)_matA);
 
   ierr = MatShellSetOperation(_matA, MATOP_MULT, (void (*)()) usermult);

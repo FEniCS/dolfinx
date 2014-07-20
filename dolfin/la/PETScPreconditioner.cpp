@@ -434,7 +434,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
 
     // --- PETSc parameters
 
-    // Number of smmoother applications
+    // Number of smoother applications
     if (parameters("mg")["num_sweeps"].is_set())
     {
       const std::size_t num_sweeps = parameters("mg")["num_sweeps"];
@@ -491,7 +491,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
 
     #else
     warning("PETSc has not been compiled with the ML library for   "
-            "algerbraic multigrid. Default PETSc solver will be used. "
+            "algebraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of ML is recommended.");
     #endif
   }
@@ -499,7 +499,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   {
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
 
-    // The PETSc AMG (smoothed aggegration) preconditioner
+    // The PETSc AMG (smoothed aggregation) preconditioner
     //PetscOptionsSetValue("-log_summary",
     //                     boost::lexical_cast<std::string>(1).c_str());
 
@@ -595,7 +595,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
       if (ierr != 0) petsc_error(ierr, __FILE__, "PCGAMGSetRepartitioning");
     }
 
-    // Maximum numebr of levels
+    // Maximum number of levels
     if (parameters("gamg")["max_num_levels"].is_set())
     {
       const std::size_t num_levels = parameters("gamg")["max_num_levels"];

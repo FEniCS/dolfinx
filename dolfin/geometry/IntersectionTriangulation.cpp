@@ -549,7 +549,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   // edge-face collision points and edge-edge collision points (the
   // edge-edge is a rare occurance). Having the intersection points,
   // we identify points that are coplanar and thus form a facet of the
-  // polyhedron. These points are then used to form a tesselation of
+  // polyhedron. These points are then used to form a tessellation of
   // triangles, which are used to form tetrahedra by the use of the
   // center point of the polyhedron. This center point is thus an
   // additional point not found on the polyhedron facets.
@@ -712,7 +712,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   // per tetrahedron.
   std::vector<double> triangulation;
 
-  // Start forming a tesselation
+  // Start forming a tessellation
   if (points.size() == 4)
   {
     // Include if determinant is sufficiently large. The determinant
@@ -814,7 +814,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   		    = checked[coplanar[o]*N2 + coplanar[m]*N + coplanar[n]]
                     = true;
 
-  	    // Do the actual tesselation using the coplanar points and
+  	    // Do the actual tessellation using the coplanar points and
   	    // a center point
   	    if (coplanar.size() == 3)
   	    {
@@ -841,7 +841,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   	    }
   	    else if (coplanar.size() > 3)
   	    {
-  	      // Tesselate as in the triangle-triangle intersection
+  	      // Tessellate as in the triangle-triangle intersection
   	      // case: First sort points using a Graham scan, then
   	      // connect to form triangles. Finally form tetrahedra
   	      // using the center of the polyhedron.
@@ -879,7 +879,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   	      // Sort angles
   	      std::sort(order.begin(), order.end());
 
-  	      // Tesselate
+  	      // Tessellate
   	      for (std::size_t m = 0; m < coplanar.size()-2; ++m)
   	      {
   		// Candidate tetrahedron:
@@ -1069,7 +1069,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
     return triangulation;
   }
 
-  // Tesselate as in the triangle-triangle intesection case: First
+  // Tessellate as in the triangle-triangle intersection case: First
   // sort points using a Graham scan, then connect to form triangles.
 
   // Use the center of the points and point no 0 as reference for the
@@ -1105,7 +1105,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
   // Sort angles
   std::sort(order.begin(), order.end());
 
-  // Tesselate
+  // Tessellate
   std::vector<Point> cand(3);
   for (std::size_t m = 0; m < order.size()-1; ++m)
   {
@@ -1312,7 +1312,7 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
   // If the edge and the face are in the same plane, we return false
   // and leave this to the edge-edge intersection test.
 
-  // Tolerance for edga and face in plane (topologically 2D problem)
+  // Tolerance for edge and face in plane (topologically 2D problem)
   const double top_2d_tol = DOLFIN_EPS_LARGE;
 
   // Compute normal

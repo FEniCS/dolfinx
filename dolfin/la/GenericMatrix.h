@@ -235,7 +235,7 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
-    /// Return pointers to underlying compresssed row/column storage data
+    /// Return pointers to underlying compressed row/column storage data
     /// For compressed row storage, data = (row_pointer[#rows +1],
     /// column_index[#nz], matrix_values[#nz], nz)
     virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,

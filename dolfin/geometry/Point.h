@@ -89,7 +89,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     double
-    ///         Adress of coordinate in the given direction.
+    ///         Address of coordinate in the given direction.
     double& operator[] (std::size_t i)
     { dolfin_assert(i < 3); return _x[i]; }
 

@@ -568,7 +568,7 @@ assembler");
     // Interior facet
     if (num_cells == 2)
     {
-      // Get cells incident with facet and assoiated data
+      // Get cells incident with facet and associated data
       for (std::size_t c = 0; c < 2; ++c)
       {
         cell[c] = Cell(mesh, facet->entities(mesh.topology().dim())[c]);

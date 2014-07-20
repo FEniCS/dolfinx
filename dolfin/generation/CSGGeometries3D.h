@@ -41,7 +41,7 @@ namespace dolfin
                                                double x1, double x2);
 
     // A simple propeller with parameters r - radius of center body, R - length of blades,
-    // w - width of blades and h - thicknes of blades
+    // w - width of blades and h - thickness of blades
     static std::shared_ptr<CSGGeometry> propeller(double r=0.125,
                                                     double R=0.5,
                                                     double w=0.3,

@@ -187,14 +187,14 @@ namespace dolfin
     ///         Return a linear combination of Functions
     FunctionAXPY operator+(const FunctionAXPY& axpy) const;
 
-    /// Substraction operator with other function
+    /// Subtraction operator with other function
     ///
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
     FunctionAXPY operator-(const Function& other) const;
 
-    /// Substraction operator with other linear combination of functions
+    /// Subtraction operator with other linear combination of functions
     ///
     /// *Returns*
     ///     _FunctionAXPY_
