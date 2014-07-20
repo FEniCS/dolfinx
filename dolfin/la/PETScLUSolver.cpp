@@ -441,7 +441,7 @@ void PETScLUSolver::set_petsc_operators()
 
   PetscErrorCode ierr;
 
-  #if PETSC_VERSION_RELEASE
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
   const bool same_pattern = parameters["same_nonzero_pattern"];
