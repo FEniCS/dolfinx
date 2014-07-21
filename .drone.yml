@@ -1,6 +1,4 @@
 image: fenicsproject/stable-src
-cache:
-  - .ccache
 script:
   - sudo apt-get update
   - sudo apt-get -y install ccache python-six
