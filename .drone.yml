@@ -1,24 +1,26 @@
 image: fenicsproject/stable-src
+cache:
+  - .ccache
 script:
   - sudo apt-get update
-  - sudo apt-get -y install python-six
+  - sudo apt-get -y install ccache python-six
+  - export PATH=/usr/lib/ccache:/home/fenics/bin:$PATH
   - git clone https://git@bitbucket.org/fenics-project/ffc
   - cd ffc
-  - sudo python setup.py install --prefix=/home/fenics
+  - sudo python setup.py install --prefix=/home/fenics > /dev/null
   - cd ..
   - git clone https://git@bitbucket.org/fenics-project/fiat
   - cd fiat
-  - sudo python setup.py install --prefix=/home/fenics
+  - sudo python setup.py install --prefix=/home/fenics > /dev/null
   - cd ..
   - git clone https://git@bitbucket.org/fenics-project/instant
   - cd instant
-  - sudo python setup.py install --prefix=/home/fenics
+  - sudo python setup.py install --prefix=/home/fenics > /dev/null
   - cd ..
   - git clone https://git@bitbucket.org/fenics-project/ufl
   - cd ufl
-  - sudo python setup.py install --prefix=/home/fenics
+  - sudo python setup.py install --prefix=/home/fenics > /dev/null
   - cd ..
-  - export PATH=$PATH:/home/fenics/bin
   - export PYTHONPATH=$PYTHONPATH:/home/fenics/lib/python2.7/site-packages
   - export UFC_DIR=/home/fenics
   - ./cmake.drone
