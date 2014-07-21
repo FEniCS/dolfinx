@@ -2,7 +2,6 @@ image: fenicsproject/stable-src
 cache:
   - /tmp/ccache
 script:
-  - whoami
   - sudo apt-get update
   - sudo apt-get -y install ccache python-six
   - export PATH=/usr/lib/ccache:/home/fenics/bin:$PATH
