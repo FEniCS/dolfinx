@@ -1,8 +1,13 @@
 image: fenicsproject/stable-src
+cache:
+  - /tmp/ccache
 script:
   - sudo apt-get update
   - sudo apt-get -y install ccache python-six
   - export PATH=/usr/lib/ccache:/home/fenics/bin:$PATH
+  - export CCACHE_DIR=/tmp/ccache
+  - mkdir -p /tmp/ccache
+  - sudo chown -R ubuntu:ubuntu /tmp/ccache
   - git clone https://git@bitbucket.org/fenics-project/ffc
   - cd ffc
   - sudo python setup.py install --prefix=/home/fenics > /dev/null
