@@ -400,7 +400,7 @@ ParMETISDualGraph::~ParMETISDualGraph()
 #else
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                std::vector<std::size_t>& cell_partition,
-               std::vector<std::vector<std::size_t> >& ghost_procs,       
+               std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs, 
                const LocalMeshData& data,
                std::string mode)
 {
