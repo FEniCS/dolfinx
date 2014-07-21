@@ -122,7 +122,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                   < MPI::size(mesh.mpi_comm()));
   }
 
-  const std::string ghost_mode = parameters['ghost_mode'];
+  const std::string ghost_mode = parameters["ghost_mode"];
 
   if (ghost_procs.empty() && ghost_mode != "none")
   {
