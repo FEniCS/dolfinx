@@ -182,8 +182,10 @@ show :
     endif()
 
     find_package(X11)
-    list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
-    list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
+    if (X11_FOUND)
+      list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
+      list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
+    endif()
 
     # ResolveCompilerPaths strips OSX frameworks, so add BLAS here for OSX
     petsc_get_variable(PETSC_BLASLAPACK_LIB BLASLAPACK_LIB)
