@@ -74,8 +74,8 @@ namespace dolfin
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    ///     conatrained_boundary (_SubDomain_)
-    ///         The subdomain marking the constrained (tied) boudaries.
+    ///     constrained_boundary (_SubDomain_)
+    ///         The subdomain marking the constrained (tied) boundaries.
     DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
            const Mesh& mesh,
            std::shared_ptr<const SubDomain> constrained_domain);
@@ -448,7 +448,7 @@ namespace dolfin
 
     // Number global mesh entities. This is usually the same as what
     // is reported by the mesh, but will differ for dofmaps
-    // constrained, e.g. dofmaps with periodoc bcs. It is stored in
+    // constrained, e.g. dofmaps with periodic bcs. It is stored in
     // order to compute the global dimension of dofmaps that are
     // constructed from a sub-dofmap.
     std::vector<std::size_t> _num_mesh_entities_global;
@@ -471,7 +471,7 @@ namespace dolfin
     // UFC dof map offset
     std::size_t _ufc_offset;
 
-    // Number of dofs owned by this proces
+    // Number of dofs owned by this process
     std::size_t _global_offset;
     int _local_ownership_size;
 

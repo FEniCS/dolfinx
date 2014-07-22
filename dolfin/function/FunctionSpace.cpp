@@ -258,7 +258,7 @@ std::shared_ptr<FunctionSpace>FunctionSpace::collapse(
   std::shared_ptr<GenericDofMap>
     collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
 
-  // Create new FunctionsSpace and return
+  // Create new FunctionSpace and return
   std::shared_ptr<FunctionSpace>
     collapsed_sub_space(new FunctionSpace(_mesh, _element, collapsed_dofmap));
   return collapsed_sub_space;
@@ -287,7 +287,7 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
-  // Note: static_cast is used below to supoort types that cannot be
+  // Note: static_cast is used below to support types that cannot be
   //       directed to dolfin::cout
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)

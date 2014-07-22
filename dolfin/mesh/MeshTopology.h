@@ -100,7 +100,7 @@ namespace dolfin
       return _global_indices[d];
     }
 
-    /// Check if global indices are available for entiries of
+    /// Check if global indices are available for entities of
     /// dimension dim
     bool have_global_indices(std::size_t dim) const
     {
@@ -113,7 +113,7 @@ namespace dolfin
     std::map<unsigned int, std::set<unsigned int> >&
       shared_entities(unsigned int dim);
 
-    /// Return map from shared entiies (local index) to process that
+    /// Return map from shared entities (local index) to process that
     /// share the entity (const version)
     const std::map<unsigned int, std::set<unsigned int> >&
       shared_entities(unsigned int dim) const;

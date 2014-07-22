@@ -49,7 +49,7 @@ namespace dolfin
     ///         The type of BoundaryMesh, which can be "exterior",
     ///         "interior" or "local". "exterior" is the globally
     ///         external boundary, "interior" is the inter-process mesh
-    ///         and "local" is the boudary of the local (this process)
+    ///         and "local" is the boundary of the local (this process)
     ///         mesh.
     ///     order (bool)
     ///         Optional argument which can be used to control whether

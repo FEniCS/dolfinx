@@ -45,15 +45,15 @@ namespace dolfin
     /// by parameters.parse(argc, argv).
     static void init_petsc(int argc, char* argv[]);
 
-    /// Finalize subsytems. This will be called by the destructor, but in
+    /// Finalize subsystems. This will be called by the destructor, but in
     /// special cases it may be necessary to call finalize() explicitly.
     static void finalize();
 
-    /// Return true if DOLFIN intialised MPI (and is therefore responsible
+    /// Return true if DOLFIN initialised MPI (and is therefore responsible
     /// for finalization)
     static bool responsible_mpi();
 
-    /// Return true if DOLFIN intialised PETSc (and is therefore
+    /// Return true if DOLFIN initialised PETSc (and is therefore
     /// responsible for finalization)
     static bool responsible_petsc();
 

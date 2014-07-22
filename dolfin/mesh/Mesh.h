@@ -547,7 +547,7 @@ namespace dolfin
     /// *Arguments*
     ///     coloring_type (std::vector<std::size_t>)
     ///         Coloring type given as list of topological dimensions,
-    ///         specifying what relation makes two mesh entinties neighbors.
+    ///         specifying what relation makes two mesh entities neighbors.
     ///
     /// *Returns*
     ///     std::vector<std::size_t>

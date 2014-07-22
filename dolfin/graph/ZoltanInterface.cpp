@@ -113,7 +113,7 @@ void ZoltanInterface::ZoltanGraphInterface::num_vertex_edges(unsigned int* num_e
 {
   dolfin_assert(num_edges);
 
-  // Compute nunber of edges from each graph node
+  // Compute number of edges from each graph node
   for (std::size_t i = 0; i < _graph.size(); ++i)
     num_edges[i] = _graph[i].size();
 }

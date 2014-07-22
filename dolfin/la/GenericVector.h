@@ -146,7 +146,7 @@ namespace dolfin
     /// Initialize vector to global size N
     virtual void init(MPI_Comm comm, std::size_t N) = 0;
 
-    /// Intitialize vector with given local ownership range
+    /// Initialize vector with given local ownership range
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range) = 0;
 

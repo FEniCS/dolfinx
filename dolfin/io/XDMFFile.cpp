@@ -468,7 +468,7 @@ void XDMFFile::operator<< (const MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void XDMFFile::write(const std::vector<Point>& points)
 {
-  // Intialise HDF5 file
+  // Initialise HDF5 file
   if (hdf5_filemode != "w")
   {
     // Create HDF5 file (truncate)
@@ -494,7 +494,7 @@ void XDMFFile::write(const std::vector<Point>& points,
 
   dolfin_assert(points.size() == values.size());
 
-  // Intialise HDF5 file
+  // Initialise HDF5 file
   if (hdf5_filemode != "w")
   {
     // Create HDF5 file (truncate)

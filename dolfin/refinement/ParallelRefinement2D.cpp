@@ -97,7 +97,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   const std::map<std::size_t, std::size_t>& edge_to_new_vertex
     = p.edge_to_new_vertex();
 
-  // Convenienence iterator
+  // Convenience iterator
   std::map<std::size_t, std::size_t>::const_iterator it;
 
   // Generate new topology
@@ -208,7 +208,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   const std::map<std::size_t, std::size_t>& edge_to_new_vertex
     = p.edge_to_new_vertex();
 
-  // Convenienence iterator
+  // Convenience iterator
   std::map<std::size_t, std::size_t>::const_iterator it;
 
   // Stage 4 - do refinement

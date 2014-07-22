@@ -123,7 +123,7 @@ namespace dolfin
     // Current number of Newton iterations
     std::size_t _newton_iteration;
 
-    // Most recent residual and intitial residual
+    // Most recent residual and initial residual
     double _residual, _residual0;
 
     // Solver
@@ -135,7 +135,7 @@ namespace dolfin
     // Solution vector
     std::shared_ptr<GenericVector> _dx;
 
-    // Resdiual vector
+    // Residual vector
     std::shared_ptr<GenericVector> _b;
 
     // MPI communicator

@@ -135,7 +135,7 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
     domain.detect_features();
   }
 
-  // Workaround, cgal segfaulted when assigning new mesh criterias
+  // Workaround, cgal segfaulted when assigning new mesh criteria
   // within the if-else blocks.
   std::unique_ptr<csg::Mesh_criteria> criteria;
 

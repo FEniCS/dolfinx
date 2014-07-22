@@ -71,7 +71,7 @@ namespace dolfin
     ///         The index.
     void init(const Mesh& mesh, std::size_t dim, std::size_t index);
 
-    /// Comparision Operator
+    /// Comparison Operator
     ///
     /// *Arguments*
     ///     another (_MeshEntity_)
@@ -86,7 +86,7 @@ namespace dolfin
               && _local_index == e._local_index);
     }
 
-    /// Comparision Operator
+    /// Comparison Operator
     ///
     /// *Arguments*
     ///     another (MeshEntity)
@@ -160,7 +160,7 @@ namespace dolfin
     std::size_t num_global_entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim).size_global(_local_index); }
 
-    /// Return array of indices for incident mesh entitites of given
+    /// Return array of indices for incident mesh entities of given
     /// topological dimension
     ///
     /// *Arguments*

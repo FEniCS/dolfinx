@@ -95,7 +95,7 @@ PETScLUSolver::_methods_descr
     #if PETSC_HAVE_SUPERLU_DIST
     ("superlu_dist", "Parallel SuperLU")
     #endif
-    ("petsc", "PETSc builtin LU solver");
+    ("petsc", "PETSc built in LU solver");
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >

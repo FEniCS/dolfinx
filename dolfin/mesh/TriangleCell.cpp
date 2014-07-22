@@ -450,7 +450,7 @@ void TriangleCell::order(Cell& cell,
   {
     dolfin_assert(!topology(2, 1).empty());
 
-    // Get cell vertiex and edge indices (local)
+    // Get cell vertex and edge indices (local)
     const unsigned int* cell_vertices = cell.entities(0);
     unsigned int* cell_edges = const_cast<unsigned int*>(cell.entities(1));
 

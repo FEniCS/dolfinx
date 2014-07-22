@@ -46,7 +46,7 @@ namespace dolfin
                          double cell_size);
 
     /// Create surface mesh from implicit surface representation. This
-    /// function uses the CGAL 3D mesh genrator
+    /// function uses the CGAL 3D mesh generator
     static void generate_surface(Mesh& mesh, const ImplicitSurface& surface,
                                  double cell_size);
 
