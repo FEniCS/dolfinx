@@ -21,7 +21,6 @@
 // Modified by Joachim B Haga 2012
 // Modified by Martin Alnaes 2013-2014
 
-
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -153,9 +152,8 @@ void Assembler::assemble_cells(GenericTensor& A,
     if (!integral)
       continue;
 
-    // FIXME: ghost mesh change
-    if (cell->is_ghost())
-      continue;
+    // Check that cell is not a ghost
+    dolfin_assert(!cell->is_ghost());
 
     // Update to current cell
     cell->get_cell_data(ufc_cell);
@@ -259,7 +257,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // FIXME: ghost mesh change
     if (mesh_cell.is_ghost())
+    {
+      error("Oops, facet is connected to ghost cell");
       continue;
+    }
 
     // Get local index of facet with respect to the cell
     const std::size_t local_facet = mesh_cell.index(*facet);
@@ -363,7 +364,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       continue;
 
     if (facet->is_ghost())
+    {
+      error("Oops, have a ghost facet");
       continue;
+    }
 
     // Get integral for sub domain (if any)
     if (use_domains)
