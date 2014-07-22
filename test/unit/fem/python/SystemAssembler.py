@@ -155,24 +155,29 @@ class TestSystemAssembler(unittest.TestCase):
             self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
             # Test SystemAssembler
-            #assembler = SystemAssembler(a, L)
-            #A = Matrix()
-            #b = Vector()
+            assembler = SystemAssembler(a, L)
+            A = Matrix()
+            b = Vector()
 
-            #assembler.assemble(A, b)
-            #self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-            #self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+            assembler.assemble(A, b)
+            self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-            #A = Matrix()
-            #b = Vector()
-            #assembler.assemble(A)
-            #self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-            #assembler.assemble(b)
-            #self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+            A = Matrix()
+            b = Vector()
+            assembler.assemble(A)
+            self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+            assembler.assemble(b)
+            self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
         parameters["ghost_mode"] = "shared_facet"
         mesh = UnitSquareMesh(24, 24)
         test(mesh)
+
+        parameters["ghost_mode"] = "shared_vertex"
+        mesh = UnitSquareMesh(24, 24)
+        test(mesh)
+
         parameters["ghost_mode"] = "none"
 
     def test_incremental_assembly(self):

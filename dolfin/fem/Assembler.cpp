@@ -183,7 +183,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     if (values && ufc.form.rank() == 0)
       (*values)[cell->index()] = ufc.A[0];
     else
-      add_to_global_tensor(A, ufc.A, dofs);
+      A.add_local(ufc.A.data(), dofs);
 
     p++;
   }
@@ -281,7 +281,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
                               ufc_cell.orientation);
 
     // Add entries to global tensor
-    add_to_global_tensor(A, ufc.A, dofs);
+    A.add_local(ufc.A.data(), dofs);
 
     p++;
   }
@@ -435,16 +435,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     }
 
     // Add entries to global tensor
-    add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);
+    A.add_local(ufc.macro_A.data(), macro_dof_ptrs);
 
     p++;
   }
-}
-//-----------------------------------------------------------------------------
-void Assembler::add_to_global_tensor(GenericTensor& A,
-                                     std::vector<double>& cell_tensor,
-                                     std::vector<const std::vector<dolfin::la_index>* >& dofs)
-{
-  A.add_local(&cell_tensor[0], dofs);
 }
 //-----------------------------------------------------------------------------

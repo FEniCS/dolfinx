@@ -36,6 +36,7 @@ namespace ufc
   class cell;
   class cell_integral;
   class exterior_facet_integral;
+  class interior_facet_integral;
 }
 
 namespace dolfin
@@ -146,23 +147,46 @@ namespace dolfin
                         const MeshFunction<std::size_t>* exterior_facet_domains,
                        const MeshFunction<std::size_t>* interior_facet_domains);
 
-    // Compute single facet (and possible connected cell)
+    // Compute exterior facet (and possibly connected cell)
     // contribution
-    static void assemble_exterior_facet(
-      Scratch& data,
-      std::array<GenericTensor*, 2>& tensors,
-      const Mesh& mesh,
+    static void compute_exterior_facet_tensor(
+      std::array<std::vector<double>, 2>& Ae,
+      std::array<UFC*, 2>& ufc,
+      ufc::cell& ufc_cell,
+      std::vector<double>& vertex_coordinates,
+      const std::array<bool, 2>& tensor_required_cell,
+      const std::array<bool, 2>& tensor_required_facet,
+      const Cell& cell,
       const Facet& facet,
-      const DirichletBC::Map& boundary_values,
+      const std::array<const ufc::cell_integral*, 2>& cell_integrals,
+      const std::array<const ufc::exterior_facet_integral*, 2>& exterior_facet_integrals);
+
+    // Compute interior facet (and possibly connected cell)
+    // contribution
+    static void compute_interior_facet_tensor(
       std::array<UFC*, 2>& ufc,
       std::array<ufc::cell, 2>& ufc_cell,
       std::array<std::vector<double>, 2>& vertex_coordinates,
-      std::array<std::array<std::vector<const std::vector<dolfin::la_index>* >, 2 >, 2>& cell_dofs,
-      const std::array<std::vector<const GenericDofMap*>, 2>& dofmaps,
-      std::array<const ufc::cell_integral*, 2>& cell_integrals,
-      std::array<const ufc::exterior_facet_integral*, 2>& exterior_facet_integrals,
-      const MeshFunction<std::size_t>* cell_domains,
-      const MeshFunction<std::size_t>* exterior_facet_domains);
+      const std::array<bool, 2>& tensor_required_cell,
+      const std::array<bool, 2>& tensor_required_facet,
+      const std::array<Cell, 2>& cell,
+      const std::array<std::size_t, 2>& local_facet,
+      const bool facet_owner,
+      const std::array<const ufc::cell_integral*, 2>& cell_integrals,
+      const std::array<const ufc::interior_facet_integral*, 2>& interior_facet_integrals,
+      const std::array<std::size_t, 2>& matrix_size,
+      const std::size_t vector_size
+      );
+
+    // Modified matrix insertion for case when rhs has facet integrals
+    // and lhs has no facet integrals
+    static void
+      matrix_block_add(GenericTensor& tensor,
+                       std::vector<double>& Ae,
+                       std::vector<double>& macro_A,
+                       const bool tensor_required_cell,
+                       const std::array<std::size_t, 2>& local_facet,
+                       std::vector<const std::vector<la_index>* >& cell_dofs);
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
