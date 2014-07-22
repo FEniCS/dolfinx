@@ -72,7 +72,7 @@ namespace dolfin
       // Compute length of uncompressed data
       const unsigned long uncompressed_size = data.size()*sizeof(T);
 
-      // Compute maxium length of compressed data
+      // Compute maximum length of compressed data
       unsigned long compressed_size = (uncompressed_size + (((uncompressed_size)/1000)+1)+12);;
 
       // Allocate space for compressed data

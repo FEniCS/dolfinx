@@ -137,7 +137,7 @@ namespace dolfin
                        std::vector<std::string>& out_values,
                        unsigned int receiving_process=0);
 
-    /// Gather values from all proceses. Same data count from each
+    /// Gather values from all processes. Same data count from each
     /// process (wrapper for MPI_Allgather)
     template<typename T>
       static void all_gather(const MPI_Comm comm,

@@ -141,7 +141,7 @@ std::size_t CholmodCholeskySolver::solve(const GenericLinearOperator& A,
                                          GenericVector& x,
                                           const GenericVector& b)
 {
-  warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
+  warning("CHOLMOD must be installed to perform a Cholesky solve for the current backend. Attempting to use UMFPACK solver.");
 
   std::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
   UmfpackLUSolver solver(Atmp);
@@ -150,7 +150,7 @@ std::size_t CholmodCholeskySolver::solve(const GenericLinearOperator& A,
 //-----------------------------------------------------------------------------
 std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 {
-  dolfin_error("CholdmodCholeskySolver.cpp",
+  dolfin_error("CholmodCholeskySolver.cpp",
                "perform factorization using CHOLMOD Cholesky solver",
                "CHOLMOD is not installed");
   return 0;
@@ -159,7 +159,7 @@ std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
                                                     const GenericVector& b)
 {
-  dolfin_error("CholdmodCholeskySolver.cpp",
+  dolfin_error("CholmodCholeskySolver.cpp",
                "perform factorized solve using CHOLMOD Cholesky solver",
                "CHOLMOD is not installed");
   return 0;

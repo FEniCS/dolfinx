@@ -353,7 +353,7 @@ TimeSeriesHDF5::find_closest_pair(double t, const std::vector<double>& times,
   if (times.empty())
   {
     dolfin_error("TimeSeries.cpp",
-                 "to retrieve data from time seris",
+                 "to retrieve data from time series",
                  "No %s stored in time series",
                  type_name.c_str());
   }
@@ -382,7 +382,7 @@ TimeSeriesHDF5::find_closest_pair(double t, const std::vector<double>& times,
                              std::less<double>());
   }
 
-  // Set indexlower and upper bound
+  // Set index lower and upper bound
   std::size_t i0 = 0;
   std::size_t i1 = 0;
   if (lower == times.begin())

@@ -158,7 +158,7 @@ Polygon::Polygon(const std::vector<Point>& vertices)
   if (!ccw())
     dolfin_error("CSGPrimitives2D.cpp",
                  "create polygon",
-                 "Polygonv vertices must be given in counter clockwise order");
+                 "Polygon vertices must be given in counter clockwise order");
 }
 //-----------------------------------------------------------------------------
 std::string Polygon::str(bool verbose) const

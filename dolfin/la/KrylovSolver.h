@@ -37,7 +37,7 @@ namespace dolfin
   class VectorSpaceBasis;
 
   /// This class defines an interface for a Krylov solver. The
-  /// approproiate solver is chosen on the basis of the matrix/vector
+  /// appropriate solver is chosen on the basis of the matrix/vector
   /// type.
 
   class KrylovSolver : public GenericLinearSolver

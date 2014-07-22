@@ -197,7 +197,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
   // Check input vector, and re-size if not already sized
   if (x.empty())
   {
-    // Intialize vector
+    // Initialize vector
     if (use_partition_from_file)
     {
       // Get partition from file
@@ -1165,7 +1165,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   // Check size of dataset. If small enough, just read on all processes...
 
   // FIXME: optimise value
-  const std::size_t max_data_one = 1048576; // arbtirary 1M
+  const std::size_t max_data_one = 1048576; // arbitrary 1M
 
   if (values_dim[0] < max_data_one)
   {

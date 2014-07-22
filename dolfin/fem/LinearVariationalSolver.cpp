@@ -88,7 +88,7 @@ void LinearVariationalSolver::solve()
     {
       dolfin_error("LinearVariationalSolver.cpp",
                    "symmetric assembly in linear variational solver",
-                   "Empty linear forms cannot be used with symmetric assmebly");
+                   "Empty linear forms cannot be used with symmetric assembly");
     }
 
     // Need to cast to DirichletBC to use assemble_system

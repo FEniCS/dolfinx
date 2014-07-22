@@ -385,7 +385,7 @@ void _set_vector_items_value(dolfin::GenericVector* self, PyObject* op, double v
 // Get single item from Matrix
 double _get_matrix_single_item(const dolfin::GenericMatrix* self, int m, int n)
 {
-  double value;
+  double value = 0.0;
   dolfin::la_index _m(Indices::check_index(m, self->size(0)));
   dolfin::la_index _n(Indices::check_index(n, self->size(1)));
   self->get(&value, 1, &_m, 1, &_n);

@@ -153,7 +153,7 @@ ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
 {
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
-    // CGAL mesh paramters
+    // CGAL mesh parameters
     Mesh_criteria criteria(CGAL::parameters::edge_size=cell_size,
                            CGAL::parameters::facet_angle=30,
                            CGAL::parameters::facet_size=cell_size,

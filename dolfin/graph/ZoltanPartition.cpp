@@ -58,7 +58,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   // Create Zoltan object
   Zoltan zoltan;
 
-  // Set Zolatn parameters
+  // Set Zoltan parameters
   zoltan.Set_Param("NUM_GID_ENTRIES", "1");
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 

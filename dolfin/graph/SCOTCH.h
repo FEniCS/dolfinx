@@ -34,7 +34,7 @@ namespace dolfin
   // Forward declarations
   class LocalMeshData;
 
-  /// This class proivdes an interface to SCOTCH-PT (parallel version)
+  /// This class provides an interface to SCOTCH-PT (parallel version)
 
   class SCOTCH
   {
@@ -66,7 +66,7 @@ namespace dolfin
 
   private:
 
-    // Compute cell partitions from distribted dual graph
+    // Compute cell partitions from distributed dual graph
     static
       void partition(const MPI_Comm mpi_comm,
                      const std::vector<std::set<std::size_t> >& local_graph,

@@ -171,7 +171,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
                                                std::size_t d0,
                                                std::size_t d1)
 {
-  // This is where all the logic takes place to find a stragety for
+  // This is where all the logic takes place to find a strategy for
   // the connectivity computation. For any given pair (d0, d1), the
   // connectivity is computed by suitably combining the following
   // basic building blocks:

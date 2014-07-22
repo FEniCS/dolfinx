@@ -55,7 +55,7 @@ namespace dolfin
     /// Set the operator (matrix)
     void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
-    /// Set the operator (matrix) and preconitioner matrix
+    /// Set the operator (matrix) and preconditioner matrix
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
 

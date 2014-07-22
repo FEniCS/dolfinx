@@ -60,7 +60,7 @@ void MeshEditor::open(Mesh& mesh, std::size_t tdim, std::size_t gdim)
   default:
     dolfin_error("MeshEditor.cpp",
                  "open mesh for editing",
-                 "Uknown cell type of topological dimension %d", tdim);
+                 "Unknown cell type of topological dimension %d", tdim);
   }
 }
 //-----------------------------------------------------------------------------

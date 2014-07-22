@@ -451,7 +451,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   // Check for self-assignment
   if (this != &v)
   {
-    // Copy data (local operatrion)
+    // Copy data (local operation)
     dolfin_assert(v._x);
     dolfin_assert(_x);
     PetscErrorCode ierr = VecCopy(v._x, _x);

@@ -42,7 +42,7 @@ namespace dolfin
     /// Return topological dimension of cell
     std::size_t dim() const;
 
-    /// Return number of entitites of given topological dimension
+    /// Return number of entities of given topological dimension
     std::size_t num_entities(std::size_t dim) const;
 
     /// Return number of vertices for entity of given topological dimension

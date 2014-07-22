@@ -200,7 +200,7 @@ std::size_t DistributedMeshTools::number_entities(
 
   std::map<Entity, EntityData>::const_iterator it;
 
-  // Number exlusively owned entities
+  // Number exclusively owned entities
   for (std::size_t i = 0; i < owned_entities.size(); ++i)
     global_entity_indices[owned_entities[i]] = offset++;
 
@@ -547,7 +547,7 @@ std::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned in
     dolfin_assert(local_index < global_indices_map.size());
     std::size_t global_index = global_indices_map[local_index];
 
-    // Destinarion process
+    // Destination process
     const std::set<unsigned int>& sharing_processes = shared_entity->second;
 
     // Pack data for sending and build global-to-local map

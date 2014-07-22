@@ -89,7 +89,7 @@ double CoordinateMatrix::norm(std::string norm_type) const
 {
   if (norm_type != "frobenius")
   {
-    error("Do not know to comput %s norm for CoordinateMatrix",
+    error("Do not know to compute %s norm for CoordinateMatrix",
           norm_type.c_str());
   }
 

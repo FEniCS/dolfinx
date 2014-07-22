@@ -28,7 +28,7 @@ using namespace dolfin;
 ImplicitSurface::ImplicitSurface(const Sphere& s, const std::string& type)
   : sphere(s), type(type)
 {
-  // Checck type
+  // Check type
   if (type != "manifold" && type != "manifold_with_boundary"
       && type != "non_manifold")
   {

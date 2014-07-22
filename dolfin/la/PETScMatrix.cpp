@@ -114,7 +114,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   if (_matA)
   {
     #ifdef DOLFIN_DEPRECATION_ERROR
-    error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
     #else
     warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error.");
     #endif
@@ -397,14 +397,14 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
     ISLocalToGlobalMapping cmapping0;
     MatGetLocalToGlobalMapping(_matA, &rmapping0, &cmapping0);
 
-    // Increase refefrence count to prevent destruction
+    // Increase reference count to prevent destruction
     PetscObjectReference((PetscObject) rmapping0);
     PetscObjectReference((PetscObject) cmapping0);
 
     ierr = MatAXPY(_matA, a, AA->mat(), DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
 
-    // Set local-to-globa map and decrease reference count to maps
+    // Set local-to-global map and decrease reference count to maps
     MatSetLocalToGlobalMapping(_matA, rmapping0, cmapping0);
     ISLocalToGlobalMappingDestroy(&rmapping0);
     ISLocalToGlobalMappingDestroy(&cmapping0);
@@ -701,7 +701,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
     if (_matA)
     {
       #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
+      error("PETScVector may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
       #else
       warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
       #endif
@@ -723,7 +723,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
                      "More than one object points to the underlying PETSc object");
       }
       #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
+      error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
       #else
       warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
       #endif
