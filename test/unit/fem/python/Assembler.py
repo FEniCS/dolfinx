@@ -115,7 +115,8 @@ class Assembly(unittest.TestCase):
 
         # Assemble A and b
         parameters["num_threads"] = 4
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), \
+                               A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
         parameters["num_threads"] = 0
 
@@ -153,7 +154,8 @@ class Assembly(unittest.TestCase):
         b_l2_norm = 1.48087142738768
 
         # Assemble A and b
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), \
+                               A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
     @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
@@ -190,7 +192,8 @@ class Assembly(unittest.TestCase):
 
         # Assemble A and b
         parameters["num_threads"] = 4
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), \
+                               A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
         parameters["num_threads"] = 0
 
@@ -407,8 +410,9 @@ class Assembly(unittest.TestCase):
 
         # Assemble form (multi-threaded)
         parameters["num_threads"] = 4
-        self.assertAlmostEqual(assemble(M, exterior_facet_domains=new_boundaries),\
-                                   reference2, 10)
+        self.assertAlmostEqual(assemble(M, \
+                                        exterior_facet_domains=new_boundaries),\
+                               reference2, 10)
         parameters["num_threads"] = 0
 
         # Check that the form itself assembles as before
@@ -494,12 +498,14 @@ class Assembly(unittest.TestCase):
         b_l2_norm = 0.95470326978246278
 
         # Assemble A and b
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), \
+                               A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
         # Assemble A and b multi-threaded
         parameters["num_threads"] = 4
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), \
+                               A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
         parameters["num_threads"] = 0
 
@@ -608,7 +614,6 @@ class Assembly(unittest.TestCase):
         e2 = Expression("x[0]", cell=mesh.ufl_cell()) # cell
         e3 = Expression("x[0]", element=V.ufl_element()) # ufl element
         e4 = Expression("x[0]", domain=mesh) # ufl.Domain (this one holds mesh reference)
-
 
         # Provide mesh in measure:
         dx2 = Measure("dx", domain=mesh)

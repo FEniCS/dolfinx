@@ -33,7 +33,9 @@
 
 namespace ufc
 {
+  class cell;
   class cell_integral;
+  class exterior_facet_integral;
 }
 
 namespace dolfin
@@ -43,6 +45,7 @@ namespace dolfin
   class Cell;
   class Facet;
   class Form;
+  class GenericDofMap;
   class GenericMatrix;
   class GenericVector;
   template<typename T> class MeshFunction;
@@ -102,6 +105,16 @@ namespace dolfin
 
   private:
 
+    // Class to hold temporary data
+    class Scratch
+    {
+    public:
+      Scratch(const Form& a, const Form& L);
+      ~Scratch();
+      void zero_cell();
+      std::array<std::vector<double>, 2> Ae;
+    };
+
     // Check form arity
     static void check_arity(std::shared_ptr<const Form> a,
                             std::shared_ptr<const Form> L);
@@ -115,8 +128,6 @@ namespace dolfin
 
     // Boundary conditions
     std::vector<const DirichletBC*> _bcs;
-
-    class Scratch;
 
     static void
       cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
@@ -135,6 +146,24 @@ namespace dolfin
                         const MeshFunction<std::size_t>* exterior_facet_domains,
                        const MeshFunction<std::size_t>* interior_facet_domains);
 
+    // Compute single facet (and possible connected cell)
+    // contribution
+    static void assemble_exterior_facet(
+      Scratch& data,
+      std::array<GenericTensor*, 2>& tensors,
+      const Mesh& mesh,
+      const Facet& facet,
+      const DirichletBC::Map& boundary_values,
+      std::array<UFC*, 2>& ufc,
+      std::array<ufc::cell, 2>& ufc_cell,
+      std::array<std::vector<double>, 2>& vertex_coordinates,
+      std::array<std::array<std::vector<const std::vector<dolfin::la_index>* >, 2 >, 2>& cell_dofs,
+      const std::array<std::vector<const GenericDofMap*>, 2>& dofmaps,
+      std::array<const ufc::cell_integral*, 2>& cell_integrals,
+      std::array<const ufc::exterior_facet_integral*, 2>& exterior_facet_integrals,
+      const MeshFunction<std::size_t>* cell_domains,
+      const MeshFunction<std::size_t>* exterior_facet_domains);
+
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
                          const std::vector<dolfin::la_index>& global_dofs0,
@@ -150,21 +179,6 @@ namespace dolfin
                                      const void* integral,
                                      const DirichletBC::Map& boundary_values,
                                      const std::vector<dolfin::la_index>& dofs);
-
-    // Class to hold temporary data
-    class Scratch
-    {
-    public:
-
-      Scratch(const Form& a, const Form& L);
-
-      ~Scratch();
-
-      void zero_cell();
-
-      std::array<std::vector<double>, 2> Ae;
-
-    };
 
   };
 

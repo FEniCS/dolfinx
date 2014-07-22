@@ -255,12 +255,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     dolfin_assert(facet->num_entities(D) == 1);
     Cell mesh_cell(mesh, facet->entities(D)[0]);
 
-    // FIXME: ghost mesh change
-    if (mesh_cell.is_ghost())
-    {
-      error("Oops, facet is connected to ghost cell");
-      continue;
-    }
+    // Check that cell is not a ghost
+    dolfin_assert(!mesh_cell.is_ghost());
 
     // Get local index of facet with respect to the cell
     const std::size_t local_facet = mesh_cell.index(*facet);
@@ -300,13 +296,14 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   if (!ufc.form.has_interior_facet_integrals())
     return;
 
-  //not_working_in_parallel("Assembly over interior facets");
-
   // Set timer
   Timer timer("Assemble interior facets");
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
+
+  // MPI rank
+  const int my_mpi_rank = MPI::rank(mesh.mpi_comm());
 
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
@@ -354,20 +351,11 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
-    // Only consider interior facets
-    //if (facet->exterior())
-    //{
-    //  p++;
-    //  continue;
-    //}
     if (facet->num_entities(D) == 1)
       continue;
 
-    if (facet->is_ghost())
-    {
-      error("Oops, have a ghost facet");
-      continue;
-    }
+    // Check that facet is not a ghost
+    dolfin_assert(!facet->is_ghost());
 
     // Get integral for sub domain (if any)
     if (use_domains)
@@ -431,25 +419,22 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     if (cell0.is_ghost() != cell1.is_ghost())
     {
-      int my_rank = MPI::rank(MPI_COMM_WORLD);
       int ghost_rank = -1;
       if (cell0.is_ghost())
         ghost_rank = cell0.owner();
       else
         ghost_rank = cell1.owner();
 
-      dolfin_assert(my_rank != ghost_rank);
+      dolfin_assert(my_mpi_rank != ghost_rank);
       dolfin_assert(ghost_rank != -1);
-      if (ghost_rank < my_rank)
+      if (ghost_rank < my_mpi_rank)
         continue;
-
       //++counter1;
       //for (std::size_t i = 0; i < ufc.macro_A.size(); ++i)
       //  ufc.macro_A[i] *= 0.5;
     }
 
     // Add entries to global tensor
-
     add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);
 
     p++;
