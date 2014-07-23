@@ -119,7 +119,7 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   ufc::cell ufc_cell;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     // Update cell data
     cell->get_cell_data(ufc_cell);

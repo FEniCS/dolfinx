@@ -38,6 +38,9 @@ using a discontinuous Galerkin formulation (interior penalty method).
 
 from dolfin import *
 
+# FIXME: Make mesh ghosted
+parameters["ghost_mode"] = "shared_facet"
+
 # Define class marking Dirichlet boundary (x = 0 or x = 1)
 class DirichletBoundary(SubDomain):
   def inside(self, x, on_boundary):
@@ -91,13 +94,14 @@ L = v*f*dx - u0*dot(grad(v), n)*ds(1) + (gamma/h)*u0*v*ds(1) + g*v*ds(2)
 # Compute solution
 u = Function(V)
 solve(a == L, u)
+print "Solution vector norm (0): {!r}".format(u.vector().norm("l2"))
 
 # Project solution to piecewise linears
-u_proj = project(u)
+#u_proj = project(u)
 
 # Save solution to file
-file = File("poisson.pvd")
-file << u_proj
+#file = File("poisson.pvd")
+#file << u_proj
 
 # Plot solution
-plot(u_proj, interactive=True)
+#plot(u_proj, interactive=True)

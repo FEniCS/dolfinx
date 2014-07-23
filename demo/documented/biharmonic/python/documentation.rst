@@ -35,13 +35,16 @@ A mesh is created, and a quadratic finite element function space:
 
 .. code-block:: python
 
+    # Make mesh ghosted for evaluation of DG terms
+    parameters["ghost_mode"] = "shared_facet"
+
     # Create mesh and define function space
     mesh = UnitSquareMesh(32, 32)
     V = FunctionSpace(mesh, "CG", 2)
 
 A subclass of :py:class:`SubDomain <dolfin.cpp.SubDomain>`,
 ``DirichletBoundary`` is created for later defining the boundary of
-the domian:
+the domain:
 
 .. code-block:: python
 

@@ -43,7 +43,7 @@ namespace dolfin
     /// Create empty set
     Set() {}
 
-    /// Wrap std::vectpr as a set. Contents will be erased.
+    /// Wrap std::vector as a set. Contents will be erased.
     Set(std::vector<T>& x) : _x(x)
     { _x.clear(); }
 
