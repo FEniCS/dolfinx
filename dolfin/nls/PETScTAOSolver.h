@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-22
-// Last changed: 2014-07-19
+// Last changed: 2014-07-23
 
 #ifndef __PETSC_TAO_SOLVER_H
 #define __PETSC_TAO_SOLVER_H
@@ -36,6 +36,7 @@ namespace dolfin
   /// Forward declarations
   class GenericVector;
   class PETScVector;
+  class PETScMatrix;
   class OptimisationProblem;
 
   /// This class implements methods for solving nonlinear optimisation
@@ -163,6 +164,9 @@ namespace dolfin
 
     /// Flag to indicate if the bounds are set
     bool has_bounds;
+
+    /// Hessian matrix
+    PETScMatrix _H;
 
     /// Available solvers
     static const std::map<std::string, std::pair<std::string, const TaoType> > _methods;

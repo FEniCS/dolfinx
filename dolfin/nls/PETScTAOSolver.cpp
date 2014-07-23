@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-22
-// Last changed: 2014-07-19
+// Last changed: 2014-07-23
 
 #ifdef ENABLE_PETSC_TAO
 
@@ -226,12 +226,14 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   set_tao_options();
   set_ksp_options();
 
-  // Initialise the Hessian matrix
-  PETScMatrix H;
-  PETScVector g;
-  optimisation_problem.form(H, g, x);
-  optimisation_problem.J(H, x);
-  dolfin_assert(H.mat());
+  // Initialise the Hessian matrix during the first call
+  if (!_H.mat())
+  {
+    PETScVector g;
+    optimisation_problem.form(_H, g, x);
+    optimisation_problem.J(_H, x);
+  }
+  dolfin_assert(_H.mat());
 
   // Set initial vector
   TaoSetInitialVector(_tao, x.vec());
@@ -242,7 +244,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
 
   // Set the objective function, gradient and Hessian evaluation routines
   TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
-  TaoSetHessianRoutine(_tao, H.mat(), H.mat(), FormHessian, &_tao_ctx);
+  TaoSetHessianRoutine(_tao, _H.mat(), _H.mat(), FormHessian, &_tao_ctx);
 
   // Clear previous monitors
   TaoCancelMonitors(_tao);
