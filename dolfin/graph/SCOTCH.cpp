@@ -380,7 +380,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   // FIXME: check MPI type compatibility with SCOTCH_Num
   // Getting this wrong will cause a SEGV
   // FIXME: is there a better way to do this?
-  
+
   MPI_Datatype MPI_SCOTCH_Num;
   if (sizeof(SCOTCH_Num) == 4)
     MPI_SCOTCH_Num = MPI_INT;
@@ -399,8 +399,8 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   // Get SCOTCH's locally indexed graph
   SCOTCH_Num* edge_ghost_tab;
   SCOTCH_dgraphData(&dgrafdat,
-                    NULL, NULL, NULL, NULL, NULL, NULL, 
-                    NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
+                    NULL, NULL, NULL, NULL, NULL, NULL,
+                    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                     &edge_ghost_tab, NULL, (MPI_Comm *)&mpi_comm);
 
   // Iterate through SCOTCH's local compact graph to find partition
@@ -408,10 +408,10 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   for(SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
     const std::size_t proc_this =  _cell_partition[i];
-    
+
     for(SCOTCH_Num j = vertloctab[i]; j < vertloctab[i + 1]; ++j)
     {
-      const std::size_t proc_other 
+      const std::size_t proc_other
         = _cell_partition[edge_ghost_tab[j]];
       if(proc_this != proc_other)
       {
@@ -430,7 +430,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
       }
     }
   }
-  
+
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
@@ -444,10 +444,11 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
-                               std::vector<std::size_t>& cell_partition,
-         std::vector<std::vector<std::size_t> >& ghost_procs,
-         const LocalMeshData& mesh_data)
+void SCOTCH::compute_partition(
+  const MPI_Comm mpi_comm,
+  std::vector<std::size_t>& cell_partition,
+  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  const LocalMeshData& mesh_data)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",
