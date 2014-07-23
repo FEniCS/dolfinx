@@ -58,7 +58,7 @@ namespace dolfin
 
 #ifdef HAS_PARMETIS
     // Standard ParMETIS partition
-    static void partition(MPI_Comm mpi_comm, 
+    static void partition(MPI_Comm mpi_comm,
        std::vector<std::size_t>& cell_partition,
        std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
        ParMETISDualGraph& g);
