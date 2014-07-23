@@ -411,14 +411,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
   PyObject* _data()
   {
     PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-						  boost::tuples::get<0>(self->data()),
-						  false);
+                                                 boost::tuples::get<0>(self->data()),
+                                                 false);
     PyObject* cols = %make_numpy_array(1, size_t)(boost::tuples::get<3>(self->data()),
-						 boost::tuples::get<1>(self->data()),
-						 false);
+                                                 boost::tuples::get<1>(self->data()),
+                                                 false);
     PyObject* values = %make_numpy_array(1, double)(boost::tuples::get<3>(self->data()),
-						    boost::tuples::get<2>(self->data()),
-						    false);
+                                                   boost::tuples::get<2>(self->data()),
+                                                   false);
 
     if ( rows == NULL || cols == NULL || values == NULL)
       return NULL;
@@ -723,10 +723,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 %define AS_BACKEND_TYPE_MACRO(TENSOR_TYPE)
 %inline %{
-bool _has_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::TENSOR_TYPE>(*tensor); }
 
-std::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::TENSOR_TYPE>(tensor); }
 %}
 
@@ -757,19 +757,20 @@ _matrix_vector_mul_map = {}
 // Run the downcast macro
 // ---------------------------------------------------------------------------
 AS_BACKEND_TYPE_MACRO(uBLASVector)
+AS_BACKEND_TYPE_MACRO(uBLASLinearOperator)
 
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
-bool _has_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(*tensor); }
 
-std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(tensor); }
 
-bool _has_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::GenericTensor > tensor)
+bool _has_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(*tensor); }
 
-const std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
+const std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(tensor); }
 %}
 
@@ -785,7 +786,8 @@ _as_backend_type_map[uBLASSparseMatrix] = _as_backend_type_uBLASSparseMatrix
 // ---------------------------------------------------------------------------
 %pythoncode %{
 _matrix_vector_mul_map[uBLASSparseMatrix] = [uBLASVector]
-_matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
+_matrix_vector_mul_map[uBLASDenseMatrix] = [uBLASVector]
+_matrix_vector_mul_map[uBLASLinearOperator] = [uBLASVector]
 %}
 
 // ---------------------------------------------------------------------------
@@ -794,9 +796,11 @@ _matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
 #ifdef HAS_PETSC
 AS_BACKEND_TYPE_MACRO(PETScVector)
 AS_BACKEND_TYPE_MACRO(PETScMatrix)
+AS_BACKEND_TYPE_MACRO(PETScLinearOperator)
 
 %pythoncode %{
 _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
+_matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
 %}
 
 #ifdef HAS_PETSC4PY
