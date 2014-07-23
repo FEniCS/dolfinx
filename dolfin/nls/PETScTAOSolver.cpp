@@ -226,7 +226,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   set_tao_options();
   set_ksp_options();
 
-  // Initialise the Hessian matrix if it hasn't been done
+  // Initialise the Hessian matrix
   PETScMatrix H;
   PETScVector g;
   optimisation_problem.form(H, g, x);

@@ -36,7 +36,6 @@ namespace dolfin
   /// Forward declarations
   class GenericVector;
   class PETScVector;
-  class PETScMatrix;
   class OptimisationProblem;
 
   /// This class implements methods for solving nonlinear optimisation
