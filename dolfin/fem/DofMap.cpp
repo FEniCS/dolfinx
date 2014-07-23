@@ -364,10 +364,6 @@ std::shared_ptr<GenericDofMap>
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index> DofMap::dofs() const
 {
-  // Ownership range
-  const std::size_t r0 = _global_offset;
-  const std::size_t r1 = r0 + _local_ownership_size;
-
   // Create vector to hold dofs
   std::vector<la_index> _dofs;
   _dofs.reserve(_dofmap.size()*max_cell_dimension());
@@ -378,9 +374,9 @@ std::vector<dolfin::la_index> DofMap::dofs() const
   {
     for (std::size_t i = 0; i < cell_dofs->size(); ++i)
     {
-      const std::size_t dof = (*cell_dofs)[i];
-      if (dof >= r0 && dof < r1)
-        _dofs.push_back(dof);
+      const la_index dof = (*cell_dofs)[i];
+      if (dof >= 0 && dof < _local_ownership_size)
+        _dofs.push_back(dof + _global_offset);
     }
   }
 
