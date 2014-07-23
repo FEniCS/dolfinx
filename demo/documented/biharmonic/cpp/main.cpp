@@ -57,14 +57,12 @@ public:
 class DirichletBoundary : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return on_boundary;
-  }
+  { return on_boundary; }
 };
 
 int main()
 {
-  // FIXME: Make mesh ghosted
+  // Make mesh ghosted for evaluation of DG terms
   parameters["ghost_mode"] = "shared_facet";
 
   // Create mesh
