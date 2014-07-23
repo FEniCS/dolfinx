@@ -42,9 +42,15 @@ namespace dolfin
   {
   public:
 
-    /// Compute cell partition using ParMETIS. The mode argument
-    /// determines which ParMETIS function is called. It can be one of
-    /// "partition", "adaptive_repartition" or "refine". For meshes
+    /// Compute cell partition from local mesh data.
+    /// The output vector cell_partition contains the desired 
+    /// destination process numbers for each cell. 
+    /// Cells shared on multiple processes have an
+    /// entry in ghost_procs pointing to
+    /// the set of sharing process numbers.
+    /// The mode argument determines which ParMETIS function 
+    /// is called. It can be one of "partition", 
+    /// "adaptive_repartition" or "refine". For meshes
     /// that have already been partitioned or are already well
     /// partitioned, it can be advantageous to use
     /// "adaptive_repartition" or "refine".

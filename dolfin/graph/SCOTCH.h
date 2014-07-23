@@ -40,8 +40,13 @@ namespace dolfin
   {
   public:
 
-    /// Compute cell partition from local mesh data, also returning
-    /// processes that need ghost copies of cells in ghost_procs
+    /// Compute cell partition from local mesh data.
+    /// The vector cell_partition contains the desired 
+    /// destination process numbers for each cell. 
+    /// Cells shared on multiple processes have an
+    /// entry in ghost_procs pointing to
+    /// the set of sharing process numbers.
+    
     static void compute_partition(const MPI_Comm mpi_comm,
           std::vector<std::size_t>& cell_partition,
           std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
