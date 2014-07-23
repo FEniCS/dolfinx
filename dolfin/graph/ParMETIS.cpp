@@ -76,11 +76,12 @@ namespace dolfin
   };
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
-             std::vector<std::size_t>& cell_partition,
-             std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
-             const LocalMeshData& mesh_data,
-             std::string mode)
+void ParMETIS::compute_partition(
+  const MPI_Comm mpi_comm,
+  std::vector<std::size_t>& cell_partition,
+  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  const LocalMeshData& mesh_data,
+  std::string mode)
 {
   // Duplicate MPI communicator (ParMETIS does not take const
   // arguments, so duplicate communicator to be sure it isn't changed)
@@ -110,10 +111,11 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
   MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::partition(MPI_Comm mpi_comm,
-           std::vector<std::size_t>& cell_partition,
-           std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
-           ParMETISDualGraph& g)
+void ParMETIS::partition(
+  MPI_Comm mpi_comm,
+  std::vector<std::size_t>& cell_partition,
+  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  ParMETISDualGraph& g)
 {
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
 
@@ -155,8 +157,8 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
       const idx_t other_cell = g.adjncy[j];
       if (other_cell < elm_begin || other_cell >= elm_end)
       {
-        const unsigned int remote = std::upper_bound(g.elmdist.begin(), 
-                                       g.elmdist.end() , 
+        const unsigned int remote = std::upper_bound(g.elmdist.begin(),
+                                       g.elmdist.end() ,
                                        other_cell) - g.elmdist.begin() - 1;
         dolfin_assert(remote < num_processes);
         if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
@@ -169,7 +171,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   // Do halo exchange of cell partition data
   std::vector<std::vector<std::size_t> > send_cell_partition(num_processes);
   std::vector<std::vector<std::size_t> > recv_cell_partition(num_processes);
-  for(std::map<idx_t, std::set<unsigned int> >::iterator hcell 
+  for(std::map<idx_t, std::set<unsigned int> >::iterator hcell
         = halo_cell_to_remotes.begin(); hcell != halo_cell_to_remotes.end();
       ++hcell)
   {
@@ -177,15 +179,18 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
          proc != hcell->second.end(); ++proc)
     {
       dolfin_assert(*proc < num_processes);
-      send_cell_partition[*proc].push_back(hcell->first + elm_begin); // global cell number
-      send_cell_partition[*proc].push_back(part[hcell->first]); //partitioning
+      // global cell number
+      send_cell_partition[*proc].push_back(hcell->first + elm_begin);
+      //partitioning
+      send_cell_partition[*proc].push_back(part[hcell->first]);
     }
   }
 
   // Actual halo exchange
   MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
 
-  // Construct a map from all currently foreign cells to their new partition number
+  // Construct a map from all currently foreign cells to their new
+  // partition number
   std::map<std::size_t, unsigned int> cell_ownership;
   for (unsigned int i = 0; i < num_processes; ++i)
   {
@@ -202,15 +207,14 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   for(unsigned int i = 0; i < ncells; i++)
   {
     const std::size_t proc_this = part[i];
-
-    for(idx_t j = g.xadj[i]; j != g.xadj[i + 1]; ++j)
+    for (idx_t j = g.xadj[i]; j != g.xadj[i + 1]; ++j)
     {
       const idx_t other_cell = g.adjncy[j];
       std::size_t proc_other;
-      
+
       if (other_cell < elm_begin || other_cell >= elm_end)
       { // remote cell - should be in map
-        const std::map<std::size_t, unsigned int>::const_iterator 
+        const std::map<std::size_t, unsigned int>::const_iterator
           find_other_proc = cell_ownership.find(other_cell);
         dolfin_assert(find_other_proc != cell_ownership.end());
         proc_other = find_other_proc->second;
@@ -218,7 +222,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
       else
         proc_other = part[other_cell - elm_begin];
 
-      if(proc_this != proc_other)
+      if (proc_this != proc_other)
       {
         auto map_it = ghost_procs.find(i);
         if (map_it == ghost_procs.end())
@@ -398,11 +402,12 @@ ParMETISDualGraph::~ParMETISDualGraph()
 }
 //-----------------------------------------------------------------------------
 #else
-void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
-               std::vector<std::size_t>& cell_partition,
-               std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs, 
-               const LocalMeshData& data,
-               std::string mode)
+void ParMETIS::compute_partition(
+  const MPI_Comm mpi_comm,
+  std::vector<std::size_t>& cell_partition,
+  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  const LocalMeshData& data,
+  std::string mode)
 {
   dolfin_error("ParMETIS.cpp",
                "compute mesh partitioning using ParMETIS",
