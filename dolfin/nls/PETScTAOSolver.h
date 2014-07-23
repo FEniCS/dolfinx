@@ -36,6 +36,7 @@ namespace dolfin
   /// Forward declarations
   class GenericVector;
   class PETScVector;
+  class PETScMatrix;
   class OptimisationProblem;
 
   /// This class implements methods for solving nonlinear optimisation
@@ -135,13 +136,6 @@ namespace dolfin
                       const PETScVector& lb,
                       const PETScVector& ub);
 
-    /// Set the TAO solver type
-    void set_solver(const std::string tao_type="default");
-
-    /// Set PETSc Krylov Solver (KSP) used by TAO
-    void set_ksp_pc(const std::string ksp_type="default",
-                    const std::string pc_type="default");
-
     /// TAO context for optimisation problems
     struct tao_ctx_t
     {
@@ -152,9 +146,21 @@ namespace dolfin
     /// TAO pointer
     Tao _tao;
 
+    /// Update parameters when tao/ksp/pc_types are explictly given
+    void update_parameters(const std::string tao_type,
+                           const std::string ksp_type,
+                           const std::string pc_type);
+
     /// Set options
     void set_tao_options();
     void set_ksp_options();
+
+    /// Set the TAO solver type
+    void set_tao(const std::string tao_type="default");
+
+    /// Set PETSc Krylov Solver (KSP) used by TAO
+    void set_ksp_pc(const std::string ksp_type="default",
+                    const std::string pc_type="default");
 
     /// Flag to indicate if the bounds are set
     bool has_bounds;

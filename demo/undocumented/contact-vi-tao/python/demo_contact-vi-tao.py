@@ -41,7 +41,7 @@ V = VectorFunctionSpace(mesh, "Lagrange", 1)
 du = TrialFunction(V)            # Incremental displacement
 v  = TestFunction(V)             # Test function
 u  = Function(V)                 # Displacement from previous iteration
-B  = Constant((0.0, -1.0))       # Body force per unit volume
+B  = Constant((0.0, -1.5))       # Body force per unit volume
 
 # Kinematics
 I = Identity(u.geometric_dimension())  # Identity tensor
@@ -108,8 +108,9 @@ bc.apply(u_max.vector())  # and upper bounds
 solver = PETScTAOSolver()
 
 # Set some parameters
-solver.parameters["method"] = "tron"
-solver.parameters["linear_solver"] = "stcg"
+solver.parameters["method"] = "gpcg"  # gpcg
+# solver.parameters["linear_solver"] = "nash"
+solver.parameters["preconditioner"] = "ml_amg"
 solver.parameters["monitor_convergence"] = True
 solver.parameters["report"] = True
 
@@ -117,12 +118,13 @@ solver.parameters["report"] = True
 # info(parameters, True)
 
 # Solve the problem
-solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
+sol = Function(V)
+solver.solve(ContactProblem(), sol.vector(), u_min.vector(), u_max.vector())
 
 # Save solution in XDMF format
-out = File("u.xdmf")
-out << u
+out = File("sol.xdmf")
+out << sol
 
 # Plot the current configuration
-plot(u, mode="displacement", wireframe=True, title="Displacement field")
+plot(sol, mode="displacement", wireframe=True, title="Displacement field")
 interactive()

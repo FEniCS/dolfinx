@@ -123,9 +123,10 @@ class TAOSolverTester(unittest.TestCase):
     if has_petsc_tao():
 
         def test_tao_solver(self):
-            solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
-            # plot(u, mode="displacement", wireframe=True, title="Displacement field", interactive=True)
-            self.assertTrue(u.vector().max() >= 1.0)
+            sol = Function(V)
+            solver.solve(ContactProblem(), sol.vector(), u_min.vector(), u_max.vector())
+            # plot(sol, mode="displacement", wireframe=True, title="Displacement field", interactive=True)
+            self.assertTrue(sol.vector().max() >= 1.0)
 
 if __name__ == "__main__":
     # Turn off DOLFIN output
