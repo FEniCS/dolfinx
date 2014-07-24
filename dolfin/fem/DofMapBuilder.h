@@ -85,7 +85,7 @@ namespace dolfin
     //     process
     //   - node_ownership = 0  -> dof owned by this process and shared
     //     with other processes
-    //   - node_ownership = 1  -> dof >owned bu this process and not
+    //   - node_ownership = 1  -> dof >owned by this process and not
     //     shared
     //
     // Also computes map from shared node to sharing processes and a

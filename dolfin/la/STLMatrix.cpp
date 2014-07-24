@@ -54,7 +54,7 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
   {
     dolfin_error("STLMatrix.cpp",
                  "initialization of STL matrix",
-                 "Primary storage dim of matrix and tensot layout must be the same");
+                 "Primary storage dim of matrix and tensor layout must be the same");
   }
 
   // Get MPI communicator
@@ -319,7 +319,7 @@ void STLMatrix::apply(std::string mode)
 double STLMatrix::norm(std::string norm_type) const
 {
   if (norm_type != "frobenius")
-    error("Do not know to comput %s norm for STLMatrix", norm_type.c_str());
+    error("Do not know to compute %s norm for STLMatrix", norm_type.c_str());
 
   double _norm = 0.0;
   for (std::size_t i = 0; i < _values.size(); ++i)
@@ -419,7 +419,7 @@ std::string STLMatrix::str(bool verbose) const
     s << str(false) << std::endl << std::endl;
     for (std::size_t i = 0; i < _local_range.second - _local_range.first; i++)
     {
-      // Sort row data by colmun index
+      // Sort row data by column index
       std::vector<std::pair<std::size_t, double> > data = _values[i];
       std::sort(data.begin(), data.end());
 

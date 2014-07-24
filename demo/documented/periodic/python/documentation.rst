@@ -88,7 +88,12 @@ A 2D mesh is created using the built-in class
 define a finite element function space relative to this space. Notice
 the fourth argument of :py:class:`FunctionSpace
 <dolfin.cpp.function.FunctionSpace>`. It specifies that all functions
-in ``V`` have periodic boundaries defined by ``pbc``.
+in ``V`` have periodic boundaries defined by ``pbc``. Also notice that
+in order for periodic boundary conditions to work correctly it is necessary
+that the mesh nodes on the periodic boundaries match up. This is automatically
+satisfied for :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`
+but may require extra care with more general meshes (especially externally
+generated ones).
 
 .. code-block:: python
 

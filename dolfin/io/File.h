@@ -63,7 +63,7 @@ namespace dolfin
     ///     filename (std::string)
     ///         Name of file.
     ///     encoding (std::string)
-    ///         Optional argument specifying encoding, ascii is default.
+    ///         Optional argument specifying encoding, ASCII is default.
     ///
     /// *Example*
     ///    .. code-block:: c++

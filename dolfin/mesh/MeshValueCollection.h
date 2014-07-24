@@ -121,7 +121,7 @@ namespace dolfin
     MeshValueCollection<T>&
       operator=(const MeshValueCollection<T>& mesh_value_collection);
 
-    /// Initialise MeshValueCollection wirth mesh and dimension
+    /// Initialise MeshValueCollection with mesh and dimension
     ///
     /// *Arguments*
     ///     mesh (_mesh))
@@ -130,7 +130,7 @@ namespace dolfin
     ///         The mesh entity dimension for the mesh value collection.
     void init(const Mesh& mesh, std::size_t dim);
 
-    /// Initialise MeshValueCollection wirth mesh and dimension
+    /// Initialise MeshValueCollection with mesh and dimension
     /// (shared_ptr version)
     ///
     /// *Arguments*
@@ -486,7 +486,7 @@ namespace dolfin
     {
       dolfin_error("MeshValueCollection.h",
                    "set value",
-                   "A mesh has not been associcated with this MeshValueCollection");
+                   "A mesh has not been associated with this MeshValueCollection");
     }
 
     const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
@@ -509,7 +509,7 @@ namespace dolfin
     {
       dolfin_error("MeshValueCollection.h",
                    "set value",
-                   "A mesh has not been associcated with this MeshValueCollection");
+                   "A mesh has not been associated with this MeshValueCollection");
     }
 
     dolfin_assert(_dim >= 0);

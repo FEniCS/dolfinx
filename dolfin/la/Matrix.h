@@ -53,7 +53,7 @@ namespace dolfin
     /// Copy constructor
     Matrix(const Matrix& A) : matrix(A.matrix->copy()) {}
 
-    /// Create a Vector from a GenericVetor
+    /// Create a Vector from a GenericVector
     Matrix(const GenericMatrix& A) : matrix(A.copy()) {}
 
     /// Destructor
@@ -104,7 +104,7 @@ namespace dolfin
     }
 
     /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
+    /// multiplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
     /// case, size and layout are important.
     virtual void init_vector(GenericVector& y, std::size_t dim) const
     { matrix->init_vector(y, dim); }

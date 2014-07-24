@@ -73,7 +73,7 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
 std::vector<int> SCOTCH::compute_gps(const Graph& graph,
                                      std::size_t num_passes)
 {
-  // Create strategy string for Gibbs-Poole-Stockmayer ordering
+  // Create strategy string for Gibbs-Poole-Stockmeyer ordering
   std::string strategy = "g{pass= "
     + boost::lexical_cast<std::string>(num_passes) + "}";
 
@@ -124,7 +124,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   // C-style array indexing
   const SCOTCH_Num baseval = 0;
 
-  // Create SCOTCH graph and intialise
+  // Create SCOTCH graph and initialise
   if (SCOTCH_graphInit(&scotch_graph) != 0)
   {
     dolfin_error("SCOTCH.cpp",
@@ -289,7 +289,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
         for (std::size_t i = 0; i < proccnttab.size(); ++i)
           cout << "  " << proccnttab[i];
         cout << endl;
-        cout << "Offests (procvrttab): " << endl;
+        cout << "Offsets (procvrttab): " << endl;
         for (std::size_t i = 0; i < procvrttab.size(); ++i)
           cout << "  " << procvrttab[i];
         cout << endl;
@@ -315,7 +315,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   */
   // ------------------------------------------------------
 
-  // Create SCOTCH graph and intialise
+  // Create SCOTCH graph and initialise
   SCOTCH_Dgraph dgrafdat;
   if (SCOTCH_dgraphInit(&dgrafdat, mpi_comm) != 0)
   {
@@ -352,7 +352,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
   SCOTCH_Strat strat;
   SCOTCH_stratInit(&strat);
 
-  // Set strategy (SCOTCH uses very crytic strings for this, and they can change between versions)
+  // Set strategy (SCOTCH uses very cryptic strings for this, and they can change between versions)
   //std::string strategy = "b{sep=m{asc=b{bnd=q{strat=f},org=q{strat=f}},low=q{strat=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}},seq=q{strat=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}}},seq=b{job=t,map=t,poli=S,sep=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}}}";
   //SCOTCH_stratDgraphMap (&strat, strategy.c_str());
 

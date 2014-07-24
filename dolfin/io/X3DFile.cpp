@@ -197,7 +197,7 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   std::vector<unsigned int> local_output;
   for (FaceIterator f(mesh); !f.end(); ++f)
   {
-    // Check if topolgical dimension is 2, or if we have a boundary
+    // Check if topological dimension is 2, or if we have a boundary
     // facet in 3D
     if (tdim == 2 || f->num_global_entities(tdim) == 1)
     {
@@ -244,7 +244,7 @@ void X3DFile::write_function(const Function& u)
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
 
-  // Mesh geometric and tological dimensions
+  // Mesh geometric and topological dimensions
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
 
@@ -305,7 +305,7 @@ void X3DFile::write_function(const Function& u)
   // Create pugi document
   pugi::xml_document xml_doc;
 
-  // Get mesh mix/max dimensions and wriet XML header
+  // Get mesh mix/max dimensions and write XML header
   const std::vector<double> xpos = mesh_min_max(mesh);
   output_xml_header(xml_doc, xpos);
 
@@ -331,7 +331,7 @@ void X3DFile::write_mesh(const Mesh& mesh)
                  "X3D will only output 2D or 3D meshes");
   }
 
-  // Creat pugi doc
+  // Create pugi doc
   pugi::xml_document xml_doc;
 
   // For serial - ensure connectivity

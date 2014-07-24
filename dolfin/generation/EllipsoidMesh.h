@@ -49,7 +49,7 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         // Create elliposid mesh
+    ///         // Create ellipsoid mesh
     ///         std::vector<double> dims(3);
     //          dims[0] = 1.0; dims[1] = 2.0; dims[2] = 1.5;
     ///         EllipsoidMesh mesh(Point(1.0, 2.0, -1.0), dims, 0.2);
