@@ -21,7 +21,8 @@
 // First added:  2011-10-15
 // Last changed: 2013-11-01
 
-#include <dolfin/common/defines.h>
+#include "types.h"
+#include "defines.h"
 
 //-------------------------------------------------------------------------
 std::string dolfin::dolfin_version()
@@ -32,6 +33,11 @@ std::string dolfin::dolfin_version()
 std::string dolfin::git_commit_hash()
 {
   return std::string(DOLFIN_GIT_COMMIT_HASH);
+}
+//-------------------------------------------------------------------------
+std::size_t dolfin::sizeof_la_index()
+{
+  return sizeof(dolfin::la_index);
 }
 //-------------------------------------------------------------------------
 bool dolfin::has_openmp()

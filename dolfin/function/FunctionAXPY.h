@@ -76,10 +76,10 @@ namespace dolfin
     /// Addition operator
     FunctionAXPY operator+(const FunctionAXPY& axpy) const;
 
-    /// Substraction operator
+    /// Subtraction operator
     FunctionAXPY operator-(const Function& func) const;
 
-    /// Substraction operator
+    /// Subtraction operator
     FunctionAXPY operator-(const FunctionAXPY& axpy) const;
 
     /// Scale operator

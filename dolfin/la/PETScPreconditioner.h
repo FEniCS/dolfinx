@@ -60,7 +60,7 @@ namespace dolfin
     /// Destructor
     virtual ~PETScPreconditioner();
 
-    /// Set the precondtioner type and parameters
+    /// Set the preconditioner type and parameters
     virtual void set(PETScKrylovSolver& solver);
 
     /// Set the (near) null space of the preconditioner operator
@@ -87,7 +87,7 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Rerturn a list of available preconditioners
+    /// Return a list of available preconditioners
     static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values

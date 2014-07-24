@@ -191,7 +191,7 @@ namespace dolfin
     ///         The subdomain markers.
     ///     sub_domain (std::size_t)
     ///         The subdomain number.
-    ///     mesn (_Mesh_)
+    ///     mesh (_Mesh_)
     ///         The mesh.
     ///     check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
@@ -249,7 +249,7 @@ namespace dolfin
     ///         The geometric dimension.
     std::size_t geometric_dimension() const;
 
-    /// Return tolerance uses to find matching point via mao function
+    /// Return tolerance uses to find matching point via map function
     ///
     /// *Returns*
     ///     double

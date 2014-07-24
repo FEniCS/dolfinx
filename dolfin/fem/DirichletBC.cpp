@@ -783,7 +783,7 @@ void DirichletBC::compute_bc(Map& boundary_values, LocalData& data,
 {
   Timer timer("DirichletBC compute bc");
 
-  // Set method if dafault
+  // Set method if default
   if (method == "default")
     method = _method;
 

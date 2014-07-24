@@ -124,7 +124,7 @@ namespace dolfin
                      const dolfin::la_index* cols)
     { dolfin_not_implemented(); }
 
-    /// Set block of values using local indies
+    /// Set block of values using local indices
     virtual void set_local(const double* block, std::size_t m,
                            const dolfin::la_index* rows, std::size_t n,
                            const dolfin::la_index* cols)

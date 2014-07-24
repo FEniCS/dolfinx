@@ -43,62 +43,43 @@
 
 using namespace dolfin;
 
-#if PETSC_VERSION_RELEASE
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
-  // Mapping from method string to PETSc
-  const std::map<std::string, std::pair<std::string, const SNESType> >
-  PETScSNESSolver::_methods
-    = boost::assign::map_list_of
-        ("default",     std::make_pair("default SNES method", ""))
-        ("ls",          std::make_pair("Line search method", SNESLS))
-        ("tr",          std::make_pair("Trust region method",  SNESTR))
-        ("test",        std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
-        ("ngmres",      std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
-        ("nrichardson", std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
-        ("virs",        std::make_pair("Reduced space active set solver method (for bounds)", SNESVIRS))
-        ("viss",        std::make_pair("Reduced space active set solver method (for bounds)", SNESVISS))
-        ("qn",          std::make_pair("Limited memory quasi-Newton", SNESQN))
-        ("ncg",         std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
-        ("fas",         std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
-        ("ms",          std::make_pair("Multistage smoothers", SNESMS));
-  #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 4
-  // Mapping from method string to PETSc
-  const std::map<std::string, std::pair<std::string, const SNESType> >
-  PETScSNESSolver::_methods
-   = boost::assign::map_list_of
-      ("default",      std::make_pair("default SNES method", ""))
-      ("newtonls",     std::make_pair("Line search method", SNESNEWTONLS))
-      ("newtontr",     std::make_pair("Trust region method", SNESNEWTONTR))
-      ("test",         std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
-      ("ngmres",       std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
-      ("nrichardson",  std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
-      ("vinewtonrsls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONRSLS))
-      ("vinewtonssls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONSSLS))
-      ("qn",           std::make_pair("Limited memory quasi-Newton", SNESQN))
-      ("ncg",          std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
-      ("fas",          std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
-      ("nasm",         std::make_pair("Nonlinear Additive Schwartz", SNESNASM))
-      ("anderson",     std::make_pair("Anderson mixing method", SNESANDERSON))
-      ("aspin",        std::make_pair("Additive-Schwarz Preconditioned Inexact Newton", SNESASPIN))
-      ("ms",           std::make_pair("Multistage smoothers", SNESMS));
-  #endif
-#else // Development version
-  // Mapping from method string to PETSc
-  const std::map<std::string, std::pair<std::string, const SNESType> >
-  PETScSNESSolver::_methods
-   = boost::assign::map_list_of
-      ("default",      std::make_pair("default SNES method", ""))
-      ("newtonls",     std::make_pair("Line search method", SNESNEWTONLS))
-      ("newtontr",     std::make_pair("Trust region method", SNESNEWTONTR))
-      ("test",         std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
-      ("ngmres",       std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
-      ("nrichardson",  std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
-      ("vinewtonrsls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONRSLS))
-      ("vinewtonssls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONSSLS))
-      ("qn",           std::make_pair("Limited memory quasi-Newton", SNESQN))
-      ("ncg",          std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
-      ("fas",          std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
-      ("ms",           std::make_pair("Multistage smoothers", SNESMS));
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
+// Mapping from method string to PETSc
+const std::map<std::string, std::pair<std::string, const SNESType> >
+PETScSNESSolver::_methods
+= boost::assign::map_list_of
+  ("default",     std::make_pair("default SNES method", ""))
+  ("ls",          std::make_pair("Line search method", SNESLS))
+  ("tr",          std::make_pair("Trust region method",  SNESTR))
+  ("test",        std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
+  ("ngmres",      std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
+  ("nrichardson", std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
+  ("virs",        std::make_pair("Reduced space active set solver method (for bounds)", SNESVIRS))
+  ("viss",        std::make_pair("Reduced space active set solver method (for bounds)", SNESVISS))
+  ("qn",          std::make_pair("Limited memory quasi-Newton", SNESQN))
+  ("ncg",         std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
+  ("fas",         std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
+  ("ms",          std::make_pair("Multistage smoothers", SNESMS));
+#elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 4
+// Mapping from method string to PETSc
+const std::map<std::string, std::pair<std::string, const SNESType> >
+PETScSNESSolver::_methods
+= boost::assign::map_list_of
+  ("default",      std::make_pair("default SNES method", ""))
+  ("newtonls",     std::make_pair("Line search method", SNESNEWTONLS))
+  ("newtontr",     std::make_pair("Trust region method", SNESNEWTONTR))
+  ("test",         std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
+  ("ngmres",       std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
+  ("nrichardson",  std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
+  ("vinewtonrsls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONRSLS))
+  ("vinewtonssls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONSSLS))
+  ("qn",           std::make_pair("Limited memory quasi-Newton", SNESQN))
+  ("ncg",          std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
+  ("fas",          std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
+  ("nasm",         std::make_pair("Nonlinear Additive Schwartz", SNESNASM))
+  ("anderson",     std::make_pair("Anderson mixing method", SNESANDERSON))
+  ("aspin",        std::make_pair("Additive-Schwarz Preconditioned Inexact Newton", SNESASPIN))
+  ("ms",           std::make_pair("Multistage smoothers", SNESMS));
 #endif
 
 //-----------------------------------------------------------------------------
@@ -391,7 +372,7 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   return 0;
 }
 //-----------------------------------------------------------------------------
-#if PETSC_VERSION_RELEASE
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
 PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
                                              MatStructure* flag, void* ctx)
 {
@@ -606,7 +587,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       VecDuplicate(_x.vec(), &lb);
       if (sign == "nonnegative")
       {
-        #if PETSC_VERSION_RELEASE
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
         VecSet(ub, SNES_VI_INF);
         #else
         VecSet(ub, PETSC_INFINITY);
@@ -618,7 +599,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       {
         VecSet(ub, 0.0);
 
-        #if PETSC_VERSION_RELEASE
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
         VecSet(lb, SNES_VI_INF);
         #else
         VecSet(lb, PETSC_INFINITY);

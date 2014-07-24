@@ -124,7 +124,7 @@ bool MultiStageScheme::implicit(unsigned int stage) const
   if (stage >= _stage_forms.size())
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "quering if stage is implicit",
+		 "querying if stage is implicit",
 		 "Expecting a stage less than the number of total stages in "
 		 "the scheme.");
   }
@@ -143,7 +143,7 @@ int MultiStageScheme::jacobian_index(unsigned int stage) const
   if (stage >= _jacobian_indices.size())
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "quering for jacobian index",
+		 "querying for jacobian index",
 		 "Expecting a stage less than the number of total stages in "
 		 "the scheme.");
   }
@@ -163,7 +163,7 @@ std::string MultiStageScheme::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void MultiStageScheme::_check_arguments()
 {
-  // Check number of stage sollutions is same as number of stage forms
+  // Check number of stage solutions is same as number of stage forms
   if (_stage_solutions.size()!=_stage_forms.size())
   {
     dolfin_error("MultiStageScheme.cpp",

@@ -11,6 +11,7 @@
 #  PETSC_VERSION_MAJOR - First number in PETSC_VERSION
 #  PETSC_VERSION_MINOR - Second number in PETSC_VERSION
 #  PETSC_VERSION_SUBMINOR - Third number in PETSC_VERSION
+#  PETSC_INT_SIZE - sizeof(PetscInt)
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
@@ -181,8 +182,10 @@ show :
     endif()
 
     find_package(X11)
-    list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
-    list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
+    if (X11_FOUND)
+      list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
+      list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
+    endif()
 
     # ResolveCompilerPaths strips OSX frameworks, so add BLAS here for OSX
     petsc_get_variable(PETSC_BLASLAPACK_LIB BLASLAPACK_LIB)
@@ -353,6 +356,14 @@ int main()
     message(STATUS "PETSc configured without Cusp support")
   endif()
 
+endif()
+
+# Check sizeof(PetscInt)
+if (PETSC_INCLUDE_DIRS)
+   include(CheckTypeSize)
+   set(CMAKE_EXTRA_INCLUDE_FILES petsc.h)
+   check_type_size("PetscInt" PETSC_INT_SIZE)
+   set(CMAKE_EXTRA_INCLUDE_FILES)
 endif()
 
 # Standard package handling

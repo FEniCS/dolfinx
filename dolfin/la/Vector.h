@@ -63,7 +63,7 @@ namespace dolfin
     /// Copy constructor
     Vector(const Vector& x) : vector(x.vector->copy()) {}
 
-    /// Create a Vector from a GenericVetor
+    /// Create a Vector from a GenericVector
     Vector(const GenericVector& x) : vector(x.copy()) {}
 
     //--- Implementation of the GenericTensor interface ---
@@ -97,7 +97,7 @@ namespace dolfin
     virtual void init(MPI_Comm comm, std::size_t N)
     { vector->init(comm, N); }
 
-    /// Initlialize vector with given ownership range
+    /// Initialize vector with given ownership range
     virtual void init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range)
     { vector->init(comm, range); }
 

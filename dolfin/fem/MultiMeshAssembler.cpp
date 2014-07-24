@@ -423,7 +423,7 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
 void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
                                            const MultiMeshForm& a)
 {
-  // FIXME: This functiono and assemble_interface are very similar.
+  // FIXME: This function and assemble_interface are very similar.
   // FIXME: Refactor to improve code reuse.
 
   // Extract multimesh
@@ -476,7 +476,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
     // Assemble over overlap
     if (custom_integral)
     {
-      log(PROGRESS, "Assembling multimesh form over overlop on part %d.", part);
+      log(PROGRESS, "Assembling multimesh form over overlap on part %d.", part);
 
       // Get quadrature rules
       const auto& quadrature_rules = multimesh->quadrature_rule_overlap(part);

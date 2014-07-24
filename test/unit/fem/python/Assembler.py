@@ -562,12 +562,15 @@ class Assembly(unittest.TestCase):
 
         # Create reference matrices and set entries
         A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
-        pos = numpy.array([0, 1, 2, 3], dtype=numpy.intc)
+        if sizeof_la_index() == 4:
+            dtype = numpy.intc
+        else:
+            dtype = numpy.int64
+        pos = numpy.array([0, 1, 2, 3], dtype=dtype)
         A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
                             [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
                             [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
                             [-1.0/6.0, 0.0, 0.0, 1.0/6.0]]), pos, pos)
-
         M0.set(numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
                             [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
                             [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],

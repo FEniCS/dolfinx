@@ -234,7 +234,7 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
     }
     catch (std::exception &e)
     {
-      // If not found then it must be seached on the other processes
+      // If not found then it must be searched on the other processes
       points_not_found.insert(points_not_found.end(), x.begin(), x.end());
     }
   }

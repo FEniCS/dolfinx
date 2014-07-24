@@ -71,7 +71,7 @@ using namespace dolfin;
 
 
 // The below is a work-around for Intel compilers which have a problem
-// with unamed namespaces. See
+// with unnamed namespaces. See
 //     http://software.intel.com/en-us/articles/compiler-reports-error-1757-when-compiling-chromium-os-code
 // and
 //     https://bugs.launchpad.net/dolfin/+bug/1086526

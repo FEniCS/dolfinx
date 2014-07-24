@@ -106,7 +106,7 @@ namespace dolfin
     /// Return copy of matrix
     virtual std::shared_ptr<GenericMatrix> copy() const;
 
-    /// Intialize vector z to be compatible with the matrix-vector product
+    /// Initialize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///

@@ -368,7 +368,7 @@ void Logger::monitor_memory_usage()
 
   #else
 
-  // Check that thread has not alrady been started
+  // Check that thread has not already been started
   if (_thread_monitor_memory_usage)
   {
     log("Memory monitor already initialize.");

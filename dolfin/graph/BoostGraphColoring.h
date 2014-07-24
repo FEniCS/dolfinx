@@ -112,7 +112,7 @@ namespace dolfin
       const vert_size_type num_colors = sequential_vertex_coloring(graph,
                                                                    color);
 
-      // Coppy colors and return
+      // Copy colors and return
       std::copy(_colors.begin(), _colors.end(), colors.begin());
       return num_colors;
     }

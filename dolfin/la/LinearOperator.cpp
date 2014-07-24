@@ -41,7 +41,7 @@ LinearOperator::LinearOperator()
   // Initialization is postponed until the backend is accessed to
   // enable accessing the member function size() to extract the size.
   // The size would otherwise need to be passed to the constructor of
-  // LinearOperator which is often unpractical for subclasses.
+  // LinearOperator which is often impractical for subclasses.
 }
 //-----------------------------------------------------------------------------
 std::string LinearOperator::str(bool verbose) const

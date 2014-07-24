@@ -91,7 +91,7 @@ Parameters PETScKrylovSolver::default_parameters()
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_krylov_solver");
 
-  // Norm type used in covergence test
+  // Norm type used in convergence test
   std::set<std::string> allowed_norm_types;
   allowed_norm_types.insert("preconditioned");
   allowed_norm_types.insert("true");
@@ -340,7 +340,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     }
   }
 
-  // FIXME: Improve check for re-setting preconditoner, e.g. if
+  // FIXME: Improve check for re-setting preconditioner, e.g. if
   //        parameters change
   // FIXME: Solve using matrix free matrices fails if no user provided
   //        Prec is provided
@@ -525,7 +525,7 @@ void PETScKrylovSolver::set_petsc_operators()
   PetscErrorCode ierr;
 
   // Get parameter
-  #if PETSC_VERSION_RELEASE
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
   const std::string mat_structure = parameters("preconditioner")["structure"];
 
   // Set operators with appropriate option
@@ -549,7 +549,7 @@ void PETScKrylovSolver::set_petsc_operators()
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "set PETSc Krylov solver operators",
-                 "Preconditioner re-use paramrter \"%s \" is unknown",
+                 "Preconditioner re-use parameter \"%s \" is unknown",
                  mat_structure.c_str());
   }
   #else

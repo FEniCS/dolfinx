@@ -33,7 +33,7 @@ namespace dolfin
 {
 
   /// These class provides static functions that permit users to set
-  /// and retreive PETSc options via the PETSc option/parameter
+  /// and retrieve PETSc options via the PETSc option/parameter
   /// system. The option should be prefixed by '-', e.g.
   ///
   ///     PETScOptions::set("mat_mumps_icntl_14", 40.0);
