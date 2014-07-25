@@ -624,9 +624,7 @@ DofMapBuilder::compute_node_ownership(
 
   // FIXME: max index value already known?
   const std::size_t max_index = MPI::max(mpi_comm,
-                                   *std::max_element(local_to_global.begin(), local_to_global.end())) + 1;
-  
-  std::cout << "max index = " << max_index << "\n";
+              *std::max_element(local_to_global.begin(), local_to_global.end())) + 1;
   
   // Loop over nodes and buffer nodes on process boundaries
   for (std::size_t i = 0; i < num_nodes_local; ++i)
@@ -634,7 +632,7 @@ DofMapBuilder::compute_node_ownership(
     if (boundary_nodes[i] >= 0)
     {
       // Mark as provisionally owned and shared (0)
-      node_ownership[i] = 0;
+      //  node_ownership[i] = 0;
 
       // Send global index
       const std::size_t global_index = local_to_global[i];
@@ -644,8 +642,8 @@ DofMapBuilder::compute_node_ownership(
       send_buffer[dest].push_back(global_index);
       global_to_local.insert(std::make_pair(global_index, i));
     }
-    else
-      node_ownership[i] = 1;
+    // else
+    node_ownership[i] = 1;
   }
 
   MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
@@ -685,23 +683,38 @@ DofMapBuilder::compute_node_ownership(
     auto q = recv_buffer[i].begin();
     for (auto p = send_buffer[i].begin(); p != send_buffer[i].end(); ++p)
     {
-      const std::size_t global_index = *p;
-      const std::size_t owner = *(q + 1);
-      std::set<std::size_t> sharing_procs(q + 1, q + 1 + *q);
-      sharing_procs.erase(process_number);
-      q += *q + 1;
+      const unsigned int num_sharing = *q;
+      if (num_sharing > 1)
+      {
+        const std::size_t global_index = *p;
+        const std::size_t owner = *(q + 1);
+        std::set<std::size_t> sharing_procs(q + 1, q + 1 + num_sharing);
+        sharing_procs.erase(process_number);
 
-      auto it = global_to_local.find(global_index);
-      dolfin_assert(it != global_to_local.end());
-      const int received_node_local = it->second;
-      if (owner == process_number)
-        node_ownership[received_node_local] = 0;
-      else
-        node_ownership[received_node_local] = -1;
-      shared_node_to_processes[received_node_local] = std::vector<int>(sharing_procs.begin(), sharing_procs.end());
+       auto it = global_to_local.find(global_index);
+        dolfin_assert(it != global_to_local.end());
+        const int received_node_local = it->second;
+        if (owner == process_number)
+          node_ownership[received_node_local] = 0;
+        else
+          node_ownership[received_node_local] = -1;
+        shared_node_to_processes[received_node_local] = std::vector<int>(sharing_procs.begin(), sharing_procs.end());
+      }
+
+      q += num_sharing + 1;      
     }
   }
   
+  for (unsigned int i = 0; i != node_ownership.size(); ++i)
+  {
+    std::cout << MPI::rank(mpi_comm) << ": " << i << " " << node_ownership[i];
+    std::cout << " - " << local_to_global[i] << " - ";
+    
+    for (auto p = shared_node_to_processes[i].begin(); p != shared_node_to_processes[i].end(); ++p)
+      std::cout << " " << *p ;
+    std::cout << "\n";
+  }
+
   
   // FIXME: The below algorithm can be improved (made more scalable)
   //        by distributing (dof, process) pairs to 'owner' range owner,
