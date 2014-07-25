@@ -265,15 +265,17 @@ namespace dolfin
     std::shared_ptr<const FiniteElement>
       extract_sub_element(const std::vector<std::size_t>& component) const;
 
+  protected:
+
+    // UFC finite element
+    std::shared_ptr<const ufc::finite_element> _ufc_element;
+
   private:
 
     // Recursively extract sub finite element
     static std::shared_ptr<const FiniteElement>
       extract_sub_element(const FiniteElement& finite_element,
                           const std::vector<std::size_t>& component);
-
-    // UFC finite element
-    std::shared_ptr<const ufc::finite_element> _ufc_element;
 
     // Simple hash of the signature string
     std::size_t _hash;
