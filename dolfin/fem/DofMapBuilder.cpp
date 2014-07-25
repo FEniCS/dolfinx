@@ -633,7 +633,7 @@ DofMapBuilder::compute_node_ownership(
       // Mark as provisionally owned and shared (0)
       node_ownership[i] = 0;
 
-      // Send global index and 'vote'
+      // Send global index
       const std::size_t global_index = local_to_global[i];
       const std::size_t dest = MPI::index_owner(mpi_comm,
                                                 global_index,
@@ -655,7 +655,7 @@ DofMapBuilder::compute_node_ownership(
       std::pair<std::map<std::size_t, std::vector<unsigned int> >::iterator,
                 bool> map_ins 
         = global_to_procs.insert(std::make_pair(*q, 
-                                                std::vector<unssigned int>(1, i)));
+                                                std::vector<unsigned int>(1, i)));
       if (!map_ins.second)
         map_ins.first->second.push_back(i);
     }
@@ -665,9 +665,9 @@ DofMapBuilder::compute_node_ownership(
     std::random_shuffle(p->second.begin(), p->second.end());
 
   // Send response back to originators in same order
-  std::vector<std:vector<unsigned int> > send_response(num_processes);
+  std::vector<std::vector<std::size_t> > send_response(num_processes);
   for (unsigned int i = 0; i != num_processes; ++i)
-    for (auto q = recv_buffer[i].begin(); q != recv_buffer[i].end(); ++r)
+    for (auto q = recv_buffer[i].begin(); q != recv_buffer[i].end(); ++q)
     {
       std::vector<unsigned int>& gprocs = global_to_procs[*q];
       send_response[i].push_back(gprocs.size());
@@ -689,12 +689,14 @@ DofMapBuilder::compute_node_ownership(
       auto it = global_to_local.find(global_index);
       dolfin_assert(it != global_to_local.end());
       const int received_node_local = it->second;
-      if (sharing_procs.front() == process_number)
+      if (sharing_procs.front() == (int)process_number)
         node_ownership[received_node_local] = 0;
       else
         node_ownership[received_node_local] = -1;
       shared_node_to_processes[received_node_local] = sharing_procs;
+    }
   }
+  
   
   // FIXME: The below algorithm can be improved (made more scalable)
   //        by distributing (dof, process) pairs to 'owner' range owner,
