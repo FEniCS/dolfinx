@@ -615,8 +615,15 @@ DofMapBuilder::compute_node_ownership(
   // not shared (1)
   node_ownership.resize(num_nodes_local);
 
-  // Communication buffer
-  std::vector<std::size_t> send_buffer;
+  // Communication buffers
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+  const std::size_t num_processes = MPI::size(mpi_comm);
+  const std::size_t process_number = MPI::rank(mpi_comm);
+  std::vector<std::vector<std::size_t> > send_buffer(num_processes);
+  std::vector<std::vector<std::size_t> > recv_buffer(num_processes);
+
+  // FIXME: max index value
+  std::size_t max_index = 0;
 
   // Loop over nodes and buffer nodes on process boundaries
   for (std::size_t i = 0; i < num_nodes_local; ++i)
@@ -626,15 +633,69 @@ DofMapBuilder::compute_node_ownership(
       // Mark as provisionally owned and shared (0)
       node_ownership[i] = 0;
 
-      // Buffer global index and 'vote'
-      send_buffer.push_back(local_to_global[i]);
-      send_buffer.push_back(boundary_nodes[i]);
-      global_to_local.insert(std::make_pair(local_to_global[i], i));
+      // Send global index and 'vote'
+      const std::size_t global_index = local_to_global[i];
+      const std::size_t dest = MPI::index_owner(mpi_comm,
+                                                global_index,
+                                                max_index);
+      send_buffer[dest].push_back(global_index);
+      global_to_local.insert(std::make_pair(global_index, i));
     }
     else
       node_ownership[i] = 1;
   }
 
+  MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
+
+  // Map from global index to sharing processes
+  std::map<std::size_t, std::vector<unsigned int> > global_to_procs;
+  for (unsigned int i = 0; i != num_processes; ++i)
+    for (auto q = recv_buffer[i].begin(); q != recv_buffer[i].end(); ++q)
+    {
+      std::pair<std::map<std::size_t, std::vector<unsigned int> >::iterator,
+                bool> map_ins 
+        = global_to_procs.insert(std::make_pair(*q, 
+                                                std::vector<unssigned int>(1, i)));
+      if (!map_ins.second)
+        map_ins.first->second.push_back(i);
+    }
+
+  // Randomise process order. First process will be owner
+  for (auto p = global_to_procs.begin(); p != global_to_procs.end(); ++p)
+    std::random_shuffle(p->second.begin(), p->second.end());
+
+  // Send response back to originators in same order
+  std::vector<std:vector<unsigned int> > send_response(num_processes);
+  for (unsigned int i = 0; i != num_processes; ++i)
+    for (auto q = recv_buffer[i].begin(); q != recv_buffer[i].end(); ++r)
+    {
+      std::vector<unsigned int>& gprocs = global_to_procs[*q];
+      send_response[i].push_back(gprocs.size());
+      send_response[i].insert(send_response[i].end(), gprocs.begin(), gprocs.end());
+    }
+  
+  MPI::all_to_all(mpi_comm, send_response, recv_buffer);
+  // [n_sharing, owner, others]
+  // 
+  for (unsigned int i = 0; i != num_processes; ++i)
+  {
+    auto q = recv_buffer[i].begin();
+    for (auto p = send_buffer[i].begin(); p != send_buffer[i].end(); ++p)
+    {
+      const std::size_t global_index = *p;
+      std::vector<int> sharing_procs(q + 1, q + 1 + *q);
+      q += *q + 1;
+
+      auto it = global_to_local.find(global_index);
+      dolfin_assert(it != global_to_local.end());
+      const int received_node_local = it->second;
+      if (sharing_procs.front() == process_number)
+        node_ownership[received_node_local] = 0;
+      else
+        node_ownership[received_node_local] = -1;
+      shared_node_to_processes[received_node_local] = sharing_procs;
+  }
+  
   // FIXME: The below algorithm can be improved (made more scalable)
   //        by distributing (dof, process) pairs to 'owner' range owner,
   //        then letting each process get the sharing process list. This
@@ -642,56 +703,53 @@ DofMapBuilder::compute_node_ownership(
 
   // Decide ownership of shared nodes
   // Get MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  const std::size_t process_number = MPI::rank(mpi_comm);
-  std::vector<std::size_t> recv_buffer;
-  for (std::size_t k = 1; k < num_processes; ++k)
-  {
-    const std::size_t src
-      = (process_number - k + num_processes) % num_processes;
-    const std::size_t dest = (process_number + k) % num_processes;
-    MPI::send_recv(mpi_comm, send_buffer, dest, recv_buffer, src);
-    for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
-    {
-      const std::size_t received_node_global = recv_buffer[i];
-      const int received_vote = recv_buffer[i + 1];
 
-      // Get (global, local) node pair. If we have this node, process
-      // for ownership
-      auto it = global_to_local.find(received_node_global);
-      if (it != global_to_local.end())
-      {
-        // Get local node index
-        const int received_node_local = it->second;
+  // for (std::size_t k = 1; k < num_processes; ++k)
+  // {
+  //   const std::size_t src
+  //     = (process_number - k + num_processes) % num_processes;
+  //   const std::size_t dest = (process_number + k) % num_processes;
+  //   MPI::send_recv(mpi_comm, send_buffer, dest, recv_buffer, src);
+  //   for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
+  //   {
+  //     const std::size_t received_node_global = recv_buffer[i];
+  //     const int received_vote = recv_buffer[i + 1];
 
-        // If received node is shared, decide ownership
-        if (node_ownership[received_node_local] == 0)
-        {
-          // Move dofs with higher ownership votes from shared to shared
-          // but not owned
-          if (received_vote < boundary_nodes[received_node_local])
-            node_ownership[received_node_local] = -1;
-          else if (received_vote == boundary_nodes[received_node_local]
-                   && process_number > src)
-          {
-            // If votes are equal, let lower rank process take ownership
-            node_ownership[received_node_local] = -1;
-          }
-          else
-            node_ownership[received_node_local] = 0;
+  //     // Get (global, local) node pair. If we have this node, process
+  //     // for ownership
+  //     auto it = global_to_local.find(received_node_global);
+  //     if (it != global_to_local.end())
+  //     {
+  //       // Get local node index
+  //       const int received_node_local = it->second;
 
-          // Store the process sharing of the node
-          shared_node_to_processes[received_node_local].push_back(src);
-        }
-        else if (node_ownership[received_node_local] == -1)
-        {
-          // Store the process sharing of the node
-          shared_node_to_processes[received_node_local].push_back(src);
-        }
-      }
-    }
-  }
+  //       // If received node is shared, decide ownership
+  //       if (node_ownership[received_node_local] == 0)
+  //       {
+  //         // Move dofs with higher ownership votes from shared to shared
+  //         // but not owned
+  //         if (received_vote < boundary_nodes[received_node_local])
+  //           node_ownership[received_node_local] = -1;
+  //         else if (received_vote == boundary_nodes[received_node_local]
+  //                  && process_number > src)
+  //         {
+  //           // If votes are equal, let lower rank process take ownership
+  //           node_ownership[received_node_local] = -1;
+  //         }
+  //         else
+  //           node_ownership[received_node_local] = 0;
+
+  //         // Store the process sharing of the node
+  //         shared_node_to_processes[received_node_local].push_back(src);
+  //       }
+  //       else if (node_ownership[received_node_local] == -1)
+  //       {
+  //         // Store the process sharing of the node
+  //         shared_node_to_processes[received_node_local].push_back(src);
+  //       }
+  //     }
+  //   }
+  // }
 
   // Build set of neighbouring processes
   neighbours.clear();
