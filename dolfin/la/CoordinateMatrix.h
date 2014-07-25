@@ -77,7 +77,7 @@ namespace dolfin
     // Storage of values
     std::vector<double> _vals;
 
-    // Gobal size
+    // Global size
     std::size_t _size[2];
 
     // Symmetric storage

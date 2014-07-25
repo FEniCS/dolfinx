@@ -46,7 +46,7 @@ namespace dolfin
     /// Destructor
     virtual ~GenericBoundingBoxTree() {}
 
-    /// Build bounding box tree for mesh entites of given dimension
+    /// Build bounding box tree for mesh entities of given dimension
     void build(const Mesh& mesh, std::size_t tdim);
 
     /// Build bounding box tree for point cloud

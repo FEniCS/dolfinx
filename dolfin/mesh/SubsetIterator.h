@@ -38,7 +38,7 @@ namespace dolfin
 
   /// A _SubsetIterator_ is similar to a _MeshEntityIterator_ but
   /// iterates over a specified subset of the range of entities as
-  /// specified by a _MeshFunction_ that labels the entites.
+  /// specified by a _MeshFunction_ that labels the entities.
 
   class SubsetIterator
   {

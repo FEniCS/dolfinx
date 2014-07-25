@@ -21,7 +21,7 @@
 // Modified by Mikael Mortensen, 2014
 //
 // First added:  2007-04-10
-// Last changed: 2014-05-11
+// Last changed: 2014-01-23
 //
 // FIXME: This class needs some cleanup, in particular collecting
 //        all data from different representations into a common
@@ -37,7 +37,7 @@
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <memory>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
@@ -101,7 +101,7 @@ namespace dolfin
   /// geometric approach, each dof on each facet that matches the
   /// boundary condition will be checked. To apply pointwise boundary
   /// conditions e.g. pointloads, one will have to use the pointwise
-  /// approach. The three possibilties are "topological", "geometric"
+  /// approach. The three possibilities are "topological", "geometric"
   /// and "pointwise".
   ///
   /// The 'check_midpoint' variable can be used to decide whether or
@@ -120,7 +120,7 @@ namespace dolfin
 
   public:
 
-    typedef boost::unordered_map<std::size_t, double> Map;
+    typedef std::unordered_map<std::size_t, double> Map;
 
     /// Create boundary condition for subdomain
     ///
@@ -319,7 +319,7 @@ namespace dolfin
     /// it is necessary to call gather() on the returned boundary values.
     ///
     /// *Arguments*
-    ///     boundary_values (boost::unordered_map<std::size_t, double>)
+    ///     boundary_values (std::unordered_map<std::size_t, double>)
     ///         Map from dof to boundary value.
     ///     method (std::string)
     ///         Optional argument: A string specifying which
@@ -332,7 +332,7 @@ namespace dolfin
     /// marked on all processes.
     ///
     /// *Arguments*
-    ///     boundary_values (boost::unordered_map<std::size_t, double>)
+    ///     boundary_values (std::unordered_map<std::size_t, double>)
     ///         Map from dof to boundary value.
     void gather(Map& boundary_values) const;
 
@@ -369,7 +369,7 @@ namespace dolfin
     /// Return function space V
     ///
     /// *Returns*
-    ///     _FunctionSPace_
+    ///     _FunctionSpace_
     ///         The function space to which boundary conditions are applied.
     std::shared_ptr<const FunctionSpace> function_space() const
     { return _function_space; }
@@ -393,7 +393,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     v (_GenericFunction_)
-    ///         The function to check for compability
+    ///         The function to check for compatibility
     ///         with boundary condition.
     ///
     /// *Returns*
@@ -418,11 +418,11 @@ namespace dolfin
     /// Set value to 0.0
     void homogenize();
 
-    /// Return method used for computing Dirichet dofs
+    /// Return method used for computing Dirichlet dofs
     ///
     /// *Returns*
     ///     std::string
-    ///         Method used for computing Dirichet dofs ("topological",
+    ///         Method used for computing Dirichlet dofs ("topological",
     ///         "geometric" or "pointwise").
     std::string method() const;
 
@@ -490,6 +490,12 @@ namespace dolfin
     // The function
     std::shared_ptr<const GenericFunction> _g;
 
+    // Search method
+    std::string _method;
+
+    // Possible search methods
+    static const std::set<std::string> methods;
+
   public:
 
     // User defined sub domain
@@ -508,12 +514,6 @@ namespace dolfin
 
     // User defined sub domain marker for mesh or mesh function
     std::size_t _user_sub_domain_marker;
-
-    // Search method
-    std::string _method;
-
-    // Possible search methods
-    static const std::set<std::string> methods;
 
     // Flag for whether midpoints should be checked
     bool _check_midpoint;

@@ -36,6 +36,9 @@ endif()
 if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
   cmake_policy(SET CMP0004 OLD)
+  if(POLICY CMP0042)
+    cmake_policy(SET CMP0042 NEW)
+  endif()
 endif()
 
 # Set location of our FindFoo.cmake modules
@@ -546,7 +549,7 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.2")
@@ -556,6 +559,15 @@ if (DOLFIN_ENABLE_VTK)
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
   endif()
+endif()
+
+#------------------------------------------------------------------------------
+# Set size of dolfin::la_index
+
+if (PETSC_FOUND)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=${PETSC_INT_SIZE}")
+else()
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=4")
 endif()
 
 #------------------------------------------------------------------------------

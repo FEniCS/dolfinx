@@ -35,7 +35,7 @@ namespace dolfin
 
   class ParMETISDualGraph;
 
-  /// This class proivdes an interface to ParMETIS
+  /// This class provides an interface to ParMETIS
 
   class ParMETIS
   {

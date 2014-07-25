@@ -83,7 +83,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   // List of entity e indices connected to cell
   std::vector<std::vector<unsigned int> > connectivity_ce(mesh.num_cells());
 
-  // List of vertces indices connected to entity e
+  // List of vertices indices connected to entity e
   std::vector<std::vector<unsigned int> > connectivity_ev;
 
   std::size_t current_entity = 0;
@@ -164,7 +164,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
                                                std::size_t d0,
                                                std::size_t d1)
 {
-  // This is where all the logic takes place to find a stragety for
+  // This is where all the logic takes place to find a strategy for
   // the connectivity computation. For any given pair (d0, d1), the
   // connectivity is computed by suitably combining the following
   // basic building blocks:

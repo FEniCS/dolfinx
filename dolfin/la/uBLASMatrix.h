@@ -119,7 +119,7 @@ namespace dolfin
     /// Resize matrix to M x N
     virtual void resize(std::size_t M, std::size_t N);
 
-    /// Intialixe vector z to be compatible with the matrix-vector product
+    /// Initialise vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
@@ -132,15 +132,27 @@ namespace dolfin
     virtual void get(double* block, std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols) const;
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols);
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows, std::size_t n,
+                           const dolfin::la_index* cols)
+    { set(block, m, rows, n, cols); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols);
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows, std::size_t n,
+                           const dolfin::la_index* cols)
+    { add(block, m, rows, n, cols); }
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -164,6 +176,10 @@ namespace dolfin
     /// Set given rows to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
 
+    /// Set given rows to identity matrix
+    virtual void ident_local(std::size_t m, const dolfin::la_index* rows)
+    { ident(m, rows); }
+
     /// Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;
 
@@ -182,7 +198,7 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
-    /// Return pointers to underlying compresssed storage data
+    /// Return pointers to underlying compressed storage data
     /// See GenericMatrix for documentation.
     virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
       const double*, int> data() const;
@@ -431,7 +447,7 @@ namespace dolfin
     const std::size_t M = _matA.size1();
     dolfin_assert(M == _matA.size2());
 
-    // Create indentity matrix
+    // Create identity matrix
     Mat X(M, M);
     X.assign(ublas::identity_matrix<double>(M));
 

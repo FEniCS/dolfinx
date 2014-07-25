@@ -107,7 +107,7 @@ class BuildSurface : public CGAL::Modifier_base<HDS>
 {
 
   // This class is used to build a CGAL polyhedron from a list of
-  // triangular facets. It requires defintion of the member function
+  // triangular facets. It requires definition of the member function
   //
   //     void operator()(HDS& hds);
 

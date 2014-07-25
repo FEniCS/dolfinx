@@ -223,7 +223,7 @@ namespace dolfin
     {
       dolfin_error("HDF5Interface.cpp",
                    "write dataset to HDF5 file",
-                   "Only rank 1 and rank 2 datsset are supported");
+                   "Only rank 1 and rank 2 dataset are supported");
     }
 
     // Get HDF5 data type
@@ -301,6 +301,13 @@ namespace dolfin
     status = H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id,
                       data.data());
     dolfin_assert(status != HDF5_FAIL);
+
+    if (use_chunking)
+    {
+      // Close chunking properties
+      status = H5Pclose(chunking_properties);
+      dolfin_assert(status != HDF5_FAIL);
+    }
 
     // Close dataset collectively
     status = H5Dclose(dset_id);
@@ -381,6 +388,10 @@ namespace dolfin
 
     // Close dataspace
     status = H5Sclose(dataspace);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close memspace
+    status = H5Sclose(memspace);
     dolfin_assert(status != HDF5_FAIL);
 
     // Close dataset
@@ -480,6 +491,10 @@ namespace dolfin
     herr_t status = H5Awrite(attribute_id, h5type, &attribute_value);
     dolfin_assert(status != HDF5_FAIL);
 
+    // Close dataspace
+    status = H5Sclose(dataspace_id);
+    dolfin_assert(status != HDF5_FAIL);
+
     // Close attribute
     status = H5Aclose(attribute_id);
     dolfin_assert(status != HDF5_FAIL);
@@ -506,6 +521,10 @@ namespace dolfin
 
     // Write attribute to dataset
     herr_t status = H5Awrite(attribute_id, h5type, &attribute_value[0]);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close dataspace
+    status = H5Sclose(dataspace_id);
     dolfin_assert(status != HDF5_FAIL);
 
     // Close attribute
@@ -535,6 +554,14 @@ namespace dolfin
 
     // Write attribute to dataset
     status = H5Awrite(attribute_id, datatype_id, attribute_value.c_str());
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close dataspace
+    status = H5Sclose(dataspace_id);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close string type
+    status = H5Tclose(datatype_id);
     dolfin_assert(status != HDF5_FAIL);
 
     // Close attribute
@@ -582,6 +609,10 @@ namespace dolfin
     // Read value to vector
     herr_t status = H5Aread(attr_id, h5type, attribute_value.data());
     dolfin_assert(status != HDF5_FAIL);
+
+    // Close dataspace
+    status = H5Sclose(dataspace);
+    dolfin_assert(status != HDF5_FAIL);
   }
   //---------------------------------------------------------------------------
   template<>
@@ -606,6 +637,10 @@ namespace dolfin
     dolfin_assert(status != HDF5_FAIL);
 
     attribute_value.assign(attribute_data.data());
+
+    // Close memory type
+    status = H5Tclose(memtype);
+    dolfin_assert(status != HDF5_FAIL);
   }
   //---------------------------------------------------------------------------
 

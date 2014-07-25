@@ -22,7 +22,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2014-04-28
+// Last changed: 2014-06-11
 
 #include <vector>
 #include <dolfin/common/utils.h>
@@ -179,9 +179,9 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
       = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
-    expansion_coefficients.set(cell_coefficients.data(),
-                               _dofmap->cell_dimension(cell->index()),
-                               cell_dofs.data());
+    expansion_coefficients.set_local(cell_coefficients.data(),
+                                     _dofmap->cell_dimension(cell->index()),
+                                     cell_dofs.data());
   }
 
   // Finalise changes
@@ -205,8 +205,8 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
   // Check if sub space is already in the cache
   std::map<std::vector<std::size_t>,
            std::shared_ptr<FunctionSpace> >::const_iterator subspace;
-  subspace = subspaces.find(component);
-  if (subspace != subspaces.end())
+  subspace = _subspaces.find(component);
+  if (subspace != _subspaces.end())
     return subspace->second;
   else
   {
@@ -228,9 +228,9 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
       new_sub_space->_component[i] = component[i];
 
     // Insert new sub space into cache
-    subspaces.insert(std::pair<std::vector<std::size_t>,
-                     std::shared_ptr<FunctionSpace> >(component,
-                                                        new_sub_space));
+    _subspaces.insert(std::pair<std::vector<std::size_t>,
+                      std::shared_ptr<FunctionSpace> >(component,
+                                                       new_sub_space));
 
     return new_sub_space;
   }
@@ -238,12 +238,12 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
 {
-  boost::unordered_map<std::size_t, std::size_t> collapsed_dofs;
+  std::unordered_map<std::size_t, std::size_t> collapsed_dofs;
   return collapse(collapsed_dofs);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>FunctionSpace::collapse(
-  boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
+  std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
 {
   dolfin_assert(_mesh);
 
@@ -258,7 +258,7 @@ std::shared_ptr<FunctionSpace>FunctionSpace::collapse(
   std::shared_ptr<GenericDofMap>
     collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
 
-  // Create new FunctionsSpace and return
+  // Create new FunctionSpace and return
   std::shared_ptr<FunctionSpace>
     collapsed_sub_space(new FunctionSpace(_mesh, _element, collapsed_dofmap));
   return collapsed_sub_space;
@@ -287,7 +287,7 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
-  // Note: static_cast is used below to supoort types that cannot be
+  // Note: static_cast is used below to support types that cannot be
   //       directed to dolfin::cout
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)

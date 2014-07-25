@@ -52,39 +52,50 @@ class TestLinearOperator(unittest.TestCase):
         # Iterate over backends supporting linear operators
         for backend in backends:
 
-            # Check whether backend is available
-            if not has_linear_algebra_backend(backend):
-                continue
+            # Try wrapped and backend implementation of operator
+            for _as_backend_type in [lambda x:x, as_backend_type]:
 
-            # Set linear algebra backend
-            parameters["linear_algebra_backend"] = backend
+                # Check whether backend is available
+                if not has_linear_algebra_backend(backend):
+                    continue
 
-            # Compute reference value by solving ordinary linear system
-            mesh = UnitSquareMesh(8, 8)
+                # Set linear algebra backend
+                parameters["linear_algebra_backend"] = backend
 
-            # Skip testing uBLAS in parallel
-            if MPI.size(mesh.mpi_comm()) > 1 and backend == "uBLAS":
-                print "Not running uBLAS test in parallel"
-                continue
+                # Compute reference value by solving ordinary linear system
+                mesh = UnitSquareMesh(8, 8)
 
-            V = FunctionSpace(mesh, "Lagrange", 1)
-            u = TrialFunction(V)
-            v = TestFunction(V)
-            f = Constant(1.0)
-            a = dot(grad(u), grad(v))*dx + u*v*dx
-            L = f*v*dx
-            A = assemble(a)
-            b = assemble(L)
-            x = Vector()
-            solve(A, x, b, "gmres", "none")
-            norm_ref = norm(x, "l2")
+                # Skip testing uBLAS in parallel
+                if MPI.size(mesh.mpi_comm()) > 1 and backend == "uBLAS":
+                    print "Not running uBLAS test in parallel"
+                    continue
 
-            # Solve using linear operator defined by form action
-            u = Function(V)
-            a_action = action(a, coefficient=u)
-            O = MyLinearOperator(a_action, u)
-            solve(O, x, b, "gmres", "none")
-            norm_action = norm(x, "l2")
+                V = FunctionSpace(mesh, "Lagrange", 1)
+                u = TrialFunction(V)
+                v = TestFunction(V)
+                f = Constant(1.0)
+                a = dot(grad(u), grad(v))*dx + u*v*dx
+                L = f*v*dx
+                A = assemble(a)
+                b = assemble(L)
+                x = Vector()
+                solve(A, x, b, "gmres", "none")
+                norm_ref = norm(x, "l2")
+
+                # Solve using linear operator defined by form action
+                u = Function(V)
+                a_action = action(a, coefficient=u)
+                O = MyLinearOperator(a_action, u)
+                O = _as_backend_type(O)
+                solve(O, x, b, "gmres", "none")
+                norm_action = norm(x, "l2")
+
+                # Check at least that petsc4py interface is available
+                if backend == 'PETSc' and has_petsc4py() and \
+                  _as_backend_type == as_backend_type:
+                    from petsc4py import PETSc
+                    self.assertTrue(isinstance(O.mat(), PETSc.Mat))
+
 
 if __name__ == "__main__":
 

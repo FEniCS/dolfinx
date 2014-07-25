@@ -23,11 +23,12 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/assign.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
+
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -196,7 +197,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
   // Check input vector, and re-size if not already sized
   if (x.empty())
   {
-    // Intialize vector
+    // Initialize vector
     if (use_partition_from_file)
     {
       // Get partition from file
@@ -750,11 +751,18 @@ void HDF5File::write(const Function& u, const std::string name)
   std::vector<std::size_t> x_cell_dofs;
   x_cell_dofs.reserve(mesh.num_cells());
 
+  std::vector<std::size_t> local_to_global_map;
+  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+
   for (std::size_t i = 0; i != mesh.num_cells(); ++i)
   {
     x_cell_dofs.push_back(cell_dofs.size());
     const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
-    cell_dofs.insert(cell_dofs.end(), cell_dofs_i.begin(), cell_dofs_i.end());
+    for (auto p = cell_dofs_i.begin(); p != cell_dofs_i.end(); ++p)
+    {
+      dolfin_assert(*p < (dolfin::la_index)local_to_global_map.size());
+      cell_dofs.push_back(local_to_global_map[*p]);
+    }
   }
 
   // Add offset to CSR index to be seamless in parallel
@@ -1122,7 +1130,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   // Check size of dataset. If small enough, just read on all processes...
 
   // FIXME: optimise value
-  const std::size_t max_data_one = 1048576; // arbtirary 1M
+  const std::size_t max_data_one = 1048576; // arbitrary 1M
 
   if (values_dim[0] < max_data_one)
   {

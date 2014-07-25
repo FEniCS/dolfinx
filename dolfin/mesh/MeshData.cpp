@@ -55,7 +55,7 @@ const MeshData& MeshData::operator= (const MeshData& data)
   // Clear all data
   clear();
 
-  // Copy ararys
+  // Copy arrays
   _arrays = data._arrays;
 
   return *this;

@@ -44,7 +44,7 @@ CSGUnion::CSGUnion(std::shared_ptr<CSGGeometry> g0,
   {
     dolfin_error("CSGOperators.cpp",
                  "create union of CSG geometries",
-                 "Dimensions of geomestries don't match (%d vs %d)",
+                 "Dimensions of geometries don't match (%d vs %d)",
                  g0->dim(), g1->dim());
   }
 
@@ -89,7 +89,7 @@ CSGDifference::CSGDifference(std::shared_ptr<CSGGeometry> g0,
   {
     dolfin_error("CSGOperators.cpp",
                  "create difference of CSG geometries",
-                 "Dimensions of geomestries don't match (%d vs %d)",
+                 "Dimensions of geometries don't match (%d vs %d)",
                  g0->dim(), g1->dim());
   }
 
@@ -134,7 +134,7 @@ CSGIntersection::CSGIntersection(std::shared_ptr<CSGGeometry> g0,
   {
     dolfin_error("CSGOperators.cpp",
                  "create intersection of CSG geometries",
-                 "Dimensions of geomestries don't match (%d vs %d)",
+                 "Dimensions of geometries don't match (%d vs %d)",
                  g0->dim(), g1->dim());
   }
 

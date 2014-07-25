@@ -26,9 +26,9 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <unordered_set>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
-#include <boost/unordered_set.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -75,57 +75,6 @@ std::shared_ptr<GenericVector> uBLASVector::copy() const
 {
   std::shared_ptr<GenericVector> y(new uBLASVector(*this));
   return y;
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm, std::size_t N)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  if (_x->size() == N)
-    return;
-  _x->resize(N, false);
-
-  // Set vector to zero
-  _x->clear();
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  resize(comm, range.second - range.first);
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range,
-                         const std::vector<la_index>& ghost_indices)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  if (!ghost_indices.empty())
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  resize(comm, range.second - range.first);
 }
 //-----------------------------------------------------------------------------
 bool uBLASVector::empty() const
@@ -271,7 +220,7 @@ double uBLASVector::sum() const
 //-----------------------------------------------------------------------------
 double uBLASVector::sum(const Array<std::size_t>& rows) const
 {
-  boost::unordered_set<std::size_t> row_set;
+  std::unordered_set<std::size_t> row_set;
   double _sum = 0.0;
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
@@ -410,5 +359,16 @@ std::string uBLASVector::str(bool verbose) const
 GenericLinearAlgebraFactory& uBLASVector::factory() const
 {
   return uBLASFactory<>::instance();
+}
+//-----------------------------------------------------------------------------
+void uBLASVector::resize(std::size_t N)
+{
+  if (_x->size() == N)
+    return;
+  else
+    _x->resize(N, false);
+
+  // Set vector to zero
+  _x->clear();
 }
 //-----------------------------------------------------------------------------

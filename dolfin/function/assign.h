@@ -35,7 +35,7 @@ namespace dolfin
   ///
   /// *Arguments*
   ///     receiving_func (std::shared_ptr<_Function_>)
-  ///         The recieving function 
+  ///         The receiving function 
   ///     assigning_func (std::shared_ptr<_Function_>)
   ///         The assigning function 
   void assign(std::shared_ptr<Function> receiving_func,

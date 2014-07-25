@@ -39,7 +39,7 @@ namespace dolfin
 {
 
   /// This class supports the output of meshes and functions in VTK
-  /// XML format for visualistion purposes. It is not suitable to
+  /// XML format for visualisation purposes. It is not suitable to
   /// checkpointing as it may decimate some data.
 
   class VTKFile : public GenericFile

@@ -71,7 +71,7 @@ MUMPSLUSolver::~MUMPSLUSolver()
 //-----------------------------------------------------------------------------
 std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(_matA);
+  dolfin_assert(_matA);
 
   DMUMPS_STRUC_C data;
 
@@ -83,7 +83,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Host participates in solve
   data.par = 1;
 
-  // Output related paramters
+  // Output related parameters
   //data.ICNTL(1) = 6; // error messages
   //data.ICNTL(2) = 0;
   //data.ICNTL(3) = 6; // Global information
@@ -93,7 +93,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     data.ICNTL(4) = 1;
 
-  // Matrix symmetry (0=non-symmetric, 2=symmetric postitve defn, 2=symmetric)
+  // Matrix symmetry (0=non-symmetric, 2=symmetric positive defn, 2=symmetric)
   data.sym = 0;
   if (parameters["symmetric"])
     data.sym = 2;
@@ -129,13 +129,13 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(29) = 0;
 
   // Global size
-  assert(_matA->size(0) == _matA->size(1));
+  dolfin_assert(_matA->size(0) == _matA->size(1));
   data.n = _matA->size(0);
 
   if (!_matA->base_one())
     error("MUMPS requires a CoordinateMatrix with Fortran-style base 1 indexing.");
 
-  // Get matrix coordindate and value data
+  // Get matrix coordinate and value data
   const std::vector<std::size_t>& rows = _matA->rows();
   const std::vector<std::size_t>& cols = _matA->columns();
   const std::vector<double>& vals = _matA->values();

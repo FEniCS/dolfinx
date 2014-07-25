@@ -21,7 +21,8 @@
 // First added:  2011-10-15
 // Last changed: 2013-11-01
 
-#include <dolfin/common/defines.h>
+#include "types.h"
+#include "defines.h"
 
 //-------------------------------------------------------------------------
 std::string dolfin::dolfin_version()
@@ -32,6 +33,11 @@ std::string dolfin::dolfin_version()
 std::string dolfin::git_commit_hash()
 {
   return std::string(DOLFIN_GIT_COMMIT_HASH);
+}
+//-------------------------------------------------------------------------
+std::size_t dolfin::sizeof_la_index()
+{
+  return sizeof(dolfin::la_index);
 }
 //-------------------------------------------------------------------------
 bool dolfin::has_openmp()
@@ -81,15 +87,6 @@ bool dolfin::has_petsc_tao()
 bool dolfin::has_slepc()
 {
 #ifdef HAS_SLEPC
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
-bool dolfin::has_trilinos()
-{
-#ifdef HAS_TRILINOS
   return true;
 #else
   return false;

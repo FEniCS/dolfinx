@@ -24,7 +24,7 @@
 #ifndef __DOLFIN_DEFINES_H
 #define __DOLFIN_DEFINES_H
 
-#include<string>
+#include <string>
 
 namespace dolfin
 {
@@ -35,6 +35,9 @@ namespace dolfin
   /// Return git changeset hash (returns "unknown" if changeset is
   /// not known)
   std::string git_commit_hash();
+
+  /// Return sizeof the dolfin::la_index type
+  std::size_t sizeof_la_index();
 
   /// Return true if DOLFIN is compiled with OpenMP
   bool has_openmp();
@@ -47,15 +50,12 @@ namespace dolfin
 
   /// Return true if PETSc SNES is enabled
   bool has_petsc_snes();
-  
+
   /// Return true if PETSc TAO is enabled
   bool has_petsc_tao();
-  
+
   /// Return true if DOLFIN is compiled with SLEPc
   bool has_slepc();
-
-  /// Return true if DOLFIN is compiled with Trilinos
-  bool has_trilinos();
 
   /// Return true if DOLFIN is compiled with Scotch
   bool has_scotch();

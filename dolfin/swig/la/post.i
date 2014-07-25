@@ -411,14 +411,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
   PyObject* _data()
   {
     PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-						  boost::tuples::get<0>(self->data()),
-						  false);
+                                                 boost::tuples::get<0>(self->data()),
+                                                 false);
     PyObject* cols = %make_numpy_array(1, size_t)(boost::tuples::get<3>(self->data()),
-						 boost::tuples::get<1>(self->data()),
-						 false);
+                                                 boost::tuples::get<1>(self->data()),
+                                                 false);
     PyObject* values = %make_numpy_array(1, double)(boost::tuples::get<3>(self->data()),
-						    boost::tuples::get<2>(self->data()),
-						    false);
+                                                   boost::tuples::get<2>(self->data()),
+                                                   false);
 
     if ( rows == NULL || cols == NULL || values == NULL)
       return NULL;
@@ -723,10 +723,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 %define AS_BACKEND_TYPE_MACRO(TENSOR_TYPE)
 %inline %{
-bool _has_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::TENSOR_TYPE>(*tensor); }
 
-std::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::TENSOR_TYPE>(tensor); }
 %}
 
@@ -757,19 +757,20 @@ _matrix_vector_mul_map = {}
 // Run the downcast macro
 // ---------------------------------------------------------------------------
 AS_BACKEND_TYPE_MACRO(uBLASVector)
+AS_BACKEND_TYPE_MACRO(uBLASLinearOperator)
 
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
-bool _has_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(*tensor); }
 
-std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(tensor); }
 
-bool _has_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::GenericTensor > tensor)
+bool _has_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(*tensor); }
 
-const std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::GenericTensor> tensor)
+const std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(tensor); }
 %}
 
@@ -785,7 +786,8 @@ _as_backend_type_map[uBLASSparseMatrix] = _as_backend_type_uBLASSparseMatrix
 // ---------------------------------------------------------------------------
 %pythoncode %{
 _matrix_vector_mul_map[uBLASSparseMatrix] = [uBLASVector]
-_matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
+_matrix_vector_mul_map[uBLASDenseMatrix] = [uBLASVector]
+_matrix_vector_mul_map[uBLASLinearOperator] = [uBLASVector]
 %}
 
 // ---------------------------------------------------------------------------
@@ -794,9 +796,11 @@ _matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
 #ifdef HAS_PETSC
 AS_BACKEND_TYPE_MACRO(PETScVector)
 AS_BACKEND_TYPE_MACRO(PETScMatrix)
+AS_BACKEND_TYPE_MACRO(PETScLinearOperator)
 
 %pythoncode %{
 _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
+_matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
 %}
 
 #ifdef HAS_PETSC4PY
@@ -892,85 +896,6 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 
 #endif  // HAS_PETSC4PY
 #endif  // HAS_PETSC
-
-#ifdef HAS_TRILINOS
-
-%runtime%{
-#include <Teuchos_RCP.hpp>
-#include <Epetra_CrsGraph.h>
-#include <Epetra_FECrsMatrix.h>
-#include <Epetra_FEVector.h>
-%}
-
-AS_BACKEND_TYPE_MACRO(EpetraVector)
-AS_BACKEND_TYPE_MACRO(EpetraMatrix)
-
-%pythoncode %{
-_matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
-%}
-
-%extend dolfin::EpetraMatrix{
-  Teuchos::RCP<Epetra_FECrsMatrix> _mat ()
-  {
-    Epetra_FECrsMatrix* tmp = self->mat().get();
-    return Teuchos::RCP<Epetra_FECrsMatrix>(tmp, false);
-  }
-
-%pythoncode %{
-    def mat(self):
-        "Return the Epetra_FECrsMatrix"
-        # Try importing PyTrilinos
-        try:
-            import PyTrilinos
-        except:
-            common.dolfin_error("dolfin/swig/la/post.i",
-                                "import PyTrilinos before accessing underlying Matrix",
-                                "PyTrilinos is not installed")
-
-        A = self._mat()
-
-        # Store the tensor to avoid garbage collection
-        # Need to be in try clause as this wont work when PyTrilinos
-        # is not installed
-        try:
-            A._org_vec = self
-        except:
-            pass
-
-        return A
-%}
-}
-
-%extend dolfin::EpetraVector{
-  Teuchos::RCP<Epetra_FEVector> _vec ()
-  {
-    Epetra_FEVector* tmp = self->vec().get();
-    return Teuchos::RCP<Epetra_FEVector>(tmp, false);
-  }
-
-%pythoncode %{
-    def vec(self):
-        "Return the Epetra_FEVector"
-        try:
-            import PyTrilinos
-        except:
-            common.dolfin_error("dolfin/swig/la/post.i",
-                                "import PyTrilinos before accessing underlying Vector",
-                                "PyTrilinos is not installed")
-        v = self._vec()
-
-        # Store the tensor to avoid garbage collection
-        # Need to be in try clause as this wont work when PyTrilinos
-        # is not installed
-        try:
-            v._org_vec = self
-        except:
-            pass
-
-        return v
-%}
-}
-#endif
 
 // ---------------------------------------------------------------------------
 // Dynamic wrappers for GenericTensor::as_backend_type and GenericTensor::has_type,
