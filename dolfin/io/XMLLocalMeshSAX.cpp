@@ -26,7 +26,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>

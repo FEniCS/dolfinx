@@ -30,7 +30,6 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -46,9 +45,9 @@
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
-  = boost::assign::map_list_of("l1",        NORM_1)
-                              ("linf",      NORM_INFINITY)
-                              ("frobenius", NORM_FROBENIUS);
+= { {"l1",        NORM_1},
+    {"linf",      NORM_INFINITY},
+    {"frobenius", NORM_FROBENIUS} };
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(bool use_gpu) : PETScBaseMatrix(NULL),
