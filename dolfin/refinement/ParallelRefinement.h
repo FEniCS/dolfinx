@@ -19,6 +19,9 @@
 // First Added: 2013-01-02
 // Last Changed: 2013-01-17
 
+#ifndef __PARALLEL_REFINEMENT_H
+#define __PARALLEL_REFINEMENT_H
+
 #include <unordered_map>
 #include <vector>
 
@@ -112,3 +115,5 @@ namespace dolfin
   };
 
 }
+
+#endif
