@@ -144,7 +144,7 @@ class AbaqusTest(_ConverterTest):
         self.assert_(handler.cells_ended)
 
         # Verify materials
-        print((list(handler.functions.keys())))
+        print(list(handler.functions.keys()))
         #self.assertEqual(handler.functions.keys(), ["material"])
         #dim, sz, entries, ended = handler.functions["material"]
         #self.assertEqual(dim, 3)

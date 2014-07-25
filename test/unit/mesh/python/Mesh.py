@@ -347,7 +347,7 @@ class MeshOrientations(unittest.TestCase):
 
         mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
         mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
-        print((mesh.cell_orientations()))
+        print(mesh.cell_orientations())
 
 class MeshSharedEntities(unittest.TestCase):
     def test_shared_entities(self):

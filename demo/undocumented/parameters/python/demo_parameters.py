@@ -25,6 +25,7 @@ Try running this demo with
 # First added:  2009-09-06
 # Last changed: 2009-12-08
 
+from __future__ import print_function
 from dolfin import *
 
 #--- Demo of global DOLFIN parameters ---
@@ -90,9 +91,9 @@ bar = application_parameters.bar
 tol = application_parameters.solver_parameters.tolerance
 
 # Print parameter values
-print(("foo =", foo))
-print(("bar =", bar))
-print(("tol =", tol))
+print("foo =", foo)
+print("bar =", bar)
+print("tol =", tol)
 print()
 
 # Print application parameters
@@ -132,16 +133,16 @@ application_parameters.update(parameter_subset)
 
 # Print command-line option string
 print("\nCommand-line option string")
-print((application_parameters.option_string()))
+print(application_parameters.option_string())
 
 # Demostrate access to full info of parameters
 def print_data(par, indent=""):
-    print(("\n" + indent + "Content of:", par.name()))
+    print("\n" + indent + "Content of:", par.name())
     for key, par_info in par.iterdata():
         if isinstance(par_info,Parameters):
             print_data(par_info, indent + "    ")
         else:
-            print((indent + key, par_info))
+            print(indent + key, par_info)
 
 print_data(application_parameters)
 

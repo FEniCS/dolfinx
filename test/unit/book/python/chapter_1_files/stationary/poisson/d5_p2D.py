@@ -7,6 +7,7 @@ u = u0 on the boundary.
 u0 = u = 1 + x^2 + 2y^2, f = -6.
 """
 
+from __future__ import print_function
 from dolfin import *
 import numpy
 
@@ -74,24 +75,24 @@ if mesh.num_cells() < 160 and u_array.size == mesh.num_vertices():
     coor = mesh.coordinates()
     for i in range(len(u_array)):
         x, y = coor[i]
-        print(('Node (%.3f,%.3f): u = %.4f (%9.2e), '\
+        print('Node (%.3f,%.3f): u = %.4f (%9.2e), '\
               'grad(u)_x = %.4f  (%9.2e), grad(u)_y = %.4f  (%9.2e)' % \
               (x, y, u_array[i], 1 + x**2 + 2*y**2 - u_array[i],
                grad_u_x_array[i], 2*x - grad_u_x_array[i],
-               grad_u_y_array[i], 4*y - grad_u_y_array[i])))
+               grad_u_y_array[i], 4*y - grad_u_y_array[i]))
 
 grad_u_array = grad_u.vector().array()
-print(('grad_u array:', grad_u_array, len(grad_u_array), grad_u_array.shape))
+print('grad_u array:', grad_u_array, len(grad_u_array), grad_u_array.shape)
 
 # Verification
 u_e = interpolate(u0, V)
 u_e_array = u_e.vector().array()
-print(('Max error:', numpy.abs(u_e_array - u_array).max()))
+print('Max error:', numpy.abs(u_e_array - u_array).max())
 
 # Compare numerical and exact solution
 center = (0.5, 0.5)
-print(('numerical u at the center point:', u(center)))
-print(('exact     u at the center point:', u0(center)))
+print('numerical u at the center point:', u(center))
+print('exact     u at the center point:', u0(center))
 
 # Normalize solution such that max(u) = 1:
 max_u = u_array.max()
@@ -99,7 +100,7 @@ u_array /= max_u
 #u.vector().set_local(u_array)
 u.vector()[:] = u_array
 #u.vector().set_local(u_array)  # safer for parallel computing
-print(('\nNormalized solution:\n', u.vector().array()))
+print('\nNormalized solution:\n', u.vector().array())
 
 file = File('poisson.pvd')
 file << u

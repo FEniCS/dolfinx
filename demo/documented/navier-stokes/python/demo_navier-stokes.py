@@ -25,6 +25,7 @@ on an L-shaped domain using Chorin's splitting method."""
 
 # Begin demo
 
+from __future__ import print_function
 from dolfin import *
 
 # Print log messages only from the root process in parallel
@@ -135,7 +136,7 @@ while t < T + DOLFIN_EPS:
     # Move to next time step
     u0.assign(u1)
     t += dt
-    print(("t =", t))
+    print("t =", t)
 
 # Hold plot
 interactive()

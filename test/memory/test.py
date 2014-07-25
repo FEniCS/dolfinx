@@ -122,12 +122,12 @@ failed = []
 print("----------------------------------------------------------------------")
 print("Running Valgrind on all C++ unittests")
 print("")
-print(("Found %d C++ unittests" % len(cpptests)))
+print("Found %d C++ unittests" % len(cpptests))
 print("")
 
 for test_path in cpptests:
     print("----------------------------------------------------------------------")
-    print(("Running Valgrind on C++ unittest %s" % test_path))
+    print("Running Valgrind on C++ unittest %s" % test_path)
     print("")
     if os.path.isfile(os.path.join(test_path, 'test')):
         failed += run_and_analyse(test_path,"./test","C++")
@@ -156,12 +156,12 @@ for test_path in cpptests:
 print("----------------------------------------------------------------------")
 print("Running Valgrind on all demos (non-interactively)")
 print("")
-print(("Found %d C++ demos" % len(cppdemos)))
+print("Found %d C++ demos" % len(cppdemos))
 print("")
 
 for demo_path in cppdemos:
     print("----------------------------------------------------------------------")
-    print(("Running Valgrind on C++ demo %s" % demo_path))
+    print("Running Valgrind on C++ demo %s" % demo_path)
     print("")
     demo_name = "./" + demo_path.split("/")[-2] + "-demo"
     print(demo_name)
@@ -173,7 +173,7 @@ for demo_path in cppdemos:
 # Print output for failed tests
 print("")
 if len(failed) > 0:
-    print(("%d demo(s) and/or unit test(s) failed memcheck, see memcheck.log for details." % len(failed)))
+    print("%d demo(s) and/or unit test(s) failed memcheck, see memcheck.log for details." % len(failed))
     file = open("memcheck.log", "w")
     for (test, interface, output) in failed:
         file.write("----------------------------------------------------------------------\n")

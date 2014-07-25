@@ -60,5 +60,5 @@ L = p*n[1]*ds(1)
 drag = assemble(D)
 lift = assemble(L)
 
-print(("Lift: %f" % lift))
-print(("Drag: %f" % drag))
+print("Lift: %f" % lift)
+print("Drag: %f" % drag)

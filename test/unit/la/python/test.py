@@ -35,7 +35,7 @@ class AbstractBaseTest(object):
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
-            print(("\nRunning:",type(self).__name__))
+            print("\nRunning:",type(self).__name__)
 
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"

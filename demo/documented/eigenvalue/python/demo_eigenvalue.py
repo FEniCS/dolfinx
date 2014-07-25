@@ -28,6 +28,7 @@ a standard eigenvalue problem.
 
 # Begin demo
 
+from __future__ import print_function
 from dolfin import *
 
 # Test for PETSc and SLEPc
@@ -62,7 +63,7 @@ eigensolver.solve()
 # Extract largest (first) eigenpair
 r, c, rx, cx = eigensolver.get_eigenpair(0)
 
-print(("Largest eigenvalue: ", r))
+print("Largest eigenvalue: ", r)
 
 # Initialize function and assign eigenvector
 u = Function(V)

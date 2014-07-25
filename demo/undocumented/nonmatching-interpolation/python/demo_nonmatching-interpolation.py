@@ -42,5 +42,5 @@ plot(v0, mesh=mesh0, title="v0")
 plot(v1, title="v1")
 interactive()
 
-print((norm(v0, mesh = mesh1)))
-print((norm(v1)))
+print(norm(v0, mesh = mesh1))
+print(norm(v1))

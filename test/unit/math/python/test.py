@@ -49,9 +49,9 @@ class DirichletBCTest(unittest.TestCase):
                 #self.assertTrue(near(v, vm)) # Can fail
                 #self.assertTrue(near(v, vp))
                 if not near(v, vm):
-                    print(("not near vm: %r, %r" % (v, vm)))
+                    print("not near vm: %r, %r" % (v, vm))
                 if not near(v, vp):
-                    print(("not near vp: %r, %r" % (v, vp)))
+                    print("not near vp: %r, %r" % (v, vp))
 
                 # vm and vp can round off to v, make some small values != v
                 # that are close to 1 (except for some of the smallest v's)

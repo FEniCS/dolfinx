@@ -60,7 +60,7 @@ def run_test(path, args=[]):
 
     # Print a message
     print()
-    print(("Running tutorial example %s" % file_path))
+    print("Running tutorial example %s" % file_path)
     print("-------------------------------------------------------------------------")
 
     # Remember default DOLFIN parameters

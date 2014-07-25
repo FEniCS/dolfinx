@@ -25,6 +25,7 @@ directory and checks that any code snippets highlighted by the .. code-block::
 directive is legal in the sense that it is present in at least one of the
 source files (.ufl, .py, .cpp) that is associated with the demo."""
 
+from __future__ import print_function
 import sys
 
 from os import chdir, path, getcwd, curdir, pardir, listdir
@@ -114,7 +115,7 @@ def block_in_source(line, block, source_files):
 
     # Return fail if no source files are provided
     if not source_files:
-        print(("\ncode block:\n", block))
+        print("\ncode block:\n", block)
         raise RuntimeError("No source file!")
 
     # Go through each source file and check if any contains code block

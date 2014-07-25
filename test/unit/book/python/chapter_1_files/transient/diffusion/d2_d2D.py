@@ -4,7 +4,7 @@ conditions and a solution that will be exact at all nodes.
 As d1_d2D.py, but here we do all assembly prior to the time loop
 (for increased efficiency).
 """
-
+from __future__ import print_function
 from dolfin import *
 import numpy
 
@@ -53,7 +53,7 @@ f = Expression('beta - 2 - 2*alpha', beta=beta, alpha=alpha)
 u = Function(V)
 t = dt
 while t <= T:
-    print(('time =', t))
+    print('time =', t)
     # f.t = t
     f_k = interpolate(f, V)
     F_k = f_k.vector()
@@ -66,7 +66,7 @@ while t <= T:
     u_e = interpolate(u0, V)
     u_e_array = u_e.vector().array()
     u_array = u.vector().array()
-    print(('Max error, t=%-10.3f:' % t, numpy.abs(u_e_array - u_array).max()))
+    print('Max error, t=%-10.3f:' % t, numpy.abs(u_e_array - u_array).max())
 
     t += dt
     u_1.assign(u)

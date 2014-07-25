@@ -30,7 +30,7 @@ for test in tests:
 
     if fail:
         failed.append(fail)
-        print(("*** %s failed" % test))
+        print("*** %s failed" % test)
         print(output)
     else:
         print("OK")

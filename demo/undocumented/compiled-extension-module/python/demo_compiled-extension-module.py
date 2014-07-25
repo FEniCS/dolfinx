@@ -19,6 +19,7 @@
 #
 # First added:  2013-04-02
 
+from __future__ import print_function
 from dolfin import *
 import numpy
 import os
@@ -38,5 +39,5 @@ probe = compiled_module.Probe(x, V)
 # Just create some random data to be used for probing
 u0 = interpolate(Expression('x[0]'), V)
 probe.eval(u0)
-print(("number of probes: ", probe.value_size()))
-print(("value at first probe: ", probe.get_probe(0)))
+print("number of probes: ", probe.value_size())
+print("value at first probe: ", probe.get_probe(0))

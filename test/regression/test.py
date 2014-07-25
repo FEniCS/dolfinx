@@ -25,6 +25,7 @@
 # First added:  2008-04-08
 # Last changed: 2014-08-11
 
+from __future__ import print_function
 import sys, os, re
 import platform
 import instant
@@ -69,8 +70,8 @@ os.putenv('DOLFIN_NOPLOT', '1')
 
 print("Running all demos (non-interactively)")
 print("")
-print(("Found %d C++ demos" % len(cppdemos)))
-print(("Found %d Python demos" % len(pydemos)))
+print("Found %d C++ demos" % len(cppdemos))
+print("Found %d Python demos" % len(pydemos))
 print("")
 import pprint
 
@@ -156,7 +157,7 @@ for prefix in prefixes:
     # Run C++ demos
     for demo in cppdemos_to_run:
         print("----------------------------------------------------------------------")
-        print(("Running C++ demo %s%s" % (prefix, demo)))
+        print("Running C++ demo %s%s" % (prefix, demo))
         print("")
 
         cppdemo_executable = get_executable_name(demo, "cpp")
@@ -177,7 +178,7 @@ for prefix in prefixes:
                 print("ok (graceful exit on fail)")
             else:
                 print("*** Failed")
-                print((output[1]))
+                print(output[1])
                 failed += [(demo, "C++", prefix, output[1])]
         else:
             print("*** Warning: missing demo")
@@ -185,7 +186,7 @@ for prefix in prefixes:
     # Run Python demos
     for demo in pydemos_to_run:
         print("----------------------------------------------------------------------")
-        print(("Running Python demo %s%s" % (prefix, demo)))
+        print("Running Python demo %s%s" % (prefix, demo))
         print("")
         demofile = get_executable_name(demo, "python") + '.py'
         if os.path.isfile(os.path.join(demo, demofile)):
@@ -217,7 +218,7 @@ for prefix in prefixes:
 timing.sort()
 print("")
 print("Time to run demos:")
-print(("\n".join("%.2fs: %s" % t for t in timing)))
+print("\n".join("%.2fs: %s" % t for t in timing))
 
 total_no_demos = len(pydemos)
 if not only_python:
@@ -226,8 +227,8 @@ if not only_python:
 # Print output for failed tests
 print("")
 if len(failed) > 0:
-    print(("%d demo(s) out of %d failed, see demo.log for details." % \
-          (len(failed), total_no_demos)))
+    print("%d demo(s) out of %d failed, see demo.log for details." % \
+          (len(failed), total_no_demos))
     file = open("demo.log", "w")
     for (test, interface, prefix, output) in failed:
         file.write("----------------------------------------------------------------------\n")

@@ -39,7 +39,7 @@ command = [sys.executable, "test.py"] + sys.argv[1:]
 
 # Run tests
 for test in tests:
-    print(("Running tests: %s" % test))
+    print("Running tests: %s" % test)
     print("----------------------------------------------------------------------")
     os.chdir(os.path.join(pwd, test))
     status = subprocess.Popen(command, shell=False).wait()

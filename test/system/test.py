@@ -37,7 +37,7 @@ command = "python test.py" + " " + " ".join(sys.argv[1:])
 
 # Run tests
 for test in tests:
-    print(("Running system test: %s" % test))
+    print("Running system test: %s" % test)
     print("----------------------------------------------------------------------")
     os.chdir(os.path.join(pwd, test))
     fail, output = get_status_output(command)

@@ -20,6 +20,7 @@
 # First added:  2011-20-09
 # Last changed: 2011-20-09
 
+from __future__ import print_function
 import unittest
 import numpy
 import math
@@ -154,7 +155,7 @@ class IntegrateDerivatives(unittest.TestCase):
         # Keyword delta to assertAlmostEqual is not supported in Python < 2.7
         r = abs(a - b) <= delta
         if not r:
-            print(("Not equal within delta %g:" % delta))
+            print("Not equal within delta %g:" % delta)
             print(a)
             print(b)
         self.assertTrue(r)
@@ -243,13 +244,13 @@ class IntegrateDerivatives(unittest.TestCase):
             F_list = F_list[1:]
 
         for F,acc in F_list:
-            if debug: print(('\n', "F:", str(F)))
+            if debug: print('\n', "F:", str(F))
 
             # Integrate over domain and its boundary
             int_dx = assemble(div(grad(F))*dx(mesh))
             int_ds = assemble(dot(grad(F), n)*ds(mesh))
 
-            if debug: print((int_dx, int_ds))
+            if debug: print(int_dx, int_ds)
 
             # Compare results. Using custom relative delta instead of
             # decimal digits here because some numbers are >> 1.

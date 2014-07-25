@@ -12,6 +12,7 @@ q(u) = (1+u)^m
 Solution method: Picard iteration (successive substitutions).
 """
 
+from __future__ import print_function
 from dolfin import *
 import numpy, sys
 
@@ -61,22 +62,22 @@ while eps > tol and iter < maxiter:
     solve(a == L, u, bcs)
     diff = u.vector().array() - u_k.vector().array()
     eps = numpy.linalg.norm(diff, ord=numpy.Inf)
-    print(('iter=%d: norm=%g' % (iter, eps)))
+    print('iter=%d: norm=%g' % (iter, eps))
     u_k.assign(u)   # update for next iteration
 
 convergence = 'convergence after %d Picard iterations' % iter
 if iter >= maxiter:
     convergence = 'no ' + convergence
 
-print(("""
+print("""
 Solution of the nonlinear Poisson problem div(q(u)*nabla_grad(u)) = f,
 with f=0, q(u) = (1+u)^m, u=0 at x=0 and u=1 at x=1.
 %s
 %s
-""" % (mesh, convergence)))
+""" % (mesh, convergence))
 
 # Find max error
 u_exact = Expression('pow((pow(2, m+1)-1)*x[0] + 1, 1.0/(m+1)) - 1', m=m)
 u_e = interpolate(u_exact, V)
 diff = numpy.abs(u_e.vector().array() - u.vector().array()).max()
-print(('Max error:', diff))
+print('Max error:', diff)

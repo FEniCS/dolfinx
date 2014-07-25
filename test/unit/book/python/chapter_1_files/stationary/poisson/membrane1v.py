@@ -1,4 +1,6 @@
 """As membrane1.py, but with more Viper visualization."""
+
+from __future__ import print_function
 from dolfin import *
 
 # This demo needs to be updated for the removal
@@ -46,7 +48,7 @@ solver.solve()
 # Find maximum real deflection
 max_w = w.vector().array().max()
 max_D = A*max_w/(8*pi*sigma*T)
-print(('Maximum real deflection is', max_D))
+print('Maximum real deflection is', max_D)
 
 # Demonstrate some visualization
 

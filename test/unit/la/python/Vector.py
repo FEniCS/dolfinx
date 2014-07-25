@@ -34,7 +34,7 @@ class AbstractBaseTest(object):
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
-            print(("\nRunning:",type(self).__name__))
+            print("\nRunning:",type(self).__name__)
 
     def assemble_vectors(self):
         mesh = UnitSquareMesh(7, 4)
@@ -284,7 +284,7 @@ class AbstractBaseTest(object):
         if MPI.size(mpi_comm_world()) > 1:
             m = 301
             local_range0 = MPI.local_range(mpi_comm_world(), m)
-            print(("local range", local_range0[0], local_range0[1]))
+            print("local range", local_range0[0], local_range0[1])
 
             # Shift parallel partitiong but preserve global size
             if MPI.rank(mpi_comm_world()) == 0:

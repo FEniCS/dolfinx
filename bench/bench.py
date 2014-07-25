@@ -35,7 +35,7 @@ def run_bench(arg, directory, files):
 
     # Get name of benchmark
     name = directory.replace("./", "").replace("/", "-")
-    print(("Running benchmark %s..." % name))
+    print("Running benchmark %s..." % name)
 
     # Remove old logfile
     cwd = os.getcwd()
@@ -56,7 +56,7 @@ def run_bench(arg, directory, files):
 
     # Report timing
     if status == 0:
-        print(("Completed in %g seconds\n" % elapsed_time))
+        print("Completed in %g seconds\n" % elapsed_time)
     else:
         global failed
         failed.append(name)
@@ -103,8 +103,8 @@ os.path.walk(".", run_bench, None)
 if len(failed) == 0:
     print("All benchmarks OK")
 else:
-    print(("%d benchmark(s) failed:" % len(failed)))
+    print("%d benchmark(s) failed:" % len(failed))
     for name in failed:
-        print(("  " + name))
+        print("  " + name)
 
 sys.exit(len(failed))

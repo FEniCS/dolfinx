@@ -13,6 +13,7 @@ Solution method: automatic, i.e., by a NonlinearVariationalProblem/Solver
 (Newton method).
 """
 
+from __future__ import print_function
 from dolfin import *
 import numpy, sys
 
@@ -91,15 +92,15 @@ PROGRESS = 16
 set_log_level(PROGRESS)
 solver.solve()
 
-print(("""
+print("""
 Solution of the nonlinear Poisson problem div(q(u)*nabla_grad(u)) = f,
 with f=0, q(u) = (1+u)^m, u=0 at x=0 and u=1 at x=1.
 %s
-""" % mesh))
+""" % mesh)
 
 # Find max error
 u_exact = Expression('pow((pow(2, m+1)-1)*x[0] + 1, 1.0/(m+1)) - 1', m=m)
 u_e = interpolate(u_exact, V)
 import numpy
 diff = numpy.abs(u_e.vector().array() - u_.vector().array()).max()
-print(('Max error:', diff))
+print('Max error:', diff)

@@ -33,6 +33,7 @@ Jianming Jin [7.2.1 - 7.2.2]
 # First added:  2008-08-22
 # Last changed: 2008-12-17
 
+from __future__ import print_function
 from dolfin import *
 
 # Test for PETSc and SLEPc
@@ -101,4 +102,4 @@ for i in range(S.size(1)):
 if cutoff is None:
     print("Unable to find dominant mode")
 else:
-    print(("Cutoff frequency:", cutoff))
+    print("Cutoff frequency:", cutoff)

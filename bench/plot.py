@@ -59,7 +59,7 @@ benchmarks = {}
 pattern = "\((.*)\)\s+(.*)\s+(.*)\s+\"(.*)\""
 
 # Extract data from logfile
-print(("Parsing %s..." % benchlog))
+print("Parsing %s..." % benchlog)
 for line in lines:
     match = re.search(pattern, line)
     if match:
@@ -177,7 +177,7 @@ outfile.write("</center>\n")
 
 # Now create separate plots for every benchmark
 for benchmark, values in benchmarks.items():
-    print(("Generating plots for %s..." % benchmark))
+    print("Generating plots for %s..." % benchmark)
 
     outfile.write("<h2>%s</h2><p>\n" % benchmark)
     outfile.write("<center>\n")

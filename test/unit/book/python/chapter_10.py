@@ -417,7 +417,7 @@ class TestPage24(unittest.TestCase):
             def eval(self, values, x):
                 values[0] = sin(x[0])*cos(x[1])
         f = MyExpression()
-        print((f((0.5, 0.5))))
+        print(f((0.5, 0.5)))
 
     def test_box_2(self):
         class MyExpression(Expression):
@@ -427,7 +427,7 @@ class TestPage24(unittest.TestCase):
             def value_shape(self):
                 return (2,)
         g = MyExpression()
-        print((g((0.5, 0.5))))
+        print(g((0.5, 0.5)))
 
     def test_box_3(self):
         f = Expression("sin(x[0])*cos(x[1])")
