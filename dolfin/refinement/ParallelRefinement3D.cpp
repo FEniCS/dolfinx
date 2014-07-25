@@ -19,9 +19,9 @@
 // First Added: 2012-12-19
 // Last Changed: 2013-01-23
 
-#include <vector>
 #include <map>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
+#include <vector>
 #include <boost/multi_array.hpp>
 
 #include <dolfin/common/types.h>
