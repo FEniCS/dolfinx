@@ -28,7 +28,6 @@
 #include <cstdlib>
 #include <utility>
 #include <ufc.h>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
@@ -60,7 +59,7 @@
 using namespace dolfin;
 
 const std::set<std::string> DirichletBC::methods
-            = boost::assign::list_of("topological")("geometric")("pointwise");
+= {"topological", "geometric", "pointwise"};
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,

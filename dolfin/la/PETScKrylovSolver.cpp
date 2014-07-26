@@ -25,7 +25,6 @@
 #ifdef HAS_PETSC
 
 #include <petsclog.h>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -45,24 +44,25 @@ using namespace dolfin;
 
 // Mapping from method string to PETSc
 const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
-  = boost::assign::map_list_of("default",  "")
-                              ("cg",         KSPCG)
-                              ("gmres",      KSPGMRES)
-                              ("minres",     KSPMINRES)
-                              ("tfqmr",      KSPTFQMR)
-                              ("richardson", KSPRICHARDSON)
-                              ("bicgstab",   KSPBCGS);
+= { {"default",  ""},
+    {"cg",         KSPCG},
+    {"gmres",      KSPGMRES},
+    {"minres",     KSPMINRES},
+    {"tfqmr",      KSPTFQMR},
+    {"richardson", KSPRICHARDSON},
+    {"bicgstab",   KSPBCGS} };
 
 // Mapping from method string to description
 const std::vector<std::pair<std::string, std::string> >
-  PETScKrylovSolver::_methods_descr = boost::assign::pair_list_of
-    ("default",    "default Krylov method")
-    ("cg",         "Conjugate gradient method")
-    ("gmres",      "Generalized minimal residual method")
-    ("minres",     "Minimal residual method")
-    ("tfqmr",      "Transpose-free quasi-minimal residual method")
-    ("richardson", "Richardson method")
-    ("bicgstab",   "Biconjugate gradient stabilized method");
+PETScKrylovSolver::_methods_descr
+=
+{ {"default",    "default Krylov method"},
+  {"cg",         "Conjugate gradient method"},
+  {"gmres",      "Generalized minimal residual method"},
+  {"minres",     "Minimal residual method"},
+  {"tfqmr",      "Transpose-free quasi-minimal residual method"},
+  {"richardson", "Richardson method"},
+  {"bicgstab",   "Biconjugate gradient stabilized method"} };
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
