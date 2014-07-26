@@ -157,14 +157,16 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   }
 }
 //-----------------------------------------------------------------------------
-const MeshFunction<std::size_t> * _pick_one_meshfunction(std::string name,
-                                                         const MeshFunction<std::size_t> * a,
-                                                         const MeshFunction<std::size_t> * b)
+const MeshFunction<std::size_t>*
+_pick_one_meshfunction(std::string name,
+                       const MeshFunction<std::size_t> * a,
+                       const MeshFunction<std::size_t> * b)
 {
   if ((a && b) && a != b)
   {
       warning("Bilinear and linear forms do not have same %s subdomains \
-in SystemAssembler. Taking %s subdomains from bilinear form", name.c_str(), name.c_str());
+in SystemAssembler. Taking %s subdomains from bilinear form",
+              name.c_str(), name.c_str());
   }
   return a ? a: b;
 }
@@ -246,11 +248,6 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   // problems
   if (x0)
   {
-    if (MPI::size(mesh.mpi_comm()) > 1)
-    {
-      warning("Parallel symmetric assembly over interior facets for nonlinear \
-problems is untested");
-    }
     dolfin_assert(x0->size()
                   == _a->function_space(1)->dofmap()->global_dimension());
 
@@ -285,9 +282,6 @@ problems is untested");
   }
   else
   {
-    // Facet-wise assembly is not working in parallel
-    not_working_in_parallel("System assembly over interior facets");
-
     // Assemble facet-wise (including cell assembly)
     facet_wise_assembly(tensors, ufc, data, boundary_values,
                         cell_domains, exterior_facet_domains,
@@ -340,7 +334,8 @@ SystemAssembler::cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
 
   // Create pointers to hold integral objects
   std::array<const ufc::cell_integral*, 2> cell_integrals
-    = { {ufc[0]->default_cell_integral.get(), ufc[1]->default_cell_integral.get()} };
+    = { {ufc[0]->default_cell_integral.get(),
+         ufc[1]->default_cell_integral.get()} };
 
   std::array<const ufc::exterior_facet_integral*, 2> exterior_facet_integrals
     = { { ufc[0]->default_exterior_facet_integral.get(),
@@ -357,6 +352,9 @@ SystemAssembler::cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Check that cell is not a ghost
+    dolfin_assert(!cell->is_ghost());
+
     // Get cell vertex coordinates
     cell->get_vertex_coordinates(vertex_coordinates);
 
@@ -385,14 +383,13 @@ SystemAssembler::cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
       if (rank == 2) // form == 0
       {
         dolfin_assert(cell_dofs[form][1]);
-        tensor_required = cell_matrix_required(tensors[form], cell_integrals[form],
+        tensor_required = cell_matrix_required(tensors[form],
+                                               cell_integrals[form],
                                                boundary_values,
                                                *cell_dofs[form][1]);
       }
       else
-      {
         tensor_required = tensors[form] && cell_integrals[form];
-      }
 
       if (tensor_required)
       {
@@ -445,9 +442,7 @@ SystemAssembler::cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
                                                    *cell_dofs[form][1]);
           }
           else
-          {
             tensor_required = tensors[form];
-          }
 
           // Add exterior facet tensor
           if (tensor_required)
@@ -514,6 +509,9 @@ SystemAssembler::facet_wise_assembly(std::array<GenericTensor*, 2>& tensors,
 assembler");
   }
 
+  // My MPI rank
+  const int my_mpi_rank = MPI::rank(mesh.mpi_comm());
+
   // Collect pointers to dof maps
   std::array<std::vector<const GenericDofMap*>, 2> dofmaps;
   for (std::size_t i = 0; i < 2; ++i)
@@ -541,29 +539,37 @@ assembler");
   std::vector<std::size_t> num_dofs(2);
 
   // Holders for UFC integrals
-  std::array<const ufc::cell_integral*, 2> cell_integrals =
-    { { ufc[0]->default_cell_integral.get(),
-        ufc[1]->default_cell_integral.get() } };
-  std::array<const ufc::exterior_facet_integral*, 2> exterior_facet_integrals =
-    { { ufc[0]->default_exterior_facet_integral.get(),
-        ufc[1]->default_exterior_facet_integral.get() } };
-  std::array<const ufc::interior_facet_integral*, 2> interior_facet_integrals =
-    { { ufc[0]->default_interior_facet_integral.get(),
-        ufc[1]->default_interior_facet_integral.get() } };
+  std::array<const ufc::cell_integral*, 2> cell_integrals
+    = { { ufc[0]->default_cell_integral.get(),
+          ufc[1]->default_cell_integral.get() } };
+  std::array<const ufc::exterior_facet_integral*, 2> exterior_facet_integrals
+    = { { ufc[0]->default_exterior_facet_integral.get(),
+          ufc[1]->default_exterior_facet_integral.get() } };
+  std::array<const ufc::interior_facet_integral*, 2> interior_facet_integrals
+    = { { ufc[0]->default_interior_facet_integral.get(),
+          ufc[1]->default_interior_facet_integral.get() } };
 
   // Check whether integrals are domain-dependent
   bool use_cell_domains = cell_domains && !cell_domains->empty();
-  bool use_exterior_facet_domains = exterior_facet_domains && !exterior_facet_domains->empty();
-  bool use_interior_facet_domains = interior_facet_domains && !interior_facet_domains->empty();
+  bool use_interior_facet_domains
+    = interior_facet_domains && !interior_facet_domains->empty();
+  bool use_exterior_facet_domains
+    = exterior_facet_domains && !exterior_facet_domains->empty();
+
+  // Indicator whether or not tensor is required
+  std::array<bool, 2> tensor_required_cell, tensor_required_facet;
 
   // Iterate over facets
-  ufc::cell ufc_cell[2];
-  std::vector<double> vertex_coordinates[2];
+  std::array<ufc::cell, 2> ufc_cell;
+  std::array<std::vector<double>, 2> vertex_coordinates;
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Number of cells sharing facet
-    const std::size_t num_cells = facet->num_entities(mesh.topology().dim());
+    const std::size_t num_cells = facet->num_entities(D);
+
+    // Check that facet is not a ghost
+    dolfin_assert(!facet->is_ghost());
 
     // Interior facet
     if (num_cells == 2)
@@ -571,36 +577,33 @@ assembler");
       // Get cells incident with facet and associated data
       for (std::size_t c = 0; c < 2; ++c)
       {
-        cell[c] = Cell(mesh, facet->entities(mesh.topology().dim())[c]);
+        cell[c] = Cell(mesh, facet->entities(D)[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(*facet);
         cell[c].get_vertex_coordinates(vertex_coordinates[c]);
         cell[c].get_cell_data(ufc_cell[c], local_facet[c]);
       }
 
-      // Loop over lhs and then rhs facet contributions
+      const bool process_facet = (cell[0].is_ghost() != cell[1].is_ghost());
+      bool facet_owner = true;
+      if (process_facet)
+      {
+        int ghost_rank = -1;
+        if (cell[0].is_ghost())
+          ghost_rank = cell[0].owner();
+        else
+          ghost_rank = cell[1].owner();
+        dolfin_assert(my_mpi_rank != ghost_rank);
+        dolfin_assert(ghost_rank != -1);
+        if (ghost_rank < my_mpi_rank)
+          facet_owner = false;
+      }
+
+      // Loop over lhs and then rhs contributions
       for (std::size_t form = 0; form < 2; ++form)
       {
         // Get rank (lhs=2, rhs=1)
         const std::size_t rank = (form == 0) ? 2 : 1;
-
-        // Get integral for sub domain (if any)
-        if (use_interior_facet_domains)
-        {
-          const std::size_t domain = (*interior_facet_domains)[*facet];
-          interior_facet_integrals[form]
-            = ufc[form]->get_interior_facet_integral(domain);
-        }
-
-        // Reset some temp data
-        std::fill(ufc[form]->macro_A.begin(), ufc[form]->macro_A.end(), 0.0);
-
-        // Update UFC object
-        // TODO: Remove this? It seems to be unused, update is called
-        //       before each tabulate_tensor below...
-        //ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
-        //                 cell[1], vertex_coordinates[1], ufc_cell[1],
-        //                 interior_facet_integrals[form]->enabled_coefficients());
 
         // Compute number of dofs in macro dofmap
         std::fill(num_dofs.begin(), num_dofs.begin() + rank, 0);
@@ -612,54 +615,54 @@ assembler");
               = &(dofmaps[form][dim]->cell_dofs(cell_index[c]));
             num_dofs[dim] += cell_dofs[form][c][dim]->size();
           }
+
+          // Resize macro dof holder
+          for (std::size_t dim = 0; dim < rank; ++dim)
+            macro_dofs[form][dim].resize(num_dofs[dim]);
+
+          // Tabulate dofs on macro element
+          const std::size_t rank = (form == 0) ? 2 : 1;
+          for (std::size_t dim = 0; dim < rank; ++dim)
+          {
+            std::copy(cell_dofs[form][c][dim]->begin(),
+                      cell_dofs[form][c][dim]->end(),
+                      macro_dofs[form][dim].begin()
+                      + c*cell_dofs[form][0][dim]->size());
+          }
         }
 
-        // Resize macro dof vector
-        for (std::size_t dim = 0; dim < rank; ++dim)
-          macro_dofs[form][dim].resize(num_dofs[dim]);
+
+        // Get facet integral for sub domain (if any)
+        if (use_interior_facet_domains)
+        {
+          const std::size_t domain = (*interior_facet_domains)[*facet];
+          interior_facet_integrals[form]
+            = ufc[form]->get_interior_facet_integral(domain);
+        }
 
         // Check if facet tensor is required
-        bool facet_tensor_required;
-        if (rank == 2) // form == 0
+        if (form == 0)
         {
-          for (std::size_t c =0; c < 2; ++c)
+          for (std::size_t c = 0; c < 2; ++c)
           {
             dolfin_assert(cell_dofs[form][c][1]);
-            facet_tensor_required = cell_matrix_required(tensors[form],
-                                                        interior_facet_integrals[form],
-                                                        boundary_values,
-                                                        *cell_dofs[form][c][1]);
-            if (facet_tensor_required)
+            tensor_required_facet[form]
+              = cell_matrix_required(tensors[form],
+                                     interior_facet_integrals[form],
+                                     boundary_values,
+                                     *cell_dofs[form][c][1]);
+            if (tensor_required_facet[form])
               break;
           }
         }
         else
         {
-          facet_tensor_required = tensors[form]
-            && interior_facet_integrals[form];
+          tensor_required_facet[form]
+            = (tensors[form] && interior_facet_integrals[form]);
         }
 
-        // Compute facet contribution to tensor, if required
-        if (facet_tensor_required)
-        {
-          // Update to current pair of cells
-          ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
-                            cell[1], vertex_coordinates[1], ufc_cell[1],
-                            interior_facet_integrals[form]->enabled_coefficients());
-          // Integrate over facet
-          interior_facet_integrals[form]->tabulate_tensor(ufc[form]->macro_A.data(),
-                                                   ufc[form]->macro_w(),
-                                                   vertex_coordinates[0].data(),
-                                                   vertex_coordinates[1].data(),
-                                                   local_facet[0],
-                                                   local_facet[1],
-                                                   ufc_cell[0].orientation,
-                                                   ufc_cell[1].orientation);
-        }
-
-        // If we have local facet 0 for cell[i], compute cell
-        // contribution
-        for (std::size_t c = 0; c < num_cells; ++c)
+        // Get cell integrals
+        for (std::size_t c = 0; c < 2; ++c)
         {
           if (local_facet[c] == 0)
           {
@@ -671,153 +674,89 @@ assembler");
             }
 
             // Check if facet tensor is required
-            bool cell_tensor_required;
-            if (rank == 2) // form == 0
+            if (form == 0)
             {
               dolfin_assert(cell_dofs[form][c][1]);
-              cell_tensor_required
+              tensor_required_cell[form]
                 = cell_matrix_required(tensors[form],
                                        cell_integrals[form],
                                        boundary_values,
                                        *cell_dofs[form][c][1]);
             }
             else
-            {
-              cell_tensor_required = tensors[form] && cell_integrals[form];
-            }
-
-            // Compute cell tensor, if required
-            if (cell_tensor_required)
-            {
-              ufc[form]->update(cell[c], vertex_coordinates[c], ufc_cell[c],
-                                cell_integrals[form]->enabled_coefficients());
-              cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
-                                                    ufc[form]->w(),
-                                                    vertex_coordinates[c].data(),
-                                                    ufc_cell[c].orientation);
-
-              // FIXME: Can the below two block be consolidated?
-              const std::size_t nn = cell_dofs[form][c][0]->size();
-              if (form == 0)
-              {
-                const std::size_t mm = cell_dofs[form][c][1]->size();
-                for (std::size_t i = 0; i < mm; i++)
-                {
-                  for (std::size_t j = 0; j < nn; j++)
-                  {
-                    ufc[form]->macro_A[2*nn*mm*c + num_cells*i*nn + nn*c + j]
-                      += ufc[form]->A[i*nn + j];
-                  }
-                }
-              }
-              else
-              {
-                for (std::size_t i = 0; i < cell_dofs[form][c][0]->size(); i++)
-                  ufc[form]->macro_A[nn*c + i] += ufc[form]->A[i];
-              }
-            }
+              tensor_required_cell[form] = tensors[form] && cell_integrals[form];
           }
+        }
 
-          // Tabulate dofs on macro element
-          for (std::size_t dim = 0; dim < rank; ++dim)
-          {
-            std::copy(cell_dofs[form][c][dim]->begin(),
-                      cell_dofs[form][c][dim]->end(),
-                      macro_dofs[form][dim].begin()
-                      + c*cell_dofs[form][0][dim]->size());
-          }
-        } // End loop over cells sharing facet (c)
-      } // End loop over form (form)
+        // Reset work array
+        std::fill(ufc[form]->macro_A.begin(), ufc[form]->macro_A.end(), 0.0);
+      }
 
-      // Modify local tensor for bcs
+      // Compute cell/facet tensor for lhs and rhs
+      std::array<std::size_t, 2> matrix_size;
+      std::size_t vector_size = 0;
+      std::size_t cell_index = 0;
+      for (std::size_t c = 0; c < num_cells; ++c)
+      {
+        if (local_facet[c] == 0)
+        {
+          matrix_size[0] = cell_dofs[0][c][0]->size();
+          matrix_size[1] = cell_dofs[0][c][1]->size();
+          vector_size = cell_dofs[1][c][0]->size();
+          cell_index = c;
+        }
+      }
+      compute_interior_facet_tensor(ufc, ufc_cell,
+                                    vertex_coordinates,
+                                    tensor_required_cell,
+                                    tensor_required_facet,
+                                    cell, local_facet,
+                                    facet_owner,
+                                    cell_integrals,
+                                    interior_facet_integrals,
+                                    matrix_size,
+                                    vector_size);
+
+      // Modify local tensors for bcs
       apply_bc(ufc[0]->macro_A.data(), ufc[1]->macro_A.data(), boundary_values,
                macro_dofs[0][0], macro_dofs[0][1]);
 
       // Add entries to global tensor
-      for (std::size_t form = 0; form < 2; ++form)
+      if (tensors[1])
+        tensors[1]->add_local(ufc[1]->macro_A.data(), macro_dofs[1]);
+
+      const bool add_macro_element
+        = ufc[0]->form.has_interior_facet_integrals();
+      if (tensors[0] && add_macro_element)
+          tensors[0]->add_local(ufc[0]->macro_A.data(), macro_dofs[0]);
+      else if (tensors[0] && !add_macro_element)
       {
-        bool add_macro_element = true;
-        if (form==0) // bilinear form
-          add_macro_element = ufc[0]->form.has_interior_facet_integrals();
-
-        if (tensors[form] && add_macro_element)
-        {
-          tensors[form]->add_local(ufc[form]->macro_A.data(), macro_dofs[form]);
-        }
-        else if (tensors[form] && !add_macro_element) // only true for the bilinear form
-        {
-          // the sparsity pattern may not support the macro element
-          // so instead extract back out the diagonal cell blocks and add them individually
-          for (std::size_t c = 0; c < num_cells; ++c)
-          {
-            if (local_facet[c] == 0)
-            {
-              // Get cell integrals for sub domain (if any)
-              if (use_cell_domains)
-              {
-                const std::size_t domain = (*cell_domains)[cell[c]];
-                cell_integrals[form] = ufc[form]->get_cell_integral(domain);
-              }
-
-              // Check if cell tensor was assembled - not necessary but saves inserting 0s
-              bool cell_tensor_required
-                = cell_matrix_required(tensors[form],
-                                       cell_integrals[form],
-                                       boundary_values,
-                                       *cell_dofs[form][c][1]);
-
-              // Add cell tensor, if required
-              if (cell_tensor_required)
-              {
-                data.zero_cell();
-                const std::size_t nn = cell_dofs[form][c][0]->size();
-                const std::size_t mm = cell_dofs[form][c][1]->size();
-                for (std::size_t i = 0; i < mm; i++)
-                {
-                  for (std::size_t j = 0; j < nn; j++)
-                  {
-                    data.Ae[form][i*nn + j]
-                       = ufc[form]->macro_A[2*nn*mm*c + num_cells*i*nn + nn*c +j];
-                  }
-                }
-                tensors[form]->add_local(data.Ae[form].data(), cell_dofs[form][c]);
-              }
-            }
-          } // End loop over cells sharing facet (c)
-        }
-      } // End loop over form (form)
+        // The sparsity pattern may not support the macro element so
+        // instead extract back out the diagonal cell blocks and add
+        // them individually
+        matrix_block_add(*tensors[0], data.Ae[0], ufc[0]->macro_A,
+                         tensor_required_cell[0], local_facet,
+                         cell_dofs[0][cell_index]);
+      }
     }
     else // Exterior facet
     {
-      // Get mesh cell to which mesh facet belongs (pick first, there
-      // is only one)
+      // Get mesh cell to which mesh facet belongs (pick first,
+      // there is only one)
       Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
 
-      // Get local index of facet with respect to the cell
-      const std::size_t local_facet = cell.index(*facet);
-
-      // Get cell data
-      cell.get_vertex_coordinates(vertex_coordinates[0]);
-      cell.get_cell_data(ufc_cell[0], local_facet);
-
-      // Initialize macro element matrix/vector to zero
-      data.zero_cell();
-
-      // Loop over lhs and then rhs facet contributions
+      // Decide if tensor needs to be computed
       for (std::size_t form = 0; form < 2; ++form)
       {
         // Get rank (lhs=2, rhs=1)
         const std::size_t rank = (form == 0) ? 2 : 1;
 
-        // Get local-to-global dof maps for cell
-        for (std::size_t dim = 0; dim < rank; ++dim)
+        // Get cell integrals for sub domain (if any)
+        if (use_cell_domains)
         {
-          cell_dofs[form][0][dim]
-            = &(dofmaps[form][dim]->cell_dofs(cell.index()));
+          const std::size_t domain = (*cell_domains)[cell];
+          cell_integrals[form] = ufc[form]->get_cell_integral(domain);
         }
-
-        // Reset some temp data
-        std::fill(ufc[form]->A.begin(), ufc[form]->A.end(), 0.0);
 
         // Get exterior facet integrals for sub domain (if any)
         if (use_exterior_facet_domains)
@@ -827,76 +766,45 @@ assembler");
             = ufc[form]->get_exterior_facet_integral(domain);
         }
 
-        // Check if facet tensor is required
-        bool facet_tensor_required;
-        if (rank == 2) // form == 0
+        // Get local-to-global dof maps for cell
+        for (std::size_t dim = 0; dim < rank; ++dim)
+        {
+          cell_dofs[form][0][dim]
+            = &(dofmaps[form][dim]->cell_dofs(cell.index()));
+        }
+
+        // Store if tensor is required
+        if (rank == 2)
         {
           dolfin_assert(cell_dofs[form][0][1]);
-          facet_tensor_required
+          tensor_required_facet[form]
             = cell_matrix_required(tensors[form],
                                    exterior_facet_integrals[form],
+                                   boundary_values,
+                                   *cell_dofs[form][0][1]);
+          tensor_required_cell[form]
+            = cell_matrix_required(tensors[form],
+                                   cell_integrals[form],
                                    boundary_values,
                                    *cell_dofs[form][0][1]);
         }
         else
         {
-          facet_tensor_required = (tensors[form] && exterior_facet_integrals[form]);
+          tensor_required_facet[form]
+            = (tensors[form] && exterior_facet_integrals[form]);
+          tensor_required_cell[form]
+            = tensors[form] && cell_integrals[form];
         }
+      }
 
-        // Compute facet integral,if required
-        if (facet_tensor_required)
-        {
-          // Update UFC object
-          ufc[form]->update(cell, vertex_coordinates[0], ufc_cell[0],
-                            exterior_facet_integrals[form]->enabled_coefficients());
-          exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
-                                                          ufc[form]->w(),
-                                                          vertex_coordinates[0].data(),
-                                                          local_facet,
-                                                          ufc_cell[0].orientation);
-          for (std::size_t i = 0; i < data.Ae[form].size(); i++)
-            data.Ae[form][i] += ufc[form]->A[i];
-        }
-
-        // If we have local facet 0, assemble cell integral
-        if (local_facet == 0)
-        {
-          // Get cell integrals for sub domain (if any)
-          if (use_cell_domains)
-          {
-            const std::size_t domain = (*cell_domains)[cell];
-            cell_integrals[form] = ufc[form]->get_cell_integral(domain);
-          }
-
-          // Check if facet tensor is required
-          bool cell_tensor_required;
-          if (rank == 2)
-          {
-            dolfin_assert(cell_dofs[form][0][1]);
-            cell_tensor_required = cell_matrix_required(tensors[form],
-                                                        cell_integrals[form],
-                                                        boundary_values,
-                                                        *cell_dofs[form][0][1]);
-          }
-          else
-          {
-            cell_tensor_required = tensors[form] && cell_integrals[form];
-          }
-
-          // Compute cell integral, if required
-          if (cell_tensor_required)
-          {
-            ufc[form]->update(cell, vertex_coordinates[0], ufc_cell[0],
-                             cell_integrals[form]->enabled_coefficients());
-            cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
-                                                  ufc[form]->w(),
-                                                  vertex_coordinates[0].data(),
-                                                  ufc_cell[0].orientation);
-            for (std::size_t i = 0; i < data.Ae[form].size(); i++)
-              data.Ae[form][i] += ufc[form]->A[i];
-          }
-        }
-      } // End loop over forms [form]
+      // Compute cell/facet tensors
+      compute_exterior_facet_tensor(data.Ae, ufc, ufc_cell[0],
+                                    vertex_coordinates[0],
+                                    tensor_required_cell,
+                                    tensor_required_facet,
+                                    cell, *facet,
+                                    cell_integrals,
+                                    exterior_facet_integrals);
 
       // Modify local matrix/element for Dirichlet boundary conditions
       apply_bc(data.Ae[0].data(), data.Ae[1].data(), boundary_values,
@@ -913,10 +821,177 @@ assembler");
   }
 }
 //-----------------------------------------------------------------------------
-inline void SystemAssembler::apply_bc(double* A, double* b,
-                                      const DirichletBC::Map& boundary_values,
-                                      const std::vector<dolfin::la_index>& global_dofs0,
-                                      const std::vector<dolfin::la_index>& global_dofs1)
+void SystemAssembler:: compute_exterior_facet_tensor(
+  std::array<std::vector<double>, 2>& Ae,
+  std::array<UFC*, 2>& ufc,
+  ufc::cell& ufc_cell,
+  std::vector<double>& vertex_coordinates,
+  const std::array<bool, 2>& tensor_required_cell,
+  const std::array<bool, 2>& tensor_required_facet,
+  const Cell& cell,
+  const Facet& facet,
+  const std::array<const ufc::cell_integral*, 2>& cell_integrals,
+  const std::array<const ufc::exterior_facet_integral*, 2>& exterior_facet_integrals)
+{
+  // Get local index of facet with respect to the cell
+  const std::size_t local_facet = cell.index(facet);
+
+  // Get cell data
+  cell.get_vertex_coordinates(vertex_coordinates);
+  cell.get_cell_data(ufc_cell, local_facet);
+
+  // Loop over lhs and then rhs facet contributions
+  for (std::size_t form = 0; form < 2; ++form)
+  {
+    // Initialize macro element matrix/vector to zero
+    std::fill(Ae[form].begin(), Ae[form].end(), 0.0);
+    std::fill(ufc[form]->A.begin(), ufc[form]->A.end(), 0.0);
+
+    // Compute facet integral,if required
+    if (tensor_required_facet[form])
+    {
+      // Update UFC object
+      ufc[form]->update(cell, vertex_coordinates, ufc_cell,
+                        exterior_facet_integrals[form]->enabled_coefficients());
+      exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
+                                                      ufc[form]->w(),
+                                                      vertex_coordinates.data(),
+                                                      local_facet,
+                                                      ufc_cell.orientation);
+      for (std::size_t i = 0; i < Ae[form].size(); i++)
+        Ae[form][i] += ufc[form]->A[i];
+    }
+
+    // If we have local facet 0, assemble cell integral
+    if (local_facet == 0)
+    {
+      dolfin_assert(!cell.is_ghost());
+
+      // Compute cell integral, if required
+      if (tensor_required_cell[form])
+      {
+        ufc[form]->update(cell, vertex_coordinates, ufc_cell,
+                          cell_integrals[form]->enabled_coefficients());
+        cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
+                                              ufc[form]->w(),
+                                              vertex_coordinates.data(),
+                                              ufc_cell.orientation);
+        for (std::size_t i = 0; i < Ae[form].size(); i++)
+          Ae[form][i] += ufc[form]->A[i];
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::compute_interior_facet_tensor(
+  std::array<UFC*, 2>& ufc,
+  std::array<ufc::cell, 2>& ufc_cell,
+  std::array<std::vector<double>, 2>& vertex_coordinates,
+  const std::array<bool, 2>& tensor_required_cell,
+  const std::array<bool, 2>& tensor_required_facet,
+  const std::array<Cell, 2>& cell,
+  const std::array<std::size_t, 2>& local_facet,
+  const bool facet_owner,
+  const std::array<const ufc::cell_integral*, 2>& cell_integrals,
+  const std::array<const ufc::interior_facet_integral*, 2>& interior_facet_integrals,
+  const std::array<std::size_t, 2>& matrix_size,
+  const std::size_t vector_size)
+{
+  // Compute facet contribution to tensor, if required
+  // Loop over lhs and then rhs facet contributions
+  for (std::size_t form = 0; form < 2; ++form)
+  {
+    // Compute interior facet integral
+    if (tensor_required_facet[form] && facet_owner)
+    {
+      // Update to current pair of cells
+      ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
+                        cell[1], vertex_coordinates[1], ufc_cell[1],
+                        interior_facet_integrals[form]->enabled_coefficients());
+      // Integrate over facet
+      interior_facet_integrals[form]->tabulate_tensor(ufc[form]->macro_A.data(),
+                                                      ufc[form]->macro_w(),
+                                                      vertex_coordinates[0].data(),
+                                                      vertex_coordinates[1].data(),
+                                                      local_facet[0],
+                                                      local_facet[1],
+                                                      ufc_cell[0].orientation,
+                                                      ufc_cell[1].orientation);
+    }
+
+    // Compute cell contribution
+    for (std::size_t c = 0; c < 2; ++c)
+    {
+      if (local_facet[c] == 0)
+      {
+        // Compute cell tensor, if required
+        if (tensor_required_cell[form] and !cell[c].is_ghost())
+        {
+          ufc[form]->update(cell[c], vertex_coordinates[c], ufc_cell[c],
+                            cell_integrals[form]->enabled_coefficients());
+          cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
+                                                ufc[form]->w(),
+                                                vertex_coordinates[c].data(),
+                                                ufc_cell[c].orientation);
+
+          // FIXME: Can the below two blocks be consolidated?
+          const std::size_t nn = matrix_size[0];
+          if (form == 0)
+          {
+            const std::size_t mm = matrix_size[1];
+            for (std::size_t i = 0; i < mm; i++)
+            {
+              for (std::size_t j = 0; j < nn; j++)
+              {
+                ufc[form]->macro_A[2*nn*mm*c + 2*i*nn + nn*c + j]
+                  += ufc[form]->A[i*nn + j];
+              }
+            }
+          }
+          else
+          {
+            for (std::size_t i = 0; i < vector_size; i++)
+              ufc[form]->macro_A[nn*c + i] += ufc[form]->A[i];
+          }
+        }
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void
+SystemAssembler::matrix_block_add(GenericTensor& tensor,
+                                  std::vector<double>& Ae,
+                                  std::vector<double>& macro_A,
+                                  const bool tensor_required_cell,
+                                  const std::array<std::size_t, 2>& local_facet,
+                                  std::vector<const std::vector<la_index>* >& cell_dofs)
+{
+  for (std::size_t c = 0; c < 2; ++c)
+  {
+    if (local_facet[c] == 0)
+    {
+      // Add cell tensor, if required
+      if (tensor_required_cell)
+      {
+        std::fill(Ae.begin(), Ae.end(), 0.0);
+        const std::size_t nn = cell_dofs[0]->size();
+        const std::size_t mm = cell_dofs[1]->size();
+        for (std::size_t i = 0; i < mm; i++)
+        {
+          for (std::size_t j = 0; j < nn; j++)
+            Ae[i*nn + j] = macro_A[2*nn*mm*c + 2*i*nn + nn*c +j];
+        }
+        tensor.add_local(Ae.data(), cell_dofs);
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::apply_bc(double* A, double* b,
+                               const DirichletBC::Map& boundary_values,
+                               const std::vector<dolfin::la_index>& global_dofs0,
+                               const std::vector<dolfin::la_index>& global_dofs1)
 {
   dolfin_assert(A);
   dolfin_assert(b);
@@ -938,15 +1013,12 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
     if (bc_value != boundary_values.end())
     {
       // Zero row
-      //_matA.unsafe_col(i).fill(0.0);
       _matA.row(i).setZero();
 
       // Modify RHS (subtract (bc_column(A))*bc_val from b)
-      //_b -= _matA.row(i)*bc_value->second;
       _b -= _matA.col(i)*bc_value->second;
 
       // Zero column
-      //_matA.row(i).fill(0.0);
       _matA.col(i).setZero();
 
       // Place 1 on diagonal and bc on RHS (i th row ).
@@ -971,10 +1043,10 @@ bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
   return false;
 }
 //-----------------------------------------------------------------------------
-inline bool SystemAssembler::cell_matrix_required(const GenericTensor* A,
-                                       const void* integral,
-                                       const DirichletBC::Map& boundary_values,
-                                       const std::vector<dolfin::la_index>& dofs)
+bool SystemAssembler::cell_matrix_required(const GenericTensor* A,
+                                           const void* integral,
+                                           const DirichletBC::Map& boundary_values,
+                                           const std::vector<dolfin::la_index>& dofs)
 {
   if (A && integral)
     return true;
