@@ -118,62 +118,67 @@ class TestSystemAssembler(unittest.TestCase):
         assembler.assemble(b)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_facet_assembly(self):
 
+        def test(mesh):
+            V = FunctionSpace(mesh, "DG", 1)
+
+            # Define test and trial functions
+            v = TestFunction(V)
+            u = TrialFunction(V)
+
+            # Define normal component, mesh size and right-hand side
+            n = FacetNormal(mesh)
+            h = CellSize(mesh)
+            h_avg = (h('+') + h('-'))/2
+            f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+
+            # Define bilinear form
+            a = dot(grad(v), grad(u))*dx \
+                - dot(avg(grad(v)), jump(u, n))*dS \
+                - dot(jump(v, n), avg(grad(u)))*dS \
+                + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+                - dot(grad(v), u*n)*ds \
+                - dot(v*n, grad(u))*ds \
+                + 8.0/h*v*u*ds
+
+            # Define linear form
+            L = v*f*dx
+
+            # Reference values
+            A_frobenius_norm = 157.867392938645
+            b_l2_norm = 1.48087142738768
+
+            # Assemble system
+            A, b = assemble_system(a, L)
+            self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+            # Test SystemAssembler
+            assembler = SystemAssembler(a, L)
+            A = Matrix()
+            b = Vector()
+
+            assembler.assemble(A, b)
+            self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+            A = Matrix()
+            b = Vector()
+            assembler.assemble(A)
+            self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+            assembler.assemble(b)
+            self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+        parameters["ghost_mode"] = "shared_facet"
         mesh = UnitSquareMesh(24, 24)
+        test(mesh)
 
-        V = FunctionSpace(mesh, "DG", 1)
+        parameters["ghost_mode"] = "shared_vertex"
+        mesh = UnitSquareMesh(24, 24)
+        test(mesh)
 
-        # Define test and trial functions
-        v = TestFunction(V)
-        u = TrialFunction(V)
-
-        # Define normal component, mesh size and right-hand side
-        n = FacetNormal(mesh)
-        h = CellSize(mesh)
-        h_avg = (h('+') + h('-'))/2
-        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
-
-        # Define bilinear form
-        a = dot(grad(v), grad(u))*dx \
-            - dot(avg(grad(v)), jump(u, n))*dS \
-            - dot(jump(v, n), avg(grad(u)))*dS \
-            + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
-            - dot(grad(v), u*n)*ds \
-            - dot(v*n, grad(u))*ds \
-            + 8.0/h*v*u*ds
-
-        # Define linear form
-        L = v*f*dx
-
-        # Reference values
-        A_frobenius_norm = 157.867392938645
-        b_l2_norm = 1.48087142738768
-
-        # Assemble system
-        A, b = assemble_system(a, L)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
-        # Test SystemAssembler
-        assembler = SystemAssembler(a, L)
-        A = Matrix()
-        b = Vector()
-
-        assembler.assemble(A, b)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
-        A = Matrix()
-        b = Vector()
-
-        assembler.assemble(A)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-
-        assembler.assemble(b)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
+        parameters["ghost_mode"] = "none"
 
     def test_incremental_assembly(self):
 
@@ -288,9 +293,10 @@ class TestSystemAssembler(unittest.TestCase):
         # a has no facet integrals
         a = c_t*c_a*dx
         # L has facet integrals so we end up in facet wise assembly
-        L = c_t('+')*vout('+')*dt('+')*dS + c_t('-')*vout('-')*dt('-')*dS  + c_t*vout*dt*ds
-        # but have to use cell wise insertion because the sparsity pattern doesn't support
-        # the macro element
+        L = c_t('+')*vout('+')*dt('+')*dS + c_t('-')*vout('-')*dt('-')*dS  \
+            + c_t*vout*dt*ds
+        # but have to use cell wise insertion because the sparsity
+        # pattern doesn't support the macro element
 
         A = Matrix()
         b = Vector()

@@ -86,6 +86,10 @@ int main()
     { return on_boundary and near(x[1]*(1 - x[1]), 0); }
   };
 
+
+  // FIXME: Make mesh ghosted
+  parameters["ghost_mode"] = "shared_facet";
+
   // Create mesh
   UnitSquareMesh mesh(24, 24);
 
