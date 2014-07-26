@@ -632,7 +632,7 @@ DofMapBuilder::compute_node_ownership(
     if (boundary_nodes[i] >= 0)
     {
       // Mark as provisionally owned and shared (0)
-      //  node_ownership[i] = 0;
+      node_ownership[i] = 0;
 
       // Send global index
       const std::size_t global_index = local_to_global[i];
@@ -642,8 +642,8 @@ DofMapBuilder::compute_node_ownership(
       send_buffer[dest].push_back(global_index);
       global_to_local.insert(std::make_pair(global_index, i));
     }
-    // else
-    node_ownership[i] = 1;
+    else
+      node_ownership[i] = 1;
   }
 
   MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
@@ -661,9 +661,12 @@ DofMapBuilder::compute_node_ownership(
         map_ins.first->second.push_back(i);
     }
 
+  const std::size_t seed = process_number;
   // Randomise process order. First process will be owner
   for (auto p = global_to_procs.begin(); p != global_to_procs.end(); ++p)
-    std::random_shuffle(p->second.begin(), p->second.end());
+    std::shuffle(p->second.begin(), p->second.end(),
+                 std::default_random_engine(seed));
+  //    std::sort(p->second.begin(), p->second.end());
 
   // Send response back to originators in same order
   std::vector<std::vector<std::size_t> > send_response(num_processes);
@@ -705,15 +708,15 @@ DofMapBuilder::compute_node_ownership(
     }
   }
   
-  for (unsigned int i = 0; i != node_ownership.size(); ++i)
-  {
-    std::cout << MPI::rank(mpi_comm) << ": " << i << " " << node_ownership[i];
-    std::cout << " - " << local_to_global[i] << " - ";
+  // for (unsigned int i = 0; i != node_ownership.size(); ++i)
+  // {
+  //   std::cout << MPI::rank(mpi_comm) << ": " << i << " " << node_ownership[i];
+  //   std::cout << " - " << local_to_global[i] << " - ";
     
-    for (auto p = shared_node_to_processes[i].begin(); p != shared_node_to_processes[i].end(); ++p)
-      std::cout << " " << *p ;
-    std::cout << "\n";
-  }
+  //   for (auto p = shared_node_to_processes[i].begin(); p != shared_node_to_processes[i].end(); ++p)
+  //     std::cout << " " << *p ;
+  //   std::cout << "\n";
+  // }
 
   
   // FIXME: The below algorithm can be improved (made more scalable)
