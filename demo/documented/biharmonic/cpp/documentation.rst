@@ -12,9 +12,9 @@ Biharmonic equation
 Implementation
 --------------
 
-The implementation is split in two files, a form file containing the definition
-of the variational forms expressed in UFL and the solver which is implemented
-in a C++ file.
+The implementation is split in two files, a form file containing the
+definition of the variational forms expressed in UFL and the solver
+which is implemented in a C++ file.
 
 Running this demo requires the files: :download:`main.cpp`,
 :download:`Biharmonic.ufl` and :download:`CMakeLists.txt`.
@@ -32,8 +32,8 @@ In the UFL file, the finite element space is defined:
     # Elements
     element = FiniteElement("Lagrange", triangle, 2)
 
-On the space ``element``, trial and test functions, and the source term
-are defined:
+On the space ``element``, trial and test functions, and the source
+term are defined:
 
 .. code-block:: python
 
@@ -78,8 +78,8 @@ internal facets are indicated by ``*dS``.
 C++ program
 ^^^^^^^^^^^
 
-The DOLFIN interface and the code generated from the UFL input is included,
-and the DOLFIN namespace is used:
+The DOLFIN interface and the code generated from the UFL input is
+included, and the DOLFIN namespace is used:
 
 .. code-block:: c++
 
@@ -100,13 +100,14 @@ function ``Expression::eval`` overloaded:
 
     void eval(Array<double>& values, const Array<double>& x) const
     {
-    values[0] = 4.0*std::pow(DOLFIN_PI, 4)*
-      std::sin(DOLFIN_PI*x[0])*std::sin(DOLFIN_PI*x[1]);
+      values[0] = 4.0*std::pow(DOLFIN_PI, 4)*
+        std::sin(DOLFIN_PI*x[0])*std::sin(DOLFIN_PI*x[1]);
     }
 
   };
 
-A boundary subdomain is defined, which in this case is the entire boundary:
+A boundary subdomain is defined, which in this case is the entire
+boundary:
 
 .. code-block:: c++
 
@@ -114,21 +115,21 @@ A boundary subdomain is defined, which in this case is the entire boundary:
   class DirichletBoundary : public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return on_boundary;
-    }
+    { return on_boundary; }
   };
 
-The main part of the program is begun, and a mesh is created with 32 vertices
-in each direction:
+The main part of the program is begun, and a mesh is created with 32
+vertices in each direction:
 
 .. code-block:: c++
 
   int main()
   {
+    // Make mesh ghosted for evaluation of DG terms
+    parameters["ghost_mode"] = "shared_facet";
+
     // Create mesh
     UnitSquareMesh mesh(32, 32);
-
 
 The source function, a function for the cell size and the penalty term
 are declared:
@@ -139,7 +140,8 @@ are declared:
     Source f;
     Constant alpha(8.0);
 
-A function space object, which is defined in the generated code, is created:
+A function space object, which is defined in the generated code, is
+created:
 
 .. code-block:: c++
 
@@ -147,9 +149,9 @@ A function space object, which is defined in the generated code, is created:
     Biharmonic::FunctionSpace V(mesh);
 
 The Dirichlet boundary condition on :math:`u` is constructed by
-defining a :cpp:class:`Constant` which is equal to zero, defining the boundary
-(``DirichletBoundary``), and using these, together with ``V``, to create
-``bc``:
+defining a :cpp:class:`Constant` which is equal to zero, defining the
+boundary (``DirichletBoundary``), and using these, together with
+``V``, to create ``bc``:
 
 .. code-block:: c++
 
@@ -158,8 +160,8 @@ defining a :cpp:class:`Constant` which is equal to zero, defining the boundary
     DirichletBoundary boundary;
     DirichletBC bc(V, u0, boundary);
 
-Using the function space ``V``, the bilinear and linear forms
-are created, and function are attached:
+Using the function space ``V``, the bilinear and linear forms are
+created, and function are attached:
 
 .. code-block:: c++
 
