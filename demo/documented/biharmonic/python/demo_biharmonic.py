@@ -44,6 +44,9 @@ from dolfin import *
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["optimize"] = True
 
+# Make mesh ghosted for evaluation of DG terms
+parameters["ghost_mode"] = "shared_facet"
+
 # Create mesh and define function space
 mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 2)

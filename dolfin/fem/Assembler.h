@@ -89,14 +89,6 @@ namespace dolfin
                                   const MeshFunction<std::size_t>* domains,
                                   std::vector<double>* values);
 
-  protected:
-
-    /// Add cell tensor to global tensor. Hook to allow the SymmetricAssembler
-    /// to split the cell tensor into symmetric/antisymmetric parts.
-    void add_to_global_tensor(GenericTensor& A,
-                              std::vector<double>& cell_tensor,
-                              std::vector<const std::vector<dolfin::la_index>* >& dofs);
-
   };
 
 }

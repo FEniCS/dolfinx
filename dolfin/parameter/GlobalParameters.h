@@ -92,6 +92,17 @@ namespace dolfin
       // Print the level of thread support provided by the MPI library
       p.add("print_mpi_thread_support_level", false);
 
+      // Allowed modes of ghost cell support
+      std::set<std::string> allowed_ghost_modes;
+      allowed_ghost_modes.insert("shared_facet");
+      allowed_ghost_modes.insert("shared_vertex");
+      allowed_ghost_modes.insert("none");
+      p.add("ghost_mode", "none", allowed_ghost_modes);
+
+      // Mesh ordering via SCOTCH and GPS
+      p.add("reorder_cells_gps", false);
+      p.add("reorder_vertices_gps", false);
+
       // Allowed partitioners (not necessarily installed)
       std::set<std::string> allowed_mesh_partitioners;
       allowed_mesh_partitioners.insert("ParMETIS");

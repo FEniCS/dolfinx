@@ -133,12 +133,12 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     Progress p("Building sparsity pattern over interior facets", mesh.num_facets());
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
-      bool exterior_facet = false;
+      bool this_exterior_facet = false;
       if (facet->num_global_entities(D) == 1)
-        exterior_facet = true;
+        this_exterior_facet = true;
 
       // Check facet type
-      if (exterior_facets && exterior_facet && !cells)
+      if (exterior_facets && this_exterior_facet && !cells)
       {
         // Get cells incident with facet
         dolfin_assert(facet->num_entities(D) == 1);
@@ -151,9 +151,16 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         // Insert dofs
         sparsity_pattern.insert_local(dofs);
       }
-      else if (interior_facets && !exterior_facet)
+      else if (interior_facets && !this_exterior_facet)
       {
+        if (facet->num_entities(D) == 1)
+        {
+          dolfin_assert(facet->is_ghost());
+          continue;
+        }
+
         // Get cells incident with facet
+        dolfin_assert(facet->num_entities(D) == 2);
         Cell cell0(mesh, facet->entities(D)[0]);
         Cell cell1(mesh, facet->entities(D)[1]);
 
@@ -182,7 +189,6 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         // Insert dofs
         sparsity_pattern.insert_local(dofs);
       }
-
       p++;
     }
   }

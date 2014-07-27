@@ -19,9 +19,16 @@
 // First Added: 2012-12-19
 // Last Changed: 2013-01-03
 
+#ifndef __PARALLEL_REFINEMENT2D_H
+#define __PARALLEL_REFINEMENT2D_H
+
+#include <utility>
+#include <vector>
+
 namespace dolfin
 {
   class Mesh;
+  template<typename T> class MeshFunction;
 
   class ParallelRefinement2D
   {
@@ -49,3 +56,5 @@ namespace dolfin
   };
 
 }
+
+#endif
