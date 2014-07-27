@@ -151,7 +151,6 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   dolfin_assert(insert.second);
 
   cout << "Return new mesh" << endl;
-
   return new_mesh;
 }
 //-----------------------------------------------------------------------------

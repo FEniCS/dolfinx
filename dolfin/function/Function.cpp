@@ -638,7 +638,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
     if (restriction && !restriction->contains(*cell))
