@@ -40,7 +40,7 @@ namespace dolfin
   class OptimisationProblem;
 
   /// This class implements methods for solving nonlinear optimisation
-  /// problems via PETSc's TAO solver. It supports unconstrained
+  /// problems via PETSc TAO solver. It supports unconstrained
   /// as well as bound-constrained minimisation problem
 
   class PETScTAOSolver : public PETScObject
@@ -95,7 +95,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
-    /// Parameters for the PETSc's TAO solver
+    /// Parameters for the PETSc TAO solver
     Parameters parameters;
 
     /// Return the TAO pointer
@@ -157,10 +157,6 @@ namespace dolfin
 
     /// Set the TAO solver type
     void set_tao(const std::string tao_type="default");
-
-    /// Set PETSc Krylov Solver (KSP) used by TAO
-    void set_ksp_pc(const std::string ksp_type="default",
-                    const std::string pc_type="default");
 
     /// Flag to indicate if the bounds are set
     bool has_bounds;

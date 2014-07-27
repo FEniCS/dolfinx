@@ -25,10 +25,12 @@
 #include <utility>
 #include <petscsys.h>
 #include <boost/assign/list_of.hpp>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/PETScPreconditioner.h>
 #include <dolfin/la/PETScVector.h>
 #include "OptimisationProblem.h"
@@ -125,7 +127,7 @@ void PETScTAOSolver::set_tao(const std::string tao_type)
   if (_methods.count(tao_type) == 0)
   {
     dolfin_error("PETScTAOSolver.cpp",
-                 "set PETSc's TAO solver",
+                 "set PETSc TAO solver",
                  "Unknown TAO method \"%s\"", tao_type.c_str());
   }
 
@@ -140,43 +142,6 @@ void PETScTAOSolver::set_tao(const std::string tao_type)
     it = _methods.find(tao_type);
     dolfin_assert(it != _methods.end());
     TaoSetType(_tao, it->second.second);
-  }
-}
-//-----------------------------------------------------------------------------
-void PETScTAOSolver::set_ksp_pc(const std::string ksp_type,
-                                const std::string pc_type)
-{
-  // Set KSP type
-  if (ksp_type != "default")
-  {
-    dolfin_assert(_tao);
-    KSP ksp;
-    TaoGetKSP(_tao, &ksp);
-
-    if (ksp)
-    {
-      PC pc;
-      KSPGetPC(ksp, &pc);
-
-      std::map<std::string, const KSPType>::const_iterator ksp_pair
-        = PETScKrylovSolver::_methods.find(ksp_type);
-      dolfin_assert(ksp_pair != PETScKrylovSolver::_methods.end());
-      KSPSetType(ksp, ksp_pair->second);
-
-      if (pc_type != "default")
-      {
-        std::map<std::string, const PCType>::const_iterator pc_pair
-          = PETScPreconditioner::_methods.find(pc_type);
-        dolfin_assert(pc_pair != PETScPreconditioner::_methods.end());
-        PCSetType(pc, pc_pair->second);
-      }
-    }
-
-    else
-    {
-      log(WARNING, "The selected TAO solver does not allow to set a specific "\
-      "Krylov solver. Option %s is ignored", ksp_type.c_str());
-    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -381,14 +346,98 @@ void PETScTAOSolver::set_tao_options()
 void PETScTAOSolver::set_ksp_options()
 {
   dolfin_assert(_tao);
-
-  // Set the KSP solver used by TAO
-  set_ksp_pc(parameters["linear_solver"], parameters["preconditioner"]);
-
   KSP ksp;
   TaoGetKSP(_tao, &ksp);
+  const std::string ksp_type  = parameters["linear_solver"];
+  const std::string pc_type = parameters["preconditioner"];
+
+  // Set the KSP solver and its options
   if (ksp)
   {
+    PC pc;
+    KSPGetPC(ksp, &pc);
+
+    if (ksp_type == "default")
+    {
+      // Do nothing
+    }
+
+    // Set type for iterative Krylov solver
+    else if (PETScKrylovSolver::_methods.count(ksp_type) != 0)
+    {
+      std::map<std::string, const KSPType>::const_iterator ksp_pair
+        = PETScKrylovSolver::_methods.find(ksp_type);
+      dolfin_assert(ksp_pair != PETScKrylovSolver::_methods.end());
+      KSPSetType(ksp, ksp_pair->second);
+
+      if (pc_type != "default")
+      {
+        std::map<std::string, const PCType>::const_iterator pc_pair
+          = PETScPreconditioner::_methods.find(pc_type);
+        dolfin_assert(pc_pair != PETScPreconditioner::_methods.end());
+        PCSetType(pc, pc_pair->second);
+      }
+    }
+
+    // Set type for direct LU solver
+    else if (ksp_type == "lu" || PETScLUSolver::_methods.count(ksp_type) != 0)
+    {
+    std::string lu_method;
+    if (PETScLUSolver::_methods.find(ksp_type) != PETScLUSolver::_methods.end())
+    {
+      lu_method = ksp_type;
+    }
+    else
+    {
+      MPI_Comm comm = MPI_COMM_NULL;
+      PetscObjectGetComm((PetscObject)_tao, &comm);
+      if (MPI::size(comm) == 1)
+      {
+        #if PETSC_HAVE_UMFPACK
+        lu_method = "umfpack";
+        #elif PETSC_HAVE_MUMPS
+        lu_method = "mumps";
+        #elif PETSC_HAVE_PASTIX
+        lu_method = "pastix";
+        #elif PETSC_HAVE_SUPERLU
+        lu_method = "superlu";
+        #else
+        lu_method = "petsc";
+        warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
+        #endif
+      }
+      else
+      {
+        #if PETSC_HAVE_SUPERLU_DIST
+        lu_method = "superlu_dist";
+        #elif PETSC_HAVE_PASTIX
+        lu_method = "pastix";
+        #elif PETSC_HAVE_MUMPS
+        lu_method = "mumps";
+        #else
+        dolfin_error("PETScTAOSolver.cpp",
+                     "solve linear system using PETSc LU solver",
+                     "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
+        #endif
+      }
+    }
+    KSPSetType(ksp, KSPPREONLY);
+    PCSetType(pc, PCLU);
+    std::map<std::string, const MatSolverPackage>::const_iterator lu_pair
+      = PETScLUSolver::_methods.find(lu_method);
+    dolfin_assert(lu_pair != PETScLUSolver::_methods.end());
+    PCFactorSetMatSolverPackage(pc, lu_pair->second);
+    }
+
+    // Unknown KSP method
+    else
+    {
+      dolfin_error("PETScTAOSolver.cpp",
+                   "set linear solver options",
+                   "Unknown KSP method \"%s\"", ksp_type.c_str());
+    }
+
+    // In any case, set the KSP options specified by the user
     Parameters krylov_parameters = parameters("krylov_solver");
 
     // GMRES restart parameter
@@ -412,6 +461,10 @@ void PETScTAOSolver::set_ksp_options()
                      krylov_parameters["absolute_tolerance"],
                      krylov_parameters["divergence_limit"],
                      krylov_parameters["maximum_iterations"]);
+  }
+  else
+  {
+    warning("The underlying linear solver cannot be modified for this specified TAO solver. The options are all ignored.");
   }
 }
 //-----------------------------------------------------------------------------
