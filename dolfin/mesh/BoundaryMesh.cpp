@@ -33,6 +33,14 @@ using namespace dolfin;
 BoundaryMesh::BoundaryMesh(const Mesh& mesh, std::string type, bool order)
   : Mesh()
 {
+  const std::size_t dim = mesh.topology().dim();
+  if (mesh.topology().ghost_offset(dim) != mesh.topology().size(dim))
+  {
+    dolfin_error("BoundaryMesh.cpp",
+                 "create BoundaryMesh with ghost cells",
+                 "Disable ghost mesh");
+  }
+
   // Create boundary mesh
   BoundaryComputation::compute_boundary(mesh, type, *this);
 
