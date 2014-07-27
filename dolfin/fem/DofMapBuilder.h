@@ -170,7 +170,7 @@ namespace dolfin
       const ufc::dofmap& ufc_dofmap,
       const Mesh& mesh);
 
-    static void compute_node_reodering(
+    static void compute_node_reordering(
       std::vector<std::size_t>& local_to_global_unowned,
       std::vector<int>& off_process_owner,
       std::vector<std::size_t>& local_to_global,

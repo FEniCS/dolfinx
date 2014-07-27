@@ -188,7 +188,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     // (d) Old local node index to new local node index
     std::vector<int> node_old_to_new_local;
     std::vector<std::size_t> node_local_to_global1;
-    compute_node_reodering(dofmap._local_to_global_unowned,
+    compute_node_reordering(dofmap._local_to_global_unowned,
                            dofmap._off_process_owner,
                            node_local_to_global1,
                            node_old_to_new_local,
@@ -1427,7 +1427,7 @@ DofMapBuilder::compute_boundary_nodes(std::vector<int>& boundary_nodes,
   }
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::compute_node_reodering(
+void DofMapBuilder::compute_node_reordering(
   std::vector<std::size_t>& local_to_global_unowned,
   std::vector<int>& off_process_owner,
   std::vector<std::size_t>& local_to_global,
@@ -1583,7 +1583,7 @@ void DofMapBuilder::compute_node_reodering(
     // node index for sending
     if (node_ownership[old_node_index_local] == 0)
     {
-      // Buffer old and new global indices t send
+      // Buffer old and new global indices to send
       send_buffer.push_back(old_local_to_global[old_node_index_local]);
       send_buffer.push_back(process_offset + node_remap[counter]);
     }
