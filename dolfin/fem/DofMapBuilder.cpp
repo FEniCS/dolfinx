@@ -149,8 +149,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     // positive integer, interior nodes are marked as -1.
     std::vector<int> boundary_nodes;
     compute_boundary_nodes(boundary_nodes, node_graph0,
-                           node_local_to_global0.size(), *ufc_node_dofmap,
-                           mesh, MPI::rank(mesh.mpi_comm()));
+                           node_local_to_global0.size(), 
+                           *ufc_node_dofmap, mesh);
 
     // Compute
     // (a) owned and shared nodes (and owned and un-owned):
@@ -1383,8 +1383,7 @@ DofMapBuilder::compute_boundary_nodes(std::vector<int>& boundary_nodes,
                                       const std::vector<std::vector<la_index>>& node_dofmap,
                                       const std::size_t num_nodes_local,
                                       const ufc::dofmap& ufc_dofmap,
-                                      const Mesh& mesh,
-                                      const std::size_t seed)
+                                      const Mesh& mesh)
 {
   // Initialise mesh
   const std::size_t D = mesh.topology().dim();
@@ -1396,8 +1395,8 @@ DofMapBuilder::compute_boundary_nodes(std::vector<int>& boundary_nodes,
   std::fill(boundary_nodes.begin(), boundary_nodes.end(), -1);
 
   // Create a random number generator for ownership 'voting'
-  std::mt19937 engine(seed);
-  std::uniform_int_distribution<> distribution(0, std::numeric_limits<int>::max());
+  //  std::mt19937 engine(seed);
+  //  std::uniform_int_distribution<> distribution(0, std::numeric_limits<int>::max());
 
   // Mark nodes on inter-process boundary
   std::vector<std::size_t> facet_nodes(ufc_dofmap.num_facet_dofs());
@@ -1423,7 +1422,7 @@ DofMapBuilder::compute_boundary_nodes(std::vector<int>& boundary_nodes,
       // Get facet node local index and assign votes (positive integer)
       size_t facet_node_local = cell_nodes[facet_nodes[i]];
       if (boundary_nodes[facet_node_local] < 0)
-        boundary_nodes[facet_node_local] = distribution(engine);
+        boundary_nodes[facet_node_local] = 1; // distribution(engine);
     }
   }
 }
