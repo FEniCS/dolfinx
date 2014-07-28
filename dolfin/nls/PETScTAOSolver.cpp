@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-22
-// Last changed: 2014-07-23
+// Last changed: 2014-07-27
 
 #ifdef ENABLE_PETSC_TAO
 
