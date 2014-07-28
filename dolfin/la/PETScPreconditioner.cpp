@@ -39,7 +39,8 @@ using namespace dolfin;
 
 // Mapping from preconditioner string to PETSc
 const std::map<std::string, const PCType> PETScPreconditioner::_methods
-= { {"ilu",              PCILU},
+= { {"default",          ""},
+    {"ilu",              PCILU},
     {"icc",              PCICC},
     {"jacobi",           PCJACOBI},
     {"bjacobi",          PCBJACOBI},
@@ -59,13 +60,12 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
 #elif PETSC_HAVE_HYPRE
     {"amg",              PCHYPRE},
 #endif
-    {"default",          ""} };
+    {"none",             PCNONE} };
 
 // Mapping from preconditioner string to description string
 const std::vector<std::pair<std::string, std::string> >
 PETScPreconditioner::_methods_descr
 = { {"default",          "default preconditioner"},
-    {"none",             "No preconditioner"},
     {"ilu",              "Incomplete LU factorization"},
     {"icc",              "Incomplete Cholesky factorization"},
     {"sor",              "Successive over-relaxation"},
@@ -90,7 +90,7 @@ PETScPreconditioner::_methods_descr
 #if PETSC_HAVE_ML
     {"ml_amg",           "ML algebraic multigrid"},
 #endif
-    {"none",             PCNONE} };
+    {"none",             "No preconditioner"} };
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 PETScPreconditioner::preconditioners()
