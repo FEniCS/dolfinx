@@ -22,7 +22,6 @@
 #include <numeric>
 #include <string>
 #include <vector>
-#include <boost/assign/list_of.hpp>
 
 // Necessary since pastix.h does not include it
 #include <stdint.h>
@@ -58,8 +57,7 @@ Parameters PaStiXLUSolver::default_parameters()
   p.add<std::size_t>("num_threads");
 
   // Thread mode (see PaStiX user documentation)
-  const std::set<std::string> thread_modes
-    = boost::assign::list_of("multiple")("single")("funnel");
+  const std::set<std::string> thread_modes = {"multiple", "single", "funnel"};
   p.add<std::string>("thread_mode", thread_modes);
 
   // Min/max block size for BLAS. This parameters can have a significant

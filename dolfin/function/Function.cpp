@@ -26,7 +26,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/adaptivity/Extrapolation.h>
 #include <dolfin/common/Array.h>
@@ -269,7 +268,7 @@ Function& Function::operator[] (std::size_t i) const
   else
   {
     // Extract function subspace
-    std::vector<std::size_t> component = boost::assign::list_of(i);
+    std::vector<std::size_t> component(1, i);
     std::shared_ptr<const FunctionSpace>
       sub_space(_function_space->extract_sub_space(component));
 
