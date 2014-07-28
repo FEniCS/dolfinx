@@ -1,4 +1,4 @@
-"""Unit test for the TAO nonlinear solver"""
+"""Unit test for the PETSc TAO solver"""
 # Copyright (C) 2014 Tianyi Li
 #
 # This file is part of DOLFIN.
@@ -17,14 +17,11 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-07-19
+# Last changed: 2014-07-28
 
-"""This demo uses PETSc's TAO solver for nonlinear (bound-constrained)
-optimisation problems to solve a buckling problem in FEniCS.
-We consider here a hyperelastic beam constrained in a box
-under axial compression.
-
-The box is designed such that this beam will lose stability and move
-upwards (and not downwards)."""
+"""This demo uses PETSc TAO solver for nonlinear (bound-constrained)
+optimisation problems to solve the same minimization problem for testing
+TAOLinearBoundSolver."""
 
 from dolfin import *
 import unittest
@@ -35,63 +32,46 @@ if has_petsc_tao():
     except RuntimeError:
         import sys; sys.exit(0)
 
-    # Read mesh
-    mesh = Mesh("buckling.xml.gz")
+    # Create mesh and define function space
+    Lx = 1.0; Ly = 0.1
+    mesh = RectangleMesh(0, 0, Lx, Ly, 100, 10)
+    V = FunctionSpace(mesh, "Lagrange", 1)
 
-    # Create function space
-    V = VectorFunctionSpace(mesh, "Lagrange", 1)
+    # Define Dirichlet boundaries
+    def left(x,on_boundary):
+        return on_boundary and near(x[0], 0.0)
 
-    # Create solution, trial and test functions
-    u, du, v = Function(V), TrialFunction(V), TestFunction(V)
+    def right(x,on_boundary):
+        return on_boundary and near(x[0], Lx)
 
-    # Elasticity parameters
-    E, nu = 10.0, 0.3
-    mu = Constant(E/(2.0*(1.0+nu)))
-    lmbda = Constant(E*nu/((1.0+nu)*(1.0-2.0*nu)))
+    # Define boundary conditions
+    zero = Constant(0.0)
+    one  = Constant(1.0)
+    bc_l = DirichletBC(V, zero, left)
+    bc_r = DirichletBC(V, one, right)
+    bcs = [bc_l, bc_r]
 
-    # Compressible neo-Hookean model
-    I = Identity(mesh.geometry().dim())
-    F = I + grad(u)
-    C = F.T*F
-    Ic = tr(C)
-    J  = det(F)
-    psi = (mu/2)*(Ic-2)-mu*ln(J)+(lmbda/2)*(ln(J))**2
+    # Define the variational problem
+    u = Function(V)
+    du = TrialFunction(V)
+    v = TestFunction(V)
+    cv = Constant(3.0/4.0)
+    ell = Constant(0.5)  # This should be smaller than Lx
+    energy = cv*(ell/2.0*inner(grad(u), grad(u))*dx + 2.0/ell*u*dx)
+    grad_energy = derivative(energy, u, v)
+    H_energy = derivative(grad_energy, u, du)
 
-    # Surface force
-    f = Constant((-0.08, 0.0))
+    # Define the lower and upper bounds
+    lb = interpolate(Constant(0.0), V)
+    ub = interpolate(Constant(1.0), V)
 
-    # The displacement u must be such that the current configuration
-    # doesn't escape the box [xmin, xmax] x [ymin, ymax]
-    constraint_u = Expression(("xmax-x[0]", "ymax-x[1]"), xmax=10.0, ymax=2.0)
-    constraint_l = Expression(("xmin-x[0]", "ymin-x[1]"), xmin=0.0, ymin=-0.2)
-    u_min = interpolate(constraint_l, V)
-    u_max = interpolate(constraint_u, V)
-
-    # Symmetry condition (to block rigid body rotations)
-    class Left(SubDomain):
-        def inside(self, x, on_boundary):
-            return on_boundary and near(x[0], 0)
-    class Right(SubDomain):
-        def inside(self, x, on_boundary):
-            return on_boundary and near(x[0], 10)
-    boundaries = FacetFunction("size_t", mesh)
-    boundaries.set_all(0)
-    left = Left()
-    left.mark(boundaries, 1)
-    right = Right()
-    right.mark(boundaries, 2)
-    ds = Measure('ds')[boundaries]
-    bc = DirichletBC(V, Constant([0.0, 0.0]), boundaries, 1)
-    bc.apply(u_min.vector())
-    bc.apply(u_max.vector())
-
-    # Variational formulation
-    elastic_energy = psi*dx - dot(f, u)*ds(2)
-    grad_elastic_energy = derivative(elastic_energy, u, v)
-    H_elastic_energy = derivative(grad_elastic_energy, u, du)
+    # Apply BC to the lower and upper bounds
+    for bc in bcs:
+        bc.apply(lb.vector())
+        bc.apply(ub.vector())
 
     # Define the minimisation problem by using OptimisationProblem class
-    class ContactProblem(OptimisationProblem):
+    class TestProblem(OptimisationProblem):
 
         def __init__(self):
             OptimisationProblem.__init__(self)
@@ -99,20 +79,20 @@ if has_petsc_tao():
         # Objective function
         def f(self, x):
             u.vector()[:] = x
-            return assemble(elastic_energy)
+            return assemble(energy)
 
         # Gradient of the objective function
         def F(self, b, x):
             u.vector()[:] = x
-            assemble(grad_elastic_energy, tensor=b)
+            assemble(grad_energy, tensor=b)
 
         # Hessian of the objective function
         def J(self, A, x):
             u.vector()[:] = x
-            assemble(H_elastic_energy, tensor=A)
+            assemble(H_energy, tensor=A)
 
     # Create the PETScTAOSolver
-    solver = PETScTAOSolver("tron", "stcg")
+    solver = PETScTAOSolver()
 
     # Set some parameters
     solver.parameters["monitor_convergence"] = True
@@ -124,9 +104,10 @@ class TAOSolverTester(unittest.TestCase):
 
         def test_tao_solver(self):
             sol = Function(V)
-            solver.solve(ContactProblem(), sol.vector(), u_min.vector(), u_max.vector())
-            # plot(sol, mode="displacement", wireframe=True, title="Displacement field", interactive=True)
-            self.assertTrue(sol.vector().max() >= 1.0)
+            solver.solve(TestProblem(), sol.vector(), lb.vector(), ub.vector())
+            
+            # Verify that energy(sol) = Ly
+            self.assertAlmostEqual(assemble(energy), Ly, 4)
 
 if __name__ == "__main__":
     # Turn off DOLFIN output

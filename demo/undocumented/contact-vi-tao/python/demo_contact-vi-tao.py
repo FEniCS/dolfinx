@@ -108,14 +108,17 @@ bc.apply(u_max.vector())  # and upper bounds
 solver = PETScTAOSolver()
 
 # Set some parameters
-solver.parameters["method"] = "gpcg"  # gpcg
+solver.parameters["method"] = "tron"  # when using gpcg make sure that you have a constant Hessian
 # solver.parameters["linear_solver"] = "nash"
-solver.parameters["preconditioner"] = "ml_amg"
+# solver.parameters["preconditioner"] = "ml_amg"
 solver.parameters["monitor_convergence"] = True
 solver.parameters["report"] = True
 
 # Uncomment this line to see the available parameters
 # info(parameters, True)
+
+# Parse (PETSc) parameters
+parameters.parse()
 
 # Solve the problem
 sol = Function(V)

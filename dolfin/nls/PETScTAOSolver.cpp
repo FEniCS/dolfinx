@@ -218,7 +218,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   if (parameters["monitor_convergence"])
     TaoSetMonitor(_tao, TaoDefaultMonitor, PETSC_NULL, PETSC_NULL);
 
-  // Check for any tao command line options
+  // Check for any TAO command line options
   std::string prefix = std::string(parameters["options_prefix"]);
   if (prefix != "default")
   {
