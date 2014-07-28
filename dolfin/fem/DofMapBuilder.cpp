@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Anders Logg, Ola Skavhaug and Garth N. Wells
+// Copyright (C) 2008-2014 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,6 +20,7 @@
 // Modified by Mikael Mortensen, 2012.
 // Modified by Joachim B Haga, 2012
 // Modified by Martin Alnaes, 2013
+// Modified by Chris Richardson, 2014
 //
 // First added:  2008-08-12
 // Last changed: 2013-01-08
@@ -684,16 +685,14 @@ DofMapBuilder::compute_node_ownership(
               *std::max_element(local_to_global.begin(), local_to_global.end())) + 1;
   
   // Loop over nodes and buffer nodes on process boundaries
-  std::vector<bool> boundary_node(num_nodes_local, false);
   for (std::size_t i = 0; i < num_nodes_local; ++i)
   {
-    if (shared_nodes[i] >= 0)
+    if (shared_nodes[i] >= 0 || shared_nodes[i] == -2)
     {
-      // Possibly shared node
+      // Possibly shared node - send out to matching process
 
       // Mark as provisionally owned and shared (0)
       node_ownership[i] = 0;
-      boundary_node[i] = true;
 
       // Send global index
       const std::size_t global_index = local_to_global[i];
@@ -702,26 +701,13 @@ DofMapBuilder::compute_node_ownership(
                                                 max_index);
       send_buffer[dest].push_back(global_index);
       global_to_local.insert(std::make_pair(global_index, i));
-  }
-    else if (shared_nodes[i] == -2)
-    {
-      // Owned, but will need to send index to other processes
-
-      // Mark as owned
-      node_ownership[i] = 0;
-
-      // Buffer global index and trivial 'vote'
-      //send_buffer.push_back(local_to_global[i]);
-      //send_buffer.push_back(-10);
     }
     else if (shared_nodes[i] == -3)
-    {
-      // Ghost, need to get index from other process
-      //node_ownership[i] = -1;
-      node_ownership[i] = -1;
-    }
-    else
-      node_ownership[i] = 1;
+     {
+       // FIXME: needed?
+       // Ghost, need to get index from other process
+       node_ownership[i] = -1;
+     }
   }
 
   MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
@@ -731,12 +717,12 @@ DofMapBuilder::compute_node_ownership(
   for (unsigned int i = 0; i != num_processes; ++i)
     for (auto q = recv_buffer[i].begin(); q != recv_buffer[i].end(); ++q)
     {
-      std::pair<std::map<std::size_t, std::vector<unsigned int> >::iterator,
-                bool> map_ins 
-        = global_to_procs.insert(std::make_pair(*q, 
-                                                std::vector<unsigned int>(1, i)));
-      if (!map_ins.second)
-        map_ins.first->second.push_back(i);
+      auto map_it = global_to_procs.find(*q);
+      if (map_it == global_to_procs.end())
+        global_to_procs.insert(std::make_pair(*q, 
+                 std::vector<unsigned int>(1, i)));
+      else
+        map_it->second.push_back(i);
     }
 
   const std::size_t seed = process_number;
@@ -744,7 +730,6 @@ DofMapBuilder::compute_node_ownership(
   for (auto p = global_to_procs.begin(); p != global_to_procs.end(); ++p)
     std::shuffle(p->second.begin(), p->second.end(),
                  std::default_random_engine(seed));
-  //    std::sort(p->second.begin(), p->second.end());
 
   // Send response back to originators in same order
   std::vector<std::vector<std::size_t> > send_response(num_processes);
@@ -772,7 +757,7 @@ DofMapBuilder::compute_node_ownership(
         std::set<std::size_t> sharing_procs(q + 1, q + 1 + num_sharing);
         sharing_procs.erase(process_number);
 
-       auto it = global_to_local.find(global_index);
+        auto it = global_to_local.find(global_index);
         dolfin_assert(it != global_to_local.end());
         const int received_node_local = it->second;
         if (owner == process_number)
@@ -1447,7 +1432,6 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     }
   }
 
-
   // Mark nodes on inter-process boundary
   std::vector<std::size_t> facet_nodes(ufc_dofmap.num_facet_dofs());
   for (FacetIterator f(mesh, "all"); !f.end(); ++f)
@@ -1455,7 +1439,6 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems
     if (!f->is_shared() and f->num_entities(D) == 2)
-    //if (!f->is_shared())
     {
       continue;
     }
