@@ -1,3 +1,4 @@
+/* -*- C -*- */
 // Copyright (C) 2007-2012 Johan Hake
 //
 // This file is part of DOLFIN.
@@ -21,9 +22,10 @@
 // Modified by Patrick E. Farrell, 2012.
 // Modified by Benjamin Kehlet, 2012.
 // Modified by Andre Massing, 2013.
+// Modified by Tianyi Li, 2014.
 //
 // First added:  2007-11-25
-// Last changed: 2014-06-23
+// Last changed: 2014-07-28
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
