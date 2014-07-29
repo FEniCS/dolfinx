@@ -25,7 +25,6 @@
 // Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
 
-#include <boost/scoped_array.hpp>
 #include <zoltan_cpp.h>
 
 #include "dolfin/common/MPI.h"
