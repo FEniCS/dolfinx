@@ -24,7 +24,6 @@
 #include <string>
 #include <utility>
 #include <petscsys.h>
-#include <boost/assign/list_of.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/KrylovSolver.h>
@@ -41,24 +40,22 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 const std::map<std::string, std::pair<std::string, const TaoType> >
   PETScTAOSolver::_methods
-    = boost::assign::map_list_of
-      ("default", std::make_pair("Default TAO method (ntl or tron)", TAOTRON))
-      ("tron",    std::make_pair("Newton Trust Region method", TAOTRON))
-      ("bqpip",   std::make_pair("Interior-Point Newton's method", TAOBQPIP))
-      ("gpcg",    std::make_pair("Gradient projection conjugate gradient method", TAOGPCG))
-      ("blmvm",   std::make_pair("Limited memory variable metric method", TAOBLMVM))
-      ("nls",     std::make_pair("Newton's method with line search", TAONLS))
-      ("ntr",     std::make_pair("Newton's method with trust region", TAONTR))
-      ("ntl",     std::make_pair("Newton's method with trust region and line search", TAONTL))
-      ("cg",      std::make_pair("Nonlinear conjugate gradient method", TAOCG))
-      ("nm",      std::make_pair("Nelder-Mead algorithm", TAONM));
+    = { {"default", {"Default TAO method (ntl or tron)", TAOTRON}},
+        {"tron",    {"Newton Trust Region method", TAOTRON}},
+        {"bqpip",   {"Interior-Point Newton's method", TAOBQPIP}},
+        {"gpcg",    {"Gradient projection conjugate gradient method", TAOGPCG}},
+        {"blmvm",   {"Limited memory variable metric method", TAOBLMVM}},
+        {"nls",     {"Newton's method with line search", TAONLS}},
+        {"ntr",     {"Newton's method with trust region", TAONTR}},
+        {"ntl",     {"Newton's method with trust region and line search", TAONTL}},
+        {"cg",      {"Nonlinear conjugate gradient method", TAOCG}},
+        {"nm",      {"Nelder-Mead algorithm", TAONM}} };
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> > PETScTAOSolver::methods()
 {
   std::vector<std::pair<std::string, std::string> > available_methods;
-  std::map<std::string, std::pair<std::string, const TaoType> >::const_iterator it;
-  for (it = _methods.begin(); it != _methods.end(); ++it)
+  for (auto it = _methods.begin(); it != _methods.end(); ++it)
     available_methods.push_back(std::make_pair(it->first, it->second.first));
   return available_methods;
 }

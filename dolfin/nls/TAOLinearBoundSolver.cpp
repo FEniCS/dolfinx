@@ -23,7 +23,6 @@
 #include <petsclog.h>
 
 #include <dolfin/common/Timer.h>
-#include <boost/assign/list_of.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -46,24 +45,24 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // Mapping from ksp_method string to PETSc
 const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
-  = boost::assign::map_list_of("default",    ""         )
-                              ("cg",         KSPCG      )
-                              ("gmres",      KSPGMRES   )
-                              ("minres",     KSPMINRES  )
-                              ("tfqmr",      KSPTFQMR   )
-                              ("richardson", KSPRICHARDSON)
-                              ("nash",       KSPNASH     )
-                              ("stcg",       KSPSTCG     )
-                              ("bicgstab",   KSPBCGS    );
+= { {"default",    ""},
+    {"cg",         KSPCG},
+    {"gmres",      KSPGMRES},
+    {"minres",     KSPMINRES},
+    {"tfqmr",      KSPTFQMR},
+    {"richardson", KSPRICHARDSON},
+    {"nash",       KSPNASH},
+    {"stcg",       KSPSTCG},
+    {"bicgstab",   KSPBCGS} };
 //-----------------------------------------------------------------------------
 // Mapping from method string to description
 const std::vector<std::pair<std::string, std::string> >
-  TAOLinearBoundSolver::_methods_descr = boost::assign::pair_list_of
-    ("default"  ,  "Default Tao method (tao_tron)"         )
-    ("tron" ,  "Newton Trust Region method"            )
-    ("bqpip",  "Interior Point Newton Algorithm"       )
-    ("gpcg" ,  "Gradient Projection Conjugate Gradient")
-    ("blmvm",  "Limited memory variable metric method" );
+  TAOLinearBoundSolver::_methods_descr
+= { {"default"  ,  "Default Tao method (tao_tron)"},
+    {"tron" ,  "Newton Trust Region method"},
+    {"bqpip",  "Interior Point Newton Algorithm"},
+    {"gpcg" ,  "Gradient Projection Conjugate Gradient"},
+    {"blmvm",  "Limited memory variable metric method"} };
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 TAOLinearBoundSolver::methods()
@@ -99,7 +98,8 @@ TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method,
   set_ksp(ksp_type);
 
   // Some preconditioners may lead to errors because not compatible with TAO.
-  if ((pc_type != "default") or (ksp_type != "default") or (method != "default"))
+  if ((pc_type != "default") or (ksp_type != "default")
+      or (method != "default"))
   {
     log(WARNING, "Some preconditioners may be not be applicable to "\
 	"TAO solvers and generate errors.");
