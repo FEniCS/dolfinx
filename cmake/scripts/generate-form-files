@@ -59,7 +59,7 @@ for subdir in subdirs:
 
         # Compile files
         os.chdir(root)
-        print "Compiling forms in %s..." % root
+        print("Compiling forms in %s..." % root)
         for f in formfiles:
             if f in special:
                 options = special[f]
