@@ -10,7 +10,7 @@ u = 2 + 2y^2 on x=1.
 u = 1 + x^2 + 2y^2, f = -6, g = -4y.
 """
 
-from __funture__ import print_function
+from __future__ import print_function
 from dolfin import *
 import numpy
 
