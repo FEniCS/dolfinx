@@ -129,11 +129,11 @@ SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
   // Conversion if python int or numpy type
   if (int_type == _INT_PYTHON_INTEGER_TYPE || int_type == _NPY_PYTHON_INTEGER_TYPE)
   {
-#if PY_MAJOR_VERSION >= 3
+%#if PY_MAJOR_VERSION >= 3
     const long signed_value = PyLong_AS_LONG(in);
-#else
+%#else
     const long signed_value = PyInt_AS_LONG(in);
-#endif
+%#endif
     value = static_cast<std::size_t>(signed_value);
     return signed_value>=0;
   }
@@ -211,11 +211,11 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
   // Conversion if python int or numpy int
   if (int_type == _INT_PYTHON_INTEGER_TYPE || int_type == _NPY_PYTHON_INTEGER_TYPE)
   {
-#if PY_MAJOR_VERSION >= 3
+%#if PY_MAJOR_VERSION >= 3
     const long signed_value = PyLong_AS_LONG(in);
-#else
+%#else
     const long signed_value = PyInt_AS_LONG(in);
-#endif
+%#endif
     value = static_cast<unsigned int>(signed_value);
     return signed_value>=0;
   }
@@ -256,11 +256,11 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
 %typemap(out, fragment=SWIG_From_frag(std::size_t)) std::size_t
 {
   if ($1<std::numeric_limits<long>::max())
-#if PY_MAJOR_VERSION >= 3
+%#if PY_MAJOR_VERSION >= 3
     $result = PyLong_FromSsize_t($1);
-#else
+%#else
     $result = PyInt_FromSsize_t($1);
-#endif
+%#endif
   else
     $result = PyLong_FromUnsignedLongLong(static_cast<unsigned long long>($1));
 }
