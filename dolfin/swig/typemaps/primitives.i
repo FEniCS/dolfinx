@@ -62,11 +62,7 @@ SWIG_AsVal_dec(bool2)(PyObject *obj, bool *val)
   SWIGINTERNINLINE PyObject * SWIG_From_std_size_t(std::size_t value)
   {
     return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
-%#if PY_MAJOR_VERSION >= 3
-    return PyLong_FromSize_t(value);
-%#else
     return PyInt_FromSize_t(value);
-%#endif
   }
 }
 
@@ -76,11 +72,7 @@ SWIG_AsVal_dec(bool2)(PyObject *obj, bool *val)
   SWIGINTERNINLINE PyObject * SWIG_From_dolfin_la_index(dolfin::la_index value)
   {
     return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
-%#if PY_MAJOR_VERSION >= 3
     return PyInt_FromSize_t(static_cast<std::size_t>(value));
-%#else
-    return PyInt_FromSize_t(static_cast<std::size_t>(value));
-%#endif
   }
 }
 
@@ -137,11 +129,11 @@ SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
   // Conversion if python int or numpy type
   if (int_type == _INT_PYTHON_INTEGER_TYPE || int_type == _NPY_PYTHON_INTEGER_TYPE)
   {
-%#if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3
     const long signed_value = PyLong_AS_LONG(in);
-%#else
+#else
     const long signed_value = PyInt_AS_LONG(in);
-%#endif
+#endif
     value = static_cast<std::size_t>(signed_value);
     return signed_value>=0;
   }
@@ -219,7 +211,11 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
   // Conversion if python int or numpy int
   if (int_type == _INT_PYTHON_INTEGER_TYPE || int_type == _NPY_PYTHON_INTEGER_TYPE)
   {
+#if PY_MAJOR_VERSION >= 3
+    const long signed_value = PyLong_AS_LONG(in);
+#else
     const long signed_value = PyInt_AS_LONG(in);
+#endif
     value = static_cast<unsigned int>(signed_value);
     return signed_value>=0;
   }
@@ -260,11 +256,11 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
 %typemap(out, fragment=SWIG_From_frag(std::size_t)) std::size_t
 {
   if ($1<std::numeric_limits<long>::max())
-%#if MAJOR_VERSION >= 3
-   $result = PyLong_FromSsize_t($1);
-%#else 
+#if PY_MAJOR_VERSION >= 3
+    $result = PyLong_FromSsize_t($1);
+#else
     $result = PyInt_FromSsize_t($1);
-%#endif
+#endif
   else
     $result = PyLong_FromUnsignedLongLong(static_cast<unsigned long long>($1));
 }
