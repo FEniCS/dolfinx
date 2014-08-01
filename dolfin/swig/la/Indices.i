@@ -97,6 +97,14 @@ protected:
 
 };
 
+#if PY_MAJOR_VERSION >= 3
+  #define PySlice_GetIndicesEx_def(op, vector_size, start_, stop_, step, index_size) \
+          PySlice_GetIndicesEx((PyObject*)op, vector_size, start_, stop_, step, index_size)
+#else
+  #define PySlice_GetIndicesEx_def(op, vector_size, start_, stop_, step, index_size_) \
+          PySlice_GetIndicesEx((PySliceObject*)op, vector_size, start_, stop_, step_, index_size_)
+#endif
+
 class SliceIndices : public Indices
   /// SliceIndices provides a c++ wrapper class for a Python slice
 {
@@ -110,7 +118,7 @@ public:
       throw std::runtime_error("expected slice");
     Py_ssize_t stop, start, step, index_size;
 
-    if (PySlice_GetIndicesEx((PySliceObject*)op, vector_size, &start, &stop, &step, &index_size) < 0)
+    if (PySlice_GetIndicesEx_def(op, vector_size, &start, &stop, &step, &index_size) < 0)
       throw std::runtime_error("invalid slice");
     _step  = step;
     _start = start;
