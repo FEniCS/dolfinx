@@ -39,7 +39,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
-#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -52,8 +51,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
-                          std::shared_ptr<const SubDomain> constrained_domain,
-                          std::shared_ptr<const Restriction> restriction)
+                          std::shared_ptr<const SubDomain> constrained_domain)
 {
   dolfin_assert(dofmap._ufc_dofmap);
 

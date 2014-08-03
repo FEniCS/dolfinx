@@ -42,7 +42,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include "Expression.h"
@@ -613,10 +612,6 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
 
-  // Get restriction if any
-  std::shared_ptr<const Restriction> restriction
-    = _function_space->dofmap()->restriction();
-
   // Local data for interpolation on each cell
   const std::size_t num_cell_vertices
     = mesh.type().num_vertices(mesh.topology().dim());
@@ -639,10 +634,6 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
-    // Skip cells not included in restriction
-    if (restriction && !restriction->contains(*cell))
-      continue;
-
     // Update to current cell
     cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
