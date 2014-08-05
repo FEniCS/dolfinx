@@ -46,7 +46,6 @@
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
-#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
@@ -833,10 +832,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   mesh.init(D);
   mesh.init(D - 1, D);
 
-  // Get restriction if any
-  std::shared_ptr<const Restriction> restriction
-    = _function_space->dofmap()->restriction();
-
   // Create UFC cell
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
@@ -850,26 +845,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Create facet
     const Facet facet(mesh, _facets[f]);
 
-    // Get cell to which facet belongs. If mesh is restricted, make
-    // sure we pick the right cell in case there are two.
+    // Get cell to which facet belongs.
     dolfin_assert(facet.num_entities(D) > 0);
-    const unsigned int* cell_indices = facet.entities(D);
-    std::size_t cell_index = 0;
-    if (restriction && facet.num_entities(D) > 1)
-    {
-      if (restriction->contains(D, cell_indices[0]))
-        cell_index = cell_indices[0];
-      else if (restriction->contains(D, cell_indices[1]))
-        cell_index = cell_indices[1];
-      else
-      {
-        dolfin_error("DirichletBC.cpp",
-                     "create Dirichlet boundary condition",
-                     "Boundary facet is not adjacent to a cell inside the restriction.");
-      }
-    }
-    else
-      cell_index = facet.entities(D)[0];
+    const std::size_t cell_index = facet.entities(D)[0];
 
     // Create attached cell
     const Cell cell(mesh, cell_index);
