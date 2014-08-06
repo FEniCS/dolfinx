@@ -272,7 +272,7 @@ endif()
 # Run tests to find required packages
 
 # Check for Boost
-set(BOOST_ROOT $ENV{BOOST_DIR})
+set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
 if (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
