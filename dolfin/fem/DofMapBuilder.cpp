@@ -244,11 +244,11 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     // (c) New local node index to new global node index
     // (d) Old local node index to new local node index
     std::vector<int> node_old_to_new_local;
-    std::vector<std::size_t> node_local_to_global1;
+    //    std::vector<std::size_t> node_local_to_global1;
     compute_node_reordering(dofmap._local_to_global_unowned,
                            dofmap._off_process_owner,
-                           node_local_to_global1,
                            node_old_to_new_local,
+                           shared_node_to_processes0,
                            node_local_to_global0,
                            node_graph0, node_ownership0, global_nodes0,
                            mesh.mpi_comm());
@@ -1485,8 +1485,8 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
 void DofMapBuilder::compute_node_reordering(
   std::vector<std::size_t>& local_to_global_unowned,
   std::vector<int>& off_process_owner,
-  std::vector<std::size_t>& local_to_global,
   std::vector<int>& old_to_new_local,
+  const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
   const std::vector<std::size_t>& old_local_to_global,
   const std::vector<std::vector<la_index>>& node_dofmap,
   const std::vector<short int>& node_ownership,
@@ -1554,17 +1554,17 @@ void DofMapBuilder::compute_node_reordering(
   for (std::size_t cell = 0; cell < node_dofmap.size(); ++cell)
   {
     // Cell dofmaps with old local indices
-    const std::vector<la_index>& nodes0 = node_dofmap[cell];
-    const std::vector<la_index>& nodes1 = node_dofmap[cell];
+    const std::vector<la_index>& nodes = node_dofmap[cell];
+    std::vector<int> local_old;
 
-    // Loop over nodes0
-    for (std::size_t i = 0; i < nodes0.size(); ++i)
+    // Loop over nodes collecting valid local nodes
+    for (std::size_t i = 0; i < nodes.size(); ++i)
     {
-      if (global_nodes.find(nodes0[i]) != global_nodes.end())
+      if (global_nodes.find(nodes[i]) != global_nodes.end())
         continue;
 
       // Old node index (0)
-      const int n0_old = nodes0[i];
+      const int n0_old = nodes[i];
 
       // New node index (0)
       dolfin_assert(n0_old < (int) old_to_contiguous_node_index.size());
@@ -1572,31 +1572,18 @@ void DofMapBuilder::compute_node_reordering(
 
       // Add to graph if node n0_local is owned
       if (n0_local != -1)
-      {
+      { 
         dolfin_assert(n0_local < (int) graph.size());
-        for (std::size_t j = 0; j < nodes1.size(); ++j)
-        {
-          if (global_nodes.find(nodes1[j]) != global_nodes.end())
-            continue;
-
-          // Old node index (1)
-          const int n1_old = nodes1[j];
-
-          // New node index (1)
-          dolfin_assert(n1_old < (int) old_to_contiguous_node_index.size());
-          const int n1_local = old_to_contiguous_node_index[n1_old];
-
-          // Add edge graph if node n1_local is owned
-          if (n1_local != -1)
-          {
-            if (n0_local != n1_local)
-              graph[n0_local].insert(n1_local);
-          }
-        }
+        local_old.push_back(n0_local);
       }
     }
-  }
 
+    for (std::size_t i = 0; i < local_old.size(); ++i)
+      for (std::size_t j = 0; j < local_old.size(); ++j)
+        if (i != j)
+          graph[local_old[i]].insert(local_old[j]);
+  }
+  
   // Reorder nodes
   const std::string ordering_library
     = dolfin::parameters["dof_ordering_library"];
@@ -1633,7 +1620,7 @@ void DofMapBuilder::compute_node_reordering(
   // Allocate space
   old_to_new_local.clear();
   old_to_new_local.resize(node_ownership.size(), -1);
-  local_to_global.resize(node_ownership.size());
+  //  local_to_global.resize(node_ownership.size());
 
   // Renumber owned nodes, and buffer nodes that are owned but shared
   // with another process
@@ -1650,10 +1637,10 @@ void DofMapBuilder::compute_node_reordering(
     // Set new node number
     dolfin_assert(counter < node_remap.size());
     dolfin_assert(old_node_index_local < old_to_new_local.size());
-    dolfin_assert(node_remap[counter] < (int) local_to_global.size());
+    //    dolfin_assert(node_remap[counter] < (int) local_to_global.size());
     old_to_new_local[old_node_index_local] = node_remap[counter];
-    local_to_global[node_remap[counter]]
-      = node_remap[counter] + process_offset ;
+    // local_to_global[node_remap[counter]]
+    //  = node_remap[counter] + process_offset ;
 
     // If this node is shared and owned, buffer old and new (global)
     // node index for sending
@@ -1755,7 +1742,7 @@ void DofMapBuilder::compute_node_reordering(
         // Add to old-to-new node map
         const int new_index_local = owned_local_size + off_process_node_counter;
         old_to_new_local[received_old_node_index_local] = new_index_local;
-        local_to_global[new_index_local] = received_new_node_index_global;
+        // local_to_global[new_index_local] = received_new_node_index_global;
 
         off_process_node_counter++;
       }
