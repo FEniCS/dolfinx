@@ -324,8 +324,3 @@ std::shared_ptr<dolfin::Parameters> get_global_parameters()
    return std::shared_ptr<dolfin::Parameters>(dolfin::reference_to_no_delete_pointer(dolfin::parameters));
  }
 %}
-
-%pythoncode%{
-parameters = _common.get_global_parameters()
-del _common.get_global_parameters
-%}

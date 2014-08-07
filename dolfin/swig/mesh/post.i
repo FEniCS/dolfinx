@@ -102,6 +102,7 @@ def mark(self, *args):
 
 %pythoncode
 %{
+import sys
 if sys.version_info[0] > 2:
     SubDomain.mark.__doc__ = _subdomain_mark_doc_string
 else:

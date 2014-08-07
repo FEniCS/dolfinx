@@ -54,7 +54,7 @@ copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interf
 # Template code for all combined SWIG modules
 module_template = r"""
 // The PyDOLFIN extension module for the %(module)s module
-%%module(package="dolfin.cpp.(module)%s", directors="1") %(module)s
+%%module(package="dolfin.cpp.%(module)s", directors="1") %(module)s
 // Define module name for conditional includes
 #define %(MODULE)sMODULE
 
