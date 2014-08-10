@@ -788,6 +788,12 @@ DofMapBuilder::compute_node_ownership(
       ++num_owned_nodes;
   }
 
+  std::vector<int> all_procs;
+  for (unsigned int i=0; i != num_processes; ++i)
+    if (i != process_number)
+      all_procs.push_back((int)i);
+  
+
   // Add/remove global dofs to/from relevant sets (last process owns
   // global nodes)
   for (std::set<std::size_t>::const_iterator node = global_nodes.begin();
@@ -795,12 +801,15 @@ DofMapBuilder::compute_node_ownership(
   {
     dolfin_assert(*node < node_ownership.size());
     if (process_number == num_processes - 1)
+    {
       node_ownership[*node] = 0;
+    }
     else
     {
       node_ownership[*node] = -1;
       --num_owned_nodes;
-    }
+    }      
+    shared_node_to_processes.insert(std::make_pair(*node, all_procs));
   }
 
   log(TRACE, "Finished determining dof ownership for parallel dof map");
