@@ -682,7 +682,7 @@ DofMapBuilder::compute_node_ownership(
 
   // FIXME: max index value already known?
   const std::size_t max_index = MPI::max(mpi_comm,
-              *std::max_element(local_to_global.begin(), local_to_global.end())) + 1;
+     *std::max_element(local_to_global.begin(), local_to_global.end())) + 1;
   
   // Loop over nodes and buffer nodes on process boundaries
   for (std::size_t i = 0; i < num_nodes_local; ++i)
@@ -692,7 +692,7 @@ DofMapBuilder::compute_node_ownership(
       // Possibly shared node - send out to matching process
 
       // Mark as provisionally owned and shared (0)
-      node_ownership[i] = 0;
+      // node_ownership[i] = 0;
 
       // Send global index
       const std::size_t global_index = local_to_global[i];
@@ -1624,7 +1624,9 @@ void DofMapBuilder::compute_node_reordering(
 
   // Renumber owned nodes, and buffer nodes that are owned but shared
   // with another process
-  std::vector<std::size_t> send_buffer;
+  const std::size_t mpi_size = MPI::size(mpi_comm);
+  std::vector<std::vector<std::size_t> > send_buffer(mpi_size);
+  std::vector<std::vector<std::size_t> > recv_buffer(mpi_size);
   std::size_t counter = 0;
   for (std::size_t old_node_index_local = 0;
        old_node_index_local < node_ownership.size();
@@ -1637,130 +1639,56 @@ void DofMapBuilder::compute_node_reordering(
     // Set new node number
     dolfin_assert(counter < node_remap.size());
     dolfin_assert(old_node_index_local < old_to_new_local.size());
-    //    dolfin_assert(node_remap[counter] < (int) local_to_global.size());
     old_to_new_local[old_node_index_local] = node_remap[counter];
-    // local_to_global[node_remap[counter]]
-    //  = node_remap[counter] + process_offset ;
 
     // If this node is shared and owned, buffer old and new (global)
     // node index for sending
     if (node_ownership[old_node_index_local] == 0)
     {
-      // Buffer old and new global indices to send
-      send_buffer.push_back(old_local_to_global[old_node_index_local]);
-      send_buffer.push_back(process_offset + node_remap[counter]);
+      auto it = node_to_sharing_processes.find(old_node_index_local);
+      if (it != node_to_sharing_processes.end())
+      {
+        for (auto p = it->second.begin(); p != it->second.end(); ++p)
+        {
+          // Buffer old and new global indices to send
+          send_buffer[*p].push_back(old_local_to_global[old_node_index_local]);
+          send_buffer[*p].push_back(process_offset + node_remap[counter]);
+        }
+      }
+      
     }
-
     ++counter;
   }
 
-  /*
-  MPI::barrier(mpi_comm);
-  if (MPI::rank(mpi_comm) == 0)
-  {
-    for (std::size_t i = 0; i < old_to_new_local.size(); ++i)
-    {
-      std::cout << "!!!test0: " << MPI::rank(mpi_comm) << ", " << i << ", "
-                << old_to_new_local[i]
-                << ", " << node_ownership[i] << std::endl;
-    }
-  }
-  MPI::barrier(mpi_comm);
-  */
-
-  // FIXME: The below algorithm can be improved (made more scalable)
-  //        by distributing (dof, process) pairs to 'owner' range
-  //        owner, then letting each process get the sharing process
-  //        list. This will avoid interleaving communication and
-  //        computation.
-  std::map<std::size_t , std::size_t> received_node_indices;
-
-  // Exchange new node numbers for nodes that are shared
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  const std::size_t process_number = MPI::rank(mpi_comm);
-  std::vector<std::size_t> recv_buffer;
+  MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
 
   local_to_global_unowned.resize(unowned_local_size);
   off_process_owner.resize(unowned_local_size);
-
   std::size_t off_process_node_counter = 0;
-  std::set<std::size_t> test_set;
 
-  for (std::size_t k = 1; k < num_processes; ++k)
-  {
-    const std::size_t src
-      = (process_number - k + num_processes) % num_processes;
-    const std::size_t dest = (process_number + k) % num_processes;
-    MPI::send_recv(mpi_comm, send_buffer, dest, recv_buffer, src);
-
-    // Add nodes renumbered by another process to the old-to-new map
-    for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
+  for (std::size_t src = 0; src != mpi_size; ++src)
+    for (auto q = recv_buffer[src].begin();
+         q != recv_buffer[src].end(); q += 2)
     {
-      const std::size_t received_old_node_index_global = recv_buffer[i];
-      const std::size_t received_new_node_index_global = recv_buffer[i + 1];
-
-      /*
-      if (MPI::rank(mpi_comm) == 1)
-      {
-        std::cout << "Received: " << received_old_node_index_global << ", "
-                  << received_new_node_index_global  << std::endl;
-      }
-      */
-
-      // Get local node index (if on this process), and check if this
-      // process has shared node (and is not the owner)
+      const std::size_t received_old_node_index_global = *q;
+      const std::size_t received_new_node_index_global = *(q + 1);
+      
       auto it
         = global_to_local_nodes_unowned.find(received_old_node_index_global);
-      if (it != global_to_local_nodes_unowned.end())
-      {
-        /*
-        if (MPI::rank(mpi_comm) == 1)
-          std::cout << "Found index" << std::endl;
-        */
+      dolfin_assert(it != global_to_local_nodes_unowned.end());
+      
+      const int received_old_node_index_local = it->second;
+      local_to_global_unowned[off_process_node_counter]
+        = received_new_node_index_global;
+      off_process_owner[off_process_node_counter] = src;
 
-        // Get local index for received dof
-        const int received_old_node_index_local = it->second;
-        dolfin_assert(received_old_node_index_local
-                      < (int) node_ownership.size());
-        dolfin_assert(node_ownership[received_old_node_index_local] == -1);
-
-        // Testing
-        if (test_set.find(received_old_node_index_global) != test_set.end())
-         error("Oops, problem in new dofmap code.");
-        test_set.insert(received_old_node_index_global);
-        //dolfin_assert(local_to_global_unowned.size() ==
-        //off_process_node_counter);
-
-        // Assign local index to remotely numbered node
-        //if (MPI::rank(MPI_COMM_WORLD) ==0)
-        //  std::cout << "** Insert: " << local_to_global_unowned.size() << ", "
-        //            << received_new_node_index_global << std::endl;
-        local_to_global_unowned[off_process_node_counter]
-          = received_new_node_index_global;
-        off_process_owner[off_process_node_counter] = src;
-
-        // Add to old-to-new node map
-        const int new_index_local = owned_local_size + off_process_node_counter;
-        old_to_new_local[received_old_node_index_local] = new_index_local;
-        // local_to_global[new_index_local] = received_new_node_index_global;
-
-        off_process_node_counter++;
-      }
+      const int new_index_local = owned_local_size + off_process_node_counter;
+      dolfin_assert(old_to_new_local[received_old_node_index_local] < 0);
+      old_to_new_local[received_old_node_index_local] = new_index_local;
+      off_process_node_counter++;
     }
-  }
-
-  // Sanity check
-  /*
-  if (MPI::rank(mpi_comm) == 1)
-  {
-    for (std::size_t i = 0; i < old_to_new_local.size(); ++i)
-    {
-      std::cout << "!!!test: " << MPI::rank(mpi_comm) << ", " << i << ", "
-                << old_to_new_local[i]
-                << ", " << node_ownership[i] << std::endl;
-    }
-  }
-  */
+  
+  // Check
   for (auto it : old_to_new_local)
   {
     dolfin_assert(it != -1);
