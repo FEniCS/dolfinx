@@ -295,7 +295,7 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   log(PROGRESS, "Solving linear system of size %d x %d (UMFPACK LU solver).",
       A->size(0), A->size(1));
 
-  // Solve for tranpose since we use compressed rows and UMFPACK
+  // Solve for transpose since we use compressed rows and UMFPACK
   // expected compressed columns
   umfpack_solve(Ap, Ai, Ax, x.data(), b.data(), numeric.get());
 

@@ -272,7 +272,7 @@ endif()
 # Run tests to find required packages
 
 # Check for Boost
-set(BOOST_ROOT $ENV{BOOST_DIR})
+set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
 if (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
@@ -559,6 +559,15 @@ if (DOLFIN_ENABLE_VTK)
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
   endif()
+endif()
+
+#------------------------------------------------------------------------------
+# Set size of dolfin::la_index
+
+if (PETSC_FOUND)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=${PETSC_INT_SIZE}")
+else()
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=4")
 endif()
 
 #------------------------------------------------------------------------------

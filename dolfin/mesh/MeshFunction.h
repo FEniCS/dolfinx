@@ -167,7 +167,7 @@ namespace dolfin
     ///     dim (std::size_t)
     ///         The dimension of the MeshFunction
     ///     domains (_MeshDomains)
-    ///         The domains from which to extratc the domain markers
+    ///         The domains from which to extract the domain markers
     MeshFunction(std::shared_ptr<const Mesh> mesh,
                  std::size_t dim, const MeshDomains& domains);
 
@@ -186,7 +186,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     f (_MeshFunction_ <T>)
-    ///         A _MeshFunction_ object to asssign to another MeshFunction.
+    ///         A _MeshFunction_ object to assign to another MeshFunction.
     MeshFunction<T>& operator= (const MeshFunction<T>& f);
 
     /// Assignment operator
@@ -583,7 +583,7 @@ namespace dolfin
     const std::size_t D = _mesh->topology().dim();
     dolfin_assert(d <= D);
 
-    // Generate connectivity if it does not excist
+    // Generate connectivity if it does not exist
     _mesh->init(D, d);
     const MeshConnectivity& connectivity = _mesh->topology()(D, d);
     dolfin_assert(!connectivity.empty());

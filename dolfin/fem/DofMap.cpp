@@ -34,7 +34,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
-#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/Vertex.h>
 #include "DofMapBuilder.h"
 #include "DofMap.h"
@@ -50,7 +49,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
   dolfin_assert(_ufc_dofmap);
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, NULL, _restriction);
+  DofMapBuilder::build(*this, mesh, NULL);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
@@ -65,30 +64,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
   this->constrained_domain = constrained_domain;
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, constrained_domain, _restriction);
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               std::shared_ptr<const Restriction> restriction)
-  : _ufc_dofmap(ufc_dofmap), _restriction(restriction), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _global_offset(0)
-{
-  dolfin_assert(_ufc_dofmap);
-  dolfin_assert(_restriction);
-
-  // Get mesh
-  const dolfin::Mesh& mesh = restriction->mesh();
-
-  // Check that we get cell markers, extend later
-  if (restriction->dim() != mesh.topology().dim())
-  {
-    dolfin_error("DofMap.cpp",
-                 "create mapping of degrees of freedom",
-                 "Only cell-based restriction of function spaces are currently supported. ");
-  }
-
-  // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, NULL, restriction);
+  DofMapBuilder::build(*this, mesh, constrained_domain);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -125,7 +101,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build new dof map
-  DofMapBuilder::build(*this, mesh, constrained_domain, _restriction);
+  DofMapBuilder::build(*this, mesh, constrained_domain);
 
   // Dimension sanity checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
@@ -205,11 +181,6 @@ std::size_t DofMap::num_facet_dofs() const
 {
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->num_facet_dofs();
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const dolfin::Restriction> DofMap::restriction() const
-{
-  return _restriction;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
@@ -364,10 +335,6 @@ std::shared_ptr<GenericDofMap>
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index> DofMap::dofs() const
 {
-  // Ownership range
-  const std::size_t r0 = _global_offset;
-  const std::size_t r1 = r0 + _local_ownership_size;
-
   // Create vector to hold dofs
   std::vector<la_index> _dofs;
   _dofs.reserve(_dofmap.size()*max_cell_dimension());
@@ -378,9 +345,9 @@ std::vector<dolfin::la_index> DofMap::dofs() const
   {
     for (std::size_t i = 0; i < cell_dofs->size(); ++i)
     {
-      const std::size_t dof = (*cell_dofs)[i];
-      if (dof >= r0 && dof < r1)
-        _dofs.push_back(dof);
+      const la_index dof = (*cell_dofs)[i];
+      if (dof >= 0 && dof < _local_ownership_size)
+        _dofs.push_back(dof + _global_offset);
     }
   }
 

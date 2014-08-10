@@ -85,12 +85,12 @@ namespace dolfin
     virtual std::size_t num_nonzeros() const = 0;
 
     /// Fill vector with number of nonzeros for diagonal block in
-    /// local_range for primary dimemsion
+    /// local_range for primary dimension
     virtual void
       num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzeros) const = 0;
 
     /// Fill vector with number of nonzeros for off-diagonal block in
-    /// local_range for primary dimemsion
+    /// local_range for primary dimension
     virtual void num_nonzeros_off_diagonal(
       std::vector<std::size_t>& num_nonzeros) const = 0;
 
@@ -104,7 +104,7 @@ namespace dolfin
     virtual std::vector<std::vector<std::size_t> >
       diagonal_pattern(Type type) const = 0;
 
-    /// Return underlying sparsity pattern (off-diagional). Options
+    /// Return underlying sparsity pattern (off-diagonal). Options
     /// are 'sorted' and 'unsorted'.
     virtual std::vector<std::vector<std::size_t> >
       off_diagonal_pattern(Type type) const = 0;

@@ -50,7 +50,6 @@ namespace dolfin
   class GenericFunction;
   class FunctionSpace;
   class Facet;
-  class Restriction;
   class GenericMatrix;
   class GenericVector;
   class SubDomain;
@@ -101,7 +100,7 @@ namespace dolfin
   /// geometric approach, each dof on each facet that matches the
   /// boundary condition will be checked. To apply pointwise boundary
   /// conditions e.g. pointloads, one will have to use the pointwise
-  /// approach. The three possibilties are "topological", "geometric"
+  /// approach. The three possibilities are "topological", "geometric"
   /// and "pointwise".
   ///
   /// The 'check_midpoint' variable can be used to decide whether or
@@ -369,7 +368,7 @@ namespace dolfin
     /// Return function space V
     ///
     /// *Returns*
-    ///     _FunctionSPace_
+    ///     _FunctionSpace_
     ///         The function space to which boundary conditions are applied.
     std::shared_ptr<const FunctionSpace> function_space() const
     { return _function_space; }
@@ -393,7 +392,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     v (_GenericFunction_)
-    ///         The function to check for compability
+    ///         The function to check for compatibility
     ///         with boundary condition.
     ///
     /// *Returns*
@@ -418,11 +417,11 @@ namespace dolfin
     /// Set value to 0.0
     void homogenize();
 
-    /// Return method used for computing Dirichet dofs
+    /// Return method used for computing Dirichlet dofs
     ///
     /// *Returns*
     ///     std::string
-    ///         Method used for computing Dirichet dofs ("topological",
+    ///         Method used for computing Dirichlet dofs ("topological",
     ///         "geometric" or "pointwise").
     std::string method() const;
 

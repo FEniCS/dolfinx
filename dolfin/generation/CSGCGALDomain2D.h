@@ -56,7 +56,7 @@ class CSGCGALDomain2D
   double compute_boundingcircle_radius() const ;
 
   // TODO: Replace this with a more C++-ish
-  // implementation, ie, take an outputiterator as arugment
+  // implementation, ie, take an outputiterator as argument
   // or define iterator
   void get_vertices(std::list<std::vector<Point> >& v,
                     double truncate_threshold) const;

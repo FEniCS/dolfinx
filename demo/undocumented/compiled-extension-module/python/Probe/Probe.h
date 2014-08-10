@@ -26,7 +26,6 @@
 
 namespace dolfin
 {
-
   class Cell;
   class FiniteElement;
   class Function;

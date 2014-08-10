@@ -86,7 +86,7 @@ namespace dolfin
 
     /// Return a pointer to the plotting widget. The pointer is valid
     /// from after init() is called (if no widget was passed in the
-    /// contructor).
+    /// constructor).
     QVTKWidget *get_widget() const;
 
     /// Close the plotting window (only Qt). The window is not destroyed.

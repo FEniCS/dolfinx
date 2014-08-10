@@ -56,7 +56,7 @@ file(GLOB COMBINED_MODULES RELATIVE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_
 list(SORT COMBINED_MODULES)
 list(REVERSE COMBINED_MODULES)
 
-# Get all orginal interface files
+# Get all original interface files
 file(GLOB_RECURSE ORIGINAL_INTERFACE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.i)
 
 # Target to copy all swig files from source to build directory

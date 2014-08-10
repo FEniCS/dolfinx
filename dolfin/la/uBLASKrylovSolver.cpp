@@ -20,7 +20,6 @@
 // First added:  2006-05-31
 // Last changed: 2012-05-07
 
-#include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/LogStream.h>
 #include "uBLASILUPreconditioner.h"
@@ -34,20 +33,18 @@ using namespace dolfin;
 std::vector<std::pair<std::string, std::string> >
 uBLASKrylovSolver::methods()
 {
-  return boost::assign::pair_list_of
-    ("default",  "default Krylov method")
-    ("cg",       "Conjugate gradient method")
-    ("gmres",    "Generalized minimal residual method")
-    ("bicgstab", "Biconjugate gradient stabilized method");
+  return { {"default",  "default Krylov method"},
+           {"cg",       "Conjugate gradient method"},
+           {"gmres",    "Generalized minimal residual method"},
+           {"bicgstab", "Biconjugate gradient stabilized method"} };
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 uBLASKrylovSolver::preconditioners()
 {
-  return boost::assign::pair_list_of
-    ("default", "default preconditioner")
-    ("none",    "No preconditioner")
-    ("ilu",     "Incomplete LU factorization");
+  return { {"default", "default preconditioner"},
+           {"none",    "No preconditioner"},
+           {"ilu",     "Incomplete LU factorization"} };
 }
 //-----------------------------------------------------------------------------
 Parameters uBLASKrylovSolver::default_parameters()

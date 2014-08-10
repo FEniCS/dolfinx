@@ -345,7 +345,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
     }
   }
 
-  // Send matches to other proceses
+  // Send matches to other processes
   MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
   // Clear ghost vertices

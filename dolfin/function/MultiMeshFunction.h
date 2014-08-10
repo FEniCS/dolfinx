@@ -27,7 +27,7 @@
 namespace dolfin
 {
 
-  // Forward declacations
+  // Forward declarations
   class MultiMeshFunctionSpace;
   class GenericVector;
   class Function;

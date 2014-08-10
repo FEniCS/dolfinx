@@ -332,7 +332,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     }
     else if (marker == regular_refinement)
     {
-      // Regular refinement: divide into subsimplicies
+      // Regular refinement: divide into sub-simplices
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges

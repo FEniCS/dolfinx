@@ -46,7 +46,6 @@ namespace dolfin
 {
 
   class GenericVector;
-  class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dofmap on a specific mesh. It will
@@ -74,21 +73,11 @@ namespace dolfin
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    ///     conatrained_boundary (_SubDomain_)
-    ///         The subdomain marking the constrained (tied) boudaries.
+    ///     constrained_boundary (_SubDomain_)
+    ///         The subdomain marking the constrained (tied) boundaries.
     DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
            const Mesh& mesh,
            std::shared_ptr<const SubDomain> constrained_domain);
-
-    /// Create restricted dof map on mesh
-    ///
-    /// *Arguments*
-    ///     ufc_dofmap (ufc::dofmap)
-    ///         The ufc::dofmap.
-    ///     restriction (_Restriction_)
-    ///         The restriction.
-    DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-           std::shared_ptr<const Restriction> restriction);
 
   private:
 
@@ -117,14 +106,6 @@ namespace dolfin
     ///         another map).
     bool is_view() const
     { return _is_view; }
-
-    /// True if dof map is restricted
-    ///
-    /// *Returns*
-    ///     bool
-    ///         True if dof map is restricted
-    bool is_restricted() const
-    { return static_cast<bool>(_restriction); }
 
     /// Return the dimension of the global finite element function
     /// space
@@ -182,14 +163,6 @@ namespace dolfin
     ///     std::size_t
     ///         The number of facet dofs.
     std::size_t num_facet_dofs() const;
-
-    /// Restriction if any. If the dofmap is not restricted, a null
-    /// pointer is returned.
-    ///
-    /// *Returns*
-    ///     std::shared_ptr<const Restriction>
-    //          The restriction.
-    std::shared_ptr<const Restriction> restriction() const;
 
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
@@ -448,7 +421,7 @@ namespace dolfin
 
     // Number global mesh entities. This is usually the same as what
     // is reported by the mesh, but will differ for dofmaps
-    // constrained, e.g. dofmaps with periodoc bcs. It is stored in
+    // constrained, e.g. dofmaps with periodic bcs. It is stored in
     // order to compute the global dimension of dofmaps that are
     // constructed from a sub-dofmap.
     std::vector<std::size_t> _num_mesh_entities_global;
@@ -457,21 +430,17 @@ namespace dolfin
     // actual_dof, both using local indices)
     std::vector<int> _ufc_local_to_local;
 
-    // Restriction, pointer zero if not restricted
-    std::shared_ptr<const Restriction> _restriction;
-
     // Flag to determine if the DofMap is a view
     bool _is_view;
 
     // Global dimension. Note that this may differ from the global
-    // dimension of the UFC dofmap if the function space is restricted
-    // or periodic.
+    // dimension of the UFC dofmap if the function space is periodic.
     std::size_t _global_dimension;
 
     // UFC dof map offset
     std::size_t _ufc_offset;
 
-    // Number of dofs owned by this proces
+    // Number of dofs owned by this process
     std::size_t _global_offset;
     int _local_ownership_size;
 

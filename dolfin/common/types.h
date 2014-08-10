@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2014 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,11 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2012
-//
-// First added:  2008-04-22
-// Last changed: 2013-05-28
 //
 // This file provides DOLFIN typedefs for basic types.
 
