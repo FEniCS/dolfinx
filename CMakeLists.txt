@@ -134,6 +134,13 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
+# Workaround https://bugs.launchpad.net/ubuntu/+source/gcc-4.6/+bug/1352356
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND
+   "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" AND
+   "${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER "4.5.99")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
+endif()
+
 if (CYGWIN OR (WIN32 AND UNIX))
   # Use -std=gnu++11 instead of -std=c++11 on Cygwin to work around
   # problem when using vsnprintf.
