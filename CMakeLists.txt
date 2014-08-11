@@ -135,10 +135,16 @@ if (HAVE_PEDANTIC)
 endif()
 
 # Workaround https://bugs.launchpad.net/ubuntu/+source/gcc-4.6/+bug/1352356
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND
-   "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" AND
-   "${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER "4.5.99")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
+# NOTE: Remove this block when bug is fixed upstream or GCC 4.6 support is dropped
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if (NOT DEFINED CMAKE_CXX_COMPILER_VERSION)
+    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+                    OUTPUT_VARIABLE CMAKE_CXX_COMPILER_VERSION)
+  endif()
+  if ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" AND
+      "${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER "4.5.99")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
+  endif()
 endif()
 
 if (CYGWIN OR (WIN32 AND UNIX))
