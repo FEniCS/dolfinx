@@ -78,8 +78,8 @@ class JIT(unittest.TestCase):
         # This test check that instant_kwargs of compile_extension_module
         # are taken into account when computing signature
         m2 = compile_extension_module('', cppargs='-O2')
-        m3 = compile_extension_module('', cppargs='-O3')
-        self.assertFalse(m2.__file__ == m3.__file__)
+        m0 = compile_extension_module('', cppargs='')
+        self.assertFalse(m2.__file__ == m0.__file__)
 
 
 if __name__ == "__main__":
