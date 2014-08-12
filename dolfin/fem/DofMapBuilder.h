@@ -52,11 +52,10 @@ namespace dolfin
 
   public:
 
-    /// Build dofmap. The constrained domain and/or restriction may be
-    /// null pointers, in which case they are ignored.
+    /// Build dofmap. The constrained domain may be
+    /// a null pointer, in which case it is ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-                      std::shared_ptr<const SubDomain> constrained_domain,
-                      std::shared_ptr<const Restriction> restriction);
+                      std::shared_ptr<const SubDomain> constrained_domain);
 
     /// Build sub-dofmap. This is a view into the parent dofmap.
     static void build_sub_map_view(DofMap& sub_dofmap,

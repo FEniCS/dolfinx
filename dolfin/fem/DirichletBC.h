@@ -50,7 +50,6 @@ namespace dolfin
   class GenericFunction;
   class FunctionSpace;
   class Facet;
-  class Restriction;
   class GenericMatrix;
   class GenericVector;
   class SubDomain;
