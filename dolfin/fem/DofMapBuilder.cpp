@@ -1522,7 +1522,7 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems
-    if (!f->is_shared()) // and f->num_entities(D) == 2)
+    if (!f->is_shared() and f->num_entities(D) == 2)
       continue;
 
     // Get cell to which facet belongs (pick first)
