@@ -49,8 +49,6 @@
 
 #include <dolfin/common/utils.h>
 
-#include "MatplotlibDebug.h"
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -821,7 +819,6 @@ DofMapBuilder::compute_node_ownership(
         else
           node_ownership[received_node_local] = -1;
 
-        // FIXME: not working for -2 and -3 yet
         shared_node_to_processes[received_node_local] 
           = std::vector<int>(sharing_procs.begin(), sharing_procs.end());
       }
@@ -845,18 +842,6 @@ DofMapBuilder::compute_node_ownership(
     if (node_ownership[i] >= 0)
       ++num_owned_nodes;
   }
-
-  std::cout << MPI::rank(mpi_comm) << " - owned nodes = " << num_owned_nodes << "\n";
-
-  VertexFunction<int> vf(mesh);
-  for (CellIterator c(mesh,"all"); !c.end(); ++c)
-  {
-    unsigned int i = 0;
-    for (VertexIterator v(*c); !v.end(); ++v)
-      vf[*v] = node_ownership[dofmap[c->index()][i++]];
-  }
-  
-  MatplotlibDebug::plot_meshfunction(vf);
 
   // Shared ownership for global dofs (after neighbour calculation)
   std::vector<int> all_procs;
@@ -1529,16 +1514,6 @@ DofMapBuilder::compute_shared_nodes(std::vector<int>& shared_nodes,
     }
     
   }
-
-  VertexFunction<int> vf(mesh);
-  for (CellIterator c(mesh,"all"); !c.end(); ++c)
-  {
-    unsigned int i = 0;
-    for (VertexIterator v(*c); !v.end(); ++v)
-      vf[*v] = shared_nodes[node_dofmap[c->index()][i++]];
-  }
-  
-  //  MatplotlibDebug::plot_meshfunction(vf);
 
   if (has_ghost_cells) return;
 
