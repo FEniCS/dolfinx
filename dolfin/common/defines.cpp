@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2011
-// Modified by Garth N. Wells, 2013
+// Modified by Anders Logg 2011, 2014
+// Modified by Garth N. Wells 2013
 //
 // First added:  2011-10-15
-// Last changed: 2013-11-01
+// Last changed: 2014-08-11
 
 #include "types.h"
 #include "defines.h"
@@ -96,15 +96,6 @@ bool dolfin::has_slepc()
 bool dolfin::has_scotch()
 {
 #ifdef HAS_SCOTCH
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
-bool dolfin::has_cgal()
-{
-#ifdef HAS_CGAL
   return true;
 #else
   return false;

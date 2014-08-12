@@ -21,7 +21,7 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2008-07-11
-# Last changed: 2012-11-12
+# Last changed: 2014-08-11
 
 from dolfin import *
 
@@ -52,11 +52,6 @@ plot(mesh, title="Rectangle")
 mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
 print "Plotting a RectangleMesh"
 plot(mesh, title="Rectangle (right/left)")
-
-if has_cgal():
-    mesh = CircleMesh(Point(0.0, 0.0), 1.0, 1.0/20.0)
-    print "Plotting a CircleMesh"
-    plot(mesh, title="Unit circle")
 
 mesh = UnitCubeMesh(10, 10, 10)
 print "Plotting a UnitCubeMesh"

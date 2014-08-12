@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-03-11
-// Last changed: 2012-11-12
+// Last changed: 2014-08-11
 //
 // Demonstrating function evaluation at arbitrary points.
 
@@ -25,8 +25,6 @@
 #include "Projection.h"
 
 using namespace dolfin;
-
-#ifdef HAS_CGAL
 
 class F : public Expression
 {
@@ -64,13 +62,3 @@ int main()
   // Evaluate discrete function g (projection of f)
   info("g(x) = %g", g(x));
 }
-
-#else
-
-int main()
-{
-  info("DOLFIN must be compiled with CGAL to run this demo.");
-  return 0;
-}
-
-#endif
