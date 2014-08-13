@@ -25,6 +25,7 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/HDF5Interface.h>
@@ -89,6 +90,9 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
 {
   // Set default parameters
   parameters = default_parameters();
+
+  // In case MPI is not already initialised
+  SubSystemsManager::init_mpi();
 
   if (File::exists(_name))
   {
