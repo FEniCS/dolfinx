@@ -183,6 +183,13 @@ void TimeSeriesHDF5::store(const Mesh& mesh, double t)
 void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
                               bool interpolate) const
 {
+  if (!File::exists(_name))
+  {
+    dolfin_error("TimeSeriesHDF5.cpp",
+                 "open file to retrieve series",
+                 "File does not exist");
+  }
+
   HDF5File hdf5_file(MPI_COMM_WORLD, _name, "r");
 
   // Interpolate value
@@ -249,6 +256,14 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
 //-----------------------------------------------------------------------------
 void TimeSeriesHDF5::retrieve(Mesh& mesh, double t) const
 {
+
+  if (!File::exists(_name))
+  {
+    dolfin_error("TimeSeriesHDF5.cpp",
+                 "open file to retrieve series",
+                 "File does not exist");
+  }
+
   // Get index closest to given time
   const std::size_t index = find_closest_index(t, _mesh_times, _name, "mesh");
 
