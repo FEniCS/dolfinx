@@ -223,11 +223,11 @@ void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
   _ufc_dofmap->tabulate_facet_dofs(dofs.data(), local_facet);
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                  const std::vector<double>& vertex_coordinates,
-                                  const Cell& cell) const
+void
+DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                             const std::vector<double>& vertex_coordinates,
+                             const Cell& cell) const
 {
-  // FIXME: This is a hack because UFC wants a double pointer for coordinates
   dolfin_assert(_ufc_dofmap);
 
   // Check dimensions
@@ -239,14 +239,9 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
     coordinates.resize(extents[cell_dim][_ufc_dofmap->geometric_dimension()]);
   }
 
-  // Set vertex coordinates
-  const std::size_t num_points = coordinates.size();
-  std::vector<double*> coords(num_points);
-  for (std::size_t i = 0; i < num_points; ++i)
-    coords[i] = &(coordinates[i][0]);
-
   // Tabulate coordinates
-  _ufc_dofmap->tabulate_coordinates(coords.data(), vertex_coordinates.data());
+  _ufc_dofmap->tabulate_coordinates(coordinates.data(),
+                                    vertex_coordinates.data());
 }
 //-----------------------------------------------------------------------------
 std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
