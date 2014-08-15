@@ -26,6 +26,7 @@ index.html for easy viewing of the generated plots.
 # First added:  2010-04-06
 # Last changed: 2010-04-13
 
+from __future__ import print_function
 import os
 import re
 import time

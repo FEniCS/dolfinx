@@ -21,6 +21,7 @@ Python. This functionality is implemented in site-packages/dolfin"""
 # First added:  2009-11-16
 # Last changed: 2009-11-16
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 

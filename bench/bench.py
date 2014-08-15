@@ -18,10 +18,8 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Johannes Ring, 2011, 2012
-#
-# First added:  2010-03-26
-# Last changed: 2012-03-15
 
+from __future__ import print_function
 import os, sys, time
 
 failed = []

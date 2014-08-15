@@ -20,6 +20,7 @@
 # First added:  2011-11-10
 # Last changed: 2011-11-10
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 

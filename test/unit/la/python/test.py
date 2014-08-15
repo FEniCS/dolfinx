@@ -20,6 +20,7 @@
 # First added:  2008-09-30
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 from six import integer_types
 from dolfin import *

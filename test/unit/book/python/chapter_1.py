@@ -22,6 +22,7 @@ Unit tests for Chapter 1 (A FEniCS tutorial).
 # First added:  2011-10-20
 # Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 import inspect, os, sys
 from dolfin import *

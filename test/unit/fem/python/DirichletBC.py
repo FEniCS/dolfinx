@@ -24,6 +24,7 @@
 # First added:  2011-09-19
 # Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *

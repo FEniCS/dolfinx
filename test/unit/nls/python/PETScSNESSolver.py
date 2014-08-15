@@ -35,6 +35,7 @@ An alternative interface to SNESVI allows the user to set explicitly
 more complex bounds as GenericVectors or Function.
 """
 
+from __future__ import print_function
 from dolfin import *
 import unittest
 

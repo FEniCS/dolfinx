@@ -36,6 +36,7 @@ Based on "demo/pde/poisson/python/demo_poisson.py"
 #
 
 # Begin demo
+from __future__ import print_function
 from dolfin import *
 from six import print_
 try:

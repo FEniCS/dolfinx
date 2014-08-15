@@ -25,6 +25,7 @@ parallel assembly/solve."""
 # First added:  2009-08-17
 # Last changed: 2013-07-06
 
+from __future__ import print_function
 import sys
 from dolfin import *
 from six import print_

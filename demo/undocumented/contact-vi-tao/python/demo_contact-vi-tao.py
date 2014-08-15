@@ -25,6 +25,7 @@
 # First added:  2012-09-03
 # Last changed: 2013-04-15
 #
+from __future__ import print_function
 from dolfin import *
 
 if not has_petsc_tao():

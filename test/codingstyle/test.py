@@ -20,6 +20,7 @@
 # First added:  2011-11-14
 # Last changed: 2011-11-14
 
+from __future__ import print_function
 import os, re
 
 cpp_tests = []

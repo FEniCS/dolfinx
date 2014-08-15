@@ -18,6 +18,7 @@
 # First added:  2011-11-14
 # Last changed: 2013-03-04
 
+from __future__ import print_function
 import sys
 from instant import get_status_output
 

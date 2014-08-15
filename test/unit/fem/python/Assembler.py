@@ -20,6 +20,7 @@
 # Modified by Anders Logg 2011
 # Modified by Martin Alnes 2014
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *

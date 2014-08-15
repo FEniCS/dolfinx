@@ -21,6 +21,7 @@ finite element spaces on non-matching meshes."""
 # First added:  2009-05-19
 # Last changed: 2009-05-19
 
+from __future__ import print_function
 from dolfin import *
 
 # Create mesh and define function spaces

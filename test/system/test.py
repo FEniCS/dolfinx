@@ -22,6 +22,7 @@
 # First added:  2009-08-17
 # Last changed: 2011-03-09
 
+from __future__ import print_function
 import os, sys
 from instant import get_status_output
 

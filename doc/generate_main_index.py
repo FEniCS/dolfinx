@@ -20,6 +20,7 @@
 # Utility script for creating main index.rst files in sphinx
 # documentation projects in DOLFIN.
 
+from __future__ import print_function
 import os, sys
 
 index_template = """

@@ -22,6 +22,7 @@
 # First added:  2012-02-21
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 

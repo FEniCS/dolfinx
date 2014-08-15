@@ -18,6 +18,7 @@
 # First added:  2014-04-07
 # Last changed: 2014-06-05
 
+from __future__ import print_function
 from dolfin import *
 import os
 

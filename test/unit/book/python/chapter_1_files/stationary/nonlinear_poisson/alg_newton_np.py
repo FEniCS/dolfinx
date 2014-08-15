@@ -12,6 +12,7 @@ q(u) = (1+u)^m
 Solution method: Newton iteration at the algebraic level.
 """
 
+from __future__ import print_function
 from dolfin import *
 import numpy, sys
 from six import print_

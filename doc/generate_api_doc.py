@@ -19,6 +19,7 @@
 #
 # Utility script for generating .rst documentation for DOLFIN
 
+from __future__ import print_function
 import os, sys
 
 dolfin_import_error_msg = """

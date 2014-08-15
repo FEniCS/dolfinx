@@ -21,6 +21,7 @@ from a common mesh."""
 # First added:  2009-02-11
 # Last changed: 2009-03-02
 
+from __future__ import print_function
 from dolfin import *
 
 # Structure sub domain

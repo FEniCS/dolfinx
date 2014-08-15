@@ -20,6 +20,7 @@
 # Modified by Marie E. Rognes (meg@simula.no), 2012
 # Modified by Martin S. Alnaes (martinal@simula.no), 2014
 
+from __future__ import print_function
 import unittest
 import numpy
 import ufl

@@ -23,6 +23,7 @@ Page numbering starts at 1 and is relative to the chapter (not the book).
 # First added:  2011-10-20
 # Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 

@@ -22,6 +22,7 @@
 # First added:
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 from unittest import TestCase as _TestCase
 import unittest
 import os

@@ -27,6 +27,7 @@ src/demo/mesh/subdomains."""
 # Last changed: 2010-04-01
 # Begin demo
 
+from __future__ import print_function
 from dolfin import *
 
 # Load mesh and subdomains

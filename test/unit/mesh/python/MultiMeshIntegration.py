@@ -20,6 +20,7 @@
 # First added:  2014-03-04
 # Last changed: 2014-03-10
 
+from __future__ import print_function
 import unittest
 import numpy
 

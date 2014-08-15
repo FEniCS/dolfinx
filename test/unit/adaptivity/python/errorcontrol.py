@@ -20,6 +20,7 @@
 # First added:  2011-04-05
 # Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 from ufl.algorithms import replace
 

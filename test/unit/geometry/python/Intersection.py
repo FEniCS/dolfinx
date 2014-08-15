@@ -20,6 +20,7 @@
 # First added:  2013-04-18
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 
 from dolfin import intersect

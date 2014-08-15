@@ -22,6 +22,7 @@
 # Utility script for splitting the cpp and python demos into separate
 # directory trees. Ignores cmake files for python.
 
+from __future__ import print_function
 import sys, os, shutil
 import subprocess
 

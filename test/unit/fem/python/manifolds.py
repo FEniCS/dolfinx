@@ -26,6 +26,7 @@ embedded in higher dimensional spaces."""
 # MER: The solving test should be moved into test/regression/..., the
 # evaluatebasis part should be moved into test/unit/FiniteElement.py
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 from six.moves import zip

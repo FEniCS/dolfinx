@@ -21,6 +21,7 @@
 # Modified by Mikael Mortensen 2011
 # Modified by Jan Blechta 2013
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 from six.moves import range

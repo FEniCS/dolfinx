@@ -25,6 +25,7 @@
 # First added:  2008-04-08
 # Last changed: 2009-05-19
 
+from __future__ import print_function
 import sys, os, re
 import platform
 from instant import get_status_output
