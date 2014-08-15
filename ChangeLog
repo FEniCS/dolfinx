@@ -1,3 +1,4 @@
+ - Add argument 'function' to project, to store the result into a preallocated function
  - Remove CGAL dependency and mesh generation, now provided by mshr
  - Remove excessive printing of points during extrapolation
 1.4.0 [2014-06-02]
