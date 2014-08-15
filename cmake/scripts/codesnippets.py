@@ -83,7 +83,7 @@ import_array();
 
 """
 
-py3 = "" if sys.version_info[0] < 3 else "\n  -py3"
+py3 = "" if sys.version_info[0] < 3 else "\n  -py3\n  -relativeimport"
 
 swig_cmakelists_str = \
 """# Automatic get the module name
@@ -110,7 +110,6 @@ set(CMAKE_SWIG_FLAGS
   -fastunpack
   -fastquery
   -nobuildnone%s
-  -relativeimport
   -Iinclude/swig
   ${DOLFIN_CXX_DEFINITIONS}
   ${DOLFIN_PYTHON_DEFINITIONS}
