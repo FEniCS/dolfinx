@@ -321,7 +321,8 @@ find_package(LibXml2 REQUIRED)
 
 # Note: Check for Python interpreter even when Python is disabled because it
 #       is used to get the installation path for dolfin_utils
-find_package(PythonInterp 3)
+# FIXME PY3: Select python 3 based on config flag?
+find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
 
   # Set variables to help find Python library that is compatible with
