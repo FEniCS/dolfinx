@@ -19,6 +19,8 @@
 # First added:  2012-10-17
 # Last changed: 2013-11-22
 
+from __future__ import print_function
+
 """Solve the Yamabe PDE which arises in the differential geometry of
 general relativity. http://arxiv.org/abs/1107.0360.
 
@@ -35,7 +37,6 @@ An alternative interface to SNESVI allows the user to set explicitly
 more complex bounds as GenericVectors or Function.
 """
 
-from __future__ import print_function
 from dolfin import *
 import unittest
 
