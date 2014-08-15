@@ -86,7 +86,6 @@ list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
@@ -110,7 +109,7 @@ endif()
 #------------------------------------------------------------------------------
 # Package-specific options
 
-option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
+# None at the moment
 
 #------------------------------------------------------------------------------
 # Compiler flags
@@ -132,6 +131,19 @@ endif()
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+endif()
+
+# Workaround https://bugs.launchpad.net/ubuntu/+source/gcc-4.6/+bug/1352356
+# NOTE: Remove this block when bug is fixed upstream or GCC 4.6 support is dropped
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if (NOT DEFINED CMAKE_CXX_COMPILER_VERSION)
+    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+                    OUTPUT_VARIABLE CMAKE_CXX_COMPILER_VERSION)
+  endif()
+  if ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" AND
+      "${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER "4.5.99")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
+  endif()
 endif()
 
 if (CYGWIN OR (WIN32 AND UNIX))
@@ -272,7 +284,7 @@ endif()
 # Run tests to find required packages
 
 # Check for Boost
-set(BOOST_ROOT $ENV{BOOST_DIR})
+set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
 if (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
@@ -507,12 +519,6 @@ if (DOLFIN_ENABLE_TRILINOS)
   else()
     message(STATUS "Trilinos could not be found")
   endif()
-endif()
-
-
-# Check for CGAL
-if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL 4.1)
 endif()
 
 # Check for zlib

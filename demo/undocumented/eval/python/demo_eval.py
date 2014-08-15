@@ -20,14 +20,10 @@
 # Modified by Johan Hake, 2009
 #
 # First added:  2008-03-17
-# Last changed: 2012-11-12
+# Last changed: 2014-08-11
 
 from dolfin import *
 from numpy import array
-
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0)
 
 # Create mesh and a point in the mesh
 mesh = UnitCubeMesh(8, 8, 8);

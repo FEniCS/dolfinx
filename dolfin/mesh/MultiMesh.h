@@ -286,7 +286,7 @@ namespace dolfin
   private:
 
     // Friends
-    friend void dolfin::plot(std::shared_ptr<const MultiMesh>);
+    friend void plot(std::shared_ptr<const MultiMesh>);
 
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;

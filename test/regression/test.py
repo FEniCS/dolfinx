@@ -23,7 +23,7 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2008-04-08
-# Last changed: 2013-12-02
+# Last changed: 2014-08-11
 
 import sys, os, re
 import platform
@@ -88,9 +88,7 @@ for s in cppslow:
 
 # List of demos that throw expected errors in parallel
 not_working_in_parallel = \
-  [os.path.join(demodir, 'documented',   'csg-2D',                      'python'), \
-   os.path.join(demodir, 'documented',   'csg-2D',                      'cpp'), \
-   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
+  [os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'), \
    os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'cpp'),    \
@@ -113,8 +111,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
    os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'triangulate',                 'python'), \
-   os.path.join(demodir, 'undocumented', 'restriction',                 'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'restriction',                 'python'),    \
    os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'cpp'),    \
    os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'python'), \
    os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'python'), \

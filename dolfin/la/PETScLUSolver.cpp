@@ -86,7 +86,7 @@ PETScLUSolver::_methods_descr
     {"mumps", "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)"},
 #endif
 #if PETSC_HAVE_PASTIX
-    {"pastix", "PaStiX (Parallel Sparse matriX package)"}.
+    {"pastix", "PaStiX (Parallel Sparse matriX package)"},
 #endif
 #if PETSC_HAVE_SUPERLU
     {"superlu", "SuperLU"},
