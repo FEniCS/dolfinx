@@ -325,8 +325,9 @@ std::shared_ptr<dolfin::Parameters> get_global_parameters()
  }
 %}
 
-%pythoncode%{
-parameters = _common.get_global_parameters()
-del _common.get_global_parameters
-%}
+// This code fails with python 3, see fix in dolfin/cpp/__init__.py
+//%pythoncode%{
+//parameters = _common.get_global_parameters()
+//del _common.get_global_parameters
+//%}
 
