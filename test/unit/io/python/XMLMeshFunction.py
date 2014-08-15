@@ -24,7 +24,7 @@
 
 import unittest
 from dolfin import *
-from six.moves import range
+from six.moves import xrange as range
 
 @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class XMLMeshFunction(unittest.TestCase):

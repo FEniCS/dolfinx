@@ -24,7 +24,7 @@
 from __future__ import print_function
 import unittest
 from dolfin import *
-from six.moves import range
+from six.moves import xrange as range
 
 class AbstractBaseTest(object):
     count = 0

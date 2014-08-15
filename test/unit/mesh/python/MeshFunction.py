@@ -23,7 +23,7 @@
 import unittest
 import numpy.random
 from dolfin import *
-from six.moves import range
+from six.moves import xrange as range
 
 class NamedMeshFunctions(unittest.TestCase):
 

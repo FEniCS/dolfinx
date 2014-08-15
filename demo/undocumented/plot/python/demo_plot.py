@@ -29,7 +29,7 @@ from math import sqrt
 import numpy
 
 import sys
-from six.moves import range
+from six.moves import xrange as range
 
 # Read mesh from file
 mesh = Mesh("../dolfin_fine.xml.gz")

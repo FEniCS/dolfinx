@@ -23,7 +23,7 @@
 import unittest
 import numpy
 from dolfin import *
-from six.moves import range
+from six.moves import xrange as range
 
 class MeshIterator(unittest.TestCase):
 
