@@ -21,6 +21,7 @@ special functions that are available in UFL."""
 # First added:  2011-10-24
 # Last changed: 2011-10-24
 
+from __future__ import print_function
 from dolfin import *
 
 # Form compiler options
@@ -50,5 +51,5 @@ plotstrings(('exp(x)', 'ln(x)', 'sqrt(x)', 'erf(x)'), mesh2)
 for nu in (0, 1):
     plotstrings(['bessel_%s(%d, x)' % (c, nu) for c in ('J', 'Y', 'I', 'K')], mesh2)
 
-print "Note that you must press 'q' in the first plot window ('cos(x)') to quit."
+print("Note that you must press 'q' in the first plot window ('cos(x)') to quit.")
 interactive()

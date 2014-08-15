@@ -482,9 +482,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import ndarray
         from types import SliceType
         if not (isinstance(indices, tuple) and len(indices) == 2):
-            raise TypeError, "expected two indices"
+            raise TypeError("expected two indices")
         if not all(isinstance(ind, (int, SliceType, list, ndarray)) for ind in indices):
-            raise TypeError, "an int, slice, list or numpy array as indices"
+            raise TypeError("an int, slice, list or numpy array as indices")
 
         if isinstance(indices[0], int):
             if isinstance(indices[1], int):
@@ -510,14 +510,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import ndarray, isscalar
         from types import SliceType
         if not (isinstance(indices, tuple) and len(indices) == 2):
-            raise TypeError, "expected two indices"
+            raise TypeError("expected two indices")
         if not all(isinstance(ind, (int, SliceType, list, ndarray)) for ind in indices):
-            raise TypeError, "an int, slice, list or numpy array as indices"
+            raise TypeError("an int, slice, list or numpy array as indices")
 
         if isinstance(indices[0], int):
             if isinstance(indices[1], int):
                 if not isscalar(values):
-                    raise TypeError, "expected scalar for single value assigment"
+                    raise TypeError("expected scalar for single value assigment")
                 _set_matrix_single_item(self, indices[0], indices[1], values)
             else:
                 raise NotImplementedError
@@ -526,7 +526,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 elif isinstance(values,ndarray):
                     _set_matrix_items_array_of_float(self, indices[0], indices[1], values, True)
                 else:
-                    raise TypeError, "expected a GenericVector or numpy array of float"
+                    raise TypeError("expected a GenericVector or numpy array of float")
         elif isinstance(indices[1], int):
             raise NotImplementedError
             if isinstance(values, GenericVector):
@@ -534,7 +534,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             elif isinstance(values, ndarray):
                 _set_matrix_items_array_of_float(self, indices[1], indices[0], values, False)
             else:
-                raise TypeError, "expected a GenericVector or numpy array of float"
+                raise TypeError("expected a GenericVector or numpy array of float")
 
         else:
             raise NotImplementedError
@@ -552,14 +552,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 elif isinstance(values, ndarray) and len(values.shape)==2:
                     _set_matrix_items_array_of_float(self, indices[0], None, values)
                 else:
-                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+                    raise TypeError("expected a GenericMatrix or 2D numpy array of float")
             else:
                 if isinstance(values,GenericMatrix):
                     _set_matrix_items_matrix(self, indices[0], indices[1], values)
                 elif isinstance(values,ndarray) and len(values.shape) == 2:
                     _set_matrix_items_array_of_float(self, indices[0], indices[1], values)
                 else:
-                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+                    raise TypeError("expected a GenericMatrix or 2D numpy array of float")
     """
 
     def __add__(self,other):

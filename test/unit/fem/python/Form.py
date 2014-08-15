@@ -20,6 +20,7 @@
 # Modified by Marie E. Rognes (meg@simula.no), 2012
 # Modified by Martin S. Alnaes (martinal@simula.no), 2014
 
+from __future__ import print_function
 import unittest
 import numpy
 import ufl
@@ -391,7 +392,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         self.assertAlmostEqual(b0, b1)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN Form operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN Form operations")
+    print("------------------------------------------------")
     unittest.main()

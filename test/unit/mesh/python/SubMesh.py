@@ -22,6 +22,7 @@
 
 import unittest
 from dolfin import *
+import six
 
 @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class SubMeshTester(unittest.TestCase):
@@ -81,11 +82,11 @@ class SubMeshTester(unittest.TestCase):
             sum_parent = 0
             sum_inner  = 0
             sum_outer  = 0
-            for key, val in parent_facets.iteritems():
+            for key, val in six.iteritems(parent_facets):
                 if val == value: sum_parent += val
-            for key, val in inner_facets.iteritems():
+            for key, val in six.iteritems(inner_facets):
                 if val == value: sum_inner += val
-            for key, val in outer_facets.iteritems():
+            for key, val in six.iteritems(outer_facets):
                 if val == value: sum_outer += val
 
             self.assertEqual(sum_outer, sum_inner)

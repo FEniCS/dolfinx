@@ -20,46 +20,45 @@
 # Modified by Anders Logg 2008, 2014
 # Modified by Benjamin Kehlet 2012
 #
-# First added:  2008-07-11
-# Last changed: 2014-08-11
 # Begin demo
 
+from __future__ import print_function
 from dolfin import *
 
 mesh = UnitIntervalMesh(10)
-print "Plotting a UnitIntervalMesh"
+print("Plotting a UnitIntervalMesh")
 plot(mesh, title="Unit interval")
 
 mesh = UnitSquareMesh(10, 10)
-print "Plotting a UnitSquareMesh"
+print("Plotting a UnitSquareMesh")
 plot(mesh, title="Unit square")
 
 mesh = UnitSquareMesh(10, 10, "left")
-print "Plotting a UnitSquareMesh"
+print("Plotting a UnitSquareMesh")
 plot(mesh, title="Unit square (left)")
 
 mesh = UnitSquareMesh(10, 10, "crossed")
-print "Plotting a UnitSquareMesh"
+print("Plotting a UnitSquareMesh")
 plot(mesh, title="Unit square (crossed)")
 
 mesh = UnitSquareMesh(10, 10, "right/left")
-print "Plotting a UnitSquareMesh"
+print("Plotting a UnitSquareMesh")
 plot(mesh, title="Unit square (right/left)")
 
 mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
-print "Plotting a RectangleMesh"
+print("Plotting a RectangleMesh")
 plot(mesh, title="Rectangle")
 
 mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
-print "Plotting a RectangleMesh"
+print("Plotting a RectangleMesh")
 plot(mesh, title="Rectangle (right/left)")
 
 mesh = UnitCubeMesh(10, 10, 10)
-print "Plotting a UnitCubeMesh"
+print("Plotting a UnitCubeMesh")
 plot(mesh, title="Unit cube")
 
 mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
-print "Plotting a BoxMesh"
+print("Plotting a BoxMesh")
 plot(mesh, title="Box")
 
 interactive()

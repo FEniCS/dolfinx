@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import unittest
 import numpy as np
 from dolfin import *
@@ -310,7 +311,7 @@ class DofMapTest(unittest.TestCase):
             self.assertTrue(owner in neighbours)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN DofMap operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN DofMap operations")
+    print("------------------------------------------------")
     unittest.main()

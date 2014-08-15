@@ -20,6 +20,7 @@
 # First added:  2011-11-10
 # Last changed: 2011-11-10
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -89,7 +90,7 @@ class Solving(unittest.TestCase):
         # FIXME: Include more tests for this versatile function
 
 if __name__ == "__main__":
-    print ""
-    print "Testing the solve function"
-    print "--------------------------"
+    print("")
+    print("Testing the solve function")
+    print("--------------------------")
     unittest.main()

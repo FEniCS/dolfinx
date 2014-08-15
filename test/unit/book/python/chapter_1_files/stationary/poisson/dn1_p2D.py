@@ -9,6 +9,7 @@ u = u0 on x=0 and x=1.
 u0 = u = 1 + x^2 + 2y^2, f = -6, g = -4y.
 """
 
+from __future__ import print_function
 from dolfin import *
 import numpy
 
@@ -42,28 +43,28 @@ solve(a == L, u, bc)
 
 #plot(u)
 
-print """
+print("""
 Solution of the Poisson problem -Laplace(u) = f,
 with u = u0 on x=0,1 and -du/dn = g at y=0,1.
 %s
-""" % mesh
+""" % mesh)
 
 # Dump solution to the screen
 u_nodal_values = u.vector()
 u_array = u_nodal_values.array()
 coor = mesh.coordinates()
 for i in range(len(u_array)):
-    print 'u(%8g,%8g) = %g' % (coor[i][0], coor[i][1], u_array[i])
+    print('u(%8g,%8g) = %g' % (coor[i][0], coor[i][1], u_array[i]))
 
 
 # Verification
 u_e = interpolate(u0, V)
 u_e_array = u_e.vector().array()
-print 'Max error:', numpy.abs(u_e_array - u_array).max()
+print('Max error:', numpy.abs(u_e_array - u_array).max())
 
 # Compare numerical and exact solution
 center = (0.5, 0.5)
-print 'numerical u at the center point:', u(center)
-print 'exact     u at the center point:', u0(center)
+print('numerical u at the center point:', u(center))
+print('exact     u at the center point:', u0(center))
 
 #interactive()

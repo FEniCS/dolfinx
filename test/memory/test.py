@@ -25,16 +25,17 @@
 # First added:  2008-04-08
 # Last changed: 2009-05-19
 
+from __future__ import print_function
 import sys, os, re
 import platform
 from instant import get_status_output
 
 if "--only-python" in sys.argv:
-    print "Skipping C++ only memory tests"
+    print("Skipping C++ only memory tests")
     sys.exit()
 
 if platform.system() in ['Darwin', 'Windows']:
-    print "No support for Valgrind on this platform."
+    print("No support for Valgrind on this platform.")
     sys.exit(0)
 
 # Demos to run
@@ -74,7 +75,7 @@ os.putenv('G_SLICE','always-malloc')
 os.putenv('GLIBCXX_FORCE_NEW','1')
 os.putenv('G_DEBUG','gc-friendly')
 
-print pythontests
+print(pythontests)
 
 # Demos that need command line arguments are treated seperately
 cppdemos.remove('./../../demo/undocumented/quadrature/cpp')
@@ -98,11 +99,11 @@ vg_comm = 'valgrind --error-exitcode=9 --tool=memcheck --leak-check=full --show-
 def run_and_analyse(path, run_str, prog_type, no_reachable_check = False):
     output = get_status_output("cd %s && %s %s" % (path, vg_comm, run_str))
     if "No such file or directory" in "".join([str(l) for l in output]):
-        print "*** FAILED: Unable to run demo"
+        print("*** FAILED: Unable to run demo")
         return [(demo, "C++", output[1])]
 
     if len(re.findall('All heap blocks were freed',output[1])) == 1:
-        print "OK"
+        print("OK")
         return []
 
     if "LEAK SUMMARY:" in output[1] and "ERROR SUMMARY:" in output[1]:
@@ -110,29 +111,29 @@ def run_and_analyse(path, run_str, prog_type, no_reachable_check = False):
            re_pos_lost.search(output[1]) and \
            re_error.search(output[1]) and \
            (no_reachable_check or re_reachable.search(output[1])):
-            print "OK"
+            print("OK")
             return []
 
-    print "*** FAILED: Memory error"
+    print("*** FAILED: Memory error")
     return [(path, prog_type, output[1])]
 
 failed = []
 
 # Run C++ unittests
-print "----------------------------------------------------------------------"
-print "Running Valgrind on all C++ unittests"
-print ""
-print "Found %d C++ unittests" % len(cpptests)
-print ""
+print("----------------------------------------------------------------------")
+print("Running Valgrind on all C++ unittests")
+print("")
+print("Found %d C++ unittests" % len(cpptests))
+print("")
 
 for test_path in cpptests:
-    print "----------------------------------------------------------------------"
-    print "Running Valgrind on C++ unittest %s" % test_path
-    print ""
+    print("----------------------------------------------------------------------")
+    print("Running Valgrind on C++ unittest %s" % test_path)
+    print("")
     if os.path.isfile(os.path.join(test_path, 'test')):
         failed += run_and_analyse(test_path,"./test","C++")
     else:
-        print "*** Warning: missing test"
+        print("*** Warning: missing test")
 
 # Outcommenting the Python unittests due to troubles with valgrind suppresions
 #
@@ -153,27 +154,27 @@ for test_path in cpptests:
 #        print "*** Warning: missing test"
 
 # Run C++ demos
-print "----------------------------------------------------------------------"
-print "Running Valgrind on all demos (non-interactively)"
-print ""
-print "Found %d C++ demos" % len(cppdemos)
-print ""
+print("----------------------------------------------------------------------")
+print("Running Valgrind on all demos (non-interactively)")
+print("")
+print("Found %d C++ demos" % len(cppdemos))
+print("")
 
 for demo_path in cppdemos:
-    print "----------------------------------------------------------------------"
-    print "Running Valgrind on C++ demo %s" % demo_path
-    print ""
+    print("----------------------------------------------------------------------")
+    print("Running Valgrind on C++ demo %s" % demo_path)
+    print("")
     demo_name = "./" + demo_path.split("/")[-2] + "-demo"
-    print demo_name
+    print(demo_name)
     if os.path.isfile(os.path.join(demo_path, demo_name)):
         failed += run_and_analyse(demo_path, demo_name, "C++")
     else:
-        print "*** Warning: missing demo"
+        print("*** Warning: missing demo")
 
 # Print output for failed tests
-print ""
+print("")
 if len(failed) > 0:
-    print "%d demo(s) and/or unit test(s) failed memcheck, see memcheck.log for details." % len(failed)
+    print("%d demo(s) and/or unit test(s) failed memcheck, see memcheck.log for details." % len(failed))
     file = open("memcheck.log", "w")
     for (test, interface, output) in failed:
         file.write("----------------------------------------------------------------------\n")
@@ -183,7 +184,7 @@ if len(failed) > 0:
         file.write("\n")
         file.write("\n")
 else:
-    print "All demos and unit tests checked for memory leaks and errors: OK"
+    print("All demos and unit tests checked for memory leaks and errors: OK")
 
 # Return error code if tests failed
 sys.exit(len(failed) != 0)
