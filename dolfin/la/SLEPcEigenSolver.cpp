@@ -114,7 +114,7 @@ void SLEPcEigenSolver::solve(std::size_t n)
     EPSSetOperators(eps, _matA->mat(), _matB->mat());
   }
   else
-    EPSSetOperators(eps, _matA->mat(), PETSC_NULL);
+    EPSSetOperators(eps, _matA->mat(), NULL);
 
   // Set number of eigenpairs to compute
   dolfin_assert(n <= _matA->size(0));
@@ -140,11 +140,10 @@ void SLEPcEigenSolver::solve(std::size_t n)
   {
     KSP ksp;
     ST st;
-    EPSMonitorSet(eps, EPSMonitorAll, PETSC_NULL, PETSC_NULL);
-    EPSSetType(eps, EPSARPACK);
+    EPSMonitorSet(eps, EPSMonitorAll, NULL, NULL);
     EPSGetST(eps, &st);
     STGetKSP(st, &ksp);
-    KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
+    KSPMonitorSet(ksp, KSPMonitorDefault, NULL, NULL);
     EPSView(eps, PETSC_VIEWER_STDOUT_SELF);
   }
 

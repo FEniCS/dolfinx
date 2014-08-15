@@ -195,7 +195,7 @@ namespace dolfin
     // A map from named mesh array data to vector for dim
     std::vector<std::map<std::string, std::vector<std::size_t> > > _arrays;
 
-    // List of depcrecated named data
+    // List of deprecated named data
     std::vector<std::string> _deprecated_names;
 
   };

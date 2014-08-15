@@ -119,17 +119,11 @@ namespace dolfin
       Parameters p("nonlinear_variational_solver");
 
       p.add("symmetric", false);
-
-      // TODO: Remove in DOLFIN 1.5
-      p.add("reset_jacobian", false);
-
-      std::set<std::string> nonlinear_solvers;
-      nonlinear_solvers.insert("newton");
-      std::string default_nonlinear_solver = "newton";
-
       p.add("print_rhs", false);
       p.add("print_matrix", false);
 
+      std::set<std::string> nonlinear_solvers = {"newton"};
+      std::string default_nonlinear_solver = "newton";
       p.add(NewtonSolver::default_parameters());
 
       #ifdef ENABLE_PETSC_SNES

@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-03-23
-# Last changed: 2011-03-23
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -33,9 +33,11 @@ class Interface(unittest.TestCase):
     def test_name_argument(self):
         u = Function(W)
         v = Function(W, name="v")
+        g = Function(v, name="g")
         self.assertEqual(u.name(), "f_%d" % u.count())
         self.assertEqual(v.name(), "v")
         self.assertEqual(str(v), "v")
+        self.assertEqual(g.name(), "g")
 
     def test_in_function_space(self):
         u = Function(W)
@@ -295,31 +297,31 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_extrapolation(self):
         f0 = Function(V)
         self.assertRaises(RuntimeError, f0.__call__, (0., 0, -1))
 
-        if MPI.size(mpi_comm_world()) == 1:
-            mesh1 = UnitSquareMesh(3, 3)
-            V1 = FunctionSpace(mesh1, "CG", 1)
+        mesh1 = UnitSquareMesh(3, 3)
+        V1 = FunctionSpace(mesh1, "CG", 1)
 
-            parameters["allow_extrapolation"] = True
-            f1 = Function(V1)
-            f1.vector()[:] = 1.0
-            self.assertAlmostEqual(f1(0.,-1), 1.0)
+        parameters["allow_extrapolation"] = True
+        f1 = Function(V1)
+        f1.vector()[:] = 1.0
+        self.assertAlmostEqual(f1(0.,-1), 1.0)
 
-            mesh2 = UnitTriangleMesh()
-            V2 = FunctionSpace(mesh2, "CG", 1)
+        mesh2 = UnitTriangleMesh()
+        V2 = FunctionSpace(mesh2, "CG", 1)
 
-            parameters["allow_extrapolation"] = False
-            f2 = Function(V2)
-            self.assertRaises(RuntimeError, f2.__call__, (0.,-1.))
+        parameters["allow_extrapolation"] = False
+        f2 = Function(V2)
+        self.assertRaises(RuntimeError, f2.__call__, (0.,-1.))
 
-            parameters["allow_extrapolation"] = True
-            f3 = Function(V2)
-            f3.vector()[:] = 1.0
+        parameters["allow_extrapolation"] = True
+        f3 = Function(V2)
+        f3.vector()[:] = 1.0
 
-            self.assertAlmostEqual(f3(0.,-1), 1.0)
+        self.assertAlmostEqual(f3(0.,-1), 1.0)
 
     def test_interpolation_jit_rank1(self):
         f = Expression(("1.0", "1.0", "1.0"))
@@ -328,52 +330,14 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
-    def test_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
-        class Side0(SubDomain):
-            def inside(self, x, on_boundary):
-                return x[0] <= 0.55
 
-        class Side1(SubDomain):
-            def inside(self, x, on_boundary):
-                return x[0] >= 0.45
-
-        mesh = UnitSquareMesh(10,10)
-        dim = 2
-
-        sd0 = MeshFunctionSizet(mesh, dim)
-        sd1 = MeshFunctionSizet(mesh, dim)
-
-        Side0().mark(sd0, 1)
-        Side1().mark(sd1, 2)
-
-        r0 = Restriction(sd0, 1)
-        r1 = Restriction(sd1, 2)
-
-        Vt = FunctionSpace(mesh, "DG", 1)
-        V0 = FunctionSpace(r0, "CG", 1)
-        V1 = FunctionSpace(r1, "CG", 1)
-
-        ft = Function(Vt)
-        f0 = Function(V0)
-        f1 = Function(V1)
-
-        f0.interpolate(Expression("x[0]*x[0]"))
-        f1.interpolate(Expression("x[1]*x[1]"))
-        ft.interpolate(f0)
-        gt = project(f1+f0, Vt)
-
-        f0v = assemble(f0*dx(1, subdomain_data=sd0))
-        f1v = assemble(f1*dx(2, subdomain_data=sd1))
-        ftv = assemble(ft*dx(1, subdomain_data=sd0))
-        gtv = assemble(gt*dx)
-
-        self.assertAlmostEqual(f0v, ftv)
-        self.assertAlmostEqual(f0v+f1v, gtv)
-
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_interpolation_old(self):
+
         class F0(Expression):
             def eval(self, values, x):
                 values[0] = 1.0
+
         class F1(Expression):
             def eval(self, values, x):
                 values[0] = 1.0
@@ -381,21 +345,18 @@ class Interpolate(unittest.TestCase):
             def value_shape(self):
                 return (2,)
 
-        # Interpolation not working in parallel yet (need number of
-        # global vertices in tests)
-        if MPI.size(mpi_comm_world()) == 1:
-            # Scalar interpolation
-            f0 = F0()
-            f = Function(V)
-            f.interpolate(f0)
-            self.assertAlmostEqual(f.vector().norm("l1"), mesh.num_vertices())
+        # Scalar interpolation
+        f0 = F0()
+        f = Function(V)
+        f.interpolate(f0)
+        self.assertAlmostEqual(f.vector().norm("l1"), mesh.num_vertices())
 
-            # Vector interpolation
-            f1 = F1()
-            W = V * V
-            f = Function(W)
-            f.interpolate(f1)
-            self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())
+        # Vector interpolation
+        f1 = F1()
+        W = V * V
+        f = Function(W)
+        f.interpolate(f1)
+        self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())
 
 if __name__ == "__main__":
     unittest.main()

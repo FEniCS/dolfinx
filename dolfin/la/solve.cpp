@@ -23,7 +23,6 @@
 // Last changed: 2011-12-21
 
 #include <memory>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/Table.h>
@@ -243,14 +242,6 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
     return false;
     #endif
   }
-  else if (backend == "Epetra")
-  {
-    #ifdef HAS_TRILINOS
-    return true;
-    #else
-    return false;
-    #endif
-  }
   else if (backend == "STL")
     return true;
 
@@ -276,17 +267,12 @@ dolfin::linear_algebra_backends()
   std::vector<std::pair<std::string, std::string> > backends;
 
   std::map<std::string, std::string> default_backend
-    = boost::assign::map_list_of("uBLAS",  " (default)")
-                                ("Epetra", "")
-                                ("PETSc", "");
+    = { {"uBLAS",  " (default)"},  {"PETSc", ""} };
   #ifdef HAS_PETSC
   default_backend["uBLAS"] = "";
   default_backend["PETSc"] = " (default)";
   #else
-    #ifdef HAS_TRILINOS
-    default_backend["uBLAS"] = "";
-    default_backend["Epetra"] = " (default)";
-    #endif
+  default_backend["uBLAS"] = " (default)";
   #endif
 
   // Add available backends
@@ -304,11 +290,6 @@ dolfin::linear_algebra_backends()
   #ifdef HAS_PETSC_CUSP
   backends.push_back(std::make_pair("PETScCusp",
                                     "GPU-accelerated build of PETSc"));
-  #endif
-  #ifdef HAS_TRILINOS
-  backends.push_back(std::make_pair("Epetra",
-                                    "Powerful MPI parallel linear algebra"
-				    " library" + default_backend["Epetra"]));
   #endif
 
   return backends;

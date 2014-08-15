@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-29
-// Last changed: 2013-11-11
+// Last changed: 2014-08-11
 //
 // This demo illustrates the built-in mesh types.
 
@@ -53,12 +53,6 @@ int main()
   RectangleMesh rectangle_right_left(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left");
   info("Plotting a RectangleMesh");
   plot(rectangle_right_left, "Rectangle (right/left)");
-
-#ifdef HAS_CGAL
-  CircleMesh circle_rotsumn(Point(0.0, 0.0), 1.0, 1.0/20);
-  info("Plotting a CircleMesh");
-  plot(circle_rotsumn, "Unit circle");
-#endif
 
   UnitCubeMesh cube(10, 10, 10);
   info("Plotting a UnitCubeMesh");

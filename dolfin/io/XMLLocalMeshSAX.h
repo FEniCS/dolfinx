@@ -108,10 +108,10 @@ namespace dolfin
     // Number of local cells
     std::size_t num_local_cells() const;
 
-    // Geometrical mesh dimesion
+    // Geometrical mesh dimension
     std::size_t gdim;
 
-    // Topological mesh dimesion
+    // Topological mesh dimension
     std::size_t tdim;
 
     // Range for vertices

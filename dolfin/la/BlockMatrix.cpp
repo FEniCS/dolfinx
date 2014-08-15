@@ -129,7 +129,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
                  "Not implemented for block matrices");
   }
 
-  // Create tempory vector
+  // Create temporary vector
   dolfin_assert(matrices[0][0]);
 
   // Loop over block rows
@@ -165,7 +165,7 @@ std::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry) c
   {
     dolfin_error("BlockMatrix.cpp",
                  "compute Schur complement approximation",
-                 "Not implemented for unsymmetric matrix");
+                 "Not implemented for asymmetric matrix");
   }
 
   dolfin_assert(matrices.size()==2 && matrices[0].size()==2 && matrices[1].size()==2);

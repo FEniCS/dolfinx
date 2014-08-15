@@ -148,23 +148,6 @@ if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PARMETIS_LIBRARIES})
 endif()
 
-# CGAL
-if (DOLFIN_ENABLE_CGAL AND CGAL_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_CGAL")
-  list(APPEND DOLFIN_CXX_DEFINITIONS "${CGAL_DEFINITIONS}")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${CGAL_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CGAL_LIBRARIES})
-
-  # Add necessary CGAL flags (usually related to floating point)
-  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CGAL_CXX_FLAGS_INIT}")
-
-  # Add options that will allow valgrind to run
-  if (CGAL_DISABLE_ROUNDING_MATH_CHECK)
-    list(APPEND DOLFIN_CXX_DEFINITIONS "-DCGAL_DISABLE_ROUNDING_MATH_CHECK")
-  endif()
-
-endif()
-
 # ZLIB
 if (DOLFIN_ENABLE_ZLIB AND ZLIB_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_ZLIB")
@@ -392,10 +375,8 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
 
-# Set library location
-get_target_property(DOLFIN_LIBRARY_LOCATION dolfin LOCATION)
-get_filename_component(DOLFIN_LIBRARY_FILENAME ${DOLFIN_LIBRARY_LOCATION} NAME)
-set(DOLFIN_LIBRARY "${CMAKE_INSTALL_PREFIX}/${DOLFIN_LIB_DIR}/${DOLFIN_LIBRARY_FILENAME}")
+# Export targets
+export(TARGETS dolfin FILE ${CMAKE_BINARY_DIR}/dolfin/DOLFINTargets.cmake)
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
@@ -412,6 +393,7 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
 install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
+    ${CMAKE_BINARY_DIR}/dolfin/DOLFINTargets.cmake
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake

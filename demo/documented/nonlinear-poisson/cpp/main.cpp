@@ -68,11 +68,6 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  // Use Trilinos if available
-  #ifdef HAS_TRILINOS
-  parameters["linear_algebra_backend"] = "Epetra";
-  #endif
-
   // Create mesh and define function space
   UnitSquareMesh mesh(16, 16);
   NonlinearPoisson::FunctionSpace V(mesh);
@@ -88,7 +83,8 @@ int main()
 
   // Create residual form defining (nonlinear) variational problem
   NonlinearPoisson::LinearForm F(V);
-  F.u = u; F.f = f;
+  F.u = u;
+  F.f = f;
 
   // Create Jacobian form J = F' (for use in nonlinear solver).
   NonlinearPoisson::JacobianForm J(V, V);

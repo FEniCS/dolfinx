@@ -99,11 +99,8 @@ class FormTestsOverManifolds(unittest.TestCase):
                     assemble(inner(bu, bv)*dx).array().sum())
         self.assertAlmostEqual(a, b)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_assemble_bilinear_1D_2D(self):
-
-        # SubMesh not running in parallel
-        if MPI.size(self.square.mpi_comm()) > 1:
-            return
 
         V = FunctionSpace(self.square, 'CG', 1)
         u = TrialFunction(V)
@@ -138,11 +135,8 @@ class FormTestsOverManifolds(unittest.TestCase):
         # Should give same result
         self.assertAlmostEqual(bar, foo)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_assemble_bilinear_2D_3D(self):
-
-        # SubMesh not running in parallel
-        if MPI.size(self.cube.mpi_comm()) > 1:
-            return
 
         V = FunctionSpace(self.cube, 'CG', 1)
         u = TrialFunction(V)
@@ -181,6 +175,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         # Should give same result
         self.assertAlmostEqual(bar, foo)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class FormTestsOverFunnySpaces(unittest.TestCase):
 
     def setUp(self):
@@ -189,10 +184,6 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         n = 16
         plane = CompiledSubDomain("near(x[1], 1.0)")
         self.square = UnitSquareMesh(n, n)
-
-        # SubMesh not running in parallel
-        if MPI.size(self.square.mpi_comm()) > 1:
-            return
 
         self.square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), plane)
 
@@ -210,10 +201,6 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         self.W3 = self.RT3*self.DG3
 
     def test_basic_rt(self):
-
-        # SubMesh not running in parallel
-        if MPI.size(self.square.mpi_comm()) > 1:
-            return
 
         f2 = Expression(("2.0", "1.0"))
         f3 = Expression(("1.0", "0.0", "2.0"))
@@ -255,10 +242,6 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
 
     def test_mixed_poisson_solve(self):
 
-        # SubMesh not running in parallel
-        if MPI.size(self.square.mpi_comm()) > 1:
-            return
-
         f = Constant(1.0)
 
         # Solve mixed Poisson on standard unit square
@@ -281,6 +264,7 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         self.assertAlmostEqual(assemble(inner(w2, w2)*dx),
                                assemble(inner(w3, w3)*dx))
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
 
     def setUp(self):
@@ -289,10 +273,6 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         self.m = m
         self.cube = UnitCubeMesh(m, m, m)
         self.cube_boundary = BoundaryMesh(self.cube, "exterior")
-
-        # SubMesh not running in parallel
-        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
-            return
 
         plane = CompiledSubDomain("near(x[1], 0.0)")
         self.square = UnitSquareMesh(m, m)
@@ -306,10 +286,6 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
 
     def test_normals_2D_1D(self):
         "Testing assembly of normals for 1D meshes embedded in 2D"
-
-        # SubMesh not running in parallel
-        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
-            return
 
         n = FacetNormal(self.bottom1)
         a = inner(n, n)*ds
@@ -325,10 +301,6 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
     def test_normals_3D_1D(self):
         "Testing assembly of normals for 1D meshes embedded in 3D"
 
-        # SubMesh not running in parallel
-        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
-            return
-
         n = FacetNormal(self.bottom3)
         a = inner(n, n)*ds
         v1 = assemble(a)
@@ -343,10 +315,6 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
     def test_normals_3D_2D(self):
         "Testing assembly of normals for 2D meshes embedded in 3D"
 
-        # SubMesh not running in parallel
-        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
-            return
-
         n = FacetNormal(self.bottom2)
         a = inner(n, n)*ds
         v1 = assemble(a)
@@ -360,10 +328,6 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
 
     def test_cell_volume(self):
         "Testing assembly of volume for embedded meshes"
-
-        # SubMesh not running in parallel
-        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
-            return
 
         volume = CellVolume(self.bottom1)
         a = volume*dx
@@ -382,10 +346,6 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
 
     def test_circumradius(self):
         "Testing assembly of circumradius for embedded meshes"
-
-        # SubMesh not running in parallel
-        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
-            return
 
         r = Circumradius(self.bottom1)
         a = r*dx
@@ -409,10 +369,6 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
 
     def test_facetarea(self):
         "Testing assembly of facet area for embedded meshes"
-
-        # SubMesh not running in parallel
-        if MPI.size(self.cube_boundary.mpi_comm()) > 1:
-            return
 
         area = FacetArea(self.bottom1)
         a = area*ds

@@ -19,7 +19,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2010-05-26
-// Last changed: 2013-03-04
+// Last changed: 2014-07-04
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -29,8 +29,8 @@
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <memory>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -46,7 +46,6 @@ namespace dolfin
   class Cell;
   class GenericVector;
   class Mesh;
-  class Restriction;
   class SubDomain;
 
   /// This class provides a generic interface for dof maps
@@ -83,18 +82,13 @@ namespace dolfin
     /// Return number of facet dofs
     virtual std::size_t num_facet_dofs() const = 0;
 
-    /// Restriction if any. If the dofmap is not restricted, a null
-    /// pointer is returned.
-    virtual std::shared_ptr<const Restriction> restriction() const = 0;
-
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
     virtual std::pair<std::size_t, std::size_t> ownership_range() const = 0;
 
     /// Return map from nonlocal-dofs (that appear in local dof map)
     /// to owning process
-    virtual const boost::unordered_map<std::size_t, unsigned int>&
-      off_process_owner() const = 0;
+    virtual const std::vector<int>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
     virtual const std::vector<dolfin::la_index>&
@@ -138,7 +132,7 @@ namespace dolfin
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
     virtual std::shared_ptr<GenericDofMap>
-        collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
+        collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                  const Mesh& mesh) const = 0;
 
     /// Return list of global dof indices on this process
@@ -158,23 +152,38 @@ namespace dolfin
     virtual void set_x(GenericVector& x, double value, std::size_t component,
                        const Mesh& mesh) const = 0;
 
-    /// Return map from shared dofs to the processes (not including
+    /// Tabulate map between local (process) and global dof indices
+    virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;
+
+    /// Return global dof index corresponding to a given local index
+    virtual std::size_t local_to_global_index(int local_index) const = 0;
+
+    /// Return map from shared nodes to the processes (not including
     /// the current process) that share it.
-    virtual const boost::unordered_map<std::size_t,
-      std::vector<unsigned int> >& shared_dofs() const = 0;
+    virtual const std::unordered_map<int, std::vector<int> >&
+      shared_nodes() const = 0;
 
     /// Return set of processes that share dofs with the this process
-    virtual const std::set<std::size_t>& neighbours() const = 0;
+    virtual const std::set<int>& neighbours() const = 0;
+
+    /// Clear any data required to build sub-dofmaps (this is to
+    /// reduce memory use)
+    virtual void clear_sub_map_data() = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
 
-    /// Subdomain mapping constrained boundaries, e.g. periodic conditions
+    /// Subdomain mapping constrained boundaries, e.g. periodic
+    /// conditions
     std::shared_ptr<const SubDomain> constrained_domain;
 
     /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
     // ordered dofmap
     std::size_t block_size;
+
+    // FIXME
+    virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
+
 
   };
 

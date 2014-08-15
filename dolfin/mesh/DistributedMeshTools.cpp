@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2013 Garth N. Wells
+// Copyright (C) 2011-2014 Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -18,10 +18,14 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2011-09-17
-// Last changed: 2013-01-29
+// Last changed: 2014-07-02
+
+#include <boost/multi_array.hpp>
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/Timer.h"
+#include "dolfin/graph/Graph.h"
+#include "dolfin/graph/SCOTCH.h"
 #include "dolfin/log/log.h"
 #include "BoundaryMesh.h"
 #include "Facet.h"
@@ -100,7 +104,7 @@ std::size_t DistributedMeshTools::number_entities(
   {
     dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
-                 "Gloval vertex indices exist at input. Cannot be renumbered");
+                 "Global vertex indices exist at input. Cannot be renumbered");
   }
 
   // Check that we're not re-numbering cells (these are fixed at mesh
@@ -114,7 +118,7 @@ std::size_t DistributedMeshTools::number_entities(
     /*
     dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
-                 "Global cells indices exist at input. Cannot be renumbered");
+                 "Global cell indices exist at input. Cannot be renumbered");
     */
   }
 
@@ -139,7 +143,7 @@ std::size_t DistributedMeshTools::number_entities(
   // map. Exclude any slave entities.
   std::map<std::vector<std::size_t>, unsigned int> entities;
   std::pair<std::vector<std::size_t>, unsigned int> entity;
-  for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+  for (MeshEntityIterator e(mesh, d, "all"); !e.end(); ++e)
   {
     const std::size_t local_index = e->index();
     if (!exclude[local_index])
@@ -166,7 +170,7 @@ std::size_t DistributedMeshTools::number_entities(
   //       communicated to other processes)
   //  [1]: not owned but shared (will be numbered by another process, and number
   //       communicated to this processes)
-  boost::array<std::map<Entity, EntityData>, 2> entity_ownership;
+  std::array<std::map<Entity, EntityData>, 2> entity_ownership;
   std::vector<std::size_t> owned_entities;
   compute_entity_ownership(mpi_comm, entities, shared_vertices_local,
                            global_vertex_indices, d, owned_entities,
@@ -196,7 +200,7 @@ std::size_t DistributedMeshTools::number_entities(
 
   std::map<Entity, EntityData>::const_iterator it;
 
-  // Number exlusively owned entities
+  // Number exclusively owned entities
   for (std::size_t i = 0; i < owned_entities.size(); ++i)
     global_entity_indices[owned_entities[i]] = offset++;
 
@@ -499,7 +503,7 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
   return processes;
 }
 //-----------------------------------------------------------------------------
-boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
+std::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
   DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
   // MPI communicator
@@ -509,7 +513,7 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
   // Return empty set if running in serial
   if (MPI::size(mpi_comm) == 1)
   {
-    return boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >();
+    return std::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >();
   }
 
   // Initialize entities of dimension d
@@ -527,7 +531,7 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
     = mesh.topology().global_indices(d);
 
   // Global-to-local map for each process
-  boost::unordered_map<std::size_t, boost::unordered_map<std::size_t, std::size_t> > global_to_local;
+  std::unordered_map<std::size_t, std::unordered_map<std::size_t, std::size_t> > global_to_local;
 
   // Pack global indices for sending to sharing processes
   std::vector<std::vector<std::size_t> > send_indices(comm_size);
@@ -543,7 +547,7 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
     dolfin_assert(local_index < global_indices_map.size());
     std::size_t global_index = global_indices_map[local_index];
 
-    // Destinarion process
+    // Destination process
     const std::set<unsigned int>& sharing_processes = shared_entity->second;
 
     // Pack data for sending and build global-to-local map
@@ -565,7 +569,7 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
   send_indices.resize(comm_size);
 
   // Determine local entities indices for received global entity indices
-  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
+  std::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
     received_global_indices;
   for (std::size_t p = 0; p < recv_entities.size(); ++p)
   {
@@ -575,10 +579,10 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
     if (recv_entities[p].size() > 0)
     {
       // Get global-to-local map for neighbour process
-      boost::unordered_map<std::size_t, boost::unordered_map<std::size_t, std::size_t> >::const_iterator
+      std::unordered_map<std::size_t, std::unordered_map<std::size_t, std::size_t> >::const_iterator
         it = global_to_local.find(sending_proc);
       dolfin_assert(it != global_to_local.end());
-      const boost::unordered_map<std::size_t, std::size_t>&
+      const std::unordered_map<std::size_t, std::size_t>&
         neighbour_global_to_local = it->second;
 
       // Build vector of local indices
@@ -590,7 +594,7 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
         const std::size_t global_index = global_indices_recv[i];
 
         // Find local index corresponding to global index
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator
+        std::unordered_map<std::size_t, std::size_t>::const_iterator
           n_global_to_local = neighbour_global_to_local.find(global_index);
 
         dolfin_assert(n_global_to_local != neighbour_global_to_local.end());
@@ -603,11 +607,11 @@ boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned 
   MPI::all_to_all(mpi_comm, send_indices, recv_entities);
 
   // Build map
-  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
+  std::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
     shared_local_indices_map;
 
   // Loop over data received from each process
-  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
+  std::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
     received_local_indices;
   for (std::size_t p = 0; p < recv_entities.size(); ++p)
   {
@@ -644,7 +648,7 @@ void DistributedMeshTools::compute_entity_ownership(
   const std::vector<std::size_t>& global_vertex_indices,
   std::size_t d,
   std::vector<std::size_t>& owned_entities,
-  boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
+  std::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
   // Build global-to-local indices map for shared vertices
   std::map<std::size_t, std::set<unsigned int> > shared_vertices;
@@ -681,7 +685,7 @@ void DistributedMeshTools::compute_preliminary_entity_ownership(
   const std::map<std::size_t, std::set<unsigned int> >& shared_vertices,
   const std::map<Entity, unsigned int>& entities,
   std::vector<std::size_t>& owned_entities,
-  boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
+  std::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
   // Entities
   std::map<Entity, EntityData>& owned_shared_entities = shared_entities[0];
@@ -764,7 +768,7 @@ void DistributedMeshTools::compute_preliminary_entity_ownership(
 void DistributedMeshTools::compute_final_entity_ownership(
   const MPI_Comm mpi_comm,
   std::vector<std::size_t>& owned_entities,
-  boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
+  std::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
   // Entities ([entity vertices], index) to be numbered
   std::map<Entity, EntityData>& owned_shared_entities = shared_entities[0];
@@ -979,7 +983,7 @@ DistributedMeshTools::compute_num_global_entities(const MPI_Comm mpi_comm,
   // Compute offset
   const std::size_t offset
     = std::accumulate(num_entities_to_number.begin(),
-                      num_entities_to_number.begin() + process_number, 
+                      num_entities_to_number.begin() + process_number,
                       (std::size_t)0);
 
   // Compute number of global entities
@@ -998,65 +1002,98 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   // Initialize entities of dimension d
   mesh.init(D - 1);
 
-  // Build entity(vertex list)-to-local-vertex-index map
-  std::map<std::vector<std::size_t>, unsigned int> entities;
-  for (MeshEntityIterator e(mesh, D - 1); !e.end(); ++e)
-  {
-    std::vector<std::size_t> entity;
-    for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-      entity.push_back(vertex->global_index());
-    std::sort(entity.begin(), entity.end());
-    entities[entity] = e->index();
-  }
+  // Initialise local facet-cell connections. 
+  mesh.init(D - 1, D);  
 
-  // Get shared vertices (local index, [sharing processes])
-  const std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local
-                            = mesh.topology().shared_entities(0);
-  const std::vector<std::size_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+  // Global numbering
+  number_entities(mesh, D - 1);
 
-  // Compute ownership of entities ([entity vertices], data):
-  //  [0]: owned and shared (will be numbered by this process, and number
-  //       communicated to other processes)
-  //  [1]: not owned but shared (will be numbered by another process, and number
-  //       communicated to this processes)
-  std::vector<std::size_t> owned_entities;
-  boost::array<std::map<Entity, EntityData>, 2> entity_ownership;
-  compute_entity_ownership(mesh.mpi_comm(), entities, shared_vertices_local,
-                           global_vertex_indices, D - 1, owned_entities,
-                           entity_ownership);
-
-  // Split ownership for convenience
-  const std::map<Entity, EntityData>& owned_shared_entities
-    = entity_ownership[0];
-  const std::map<Entity, EntityData>& unowned_shared_entities
-    = entity_ownership[1];
+  // Calculate the number of global cells attached to each facet
+  // essentially defining the exterior surface
+  // FIXME: should this be done earlier, e.g. at partitioning stage
+  // when dual graph is built?
 
   // Create vector to hold number of cells connected to each
-  // facet. Assume facet is internal, then modify for external facets.
-  std::vector<unsigned int> num_global_neighbors(mesh.num_facets(), 2);
+  // facet. Initially copy over from local values.
+  std::vector<unsigned int> num_global_neighbors(mesh.num_facets());
 
-  // Add facets that are locally connected to one cell only
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  std::map<unsigned int, std::set<unsigned int> >& shared_facets
+    = mesh.topology().shared_entities(D - 1);
+
+  // Check if no ghost cells
+  if (mesh.topology().ghost_offset(D) == mesh.topology().size(D))
   {
-    if (facet->num_entities(D) == 1)
-      num_global_neighbors[facet->index()] = 1;
+    // Copy local values
+    for (FacetIterator f(mesh); !f.end(); ++f)
+      num_global_neighbors[f->index()] = f->num_entities(D);
+    
+    // All shared facets must have two cells, if no ghost cells
+    for (auto f_it = shared_facets.begin(); 
+             f_it != shared_facets.end(); ++f_it)
+      num_global_neighbors[f_it->first] = 2;
   }
-
-  // Handle facets on internal partition boundaries
-  std::map<Entity, EntityData>::const_iterator it;
-
-  for (it = owned_shared_entities.begin();
-       it != owned_shared_entities.end(); ++it)
+  else
   {
-    num_global_neighbors[entities.find(it->first)->second] = 2;
-  }
+    // With ghost cells, shared facets may be on an external edge,
+    // so need to check connectivity with the cell owner.
 
-  for (it = unowned_shared_entities.begin();
-       it != unowned_shared_entities.end(); ++it)
-  {
-    num_global_neighbors[entities.find(it->first)->second] = 2;
+    const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
+    std::vector<std::vector<std::size_t> > send_facet(mpi_size);
+    std::vector<std::vector<std::size_t> > recv_facet(mpi_size);
+    
+    // Map shared facets 
+    std::map<std::size_t, std::size_t> global_to_local_facet;
+    
+    for (MeshEntityIterator f(mesh, D - 1, "all"); !f.end(); ++f)
+    {
+      // Insert shared facets into mapping
+      if (f->is_shared())
+        global_to_local_facet.insert(std::make_pair(f->global_index(),
+                                                    f->index()));
+      // Copy local values
+      const std::size_t n_cells = f->num_entities(D);
+      num_global_neighbors[f->index()] = n_cells;
+      
+      if (f->is_ghost() && n_cells == 1)
+      {
+        // Singly attached ghost facet - check with owner of attached cell
+        const Cell c(mesh, f->entities(D)[0]);
+        dolfin_assert(c.is_ghost());
+        send_facet[c.owner()].push_back(f->global_index());
+      }
+    }
+    
+    MPI::all_to_all(mesh.mpi_comm(), send_facet, recv_facet);
+    
+    // Convert received global facet index into number of attached
+    // cells and return to sender
+    std::vector<std::vector<std::size_t> > send_response(mpi_size);  
+    for (unsigned int p = 0; p != mpi_size; ++p)
+    {
+      for (auto r = recv_facet[p].begin(); r != recv_facet[p].end(); ++r)
+      {
+        auto map_it = global_to_local_facet.find(*r);
+        dolfin_assert(map_it != global_to_local_facet.end());
+        const Facet local_facet(mesh, map_it->second);
+        const std::size_t n_cells = local_facet.num_entities(D);
+        send_response[p].push_back(n_cells);
+      }
+    }
+    
+    MPI::all_to_all(mesh.mpi_comm(), send_response, recv_facet);
+    
+    // Insert received result into same facet that it came from
+    for (unsigned int p = 0; p != mpi_size; ++p)
+    {
+      for (unsigned int i = 0; i != recv_facet[p].size(); ++i)
+      {
+        auto f_it = global_to_local_facet.find(send_facet[p][i]);
+        dolfin_assert(f_it != global_to_local_facet.end());
+        num_global_neighbors[f_it->second] = recv_facet[p][i];
+      }
+    }
   }
-  mesh.topology()(D - 1, mesh.topology().dim()).set_global_size(num_global_neighbors);
+  
+  mesh.topology()(D - 1, D).set_global_size(num_global_neighbors);
 }
 //-----------------------------------------------------------------------------

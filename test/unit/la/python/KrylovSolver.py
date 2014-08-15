@@ -20,7 +20,7 @@
 # Modified by Anders Logg 2012
 #
 # First added:  2012-02-21
-# Last changed: 2012-08-27
+# Last changed: 2014-05-30
 
 import unittest
 from dolfin import *
@@ -59,22 +59,15 @@ if has_linear_algebra_backend("PETSc"):
             # Get solution vector
             #x_petsc = as_backend_type(x)
 
-            #for prec, descr in krylov_solver_preconditioners():
-            #    if MPI.size(mesh.mpi_comm()) > 1 and prec in ["ilu", "icc", "jacobi", "hypre_amg"]:
-            #        print "FIXME: Preconditioner '%s' does not work in parallel,"\
-            #              " skipping" % prec
-            #        continue
+            # With simple interface
+            #solver = PETScKrylovSolver("gmres", prec)
+            #solver.solve(A, x_petsc, as_backend_type(b))
+            #self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
-                # With simple interface
-                #solver = PETScKrylovSolver("gmres", prec)
-                #solver.solve(A, x_petsc, as_backend_type(b))
-                #self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
-
-
-                # With PETScPreconditioner interface
-                #solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
-                #solver.solve(A, x_petsc, as_backend_type(b))
-                #self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
+            # With PETScPreconditioner interface
+            #solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
+            #solver.solve(A, x_petsc, as_backend_type(b))
+            #self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
 if __name__ == "__main__":
 

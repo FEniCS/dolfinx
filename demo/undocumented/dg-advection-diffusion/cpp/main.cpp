@@ -52,6 +52,9 @@ class DirichletBoundary : public SubDomain
 
 int main(int argc, char *argv[])
 {
+  // FIXME: Make mesh ghosted
+  parameters["ghost_mode"] = "shared_facet";
+
   // Read simple velocity field (-1.0, -0.4) defined on a 64x64 unit square
   // mesh and a quadratic vector Lagrange element
 

@@ -308,7 +308,7 @@ ExodusFile::create_vtk_mesh(const Mesh& mesh) const
   vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
     vtkSmartPointer<vtkUnstructuredGrid>::New();
 
-  // Toplogical dimension of mesh
+  // Topological dimension of mesh
   const std::size_t D = mesh.topology().dim();
 
   // Set the points

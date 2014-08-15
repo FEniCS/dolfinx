@@ -19,8 +19,11 @@
 // First Added: 2013-01-02
 // Last Changed: 2013-01-17
 
+#ifndef __PARALLEL_REFINEMENT_H
+#define __PARALLEL_REFINEMENT_H
+
+#include <unordered_map>
 #include <vector>
-#include <boost/unordered_map.hpp>
 
 namespace dolfin
 {
@@ -88,7 +91,7 @@ namespace dolfin
     const Mesh& _mesh;
 
     // Shared edges between processes. In 2D, vector size is 1
-    boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int,
+    std::unordered_map<unsigned int, std::vector<std::pair<unsigned int,
       unsigned int> > > shared_edges;
 
     // Mapping from old local edge index to new global vertex, needed
@@ -112,3 +115,5 @@ namespace dolfin
   };
 
 }
+
+#endif

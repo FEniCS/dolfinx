@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "3")
+set(DOLFIN_VERSION_MINOR "4")
 set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
@@ -36,6 +36,9 @@ endif()
 if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
   cmake_policy(SET CMP0004 OLD)
+  if(POLICY CMP0042)
+    cmake_policy(SET CMP0042 NEW)
+  endif()
 endif()
 
 # Set location of our FindFoo.cmake modules
@@ -83,7 +86,6 @@ list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
@@ -107,7 +109,7 @@ endif()
 #------------------------------------------------------------------------------
 # Package-specific options
 
-option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
+# None at the moment
 
 #------------------------------------------------------------------------------
 # Compiler flags
@@ -129,6 +131,19 @@ endif()
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+endif()
+
+# Workaround https://bugs.launchpad.net/ubuntu/+source/gcc-4.6/+bug/1352356
+# NOTE: Remove this block when bug is fixed upstream or GCC 4.6 support is dropped
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if (NOT DEFINED CMAKE_CXX_COMPILER_VERSION)
+    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+                    OUTPUT_VARIABLE CMAKE_CXX_COMPILER_VERSION)
+  endif()
+  if ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" AND
+      "${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER "4.5.99")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
+  endif()
 endif()
 
 if (CYGWIN OR (WIN32 AND UNIX))
@@ -269,7 +284,7 @@ endif()
 # Run tests to find required packages
 
 # Check for Boost
-set(BOOST_ROOT $ENV{BOOST_DIR})
+set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
 if (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
@@ -286,10 +301,10 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 1.3.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.4.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.3.0.\n"
+    "compatible with requested version 1.4.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -506,12 +521,6 @@ if (DOLFIN_ENABLE_TRILINOS)
   endif()
 endif()
 
-
-# Check for CGAL
-if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL 4.1)
-endif()
-
 # Check for zlib
 if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
@@ -546,7 +555,7 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.2")
@@ -556,6 +565,15 @@ if (DOLFIN_ENABLE_VTK)
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
   endif()
+endif()
+
+#------------------------------------------------------------------------------
+# Set size of dolfin::la_index
+
+if (PETSC_FOUND)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=${PETSC_INT_SIZE}")
+else()
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=4")
 endif()
 
 #------------------------------------------------------------------------------
@@ -973,10 +991,10 @@ if (CPPUNIT_FOUND)
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
-  # Add target "test" for building tests
-  add_custom_target(test
-    COMMAND ${MAKE_PROGRAM}
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
+  # Add target "tests" for building tests
+  add_custom_target(tests
+                    COMMAND ${MAKE_PROGRAM}
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 
 if (DOLFIN_ENABLE_TESTING)

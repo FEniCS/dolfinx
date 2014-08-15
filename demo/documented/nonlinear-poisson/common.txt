@@ -45,7 +45,7 @@ defined as follows:
 
 .. math::
 
-	 F(u;v) = \int_\Omega (1 + u^2)\cdot\nabla(u)\cdot \nabla(v) - f v \,{\rm dx} = 0.
+	 F(u;v) = \int_\Omega (1 + u^2)\cdot\nabla u \cdot \nabla v - f v \,{\rm dx} = 0.
 
 To solve the nonlinear system :math:`b(U) = 0` by Newton's method we
 compute the Jacobian :math:`A = b'`, where :math:`U` is the
@@ -61,7 +61,7 @@ Linearizing the semilinear form :math:`F` around :math:`u = u_h`, we obtain
 
 .. math::
 
-	F'(u_h;\delta u,v) = \int_\Omega [(\delta u\nabla u_h)\cdot\nabla v + ((1+u_h)\nabla\delta u)\nabla v] \,{\rm dx}
+	F'(u_h;\delta u,v) = \int_\Omega [(2 \delta u\nabla u_h)\cdot\nabla v + ((1+u_h^2)\nabla\delta u)\nabla v] \,{\rm dx}
 
 We note that for each fixed :math:`u_h`, :math:`a = F'(u_h;\,\cdot\,,\,\cdot\,)` is a bilinear form and :math:`L = F(u_h;\,\cdot\,,\,\cdot\,)` is a linear form. In each Newton iteration, we thus solve a linear variational problem of the canonical form:
 find :math:`\delta u \in V_{h,0}` such that
@@ -69,7 +69,7 @@ find :math:`\delta u \in V_{h,0}` such that
 .. math::
 
 
-	F'(u_h;\delta u,v) = F(u_h;v)\quad\forall\,v\in\hat{V}_h.
+	F'(u_h;\delta u,v) = -F(u_h;v)\quad\forall\,v\in\hat{V}_h.
 
 
 In this demo, we shall consider the following definitions of the input function, the domain, and the boundaries:
@@ -78,6 +78,3 @@ In this demo, we shall consider the following definitions of the input function,
 * :math:`\Gamma_{D} = \{(1, y) \subset \partial \Omega\}\,\,\,` (Dirichlet boundary)
 * :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \cup (0, y) \subset \partial \Omega\}\,\,\,` (Neumann boundary)
 * :math:`f(x, y) = x\sin(y)\,\,\,` (source term)
-
-
-

@@ -129,7 +129,6 @@ int main()
 {
   // Add backends supporting the LinearOperator interface
   backends.push_back("PETSc");
-  backends.push_back("Epetra");
   backends.push_back("uBLAS");
 
   DOLFIN_TEST;

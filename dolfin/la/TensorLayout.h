@@ -91,6 +91,8 @@ namespace dolfin
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
+    std::vector<std::vector<std::size_t>> local_to_global_map;
+
   private:
 
     // MPI communicator

@@ -30,7 +30,7 @@ namespace dolfin
 
   /// This is a set-like data structure. It is not ordered and it is based
   /// a std::vector. It uses linear search, and can be faster than std::set
-  // and boost::unordered_set in some cases.
+  // and std::unordered_set in some cases.
 
   template<typename T>
   class Set
@@ -43,7 +43,7 @@ namespace dolfin
     /// Create empty set
     Set() {}
 
-    /// Wrap std::vectpr as a set. Contents will be erased.
+    /// Wrap std::vector as a set. Contents will be erased.
     Set(std::vector<T>& x) : _x(x)
     { _x.clear(); }
 

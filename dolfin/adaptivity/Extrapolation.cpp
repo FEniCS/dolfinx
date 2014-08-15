@@ -29,8 +29,8 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/BasisFunction.h>
-#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
@@ -210,7 +210,7 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
                                   const Function& v,
                                   std::map<std::size_t, std::size_t>& dof2row)
 {
-  // Extract coefficents for v on patch cell
+  // Extract coefficients for v on patch cell
   dolfin_assert(V.element());
   std::vector<double> dof_values(V.element()->space_dimension());
   v.restrict(&dof_values[0], *V.element(), cell1, vertex_coordinates1.data(),

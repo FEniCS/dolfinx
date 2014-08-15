@@ -24,17 +24,6 @@ First, the :py:mod:`dolfin` module is imported:
 
     from dolfin import *
 
-
-The actual CG and ILU implementations that are brought into action
-depend on the choice of linear algebra package.  If the linear algebra
-package Epetra (Trilinos) is available we set the backend to Epetra,
-which is used later by the Newton solver.
-
-.. code-block:: python
-
-	if has_linear_algebra_backend("Epetra"):
-		parameters["linear_algebra_backend"] = "Epetra"
-
 Next, we want to consider the Dirichlet boundary condition. A simple
 Python function, returning a boolean, can be used to define the
 subdomain for the Dirichlet boundary condition (:math:`\Gamma_D`). The

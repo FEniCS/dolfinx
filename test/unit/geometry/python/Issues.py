@@ -18,12 +18,13 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-12-09
-# Last changed: 2013-12-09
+# Last changed: 2014-05-30
 
 import unittest
 
 from dolfin import *
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class Issues(unittest.TestCase):
 
     def test_issue_97(self):
@@ -32,10 +33,6 @@ class Issues(unittest.TestCase):
         N = 2
         L = 1000
         mesh = BoxMesh(0, 0, 0, L, L, L, N, N, N)
-
-        if MPI.size(mesh.mpi_comm()) > 1:
-            return
-
         V = FunctionSpace(mesh, 'CG', 1)
         v = interpolate(Expression('x[0]'), V)
         x = Point(0.5*L, 0.5*L, 0.5*L)
@@ -45,8 +42,6 @@ class Issues(unittest.TestCase):
         "Test from Torsten Wendav (issue #168)"
 
         mesh = UnitCubeMesh(14, 14, 14)
-        if MPI.size(mesh.mpi_comm()) > 1:
-            return
         V = FunctionSpace(mesh, "Lagrange", 1)
         v = Function(V)
         x = (0.75, 0.25, 0.125)

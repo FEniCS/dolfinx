@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,7 @@
 // Modified by Ola Skavhaug, 2007-2009
 // Modified by Kent-Andre Mardal, 2008
 // Modified by Johannes Ring, 2012
-//
-// First added:  2007-01-17
-// Last changed: 2013-09-19
+// Modified by Martin Alnaes, 2014
 
 #include <memory>
 
@@ -67,7 +65,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 
     // Get dimensions
     std::vector<std::size_t> global_dimensions;
-    std::vector<std::pair<std::size_t, std::size_t> > local_range;
+    std::vector<std::pair<std::size_t, std::size_t>> local_range;
     std::vector<std::size_t> block_sizes;
     for (std::size_t i = 0; i < a.rank(); i++)
     {
@@ -88,6 +86,27 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     // Initialise tensor layout
     tensor_layout->init(a.mesh().mpi_comm(), global_dimensions, block_size,
                         local_range);
+
+    if (a.rank() > 0)
+    {
+      tensor_layout->local_to_global_map.resize(a.rank());
+      for (std::size_t i = 0; i < a.rank(); ++i)
+      {
+        const std::size_t bs = dofmaps[i]->block_size;
+        const std::size_t local_size
+          = local_range[i].second - local_range[i].first;
+        const std::vector<std::size_t>& local_to_global_unowned
+          = dofmaps[i]->local_to_global_unowned();
+        tensor_layout->local_to_global_map[i].resize(local_size
+                                                  + bs*local_to_global_unowned.size());
+        for (std::size_t j = 0;
+             j < tensor_layout->local_to_global_map[i].size(); ++j)
+        {
+          tensor_layout->local_to_global_map[i][j]
+            = dofmaps[i]->local_to_global_index(j);
+        }
+      }
+    }
 
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
@@ -141,7 +160,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       {
         dolfin_error("AssemblerBase.cpp",
                      "assemble form",
-                     "Reset of tensor in assembly not requested, but dim %d of tensor does not match form", i);
+                     "Dim %d of tensor does not match form", i);
       }
     }
   }
@@ -159,7 +178,7 @@ void AssemblerBase::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<std::shared_ptr<const GenericFunction> >
+  const std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients
@@ -183,9 +202,11 @@ void AssemblerBase::check(const Form& a)
     }
 
     // unique_ptr deletes its object when it exits its scope
-    std::unique_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
+    std::unique_ptr<ufc::finite_element>
+      fe(a.ufc_form()->create_finite_element(i + a.rank()));
 
-    // Checks out-commented since they only work for Functions, not Expressions
+    // Checks out-commented since they only work for Functions, not
+    // Expressions
     const std::size_t r = coefficients[i]->value_rank();
     const std::size_t fe_r = fe->value_rank();
     if (fe_r != r)
@@ -213,21 +234,25 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   // Check that the cell dimension matches the mesh dimension
   if (a.rank() + a.ufc_form()->num_coefficients() > 0)
   {
-    std::unique_ptr<ufc::finite_element> element(a.ufc_form()->create_finite_element(0));
+    std::unique_ptr<ufc::finite_element>
+      element(a.ufc_form()->create_finite_element(0));
     dolfin_assert(element);
-    if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
+    if (mesh.type().cell_type() == CellType::interval && element->cell_shape()
+        != ufc::interval)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (intervals) does not match cell type of form");
     }
-    if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
+    if (mesh.type().cell_type() == CellType::triangle && element->cell_shape()
+        != ufc::triangle)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (triangles) does not match cell type of form");
     }
-    if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
+    if (mesh.type().cell_type() == CellType::tetrahedron
+        && element->cell_shape() != ufc::tetrahedron)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",

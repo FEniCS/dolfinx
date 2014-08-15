@@ -18,18 +18,17 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-18
-# Last changed: 2014-02-17
+# Last changed: 2014-05-30
 
 import unittest
 import numpy
 
 from dolfin import *
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class IntervalTest(unittest.TestCase):
 
     def test_distance(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         mesh = UnitIntervalMesh(1)
         cell = Cell(mesh, 0)
@@ -37,11 +36,10 @@ class IntervalTest(unittest.TestCase):
         self.assertAlmostEqual(cell.distance(Point(-1.0)), 1.0)
         self.assertAlmostEqual(cell.distance(Point(0.5)), 0.0)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TriangleTest(unittest.TestCase):
 
     def test_distance(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         mesh = UnitSquareMesh(1, 1)
         cell = Cell(mesh, 1)
@@ -50,11 +48,10 @@ class TriangleTest(unittest.TestCase):
         self.assertAlmostEqual(cell.distance(Point(-1.0, 0.5)), 1)
         self.assertAlmostEqual(cell.distance(Point(0.5, 0.5)), 0.0)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TetrahedronTest(unittest.TestCase):
 
     def test_distance(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
 
         mesh = UnitCubeMesh(1, 1, 1)
         cell = Cell(mesh, 5)
@@ -66,4 +63,3 @@ class TetrahedronTest(unittest.TestCase):
 
 if __name__ == "__main__":
         unittest.main()
-

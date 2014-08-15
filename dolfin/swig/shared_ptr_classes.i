@@ -24,7 +24,7 @@
 // Modified by Andre Massing, 2013.
 //
 // First added:  2007-11-25
-// Last changed: 2013-10-30
+// Last changed: 2014-08-11
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -72,7 +72,7 @@
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
 %shared_ptr(dolfin::GenericDofMap)
 %shared_ptr(dolfin::DofMap)
-%shared_ptr(dolfin::CCFEMDofMap)
+%shared_ptr(dolfin::MultiMeshDofMap)
 %shared_ptr(dolfin::Form)
 %shared_ptr(dolfin::FiniteElement)
 %shared_ptr(dolfin::BasisFunction)
@@ -101,6 +101,8 @@
 %shared_ptr(dolfin::FacetArea)
 %shared_ptr(dolfin::Constant)
 %shared_ptr(dolfin::MeshCoordinates)
+%shared_ptr(dolfin::MultiMeshFunctionSpace)
+%shared_ptr(dolfin::MultiMeshSubSpace)
 
 // geometry
 %shared_ptr(dolfin::BoundingBoxTree)
@@ -108,12 +110,8 @@
 // mesh
 %shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
 %shared_ptr(dolfin::BoundaryMesh)
-%shared_ptr(dolfin::CircleMesh)
-%shared_ptr(dolfin::EllipseMesh)
-%shared_ptr(dolfin::EllipsoidMesh)
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::Restriction)
-%shared_ptr(dolfin::SphereMesh)
 %shared_ptr(dolfin::SubMesh)
 %shared_ptr(dolfin::UnitTetrahedronMesh)
 %shared_ptr(dolfin::UnitCubeMesh)
@@ -125,31 +123,9 @@
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
 %shared_ptr(dolfin::Rectangle)
-
- //csg
-%shared_ptr(dolfin::CSGGeometry)
-%shared_ptr(dolfin::CSGOperator)
-%shared_ptr(dolfin::CSGUnion)
-%shared_ptr(dolfin::CSGDifference)
-%shared_ptr(dolfin::CSGIntersection)
-%shared_ptr(dolfin::CSGPrimitive)
-%shared_ptr(dolfin::CSGPrimitive2D)
-%shared_ptr(dolfin::CSGPrimitive3D)
-%shared_ptr(dolfin::Circle)
-%shared_ptr(dolfin::Ellipse)
-%shared_ptr(dolfin::Polygon)
-%shared_ptr(dolfin::Sphere)
-%shared_ptr(dolfin::Cone)
-%shared_ptr(dolfin::Cylinder)
-%shared_ptr(dolfin::Tetrahedron)
-%shared_ptr(dolfin::Surface3D)
-%shared_ptr(dolfin::CSGCGALMeshGenerator2D)
-%shared_ptr(dolfin::CSGCGALMeshGenerator3D)
-
+%shared_ptr(dolfin::MultiMesh)
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)
-
-// mesh
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
 
@@ -201,15 +177,6 @@
 
 #ifdef HAS_SLEPC
 %shared_ptr(dolfin::SLEPcEigenSolver)
-#endif
-
-#ifdef HAS_TRILINOS
-%shared_ptr(dolfin::EpetraKrylovSolver)
-%shared_ptr(dolfin::EpetraLUSolver)
-%shared_ptr(dolfin::EpetraMatrix)
-%shared_ptr(dolfin::EpetraSparsityPattern)
-%shared_ptr(dolfin::EpetraVector)
-%shared_ptr(dolfin::TrilinosPreconditioner)
 #endif
 
 #ifdef HAS_PASTIX

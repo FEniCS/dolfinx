@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2007-05-24
-// Last changed: 2012-11-12
+// Last changed: 2014-08-12
 //
 // Unit tests for the function library
 
@@ -83,7 +83,6 @@ public:
                                  sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
                                  DOLFIN_EPS);
 
-    #ifdef HAS_CGAL
     if (dolfin::MPI::size(mesh.mpi_comm()) == 1)
     {
       // Test evaluation of a discrete function
@@ -99,7 +98,6 @@ public:
       g.eval(u1, x);
       CPPUNIT_ASSERT(std::abs(u0[0]-u1[0]) < tol);
     }
-    #endif
   }
 };
 

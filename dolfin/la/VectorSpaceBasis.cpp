@@ -41,7 +41,7 @@ bool VectorSpaceBasis::is_orthonormal() const
       dolfin_assert(_basis[j]);
       const double delta_ij = (i == j) ? 1.0 : 0.0;
       const double dot_ij = _basis[i]->inner(*_basis[j]);
-      if (abs(delta_ij - dot_ij) > DOLFIN_EPS)
+      if (std::abs(delta_ij - dot_ij) > DOLFIN_EPS)
         return false;
     }
   }
@@ -60,7 +60,7 @@ bool VectorSpaceBasis::is_orthogonal() const
       if (i != j)
       {
         const double dot_ij = _basis[i]->inner(*_basis[j]);
-        if (abs(dot_ij) > DOLFIN_EPS)
+        if (std::abs(dot_ij) > DOLFIN_EPS)
           return false;
       }
     }

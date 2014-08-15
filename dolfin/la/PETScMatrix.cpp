@@ -27,10 +27,9 @@
 
 #ifdef HAS_PETSC
 
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -46,9 +45,9 @@
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
-  = boost::assign::map_list_of("l1",        NORM_1)
-                              ("linf",      NORM_INFINITY)
-                              ("frobenius", NORM_FROBENIUS);
+= { {"l1",        NORM_1},
+    {"linf",      NORM_INFINITY},
+    {"frobenius", NORM_FROBENIUS} };
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(bool use_gpu) : PETScBaseMatrix(NULL),
@@ -114,7 +113,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   if (_matA)
   {
     #ifdef DOLFIN_DEPRECATION_ERROR
-    error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
+    error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
     #else
     warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error.");
     #endif
@@ -168,21 +167,56 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     ierr = MatSeqAIJSetPreallocation(_matA, 0, _num_nonzeros.data());
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSeqAIJSetPreallocation");
 
-    // Set column indices
-    /*
-    const std::vector<std::vector<std::size_t> > _column_indices
-        = sparsity_pattern.diagonal_pattern(SparsityPattern::sorted);
-    std::vector<int> column_indices;
-    column_indices.reserve(sparsity_pattern.num_nonzeros());
-    for (std::size_t i = 0; i < _column_indices.size(); ++i)
+    ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+    dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
+
+    // Block size
+    const std::size_t bs = tensor_layout.block_size;
+
+    // Set local-to-global mapping
+    std::vector<PetscInt> _map0, _map1;
+    if (tensor_layout.local_to_global_map[0].empty()
+        && tensor_layout.local_to_global_map[1].empty())
     {
-      //cout << "Row: " << i << endl;
-      //for (std::size_t j = 0; j < _column_indices[i].size(); ++j)
-      //  cout << "  Col: " << _column_indices[i][j] << endl;
-      column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
+      dolfin_assert(bs == 1);
+      _map0.resize(M);
+      _map1.resize(N);
+      for (std::size_t i = 0; i < M; ++i)
+        _map0[i] = i;
+      for (std::size_t i = 0; i < N; ++i)
+        _map1[i] = i;
     }
-    MatSeqAIJSetColumnIndices(_matA, &column_indices[0]);
-    */
+    else
+    {
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
+      _map0.assign(tensor_layout.local_to_global_map[0].begin(),
+                   tensor_layout.local_to_global_map[0].end());
+      _map1.assign(tensor_layout.local_to_global_map[1].begin(),
+                   tensor_layout.local_to_global_map[1].end());
+      #else
+      _map0 = std::vector<PetscInt>(tensor_layout.local_to_global_map[0].size()/bs);
+      _map1 = std::vector<PetscInt>(tensor_layout.local_to_global_map[1].size()/bs);
+      for (std::size_t i = 0; i < _map0.size(); ++i)
+        _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
+      for (std::size_t i = 0; i < _map1.size(); ++i)
+        _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
+      #endif
+    }
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map0.size(), _map0.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map1.size(), _map1.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
+    #else
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map0.size(), _map0.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map1.size(), _map1.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
+    #endif
+    MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
+                               petsc_local_to_global1);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   }
   else
   {
@@ -191,8 +225,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       not_working_in_parallel("Due to limitations in PETSc, "
                               "distributed PETSc Cusp matrices");
     }
-
-    // FIXME: Try using MatStashSetInitialSize to optimise performance
 
     // Get number of nonzeros for each row from sparsity pattern
     std::vector<std::size_t> num_nonzeros_diagonal;
@@ -228,6 +260,41 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     ierr = MatMPIAIJSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(),
                                      0, _num_nonzeros_off_diagonal.data());
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatMPIAIJSetPreallocation");
+
+
+    ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+    dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
+
+    std::vector<PetscInt> _map0, _map1;
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
+    _map0.assign(tensor_layout.local_to_global_map[0].begin(),
+                 tensor_layout.local_to_global_map[0].end());
+    _map1.assign(tensor_layout.local_to_global_map[1].begin(),
+                 tensor_layout.local_to_global_map[1].end());
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map0.size(), _map0.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map1.size(), _map1.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
+    #else
+    // Block size
+    const std::size_t bs = tensor_layout.block_size;
+
+    _map0.resize(tensor_layout.local_to_global_map[0].size()/bs);
+    _map1.resize(tensor_layout.local_to_global_map[1].size()/bs);
+    for (std::size_t i = 0; i < _map0.size(); ++i)
+      _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
+    for (std::size_t i = 0; i < _map1.size(); ++i)
+      _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map0.size(), _map0.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map1.size(), _map1.data(),
+                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
+    #endif
+
+    MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
+                               petsc_local_to_global1);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   }
 
   // Set some options
@@ -273,13 +340,34 @@ void PETScMatrix::set(const double* block,
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValues");
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::set_local(const double* block,
+                            std::size_t m, const dolfin::la_index* rows,
+                            std::size_t n, const dolfin::la_index* cols)
+{
+  dolfin_assert(_matA);
+  PetscErrorCode ierr = MatSetValuesLocal(_matA, m, rows, n, cols, block,
+                                          INSERT_VALUES);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::add(const double* block,
                       std::size_t m, const dolfin::la_index* rows,
                       std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(_matA);
-  PetscErrorCode ierr = MatSetValues(_matA, m, rows, n, cols, block, ADD_VALUES);
+  PetscErrorCode ierr = MatSetValues(_matA, m, rows, n, cols, block,
+                                     ADD_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValues");
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::add_local(const double* block,
+                            std::size_t m, const dolfin::la_index* rows,
+                            std::size_t n, const dolfin::la_index* cols)
+{
+  dolfin_assert(_matA);
+  PetscErrorCode ierr = MatSetValuesLocal(_matA, m, rows, n, cols, block,
+                                          ADD_VALUES);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::axpy(double a, const GenericMatrix& A,
@@ -297,8 +385,28 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
   }
   else
   {
+    // NOTE: Performing MatAXPY with DIFFERENT_NONZERO_PATTERN
+    // destroys the local-to-global maps. We therefore assign the map
+    // from *this. This is not ideal, the overloaded operations,
+    // e.g. operator()+, do not allow 'same_nonzero_pattern' to be
+    // set.
+
+    // Get local-to-global map for PETSc matrix
+    ISLocalToGlobalMapping rmapping0;
+    ISLocalToGlobalMapping cmapping0;
+    MatGetLocalToGlobalMapping(_matA, &rmapping0, &cmapping0);
+
+    // Increase reference count to prevent destruction
+    PetscObjectReference((PetscObject) rmapping0);
+    PetscObjectReference((PetscObject) cmapping0);
+
     ierr = MatAXPY(_matA, a, AA->mat(), DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
+
+    // Set local-to-global map and decrease reference count to maps
+    MatSetLocalToGlobalMapping(_matA, rmapping0, cmapping0);
+    ISLocalToGlobalMappingDestroy(&rmapping0);
+    ISLocalToGlobalMappingDestroy(&cmapping0);
   }
 }
 //-----------------------------------------------------------------------------
@@ -368,12 +476,8 @@ void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   dolfin_assert(_matA);
 
   PetscErrorCode ierr;
-  IS is = 0;
   PetscScalar one = 1.0;
-  const PetscInt _m = m;
-  ierr = ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
-  ierr = MatZeroRowsIS(_matA, is, one, NULL, NULL);
+  ierr = MatZeroRows(_matA, m, rows, one, NULL, NULL);
   if (ierr == PETSC_ERR_ARG_WRONGSTATE)
   {
     dolfin_error("PETScMatrix.cpp",
@@ -381,10 +485,24 @@ void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
                  "some diagonal elements not preallocated "
                  "(try assembler option keep_diagonal)");
   }
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsIS");
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRows");
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
+{
+  dolfin_assert(_matA);
 
-  ierr = ISDestroy(&is);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
+  PetscErrorCode ierr;
+  PetscScalar one = 1.0;
+  ierr = MatZeroRowsLocal(_matA, m, rows, one, NULL, NULL);
+  if (ierr == PETSC_ERR_ARG_WRONGSTATE)
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "set given rows to identity matrix",
+                 "some diagonal elements not preallocated "
+                 "(try assembler option keep_diagonal)");
+  }
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
@@ -582,7 +700,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
     if (_matA)
     {
       #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScVector may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
+      error("PETScVector may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
       #else
       warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
       #endif
@@ -604,7 +722,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
                      "More than one object points to the underlying PETSc object");
       }
       #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScMatrix may not be initialized more than once. Remove build definiton -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
+      error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
       #else
       warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
       #endif

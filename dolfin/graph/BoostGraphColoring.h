@@ -44,8 +44,8 @@ namespace dolfin
 
     /// Compute vertex colors
     template<typename ColorType>
-    static std::size_t compute_local_vertex_coloring(const Graph& graph,
-                                     std::vector<ColorType>& colors)
+      static std::size_t compute_local_vertex_coloring(const Graph& graph,
+                                                       std::vector<ColorType>& colors)
     {
       Timer timer("Boost graph coloring (from dolfin::Graph)");
 
@@ -71,7 +71,7 @@ namespace dolfin
         for (edge = vertex->begin(); edge != vertex->end(); ++edge)
         {
           const std::size_t vertex_index = vertex - graph.begin();
-          if (vertex_index != *edge)
+          if (vertex_index != (std::size_t) *edge)
             edges.push_back(std::make_pair(vertex_index, *edge));
         }
       }
@@ -112,7 +112,7 @@ namespace dolfin
       const vert_size_type num_colors = sequential_vertex_coloring(graph,
                                                                    color);
 
-      // Coppy colors and return
+      // Copy colors and return
       std::copy(_colors.begin(), _colors.end(), colors.begin());
       return num_colors;
     }

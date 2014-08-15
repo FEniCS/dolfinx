@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-03-03
+// Last changed: 2014-04-28
 
 #ifndef __SIMPLEX_QUADRATURE_H
 #define __SIMPLEX_QUADRATURE_H
@@ -27,9 +27,27 @@
 namespace dolfin
 {
 
+  // Forward declarations
+  class Cell;
+
   class SimplexQuadrature
   {
   public:
+
+    /// Compute quadrature rule for cell.
+    ///
+    /// *Arguments*
+    ///     cell (Cell)
+    ///         The cell.
+    ///     order (std::size_t)
+    ///         The order of convergence of the quadrature rule.
+    ///
+    /// *Returns*
+    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///         A flattened array of quadrature points and a
+    ///         corresponding array of quadrature weights.
+    static std::pair<std::vector<double>, std::vector<double> >
+    compute_quadrature_rule(const Cell& cell, std::size_t order);
 
     /// Compute quadrature rule for simplex.
     ///
@@ -46,8 +64,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::pair<std::vector<double>, std::vector<double> >
-    ///         An array of quadrature weights and a corresponding
-    ///         flattened array of quadrature points.
+    ///         A flattened array of quadrature points and a
+    ///         corresponding array of quadrature weights.
     static std::pair<std::vector<double>, std::vector<double> >
     compute_quadrature_rule(const double* coordinates,
                             std::size_t tdim,
@@ -67,8 +85,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::pair<std::vector<double>, std::vector<double> >
-    ///         An array of quadrature weights and a corresponding
-    ///         flattened array of quadrature points.
+    ///         A flattened array of quadrature points and a
+    ///         corresponding array of quadrature weights.
     static std::pair<std::vector<double>, std::vector<double> >
     compute_quadrature_rule_interval(const double* coordinates,
                                      std::size_t gdim,
@@ -87,8 +105,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::pair<std::vector<double>, std::vector<double> >
-    ///         An array of quadrature weights and a corresponding
-    ///         flattened array of quadrature points.
+    ///         A flattened array of quadrature points and a
+    ///         corresponding array of quadrature weights.
     static std::pair<std::vector<double>, std::vector<double> >
     compute_quadrature_rule_triangle(const double* coordinates,
                                      std::size_t gdim,
@@ -107,8 +125,9 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::pair<std::vector<double>, std::vector<double> >
-    ///         An array of quadrature weights and a corresponding
-    ///         flattened array of quadrature points.
+    ///         A flattened array of quadrature points and a
+    ///         corresponding array of quadrature weights.
+
     static std::pair<std::vector<double>, std::vector<double> >
     compute_quadrature_rule_tetrahedron(const double* coordinates,
                                         std::size_t gdim,

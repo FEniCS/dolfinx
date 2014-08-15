@@ -18,7 +18,9 @@
 // First added:  2011-04-13
 // Last changed: 2014-03-25
 
-#include <boost/scoped_array.hpp>
+#include <limits>
+#include <memory>
+#include <vector>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -126,7 +128,8 @@ void PointSource::apply(GenericVector& b)
   // Add values to vector
   dolfin_assert(_function_space->element()->space_dimension()
                 == _function_space->dofmap()->cell_dimension(cell.index()));
-  b.add(values.data(), _function_space->element()->space_dimension(), dofs.data());
+  b.add_local(values.data(), _function_space->element()->space_dimension(),
+              dofs.data());
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
