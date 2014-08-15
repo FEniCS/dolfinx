@@ -101,7 +101,7 @@ protected:
   #define PySlice_GetIndicesEx_def(op, vector_size, start_, stop_, step, index_size) \
           PySlice_GetIndicesEx((PyObject*)op, vector_size, start_, stop_, step, index_size)
 #else
-  #define PySlice_GetIndicesEx_def(op, vector_size, start_, stop_, step, index_size_) \
+  #define PySlice_GetIndicesEx_def(op, vector_size, start_, stop_, step_, index_size_) \
           PySlice_GetIndicesEx((PySliceObject*)op, vector_size, start_, stop_, step_, index_size_)
 #endif
 
