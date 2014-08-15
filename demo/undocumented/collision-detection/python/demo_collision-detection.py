@@ -16,13 +16,9 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-09-02
-# Last changed: 2014-01-07
+# Last changed: 2014-08-12
 
 from dolfin import *
-
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0)
 
 # Some parameters
 L = 10.0
@@ -37,8 +33,8 @@ num_steps = 1000
 
 # Create meshes: a box and two circles
 mesh_A = RectangleMesh(0, 0, L, L, M, M)
-mesh_B = CircleMesh(Point(0.0, 0.0), 1.0, 1.0/N)
-mesh_C = CircleMesh(Point(0.0, 0.0), 1.0, 1.0/N)
+mesh_B = Mesh("../circle.xml.gz")
+mesh_C = Mesh("../circle.xml.gz")
 
 # Displace circles to initial positions
 mesh_B.translate(Point(x_B, y_B))

@@ -23,14 +23,9 @@
 # Modified by Corrado Maurini 2013
 #
 # First added:  2012-09-03
-# Last changed: 2014-02-21
+# Last changed: 2014-08-11
 #
 from dolfin import *
-
-# Check that DOLFIN is configured with PETSc and CGAL
-if not has_petsc_snes():
-    print "DOLFIN must be compiled with PETSc version > 3.2 to run this demo."
-    exit(0)
 
 # Create mesh
 mesh = Mesh("../circle_yplane.xml.gz")
