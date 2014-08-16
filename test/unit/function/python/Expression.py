@@ -20,7 +20,7 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2007-05-24
-# Last changed: 2014-05-30
+# Last changed: 2014-08-12
 
 import unittest
 from dolfin import *
@@ -81,10 +81,6 @@ class Eval(unittest.TestCase):
           self.assertAlmostEqual(u00[0], same_result)
           self.assertAlmostEqual(u11, same_result)
           self.assertAlmostEqual(u21, same_result)
-
-          # Projection requires CGAL
-          if not has_cgal():
-               return
 
           x = (mesh.coordinates()[0]+mesh.coordinates()[1])/2
           f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)

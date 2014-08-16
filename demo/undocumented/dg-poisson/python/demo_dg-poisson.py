@@ -96,12 +96,9 @@ u = Function(V)
 solve(a == L, u)
 print "Solution vector norm (0): {!r}".format(u.vector().norm("l2"))
 
-# Project solution to piecewise linears
-#u_proj = project(u)
-
 # Save solution to file
 #file = File("poisson.pvd")
-#file << u_proj
+#file << u
 
 # Plot solution
-#plot(u_proj, interactive=True)
+#plot(u, interactive=True)

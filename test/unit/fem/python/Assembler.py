@@ -74,25 +74,37 @@ class Assembly(unittest.TestCase):
 
     def test_cell_assembly(self):
 
+        def compare_norms(V, Anorm, bnorm):
+            v = TestFunction(V)
+            u = TrialFunction(V)
+            f = Constant((10, 20, 30))
+
+            def epsilon(v):
+                return 0.5*(grad(v) + grad(v).T)
+
+            a = inner(epsilon(v), epsilon(u))*dx
+            L = inner(v, f)*dx
+
+            # Assemble A and b
+            self.assertAlmostEqual(assemble(a).norm("frobenius"), Anorm, 10)
+            self.assertAlmostEqual(assemble(L).norm("l2"), bnorm, 10)
+
+
+        # Mesh
         mesh = UnitCubeMesh(4, 4, 4)
-        V = VectorFunctionSpace(mesh, "DG", 1)
 
-        v = TestFunction(V)
-        u = TrialFunction(V)
-        f = Constant((10, 20, 30))
+        # P1 DG test
+        V = VectorFunctionSpace(mesh, "Discontinuous Lagrange", 1)
+        compare_norms(V, 4.3969686527582512, 0.95470326978246278)
 
-        def epsilon(v):
-            return 0.5*(grad(v) + grad(v).T)
+        # P2 CG test
+        V = VectorFunctionSpace(mesh, "Lagrange", 2)
+        compare_norms(V, 23.38048955147601, 2.12139706816836)
 
-        a = inner(epsilon(v), epsilon(u))*dx
-        L = inner(v, f)*dx
+        # P3 CG test
+        V = VectorFunctionSpace(mesh, "Lagrange", 3)
+        compare_norms(V, 41.71603858326480, 1.23766702366118)
 
-        A_frobenius_norm =  4.3969686527582512
-        b_l2_norm = 0.95470326978246278
-
-        # Assemble A and b
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
     @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_cell_assembly_multithreaded(self):

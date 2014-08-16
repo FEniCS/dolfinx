@@ -93,7 +93,6 @@ main_file_names = dict(test="test.cpp",
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
 exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt'),
-                    os.path.join('demo', 'undocumented', 'csg'),
                     os.path.join('demo', 'undocumented', 'meshintersection')]
 
 def generate_cmake_files(subdirectory, generated_files):

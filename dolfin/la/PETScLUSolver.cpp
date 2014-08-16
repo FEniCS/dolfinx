@@ -86,7 +86,7 @@ PETScLUSolver::_methods_descr
     {"mumps", "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)"},
 #endif
 #if PETSC_HAVE_PASTIX
-    {"pastix", "PaStiX (Parallel Sparse matriX package)"}.
+    {"pastix", "PaStiX (Parallel Sparse matriX package)"},
 #endif
 #if PETSC_HAVE_SUPERLU
     {"superlu", "SuperLU"},
@@ -486,7 +486,7 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
 
   if (report && dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
   {
-    log(PROGRESS,"Solving linear system of size %d x %d (PETSc LU solver, %s).",
+    log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver, %s).",
         A.size(0), A.size(1), solver_type);
   }
 }

@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-11-14
+// Last changed: 2014-08-11
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -31,7 +31,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/generation/CSGGeometry.h>
 #include "ExpressionWrapper.h"
 #include "VTKPlotter.h"
 
@@ -42,7 +41,6 @@
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableMeshFunction.h"
 #include "VTKPlottableDirichletBC.h"
-#include "VTKPlottableCSGGeometry.h"
 
 #ifdef HAS_QVTK
 #include <QApplication>
@@ -94,7 +92,6 @@ namespace dolfin
         return CreateVTKPlottable(t);                                   \
     } while (0)
 
-    DISPATCH(CSGGeometry);
     DISPATCH(DirichletBC);
     DISPATCH(ExpressionWrapper);
     DISPATCH(Function);
