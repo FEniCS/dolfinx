@@ -83,7 +83,10 @@ import_array();
 
 """
 
-py3 = "" if sys.version_info[0] < 3 else "\n  -py3\n  -relativeimport"
+if sys.version_info[0] < 3:
+    py3 = ""
+else:
+    py3 = "\n  -py3" # \n  -relativeimport
 
 swig_cmakelists_str = \
 """# Automatic get the module name
