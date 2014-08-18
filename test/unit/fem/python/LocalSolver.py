@@ -20,6 +20,7 @@
 # First added:  2013-02-13
 # Last changed:
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -53,7 +54,7 @@ class LocalSolver(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print ""
-    print "Testing class LocalSolver"
-    print "-------------------------"
+    print("")
+    print("Testing class LocalSolver")
+    print("-------------------------")
     unittest.main()

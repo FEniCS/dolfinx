@@ -23,6 +23,7 @@
 import unittest
 import numpy
 from dolfin import *
+from six.moves import xrange as range
 
 class MeshIterator(unittest.TestCase):
 
@@ -32,13 +33,13 @@ class MeshIterator(unittest.TestCase):
         mesh = UnitCubeMesh(5, 5, 5)
 
         # Test connectivity
-        cons = [(i, mesh.topology()(0,i)) for i in xrange(4)]
+        cons = [(i, mesh.topology()(0,i)) for i in range(4)]
 
         # Test writability
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(StandardError, assign, con, i)
+            self.assertRaises(Exception, assign, con, i)
 
         n = 0
         for i, v in enumerate(vertices(mesh)):
@@ -62,13 +63,13 @@ class MeshIterator(unittest.TestCase):
         mesh = UnitCubeMesh(5, 5, 5)
 
         # Test connectivity
-        cons = [(i, mesh.topology()(1,i)) for i in xrange(4)]
+        cons = [(i, mesh.topology()(1,i)) for i in range(4)]
 
         # Test writability
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(StandardError, assign, con, i)
+            self.assertRaises(Exception, assign, con, i)
 
         n = 0
         for i, e in enumerate(edges(mesh)):
@@ -84,13 +85,13 @@ class MeshIterator(unittest.TestCase):
         mesh = UnitCubeMesh(5, 5, 5)
 
         # Test connectivity
-        cons = [(i, mesh.topology()(2,i)) for i in xrange(4)]
+        cons = [(i, mesh.topology()(2,i)) for i in range(4)]
 
         # Test writability
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(StandardError, assign, con, i)
+            self.assertRaises(Exception, assign, con, i)
 
         n = 0
         for i, f in enumerate(faces(mesh)):
@@ -113,13 +114,13 @@ class MeshIterator(unittest.TestCase):
         mesh = UnitCubeMesh(5, 5, 5)
 
         # Test connectivity
-        cons = [(i, mesh.topology()(3,i)) for i in xrange(4)]
+        cons = [(i, mesh.topology()(3,i)) for i in range(4)]
 
         # Test writability
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(StandardError, assign, con, i)
+            self.assertRaises(Exception, assign, con, i)
 
         n = 0
         for i, c in enumerate(cells(mesh)):

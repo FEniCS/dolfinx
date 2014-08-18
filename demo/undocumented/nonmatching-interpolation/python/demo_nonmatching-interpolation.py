@@ -21,6 +21,7 @@ finite element spaces on non-matching meshes."""
 # First added:  2009-05-19
 # Last changed: 2009-05-19
 
+from __future__ import print_function
 from dolfin import *
 
 # Create mesh and define function spaces
@@ -42,5 +43,5 @@ plot(v0, mesh=mesh0, title="v0")
 plot(v1, title="v1")
 interactive()
 
-print norm(v0, mesh = mesh1)
-print norm(v1)
+print(norm(v0, mesh = mesh1))
+print(norm(v1))

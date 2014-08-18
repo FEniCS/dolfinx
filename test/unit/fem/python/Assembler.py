@@ -20,6 +20,7 @@
 # Modified by Anders Logg 2011
 # Modified by Martin Alnes 2014
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -667,7 +668,7 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(0.0, assemble(n2[0]*ds(mesh)))
 
 if __name__ == "__main__":
-    print ""
-    print "Testing class Assembler"
-    print "-----------------------"
+    print("")
+    print("Testing class Assembler")
+    print("-----------------------")
     unittest.main()

@@ -8,6 +8,7 @@ split into two distinct parts (separate objects and integrations)
 and we have a Robin condition instead of a Neumann condition at y=0.
 """
 
+from __future__ import print_function
 from dolfin import *
 import numpy
 
@@ -89,11 +90,11 @@ for condition in bcs: condition.apply(A, b)
 u = Function(V)
 solve(A, u.vector(), b, 'lu')
 
-print mesh
+print(mesh)
 
 # Verification
 u_exact = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]')
 u_e = interpolate(u_exact, V)
-print 'Max error:', abs(u_e.vector().array() - u.vector().array()).max()
+print('Max error:', abs(u_e.vector().array() - u.vector().array()).max())
 
 #interactive()

@@ -59,7 +59,7 @@ for subdir in subdirs:
 
         # Compile files
         os.chdir(root)
-        print "Compiling forms in %s..." % root
+        print("Compiling forms in %s..." % root)
         for f in formfiles:
             if f in special:
                 options = special[f]
@@ -74,8 +74,8 @@ for subdir in subdirs:
                 options += " -fno-evaluate_basis -fno-evaluate_basis_derivatives"
 
             command = "ffc -v %s -f no_ferari -l dolfin %s %s >> compile.log" % (optimization, options, f)
-            print "  " + command
+            print("  " + command)
             ret = os.system(command)
             if not ret == 0:
-                raise RuntimeError, "Unable to compile form: %s/%s" % (root, f)
+                raise RuntimeError("Unable to compile form: %s/%s" % (root, f))
         os.chdir(topdir)

@@ -18,6 +18,7 @@
 # First added:  2011-05-22
 # Last changed: 2011-05-22
 
+from __future__ import print_function
 import sys
 from instant import get_status_output
 
@@ -30,9 +31,9 @@ for test in tests:
 
     if fail:
         failed.append(fail)
-        print "*** %s failed" % test
-        print output
+        print("*** %s failed" % test)
+        print(output)
     else:
-        print "OK"
+        print("OK")
 
 sys.exit(len(failed))

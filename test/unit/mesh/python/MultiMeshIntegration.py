@@ -20,10 +20,12 @@
 # First added:  2014-03-04
 # Last changed: 2014-03-10
 
+from __future__ import print_function
 import unittest
 import numpy
 
 from dolfin import *
+from six.moves import xrange as range
 
 
 def triangulation_to_mesh_2d(triangulation):
@@ -34,9 +36,9 @@ def triangulation_to_mesh_2d(triangulation):
     num_vertices = len(triangulation) / 2
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
-    for i in xrange(num_cells):
+    for i in range(num_cells):
         editor.add_cell(i, 3*i, 3*i + 1, 3*i + 2)
-    for i in xrange(num_vertices):
+    for i in range(num_vertices):
         editor.add_vertex(i, triangulation[2*i], triangulation[2*i + 1])
     editor.close()
     return mesh
@@ -62,19 +64,19 @@ class TriangleIntegrationTest(unittest.TestCase):
         multimesh.build()
 
         for part in range(0, multimesh.num_parts()):
-            print part
+            print(part)
             covered = multimesh.covered_cells(part)
             uncut = multimesh.uncut_cells(part)
             cut = multimesh.cut_cells(part)
             qr = multimesh.quadrature_rule_cut_cells(part)
-            print "covered"
-            print covered
-            print "uncut"
-            print uncut
-            print "cut"
-            print cut
-            print "quadrature"
-            print qr
+            print("covered")
+            print(covered)
+            print("uncut")
+            print(uncut)
+            print("cut")
+            print(cut)
+            print("quadrature")
+            print(qr)
 
         V_0 = FunctionSpace(mesh_0, "CG", 1)
         V_1 = FunctionSpace(mesh_1, "CG", 1)

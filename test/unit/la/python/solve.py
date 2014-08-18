@@ -20,6 +20,7 @@
 # First added:  2011-12-21
 # Last changed:se
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print ""
-    print "Testing DOLFIN la/solve interface"
-    print "------------------------------------------------"
+    print("")
+    print("Testing DOLFIN la/solve interface")
+    print("------------------------------------------------")
     unittest.main()
