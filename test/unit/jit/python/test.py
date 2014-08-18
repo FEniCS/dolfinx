@@ -75,6 +75,14 @@ class JIT(unittest.TestCase):
             np_vec[:] = exp(np_vec)
             self.assertTrue((np_vec == vec.array()).all())
 
+    def test_compile_extension_module_kwargs(self):
+        # This test check that instant_kwargs of compile_extension_module
+        # are taken into account when computing signature
+        m2 = compile_extension_module('', cppargs='-O2')
+        m0 = compile_extension_module('', cppargs='')
+        self.assertFalse(m2.__file__ == m0.__file__)
+
+
 if __name__ == "__main__":
     print("")
     print("Testing JIT compiler")
