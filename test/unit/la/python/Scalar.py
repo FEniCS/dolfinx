@@ -20,6 +20,7 @@
 # First added:  2011-03-01
 # Last changed: 2011-03-01
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -38,7 +39,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print ""
-    print "Testing DOLFIN Scalar classes"
-    print "------------------------------------------------"
+    print("")
+    print("Testing DOLFIN Scalar classes")
+    print("------------------------------------------------")
     unittest.main()

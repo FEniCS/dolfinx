@@ -22,6 +22,7 @@
 # First added:  2012-08-18
 # Last changed: 2013-04-12
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -162,7 +163,7 @@ class ConstrainedFunctionSpaceTest(unittest.TestCase):
         self.assertAlmostEqual(u.vector().norm("l2"), 0.3368694028630991, 10)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing constrained (periodic) FunctionSpace"
-    print "------------------------------------------------"
+    print("")
+    print("Testing constrained (periodic) FunctionSpace")
+    print("------------------------------------------------")
     unittest.main()

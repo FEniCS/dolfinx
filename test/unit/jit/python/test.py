@@ -20,6 +20,7 @@
 # First added:  2011-05-12
 # Last changed: 2011-05-12
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -75,7 +76,7 @@ class JIT(unittest.TestCase):
             self.assertTrue((np_vec == vec.array()).all())
 
 if __name__ == "__main__":
-    print ""
-    print "Testing JIT compiler"
-    print "------------------------------------------------"
+    print("")
+    print("Testing JIT compiler")
+    print("------------------------------------------------")
     unittest.main()

@@ -58,7 +58,7 @@ class Normal(unittest.TestCase):
         D = cube.topology().dim()
         for f in faces(cube):
             n = [f.normal(i) for i in range(D)]
-            norm = sum(map(lambda x: x*x, n))
+            norm = sum([x*x for x in n])
             self.assertAlmostEqual(norm, 1.0)
 
         f = Face(square, 0)

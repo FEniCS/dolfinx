@@ -25,8 +25,10 @@ parallel assembly/solve."""
 # First added:  2009-08-17
 # Last changed: 2013-07-06
 
+from __future__ import print_function
 import sys
 from dolfin import *
+from six import print_
 
 # Relative tolerance for regression test
 tol = 1e-10
@@ -54,37 +56,37 @@ def test_solve(mesh, degree):
 
 def print_reference(results):
     "Print nicely formatted values for gluing into code as a reference"
-    print "reference = {",
+    print_("reference = {", end=' ')
     for (i, result) in enumerate(results):
         if i > 0:
-            print "             ",
-        print "(\"%s\", %d): %.16g" % result,
+            print_("             ", end=' ')
+        print_("(\"%s\", %d): %.16g" % result, end=' ')
         if i < len(results) - 1:
-            print ","
+            print(",")
         else:
-            print "}"
+            print("}")
 
 def check_results(results, reference, tol):
     "Compare results with reference"
 
     status = 0
 
-    print "Checking results"
-    print "----------------"
+    print("Checking results")
+    print("----------------")
 
     for (mesh_file, degree, norm) in results:
-        print "(%s, %d):\t" % (mesh_file, degree),
+        print_("(%s, %d):\t" % (mesh_file, degree), end=' ')
         if (mesh_file, degree) in reference:
             ref = reference[(mesh_file, degree)]
             diff =  abs(norm - ref) / abs(ref)
             if diff < tol:
-                print "OK",
+                print_("OK", end=' ')
             else:
                 status = 1
-                print "*** ERROR",
-            print "(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff)
+                print_("*** ERROR", end=' ')
+            print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
         else:
-            print "missing reference"
+            print("missing reference")
 
     return status
 

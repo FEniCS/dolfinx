@@ -102,7 +102,11 @@ def mark(self, *args):
 
 %pythoncode
 %{
-SubDomain.mark.__func__.__doc__ = _subdomain_mark_doc_string
+import sys
+if sys.version_info[0] > 2:
+    SubDomain.mark.__doc__ = _subdomain_mark_doc_string
+else:
+    SubDomain.mark.__func__.__doc__ = _subdomain_mark_doc_string
 del _subdomain_mark_doc_string
 %}
 
@@ -227,7 +231,7 @@ class MeshFunction(object):
     __doc__ = _doc_string
     def __new__(cls, tp, *args):
         if not isinstance(tp, str):
-            raise TypeError, "expected a 'str' as first argument"
+            raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return MeshFunctionInt(*args)
         if tp == "uint":
@@ -241,7 +245,7 @@ class MeshFunction(object):
         elif tp == "bool":
             return MeshFunctionBool(*args)
         else:
-            raise RuntimeError, "Cannot create a MeshFunction of type '%s'." % (tp,)
+            raise RuntimeError("Cannot create a MeshFunction of type '%s'." % (tp,))
 
 del _doc_string
 
@@ -249,7 +253,7 @@ def _new_closure(MeshType):
     assert(isinstance(MeshType, str))
     def new(cls, tp, mesh, value=0):
         if not isinstance(tp, str):
-            raise TypeError, "expected a 'str' as first argument"
+            raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
@@ -262,7 +266,7 @@ def _new_closure(MeshType):
             value = bool(value) if isinstance(value, int) else value
             return eval("%sBool(mesh, value)"%MeshType)
         else:
-            raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
+            raise RuntimeError("Cannot create a %sFunction of type '%s'." % (MeshType, tp))
 
     return new
 
@@ -352,7 +356,7 @@ class MeshValueCollection(object):
     __doc__ = _meshvaluecollection_doc_string
     def __new__(cls, tp, *args):
         if not isinstance(tp, str):
-            raise TypeError, "expected a 'str' as first argument"
+            raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return MeshValueCollectionInt(*args)
         if tp == "uint":
@@ -366,7 +370,7 @@ class MeshValueCollection(object):
         elif tp == "bool":
             return MeshValueCollectionBool(*args)
         else:
-            raise RuntimeError, "Cannot create a MeshValueCollection of type '%s'." % (tp,)
+            raise RuntimeError("Cannot create a MeshValueCollection of type '%s'." % (tp,))
 
 del _meshvaluecollection_doc_string
 %}

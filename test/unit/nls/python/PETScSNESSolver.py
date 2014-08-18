@@ -19,6 +19,8 @@
 # First added:  2012-10-17
 # Last changed: 2013-11-22
 
+from __future__ import print_function
+
 """Solve the Yamabe PDE which arises in the differential geometry of
 general relativity. http://arxiv.org/abs/1107.0360.
 
@@ -119,7 +121,7 @@ if __name__ == "__main__":
   # Turn off DOLFIN output
   set_log_active(False)
 
-  print ""
-  print "Testing DOLFIN nls/PETScSNESSolver interface"
-  print "--------------------------------------------"
+  print("")
+  print("Testing DOLFIN nls/PETScSNESSolver interface")
+  print("--------------------------------------------")
   unittest.main()

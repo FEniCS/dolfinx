@@ -32,6 +32,7 @@ forces).
 # First added:  2007-11-14
 # Last changed: 2008-12-27
 
+from __future__ import print_function
 from dolfin import *
 
 # Read the mesh from file
@@ -60,5 +61,5 @@ L = p*n[1]*ds(1)
 drag = assemble(D)
 lift = assemble(L)
 
-print "Lift: %f" % lift
-print "Drag: %f" % drag
+print("Lift: %f" % lift)
+print("Drag: %f" % drag)

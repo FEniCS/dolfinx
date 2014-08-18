@@ -36,9 +36,6 @@ elements.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2011
-#
-# First added:  2009-04-02
-# Last changed: 2014-08-11
 
 from dolfin import *
 

@@ -22,6 +22,7 @@
 # First added:  2012-02-21
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -74,7 +75,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print ""
-    print "Testing DOLFIN la/KrylovSolver interface"
-    print "----------------------------------------"
+    print("")
+    print("Testing DOLFIN la/KrylovSolver interface")
+    print("----------------------------------------")
     unittest.main()
