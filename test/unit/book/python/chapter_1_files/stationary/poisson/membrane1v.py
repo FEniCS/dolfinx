@@ -1,9 +1,9 @@
 """As membrane1.py, but with more Viper visualization."""
 from dolfin import *
 
-if not has_cgal():
-    import sys
-    sys.exit(0)
+# This demo needs to be updated for the removal
+# of CircleMesh from DOLFIN
+exit(0)
 
 # Set pressure function:
 T = 10.0  # tension

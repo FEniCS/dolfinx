@@ -86,7 +86,6 @@ list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
@@ -110,7 +109,7 @@ endif()
 #------------------------------------------------------------------------------
 # Package-specific options
 
-option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
+# None at the moment
 
 #------------------------------------------------------------------------------
 # Compiler flags
@@ -520,12 +519,6 @@ if (DOLFIN_ENABLE_TRILINOS)
   else()
     message(STATUS "Trilinos could not be found")
   endif()
-endif()
-
-
-# Check for CGAL
-if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL 4.1)
 endif()
 
 # Check for zlib

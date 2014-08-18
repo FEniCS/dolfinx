@@ -110,47 +110,6 @@ mesh we use diagonals to both left and right.
 .. image:: rectanglemesh_left_right.png
 	:scale: 75 %
 
-Unstructured ellipsoid and ellipse meshes can be created if DOLFIN is
-configured with CGAL.  Using :py:class:`CircleMesh
-<dolfin.cpp.generation.CircleMesh>` For a circle centered at (0, 0)
-with radius 1 and cell size 0.2:
-
-.. code-block:: python
-
-    mesh = CircleMesh(Point(0.0, 0.0), 1.0, 0.2)
-    print "Plotting a CircleMesh"
-    plot(mesh, title="Circle (unstructured)")
-
-Using :py:class:`EllipseMesh <dolfin.cpp.generation.EllipseMesh>` for
-an ellipse centered at (0, 0) with 'radii' of 3 and 1 in the
-:math:`x`- and :math:`y` directions, respectively, and cell size 0.2:
-
-.. code-block:: python
-
-   mesh = EllipseMesh(Point(0.0, 0.0), [3.0, 1.0], 0.2)
-   print "Plotting an EllipseMesh"
-   plot(mesh, title="Ellipse mesh (unstructured)")
-
-Using :py:class:`SphereMesh <dolfin.cpp.generation.SphereMesh>` for a
-sphere centered at (0, 0, 0) with radius 1 and cell size 0.2:
-
-.. code-block:: python
-
-   mesh = SphereMesh(Point(0.0, 0.0, 0.0), 1.0, 0.2)
-   print "Plotting a SphereMesh"
-   plot(mesh, title="Sphere mesh (unstructured)")
-
-Using :py:class:`EllipsoidMesh <dolfin.cpp.generation.EllipsoidMesh>`
-For an ellipsoid centered at (0, 0, 0.0), with 'radii' of 3, 1 and 2
-in the :math:`x`-, :math:`y` and :math`z`-directions, respectively,
-and cell size 0.2:
-
-.. code-block:: python
-
-   mesh = EllipsoidMesh(Point(0.0, 0.0, 0.0), [3.0, 1.0, 2.0], 0.2)
-   print "Plotting an EllipsoidMesh"
-   plot(mesh, title="Ellipsoid mesh (unstructured)")
-
 To make a mesh of the 3D unit cube :math:`[0,1] \times [0,1] \times
 [0,1]`, we use :py:class:`UnitCubeMesh
 <dolfin.cpp.generation.UnitCubeMesh>`. :py:class:`UnitCubeMesh
@@ -176,6 +135,11 @@ next three arguments, while the last three arguments specify the
 number of points in the :math:`x`-, :math:`y`- and
 :math:`z`-direction.
 
+Meshes for more complex geometries may be created using the mshr
+library, which functions as a plugin to DOLFIN, providing support
+for Constructive Solid Geometry (CSG) and mesh generation. For
+more details, refer to the mshr documentation.
+
 .. code-block:: python
 
    mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
@@ -192,7 +156,6 @@ and rotate the plots.
 .. code-block:: python
 
    interactive()
-
 
 Complete code
 -------------

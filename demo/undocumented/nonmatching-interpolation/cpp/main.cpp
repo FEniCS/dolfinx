@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-06-17
-// Last changed: 2012-07-05
+// Last changed: 2014-08-11
 
 //
 // This program demonstrates the interpolation of functions on non-matching
@@ -28,8 +28,6 @@
 #include "P3.h"
 
 using namespace dolfin;
-
-#ifdef HAS_CGAL
 
 class MyExpression : public Expression
 {
@@ -70,13 +68,3 @@ int main()
 
   return 0;
 }
-
-#else
-
-int main()
-{
-  info("DOLFIN must be compiled with CGAL to run this demo.");
-  return 0;
-}
-
-#endif

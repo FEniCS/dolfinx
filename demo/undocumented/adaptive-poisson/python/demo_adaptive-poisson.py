@@ -32,16 +32,11 @@ edge (jump) terms and the size of the interpolation constant.
 # Modified by Anders Logg 2008-2011
 #
 # First added:  2008-04-03
-# Last changed: 2013-01-23
+# Last changed: 2014-08-11
 
 from dolfin import *
 from numpy import array, sqrt
 from math import pow
-
-# This demo does not work without CGAL
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0)
 
 TOL = 5e-4           # Error tolerance
 REFINE_RATIO = 0.50  # Refine 50 % of the cells in each iteration
