@@ -1,4 +1,4 @@
-"""Unit tests for the solve interface"""
+"""Unit tests for the Scalar interface"""
 
 # Copyright (C) 2011 Garth N. Wells
 #
@@ -17,39 +17,24 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2011-12-21
-# Last changed:se
+# First added:  2011-03-01
+# Last changed: 2011-03-01
 
 from __future__ import print_function
-import unittest
+import pytest
 from dolfin import *
 
-class solveTest(unittest.TestCase):
+def test_parallel_sum(self):
+    a = Scalar()
+    b = 1.0
+    a.assign(b)
+    a.apply("add")
+    assert round(a.getval(), b*MPI.size(a.mpi_comm()), 7) == 0
 
-    def test_normalize_average(self):
-        size = 200
-        value = 2.0
-        x = Vector(mpi_comm_world(), size)
-        x[:] = value
-        factor =normalize(x, "average")
-        self.assertEqual(factor, value)
-        self.assertEqual(x.sum(), 0.0)
-
-    def test_normalize_l2(self):
-        size = 200
-        value = 2.0
-        x = Vector(mpi_comm_world(), size)
-        x[:] = value
-        factor = normalize(x, "l2")
-        self.assertAlmostEqual(factor, sqrt(size*value*value))
-        self.assertAlmostEqual(x.norm("l2"), 1.0)
 
 if __name__ == "__main__":
 
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print("")
-    print("Testing DOLFIN la/solve interface")
-    print("------------------------------------------------")
-    unittest.main()
+    pytest.main()

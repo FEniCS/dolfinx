@@ -43,39 +43,35 @@ A = assemble(a)
 b = assemble(L)
 bc.apply(A, b)
 
+
 if has_linear_algebra_backend("PETSc"):
-    class PETScKrylovSolverTester(unittest.TestCase):
+    def test_krylov_solver():
+	"Test PETScKrylovSolver"
+	# Get solution vector
+	tmp = Function(V)
+	#x = tmp.vector()
 
-        def test_krylov_solver(self):
-            "Test PETScKrylovSolver"
-            # Get solution vector
-            tmp = Function(V)
-            #x = tmp.vector()
+	# Solve first using direct solver
+	#solve(A, x, b, "lu")
 
-            # Solve first using direct solver
-            #solve(A, x, b, "lu")
+	#direct_norm = x.norm("l2")
 
-            #direct_norm = x.norm("l2")
+	# Get solution vector
+	#x_petsc = as_backend_type(x)
 
-            # Get solution vector
-            #x_petsc = as_backend_type(x)
+	# With simple interface
+	#solver = PETScKrylovSolver("gmres", prec)
+	#solver.solve(A, x_petsc, as_backend_type(b))
+	#assert round(x_petsc.norm("l2") - direct_norm, 5) == 0
 
-            # With simple interface
-            #solver = PETScKrylovSolver("gmres", prec)
-            #solver.solve(A, x_petsc, as_backend_type(b))
-            #self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
+	# With PETScPreconditioner interface
+	#solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
+	#solver.solve(A, x_petsc, as_backend_type(b))
+	#assert round(x_petsc.norm("l2") - direct_norm, 5) == 0
 
-            # With PETScPreconditioner interface
-            #solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
-            #solver.solve(A, x_petsc, as_backend_type(b))
-            #self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
 if __name__ == "__main__":
 
     # Turn off DOLFIN output
     set_log_active(False)
-
-    print("")
-    print("Testing DOLFIN la/KrylovSolver interface")
-    print("----------------------------------------")
-    unittest.main()
+    pytest.main()

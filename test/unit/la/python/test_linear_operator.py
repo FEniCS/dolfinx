@@ -18,13 +18,13 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
-import unittest
+import pytest
 from dolfin import *
 
 # Backends supporting the LinearOperator interface
 backends = ["PETSc", "uBLAS"]
 
-class TestLinearOperator(unittest.TestCase):
+class TestLinearOperator:
 
     def test_linear_operator(self):
 
@@ -92,12 +92,8 @@ class TestLinearOperator(unittest.TestCase):
                 if backend == 'PETSc' and has_petsc4py() and \
                   _as_backend_type == as_backend_type:
                     from petsc4py import PETSc
-                    self.assertTrue(isinstance(O.mat(), PETSc.Mat))
+                    assert isinstance(O.mat(), PETSc.Mat)
 
 
 if __name__ == "__main__":
-
-    print("")
-    print("Testing DOLFIN la/LinearOperator (matrix-free) interface")
-    print("--------------------------------------------------------")
-    unittest.main()
+    pytest.main()

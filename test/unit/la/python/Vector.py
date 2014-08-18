@@ -26,7 +26,7 @@ from __future__ import print_function
 import unittest
 from dolfin import *
 
-class AbstractBaseTest(object):
+class TestAbstractBase(object):
     count = 0
     backend = "default"
     def setUp(self):
