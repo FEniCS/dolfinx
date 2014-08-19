@@ -61,9 +61,9 @@ def testGrad():
     c0 = Constant(1.)
     c3 = Constant(array([2,3]), tetrahedron)
     def gradient(c):
-	  return grad(c)
+        return grad(c)
     with pytest.raises(UFLException):
-	grad(c0)
+        grad(c0)
     assert zero == gradient(c3)
 
 

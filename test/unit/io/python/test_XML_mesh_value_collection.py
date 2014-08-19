@@ -25,7 +25,7 @@ from dolfin import *
 
 
 @pytest.mark.skipIf(MPI.size(mpi_comm_world()) > 1, 
-		      reason="Skipping unit test(s) not working in parallel")
+                      reason="Skipping unit test(s) not working in parallel")
 def test_insertion_extraction_io():
     "Test input/output via << and >>."
 

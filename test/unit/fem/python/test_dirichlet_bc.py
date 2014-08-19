@@ -44,10 +44,10 @@ def test_director_lifetime():
     of scope"""
 
     class Boundary(SubDomain):
-	def inside(self, x, on_boundary): return on_boundary
+        def inside(self, x, on_boundary): return on_boundary
 
     class BoundaryFunction(Expression):
-	def eval(self, values, x): values[0] = 1.0
+        def eval(self, values, x): values[0] = 1.0
 
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -68,7 +68,7 @@ def test_get_values():
     dofs = numpy.zeros(3, dtype="I")
 
     def upper(x, on_boundary):
-	return x[1] > 0.5 + DOLFIN_EPS
+        return x[1] > 0.5 + DOLFIN_EPS
 
     V = FunctionSpace(mesh, "CG", 1)
     bc = DirichletBC(V, 0.0, upper)
@@ -99,7 +99,7 @@ def test_meshdomain_bcs():
     assert round(norm(b) - 16.55294535724685, 7) == 0
 
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-		    reason="Skipping unit test(s) not working in parallel")
+                    reason="Skipping unit test(s) not working in parallel")
 def test_bc_for_piola_on_manifolds():
     "Testing DirichletBC for piolas over standard domains vs manifolds."
 
@@ -123,18 +123,18 @@ def test_bc_for_piola_on_manifolds():
     elements = [N1curl1, N2curl1,  N1curl2, N2curl2, RT1, RT2, BDM1, BDM2, DRT1, DRT2]
 
     for element in elements:
-	V = element(mesh)
-	bc = DirichletBC(V, (1.0, 0.0, 0.0), "on_boundary")
-	u = Function(V)
-	bc.apply(u.vector())
-	b0 = assemble(inner(u, u)*dx)
+        V = element(mesh)
+        bc = DirichletBC(V, (1.0, 0.0, 0.0), "on_boundary")
+        u = Function(V)
+        bc.apply(u.vector())
+        b0 = assemble(inner(u, u)*dx)
 
-	V = element(square)
-	bc = DirichletBC(V, (1.0, 0.0), "on_boundary")
-	u = Function(V)
-	bc.apply(u.vector())
-	b1 = assemble(inner(u, u)*dx)
-	assert round(b0 - b1, 7) == 0
+        V = element(square)
+        bc = DirichletBC(V, (1.0, 0.0), "on_boundary")
+        u = Function(V)
+        bc.apply(u.vector())
+        b1 = assemble(inner(u, u)*dx)
+        assert round(b0 - b1, 7) == 0
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ def reconstruct_refined_form(form, functions, mesh):
 
 
 skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-	    reason="Skipping unit test(s) not working in parallel")
+                    reason="Skipping unit test(s) not working in parallel")
 
 mesh_ = UnitSquareMesh(8, 8)
 V_ = FunctionSpace(mesh_, "Lagrange", 1)

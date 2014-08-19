@@ -74,14 +74,14 @@ def test_calling():
     bc = DirichletBC(V, 0.0, DomainBoundary())
 
     kwargs = {"solver_parameters":{"linear_solver": "lu"},
-	      "form_compiler_parameters":{"optimize": True}}
+              "form_compiler_parameters":{"optimize": True}}
 
     A = assemble(a)
     b = assemble(L)
     x = Vector()
 
     with pytest.raises(RuntimeError):
-	solve(A, x, b, **kwargs)
+        solve(A, x, b, **kwargs)
 
     # FIXME: Include more tests for this versatile function
 

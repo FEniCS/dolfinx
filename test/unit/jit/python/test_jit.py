@@ -53,9 +53,9 @@ def test_compile_extension_module(self):
 
       void PETSc_exp(std::shared_ptr<dolfin::PETScVector> vec)
       {
-	Vec x = vec->vec();
-	assert(x);
-	VecExp(x);
+        Vec x = vec->vec();
+        assert(x);
+        VecExp(x);
       }
     }
     """

@@ -33,7 +33,7 @@ from six.moves import zip
 import numpy
 
 skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-		      reason="This test should only be run in parallel.")
+              reason="This test should only be run in parallel.")
 
 # Subdomain to extract bottom boundary.
 class BottomEdge(SubDomain):
@@ -192,18 +192,18 @@ def test_basis_evaluation_2D_in_3D():
     rotation = Rotation(numpy.pi/4, numpy.pi/4)
 
     for i in range(4):
-	basis_test("CG", i + 1, basemesh, rotmesh, rotation)
+        basis_test("CG", i + 1, basemesh, rotmesh, rotation)
     for i in range(5):
-	basis_test("DG", i, basemesh, rotmesh, rotation)
+        basis_test("DG", i, basemesh, rotmesh, rotation)
     for i in range(4):
-	basis_test("RT", i + 1, basemesh, rotmesh, rotation, piola=True,)
+        basis_test("RT", i + 1, basemesh, rotmesh, rotation, piola=True,)
     for i in range(4):
-	basis_test("DRT", i + 1, basemesh, rotmesh, rotation, piola=True)
+        basis_test("DRT", i + 1, basemesh, rotmesh, rotation, piola=True)
     for i in range(4):
-	basis_test("BDM", i + 1, basemesh, rotmesh, rotation, piola=True)
+        basis_test("BDM", i + 1, basemesh, rotmesh, rotation, piola=True)
     for i in range(4):
-	basis_test("N1curl", i + 1, basemesh, rotmesh, rotation, piola=True)
-    basis_test("BDFM", 2, basemesh, rotmesh, rotation, piola=True)
+        basis_test("N1curl", i + 1, basemesh, rotmesh, rotation, piola=True)
+        basis_test("BDFM", 2, basemesh, rotmesh, rotation, piola=True)
 
 
 def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
@@ -214,59 +214,59 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
     f_rot = FunctionSpace(rotmesh, family, degree)
 
     points = numpy.array([[1.0, 1.0, 0.0],
-			  [0.5, 0.5, 0.0],
-			  [0.3, 0.7, 0.0],
-			  [0.4, 0.0, 0.0]])
+                          [0.5, 0.5, 0.0],
+                          [0.3, 0.7, 0.0],
+                          [0.4, 0.0, 0.0]])
 
     for cell_base, cell_rot in zip(cells(basemesh), cells(rotmesh)):
 
-	values_base = numpy.zeros(f_base.element().value_dimension(0))
-	derivs_base = numpy.zeros(f_base.element().value_dimension(0)*3)
-	values_rot = numpy.zeros(f_rot.element().value_dimension(0))
-	derivs_rot = numpy.zeros(f_rot.element().value_dimension(0)*3)
+        values_base = numpy.zeros(f_base.element().value_dimension(0))
+        derivs_base = numpy.zeros(f_base.element().value_dimension(0)*3)
+        values_rot = numpy.zeros(f_rot.element().value_dimension(0))
+        derivs_rot = numpy.zeros(f_rot.element().value_dimension(0)*3)
 
-	# Get cell vertices
-	vertex_coordinates_base = cell_base.get_vertex_coordinates()
-	vertex_coordinates_rot  = cell_rot.get_vertex_coordinates()
+        # Get cell vertices
+        vertex_coordinates_base = cell_base.get_vertex_coordinates()
+        vertex_coordinates_rot  = cell_rot.get_vertex_coordinates()
 
-	for i in range(f_base.element().space_dimension()):
-	    for point in points:
-		f_base.element().evaluate_basis(i, values_base,
-						point,
-						vertex_coordinates_base,
-						cell_base.orientation())
+        for i in range(f_base.element().space_dimension()):
+            for point in points:
+                f_base.element().evaluate_basis(i, values_base,
+                                                point,
+                                                vertex_coordinates_base,
+                                                cell_base.orientation())
 
-		f_base.element().evaluate_basis_derivatives(i, 1, derivs_base,
-							    point, vertex_coordinates_base,
-							    cell_base.orientation())
+                f_base.element().evaluate_basis_derivatives(i, 1, derivs_base,
+                                                            point, vertex_coordinates_base,
+                                                            cell_base.orientation())
 
-		f_rot.element().evaluate_basis(i, values_rot,
-						rotation.rotate_point(point),
-						vertex_coordinates_rot,
-						cell_rot.orientation())
+                f_rot.element().evaluate_basis(i, values_rot,
+                                                rotation.rotate_point(point),
+                                                vertex_coordinates_rot,
+                                                cell_rot.orientation())
 
-		f_base.element().evaluate_basis_derivatives(i, 1, derivs_rot,
-							    rotation.rotate_point(point),
-							    vertex_coordinates_rot,
-							    cell_rot.orientation())
+                f_base.element().evaluate_basis_derivatives(i, 1, derivs_rot,
+                                                            rotation.rotate_point(point),
+                                                            vertex_coordinates_rot,
+                                                            cell_rot.orientation())
 
-		if piola:
-		    values_cmp = rotation.rotate_point(values_base)
+                if piola:
+                    values_cmp = rotation.rotate_point(values_base)
 
-		    derivs_rot2 = derivs_rot.reshape(f_rot.element().value_dimension(0),3)
-		    derivs_base2 = derivs_base.reshape(f_base.element().value_dimension(0),3)
-		    # If D is the unrotated derivative tensor, then RDR^T is the rotated version.
-		    derivs_cmp = numpy.dot(rotation.mat, 
-					    rotation.rotate_point(derivs_base2))
-		else:
-		    values_cmp = values_base
-		    # Rotate the derivative for comparison.
-		    derivs_cmp = rotation.rotate_point(derivs_base)
-		    derivs_rot2 = derivs_rot
+                    derivs_rot2 = derivs_rot.reshape(f_rot.element().value_dimension(0),3)
+                    derivs_base2 = derivs_base.reshape(f_base.element().value_dimension(0),3)
+                    # If D is the unrotated derivative tensor, then RDR^T is the rotated version.
+                    derivs_cmp = numpy.dot(rotation.mat, 
+                                            rotation.rotate_point(derivs_base2))
+                else:
+                    values_cmp = values_base
+                    # Rotate the derivative for comparison.
+                    derivs_cmp = rotation.rotate_point(derivs_base)
+                    derivs_rot2 = derivs_rot
 
-		assert round(abs(derivs_rot2-derivs_cmp).max() - 0.0, 10) == 0
-		assert round(abs(values_cmp-values_rot).max() - 0.0, 10) == 0
+                assert round(abs(derivs_rot2-derivs_cmp).max() - 0.0, 10) == 0
+                assert round(abs(values_cmp-values_rot).max() - 0.0, 10) == 0
 
-		
+                
 if __name__ == "__main__":
     pytest.main()

@@ -64,23 +64,23 @@ def test_evaluate_dofs(W, mesh, V):
     L11 = L1.sub(1)
 
     for cell in cells(mesh):
-	vx = cell.get_vertex_coordinates()
-	orientation = cell.orientation()
-	V.dofmap().tabulate_coordinates(cell, coords)
-	for i in range(coords.shape[0]):
-	    coord[:] = coords[i,:]
-	    values0[i] = e(*coord)
-	L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
-	L01.element().evaluate_dofs(values2, e, vx, orientation, cell)
-	L11.element().evaluate_dofs(values3, e, vx, orientation, cell)
-	L1.element().evaluate_dofs(values4, e2, vx, orientation, cell)
+        vx = cell.get_vertex_coordinates()
+        orientation = cell.orientation()
+        V.dofmap().tabulate_coordinates(cell, coords)
+        for i in range(coords.shape[0]):
+            coord[:] = coords[i,:]
+            values0[i] = e(*coord)
+        L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
+        L01.element().evaluate_dofs(values2, e, vx, orientation, cell)
+        L11.element().evaluate_dofs(values3, e, vx, orientation, cell)
+        L1.element().evaluate_dofs(values4, e2, vx, orientation, cell)
 
-	for i in range(3):
-	    assert round(values0[i] - values1[i], 7) == 0
-	    assert round(values0[i] - values2[i], 7) == 0
-	    assert round(values0[i] - values3[i], 7) == 0
-	    assert round(values4[:3][i] - values0[i], 7) == 0
-	    assert round(values4[3:][i] - values0[i], 7) == 0
+        for i in range(3):
+            assert round(values0[i] - values1[i], 7) == 0
+            assert round(values0[i] - values2[i], 7) == 0
+            assert round(values0[i] - values3[i], 7) == 0
+            assert round(values4[:3][i] - values0[i], 7) == 0
+            assert round(values4[3:][i] - values0[i], 7) == 0
 
 def test_evaluate_dofs_manifolds_affine():
     "Testing evaluate_dofs vs tabulated coordinates."
@@ -100,22 +100,22 @@ def test_evaluate_dofs_manifolds_affine():
 
     f = Expression("x[0]+x[1]")
     for V in elements:
-	sdim = V.element().space_dimension()
-	gdim = V.mesh().geometry().dim()
-	coords = numpy.zeros((sdim, gdim), dtype="d")
-	coord = numpy.zeros(gdim, dtype="d")
-	values0 = numpy.zeros(sdim, dtype="d")
-	values1 = numpy.zeros(sdim, dtype="d")
-	for cell in cells(V.mesh()):
-	    vx = cell.get_vertex_coordinates()
-	    orientation = cell.orientation()
-	    V.dofmap().tabulate_coordinates(cell, coords)
-	    for i in range(coords.shape[0]):
-		coord[:] = coords[i,:]
-		values0[i] = f(*coord)
-	    V.element().evaluate_dofs(values1, f, vx, orientation, cell)
-	    for i in range(sdim):
-		assert round(values0[i] - values1[i], 7) == 0
+        sdim = V.element().space_dimension()
+        gdim = V.mesh().geometry().dim()
+        coords = numpy.zeros((sdim, gdim), dtype="d")
+        coord = numpy.zeros(gdim, dtype="d")
+        values0 = numpy.zeros(sdim, dtype="d")
+        values1 = numpy.zeros(sdim, dtype="d")
+        for cell in cells(V.mesh()):
+            vx = cell.get_vertex_coordinates()
+            orientation = cell.orientation()
+            V.dofmap().tabulate_coordinates(cell, coords)
+            for i in range(coords.shape[0]):
+                coord[:] = coords[i,:]
+                values0[i] = f(*coord)
+            V.element().evaluate_dofs(values1, f, vx, orientation, cell)
+            for i in range(sdim):
+                assert round(values0[i] - values1[i], 7) == 0
 
 
 def test_tabulate_coord(V, W, mesh):
@@ -132,17 +132,17 @@ def test_tabulate_coord(V, W, mesh):
     L11 = L1.sub(1)
 
     for cell in cells(mesh):
-	V.dofmap().tabulate_coordinates(cell, coord0)
-	L0.dofmap().tabulate_coordinates(cell, coord1)
-	L01.dofmap().tabulate_coordinates(cell, coord2)
-	L11.dofmap().tabulate_coordinates(cell, coord3)
-	L1.dofmap().tabulate_coordinates(cell, coord4)
+        V.dofmap().tabulate_coordinates(cell, coord0)
+        L0.dofmap().tabulate_coordinates(cell, coord1)
+        L01.dofmap().tabulate_coordinates(cell, coord2)
+        L11.dofmap().tabulate_coordinates(cell, coord3)
+        L1.dofmap().tabulate_coordinates(cell, coord4)
 
-	assert (coord0 == coord1).all()
-	assert (coord0 == coord2).all()
-	assert (coord0 == coord3).all()
-	assert (coord4[:3] == coord0).all()
-	assert (coord4[3:] == coord0).all()
+        assert (coord0 == coord1).all()
+        assert (coord0 == coord2).all()
+        assert (coord0 == coord3).all()
+        assert (coord4[:3] == coord0).all()
+        assert (coord4[3:] == coord0).all()
 
 
 if __name__ == "__main__":

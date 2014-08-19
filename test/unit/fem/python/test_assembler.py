@@ -85,7 +85,7 @@ def test_cell_assembly():
     f = Constant((10, 20, 30))
 
     def epsilon(v):
-	return 0.5*(grad(v) + grad(v).T)
+        return 0.5*(grad(v) + grad(v).T)
 
     a = inner(epsilon(v), epsilon(u))*dx
     L = inner(v, f)*dx
@@ -108,7 +108,7 @@ def test_cell_assembly_multithreaded():
     f = Constant((10, 20, 30))
 
     def epsilon(v):
-	return 0.5*(grad(v) + grad(v).T)
+        return 0.5*(grad(v) + grad(v).T)
 
     a = inner(epsilon(v), epsilon(u))*dx
     L = inner(v, f)*dx
@@ -141,12 +141,12 @@ def test_facet_assembly():
 
     # Define bilinear form
     a = dot(grad(v), grad(u))*dx \
-	- dot(avg(grad(v)), jump(u, n))*dS \
-	- dot(jump(v, n), avg(grad(u)))*dS \
-	+ 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
-	- dot(grad(v), u*n)*ds \
-	- dot(v*n, grad(u))*ds \
-	+ 8.0/h*v*u*ds
+        - dot(avg(grad(v)), jump(u, n))*dS \
+        - dot(jump(v, n), avg(grad(u)))*dS \
+        + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+        - dot(grad(v), u*n)*ds \
+        - dot(v*n, grad(u))*ds \
+        + 8.0/h*v*u*ds
 
     # Define linear form
     L = v*f*dx
@@ -177,12 +177,12 @@ def test_facet_assembly_multithreaded():
 
     # Define bilinear form
     a = dot(grad(v), grad(u))*dx \
-	- dot(avg(grad(v)), jump(u, n))*dS \
-	- dot(jump(v, n), avg(grad(u)))*dS \
-	+ 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
-	- dot(grad(v), u*n)*ds \
-	- dot(v*n, grad(u))*ds \
-	+ 8.0/h*v*u*ds
+        - dot(avg(grad(v)), jump(u, n))*dS \
+        - dot(jump(v, n), avg(grad(u)))*dS \
+        + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+        - dot(grad(v), u*n)*ds \
+        - dot(v*n, grad(u))*ds \
+        + 8.0/h*v*u*ds
 
     # Define linear form
     L = v*f*dx
@@ -234,25 +234,25 @@ def test_subdomain_and_fulldomain_assembly_meshdomains():
 
     # Define subdomains for 3 faces of the unit cube
     class F0(SubDomain):
-	def inside(self, x, inside):
-	    return near(x[0], 0.0)
+        def inside(self, x, inside):
+            return near(x[0], 0.0)
     class F1(SubDomain):
-	def inside(self, x, inside):
-	    return near(x[1], 0.0)
+        def inside(self, x, inside):
+            return near(x[1], 0.0)
     class F2(SubDomain):
-	def inside(self, x, inside):
-	    return near(x[2], 0.0)
+        def inside(self, x, inside):
+            return near(x[2], 0.0)
 
     # Define subdomains for 3 parts of the unit cube
     class S0(SubDomain):
-	def inside(self, x, inside):
-	    return x[0] > 0.25
+        def inside(self, x, inside):
+            return x[0] > 0.25
     class S1(SubDomain):
-	def inside(self, x, inside):
-	    return x[0] > 0.5
+        def inside(self, x, inside):
+            return x[0] > 0.5
     class S2(SubDomain):
-	def inside(self, x, inside):
-	    return x[0] > 0.75
+        def inside(self, x, inside):
+            return x[0] > 0.75
 
     # Mark mesh
     f0 = F0()
@@ -277,7 +277,7 @@ def test_subdomain_and_fulldomain_assembly_meshdomains():
 	sub = [assemble(Constant(1.0)*dmu(k, domain=mesh)) for k in krange]
 	for k in krange:
 	    #print sub[k] + full, subplusfull[k]
-	    assert round(sub[k] + full - subplusfull[k], 7) == 0
+            assert round(sub[k] + full - subplusfull[k], 7) == 0
 
 @skip_parallel
 def test_subdomain_assembly_form_1():
@@ -446,15 +446,15 @@ def test_subdomain_assembly_form_2():
 
     # Define domain for lower left corner
     class MyDomain(SubDomain):
-	def inside(self, x, on_boundary):
-	    return x[0] < 0.5 + DOLFIN_EPS and x[1] < 0.5 + DOLFIN_EPS
+        def inside(self, x, on_boundary):
+            return x[0] < 0.5 + DOLFIN_EPS and x[1] < 0.5 + DOLFIN_EPS
     my_domain = MyDomain()
 
     # Define boundary for lower left corner
     class MyBoundary(SubDomain):
-	def inside(self, x, on_boundary):
-	    return (x[0] < 0.5 + DOLFIN_EPS and x[1] < DOLFIN_EPS) or \
-		    (x[1] < 0.5 + DOLFIN_EPS and x[0] < DOLFIN_EPS)
+        def inside(self, x, on_boundary):
+            return (x[0] < 0.5 + DOLFIN_EPS and x[1] < DOLFIN_EPS) or \
+                   (x[1] < 0.5 + DOLFIN_EPS and x[0] < DOLFIN_EPS)
     my_boundary = MyBoundary()
 
     # Mark mesh functions
@@ -570,13 +570,13 @@ def test_reference_assembly():
 	dtype = numpy.int64
     pos = numpy.array([0, 1, 2, 3], dtype=dtype)
     A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
-			[-1.0/6.0, 1.0/6.0, 0.0, 0.0],
-			[-1.0/6.0, 0.0, 1.0/6.0, 0.0],
-			[-1.0/6.0, 0.0, 0.0, 1.0/6.0]]), pos, pos)
+                        [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
+                        [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
+                        [-1.0/6.0, 0.0, 0.0, 1.0/6.0]]), pos, pos)
     M0.set(numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
-			[1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
-			[1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
-			[1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]]), pos, pos)
+                        [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
+                        [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
+                        [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]]), pos, pos)
     A0.apply("insert")
     M0.apply("insert")
 
@@ -639,7 +639,6 @@ def test_ways_to_pass_mesh_to_assembler():
     assert round(0.5 - assemble(e3*dx(mesh)), 7) == 0
     assert round(0.5 - assemble(e4*dx), 7) == 0 # e4 has a domain with mesh reference
     assert round(0.5 - assemble(e4*dx(mesh)), 7) == 0
-
 
     # Geometric quantities with mesh in domain:
     assert round(0.0 - assemble(n[0]*ds), 7) == 0

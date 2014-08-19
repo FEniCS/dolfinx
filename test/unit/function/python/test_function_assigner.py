@@ -140,11 +140,11 @@ def test_1_1_assigner(w, ww, wr, wrr, q, r, qqv, u0, u1, u2):
     assert np.all(qqv.sub(0).sub(0, deepcopy=True).vector().array() == q.vector().array())
 
     with pytest.raises(RuntimeError):
-	assign(qqv.sub(0), q)
+        assign(qqv.sub(0), q)
     with pytest.raises(RuntimeError):
-	assign(qqv.sub(1), q)
+        assign(qqv.sub(1), q)
     with pytest.raises(RuntimeError):
-	assign(wrr.sub(1), w)
+        assign(wrr.sub(1), w)
 
 
 def test_N_1_assigner(u0, u1, u2, qq, qqv, rr, w, wrr, r):
@@ -166,10 +166,10 @@ def test_N_1_assigner(u0, u1, u2, qq, qqv, rr, w, wrr, r):
     assert np.all(wrr.sub(1, deepcopy=True).vector().array() == rr.vector().array())
 
     with pytest.raises(RuntimeError):
-	assign(qqv, [qq, u1, u1])
+        assign(qqv, [qq, u1, u1])
 
     with pytest.raises(RuntimeError):
-	assign(wrr, [w, r, r])
+        assign(wrr, [w, r, r])
 
 def test_1_N_assigner(u0, u1, u2, w, qq, qqv):
 

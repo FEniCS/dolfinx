@@ -41,7 +41,7 @@ def test_cell_assembly():
     f = Constant((10, 20, 30))
 
     def epsilon(v):
-	return 0.5*(grad(v) + grad(v).T)
+        return 0.5*(grad(v) + grad(v).T)
 
     a = inner(epsilon(v), epsilon(u))*dx
     L = inner(v, f)*dx
@@ -123,54 +123,54 @@ def test_cell_assembly_bc():
 def test_facet_assembly():
 
     def test(mesh):
-	V = FunctionSpace(mesh, "DG", 1)
+        V = FunctionSpace(mesh, "DG", 1)
 
-	# Define test and trial functions
-	v = TestFunction(V)
-	u = TrialFunction(V)
+        # Define test and trial functions
+        v = TestFunction(V)
+        u = TrialFunction(V)
 
-	# Define normal component, mesh size and right-hand side
-	n = FacetNormal(mesh)
-	h = CellSize(mesh)
-	h_avg = (h('+') + h('-'))/2
-	f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+        # Define normal component, mesh size and right-hand side
+        n = FacetNormal(mesh)
+        h = CellSize(mesh)
+        h_avg = (h('+') + h('-'))/2
+        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
 
-	# Define bilinear form
-	a = dot(grad(v), grad(u))*dx \
-	    - dot(avg(grad(v)), jump(u, n))*dS \
-	    - dot(jump(v, n), avg(grad(u)))*dS \
-	    + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
-	    - dot(grad(v), u*n)*ds \
-	    - dot(v*n, grad(u))*ds \
-	    + 8.0/h*v*u*ds
+        # Define bilinear form
+        a = dot(grad(v), grad(u))*dx \
+            - dot(avg(grad(v)), jump(u, n))*dS \
+            - dot(jump(v, n), avg(grad(u)))*dS \
+            + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+            - dot(grad(v), u*n)*ds \
+            - dot(v*n, grad(u))*ds \
+            + 8.0/h*v*u*ds
 
-	# Define linear form
-	L = v*f*dx
+        # Define linear form
+        L = v*f*dx
 
-	# Reference values
-	A_frobenius_norm = 157.867392938645
-	b_l2_norm = 1.48087142738768
+        # Reference values
+        A_frobenius_norm = 157.867392938645
+        b_l2_norm = 1.48087142738768
 
-	# Assemble system
-	A, b = assemble_system(a, L)
-	assert round(A.norm("frobenius") - A_frobenius_norm, 10) == 0
-	assert round(b.norm("l2") - b_l2_norm, 10) == 0
+        # Assemble system
+        A, b = assemble_system(a, L)
+        assert round(A.norm("frobenius") - A_frobenius_norm, 10) == 0
+        assert round(b.norm("l2") - b_l2_norm, 10) == 0
 
-	# Test SystemAssembler
-	assembler = SystemAssembler(a, L)
-	A = Matrix()
-	b = Vector()
+        # Test SystemAssembler
+        assembler = SystemAssembler(a, L)
+        A = Matrix()
+        b = Vector()
 
-	assembler.assemble(A, b)
-	assert round(A.norm("frobenius") - A_frobenius_norm, 10) == 0
-	assert round(b.norm("l2") - b_l2_norm, 10) == 0
+        assembler.assemble(A, b)
+        assert round(A.norm("frobenius") - A_frobenius_norm, 10) == 0
+        assert round(b.norm("l2") - b_l2_norm, 10) == 0
 
-	A = Matrix()
-	b = Vector()
-	assembler.assemble(A)
-	assert round(A.norm("frobenius") - A_frobenius_norm, 10) == 0
-	assembler.assemble(b)
-	assert round(b.norm("l2") - b_l2_norm, 10) == 0
+        A = Matrix()
+        b = Vector()
+        assembler.assemble(A)
+        assert round(A.norm("frobenius") - A_frobenius_norm, 10) == 0
+        assembler.assemble(b)
+        assert round(b.norm("l2") - b_l2_norm, 10) == 0
 
     parameters["ghost_mode"] = "shared_facet"
     mesh = UnitSquareMesh(24, 24)
@@ -186,45 +186,45 @@ def test_incremental_assembly():
 
     for f in [Constant(0.0), Constant(1e4)]:
 
-	# Laplace/Poisson problem
-	mesh = UnitSquareMesh(20, 20)
-	V = FunctionSpace(mesh, 'CG', 1)
-	u, v = TrialFunction(V), TestFunction(V)
-	a, L = inner(grad(u), grad(v))*dx, f*v*dx
-	uD = Expression("42.0*(2.0*x[0]-1.0)")
-	bc = DirichletBC(V, uD, "on_boundary")
+        # Laplace/Poisson problem
+        mesh = UnitSquareMesh(20, 20)
+        V = FunctionSpace(mesh, 'CG', 1)
+        u, v = TrialFunction(V), TestFunction(V)
+        a, L = inner(grad(u), grad(v))*dx, f*v*dx
+        uD = Expression("42.0*(2.0*x[0]-1.0)")
+        bc = DirichletBC(V, uD, "on_boundary")
 
-	# Initialize initial guess by some number
-	u = Function(V)
-	x = u.vector()
-	x[:] = 30.0
+        # Initialize initial guess by some number
+        u = Function(V)
+        x = u.vector()
+        x[:] = 30.0
 
-	# Assemble incremental system
-	assembler = SystemAssembler(a, -L, bc)
-	A, b = Matrix(), Vector()
-	assembler.assemble(A, b, x)
+        # Assemble incremental system
+        assembler = SystemAssembler(a, -L, bc)
+        A, b = Matrix(), Vector()
+        assembler.assemble(A, b, x)
 
-	# Solve for (negative) increment
-	Dx = Vector(x)
-	Dx.zero()
-	solve(A, Dx, b)
+        # Solve for (negative) increment
+        Dx = Vector(x)
+        Dx.zero()
+        solve(A, Dx, b)
 
-	# Update solution
-	x[:] -= Dx[:]
+        # Update solution
+        x[:] -= Dx[:]
 
-	# Check solution
-	u_true = Function(V)
-	solve(a == L, u_true, bc)
-	u.vector()[:] -= u_true.vector()[:]
-	error = norm(u.vector(), 'linf')
-	assert round(error - 0.0, 7) == 0
+        # Check solution
+        u_true = Function(V)
+        solve(a == L, u_true, bc)
+        u.vector()[:] -= u_true.vector()[:]
+        error = norm(u.vector(), 'linf')
+        assert round(error - 0.0, 7) == 0
 
 @skip_in_parallel
 def test_domains():
 
     class RightSubDomain(SubDomain):
-	def inside(self, x, on_boundary):
-	    return x[0] > 0.5
+        def inside(self, x, on_boundary):
+            return x[0] > 0.5
 
     mesh = UnitSquareMesh(24, 24)
 
@@ -296,7 +296,7 @@ def test_facet_assembly_cellwise_insertion():
     a = c_t*c_a*dx
     # L has facet integrals so we end up in facet wise assembly
     L = c_t('+')*vout('+')*dt('+')*dS + c_t('-')*vout('-')*dt('-')*dS  \
-	+ c_t*vout*dt*ds
+        + c_t*vout*dt*ds
     # but have to use cell wise insertion because the sparsity
     # pattern doesn't support the macro element
 

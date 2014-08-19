@@ -33,39 +33,39 @@ type_conv = dict(size_t=int, int=int, double=float, bool=bool)
 def test_save_1d_meshfunctions():
     mesh = UnitIntervalMesh(32)
     for F in mesh_functions:
-	if F in [FaceFunction, EdgeFunction]: continue
-	for t in mesh_function_types:
-	    mf = F(t, mesh, type_conv[t](1))
-	    File("mf.pvd") << mf
-	    f = File("mf.pvd")
-	    f << (mf, 0.)
-	    f << (mf, 1.)
-	    for file_option in file_options:
-		File("mf.pvd", file_option) << mf
+        if F in [FaceFunction, EdgeFunction]: continue
+        for t in mesh_function_types:
+            mf = F(t, mesh, type_conv[t](1))
+            File("mf.pvd") << mf
+            f = File("mf.pvd")
+            f << (mf, 0.)
+            f << (mf, 1.)
+            for file_option in file_options:
+                File("mf.pvd", file_option) << mf
 
 def test_save_2d_meshfunctions():
     mesh = UnitSquareMesh(32, 32)
     for F in mesh_functions:
-	for t in mesh_function_types:
-	    mf = F(t, mesh, type_conv[t](1))
-	    File("mf.pvd") << mf
-	    f = File("mf.pvd")
-	    f << (mf, 0.)
-	    f << (mf, 1.)
-	    for file_option in file_options:
-		File("mf.pvd", file_option) << mf
+        for t in mesh_function_types:
+            mf = F(t, mesh, type_conv[t](1))
+            File("mf.pvd") << mf
+            f = File("mf.pvd")
+            f << (mf, 0.)
+            f << (mf, 1.)
+            for file_option in file_options:
+                File("mf.pvd", file_option) << mf
 
 def test_save_3d_meshfunctions():
     mesh = UnitCubeMesh(8, 8, 8)
     for F in mesh_functions:
-	for t in mesh_function_types:
-	    mf = F(t, mesh, type_conv[t](1))
-	    File("mf.pvd") << mf
-	    f = File("mf.pvd")
-	    f << (mf, 0.)
-	    f << (mf, 1.)
-	    for file_option in file_options:
-		File("mf.pvd", file_option) << mf
+        for t in mesh_function_types:
+            mf = F(t, mesh, type_conv[t](1))
+            File("mf.pvd") << mf
+            f = File("mf.pvd")
+            f << (mf, 0.)
+            f << (mf, 1.)
+            for file_option in file_options:
+                File("mf.pvd", file_option) << mf
 
 def test_save_1d_mesh():
     mesh = UnitIntervalMesh(32)
@@ -74,7 +74,7 @@ def test_save_1d_mesh():
     f << (mesh, 0.)
     f << (mesh, 1.)
     for file_option in file_options:
-	File("mesh.pvd", file_option) << mesh
+        File("mesh.pvd", file_option) << mesh
 
 def test_save_2d_mesh():
     mesh = UnitSquareMesh(32, 32)
@@ -83,7 +83,7 @@ def test_save_2d_mesh():
     f << (mesh, 0.)
     f << (mesh, 1.)
     for file_option in file_options:
-	File("mesh.pvd", file_option) << mesh
+        File("mesh.pvd", file_option) << mesh
 
 def test_save_3d_mesh():
     mesh = UnitCubeMesh(8, 8, 8)
@@ -92,7 +92,7 @@ def test_save_3d_mesh():
     f << (mesh, 0.)
     f << (mesh, 1.)
     for file_option in file_options:
-	File("mesh.pvd", file_option) << mesh 
+        File("mesh.pvd", file_option) << mesh 
 
 def test_save_1d_scalar():
     mesh = UnitIntervalMesh(32)
@@ -103,7 +103,7 @@ def test_save_1d_scalar():
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-	File("u.pvd", file_option) << u
+        File("u.pvd", file_option) << u
 
 def test_save_2d_scalar():
     mesh = UnitSquareMesh(16, 16)
@@ -114,7 +114,7 @@ def test_save_2d_scalar():
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-	File("u.pvd", file_option) << u
+        File("u.pvd", file_option) << u
 
 def test_save_3d_scalar():
     mesh = UnitCubeMesh(8, 8, 8)
@@ -125,7 +125,7 @@ def test_save_3d_scalar():
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-	File("u.pvd", file_option) << u
+        File("u.pvd", file_option) << u
 
 # FFC fails for vector spaces in 1D
 #@pytest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
@@ -146,7 +146,7 @@ def test_save_2d_vector():
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-	File("u.pvd", file_option) << u
+        File("u.pvd", file_option) << u
 
 def test_save_3d_vector():
     mesh = UnitCubeMesh(8, 8, 8)
@@ -157,7 +157,7 @@ def test_save_3d_vector():
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-	File("u.pvd", file_option) << u
+        File("u.pvd", file_option) << u
 
 # FFC fails for tensor spaces in 1D
 #@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
@@ -179,7 +179,7 @@ def test_save_2d_tensor():
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-	File("u.pvd", file_option) << u
+        File("u.pvd", file_option) << u
 
 def test_save_3d_tensor():
     mesh = UnitCubeMesh(8, 8, 8)
@@ -190,7 +190,7 @@ def test_save_3d_tensor():
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-	File("u.pvd", file_option) << u
+        File("u.pvd", file_option) << u
 
 if __name__ == "__main__":
     pytest.main()

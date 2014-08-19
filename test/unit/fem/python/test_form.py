@@ -103,7 +103,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     w = TestFunction(Q1)
     u.vector()[:] = 0.5
     facetareas = MPI.sum(square_boundary.mpi_comm(),
-			  assemble(u*w*dx).array().sum())
+                          assemble(u*w*dx).array().sum())
     assert round(facetareas - 2.0, 7) == 0
 
     u = Function(V2)
@@ -112,7 +112,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     a = u*w*dx
     b = assemble(a)
     facetareas = MPI.sum(cube_boundary.mpi_comm(),
-			  assemble(u*w*dx).array().sum())
+                         assemble(u*w*dx).array().sum())
     assert round(facetareas - 3.0, 7) == 0
 
     mesh = UnitSquareMesh(8, 8)
@@ -126,9 +126,9 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     bv = TestFunction(BV)
 
     a = MPI.sum(mesh.mpi_comm(),
-		assemble(inner(u, v)*ds).array().sum())
+                assemble(inner(u, v)*ds).array().sum())
     b = MPI.sum(bdry.mpi_comm(),
-		assemble(inner(bu, bv)*dx).array().sum())
+                 assemble(inner(bu, bv)*dx).array().sum())
     assert round(a - b, 7) == 0
 
 
@@ -143,9 +143,9 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bv = TestFunction(V1)
 
     a = MPI.sum(square.mpi_comm(),
-		assemble(inner(u, v)*ds).array().sum())
+                 assemble(inner(u, v)*ds).array().sum())
     b = MPI.sum(square_boundary.mpi_comm(),
-		assemble(inner(bu, bv)*dx).array().sum())
+                assemble(inner(bu, bv)*dx).array().sum())
     assert round(a - b, 7) == 0
 
     # Assemble over subset of mesh facets
@@ -155,7 +155,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     subdomain.mark(bottom, 1)
     dss = ds[bottom]
     foo = MPI.sum(square.mpi_comm(),
-		  abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
+               abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
     # Assemble over all cells of submesh created from subset of boundary mesh
     bottom2 = CellFunctionSizet(square_boundary)
     bottom2.set_all(0)
@@ -164,7 +164,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bu = TrialFunction(BV)
     bv = TestFunction(BV)
     bar = MPI.sum(square_boundary.mpi_comm(),
-		  abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
+                  abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
     # Should give same result
     assert round(bar - foo, 7) == 0
 
@@ -181,9 +181,9 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     bv = TestFunction(V2)
 
     a = MPI.sum(cube.mpi_comm(),
-		assemble(inner(u, v)*ds).array().sum())
+                assemble(inner(u, v)*ds).array().sum())
     b = MPI.sum(cube_boundary.mpi_comm(),
-		assemble(inner(bu, bv)*dx).array().sum())
+                assemble(inner(bu, bv)*dx).array().sum())
     assert round(a - b, 7) == 0
 
     # Assemble over subset of mesh facets
@@ -193,7 +193,7 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     subdomain.mark(bottom, 1)
     dss = ds[bottom]
     foo = MPI.sum(cube.mpi_comm(),
-		  abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
+               abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
     #foo = MPI.sum(cube.mpi_comm(),
     #              abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(1),
     #                           exterior_facet_domains=bottom).array()).sum())
@@ -205,7 +205,7 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     bu = TrialFunction(BV)
     bv = TestFunction(BV)
     bar = MPI.sum(cube_boundary.mpi_comm(),
-		  abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
+                   abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
     # Should give same result
     assert round(bar - foo, 7) == 0
 
