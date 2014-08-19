@@ -199,7 +199,8 @@ namespace dolfin
     /// reduce memory use)
     void clear_sub_map_data()
     {
-      std::vector<int>().swap(_ufc_local_to_local);
+      //std::vector<int>().swap(_ufc_local_to_local);
+      _ufc_local_to_local.clear();
     }
 
     /// Local-to-global mapping of dofs on a cell

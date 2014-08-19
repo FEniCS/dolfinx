@@ -69,7 +69,8 @@ namespace dolfin
     // bcs
     static std::size_t build_constrained_vertex_indices(
       const Mesh& mesh,
-      const std::map<unsigned int, std::pair<unsigned int, unsigned int>>& slave_to_master_vertices,
+      const std::map<unsigned int, std::pair<unsigned int,
+      unsigned int>>& slave_to_master_vertices,
       std::vector<std::size_t>& modified_vertex_indices_global);
 
     // Build simple local UFC-based dofmap data structure (does not
@@ -90,7 +91,7 @@ namespace dolfin
     // Also computes map from shared node to sharing processes and a
     // set of process that share dofs on this process.
     // Returns: number of locally owned nodes
-    static int compute_node_ownership    (
+    static int compute_node_ownership(
       std::vector<short int>& node_ownership,
       std::unordered_map<int, std::vector<int>>& shared_node_to_processes,
       std::set<int>& neighbours,
@@ -98,8 +99,8 @@ namespace dolfin
       const std::vector<int>& boundary_nodes,
       const std::set<std::size_t>& global_nodes,
       const std::vector<std::size_t>& node_local_to_global,
-      const Mesh& mesh);
-
+      const Mesh& mesh,
+      const std::size_t global_dim);
 
     // Build dofmap based on re-ordered nodes
     static void
