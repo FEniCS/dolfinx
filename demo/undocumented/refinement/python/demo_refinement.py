@@ -20,6 +20,7 @@
 # First added:  2007-06-01
 # Last changed: 2012-11-12
 
+from __future__ import print_function
 from dolfin import *
 
 # Create mesh of unit square
@@ -27,27 +28,27 @@ mesh = UnitSquareMesh(8, 8)
 plot(mesh)
 
 info(mesh)
-print
+print()
 
 # Uniform refinement
 mesh = refine(mesh)
 plot(mesh)
 
 info(mesh)
-print
+print()
 
 # Uniform refinement
 mesh = refine(mesh)
 plot(mesh)
 
 info(mesh)
-print
+print()
 
 # Refine mesh close to x = (0.5, 0.5)
 p = Point(0.5, 0.5)
 for i in range(5):
 
-    print "marking for refinement"
+    print("marking for refinement")
 
     # Mark cells for refinement
     cell_markers = CellFunction("bool", mesh)

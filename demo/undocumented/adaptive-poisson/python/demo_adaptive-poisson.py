@@ -30,13 +30,12 @@ edge (jump) terms and the size of the interpolation constant.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2008-2011
-#
-# First added:  2008-04-03
-# Last changed: 2014-08-11
 
+from __future__ import print_function
 from dolfin import *
 from numpy import array, sqrt
 from math import pow
+from six.moves import xrange as range
 
 TOL = 5e-4           # Error tolerance
 REFINE_RATIO = 0.50  # Refine 50 % of the cells in each iteration
@@ -48,7 +47,7 @@ source_str = "exp(-100.0*(pow(x[0], 2) + pow(x[1], 2)))"
 source = eval("lambda x: " + source_str)
 
 # Adaptive algorithm
-for level in xrange(MAX_ITER):
+for level in range(MAX_ITER):
 
     # Define variational problem
     V = FunctionSpace(mesh, "CG", 1)
@@ -75,7 +74,7 @@ for level in xrange(MAX_ITER):
     # Compute error estimate
     E = sum([g*g for g in gamma])
     E = sqrt(MPI.sum(mesh.mpi_comm(), E))
-    print "Level %d: E = %g (TOL = %g)" % (level, E, TOL)
+    print("Level %d: E = %g (TOL = %g)" % (level, E, TOL))
 
     # Check convergence
     if E < TOL:

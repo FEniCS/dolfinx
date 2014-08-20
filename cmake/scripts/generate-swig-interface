@@ -216,13 +216,13 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
                 try:
                     # Extract type info
                     used_types, declared_types = parse_and_extract_type_info(code)
-                except Exception, e:
-                    print
-                    print "###################"
-                    print "ERROR while parsing:", header_file
-                    print "###################"
-                    print e
-                    print
+                except Exception as e:
+                    print()
+                    print("###################")
+                    print("ERROR while parsing:", header_file)
+                    print("###################")
+                    print(e)
+                    print()
                     continue
 
                 # Store type info
@@ -555,8 +555,8 @@ def regenerate_swig_interface(excludes, top_destdir):
     for module in module_to_submodules:
         # Sort submodules
         dependencies = sorted(module_info[module]["dependencies"].keys(), \
-                              cmp=lambda a, b : cmp(\
-            submodule_ordered.index(a), submodule_ordered.index(b)))
+                              key=lambda x: \
+            (submodule_ordered.index(x)))
         write_module_interface_file(module, module_info[module]["dependencies"], \
                                     submodule_info)
         write_swig_cmakelist_file(module)

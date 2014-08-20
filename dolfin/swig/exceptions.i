@@ -38,7 +38,11 @@ SWIGINTERN void handle_dolfin_exceptions()
   
   // all logic_error subclasses
   catch (std::logic_error &e) {
+#if PY_MAJOR_VERSION >= 3
+    PyErr_SetString(PyExc_Exception, const_cast<char*>(e.what()));
+#else
     PyErr_SetString(PyExc_StandardError, const_cast<char*>(e.what()));
+#endif
   }
 
   // all runtime_error subclasses

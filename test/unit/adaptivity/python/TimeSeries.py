@@ -21,6 +21,7 @@
 # First added:  2011-06-16
 # Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -96,7 +97,7 @@ class TimeSeriesTest(unittest.TestCase):
         series1.retrieve(x1, 0.15)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing TimeSeries operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing TimeSeries operations")
+    print("------------------------------------------------")
     unittest.main()

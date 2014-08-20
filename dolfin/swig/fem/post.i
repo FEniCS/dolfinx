@@ -115,8 +115,8 @@ def tabulate_coordinates(self, cell, coordinates=None):
        not (coordinates.flags.c_contiguous and \
             coordinates.dtype == np.dtype('d') and \
             coordinates.shape==shape):
-        raise TypeError, "expected a C-contiguous numpy array " \
-              "of 'double' (dtype='d') with shape %s"%str(shape)
+        raise TypeError("expected a C-contiguous numpy array " \
+              "of 'double' (dtype='d') with shape %s"%str(shape))
 
     # Call the extended method
     self._tabulate_coordinates(coordinates, cell)

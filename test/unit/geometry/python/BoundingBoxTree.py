@@ -20,6 +20,7 @@
 # First added:  2013-04-15
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 import numpy
 
@@ -441,7 +442,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         self.assertAlmostEqual(distance, reference[1])
 
 if __name__ == "__main__":
-    print ""
-    print "Testing BoundingBoxTree"
-    print "------------------------------------------------"
+    print("")
+    print("Testing BoundingBoxTree")
+    print("------------------------------------------------")
     unittest.main()
