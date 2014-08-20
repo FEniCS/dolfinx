@@ -20,6 +20,7 @@
 # First added:  2007-06-09
 # Last changed: 2011-11-14
 
+from __future__ import print_function
 import re, sys, os, subprocess
 from instant import get_status_output
 
@@ -39,8 +40,8 @@ command = [sys.executable, "test.py"] + sys.argv[1:]
 
 # Run tests
 for test in tests:
-    print "Running tests: %s" % test
-    print "----------------------------------------------------------------------"
+    print("Running tests: %s" % test)
+    print("----------------------------------------------------------------------")
     os.chdir(os.path.join(pwd, test))
     status = subprocess.Popen(command, shell=False).wait()
     if status:

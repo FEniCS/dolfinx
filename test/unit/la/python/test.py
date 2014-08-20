@@ -20,7 +20,9 @@
 # First added:  2008-09-30
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
+from six import integer_types
 from dolfin import *
 import sys
 
@@ -34,7 +36,7 @@ class AbstractBaseTest(object):
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
-            print "\nRunning:",type(self).__name__
+            print("\nRunning:",type(self).__name__)
 
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
@@ -82,7 +84,7 @@ class AbstractBaseTest(object):
 
         # Test set and access with different integers
         ind = 2
-        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,long]:
+        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,integer_types[1]]:
             v[t(ind)] = 2.0
             if v.owns_index(t(ind)): self.assertAlmostEqual(v[t(ind)], 2.0)
 
@@ -361,7 +363,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     #set_log_active(False);
 
-    print ""
-    print "Testing basic PyDOLFIN linear algebra operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing basic PyDOLFIN linear algebra operations")
+    print("------------------------------------------------")
     unittest.main()

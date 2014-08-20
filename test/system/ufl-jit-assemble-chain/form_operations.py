@@ -20,6 +20,7 @@
 # First added:  2011-11-14
 # Last changed: 2011-11-14
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -52,7 +53,7 @@ class FormOperations(unittest.TestCase):
         self.assertAlmostEqual(n, nl)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing DOLFIN integration of basic UFL form operations"
-    print "-------------------------------------------------------"
+    print("")
+    print("Testing DOLFIN integration of basic UFL form operations")
+    print("-------------------------------------------------------")
     unittest.main()

@@ -36,18 +36,19 @@ Based on "demo/pde/poisson/python/demo_poisson.py"
 #
 
 # Begin demo
-
+from __future__ import print_function
 from dolfin import *
+from six import print_
 try:
     from petsc4py import PETSc
 except:
-    print "*** You need to have petsc4py installed for this demo to run",
-    print "Exiting."
+    print_("*** You need to have petsc4py installed for this demo to run", end=' ')
+    print("Exiting.")
     exit()
 
 if not has_petsc4py():
-    print "*** DOLFIN has not been compiled with petsc4py support",
-    print "Exiting."
+    print_("*** DOLFIN has not been compiled with petsc4py support", end=' ')
+    print("Exiting.")
     exit()
 
 parameters["linear_algebra_backend"] = "PETSc"

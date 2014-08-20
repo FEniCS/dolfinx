@@ -22,6 +22,7 @@
 # First added:
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 from unittest import TestCase as _TestCase
 import unittest
 import os
@@ -31,6 +32,8 @@ import tempfile
 from dolfin_utils.meshconvert import meshconvert
 from dolfin_utils.meshconvert.meshconvert import DataHandler
 from dolfin import MPI, mpi_comm_world
+import six
+from functools import reduce
 
 class TestCase(_TestCase):
     def _get_tempfname(self, suffix=None):
@@ -142,7 +145,7 @@ class AbaqusTest(_ConverterTest):
         self.assert_(handler.cells_ended)
 
         # Verify materials
-        print handler.functions.keys()
+        print(list(handler.functions.keys()))
         #self.assertEqual(handler.functions.keys(), ["material"])
         #dim, sz, entries, ended = handler.functions["material"]
         #self.assertEqual(dim, 3)
@@ -220,7 +223,7 @@ class AbaqusTest(_ConverterTest):
         self.assert_(handler.vertices_ended)
         self.assert_(handler.cells_ended)
 
-        self.assert_("facet_region" in handler.functions.keys())
+        self.assert_("facet_region" in list(handler.functions.keys()))
         cell_type = DataHandler.CellType_Triangle
         function_dim, sz, entries, ended = handler.functions["facet_region"]
 
@@ -232,7 +235,7 @@ class AbaqusTest(_ConverterTest):
 
 
         # Check that the right number of facets are marked
-        for marker, count in marker_counter.iteritems():
+        for marker, count in six.iteritems(marker_counter):
             self.assert_(len([i for i in entries if i == marker]) == count)
 
         self.assert_(ended)
@@ -283,7 +286,7 @@ class GmshTest(_ConverterTest):
         self.assert_(handler.cells_ended)
 
         # Verify physical regions
-        self.assertEqual(handler.functions.keys(), ["physical_region"])
+        self.assertEqual(list(handler.functions.keys()), ["physical_region"])
         dim, sz, entries, ended = handler.functions["physical_region"]
         self.assertEqual(dim, 3)
         self.assertEqual(sz, 10)        # There are 10 cells
@@ -353,7 +356,7 @@ class GmshTest(_ConverterTest):
 
         handler = self.__convert("gmsh_test_facet_regions_%dD_%d.msh" % (dim, id), cell_type, dim)
 
-        free_facets = range(size)
+        free_facets = list(range(size))
 
         for i in marked_facets:
             free_facets.remove(i)
@@ -449,7 +452,7 @@ class TriangleTester(_TestCase):
         #length0 = reduce(add, (Edge(mesh, e.index()).length() \
         #                    for e in SubsetIterator(edge_markers, 0)), 0.0)
         length0, length1 = 0.0, 0.0
-        for item in edge_markers.items():
+        for item in list(edge_markers.items()):
             if item[1] == 0:
                 e = Edge(mesh, int(item[0]))
                 length0 +=  Edge(mesh, int(item[0])).length()

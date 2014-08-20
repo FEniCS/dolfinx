@@ -23,6 +23,7 @@
 # First added:  2011-10-04
 # Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -314,7 +315,7 @@ class TestSystemAssembler(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print ""
-    print "Testing class SystemAssembler"
-    print "-----------------------------"
+    print("")
+    print("Testing class SystemAssembler")
+    print("-----------------------------")
     unittest.main()

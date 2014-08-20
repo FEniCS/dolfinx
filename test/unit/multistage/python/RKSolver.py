@@ -20,6 +20,7 @@
 # First added:  2013-02-20
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -99,7 +100,7 @@ class RKSolverTest(unittest.TestCase):
         cpp.set_log_level(LEVEL)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN RKSolver operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN RKSolver operations")
+    print("------------------------------------------------")
     unittest.main()

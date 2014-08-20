@@ -4,6 +4,7 @@ As d5_p2D.py, but with a more complicated solution, error computations
 and convergence studies.
 """
 
+from __future__ import print_function
 from dolfin import *
 import sys
 
@@ -84,10 +85,10 @@ def compute(nx, ny, degree):
     # Infinity norm based on nodal values
     u_e_V = interpolate(u_e, V)
     E5 = abs(u_e_V.vector().array() - u.vector().array()).max()
-    print 'E2:', E2
-    print 'E3:', E3
-    print 'E4:', E4
-    print 'E5:', E5
+    print('E2:', E2)
+    print('E3:', E3)
+    print('E4:', E4)
+    print('E5:', E5)
 
     # H1 seminorm
     error = inner(grad(e_Ve), grad(e_Ve))*dx
@@ -115,11 +116,11 @@ for nx in [4, 8, 16]:
 
 # Convergence rates
 from math import log as ln  # log is a dolfin name too
-error_types = E[0].keys()
+error_types = list(E[0].keys())
 for error_type in sorted(error_types):
-    print '\nError norm based on', error_type
+    print('\nError norm based on', error_type)
     for i in range(1, len(E)):
         Ei   = E[i][error_type]  # E is a list of dicts
         Eim1 = E[i-1][error_type]
         r = ln(Ei/Eim1)/ln(h[i]/h[i-1])
-        print 'h=%8.2E E=%8.2E r=%.2f' % (h[i], Ei, r)
+        print('h=%8.2E E=%8.2E r=%.2f' % (h[i], Ei, r))

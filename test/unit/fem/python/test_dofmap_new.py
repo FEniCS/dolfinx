@@ -1,7 +1,6 @@
-"""This script demonstrates how to interpolate functions between different
-finite element spaces on non-matching meshes."""
+"""Unit tests for the DofMap interface"""
 
-# Copyright (C) 2009 Garth N. Wells
+# Copyright (C) 2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -17,31 +16,22 @@ finite element spaces on non-matching meshes."""
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2009-05-19
-# Last changed: 2009-05-19
 
 from __future__ import print_function
+import pytest
+import numpy as np
 from dolfin import *
 
-# Create mesh and define function spaces
-mesh0 = UnitSquareMesh(16, 16)
-mesh1 = UnitSquareMesh(64, 64)
+def test_dofmap_clear_submap():
+    mesh = UnitSquareMesh(8, 8)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    W = V*V
 
-P1 = FunctionSpace(mesh1, "CG", 1)
-P3 = FunctionSpace(mesh0, "CG", 3)
+    # Check block size
+    assert W.dofmap().block_size == 2
 
-# Define function
-v0 = Expression("sin(10.0*x[0])*sin(10.0*x[1])", element=FiniteElement('CG', triangle, 3))
-v1 = Function(P1)
-
-# Interpolate
-v1.interpolate(v0)
-
-# Plot functions
-plot(v0, mesh=mesh0, title="v0")
-plot(v1, title="v1")
-interactive()
-
-print(norm(v0, mesh = mesh1))
-print(norm(v1))
+    W.dofmap().clear_sub_map_data()
+    with pytest.raises(RuntimeError):
+        W0 = W.sub(0)
+    with pytest.raises(RuntimeError):
+        W1 = W.sub(1)

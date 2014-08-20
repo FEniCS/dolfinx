@@ -36,6 +36,7 @@
 # and the value of the functional at the solution usol is F(usol)=Ly
 # for any value of ell, with 0<ell<Lx.
 
+from __future__ import print_function
 from dolfin import *
 import unittest
 
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print ""
-    print "Testing DOLFIN TAOLinearBoundSolver interface"
-    print "----------------------------------------"
+    print("")
+    print("Testing DOLFIN TAOLinearBoundSolver interface")
+    print("----------------------------------------")
     unittest.main()

@@ -20,6 +20,7 @@
 # First added:  2011-11-14
 # Last changed: 2011-11-14
 
+from __future__ import print_function
 import os, re
 
 cpp_tests = []
@@ -28,8 +29,8 @@ python_tests = []
 def test_codingstyle(topdir, language, subdir, suffixes, tests):
     "Main function for performing tests"
 
-    print "Running tests for %s coding style, watch out..." % language
-    print "----------------------------------------------------"
+    print("Running tests for %s coding style, watch out..." % language)
+    print("----------------------------------------------------")
 
     # Iterate over all files
     num_errors = 0
@@ -55,13 +56,13 @@ def test_codingstyle(topdir, language, subdir, suffixes, tests):
                     num_warnings += 1
 
     # Print summary
-    print
-    print "Ran %d test(s)" % len(tests)
+    print()
+    print("Ran %d test(s)" % len(tests))
     if num_errors == 0:
-        print "OK"
+        print("OK")
     else:
-        print "*** %d tests failed" % num_failed
-    print
+        print("*** %d tests failed" % num_failed)
+    print()
 
 def test_dolfin_error(code, filename):
     "Test for use of dolfin_error vs error"
@@ -77,7 +78,7 @@ def test_dolfin_error(code, filename):
         return True
 
     # Write an error message
-    print "*** error() used in %s when dolfin_error() should be used" % filename
+    print("*** error() used in %s when dolfin_error() should be used" % filename)
 
     return False
 
@@ -94,7 +95,7 @@ def test_raise_exception(code, filename):
         return True
 
     # Write an error message
-    print "* Warning: exception raised in %s when dolfin_error() should be used" % filename
+    print("* Warning: exception raised in %s when dolfin_error() should be used" % filename)
 
     return False
 
@@ -111,7 +112,7 @@ def test_uint(code, filename):
         return True
 
     # Write an error message
-    print "* Warning: uint is used in %s when std::size_t should be used" % filename
+    print("* Warning: uint is used in %s when std::size_t should be used" % filename)
 
     return False
 

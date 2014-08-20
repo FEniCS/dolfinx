@@ -23,6 +23,7 @@
 import unittest
 import numpy
 from dolfin import *
+from six.moves import xrange as range
 
 def triangulation_to_mesh_2d(triangulation):
     editor = MeshEditor()
@@ -32,9 +33,9 @@ def triangulation_to_mesh_2d(triangulation):
     num_vertices = len(triangulation) / 2
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
-    for i in xrange(num_cells):
+    for i in range(num_cells):
         editor.add_cell(i, 3*i, 3*i + 1, 3*i + 2)
-    for i in xrange(num_vertices):
+    for i in range(num_vertices):
         editor.add_vertex(i, triangulation[2*i], triangulation[2*i + 1])
     editor.close()
     return mesh
@@ -47,9 +48,9 @@ def triangulation_to_mesh_2d_3d(triangulation):
     num_vertices = len(triangulation)/3
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
-    for i in xrange(num_cells):
+    for i in range(num_cells):
         editor.add_cell(i, 3*i, 3*i+1, 3*i+2)
-    for i in xrange(num_vertices):
+    for i in range(num_vertices):
         editor.add_vertex(i, triangulation[3*i], triangulation[3*i+1], triangulation[3*i+2])
     editor.close()
     return mesh
@@ -62,9 +63,9 @@ def triangulation_to_mesh_3d(triangulation):
     num_vertices = len(triangulation)/3
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
-    for i in xrange(num_cells):
+    for i in range(num_cells):
         editor.add_cell(i, 4*i, 4*i+1, 4*i+2, 4*i+3)
-    for i in xrange(num_vertices):
+    for i in range(num_vertices):
         editor.add_vertex(i, triangulation[3*i], triangulation[3*i+1], triangulation[3*i+2])
     editor.close()
     return mesh
