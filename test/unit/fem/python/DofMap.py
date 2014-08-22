@@ -22,8 +22,10 @@ import unittest
 import numpy as np
 from dolfin import *
 
-class DofMapTest(unittest.TestCase):
+class TestDofMap:
 
+    @classmethod
+    @pytest.fixture(scope="class", autouse=True)
     def setUp(self):
         self.mesh = UnitSquareMesh(4, 4)
         self.V = FunctionSpace(self.mesh, "Lagrange", 1)
@@ -49,11 +51,11 @@ class DofMapTest(unittest.TestCase):
             L11.dofmap().tabulate_coordinates(cell, coord3)
             coord4 = L1.dofmap().tabulate_coordinates(cell)
 
-            self.assertTrue((coord0 == coord1).all())
-            self.assertTrue((coord0 == coord2).all())
-            self.assertTrue((coord0 == coord3).all())
-            self.assertTrue((coord4[:3] == coord0).all())
-            self.assertTrue((coord4[3:] == coord0).all())
+            assert (coord0 == coord1).all()
+            assert (coord0 == coord2).all()
+            assert (coord0 == coord3).all()
+            assert (coord4[:3] == coord0).all()
+            assert (coord4[3:] == coord0).all()
 
     def test_tabulate_dofs(self):
 
@@ -70,19 +72,15 @@ class DofMapTest(unittest.TestCase):
             dofs2 = L11.dofmap().cell_dofs(cell.index())
             dofs3 = L1.dofmap().cell_dofs(cell.index())
 
-            self.assertTrue(np.array_equal(dofs0, \
-                                L0.dofmap().cell_dofs(i)))
-            self.assertTrue(np.array_equal(dofs1,
-                                L01.dofmap().cell_dofs(i)))
-            self.assertTrue(np.array_equal(dofs2,
-                                L11.dofmap().cell_dofs(i)))
-            self.assertTrue(np.array_equal(dofs3,
-                                L1.dofmap().cell_dofs(i)))
+            assert np.array_equal(dofs0, L0.dofmap().cell_dofs(i))
+            assert np.array_equal(dofs1, L01.dofmap().cell_dofs(i))
+            assert np.array_equal(dofs2, L11.dofmap().cell_dofs(i))
+            assert np.array_equal(dofs3, L1.dofmap().cell_dofs(i))
 
-            self.assertEqual(len(np.intersect1d(dofs0, dofs1)), 0)
-            self.assertEqual(len(np.intersect1d(dofs0, dofs2)), 0)
-            self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
-            self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
+            assert len(np.intersect1d(dofs0, dofs1)) == 0
+            assert len(np.intersect1d(dofs0, dofs2)) == 0
+            assert len(np.intersect1d(dofs1, dofs2)) == 0
+            assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
     def test_tabulate_coord_periodic(self):
 
@@ -119,11 +117,11 @@ class DofMapTest(unittest.TestCase):
             L11.dofmap().tabulate_coordinates(cell, coord3)
             coord4 = L1.dofmap().tabulate_coordinates(cell)
 
-            self.assertTrue((coord0 == coord1).all())
-            self.assertTrue((coord0 == coord2).all())
-            self.assertTrue((coord0 == coord3).all())
-            self.assertTrue((coord4[:3] == coord0).all())
-            self.assertTrue((coord4[3:] == coord0).all())
+            assert (coord0 == coord1).all()
+            assert (coord0 == coord2).all()
+            assert (coord0 == coord3).all()
+            assert (coord4[:3] == coord0).all()
+            assert (coord4[3:] == coord0).all()
 
     def test_tabulate_dofs_periodic(self):
 
@@ -149,12 +147,12 @@ class DofMapTest(unittest.TestCase):
         L11  = L1.sub(1)
 
         # Check dimensions
-        self.assertEqual(V.dim(), 110)
-        self.assertEqual(Q.dim(), 220)
-        self.assertEqual(L0.dim(), V.dim())
-        self.assertEqual(L1.dim(), Q.dim())
-        self.assertEqual(L01.dim(), V.dim())
-        self.assertEqual(L11.dim(), V.dim())
+        assert V.dim() == 110
+        assert Q.dim() == 220
+        assert L0.dim() == V.dim()
+        assert L1.dim() == Q.dim()
+        assert L01.dim() == V.dim()
+        assert L11.dim() == V.dim()
 
         for i, cell in enumerate(cells(mesh)):
 
@@ -164,19 +162,15 @@ class DofMapTest(unittest.TestCase):
             dofs2 = L11.dofmap().cell_dofs(cell.index())
             dofs3 = L1.dofmap().cell_dofs(cell.index())
 
-            self.assertTrue(np.array_equal(dofs0, \
-                                L0.dofmap().cell_dofs(i)))
-            self.assertTrue(np.array_equal(dofs1,
-                                L01.dofmap().cell_dofs(i)))
-            self.assertTrue(np.array_equal(dofs2,
-                                L11.dofmap().cell_dofs(i)))
-            self.assertTrue(np.array_equal(dofs3,
-                                L1.dofmap().cell_dofs(i)))
+            assert np.array_equal(dofs0, L0.dofmap().cell_dofs(i))
+            assert np.array_equal(dofs1, L01.dofmap().cell_dofs(i))
+            assert np.array_equal(dofs2, L11.dofmap().cell_dofs(i))
+            assert np.array_equal(dofs3, L1.dofmap().cell_dofs(i))
 
-            self.assertEqual(len(np.intersect1d(dofs0, dofs1)), 0)
-            self.assertEqual(len(np.intersect1d(dofs0, dofs2)), 0)
-            self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
-            self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
+            assert len(np.intersect1d(dofs0, dofs1)) == 0
+            assert len(np.intersect1d(dofs0, dofs2)) == 0
+            assert len(np.intersect1d(dofs1, dofs2)) == 0
+            assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
     def test_global_dof_builder(self):
 
@@ -212,7 +206,7 @@ class DofMapTest(unittest.TestCase):
             for v_val, f_val in zip(vert_values, func_values):
                 # Do not compare dofs owned by other process
                 if f_val != -1:
-                    self.assertAlmostEqual(f_val, v_val)
+                    assert round(f_val - v_val, 7) == 0
 
             c0 = Constant((1,2))
             u0 = Function(Q)
@@ -224,17 +218,22 @@ class DofMapTest(unittest.TestCase):
             vert_values[1::2] = 2
 
             u1.vector().set_local(vert_values[dof_to_vertex_map(Q)].copy())
-            self.assertAlmostEqual((u0.vector()-u1.vector()).sum(), 0.0)
+            assert round((u0.vector()-u1.vector()).sum() - 0.0, 7) == 0
 
             W = FunctionSpace(self.mesh, "DG", 0)
-            self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W))
+            with pytest.raises(RuntimeError, lambda : dof_to_vertex_map(W))
 
             W = Q*FunctionSpace(self.mesh, "R", 0)
-            self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W))
+            with pytest.raises(RuntimeError):
+                dof_to_vertex_map(W))
+
             W = FunctionSpace(self.mesh, "CG", 2)
-            self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W))
+            with pytest.raises(RuntimeError):
+                dof_to_vertex_map(W))
+
             W = VectorFunctionSpace(self.mesh, "CG", 1)
-            self.assertRaises(RuntimeError, lambda : dof_to_vertex_map(W.sub(0)))
+            with pytest.raises(RuntimeError):
+                dof_to_vertex_map(W.sub(0)))
 
 
     def test_entity_dofs(self):
@@ -242,34 +241,34 @@ class DofMapTest(unittest.TestCase):
         # Test that num entity dofs is correctly wrapped to
         # dolfin::DofMap
         V = FunctionSpace(self.mesh, "CG", 1)
-        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
-        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
-        self.assertEqual(V.dofmap().num_entity_dofs(2), 0)
+        assert V.dofmap().num_entity_dofs(0) == 1
+        assert V.dofmap().num_entity_dofs(1) == 0
+        assert V.dofmap().num_entity_dofs(2) == 0
 
         V = VectorFunctionSpace(self.mesh, "CG", 1)
-        self.assertEqual(V.dofmap().num_entity_dofs(0), 2)
-        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
-        self.assertEqual(V.dofmap().num_entity_dofs(2), 0)
+        assert V.dofmap().num_entity_dofs(0) == 2
+        assert V.dofmap().num_entity_dofs(1) == 0
+        assert V.dofmap().num_entity_dofs(2) == 0
 
         V = FunctionSpace(self.mesh, "CG", 2)
-        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
-        self.assertEqual(V.dofmap().num_entity_dofs(1), 1)
-        self.assertEqual(V.dofmap().num_entity_dofs(2), 0)
+        assert V.dofmap().num_entity_dofs(0) == 1
+        assert V.dofmap().num_entity_dofs(1) == 1
+        assert V.dofmap().num_entity_dofs(2) == 0
 
         V = FunctionSpace(self.mesh, "CG", 3)
-        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
-        self.assertEqual(V.dofmap().num_entity_dofs(1), 2)
-        self.assertEqual(V.dofmap().num_entity_dofs(2), 1)
+        assert V.dofmap().num_entity_dofs(0) == 1
+        assert V.dofmap().num_entity_dofs(1) == 2
+        assert V.dofmap().num_entity_dofs(2) == 1
 
         V = FunctionSpace(self.mesh, "DG", 0)
-        self.assertEqual(V.dofmap().num_entity_dofs(0), 0)
-        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
-        self.assertEqual(V.dofmap().num_entity_dofs(2), 1)
+        assert V.dofmap().num_entity_dofs(0) == 0
+        assert V.dofmap().num_entity_dofs(1) == 0
+        assert V.dofmap().num_entity_dofs(2) == 1
 
         V = FunctionSpace(self.mesh, "DG", 1)
-        self.assertEqual(V.dofmap().num_entity_dofs(0), 0)
-        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
-        self.assertEqual(V.dofmap().num_entity_dofs(2), 3)
+        assert V.dofmap().num_entity_dofs(0) == 0
+        assert V.dofmap().num_entity_dofs(1) == 0
+        assert V.dofmap().num_entity_dofs(2) == 3
 
         V = VectorFunctionSpace(self.mesh, "CG", 1)
 
@@ -278,12 +277,13 @@ class DofMapTest(unittest.TestCase):
         # mapped from ufc generated code to dolfin
         for i, cdofs in enumerate([[0,3], [1,4], [2,5]]):
             dofs = V.dofmap().tabulate_entity_dofs(0, i)
-            self.assertTrue(all(d==cd for d, cd in zip(dofs, cdofs)))
+            assert all(d==cd for d, cd in zip(dofs, cdofs))
 
 
     def test_clear_sub_map_data(self):
         V = FunctionSpace(self.mesh, "CG", 2)
-        self.assertRaises(ValueError, lambda : V.sub(1))
+        with pytest.raises(ValueError):
+            V.sub(1))
 
         V = VectorFunctionSpace(self.mesh, "CG", 2)
         V1 = V.sub(1)
@@ -295,20 +295,21 @@ class DofMapTest(unittest.TestCase):
         V1 = V.sub(1)
 
         # New sub-map should throw an error
-        self.assertRaises(RuntimeError, lambda : V.sub(0))
+        with pytest.raises(RuntimeError):
+            V.sub(0))
 
     @unittest.skipIf(not MPI.size(mpi_comm_world()) > 1, "This test should only be run in parallel.")
     def test_mpi_dofmap_stats(self):
 
         V = FunctionSpace(self.mesh, "CG", 1)
-        self.assertTrue(len(V.dofmap().shared_nodes()) > 0)
+        assert len(V.dofmap().shared_nodes()) > 0
         neighbours = V.dofmap().neighbours()
         for processes in V.dofmap().shared_nodes().values():
             for process in processes:
-                self.assertTrue(process in neighbours)
+                assert process in neighbours
 
         for owner in V.dofmap().off_process_owner():
-            self.assertTrue(owner in neighbours)
+            assert owner in neighbours
 
 if __name__ == "__main__":
     print("")

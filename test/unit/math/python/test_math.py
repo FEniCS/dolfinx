@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for basic math functions"""
 
 # Copyright (C) 2011 Martin Alnaes
@@ -44,11 +46,11 @@ class TestDirichletBC:
                 #vp = v + v*eps
 
                 # Check that we return True when we should by definition:
-                self.assertTrue(near(v, v))
-                self.assertTrue(near(vm, vm))
-                self.assertTrue(near(vp, vp))
-                #self.assertTrue(near(v, vm)) # Can fail
-                #self.assertTrue(near(v, vp))
+                assert near(v, v)
+                assert near(vm, vm)
+                assert near(vp, vp)
+                #assert near(v, vm) # Can fail
+                #assert near(v, vp)
                 if not near(v, vm):
                     print("not near vm: %r, %r" % (v, vm))
                 if not near(v, vp):
@@ -58,12 +60,12 @@ class TestDirichletBC:
                 # that are close to 1 (except for some of the smallest v's)
                 v2m = v * (1.0 - 2*eps) - 2*eps
                 v2p = v * (1.0 + 2*eps) + 2*eps
-                self.assertTrue(v/v2m > 1.0)
-                self.assertTrue(v/v2p < 1.0)
+                assert v/v2m > 1.0
+                assert v/v2p < 1.0
 
                 # Check that we can fail for fairly close values
-                self.assertFalse(near(v, v2m))
-                self.assertFalse(near(v, v2p))
+                assert not near(v, v2m)
+                assert not near(v, v2p)
 
     def test_between(self):
         eps = DOLFIN_EPS
@@ -77,20 +79,16 @@ class TestDirichletBC:
                 vp = v + eps
 
                 # Check that we return True when we should by definition:
-                self.assertTrue(between(v, (vm, vp)))
+                assert between(v, (vm, vp))
 
                 # vm and vp can round off to v, make some small values != v
                 v2m = v * (1.0 - 2*eps) - 2*eps
                 v2p = v * (1.0 + 2*eps) + 2*eps
 
                 # Close to 1 except for some of the smallest v's:
-                self.assertTrue(v/v2m > 1.0)
-                self.assertTrue(v/v2p < 1.0)
-                self.assertTrue(between(v, (v2m, v2p)))
+                assert v/v2m > 1.0
+                assert v/v2p < 1.0
+                assert between(v, (v2m, v2p))
 
                 # Check that we can fail for fairly close values
-                self.assertFalse(between(v, (v2p, v2m)))
-
-
-if __name__ == "__main__":
-    pytest.main()
+                assert not between(v, (v2p, v2m))

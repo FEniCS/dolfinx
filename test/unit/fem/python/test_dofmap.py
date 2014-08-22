@@ -23,19 +23,19 @@ from dolfin import *
 
 mesh_ = UnitSquareMesh(4, 4)
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def mesh():
     return mesh_
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def V():
     return FunctionSpace(mesh_, "Lagrange", 1)
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def Q():
     return VectorFunctionSpace(mesh_, "Lagrange", 1)
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def W():
     V_ = V()
     Q_ = Q()
