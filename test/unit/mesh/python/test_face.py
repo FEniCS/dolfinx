@@ -20,14 +20,15 @@
 # First added:  2011-02-26
 # Last changed: 2014-05-30
 
-import unittest
+import pytest
 from dolfin import *
 
 cube = UnitCubeMesh(5, 5, 5)
 square = UnitSquareMesh(5, 5)
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class Area(unittest.TestCase):
+@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                 reason="Skipping unit test(s) not working in parallel")
+class Area():
 
     def testArea(self):
         """Iterate over faces and sum area."""
@@ -35,23 +36,24 @@ class Area(unittest.TestCase):
         area = 0.0
         for f in faces(cube):
             area += f.area()
-        self.assertAlmostEqual(area, 39.21320343559672494393)
+        assert round(area - 39.21320343559672494393, 7) == 0
 
         area = 0.0
         for f in faces(square):
             area += f.area()
-        self.assertAlmostEqual(area, 1.0)
+        assert round(area - 1.0, 7) == 0
 
-class Normal(unittest.TestCase):
+class Normal():
 
     def testNormalPoint(self):
         """Compute normal vector to each face."""
         for f in faces(cube):
             n = f.normal()
-            self.assertAlmostEqual(n.norm(), 1.0)
+            assert round(n.norm() - 1.0, 7) == 0
 
         f = Face(square, 0)
-        self.assertRaises(RuntimeError, f.normal)
+        pytest.raises(RuntimeError):
+            f.normal()
 
     def testNormalComponent(self):
         """Compute normal vector components to each face."""
@@ -59,10 +61,11 @@ class Normal(unittest.TestCase):
         for f in faces(cube):
             n = [f.normal(i) for i in range(D)]
             norm = sum([x*x for x in n])
-            self.assertAlmostEqual(norm, 1.0)
+            assert round(norm - 1.0, 7) == 0
 
         f = Face(square, 0)
-        self.assertRaises(RuntimeError, f.normal, 0)
+        with pytest.raises(RuntimeError):
+            f.normal(0)
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()

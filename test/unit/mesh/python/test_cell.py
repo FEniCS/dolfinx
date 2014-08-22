@@ -20,46 +20,49 @@
 # First added:  2013-04-18
 # Last changed: 2014-05-30
 
-import unittest
+import pytest
 import numpy
 
 from dolfin import *
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class IntervalTest(unittest.TestCase):
+skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                          reason="Skipping unit test(s) not working in parallel")
+
+@skip_in_paralell
+class IntervalTest():
 
     def test_distance(self):
 
         mesh = UnitIntervalMesh(1)
         cell = Cell(mesh, 0)
 
-        self.assertAlmostEqual(cell.distance(Point(-1.0)), 1.0)
-        self.assertAlmostEqual(cell.distance(Point(0.5)), 0.0)
+        assert round(cell.distance(Point(-1.0)) - 1.0, 7) == 0
+        assert round(cell.distance(Point(0.5)) - 0.0, 7) == 0
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class TriangleTest(unittest.TestCase):
+@skip_in_paralell
+class TriangleTest():
 
     def test_distance(self):
 
         mesh = UnitSquareMesh(1, 1)
         cell = Cell(mesh, 1)
 
-        self.assertAlmostEqual(cell.distance(Point(-1.0, -1.0)), numpy.sqrt(2))
-        self.assertAlmostEqual(cell.distance(Point(-1.0, 0.5)), 1)
-        self.assertAlmostEqual(cell.distance(Point(0.5, 0.5)), 0.0)
+        assert round(cell.distance(Point(-1.0, -1.0)) - numpy.sqrt(2), 7) == 0
+        assert round(cell.distance(Point(-1.0, 0.5)) - 1, 7) == 0
+        assert round(cell.distance(Point(0.5, 0.5)) - 0.0, 7) == 0
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class TetrahedronTest(unittest.TestCase):
+@skip_in_paralell
+class TetrahedronTest():
 
     def test_distance(self):
 
         mesh = UnitCubeMesh(1, 1, 1)
         cell = Cell(mesh, 5)
 
-        self.assertAlmostEqual(cell.distance(Point(-1.0, -1.0, -1.0)), \
-                               numpy.sqrt(3))
-        self.assertAlmostEqual(cell.distance(Point(-1.0, 0.5, 0.5)), 1)
-        self.assertAlmostEqual(cell.distance(Point(0.5, 0.5, 0.5)), 0.0)
+        assert round(cell.distance(Point(-1.0, -1.0, -1.0)) - \
+                      numpy.sqrt(3), 7) == 0
+        assert round(cell.distance(Point(-1.0, 0.5, 0.5)) - 1, 7) == 0
+        assert round(cell.distance(Point(0.5, 0.5, 0.5)) - 0.0, 7) == 0
 
 if __name__ == "__main__":
-        unittest.main()
+        pytest.main()

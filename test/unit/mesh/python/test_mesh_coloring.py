@@ -20,10 +20,10 @@
 # First added:  2013-08-10
 # Last changed:
 
-import unittest
+import pytest
 from dolfin import *
 
-class MeshColoring(unittest.TestCase):
+class TestMeshColoring():
 
     def test_by_entity_cell_coloring(self):
         """Color mesh cells by connections."""
@@ -38,4 +38,4 @@ class MeshColoring(unittest.TestCase):
             mesh.color("facet")
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()

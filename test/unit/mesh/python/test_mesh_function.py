@@ -25,6 +25,9 @@ import numpy.random
 from dolfin import *
 from six.moves import xrange as range
 
+def pytest_generate_tests(metafunc):
+    
+
 class NamedMeshFunctions(unittest.TestCase):
 
     def setUp(self):

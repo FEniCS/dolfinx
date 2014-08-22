@@ -20,37 +20,40 @@
 # First added:  2011-02-26
 # Last changed: 2014-05-30
 
-import unittest
+import pytest
 from dolfin import *
 
 cube   = UnitCubeMesh(5, 5, 5)
 square = UnitSquareMesh(5, 5)
 meshes = [cube, square]
 
-class EdgeFunctions(unittest.TestCase):
+skip_in_paralell = @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                           reason="Skipping unit test(s) not working in parallel")
 
-    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-    def test2DEdgeLength(self):
+class TestEdgeFunctions():
+
+    @skip_in_paralell
+    def test_2DEdgeLength(self):
         """Iterate over edges and sum length."""
         length = 0.0
         for e in edges(square):
             length += e.length()
-        self.assertAlmostEqual(length, 19.07106781186544708362)
+        assert round(length - 19.07106781186544708362, 7) == 0
 
-    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-    def test3DEdgeLength(self):
+    @skip_in_paralell
+    def test_3DEdgeLength(self):
         """Iterate over edges and sum length."""
         length = 0.0
         for e in edges(cube):
             length += e.length()
-        self.assertAlmostEqual(length, 278.58049080280125053832)
+        assert round(length - 278.58049080280125053832, 7) == 0
 
-    def testEdgeDot(self):
+    def test_EdgeDot(self):
         """Iterate over edges compute dot product with self."""
         for mesh in meshes:
             for e in edges(mesh):
                 dot = e.dot(e)/(e.length()**2)
-                self.assertAlmostEqual(dot, 1.0)
+                assert round(dot - 1.0, 7) == 0
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()

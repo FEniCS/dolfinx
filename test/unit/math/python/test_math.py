@@ -23,11 +23,11 @@
 # Last changed:
 
 from __future__ import print_function
-import unittest
+import pytest
 import numpy
 from dolfin import *
 
-class DirichletBCTest(unittest.TestCase):
+class TestDirichletBC:
 
     def test_near(self):
         eps = DOLFIN_EPS
@@ -93,7 +93,4 @@ class DirichletBCTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print("")
-    print("Testing basic DOLFIN maths operations")
-    print("------------------------------------------------")
-    unittest.main()
+    pytest.main()

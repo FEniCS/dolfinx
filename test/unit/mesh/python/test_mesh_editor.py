@@ -20,11 +20,11 @@
 # First added:  2006-08-08
 # Last changed: 2014-02-06
 
-import unittest
+import pytest
 import numpy
 from dolfin import *
 
-class MeshEditorTest(unittest.TestCase):
+class TestMeshEditor():
 
     def test_triangle_mesh(self):
 
@@ -49,4 +49,4 @@ class MeshEditorTest(unittest.TestCase):
         editor.close()
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()
