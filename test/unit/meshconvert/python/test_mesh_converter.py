@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """ Tests for the meshconvert module."""
 
 # Copyright (C) 2012
@@ -23,8 +25,8 @@
 # Last changed: 2014-05-30
 
 from __future__ import print_function
-from unittest import TestCase as _TestCase
-import unittest
+from tester import Tester
+import pytest
 import os
 import glob
 import tempfile
@@ -35,7 +37,10 @@ from dolfin import MPI, mpi_comm_world
 import six
 from functools import reduce
 
-class TestCase(_TestCase):
+skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                    reason="Skipping unit test(s) not working in parallel")
+ 
+class TestCase(Tester):
     def _get_tempfname(self, suffix=None):
         fd, fname = tempfile.mkstemp(suffix=suffix)
         os.close(fd)
@@ -248,7 +253,7 @@ class AbaqusTest(_ConverterTest):
         meshconvert.convert(fname, handler)
         return handler
 
-class GmshTest(_ConverterTest):
+class TestGmsh(_ConverterTest):
     """ Test Gmsh convertor.
     """
     def test_success(self):
@@ -383,8 +388,8 @@ class GmshTest(_ConverterTest):
         meshconvert.convert(fname, handler)
         return handler
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class TriangleTester(_TestCase):
+@skip_in_paralell
+class TestTriangle(Tester):
 
     def test_convert_triangle(self): # Disabled because it fails, see FIXME below
 
@@ -472,8 +477,8 @@ class TriangleTester(_TestCase):
         os.unlink(dfname)
         os.unlink(dfname0)
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class DiffPackTester(_TestCase):
+@skip_in_paralell
+class TestDiffPack(Tester):
     def test_convert_diffpack(self):
 
         from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
@@ -529,7 +534,3 @@ class DiffPackTester(_TestCase):
 
         # Clean up
         os.unlink(dfname)
-
-if __name__ == "__main__":
-    unittest.main()
-    meshconvert

@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for MeshIterator and subclasses"
 
 # Copyright (C) 2006-2011 Anders Logg
@@ -20,12 +22,13 @@
 # First added:  2006-08-08
 # Last changed: 2011-08-21
 
-import unittest
+import pytest
+from tester import Tester
 import numpy
 from dolfin import *
 from six.moves import xrange as range
 
-class MeshIterator(unittest.TestCase):
+class TestMeshIterator(Tester):
 
     def test_vertex_iterators(self):
         "Iterate over vertices"
@@ -144,6 +147,3 @@ class MeshIterator(unittest.TestCase):
             for v in vertices(c):
                 n += 1
         self.assertEqual(n, 4*mesh.num_cells())
-
-if __name__ == "__main__":
-    unittest.main()

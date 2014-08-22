@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for the MeshQuality class"
 
 # Copyright (C) 2013 Garth N. Wells
@@ -21,11 +23,16 @@
 # Last changed:
 
 from __future__ import print_function
-import unittest
+import pytest
+from tester import Tester
 import numpy
 from dolfin import *
 
-class MeshQualityTest(unittest.TestCase):
+
+skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                     reason="Skipping unit test(s) not working in parallel")
+
+class TestMeshQuality(Tester):
 
     def test_radius_ratio_triangle(self):
 
@@ -79,11 +86,12 @@ class MeshQualityTest(unittest.TestCase):
         test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
         print(test)
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class CellRadii(unittest.TestCase):
+@skip_in_paralell
+class TestCellRadi(Tester):
 
-    def setUp(self):
-
+    @classmethod
+    @pytest.fixture(scope="class", autouse=True)
+    def __init__(self):
         # Create 1D mesh with degenerate cell
         self.mesh1d = UnitIntervalMesh(4)
         self.mesh1d.coordinates()[4] = self.mesh1d.coordinates()[3]
@@ -98,7 +106,6 @@ class CellRadii(unittest.TestCase):
         self.mesh3d.coordinates()[7][1] = 0.0
 
     def test_radius_ratio_min_radius_ratio_max(self):
-
         rmin, rmax = MeshQuality.radius_ratio_min_max(self.mesh1d)
         self.assertAlmostEqual(rmin, 0.0)
         self.assertAlmostEqual(rmax, 1.0)
@@ -110,6 +117,3 @@ class CellRadii(unittest.TestCase):
         rmin, rmax = MeshQuality.radius_ratio_min_max(self.mesh3d)
         self.assertAlmostEqual(rmin, 0.0)
         self.assertAlmostEqual(rmax, 1.0)
-
-if __name__ == "__main__":
-    unittest.main()

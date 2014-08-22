@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for SubDomain"""
 
 # Copyright (C) 2013 Johan Hake
@@ -20,11 +22,12 @@
 # First added:  2013-06-24
 # Last changed: 2013-06-24
 
-import unittest
+import pytest
+from tester import Tester
 import numpy as np
 from dolfin import *
 
-class SubDomainTester(unittest.TestCase):
+class TestSubDomain(Tester):
 
     def test_compiled_subdomains(self):
         def noDefaultValues():
@@ -109,7 +112,3 @@ class SubDomainTester(unittest.TestCase):
                 # Check that the number of marked entities is correct
                 self.assertEqual(sum(f.array()==1), 0)
                 self.assertEqual(sum(f.array()==2), mesh.num_entities(f_dim))
-
-
-if __name__ == "__main__":
-    unittest.main()

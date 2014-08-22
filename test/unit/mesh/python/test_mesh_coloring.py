@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for mesh coloring"""
 
 # Copyright (C) 2013 Garth N. Wells
@@ -36,6 +38,3 @@ class TestMeshColoring():
             mesh.color("vertex")
             mesh.color("edge")
             mesh.color("facet")
-
-if __name__ == "__main__":
-    pytest.main()

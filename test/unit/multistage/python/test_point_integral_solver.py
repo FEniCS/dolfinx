@@ -21,7 +21,8 @@
 # Last changed: 2013-02-20
 
 from __future__ import print_function
-import unittest
+import pytest
+from tester import Tester
 from dolfin import *
 
 parameters.form_compiler.optimize=True
@@ -129,7 +130,7 @@ def function_closure(Scheme):
 
     return scalar_time, scalar, vector
 
-class PointIntegralSolverTest(unittest.TestCase):
+class TestPointIntegralSolver(Tester):
     pass
 
 # Build test methods using function closure so 1 test is generated per Scheme and
@@ -139,19 +140,11 @@ for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
 
     scalar_time, scalar, vector = function_closure(Scheme)
     
-    setattr(PointIntegralSolverTest,
+    setattr(TestPointIntegralSolver,
             "test_butcher_schemes_scalar_time_{0}".format(Scheme), scalar_time)
 
-    setattr(PointIntegralSolverTest,
+    setattr(TestPointIntegralSolver,
             "test_butcher_schemes_scalar_{0}".format(Scheme), scalar)
 
-    setattr(PointIntegralSolverTest,
+    setattr(TestPointIntegralSolver,
             "test_butcher_schemes_vector_{0}".format(Scheme), vector)
-
-if __name__ == "__main__":
-    print("")
-    print("Testing PyDOLFIN PointIntegralSolver operations")
-    print("------------------------------------------------")
-    unittest.main()
-    cpp.set_log_level(INFO)
-    list_timings()

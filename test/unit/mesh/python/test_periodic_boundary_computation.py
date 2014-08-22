@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for PeriodicBoundaryComputation"""
 
 # Copyright (C) 2013 Mikael Mortensen
@@ -20,7 +22,8 @@
 # First added:  2013-04-12
 # Last changed: 2014-05-30
 
-import unittest
+import pytest
+from tester import Tester
 import numpy as np
 from dolfin import *
 
@@ -36,10 +39,11 @@ periodic_boundary = PeriodicBoundary()
 pbc = PeriodicBoundaryComputation()
 mesh = UnitSquareMesh(4, 4)
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class PeriodicBoundaryComputations(unittest.TestCase):
+@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+            reason="Skipping unit test(s) not working in parallel")
+class TestPeriodicBoundaryComputations(Tester):
 
-    def testComputePeriodicPairs(self):
+    def test_ComputePeriodicPairs(self):
 
         # Verify that correct number of periodic pairs are computed
         vertices = pbc.compute_periodic_pairs(mesh, periodic_boundary, 0)
@@ -47,7 +51,7 @@ class PeriodicBoundaryComputations(unittest.TestCase):
         self.assertEqual(len(vertices), 5)
         self.assertEqual(len(edges), 4)
 
-    def testMastersSlaves(self):
+    def test_MastersSlaves(self):
 
         # Verify that correct number of masters and slaves are marked
         mf = pbc.masters_slaves(mesh, periodic_boundary, 0)
@@ -57,6 +61,3 @@ class PeriodicBoundaryComputations(unittest.TestCase):
         mf = pbc.masters_slaves(mesh, periodic_boundary, 1)
         self.assertEqual(len(np.where(mf.array() == 1)[0]), 4)
         self.assertEqual(len(np.where(mf.array() == 2)[0]), 4)
-
-if __name__ == "__main__":
-    unittest.main()

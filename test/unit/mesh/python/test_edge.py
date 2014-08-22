@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the Edge class"""
 
 # Copyright (C) 2011 Garth N. Wells
@@ -27,7 +29,7 @@ cube   = UnitCubeMesh(5, 5, 5)
 square = UnitSquareMesh(5, 5)
 meshes = [cube, square]
 
-skip_in_paralell = @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                            reason="Skipping unit test(s) not working in parallel")
 
 class TestEdgeFunctions():
@@ -55,5 +57,5 @@ class TestEdgeFunctions():
                 dot = e.dot(e)/(e.length()**2)
                 assert round(dot - 1.0, 7) == 0
 
-if __name__ == "__main__":
+
     pytest.main()

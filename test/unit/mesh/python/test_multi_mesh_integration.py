@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for MultiMesh Integration"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson
@@ -21,7 +23,8 @@
 # Last changed: 2014-03-10
 
 from __future__ import print_function
-import unittest
+import pytest
+from tester import Tester
 import numpy
 
 from dolfin import *
@@ -43,12 +46,11 @@ def triangulation_to_mesh_2d(triangulation):
     editor.close()
     return mesh
 
-class TriangleIntegrationTest(unittest.TestCase):
+class TestTriangleIntegration(Tester):
 
+    @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+            reason="Skipping unit test(s) not working in parallel")
     def test_integrate(self):
-
-        if MPI.size(mpi_comm_world()) > 1: return
-
         # Create two meshes of the unit square
         mesh_0 = UnitSquareMesh(10, 10)
         mesh_1 = UnitSquareMesh(11, 11)
@@ -64,19 +66,19 @@ class TriangleIntegrationTest(unittest.TestCase):
         multimesh.build()
 
         for part in range(0, multimesh.num_parts()):
-            print(part)
+            #print(part)
             covered = multimesh.covered_cells(part)
             uncut = multimesh.uncut_cells(part)
             cut = multimesh.cut_cells(part)
             qr = multimesh.quadrature_rule_cut_cells(part)
-            print("covered")
-            print(covered)
-            print("uncut")
-            print(uncut)
-            print("cut")
-            print(cut)
-            print("quadrature")
-            print(qr)
+            #print("covered")
+            #print(covered)
+            #print("uncut")
+            #print(uncut)
+            #print("cut")
+            #print(cut)
+            #print("quadrature")
+            #print(qr)
 
         V_0 = FunctionSpace(mesh_0, "CG", 1)
         V_1 = FunctionSpace(mesh_1, "CG", 1)
@@ -133,9 +135,3 @@ class TriangleIntegrationTest(unittest.TestCase):
 
         # errorstring = "translation=" + str(dx[0]) + str(" ") + str(dx[1])
         # self.assertAlmostEqual(volume, exactvolume,7,errorstring)
-
-
-
-if __name__ == "__main__":
-        unittest.main()
-

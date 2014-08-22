@@ -1,4 +1,7 @@
+#!/usr/bin/env py.test
+
 """Unit test for the SNES nonlinear solver"""
+
 # Copyright (C) 2012 Patrick E. Farrell
 #
 # This file is part of DOLFIN.
@@ -38,7 +41,8 @@ more complex bounds as GenericVectors or Function.
 """
 
 from dolfin import *
-import unittest
+import pytest
+from tester import Tester
 
 if has_petsc_snes():
     try:
@@ -86,42 +90,31 @@ if has_petsc_snes():
                                                      "sign": "default",
                                                      "report": True}}
 
-class SNESSolverTester(unittest.TestCase):
+@pytest.mark.skipif(not has_petsc_snes(), reason="Need petsc snes")
+class TestSNESSolver(Tester):
 
-    if has_petsc_snes():
+    def test_snes_solver(self):
+        u.interpolate(Constant(-1000.0))
+        solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters_sign)
+        self.assertTrue(u.vector().min() >= 0)
 
-        def test_snes_solver(self):
-            u.interpolate(Constant(-1000.0))
-            solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters_sign)
-            self.assertTrue(u.vector().min() >= 0)
+    def test_newton_solver(self):
+        u.interpolate(Constant(-1000.0))
+        solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
+        self.assertTrue(u.vector().min() < 0)
 
-        def test_newton_solver(self):
-            u.interpolate(Constant(-1000.0))
-            solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
-            self.assertTrue(u.vector().min() < 0)
+    def test_snes_solver_bound_functions(self):
+        u.interpolate(Constant(-1000.0))
+        problem = NonlinearVariationalProblem(F, u, bcs, J)
+        solver  = NonlinearVariationalSolver(problem)
+        solver.parameters.update(snes_solver_parameters_bounds)
+        solver.solve(lb, ub)
+        self.assertTrue(u.vector().min() >= 0)
 
-        def test_snes_solver_bound_functions(self):
-            u.interpolate(Constant(-1000.0))
-            problem = NonlinearVariationalProblem(F, u, bcs, J)
-            solver  = NonlinearVariationalSolver(problem)
-            solver.parameters.update(snes_solver_parameters_bounds)
-            solver.solve(lb, ub)
-            self.assertTrue(u.vector().min() >= 0)
-
-        def test_snes_solver_bound_vectors(self):
-            u.interpolate(Constant(-1000.0))
-            problem = NonlinearVariationalProblem(F, u, bcs, J)
-            solver  = NonlinearVariationalSolver(problem)
-            solver.parameters.update(snes_solver_parameters_bounds)
-            solver.solve(lb.vector(), ub.vector())
-            self.assertTrue(u.vector().min() >= 0)
-
-
-if __name__ == "__main__":
-  # Turn off DOLFIN output
-  set_log_active(False)
-
-  print("")
-  print("Testing DOLFIN nls/PETScSNESSolver interface")
-  print("--------------------------------------------")
-  unittest.main()
+    def test_snes_solver_bound_vectors(self):
+        u.interpolate(Constant(-1000.0))
+        problem = NonlinearVariationalProblem(F, u, bcs, J)
+        solver  = NonlinearVariationalSolver(problem)
+        solver.parameters.update(snes_solver_parameters_bounds)
+        solver.solve(lb.vector(), ub.vector())
+        self.assertTrue(u.vector().min() >= 0)

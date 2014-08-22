@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for MeshFunctions"""
 
 # Copyright (C) 2011 Garth N. Wells
@@ -20,17 +22,18 @@
 # First added:  2011-03-10
 # Last changed: 2011-03-10
 
-import unittest
+import pytest
+from tester import Tester
 import numpy.random
 from dolfin import *
 from six.moves import xrange as range
 
-def pytest_generate_tests(metafunc):
+
+class TestNamedMeshFunctions(Tester):
     
-
-class NamedMeshFunctions(unittest.TestCase):
-
-    def setUp(self):
+    @classmethod
+    @pytest.fixture(scope = "class", autouse = True)
+    def setup(self):
         #self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
         #self.tps = ['int', 'size_t', 'bool', 'double']
         self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
@@ -82,15 +85,17 @@ class NamedMeshFunctions(unittest.TestCase):
             if tp == 'bool':
                 continue
             for name in self.names:
-                self.assertRaises(TypeError, self.funcs[(tp, name)].__setitem__, len(self.funcs[(tp, name)])-1, "jada")
+                with pytest.raises(TypeError):
+                    self.funcs[(tp, name)].__setitem__(len(self.funcs[(tp, name)])-1, "jada")
                 
-class MeshFunctions(unittest.TestCase):
 
-    def setUp(self):
+class TestMeshFunctions:
+
+    def __init__(self):
         self.mesh = UnitCubeMesh(8, 8, 8)
         self.f = MeshFunction('int', self.mesh, 0)
 
-    def testCreate(self):
+    def test_Create(self):
         """Create MeshFunctions."""
         v = MeshFunction("size_t", self.mesh)
 
@@ -106,7 +111,7 @@ class MeshFunctions(unittest.TestCase):
         v = MeshFunction("size_t", self.mesh, 3)
         self.assertEqual(v.size(), self.mesh.num_cells())
 
-    def testCreateAssign(self):
+    def test_CreateAssign(self):
         """Create MeshFunctions with value."""
         i = 10
         v = MeshFunction("size_t", self.mesh, 0, i)
@@ -125,11 +130,8 @@ class MeshFunctions(unittest.TestCase):
         self.assertEqual(v.size(), self.mesh.num_cells())
         self.assertEqual(v[0], i)
 
-    def testAssign(self):
+    def test_Assign(self):
         f = self.f
         f[3] = 10
         v = Vertex(self.mesh, 3)
         self.assertEqual(f[v], 10)
-
-if __name__ == "__main__":
-    unittest.main()

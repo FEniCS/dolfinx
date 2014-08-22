@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the RKSolver interface"""
 
 # Copyright (C) 2013 Johan Hake
@@ -21,7 +23,8 @@
 # Last changed: 2014-05-30
 
 from __future__ import print_function
-import unittest
+import pytest
+from tester import Tester
 from dolfin import *
 
 import numpy as np
@@ -37,8 +40,9 @@ def convergence_order(errors, base = 2):
 
     return orders
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class RKSolverTest(unittest.TestCase):
+@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+        reason="Skipping unit test(s) not working in parallel")
+class TestRKSolver(Tester):
 
     def test_butcher_schemes_scalar(self):
 
@@ -98,9 +102,3 @@ class RKSolverTest(unittest.TestCase):
             self.assertTrue(scheme.order()-min(convergence_order(u_errors_1))<0.1)
 
         cpp.set_log_level(LEVEL)
-
-if __name__ == "__main__":
-    print("")
-    print("Testing PyDOLFIN RKSolver operations")
-    print("------------------------------------------------")
-    unittest.main()

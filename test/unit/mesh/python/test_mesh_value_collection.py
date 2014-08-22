@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for MeshValueCollection"""
 
 # Copyright (C) 2011 Johan Hake
@@ -20,11 +22,12 @@
 # First added:  2011-03-10
 # Last changed: 2011-03-10
 
-import unittest
+import pytest
+from tester import Tester
 import numpy.random
 from dolfin import *
 
-class MeshValueCollections(unittest.TestCase):
+class TesterMeshValueCollections(Tester):
 
     def test_assign_2D_cells(self):
         mesh = UnitSquareMesh(3, 3)
@@ -167,6 +170,3 @@ class MeshValueCollections(unittest.TestCase):
             for i, vert in enumerate(vertices(cell)):
                 self.assertEqual(25, g.get_value(cell.index(), i))
                 self.assertEqual(f2[vert], g.get_value(cell.index(), i))
-
-if __name__ == "__main__":
-    unittest.main()

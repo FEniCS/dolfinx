@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for the mesh library"
 
 # Copyright (C) 2006 Anders Logg
@@ -27,21 +29,26 @@
 # Last changed: 2014-08-12
 
 from __future__ import print_function
-import unittest
+import pytest
+from tester import Tester
 import numpy
 from dolfin import *
 
-class MeshConstruction(unittest.TestCase):
+skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                     reason="Skipping unit test(s) not working in parallel")
 
-    def setUp(self):
+class MeshConstruction(Tester):
 
+    @classmethod
+    @pytest.fixture(scope="class", autouse=True)
+    def setup(self):
         self.interval = UnitIntervalMesh(10)
         self.square = UnitSquareMesh(5, 5)
         self.rectangle = RectangleMesh(0, 0, 2, 2, 5, 5)
         self.cube = UnitCubeMesh(3, 3, 3)
         self.box = BoxMesh(0, 0, 0, 2, 2, 2, 2, 2, 5)
 
-    def testUFLCell(self):
+    def test_UFLCell(self):
         import ufl
         self.assertEqual(ufl.interval, self.interval.ufl_cell())
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
@@ -49,7 +56,7 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
 
-    def testUFLDomain(self):
+    def test_UFLDomain(self):
         import ufl
         def _check_ufl_domain(mesh):
             domain = mesh.ufl_domain()
@@ -64,15 +71,15 @@ class MeshConstruction(unittest.TestCase):
         _check_ufl_domain(self.cube)
         _check_ufl_domain(self.box)
 
-class SimpleShapes(unittest.TestCase):
+class TestSimpleShapes(Tester):
 
-    def testUnitSquareMesh(self):
+    def test_UnitSquareMesh(self):
         """Create mesh of unit square."""
         mesh = UnitSquareMesh(5, 7)
         self.assertEqual(mesh.size_global(0), 48)
         self.assertEqual(mesh.size_global(2), 70)
 
-    def testUnitSquareMeshDistributed(self):
+    def test_UnitSquareMeshDistributed(self):
         """Create mesh of unit square."""
         mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
         self.assertEqual(mesh.size_global(0), 48)
@@ -83,7 +90,7 @@ class SimpleShapes(unittest.TestCase):
             self.assertTrue(isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm))
             self.assertEqual(mesh.mpi_comm(), mpi_comm_world())
 
-    def testUnitSquareMeshLocal(self):
+    def test_UnitSquareMeshLocal(self):
         """Create mesh of unit square."""
         mesh = UnitSquareMesh(mpi_comm_self(), 5, 7)
         self.assertEqual(mesh.num_vertices(), 48)
@@ -94,72 +101,74 @@ class SimpleShapes(unittest.TestCase):
             self.assertTrue(isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm))
             self.assertEqual(mesh.mpi_comm(), mpi_comm_self())
 
-    def testUnitCubeMesh(self):
+    def test_UnitCubeMesh(self):
         """Create mesh of unit cube."""
         mesh = UnitCubeMesh(5, 7, 9)
         self.assertEqual(mesh.size_global(0), 480)
         self.assertEqual(mesh.size_global(3), 1890)
 
-    def testUnitCubeMeshDistributed(self):
+    def test_UnitCubeMeshDistributed(self):
         """Create mesh of unit cube."""
         mesh = UnitCubeMesh(mpi_comm_world(), 5, 7, 9)
         self.assertEqual(mesh.size_global(0), 480)
         self.assertEqual(mesh.size_global(3), 1890)
 
-    def testUnitCubeMeshDistributedLocal(self):
+    def test_UnitCubeMeshDistributedLocal(self):
         """Create mesh of unit cube."""
         mesh = UnitCubeMesh(mpi_comm_self(), 5, 7, 9)
         self.assertEqual(mesh.num_vertices(), 480)
         self.assertEqual(mesh.num_cells(), 1890)
 
-class MeshRefinement(unittest.TestCase):
+class TestMeshRefinement(Tester):
 
-    def testRefineUnitSquareMesh(self):
+    def test_RefineUnitSquareMesh(self):
         """Refine mesh of unit square."""
         mesh = UnitSquareMesh(5, 7)
         mesh = refine(mesh)
         self.assertEqual(mesh.size_global(0), 165)
         self.assertEqual(mesh.size_global(2), 280)
 
-    def testRefineUnitCubeMesh(self):
+    def test_RefineUnitCubeMesh(self):
         """Refine mesh of unit cube."""
         mesh = UnitCubeMesh(5, 7, 9)
         mesh = refine(mesh)
         self.assertEqual(mesh.size_global(0), 3135)
         self.assertEqual(mesh.size_global(3), 15120)
 
-class BoundaryExtraction(unittest.TestCase):
+class TestBoundaryExtraction(Tester):
 
-    def testBoundaryComputation(self):
+    def test_BoundaryComputation(self):
         """Compute boundary of mesh."""
         mesh = UnitCubeMesh(2, 2, 2)
         boundary = BoundaryMesh(mesh, "exterior")
         self.assertEqual(boundary.size_global(0), 26)
         self.assertEqual(boundary.size_global(2), 48)
 
-        def testBoundaryBoundary(self):
-            """Compute boundary of boundary."""
-            mesh = UnitCubeMesh(2, 2, 2)
-            b0 = BoundaryMesh(mesh, "exterior")
-            b1 = BoundaryMesh(b0, "exterior")
-            self.assertEqual(b1.num_vertices(), 0)
-            self.assertEqual(b1.num_cells(), 0)
+    def test_BoundaryBoundary(self):
+        """Compute boundary of boundary."""
+        mesh = UnitCubeMesh(2, 2, 2)
+        b0 = BoundaryMesh(mesh, "exterior")
+        b1 = BoundaryMesh(b0, "exterior")
+        self.assertEqual(b1.num_vertices(), 0)
+        self.assertEqual(b1.num_cells(), 0)
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class MeshFunctions(unittest.TestCase):
+@skip_in_paralell
+class TestMeshFunctions(Tester):
 
-    def setUp(self):
+    @classmethod
+    @pytest.fixture(scope="class", autouse=True)
+    def setup(self):
         self.mesh = UnitSquareMesh(3, 3)
         self.f = MeshFunction('int', self.mesh, 0)
 
-    def testAssign(self):
+    def test_Assign(self):
         """Assign value of mesh function."""
         f = self.f
         f[3] = 10
         v = Vertex(self.mesh, 3)
         self.assertEqual(f[v], 10)
 
-    def testWrite(self):
+    def test_Write(self):
         """Construct and save a simple meshfunction."""
         f = self.f
         f[0] = 1
@@ -167,7 +176,7 @@ class MeshFunctions(unittest.TestCase):
         file = File("saved_mesh_function.xml")
         file << f
 
-    def testRead(self):
+    def test_Read(self):
         """Construct and save a simple meshfunction. Then read it back from
         file."""
         #mf = self.mesh.data().create_mesh_function("mesh_data_function", 2)
@@ -182,7 +191,7 @@ class MeshFunctions(unittest.TestCase):
         #f = MeshFunction('int', self.mesh, "saved_mesh_function.xml")
         #assert all(f.array() == self.f.array())
 
-    def testSubsetIterators(self):
+    def test_SubsetIterators(self):
         def inside1(x):
             return x[0] <= 0.5
         def inside2(x):
@@ -202,10 +211,10 @@ class MeshFunctions(unittest.TestCase):
 
 # FIXME: Mesh IO tests should be in io test directory
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class InputOutput(unittest.TestCase):
+@skip_in_paralell
+class TestInputOutput(Tester):
 
-    def testMeshXML2D(self):
+    def test_MeshXML2D(self):
         """Write and read 2D mesh to/from file"""
         mesh_out = UnitSquareMesh(3, 3)
         mesh_in  = Mesh()
@@ -214,7 +223,7 @@ class InputOutput(unittest.TestCase):
         file >> mesh_in
         self.assertEqual(mesh_in.num_vertices(), 16)
 
-    def testMeshXML3D(self):
+    def test_MeshXML3D(self):
         """Write and read 3D mesh to/from file"""
         mesh_out = UnitCubeMesh(3, 3, 3)
         mesh_in  = Mesh()
@@ -223,7 +232,7 @@ class InputOutput(unittest.TestCase):
         file >> mesh_in
         self.assertEqual(mesh_in.num_vertices(), 64)
 
-    def xtestMeshFunction(self):
+    def xtest_MeshFunction(self):
         """Write and read mesh function to/from file"""
         mesh = UnitSquareMesh(1, 1)
         f = MeshFunction('int', mesh, 0)
@@ -238,28 +247,30 @@ class InputOutput(unittest.TestCase):
         for v in vertices(mesh):
             self.assertEqual(f[v], g[v])
 
-class PyCCInterface(unittest.TestCase):
+class TestPyCCInterface(Tester):
 
-    def testGetGeometricalDimension(self):
+    def test_GetGeometricalDimension(self):
         """Get geometrical dimension of mesh"""
         mesh = UnitSquareMesh(5, 5)
         self.assertEqual(mesh.geometry().dim(), 2)
 
-    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-    def testGetCoordinates(self):
+    @skip_in_paralell
+    def test_GetCoordinates(self):
         """Get coordinates of vertices"""
         mesh = UnitSquareMesh(5, 5)
         self.assertEqual(len(mesh.coordinates()), 36)
 
-    def testGetCells(self):
+    def test_GetCells(self):
         """Get cells of mesh"""
         mesh = UnitSquareMesh(5, 5)
         self.assertEqual(MPI.sum(mesh.mpi_comm(), len(mesh.cells())), 50)
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class CellRadii(unittest.TestCase):
+@skip_in_paralell
+class TestCellRadii(Tester):
 
-    def setUp(self):
+    @classmethod
+    @pytest.fixture(scope="class", autouse=True)
+    def setup(self):
         # Create 1D mesh with degenerate cell
         self.mesh1d = UnitIntervalMesh(4)
         self.mesh1d.coordinates()[4] = self.mesh1d.coordinates()[3]
@@ -314,10 +325,7 @@ class CellRadii(unittest.TestCase):
         self.assertAlmostEqual(self.mesh3d.rmin(), 0.0)
         self.assertAlmostEqual(self.mesh3d.rmax(), sqrt(3.0)/6.0)
 
-class MeshOrientations(unittest.TestCase):
-
-    def setUp(self):
-        pass
+class TestMeshOrientations(Tester):
 
     def test_basic_cell_orientations(self):
         "Test that default cell orientations initialize and update as expected."
@@ -330,7 +338,7 @@ class MeshOrientations(unittest.TestCase):
         orientations[0] = 1
         self.assertEqual(mesh.cell_orientations()[0], 1)
 
-    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    @skip_in_paralell
     def test_cell_orientations(self):
         "Test that cell orientations update as expected."
         mesh = UnitIntervalMesh(12)
@@ -350,7 +358,7 @@ class MeshOrientations(unittest.TestCase):
         mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
         print(mesh.cell_orientations())
 
-class MeshSharedEntities(unittest.TestCase):
+class MeshSharedEntities(Tester):
     def test_shared_entities(self):
         for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
             if MeshClass not in [UnitSquareMesh]:
@@ -365,5 +373,5 @@ class MeshSharedEntities(unittest.TestCase):
                 self.assertTrue(isinstance(mesh.topology().shared_entities(shared_dim), dict))
                 self.assertTrue(isinstance(mesh.topology().global_indices(shared_dim), numpy.ndarray))
 
-if __name__ == "__main__":
-    unittest.main()
+
+

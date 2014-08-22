@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for the MeshEditor class"
 
 # Copyright (C) 2006-2011 Anders Logg
@@ -48,5 +50,5 @@ class TestMeshEditor():
         # Close editor
         editor.close()
 
-if __name__ == "__main__":
+
     pytest.main()

@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for the mesh library"
 
 # Copyright (C) 2012 Anders Logg
@@ -20,10 +22,11 @@
 # First added:  2012-01-16
 # Last changed: 2013-06-28
 
-import unittest
+import pytest
+from tester import Tester
 from dolfin import *
 
-class MeshTransformation(unittest.TestCase):
+class TesterMeshTransformation(Tester):
 
     def test_translate_2d(self):
         mesh = UnitSquareMesh(8, 8)
@@ -49,6 +52,3 @@ class MeshTransformation(unittest.TestCase):
         mesh.rotate(30, 1)
         mesh.rotate(30, 2)
         mesh.rotate(30, 0, p)
-
-if __name__ == "__main__":
-    unittest.main()

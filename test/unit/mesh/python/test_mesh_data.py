@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for the MeshData class"
 
 # Copyright (C) 2011 Anders Logg
@@ -20,10 +22,10 @@
 # First added:  2011-08-22
 # Last changed: 2011-08-22
 
-import unittest
+import pytest
 from dolfin import *
 
-class MeshData(unittest.TestCase):
+class TestMeshData:
 
     def test_meshfunction(self):
         "Test input/output"
@@ -36,5 +38,5 @@ class MeshData(unittest.TestCase):
 
         #self.assertEqual(len(g), mesh.num_vertices())
 
-if __name__ == "__main__":
-    unittest.main()
+
+

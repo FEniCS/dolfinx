@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the Cell class"""
 
 # Copyright (C) 2013 Anders Logg
@@ -29,7 +31,7 @@ skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                           reason="Skipping unit test(s) not working in parallel")
 
 @skip_in_paralell
-class IntervalTest():
+class TestInterval():
 
     def test_distance(self):
 
@@ -40,7 +42,7 @@ class IntervalTest():
         assert round(cell.distance(Point(0.5)) - 0.0, 7) == 0
 
 @skip_in_paralell
-class TriangleTest():
+class TestTriangle():
 
     def test_distance(self):
 
@@ -52,7 +54,7 @@ class TriangleTest():
         assert round(cell.distance(Point(0.5, 0.5)) - 0.0, 7) == 0
 
 @skip_in_paralell
-class TetrahedronTest():
+class TestTetrahedron():
 
     def test_distance(self):
 
@@ -63,6 +65,3 @@ class TetrahedronTest():
                       numpy.sqrt(3), 7) == 0
         assert round(cell.distance(Point(-1.0, 0.5, 0.5)) - 1, 7) == 0
         assert round(cell.distance(Point(0.5, 0.5, 0.5)) - 0.0, 7) == 0
-
-if __name__ == "__main__":
-        pytest.main()

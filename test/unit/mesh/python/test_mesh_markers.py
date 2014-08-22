@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the class MeshMarkers. These unit test actually test
 a bit more than that, since they also test marking of meshes and the
 interaction between Mesh - MeshDomains - MeshMarkers"""
@@ -22,10 +24,11 @@ interaction between Mesh - MeshDomains - MeshMarkers"""
 # First added:  2011-09-01
 # Last changed: 2011-09-02
 
-import unittest
+import pytest
+from tester import Tester
 from dolfin import *
 
-class XMLMesMarkers(unittest.TestCase):
+class TestXMLMesMarkers(Tester):
 
     def test_subdomain_marking(self):
         "Test setting markers from subdomains"
@@ -62,6 +65,3 @@ class XMLMesMarkers(unittest.TestCase):
 
         # FIXME: Add test here
         self.assertEqual(0, 0)
-
-if __name__ == "__main__":
-    unittest.main()

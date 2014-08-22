@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the Face class"""
 
 # Copyright (C) 2011 Garth N. Wells
@@ -28,9 +30,9 @@ square = UnitSquareMesh(5, 5)
 
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                  reason="Skipping unit test(s) not working in parallel")
-class Area():
+class TestArea():
 
-    def testArea(self):
+    def test_Area(self):
         """Iterate over faces and sum area."""
 
         area = 0.0
@@ -43,19 +45,19 @@ class Area():
             area += f.area()
         assert round(area - 1.0, 7) == 0
 
-class Normal():
+class TestNormal():
 
-    def testNormalPoint(self):
+    def test_NormalPoint(self):
         """Compute normal vector to each face."""
         for f in faces(cube):
             n = f.normal()
             assert round(n.norm() - 1.0, 7) == 0
 
         f = Face(square, 0)
-        pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError):
             f.normal()
 
-    def testNormalComponent(self):
+    def test_NormalComponent(self):
         """Compute normal vector components to each face."""
         D = cube.topology().dim()
         for f in faces(cube):
@@ -67,5 +69,5 @@ class Normal():
         with pytest.raises(RuntimeError):
             f.normal(0)
 
-if __name__ == "__main__":
+
     pytest.main()

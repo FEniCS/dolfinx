@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for parameter library"""
 
 # Copyright (C) 2011 Anders Logg
@@ -21,11 +23,13 @@
 # Last changed: 2014-05-30
 
 from __future__ import print_function
-import unittest
+import pytest
+from tester import Tester
 from dolfin import *
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class InputOutput(unittest.TestCase):
+@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                     reason="Skipping unit test(s) not working in parallel")
+class TestInputOutput(Tester):
 
     def test_simple(self):
 
@@ -142,9 +146,3 @@ class InputOutput(unittest.TestCase):
         # Reset parameters so that other tests will continue to work
         parameters["krylov_solver"]["absolute_tolerance"] = absolute_tolerance
         parameters["lu_solver"]["reuse_factorization"] = reuse_factorization
-
-if __name__ == "__main__":
-    print("")
-    print("Testing parameter library")
-    print("------------------------------------------------")
-    unittest.main()

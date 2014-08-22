@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for the mesh library"
 
 # Copyright (C) 2006 Anders Logg
@@ -20,12 +22,14 @@
 # First added:  2013-02-06
 # Last changed: 2014-05-30
 
-import unittest
+import pytest
+from tester import Tester
 from dolfin import *
 import six
 
-@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-class SubMeshTester(unittest.TestCase):
+@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                     reason="Skipping unit test(s) not working in parallel")
+class TestSubMesh(Tester):
 
     def test_creation(self):
         """Create SubMesh."""
@@ -103,6 +107,3 @@ class SubMeshTester(unittest.TestCase):
                              (outer_facets.array()==value).sum())
             self.assertEqual((parent_facets.array()==value).sum(),
                              (outer_facets.array()==value).sum())
-
-if __name__ == "__main__":
-    unittest.main()

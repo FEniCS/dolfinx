@@ -1,4 +1,7 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the TAOLinearBoundSolver interface"""
+
 # Copyright (C) 2013 Corrado Maurini
 #
 # This file is part of DOLFIN.
@@ -38,7 +41,8 @@
 
 from __future__ import print_function
 from dolfin import *
-import unittest
+import pytest
+from tester import Tester
 
 if has_petsc():
 
@@ -91,7 +95,7 @@ if has_petsc():
 
 if has_petsc_tao():
 
-    class TAOLinearBoundSolverTester(unittest.TestCase):
+    class TestTAOLinearBoundSolver(Tester):
 
         def test_tao_linear_bound_solver(self):
             "Test TAOLinearBoundSolver"
@@ -100,13 +104,3 @@ if has_petsc_tao():
 
             # Test that F(usol) = Ly
             self.assertAlmostEqual(assemble(F), Ly, 4)
-
-if __name__ == "__main__":
-
-    # Turn off DOLFIN output
-    set_log_active(False)
-
-    print("")
-    print("Testing DOLFIN TAOLinearBoundSolver interface")
-    print("----------------------------------------")
-    unittest.main()

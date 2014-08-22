@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for BoundaryMesh library"
 
 # Copyright (C) 2012 Garth N. Wells
@@ -54,6 +56,3 @@ class TestBoundaryMeshConstruction:
         assert MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()) == 6*8*8*2
         assert bmesh1.size_global(2) == 6*8*8*2
         assert bmesh1.topology().dim() == 2
-
-if __name__ == "__main__":
-    pytest.main()
