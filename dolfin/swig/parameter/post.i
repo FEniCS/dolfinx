@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-05-12
-// Last changed: 2012-08-09
+// Last changed: 2014-08-25
 //
 // ===========================================================================
 // SWIG directives for the DOLFIN parameter kernel module (post)
@@ -157,8 +157,7 @@ def items(self):
 
 def iteritems(self):
     "Returns an iterator over the (key, value) items of the Parameters"
-    for key, value in self.items():
-        yield key, value
+    return iter(self.items())
 
 def set_range(self, key, *arg):
     "Set the range for the given parameter"
@@ -184,6 +183,9 @@ def __getitem__(self, key):
 
 def __setitem__(self, key, value):
     "Set the parameter 'key', with given 'value'"
+    if (key == "this") and type(value).__name__ == 'SwigPyObject':
+        self.__dict__[key] = value
+        return
     if key not in self._get_parameter_keys():
         raise KeyError("'%s' is not a parameter"%key)
     if not isinstance(value,(int,str,float,bool)):
@@ -198,7 +200,7 @@ def update(self, other):
     "A recursive update that handles parameter subsets correctly."
     if not isinstance(other,(Parameters, dict)):
         raise TypeError("expected a 'dict' or a '%s'"%Parameters.__name__)
-    for key, other_value in other.iteritems():
+    for key, other_value in other.items():
         self_value  = self[key]
         if isinstance(self_value, Parameters):
             self_value.update(other_value)
@@ -208,7 +210,7 @@ def update(self, other):
 def to_dict(self):
     """Convert the Parameters to a dict"""
     ret = {}
-    for key, value in self.iteritems():
+    for key, value in self.items():
         if isinstance(value, Parameters):
             ret[key] = value.to_dict()
         else:
@@ -223,7 +225,7 @@ def option_string(self):
     "Return an option string representation of the Parameters"
     def option_list(parent,basename):
         ret_list = []
-        for key, value in parent.iteritems():
+        for key, value in parent.items():
             if isinstance(value, Parameters):
                 ret_list.extend(option_list(value,basename + key + '.'))
             else:
@@ -295,7 +297,8 @@ def __new_Parameter_init__(self,*args,**kwargs):
         return
 
     from numpy import isscalar
-    for key, value in kwargs.iteritems():
+    from six import iteritems
+    for key, value in iteritems(kwargs):
         if isinstance(value,type(self)):
             self.add(value)
         elif isinstance(value,tuple):
