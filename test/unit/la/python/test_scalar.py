@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the Scalar interface"""
 
 # Copyright (C) 2011 Garth N. Wells
@@ -20,21 +22,11 @@
 # First added:  2011-03-01
 # Last changed: 2011-03-01
 
-from __future__ import print_function
-import pytest
 from dolfin import *
 
-def test_parallel_sum(self):
+def test_parallel_sum():
     a = Scalar()
     b = 1.0
     a.assign(b)
     a.apply("add")
-    assert round(a.getval(), b*MPI.size(a.mpi_comm()), 7) == 0
-
-
-if __name__ == "__main__":
-
-    # Turn off DOLFIN output
-    set_log_active(False)
-
-    pytest.main()
+    assert round(a.getval() - b*MPI.size(a.mpi_comm()), 7) == 0

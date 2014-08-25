@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Unit tests for XML input/output of Mesh (class XMLMesh)"
 
 # Copyright (C) 2011 Garth N. Wells
@@ -24,6 +26,13 @@
 
 import pytest
 from dolfin import *
+import os
+
+# create an output folder
+filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
+filepath = str(os.path.sep).join(filepath + ['output', ''])
+if not os.path.exists(filepath):
+    os.mkdir(filepath)
 
 skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                       reason="Skipping unit test(s) not working in parallel")
@@ -31,13 +40,13 @@ skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
 @skip_in_parallel
 def test_save_plain_mesh2D():
     mesh = UnitSquareMesh(8, 8)
-    f = File("unit_square.xml")
+    f = File(filepath + "unit_square.xml")
     f << mesh
 
 @skip_in_parallel
 def test_save_plain_mesh3D():
     mesh = UnitCubeMesh(8, 8, 8)
-    f = File("unit_cube.xml")
+    f = File(filepath + "unit_cube.xml")
     f << mesh
 
 @skip_in_parallel
@@ -97,11 +106,11 @@ def test_mesh_domains_io():
     s1.mark_cells(output_mesh, 1)
 
     # Write to file
-    output_file = File("XMLMesh_test_mesh_domains_io.xml")
+    output_file = File(filepath + "XMLMesh_test_mesh_domains_io.xml")
     output_file << output_mesh
 
     # Read from file
-    input_file = File("XMLMesh_test_mesh_domains_io.xml")
+    input_file = File(filepath + "XMLMesh_test_mesh_domains_io.xml")
     input_mesh = Mesh()
     input_file >> input_mesh
 
@@ -120,6 +129,3 @@ def test_Read():
     file = File("../snake.xml.gz")
     localdata = cpp.LocalMeshData(mpi_comm_world())
     file >> localdata
-
-if __name__ == "__main__":
-    pytest.main()

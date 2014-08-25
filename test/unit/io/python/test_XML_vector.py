@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the XML io library for vectors"""
 
 # Copyright (C) 2011 Garth N. Wells
@@ -22,20 +24,27 @@
 
 import pytest
 from dolfin import *
+import os
+
+# create an output folder
+filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
+filepath = str(os.path.sep).join(filepath + ['output', ''])
+if not os.path.exists(filepath):
+    os.mkdir(filepath)
 
 def test_save_vector():
     if has_linear_algebra_backend("PETSc"):
         # Create vector and write file
         x = PETScVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File("x.xml")
+        f = File(filepath + "x.xml")
         f << x
 
     if has_linear_algebra_backend("Epetra"):
         # Create vector and write file
         x = EpetraVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File("x.xml")
+        f = File(filepath + "x.xml")
         f << x
 
 def test_save_gzipped_vector():
@@ -43,7 +52,7 @@ def test_save_gzipped_vector():
         # Create vector and write file
         x = PETScVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File("x.xml.gz")
+        f = File(filepath + "x.xml.gz")
         f << x
 
 
@@ -52,7 +61,7 @@ def test_read_vector():
         # Create vector and write file
         x = PETScVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File("x.xml")
+        f = File(filepath + "x.xml")
         f << x
 
         # Read vector from previous write
@@ -66,7 +75,7 @@ def test_read_vector():
         # Create vector and write file
         x = EpetraVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File("x.xml")
+        f = File(filepath + "x.xml")
         f << x
 
         # Read vector from write
@@ -80,7 +89,7 @@ def test_read_gzipped_vector():
         # Create vector and write file
         x = PETScVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File("x.xml")
+        f = File(filepath + "x.xml")
         f << x
 
         # Read vector from previous write
@@ -94,7 +103,7 @@ def test_save_read_vector():
     x = Vector(mpi_comm_world(), size)
     x[:] = 1.0
 
-    out_file = File("test_vector_xml.xml")
+    out_file = File(filepath + "test_vector_xml.xml")
     out_file << x
 
     y = Vector()

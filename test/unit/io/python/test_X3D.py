@@ -1,4 +1,4 @@
-
+#!/usr/bin/env py.test
 
 # Copyright (C) 2013 Garth N. Wells
 #
@@ -22,49 +22,51 @@
 
 import unittest
 from dolfin import * 
+import os
 
+# create an output folder
+filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
+filepath = str(os.path.sep).join(filepath + ['output', ''])
+if not os.path.exists(filepath):
+    os.mkdir(filepath)
 
 def test_save_mesh1D():
     mesh = UnitIntervalMesh(16)
-    file = File("mesh1D.x3d")
+    file = File(filepath + "mesh1D.x3d")
     #self.assertRaises(RuntimeError, file << mesh)
 
 def test_save_mesh2D():
     mesh = UnitSquareMesh(16, 16)
-    file = File("mesh2D.x3d")
+    file = File(filepath + "mesh2D.x3d")
     file << mesh
 
 def test_save_mesh3D():
     mesh = UnitCubeMesh(16, 16, 16)
-    file = File("mesh3D.x3d")
+    file = File(filepath + "mesh3D.x3d")
     file << mesh
 
 def test_save_cell_meshfunction2D():
     mesh = UnitSquareMesh(16, 16)
     mf = CellFunction("size_t", mesh, 12)
-    file = File("cell_mf2D.x3d")
+    file = File(filepath + "cell_mf2D.x3d")
     file << mf
 
 def test_save_facet_meshfunction2D():
     mesh = UnitSquareMesh(16, 16)
     mf = FacetFunction("size_t", mesh, 12)
-    file = File("facet_mf2D.x3d")
+    file = File(filepath + "facet_mf2D.x3d")
     #with pytest.raises(RuntimeError):
     #    file << mf
 
 def test_save_cell_meshfunctio22D():
     mesh = UnitCubeMesh(16, 16, 16)
     mf = CellFunction("size_t", mesh, 12)
-    file = File("cell_mf3D.x3d")
+    file = File(filepath + "cell_mf3D.x3d")
     file << mf
 
 def test_save_facet_meshfunction3D():
     mesh = UnitCubeMesh(16, 16, 16)
     mf = FacetFunction("size_t", mesh, 12)
-    file = File("facet_mf3D.x3d")
+    file = File(filepath + "facet_mf3D.x3d")
     #with pytest.raises(RuntimeError):
     #    file << mf
-
-
-if __name__ == "__main__":
-    unittest.main()

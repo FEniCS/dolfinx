@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for error control"""
 
 # Copyright (C) 2011 Marie E. Rognes
@@ -20,7 +22,6 @@
 # First added:  2011-04-05
 # Last changed: 2014-05-28
 
-from __future__ import print_function
 import pytest
 from ufl.algorithms import replace
 
@@ -149,6 +150,3 @@ def test_adaptive_solve(problem, goal, u, mesh):
     # Compare computed goal with reference
     reference = 0.12583303389560166
     assert round(assemble(M) - reference, 7) == 0
-
-if __name__ == "__main__":
-    pytest.main()

@@ -1,3 +1,5 @@
+
+
 "Unit tests for XML input/output of MeshValueCollection"
 
 # Copyright (C) 2011 Anders Logg
@@ -22,7 +24,13 @@
 
 import pytest
 from dolfin import *
+import os
 
+# create an output folder
+filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
+filepath = str(os.path.sep).join(filepath + ['output', ''])
+if not os.path.exists(filepath):
+    os.mkdir(filepath)
 
 @pytest.mark.skipIf(MPI.size(mpi_comm_world()) > 1, 
                       reason="Skipping unit test(s) not working in parallel")
@@ -46,11 +54,11 @@ def test_insertion_extraction_io():
     output_values.rename(name, "a MeshValueCollection")
 
     # Write to file
-    output_file = File("xml_mesh_value_collection_test_io.xml")
+    output_file = File(filepath + "xml_mesh_value_collection_test_io.xml")
     output_file << output_values
 
     # Read from file
-    input_file = File("xml_mesh_value_collection_test_io.xml")
+    input_file = File(filepath + "xml_mesh_value_collection_test_io.xml")
     input_values = MeshValueCollection("size_t", mesh)
     input_file >> input_values
 
@@ -70,6 +78,3 @@ def test_constructor_input():
 
     # Check that size is correct
     assert MPI.sum(mesh.mpi_comm(), input_values.size()) == 6
-
-if __name__ == "__main__":
-    pytest.main()

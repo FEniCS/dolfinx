@@ -25,7 +25,7 @@ import numpy
 from dolfin import *
 
 
-def test_local_solve():
+def test_local_solver():
 
     mesh = UnitCubeMesh(16, 16, 16)
     V = FunctionSpace(mesh, "Lagrange", 2)

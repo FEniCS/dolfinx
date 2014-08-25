@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for SVG output"""
 
 # Copyright (C) 2012 Anders Logg
@@ -37,6 +39,3 @@ def test_write_mesh_3d():
     mesh = UnitCubeMesh(8, 8, 8)
     f = File("output/mesh_3d.svg")
     f << mesh
-
-if __name__ == "__main__":
-    pytest.main()

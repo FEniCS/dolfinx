@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the Matrix interface"""
 
 # Copyright (C) 2011-2014 Garth N. Wells
@@ -22,30 +24,27 @@
 # Modified by Jan Blechta 2013
 
 from __future__ import print_function
-import unittest
+import pytest
 from dolfin import *
 from six.moves import xrange as range
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                                      reason="Skipping unit test(s) not working in parallel")
+skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
+                     reason="Skipping unit test(s) not working in parallel")
 
-backends = [skip_in_parallel(('uBLAS', 'Sparse')), skip_in_parallel(('uBLAS', 'Dense'))
-if has_linear_algebra_backend("PETScCusp"): backends.append(skip_in_parallel(('PETScCusp', '')))
-if has_linear_algebra_backend("PETSc"): backends.append(('PETSc', '')])
+class AbstractBaseTest:
+    #count = 0
 
-@pytest.fixture(scope='module', params=backends)
-def sub_backend(request):
-    parameters.linear_algebra_backend = request.param[0]
-    return request.param[1]
+    #@classmethod
+    #@pytest.fixture(scope="class", autouse=True)
+    def setup(self):
+        if self.backend != "default":
+            parameters.linear_algebra_backend = self.backend
+        #type(self).count += 1
+        #if type(self).count == 1:
+            # Only print this message once per class instance
+            #print("\nRunning:",type(self).__name__)
 
-def pytest_generate_test(metafunc):
-    metafunc.parametrize('backend', 'sub_backend', backends)
-
-class TestBackends:
-    def __init__(self, backend, sub_backend):
-        
-
-    def assemble_matrices(use_backend=False, keep_diagonal=False):
+    def assemble_matrices(self, use_backend=False, keep_diagonal=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
         mesh = UnitSquareMesh(21, 23)
 
@@ -60,17 +59,17 @@ class TestBackends:
         a = dot(grad(u), grad(v))*ds
         b = v*s*dx
 
-        return _assemble(a, use_backend=use_backend, keep_diagonal=keep_diagonal), \
-               _assemble(b, use_backend=use_backend, keep_diagonal=keep_diagonal)
+        return self.assemble(a, use_backend=use_backend, keep_diagonal=keep_diagonal), \
+               self.assemble(b, use_backend=use_backend, keep_diagonal=keep_diagonal)
 
-    def _assemble(form, use_backend=False, keep_diagonal=False):
+    def assemble(self, form, use_backend=False, keep_diagonal=False):
         if use_backend:
             backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
             return assemble(form, backend=backend, keep_diagonal=keep_diagonal)
         else:
             return assemble(form, keep_diagonal=keep_diagonal)
 
-    def test_basic_la_operations(use_backend=False):
+    def test_basic_la_operations(self, use_backend=False):
         from numpy import ndarray, array, ones, sum
 
         # Tests bailout for this choice
@@ -136,9 +135,8 @@ class TestBackends:
         #A[5,5] = 15
         #assert A[5,5] == 15
 
-    @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                   reason="Skipping unit test(s) not working in parallel")
-    def test_numpy_array(use_backend=False):
+    @skip_in_paralell
+    def test_numpy_array(self, use_backend=False):
         from numpy import ndarray, array, ones, sum
 
         # Tests bailout for this choice
@@ -217,13 +215,13 @@ class TestBackends:
         C_norm = C.norm('frobenius')
         assert round(A_norm - C_norm, 7) == 0
 
-    def test_ident_zeros(use_backend=False):
+    def test_ident_zeros(self, use_backend=False):
 
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
             A, B = self.assemble_matrices(use_backend=use_backend)
             with pytest.raises(RuntimeError):
-                A.ident_zeros
+                A.ident_zeros()
 
         # Assemble matrix A with diagonal entries
         A, B = self.assemble_matrices(use_backend=use_backend, keep_diagonal=True)
@@ -252,7 +250,7 @@ class TestBackends:
     def test_ident_zeros_with_backend(self):
         self.test_ident_zeros(use_backend=True)
 
-    def test_setting_diagonal(use_backend=False):
+    def test_setting_diagonal(self, use_backend=False):
 
         mesh = UnitSquareMesh(21, 23)
 
@@ -262,7 +260,7 @@ class TestBackends:
         v = TestFunction(V)
         u = TrialFunction(V)
 
-        B = _assemble(u*v*dx(), use_backend=use_backend, keep_diagonal=True)
+        B = self.assemble(u*v*dx(), use_backend=use_backend, keep_diagonal=True)
 
         b = assemble(action(u*v*dx(), Constant(1)))
         A = B.copy()
@@ -282,7 +280,7 @@ class TestBackends:
         assert round(resultsA.norm("l2") - resultsB.norm("l2"), 7) == 0
 
     def test_setting_diagonal_with_backend(self):
-        test_setting_diagonal(True)
+        self.test_setting_diagonal(True)
 
     #def test_create_from_sparsity_pattern(self):
 
@@ -301,11 +299,12 @@ class TestBackends:
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
-    def test_matrix_data(sub_backend, use_backend=False):
+class DataTester:
+    def test_matrix_data(self, use_backend=False):
         """ Test for ordinary Matrix"""
         # Tests bailout for this choice
         if self.backend == "uBLAS" and \
-               (not use_backend or sub_backend =="Dense"):
+               (not use_backend or self.sub_backend =="Dense"):
             return
 
         A, B = self.assemble_matrices(use_backend)
@@ -314,7 +313,7 @@ class TestBackends:
         i = 0
         for row in range(A.size(0)):
             for col in range(rows[row], rows[row+1]):
-                assert array[row == cols[col]],values[i]
+                assert array[row, cols[col]] == values[i]
                 i += 1
 
         # Test none writeable of a shallow copy of the data
@@ -335,49 +334,40 @@ class TestBackends:
             for k in range(rows[row], rows[row+1]):
                 assert array[row,cols[k]] == values[k]
 
-    def test_matrix_data_use_backend(sub_backend):
-        test_matrix_data(sub_backend, use_backend=True)
+    def test_matrix_data_use_backend(self):
+        self.test_matrix_data(True)
 
+class DataNotWorkingTester:
     def test_matrix_data(self):
-        A, B = assemble_matrices()
+        A, B = self.assemble_matrices()
         with pytest.raises(RuntimeError):
-            A.data
+            A.data()
 
         A = as_backend_type(A)
         with pytest.raises(RuntimeError):
-            A.data
+            A.data()
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                        reason="Skipping unit test(s) not working in parallel")
 
-@skip_in_parallel
-def test_uBLASSparse():
-    class uBLASSparseTester(DataTester, AbstractBaseTest):
-        backend     = "uBLAS"
-        sub_backend = "Sparse"
+@skip_in_paralell
+class TestuBLASSparse(DataTester, AbstractBaseTest):
+    backend     = "uBLAS"
+    sub_backend = "Sparse"
 
-@skip_in_parallel
-def test_uBLASDense():
-    class uBLASDenseTester(DataTester, AbstractBaseTest):
-        backend     = "uBLAS"
-        sub_backend = "Dense"
+@skip_in_paralell
+class TestuBLASDense(DataTester, AbstractBaseTest):
+    backend     = "uBLAS"
+    sub_backend = "Dense"
 
 if has_linear_algebra_backend("PETScCusp"):
-    @skip_in_parallel
-    def test_PETScCusp():
-        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest):
-            backend    = "PETScCusp"
-            sub_backend = ""
+    @skip_in_paralell
+    class TestPETScCusp(DataNotWorkingTester, AbstractBaseTest):
+        backend    = "PETScCusp"
+        sub_backend = ""
 
 if has_linear_algebra_backend("PETSc"):
-    def Test_PETSc():
-        class PETScTester(DataNotWorkingTester, AbstractBaseTest):
-            backend    = "PETSc"
-            sub_backend = ""
+    class TestPETSc(DataNotWorkingTester, AbstractBaseTest):
+        backend    = "PETSc"
+        sub_backend = ""
 
-
-if __name__ == "__main__":
-
-    # Turn off DOLFIN output
-    set_log_active(False)
-    pytest.main()
+#class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+#    backend    = "STL"

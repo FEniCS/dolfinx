@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for graph building"""
 
 # Copyright (C) 2013 Garth N. Wells
@@ -24,7 +26,7 @@ import pytest
 from dolfin import *
 
 
-def test_build_from_mesh_simple(self):
+def test_build_from_mesh_simple():
     """Build mesh graph """
 
     mesh = UnitCubeMesh(16, 16, 16)
@@ -34,7 +36,3 @@ def test_build_from_mesh_simple(self):
     GraphBuilder.local_graph(mesh, 2, D)
     GraphBuilder.local_graph(mesh, 1, D)
     GraphBuilder.local_graph(mesh, 0, D)
-
-
-if __name__ == "__main__":
-    pytest.main()

@@ -1,3 +1,5 @@
+#!/us/bin/env py.test
+
 "Unit tests for XML input/output of MeshFunction (class XMLMeshFunction)"
 
 # Copyright (C) 2011-2014 Garth N. Wells
@@ -20,12 +22,18 @@
 # Modified by Anders Logg 2011
 
 import pytest
+import os
 from dolfin import *
 from six.moves import xrange as range
 
 skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                      reason="Skipping unit test(s) not working in parallel")
 
+# create an output folder
+filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
+filepath = str(os.path.sep).join(filepath + ['output', ''])
+if not os.path.exists(filepath):
+    os.mkdir(filepath)
 
 @skip_in_parallel
 def test_io_size_t():
@@ -39,12 +47,12 @@ def test_io_size_t():
     f[5] = 7
 
     # Write
-    output_file = File("XMLMeshFunction_test_io_size_t.xml")
+    output_file = File(filepath + "XMLMeshFunction_test_io_size_t.xml")
     output_file << f
 
     # Read from file
     g = MeshFunction("size_t", mesh, 1)
-    input_file = File("XMLMeshFunction_test_io_size_t.xml")
+    input_file = File(filepath + "XMLMeshFunction_test_io_size_t.xml")
     input_file >> g
 
     # Check values
@@ -64,12 +72,12 @@ def test_io_int():
     f[5] = 7
 
     # Write
-    output_file = File("XMLMeshFunction_test_io_int.xml")
+    output_file = File(filepath + "XMLMeshFunction_test_io_int.xml")
     output_file << f
 
     # Read from file
     g = MeshFunction("int", mesh, 1)
-    input_file = File("XMLMeshFunction_test_io_int.xml")
+    input_file = File(filepath + "XMLMeshFunction_test_io_int.xml")
     input_file >> g
 
     # Check values
@@ -89,12 +97,12 @@ def test_io_double():
     f[5] = 10000000.0
 
     # Write
-    output_file = File("XMLMeshFunction_test_io_double.xml")
+    output_file = File(filepath + "XMLMeshFunction_test_io_double.xml")
     output_file << f
 
     # Read from file
     g = MeshFunction("double", mesh, 1)
-    input_file = File("XMLMeshFunction_test_io_double.xml")
+    input_file = File(filepath + "XMLMeshFunction_test_io_double.xml")
     input_file >> g
 
     # Check values
@@ -114,17 +122,14 @@ def test_io_bool():
     f[5] = False
 
     # Write
-    output_file = File("XMLMeshFunction_test_io_bool.xml")
+    output_file = File(filepath + "XMLMeshFunction_test_io_bool.xml")
     output_file << f
 
     # Read from file
     g = MeshFunction("bool", mesh, 1)
-    input_file = File("XMLMeshFunction_test_io_bool.xml")
+    input_file = File(filepath + "XMLMeshFunction_test_io_bool.xml")
     input_file >> g
 
     # Check values
     for i in range(f.size()):
         assert f[i] == g[i]
-
-if __name__ == "__main__":
-    pytest.main()

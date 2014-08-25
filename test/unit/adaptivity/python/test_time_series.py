@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for TimeSeries"""
 
 # Copyright (C) 2011-2014 Marie E. Rognes
@@ -20,6 +22,13 @@
 from __future__ import print_function
 import pytest
 from dolfin import *
+import os
+
+# create an output folder
+filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
+filepath = str(os.path.sep).join(filepath + ['TimeSeries_test_subdirectory', ''])
+if not os.path.exists(filepath):
+    os.mkdir(filepath)
 
 skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                      reason="Skipping unit test(s) not working in parallel")
@@ -50,13 +59,13 @@ def _test_retrieve( compressed=False, all_connectivities=False):
     V = FunctionSpace(mesh, "CG", 2)
 
     u = Function(V)
-    series = TimeSeries("TimeSeries_test_retrieve", compressed, all_connectivities)
+    series = TimeSeries(filepath + "TimeSeries_test_retrieve", compressed, all_connectivities)
     for t in times:
         u.vector()[:] = t
         series.store(u.vector(), t)
         series.store(mesh, t)
 
-    series = TimeSeries("TimeSeries_test_retrieve", compressed)
+    series = TimeSeries(filepath + "TimeSeries_test_retrieve", compressed)
     t0 = series.vector_times()[0]
     T = series.mesh_times()[-1]
 
@@ -100,7 +109,3 @@ def test_subdirectory():
 
     series1.retrieve(m1, 0.1)
     series1.retrieve(x1, 0.15)
-
-
-if __name__ == "__main__":
-    pytest.main()

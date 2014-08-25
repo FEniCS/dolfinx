@@ -21,7 +21,7 @@
 # Last changed: 2014-05-30
 
 from __future__ import print_function
-import unittest
+import pytest
 
 from dolfin import *
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the KrylovSolver interface"""
 
 # Copyright (C) 2012 Johan Hake
@@ -22,8 +24,6 @@
 # First added:  2012-02-21
 # Last changed: 2014-05-30
 
-from __future__ import print_function
-import unittest
 from dolfin import *
 
 # Assemble system
@@ -68,10 +68,3 @@ if has_linear_algebra_backend("PETSc"):
         #solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
         #solver.solve(A, x_petsc, as_backend_type(b))
         #assert round(x_petsc.norm("l2") - direct_norm, 5) == 0
-
-
-if __name__ == "__main__":
-
-    # Turn off DOLFIN output
-    set_log_active(False)
-    pytest.main()

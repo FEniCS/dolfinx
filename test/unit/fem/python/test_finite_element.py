@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the fem interface"""
 
 # Copyright (C) 2009 Garth N. Wells
@@ -23,26 +25,24 @@
 import pytest
 import numpy
 from dolfin import *
-from six.moves import range
+from six.moves import xrange as range
 
 
-mesh_ = UnitSquareMesh(4, 4)
-
-@pytest.fixture
+@pytest.fixture(scope='module')
 def mesh():
-    return mesh_
+    return UnitSquareMesh(4, 4)
 
-@pytest.fixture
-def V():
-    return FunctionSpace(mesh_, "CG", 1)
+@pytest.fixture(scope='module')
+def V(mesh):
+    return FunctionSpace(mesh, "CG", 1)
 
-@pytest.fixture
-def Q():
-    return VectorFunctionSpace(mesh_, "CG", 1)
+@pytest.fixture(scope='module')
+def Q(mesh):
+    return VectorFunctionSpace(mesh, "CG", 1)
 
-@pytest.fixture
-def W():
-    return V() * Q()
+@pytest.fixture(scope='module')
+def W(V, Q):
+    return V * Q
 
 
 def test_evaluate_dofs(W, mesh, V):
@@ -143,7 +143,3 @@ def test_tabulate_coord(V, W, mesh):
         assert (coord0 == coord3).all()
         assert (coord4[:3] == coord0).all()
         assert (coord4[3:] == coord0).all()
-
-
-if __name__ == "__main__":
-    pytest.main()

@@ -33,6 +33,13 @@ import pytest
 from tester import Tester
 import numpy
 from dolfin import *
+import os
+
+# create an output folder
+filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
+filepath = str(os.path.sep).join(filepath + ['output', ''])
+if not os.path.exists(filepath):
+    os.mkdir(filepath)
 
 skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                      reason="Skipping unit test(s) not working in parallel")
@@ -173,7 +180,7 @@ class TestMeshFunctions(Tester):
         f = self.f
         f[0] = 1
         f[1] = 2
-        file = File("saved_mesh_function.xml")
+        file = File(filepath + "saved_mesh_function.xml")
         file << f
 
     def test_Read(self):
@@ -186,9 +193,9 @@ class TestMeshFunctions(Tester):
 
         #self.f[0] = 1
         #self.f[1] = 2
-        #file = File("saved_mesh_function.xml")
+        #file = File(filepath + "saved_mesh_function.xml")
         #file << self.f
-        #f = MeshFunction('int', self.mesh, "saved_mesh_function.xml")
+        #f = MeshFunction('int', self.mesh, filepath + "saved_mesh_function.xml")
         #assert all(f.array() == self.f.array())
 
     def test_SubsetIterators(self):
@@ -218,7 +225,7 @@ class TestInputOutput(Tester):
         """Write and read 2D mesh to/from file"""
         mesh_out = UnitSquareMesh(3, 3)
         mesh_in  = Mesh()
-        file = File("unitsquare.xml")
+        file = File(filepath + "unitsquare.xml")
         file << mesh_out
         file >> mesh_in
         self.assertEqual(mesh_in.num_vertices(), 16)
@@ -227,7 +234,7 @@ class TestInputOutput(Tester):
         """Write and read 3D mesh to/from file"""
         mesh_out = UnitCubeMesh(3, 3, 3)
         mesh_in  = Mesh()
-        file = File("unitcube.xml")
+        file = File(filepath + "unitcube.xml")
         file << mesh_out
         file >> mesh_in
         self.assertEqual(mesh_in.num_vertices(), 64)
@@ -240,7 +247,7 @@ class TestInputOutput(Tester):
         f[1] = 4
         f[2] = 6
         f[3] = 8
-        file = File("meshfunction.xml")
+        file = File(filepath + "meshfunction.xml")
         file << f
         g = MeshFunction('int', mesh, 0)
         file >> g
@@ -372,6 +379,3 @@ class MeshSharedEntities(Tester):
             for shared_dim in range(dim):
                 self.assertTrue(isinstance(mesh.topology().shared_entities(shared_dim), dict))
                 self.assertTrue(isinstance(mesh.topology().global_indices(shared_dim), numpy.ndarray))
-
-
-

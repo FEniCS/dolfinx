@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the JIT compiler"""
 
 # Copyright (C) 2011 Anders Logg
@@ -17,12 +19,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import pytest
 from dolfin import *
 
 
-def test_nasty_jit_caching_bug(self):
+def test_nasty_jit_caching_bug():
 
     # This may result in something like "matrices are not aligned"
     # from FIAT if the JIT caching does not recognize that the two
@@ -38,7 +39,8 @@ def test_nasty_jit_caching_bug(self):
         assert round(M1 - 1.0, 7) == 0
         assert round(M2 - 1.0, 7) == 0
 
-def test_compile_extension_module(self):
+
+def test_compile_extension_module():
 
     # This test should do basically the same as the docstring of
     # the compile_extension_module function in compilemodule.py.
@@ -77,8 +79,4 @@ def test_compile_extension_module_kwargs():
     # are taken into account when computing signature
     m2 = compile_extension_module('', cppargs='-O2')
     m0 = compile_extension_module('', cppargs='')
-    self.assertFalse(m2.__file__ == m0.__file__)
-
-
-if __name__ == "__main__":
-    pytest.main()
+    assert not m2.__file__ == m0.__file__

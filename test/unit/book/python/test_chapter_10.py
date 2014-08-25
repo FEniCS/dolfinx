@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """
 Unit tests for Chapter 10 (DOLFIN: A C++/Python finite element library).
 Page numbering starts at 1 and is relative to the chapter (not the book).
@@ -23,6 +25,13 @@ Page numbering starts at 1 and is relative to the chapter (not the book).
 from __future__ import print_function
 import pytest
 from dolfin import *
+import os
+
+# create an output folder
+filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
+filepath = str(os.path.sep).join(filepath + ['output', ''])
+if not os.path.exists(filepath):
+    os.mkdir(filepath)
 
 default_parameters = parameters.copy()
 skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
@@ -643,7 +652,7 @@ def test_p35_box_1():
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
 
-    file = File("solution.pvd")
+    file = File(filepath + "solution.pvd")
     file << u
 
 @skip_parallel
@@ -653,7 +662,7 @@ def test_p35_box_2():
     u = Function(V)
     t = 1.0
 
-    file = File("solution.pvd", "compressed");
+    file = File(filepath + "solution.pvd", "compressed");
     file << (u, t)
 
 @skip_parallel
@@ -661,13 +670,13 @@ def test_p36_box_1():
     mesh = UnitSquareMesh(2, 2)
     matrix, x, vector = create_data()
 
-    vector_file = File("vector.xml")
+    vector_file = File(filepath + "vector.xml")
     vector_file << vector
     vector_file >> vector
-    mesh_file = File("mesh.xml")
+    mesh_file = File(filepath + "mesh.xml")
     mesh_file << mesh
     mesh_file >> mesh
-    parameters_file = File("parameters.xml")
+    parameters_file = File(filepath + "parameters.xml")
     parameters_file << parameters
     parameters_file >> parameters
 
@@ -683,7 +692,7 @@ def test_p37_box_1():
     t = 0.0
     T = 1.0
 
-    time_series = TimeSeries("simulation_data")
+    time_series = TimeSeries(filepath + "simulation_data")
     while t < T:
         time_series.store(u.vector(), t)
         time_series.store(mesh, t)
@@ -691,7 +700,7 @@ def test_p37_box_1():
 
 @skip_parallel
 def test_p37_box_2():
-    time_series = TimeSeries("simulation_data")
+    time_series = TimeSeries(filepath + "simulation_data")
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -821,7 +830,7 @@ def test_p42_box_4():
 
 @skip_parallel
 def test_p43_box_1():
-    file = File("parameters.xml")
+    file = File(filepath + "parameters.xml")
     file << parameters
     file >> parameters
 
@@ -965,7 +974,3 @@ def test_p51_box_3():
     b = Vector(mpi_comm_world(), 20)
     b1 = b[[0, 4, 7, 10]]
     b2 = b[array((0, 4, 7, 10))]
-
-
-if __name__ == "__main__":
-    pytest.main()
