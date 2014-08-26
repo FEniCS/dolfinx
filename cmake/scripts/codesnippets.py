@@ -54,7 +54,7 @@ copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interf
 # Template code for all combined SWIG modules
 module_template = r"""
 // The PyDOLFIN extension module for the %(module)s module
-%%module(package="dolfin.cpp.%(module)s", directors="1") %(module)s
+%%module(package="dolfin.cpp", directors="1") %(module)s
 // Define module name for conditional includes
 #define %(MODULE)sMODULE
 
@@ -86,7 +86,7 @@ import_array();
 if sys.version_info[0] < 3:
     py3 = ""
 else:
-    py3 = "\n  -py3" # \n  -relativeimport
+    py3 = "\n  -py3 \n  -relativeimport"
 
 swig_cmakelists_str = \
 """# Automatic get the module name
