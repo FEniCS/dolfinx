@@ -20,7 +20,7 @@ Unit tests for Chapter 1 (A FEniCS tutorial).
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
-import unittest
+import pytest
 import inspect, os, sys
 from dolfin import *
 

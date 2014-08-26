@@ -43,6 +43,7 @@ more complex bounds as GenericVectors or Function.
 from dolfin import *
 import pytest
 from tester import Tester
+import os
 
 if has_petsc_snes():
     try:
@@ -51,8 +52,9 @@ if has_petsc_snes():
         import sys; sys.exit(0)
 
     parameters["form_compiler"]["quadrature_degree"] = 5
-
-    mesh = Mesh("doughnut.xml.gz")
+    
+    filepath = os.path.dirname(os.path.abspath(__file__))
+    mesh = Mesh(filepath + "/doughnut.xml.gz")
     V = FunctionSpace(mesh, "CG", 1)
     bcs = [DirichletBC(V, 1.0, "on_boundary")]
 
