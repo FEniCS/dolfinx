@@ -247,24 +247,22 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return self.__getitem__(slice(i, j, 1))
 
     def __getitem__(self, indices):
-        from numpy import ndarray, integer
-        from types import SliceType
+        from numpy import ndarray, integer, long
         if isinstance(indices, (int, integer, long)):
             return _get_vector_single_item(self, indices)
-        elif isinstance(indices, (SliceType, ndarray, list) ):
+        elif isinstance(indices, (slice, ndarray, list) ):
             return as_backend_type(_get_vector_sub_vector(self, indices))
         else:
             raise TypeError("expected an int, slice, list or numpy array of integers")
 
     def __setitem__(self, indices, values):
-        from numpy import ndarray, integer, isscalar
-        from types import SliceType
+        from numpy import ndarray, integer, isscalar, long
         if isinstance(indices, (int, integer, long)):
             if isscalar(values):
                 return _set_vector_items_value(self, indices, values)
             else:
                 raise TypeError("provide a scalar to set single item")
-        elif isinstance(indices, (SliceType, ndarray, list)):
+        elif isinstance(indices, (slice, ndarray, list)):
             if isscalar(values):
                 _set_vector_items_value(self, indices, values)
             elif isinstance(values, GenericVector):
@@ -280,7 +278,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return self.size()
 
     def __iter__(self):
-        for i in xrange(self.size()):
+        for i in range(self.size()):
             yield _get_vector_single_item(self, i)
 
     def __add__(self, other):
@@ -440,7 +438,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import zeros
         m_range = self.local_range(0);
         A = zeros((m_range[1] - m_range[0], self.size(1)))
-        for i, row in enumerate(xrange(*m_range)):
+        for i, row in enumerate(range(*m_range)):
             column, values = self.getrow(row)
             A[i, column] = values
         return A
