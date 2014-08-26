@@ -20,6 +20,8 @@
 # First added:  2012-01-17
 # Last changed: 2012-07-03
 
+import sys
+
 copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interface of DOLFIN
 %(comment)s
 %(comment)s Copyright (C) 2012 %(holder)s
@@ -52,8 +54,7 @@ copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interf
 # Template code for all combined SWIG modules
 module_template = r"""
 // The PyDOLFIN extension module for the %(module)s module
-%%module(package="dolfin.cpp.%(module)s", directors="1") %(module)s
-
+%%module(package="dolfin.cpp", directors="1") %(module)s
 // Define module name for conditional includes
 #define %(MODULE)sMODULE
 
@@ -82,6 +83,11 @@ import_array();
 
 """
 
+if sys.version_info[0] < 3:
+    py3 = ""
+else:
+    py3 = "\n  -py3 \n  -relativeimport"
+
 swig_cmakelists_str = \
 """# Automatic get the module name
 get_filename_component(SWIG_MODULE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
@@ -106,7 +112,7 @@ set(CMAKE_SWIG_FLAGS
   -fastinit
   -fastunpack
   -fastquery
-  -nobuildnone
+  -nobuildnone%s
   -Iinclude/swig
   ${DOLFIN_CXX_DEFINITIONS}
   ${DOLFIN_PYTHON_DEFINITIONS}
@@ -150,4 +156,4 @@ install(FILES
   DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/cpp
   COMPONENT RuntimeLibraries
   )
-"""
+""" % py3

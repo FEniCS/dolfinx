@@ -20,6 +20,7 @@
 # First added:  2013-12-09
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 
 from dolfin import *
@@ -48,7 +49,7 @@ class Issues(unittest.TestCase):
         vx = v(x)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing issues reported by users"
-    print "------------------------------------------------"
+    print("")
+    print("Testing issues reported by users")
+    print("------------------------------------------------")
     unittest.main()

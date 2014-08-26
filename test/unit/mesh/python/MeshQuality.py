@@ -20,6 +20,7 @@
 # First added:  2013-10-07
 # Last changed:
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -76,7 +77,7 @@ class MeshQualityTest(unittest.TestCase):
         # Create mesh, collpase and compute min ratio
         mesh = UnitCubeMesh(12, 12, 12)
         test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
-        print test
+        print(test)
 
 @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class CellRadii(unittest.TestCase):

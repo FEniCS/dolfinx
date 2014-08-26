@@ -23,8 +23,9 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2008-04-08
-# Last changed: 2013-12-02
+# Last changed: 2014-08-11
 
+from __future__ import print_function
 import sys, os, re
 import platform
 import instant
@@ -67,11 +68,11 @@ for dpath, dnames, fnames in os.walk(demodir):
 # Set non-interactive
 os.putenv('DOLFIN_NOPLOT', '1')
 
-print "Running all demos (non-interactively)"
-print ""
-print "Found %d C++ demos" % len(cppdemos)
-print "Found %d Python demos" % len(pydemos)
-print ""
+print("Running all demos (non-interactively)")
+print("")
+print("Found %d C++ demos" % len(cppdemos))
+print("Found %d Python demos" % len(pydemos))
+print("")
 import pprint
 
 # Push slow demos to the end
@@ -88,9 +89,7 @@ for s in cppslow:
 
 # List of demos that throw expected errors in parallel
 not_working_in_parallel = \
-  [os.path.join(demodir, 'documented',   'csg-2D',                      'python'), \
-   os.path.join(demodir, 'documented',   'csg-2D',                      'cpp'), \
-   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
+  [os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'), \
    os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'cpp'),    \
@@ -129,7 +128,7 @@ else:
 
 # Check if we should skip C++ demos
 if only_python:
-    print "Skipping C++ demos"
+    print("Skipping C++ demos")
     cppdemos = []
 
 # Build prefix list
@@ -138,7 +137,7 @@ mpi_prefix = "mpirun -np 3 "
 if has_mpi() and (has_parmetis() or has_scotch()):
     prefixes.append(mpi_prefix)
 else:
-    print "Not running regression tests in parallel."
+    print("Not running regression tests in parallel.")
 
 # Allow to disable parallel testing
 if "DISABLE_PARALLEL_TESTING" in os.environ:
@@ -157,9 +156,9 @@ for prefix in prefixes:
 
     # Run C++ demos
     for demo in cppdemos_to_run:
-        print "----------------------------------------------------------------------"
-        print "Running C++ demo %s%s" % (prefix, demo)
-        print ""
+        print("----------------------------------------------------------------------")
+        print("Running C++ demo %s%s" % (prefix, demo))
+        print("")
 
         cppdemo_executable = get_executable_name(demo, "cpp")
 
@@ -174,21 +173,21 @@ for prefix in prefixes:
             t2 = time()
             timing += [(t2 - t1, demo)]
             if output[0] == 0:
-                print "OK"
+                print("OK")
             elif output[0] == 10: # Failing but exiting gracefully
-                print "ok (graceful exit on fail)"
+                print("ok (graceful exit on fail)")
             else:
-                print "*** Failed"
-                print output[1]
+                print("*** Failed")
+                print(output[1])
                 failed += [(demo, "C++", prefix, output[1])]
         else:
-            print "*** Warning: missing demo"
+            print("*** Warning: missing demo")
 
     # Run Python demos
     for demo in pydemos_to_run:
-        print "----------------------------------------------------------------------"
-        print "Running Python demo %s%s" % (prefix, demo)
-        print ""
+        print("----------------------------------------------------------------------")
+        print("Running Python demo %s%s" % (prefix, demo))
+        print("")
         demofile = get_executable_name(demo, "python") + '.py'
         if os.path.isfile(os.path.join(demo, demofile)):
             t1 = time()
@@ -198,12 +197,12 @@ for prefix in prefixes:
             t2 = time()
             timing += [(t2 - t1, demo)]
             if status == 0:
-                print "OK"
+                print("OK")
             elif status == 10: # Failing but exiting gracefully
-                print "ok (graceful exit on fail)"
+                print("ok (graceful exit on fail)")
             else:
-                print "*** Failed"
-                print output
+                print("*** Failed")
+                print(output)
 
                 # Add contents from Instant's compile.log to output
                 instant_compile_log = os.path.join(instant.get_default_error_dir(), "compile.log")
@@ -213,23 +212,23 @@ for prefix in prefixes:
                     output += instant_error
                 failed += [(demo, "Python", prefix, output)]
         else:
-            print "*** Warning: missing demo"
+            print("*** Warning: missing demo")
 
 # Print summary of time to run demos
 timing.sort()
-print ""
-print "Time to run demos:"
-print "\n".join("%.2fs: %s" % t for t in timing)
+print("")
+print("Time to run demos:")
+print("\n".join("%.2fs: %s" % t for t in timing))
 
 total_no_demos = len(pydemos)
 if not only_python:
     total_no_demos += len(cppdemos)
 
 # Print output for failed tests
-print ""
+print("")
 if len(failed) > 0:
-    print "%d demo(s) out of %d failed, see demo.log for details." % \
-          (len(failed), total_no_demos)
+    print("%d demo(s) out of %d failed, see demo.log for details." % \
+          (len(failed), total_no_demos))
     file = open("demo.log", "w")
     for (test, interface, prefix, output) in failed:
         file.write("----------------------------------------------------------------------\n")
@@ -239,7 +238,7 @@ if len(failed) > 0:
         file.write("\n")
         file.write("\n")
 else:
-    print "All demos checked: OK"
+    print("All demos checked: OK")
 
 # Return error code if tests failed
 sys.exit(len(failed) != 0)

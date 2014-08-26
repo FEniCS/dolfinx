@@ -26,9 +26,10 @@ embedded in higher dimensional spaces."""
 # MER: The solving test should be moved into test/regression/..., the
 # evaluatebasis part should be moved into test/unit/FiniteElement.py
 
+from __future__ import print_function
 import unittest
 from dolfin import *
-from itertools import izip
+from six.moves import zip
 
 import numpy
 
@@ -219,7 +220,7 @@ class ManifoldBasisEvaluation(unittest.TestCase):
                               [0.3, 0.7, 0.0],
                               [0.4, 0.0, 0.0]])
 
-        for cell_base, cell_rot in izip(cells(self.basemesh), cells(self.rotmesh)):
+        for cell_base, cell_rot in zip(cells(self.basemesh), cells(self.rotmesh)):
 
             values_base = numpy.zeros(f_base.element().value_dimension(0))
             derivs_base = numpy.zeros(f_base.element().value_dimension(0)*3)
@@ -268,8 +269,8 @@ class ManifoldBasisEvaluation(unittest.TestCase):
                     self.assertAlmostEqual(abs(values_cmp-values_rot).max(), 0.0, 10)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing solving and evaluate basis over manifolds"
-    print "-------------------------------------------------"
+    print("")
+    print("Testing solving and evaluate basis over manifolds")
+    print("-------------------------------------------------")
 
     unittest.main()

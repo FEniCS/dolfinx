@@ -86,7 +86,6 @@ list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
@@ -110,7 +109,7 @@ endif()
 #------------------------------------------------------------------------------
 # Package-specific options
 
-option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
+# None at the moment
 
 #------------------------------------------------------------------------------
 # Compiler flags
@@ -322,6 +321,7 @@ find_package(LibXml2 REQUIRED)
 
 # Note: Check for Python interpreter even when Python is disabled because it
 #       is used to get the installation path for dolfin_utils
+# FIXME PY3: Select python 3 based on config flag?
 find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
 
@@ -361,6 +361,9 @@ if (DOLFIN_ENABLE_PYTHON)
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
     find_package(NumPy REQUIRED)
 
+    if (DEFINED UFC_SWIG_EXECUTABLE)
+      set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
+    endif()
     find_package(SWIG REQUIRED)
     if (${SWIG_VERSION} LESS 2.0)
       message(FATAL_ERROR " DOLFIN requires SWIG version 2.0 or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to False or install correct SWIG version.")
@@ -520,12 +523,6 @@ if (DOLFIN_ENABLE_TRILINOS)
   else()
     message(STATUS "Trilinos could not be found")
   endif()
-endif()
-
-
-# Check for CGAL
-if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL 4.1)
 endif()
 
 # Check for zlib

@@ -139,7 +139,6 @@ DofMap::DofMap(const DofMap& dofmap)
   _off_process_owner = dofmap._off_process_owner;
   _shared_nodes = dofmap._shared_nodes;
   _neighbours = dofmap._neighbours;
-  //slave_master_mesh_entities = dofmap.slave_master_mesh_entities;
   constrained_domain = dofmap.constrained_domain;
 }
 //-----------------------------------------------------------------------------
@@ -204,8 +203,9 @@ const std::set<int>& DofMap::neighbours() const
   return _neighbours;
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
-				  std::size_t dim, std::size_t local_entity) const
+void
+DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
+                             std::size_t dim, std::size_t local_entity) const
 {
   dolfin_assert(_ufc_dofmap);
   if (_ufc_dofmap->num_entity_dofs(dim)==0)
@@ -223,11 +223,11 @@ void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
   _ufc_dofmap->tabulate_facet_dofs(dofs.data(), local_facet);
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                  const std::vector<double>& vertex_coordinates,
-                                  const Cell& cell) const
+void
+DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                             const std::vector<double>& vertex_coordinates,
+                             const Cell& cell) const
 {
-  // FIXME: This is a hack because UFC wants a double pointer for coordinates
   dolfin_assert(_ufc_dofmap);
 
   // Check dimensions
@@ -239,14 +239,9 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
     coordinates.resize(extents[cell_dim][_ufc_dofmap->geometric_dimension()]);
   }
 
-  // Set vertex coordinates
-  const std::size_t num_points = coordinates.size();
-  std::vector<double*> coords(num_points);
-  for (std::size_t i = 0; i < num_points; ++i)
-    coords[i] = &(coordinates[i][0]);
-
   // Tabulate coordinates
-  _ufc_dofmap->tabulate_coordinates(coords.data(), vertex_coordinates.data());
+  _ufc_dofmap->tabulate_coordinates(coordinates.data(),
+                                    vertex_coordinates.data());
 }
 //-----------------------------------------------------------------------------
 std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
@@ -290,7 +285,8 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       const std::size_t dof = dofs[i];
-      if (dof >= _global_offset && dof < (_global_offset + _local_ownership_size))
+      if (dof >= _global_offset
+          && dof < (_global_offset + _local_ownership_size))
       {
         const std::size_t local_index = dof - offset;
         for (std::size_t j = 0; j < gdim; ++j)

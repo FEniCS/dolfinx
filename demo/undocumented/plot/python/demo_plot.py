@@ -29,12 +29,13 @@ from math import sqrt
 import numpy
 
 import sys
+from six.moves import xrange as range
 
 # Read mesh from file
 mesh = Mesh("../dolfin_fine.xml.gz")
 
 # Decide which demos to run
-demos = map(int, sys.argv[1:]) or [0, 1, 2]
+demos = list(map(int, sys.argv[1:])) or [0, 1, 2]
 
 # Have some fun with the mesh
 if 0 in demos:
@@ -48,7 +49,7 @@ if 0 in demos:
     coordinates = mesh.coordinates()
     original = coordinates.copy()
 
-    for i in xrange(200):
+    for i in range(200):
 
         if X < H or X > 1.0 - H:
             dX = -dX
@@ -60,7 +61,7 @@ if 0 in demos:
 
         if 0:
             # Straight-forward (slow) loop implementation
-            for j in xrange(mesh.num_vertices()):
+            for j in range(mesh.num_vertices()):
                 x, y = coordinates[j]
                 r = sqrt((x - X)**2 + (y - Y)**2)
                 if r < R:
