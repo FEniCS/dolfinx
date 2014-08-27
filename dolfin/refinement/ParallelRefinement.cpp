@@ -31,6 +31,7 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/Vertex.h>
@@ -56,6 +57,20 @@ bool ParallelRefinement::is_marked(std::size_t edge_index) const
 {
   dolfin_assert(edge_index < _mesh.num_edges());
   return marked_edges[edge_index];
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t> ParallelRefinement::marked_edge_list(const MeshEntity& cell) const
+{
+  std::vector<std::size_t> result;
+
+  std::size_t i = 0;
+  for (EdgeIterator edge(cell); !edge.end(); ++edge)
+  {
+    if (marked_edges[edge->index()])
+      result.push_back(i);
+    ++i;
+  }
+  return result;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(std::size_t edge_index)
@@ -396,5 +411,46 @@ void ParallelRefinement::new_cell(const std::size_t i0, const std::size_t i1,
   new_cell_topology.push_back(i0);
   new_cell_topology.push_back(i1);
   new_cell_topology.push_back(i2);
+}
+//-----------------------------------------------------------------------------
+void ParallelRefinement::new_cell(const std::vector<std::size_t>& idx)
+{
+  new_cell_topology.insert(new_cell_topology.end(), idx.begin(), idx.end());
+}
+//-----------------------------------------------------------------------------
+void ParallelRefinement::build_local(Mesh& new_mesh) const
+{
+  MeshEditor ed;
+  const std::size_t tdim = _mesh.topology().dim();
+  const std::size_t gdim = _mesh.geometry().dim();
+  dolfin_assert(new_vertex_coordinates.size()%gdim == 0);
+  const std::size_t num_vertices = new_vertex_coordinates.size()/gdim;
+
+  const std::size_t num_cell_vertices = tdim + 1;
+  dolfin_assert(new_cell_topology.size()%num_cell_vertices == 0);
+  const std::size_t num_cells = new_cell_topology.size()/num_cell_vertices;
+
+  ed.open(new_mesh, tdim, gdim);
+  ed.init_vertices(num_vertices);
+  std::size_t i = 0;
+  for (auto p = new_vertex_coordinates.begin(); p != new_vertex_coordinates.end();
+       p += gdim)
+  {
+    std::vector<double> vertex(p, p + gdim);
+    ed.add_vertex(i, vertex);
+    ++i;
+  }
+
+  ed.init_cells(num_cells);
+  i = 0;
+  for (auto p = new_cell_topology.begin(); p != new_cell_topology.end();
+       p += num_cell_vertices)
+  {
+    std::vector<std::size_t> cell(p, p + num_cell_vertices);
+    ed.add_cell(i, cell);
+    ++i;
+  }
+  ed.close();
+
 }
 //-----------------------------------------------------------------------------

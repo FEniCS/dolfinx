@@ -47,6 +47,10 @@ namespace dolfin
     /// Return marked status of edge
     bool is_marked(std::size_t edge_index) const;
 
+    /// Return list of marked edges incident on this MeshEntity -
+    /// usually a cell
+    std::vector<std::size_t> marked_edge_list(const MeshEntity& cell) const;
+
     /// Mark edge by index
     void mark(std::size_t edge_index);
 
@@ -81,9 +85,13 @@ namespace dolfin
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2,
                   std::size_t i3);
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2);
+    void new_cell(const std::vector<std::size_t>& idx);
 
     /// Use vertex and topology data to partition new mesh
     void partition(Mesh& new_mesh, bool redistribute) const;
+
+    /// Build local mesh from internal data when not running in parallel
+    void build_local(Mesh& new_mesh) const;
 
   private:
 
