@@ -59,20 +59,6 @@ bool ParallelRefinement::is_marked(std::size_t edge_index) const
   return marked_edges[edge_index];
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> ParallelRefinement::marked_edge_list(const MeshEntity& cell) const
-{
-  std::vector<std::size_t> result;
-
-  std::size_t i = 0;
-  for (EdgeIterator edge(cell); !edge.end(); ++edge)
-  {
-    if (marked_edges[edge->index()])
-      result.push_back(i);
-    ++i;
-  }
-  return result;
-}
-//-----------------------------------------------------------------------------
 void ParallelRefinement::mark(std::size_t edge_index)
 {
   dolfin_assert(edge_index < _mesh.num_edges());
@@ -98,6 +84,15 @@ void ParallelRefinement::mark(const MeshEntity& cell)
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const MeshFunction<bool>& refinement_marker)
 {
+  // Special case for EdgeFunction because EdgeIterator(Edge) will get all
+  // connected edge-edge entities otherwise
+  if (refinement_marker.dim() == 1)
+  {
+    for (EdgeIterator e(_mesh); !e.end(); ++e)
+      marked_edges[e->index()] = refinement_marker[*e];
+    return;
+  }
+
   for (MeshEntityIterator cell(_mesh, refinement_marker.dim()); !cell.end();
        ++cell)
   {
@@ -109,15 +104,18 @@ void ParallelRefinement::mark(const MeshFunction<bool>& refinement_marker)
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t ParallelRefinement::marked_edge_count(const MeshEntity& cell) const
+std::vector<std::size_t> ParallelRefinement::marked_edge_list(const MeshEntity& cell) const
 {
-  std::size_t n_marked = 0;
+  std::vector<std::size_t> result;
+
+  std::size_t i = 0;
   for (EdgeIterator edge(cell); !edge.end(); ++edge)
   {
     if (marked_edges[edge->index()])
-      n_marked++;
+      result.push_back(i);
+    ++i;
   }
-  return n_marked;
+  return result;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::update_logical_edgefunction()
@@ -167,6 +165,9 @@ void ParallelRefinement::create_new_vertices()
   const std::size_t num_processes = MPI::size(_mesh.mpi_comm());
   const std::size_t process_number = MPI::rank(_mesh.mpi_comm());
 
+  // Copy over existing mesh vertices
+  new_vertex_coordinates = _mesh.coordinates();
+
   // Tally up unshared marked edges, and shared marked edges which are
   // owned on this process.  Index them sequentially from zero.
   const std::size_t gdim = _mesh.geometry().dim();
@@ -179,7 +180,8 @@ void ParallelRefinement::create_new_vertices()
       bool owner = true;
 
       // If shared, check that this is true
-      if (shared_edges.count(local_i) != 0)
+      auto shared_edge_i = shared_edges.find(local_i);
+      if (shared_edge_i != shared_edges.end())
       {
         // check if any other sharing process has a lower rank
         for (auto proc_edge = shared_edges.find(local_i)->second.begin();
@@ -198,11 +200,9 @@ void ParallelRefinement::create_new_vertices()
         const Point& midpoint = Edge(_mesh, local_i).midpoint();
         for (std::size_t j = 0; j < gdim; ++j)
           new_vertex_coordinates.push_back(midpoint[j]);
-
         local_edge_to_new_vertex[local_i] = n++;
       }
     }
-
   }
 
   // Calculate global range for new local vertices
@@ -225,7 +225,8 @@ void ParallelRefinement::create_new_vertices()
 
     const std::size_t local_i = local_edge->first;
     //shared, but locally owned : remote owned are not in list.
-    if (shared_edges.count(local_i) != 0)
+    auto shared_edge_i = shared_edges.find(local_i);
+    if (shared_edge_i != shared_edges.end())
     {
       for (auto remote_process_edge = shared_edges[local_i].begin();
            remote_process_edge != shared_edges[local_i].end();
@@ -239,26 +240,17 @@ void ParallelRefinement::create_new_vertices()
     }
   }
 
-  // send new vertex indices to remote processes and receive
+  // Send new vertex indices to remote processes and receive
   std::vector<std::vector<std::size_t> > received_values(num_processes);
   MPI::all_to_all(_mesh.mpi_comm(), values_to_send, received_values);
 
   // Flatten and add received remote global vertex indices to map
-  std::vector<std::vector<std::pair<std::size_t, std::size_t> > >::iterator p;
-  for (std::size_t p = 0; p < received_values.size(); ++p)
-  {
-    const std::vector<std::size_t>& q = received_values[p];
-    for (std::size_t i = 0; i < q.size(); i += 2)
-      local_edge_to_new_vertex[q[i]] = q[i + 1];
-  }
+  for (auto p = received_values.begin(); p != received_values.end(); ++p)
+    for (auto q = p->begin(); q != p->end(); q += 2)
+      local_edge_to_new_vertex[*q] = *(q + 1);
 
-  // Now add new vertex coordinates to existing, and index using new
-  // global indexing.  Reorder so that MeshPartitioning.cpp can find
-  // them. After that, we are done with coordinates, and just need to
-  // rebuild the topology.
-  new_vertex_coordinates.insert(new_vertex_coordinates.begin(),
-                                _mesh.coordinates().begin(),
-                                _mesh.coordinates().end());
+  // Attach global indices to each vertex, old and new, and sort
+  // them across processes into this order
 
   std::vector<std::size_t> global_indices(_mesh.topology().global_indices(0));
   for (std::size_t i = 0; i < num_new_vertices; i++)
@@ -268,7 +260,8 @@ void ParallelRefinement::create_new_vertices()
                                      _mesh.geometry().dim(), global_indices);
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
+void ParallelRefinement::reorder_vertices_by_global_indices(
+                                 std::vector<double>& vertex_coords,
                                  const std::size_t gdim,
                                  const std::vector<std::size_t>& global_indices)
 {
@@ -344,6 +337,42 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
   }
 }
 //-----------------------------------------------------------------------------
+void ParallelRefinement::build_local(Mesh& new_mesh) const
+{
+  MeshEditor ed;
+  const std::size_t tdim = _mesh.topology().dim();
+  const std::size_t gdim = _mesh.geometry().dim();
+  dolfin_assert(new_vertex_coordinates.size()%gdim == 0);
+  const std::size_t num_vertices = new_vertex_coordinates.size()/gdim;
+
+  const std::size_t num_cell_vertices = tdim + 1;
+  dolfin_assert(new_cell_topology.size()%num_cell_vertices == 0);
+  const std::size_t num_cells = new_cell_topology.size()/num_cell_vertices;
+
+  ed.open(new_mesh, tdim, gdim);
+  ed.init_vertices(num_vertices);
+  std::size_t i = 0;
+  for (auto p = new_vertex_coordinates.begin(); p != new_vertex_coordinates.end();
+       p += gdim)
+  {
+    std::vector<double> vertex(p, p + gdim);
+    ed.add_vertex(i, vertex);
+    ++i;
+  }
+
+  ed.init_cells(num_cells);
+  i = 0;
+  for (auto p = new_cell_topology.begin(); p != new_cell_topology.end();
+       p += num_cell_vertices)
+  {
+    std::vector<std::size_t> cell(p, p + num_cell_vertices);
+    ed.add_cell(i, cell);
+    ++i;
+  }
+  ed.close();
+
+}
+//-----------------------------------------------------------------------------
 void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
 {
   LocalMeshData mesh_data(new_mesh.mpi_comm());
@@ -416,41 +445,5 @@ void ParallelRefinement::new_cell(const std::size_t i0, const std::size_t i1,
 void ParallelRefinement::new_cell(const std::vector<std::size_t>& idx)
 {
   new_cell_topology.insert(new_cell_topology.end(), idx.begin(), idx.end());
-}
-//-----------------------------------------------------------------------------
-void ParallelRefinement::build_local(Mesh& new_mesh) const
-{
-  MeshEditor ed;
-  const std::size_t tdim = _mesh.topology().dim();
-  const std::size_t gdim = _mesh.geometry().dim();
-  dolfin_assert(new_vertex_coordinates.size()%gdim == 0);
-  const std::size_t num_vertices = new_vertex_coordinates.size()/gdim;
-
-  const std::size_t num_cell_vertices = tdim + 1;
-  dolfin_assert(new_cell_topology.size()%num_cell_vertices == 0);
-  const std::size_t num_cells = new_cell_topology.size()/num_cell_vertices;
-
-  ed.open(new_mesh, tdim, gdim);
-  ed.init_vertices(num_vertices);
-  std::size_t i = 0;
-  for (auto p = new_vertex_coordinates.begin(); p != new_vertex_coordinates.end();
-       p += gdim)
-  {
-    std::vector<double> vertex(p, p + gdim);
-    ed.add_vertex(i, vertex);
-    ++i;
-  }
-
-  ed.init_cells(num_cells);
-  i = 0;
-  for (auto p = new_cell_topology.begin(); p != new_cell_topology.end();
-       p += num_cell_vertices)
-  {
-    std::vector<std::size_t> cell(p, p + num_cell_vertices);
-    ed.add_cell(i, cell);
-    ++i;
-  }
-  ed.close();
-
 }
 //-----------------------------------------------------------------------------
