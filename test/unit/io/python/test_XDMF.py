@@ -1,4 +1,4 @@
-
+#!/usr/bin/env py.test
 
 # Copyright (C) 2012 Garth N. Wells
 #
@@ -221,6 +221,3 @@ if has_hdf5():
 
         file = XDMFFile(mesh.mpi_comm(), "output/point_values_3D.xdmf")
         file.write(points, vals)
-
-if __name__ == "__main__":
-    pytest.main()

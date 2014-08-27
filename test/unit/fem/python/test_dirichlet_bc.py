@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for Dirichlet boundary conditions"""
 
 # Copyright (C) 2011-2012 Garth N. Wells
@@ -135,7 +137,3 @@ def test_bc_for_piola_on_manifolds():
         bc.apply(u.vector())
         b1 = assemble(inner(u, u)*dx)
         assert round(b0 - b1, 7) == 0
-
-
-if __name__ == "__main__":
-    pytest.main()

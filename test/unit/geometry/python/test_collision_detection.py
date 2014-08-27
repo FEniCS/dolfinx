@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the CollisionDetection class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson
@@ -164,6 +166,3 @@ def test_tetrahedron_collides_tetrahedron():
     # touching faces
     assert c3.collides(c43) == True
     assert c43.collides(c3) == True
-
-if __name__ == "__main__":
-    pytest.main()

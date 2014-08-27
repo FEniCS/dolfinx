@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the fem interface"""
 
 # Copyright (C) 2011-2014 Johan Hake
@@ -450,7 +452,3 @@ def test_facetarea(bottom1, bottom2, bottom3, m):
     a = area*ds
     b1 = assemble(a)
     assert round(b0 - b1, 7) == 0
-
-
-if __name__ == "__main__":
-    pytest.main()

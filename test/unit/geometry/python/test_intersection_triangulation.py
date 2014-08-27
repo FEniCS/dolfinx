@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the IntersectionTriangulation class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson
@@ -172,6 +174,3 @@ def test_triangulate_intersection_3d():
     errorstring = "translation="
     errorstring += str(dx[0])+" "+str(dx[1])+" "+str(dx[2])
     assert round(volume - exactvolume, 7) == 0, errorstring
-
-if __name__ == "__main__":
-        pytest.main()

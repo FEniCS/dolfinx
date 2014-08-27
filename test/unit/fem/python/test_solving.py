@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the solve function"""
 
 # Copyright (C) 2011 Anders Logg
@@ -84,7 +86,3 @@ def test_calling():
         solve(A, x, b, **kwargs)
 
     # FIXME: Include more tests for this versatile function
-
-
-if __name__ == "__main__":
-    pytest.main()

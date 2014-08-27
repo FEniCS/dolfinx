@@ -1,4 +1,7 @@
+#!/usr/bin/env py.test
+
 """Unit tests for assembly"""
+
 # Copyright (C) 2011-2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
@@ -646,6 +649,3 @@ def test_ways_to_pass_mesh_to_assembler():
 
     # Geometric quantities without mesh in domain:
     assert round(0.0 - assemble(n2[0]*ds(mesh)), 7) == 0
-
-if __name__ == "__main__":
-    pytest.main()

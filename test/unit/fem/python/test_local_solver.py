@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for LocalSolver"""
 
 # Copyright (C) 2013 Garth N. Wells
@@ -49,7 +51,3 @@ def test_local_solver():
     x = u.vector().copy()
     x[:] = 10.0
     assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
-
-
-if __name__ == "__main__":
-    pytest.main()

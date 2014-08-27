@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for intersection computation"""
 
 # Copyright (C) 2013 Anders Logg
@@ -50,7 +52,3 @@ def test_issue_168():
     v = Function(V)
     x = (0.75, 0.25, 0.125)
     vx = v(x)
-
-
-if __name__ == "__main__":
-    pytest.main()

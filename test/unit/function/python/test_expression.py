@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the function library"""
 
 # Copyright (C) 2007-2014 Anders Logg
@@ -669,6 +671,3 @@ def test_doc_string_python_expressions():
 
     assert id(f3._mesh) == id(square)
     assert id(f3._domain) == id(cell_data)
-
-if __name__ == "__main__":
-    pytest.main()

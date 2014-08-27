@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for intersection computation"""
 
 # Copyright (C) 2013-2014 Anders Logg
@@ -58,6 +60,3 @@ def test_mesh_point_3d():
     intersection = intersect(mesh, point)
 
     assert intersection.intersected_cells() == [816]
-
-if __name__ == "__main__":
-    pytest.main()

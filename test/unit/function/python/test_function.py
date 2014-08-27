@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the Function class"""
 
 # Copyright (C) 2011-2014 Garth N. Wells
@@ -454,6 +456,3 @@ def test_interpolation_old():
     f = Function(W)
     f.interpolate(f1)
     assert round(f.vector().norm("l1") - 2*mesh.num_vertices(), 7) == 0
-
-if __name__ == "__main__":
-    pytest.main()

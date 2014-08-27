@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the Attribute interface of the HDF5 io library"""
 
 # Copyright (C) 2013 Chris Richardson
@@ -79,6 +81,3 @@ if has_hdf5():
         assert len(vec) == len(ans)
         for val1, val2 in zip(vec, ans):
             assert val1 == val2
-
-if __name__ == "__main__":
-    pytest.main()

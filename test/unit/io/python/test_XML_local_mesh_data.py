@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the io library"""
 
 # Copyright (C) 2007 Anders Logg
@@ -30,6 +32,3 @@ def testRead():
     file = File("../snake.xml.gz")
     localdata = cpp.LocalMeshData(mpi_comm_world())
     file >> localdata
-
-if __name__ == "__main__":
-    pytest.main()

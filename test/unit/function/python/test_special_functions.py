@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the function library"""
 
 # Copyright (C) 2011 Kristian B. Oelgaard
@@ -41,6 +43,3 @@ def testFacetArea():
         assert round(assemble(c*ds(mesh)) - surface, 7) == 0
         assert round(assemble(c0*ds(mesh)) - ref_int, 7) == 0
         assert round(assemble(c1*ds(mesh)) - ref_int, 7) == 0
-
-if __name__ == "__main__":
-    pytest.main()

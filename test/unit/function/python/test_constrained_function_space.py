@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for FunctionSpace with constrained domain"""
 
 # Copyright (C) 2012-2014 Garth N. Wells
@@ -156,6 +158,3 @@ def test_solution():
     solve(F == 0, u, bcs)
 
     assert round(u.vector().norm("l2") - 0.3368694028630991, 10) == 0
-
-if __name__ == "__main__":
-    pytest.main()

@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for BoundingBoxTree"""
 
 # Copyright (C) 2013-2014 Anders Logg
@@ -459,6 +461,3 @@ def test_compute_closest_entity_3d():
     entity, distance = tree.compute_closest_entity(p)
     assert entity == reference[0]
     assert round(distance - reference[1], 7) == 0
-
-if __name__ == "__main__":
-    pytest.main()

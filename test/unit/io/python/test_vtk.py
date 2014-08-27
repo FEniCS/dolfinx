@@ -1,4 +1,4 @@
-
+#!/usr/bin/env py.test
 
 # Copyright (C) 2011 Garth N. Wells
 #
@@ -197,6 +197,3 @@ def test_save_3d_tensor():
     f << (u, 1.)
     for file_option in file_options:
         File(filepath + "u.pvd", file_option) << u
-
-if __name__ == "__main__":
-    pytest.main()

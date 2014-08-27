@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """
 Unit tests for Chapter 1 (A FEniCS tutorial).
 """
@@ -189,6 +191,3 @@ def test_d2_d2D():
 def disabled_test_sin_daD():
     # Disabled since it depends on scitools
     run_test(["transient", "diffusion"], [1, 1.5, 4, 40])
-
-if __name__ == "__main__":
-    pytest.main()

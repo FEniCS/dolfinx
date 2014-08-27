@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the HDF5 io library"""
 
 # Copyright (C) 2012 Garth N. Wells
@@ -164,7 +166,3 @@ if has_hdf5():
         assert mesh0.size_global(0) == mesh1.size_global(0)
         dim = mesh0.topology().dim()
         assert mesh0.size_global(dim) == mesh1.size_global(dim)
-
-
-if __name__ == "__main__":
-    pytest.main()

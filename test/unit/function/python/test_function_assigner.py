@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the FunctionAssigner class"""
 
 # Copyright (C) 2013 Johan Hake
@@ -184,7 +186,3 @@ def test_1_N_assigner(u0, u1, u2, w, qq, qqv):
 
     assert np.all(qqv.sub(0, deepcopy=True).vector().array() == qq.vector().array())
     assert np.all(qqv.sub(1, deepcopy=True).vector().array() == u1.vector().array())
-
-
-if __name__ == "__main__":
-    pytest.main()

@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the solve function on manifolds
 embedded in higher dimensional spaces."""
 
@@ -266,7 +268,3 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
 
                 assert round(abs(derivs_rot2-derivs_cmp).max() - 0.0, 10) == 0
                 assert round(abs(values_cmp-values_rot).max() - 0.0, 10) == 0
-
-                
-if __name__ == "__main__":
-    pytest.main()

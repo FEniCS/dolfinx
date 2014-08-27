@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit test for HarmonicSmoothing and ALE"""
 
 # Copyright (C) 2013 Jan Blechta
@@ -101,6 +103,3 @@ def test_ale():
     magic_number = 0.28
     rmin = MeshQuality.radius_ratio_min_max(mesh)[0]
     assert rmin > magic_number
-
-if __name__ == "__main__":
-    pytest.main()

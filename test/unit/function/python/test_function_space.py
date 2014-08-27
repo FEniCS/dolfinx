@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the FunctionSpace class"""
 
 # Copyright (C) 2011 Johan Hake
@@ -151,6 +153,3 @@ def test_argument_equality():
         # is triggered when comparing ufl expressions
         assert grad(v) == grad(v2)
         assert grad(v) != grad(v3)
-
-if __name__ == "__main__":
-    pytest.main()

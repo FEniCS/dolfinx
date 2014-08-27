@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for interpolation using LagrangeInterpolator"""
 
 # Copyright (C) 2014 Mikael Mortensen
@@ -84,6 +86,3 @@ def test_functional3D():
     u1 = Function(V1)
     ll.interpolate(u1, u0)
     assert round(assemble(u0*dx) - assemble(u1*dx), 10) == 0
-
-if __name__ == "__main__":
-    pytest.main()

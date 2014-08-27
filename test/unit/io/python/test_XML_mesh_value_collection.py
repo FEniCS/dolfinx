@@ -1,4 +1,4 @@
-
+#!/usr/bin/env py.test
 
 "Unit tests for XML input/output of MeshValueCollection"
 

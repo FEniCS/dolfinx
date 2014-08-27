@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the function library"""
 
 # Copyright (C) 2007 Anders Logg
@@ -83,7 +85,3 @@ def test_compute_vertex_values():
     assert all(e1_values[:mesh.num_vertices()]==1)
     assert all(e1_values[mesh.num_vertices():mesh.num_vertices()*2]==2)
     assert all(e1_values[mesh.num_vertices()*2:mesh.num_vertices()*3]==3)
-
-
-if __name__ == "__main__":
-    pytest.main()

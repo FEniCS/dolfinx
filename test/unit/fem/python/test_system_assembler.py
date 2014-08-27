@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for class SystemAssembler"""
 
 # Copyright (C) 2011-2013 Garth N. Wells, 2013 Jan Blechta
@@ -313,7 +315,3 @@ def test_facet_assembly_cellwise_insertion():
     x.vector()[:] -= 10.0
     error = norm(x.vector(), 'linf')
     assert round(error - 0.0, 7) == 0
-
-
-if __name__ == "__main__":
-    pytest.main()

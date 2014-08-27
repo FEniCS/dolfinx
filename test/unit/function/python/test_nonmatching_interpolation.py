@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for evaluating functions on non-matching meshes"""
 
 # Copyright (C) 2013 Garth N. Wells
@@ -81,6 +83,3 @@ def test_functional3D():
     u1 = Function(V1)
     u1.interpolate(u0)
     assert round(assemble(u0*dx) - assemble(u1*dx), 10) == 0
-
-if __name__ == "__main__":
-    pytest.main()
