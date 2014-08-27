@@ -24,7 +24,6 @@
 
 from __future__ import print_function
 import pytest
-from tester import Tester
 from dolfin import *
 
 import numpy as np
@@ -42,7 +41,7 @@ def convergence_order(errors, base = 2):
 
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
         reason="Skipping unit test(s) not working in parallel")
-class TestRKSolver(Tester):
+class TestRKSolver:
 
     def test_butcher_schemes_scalar(self):
 
@@ -68,7 +67,7 @@ class TestRKSolver(Tester):
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(u_true(0.0, 0.0) - u(0.0, 0.0))
 
-            self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+            assert scheme.order()-min(convergence_order(u_errors))<0.1
 
         cpp.set_log_level(LEVEL)
 
@@ -98,7 +97,7 @@ class TestRKSolver(Tester):
                 u_errors_0.append(u_true(0.0, 0.0)[0] - u(0.0, 0.0)[0])
                 u_errors_1.append(u_true(0.0, 0.0)[1] - u(0.0, 0.0)[1])
 
-            self.assertTrue(scheme.order()-min(convergence_order(u_errors_0))<0.1)
-            self.assertTrue(scheme.order()-min(convergence_order(u_errors_1))<0.1)
+            assert scheme.order()-min(convergence_order(u_errors_0))<0.1
+            assert scheme.order()-min(convergence_order(u_errors_1))<0.1
 
         cpp.set_log_level(LEVEL)

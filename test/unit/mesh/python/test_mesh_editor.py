@@ -22,33 +22,26 @@
 # First added:  2006-08-08
 # Last changed: 2014-02-06
 
-import pytest
-import numpy
 from dolfin import *
 
-class TestMeshEditor():
+def test_triangle_mesh():
 
-    def test_triangle_mesh(self):
+    # Create mesh object and open editor
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, 2, 2)
+    editor.init_vertices(3) # test both versions of interface
+    editor.init_vertices_global(3, 3)
+    editor.init_cells(1)    # test both versions of interface
+    editor.init_cells_global(1, 1)
 
-        # Create mesh object and open editor
-        mesh = Mesh()
-        editor = MeshEditor()
-        editor.open(mesh, 2, 2)
-        editor.init_vertices(3) # test both versions of interface
-        editor.init_vertices_global(3, 3)
-        editor.init_cells(1)    # test both versions of interface
-        editor.init_cells_global(1, 1)
+    # Add vertices
+    editor.add_vertex(0, 0.0, 0.0)
+    editor.add_vertex(1, 1.0, 0.0)
+    editor.add_vertex(2, 0.0, 1.0)
 
-        # Add vertices
-        editor.add_vertex(0, 0.0, 0.0)
-        editor.add_vertex(1, 1.0, 0.0)
-        editor.add_vertex(2, 0.0, 1.0)
+    # Add cell
+    editor.add_cell(0, 0, 1, 2)
 
-        # Add cell
-        editor.add_cell(0, 0, 1, 2)
-
-        # Close editor
-        editor.close()
-
-
-    pytest.main()
+    # Close editor
+    editor.close()

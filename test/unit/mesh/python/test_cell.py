@@ -24,7 +24,6 @@
 
 import pytest
 import numpy
-
 from dolfin import *
 
 skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 

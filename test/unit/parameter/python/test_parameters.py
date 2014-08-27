@@ -24,12 +24,11 @@
 
 from __future__ import print_function
 import pytest
-from tester import Tester
 from dolfin import *
 
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                      reason="Skipping unit test(s) not working in parallel")
-class TestInputOutput(Tester):
+class TestInputOutput:
 
     def test_simple(self):
 
@@ -50,11 +49,11 @@ class TestInputOutput(Tester):
         f1 >> p1
 
         # Check values
-        self.assertEqual(p1.name(), "test")
-        self.assertEqual(p1["filename"], "foo.txt")
-        self.assertEqual(p1["maxiter"], 100)
-        self.assertEqual(p1["tolerance"], 0.001)
-        self.assertEqual(p1["monitor_convergence"], True)
+        assert p1.name() == "test"
+        assert p1["filename"] == "foo.txt"
+        assert p1["maxiter"] == 100
+        assert p1["tolerance"] == 0.001
+        assert p1["monitor_convergence"] == True
 
     def test_gzipped_simple(self):
 
@@ -75,11 +74,11 @@ class TestInputOutput(Tester):
         f1 >> p1
 
         # Check values
-        self.assertEqual(p1.name(), "test")
-        self.assertEqual(p1["filename"], "foo.txt")
-        self.assertEqual(p1["maxiter"], 100)
-        self.assertEqual(p1["tolerance"], 0.001)
-        self.assertEqual(p1["monitor_convergence"], True)
+        assert p1.name() == "test"
+        assert p1["filename"] == "foo.txt"
+        assert p1["maxiter"] == 100
+        assert p1["tolerance"] == 0.001
+        assert p1["monitor_convergence"] == True
 
     def test_nested(self):
 
@@ -106,12 +105,12 @@ class TestInputOutput(Tester):
         f1 >> p1
 
         # Check values
-        self.assertEqual(p1.name(), "test")
-        self.assertEqual(p1["foo"], "bar")
-        self.assertEqual(p1["sub0"]["filename"], "foo.txt")
-        self.assertEqual(p1["sub0"]["maxiter"], 100)
-        self.assertEqual(p1["sub0"]["tolerance"], 0.001)
-        self.assertEqual(p1["sub0"]["monitor_convergence"], True)
+        assert p1.name() == "test"
+        assert p1["foo"] == "bar"
+        assert p1["sub0"]["filename"] == "foo.txt"
+        assert p1["sub0"]["maxiter"] == 100
+        assert p1["sub0"]["tolerance"] == 0.001
+        assert p1["sub0"]["monitor_convergence"] == True
 
     def test_nested_read_existing(self):
         """Test that we can read in a nested parameter database into
@@ -140,8 +139,8 @@ class TestInputOutput(Tester):
         lu_solver = LUSolver()
 
         # Check that parameters propagate to solvers
-        self.assertEqual(krylov_solver.parameters["absolute_tolerance"], 1.23456)
-        self.assertEqual(lu_solver.parameters["reuse_factorization"], True)
+        assert krylov_solver.parameters["absolute_tolerance"] == 1.23456
+        assert lu_solver.parameters["reuse_factorization"] == True
 
         # Reset parameters so that other tests will continue to work
         parameters["krylov_solver"]["absolute_tolerance"] = absolute_tolerance

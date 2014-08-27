@@ -23,7 +23,6 @@
 # Last changed: 2014-05-30
 
 import pytest
-from tester import Tester
 import numpy as np
 from dolfin import *
 
@@ -41,23 +40,23 @@ mesh = UnitSquareMesh(4, 4)
 
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
             reason="Skipping unit test(s) not working in parallel")
-class TestPeriodicBoundaryComputations(Tester):
+class TestPeriodicBoundaryComputations:
 
     def test_ComputePeriodicPairs(self):
 
         # Verify that correct number of periodic pairs are computed
         vertices = pbc.compute_periodic_pairs(mesh, periodic_boundary, 0)
         edges    = pbc.compute_periodic_pairs(mesh, periodic_boundary, 1)
-        self.assertEqual(len(vertices), 5)
-        self.assertEqual(len(edges), 4)
+        assert len(vertices) == 5
+        assert len(edges) == 4
 
     def test_MastersSlaves(self):
 
         # Verify that correct number of masters and slaves are marked
         mf = pbc.masters_slaves(mesh, periodic_boundary, 0)
-        self.assertEqual(len(np.where(mf.array() == 1)[0]), 5)
-        self.assertEqual(len(np.where(mf.array() == 2)[0]), 5)
+        assert len(np.where(mf.array() == 1)[0]) == 5
+        assert len(np.where(mf.array() == 2)[0]) == 5
 
         mf = pbc.masters_slaves(mesh, periodic_boundary, 1)
-        self.assertEqual(len(np.where(mf.array() == 1)[0]), 4)
-        self.assertEqual(len(np.where(mf.array() == 2)[0]), 4)
+        assert len(np.where(mf.array() == 1)[0]) == 4
+        assert len(np.where(mf.array() == 2)[0]) == 4

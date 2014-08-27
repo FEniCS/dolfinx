@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the RKSolver interface"""
 
 # Copyright (C) 2013 Johan Hake
@@ -22,7 +24,6 @@
 
 from __future__ import print_function
 import pytest
-from tester import Tester
 from dolfin import *
 
 parameters.form_compiler.optimize=True
@@ -70,7 +71,7 @@ def function_closure(Scheme):
             solver.step_interval(0., tstop, dt)
             u_errors.append(errornorm(u_true, u))
 
-        self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+        assert scheme.order()-min(convergence_order(u_errors))<0.1
 
     def scalar(self):
 
@@ -94,7 +95,7 @@ def function_closure(Scheme):
             u.interpolate(Constant(1.0))
             solver.step_interval(0., tstop, dt)
             u_errors.append(errornorm(u_true, u))
-        self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+        assert scheme.order()-min(convergence_order(u_errors))<0.1
 
     def vector(self):
 
@@ -126,11 +127,11 @@ def function_closure(Scheme):
 
             u_errors.append(errornorm(u_true, u))
 
-        self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+        assert scheme.order()-min(convergence_order(u_errors))<0.1
 
     return scalar_time, scalar, vector
 
-class TestPointIntegralSolver(Tester):
+class TestPointIntegralSolver:
     pass
 
 # Build test methods using function closure so 1 test is generated per Scheme and

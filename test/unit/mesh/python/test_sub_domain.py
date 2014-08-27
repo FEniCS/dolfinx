@@ -23,11 +23,10 @@
 # Last changed: 2013-06-24
 
 import pytest
-from tester import Tester
 import numpy as np
 from dolfin import *
 
-class TestSubDomain(Tester):
+class TestSubDomain:
 
     def test_compiled_subdomains(self):
         def noDefaultValues():
@@ -39,9 +38,12 @@ class TestSubDomain(Tester):
         def wrongParameterNames():
             CompiledSubDomain("long", str=1.0)
 
-        self.assertRaises(RuntimeError, noDefaultValues)
-        self.assertRaises(TypeError, wrongDefaultType)
-        self.assertRaises(RuntimeError, wrongParameterNames)
+        with pytest.raises(RuntimeError):
+            noDefaultValues()
+        with pytest.raises(TypeError):
+            wrongDefaultType()
+        with pytest.raises(RuntimeError):
+            wrongParameterNames()
 
     def test_creation_and_marking(self):
 
@@ -95,11 +97,11 @@ class TestSubDomain(Tester):
 
                     # Check that the number of marked entities are at least the
                     # correct number (it can be larger in parallel)
-                    self.assertTrue(all(value >= correct[dim, f_dim]
-                                        for value in [
-                                            MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
-                                            MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
-                                            ]))
+                    assert all(value >= correct[dim, f_dim]
+                               for value in [
+                                 MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
+                                 MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
+                                 ])
 
             for MeshFunc, f_dim in [(VertexFunction, 0),
                                     (FacetFunction, dim-1),
@@ -110,5 +112,5 @@ class TestSubDomain(Tester):
                 every.mark(f, 2)
 
                 # Check that the number of marked entities is correct
-                self.assertEqual(sum(f.array()==1), 0)
-                self.assertEqual(sum(f.array()==2), mesh.num_entities(f_dim))
+                assert sum(f.array()==1) == 0
+                assert sum(f.array()==2) == mesh.num_entities(f_dim)

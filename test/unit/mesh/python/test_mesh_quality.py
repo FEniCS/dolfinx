@@ -24,7 +24,6 @@
 
 from __future__ import print_function
 import pytest
-from tester import Tester
 import numpy
 from dolfin import *
 
@@ -32,7 +31,7 @@ from dolfin import *
 skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                      reason="Skipping unit test(s) not working in parallel")
 
-class TestMeshQuality(Tester):
+class TestMeshQuality:
 
     def test_radius_ratio_triangle(self):
 
@@ -40,7 +39,7 @@ class TestMeshQuality(Tester):
         mesh = UnitSquareMesh(12, 12)
         ratios = MeshQuality.radius_ratios(mesh)
         for c in cells(mesh):
-            self.assertAlmostEqual(ratios[c], 0.828427124746)
+            assert round(ratios[c] - 0.828427124746, 7) == 0
 
     def test_radius_ratio_tetrahedron(self):
 
@@ -48,7 +47,7 @@ class TestMeshQuality(Tester):
         mesh = UnitCubeMesh(14, 14, 14)
         ratios = MeshQuality.radius_ratios(mesh)
         for c in cells(mesh):
-            self.assertAlmostEqual(ratios[c], 0.717438935214)
+            assert round(ratios[c] - 0.717438935214, 7) == 0
             #print ratio[c]
 
     def test_radius_ratio_triangle_min_max(self):
@@ -57,13 +56,13 @@ class TestMeshQuality(Tester):
         mesh = UnitSquareMesh(12, 12)
 
         rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
-        self.assertTrue(rmax <= rmax)
+        assert rmax <= rmax
 
         x = mesh.coordinates()
         x[:, 0] *= 0.0
         rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
-        self.assertAlmostEqual(rmin, 0.0)
-        self.assertAlmostEqual(rmax, 0.0)
+        assert round(rmin - 0.0, 7) == 0
+        assert round(rmax - 0.0, 7) == 0
 
     def test_radius_ratio_tetrahedron_min_max(self):
 
@@ -71,13 +70,13 @@ class TestMeshQuality(Tester):
         mesh = UnitCubeMesh(12, 12, 12)
 
         rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
-        self.assertTrue(rmax <= rmax)
+        assert rmax <= rmax
 
         x = mesh.coordinates()
         x[:, 0] *= 0.0
         rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
-        self.assertAlmostEqual(rmax, 0.0)
-        self.assertAlmostEqual(rmax, 0.0)
+        assert round(rmax - 0.0, 7) == 0
+        assert round(rmax - 0.0, 7) == 0
 
     def test_radius_ratio_matplotlib(self):
 
@@ -87,7 +86,7 @@ class TestMeshQuality(Tester):
         print(test)
 
 @skip_in_paralell
-class TestCellRadi(Tester):
+class TestCellRadi:
 
     @classmethod
     @pytest.fixture(scope="class", autouse=True)
@@ -107,13 +106,13 @@ class TestCellRadi(Tester):
 
     def test_radius_ratio_min_radius_ratio_max(self):
         rmin, rmax = MeshQuality.radius_ratio_min_max(self.mesh1d)
-        self.assertAlmostEqual(rmin, 0.0)
-        self.assertAlmostEqual(rmax, 1.0)
+        assert round(rmin - 0.0, 7) == 0
+        assert round(rmax - 1.0, 7) == 0
 
         rmin, rmax = MeshQuality.radius_ratio_min_max(self.mesh2d)
-        self.assertAlmostEqual(rmin, 2.0*sqrt(2.0)/(2.0+sqrt(2.0)) )
-        self.assertAlmostEqual(rmax, 1.0)
+        assert round(rmin - 2.0*sqrt(2.0)/(2.0+sqrt(2.0)), 7) == 0
+        assert round(rmax - 1.0, 7) == 0
 
         rmin, rmax = MeshQuality.radius_ratio_min_max(self.mesh3d)
-        self.assertAlmostEqual(rmin, 0.0)
-        self.assertAlmostEqual(rmax, 1.0)
+        assert round(rmin - 0.0, 7) == 0
+        assert round(rmax - 1.0, 7) == 0

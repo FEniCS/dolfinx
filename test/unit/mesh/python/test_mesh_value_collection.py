@@ -23,11 +23,10 @@
 # Last changed: 2011-03-10
 
 import pytest
-from tester import Tester
 import numpy.random
 from dolfin import *
 
-class TesterMeshValueCollections(Tester):
+class TestMeshValueCollections:
 
     def test_assign_2D_cells(self):
         mesh = UnitSquareMesh(3, 3)
@@ -39,17 +38,17 @@ class TesterMeshValueCollections(Tester):
             all_new = all_new and f.set_value(cell.index(), value)
         g = MeshValueCollection("int", mesh, 2)
         g.assign(f)
-        self.assertEqual(ncells, f.size())
-        self.assertEqual(ncells, g.size())
-        self.assertTrue(all_new)
+        assert ncells == f.size()
+        assert ncells == g.size()
+        assert all_new
 
         for cell in cells(mesh):
             value = ncells - cell.index()
-            self.assertEqual(value, g.get_value(cell.index(), 0))
+            assert value, g.get_value(cell.index() == 0)
 
         old_value = g.get_value(0,0)
         g.set_value(0, 0, old_value+1)
-        self.assertEqual(old_value+1, g.get_value(0, 0))
+        assert old_value+1 == g.get_value(0, 0)
 
     def test_assign_2D_facets(self):
         mesh = UnitSquareMesh(3, 3)
@@ -64,14 +63,14 @@ class TesterMeshValueCollections(Tester):
 
         g = MeshValueCollection("int", mesh, 1)
         g.assign(f)
-        self.assertEqual(ncells*3, f.size())
-        self.assertEqual(ncells*3, g.size())
-        self.assertTrue(all_new)
+        assert ncells*3 == f.size()
+        assert ncells*3 == g.size()
+        assert all_new
 
         for cell in cells(mesh):
             value = ncells - cell.index()
             for i, facet in enumerate(facets(cell)):
-                self.assertEqual(value+i, g.get_value(cell.index(), i))
+                assert value+i == g.get_value(cell.index(), i)
 
     def test_assign_2D_vertices(self):
         mesh = UnitSquareMesh(3, 3)
@@ -86,14 +85,14 @@ class TesterMeshValueCollections(Tester):
 
         g = MeshValueCollection("int", mesh, 0)
         g.assign(f)
-        self.assertEqual(ncells*3, f.size())
-        self.assertEqual(ncells*3, g.size())
-        self.assertTrue(all_new)
+        assert ncells*3 == f.size()
+        assert ncells*3 == g.size()
+        assert all_new
 
         for cell in cells(mesh):
             value = ncells - cell.index()
             for i, vert in enumerate(vertices(cell)):
-                self.assertEqual(value+i, g.get_value(cell.index(), i))
+                assert value+i == g.get_value(cell.index(), i)
 
     def test_mesh_function_assign_2D_cells(self):
         mesh = UnitSquareMesh(3, 3)
@@ -104,15 +103,15 @@ class TesterMeshValueCollections(Tester):
 
         g = MeshValueCollection("int", mesh, 2)
         g.assign(f)
-        self.assertEqual(ncells, f.size())
-        self.assertEqual(ncells, g.size())
+        assert ncells == f.size()
+        assert ncells == g.size()
 
         f2 = MeshFunction("int", mesh, g)
 
         for cell in cells(mesh):
             value = ncells - cell.index()
-            self.assertEqual(value, g.get_value(cell.index(), 0))
-            self.assertEqual(f2[cell], g.get_value(cell.index(), 0))
+            assert value == g.get_value(cell.index(), 0)
+            assert f2[cell] == g.get_value(cell.index(), 0)
 
         h = MeshValueCollection("int", mesh, 2)
         global_indices = mesh.topology().global_indices(2)
@@ -131,7 +130,7 @@ class TesterMeshValueCollections(Tester):
         info(str(values))
         info(str(values.sum()))
 
-        self.assertEqual(MPI.sum(mesh.mpi_comm(), values.sum()*1.0), 140.)
+        assert MPI.sum(mesh.mpi_comm(), values.sum()*1.0) == 140.
 
     def test_mesh_function_assign_2D_facets(self):
         mesh = UnitSquareMesh(3, 3)
@@ -139,21 +138,21 @@ class TesterMeshValueCollections(Tester):
         f = FacetFunction("int", mesh, 25)
         for cell in cells(mesh):
             for i, facet in enumerate(facets(cell)):
-                self.assertEqual(25, f[facet])
+                assert 25 == f[facet]
 
         g = MeshValueCollection("int", mesh, 1)
         g.assign(f)
-        self.assertEqual(mesh.num_facets(), f.size())
-        self.assertEqual(mesh.num_cells()*3, g.size())
+        assert mesh.num_facets() == f.size()
+        assert mesh.num_cells()*3 == g.size()
         for cell in cells(mesh):
             for i, facet in enumerate(facets(cell)):
-                self.assertEqual(25, g.get_value(cell.index(), i))
+                assert 25 == g.get_value(cell.index(), i)
 
         f2 = MeshFunction("int", mesh, g)
 
         for cell in cells(mesh):
             for i, facet in enumerate(facets(cell)):
-                self.assertEqual(f2[facet], g.get_value(cell.index(), i))
+                assert f2[facet] == g.get_value(cell.index(), i)
 
     def test_mesh_function_assign_2D_vertices(self):
         mesh = UnitSquareMesh(3, 3)
@@ -161,12 +160,12 @@ class TesterMeshValueCollections(Tester):
         f = VertexFunction("int", mesh, 25)
         g = MeshValueCollection("int", mesh, 0)
         g.assign(f)
-        self.assertEqual(mesh.num_vertices(), f.size())
-        self.assertEqual(mesh.num_cells()*3, g.size())
+        assert mesh.num_vertices() == f.size()
+        assert mesh.num_cells()*3 == g.size()
 
         f2 = MeshFunction("int", mesh, g)
 
         for cell in cells(mesh):
             for i, vert in enumerate(vertices(cell)):
-                self.assertEqual(25, g.get_value(cell.index(), i))
-                self.assertEqual(f2[vert], g.get_value(cell.index(), i))
+                assert 25 == g.get_value(cell.index(), i)
+                assert f2[vert] == g.get_value(cell.index(), i)

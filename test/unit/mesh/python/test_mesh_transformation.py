@@ -22,11 +22,10 @@
 # First added:  2012-01-16
 # Last changed: 2013-06-28
 
-import pytest
-from tester import Tester
+
 from dolfin import *
 
-class TesterMeshTransformation(Tester):
+class TesterMeshTransformation:
 
     def test_translate_2d(self):
         mesh = UnitSquareMesh(8, 8)

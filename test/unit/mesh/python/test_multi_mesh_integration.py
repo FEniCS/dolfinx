@@ -24,9 +24,7 @@
 
 from __future__ import print_function
 import pytest
-from tester import Tester
 import numpy
-
 from dolfin import *
 from six.moves import xrange as range
 
@@ -46,7 +44,7 @@ def triangulation_to_mesh_2d(triangulation):
     editor.close()
     return mesh
 
-class TestTriangleIntegration(Tester):
+class TestTriangleIntegration:
 
     @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
             reason="Skipping unit test(s) not working in parallel")
@@ -107,7 +105,7 @@ class TestTriangleIntegration(Tester):
         # MMA = MultiMeshAssembler()
         # area = MMA.assemble(L_multi)
         # area = assemble(L_multi)
-        # self.assertAlmostEqual(area, exactarea)
+        # assert round(area - exactarea, 7) == 0
 
 
         # # Translate second mesh randomly
@@ -134,4 +132,4 @@ class TestTriangleIntegration(Tester):
 
 
         # errorstring = "translation=" + str(dx[0]) + str(" ") + str(dx[1])
-        # self.assertAlmostEqual(volume, exactvolume,7,errorstring)
+        # assert round(volume - exactvolume, 7, errorstring)

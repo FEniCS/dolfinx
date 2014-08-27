@@ -23,12 +23,11 @@
 # Last changed: 2011-08-21
 
 import pytest
-from tester import Tester
 import numpy
 from dolfin import *
 from six.moves import xrange as range
 
-class TestMeshIterator(Tester):
+class TestMeshIterator:
 
     def test_vertex_iterators(self):
         "Iterate over vertices"
@@ -42,23 +41,24 @@ class TestMeshIterator(Tester):
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(Exception, assign, con, i)
+            with pytest.raises(Exception):
+                assign(con, i)
 
         n = 0
         for i, v in enumerate(vertices(mesh)):
             n += 1
             for j, con in cons:
-                self.assertTrue(numpy.all(con(i) == v.entities(j)))
+                assert numpy.all(con(i) == v.entities(j))
 
-        self.assertEqual(n, mesh.num_vertices())
+        assert n == mesh.num_vertices()
 
         # Check coordinate assignment
         # FIXME: Outcomment to hopefully please Mac-buildbot
         #end_point = numpy.array([v.x(0), v.x(1), v.x(2)])
         #mesh.coordinates()[:] += 2
-        #self.assertEqual(end_point[0] + 2, mesh.coordinates()[-1,0])
-        #self.assertEqual(end_point[1] + 2, mesh.coordinates()[-1,1])
-        #self.assertEqual(end_point[2] + 2, mesh.coordinates()[-1,2])
+        #assert end_point[0] + 2 == mesh.coordinates()[-1,0]
+        #assert end_point[1] + 2 == mesh.coordinates()[-1,1]
+        #assert end_point[2] + 2 == mesh.coordinates()[-1,2]
 
     def test_edge_iterators(self):
         "Iterate over edges"
@@ -72,15 +72,16 @@ class TestMeshIterator(Tester):
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(Exception, assign, con, i)
+            with pytest.raises(Exception):
+                assign(con, i)
 
         n = 0
         for i, e in enumerate(edges(mesh)):
             n += 1
             for j, con in cons:
-                self.assertTrue(numpy.all(con(i) == e.entities(j)))
+                assert numpy.all(con(i) == e.entities(j))
 
-        self.assertEqual(n, mesh.num_edges())
+        assert n == mesh.num_edges()
 
     def test_face_iterator(self):
         "Iterate over faces"
@@ -94,15 +95,16 @@ class TestMeshIterator(Tester):
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(Exception, assign, con, i)
+            with pytest.raises(Exception):
+                assign(con, i)
 
         n = 0
         for i, f in enumerate(faces(mesh)):
             n += 1
             for j, con in cons:
-                self.assertTrue(numpy.all(con(i) == f.entities(j)))
+                assert numpy.all(con(i) == f.entities(j))
 
-        self.assertEqual(n, mesh.num_faces())
+        assert n == mesh.num_faces()
 
     def test_facet_iterators(self):
         "Iterate over facets"
@@ -110,7 +112,7 @@ class TestMeshIterator(Tester):
         n = 0
         for f in facets(mesh):
             n += 1
-        self.assertEqual(n, mesh.num_facets())
+        assert n == mesh.num_facets()
 
     def test_cell_iterators(self):
         "Iterate over cells"
@@ -123,20 +125,20 @@ class TestMeshIterator(Tester):
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(Exception, assign, con, i)
+            with pytest.raises(Exception):
+                assign(con, i)
 
         n = 0
         for i, c in enumerate(cells(mesh)):
             n += 1
             for j, con in cons:
-                self.assertTrue(numpy.all(con(i) == c.entities(j)))
+                assert numpy.all(con(i) == c.entities(j))
 
-        self.assertEqual(n, mesh.num_cells())
+        assert n == mesh.num_cells()
 
         # Test non destruction of MeshEntities
         cell_list = [c for c in cells(mesh)]
-        self.assertEqual(sum(c.volume() for c in cell_list), \
-                         sum(c.volume() for c in cells(mesh)))
+        assert sum(c.volume() for c in cell_list) == sum(c.volume() for c in cells(mesh))
 
     def test_mixed_iterators(self):
         "Iterate over vertices of cells"
@@ -146,4 +148,4 @@ class TestMeshIterator(Tester):
         for c in cells(mesh):
             for v in vertices(c):
                 n += 1
-        self.assertEqual(n, 4*mesh.num_cells())
+        assert n == 4*mesh.num_cells()

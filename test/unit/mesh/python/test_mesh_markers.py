@@ -25,10 +25,9 @@ interaction between Mesh - MeshDomains - MeshMarkers"""
 # Last changed: 2011-09-02
 
 import pytest
-from tester import Tester
 from dolfin import *
 
-class TestXMLMesMarkers(Tester):
+class TestXMLMesMarkers:
 
     def test_subdomain_marking(self):
         "Test setting markers from subdomains"
@@ -64,4 +63,4 @@ class TestXMLMesMarkers(Tester):
         f4.mark_facets(mesh, 4)
 
         # FIXME: Add test here
-        self.assertEqual(0, 0)
+        assert 0 == 0

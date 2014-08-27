@@ -23,50 +23,55 @@
 # Last changed: 2014-05-30
 
 import pytest
-from tester import Tester
 from dolfin import *
 import six
 
+@pytest.fixture(scope='module', params=range(3))
+def MeshFunc(request):
+    test_mesh = [(UnitIntervalMesh, (10,)), 
+                 (UnitSquareMesh, (10, 10)), 
+                 (UnitCubeMesh, (10, 10, 10))]
+    return test_mesh[request.param]
+ 
+@pytest.mark.usefixtures("MeshFunc")
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                      reason="Skipping unit test(s) not working in parallel")
-class TestSubMesh(Tester):
-
-    def test_creation(self):
+class TestSubMesh:
+   
+    def test_creation(self, MeshFunc):
         """Create SubMesh."""
-        for MeshClass, args in [(UnitIntervalMesh, (10,)),
-                                (UnitSquareMesh, (10, 10)),
-                                (UnitCubeMesh, (10,10,10))]:
+        args = MeshFunc[1]
+        MeshFunc = MeshFunc[0]
+        mesh = MeshFunc(*args)
+        dim_t = mesh.topology().dim()
+        mesh.domains().init(dim_t)
+        domains = CellFunction("size_t", mesh, 0)
+        for cell in cells(mesh):
+            # Mark half the cells
+            if cell.index()>mesh.num_cells()/2:
+                break
+            domains[cell] = 1
+            mesh.domains().set_marker((cell.index(), 1), dim_t)
 
-            mesh = MeshClass(*args)
-            dim_t = mesh.topology().dim()
-            mesh.domains().init(dim_t)
-            domains = CellFunction("size_t", mesh, 0)
-            for cell in cells(mesh):
-                # Mark half the cells
-                if cell.index()>mesh.num_cells()/2:
-                    break
-                domains[cell] = 1
-                mesh.domains().set_marker((cell.index(), 1), dim_t)
+        # Create mesh from stored MeshValueCollection and
+        # external CellFunction
+        smesh0 = SubMesh(mesh, 1)
+        smesh1 = SubMesh(mesh, domains, 1)
+        assert smesh0.num_cells() == smesh1.num_cells()
+        assert smesh0.num_vertices() == smesh1.num_vertices()
+        # Check that we create the same sub mesh with the same
+        # MeshValueCollection
+        for cell0, cell1 in zip(cells(smesh0), cells(smesh1)):
+            assert cell0.index() == cell1.index()
+            assert smesh0.domains().get_marker(cell0.index(), dim_t) == \
+                    smesh1.domains().get_marker(cell1.index(), dim_t)
+ 
+        with pytest.raises(RuntimeError):
+            SubMesh(mesh, 2)
 
-            # Create mesh from stored MeshValueCollection and
-            # external CellFunction
-            smesh0 = SubMesh(mesh, 1)
-            smesh1 = SubMesh(mesh, domains, 1)
-            self.assertEqual(smesh0.num_cells(), smesh1.num_cells())
-            self.assertEqual(smesh0.num_vertices(), smesh1.num_vertices())
-
-            # Check that we create the same sub mesh with the same
-            # MeshValueCollection
-            for cell0, cell1 in zip(cells(smesh0), cells(smesh1)):
-                self.assertEqual(cell0.index(), cell1.index())
-                self.assertEqual(smesh0.domains().get_marker(cell0.index(),\
-                                                                 dim_t),
-                                 smesh1.domains().get_marker(cell1.index(),\
-                                                                 dim_t))
-
-            self.assertRaises(RuntimeError, SubMesh, (mesh, 2))
-            mesh = MeshClass(*args)
-            self.assertRaises(RuntimeError, SubMesh, (mesh, 1))
+        mesh = MeshFunc(*args)
+        with pytest.raises(RuntimeError): 
+            SubMesh(mesh, 1)
 
     def test_facet_domain_propagation(self):
 
@@ -93,8 +98,8 @@ class TestSubMesh(Tester):
             for key, val in six.iteritems(outer_facets):
                 if val == value: sum_outer += val
 
-            self.assertEqual(sum_outer, sum_inner)
-            self.assertEqual(sum_outer, sum_parent)
+            assert sum_outer == sum_inner
+            assert sum_outer == sum_parent
 
         # Test Meshfunction interface
         parent_facets = MeshFunction("size_t", mesh, D, mesh.domains())
@@ -103,7 +108,7 @@ class TestSubMesh(Tester):
 
         # Check we have the same number of value-marked facets
         for value in [5, 10, 15]:
-            self.assertEqual((inner_facets.array()==value).sum(),
-                             (outer_facets.array()==value).sum())
-            self.assertEqual((parent_facets.array()==value).sum(),
-                             (outer_facets.array()==value).sum())
+            assert (inner_facets.array()==value).sum() == \
+                             (outer_facets.array()==value).sum()
+            assert (parent_facets.array()==value).sum() == \
+                             (outer_facets.array()==value).sum()

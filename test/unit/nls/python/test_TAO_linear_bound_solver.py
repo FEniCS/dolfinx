@@ -42,8 +42,7 @@
 from __future__ import print_function
 from dolfin import *
 import pytest
-from tester import Tester
-
+i
 if has_petsc():
 
     try:
@@ -95,7 +94,7 @@ if has_petsc():
 
 if has_petsc_tao():
 
-    class TestTAOLinearBoundSolver(Tester):
+    class TestTAOLinearBoundSolver:
 
         def test_tao_linear_bound_solver(self):
             "Test TAOLinearBoundSolver"
@@ -103,4 +102,4 @@ if has_petsc_tao():
             solver.solve(A,xsol,b,xl,xu)
 
             # Test that F(usol) = Ly
-            self.assertAlmostEqual(assemble(F), Ly, 4)
+            assert round(assemble(F) - Ly, 4) == 0

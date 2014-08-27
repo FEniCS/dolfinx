@@ -42,7 +42,6 @@ more complex bounds as GenericVectors or Function.
 
 from dolfin import *
 import pytest
-from tester import Tester
 import os
 
 if has_petsc_snes():
@@ -93,17 +92,17 @@ if has_petsc_snes():
                                                      "report": True}}
 
 @pytest.mark.skipif(not has_petsc_snes(), reason="Need petsc snes")
-class TestSNESSolver(Tester):
+class TestSNESSolver:
 
     def test_snes_solver(self):
         u.interpolate(Constant(-1000.0))
         solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters_sign)
-        self.assertTrue(u.vector().min() >= 0)
+        assert u.vector().min() >= 0
 
     def test_newton_solver(self):
         u.interpolate(Constant(-1000.0))
         solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
-        self.assertTrue(u.vector().min() < 0)
+        assert u.vector().min() < 0
 
     def test_snes_solver_bound_functions(self):
         u.interpolate(Constant(-1000.0))
@@ -111,7 +110,7 @@ class TestSNESSolver(Tester):
         solver  = NonlinearVariationalSolver(problem)
         solver.parameters.update(snes_solver_parameters_bounds)
         solver.solve(lb, ub)
-        self.assertTrue(u.vector().min() >= 0)
+        assert u.vector().min() >= 0
 
     def test_snes_solver_bound_vectors(self):
         u.interpolate(Constant(-1000.0))
@@ -119,4 +118,4 @@ class TestSNESSolver(Tester):
         solver  = NonlinearVariationalSolver(problem)
         solver.parameters.update(snes_solver_parameters_bounds)
         solver.solve(lb.vector(), ub.vector())
-        self.assertTrue(u.vector().min() >= 0)
+        assert u.vector().min() >= 0

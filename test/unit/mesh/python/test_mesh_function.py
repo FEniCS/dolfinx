@@ -23,13 +23,12 @@
 # Last changed: 2011-03-10
 
 import pytest
-from tester import Tester
 import numpy.random
 from dolfin import *
 from six.moves import xrange as range
 
 
-class TestNamedMeshFunctions(Tester):
+class TestNamedMeshFunctions:
     
     @classmethod
     @pytest.fixture(scope = "class", autouse = True)
@@ -51,34 +50,34 @@ class TestNamedMeshFunctions(Tester):
                 if name is "Vertex":
                     a = len(self.funcs[(tp, name)])
                     b = self.mesh.num_vertices()
-                    self.assertEqual(a, b)
+                    assert a == b
                 else:
                     a = len(self.funcs[(tp, name)])
                     b = getattr(self.mesh, "num_%ss"%name.lower())()
-                    self.assertEqual(a, b)
+                    assert a == b
 
     def test_access_type(self):
         type_dict = dict(int=int, size_t=int, double=float, bool=bool)
         for tp in self.tps:
             for name in self.names:
-                self.assertTrue(isinstance(self.funcs[(tp, name)][0], \
-                                           type_dict[tp]))
+                assert isinstance(self.funcs[(tp, name)][0], type_dict[tp])
 
     def test_numpy_access(self):
         for tp in self.tps:
             for name in self.names:
                 values = self.funcs[(tp, name)].array()
                 values[:] = numpy.random.rand(len(values))
-                self.assertTrue(all(values[i]==self.funcs[(tp, name)][i]
-                                    for i in range(len(values))))
+                assert all(values[i]==self.funcs[(tp, name)][i] \
+                            for i in range(len(values)))
 
     def test_iterate(self):
         for tp in self.tps:
             for name in self.names:
                 for index, value in enumerate(self.funcs[(tp, name)]):
                     pass
-                self.assertEqual(index, len(self.funcs[(tp, name)])-1)
-                self.assertRaises(IndexError, self.funcs[(tp, name)].__getitem__, len(self.funcs[(tp, name)]))
+                assert index == len(self.funcs[(tp, name)])-1
+                with pytest.raises(IndexError):
+                    self.funcs[(tp, name)].__getitem__(len(self.funcs[(tp, name)]))
 
     def test_setvalues(self):
         for tp in self.tps:
@@ -100,38 +99,38 @@ class TestMeshFunctions:
         v = MeshFunction("size_t", self.mesh)
 
         v = MeshFunction("size_t", self.mesh, 0)
-        self.assertEqual(v.size(), self.mesh.num_vertices())
+        assert v.size() == self.mesh.num_vertices()
 
         v = MeshFunction("size_t", self.mesh, 1)
-        self.assertEqual(v.size(), self.mesh.num_edges())
+        assert v.size() == self.mesh.num_edges()
 
         v = MeshFunction("size_t", self.mesh, 2)
-        self.assertEqual(v.size(), self.mesh.num_facets())
+        assert v.size() == self.mesh.num_facets()
 
         v = MeshFunction("size_t", self.mesh, 3)
-        self.assertEqual(v.size(), self.mesh.num_cells())
+        assert v.size() == self.mesh.num_cells()
 
     def test_CreateAssign(self):
         """Create MeshFunctions with value."""
         i = 10
         v = MeshFunction("size_t", self.mesh, 0, i)
-        self.assertEqual(v.size(), self.mesh.num_vertices())
-        self.assertEqual(v[0], i)
+        assert v.size() == self.mesh.num_vertices()
+        assert v[0] == i
 
         v = MeshFunction("size_t", self.mesh, 1, i)
-        self.assertEqual(v.size(), self.mesh.num_edges())
-        self.assertEqual(v[0], i)
+        assert v.size() == self.mesh.num_edges()
+        assert v[0] == i
 
         v = MeshFunction("size_t", self.mesh, 2, i)
-        self.assertEqual(v.size(), self.mesh.num_facets())
-        self.assertEqual(v[0], i)
+        assert v.size() == self.mesh.num_facets()
+        assert v[0] == i
 
         v = MeshFunction("size_t", self.mesh, 3, i)
-        self.assertEqual(v.size(), self.mesh.num_cells())
-        self.assertEqual(v[0], i)
+        assert v.size() == self.mesh.num_cells()
+        assert v[0] == i
 
     def test_Assign(self):
         f = self.f
         f[3] = 10
         v = Vertex(self.mesh, 3)
-        self.assertEqual(f[v], 10)
+        assert f[v] == 10
