@@ -49,8 +49,9 @@ def run_test(path, args=[]):
 
     # Figure out name of script to be run
     script_name = inspect.stack()[1][3].split("test_")[1] + ".py"
-    file_path = os.path.join(*(["chapter_1_files"] + path + [script_name]))
-
+    file_path = os.path.join(*([os.path.dirname(__file__)] + ["chapter_1_files"] + \
+                               path + [script_name]))
+ 
     # Print a message
     print()
     print("Running tutorial example %s" % file_path)
@@ -66,7 +67,7 @@ def run_test(path, args=[]):
     # Try reading parameters, might not always work if running without PETSc
     # and the parameter file specifies PETSc to be used
     try:
-        file = File(os.path.join("chapter_1_files", "dolfin_parameters.xml"))
+        file = File(os.path.join(os.path.dirname(__file__), "dolfin_parameters.xml"))
         file >> parameters
         print()
         print("Running again using stored parameter values")

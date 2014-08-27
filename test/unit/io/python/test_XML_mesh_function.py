@@ -30,8 +30,7 @@ skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                      reason="Skipping unit test(s) not working in parallel")
 
 # create an output folder
-filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
-filepath = str(os.path.sep).join(filepath + ['output', ''])
+filepath = os.path.join(os.path.dirname(__file__), 'output', '')
 if not os.path.exists(filepath):
     os.mkdir(filepath)
 

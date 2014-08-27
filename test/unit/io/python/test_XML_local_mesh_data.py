@@ -23,12 +23,13 @@
 # Last changed: 2009-01-02
 
 import pytest
+import os
 from dolfin import *
 
 # FIXME: Not a proper unit test. When LocalMeshData has a public interface
 # FIXME: we can expand on these
 
 def testRead():
-    file = File("../snake.xml.gz")
+    file = File(os.path.join(os.path.dirname(__file__), "..", "snake.xml.gz"))
     localdata = cpp.LocalMeshData(mpi_comm_world())
     file >> localdata

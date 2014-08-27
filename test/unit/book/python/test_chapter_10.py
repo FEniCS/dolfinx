@@ -28,8 +28,8 @@ from dolfin import *
 import os
 
 # create an output folder
-filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
-filepath = str(os.path.sep).join(filepath + ['output', ''])
+filedir = os.path.dirname(os.path.abspath(__file__))
+filepath = os.path.join(filedir, 'output', '')
 if not os.path.exists(filepath):
     os.mkdir(filepath)
 
@@ -250,7 +250,7 @@ def test_p12_box_1():
 
 @skip_parallel
 def test_p13_box_2():
-    mesh = Mesh("mesh.xml")
+    mesh = Mesh(os.path.join(os.path.dirname(__file__), "mesh.xml"))
 
 @skip_parallel
 def test_p14_box_1():
@@ -620,7 +620,7 @@ def test_p33_box_1():
 
 @skip_parallel
 def test_p33_box_2():
-    mesh = Mesh("mesh.xml")
+    mesh = Mesh(os.path.join(os.path.dirname(__file__), "mesh.xml"))
 
 @skip_parallel
 def test_p34_box_1():

@@ -9,6 +9,7 @@ u0 = u = 1 + x^2 + 2y^2, f = -6.
 """
 
 from __future__ import print_function
+import os
 from dolfin import *
 
 # Create mesh and define function space
@@ -55,7 +56,8 @@ solver.solve()
 #plot(mesh)
 
 # Dump solution to file in VTK format
-file = File('poisson.pvd')
+file_path = os.path.join(os.path.dirname(__file__), "poisson.pvd")
+file = File(file_path)
 file << u
 
 # Hold plot

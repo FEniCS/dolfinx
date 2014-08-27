@@ -24,6 +24,7 @@
 
 from __future__ import print_function
 import pytest
+import os
 from dolfin import *
 
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
@@ -40,12 +41,12 @@ class TestInputOutput:
         p0.add("monitor_convergence", True)
 
         # Save to file
-        f0 = File("test_parameters.xml")
+        f0 = File(os.path.join(os.path.dirname(__file__), "test_parameters.xml"))
         f0 << p0
 
         # Read from file
         p1 = Parameters()
-        f1 = File("test_parameters.xml")
+        f1 = File(os.path.join(os.path.dirname(__file__), "test_parameters.xml"))
         f1 >> p1
 
         # Check values
@@ -65,12 +66,12 @@ class TestInputOutput:
         p0.add("monitor_convergence", True)
 
         # Save to file
-        f0 = File("test_parameters.xml.gz")
+        f0 = File(os.path.join(os.path.dirname(__file__), "test_parameters.xml.gz"))
         f0 << p0
 
         # Read from file
         p1 = Parameters()
-        f1 = File("test_parameters.xml.gz")
+        f1 = File(os.path.join(os.path.dirname(__file__), "test_parameters.xml.gz"))
         f1 >> p1
 
         # Check values
@@ -96,12 +97,12 @@ class TestInputOutput:
         p0.add(p01)
 
         # Save to file
-        f0 = File("test_parameters.xml")
+        f0 = File(os.path.join(os.path.dirname(__file__), "test_parameters.xml"))
         f0 << p0
 
         # Read from file
         p1 = Parameters()
-        f1 = File("test_parameters.xml")
+        f1 = File(os.path.join(os.path.dirname(__file__), "test_parameters.xml"))
         f1 >> p1
 
         # Check values
@@ -116,7 +117,7 @@ class TestInputOutput:
         """Test that we can read in a nested parameter database into
         an existing (and matching) parameter database"""
 
-        file = File("test_parameters.xml")
+        file = File(os.path.join(os.path.dirname(__file__), "test_parameters.xml"))
         file << parameters
 
         p = Parameters("test")

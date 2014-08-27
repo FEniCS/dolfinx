@@ -28,8 +28,7 @@ from dolfin import *
 import os
 
 # create an output folder
-filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
-filepath = str(os.path.sep).join(filepath + ['output', ''])
+filepath = os.path.join(os.path.dirname(__file__), 'output', '')
 if not os.path.exists(filepath):
     os.mkdir(filepath)
 

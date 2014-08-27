@@ -25,8 +25,8 @@ from dolfin import *
 import os
 
 # create an output folder
-filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
-filepath = str(os.path.sep).join(filepath + ['TimeSeries_test_subdirectory', ''])
+filedir = os.path.dirname(os.path.abspath(__file__))
+filepath = os.path.join(filedir, 'TimeSeries_test_subdirectory')
 if not os.path.exists(filepath):
     os.mkdir(filepath)
 
@@ -59,13 +59,13 @@ def _test_retrieve( compressed=False, all_connectivities=False):
     V = FunctionSpace(mesh, "CG", 2)
 
     u = Function(V)
-    series = TimeSeries(filepath + "TimeSeries_test_retrieve", compressed, all_connectivities)
+    series = TimeSeries(filedir + "TimeSeries_test_retrieve", compressed, all_connectivities)
     for t in times:
         u.vector()[:] = t
         series.store(u.vector(), t)
         series.store(mesh, t)
 
-    series = TimeSeries(filepath + "TimeSeries_test_retrieve", compressed)
+    series = TimeSeries(filedir + "TimeSeries_test_retrieve", compressed)
     t0 = series.vector_times()[0]
     T = series.mesh_times()[-1]
 
@@ -94,7 +94,7 @@ def test_subdirectory():
 
     m0 = UnitSquareMesh(3, 3)
 
-    name = "TimeSeries_test_subdirectory/foo"
+    name = filedir + "TimeSeries_test_subdirectory/foo"
     series0 = TimeSeries(name)
     x0 = Vector(mpi_comm_world(), 10)
 

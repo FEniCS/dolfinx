@@ -26,6 +26,7 @@
 # First added:  2011-09-19
 # Last changed: 2014-05-28
 
+import os
 import pytest
 import numpy
 from dolfin import *
@@ -81,7 +82,7 @@ def test_meshdomain_bcs():
     part of the mesh. This test is also a compatibility test for
     VMTK."""
 
-    mesh = Mesh("aneurysm.xml.gz")
+    mesh = Mesh(os.path.join(os.path.dirname(__file__), "aneurysm.xml.gz"))
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
 

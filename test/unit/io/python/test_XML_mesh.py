@@ -29,8 +29,7 @@ from dolfin import *
 import os
 
 # create an output folder
-filepath = os.path.abspath(__file__).split(str(os.path.sep))[:-1]
-filepath = str(os.path.sep).join(filepath + ['output', ''])
+filepath = os.path.join(os.path.dirname(__file__), 'output', '')
 if not os.path.exists(filepath):
     os.mkdir(filepath)
 
@@ -126,6 +125,6 @@ def test_mesh_domains_io():
 
 @skip_in_parallel
 def test_Read():
-    file = File("../snake.xml.gz")
+    file = File(os.path.join(os.path.dirname(__file__), "..", "snake.xml.gz"))
     localdata = cpp.LocalMeshData(mpi_comm_world())
     file >> localdata

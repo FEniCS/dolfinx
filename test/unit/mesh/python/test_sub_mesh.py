@@ -22,6 +22,7 @@
 # First added:  2013-02-06
 # Last changed: 2014-05-30
 
+import os
 import pytest
 from dolfin import *
 import six
@@ -77,7 +78,7 @@ class TestSubMesh:
 
         # Boxes contains two subdomains with marked faces between
         # them.  These faces are marked with 5, 10, 15.
-        mesh = Mesh("../boxes.xml.gz")
+        mesh = Mesh(os.path.join(os.path.dirname(__file__), "..", "boxes.xml.gz"))
         inner = SubMesh(mesh, 1)
         outer = SubMesh(mesh, 2)
 

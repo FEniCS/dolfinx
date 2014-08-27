@@ -25,7 +25,6 @@
 # Last changed: 2014-05-30
 
 from __future__ import print_function
-from tester import Tester
 import pytest
 import os
 import glob
@@ -39,6 +38,47 @@ from functools import reduce
 
 skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                     reason="Skipping unit test(s) not working in parallel")
+
+class Tester:
+    def assertTrue(self, a):
+        assert a
+
+    assert_ = assertTrue
+
+    def assertFalse(self, a):
+        assert not a
+
+    def assertEqual(self, a, b):
+        assert a == b
+
+    def assertAlmostEqual(self, a, b):
+        assert abs(a-b) < 1e-7
+
+    def assertNotEqual(self, a, b):
+        assert a != b
+
+    def assertIsInstance(self, obj, cls):
+        assert isinstance(obj, cls)
+
+    def assertNotIsInstance(self, obj, cls):
+        assert not isinstance(obj, cls)
+
+    def assertRaises(self, e, f, *args):
+        if args==[]:
+            with pytest.raises(e):
+                f()
+        elif len(args)==1:
+            with pytest.raises(e):
+                f(args[0])
+        elif len(args)==2:
+            with pytest.raises(e):
+                f(args[0], args[1])
+
+    def assertEqualValues(self, A, B):
+        B = as_ufl(B)
+        self.assertEqual(A.ufl_shape, B.ufl_shape)
+        self.assertEqual(inner(A-B, A-B)(None), 0)
+
  
 class TestCase(Tester):
     def _get_tempfname(self, suffix=None):
@@ -384,7 +424,7 @@ class TestGmsh(_ConverterTest):
     def __convert(self, fname, cell_type=DataHandler.CellType_Tetrahedron, dim=3):
         handler = _TestHandler(cell_type, dim, self)
         if not os.path.isabs(fname):
-            fname = os.path.join("data", fname)
+            fname = os.path.join(os.path.dirname(__file__), "data", fname)
         meshconvert.convert(fname, handler)
         return handler
 
@@ -396,7 +436,7 @@ class TestTriangle(Tester):
         # test no. 1
         from dolfin import Mesh, MPI, mpi_comm_world
 
-        fname = os.path.join("data", "triangle")
+        fname = os.path.join(os.path.dirname(__file__), "data", "triangle")
         dfname = fname+".xml"
 
         # Read triangle file and convert to a dolfin xml mesh file
@@ -415,7 +455,7 @@ class TestTriangle(Tester):
                            edges, Edge, faces, Face, \
                            SubsetIterator, facets, CellFunction, mpi_comm_world
 
-        fname = os.path.join("data", "test_Triangle_3")
+        fname = os.path.join(os.path.dirname(__file__), "data", "test_Triangle_3")
         dfname = fname+".xml"
         dfname0 = fname+".attr0.xml"
 
@@ -483,7 +523,7 @@ class TestDiffPack(Tester):
 
         from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
 
-        fname = os.path.join("data", "diffpack_tet")
+        fname = os.path.join(os.path.dirname(__file__), "data", "diffpack_tet")
         dfname = fname+".xml"
 
         # Read triangle file and convert to a dolfin xml mesh file
@@ -511,7 +551,7 @@ class TestDiffPack(Tester):
 
         from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
 
-        fname = os.path.join("data", "diffpack_tri")
+        fname = os.path.join(os.path.dirname(__file__), "data", "diffpack_tri")
         dfname = fname+".xml"
 
         # Read triangle file and convert to a dolfin xml mesh file

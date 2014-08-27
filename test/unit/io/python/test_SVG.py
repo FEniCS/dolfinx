@@ -22,20 +22,23 @@
 # First added:  2012-12-01
 # Last changed: 2012-12-01
 
+import os
 import pytest
 from dolfin import *
 
+file_path = os.path.join(os.path.dirname(__file__), 'output', 'mesh')
+
 def test_write_mesh_1d():
     mesh = UnitIntervalMesh(8)
-    f = File("output/mesh_1d.svg")
+    f = File(file_path + "_1d.svg")
     f << mesh
 
 def test_write_mesh_2d():
     mesh = UnitSquareMesh(8, 8)
-    f = File("output/mesh_2d.svg")
+    f = File(file_path + "_2d.svg")
     f << mesh
 
 def test_write_mesh_3d():
     mesh = UnitCubeMesh(8, 8, 8)
-    f = File("output/mesh_3d.svg")
+    f = File(file_path + "_3d.svg")
     f << mesh

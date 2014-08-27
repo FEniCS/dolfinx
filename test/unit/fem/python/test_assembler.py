@@ -24,6 +24,7 @@
 # Modified by Martin Alnes 2014
 
 import pytest
+import os
 import numpy
 from dolfin import *
 
@@ -556,7 +557,7 @@ def test_reference_assembly():
     parameters["reorder_dofs_serial"] = False
 
     # Load reference mesh (just a simple tetrahedron)
-    mesh = Mesh("tetrahedron.xml.gz");
+    mesh = Mesh(os.path.join(os.path.dirname(__file__), "tetrahedron.xml.gz"))
 
     # Assemble stiffness and mass matrices
     V = FunctionSpace(mesh, "Lagrange", 1)
