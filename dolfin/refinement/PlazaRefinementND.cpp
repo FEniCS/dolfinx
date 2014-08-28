@@ -129,10 +129,9 @@ void PlazaRefinementND::get_tetrahedra(
     {
       // Connect to edge end vertices
       
+      // Only add upper-triangular connections
       conn[v1][ei + 4] = true;
       conn[v0][ei + 4] = true;
-      // conn[ei + 4][v0] = true;
-      // conn[ei + 4][v1] = true;
       
       // Edge has two attached facets in cell
       // which have the same numbering as the
@@ -150,8 +149,8 @@ void PlazaRefinementND::get_tetrahedra(
 
           // This is longest edge - connect to opposite vertex
 
+          // Only add upper-triangular connection
           conn[fk][ei + 4] = true;
-          // conn[ei + 4][fk] = true;
 
           if (le_k == ei && marked_edges[e_opp])
           {
@@ -194,12 +193,16 @@ void PlazaRefinementND::get_tetrahedra(
         // Note that j>i and k>j. facet_set is in increasing order, so *q > *p.
         // Should never repeat same tetrahedron twice.
         for(auto p = facet_set.begin(); p != facet_set.end(); ++p)
+        {
           for(auto q = p + 1; q != facet_set.end(); ++q)
+          {
             if(conn[*p][*q])
             {     
               std::vector<std::size_t> tet{i, j, *p, *q};
               tet_set.push_back(tet);
             }
+          }
+        }
       }
   }
 }  
@@ -325,18 +328,18 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
     = p_ref.edge_to_new_vertex();
 
   std::vector<std::size_t> parent_cell;
+  std::vector<std::size_t> indices(num_cell_vertices + num_cell_edges);
+  std::vector<std::size_t> marked_edge_list;
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Create vector of indices in the order
     // [vertices][edges], 3+3 in 2D, 4+6 in 3D
-    std::vector<std::size_t> indices(num_cell_edges + num_cell_vertices);
     std::size_t j = 0;
     for (VertexIterator v(*cell); !v.end(); ++v)
       indices[j++] = v->global_index();
     
-    std::vector<std::size_t> marked_edge_list
-      = p_ref.marked_edge_list(*cell);
+    marked_edge_list = p_ref.marked_edge_list(*cell);
 
     if (marked_edge_list.size() == 0)
     {
@@ -346,7 +349,7 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
     }
     else
     {    
-
+      indices.resize(num_cell_vertices + num_cell_edges);
       // Get the marked edge indices for new vertices
       // and make bool vector of marked edges
       std::vector<bool> markers(num_cell_edges, false);      
@@ -398,7 +401,7 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
     }
   }
   
-  bool serial = (MPI::size(mesh.mpi_comm()) == 1);
+  const bool serial = (MPI::size(mesh.mpi_comm()) == 1);
 
   if (serial)
     p_ref.build_local(new_mesh);

@@ -184,8 +184,8 @@ void ParallelRefinement::create_new_vertices()
       if (shared_edge_i != shared_edges.end())
       {
         // check if any other sharing process has a lower rank
-        for (auto proc_edge = shared_edges.find(local_i)->second.begin();
-             proc_edge != shared_edges.find(local_i)->second.end();
+        for (auto proc_edge = shared_edge_i->second.begin();
+             proc_edge != shared_edge_i->second.end();
              ++proc_edge)
         {
           if (proc_edge->first < process_number)
@@ -362,10 +362,11 @@ void ParallelRefinement::build_local(Mesh& new_mesh) const
 
   ed.init_cells(num_cells);
   i = 0;
+  std::vector<std::size_t> cell(num_cell_vertices);
   for (auto p = new_cell_topology.begin(); p != new_cell_topology.end();
        p += num_cell_vertices)
   {
-    std::vector<std::size_t> cell(p, p + num_cell_vertices);
+    std::copy(p, p + num_cell_vertices, cell.begin());
     ed.add_cell(i, cell);
     ++i;
   }
