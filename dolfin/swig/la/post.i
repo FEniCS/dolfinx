@@ -329,6 +329,15 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return ret
         return NotImplemented
 
+    def __truediv__(self,other):
+        """x.__div__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            ret = self.copy()
+            ret._scale(1.0 / other)
+            return ret
+        return NotImplemented
+
     def __radd__(self,other):
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
@@ -384,6 +393,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return NotImplemented
 
     def __idiv__(self, other):
+        """x.__idiv__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            self._scale(1.0 / other)
+            return self
+        return NotImplemented
+
+    def __itruediv__(self, other):
         """x.__idiv__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
@@ -622,6 +639,15 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return ret
         return NotImplemented
 
+    def __truediv__(self,other):
+        """x.__div__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            ret = self.copy()
+            ret._scale(1.0/other)
+            return ret
+        return NotImplemented
+
     def __radd__(self,other):
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
@@ -666,6 +692,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return NotImplemented
 
     def __idiv__(self,other):
+        """x.__idiv__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            self._scale(1.0 / other)
+            return self
+        return NotImplemented
+
+    def __itruediv__(self,other):
         """x.__idiv__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):

@@ -178,6 +178,10 @@ def __next__(self):
         raise StopIteration
     self.first = False
     return self._dereference()
+
+# Py2/Py3
+next = __next__
+
 %}
 
 }
