@@ -28,16 +28,63 @@ from __future__ import print_function
 import pytest
 from dolfin import *
 
-class AbstractBaseTest:
-    #count = 0
-    backend = "default"
-    def setUp(self):
-        if self.backend != "default":
-            parameters.linear_algebra_backend = self.backend
-        #type(self).count += 1
-        #if type(self).count == 1:
-            # Only print this message once per class instance
-            #print("\nRunning:",type(self).__name__)
+skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
+                      reason="Skipping unit test(s) not working in parallel")
+
+# Parallel backends
+data_backends = []
+no_data_backends = ["PETSc"]
+if MPI.size(mpi_comm_world()) == 1:
+    # Add serial only backends
+    data_backends += ["uBLAS"] # What about "Dense" and "Sparse"? The sub_backend wasn't used.
+    no_data_backends += ["PETScCusp"]
+
+# If we have PETSc, STL Vector gets typedefed to one of these and data
+# test will not work. If none of these backends are available
+# STLVector defaults to uBLASVEctor, which data will work
+if has_linear_algebra_backend("PETSc"):
+    no_data_backends += ["STL"]
+else:
+    data_backends += ["STL"]
+
+# Remove backends we haven't built with
+data_backends = list(filter(has_linear_algebra_backend, data_backends))
+no_data_backends = list(filter(has_linear_algebra_backend, no_data_backends))
+any_backends = data_backends + no_data_backends
+
+@pytest.yield_fixture(scope="module", params=any_backends)
+def any_backend(request):
+    # Set backend
+    prev_backend = parameters.linear_algebra_backend
+    parameters.linear_algebra_backend = request.param
+    # Yield to allow test to run
+    yield request.param
+    # Reset backend
+    parameters.linear_algebra_backend = prev_backend
+
+@pytest.yield_fixture(scope="module", params=data_backends)
+def data_backend(request):
+    # Set backend
+    prev_backend = parameters.linear_algebra_backend
+    parameters.linear_algebra_backend = request.param
+    # Yield to allow test to run
+    yield request.param
+    # Reset backend
+    parameters.linear_algebra_backend = prev_backend
+
+@pytest.yield_fixture(scope="module", params=no_data_backends)
+def no_data_backend(request):
+    # Set backend
+    prev_backend = parameters.linear_algebra_backend
+    parameters.linear_algebra_backend = request.param
+    # Yield to allow test to run
+    yield request.param
+    # Reset backend
+    parameters.linear_algebra_backend = prev_backend
+
+
+@pytest.mark.usefixtures("any_backend")
+class TestVectorForAnyBackend:
 
     def assemble_vectors(self):
         mesh = UnitSquareMesh(7, 4)
@@ -313,6 +360,7 @@ class AbstractBaseTest:
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS backend
+@pytest.mark.usefixtures("data_backend")
 class DataTester:
     def test_vector_data(self):
         # Test for ordinary Vector
@@ -333,6 +381,7 @@ class DataTester:
         data = v.data()
         assert (data==array).all()
 
+@pytest.mark.usefixtures("no_data_backend")
 class DataNotWorkingTester:
     def test_vector_data(self):
         v = Vector(mpi_comm_world(), 301)
@@ -344,35 +393,3 @@ class DataNotWorkingTester:
             v.data()
         with pytest.raises(AttributeError):
             no_attribute()
-
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                      reason="Skipping unit test(s) not working in parallel")
-
-@skip_in_parallel
-class TestuBLASSparse(DataTester, AbstractBaseTest):
-    backend     = "uBLAS"
-    sub_backend = "Sparse"
-
-@skip_in_parallel
-class TestuBLASDense(DataTester, AbstractBaseTest):
-    backend     = "uBLAS"
-    sub_backend = "Dense"
-
-if has_linear_algebra_backend("PETScCusp"):
-    @skip_in_parallel
-    class TestPETScCusp(DataNotWorkingTester, AbstractBaseTest):
-        backend    = "PETScCusp"
-
-if has_linear_algebra_backend("PETSc"):
-    class TestPETSc(DataNotWorkingTester, AbstractBaseTest):
-        backend    = "PETSc"
-
-# If we have PETSc, STL Vector gets typedefed to one of these and data
-# test will not work. If none of these backends are available
-# STLVector defaults to uBLASVEctor, which data will work
-if has_linear_algebra_backend("PETSc"):
-    class TestSTL(DataNotWorkingTester, AbstractBaseTest):
-        backend    = "STL"
-else:
-    class TestSTL(AbstractBaseTest):
-        backend    = "STL"
