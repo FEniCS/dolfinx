@@ -25,31 +25,32 @@ from dolfin import *
 import os
 
 # create an output folder
-filedir = os.path.dirname(os.path.abspath(__file__))
-filepath = os.path.join(filedir, 'TimeSeries_test_subdirectory')
-if not os.path.exists(filepath):
-    os.mkdir(filepath)
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename)
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
 
 skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                      reason="Skipping unit test(s) not working in parallel")
 
 @skip_parallel
-def test_retrieve_compressed():
-    _test_retrieve(True, False)
-
-
-@skip_parallel
-def test_retrieve_compressed_all_connectivities():
-    _test_retrieve(True, True)
-
+def test_retrieve_compressed(temppath):
+    _test_retrieve(temppath, True, False)
 
 @skip_parallel
-def test_retrieve_all_connectivities():
-    _test_retrieve(False, True)
-
+def test_retrieve_compressed_all_connectivities(temppath):
+    _test_retrieve(temppath, True, True)
 
 @skip_parallel
-def _test_retrieve( compressed=False, all_connectivities=False):
+def test_retrieve_all_connectivities(temppath):
+    _test_retrieve(temppath, False, True)
+
+def _test_retrieve(temppath, compressed, all_connectivities):
+    filename = os.path.join(temppath, "test_retrieve")
 
     times = [t/10.0 for t in range(1, 11)]
 
@@ -59,13 +60,13 @@ def _test_retrieve( compressed=False, all_connectivities=False):
     V = FunctionSpace(mesh, "CG", 2)
 
     u = Function(V)
-    series = TimeSeries(filedir + "TimeSeries_test_retrieve", compressed, all_connectivities)
+    series = TimeSeries(filename, compressed, all_connectivities)
     for t in times:
         u.vector()[:] = t
         series.store(u.vector(), t)
         series.store(mesh, t)
 
-    series = TimeSeries(filedir + "TimeSeries_test_retrieve", compressed)
+    series = TimeSeries(filename, compressed)
     t0 = series.vector_times()[0]
     T = series.mesh_times()[-1]
 
@@ -89,13 +90,13 @@ def _test_retrieve( compressed=False, all_connectivities=False):
 
 
 @skip_parallel
-def test_subdirectory():
+def test_subdirectory(temppath):
     "Test that retrieve/store works with nonexisting subdirectory"
+    filename = os.path.join(temppath, "test_subdirectory")
 
     m0 = UnitSquareMesh(3, 3)
 
-    name = filedir + "TimeSeries_test_subdirectory/foo"
-    series0 = TimeSeries(name)
+    series0 = TimeSeries(filename)
     x0 = Vector(mpi_comm_world(), 10)
 
     # Test storage of only one time point for the mesh
@@ -103,7 +104,7 @@ def test_subdirectory():
     series0.store(x0, 0.1)
     series0.store(x0, 0.2)
 
-    series1 = TimeSeries(name)
+    series1 = TimeSeries(filename)
     m1 = Mesh()
     x1 = Vector()
 
