@@ -373,10 +373,11 @@ namespace dolfin
         return local_index + _global_offset;
       else
       {
-        const std::div_t div = std::div((local_index - _local_ownership_size), block_size);
-        const std::size_t component = div.rem;
-        const std::size_t index = div.quot;
-        dolfin_assert(index < _local_to_global_unowned.size());
+        const std::div_t div = std::div((local_index - _local_ownership_size),
+                                        block_size);
+        const int component = div.rem;
+        const int index = div.quot;
+        dolfin_assert((std::size_t) index < _local_to_global_unowned.size());
         return block_size*_local_to_global_unowned[index] + component;
       }
     }
