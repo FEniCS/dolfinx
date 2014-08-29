@@ -70,8 +70,7 @@ class Rotation(object):
 
     def to_interval_c(self):
         """Return a c expression mapping x back to the line."""
-        return "(x[0]*"+`numpy.cos(self.theta)` \
-            +   "+ x[1]*"+`numpy.sin(self.theta)`+')'
+        return "(x[0]*%f + x[1]*%f)" % (numpy.cos(self.theta), numpy.sin(self.theta))
 
     def rotate(self, mesh):
         """Rotate mesh through theta."""

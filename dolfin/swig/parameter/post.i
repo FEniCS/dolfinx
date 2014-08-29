@@ -92,22 +92,34 @@ def data(self):
   {
     if (PyList_Check(op))
     {
-      int i;
+      int i, j;
       int argc = PyList_Size(op);
       char **argv = (char **) malloc((argc+1)*sizeof(char *));
       for (i = 0; i < argc; i++)
       {
         PyObject *o = PyList_GetItem(op,i);
+%#if PY_VERSION_HEX>=0x03000000
+        if (PyUnicode_Check(o))
+%#else  
         if (PyString_Check(o))
-          argv[i] = PyString_AsString(o);
+%#endif
+        {
+          argv[i] = SWIG_Python_str_AsChar(o);
+        }
         else
         {
+          // Clean up for Python 3
+          for (j = 0; j <= i; j++)
+            SWIG_Python_str_DelForPy3(argv[j]);
           free(argv);
           throw std::runtime_error("list must contain strings");
         }
       }
       argv[i] = 0;
       self->parse(argc, argv);
+      // Clean up for Python 3
+      for (i = 0; i < argc; i++)
+        SWIG_Python_str_DelForPy3(argv[i]);
       free(argv);
     }
     else

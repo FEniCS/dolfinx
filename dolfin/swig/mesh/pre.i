@@ -169,7 +169,7 @@ def __iter__(self):
     self.first = True
     return self
 
-def next(self):
+def __next__(self):
     self.first = self.first if hasattr(self,"first") else True
     if not self.first:
         self._increment()
@@ -178,6 +178,10 @@ def next(self):
         raise StopIteration
     self.first = False
     return self._dereference()
+
+# Py2/Py3
+next = __next__
+
 %}
 
 }

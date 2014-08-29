@@ -25,11 +25,15 @@
 // compile time, to the cpp module
 //-----------------------------------------------------------------------------
 %inline %{
-int dolfin_swigversion() { return  SWIGVERSION; }
+unsigned int dolfin_swigversion() { return  SWIGVERSION; }
+unsigned int dolfin_pythonversion() { return  PY_VERSION_HEX; }
 %}
 
 %pythoncode %{
 tmp = hex(dolfin_swigversion())
-__swigversion__ = "%d.%d.%d"%(tuple(map(int, [tmp[-5], tmp[-3], tmp[-2:]])))
-del tmp, dolfin_swigversion
+int_hex = lambda x : int(x, base=16)
+__swigversion__ = "%d.%d.%d"%(tuple(map(int_hex, [tmp[2], tmp[4], tmp[6]])))
+tmp = hex(dolfin_pythonversion())
+__pythonversion__ = "%d.%d.%d"%(tuple(map(int_hex, [tmp[2], tmp[4], tmp[6]])))
+del tmp, int_hex, dolfin_pythonversion, dolfin_swigversion
 %}

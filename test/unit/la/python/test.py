@@ -84,7 +84,7 @@ class AbstractBaseTest(object):
 
         # Test set and access with different integers
         ind = 2
-        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,integer_types[1]]:
+        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,integer_types[-1]]:
             v[t(ind)] = 2.0
             if v.owns_index(t(ind)): self.assertAlmostEqual(v[t(ind)], 2.0)
 

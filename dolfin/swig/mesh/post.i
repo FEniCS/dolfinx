@@ -32,6 +32,16 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
+// Extend Point for Python 3
+//-----------------------------------------------------------------------------
+%extend dolfin::Point {
+%pythoncode %{
+__truediv__ = __div__
+__itruediv__ = __idiv__
+%}
+}
+
+//-----------------------------------------------------------------------------
 // Extend mesh entity iterators to work as Python iterators
 //-----------------------------------------------------------------------------
 %extend dolfin::MeshEntityIterator {
@@ -41,7 +51,7 @@ def __iter__(self):
     self.first = True
     return self
 
-def next(self):
+def __next__(self):
     self.first = self.first if hasattr(self,"first") else True
     if not self.first:
         self._increment()
@@ -50,6 +60,8 @@ def next(self):
         raise StopIteration
     self.first = False
     return self._dereference()
+# Py2/Py3
+next = __next__
 %}
 }
 
@@ -63,7 +75,7 @@ def __iter__(self):
     self.first = True
     return self
 
-def next(self):
+def __next__(self):
     self.first = self.first if hasattr(self,"first") else True
     if not self.first:
         self._increment()
@@ -71,6 +83,8 @@ def next(self):
         raise StopIteration
     self.first = False
     return self._dereference()
+# Py2/Py3
+next = __next__
 %}
 }
 
@@ -88,7 +102,7 @@ _subdomain_mark_doc_string = SubDomain._mark.__doc__
 # NOTE: This is a hardcoded check, which rely on SubDomain::mark only taking
 # a MeshFunction as its first argument when mark is called with two arguments
 def mark(self, *args):
-    import common
+    from . import common
     if len(args) == 2 and not isinstance(args[0], \
                     (MeshFunctionSizet, MeshFunctionInt,
                      MeshFunctionDouble, MeshFunctionBool)):
@@ -235,6 +249,7 @@ class MeshFunction(object):
         if tp == "int":
             return MeshFunctionInt(*args)
         if tp == "uint":
+            from . import common
             common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshFunctionSizet(*args)
@@ -360,6 +375,7 @@ class MeshValueCollection(object):
         if tp == "int":
             return MeshValueCollectionInt(*args)
         if tp == "uint":
+            from . import common
             common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshValueCollectionSizet(*args)
@@ -520,8 +536,8 @@ def ufl_domain(self):
 // Modifying the interface of Hierarchical
 //-----------------------------------------------------------------------------
 %pythoncode %{
-HierarchicalMesh.leaf_node = HierarchicalMesh._leaf_node
-HierarchicalMesh.root_node = HierarchicalMesh._root_node
-HierarchicalMesh.child = HierarchicalMesh._child
-HierarchicalMesh.parent = HierarchicalMesh._parent
+HierarchicalMesh.leaf_node = new_instancemethod(_mesh.HierarchicalMesh__leaf_node,None,HierarchicalMesh)
+HierarchicalMesh.root_node = new_instancemethod(_mesh.HierarchicalMesh__root_node,None,HierarchicalMesh)
+HierarchicalMesh.child = new_instancemethod(_mesh.HierarchicalMesh__child,None,HierarchicalMesh)
+HierarchicalMesh.parent = new_instancemethod(_mesh.HierarchicalMesh__parent,None,HierarchicalMesh)
 %}

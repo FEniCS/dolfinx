@@ -34,7 +34,7 @@ tests = ["parallel-assembly-solve", "ufl-jit-assemble-chain"]
 failed = []
 
 # Command to run
-command = "python test.py" + " " + " ".join(sys.argv[1:])
+command = sys.executable " test.py" + " " + " ".join(sys.argv[1:])
 
 # Run tests
 for test in tests:

@@ -82,7 +82,7 @@ SWIG_AsVal_dec(bool2)(PyObject *obj, bool *val)
 //-----------------------------------------------------------------------------
 %fragment("PyInteger_Check", "header")
 {
-// Homebrewed Integer enmerate
+// Homebrewed Integer enumerate
 typedef enum {
   _NO_PYTHON_INTEGER_TYPE=-1,
   _INT_PYTHON_INTEGER_TYPE,
