@@ -100,7 +100,6 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
 //-----------------------------------------------------------------------------
 void HDF5Interface::close_file(const hid_t hdf5_file_handle)
 {
-  info("close");
   herr_t status = H5Fclose(hdf5_file_handle);
   dolfin_assert(status != HDF5_FAIL);
 }
