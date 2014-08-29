@@ -101,6 +101,7 @@ void HDF5File::close()
   // Close HDF5 file
   if (hdf5_file_open)
     HDF5Interface::close_file(hdf5_file_id);
+  hdf5_file_open = false;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::flush()
@@ -378,6 +379,23 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     MPI::broadcast(_mpi_comm, partitions);
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
                                  "partition", partitions);
+
+    // ---------- Markers
+    for (std::size_t d = 0; d <= mesh.domains().max_dim(); d++)
+    {
+      if (mesh.domains().markers(d).empty())
+        continue;
+
+      const std::map<std::size_t, std::size_t>& domain = mesh.domains().markers(d);
+
+      MeshValueCollection<std::size_t> collection(mesh, d);
+      std::map<std::size_t, std::size_t>::const_iterator it;
+      for (it = domain.begin(); it != domain.end(); ++it)
+        collection.set_value(it->first, it->second);
+      const std::string marker_dataset =  name + "/domain_" + std::to_string(d);
+      write_mesh_value_collection(collection, marker_dataset);
+    }
+
   }
 }
 //-----------------------------------------------------------------------------
@@ -1411,6 +1429,46 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
     HDF5Utility::build_local_mesh(input_mesh, mesh_data);
   else
     MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
+
+  // ---- Markers ----
+  // Check if we have any domains
+  for (std::size_t d = 0; d <= input_mesh.topology().dim(); ++d)
+  {
+    const std::string marker_dataset = mesh_name + "/domain_" + std::to_string(d);
+    if (!has_dataset(marker_dataset))
+      continue;
+
+    input_mesh.init(d);
+
+    MeshValueCollection<std::size_t> mvc(input_mesh, d);
+    read_mesh_value_collection(mvc, marker_dataset);
+
+    // Get mesh value collection data
+    const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
+      values = mvc.values();
+
+    // Get mesh domain data and fill
+    std::map<std::size_t, std::size_t>& markers = input_mesh.domains().markers(d);
+    std::map<std::pair<std::size_t, std::size_t>,
+             std::size_t>::const_iterator entry;
+    if (d != input_mesh.topology().dim())
+    {
+      for (entry = values.begin(); entry != values.end(); ++entry)
+      {
+        const Cell cell(input_mesh, entry->first.first);
+        const std::size_t entity_index
+          = cell.entities(d)[entry->first.second];
+        markers[entity_index] = entry->second;
+      }
+    }
+    else
+    {
+      // Special case for cells
+      for (entry = values.begin(); entry != values.end(); ++entry)
+        markers[entry->first.first] = entry->second;
+    }
+  }
+
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const
