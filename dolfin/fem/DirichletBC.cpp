@@ -25,6 +25,7 @@
 // Last changed: 2014-01-23
 
 #include <map>
+#include <cinttypes>
 #include <cstdlib>
 #include <utility>
 #include <ufc.h>
@@ -289,8 +290,8 @@ void DirichletBC::gather(Map& boundary_values) const
       }
       else
       {
-        const std::div_t div = std::div(_vec[i].first, bs);
-        const int node = div.quot;
+        const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
+        const std::size_t node = div.quot;
         const int component = div.rem;
 
         // Case 1: dof is not owned by this process
