@@ -1099,9 +1099,14 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
       const std::size_t cell_index = it->first.first;
       const std::size_t local_entity_index = it->first.second;
 
-      const Cell cell(mesh, cell_index);
-      const MeshEntity e(mesh, dim, cell.entities(dim)[local_entity_index]);
-      markers[e.index()] = it->second;
+      if ( dim == D )
+        markers[0] = it->second;
+      else
+      {
+        const Cell cell(mesh, cell_index);
+        const MeshEntity e(mesh, dim, cell.entities(dim)[local_entity_index]);
+        markers[e.index()] = it->second;
+      }
     }
   }
 }
