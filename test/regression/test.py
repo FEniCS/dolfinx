@@ -192,7 +192,9 @@ for prefix in prefixes:
         if os.path.isfile(os.path.join(demo, demofile)):
             t1 = time()
             os.chdir(demo)
-            status, output = get_status_output("%s python %s" % (prefix, demofile))
+            status, output = get_status_output("%s %s %s" % \
+                                               (prefix, sys.executable, demofile))
+            #status, output = get_status_output("%s python %s" % (prefix, demofile))
             os.chdir(rootdir)
             t2 = time()
             timing += [(t2 - t1, demo)]
