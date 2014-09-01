@@ -29,8 +29,8 @@ def triangulation_to_mesh_2d(triangulation):
     editor = MeshEditor()
     mesh = Mesh()
     editor.open(mesh, 2, 2)
-    num_cells = len(triangulation) / 6
-    num_vertices = len(triangulation) / 2
+    num_cells = int(len(triangulation) / 6)
+    num_vertices = int(len(triangulation) / 2)
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
     for i in range(num_cells):
@@ -44,8 +44,8 @@ def triangulation_to_mesh_2d_3d(triangulation):
     editor = MeshEditor()
     mesh = Mesh()
     editor.open(mesh,2,3)
-    num_cells = len(triangulation)/9
-    num_vertices = len(triangulation)/3
+    num_cells = int(len(triangulation)/9)
+    num_vertices = int(len(triangulation)/3)
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
     for i in range(num_cells):
@@ -59,8 +59,8 @@ def triangulation_to_mesh_3d(triangulation):
     editor = MeshEditor()
     mesh = Mesh()
     editor.open(mesh,3,3)
-    num_cells = len(triangulation)/12
-    num_vertices = len(triangulation)/3
+    num_cells = int(len(triangulation)/12)
+    num_vertices = int(len(triangulation)/3)
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
     for i in range(num_cells):
