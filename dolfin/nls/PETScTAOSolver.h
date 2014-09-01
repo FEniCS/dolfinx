@@ -25,6 +25,7 @@
 
 #include <map>
 #include <petsctao.h>
+#include <petsctaolinesearch.h>
 #include <memory>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/PETScObject.h>

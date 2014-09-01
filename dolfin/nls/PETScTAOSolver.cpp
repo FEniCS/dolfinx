@@ -77,6 +77,17 @@ Parameters PETScTAOSolver::default_parameters()
   p.add("method"                 , "default");
   p.add("linear_solver"          , "default");
   p.add("preconditioner"         , "default");
+  
+  std::set<std::string> line_searches;
+  line_searches.insert("default");
+  line_searches.insert("unit");
+  line_searches.insert("more-thuente");
+  line_searches.insert("gpcg");
+  line_searches.insert("armijo");
+  line_searches.insert("owarmijo");
+  line_searches.insert("ipm");
+  
+  p.add("line_search", "default", line_searches);
 
   p.add(KrylovSolver::default_parameters());
 
@@ -338,6 +349,15 @@ void PETScTAOSolver::set_tao_options()
   // Set TAO solver maximum iterations
   int maxits = parameters["maximum_iterations"];
   TaoSetMaximumIterations(_tao, maxits);
+
+  // Set TAO line search
+  const std::string line_search_type = parameters["line_search"];
+  if (line_search_type != "default")
+  {
+    TaoLineSearch linesearch;
+    TaoGetLineSearch(_tao, &linesearch);
+    TaoLineSearchSetType(linesearch, line_search_type.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::set_ksp_options()
