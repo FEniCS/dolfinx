@@ -25,37 +25,41 @@
 import pytest
 from dolfin import *
 
-cube   = UnitCubeMesh(5, 5, 5)
-square = UnitSquareMesh(5, 5)
-meshes = [cube, square]
+@pytest.fixture(scope='module')
+def cube():
+    return UnitCubeMesh(5, 5, 5)
+
+@pytest.fixture(scope='module')
+def square():
+    return UnitSquareMesh(5, 5)
+
+@pytest.fixture(scope='module', params=range(2))
+def meshes(cube, square, request):
+    mesh = [cube, square]
+    return mesh[request.param]
 
 skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                           reason="Skipping unit test(s) not working in parallel")
+                       reason="Skipping unit test(s) not working in parallel")
 
-class TestEdgeFunctions():
+@skip_in_paralell
+def test_2DEdgeLength(square):
+    """Iterate over edges and sum length."""
+    length = 0.0
+    for e in edges(square):
+        length += e.length()
+    assert round(length - 19.07106781186544708362, 7) == 0
 
-    @skip_in_paralell
-    def test_2DEdgeLength(self):
-        """Iterate over edges and sum length."""
-        length = 0.0
-        for e in edges(square):
-            length += e.length()
-        assert round(length - 19.07106781186544708362, 7) == 0
-
-    @skip_in_paralell
-    def test_3DEdgeLength(self):
-        """Iterate over edges and sum length."""
-        length = 0.0
-        for e in edges(cube):
-            length += e.length()
-        assert round(length - 278.58049080280125053832, 7) == 0
-
-    def test_EdgeDot(self):
-        """Iterate over edges compute dot product with self."""
-        for mesh in meshes:
-            for e in edges(mesh):
-                dot = e.dot(e)/(e.length()**2)
-                assert round(dot - 1.0, 7) == 0
+@skip_in_paralell
+def test_3DEdgeLength(cube):
+    """Iterate over edges and sum length."""
+    length = 0.0
+    for e in edges(cube):
+        length += e.length()
+    assert round(length - 278.58049080280125053832, 7) == 0
 
 
-    pytest.main()
+def test_EdgeDot(meshes):
+    """Iterate over edges compute dot product with ."""
+    for e in edges(meshes):
+        dot = e.dot(e)/(e.length()**2)
+        assert round(dot - 1.0, 7) == 0

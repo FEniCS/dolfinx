@@ -27,40 +27,39 @@ interaction between Mesh - MeshDomains - MeshMarkers"""
 import pytest
 from dolfin import *
 
-class TestXMLMesMarkers:
 
-    def test_subdomain_marking(self):
-        "Test setting markers from subdomains"
+def test_subdomain_marking():
+    "Test setting markers from subdomains"
 
-        # Define subdomains for 5 of the 6 faces of the unit cube
-        class F0(SubDomain):
-            def inside(self, x, inside):
-                return near(x[0], 0.0)
-        class F1(SubDomain):
-            def inside(self, x, inside):
-                return near(x[0], 1.0)
-        class F2(SubDomain):
-            def inside(self, x, inside):
-                return near(x[1], 0.0)
-        class F3(SubDomain):
-            def inside(self, x, inside):
-                return near(x[1], 1.0)
-        class F4(SubDomain):
-            def inside(self, x, inside):
-                return near(x[2], 0.0)
-        f0 = F0()
-        f1 = F1()
-        f2 = F2()
-        f3 = F3()
-        f4 = F4()
+    # Define subdomains for 5 of the 6 faces of the unit cube
+    class F0(SubDomain):
+        def inside(self, x, inside):
+            return near(x[0], 0.0)
+    class F1(SubDomain):
+        def inside(self, x, inside):
+            return near(x[0], 1.0)
+    class F2(SubDomain):
+        def inside(self, x, inside):
+            return near(x[1], 0.0)
+    class F3(SubDomain):
+        def inside(self, x, inside):
+            return near(x[1], 1.0)
+    class F4(SubDomain):
+        def inside(self, x, inside):
+            return near(x[2], 0.0)
+    f0 = F0()
+    f1 = F1()
+    f2 = F2()
+    f3 = F3()
+    f4 = F4()
 
-        # Apply markers to unit cube
-        mesh = UnitCubeMesh(3, 3, 3)
-        f0.mark_facets(mesh, 0)
-        f1.mark_facets(mesh, 1)
-        f2.mark_facets(mesh, 2)
-        f3.mark_facets(mesh, 3)
-        f4.mark_facets(mesh, 4)
+    # Apply markers to unit cube
+    mesh = UnitCubeMesh(3, 3, 3)
+    f0.mark_facets(mesh, 0)
+    f1.mark_facets(mesh, 1)
+    f2.mark_facets(mesh, 2)
+    f3.mark_facets(mesh, 3)
+    f4.mark_facets(mesh, 4)
 
-        # FIXME: Add test here
-        assert 0 == 0
+    # FIXME: Add test here
+    assert 0 == 0

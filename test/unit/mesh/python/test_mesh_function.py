@@ -28,109 +28,114 @@ from dolfin import *
 from six.moves import xrange as range
 
 
-class TestNamedMeshFunctions:
-    
-    @classmethod
-    @pytest.fixture(scope = "class", autouse = True)
-    def setup(self):
-        #self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
-        #self.tps = ['int', 'size_t', 'bool', 'double']
-        self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
-        self.tps = ['int', 'size_t', 'bool', 'double']
-        self.mesh = UnitCubeMesh(3, 3, 3)
-        self.funcs = {}
-        for tp in self.tps:
-            for name in self.names:
-                self.funcs[(tp, name)] = eval("%sFunction('%s', self.mesh)"%\
-                                              (name, tp))
+@pytest.fixture(scope="module", params=range(5))
+def name(request):
+    names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
+    return names[request.param]
 
-    def test_size(self):
-        for tp in self.tps:
-            for name in self.names:
-                if name is "Vertex":
-                    a = len(self.funcs[(tp, name)])
-                    b = self.mesh.num_vertices()
-                    assert a == b
-                else:
-                    a = len(self.funcs[(tp, name)])
-                    b = getattr(self.mesh, "num_%ss"%name.lower())()
-                    assert a == b
+@pytest.fixture(scope="module", params=range(4))
+def tp(request):
+    tps = ['int', 'size_t', 'bool', 'double']
+    return tps[request.param]
 
-    def test_access_type(self):
-        type_dict = dict(int=int, size_t=int, double=float, bool=bool)
-        for tp in self.tps:
-            for name in self.names:
-                assert isinstance(self.funcs[(tp, name)][0], type_dict[tp])
+@pytest.fixture(scope="module")
+def mesh():
+    return UnitCubeMesh(3, 3, 3)
 
-    def test_numpy_access(self):
-        for tp in self.tps:
-            for name in self.names:
-                values = self.funcs[(tp, name)].array()
-                values[:] = numpy.random.rand(len(values))
-                assert all(values[i]==self.funcs[(tp, name)][i] \
-                            for i in range(len(values)))
+@pytest.fixture(scope="module")
+def funcs(mesh):
+    names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
+    tps = ['int', 'size_t', 'bool', 'double']
+    funcs = {}
+    for tp in tps:
+        for name in names:
+            funcs[(tp, name)] = eval("%sFunction('%s', mesh)"%\
+                                       (name, tp))
+    return funcs
 
-    def test_iterate(self):
-        for tp in self.tps:
-            for name in self.names:
-                for index, value in enumerate(self.funcs[(tp, name)]):
-                    pass
-                assert index == len(self.funcs[(tp, name)])-1
-                with pytest.raises(IndexError):
-                    self.funcs[(tp, name)].__getitem__(len(self.funcs[(tp, name)]))
+@pytest.fixture(scope="module")
+def cube():
+    return UnitCubeMesh(8, 8, 8)
 
-    def test_setvalues(self):
-        for tp in self.tps:
-            if tp == 'bool':
-                continue
-            for name in self.names:
-                with pytest.raises(TypeError):
-                    self.funcs[(tp, name)].__setitem__(len(self.funcs[(tp, name)])-1, "jada")
-                
+@pytest.fixture(scope="module")
+def f(cube):
+    return MeshFunction('int', cube, 0)
 
-class TestMeshFunctions:
 
-    def __init__(self):
-        self.mesh = UnitCubeMesh(8, 8, 8)
-        self.f = MeshFunction('int', self.mesh, 0)
+def test_size(tp, name, funcs, mesh):
+    if name is "Vertex":
+        a = len(funcs[(tp, name)])
+        b = mesh.num_vertices()
+        assert a == b
+    else:
+        a = len(funcs[(tp, name)])
+        b = getattr(mesh, "num_%ss"%name.lower())()
+        assert a == b
 
-    def test_Create(self):
-        """Create MeshFunctions."""
-        v = MeshFunction("size_t", self.mesh)
+def test_access_type(tp, name, funcs):
+    type_dict = dict(int=int, size_t=int, double=float, bool=bool)
+    assert isinstance(funcs[(tp, name)][0], type_dict[tp])
 
-        v = MeshFunction("size_t", self.mesh, 0)
-        assert v.size() == self.mesh.num_vertices()
 
-        v = MeshFunction("size_t", self.mesh, 1)
-        assert v.size() == self.mesh.num_edges()
+def test_numpy_access(funcs, tp, name):
+    values = funcs[(tp, name)].array()
+    values[:] = numpy.random.rand(len(values))
+    assert all(values[i]==funcs[(tp, name)][i] \
+        		 for i in range(len(values)))
 
-        v = MeshFunction("size_t", self.mesh, 2)
-        assert v.size() == self.mesh.num_facets()
+def test_iterate(tp, name, funcs):
+     for index, value in enumerate(funcs[(tp, name)]):
+         pass
+     assert index == len(funcs[(tp, name)])-1
+     with pytest.raises(IndexError):
+          funcs[(tp, name)].__getitem__(len(funcs[(tp, name)]))
 
-        v = MeshFunction("size_t", self.mesh, 3)
-        assert v.size() == self.mesh.num_cells()
 
-    def test_CreateAssign(self):
-        """Create MeshFunctions with value."""
-        i = 10
-        v = MeshFunction("size_t", self.mesh, 0, i)
-        assert v.size() == self.mesh.num_vertices()
-        assert v[0] == i
+def test_setvalues(tp, funcs, name):
+    if tp != 'bool':
+        with pytest.raises(TypeError):
+            funcs[(tp, name)].__setitem__(len(funcs[(tp, name)])-1, "jada")
+            
 
-        v = MeshFunction("size_t", self.mesh, 1, i)
-        assert v.size() == self.mesh.num_edges()
-        assert v[0] == i
+def test_Create(cube):
+    """Create MeshFunctions."""
+    v = MeshFunction("size_t", cube)
 
-        v = MeshFunction("size_t", self.mesh, 2, i)
-        assert v.size() == self.mesh.num_facets()
-        assert v[0] == i
+    v = MeshFunction("size_t", cube, 0)
+    assert v.size() == cube.num_vertices()
 
-        v = MeshFunction("size_t", self.mesh, 3, i)
-        assert v.size() == self.mesh.num_cells()
-        assert v[0] == i
+    v = MeshFunction("size_t", cube, 1)
+    assert v.size() == cube.num_edges()
 
-    def test_Assign(self):
-        f = self.f
-        f[3] = 10
-        v = Vertex(self.mesh, 3)
-        assert f[v] == 10
+    v = MeshFunction("size_t", cube, 2)
+    assert v.size() == cube.num_facets()
+
+    v = MeshFunction("size_t", cube, 3)
+    assert v.size() == cube.num_cells()
+
+
+def test_CreateAssign(cube):
+    """Create MeshFunctions with value."""
+    i = 10
+    v = MeshFunction("size_t", cube, 0, i)
+    assert v.size() == cube.num_vertices()
+    assert v[0] == i
+
+    v = MeshFunction("size_t", cube, 1, i)
+    assert v.size() == cube.num_edges()
+    assert v[0] == i
+
+    v = MeshFunction("size_t", cube, 2, i)
+    assert v.size() == cube.num_facets()
+    assert v[0] == i
+
+    v = MeshFunction("size_t", cube, 3, i)
+    assert v.size() == cube.num_cells()
+    assert v[0] == i
+
+
+def test_Assign(f, cube):
+    f = f
+    f[3] = 10
+    v = Vertex(cube, 3)
+    assert f[v] == 10

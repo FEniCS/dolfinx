@@ -25,29 +25,27 @@
 
 from dolfin import *
 
-class TesterMeshTransformation:
+def test_translate_2d():
+    mesh = UnitSquareMesh(8, 8)
+    p = Point(1, 2)
+    mesh.translate(p)
 
-    def test_translate_2d(self):
-        mesh = UnitSquareMesh(8, 8)
-        p = Point(1, 2)
-        mesh.translate(p)
+def test_translate_3d():
+    mesh = UnitCubeMesh(8, 8, 8)
+    p = Point(1, 2, 3)
+    mesh.translate(p)
 
-    def test_translate_3d(self):
-        mesh = UnitCubeMesh(8, 8, 8)
-        p = Point(1, 2, 3)
-        mesh.translate(p)
+def test_rotate_2d():
+    mesh = UnitSquareMesh(8, 8)
+    p = Point(1, 2)
+    mesh.rotate(10)
+    mesh.rotate(10, 2)
+    mesh.rotate(10, 2, p)
 
-    def test_rotate_2d(self):
-        mesh = UnitSquareMesh(8, 8)
-        p = Point(1, 2)
-        mesh.rotate(10)
-        mesh.rotate(10, 2)
-        mesh.rotate(10, 2, p)
-
-    def test_rotate_3d(self):
-        mesh = UnitCubeMesh(8, 8, 8)
-        p = Point(1, 2, 3)
-        mesh.rotate(30, 0)
-        mesh.rotate(30, 1)
-        mesh.rotate(30, 2)
-        mesh.rotate(30, 0, p)
+def test_rotate_3d():
+    mesh = UnitCubeMesh(8, 8, 8)
+    p = Point(1, 2, 3)
+    mesh.rotate(30, 0)
+    mesh.rotate(30, 1)
+    mesh.rotate(30, 2)
+    mesh.rotate(30, 0, p)

@@ -215,6 +215,7 @@ class AbstractBaseTest:
         C_norm = C.norm('frobenius')
         assert round(A_norm - C_norm, 7) == 0
 
+    @pytest.mark.slow
     def test_ident_zeros(self, use_backend=False):
 
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error

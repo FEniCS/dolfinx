@@ -30,12 +30,18 @@ skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                      reason="Skipping unit test(s) not working in parallel")
 
 # create an output folder
-filepath = os.path.join(os.path.dirname(__file__), 'output', '')
-if not os.path.exists(filepath):
-    os.mkdir(filepath)
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename, "")
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
+
 
 @skip_in_parallel
-def test_io_size_t():
+def test_io_size_t(temppath):
     "Test input/output for size_t"
 
     # Write some data
@@ -46,12 +52,12 @@ def test_io_size_t():
     f[5] = 7
 
     # Write
-    output_file = File(filepath + "XMLMeshFunction_test_io_size_t.xml")
+    output_file = File(temppath + "XMLMeshFunction_test_io_size_t.xml")
     output_file << f
 
     # Read from file
     g = MeshFunction("size_t", mesh, 1)
-    input_file = File(filepath + "XMLMeshFunction_test_io_size_t.xml")
+    input_file = File(temppath + "XMLMeshFunction_test_io_size_t.xml")
     input_file >> g
 
     # Check values
@@ -60,7 +66,7 @@ def test_io_size_t():
 
 
 @skip_in_parallel
-def test_io_int():
+def test_io_int(temppath):
     "Test input/output for int"
 
     # Write some data
@@ -71,12 +77,12 @@ def test_io_int():
     f[5] = 7
 
     # Write
-    output_file = File(filepath + "XMLMeshFunction_test_io_int.xml")
+    output_file = File(temppath + "XMLMeshFunction_test_io_int.xml")
     output_file << f
 
     # Read from file
     g = MeshFunction("int", mesh, 1)
-    input_file = File(filepath + "XMLMeshFunction_test_io_int.xml")
+    input_file = File(temppath + "XMLMeshFunction_test_io_int.xml")
     input_file >> g
 
     # Check values
@@ -85,7 +91,7 @@ def test_io_int():
 
 
 @skip_in_parallel
-def test_io_double():
+def test_io_double(temppath):
     "Test input/output for double"
 
     # Write some data
@@ -96,12 +102,12 @@ def test_io_double():
     f[5] = 10000000.0
 
     # Write
-    output_file = File(filepath + "XMLMeshFunction_test_io_double.xml")
+    output_file = File(temppath + "XMLMeshFunction_test_io_double.xml")
     output_file << f
 
     # Read from file
     g = MeshFunction("double", mesh, 1)
-    input_file = File(filepath + "XMLMeshFunction_test_io_double.xml")
+    input_file = File(temppath + "XMLMeshFunction_test_io_double.xml")
     input_file >> g
 
     # Check values
@@ -110,7 +116,7 @@ def test_io_double():
 
 
 @skip_in_parallel
-def test_io_bool():
+def test_io_bool(temppath):
     "Test input/output for bool"
 
     # Write some data
@@ -121,12 +127,12 @@ def test_io_bool():
     f[5] = False
 
     # Write
-    output_file = File(filepath + "XMLMeshFunction_test_io_bool.xml")
+    output_file = File(temppath + "XMLMeshFunction_test_io_bool.xml")
     output_file << f
 
     # Read from file
     g = MeshFunction("bool", mesh, 1)
-    input_file = File(filepath + "XMLMeshFunction_test_io_bool.xml")
+    input_file = File(temppath + "XMLMeshFunction_test_io_bool.xml")
     input_file >> g
 
     # Check values

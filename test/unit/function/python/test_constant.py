@@ -26,10 +26,6 @@ import pytest
 from numpy import array
 from dolfin import *
 
-mesh = UnitCubeMesh(8, 8, 8)
-V = FunctionSpace(mesh, 'CG', 1)
-W = VectorFunctionSpace(mesh, 'CG', 1)
-
 
 def test_name_argument():
     u = Constant(1.0)
@@ -71,6 +67,8 @@ def testGrad():
 
 def test_compute_vertex_values():
     from numpy import zeros, all, array
+
+    mesh = UnitCubeMesh(8, 8, 8)
 
     e0 = Constant(1)
     e1 = Constant((1, 2, 3))

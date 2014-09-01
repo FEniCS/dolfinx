@@ -30,37 +30,31 @@ skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                           reason="Skipping unit test(s) not working in parallel")
 
 @skip_in_paralell
-class TestInterval():
+def test_distance_interval():
 
-    def test_distance(self):
+    mesh = UnitIntervalMesh(1)
+    cell = Cell(mesh, 0)
 
-        mesh = UnitIntervalMesh(1)
-        cell = Cell(mesh, 0)
-
-        assert round(cell.distance(Point(-1.0)) - 1.0, 7) == 0
-        assert round(cell.distance(Point(0.5)) - 0.0, 7) == 0
+    assert round(cell.distance(Point(-1.0)) - 1.0, 7) == 0
+    assert round(cell.distance(Point(0.5)) - 0.0, 7) == 0
 
 @skip_in_paralell
-class TestTriangle():
+def test_distance_triangle():
 
-    def test_distance(self):
+    mesh = UnitSquareMesh(1, 1)
+    cell = Cell(mesh, 1)
 
-        mesh = UnitSquareMesh(1, 1)
-        cell = Cell(mesh, 1)
-
-        assert round(cell.distance(Point(-1.0, -1.0)) - numpy.sqrt(2), 7) == 0
-        assert round(cell.distance(Point(-1.0, 0.5)) - 1, 7) == 0
-        assert round(cell.distance(Point(0.5, 0.5)) - 0.0, 7) == 0
+    assert round(cell.distance(Point(-1.0, -1.0)) - numpy.sqrt(2), 7) == 0
+    assert round(cell.distance(Point(-1.0, 0.5)) - 1, 7) == 0
+    assert round(cell.distance(Point(0.5, 0.5)) - 0.0, 7) == 0
 
 @skip_in_paralell
-class TestTetrahedron():
+def test_distance_tetrahedron():
 
-    def test_distance(self):
+    mesh = UnitCubeMesh(1, 1, 1)
+    cell = Cell(mesh, 5)
 
-        mesh = UnitCubeMesh(1, 1, 1)
-        cell = Cell(mesh, 5)
-
-        assert round(cell.distance(Point(-1.0, -1.0, -1.0)) - \
-                      numpy.sqrt(3), 7) == 0
-        assert round(cell.distance(Point(-1.0, 0.5, 0.5)) - 1, 7) == 0
-        assert round(cell.distance(Point(0.5, 0.5, 0.5)) - 0.0, 7) == 0
+    assert round(cell.distance(Point(-1.0, -1.0, -1.0)) - \
+                  numpy.sqrt(3), 7) == 0
+    assert round(cell.distance(Point(-1.0, 0.5, 0.5)) - 1, 7) == 0
+    assert round(cell.distance(Point(0.5, 0.5, 0.5)) - 0.0, 7) == 0

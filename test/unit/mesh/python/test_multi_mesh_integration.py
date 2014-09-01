@@ -23,8 +23,8 @@
 # Last changed: 2014-03-10
 
 from __future__ import print_function
-import pytest
 import numpy
+import pytest
 from dolfin import *
 from six.moves import xrange as range
 
@@ -44,92 +44,91 @@ def triangulation_to_mesh_2d(triangulation):
     editor.close()
     return mesh
 
-class TestTriangleIntegration:
 
-    @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-            reason="Skipping unit test(s) not working in parallel")
-    def test_integrate(self):
-        # Create two meshes of the unit square
-        mesh_0 = UnitSquareMesh(10, 10)
-        mesh_1 = UnitSquareMesh(11, 11)
+@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+        reason="Skipping unit test(s) not working in parallel")
+def test_integrate():
+    # Create two meshes of the unit square
+    mesh_0 = UnitSquareMesh(10, 10)
+    mesh_1 = UnitSquareMesh(11, 11)
 
-        # Translate
-        pt = Point(0.632350,0.278498)
-        mesh_1.translate(pt)
-        exactarea = 2-(1-pt[0])*(1-pt[1])
+    # Translate
+    pt = Point(0.632350,0.278498)
+    mesh_1.translate(pt)
+    exactarea = 2-(1-pt[0])*(1-pt[1])
 
-        multimesh = MultiMesh()
-        multimesh.add(mesh_0)
-        multimesh.add(mesh_1)
-        multimesh.build()
+    multimesh = MultiMesh()
+    multimesh.add(mesh_0)
+    multimesh.add(mesh_1)
+    multimesh.build()
 
-        for part in range(0, multimesh.num_parts()):
-            #print(part)
-            covered = multimesh.covered_cells(part)
-            uncut = multimesh.uncut_cells(part)
-            cut = multimesh.cut_cells(part)
-            qr = multimesh.quadrature_rule_cut_cells(part)
-            #print("covered")
-            #print(covered)
-            #print("uncut")
-            #print(uncut)
-            #print("cut")
-            #print(cut)
-            #print("quadrature")
-            #print(qr)
+    for part in range(0, multimesh.num_parts()):
+        #print(part)
+        covered = multimesh.covered_cells(part)
+        uncut = multimesh.uncut_cells(part)
+        cut = multimesh.cut_cells(part)
+        qr = multimesh.quadrature_rule_cut_cells(part)
+        #print("covered")
+        #print(covered)
+        #print("uncut")
+        #print(uncut)
+        #print("cut")
+        #print(cut)
+        #print("quadrature")
+        #print(qr)
 
-        V_0 = FunctionSpace(mesh_0, "CG", 1)
-        V_1 = FunctionSpace(mesh_1, "CG", 1)
+    V_0 = FunctionSpace(mesh_0, "CG", 1)
+    V_1 = FunctionSpace(mesh_1, "CG", 1)
 
-        V_multi = MultiMeshFunctionSpace()
-        V_multi.add(V_0)
-        V_multi.add(V_1)
-        V_multi.build()
+    V_multi = MultiMeshFunctionSpace()
+    V_multi.add(V_0)
+    V_multi.add(V_1)
+    V_multi.build()
 
-        u = MultiMeshFunction(V_multi)
-        u.vector()[:] = 1.
+    u = MultiMeshFunction(V_multi)
+    u.vector()[:] = 1.
 
-        v_0 = Function(V_0)
-        v_1 = Function(V_1)
-        v_0.vector()[:] = 1.
-        v_1.vector()[:] = 1.
+    v_0 = Function(V_0)
+    v_1 = Function(V_1)
+    v_0.vector()[:] = 1.
+    v_1.vector()[:] = 1.
 
-        L_multi = MultiMeshForm(V_multi)
-        L_0 = Form(v_0*dx)
-        L_1 = Form(v_1*dx)
-        L_multi.add(L_0)
-        L_multi.add(L_1)
-        L_multi.build()
+    L_multi = MultiMeshForm(V_multi)
+    L_0 = Form(v_0*dx)
+    L_1 = Form(v_1*dx)
+    L_multi.add(L_0)
+    L_multi.add(L_1)
+    L_multi.build()
 
-        # area = assemble(L_0) + assemble(L_1)
-        # MMA = MultiMeshAssembler()
-        # area = MMA.assemble(L_multi)
-        # area = assemble(L_multi)
-        # assert round(area - exactarea, 7) == 0
-
-
-        # # Translate second mesh randomly
-        # #dx = Point(numpy.random.rand(),numpy.random.rand())
-        # dx = Point(0.278498, 0.546881)
-        # mesh_1.translate(dx)
-
-        # exactvolume = (1 - abs(dx[0]))*(1 - abs(dx[1]))
-
-        # # Compute triangulation volume using the quadrature rules
-        # volume = 0
-        # for c0 in cells(mesh_0):
-        #     for c1 in cells(mesh_1):
-        #         triangulation = c0.triangulate_intersection(c1)
-        #         if (triangulation.size>0):
-        #             # compute_quadrature_rule(triangulation,
-        #             #                         2,2,1)
-        #             compute_quadrature_rule(c0,1)
-
-        #             tmesh = triangulation_to_mesh_2d(triangulation)
-        #             for t in cells(tmesh):
-        #                 volume += t.volume()
+    # area = assemble(L_0) + assemble(L_1)
+    # MMA = MultiMeshAssembler()
+    # area = MMA.assemble(L_multi)
+    # area = assemble(L_multi)
+    # assert round(area - exactarea, 7) == 0
 
 
+    # # Translate second mesh randomly
+    # #dx = Point(numpy.random.rand(),numpy.random.rand())
+    # dx = Point(0.278498, 0.546881)
+    # mesh_1.translate(dx)
 
-        # errorstring = "translation=" + str(dx[0]) + str(" ") + str(dx[1])
-        # assert round(volume - exactvolume, 7, errorstring)
+    # exactvolume = (1 - abs(dx[0]))*(1 - abs(dx[1]))
+
+    # # Compute triangulation volume using the quadrature rules
+    # volume = 0
+    # for c0 in cells(mesh_0):
+    #     for c1 in cells(mesh_1):
+    #         triangulation = c0.triangulate_intersection(c1)
+    #         if (triangulation.size>0):
+    #             # compute_quadrature_rule(triangulation,
+    #             #                         2,2,1)
+    #             compute_quadrature_rule(c0,1)
+
+    #             tmesh = triangulation_to_mesh_2d(triangulation)
+    #             for t in cells(tmesh):
+    #                 volume += t.volume()
+
+
+
+    # errorstring = "translation=" + str(dx[0]) + str(" ") + str(dx[1])
+    # assert round(volume - exactvolume, 7, errorstring)

@@ -23,75 +23,80 @@
 # First added:  2013-02-27
 # Last changed: 2013-03-11
 
-import unittest
+import pytest
 from dolfin import *
 import os
 
 # create an output folder
-filepath = os.path.join(os.path.dirname(__file__), 'output', '')
-if not os.path.exists(filepath):
-    os.mkdir(filepath)
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename, "")
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
 
 if has_exodus():
-    def test_save_1d_mesh():
+    def test_save_1d_mesh(temppath):
         """Test output of 1D Mesh to Exodus file"""
         mesh = UnitIntervalMesh(32)
-        File(filepath + "mesh.e") << mesh
+        File(temppath + "mesh.e") << mesh
 
-    def test_save_2d_mesh():
+    def test_save_2d_mesh(temppath):
         """Test output of 2D Mesh to Exodus file"""
         mesh = UnitSquareMesh(32, 32)
-        File(filepath + "mesh.e") << mesh
+        File(temppath + "mesh.e") << mesh
 
-    def test_save_3d_mesh():
+    def test_save_3d_mesh(temppath):
         """Test output of 3D Mesh to Exodus file"""
         mesh = UnitCubeMesh(8, 8, 8)
-        File(filepath + "mesh.e") << mesh
+        File(temppath + "mesh.e") << mesh
 
-    def test_save_1d_scalar():
+    def test_save_1d_scalar(temppath):
         """Test output of 1D scalar Function to Exodus file"""
         mesh = UnitIntervalMesh(32)
         u = Function(FunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
-        File(filepath + "u.e") << u
+        File(temppath + "u.e") << u
 
-    def test_save_2d_scalar():
+    def test_save_2d_scalar(temppath):
         """Test output of 2D scalar Function to Exodus file"""
         mesh = UnitSquareMesh(16, 16)
         u = Function(FunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
-        File(filepath + "u.e") << u
+        File(temppath + "u.e") << u
 
-    def test_save_3d_scalar():
+    def test_save_3d_scalar(temppath):
         """Test output of 3D scalar Function to Exodus file"""
         mesh = UnitCubeMesh(8, 8, 8)
         u = Function(FunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
-        File(filepath + "u.e") << u
+        File(temppath + "u.e") << u
 
-    def test_save_2d_vector():
+    def test_save_2d_vector(temppath):
         """Test output of 2D vector Function to Exodus file"""
         mesh = UnitSquareMesh(16, 16)
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
-        File(filepath + "u.e") << u
+        File(temppath + "u.e") << u
 
-    def test_save_3d_vector():
+    def test_save_3d_vector(temppath):
         """Test output of 3D vector Function to Exodus file"""
         mesh = UnitCubeMesh(8, 8, 8)
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
-        File(filepath + "u.e") << u
+        File(temppath + "u.e") << u
 
-    def test_save_2d_tensor():
+    def test_save_2d_tensor(temppath):
         """Test output of 2D tensor Function to Exodus file"""
         mesh = UnitSquareMesh(16, 16)
         u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
-        File(filepath + "u.e") << u
+        File(temppath + "u.e") << u
 
-    #def test_save_3d_tensor():
+    #def test_save_3d_tensor(temppath):
     #    mesh = UnitCubeMesh(8, 8, 8)
     #    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     #    u.vector()[:] = 1.0
-    #    File(filepath + "u.e") << u
+    #    File(temppath + "u.e") << u

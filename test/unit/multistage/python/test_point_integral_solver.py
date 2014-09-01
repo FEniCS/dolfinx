@@ -140,7 +140,7 @@ for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
 
     scalar_time, scalar, vector = function_closure(Scheme)
-    
+   
     setattr(TestPointIntegralSolver,
             "test_butcher_schemes_scalar_time_{0}".format(Scheme), scalar_time)
 

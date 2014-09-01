@@ -25,174 +25,193 @@ from dolfin import *
 import os
 
 # VTK file options
-file_options = ["ascii", "base64", "compressed"]
-mesh_functions = [CellFunction, FacetFunction, FaceFunction, EdgeFunction, VertexFunction]
-mesh_function_types = ["size_t", "int", "double", "bool"]
-type_conv = dict(size_t=int, int=int, double=float, bool=bool)
+@pytest.fixture(scope="module")
+def file_options():
+    return ["ascii", "base64", "compressed"]
+
+@pytest.fixture(scope="module")
+def mesh_functions():
+    return [CellFunction, FacetFunction, FaceFunction, EdgeFunction, VertexFunction]
+
+@pytest.fixture(scope="module")
+def mesh_function_types():
+    return ["size_t", "int", "double", "bool"]
+
+@pytest.fixture(scope="module")
+def type_conv():
+    return dict(size_t=int, int=int, double=float, bool=bool)
 
 # create an output folder
-filepath = os.path.join(os.path.dirname(__file__), 'output', '')
-if not os.path.exists(filepath):
-    os.mkdir(filepath)
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename, "")
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
 
-def test_save_1d_meshfunctions():
+def test_save_1d_meshfunctions(temppath, mesh_functions, \
+                                mesh_function_types, file_options, type_conv):
     mesh = UnitIntervalMesh(32)
     for F in mesh_functions:
         if F in [FaceFunction, EdgeFunction]: continue
         for t in mesh_function_types:
             mf = F(t, mesh, type_conv[t](1))
-            File(filepath + "mf.pvd") << mf
-            f = File(filepath + "mf.pvd")
+            File(temppath + "mf.pvd") << mf
+            f = File(temppath + "mf.pvd")
             f << (mf, 0.)
             f << (mf, 1.)
             for file_option in file_options:
-                File(filepath + "mf.pvd", file_option) << mf
+                File(temppath + "mf.pvd", file_option) << mf
 
-def test_save_2d_meshfunctions():
+def test_save_2d_meshfunctions(temppath, mesh_functions, \
+                                mesh_function_types, file_options, type_conv):
     mesh = UnitSquareMesh(32, 32)
     for F in mesh_functions:
         for t in mesh_function_types:
             mf = F(t, mesh, type_conv[t](1))
-            File(filepath + "mf.pvd") << mf
-            f = File(filepath + "mf.pvd")
+            File(temppath + "mf.pvd") << mf
+            f = File(temppath + "mf.pvd")
             f << (mf, 0.)
             f << (mf, 1.)
             for file_option in file_options:
-                File(filepath + "mf.pvd", file_option) << mf
+                File(temppath + "mf.pvd", file_option) << mf
 
-def test_save_3d_meshfunctions():
+def test_save_3d_meshfunctions(temppath, mesh_functions, \
+                                mesh_function_types, file_options, type_conv):
     mesh = UnitCubeMesh(8, 8, 8)
     for F in mesh_functions:
         for t in mesh_function_types:
             mf = F(t, mesh, type_conv[t](1))
-            File(filepath + "mf.pvd") << mf
-            f = File(filepath + "mf.pvd")
+            File(temppath + "mf.pvd") << mf
+            f = File(temppath + "mf.pvd")
             f << (mf, 0.)
             f << (mf, 1.)
             for file_option in file_options:
-                File(filepath + "mf.pvd", file_option) << mf
+                File(temppath + "mf.pvd", file_option) << mf
 
-def test_save_1d_mesh():
+def test_save_1d_mesh(temppath, file_options):
     mesh = UnitIntervalMesh(32)
-    File(filepath + "mesh.pvd") << mesh
-    f = File(filepath + "mesh.pvd")
+    File(temppath + "mesh.pvd") << mesh
+    f = File(temppath + "mesh.pvd")
     f << (mesh, 0.)
     f << (mesh, 1.)
     for file_option in file_options:
-        File(filepath + "mesh.pvd", file_option) << mesh
+        File(temppath + "mesh.pvd", file_option) << mesh
 
-def test_save_2d_mesh():
+def test_save_2d_mesh(temppath, file_options):
     mesh = UnitSquareMesh(32, 32)
-    File(filepath + "mesh.pvd") << mesh
-    f = File(filepath + "mesh.pvd")
+    File(temppath + "mesh.pvd") << mesh
+    f = File(temppath + "mesh.pvd")
     f << (mesh, 0.)
     f << (mesh, 1.)
     for file_option in file_options:
-        File(filepath + "mesh.pvd", file_option) << mesh
+        File(temppath + "mesh.pvd", file_option) << mesh
 
-def test_save_3d_mesh():
+def test_save_3d_mesh(temppath, file_options):
     mesh = UnitCubeMesh(8, 8, 8)
-    File(filepath + "mesh.pvd") << mesh
-    f = File(filepath + "mesh.pvd")
+    File(temppath + "mesh.pvd") << mesh
+    f = File(temppath + "mesh.pvd")
     f << (mesh, 0.)
     f << (mesh, 1.)
     for file_option in file_options:
-        File(filepath + "mesh.pvd", file_option) << mesh 
+        File(temppath + "mesh.pvd", file_option) << mesh 
 
-def test_save_1d_scalar():
+def test_save_1d_scalar(temppath, file_options):
     mesh = UnitIntervalMesh(32)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(filepath + "u.pvd") << u
-    f = File(filepath + "u.pvd")
+    File(temppath + "u.pvd") << u
+    f = File(temppath + "u.pvd")
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-        File(filepath + "u.pvd", file_option) << u
+        File(temppath + "u.pvd", file_option) << u
 
-def test_save_2d_scalar():
+def test_save_2d_scalar(temppath, file_options):
     mesh = UnitSquareMesh(16, 16)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(filepath + "u.pvd") << u
-    f = File(filepath + "u.pvd")
+    File(temppath + "u.pvd") << u
+    f = File(temppath + "u.pvd")
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-        File(filepath + "u.pvd", file_option) << u
+        File(temppath + "u.pvd", file_option) << u
 
-def test_save_3d_scalar():
+def test_save_3d_scalar(temppath, file_options):
     mesh = UnitCubeMesh(8, 8, 8)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(filepath + "u.pvd") << u
-    f = File(filepath + "u.pvd")
+    File(temppath + "u.pvd") << u
+    f = File(temppath + "u.pvd")
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-        File(filepath + "u.pvd", file_option) << u
+        File(temppath + "u.pvd", file_option) << u
 
 # FFC fails for vector spaces in 1D
 #@pytest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-#def test_save_1d_vector():
+#def test_save_1d_vector(temppath, file_options):
 #    mesh = UnitIntervalMesh(32)
 #    u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
 #    u.vector()[:] = 1.0
-#    File(filepath + "u.pvd") << u
+#    File(temppath + "u.pvd") << u
 #    for file_option in file_options:
-#        File(filepath + "u.pvd", file_option) << u
+#        File(temppath + "u.pvd", file_option) << u
 
-def test_save_2d_vector():
+def test_save_2d_vector(temppath, file_options):
     mesh = UnitSquareMesh(16, 16)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(filepath + "u.pvd") << u
-    f = File(filepath + "u.pvd")
+    File(temppath + "u.pvd") << u
+    f = File(temppath + "u.pvd")
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-        File(filepath + "u.pvd", file_option) << u
+        File(temppath + "u.pvd", file_option) << u
 
-def test_save_3d_vector():
+def test_save_3d_vector(temppath, file_options):
     mesh = UnitCubeMesh(8, 8, 8)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(filepath + "u.pvd") << u
-    f = File(filepath + "u.pvd")
+    File(temppath + "u.pvd") << u
+    f = File(temppath + "u.pvd")
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-        File(filepath + "u.pvd", file_option) << u
+        File(temppath + "u.pvd", file_option) << u
 
 # FFC fails for tensor spaces in 1D
 #@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
 #                reason="Skipping unit test(s) not working in parallel")
-#def test_save_1d_tensor():
+#def test_save_1d_tensor(temppath, file_options):
 #    mesh = UnitIntervalMesh(32)
 #    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
 #    u.vector()[:] = 1.0
-#    File(filepath + "u.pvd") << u
+#    File(temppath + "u.pvd") << u
 #    for file_option in file_options:
-#        File(filepath + "u.pvd", file_option) << u
+#        File(temppath + "u.pvd", file_option) << u
 
-def test_save_2d_tensor():
+def test_save_2d_tensor(temppath, file_options):
     mesh = UnitSquareMesh(16, 16)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(filepath + "u.pvd") << u
-    f = File(filepath + "u.pvd")
+    File(temppath + "u.pvd") << u
+    f = File(temppath + "u.pvd")
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-        File(filepath + "u.pvd", file_option) << u
+        File(temppath + "u.pvd", file_option) << u
 
-def test_save_3d_tensor():
+def test_save_3d_tensor(temppath, file_options):
     mesh = UnitCubeMesh(8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(filepath + "u.pvd") << u
-    f = File(filepath + "u.pvd")
+    File(temppath + "u.pvd") << u
+    f = File(temppath + "u.pvd")
     f << (u, 0.)
     f << (u, 1.)
     for file_option in file_options:
-        File(filepath + "u.pvd", file_option) << u
+        File(temppath + "u.pvd", file_option) << u

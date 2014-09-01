@@ -42,7 +42,7 @@ class BottomEdge(SubDomain):
     def inside(self, x, on_boundary):
         return near(x[2], 0.0)
 
-class Rotation(object):
+class Rotation:
     """Class implementing rotations of the unit plane through an angle
     of phi about the x axis followed by theta about the z axis."""
     def __init__(self, phi, theta):

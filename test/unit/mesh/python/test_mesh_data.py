@@ -25,18 +25,13 @@
 import pytest
 from dolfin import *
 
-class TestMeshData:
+def test_meshfunction():
+    "Test input/output"
 
-    def test_meshfunction(self):
-        "Test input/output"
+    mesh = UnitCubeMesh(3, 3, 3)
 
-        mesh = UnitCubeMesh(3, 3, 3)
+    f = mesh.data().create_array("foo", 3)
+    #f[:] = 0.0
+    #g = mesh.data().array("foo")
 
-        f = mesh.data().create_array("foo", 3)
-        #f[:] = 0.0
-        #g = mesh.data().array("foo")
-
-        #self.assertEqual(len(g), mesh.num_vertices())
-
-
-
+    #assert len(g) == mesh.num_vertices()

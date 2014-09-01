@@ -27,13 +27,18 @@ from dolfin import *
 import os
 
 # create an output folder
-filepath = os.path.join(os.path.dirname(__file__), 'output', '')
-if not os.path.exists(filepath):
-    os.mkdir(filepath)
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename, "")
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
 
 @pytest.mark.skipIf(MPI.size(mpi_comm_world()) > 1, 
                       reason="Skipping unit test(s) not working in parallel")
-def test_insertion_extraction_io():
+def test_insertion_extraction_io(temppath):
     "Test input/output via << and >>."
 
     # Create mesh
@@ -53,11 +58,11 @@ def test_insertion_extraction_io():
     output_values.rename(name, "a MeshValueCollection")
 
     # Write to file
-    output_file = File(filepath + "xml_mesh_value_collection_test_io.xml")
+    output_file = File(temppath + "xml_mesh_value_collection_test_io.xml")
     output_file << output_values
 
     # Read from file
-    input_file = File(filepath + "xml_mesh_value_collection_test_io.xml")
+    input_file = File(temppath + "xml_mesh_value_collection_test_io.xml")
     input_values = MeshValueCollection("size_t", mesh)
     input_file >> input_values
 
@@ -66,7 +71,7 @@ def test_insertion_extraction_io():
     assert input_values.dim() == output_values.dim()
     assert input_values.name() == name
 
-def test_constructor_input():
+def test_constructor_input(temppath):
     "Test input via constructor."
 
     # Create mesh

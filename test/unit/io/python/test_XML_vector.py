@@ -27,40 +27,45 @@ from dolfin import *
 import os
 
 # create an output folder
-filepath = os.path.join(os.path.dirname(__file__), 'output', '')
-if not os.path.exists(filepath):
-    os.mkdir(filepath)
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename, "")
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
 
-def test_save_vector():
+def test_save_vector(temppath):
     if has_linear_algebra_backend("PETSc"):
         # Create vector and write file
         x = PETScVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File(filepath + "x.xml")
+        f = File(temppath + "x.xml")
         f << x
 
     if has_linear_algebra_backend("Epetra"):
         # Create vector and write file
         x = EpetraVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File(filepath + "x.xml")
+        f = File(temppath + "x.xml")
         f << x
 
-def test_save_gzipped_vector():
+def test_save_gzipped_vector(temppath):
     if has_linear_algebra_backend("PETSc"):
         # Create vector and write file
         x = PETScVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File(filepath + "x.xml.gz")
+        f = File(temppath + "x.xml.gz")
         f << x
 
 
-def test_read_vector():
+def test_read_vector(temppath):
     if has_linear_algebra_backend("PETSc"):
         # Create vector and write file
         x = PETScVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File(filepath + "x.xml")
+        f = File(temppath + "x.xml")
         f << x
 
         # Read vector from previous write
@@ -74,7 +79,7 @@ def test_read_vector():
         # Create vector and write file
         x = EpetraVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File(filepath + "x.xml")
+        f = File(temppath + "x.xml")
         f << x
 
         # Read vector from write
@@ -83,12 +88,12 @@ def test_read_vector():
         assert x.size() == y.size()
         assert round(x.norm("l2") - y.norm("l2"), 7) == 0
 
-def test_read_gzipped_vector():
+def test_read_gzipped_vector(temppath):
     if has_linear_algebra_backend("PETSc"):
         # Create vector and write file
         x = PETScVector(mpi_comm_world(), 197)
         x[:] = 1.0
-        f = File(filepath + "x.xml")
+        f = File(temppath + "x.xml")
         f << x
 
         # Read vector from previous write
@@ -97,18 +102,15 @@ def test_read_gzipped_vector():
         assert x.size() == y.size()
         assert round(x.norm("l2") - y.norm("l2"), 7) == 0
 
-def test_save_read_vector():
+def test_save_read_vector(temppath):
     size = 512
     x = Vector(mpi_comm_world(), size)
     x[:] = 1.0
 
-    out_file = File(filepath + "test_vector_xml.xml")
+    out_file = File(temppath + "test_vector_xml.xml")
     out_file << x
 
     y = Vector()
     out_file >> y
     assert x.size() == y.size()
     assert round((x - y).norm("l2") - 0.0, 7) == 0
-
-if __name__ == "__main__":
-    pytest.main()

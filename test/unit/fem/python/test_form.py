@@ -27,53 +27,49 @@ import numpy
 import ufl
 from dolfin import *
 
-square_ = UnitSquareMesh(2, 2)
-square_boundary_ = BoundaryMesh(square_, "exterior")
-cube_ = UnitCubeMesh(2, 2, 2)
-cube_boundary_ = BoundaryMesh(cube_, "exterior")
-
 skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                              reason="Skipping unit test(s) not working in parallel")
+fixt = pytest.fixture(scope='module')
 
-@pytest.fixture
-def square_boundary():
-    return square_boundary_
-
-@pytest.fixture
-def cube_boundary():
-    return cube_boundary_
-
-@pytest.fixture
+@fixt
 def square():
-    return square_
+    return UnitSquareMesh(2, 2)
 
-@pytest.fixture
+@fixt
+def square_boundary(square):
+    return BoundaryMesh(square, "exterior")
+
+@fixt
+def cube_boundary(cube):
+    return BoundaryMesh(cube, "exterior")
+
+@fixt
 def cube():
-    return cube_
+    return UnitCubeMesh(2, 2, 2)
 
-@pytest.fixture
-def V1():
-    return FunctionSpace(square_boundary_, "CG", 1) 
+@fixt
+def V1(square_boundary):
+    return FunctionSpace(square_boundary, "CG", 1) 
 
-@pytest.fixture
-def VV1():   
-    return VectorFunctionSpace(square_boundary_, "CG", 1)
+@fixt
+def VV1(square_boundary):   
+    return VectorFunctionSpace(square_boundary, "CG", 1)
 
-@pytest.fixture
-def Q1():   
-    return FunctionSpace(square_boundary_, "DG", 0)
+@fixt
+def Q1(square_boundary):   
+    return FunctionSpace(square_boundary, "DG", 0)
 
-@pytest.fixture
-def V2():   
-    return FunctionSpace(cube_boundary_, "CG", 1)      
+@fixt
+def V2(cube_boundary):   
+    return FunctionSpace(cube_boundary, "CG", 1)      
 
-@pytest.fixture
-def VV2():
-    return VectorFunctionSpace(cube_boundary_, "CG", 1)
+@fixt
+def VV2(cube_boundary):
+    return VectorFunctionSpace(cube_boundary, "CG", 1)
 
-@pytest.fixture
-def Q2():   
-    return FunctionSpace(cube_boundary_, "DG", 0)
+@fixt
+def Q2(cube_boundary):   
+    return FunctionSpace(cube_boundary, "DG", 0)
 
 
 def test_assemble_functional(V1, V2):
@@ -212,36 +208,39 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     assert round(bar - foo, 7) == 0
 
 
-# Set-up meshes
-n = 16
-plane_ = CompiledSubDomain("near(x[1], 1.0)")
-square_ = UnitSquareMesh(n, n)
-square3d_ = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), plane_)
+@fixt
+def base():
+    n = 16
+    plane = CompiledSubDomain("near(x[1], 1.0)")
+    square = UnitSquareMesh(n, n)
 
-# Define global normal and create orientation map
-global_normal = Expression(("0.0", "1.0", "0.0"))
-square3d_.init_cell_orientations(global_normal)
+    square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), plane)
+    global_normal = Expression(("0.0", "1.0", "0.0"))
+    square3d.init_cell_orientations(global_normal)
 
-DG2_ = FunctionSpace(square_, "DG", 0)
-DG3_ = FunctionSpace(square3d_, "DG", 0)
-RT2_ = FunctionSpace(square_, "RT", 1)
-RT3_ = FunctionSpace(square3d_, "RT", 1)
+    RT2 = FunctionSpace(square, "RT", 1)
+    RT3 = FunctionSpace(square3d, "RT", 1)
+    DG2 = FunctionSpace(square, "DG", 0)
+    DG3 = FunctionSpace(square3d, "DG", 0)
 
-@pytest.fixture
-def RT2():
-    return RT2_
+    return [(RT2, RT3), (DG2, DG3)]
 
-@pytest.fixture
-def RT3():
-    return RT3_
+@fixt
+def RT2(base):
+    return base[0][0]
 
-@pytest.fixture
-def W2():
-    return RT2_ * DG2_
+@fixt
+def RT3(base):
+    return base[0][1]
 
-@pytest.fixture
-def W3():
-    return RT3_ * DG3_
+@fixt
+def W2(base):
+    return base[0][0] * base[1][0]
+
+@fixt
+def W3(base):
+    return base[0][1] * base[1][1]
+
 
 @skip_parallel
 def test_basic_rt(RT2, RT3):
@@ -309,31 +308,46 @@ def test_mixed_poisson_solve(W2, W3):
     assert round(assemble(inner(w2, w2)*dx) - assemble(inner(w3, w3)*dx)) == 0
 
 
-@pytest.fixture
+@fixt
 def m():
     return 3
 
-cube_ = UnitCubeMesh(m(), m(), m())
-cube_boundary_ = BoundaryMesh(cube_, "exterior")
+@fixt
+def cube(m):
+    return UnitCubeMesh(m, m, m)
 
-plane_ = CompiledSubDomain("near(x[1], 0.0)")
-square_ = UnitSquareMesh(m(), m())
-square_boundary_ = BoundaryMesh(square_, "exterior")
+@fixt
+def cube_boundary(cube):
+    return BoundaryMesh(cube, "exterior")
 
-line_ = CompiledSubDomain("near(x[0], 0.0)")
-mesh3_ = BoundaryMesh(SubMesh(cube_boundary_, plane_), "exterior")
+@fixt
+def plane():
+    return CompiledSubDomain("near(x[1], 0.0)")
 
-@pytest.fixture
-def bottom1():
-    return SubMesh(square_boundary_, plane_)
+@fixt
+def square_boundary_(m):
+    square = UnitSquareMesh(m, m)
+    return BoundaryMesh(square, "exterior")
 
-@pytest.fixture
-def bottom2():
-    return SubMesh(cube_boundary_, plane_)
+@fixt
+def line():
+    return CompiledSubDomain("near(x[0], 0.0)")
 
-@pytest.fixture
-def bottom3():
-    return SubMesh(mesh3_, line_)
+@fixt
+def mesh3(cube_boundary, plane):
+    return BoundaryMesh(SubMesh(cube_boundary, plane), "exterior")
+
+@fixt
+def bottom1(square_boundary_, plane):
+    return SubMesh(square_boundary_, plane)
+
+@fixt
+def bottom2(cube_boundary, plane):
+    return SubMesh(cube_boundary, plane)
+
+@fixt
+def bottom3(mesh3, line):
+    return SubMesh(mesh3, line)
 
     
 @skip_parallel

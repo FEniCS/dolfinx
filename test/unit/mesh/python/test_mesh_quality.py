@@ -31,88 +31,81 @@ from dolfin import *
 skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
                      reason="Skipping unit test(s) not working in parallel")
 
-class TestMeshQuality:
 
-    def test_radius_ratio_triangle(self):
+def test_radius_ratio_triangle():
 
-        # Create mesh and compute rations
-        mesh = UnitSquareMesh(12, 12)
-        ratios = MeshQuality.radius_ratios(mesh)
-        for c in cells(mesh):
-            assert round(ratios[c] - 0.828427124746, 7) == 0
+    # Create mesh and compute rations
+    mesh = UnitSquareMesh(12, 12)
+    ratios = MeshQuality.radius_ratios(mesh)
+    for c in cells(mesh):
+        assert round(ratios[c] - 0.828427124746, 7) == 0
 
-    def test_radius_ratio_tetrahedron(self):
+def test_radius_ratio_tetrahedron():
 
-        # Create mesh and compute ratios
-        mesh = UnitCubeMesh(14, 14, 14)
-        ratios = MeshQuality.radius_ratios(mesh)
-        for c in cells(mesh):
-            assert round(ratios[c] - 0.717438935214, 7) == 0
-            #print ratio[c]
+    # Create mesh and compute ratios
+    mesh = UnitCubeMesh(14, 14, 14)
+    ratios = MeshQuality.radius_ratios(mesh)
+    for c in cells(mesh):
+        assert round(ratios[c] - 0.717438935214, 7) == 0
+        #print ratio[c]
 
-    def test_radius_ratio_triangle_min_max(self):
+def test_radius_ratio_triangle_min_max():
 
-        # Create mesh, collpase and compute min ratio
-        mesh = UnitSquareMesh(12, 12)
+    # Create mesh, collpase and compute min ratio
+    mesh = UnitSquareMesh(12, 12)
 
-        rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
-        assert rmax <= rmax
+    rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
+    assert rmax <= rmax
 
-        x = mesh.coordinates()
-        x[:, 0] *= 0.0
-        rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
-        assert round(rmin - 0.0, 7) == 0
-        assert round(rmax - 0.0, 7) == 0
+    x = mesh.coordinates()
+    x[:, 0] *= 0.0
+    rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
+    assert round(rmin - 0.0, 7) == 0
+    assert round(rmax - 0.0, 7) == 0
 
-    def test_radius_ratio_tetrahedron_min_max(self):
+def test_radius_ratio_tetrahedron_min_max():
 
-        # Create mesh, collpase and compute min ratio
-        mesh = UnitCubeMesh(12, 12, 12)
+    # Create mesh, collpase and compute min ratio
+    mesh = UnitCubeMesh(12, 12, 12)
 
-        rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
-        assert rmax <= rmax
+    rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
+    assert rmax <= rmax
 
-        x = mesh.coordinates()
-        x[:, 0] *= 0.0
-        rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
-        assert round(rmax - 0.0, 7) == 0
-        assert round(rmax - 0.0, 7) == 0
+    x = mesh.coordinates()
+    x[:, 0] *= 0.0
+    rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
+    assert round(rmax - 0.0, 7) == 0
+    assert round(rmax - 0.0, 7) == 0
 
-    def test_radius_ratio_matplotlib(self):
+def test_radius_ratio_matplotlib():
 
-        # Create mesh, collpase and compute min ratio
-        mesh = UnitCubeMesh(12, 12, 12)
-        test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
-        print(test)
+    # Create mesh, collpase and compute min ratio
+    mesh = UnitCubeMesh(12, 12, 12)
+    test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
+    print(test)
+
 
 @skip_in_paralell
-class TestCellRadi:
+def test_radius_ratio_min_radius_ratio_max():
+    mesh1d = UnitIntervalMesh(4)
+    mesh1d.coordinates()[4] = mesh1d.coordinates()[3]
 
-    @classmethod
-    @pytest.fixture(scope="class", autouse=True)
-    def __init__(self):
-        # Create 1D mesh with degenerate cell
-        self.mesh1d = UnitIntervalMesh(4)
-        self.mesh1d.coordinates()[4] = self.mesh1d.coordinates()[3]
+    # Create 2D mesh with one equilateral triangle
+    mesh2d = UnitSquareMesh(1, 1, 'left')
+    mesh2d.coordinates()[3] += 0.5*(sqrt(3.0)-1.0)
 
-        # Create 2D mesh with one equilateral triangle
-        self.mesh2d = UnitSquareMesh(1, 1, 'left')
-        self.mesh2d.coordinates()[3] += 0.5*(sqrt(3.0)-1.0)
+    # Create 3D mesh with regular tetrahedron and degenerate cells
+    mesh3d = UnitCubeMesh(1, 1, 1)
+    mesh3d.coordinates()[2][0] = 1.0
+    mesh3d.coordinates()[7][1] = 0.0
+    rmin, rmax = MeshQuality.radius_ratio_min_max(mesh1d)
+    assert round(rmin - 0.0, 7) == 0
+    assert round(rmax - 1.0, 7) == 0
 
-        # Create 3D mesh with regular tetrahedron and degenerate cells
-        self.mesh3d = UnitCubeMesh(1, 1, 1)
-        self.mesh3d.coordinates()[2][0] = 1.0
-        self.mesh3d.coordinates()[7][1] = 0.0
+    rmin, rmax = MeshQuality.radius_ratio_min_max(mesh2d)
+    assert round(rmin - 2.0*sqrt(2.0)/(2.0+sqrt(2.0)), 7) == 0
+    assert round(rmax - 1.0, 7) == 0
 
-    def test_radius_ratio_min_radius_ratio_max(self):
-        rmin, rmax = MeshQuality.radius_ratio_min_max(self.mesh1d)
-        assert round(rmin - 0.0, 7) == 0
-        assert round(rmax - 1.0, 7) == 0
-
-        rmin, rmax = MeshQuality.radius_ratio_min_max(self.mesh2d)
-        assert round(rmin - 2.0*sqrt(2.0)/(2.0+sqrt(2.0)), 7) == 0
-        assert round(rmax - 1.0, 7) == 0
-
-        rmin, rmax = MeshQuality.radius_ratio_min_max(self.mesh3d)
-        assert round(rmin - 0.0, 7) == 0
-        assert round(rmax - 1.0, 7) == 0
+    rmin, rmax = MeshQuality.radius_ratio_min_max(mesh3d)
+    assert round(rmin - 0.0, 7) == 0
+    assert round(rmax - 1.0, 7) == 0

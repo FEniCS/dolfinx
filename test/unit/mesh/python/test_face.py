@@ -25,49 +25,53 @@
 import pytest
 from dolfin import *
 
-cube = UnitCubeMesh(5, 5, 5)
-square = UnitSquareMesh(5, 5)
+@pytest.fixture(scope='module')
+def cube():
+    return UnitCubeMesh(5, 5, 5)
 
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                 reason="Skipping unit test(s) not working in parallel")
-class TestArea():
+@pytest.fixture(scope='module')
+def square():
+    return UnitSquareMesh(5, 5)
 
-    def test_Area(self):
-        """Iterate over faces and sum area."""
+skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                           reason="Skipping unit test(s) not working in parallel")
 
-        area = 0.0
-        for f in faces(cube):
-            area += f.area()
-        assert round(area - 39.21320343559672494393, 7) == 0
+@skip_in_parallel
+def test_Area(cube, square):
+    """Iterate over faces and sum area."""
 
-        area = 0.0
-        for f in faces(square):
-            area += f.area()
-        assert round(area - 1.0, 7) == 0
+    area = 0.0
+    for f in faces(cube):
+	area += f.area()
+    assert round(area - 39.21320343559672494393, 7) == 0
 
-class TestNormal():
-
-    def test_NormalPoint(self):
-        """Compute normal vector to each face."""
-        for f in faces(cube):
-            n = f.normal()
-            assert round(n.norm() - 1.0, 7) == 0
-
-        f = Face(square, 0)
-        with pytest.raises(RuntimeError):
-            f.normal()
-
-    def test_NormalComponent(self):
-        """Compute normal vector components to each face."""
-        D = cube.topology().dim()
-        for f in faces(cube):
-            n = [f.normal(i) for i in range(D)]
-            norm = sum([x*x for x in n])
-            assert round(norm - 1.0, 7) == 0
-
-        f = Face(square, 0)
-        with pytest.raises(RuntimeError):
-            f.normal(0)
+    area = 0.0
+    for f in faces(square):
+	area += f.area()
+    assert round(area - 1.0, 7) == 0
 
 
-    pytest.main()
+@skip_in_parallel
+def test_NormalPoint(cube, square):
+    """Compute normal vector to each face."""
+    for f in faces(cube):
+	n = f.normal()
+	assert round(n.norm() - 1.0, 7) == 0
+
+    f = Face(square, 0)
+    with pytest.raises(RuntimeError):
+	f.normal()
+
+
+@skip_in_parallel
+def test_NormalComponent(cube, square):
+    """Compute normal vector components to each face."""
+    D = cube.topology().dim()
+    for f in faces(cube):
+	n = [f.normal(i) for i in range(D)]
+	norm = sum([x*x for x in n])
+	assert round(norm - 1.0, 7) == 0
+
+    f = Face(square, 0)
+    with pytest.raises(RuntimeError):
+	f.normal(0)

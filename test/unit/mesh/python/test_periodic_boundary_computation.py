@@ -26,37 +26,48 @@ import pytest
 import numpy as np
 from dolfin import *
 
-class PeriodicBoundary(SubDomain):
-    def inside(self, x, on_boundary):
-        return x[0] < DOLFIN_EPS
-    def map(self, x, y):
-        y[0] = x[0] - 1.0
-        y[1] = x[1]
 
-# Create instance of PeriodicBoundaryComputation
-periodic_boundary = PeriodicBoundary()
-pbc = PeriodicBoundaryComputation()
-mesh = UnitSquareMesh(4, 4)
+@pytest.fixture(scope='module')
+def periodic_boundary():
+    class PeriodicBoundary(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] < DOLFIN_EPS
+        def map(self, x, y):
+            y[0] = x[0] - 1.0
+            y[1] = x[1]
 
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-            reason="Skipping unit test(s) not working in parallel")
-class TestPeriodicBoundaryComputations:
+    return PeriodicBoundary()
 
-    def test_ComputePeriodicPairs(self):
+@pytest.fixture(scope='module')
+def pbc():
+    return PeriodicBoundaryComputation()
 
-        # Verify that correct number of periodic pairs are computed
-        vertices = pbc.compute_periodic_pairs(mesh, periodic_boundary, 0)
-        edges    = pbc.compute_periodic_pairs(mesh, periodic_boundary, 1)
-        assert len(vertices) == 5
-        assert len(edges) == 4
+@pytest.fixture(scope='module')
+def mesh():
+    return UnitSquareMesh(4, 4)
 
-    def test_MastersSlaves(self):
 
-        # Verify that correct number of masters and slaves are marked
-        mf = pbc.masters_slaves(mesh, periodic_boundary, 0)
-        assert len(np.where(mf.array() == 1)[0]) == 5
-        assert len(np.where(mf.array() == 2)[0]) == 5
+skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
+                      reason="Skipping unit test(s) not working in parallel")
 
-        mf = pbc.masters_slaves(mesh, periodic_boundary, 1)
-        assert len(np.where(mf.array() == 1)[0]) == 4
-        assert len(np.where(mf.array() == 2)[0]) == 4
+@skip_in_parallel
+def test_ComputePeriodicPairs(pbc, periodic_boundary, mesh):
+
+    # Verify that correct number of periodic pairs are computed
+    vertices = pbc.compute_periodic_pairs(mesh, periodic_boundary, 0)
+    edges    = pbc.compute_periodic_pairs(mesh, periodic_boundary, 1)
+    assert len(vertices) == 5
+    assert len(edges) == 4
+
+
+@skip_in_parallel
+def test_MastersSlaves(pbc, periodic_boundary, mesh):
+
+    # Verify that correct number of masters and slaves are marked
+    mf = pbc.masters_slaves(mesh, periodic_boundary, 0)
+    assert len(np.where(mf.array() == 1)[0]) == 5
+    assert len(np.where(mf.array() == 2)[0]) == 5
+
+    mf = pbc.masters_slaves(mesh, periodic_boundary, 1)
+    assert len(np.where(mf.array() == 1)[0]) == 4
+    assert len(np.where(mf.array() == 2)[0]) == 4

@@ -26,12 +26,20 @@ from dolfin import *
 from math   import sin, cos, exp, tan
 from numpy  import array, zeros, float_
 
-mesh = UnitCubeMesh(8, 8, 8)
-V = FunctionSpace(mesh, 'CG', 1)
-W = VectorFunctionSpace(mesh, 'CG', 1)
+@pytest.fixture(scope='module')
+def mesh():
+    return UnitCubeMesh(8, 8, 8)
+
+@pytest.fixture(scope='module')
+def V(mesh):
+    return FunctionSpace(mesh, 'CG', 1)
+
+@pytest.fixture(scope='module')
+def W(mesh):
+    return VectorFunctionSpace(mesh, 'CG', 1)
 
 
-def test_arbitraryEval():
+def test_arbitraryEval(mesh):
     class F0(Expression):
           def eval(self, values, x):
               values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
@@ -129,7 +137,7 @@ def test_ufl_eval():
     assert dot(v0,v0)(x) == sum(v**2 for v in v0(*x))
     assert dot(v0,v0)(x) == 98
 
-def test_overload_and_call_back():
+def test_overload_and_call_back(V, mesh):
     class F0(Expression):
         def eval(self, values, x):
             values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
@@ -191,7 +199,7 @@ def test_no_write_to_const_array():
         assemble(f1*dx(mesh))
 
 
-def test_compute_vertex_values():
+def test_compute_vertex_values(mesh):
     from numpy import zeros, all, array
 
     e0 = Expression("1")
@@ -333,13 +341,13 @@ def test_exponent_init():
     e2 = Expression("1e+10")
     assert e2(0,0,0) == 1e+10
 
-def test_name_space_usage():
+def test_name_space_usage(mesh):
     e0 = Expression("std::sin(x[0])*cos(x[1])")
     e1 = Expression("sin(x[0])*std::cos(x[1])")
     assert round(assemble(e0*dx(mesh)) - \
             assemble(e1*dx(mesh)), 7) == 0
 
-def test_generic_function_attributes():
+def test_generic_function_attributes(mesh, V):
     tc = Constant(2.0)
     te = Expression("value", value=tc)
 
@@ -443,7 +451,7 @@ def test_doc_string_eval():
     f.user_parameters["B"] = Constant(5.0)
     assert round(f(pi/4, pi/4) - 6./sqrt(2), 7) == 0
 
-def test_doc_string_complex_compiled_expression():
+def test_doc_string_complex_compiled_expression(mesh):
     """
     This test tests all features documented in the doc string of
     Expression. If this test breaks and it is fixed the corresponding fixes
@@ -529,6 +537,7 @@ def test_doc_string_complex_compiled_expression():
     f.eval_cell(values, coords, c2)
     assert values[0] == 0.0
 
+@pytest.mark.slow
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                     reason="Skipping unit test(s) not working in parallel")
 def test_doc_string_compiled_expression_with_system_headers():
@@ -615,7 +624,7 @@ def test_doc_string_compiled_expression_with_system_headers():
     with pytest.raises(RuntimeError):
         Expression(code_not_compile)
 
-def test_doc_string_python_expressions():
+def test_doc_string_python_expressions(mesh):
     """
     This test tests all features documented in the doc string of
     Expression. If this test breaks and it is fixed the corresponding fixes

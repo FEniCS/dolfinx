@@ -29,27 +29,33 @@ from dolfin import *
 import os
 
 # create an output folder
-filepath = os.path.join(os.path.dirname(__file__), 'output', '')
-if not os.path.exists(filepath):
-    os.mkdir(filepath)
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename, "")
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
+
 
 skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                       reason="Skipping unit test(s) not working in parallel")
 
 @skip_in_parallel
-def test_save_plain_mesh2D():
+def test_save_plain_mesh2D(temppath):
     mesh = UnitSquareMesh(8, 8)
-    f = File(filepath + "unit_square.xml")
+    f = File(temppath + "unit_square.xml")
     f << mesh
 
 @skip_in_parallel
-def test_save_plain_mesh3D():
+def test_save_plain_mesh3D(temppath):
     mesh = UnitCubeMesh(8, 8, 8)
-    f = File(filepath + "unit_cube.xml")
+    f = File(temppath + "unit_cube.xml")
     f << mesh
 
 @skip_in_parallel
-def test_mesh_domains_io():
+def test_mesh_domains_io(temppath):
     "Test input/output for mesh domains"
 
     # Define subdomains for the 6 faces of the unit cube
@@ -105,11 +111,11 @@ def test_mesh_domains_io():
     s1.mark_cells(output_mesh, 1)
 
     # Write to file
-    output_file = File(filepath + "XMLMesh_test_mesh_domains_io.xml")
+    output_file = File(temppath + "XMLMesh_test_mesh_domains_io.xml")
     output_file << output_mesh
 
     # Read from file
-    input_file = File(filepath + "XMLMesh_test_mesh_domains_io.xml")
+    input_file = File(temppath + "XMLMesh_test_mesh_domains_io.xml")
     input_mesh = Mesh()
     input_file >> input_mesh
 
@@ -122,9 +128,3 @@ def test_mesh_domains_io():
             len(output_mesh.domains().markers(2))
     assert len(input_mesh.domains().markers(3)) == \
             len(output_mesh.domains().markers(3))
-
-@skip_in_parallel
-def test_Read():
-    file = File(os.path.join(os.path.dirname(__file__), "..", "snake.xml.gz"))
-    localdata = cpp.LocalMeshData(mpi_comm_world())
-    file >> localdata

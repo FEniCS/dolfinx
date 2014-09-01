@@ -26,19 +26,27 @@ import os
 import pytest
 from dolfin import *
 
-file_path = os.path.join(os.path.dirname(__file__), 'output', 'mesh')
+# create an output folder
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename, "")
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
 
-def test_write_mesh_1d():
+def test_write_mesh_1d(temppath):
     mesh = UnitIntervalMesh(8)
-    f = File(file_path + "_1d.svg")
+    f = File(temppath + "_1d.svg")
     f << mesh
 
-def test_write_mesh_2d():
+def test_write_mesh_2d(temppath):
     mesh = UnitSquareMesh(8, 8)
-    f = File(file_path + "_2d.svg")
+    f = File(temppath + "_2d.svg")
     f << mesh
 
-def test_write_mesh_3d():
+def test_write_mesh_3d(temppath):
     mesh = UnitCubeMesh(8, 8, 8)
-    f = File(file_path + "_3d.svg")
+    f = File(temppath + "_3d.svg")
     f << mesh

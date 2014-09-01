@@ -22,95 +22,94 @@
 # First added:  2013-06-24
 # Last changed: 2013-06-24
 
-import pytest
+
 import numpy as np
 from dolfin import *
+import pytest
 
-class TestSubDomain:
+def test_compiled_subdomains():
+    def noDefaultValues():
+        CompiledSubDomain("a")
 
-    def test_compiled_subdomains(self):
-        def noDefaultValues():
-            CompiledSubDomain("a")
+    def wrongDefaultType():
+        CompiledSubDomain("a", a="1")
 
-        def wrongDefaultType():
-            CompiledSubDomain("a", a="1")
+    def wrongParameterNames():
+        CompiledSubDomain("long", str=1.0)
 
-        def wrongParameterNames():
-            CompiledSubDomain("long", str=1.0)
+    with pytest.raises(RuntimeError):
+        noDefaultValues()
+    with pytest.raises(TypeError):
+        wrongDefaultType()
+    with pytest.raises(RuntimeError):
+        wrongParameterNames()
 
-        with pytest.raises(RuntimeError):
-            noDefaultValues()
-        with pytest.raises(TypeError):
-            wrongDefaultType()
-        with pytest.raises(RuntimeError):
-            wrongParameterNames()
+def test_creation_and_marking():
 
-    def test_creation_and_marking(self):
+    class Left(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] < DOLFIN_EPS
 
-        class Left(SubDomain):
-            def inside(self, x, on_boundary):
-                return x[0] < DOLFIN_EPS
+    class Right(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] > 1.0 - DOLFIN_EPS
 
-        class Right(SubDomain):
-            def inside(self, x, on_boundary):
-                return x[0] > 1.0 - DOLFIN_EPS
+    subdomain_pairs = [(Left(), Right()),
+        		(AutoSubDomain(\
+        		    lambda x, on_boundary: x[0] < DOLFIN_EPS),
+        		AutoSubDomain(\
+        		    lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
+        		(CompiledSubDomain("near(x[0], a)", a = 0.0),
+        		CompiledSubDomain("near(x[0], a)", a = 1.0)),
+        		(CompiledSubDomain("near(x[0], 0.0)"),
+        		CompiledSubDomain("near(x[0], 1.0)"))]
 
-        subdomain_pairs = [(Left(), Right()),
-                           (AutoSubDomain(\
-                               lambda x, on_boundary: x[0] < DOLFIN_EPS),
-                            AutoSubDomain(\
-                                lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
-                           (CompiledSubDomain("near(x[0], a)", a = 0.0),
-                            CompiledSubDomain("near(x[0], a)", a = 1.0)),
-                           (CompiledSubDomain("near(x[0], 0.0)"),
-                            CompiledSubDomain("near(x[0], 1.0)"))]
+    empty = CompiledSubDomain("false")
+    every = CompiledSubDomain("true")
 
-        empty = CompiledSubDomain("false")
-        every = CompiledSubDomain("true")
+    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
+        dim = ind+1
+        args = [10]*dim
+        mesh = MeshClass(*args)
 
-        for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
-            dim = ind+1
-            args = [10]*dim
-            mesh = MeshClass(*args)
+        mesh.init()
 
-            mesh.init()
-
-            for left, right in subdomain_pairs:
-
-                for MeshFunc, f_dim in [(VertexFunction, 0),
-                                        (FacetFunction, dim-1),
-                                        (CellFunction, dim)]:
-                    f = MeshFunc("size_t", mesh, 0)
-
-                    left.mark(f, 1)
-                    right.mark(f, 2)
-
-                    correct = {(1,0):1,
-                               (1,0):1,
-                               (1,1):0,
-                               (2,0):11,
-                               (2,1):10,
-                               (2,2):0,
-                               (3,0):121,
-                               (3,2):200,
-                               (3,3):0}
-
-                    # Check that the number of marked entities are at least the
-                    # correct number (it can be larger in parallel)
-                    assert all(value >= correct[dim, f_dim]
-                               for value in [
-                                 MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
-                                 MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
-                                 ])
+        for left, right in subdomain_pairs:
 
             for MeshFunc, f_dim in [(VertexFunction, 0),
-                                    (FacetFunction, dim-1),
-                                    (CellFunction, dim)]:
-                f = MeshFunc("size_t", mesh, 0)
+        			    (FacetFunction, dim-1),
+        			    (CellFunction, dim)]:
+        	f = MeshFunc("size_t", mesh, 0)
 
-                empty.mark(f, 1)
-                every.mark(f, 2)
+        	left.mark(f, 1)
+        	right.mark(f, 2)
 
-                # Check that the number of marked entities is correct
-                assert sum(f.array()==1) == 0
-                assert sum(f.array()==2) == mesh.num_entities(f_dim)
+        	correct = {(1,0):1,
+        		    (1,0):1,
+        		    (1,1):0,
+        		    (2,0):11,
+        		    (2,1):10,
+        		    (2,2):0,
+        		    (3,0):121,
+        		    (3,2):200,
+        		    (3,3):0}
+
+        	# Check that the number of marked entities are at least the
+        	# correct number (it can be larger in parallel)
+        	assert all(value >= correct[dim, f_dim]
+        		    for value in [
+        		      MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
+        		      MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
+        		      ])
+
+        for MeshFunc, f_dim in [(VertexFunction, 0),
+        			(FacetFunction, dim-1),
+        			(CellFunction, dim)]:
+            f = MeshFunc("size_t", mesh, 0)
+
+            empty.mark(f, 1)
+            every.mark(f, 2)
+
+            # Check that the number of marked entities is correct
+            assert sum(f.array()==1) == 0
+            assert sum(f.array()==2) == mesh.num_entities(f_dim)

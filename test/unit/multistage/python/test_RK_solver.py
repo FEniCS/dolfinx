@@ -39,65 +39,68 @@ def convergence_order(errors, base = 2):
 
     return orders
 
+@pytest.mark.slow
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
         reason="Skipping unit test(s) not working in parallel")
-class TestRKSolver:
+def test_butcher_schemes_scalar():
 
-    def test_butcher_schemes_scalar(self):
+    LEVEL = cpp.get_log_level()
+    cpp.set_log_level(cpp.WARNING)
+    mesh = UnitSquareMesh(4, 4)
 
-        LEVEL = cpp.get_log_level()
-        cpp.set_log_level(cpp.WARNING)
-        mesh = UnitSquareMesh(4, 4)
+    V = FunctionSpace(mesh, "R", 0)
+    u = Function(V)
+    v = TestFunction(V)
+    form = u*v*dx
 
-        V = FunctionSpace(mesh, "R", 0)
-        u = Function(V)
-        v = TestFunction(V)
-        form = u*v*dx
+    tstop = 1.0
+    u_true = Expression("exp(t)", t=tstop)
 
-        tstop = 1.0
-        u_true = Expression("exp(t)", t=tstop)
+    for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
+                   BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
+        scheme = Scheme(form, u)
+        solver = RKSolver(scheme)
+        u_errors = []
+        for dt in [0.05, 0.025, 0.0125]:
+            u.interpolate(Constant(1.0))
+            solver.step_interval(0., tstop, dt)
+            u_errors.append(u_true(0.0, 0.0) - u(0.0, 0.0))
 
-        for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
-                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
-            scheme = Scheme(form, u)
-            solver = RKSolver(scheme)
-            u_errors = []
-            for dt in [0.05, 0.025, 0.0125]:
-                u.interpolate(Constant(1.0))
-                solver.step_interval(0., tstop, dt)
-                u_errors.append(u_true(0.0, 0.0) - u(0.0, 0.0))
+        assert scheme.order()-min(convergence_order(u_errors))<0.1
 
-            assert scheme.order()-min(convergence_order(u_errors))<0.1
+    cpp.set_log_level(LEVEL)
 
-        cpp.set_log_level(LEVEL)
 
-    def test_butcher_schemes_vector(self):
+@pytest.mark.slow
+@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
+        reason="Skipping unit test(s) not working in parallel")
+def test_butcher_schemes_vector():
 
-        LEVEL = cpp.get_log_level()
-        cpp.set_log_level(cpp.WARNING)
-        mesh = UnitSquareMesh(4, 4)
+    LEVEL = cpp.get_log_level()
+    cpp.set_log_level(cpp.WARNING)
+    mesh = UnitSquareMesh(4, 4)
 
-        V = VectorFunctionSpace(mesh, "R", 0, dim=2)
-        u = Function(V)
-        v = TestFunction(V)
-        form = inner(as_vector((-u[1], u[0])), v)*dx
+    V = VectorFunctionSpace(mesh, "R", 0, dim=2)
+    u = Function(V)
+    v = TestFunction(V)
+    form = inner(as_vector((-u[1], u[0])), v)*dx
 
-        tstop = 1.0
-        u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
+    tstop = 1.0
+    u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
 
-        for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
-                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
-            scheme = Scheme(form, u)
-            solver = RKSolver(scheme)
-            u_errors_0 = []
-            u_errors_1 = []
-            for dt in [0.05, 0.025, 0.0125]:
-                u.interpolate(Constant((1.0, 0.0)))
-                solver.step_interval(0., tstop, dt)
-                u_errors_0.append(u_true(0.0, 0.0)[0] - u(0.0, 0.0)[0])
-                u_errors_1.append(u_true(0.0, 0.0)[1] - u(0.0, 0.0)[1])
+    for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
+                   BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
+        scheme = Scheme(form, u)
+        solver = RKSolver(scheme)
+        u_errors_0 = []
+        u_errors_1 = []
+        for dt in [0.05, 0.025, 0.0125]:
+            u.interpolate(Constant((1.0, 0.0)))
+            solver.step_interval(0., tstop, dt)
+            u_errors_0.append(u_true(0.0, 0.0)[0] - u(0.0, 0.0)[0])
+            u_errors_1.append(u_true(0.0, 0.0)[1] - u(0.0, 0.0)[1])
 
-            assert scheme.order()-min(convergence_order(u_errors_0))<0.1
-            assert scheme.order()-min(convergence_order(u_errors_1))<0.1
+        assert scheme.order()-min(convergence_order(u_errors_0))<0.1
+        assert scheme.order()-min(convergence_order(u_errors_1))<0.1
 
-        cpp.set_log_level(LEVEL)
+    cpp.set_log_level(LEVEL)

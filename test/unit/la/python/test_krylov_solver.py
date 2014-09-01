@@ -47,6 +47,24 @@ bc.apply(A, b)
 if has_linear_algebra_backend("PETSc"):
     def test_krylov_solver():
         "Test PETScKrylovSolver"
+
+        # Assemble system
+        mesh = UnitSquareMesh(32, 32)
+        V = FunctionSpace(mesh, 'CG', 1)
+        bc = DirichletBC(V, Constant(0.0), lambda x, on_boundary: on_boundary)
+        u = TrialFunction(V)
+        v = TestFunction(V)
+        u1 = Function(V)
+
+        # Forms
+        a, L = inner(grad(u), grad(v))*dx, Constant(1.0)*v*dx
+        a_L = inner(grad(u1), grad(v))*dx
+
+        # Assemble linear algebra objects
+        A = assemble(a)
+        b = assemble(L)
+        bc.apply(A, b)
+
         # Get solution vector
         tmp = Function(V)
         #x = tmp.vector()

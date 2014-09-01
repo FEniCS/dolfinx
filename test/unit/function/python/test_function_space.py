@@ -27,17 +27,42 @@
 import pytest
 from dolfin import *
 
-mesh = UnitCubeMesh(8, 8, 8)
-V = FunctionSpace(mesh, 'CG', 1)
-W = VectorFunctionSpace(mesh, 'CG', 1)
-Q = W*V
-f = Function(V)
-V2 = f.function_space()
-g = Function(W)
-W2 = g.function_space()
+fixt = pytest.fixture(scope='module')
+
+@fixt
+def mesh():
+    return UnitCubeMesh(8, 8, 8)
+
+@fixt
+def V(mesh):
+    return FunctionSpace(mesh, 'CG', 1)
+
+@fixt
+def W(mesh):
+    return VectorFunctionSpace(mesh, 'CG', 1)
+
+@fixt
+def Q(W, V):
+    return W*V
+
+@fixt
+def f(V):
+    return Function(V)
+
+@fixt
+def V2(f):
+    return f.function_space()
+
+@fixt
+def g(W):
+    return Function(W)
+
+@fixt
+def W2(g):
+    return g.function_space()
 
 
-def test_python_interface():
+def test_python_interface(V, V2, W, W2, Q):
     # Test Python interface of cpp generated FunctionSpace
     assert isinstance(V, FunctionSpaceBase)
     assert isinstance(W, FunctionSpaceBase)
@@ -56,7 +81,7 @@ def test_python_interface():
     Q2 = W2*V2
     assert Q2.dim() == Q.dim()
 
-def test_component():
+def test_component(V, W, Q):
     assert not W.component()
     assert not V.component()
     assert W.sub(0).component()[0] == 0
@@ -64,37 +89,37 @@ def test_component():
     assert Q.sub(0).component()[0] == 0
     assert Q.sub(1).component()[0] == 1
 
-def test_equality():
+def test_equality(V, V2, W, W2):
     assert V == V
     assert V == V2
     assert W == W
     assert W == W2
 
-def test_boundary():
+def test_boundary(mesh):
     bmesh = BoundaryMesh(mesh, "exterior")
     Vb = FunctionSpace(bmesh, "DG", 0)
     Wb = VectorFunctionSpace(bmesh, "CG", 1)
     assert Vb.dim() == 768
     assert Wb.dim() == 1158
 
-def test_not_equal():
+def test_not_equal(W, V, W2, V2):
     assert W != V
     assert W2 != V2
 
-def test_sub_equality():
+def test_sub_equality(W, Q):
     assert W.sub(0) == W.sub(0)
     assert W.sub(0) != W.sub(1)
     assert W.sub(0) == W.extract_sub_space([0])
     assert W.sub(1) == W.extract_sub_space([1])
     assert Q.sub(0) == Q.extract_sub_space([0])
 
-def test_in_operator():
+def test_in_operator(f, g, V, V2, W, W2):
     assert f in V
     assert f in V2
     assert g in W
     assert g in W2
 
-def test_collapse():
+def test_collapse(W, V):
     Vs = W.sub(2)
     with pytest.raises(RuntimeError):
         Function(Vs)
@@ -107,7 +132,7 @@ def test_collapse():
     f1 = Function(Vc)
     assert len(f0.vector()) == len(f1.vector())
 
-def test_argument_equality():
+def test_argument_equality(mesh, V, V2, W, W2):
     "Placed this test here because it's mainly about detecting differing function spaces."
     mesh2 = UnitCubeMesh(8, 8, 8)
     V3 = FunctionSpace(mesh2, 'CG', 1)

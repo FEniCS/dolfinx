@@ -26,92 +26,126 @@ import pytest
 from dolfin import *
 import numpy as np
 
-mesh = UnitCubeMesh(8, 8, 8)
-V = FunctionSpace(mesh, "CG", 1)
-Q = FunctionSpace(mesh, "CG", 2)
-W = VectorFunctionSpace(mesh, "CG", 1)
-QQ = VectorFunctionSpace(mesh, "CG", 2)
-R = FunctionSpace(mesh, "R", 0)
-RR = VectorFunctionSpace(mesh, "R", 0)
-QQV = QQ*V
-WW = W*W
-WR = W*R
-WRR = W*RR
+fixt = pytest.fixture(scope='module')
 
-@pytest.fixture
-def u0():
+@fixt
+def mesh():
+    return UnitCubeMesh(8, 8, 8)
+
+@fixt
+def V(mesh):
+    return FunctionSpace(mesh, "CG", 1)
+
+@fixt
+def Q(mesh):
+    return FunctionSpace(mesh, "CG", 2)
+
+@fixt
+def W(mesh):
+    return VectorFunctionSpace(mesh, "CG", 1)
+
+@fixt
+def QQ(mesh):
+    return VectorFunctionSpace(mesh, "CG", 2)
+
+@fixt
+def R(mesh):
+    return FunctionSpace(mesh, "R", 0)
+
+@fixt
+def RR(mesh):
+    return VectorFunctionSpace(mesh, "R", 0)
+
+@fixt
+def QQV(QQ, V):
+    return QQ*V
+
+@fixt
+def WW(W):
+    return W * W
+
+@fixt
+def WR(W, R):
+    return W * R
+
+@fixt
+def WRR(W, RR):
+    return W * RR
+
+@fixt
+def u0(V):
      u0_ = Function(V)
      u0_.vector()[:] = 1.
      return u0_
 
-@pytest.fixture
-def u1():
+@fixt
+def u1(V):
      u1_ = Function(V)
      u1_.vector()[:] = 2.
      return u1_
 
-@pytest.fixture
-def u2():
+@fixt
+def u2(V):
      u2_ = Function(V)
      u2_.vector()[:] = 3.
      return u2_
 
-@pytest.fixture
-def r():
+@fixt
+def r(R):
     r_ = Function(R)
     r_.vector()[:] = 3.
     return r_
 
-@pytest.fixture
-def rr():
+@fixt
+def rr(RR):
     rr_ = Function(RR)
     rr_.vector()[:] = 2.
     return rr_
 
-@pytest.fixture
-def w():
+@fixt
+def w(W):
     w_ = Function(W)
     w_.vector()[:] = 4.
     return w_
 
-@pytest.fixture
-def ww():
+@fixt
+def ww(WW):
     ww_ = Function(WW)
     ww_.vector()[:] = 5.
     return ww_
 
-@pytest.fixture
-def wr():
+@fixt
+def wr(WR):
     wr_ = Function(WR)
     wr_.vector()[:] = 6.
     return wr_
 
-@pytest.fixture
-def wrr():
+@fixt
+def wrr(WRR):
     wrr_ = Function(WRR)
     wrr_.vector()[:] = 7.
     return wrr_
 
-@pytest.fixture
-def q():
+@fixt
+def q(Q):
     q_ = Function(Q)
     q_.vector()[:] = 1.
     return q_
 
-@pytest.fixture
-def qq():
+@fixt
+def qq(QQ):
     qq_ = Function(QQ)
     qq_.vector()[:] = 2.
     return qq_
 
-@pytest.fixture
-def qqv():
+@fixt
+def qqv(QQV):
     qqv_ = Function(QQV)
     qqv_.vector()[:] = 3.
     return qqv_
 
 
-def test_1_1_assigner(w, ww, wr, wrr, q, r, qqv, u0, u1, u2):
+def test_1_1_assigner(w, ww, wr, wrr, q, r, qqv, u0, u1, u2, W, V, WW):
 
     assigner = FunctionAssigner(W.sub(0), V)
     assigner.assign(w.sub(0), u0)
@@ -149,7 +183,7 @@ def test_1_1_assigner(w, ww, wr, wrr, q, r, qqv, u0, u1, u2):
         assign(wrr.sub(1), w)
 
 
-def test_N_1_assigner(u0, u1, u2, qq, qqv, rr, w, wrr, r):
+def test_N_1_assigner(u0, u1, u2, qq, qqv, rr, w, wrr, r, W, V):
 
     vv = Function(W)
     assigner = FunctionAssigner(W, [V,V,V])
@@ -173,7 +207,7 @@ def test_N_1_assigner(u0, u1, u2, qq, qqv, rr, w, wrr, r):
     with pytest.raises(RuntimeError):
         assign(wrr, [w, r, r])
 
-def test_1_N_assigner(u0, u1, u2, w, qq, qqv):
+def test_1_N_assigner(u0, u1, u2, w, qq, qqv, V, W):
 
     assigner = FunctionAssigner([V,V,V], W)
     assigner.assign([u0, u1, u2], w)

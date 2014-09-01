@@ -27,14 +27,20 @@ import pytest
 from dolfin import *
 import os
 
-# create an output folder
-filedir = os.path.dirname(os.path.abspath(__file__))
-filepath = os.path.join(filedir, 'output', '')
-if not os.path.exists(filepath):
-    os.mkdir(filepath)
+
+
+#te an output folder
+@pytest.fixture(scope="module")
+def temppath():
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    basename = os.path.basename(__file__).replace(".py", "_data")
+    temppath = os.path.join(filedir, basename)
+    if not os.path.exists(temppath):
+        os.mkdir(temppath)
+    return temppath
 
 default_parameters = parameters.copy()
-skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
+skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
     reason="Skipping unit test(s) not working in parallel")
 
 def create_data(A=None):
@@ -51,67 +57,67 @@ def create_data(A=None):
     x = Vector()
     return A, x, b
 
-@skip_parallel
+@skip_in_parallel
 def test_p4_box_1():
     x = Vector()
 
-@skip_parallel
+@skip_in_parallel
 def test_p4_box_2():
     A = Matrix()
 
-@skip_parallel
+@skip_in_parallel
 def test_p5_box_1():
     x = Vector(mpi_comm_world(), 100)
 
-@skip_parallel
+@skip_in_parallel
 def test_p5_box_2():
     A, x, b = create_data()
     solve(A, x, b)
 
-@skip_parallel
+@skip_in_parallel
 def test_p5_box_3():
     A, x, b = create_data()
     solve(A, x, b, "lu")
     solve(A, x, b, "gmres", "ilu")
 
-@skip_parallel
+@skip_in_parallel
 def test_p5_box_4():
     list_lu_solver_methods()
     list_krylov_solver_methods()
     list_krylov_solver_preconditioners()
 
-@skip_parallel
+@skip_in_parallel
 def test_p6_box_1():
     A, x, b = create_data()
     solver = LUSolver(A)
     solver.solve(x, b)
 
-@skip_parallel
+@skip_in_parallel
 def test_p6_box_2():
     A, x, b = create_data()
     solver = LUSolver()
     solver.set_operator(A)
     solver.solve(x, b)
 
-@skip_parallel
+@skip_in_parallel
 def test_p6_box_3():
     solver = LUSolver()
     solver.parameters["same_nonzero_pattern"] = True
 
-@skip_parallel
+@skip_in_parallel
 def test_p6_box_4():
     A, x, b = create_data()
     solver = KrylovSolver(A)
     solver.solve(x, b)
 
-@skip_parallel
+@skip_in_parallel
 def test_p7_box_1():
     A, x, b = create_data()
     solver = KrylovSolver()
     solver.set_operator(A)
     solver.solve(x, b)
 
-@skip_parallel
+@skip_in_parallel
 def test_p7_box_2():
     A, x, b = create_data()
     P = A
@@ -119,7 +125,7 @@ def test_p7_box_2():
     solver.set_operators(A, P)
     solver.solve(x, b)
 
-@skip_parallel
+@skip_in_parallel
 def test_p7_box_3():
     solver = KrylovSolver()
     solver.parameters["relative_tolerance"] = 1.0e-6
@@ -129,17 +135,17 @@ def test_p7_box_3():
     solver.parameters["error_on_nonconvergence"] = True
     solver.parameters["nonzero_initial_guess"] = False
 
-@skip_parallel
+@skip_in_parallel
 def test_p7_box_4():
     solver = KrylovSolver()
     solver.parameters["report"] = True
     solver.parameters["monitor_convergence"] = True
 
-@skip_parallel
+@skip_in_parallel
 def test_p8_box_1():
     solver = KrylovSolver("gmres", "ilu")
 
-@skip_parallel
+@skip_in_parallel
 def test_p8_box_2():
     if not has_linear_algebra_backend("PETSc") or not has_slepc() : return
     A = PETScMatrix()
@@ -148,7 +154,7 @@ def test_p8_box_2():
     eigensolver.solve()
     lambda_r, lambda_c, x_real, x_complex = eigensolver.get_eigenpair(0)
 
-@skip_parallel
+@skip_in_parallel
 def test_p9_box_1():
     if not has_linear_algebra_backend("PETSc") or not has_slepc() : return
     A = PETScMatrix()
@@ -157,7 +163,7 @@ def test_p9_box_1():
     M, x, b = create_data(M)
     eigensolver = SLEPcEigenSolver(A, M)
 
-@skip_parallel
+@skip_in_parallel
 def test_p9_box_2():
     if not has_linear_algebra_backend("PETSc"): return
     parameters["linear_algebra_backend"] = "PETSc"
@@ -165,13 +171,13 @@ def test_p9_box_2():
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
-@skip_parallel
+@skip_in_parallel
 def test_p9_box_3():
     if not has_linear_algebra_backend("PETSc"): return
     x = PETScVector()
     solver = PETScLUSolver()
 
-@skip_parallel
+@skip_in_parallel
 def test_p10_box_1():
 
     class MyNonlinearProblem(NonlinearProblem):
@@ -189,7 +195,7 @@ def test_p10_box_1():
             assemble(self.a, tensor=A)
             self.bc.apply(A)
 
-@skip_parallel
+@skip_in_parallel
 def test_p11_box_1():
 
     class MyNonlinearProblem(NonlinearProblem):
@@ -220,7 +226,7 @@ def test_p11_box_1():
     newton_solver = NewtonSolver()
     newton_solver.solve(problem, u.vector())
 
-@skip_parallel
+@skip_in_parallel
 def test_p11_box_2():
     newton_solver = NewtonSolver()
     newton_solver.parameters["maximum_iterations"] = 20
@@ -228,12 +234,12 @@ def test_p11_box_2():
     newton_solver.parameters["absolute_tolerance"] = 1.0e-10
     newton_solver.parameters["error_on_nonconvergence"] = False
 
-@skip_parallel
+@skip_in_parallel
 def test_p11_box_3():
     unit_square = UnitSquareMesh(16, 16)
     unit_cube = UnitCubeMesh(16, 16, 16)
 
-@skip_parallel
+@skip_in_parallel
 def test_p12_box_1():
     mesh = Mesh();
     editor = MeshEditor();
@@ -248,31 +254,31 @@ def test_p12_box_1():
     editor.add_cell(1, 0, 2, 3)
     editor.close()
 
-@skip_parallel
+@skip_in_parallel
 def test_p13_box_2():
     mesh = Mesh(os.path.join(os.path.dirname(__file__), "mesh.xml"))
 
-@skip_parallel
+@skip_in_parallel
 def test_p14_box_1():
     mesh = UnitSquareMesh(8, 8)
     entity = MeshEntity(mesh, 0, 33)
     vertex = Vertex(mesh, 33)
     cell = Cell(mesh, 25)
 
-@skip_parallel
+@skip_in_parallel
 def test_p14_box_2():
     mesh = UnitSquareMesh(2, 2)
     gdim = mesh.topology().dim()
     tdim = mesh.geometry().dim()
 
-@skip_parallel
+@skip_in_parallel
 def test_p15_box_1():
     mesh = UnitSquareMesh(2, 2)
     mesh.init(2)
     mesh.init(0, 0)
     mesh.init(1, 1)
 
-@skip_parallel
+@skip_in_parallel
 def test_p15_box_2():
     mesh = UnitSquareMesh(2, 2)
     for c in cells(mesh):
@@ -280,7 +286,7 @@ def test_p15_box_2():
             for v1 in vertices(v0):
                 print(v1)
 
-@skip_parallel
+@skip_in_parallel
 def test_p16_box_1():
     mesh = UnitSquareMesh(2, 2)
     D = mesh.topology().dim()
@@ -289,7 +295,7 @@ def test_p16_box_1():
             for v1 in entities(v0, 0):
                 print(v1)
 
-@skip_parallel
+@skip_in_parallel
 def test_p16_box_2():
     mesh = UnitSquareMesh(2, 2)
 
@@ -307,7 +313,7 @@ def test_p16_box_2():
         if near(p.y(), 0.0) or near(p.y(), 1.0):
             boundary_markers[facet] = 1
 
-@skip_parallel
+@skip_in_parallel
 def test_p17_box_1():
     mesh = UnitSquareMesh(2, 2)
     # Note: MeshData no longer returns MeshFunctions. This was
@@ -319,7 +325,7 @@ def test_p17_box_1():
     sub_domains = mesh.data().create_array("sub_domains", 2)
     sub_domains = mesh.data().array("sub_domains", 2)
 
-@skip_parallel
+@skip_in_parallel
 def test_p17_box_2():
     mesh = UnitSquareMesh(8, 8)
 
@@ -334,7 +340,7 @@ def test_p17_box_2():
             cell_markers[cell] = True
     mesh = refine(mesh, cell_markers)
 
-@skip_parallel
+@skip_in_parallel
 def test_p19_box_1():
     element = FiniteElement("Lagrange", tetrahedron, 5)
     element = FiniteElement("CG", tetrahedron, 5)
@@ -343,35 +349,35 @@ def test_p19_box_1():
     element = FiniteElement("Nedelec 1st kind H(curl)", tetrahedron, 2)
     element = FiniteElement("N1curl", tetrahedron, 2)
 
-@skip_parallel
+@skip_in_parallel
 def test_p20_box_1():
     element = FiniteElement("Lagrange", triangle, 1)
 
-@skip_parallel
+@skip_in_parallel
 def test_p20_box_2():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
-@skip_parallel
+@skip_in_parallel
 def test_p20_box_3():
     V = VectorElement("Lagrange", triangle, 2)
     Q = FiniteElement("Lagrange", triangle, 1)
     W = V*Q
 
-@skip_parallel
+@skip_in_parallel
 def test_p21_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = VectorFunctionSpace(mesh, "Lagrange", 2)
     Q = FunctionSpace(mesh, "Lagrange", 1)
     W = V*Q
 
-@skip_parallel
+@skip_in_parallel
 def test_p21_box_2():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = Function(V)
 
-@skip_parallel
+@skip_in_parallel
 def test_p22_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -382,7 +388,7 @@ def test_p22_box_1():
     u = Function(V)
     solve(A, u.vector(), b)
 
-@skip_parallel
+@skip_in_parallel
 def test_p22_box_2():
     mesh = UnitCubeMesh(2, 2, 2)
 
@@ -394,7 +400,7 @@ def test_p22_box_2():
     u = Function(V)
     vector = u(0.1, 0.2, 0.3)
 
-@skip_parallel
+@skip_in_parallel
 def test_p23_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = VectorFunctionSpace(mesh, "Lagrange", 2)
@@ -406,7 +412,7 @@ def test_p23_box_1():
 
     uu, pp = w.split(deepcopy=True)
 
-@skip_parallel
+@skip_in_parallel
 def test_p24_box_1():
     class MyExpression(Expression):
         def eval(self, values, x):
@@ -414,7 +420,7 @@ def test_p24_box_1():
     f = MyExpression()
     print(f((0.5, 0.5)))
 
-@skip_parallel
+@skip_in_parallel
 def test_p24_box_2():
     class MyExpression(Expression):
         def eval(self, values, x):
@@ -425,12 +431,12 @@ def test_p24_box_2():
     g = MyExpression()
     print(g((0.5, 0.5)))
 
-@skip_parallel
+@skip_in_parallel
 def test_p24_box_3():
     f = Expression("sin(x[0])*cos(x[1])")
     g = Expression(("sin(x[0])", "cos(x[1])"))
 
-@skip_parallel
+@skip_in_parallel
 def test_p25_box_1():
     t = 0.0
     T = 1.0
@@ -441,7 +447,7 @@ def test_p25_box_1():
         h.t = t
         t += dt
 
-@skip_parallel
+@skip_in_parallel
 def test_p26_box_1():
     mesh = UnitSquareMesh(8, 8)
     V = VectorFunctionSpace(mesh, "Lagrange", 1)
@@ -461,7 +467,7 @@ def test_p26_box_1():
     a = inner(sigma(u), sym(grad(v)))*dx
     L = dot(f, v)*dx
 
-@skip_parallel
+@skip_in_parallel
 def test_p27_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -476,7 +482,7 @@ def test_p27_box_1():
     b = assemble(L)
     A = assemble(a)
 
-@skip_parallel
+@skip_in_parallel
 def test_p29_box_1():
     mesh = UnitSquareMesh(2, 2)
     class NeumannBoundary(SubDomain):
@@ -487,7 +493,7 @@ def test_p29_box_1():
     exterior_facet_domains.set_all(1)
     neumann_boundary.mark(exterior_facet_domains, 0)
 
-@skip_parallel
+@skip_in_parallel
 def test_p30_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -502,7 +508,7 @@ def test_p30_box_1():
     dss = ds[neumann_boundary]
     a = g*v*dss(0) + h*v*dss(1)
 
-@skip_parallel
+@skip_in_parallel
 def test_p30_box_2():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -516,14 +522,14 @@ def test_p30_box_2():
     Gamma_D = DirichletBoundary()
     bc = DirichletBC(V, u_0, Gamma_D)
 
-@skip_parallel
+@skip_in_parallel
 def test_p31_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u_0 = Expression("sin(x[0])")
     bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
 
-@skip_parallel
+@skip_in_parallel
 def test_p31_box_2():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -535,7 +541,7 @@ def test_p31_box_2():
     bc.apply(A, b)
     bc.apply(u.vector())
 
-@skip_parallel
+@skip_in_parallel
 def test_p32_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -552,7 +558,7 @@ def test_p32_box_1():
     u = Function(V)
     solve(a == L, u, bcs=bcs)
 
-@skip_parallel
+@skip_in_parallel
 def test_p32_box_2():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -573,7 +579,7 @@ def test_p32_box_2():
     J = derivative(F, u)
     solve(F == 0, u, bcs=bcs, J=J)
 
-@skip_parallel
+@skip_in_parallel
 def test_p32_box_3():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -597,7 +603,7 @@ def test_p32_box_3():
     solver.parameters["newton_solver"]["preconditioner"] = "ilu"
     solver.solve()
 
-@skip_parallel
+@skip_in_parallel
 def test_p33_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -618,11 +624,11 @@ def test_p33_box_1():
 
     info(solver.parameters, True)
 
-@skip_parallel
+@skip_in_parallel
 def test_p33_box_2():
     mesh = Mesh(os.path.join(os.path.dirname(__file__), "mesh.xml"))
 
-@skip_parallel
+@skip_in_parallel
 def test_p34_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -633,7 +639,7 @@ def test_p34_box_1():
     #plot(mesh)
     #plot(mesh_function)
 
-@skip_parallel
+@skip_in_parallel
 def test_p34_box_2():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -646,45 +652,45 @@ def test_p34_box_2():
     # Disabled since it claims the terminal
     #plot(element)
 
-@skip_parallel
-def test_p35_box_1():
+@skip_in_parallel
+def test_p35_box_1(temppath):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
 
-    file = File(filepath + "solution.pvd")
+    file = File(temppath + "solution.pvd")
     file << u
 
-@skip_parallel
-def test_p35_box_2():
+@skip_in_parallel
+def test_p35_box_2(temppath):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
     t = 1.0
 
-    file = File(filepath + "solution.pvd", "compressed");
+    file = File(temppath + "solution.pvd", "compressed");
     file << (u, t)
 
-@skip_parallel
-def test_p36_box_1():
+@skip_in_parallel
+def test_p36_box_1(temppath):
     mesh = UnitSquareMesh(2, 2)
     matrix, x, vector = create_data()
 
-    vector_file = File(filepath + "vector.xml")
+    vector_file = File(temppath + "vector.xml")
     vector_file << vector
     vector_file >> vector
-    mesh_file = File(filepath + "mesh.xml")
+    mesh_file = File(temppath + "mesh.xml")
     mesh_file << mesh
     mesh_file >> mesh
-    parameters_file = File(filepath + "parameters.xml")
+    parameters_file = File(temppath + "parameters.xml")
     parameters_file << parameters
     parameters_file >> parameters
 
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
-@skip_parallel
-def test_p37_box_1():
+@skip_in_parallel
+def test_p37_box_1(temppath):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -692,15 +698,15 @@ def test_p37_box_1():
     t = 0.0
     T = 1.0
 
-    time_series = TimeSeries(filepath + "simulation_data")
+    time_series = TimeSeries(temppath + "simulation_data")
     while t < T:
         time_series.store(u.vector(), t)
         time_series.store(mesh, t)
         t += dt
 
-@skip_parallel
-def test_p37_box_2():
-    time_series = TimeSeries(filepath + "simulation_data")
+@skip_in_parallel
+def test_p37_box_2(temppath):
+    time_series = TimeSeries(temppath + "simulation_data")
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -709,13 +715,13 @@ def test_p37_box_2():
     #time_series.retrieve(u.vector(), t)
     #time_series.retrieve(mesh, t)
 
-@skip_parallel
+@skip_in_parallel
 def test_p37_box_3():
     M = 100
     N = 100
     info("Assembling system of size %d x %d." % (M, N))
 
-@skip_parallel
+@skip_in_parallel
 def test_p38_box_1():
     info("Test message")
     log(DEBUG, "Test message")
@@ -729,7 +735,7 @@ def test_p38_box_1():
     warning("Test message")
     print("Test message")
 
-@skip_parallel
+@skip_in_parallel
 def test_p39_box_1():
     matrix, vector, b = create_data()
     solver = KrylovSolver()
@@ -747,12 +753,12 @@ def test_p39_box_1():
     info(function_space)
     info(parameters)
 
-@skip_parallel
+@skip_in_parallel
 def test_p39_box_2():
     mesh = UnitSquareMesh(2, 2)
     info(mesh, True)
 
-@skip_parallel
+@skip_in_parallel
 def test_p40_box_1():
     mesh = UnitSquareMesh(2, 2)
     t = 0.0
@@ -774,7 +780,7 @@ def test_p40_box_1():
         t += dt
         q.update(t / T)
 
-@skip_parallel
+@skip_in_parallel
 def test_p40_box_2():
     def solve(A, b):
         timer = Timer("Linear solve")
@@ -782,7 +788,7 @@ def test_p40_box_2():
         return x
     solve(None, None)
 
-@skip_parallel
+@skip_in_parallel
 def test_p41_box_1():
     info(parameters, True)
     num_threads = parameters["num_threads"]
@@ -793,7 +799,7 @@ def test_p41_box_1():
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
-@skip_parallel
+@skip_in_parallel
 def test_p41_box_2():
     solver = KrylovSolver()
     solver.parameters["absolute_tolerance"] = 1e-6
@@ -802,13 +808,13 @@ def test_p41_box_2():
     #solver.parameters["preconditioner"]["reuse"] = True
     solver.parameters["preconditioner"]["structure"] = "same"
 
-@skip_parallel
+@skip_in_parallel
 def test_p42_box_1():
     my_parameters = Parameters("my_parameters")
     my_parameters.add("foo", 3)
     my_parameters.add("bar", 0.1)
 
-@skip_parallel
+@skip_in_parallel
 def test_p42_box_2():
     d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
     parameters.update(d)
@@ -816,41 +822,41 @@ def test_p42_box_2():
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
-@skip_parallel
+@skip_in_parallel
 def test_p42_box_3():
     my_parameters = Parameters("my_parameters", foo=3, bar=0.1,
                                 nested=Parameters("nested", baz=True))
 
-@skip_parallel
+@skip_in_parallel
 def test_p42_box_4():
     parameters.parse()
 
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
-@skip_parallel
-def test_p43_box_1():
-    file = File(filepath + "parameters.xml")
+@skip_in_parallel
+def test_p43_box_1(temppath):
+    file = File(temppath + "parameters.xml")
     file << parameters
     file >> parameters
 
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
-@skip_parallel
+@skip_in_parallel
 def test_p45_box_1():
     parameters["mesh_partitioner"] = "ParMETIS"
 
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
-@skip_parallel
+@skip_in_parallel
 def test_p45_box_2():
     from dolfin import cpp
     Function = cpp.Function
     assemble = cpp.assemble
 
-@skip_parallel
+@skip_in_parallel
 def test_p46_box_1():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -872,11 +878,11 @@ def test_p47_box_2():
     L = f*v*dx
     assemble(L)
 
-@skip_parallel
+@skip_in_parallel
 def test_p48_box_1():
     e = Expression("sin(x[0])")
 
-@skip_parallel
+@skip_in_parallel
 def test_p49_box_1():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -886,14 +892,14 @@ def test_p49_box_1():
     a = c*dot(grad(u), grad(v))*dx
     A = assemble(a)
 
-@skip_parallel
+@skip_in_parallel
 def test_p50_box_1():
     parameters["form_compiler"]["name"] = "sfc"
 
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
-@skip_parallel
+@skip_in_parallel
 def test_p50_box_2():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -904,7 +910,7 @@ def test_p50_box_2():
     A = assemble(a)
     AA = A.array()
 
-@skip_parallel
+@skip_in_parallel
 def test_p50_box_3():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -919,7 +925,7 @@ def test_p50_box_3():
     # Reset linear algebra backend so that other tests work
     parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
-@skip_parallel
+@skip_in_parallel
 def test_p50_box_4():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -937,7 +943,7 @@ def test_p50_box_4():
     # Reset linear algebra backend so that other tests work
     parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
-@skip_parallel
+@skip_in_parallel
 def test_p51_box_1():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -959,7 +965,7 @@ def test_p51_box_1():
     # Reset linear algebra backend so that other tests work
     parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
-@skip_parallel
+@skip_in_parallel
 def test_p51_box_2():
     b = Vector(mpi_comm_world(), 10)
     c = Vector(mpi_comm_world(), 10)
@@ -968,7 +974,7 @@ def test_p51_box_2():
     b[b < 0] = 0
     b2 = b[::2]
 
-@skip_parallel
+@skip_in_parallel
 def test_p51_box_3():
     from numpy import array
     b = Vector(mpi_comm_world(), 20)

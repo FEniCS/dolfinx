@@ -29,66 +29,65 @@ import pytest
 import numpy
 from dolfin import *
 
-class TestDirichletBC:
 
-    def test_near(self):
-        eps = DOLFIN_EPS
-        # Loop over magnitudes
-        for i in range(100):
-            # Loop over base values
-            for j in range(1, 10):
-                # Compute a value v and some values close to it
-                v = j*10**(i-13)
-                #print "number:", v
-                vm = v - eps
-                vp = v + eps
-                #vm = v - v*eps # Scaling eps does not work
-                #vp = v + v*eps
+def test_near():
+    eps = DOLFIN_EPS
+    # Loop over magnitudes
+    for i in range(100):
+	# Loop over base values
+	for j in range(1, 10):
+	    # Compute a value v and some values close to it
+	    v = j*10**(i-13)
+	    #print "number:", v
+	    vm = v - eps
+	    vp = v + eps
+	    #vm = v - v*eps # Scaling eps does not work
+	    #vp = v + v*eps
 
-                # Check that we return True when we should by definition:
-                assert near(v, v)
-                assert near(vm, vm)
-                assert near(vp, vp)
-                #assert near(v, vm) # Can fail
-                #assert near(v, vp)
-                if not near(v, vm):
-                    print("not near vm: %r, %r" % (v, vm))
-                if not near(v, vp):
-                    print("not near vp: %r, %r" % (v, vp))
+	    # Check that we return True when we should by definition:
+	    assert near(v, v)
+	    assert near(vm, vm)
+	    assert near(vp, vp)
+	    #assert near(v, vm) # Can fail
+	    #assert near(v, vp)
+	    if not near(v, vm):
+		print("not near vm: %r, %r" % (v, vm))
+	    if not near(v, vp):
+		print("not near vp: %r, %r" % (v, vp))
 
-                # vm and vp can round off to v, make some small values != v
-                # that are close to 1 (except for some of the smallest v's)
-                v2m = v * (1.0 - 2*eps) - 2*eps
-                v2p = v * (1.0 + 2*eps) + 2*eps
-                assert v/v2m > 1.0
-                assert v/v2p < 1.0
+	    # vm and vp can round off to v, make some small values != v
+	    # that are close to 1 (except for some of the smallest v's)
+	    v2m = v * (1.0 - 2*eps) - 2*eps
+	    v2p = v * (1.0 + 2*eps) + 2*eps
+	    assert v/v2m > 1.0
+	    assert v/v2p < 1.0
 
-                # Check that we can fail for fairly close values
-                assert not near(v, v2m)
-                assert not near(v, v2p)
+	    # Check that we can fail for fairly close values
+	    assert not near(v, v2m)
+	    assert not near(v, v2p)
 
-    def test_between(self):
-        eps = DOLFIN_EPS
-        # Loop over magnitudes
-        for i in range(100):
-            # Loop over base values
-            for j in range(1, 10):
-                # Compute a value v and some values close to it
-                v = j*10**(i - 15)
-                vm = v - eps
-                vp = v + eps
+def test_between():
+    eps = DOLFIN_EPS
+    # Loop over magnitudes
+    for i in range(100):
+	# Loop over base values
+	for j in range(1, 10):
+	    # Compute a value v and some values close to it
+	    v = j*10**(i - 15)
+	    vm = v - eps
+	    vp = v + eps
 
-                # Check that we return True when we should by definition:
-                assert between(v, (vm, vp))
+	    # Check that we return True when we should by definition:
+	    assert between(v, (vm, vp))
 
-                # vm and vp can round off to v, make some small values != v
-                v2m = v * (1.0 - 2*eps) - 2*eps
-                v2p = v * (1.0 + 2*eps) + 2*eps
+	    # vm and vp can round off to v, make some small values != v
+	    v2m = v * (1.0 - 2*eps) - 2*eps
+	    v2p = v * (1.0 + 2*eps) + 2*eps
 
-                # Close to 1 except for some of the smallest v's:
-                assert v/v2m > 1.0
-                assert v/v2p < 1.0
-                assert between(v, (v2m, v2p))
+	    # Close to 1 except for some of the smallest v's:
+	    assert v/v2m > 1.0
+	    assert v/v2p < 1.0
+	    assert between(v, (v2m, v2p))
 
-                # Check that we can fail for fairly close values
-                assert not between(v, (v2p, v2m))
+	    # Check that we can fail for fairly close values
+	    assert not between(v, (v2p, v2m))
