@@ -18,12 +18,9 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-#
-# First added:  2013-10-25
-# Last changed: 2013-10-25
 
 import pytest
+import os
 from dolfin import *
 
 # create an output folder
