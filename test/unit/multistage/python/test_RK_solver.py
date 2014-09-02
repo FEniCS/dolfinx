@@ -18,15 +18,15 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2013-02-20
-# Last changed: 2014-05-30
 
 from __future__ import print_function
+
 import pytest
 from dolfin import *
-
 import numpy as np
+
+skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
+                                      reason="Skipping unit test(s) not working in parallel")
 
 def convergence_order(errors, base = 2):
     import math
@@ -40,8 +40,7 @@ def convergence_order(errors, base = 2):
     return orders
 
 @pytest.mark.slow
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-        reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_butcher_schemes_scalar():
 
     LEVEL = cpp.get_log_level()
@@ -72,8 +71,7 @@ def test_butcher_schemes_scalar():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-        reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_butcher_schemes_vector():
 
     LEVEL = cpp.get_log_level()

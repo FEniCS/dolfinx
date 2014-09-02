@@ -18,17 +18,25 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2013-02-20
-# Last changed: 2013-02-20
 
 from __future__ import print_function
+
 import pytest
 from dolfin import *
-
-parameters.form_compiler.optimize=True
-
 import numpy as np
+
+
+# FIXME: Push/pop this parameter in a yield_fixture? This will affect other tests as well!
+parameters.form_compiler.optimize = True
+
+
+# Build test methods using function closure so 1 test is generated per Scheme and
+# test case
+@pytest.fixture(params=[ForwardEuler, ExplicitMidPoint, RK4,
+                        BackwardEuler, CN2, ESDIRK3, ESDIRK4])
+def Scheme(request):
+    return request.param
+
 
 def convergence_order(errors, base = 2):
     import math
@@ -41,111 +49,92 @@ def convergence_order(errors, base = 2):
 
     return orders
 
-def function_closure(Scheme):
 
-    def scalar_time(self):
+@pytest.mark.slow
+def test_butcher_schemes_scalar_time(Scheme):
+    mesh = UnitSquareMesh(10, 10)
+    V = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
+    time = Constant(0.0)
+    u0=10.0
+    tstop = 1.0
+    weight = Constant(2)
+    u_true = Expression("u0 + 2*t + pow(t, 2)/2. + weight*pow(t, 3)/3. - "\
+                        "pow(t, 5)/5.", t=tstop, u0=u0, weight=weight)
 
-        mesh = UnitSquareMesh(10, 10)
-        V = FunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
-        time = Constant(0.0)
-        u0=10.0
-        tstop = 1.0
-        weight = Constant(2)
-        u_true = Expression("u0 + 2*t + pow(t, 2)/2. + weight*pow(t, 3)/3. - "\
-                            "pow(t, 5)/5.", t=tstop, u0=u0, weight=weight)
+    u = Function(V)
+    compound_time_expr = Expression("weight*time*time", weight=weight, \
+                                    element=time.element(), time=time)
+    form = (2+time+compound_time_expr-time**4)*v*dP
 
-        u = Function(V)
-        compound_time_expr = Expression("weight*time*time", weight=weight, \
-                                        element=time.element(), time=time)
-        form = (2+time+compound_time_expr-time**4)*v*dP
-        
-        scheme = Scheme(form, u, time)
-        info(scheme)
-        solver = PointIntegralSolver(scheme)
-        u_errors = []
-        for dt in [0.05, 0.025, 0.0125]:
-            solver.reset_newton_solver()
-            solver.reset_stage_solutions()
-            u.interpolate(Constant(u0))
-            solver.step_interval(0., tstop, dt)
-            u_errors.append(errornorm(u_true, u))
+    scheme = Scheme(form, u, time)
+    info(scheme)
+    solver = PointIntegralSolver(scheme)
+    u_errors = []
+    for dt in [0.05, 0.025, 0.0125]:
+        solver.reset_newton_solver()
+        solver.reset_stage_solutions()
+        u.interpolate(Constant(u0))
+        solver.step_interval(0., tstop, dt)
+        u_errors.append(errornorm(u_true, u))
 
-        assert scheme.order()-min(convergence_order(u_errors))<0.1
+    assert scheme.order()-min(convergence_order(u_errors))<0.1
 
-    def scalar(self):
 
-        mesh = UnitSquareMesh(10, 10)
-        V = FunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
+@pytest.mark.slow
+def test_butcher_schemes_scalar(Scheme):
+    mesh = UnitSquareMesh(10, 10)
+    V = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
 
-        tstop = 1.0
-        u_true = Expression("exp(t)", t=tstop)
+    tstop = 1.0
+    u_true = Expression("exp(t)", t=tstop)
 
-        u = Function(V)
-        form = u*v*dP
+    u = Function(V)
+    form = u*v*dP
 
-        scheme = Scheme(form, u)
-        info(scheme)
-        u_errors = []
-        solver = PointIntegralSolver(scheme)
-        for dt in [0.05, 0.025, 0.0125]:
-            solver.reset_newton_solver()
-            solver.reset_stage_solutions()
-            u.interpolate(Constant(1.0))
-            solver.step_interval(0., tstop, dt)
-            u_errors.append(errornorm(u_true, u))
-        assert scheme.order()-min(convergence_order(u_errors))<0.1
+    scheme = Scheme(form, u)
+    info(scheme)
+    u_errors = []
+    solver = PointIntegralSolver(scheme)
+    for dt in [0.05, 0.025, 0.0125]:
+        solver.reset_newton_solver()
+        solver.reset_stage_solutions()
+        u.interpolate(Constant(1.0))
+        solver.step_interval(0., tstop, dt)
+        u_errors.append(errornorm(u_true, u))
+    assert scheme.order()-min(convergence_order(u_errors))<0.1
 
-    def vector(self):
 
-        mesh = UnitSquareMesh(10, 10)
-        V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
-        v = TestFunction(V)
-        tstop = 1.0
-        u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
+@pytest.mark.slow
+def test_butcher_schemes_vector(Scheme):
 
-        u = Function(V)
-        form = inner(as_vector((-u[1], u[0])), v)*dP
+    mesh = UnitSquareMesh(10, 10)
+    V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
+    v = TestFunction(V)
+    tstop = 1.0
+    u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
 
-        scheme = Scheme(form, u)
-        info(scheme)
-        solver = PointIntegralSolver(scheme)
-        u_errors = []
-        for dt in [0.05, 0.025, 0.0125]:
-            solver.reset_newton_solver()
-            solver.reset_stage_solutions()
-            u.interpolate(Constant((1.0, 0.0)))
-            scheme.t().assign(0.0)
-            next_dt = dt
-            while float(scheme.t()) + next_dt <= tstop:
-                if next_dt < 1000*DOLFIN_EPS:
-                    break
+    u = Function(V)
+    form = inner(as_vector((-u[1], u[0])), v)*dP
 
-                solver.step(next_dt)
-                next_dt = min(tstop-float(scheme.t()), dt)
+    scheme = Scheme(form, u)
+    info(scheme)
+    solver = PointIntegralSolver(scheme)
+    u_errors = []
+    for dt in [0.05, 0.025, 0.0125]:
+        solver.reset_newton_solver()
+        solver.reset_stage_solutions()
+        u.interpolate(Constant((1.0, 0.0)))
+        scheme.t().assign(0.0)
+        next_dt = dt
+        while float(scheme.t()) + next_dt <= tstop:
+            if next_dt < 1000*DOLFIN_EPS:
+                break
 
-            u_errors.append(errornorm(u_true, u))
+            solver.step(next_dt)
+            next_dt = min(tstop-float(scheme.t()), dt)
 
-        assert scheme.order()-min(convergence_order(u_errors))<0.1
+        u_errors.append(errornorm(u_true, u))
 
-    return scalar_time, scalar, vector
-
-class TestPointIntegralSolver:
-    pass
-
-# Build test methods using function closure so 1 test is generated per Scheme and
-# test case
-for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
-               BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
-
-    scalar_time, scalar, vector = function_closure(Scheme)
-   
-    setattr(TestPointIntegralSolver,
-            "test_butcher_schemes_scalar_time_{0}".format(Scheme), scalar_time)
-
-    setattr(TestPointIntegralSolver,
-            "test_butcher_schemes_scalar_{0}".format(Scheme), scalar)
-
-    setattr(TestPointIntegralSolver,
-            "test_butcher_schemes_vector_{0}".format(Scheme), vector)
+    assert scheme.order()-min(convergence_order(u_errors))<0.1
