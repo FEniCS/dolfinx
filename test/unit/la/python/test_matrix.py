@@ -359,16 +359,18 @@ class TestuBLASDense(DataTester, AbstractBaseTest):
     backend     = "uBLAS"
     sub_backend = "Dense"
 
-if has_linear_algebra_backend("PETScCusp"):
-    @skip_in_paralell
-    class TestPETScCusp(DataNotWorkingTester, AbstractBaseTest):
-        backend    = "PETScCusp"
-        sub_backend = ""
+@pytest.mark.skipif(not has_linear_algebra_backend("PETScCusp"), 
+                      reason="Skipping unit test(s) depending on PETScCups.")
+@skip_in_paralell
+class TestPETScCusp(DataNotWorkingTester, AbstractBaseTest):
+    backend    = "PETScCusp"
+    sub_backend = ""
 
-if has_linear_algebra_backend("PETSc"):
-    class TestPETSc(DataNotWorkingTester, AbstractBaseTest):
-        backend    = "PETSc"
-        sub_backend = ""
+@pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
+                      reason="Skipping unit test(s) depending on PETSc.")
+class TestPETSc(DataNotWorkingTester, AbstractBaseTest):
+    backend    = "PETSc"
+    sub_backend = ""
 
 #class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
 #    backend    = "STL"

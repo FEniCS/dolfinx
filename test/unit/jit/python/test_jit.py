@@ -40,14 +40,14 @@ def test_nasty_jit_caching_bug():
         assert round(M2 - 1.0, 7) == 0
 
 
+@pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
+                    reason="Skipping unit test(s) depending on PETSc and slepc.")
 def test_compile_extension_module():
 
     # This test should do basically the same as the docstring of
     # the compile_extension_module function in compilemodule.py.
     # Remember to update the docstring if the test is modified!
 
-    if not has_linear_algebra_backend("PETSc"):
-        return
 
     from numpy import arange, exp
     code = """

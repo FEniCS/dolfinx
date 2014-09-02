@@ -42,6 +42,11 @@ def temppath():
 default_parameters = parameters.copy()
 skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
     reason="Skipping unit test(s) not working in parallel")
+skip_if_not_PETsc_or_not_slepc = \
+         pytest.mark.skipif(not has_linear_algebra_backend("PETSc") or not has_slepc(),
+                            reason='Skipping unit test(s) depending on PETSc and slepc.')
+skip_if_not_PETSc = pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
+                                        reason="Skipping unit test(s) depending on PETSc.")
 
 def create_data(A=None):
     "This function creates data used in the tests below"
@@ -145,35 +150,35 @@ def test_p7_box_4():
 def test_p8_box_1():
     solver = KrylovSolver("gmres", "ilu")
 
+@skip_if_not_PETsc_or_not_slepc
 @skip_in_parallel
 def test_p8_box_2():
-    if not has_linear_algebra_backend("PETSc") or not has_slepc() : return
     A = PETScMatrix()
     A, x, b = create_data(A)
     eigensolver = SLEPcEigenSolver(A)
     eigensolver.solve()
     lambda_r, lambda_c, x_real, x_complex = eigensolver.get_eigenpair(0)
 
+@skip_if_not_PETsc_or_not_slepc
 @skip_in_parallel
 def test_p9_box_1():
-    if not has_linear_algebra_backend("PETSc") or not has_slepc() : return
     A = PETScMatrix()
     M = PETScMatrix()
     A, x, b = create_data(A)
     M, x, b = create_data(M)
     eigensolver = SLEPcEigenSolver(A, M)
 
+@skip_if_not_PETSc
 @skip_in_parallel
 def test_p9_box_2():
-    if not has_linear_algebra_backend("PETSc"): return
     parameters["linear_algebra_backend"] = "PETSc"
 
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
+@skip_if_not_PETSc
 @skip_in_parallel
 def test_p9_box_3():
-    if not has_linear_algebra_backend("PETSc"): return
     x = PETScVector()
     solver = PETScLUSolver()
 
@@ -925,6 +930,8 @@ def test_p50_box_3():
     # Reset linear algebra backend so that other tests work
     parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
+@pytest.mark.skipif(not has_linear_algebra_backend("MTL4"), 
+                      reason="Skipping unit test(s) depending on PETSc.") 
 @skip_in_parallel
 def test_p50_box_4():
     mesh = UnitSquareMesh(8, 8)
@@ -933,12 +940,11 @@ def test_p50_box_4():
     v = TestFunction(V)
     a = u*v*dx
 
-    # Only test when MTL4 is available TODO: Use a @skipIf for this
+    # Only test when MTL4 is available
     default_linear_algebra_backend = parameters["linear_algebra_backend"]
-    if has_linear_algebra_backend("MTL4"):
-        parameters["linear_algebra_backend"] = "MTL4"
-        A = assemble(a)
-        rows, columns, values = A.data()
+    parameters["linear_algebra_backend"] = "MTL4"
+    A = assemble(a)
+    rows, columns, values = A.data()
 
     # Reset linear algebra backend so that other tests work
     parameters["linear_algebra_backend"] = default_linear_algebra_backend

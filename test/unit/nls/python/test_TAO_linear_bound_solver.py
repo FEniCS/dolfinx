@@ -44,59 +44,60 @@ from dolfin import *
 import pytest
 
 
-if has_petsc_tao():
-    try:
-        parameters["linear_algebra_backend"] = "PETSc"
-    except RuntimeError:
-        import sys; sys.exit(0)
+try:
+    parameters["linear_algebra_backend"] = "PETSc"
+except RuntimeError:
+    import sys; sys.exit(0)
 
-    def test_tao_linear_bound_solver():
-        "Test TAOLinearBoundSolver"
+@pytest.mark.skipif(not has_petsc_tao(), 
+        reason="Skipping unit test(s) depending on PETSc tao.")
+def test_tao_linear_bound_solver():
+    "Test TAOLinearBoundSolver"
 
-        # Create mesh and define function space
-        Lx = 1.0; Ly = 0.1
-        mesh = RectangleMesh(0, 0, Lx, Ly, 100, 10)
-        V = FunctionSpace(mesh, "Lagrange", 1)
+    # Create mesh and define function space
+    Lx = 1.0; Ly = 0.1
+    mesh = RectangleMesh(0, 0, Lx, Ly, 100, 10)
+    V = FunctionSpace(mesh, "Lagrange", 1)
 
-        # Define Dirichlet boundaries
-        def left(x,on_boundary):
-            return on_boundary and near(x[0], 0.0)
+    # Define Dirichlet boundaries
+    def left(x,on_boundary):
+        return on_boundary and near(x[0], 0.0)
 
-        def right(x,on_boundary):
-            return on_boundary and near(x[0], Lx)
+    def right(x,on_boundary):
+        return on_boundary and near(x[0], Lx)
 
-        # Define boundary conditions
-        zero = Constant(0.0)
-        one  = Constant(1.0)
-        bc_l = DirichletBC(V, zero, left)
-        bc_r = DirichletBC(V, one, right)
-        bc = [bc_l, bc_r]
+    # Define boundary conditions
+    zero = Constant(0.0)
+    one  = Constant(1.0)
+    bc_l = DirichletBC(V, zero, left)
+    bc_r = DirichletBC(V, one, right)
+    bc = [bc_l, bc_r]
 
-        # Define variational problem
-        usol = Function(V)
-        u = TrialFunction(V)
-        v = TestFunction(V)
-        cv = Constant(3.0/4.0)
-        ell = Constant(0.5) # This should be smaller than Lx
-        F = cv*(ell/2.0*inner(grad(usol), grad(usol))*dx + 2.0/ell*usol*dx)
-        # Weak form
-        a = cv*ell*inner(grad(u), grad(v))*dx
-        L = -cv*2*v/ell*dx
+    # Define variational problem
+    usol = Function(V)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    cv = Constant(3.0/4.0)
+    ell = Constant(0.5) # This should be smaller than Lx
+    F = cv*(ell/2.0*inner(grad(usol), grad(usol))*dx + 2.0/ell*usol*dx)
+    # Weak form
+    a = cv*ell*inner(grad(u), grad(v))*dx
+    L = -cv*2*v/ell*dx
 
-        # Assemble the linear system
-        A, b = assemble_system(a, L, bc)
+    # Assemble the linear system
+    A, b = assemble_system(a, L, bc)
 
-        # Define the upper and lower bounds
-        upperbound = interpolate(Constant(1.), V)
-        lowerbound = interpolate(Constant(0.), V)
-        xu = upperbound.vector()
-        xl = lowerbound.vector()
+    # Define the upper and lower bounds
+    upperbound = interpolate(Constant(1.), V)
+    lowerbound = interpolate(Constant(0.), V)
+    xu = upperbound.vector()
+    xl = lowerbound.vector()
 
-        # Take the PETScVector of the solution function
-        xsol = usol.vector()
+    # Take the PETScVector of the solution function
+    xsol = usol.vector()
 
-        solver = TAOLinearBoundSolver("tron","stcg")
-        solver.solve(A,xsol,b,xl,xu)
+    solver = TAOLinearBoundSolver("tron","stcg")
+    solver.solve(A,xsol,b,xl,xu)
 
-        # Test that F(usol) = Ly
-        assert round(assemble(F) - Ly, 4) == 0
+    # Test that F(usol) = Ly
+    assert round(assemble(F) - Ly, 4) == 0

@@ -36,71 +36,78 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-def test_save_vector(temppath):
-    if has_linear_algebra_backend("PETSc"):
-        # Create vector and write file
-        x = PETScVector(mpi_comm_world(), 197)
-        x[:] = 1.0
-        f = File(temppath + "x.xml")
-        f << x
 
-    if has_linear_algebra_backend("Epetra"):
-        # Create vector and write file
-        x = EpetraVector(mpi_comm_world(), 197)
-        x[:] = 1.0
-        f = File(temppath + "x.xml")
-        f << x
+skip_if_not_PETSc = pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
+                                     reason="Skipping unit test(s) need backend to be PETSc.")
+skip_if_not_Epetra = pytest.mark.skipif(not has_linear_algebra_backend("Epetra"),
+                                     reason="Skipping unit test(s) need backend to be Epetra.")
 
+@skip_if_not_PETSc
+def test_save_vector_petsc(temppath):
+    # Create vector and write file
+    x = PETScVector(mpi_comm_world(), 197)
+    x[:] = 1.0
+    f = File(temppath + "x.xml")
+    f << x
+
+@skip_if_not_Epetra
+def test_save_vector_epetra(temppath):
+    # Create vector and write file
+    x = EpetraVector(mpi_comm_world(), 197)
+    x[:] = 1.0
+    f = File(temppath + "x.xml")
+    f << x
+
+@skip_if_not_PETSc
 def test_save_gzipped_vector(temppath):
-    if has_linear_algebra_backend("PETSc"):
-        # Create vector and write file
-        x = PETScVector(mpi_comm_world(), 197)
-        x[:] = 1.0
-        f = File(temppath + "x.xml.gz")
-        f << x
+    # Create vector and write file
+    x = PETScVector(mpi_comm_world(), 197)
+    x[:] = 1.0
+    f = File(temppath + "x.xml.gz")
+    f << x
+
+@skip_if_not_PETSc
+def test_read_vector_petcs(temppath):
+    # Create vector and write file
+    x = PETScVector(mpi_comm_world(), 197)
+    x[:] = 1.0
+    f = File(temppath + "x.xml")
+    f << x
+
+    # Read vector from previous write
+    y = PETScVector()
+    f >> y
+    assert x.size() == y.size()
+    assert round(x.norm("l2") - y.norm("l2"), 7) == 0
+
+@skip_if_not_Epetra
+def test_read_vector_eptra(temppath):
+    # Create vector and write file
+    x = EpetraVector(mpi_comm_world(), 197)
+    x[:] = 1.0
+    f = File(temppath + "x.xml")
+    f << x
+
+    # Read vector from write
+    y = EpetraVector()
+    f >> y
+    assert x.size() == y.size()
+    assert round(x.norm("l2") - y.norm("l2"), 7) == 0
 
 
-def test_read_vector(temppath):
-    if has_linear_algebra_backend("PETSc"):
-        # Create vector and write file
-        x = PETScVector(mpi_comm_world(), 197)
-        x[:] = 1.0
-        f = File(temppath + "x.xml")
-        f << x
-
-        # Read vector from previous write
-        y = PETScVector()
-        f >> y
-        assert x.size() == y.size()
-        assert round(x.norm("l2") - y.norm("l2"), 7) == 0
-
-
-    if has_linear_algebra_backend("Epetra"):
-        # Create vector and write file
-        x = EpetraVector(mpi_comm_world(), 197)
-        x[:] = 1.0
-        f = File(temppath + "x.xml")
-        f << x
-
-        # Read vector from write
-        y = EpetraVector()
-        f >> y
-        assert x.size() == y.size()
-        assert round(x.norm("l2") - y.norm("l2"), 7) == 0
-
+@skip_if_not_PETSc
 def test_read_gzipped_vector(temppath):
-    if has_linear_algebra_backend("PETSc"):
-        # Create vector and write file
-        x = PETScVector(mpi_comm_world(), 197)
-        x[:] = 1.0
-        f = File(temppath + "x.xml")
-        f << x
+    # Create vector and write file
+    x = PETScVector(mpi_comm_world(), 197)
+    x[:] = 1.0
+    f = File(temppath + "x.xml")
+    f << x
 
-        # Read vector from previous write
-        y = PETScVector()
-        f >> y
-        assert x.size() == y.size()
-        assert round(x.norm("l2") - y.norm("l2"), 7) == 0
+    # Read vector from previous write
+    y = PETScVector()
+    f >> y
+    assert x.size() == y.size()
+    assert round(x.norm("l2") - y.norm("l2"), 7) == 0
 
 def test_save_read_vector(temppath):
     size = 512

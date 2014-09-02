@@ -25,64 +25,49 @@
 # Last changed: 2014-05-30
 
 from dolfin import *
-
-# Assemble system
-mesh = UnitSquareMesh(32, 32)
-V = FunctionSpace(mesh, 'CG', 1)
-bc = DirichletBC(V, Constant(0.0), lambda x, on_boundary: on_boundary)
-u = TrialFunction(V)
-v = TestFunction(V)
-u1 = Function(V)
-
-# Forms
-a, L = inner(grad(u), grad(v))*dx, Constant(1.0)*v*dx
-a_L = inner(grad(u1), grad(v))*dx
-
-# Assemble linear algebra objects
-A = assemble(a)
-b = assemble(L)
-bc.apply(A, b)
+import pytest
 
 
-if has_linear_algebra_backend("PETSc"):
-    def test_krylov_solver():
-        "Test PETScKrylovSolver"
+@pytest.mark.skipif(not has_linear_algebra_backend("PETSc"), 
+                    reason="Skipping unit test(s) depending on PETSc.")
+def test_krylov_solver():
+    "Test PETScKrylovSolver"
 
-        # Assemble system
-        mesh = UnitSquareMesh(32, 32)
-        V = FunctionSpace(mesh, 'CG', 1)
-        bc = DirichletBC(V, Constant(0.0), lambda x, on_boundary: on_boundary)
-        u = TrialFunction(V)
-        v = TestFunction(V)
-        u1 = Function(V)
+    # Assemble system
+    mesh = UnitSquareMesh(32, 32)
+    V = FunctionSpace(mesh, 'CG', 1)
+    bc = DirichletBC(V, Constant(0.0), lambda x, on_boundary: on_boundary)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    u1 = Function(V)
 
-        # Forms
-        a, L = inner(grad(u), grad(v))*dx, Constant(1.0)*v*dx
-        a_L = inner(grad(u1), grad(v))*dx
+    # Forms
+    a, L = inner(grad(u), grad(v))*dx, Constant(1.0)*v*dx
+    a_L = inner(grad(u1), grad(v))*dx
 
-        # Assemble linear algebra objects
-        A = assemble(a)
-        b = assemble(L)
-        bc.apply(A, b)
+    # Assemble linear algebra objects
+    A = assemble(a)
+    b = assemble(L)
+    bc.apply(A, b)
 
-        # Get solution vector
-        tmp = Function(V)
-        #x = tmp.vector()
+    # Get solution vector
+    tmp = Function(V)
+    #x = tmp.vector()
 
-        # Solve first using direct solver
-        #solve(A, x, b, "lu")
+    # Solve first using direct solver
+    #solve(A, x, b, "lu")
 
-        #direct_norm = x.norm("l2")
+    #direct_norm = x.norm("l2")
 
-        # Get solution vector
-        #x_petsc = as_backend_type(x)
+    # Get solution vector
+    #x_petsc = as_backend_type(x)
 
-        # With simple interface
-        #solver = PETScKrylovSolver("gmres", prec)
-        #solver.solve(A, x_petsc, as_backend_type(b))
-        #assert round(x_petsc.norm("l2") - direct_norm, 5) == 0
+    # With simple interface
+    #solver = PETScKrylovSolver("gmres", prec)
+    #solver.solve(A, x_petsc, as_backend_type(b))
+    #assert round(x_petsc.norm("l2") - direct_norm, 5) == 0
 
-        # With PETScPreconditioner interface
-        #solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
-        #solver.solve(A, x_petsc, as_backend_type(b))
-        #assert round(x_petsc.norm("l2") - direct_norm, 5) == 0
+    # With PETScPreconditioner interface
+    #solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
+    #solver.solve(A, x_petsc, as_backend_type(b))
+    #assert round(x_petsc.norm("l2") - direct_norm, 5) == 0
