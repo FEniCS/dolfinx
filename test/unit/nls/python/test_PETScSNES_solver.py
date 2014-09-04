@@ -50,15 +50,15 @@ try:
 except RuntimeError:
     import sys; sys.exit(0)
 
-parameters["form_compiler"]["quadrature_degree"] = 5    
+parameters["form_compiler"]["quadrature_degree"] = 5
 skip_if_not_petsc_snes = pytest.mark.skipif(not has_petsc_snes(), reason="Need petsc snes")
 
 fixt = pytest.fixture(scope='module')
 
 @fixt
 def mesh():
-    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '')
-    return Mesh(filepath + "/doughnut.xml.gz")
+    filedir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+    return Mesh(os.path.join(filedir, "doughnut.xml.gz"))
 
 @fixt
 def V(mesh):
@@ -104,24 +104,24 @@ def ub(V):
 def newton_solver_parameters():
     return{"nonlinear_solver": "newton",
             "newton_solver": {"linear_solver": "lu",
-        		      "maximum_iterations": 100,
-        		      "report": False}}
+            "maximum_iterations": 100,
+            "report": False}}
 
 @fixt
 def snes_solver_parameters_sign():
     return {"nonlinear_solver": "snes",
             "snes_solver": {"linear_solver": "lu",
-        		    "maximum_iterations": 100,
-        		    "sign": "nonnegative",
-        		    "report": True}}
+            "maximum_iterations": 100,
+            "sign": "nonnegative",
+            "report": True}}
 
 @fixt
 def snes_solver_parameters_bounds():
     return {"nonlinear_solver": "snes",
             "snes_solver": {"linear_solver": "lu",
-        		    "maximum_iterations": 100,
-        		    "sign": "default",
-        		    "report": True}}    
+            "maximum_iterations": 100,
+            "sign": "default",
+            "report": True}}
 
 @skip_if_not_petsc_snes
 def test_snes_solver(F, bcs, u, snes_solver_parameters_sign):
