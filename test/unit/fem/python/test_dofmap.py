@@ -24,6 +24,10 @@ import pytest
 import numpy as np
 from dolfin import *
 
+
+skip_in_serial = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
+                                    reason="This test does not run in parallel.")
+
 fixt = pytest.fixture(scope="module")
 
 @fixt
@@ -307,8 +311,7 @@ def test_clear_sub_map_data(mesh):
     with pytest.raises(RuntimeError):
         V.sub(0)
 
-@pytest.mark.skipif(not MPI.size(mpi_comm_world()) > 1,
-            reason="This test should only be run in parallel.")
+@skip_in_serial
 def test_mpi_dofmap_stats(mesh):
 
     V = FunctionSpace(mesh, "CG", 1)
