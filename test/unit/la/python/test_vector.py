@@ -25,8 +25,7 @@ from __future__ import print_function
 import pytest
 from dolfin import *
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                      reason="Skipping unit test(s) not working in parallel")
+from dolfin_utils.test import *
 
 
 # TODO: Use the fixture setup from matrix in a shared conftest.py when we move tests to one flat folder.
@@ -56,35 +55,10 @@ no_data_backends = list(filter(has_linear_algebra_backend, no_data_backends))
 any_backends = data_backends + no_data_backends
 
 
-@pytest.yield_fixture(scope="module", params=any_backends)
-def any_backend(request):
-    # Set backend
-    prev_backend = parameters.linear_algebra_backend
-    parameters.linear_algebra_backend = request.param
-    # Yield to allow test to run
-    yield request.param
-    # Reset backend
-    parameters.linear_algebra_backend = prev_backend
-
-@pytest.yield_fixture(scope="module", params=data_backends)
-def data_backend(request):
-    # Set backend
-    prev_backend = parameters.linear_algebra_backend
-    parameters.linear_algebra_backend = request.param
-    # Yield to allow test to run
-    yield request.param
-    # Reset backend
-    parameters.linear_algebra_backend = prev_backend
-
-@pytest.yield_fixture(scope="module", params=no_data_backends)
-def no_data_backend(request):
-    # Set backend
-    prev_backend = parameters.linear_algebra_backend
-    parameters.linear_algebra_backend = request.param
-    # Yield to allow test to run
-    yield request.param
-    # Reset backend
-    parameters.linear_algebra_backend = prev_backend
+# Fixtures setting up and resetting the global linear algebra backend for a list of backends
+any_backend     = set_parameters_fixture("linear_algebra_backend", any_backends)
+data_backend    = set_parameters_fixture("linear_algebra_backend", data_backends)
+no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backends)
 
 
 @pytest.mark.usefixtures("any_backend")

@@ -28,8 +28,7 @@ import pytest
 from dolfin import *
 from six.moves import xrange as range
 
-skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                     reason="Skipping unit test(s) not working in parallel")
+from dolfin_utils.test import *
 
 
 # TODO: Reuse this fixture setup code between matrix and vector tests:
@@ -60,24 +59,13 @@ no_data_backends = [b for b in no_data_backends if has_linear_algebra_backend(b[
 any_backends = data_backends + no_data_backends
 
 
-def push_pop_parameters_fixture(paramname, values, key=lambda x: x):
-    "Return a fixture that sets and resets a global parameter to each of a list of values before and after each test run."
-    def _pushpop(request):
-        prev = parameters[paramname]               # Remember original value
-        parameters[paramname] = key(request.param) # Set value
-        yield request.param                        # Let test run
-        parameters[paramname] = prev               # Reset value
-    return pytest.yield_fixture(scope="function", params=values)(_pushpop)
-
 # Fixtures setting up and resetting the global linear algebra backend for a list of backends
-any_backend     = push_pop_parameters_fixture("linear_algebra_backend", any_backends, lambda x: x[0])
-data_backend    = push_pop_parameters_fixture("linear_algebra_backend", data_backends, lambda x: x[0])
-no_data_backend = push_pop_parameters_fixture("linear_algebra_backend", no_data_backends, lambda x: x[0])
+any_backend     = set_parameters_fixture("linear_algebra_backend", any_backends, lambda x: x[0])
+data_backend    = set_parameters_fixture("linear_algebra_backend", data_backends, lambda x: x[0])
+no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backends, lambda x: x[0])
 
-
-@pytest.fixture(params=[False, True])
-def use_backend(request):
-    return request.param
+# With and without explicit backend choice
+use_backend = true_false_fixture
 
 
 class TestMatrixForAnyBackend:
@@ -177,7 +165,7 @@ class TestMatrixForAnyBackend:
         #A[5,5] = 15
         #assert A[5,5] == 15
 
-    @skip_in_paralell
+    @skip_in_parallel
     def test_numpy_array(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
 
