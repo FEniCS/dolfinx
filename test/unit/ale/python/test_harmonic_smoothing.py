@@ -18,9 +18,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2013-03-02
-# Last changed: 2014-05-28
 
 from __future__ import print_function
 import pytest
@@ -29,10 +26,7 @@ from dolfin import UnitSquareMesh, BoundaryMesh, Expression, \
                    mpi_comm_world
 
 def test_HarmonicSmoothing():
-
-    print("")
-    print("Testing HarmonicSmoothing::move(Mesh& mesh, " \
-          "const BoundaryMesh& new_boundary)")
+    #print("Testing HarmonicSmoothing::move(Mesh& mesh, "const BoundaryMesh& new_boundary)")
 
     # Create some mesh and its boundary
     mesh = UnitSquareMesh(10, 10)
@@ -60,12 +54,11 @@ def test_HarmonicSmoothing():
     rmin = MeshQuality.radius_ratio_min_max(mesh)[0]
     assert rmin > magic_number
 
+
 @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                     reason="Skipping unit test(s) not working in parallel")
 def test_ale():
-
-    print("")
-    print("Testing ALE::move(Mesh& mesh0, const Mesh& mesh1)")
+    #print("Testing ALE::move(Mesh& mesh0, const Mesh& mesh1)")
 
     # Create some mesh
     mesh = UnitSquareMesh(4, 5)
