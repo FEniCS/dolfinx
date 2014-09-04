@@ -27,10 +27,10 @@ import pytest
 from dolfin import *
 import os
 
+from dolfin_utils.test import *
 
-
-#te an output folder
-@pytest.fixture(scope="module")
+#create an output folder
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -39,14 +39,10 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-default_parameters = parameters.copy()
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-    reason="Skipping unit test(s) not working in parallel")
-skip_if_not_PETsc_or_not_slepc = \
-         pytest.mark.skipif(not has_linear_algebra_backend("PETSc") or not has_slepc(),
-                            reason='Skipping unit test(s) depending on PETSc and slepc.')
-skip_if_not_PETSc = pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
-                                        reason="Skipping unit test(s) depending on PETSc.")
+@fixture
+def default_parameters():
+    return parameters.copy()
+
 
 def create_data(A=None):
     "This function creates data used in the tests below"
@@ -170,7 +166,7 @@ def test_p9_box_1():
 
 @skip_if_not_PETSc
 @skip_in_parallel
-def test_p9_box_2():
+def test_p9_box_2(default_parameters):
     parameters["linear_algebra_backend"] = "PETSc"
 
     # Reset parameter again so we don't mess with other tests
@@ -677,7 +673,7 @@ def test_p35_box_2(temppath):
     file << (u, t)
 
 @skip_in_parallel
-def test_p36_box_1(temppath):
+def test_p36_box_1(temppath, default_parameters):
     mesh = UnitSquareMesh(2, 2)
     matrix, x, vector = create_data()
 
@@ -794,7 +790,7 @@ def test_p40_box_2():
     solve(None, None)
 
 @skip_in_parallel
-def test_p41_box_1():
+def test_p41_box_1(default_parameters):
     info(parameters, True)
     num_threads = parameters["num_threads"]
     allow_extrapolation = parameters["allow_extrapolation"]
@@ -820,7 +816,7 @@ def test_p42_box_1():
     my_parameters.add("bar", 0.1)
 
 @skip_in_parallel
-def test_p42_box_2():
+def test_p42_box_2(default_parameters):
     d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
     parameters.update(d)
 
@@ -833,14 +829,14 @@ def test_p42_box_3():
                                 nested=Parameters("nested", baz=True))
 
 @skip_in_parallel
-def test_p42_box_4():
+def test_p42_box_4(default_parameters):
     parameters.parse()
 
     # Reset parameter again so we don't mess with other tests
     parameters.update(default_parameters)
 
 @skip_in_parallel
-def test_p43_box_1(temppath):
+def test_p43_box_1(temppath, default_parameters):
     file = File(temppath + "parameters.xml")
     file << parameters
     file >> parameters
@@ -849,7 +845,7 @@ def test_p43_box_1(temppath):
     parameters.update(default_parameters)
 
 @skip_in_parallel
-def test_p45_box_1():
+def test_p45_box_1(default_parameters):
     parameters["mesh_partitioner"] = "ParMETIS"
 
     # Reset parameter again so we don't mess with other tests
@@ -898,7 +894,7 @@ def test_p49_box_1():
     A = assemble(a)
 
 @skip_in_parallel
-def test_p50_box_1():
+def test_p50_box_1(default_parameters):
     parameters["form_compiler"]["name"] = "sfc"
 
     # Reset parameter again so we don't mess with other tests
@@ -916,24 +912,23 @@ def test_p50_box_2():
     AA = A.array()
 
 @skip_in_parallel
-def test_p50_box_3():
+def test_p50_box_3(default_parameters):
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
     v = TestFunction(V)
     L = v*dx
 
-    default_linear_algebra_backend = parameters["linear_algebra_backend"]
     parameters["linear_algebra_backend"] = "uBLAS"
     b = assemble(L)
     bb = b.data()
 
     # Reset linear algebra backend so that other tests work
-    parameters["linear_algebra_backend"] = default_linear_algebra_backend
+    parameters.update(default_parameters)
 
 @pytest.mark.skipif(not has_linear_algebra_backend("MTL4"), 
-                      reason="Skipping unit test(s) depending on PETSc.") 
+                      reason="Skipping unit test(s) depending on MTL4.") 
 @skip_in_parallel
-def test_p50_box_4():
+def test_p50_box_4(default_parameters):
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
@@ -941,22 +936,20 @@ def test_p50_box_4():
     a = u*v*dx
 
     # Only test when MTL4 is available
-    default_linear_algebra_backend = parameters["linear_algebra_backend"]
     parameters["linear_algebra_backend"] = "MTL4"
     A = assemble(a)
     rows, columns, values = A.data()
 
     # Reset linear algebra backend so that other tests work
-    parameters["linear_algebra_backend"] = default_linear_algebra_backend
+    parameters.update(default_parameters)
 
 @skip_in_parallel
-def test_p51_box_1():
+def test_p51_box_1(default_parameters):
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
     a = u*v*dx
-    default_linear_algebra_backend = parameters["linear_algebra_backend"]
     parameters["linear_algebra_backend"] = "uBLAS"
     A = assemble(a)
 
@@ -969,7 +962,7 @@ def test_p51_box_1():
         csr = csr_matrix((values, columns, rows))
 
     # Reset linear algebra backend so that other tests work
-    parameters["linear_algebra_backend"] = default_linear_algebra_backend
+    parameters.update(default_parameters)
 
 @skip_in_parallel
 def test_p51_box_2():

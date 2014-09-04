@@ -24,22 +24,21 @@ import pytest
 import numpy as np
 from dolfin import *
 
+from dolfin_utils import *
 
-skip_in_serial = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                                    reason="This test does not run in parallel.")
-
-fixt = pytest.fixture(scope="module")
-
-@fixt
+@fixture
 def mesh():
     return UnitSquareMesh(4, 4)
-@fixt
+
+@fixture
 def V(mesh):
     return FunctionSpace(mesh, "Lagrange", 1)
-@fixt
+
+@fixture
 def Q(mesh):
     return VectorFunctionSpace(mesh, "Lagrange", 1)
-@fixt
+
+@fixture
 def W(V, Q):
     return V*Q
 

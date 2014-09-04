@@ -23,9 +23,9 @@ import pytest
 from dolfin import *
 import ufl
 
+from dolfin_utils.test import *
+
 fixt = pytest.fixture(scope='module')
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                                      reason="Skipping unit test(s) not working in parallel")
 
 @fixt
 def mesh():
@@ -322,6 +322,8 @@ def test_interpolation_jit_rank0(V):
 
 @skip_in_parallel
 def test_extrapolation(V):
+    original_parameters = parameters["allow_extrapolation"]    
+
     f0 = Function(V)
     with pytest.raises(RuntimeError):
         f0.__call__((0., 0, -1))
@@ -347,6 +349,8 @@ def test_extrapolation(V):
     f3.vector()[:] = 1.0
 
     assert round(f3(0.,-1) - 1.0, 7) == 0
+
+    parameters["allow_extrapolation"] = original_parameters
 
 def test_interpolation_jit_rank1(W):
     f = Expression(("1.0", "1.0", "1.0"))

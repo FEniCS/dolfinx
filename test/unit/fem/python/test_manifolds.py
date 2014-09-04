@@ -33,9 +33,7 @@ from dolfin import *
 from six.moves import zip
 
 import numpy
-
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-              reason="This test should only be run in parallel.")
+from dolfin_utils.test import *
 
 # Subdomain to extract bottom boundary.
 class BottomEdge(SubDomain):
@@ -209,7 +207,7 @@ def test_basis_evaluation_2D_in_3D():
 
 
 def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
-
+    basis_derivatives = parameters["form_compiler"]["no-evaluate_basis_derivatives"]
     parameters["form_compiler"]["no-evaluate_basis_derivatives"] = False
 
     f_base = FunctionSpace(basemesh, family, degree)
@@ -268,3 +266,5 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
 
                 assert round(abs(derivs_rot2-derivs_cmp).max() - 0.0, 10) == 0
                 assert round(abs(values_cmp-values_rot).max() - 0.0, 10) == 0
+
+    parameters["form_compiler"]["no-evaluate_basis_derivatives"] = basis_derivatives

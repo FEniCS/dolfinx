@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 """Unit tests for the linear algebra interface"""
 
 # Copyright (C) 2008 Johan Hake

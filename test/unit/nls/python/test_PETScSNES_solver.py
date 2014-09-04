@@ -44,41 +44,37 @@ from dolfin import *
 import pytest
 import os
 
+from dolfin_utils.test import *
 
-try:
-    parameters["linear_algebra_backend"] = "PETSc"
-except RuntimeError:
-    import sys; sys.exit(0)
 
-parameters["form_compiler"]["quadrature_degree"] = 5
-skip_if_not_petsc_snes = pytest.mark.skipif(not has_petsc_snes(), reason="Need petsc snes")
+parameter_degree = set_parameters_fixture("form_compiler.quadrature_degree", [5])
+parameter_backend = set_parameters_fixture("linear_algebra_backend", ["PETSc"])
 
-fixt = pytest.fixture(scope='module')
 
-@fixt
+@fixture
 def mesh():
     filedir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
     return Mesh(os.path.join(filedir, "doughnut.xml.gz"))
 
-@fixt
+@fixture
 def V(mesh):
     return FunctionSpace(mesh, "CG", 1)
 
-@fixt
+@fixture
 def bcs(V):
     return [DirichletBC(V, 1.0, "on_boundary")]
 
-@fixt
+@fixture
 def u(V):
     u = Function(V)
     u.interpolate(Constant(-1000.0))
     return u
 
-@fixt
+@fixture
 def v(V):
     return TestFunction(V)
 
-@fixt
+@fixture
 def F(u, v, mesh):
     x = SpatialCoordinate(mesh)
     r = sqrt(x[0]**2 + x[1]**2)
@@ -87,27 +83,27 @@ def F(u, v, mesh):
     return (8*inner(grad(u), grad(v))*dx + rho * inner(u**5, v)*dx \
             + (-1.0/8.0)*inner(u, v)*dx)
 
-@fixt
+@fixture
 def J(V, u, F):
     du = TrialFunction(V)
     return derivative(F, u, du)
 
-@fixt
+@fixture
 def lb(V):
     return Function(interpolate(Constant(0.), V))
 
-@fixt
+@fixture
 def ub(V):
     return Function(interpolate(Constant(100.), V))
 
-@fixt
+@fixture
 def newton_solver_parameters():
     return{"nonlinear_solver": "newton",
             "newton_solver": {"linear_solver": "lu",
             "maximum_iterations": 100,
             "report": False}}
 
-@fixt
+@fixture
 def snes_solver_parameters_sign():
     return {"nonlinear_solver": "snes",
             "snes_solver": {"linear_solver": "lu",
@@ -115,7 +111,7 @@ def snes_solver_parameters_sign():
             "sign": "nonnegative",
             "report": True}}
 
-@fixt
+@fixture
 def snes_solver_parameters_bounds():
     return {"nonlinear_solver": "snes",
             "snes_solver": {"linear_solver": "lu",
@@ -124,19 +120,20 @@ def snes_solver_parameters_bounds():
             "report": True}}
 
 @skip_if_not_petsc_snes
-def test_snes_solver(F, bcs, u, snes_solver_parameters_sign):
+def test_snes_solver(F, bcs, u, snes_solver_parameters_sign, parameter_degree, parameter_backend):
     u.interpolate(Constant(-1000.0))
     solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters_sign)
     assert u.vector().min() >= 0
 
 @skip_if_not_petsc_snes
-def test_newton_solver(F, u, bcs, newton_solver_parameters):
+def test_newton_solver(F, u, bcs, newton_solver_parameters, parameter_degree, parameter_backend):
     u.interpolate(Constant(-1000.0))
     solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
     assert u.vector().min() < 0
 
 @skip_if_not_petsc_snes
-def test_snes_solver_bound_functions(F, u, bcs, J, snes_solver_parameters_bounds, lb, ub):
+def test_snes_solver_bound_functions(F, u, bcs, J, snes_solver_parameters_bounds, 
+                                      lb, ub, parameter_degree, parameter_backend):
     u.interpolate(Constant(-1000.0))
     problem = NonlinearVariationalProblem(F, u, bcs, J)
     solver  = NonlinearVariationalSolver(problem)
@@ -145,7 +142,8 @@ def test_snes_solver_bound_functions(F, u, bcs, J, snes_solver_parameters_bounds
     assert u.vector().min() >= 0
 
 @skip_if_not_petsc_snes
-def test_snes_solver_bound_vectors(F, u, bcs, J, snes_solver_parameters_bounds, lb, ub):
+def test_snes_solver_bound_vectors(F, u, bcs, J, snes_solver_parameters_bounds, 
+                                    lb, ub, parameter_degree, parameter_backend):
     u.interpolate(Constant(-1000.0))
     problem = NonlinearVariationalProblem(F, u, bcs, J)
     solver  = NonlinearVariationalSolver(problem)

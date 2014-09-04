@@ -43,15 +43,12 @@ from __future__ import print_function
 from dolfin import *
 import pytest
 
+from dolfin_utils.test import *
 
-try:
-    parameters["linear_algebra_backend"] = "PETSc"
-except RuntimeError:
-    import sys; sys.exit(0)
+backend = set_parameters_fixture("linear_algebra_backend", ["PETSc"])
 
-@pytest.mark.skipif(not has_petsc_tao(), 
-        reason="Skipping unit test(s) depending on PETSc tao.")
-def test_tao_linear_bound_solver():
+@skip_if_not_petsc_tao
+def test_tao_linear_bound_solver(backend):
     "Test TAOLinearBoundSolver"
 
     # Create mesh and define function space

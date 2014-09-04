@@ -22,8 +22,8 @@
 from dolfin import *
 import pytest
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                                      reason="Skipping unit test(s) not working in parallel")
+from dolfin_utils.test import * 
+
 
 # Backends supporting the LinearOperator interface
 @pytest.mark.parametrize('backend', ["PETSc", skip_in_parallel("uBLAS")])
@@ -31,7 +31,7 @@ def test_linear_operator(backend):
 
     # Check whether backend is available
     if not has_linear_algebra_backend(backend):
-        return
+        pytest.skip('Need %s as backend to run this test' % backend)
 
     # Set linear algebra backend
     prev_backend = parameters["linear_algebra_backend"]

@@ -25,10 +25,9 @@ import pytest
 from dolfin import *
 import numpy as np
 
+from dolfin_utils.test import set_parameters_fixture
 
-# FIXME: Push/pop this parameter in a yield_fixture? This will affect other tests as well!
-parameters.form_compiler.optimize = True
-
+optimize = set_parameters_fixture('form_compiler.optimize', [True])
 
 # Build test methods using function closure so 1 test is generated per Scheme and
 # test case
@@ -51,7 +50,7 @@ def convergence_order(errors, base = 2):
 
 
 @pytest.mark.slow
-def test_butcher_schemes_scalar_time(Scheme):
+def test_butcher_schemes_scalar_time(Scheme, optimize):
     mesh = UnitSquareMesh(10, 10)
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
@@ -82,7 +81,7 @@ def test_butcher_schemes_scalar_time(Scheme):
 
 
 @pytest.mark.slow
-def test_butcher_schemes_scalar(Scheme):
+def test_butcher_schemes_scalar(Scheme, optimize):
     mesh = UnitSquareMesh(10, 10)
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
@@ -107,7 +106,7 @@ def test_butcher_schemes_scalar(Scheme):
 
 
 @pytest.mark.slow
-def test_butcher_schemes_vector(Scheme):
+def test_butcher_schemes_vector(Scheme, optimize):
 
     mesh = UnitSquareMesh(10, 10)
     V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
