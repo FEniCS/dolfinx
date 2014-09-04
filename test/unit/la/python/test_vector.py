@@ -2,7 +2,7 @@
 
 """Unit tests for the Vector interface"""
 
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011-2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -20,9 +20,6 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2011
-#
-# First added:  2011-03-01
-# Last changed: 2014-05-30
 
 from __future__ import print_function
 import pytest
@@ -31,12 +28,18 @@ from dolfin import *
 skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                       reason="Skipping unit test(s) not working in parallel")
 
-# Parallel backends
+
+# TODO: Use the fixture setup from matrix in a shared conftest.py when we move tests to one flat folder.
+
+
+# Lists of backends supporting or not supporting data access
 data_backends = []
 no_data_backends = ["PETSc"]
+
+# Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
-    # Add serial only backends
-    data_backends += ["uBLAS"] # What about "Dense" and "Sparse"? The sub_backend wasn't used.
+    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't used in the old test.
+    data_backends += ["uBLAS"]
     no_data_backends += ["PETScCusp"]
 
 # If we have PETSc, STL Vector gets typedefed to one of these and data
@@ -51,6 +54,7 @@ else:
 data_backends = list(filter(has_linear_algebra_backend, data_backends))
 no_data_backends = list(filter(has_linear_algebra_backend, no_data_backends))
 any_backends = data_backends + no_data_backends
+
 
 @pytest.yield_fixture(scope="module", params=any_backends)
 def any_backend(request):

@@ -22,12 +22,20 @@
 from dolfin import *
 import pytest
 
+skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
+                                      reason="Skipping unit test(s) not working in parallel")
+
 # Backends supporting the LinearOperator interface
-@pytest.mark.parametrize('backends', ["PETSc", pytest.mark.skipif(
-                                                  MPI.size(mpi_comm_world()) > 1,
-                                                  reason="Skipping unit test(s) not" +\
-                                                          "working in parallel")("uBLAS")])
-def test_linear_operator(backends):
+@pytest.mark.parametrize('backend', ["PETSc", skip_in_parallel("uBLAS")])
+def test_linear_operator(backend):
+
+    # Check whether backend is available
+    if not has_linear_algebra_backend(backend):
+        return
+
+    # Set linear algebra backend
+    prev_backend = parameters["linear_algebra_backend"]
+    parameters["linear_algebra_backend"] = backend
 
     # Define linear operator
     class MyLinearOperator(LinearOperator):
@@ -48,49 +56,36 @@ def test_linear_operator(backends):
             # Assemble action
             assemble(self.a_action, tensor=y)
 
-    # Iterate over backends supporting linear operators
-    for backend in backends:
+    # Try wrapped and backend implementation of operator
+    for _as_backend_type in [(lambda x: x), as_backend_type]:
 
-         # Try wrapped and backend implementation of operator
-         for _as_backend_type in [lambda x:x, as_backend_type]:
+        # Compute reference value by solving ordinary linear system
+        mesh = UnitSquareMesh(8, 8)
 
-            # Check whether backend is available
-            if not has_linear_algebra_backend(backend):
-                continue
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        u = TrialFunction(V)
+        v = TestFunction(V)
+        f = Constant(1.0)
+        a = dot(grad(u), grad(v))*dx + u*v*dx
+        L = f*v*dx
+        A = assemble(a)
+        b = assemble(L)
+        x = Vector()
+        solve(A, x, b, "gmres", "none")
+        norm_ref = norm(x, "l2")
 
-            # Set linear algebra backend
-            parameters["linear_algebra_backend"] = backend
+        # Solve using linear operator defined by form action
+        u = Function(V)
+        a_action = action(a, coefficient=u)
+        O = MyLinearOperator(a_action, u)
+        O = _as_backend_type(O)
+        solve(O, x, b, "gmres", "none")
+        norm_action = norm(x, "l2")
 
-            # Compute reference value by solving ordinary linear system
-            mesh = UnitSquareMesh(8, 8)
+        # Check at least that petsc4py interface is available
+        if backend == 'PETSc' and has_petsc4py() and _as_backend_type == as_backend_type:
+            from petsc4py import PETSc
+            assert isinstance(O.mat(), PETSc.Mat)
 
-            # Skip testing uBLAS in parallel
-            if MPI.size(mesh.mpi_comm()) > 1 and backend == "uBLAS":
-                print("Not running uBLAS test in parallel")
-                continue
-
-            V = FunctionSpace(mesh, "Lagrange", 1)
-            u = TrialFunction(V)
-            v = TestFunction(V)
-            f = Constant(1.0)
-            a = dot(grad(u), grad(v))*dx + u*v*dx
-            L = f*v*dx
-            A = assemble(a)
-            b = assemble(L)
-            x = Vector()
-            solve(A, x, b, "gmres", "none")
-            norm_ref = norm(x, "l2")
-
-            # Solve using linear operator defined by form action
-            u = Function(V)
-            a_action = action(a, coefficient=u)
-            O = MyLinearOperator(a_action, u)
-            O = _as_backend_type(O)
-            solve(O, x, b, "gmres", "none")
-            norm_action = norm(x, "l2")
-
-            # Check at least that petsc4py interface is available
-            if backend == 'PETSc' and has_petsc4py() and \
-               _as_backend_type == as_backend_type:
-                from petsc4py import PETSc
-                assert isinstance(O.mat(), PETSc.Mat)
+    # Reset backend
+    parameters["linear_algebra_backend"] = prev_backend

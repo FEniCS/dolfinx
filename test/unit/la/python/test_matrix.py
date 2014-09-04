@@ -31,18 +31,56 @@ from six.moves import xrange as range
 skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
                      reason="Skipping unit test(s) not working in parallel")
 
-class AbstractBaseTest:
-    #count = 0
 
-    #@classmethod
-    #@pytest.fixture(scope="class", autouse=True)
-    def setup(self):
-        if self.backend != "default":
-            parameters.linear_algebra_backend = self.backend
-        #type(self).count += 1
-        #if type(self).count == 1:
-            # Only print this message once per class instance
-            #print("\nRunning:",type(self).__name__)
+# TODO: Reuse this fixture setup code between matrix and vector tests:
+
+
+# Lists of backends supporting or not supporting data access
+data_backends = []
+no_data_backends = [("PETSc", "")]
+
+# Add serial only backends
+if MPI.size(mpi_comm_world()) == 1:
+    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't used in the old test.
+    data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse")]
+    no_data_backends += [("PETScCusp", "")]
+
+# TODO: STL tests were disabled in old test framework, and do not work now:
+# If we have PETSc, STL Vector gets typedefed to one of these and data
+# test will not work. If none of these backends are available
+# STLVector defaults to uBLASVEctor, which data will work
+#if has_linear_algebra_backend("PETSc"):
+#    no_data_backends += [("STL", "")]
+#else:
+#    data_backends += [("STL", "")]
+
+# Remove backends we haven't built with
+data_backends = [b for b in data_backends if has_linear_algebra_backend(b[0])]
+no_data_backends = [b for b in no_data_backends if has_linear_algebra_backend(b[0])]
+any_backends = data_backends + no_data_backends
+
+
+def push_pop_parameters_fixture(paramname, values, key=lambda x: x):
+    "Return a fixture that sets and resets a global parameter to each of a list of values before and after each test run."
+    def _pushpop(request):
+        prev = parameters[paramname]               # Remember original value
+        parameters[paramname] = key(request.param) # Set value
+        yield request.param                        # Let test run
+        parameters[paramname] = prev               # Reset value
+    return pytest.yield_fixture(scope="function", params=values)(_pushpop)
+
+# Fixtures setting up and resetting the global linear algebra backend for a list of backends
+any_backend     = push_pop_parameters_fixture("linear_algebra_backend", any_backends, lambda x: x[0])
+data_backend    = push_pop_parameters_fixture("linear_algebra_backend", data_backends, lambda x: x[0])
+no_data_backend = push_pop_parameters_fixture("linear_algebra_backend", no_data_backends, lambda x: x[0])
+
+
+@pytest.fixture(params=[False, True])
+def use_backend(request):
+    return request.param
+
+
+class TestMatrixForAnyBackend:
 
     def assemble_matrices(self, use_backend=False, keep_diagonal=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
@@ -69,7 +107,11 @@ class AbstractBaseTest:
         else:
             return assemble(form, keep_diagonal=keep_diagonal)
 
-    def test_basic_la_operations(self, use_backend=False):
+    def test_basic_la_operations(self, use_backend, any_backend):
+        # Hack to make old tests work in new framework. The original setup was a bit exoteric...
+        # TODO: Removing use of self in this class will make it clearer what happens in this test.
+        self.backend, self.sub_backend = any_backend
+
         from numpy import ndarray, array, ones, sum
 
         # Tests bailout for this choice
@@ -136,7 +178,9 @@ class AbstractBaseTest:
         #assert A[5,5] == 15
 
     @skip_in_paralell
-    def test_numpy_array(self, use_backend=False):
+    def test_numpy_array(self, use_backend, any_backend):
+        self.backend, self.sub_backend = any_backend
+
         from numpy import ndarray, array, ones, sum
 
         # Tests bailout for this choice
@@ -162,9 +206,6 @@ class AbstractBaseTest:
             except ImportError:
                 pass
 
-    def test_basic_la_operations_with_backend(self):
-        self.test_basic_la_operations(True)
-
     #def create_sparsity_pattern(self):
     #    "Create a sparsity pattern"
     #    mesh = UnitSquareMesh(34, 33)
@@ -180,20 +221,20 @@ class AbstractBaseTest:
     #    a = dot(grad(u), grad(v))*dx
     #    b = v*s*dx
 
-    def test_create_empty_matrix(self):
+    def test_create_empty_matrix(self, any_backend):
         A = Matrix()
         assert A.size(0) == 0
         assert A.size(1) == 0
         info(A)
         info(A, True)
 
-    def test_copy_empty_matrix(self):
+    def test_copy_empty_matrix(self, any_backend):
         A = Matrix()
         B = Matrix(A)
         assert B.size(0) == 0
         assert B.size(1) == 0
 
-    def test_copy_matrix(self):
+    def test_copy_matrix(self, any_backend):
         A0, B0 = self.assemble_matrices()
 
         A1 = Matrix(A0)
@@ -206,7 +247,8 @@ class AbstractBaseTest:
         assert B0.size(1) == B1.size(1)
         assert round(B0.norm("frobenius") - B1.norm("frobenius"), 7) == 0
 
-    def test_compress_matrix(self):
+    def test_compress_matrix(self, any_backend):
+        self.backend, self.sub_backend = any_backend
 
         A, B = self.assemble_matrices()
         A_norm = A.norm('frobenius')
@@ -216,7 +258,8 @@ class AbstractBaseTest:
         assert round(A_norm - C_norm, 7) == 0
 
     @pytest.mark.slow
-    def test_ident_zeros(self, use_backend=False):
+    def test_ident_zeros(self, use_backend, any_backend):
+        self.backend, self.sub_backend = any_backend
 
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
@@ -248,10 +291,8 @@ class AbstractBaseTest:
             assert j < cols.size
             assert round(sum(abs(row)) - 1.0, 7) == 0
 
-    def test_ident_zeros_with_backend(self):
-        self.test_ident_zeros(use_backend=True)
-
-    def test_setting_diagonal(self, use_backend=False):
+    def test_setting_diagonal(self, use_backend, any_backend):
+        self.backend, self.sub_backend = any_backend
 
         mesh = UnitSquareMesh(21, 23)
 
@@ -280,9 +321,6 @@ class AbstractBaseTest:
         B.mult(ones, resultsB)
         assert round(resultsA.norm("l2") - resultsB.norm("l2"), 7) == 0
 
-    def test_setting_diagonal_with_backend(self):
-        self.test_setting_diagonal(True)
-
     #def test_create_from_sparsity_pattern(self):
 
     #def test_size(self):
@@ -301,8 +339,10 @@ class AbstractBaseTest:
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
 class DataTester:
-    def test_matrix_data(self, use_backend=False):
+    def test_matrix_data(self, use_backend, data_backend):
         """ Test for ordinary Matrix"""
+        self.backend, self.sub_backend = data_backend
+
         # Tests bailout for this choice
         if self.backend == "uBLAS" and \
                (not use_backend or self.sub_backend =="Dense"):
@@ -335,11 +375,11 @@ class DataTester:
             for k in range(rows[row], rows[row+1]):
                 assert array[row,cols[k]] == values[k]
 
-    def test_matrix_data_use_backend(self):
-        self.test_matrix_data(True)
 
 class DataNotWorkingTester:
-    def test_matrix_data(self):
+    def test_matrix_data(self, no_data_backend):
+        self.backend, self.sub_backend = no_data_backend
+
         A, B = self.assemble_matrices()
         with pytest.raises(RuntimeError):
             A.data()
@@ -347,30 +387,3 @@ class DataNotWorkingTester:
         A = as_backend_type(A)
         with pytest.raises(RuntimeError):
             A.data()
-
-
-@skip_in_paralell
-class TestuBLASSparse(DataTester, AbstractBaseTest):
-    backend     = "uBLAS"
-    sub_backend = "Sparse"
-
-@skip_in_paralell
-class TestuBLASDense(DataTester, AbstractBaseTest):
-    backend     = "uBLAS"
-    sub_backend = "Dense"
-
-@pytest.mark.skipif(not has_linear_algebra_backend("PETScCusp"), 
-                      reason="Skipping unit test(s) depending on PETScCups.")
-@skip_in_paralell
-class TestPETScCusp(DataNotWorkingTester, AbstractBaseTest):
-    backend    = "PETScCusp"
-    sub_backend = ""
-
-@pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
-                      reason="Skipping unit test(s) depending on PETSc.")
-class TestPETSc(DataNotWorkingTester, AbstractBaseTest):
-    backend    = "PETSc"
-    sub_backend = ""
-
-#class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-#    backend    = "STL"
