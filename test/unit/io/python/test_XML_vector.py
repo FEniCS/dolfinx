@@ -2,7 +2,7 @@
 
 """Unit tests for the XML io library for vectors"""
 
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011-2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -18,9 +18,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-06-17
-# Last changed:
 
 import pytest
 from dolfin import *

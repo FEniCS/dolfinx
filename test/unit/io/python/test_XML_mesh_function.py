@@ -34,7 +34,7 @@ skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename, "")
+    temppath = os.path.join(filedir, basename)
     if not os.path.exists(temppath):
         os.mkdir(temppath)
     return temppath
@@ -51,13 +51,15 @@ def test_io_size_t(temppath):
     f[2] = 3
     f[5] = 7
 
+    filename = os.path.join(temppath, "XMLMeshFunction_test_io_size_t.xml")
+
     # Write
-    output_file = File(temppath + "XMLMeshFunction_test_io_size_t.xml")
+    output_file = File(filename)
     output_file << f
 
     # Read from file
     g = MeshFunction("size_t", mesh, 1)
-    input_file = File(temppath + "XMLMeshFunction_test_io_size_t.xml")
+    input_file = File(filename)
     input_file >> g
 
     # Check values
@@ -76,13 +78,15 @@ def test_io_int(temppath):
     f[2] = -3
     f[5] = 7
 
+    filename = os.path.join(temppath, "XMLMeshFunction_test_io_int.xml")
+
     # Write
-    output_file = File(temppath + "XMLMeshFunction_test_io_int.xml")
+    output_file = File(filename)
     output_file << f
 
     # Read from file
     g = MeshFunction("int", mesh, 1)
-    input_file = File(temppath + "XMLMeshFunction_test_io_int.xml")
+    input_file = File(filename)
     input_file >> g
 
     # Check values
@@ -101,13 +105,15 @@ def test_io_double(temppath):
     f[2] = 3.14
     f[5] = 10000000.0
 
+    filename = os.path.join(temppath, "XMLMeshFunction_test_io_double.xml")
+
     # Write
-    output_file = File(temppath + "XMLMeshFunction_test_io_double.xml")
+    output_file = File(filename)
     output_file << f
 
     # Read from file
     g = MeshFunction("double", mesh, 1)
-    input_file = File(temppath + "XMLMeshFunction_test_io_double.xml")
+    input_file = File(filename)
     input_file >> g
 
     # Check values
@@ -126,13 +132,15 @@ def test_io_bool(temppath):
     f[2] = True
     f[5] = False
 
+    filename = os.path.join(temppath, "XMLMeshFunction_test_io_bool.xml")
+
     # Write
-    output_file = File(temppath + "XMLMeshFunction_test_io_bool.xml")
+    output_file = File(filename)
     output_file << f
 
     # Read from file
     g = MeshFunction("bool", mesh, 1)
-    input_file = File(temppath + "XMLMeshFunction_test_io_bool.xml")
+    input_file = File(filename)
     input_file >> g
 
     # Check values

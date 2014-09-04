@@ -22,6 +22,7 @@
 # Modified by Chris Richardson 2013
 
 import pytest
+import os
 from dolfin import *
 
 # create an output folder
@@ -39,32 +40,37 @@ skip_if_no_hdf5 = pytest.mark.skipif(not has_hdf5(),
 
 @skip_if_no_hdf5
 def test_save_vector(temppath):
+    filename = os.path.join(temppath, "x.h5")
     x = Vector(mpi_comm_world(), 305)
     x[:] = 1.0
-    vector_file = HDF5File(x.mpi_comm(), fielpath + "x.h5", "w")
-    vector_file.write(x, temppath + "my_vector")
+    vector_file = HDF5File(x.mpi_comm(), filename, "w")
+    vector_file.write(x, "/my_vector")
 
 @skip_if_no_hdf5
 def test_save_and_read_vector(temppath):
+    filename = os.path.join(temppath, "vector.h5")
+
     # Write to file
     x = Vector(mpi_comm_world(), 305)
     x[:] = 1.2
-    vector_file = HDF5File(x.mpi_comm(), temppath + "vector.h5", "w")
-    vector_file.write(x, temppath + "my_vector")
+    vector_file = HDF5File(x.mpi_comm(), filename, "w")
+    vector_file.write(x, "/my_vector")
     del vector_file
 
     # Read from file
     y = Vector()
-    vector_file = HDF5File(x.mpi_comm(), temppath + "vector.h5", "r")
-    vector_file.read(y, temppath + "my_vector", False)
+    vector_file = HDF5File(x.mpi_comm(), filename, "r")
+    vector_file.read(y, "/my_vector", False)
     assert y.size() == x.size()
     assert (x - y).norm("l1") == 0.0
 
 @skip_if_no_hdf5
 def test_save_and_read_meshfunction_2D(temppath):
+    filename = os.path.join(temppath, "meshfn-2d.h5")
+
     # Write to file
     mesh = UnitSquareMesh(20, 20)
-    mf_file = HDF5File(mesh.mpi_comm(), temppath + "meshfn-2d.h5", "w")
+    mf_file = HDF5File(mesh.mpi_comm(), filename, "w")
 
     # save meshfuns to compare when reading back
     meshfunctions = []
@@ -75,23 +81,25 @@ def test_save_and_read_meshfunction_2D(temppath):
         for cell in entities(mesh, i):
             mf[cell] = cell.midpoint()[0]
         meshfunctions.append(mf)
-        mf_file.write(mf, temppath + "meshfunction/meshfun%d" % i)
+        mf_file.write(mf, "/meshfunction/meshfun%d" % i)
 
     del mf_file
 
     # Read back from file
-    mf_file = HDF5File(mesh.mpi_comm(), temppath + "meshfn-2d.h5", "r")
+    mf_file = HDF5File(mesh.mpi_comm(), filename, "r")
     for i in range(0,3):
         mf2 = MeshFunction('double', mesh, i)
-        mf_file.read(mf2, temppath + "meshfunction/meshfun%d" % i)
+        mf_file.read(mf2, "/meshfunction/meshfun%d" % i)
         for cell in entities(mesh, i):
             assert meshfunctions[i][cell] == mf2[cell]
 
 @skip_if_no_hdf5
 def test_save_and_read_meshfunction_3D(temppath):
+    filename = os.path.join(temppath, "meshfn-3d.h5")
+
     # Write to file
     mesh = UnitCubeMesh(10, 10, 10)
-    mf_file = HDF5File(mesh.mpi_comm(), temppath + "meshfn-3d.h5", "w")
+    mf_file = HDF5File(mesh.mpi_comm(), filename, "w")
 
     # save meshfuns to compare when reading back
     meshfunctions = []
@@ -102,39 +110,42 @@ def test_save_and_read_meshfunction_3D(temppath):
         for cell in entities(mesh, i):
             mf[cell] = cell.midpoint()[0]
         meshfunctions.append(mf)
-        mf_file.write(mf, temppath + "meshfunction/group/%d/meshfun"%i)
+        mf_file.write(mf, "/meshfunction/group/%d/meshfun"%i)
 
     del mf_file
 
     # Read back from file
-    mf_file = HDF5File(mesh.mpi_comm(), temppath + "meshfn-3d.h5", "r")
+    mf_file = HDF5File(mesh.mpi_comm(), filename, "r")
     for i in range(0,4):
         mf2 = MeshFunction('double', mesh, i)
-        mf_file.read(mf2, temppath + "meshfunction/group/%d/meshfun"%i)
+        mf_file.read(mf2, "/meshfunction/group/%d/meshfun"%i)
         for cell in entities(mesh, i):
             assert meshfunctions[i][cell] == mf2[cell]
 
 @skip_if_no_hdf5
 def test_save_and_read_mesh_value_collection(temppath):
+    filename = os.path.join(temppath, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(5, 5, 5)
 
     # Writ to file
-    hdf5_file = HDF5File(mesh.mpi_comm(), temppath + "mesh_value_collection.h5", "w")
+    hdf5_file = HDF5File(mesh.mpi_comm(), filename, "w")
     for dim in range(mesh.topology().dim()):
         mvc = MeshValueCollection("size_t", mesh, dim)
         for i, cell in enumerate(entities(mesh, dim)):
             mvc.set_value(cell.index(), i)
-        hdf5_file.write(mvc, temppath + "mesh_value_collection_%d" % dim)
+        hdf5_file.write(mvc, "/mesh_value_collection_%d" % dim)
     del hdf5_file
 
     # Read from file
-    hdf5_file = HDF5File(mesh.mpi_comm(), temppath + "mesh_value_collection.h5", "r")
+    hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
     for dim in range(mesh.topology().dim()):
         mvc = MeshValueCollection("size_t", mesh, dim)
-        hdf5_file.read(mvc, temppath + "mesh_value_collection_%d" % dim)
+        hdf5_file.read(mvc, "/mesh_value_collection_%d" % dim)
 
 @skip_if_no_hdf5
 def test_save_and_read_function(temppath):
+    filename = os.path.join(temppath, "function.h5")
+
     mesh = UnitSquareMesh(10, 10)
     Q = FunctionSpace(mesh, "CG", 3)
     F0 = Function(Q)
@@ -143,28 +154,31 @@ def test_save_and_read_function(temppath):
     F0.interpolate(E)
 
     # Save to HDF5 File
-    hdf5_file = HDF5File(mesh.mpi_comm(), temppath + "function.h5", "w")
-    hdf5_file.write(F0, "function")
+
+    hdf5_file = HDF5File(mesh.mpi_comm(), filename, "w")
+    hdf5_file.write(F0, "/function")
     del hdf5_file
 
     #Read back from file
-    hdf5_file = HDF5File(mesh.mpi_comm(), temppath + "function.h5", "r")
-    hdf5_file.read(F1, temppath + "function")
+    hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
+    hdf5_file.read(F1, "/function")
     result = F0.vector() - F1.vector()
-    self.assertTrue(len(result.array().nonzero()[0]) == 0)
+    assert len(result.array().nonzero()[0]) == 0
 
 @skip_if_no_hdf5
 def test_save_and_read_mesh_2D(temppath):
+    filename = os.path.join(temppath, "mesh2d.h5")
+
     # Write to file
     mesh0 = UnitSquareMesh(20, 20)
-    mesh_file = HDF5File(mesh0.mpi_comm(), temppath + "mesh.h5", "w")
-    mesh_file.write(mesh0, temppath + "my_mesh")
+    mesh_file = HDF5File(mesh0.mpi_comm(), filename, "w")
+    mesh_file.write(mesh0, "/my_mesh")
     del mesh_file
 
     # Read from file
     mesh1 = Mesh()
-    mesh_file = HDF5File(mesh0.mpi_comm(), temppath + "mesh.h5", "r")
-    mesh_file.read(mesh1, temppath + "my_mesh", False)
+    mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
+    mesh_file.read(mesh1, "/my_mesh", False)
 
     assert mesh0.size_global(0) == mesh1.size_global(0)
     dim = mesh0.topology().dim()
@@ -172,16 +186,18 @@ def test_save_and_read_mesh_2D(temppath):
 
 @skip_if_no_hdf5
 def test_save_and_read_mesh_3D(temppath):
+    filename = os.path.join(temppath, "mesh3d.h5")
+
     # Write to file
     mesh0 = UnitCubeMesh(10, 10, 10)
-    mesh_file = HDF5File(mesh0.mpi_comm(), temppath + "mesh.h5", "w")
-    mesh_file.write(mesh0, temppath + "my_mesh")
+    mesh_file = HDF5File(mesh0.mpi_comm(), filename, "w")
+    mesh_file.write(mesh0, "/my_mesh")
     del mesh_file
 
     # Read from file
     mesh1 = Mesh()
-    mesh_file = HDF5File(mesh0.mpi_comm(), temppath + "mesh.h5", "r")
-    mesh_file.read(mesh1, temppath + "my_mesh", False)
+    mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
+    mesh_file.read(mesh1, "/my_mesh", False)
 
     assert mesh0.size_global(0) == mesh1.size_global(0)
     dim = mesh0.topology().dim()
