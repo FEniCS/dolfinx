@@ -42,6 +42,9 @@ def W(V, Q):
     return V*Q
 
 
+reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
+
+
 def test_tabulate_coord(mesh, V, W):
 
     L0  = W.sub(0)
@@ -195,12 +198,11 @@ def test_global_dof_builder():
     W = MixedFunctionSpace([V, R])
     W = MixedFunctionSpace([R, V])
 
-def test_dof_to_vertex_map(mesh):
+
+def test_dof_to_vertex_map(mesh, reorder_dofs):
 
     # Check for both reordered and UFC ordered dofs
-    for reorder_dofs in [True, False]:
-        parameters.reorder_dofs_serial = reorder_dofs
-
+    if 1:
         V = FunctionSpace(mesh, "Lagrange", 1)
         Q = VectorFunctionSpace(mesh, "Lagrange", 1)
         W = V*Q
