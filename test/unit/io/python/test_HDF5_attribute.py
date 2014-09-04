@@ -45,7 +45,6 @@ def hdf_file(temppath):
     yield hdf_file
     del hdf_file
 
-@pytest.mark.xfail(reason="bug in hdf5 get attr")
 @skip_if_no_hdf5
 def test_read_write_str_attribute(hdf_file):
     attr = hdf_file.attributes("/a_vector")
@@ -53,7 +52,6 @@ def test_read_write_str_attribute(hdf_file):
     assert attr.type_str("name") == "string"
     assert attr['name'] == 'Vector'
 
-@pytest.mark.xfail(reason="bug in hdf5 get attr")
 @skip_if_no_hdf5
 def test_read_write_float_attribute(temppath):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "float.h5"), "w")
@@ -65,7 +63,6 @@ def test_read_write_float_attribute(temppath):
     assert attr['val'] == -9.2554
     del hdf_file
 
-@pytest.mark.xfail(reason="bug in hdf5 get attr")
 @skip_if_no_hdf5
 def test_read_write_int_attribute(temppath):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "int.h5"), "w")
@@ -77,7 +74,6 @@ def test_read_write_int_attribute(temppath):
     assert attr['val'] == 1
     del hdf_file
 
-@pytest.mark.xfail(reason="bug in hdf5 get attr")
 @skip_if_no_hdf5
 def test_read_write_vec_float_attribute(temppath):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "vec_float.h5"), "w")
@@ -93,7 +89,6 @@ def test_read_write_vec_float_attribute(temppath):
         assert val1 == val2
     del hdf_file
 
-@pytest.mark.xfail(reason="bug in hdf5 get attr")
 @skip_if_no_hdf5
 def test_read_write_vec_int_attribute(temppath):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "vec_int.h5"), "w")
