@@ -24,9 +24,7 @@ import pytest
 import numpy as np
 from dolfin import *
 
-
-skip_in_serial = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                                    reason="This test does not run in parallel.")
+from dolfin_utils.test import *
 
 fixt = pytest.fixture(scope="module")
 
