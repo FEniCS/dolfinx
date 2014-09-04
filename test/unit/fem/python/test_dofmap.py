@@ -24,7 +24,7 @@ import pytest
 import numpy as np
 from dolfin import *
 
-from dolfin_utils import *
+from dolfin_utils.test import *
 
 @fixture
 def mesh():
@@ -41,6 +41,9 @@ def Q(mesh):
 @fixture
 def W(V, Q):
     return V*Q
+
+
+reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
 
 
 def test_tabulate_coord(mesh, V, W):
@@ -196,56 +199,54 @@ def test_global_dof_builder():
     W = MixedFunctionSpace([V, R])
     W = MixedFunctionSpace([R, V])
 
-def test_dof_to_vertex_map(mesh):
+
+def test_dof_to_vertex_map(mesh, reorder_dofs):
 
     # Check for both reordered and UFC ordered dofs
-    for reorder_dofs in [True, False]:
-        parameters.reorder_dofs_serial = reorder_dofs
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    Q = VectorFunctionSpace(mesh, "Lagrange", 1)
+    W = V*Q
 
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        Q = VectorFunctionSpace(mesh, "Lagrange", 1)
-        W = V*Q
+    u = Function(V)
+    e = Expression("x[0]+x[1]")
+    u.interpolate(e)
 
-        u = Function(V)
-        e = Expression("x[0]+x[1]")
-        u.interpolate(e)
+    vert_values = mesh.coordinates().sum(1)
+    func_values = -1*np.ones(len(vert_values))
+    func_values[dof_to_vertex_map(V)] = u.vector().array()
 
-        vert_values = mesh.coordinates().sum(1)
-        func_values = -1*np.ones(len(vert_values))
-        func_values[dof_to_vertex_map(V)] = u.vector().array()
+    for v_val, f_val in zip(vert_values, func_values):
+        # Do not compare dofs owned by other process
+        if f_val != -1:
+            assert round(f_val - v_val, 7) == 0
 
-        for v_val, f_val in zip(vert_values, func_values):
-            # Do not compare dofs owned by other process
-            if f_val != -1:
-                assert round(f_val - v_val, 7) == 0
+    c0 = Constant((1,2))
+    u0 = Function(Q)
+    u0.interpolate(c0)
 
-        c0 = Constant((1,2))
-        u0 = Function(Q)
-        u0.interpolate(c0)
+    vert_values = np.zeros(mesh.num_vertices()*2)
+    u1 = Function(Q)
+    vert_values[::2] = 1
+    vert_values[1::2] = 2
 
-        vert_values = np.zeros(mesh.num_vertices()*2)
-        u1 = Function(Q)
-        vert_values[::2] = 1
-        vert_values[1::2] = 2
+    u1.vector().set_local(vert_values[dof_to_vertex_map(Q)].copy())
+    assert round((u0.vector()-u1.vector()).sum() - 0.0, 7) == 0
 
-        u1.vector().set_local(vert_values[dof_to_vertex_map(Q)].copy())
-        assert round((u0.vector()-u1.vector()).sum() - 0.0, 7) == 0
+    W = FunctionSpace(mesh, "DG", 0)
+    with pytest.raises(RuntimeError):
+        dof_to_vertex_map(W)
 
-        W = FunctionSpace(mesh, "DG", 0)
-        with pytest.raises(RuntimeError):
-            dof_to_vertex_map(W)
+    W = Q*FunctionSpace(mesh, "R", 0)
+    with pytest.raises(RuntimeError):
+        dof_to_vertex_map(W)
 
-        W = Q*FunctionSpace(mesh, "R", 0)
-        with pytest.raises(RuntimeError):
-            dof_to_vertex_map(W)
+    W = FunctionSpace(mesh, "CG", 2)
+    with pytest.raises(RuntimeError):
+        dof_to_vertex_map(W)
 
-        W = FunctionSpace(mesh, "CG", 2)
-        with pytest.raises(RuntimeError):
-            dof_to_vertex_map(W)
-
-        W = VectorFunctionSpace(mesh, "CG", 1)
-        with pytest.raises(RuntimeError):
-            dof_to_vertex_map(W.sub(0))
+    W = VectorFunctionSpace(mesh, "CG", 1)
+    with pytest.raises(RuntimeError):
+        dof_to_vertex_map(W.sub(0))
 
 
 def test_entity_dofs(mesh):
