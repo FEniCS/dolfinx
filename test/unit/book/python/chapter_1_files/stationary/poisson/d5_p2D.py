@@ -8,6 +8,7 @@ u0 = u = 1 + x^2 + 2y^2, f = -6.
 """
 
 from __future__ import print_function
+import os
 from dolfin import *
 import numpy
 
@@ -102,7 +103,8 @@ u.vector()[:] = u_array
 #u.vector().set_local(u_array)  # safer for parallel computing
 print('\nNormalized solution:\n', u.vector().array())
 
-file = File('poisson.pvd')
+file_path = os.path.join(os.path.dirname(__file__), "poisson.pvd")
+file = File(file_path)
 file << u
 file << grad_u
 file << grad_u_x
