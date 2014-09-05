@@ -191,7 +191,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     p.update_logical_edgefunction();
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      std::size_t n_marked = p.marked_edge_count(*cell);
+      std::size_t n_marked = p.marked_edge_list(*cell).size();
       EdgeIterator edge(*cell);
       std::size_t ref_edge_index = edge[ref_edge[cell->index()]].index();
       if (n_marked != 0 && p.is_marked(ref_edge_index) == false)
@@ -217,7 +217,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    std::size_t rgb_count = p.marked_edge_count(*cell);
+    std::size_t rgb_count = p.marked_edge_list(*cell).size();
     EdgeIterator e(*cell);
     VertexIterator v(*cell);
     const std::size_t ref = ref_edge[cell->index()];

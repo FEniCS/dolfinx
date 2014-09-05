@@ -16,10 +16,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2012-08-24
-# Last changed: 2012-08-24
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -67,7 +65,7 @@ class TestLinearOperator(unittest.TestCase):
 
                 # Skip testing uBLAS in parallel
                 if MPI.size(mesh.mpi_comm()) > 1 and backend == "uBLAS":
-                    print "Not running uBLAS test in parallel"
+                    print("Not running uBLAS test in parallel")
                     continue
 
                 V = FunctionSpace(mesh, "Lagrange", 1)
@@ -99,7 +97,7 @@ class TestLinearOperator(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    print ""
-    print "Testing DOLFIN la/LinearOperator (matrix-free) interface"
-    print "--------------------------------------------------------"
+    print("")
+    print("Testing DOLFIN la/LinearOperator (matrix-free) interface")
+    print("--------------------------------------------------------")
     unittest.main()

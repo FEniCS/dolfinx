@@ -27,7 +27,6 @@
 
 #include <cmath>
 #include <numeric>
-#include <boost/assign/list_of.hpp>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
@@ -42,9 +41,7 @@
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScVector::norm_types
-= boost::assign::map_list_of("l1",   NORM_1)
-  ("l2",   NORM_2)
-  ("linf", NORM_INFINITY);
+= { {"l1",   NORM_1}, {"l2",   NORM_2},  {"linf", NORM_INFINITY} };
 
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector() : _x(NULL), _use_gpu(false)

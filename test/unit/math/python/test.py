@@ -22,6 +22,7 @@
 # First added:  2011-07-108
 # Last changed:
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -35,7 +36,7 @@ class DirichletBCTest(unittest.TestCase):
             # Loop over base values
             for j in range(1, 10):
                 # Compute a value v and some values close to it
-                v = j*10**(i-13)
+                v = float(j*10**(i-13))
                 #print "number:", v
                 vm = v - eps
                 vp = v + eps
@@ -49,9 +50,9 @@ class DirichletBCTest(unittest.TestCase):
                 #self.assertTrue(near(v, vm)) # Can fail
                 #self.assertTrue(near(v, vp))
                 if not near(v, vm):
-                    print "not near vm: %r, %r" % (v, vm)
+                    print("not near vm: {}, {}".format(v, vm))
                 if not near(v, vp):
-                    print "not near vp: %r, %r" % (v, vp)
+                    print("not near vp: {}, {}".format(v, vp))
 
                 # vm and vp can round off to v, make some small values != v
                 # that are close to 1 (except for some of the smallest v's)
@@ -71,7 +72,7 @@ class DirichletBCTest(unittest.TestCase):
             # Loop over base values
             for j in range(1, 10):
                 # Compute a value v and some values close to it
-                v = j*10**(i - 15)
+                v = float(j*10**(i - 15))
                 vm = v - eps
                 vp = v + eps
 
@@ -92,7 +93,7 @@ class DirichletBCTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print ""
-    print "Testing basic DOLFIN maths operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing basic DOLFIN maths operations")
+    print("------------------------------------------------")
     unittest.main()

@@ -18,7 +18,9 @@
 // First added:  2011-04-13
 // Last changed: 2014-03-25
 
-#include <boost/scoped_array.hpp>
+#include <limits>
+#include <memory>
+#include <vector>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/FunctionSpace.h>

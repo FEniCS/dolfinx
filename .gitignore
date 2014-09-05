@@ -19,6 +19,17 @@ dolfin/libdolfin.so*
 # FFC generated code in library
 dolfin/ale/Poisson*D.h
 
+# FFC generated code in benchmarks
+bench/fem/convergence/cpp/Poisson2D_1.cpp
+bench/fem/convergence/cpp/Poisson2D_2.cpp
+bench/fem/convergence/cpp/Poisson2D_3.cpp
+bench/fem/convergence/cpp/Poisson2D_4.cpp
+bench/fem/convergence/cpp/Poisson2D_5.cpp
+bench/fem/convergence/cpp/Poisson3D_1.cpp
+bench/fem/convergence/cpp/Poisson3D_2.cpp
+bench/fem/convergence/cpp/Poisson3D_3.cpp
+bench/fem/convergence/cpp/Poisson3D_4.cpp
+
 # Log files
 *.log
 
@@ -57,11 +68,15 @@ bench/**/**/cpp/forms/*.h
 bench/**/**/cpp/*.h
 test/unit/**/python/*.xml
 test/unit/**/cpp/*.xml
+test/unit/function/cpp/Projection.h
+test/unit/la/cpp/forms/ReactionDiffusion.h
+test/unit/la/cpp/forms/ReactionDiffusionAction.h
 
 # FFC generated demo files
 demo/**/**/cpp/*.h
-demo/pde/cahn-hilliard/cpp/CahnHilliard2D.cpp
-demo/pde/cahn-hilliard/cpp/CahnHilliard3D.cpp
+demo/documented/cahn-hilliard/cpp/CahnHilliard2D.cpp
+demo/documented/cahn-hilliard/cpp/CahnHilliard3D.cpp
+
 
 # QT generated code
 moc_*

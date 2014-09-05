@@ -8,6 +8,7 @@ u = u0 on the boundary.
 u0 = u = 1 + x^2 + 2y^2, f = -6.
 """
 
+from __future__ import print_function
 from dolfin import *
 
 # Create mesh and define function space
@@ -38,7 +39,7 @@ solver.parameters['linear_solver'] = 'cg'
 solver.parameters['preconditioner'] = 'ilu'
 info(solver.parameters, True)
 
-print parameters['linear_algebra_backend']
+print(parameters['linear_algebra_backend'])
 cg_prm = solver.parameters['krylov_solver'] # short form
 cg_prm['absolute_tolerance'] = 1E-7
 cg_prm['relative_tolerance'] = 1E-4

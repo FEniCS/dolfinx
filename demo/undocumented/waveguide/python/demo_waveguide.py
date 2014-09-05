@@ -33,15 +33,16 @@ Jianming Jin [7.2.1 - 7.2.2]
 # First added:  2008-08-22
 # Last changed: 2008-12-17
 
+from __future__ import print_function
 from dolfin import *
 
 # Test for PETSc and SLEPc
 if not has_linear_algebra_backend("PETSc"):
-    print "DOLFIN has not been configured with PETSc. Exiting."
+    print("DOLFIN has not been configured with PETSc. Exiting.")
     exit()
 
 if not has_slepc():
-    print "DOLFIN has not been configured with SLEPc. Exiting."
+    print("DOLFIN has not been configured with SLEPc. Exiting.")
     exit()
 
 # Make sure we use the PETSc backend
@@ -99,6 +100,6 @@ for i in range(S.size(1)):
         break
 
 if cutoff is None:
-    print "Unable to find dominant mode"
+    print("Unable to find dominant mode")
 else:
-    print "Cutoff frequency:", cutoff
+    print("Cutoff frequency:", cutoff)

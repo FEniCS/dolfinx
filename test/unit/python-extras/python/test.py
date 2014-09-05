@@ -21,6 +21,7 @@ Python. This functionality is implemented in site-packages/dolfin"""
 # First added:  2009-11-16
 # Last changed: 2009-11-16
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -43,7 +44,7 @@ class ErrorNorm(unittest.TestCase):
         self.assertAlmostEqual(e, sqrt(1.0/5.0))
 
 if __name__ == "__main__":
-    print ""
-    print "Testing Python extras"
-    print "----------------------------------------------------------------------"
+    print("")
+    print("Testing Python extras")
+    print("----------------------------------------------------------------------")
     unittest.main()

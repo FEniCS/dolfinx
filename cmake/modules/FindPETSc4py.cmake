@@ -46,7 +46,7 @@ if(PETSC4PY_INCLUDE_DIRS)
 endif(PETSC4PY_INCLUDE_DIRS)
 
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print petsc4py.get_include()"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIRS
   RESULT_VARIABLE PETSC4PY_NOT_FOUND
   ERROR_QUIET
@@ -62,7 +62,7 @@ endif(PETSC4PY_INCLUDE_DIRS)
 
 if(PETSC4PY_FOUND)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print petsc4py.__version__"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.__version__)"
     OUTPUT_VARIABLE PETSC4PY_VERSION
     RESULT_VARIABLE PETSC4PY_NOT_FOUND
     OUTPUT_STRIP_TRAILING_WHITESPACE

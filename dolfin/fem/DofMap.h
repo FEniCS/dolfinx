@@ -46,7 +46,6 @@ namespace dolfin
 {
 
   class GenericVector;
-  class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dofmap on a specific mesh. It will
@@ -80,16 +79,6 @@ namespace dolfin
            const Mesh& mesh,
            std::shared_ptr<const SubDomain> constrained_domain);
 
-    /// Create restricted dof map on mesh
-    ///
-    /// *Arguments*
-    ///     ufc_dofmap (ufc::dofmap)
-    ///         The ufc::dofmap.
-    ///     restriction (_Restriction_)
-    ///         The restriction.
-    DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-           std::shared_ptr<const Restriction> restriction);
-
   private:
 
     // Create a sub-dofmap (a view) from parent_dofmap
@@ -117,14 +106,6 @@ namespace dolfin
     ///         another map).
     bool is_view() const
     { return _is_view; }
-
-    /// True if dof map is restricted
-    ///
-    /// *Returns*
-    ///     bool
-    ///         True if dof map is restricted
-    bool is_restricted() const
-    { return static_cast<bool>(_restriction); }
 
     /// Return the dimension of the global finite element function
     /// space
@@ -183,14 +164,6 @@ namespace dolfin
     ///         The number of facet dofs.
     std::size_t num_facet_dofs() const;
 
-    /// Restriction if any. If the dofmap is not restricted, a null
-    /// pointer is returned.
-    ///
-    /// *Returns*
-    ///     std::shared_ptr<const Restriction>
-    //          The restriction.
-    std::shared_ptr<const Restriction> restriction() const;
-
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
     ///
@@ -226,7 +199,8 @@ namespace dolfin
     /// reduce memory use)
     void clear_sub_map_data()
     {
-      std::vector<int>().swap(_ufc_local_to_local);
+      //std::vector<int>().swap(_ufc_local_to_local);
+      _ufc_local_to_local.clear();
     }
 
     /// Local-to-global mapping of dofs on a cell
@@ -399,10 +373,11 @@ namespace dolfin
         return local_index + _global_offset;
       else
       {
-        const std::div_t div = std::div((local_index - _local_ownership_size), block_size);
-        const std::size_t component = div.rem;
-        const std::size_t index = div.quot;
-        dolfin_assert(index < _local_to_global_unowned.size());
+        const std::div_t div = std::div((local_index - _local_ownership_size),
+                                        block_size);
+        const int component = div.rem;
+        const int index = div.quot;
+        dolfin_assert((std::size_t) index < _local_to_global_unowned.size());
         return block_size*_local_to_global_unowned[index] + component;
       }
     }
@@ -457,15 +432,11 @@ namespace dolfin
     // actual_dof, both using local indices)
     std::vector<int> _ufc_local_to_local;
 
-    // Restriction, pointer zero if not restricted
-    std::shared_ptr<const Restriction> _restriction;
-
     // Flag to determine if the DofMap is a view
     bool _is_view;
 
     // Global dimension. Note that this may differ from the global
-    // dimension of the UFC dofmap if the function space is restricted
-    // or periodic.
+    // dimension of the UFC dofmap if the function space is periodic.
     std::size_t _global_dimension;
 
     // UFC dof map offset

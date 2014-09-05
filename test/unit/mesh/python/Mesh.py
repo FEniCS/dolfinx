@@ -24,8 +24,9 @@
 # Modified by Oeyvind Evju 2013
 #
 # First added:  2006-08-08
-# Last changed: 2014-05-30
+# Last changed: 2014-08-12
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -35,8 +36,6 @@ class MeshConstruction(unittest.TestCase):
     def setUp(self):
 
         self.interval = UnitIntervalMesh(10)
-        if has_cgal():
-            self.circle = CircleMesh(Point(0.0, 0.0), 1.0, 0.1)
         self.square = UnitSquareMesh(5, 5)
         self.rectangle = RectangleMesh(0, 0, 2, 2, 5, 5)
         self.cube = UnitCubeMesh(3, 3, 3)
@@ -45,8 +44,6 @@ class MeshConstruction(unittest.TestCase):
     def testUFLCell(self):
         import ufl
         self.assertEqual(ufl.interval, self.interval.ufl_cell())
-        if has_cgal():
-            self.assertEqual(ufl.triangle, self.circle.ufl_cell())
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
         self.assertEqual(ufl.triangle, self.rectangle.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
@@ -62,8 +59,6 @@ class MeshConstruction(unittest.TestCase):
             self.assertTrue(str(mesh.id()) in domain.label())
 
         _check_ufl_domain(self.interval)
-        if has_cgal():
-            _check_ufl_domain(self.circle)
         _check_ufl_domain(self.square)
         _check_ufl_domain(self.rectangle)
         _check_ufl_domain(self.cube)
@@ -353,7 +348,7 @@ class MeshOrientations(unittest.TestCase):
 
         mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
         mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
-        print mesh.cell_orientations()
+        print(mesh.cell_orientations())
 
 class MeshSharedEntities(unittest.TestCase):
     def test_shared_entities(self):

@@ -25,7 +25,7 @@
 // Modified by Tianyi Li, 2014.
 //
 // First added:  2007-11-25
-// Last changed: 2014-07-28
+// Last changed: 2014-08-11
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -111,12 +111,8 @@
 // mesh
 %shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
 %shared_ptr(dolfin::BoundaryMesh)
-%shared_ptr(dolfin::CircleMesh)
-%shared_ptr(dolfin::EllipseMesh)
-%shared_ptr(dolfin::EllipsoidMesh)
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::Restriction)
-%shared_ptr(dolfin::SphereMesh)
 %shared_ptr(dolfin::SubMesh)
 %shared_ptr(dolfin::UnitTetrahedronMesh)
 %shared_ptr(dolfin::UnitCubeMesh)
@@ -129,31 +125,8 @@
 %shared_ptr(dolfin::RectangleMesh)
 %shared_ptr(dolfin::Rectangle)
 %shared_ptr(dolfin::MultiMesh)
-
-// csg
-%shared_ptr(dolfin::CSGGeometry)
-%shared_ptr(dolfin::CSGOperator)
-%shared_ptr(dolfin::CSGUnion)
-%shared_ptr(dolfin::CSGDifference)
-%shared_ptr(dolfin::CSGIntersection)
-%shared_ptr(dolfin::CSGPrimitive)
-%shared_ptr(dolfin::CSGPrimitive2D)
-%shared_ptr(dolfin::CSGPrimitive3D)
-%shared_ptr(dolfin::Circle)
-%shared_ptr(dolfin::Ellipse)
-%shared_ptr(dolfin::Polygon)
-%shared_ptr(dolfin::Sphere)
-%shared_ptr(dolfin::Cone)
-%shared_ptr(dolfin::Cylinder)
-%shared_ptr(dolfin::Tetrahedron)
-%shared_ptr(dolfin::Surface3D)
-%shared_ptr(dolfin::CSGCGALMeshGenerator2D)
-%shared_ptr(dolfin::CSGCGALMeshGenerator3D)
-
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)
-
-// mesh
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
 

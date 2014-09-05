@@ -22,8 +22,6 @@
 // First added:  2005-12-02
 // Last changed: 2014-02-06
 
-#include <boost/assign.hpp>
-
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>

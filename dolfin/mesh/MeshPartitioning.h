@@ -206,13 +206,6 @@ namespace dolfin
     // Initialise global entity numbering
     DistributedMeshTools::number_entities(mesh, dim);
 
-    if (dim == 0)
-    {
-      // MeshPartitioning::build_mesh_value_collection needs updating
-      // for vertices
-      dolfin_not_implemented();
-    }
-
     // Get mesh value collection used for marking
     MeshValueCollection& markers = mesh_values;
 

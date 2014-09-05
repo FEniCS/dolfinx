@@ -18,6 +18,7 @@
 # First added:  2011-11-14
 # Last changed: 2013-03-04
 
+from __future__ import print_function
 import sys
 from instant import get_status_output
 
@@ -25,17 +26,17 @@ tests = ["assembly_derivatives.py", "form_operations.py"]
 
 failed = []
 for test in tests:
-    command = "%s %s" % (sys.executable,test)
-    print
-    print "Running tests: %s" % test
-    print "----------------------------------------------------------------------"
+    command = "%s %s" % (sys.executable, test)
+    print()
+    print("Running tests: %s" % test)
+    print("----------------------------------------------------------------------")
     fail, output = get_status_output(command)
 
     if fail:
         failed.append(fail)
-        print "*** %s failed" % test
-        print output
+        print("*** %s failed" % test)
+        print(output)
     else:
-        print "OK"
+        print("OK")
 
 sys.exit(len(failed))

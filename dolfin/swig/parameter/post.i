@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-05-12
-// Last changed: 2012-08-09
+// Last changed: 2014-08-25
 //
 // ===========================================================================
 // SWIG directives for the DOLFIN parameter kernel module (post)
@@ -38,7 +38,7 @@ def warn_once(self, msg):
         cls._warned = set()
     if not msg in cls._warned:
         cls._warned.add(msg)
-        print msg
+        print(msg)
 
 def value(self):
     val_type = self.type_str()
@@ -51,7 +51,7 @@ def value(self):
     elif val_type == "double":
         return float(self)
     else:
-        raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type, self.key())
+        raise TypeError("unknown value type '%s' of parameter '%s'"%(val_type, self.key()))
 
 def get_range(self):
     val_type = self.type_str()
@@ -74,7 +74,7 @@ def get_range(self):
             return
         return local_range
     else:
-        raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type, self.key())
+        raise TypeError("unknown value type '%s' of parameter '%s'"%(val_type, self.key()))
 
 def data(self):
     return self.value(), self.get_range(), self.access_count(), self.change_count()
@@ -92,22 +92,34 @@ def data(self):
   {
     if (PyList_Check(op))
     {
-      int i;
+      int i, j;
       int argc = PyList_Size(op);
       char **argv = (char **) malloc((argc+1)*sizeof(char *));
       for (i = 0; i < argc; i++)
       {
         PyObject *o = PyList_GetItem(op,i);
+%#if PY_VERSION_HEX>=0x03000000
+        if (PyUnicode_Check(o))
+%#else  
         if (PyString_Check(o))
-          argv[i] = PyString_AsString(o);
+%#endif
+        {
+          argv[i] = SWIG_Python_str_AsChar(o);
+        }
         else
         {
+          // Clean up for Python 3
+          for (j = 0; j <= i; j++)
+            SWIG_Python_str_DelForPy3(argv[j]);
           free(argv);
           throw std::runtime_error("list must contain strings");
         }
       }
       argv[i] = 0;
       self->parse(argc, argv);
+      // Clean up for Python 3
+      for (i = 0; i < argc; i++)
+        SWIG_Python_str_DelForPy3(argv[i]);
       free(argv);
     }
     else
@@ -157,19 +169,18 @@ def items(self):
 
 def iteritems(self):
     "Returns an iterator over the (key, value) items of the Parameters"
-    for key, value in self.items():
-        yield key, value
+    return iter(self.items())
 
 def set_range(self, key, *arg):
     "Set the range for the given parameter"
     if key not in self._get_parameter_keys():
-        raise KeyError, "no parameter with name '%s'"%key
+        raise KeyError("no parameter with name '%s'"%key)
     self._get_parameter(key).set_range(*arg)
 
 def get_range(self, key):
     "Get the range for the given parameter"
     if key not in self._get_parameter_keys():
-        raise KeyError, "no parameter with name '%s'"%key
+        raise KeyError("no parameter with name '%s'"%key)
     return self._get_parameter(key).get_range()
 
 def __getitem__(self, key):
@@ -180,14 +191,17 @@ def __getitem__(self, key):
     if key in self._get_parameter_set_keys():
         return self._get_parameter_set(key)
 
-    raise KeyError, "'%s'"%key
+    raise KeyError("'%s'"%key)
 
 def __setitem__(self, key, value):
     "Set the parameter 'key', with given 'value'"
+    if (key == "this") and type(value).__name__ == 'SwigPyObject':
+        self.__dict__[key] = value
+        return
     if key not in self._get_parameter_keys():
-        raise KeyError, "'%s' is not a parameter"%key
+        raise KeyError("'%s' is not a parameter"%key)
     if not isinstance(value,(int,str,float,bool)):
-        raise TypeError, "can only set 'int', 'bool', 'float' and 'str' parameters"
+        raise TypeError("can only set 'int', 'bool', 'float' and 'str' parameters")
     par = self._get_parameter(key)
     if isinstance(value,bool):
         par._assign_bool(value)
@@ -197,8 +211,8 @@ def __setitem__(self, key, value):
 def update(self, other):
     "A recursive update that handles parameter subsets correctly."
     if not isinstance(other,(Parameters, dict)):
-        raise TypeError, "expected a 'dict' or a '%s'"%Parameters.__name__
-    for key, other_value in other.iteritems():
+        raise TypeError("expected a 'dict' or a '%s'"%Parameters.__name__)
+    for key, other_value in other.items():
         self_value  = self[key]
         if isinstance(self_value, Parameters):
             self_value.update(other_value)
@@ -208,7 +222,7 @@ def update(self, other):
 def to_dict(self):
     """Convert the Parameters to a dict"""
     ret = {}
-    for key, value in self.iteritems():
+    for key, value in self.items():
         if isinstance(value, Parameters):
             ret[key] = value.to_dict()
         else:
@@ -223,7 +237,7 @@ def option_string(self):
     "Return an option string representation of the Parameters"
     def option_list(parent,basename):
         ret_list = []
-        for key, value in parent.iteritems():
+        for key, value in parent.items():
             if isinstance(value, Parameters):
                 ret_list.extend(option_list(value,basename + key + '.'))
             else:
@@ -256,7 +270,7 @@ def get(self, key):
     if key in self._get_parameter_set_keys():
         return self._get_parameter_set(key)
 
-    raise KeyError, "'%s'"%key
+    raise KeyError("'%s'"%key)
 
 %}
 
@@ -290,12 +304,13 @@ def __new_Parameter_init__(self,*args,**kwargs):
     elif len(args) == 1 and isinstance(args[0], (str,type(self))):
         old_init(self, args[0])
     else:
-        raise TypeError, "expected a single optional argument of type 'str' or ''"%type(self).__name__
+        raise TypeError("expected a single optional argument of type 'str' or ''"%type(self).__name__)
     if len(kwargs) == 0:
         return
 
     from numpy import isscalar
-    for key, value in kwargs.iteritems():
+    from six import iteritems
+    for key, value in iteritems(kwargs):
         if isinstance(value,type(self)):
             self.add(value)
         elif isinstance(value,tuple):
@@ -303,10 +318,10 @@ def __new_Parameter_init__(self,*args,**kwargs):
                 self.add(key, *value)
             elif isinstance(value[0], str) and len(value) == 2:
                 if not isinstance(value[1], list):
-                    raise TypeError, "expected a list as second item of tuple, when first is a 'str'"
+                    raise TypeError("expected a list as second item of tuple, when first is a 'str'")
                 self.add(key, *value)
             else:
-                raise TypeError,"expected a range tuple of size 2 for 'str' values and 3 for scalars"
+                raise TypeError("expected a range tuple of size 2 for 'str' values and 3 for scalars")
         else:
             self.add(key,value)
 
@@ -325,7 +340,9 @@ std::shared_ptr<dolfin::Parameters> get_global_parameters()
  }
 %}
 
-%pythoncode%{
-parameters = _common.get_global_parameters()
-del _common.get_global_parameters
-%}
+// This code fails with python 3, see fix in dolfin/cpp/__init__.py
+//%pythoncode%{
+//parameters = _common.get_global_parameters()
+//del _common.get_global_parameters
+//%}
+
