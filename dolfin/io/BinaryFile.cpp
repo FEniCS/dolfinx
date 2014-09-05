@@ -19,13 +19,12 @@
 // Last changed: 2011-11-23
 
 #include <fstream>
-#include <istream>
 #include <ios>
-#include <boost/scoped_array.hpp>
+#include <iosfwd>
+#include <istream>
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/operations.hpp>
-#include <iosfwd>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>

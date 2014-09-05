@@ -101,14 +101,6 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
   dolfin_assert(_problem);
   std::shared_ptr<Function> u(_problem->solution());
 
-  // 'reset_jacobian' option is deprecated
-  if (parameters["reset_jacobian"].change_count() > 1)
-  {
-    deprecation("reset_jacobian parameter in NonlinearVariationalSolver",
-                "1.4.0", "1.5",
-                "reset_jacobian no longer has any effect.");
-  }
-
   // Create nonlinear problem
   if (!nonlinear_problem)
   {
@@ -174,8 +166,7 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
 //-----------------------------------------------------------------------------
 // Implementation of NonlinearDiscreteProblem
 //-----------------------------------------------------------------------------
-NonlinearVariationalSolver::
-NonlinearDiscreteProblem::
+NonlinearVariationalSolver::NonlinearDiscreteProblem::
 NonlinearDiscreteProblem(std::shared_ptr<NonlinearVariationalProblem> problem,
                          std::shared_ptr<NonlinearVariationalSolver> solver)
   : _problem(problem), _solver(solver)
@@ -183,8 +174,7 @@ NonlinearDiscreteProblem(std::shared_ptr<NonlinearVariationalProblem> problem,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NonlinearVariationalSolver::
-NonlinearDiscreteProblem::~NonlinearDiscreteProblem()
+NonlinearVariationalSolver::NonlinearDiscreteProblem::~NonlinearDiscreteProblem()
 {
   // Do nothing
 }
@@ -216,8 +206,9 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
     info(b, true);
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
-                                                        const GenericVector& x)
+void
+NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
+                                                             const GenericVector& x)
 {
   // Get problem data
   dolfin_assert(_problem);

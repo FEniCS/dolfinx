@@ -7,7 +7,9 @@ u = u0 on x=0,
 u0 = u = 1 + x^2 + 2y^2, p = x + y, f = -8x - 10y.
 """
 
+from __future__ import print_function
 from dolfin import *
+from six.moves import input
 import numpy
 plot = lambda *args, **kwargs: None
 
@@ -65,7 +67,7 @@ plot(mesh)
 # Alternative computation of the flux
 flux2 = project(-p*grad(u), VectorFunctionSpace(mesh, 'Lagrange', 1))
 
-print mesh
+print(mesh)
 
 # Dump solution and flux to the screen with errors
 u_array = u.vector().array()
@@ -80,11 +82,11 @@ if mesh.num_cells() < 1600:
     coor = mesh.coordinates()
     for i in range(len(u_array)):
         x, y = coor[i]
-        print 'Node (%.3f,%.3f): u = %.4f (%9.2e), '\
+        print('Node (%.3f,%.3f): u = %.4f (%9.2e), '\
               'flux_x = %.4f  (%9.2e), flux_y = %.4f  (%9.2e)' % \
               (x, y, u_array[i], 1 + x**2 + 2*y**2 - u_array[i],
                flux_x_array[i], -(x+y)*2*x - flux_x_array[i],
-               flux_y_array[i], -(x+y)*4*y - flux_y_array[i])
+               flux_y_array[i], -(x+y)*4*y - flux_y_array[i]))
 
 # Plot solution and flux
 import scitools.BoxField
@@ -101,9 +103,9 @@ u_box = scitools.BoxField.dolfin_function2BoxField(
 
 # Write out u at mesh point (i,j)
 i = nx; j = ny
-print 'u(%g,%g)=%g' % (u_box.grid.coor[X][i],
+print('u(%g,%g)=%g' % (u_box.grid.coor[X][i],
                        u_box.grid.coor[Y][j],
-                       u_box.values[i,j])
+                       u_box.values[i,j]))
 ev.contour(u_box.grid.coorv[X], u_box.grid.coorv[Y], u_box.values,
            14, savefig='tmp0.eps', title='Contour plot of u',
            clabels='on')
@@ -119,7 +121,7 @@ ev.mesh(u_box.grid.coorv[X], u_box.grid.coorv[Y], u_box.values,
 start = (0,0.5)
 x, uval, y_fixed, snapped = u_box.gridline(start, direction=X)
 if snapped:
-    print 'Line at %s adjusted (snapped) to y=%g' % (start, y_fixed)
+    print('Line at %s adjusted (snapped) to y=%g' % (start, y_fixed))
 ev.figure()
 ev.plot(x, uval, 'r-', title='Solution',
         legend='finite element solution')
@@ -164,7 +166,7 @@ ev.plot(x, flux_x_line, 'r-',
 # Verification
 u_e = interpolate(u0, V)
 u_e_array = u_e.vector().array()
-print 'Max error:', numpy.abs(u_e_array - u_array).max()
+print('Max error:', numpy.abs(u_e_array - u_array).max())
 
 #interactive()
-raw_input('Press Return: ')  # some curve plot engines need this for a lasting plot on the screen
+input('Press Return: ')  # some curve plot engines need this for a lasting plot on the screen

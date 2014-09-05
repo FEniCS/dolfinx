@@ -16,6 +16,7 @@
 #include <dolfin/generation/dolfin_generation.h>
 #include <dolfin/geometry/dolfin_geometry.h>
 #include <dolfin/refinement/dolfin_refinement.h>
+#include <dolfin/graph/dolfin_graph.h>
 
 // SWIG module la
 #include <dolfin/la/dolfin_la.h>
@@ -25,7 +26,6 @@
 #include <dolfin/function/dolfin_function.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/ale/dolfin_ale.h>
-#include <dolfin/graph/dolfin_graph.h>
 
 // SWIG module fem
 #include <dolfin/fem/dolfin_fem.h>

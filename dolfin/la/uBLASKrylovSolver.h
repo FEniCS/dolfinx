@@ -181,7 +181,7 @@ namespace dolfin
 
     // Write a message
     if (report)
-      info("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
+      info("Solving linear system of size %ld x %ld (uBLAS Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
     _pc->init(P);

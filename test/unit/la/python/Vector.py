@@ -22,6 +22,7 @@
 # First added:  2011-03-01
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -34,7 +35,7 @@ class AbstractBaseTest(object):
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
-            print "\nRunning:",type(self).__name__
+            print("\nRunning:",type(self).__name__)
 
     def assemble_vectors(self):
         mesh = UnitSquareMesh(7, 4)
@@ -284,7 +285,7 @@ class AbstractBaseTest(object):
         if MPI.size(mpi_comm_world()) > 1:
             m = 301
             local_range0 = MPI.local_range(mpi_comm_world(), m)
-            print "local range", local_range0[0], local_range0[1]
+            print("local range", local_range0[0], local_range0[1])
 
             # Shift parallel partitiong but preserve global size
             if MPI.rank(mpi_comm_world()) == 0:
@@ -319,7 +320,7 @@ class DataTester:
         data = v.data(False)
         def write_data(data):
             data[0] = 1
-        self.assertRaises(StandardError, write_data, data)
+        self.assertRaises(Exception, write_data, data)
 
         # Test for as_backend_typeed Vector
         v = as_backend_type(v)
@@ -371,7 +372,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print ""
-    print "Testing DOLFIN Vector classes"
-    print "------------------------------------------------"
+    print("")
+    print("Testing DOLFIN Vector classes")
+    print("------------------------------------------------")
     unittest.main()

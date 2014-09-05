@@ -93,7 +93,6 @@ main_file_names = dict(test="test.cpp",
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
 exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt'),
-                    os.path.join('demo', 'undocumented', 'csg'),
                     os.path.join('demo', 'undocumented', 'meshintersection')]
 
 def generate_cmake_files(subdirectory, generated_files):
@@ -117,7 +116,7 @@ def generate_cmake_files(subdirectory, generated_files):
                     skip = True
 
             if skip :
-                print "Skipping custom CMakeLists.txt file:", root
+                print("Skipping custom CMakeLists.txt file:", root)
                 continue
 
             if executable_prefix == "bench_":
@@ -162,13 +161,13 @@ def generate_cmake_files(subdirectory, generated_files):
             if program_name not in executable_names:
                 executable_names.add(program_name)
             else:
-                print "Warning: duplicate executable names found when generating CMakeLists.txt files."
+                print("Warning: duplicate executable names found when generating CMakeLists.txt files.")
 
             # Write file
             filename = os.path.join(program_dir, "CMakeLists.txt")
             generated_files.append(filename)
             with open(filename, "w") as f:
-                print "Creating CMakeLists.txt file:", program_name, program_dir
+                print("Creating CMakeLists.txt file:", program_name, program_dir)
                 f.write(cmakelists_str % name_forms)
 
             # FIXME: add command line option for adding files
@@ -181,5 +180,5 @@ for subdirectory in sub_directories:
     generate_cmake_files(subdirectory, generated_files)
 
 # Print list of generated files
-print "The following files were generated:"
-print "\n".join(generated_files)
+print("The following files were generated:")
+print("\n".join(generated_files))

@@ -27,6 +27,7 @@ src/demo/mesh/subdomains."""
 # Last changed: 2010-04-01
 # Begin demo
 
+from __future__ import print_function
 from dolfin import *
 
 # Load mesh and subdomains
@@ -69,8 +70,8 @@ solve(a == L, w, bcs)
 # (needed for further computation on coefficient vector)
 (u, p) = w.split(True)
 
-print "Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2")
-print "Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2")
+print("Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2"))
+print("Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2"))
 
 # Split the mixed solution using a shallow copy
 (u, p) = w.split()

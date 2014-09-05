@@ -94,14 +94,11 @@ L = v*f*dx - u0*dot(grad(v), n)*ds(1) + (gamma/h)*u0*v*ds(1) + g*v*ds(2)
 # Compute solution
 u = Function(V)
 solve(a == L, u)
-print "Solution vector norm (0): {!r}".format(u.vector().norm("l2"))
-
-# Project solution to piecewise linears
-#u_proj = project(u)
+print("Solution vector norm (0): {!r}".format(u.vector().norm("l2")))
 
 # Save solution to file
 #file = File("poisson.pvd")
-#file << u_proj
+#file << u
 
 # Plot solution
-#plot(u_proj, interactive=True)
+#plot(u, interactive=True)

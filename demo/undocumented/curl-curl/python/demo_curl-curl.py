@@ -36,18 +36,11 @@ elements.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2011
-#
-# First added:  2009-04-02
-# Last changed: 2012-11-12
 
 from dolfin import *
 
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0)
-
-# Create sphere mesh
-mesh = SphereMesh(Point(0.0, 0.0, 0.0), 1.0, 0.1)
+# Load sphere mesh
+mesh = Mesh("../sphere.xml.gz")
 
 # Define function spaces
 P1 = VectorFunctionSpace(mesh, "CG", 1)

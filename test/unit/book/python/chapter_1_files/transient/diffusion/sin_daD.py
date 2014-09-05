@@ -1,5 +1,6 @@
 """Temperature variations in the ground."""
 
+from __future__ import print_function
 from dolfin import *
 import sys, numpy, time
 
@@ -11,8 +12,8 @@ degree = int(sys.argv[1])
 D = float(sys.argv[2])
 W = D/2.0
 divisions = [int(arg) for arg in sys.argv[3:]]
-print 'degree=%d, D=%g, W=%g, %s cells' % \
-      (degree, D, W, 'x'.join(sys.argv[3:]))
+print('degree=%d, D=%g, W=%g, %s cells' % \
+      (degree, D, W, 'x'.join(sys.argv[3:])))
 
 d = len(divisions)  # no of space dimensions
 if d == 1:
@@ -91,7 +92,7 @@ kappa = Expression(kappa_str[d],
 rho = 1500
 c = 1600
 
-print 'Thermal diffusivity:', kappa_0/rho/c
+print('Thermal diffusivity:', kappa_0/rho/c)
 
 # Define initial condition
 T_1 = interpolate(Constant(T_R), V)
@@ -171,11 +172,11 @@ flux = -kappa*dot(nabla_grad(T), n)*ds
 t = dt
 counter = 0
 while t <= t_stop:
-    print 'time =', t
+    print('time =', t)
     b = assemble(L, tensor=b)
     T_0.t = t
     help = interpolate(T_0, V)
-    print 'T_0:', help.vector().array()[0]
+    print('T_0:', help.vector().array()[0])
     bc.apply(A, b)
     solve(A, T.vector(), b)
     viz.update(T)
@@ -183,7 +184,7 @@ while t <= t_stop:
     line_plot()
 
     total_flux = assemble(flux)
-    print 'Total flux:', total_flux
+    print('Total flux:', total_flux)
     
     t += dt
     T_1.assign(T)

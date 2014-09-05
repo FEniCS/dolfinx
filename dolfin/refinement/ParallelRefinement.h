@@ -37,12 +37,18 @@ namespace dolfin
   {
   public:
 
-    /// Create any useful parallel data about the mesh (e.g. shared
-    /// edges) and store
+    /// ParallelRefinement encapsulates two main features:
+    /// a distributed EdgeFunction, which can be updated
+    /// across processes, and storage for local mesh data, 
+    /// which can be used to construct the new Mesh
     ParallelRefinement(const Mesh& mesh);
 
     /// Destructor
     ~ParallelRefinement();
+
+    /// Original mesh associated with this refinement
+    const Mesh& mesh() const
+    { return _mesh; }
 
     /// Return marked status of edge
     bool is_marked(std::size_t edge_index) const;
@@ -60,9 +66,9 @@ namespace dolfin
     /// Mark all incident edges of an entity
     void mark(const MeshEntity& cell);
 
-    /// Return number of marked edges incident on this MeshEntity -
+    /// Return list of marked edges incident on this MeshEntity -
     /// usually a cell
-    std::size_t marked_edge_count(const MeshEntity& cell) const;
+    std::vector<std::size_t> marked_edge_list(const MeshEntity& cell) const;
 
     /// Transfer marked edges between processes
     void update_logical_edgefunction();
@@ -81,9 +87,13 @@ namespace dolfin
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2,
                   std::size_t i3);
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2);
+    void new_cell(const std::vector<std::size_t>& idx);
 
-    /// Use vertex and topology data to partition new mesh
+    /// Use vertex and topology data to partition new mesh across processes
     void partition(Mesh& new_mesh, bool redistribute) const;
+
+    /// Build local mesh from internal data when not running in parallel
+    void build_local(Mesh& new_mesh) const;
 
   private:
 
@@ -111,7 +121,6 @@ namespace dolfin
     void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
                            const std::size_t gdim,
                            const std::vector<std::size_t>& global_indices);
-
   };
 
 }

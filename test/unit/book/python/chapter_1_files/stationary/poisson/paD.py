@@ -9,6 +9,7 @@ du/dn = 0 at all other boundaries.
 Exact solution: u(x, ...) = x^2
 """
 
+from __future__ import print_function
 from dolfin import *
 import numpy, sys
 
@@ -44,10 +45,10 @@ L = f*v*dx
 u = Function(V)
 solve(a == L, u, bcs)
 
-print mesh
+print(mesh)
 
 # Verification
 u_exact = Expression('x[0]*x[0]')
 u_e = interpolate(u_exact, V)
-print 'Max error:', \
-      numpy.abs(u_e.vector().array() - u.vector().array()).max()
+print('Max error:', \
+      numpy.abs(u_e.vector().array() - u.vector().array()).max())

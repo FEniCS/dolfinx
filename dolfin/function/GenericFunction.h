@@ -90,28 +90,28 @@ namespace dolfin
     //--- Convenience functions ---
 
     /// Evaluation at given point (scalar function)
-    double operator() (double x);
+    double operator() (double x) const;
 
     /// Evaluation at given point (scalar function)
-    double operator() (double x, double y);
+    double operator() (double x, double y) const;
 
     /// Evaluation at given point (scalar function)
-    double operator() (double x, double y, double z);
+    double operator() (double x, double y, double z) const;
 
     /// Evaluation at given point (scalar function)
-    double operator() (const Point& p);
+    double operator() (const Point& p) const;
 
     /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& values, double x);
+    void operator() (Array<double>& values, double x) const;
 
     /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& values, double x, double y);
+    void operator() (Array<double>& values, double x, double y) const;
 
     /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& values, double x, double y, double z);
+    void operator() (Array<double>& values, double x, double y, double z) const;
 
     /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& values, const Point& p);
+    void operator() (Array<double>& values, const Point& p) const;
 
     /// Evaluation at given point
 

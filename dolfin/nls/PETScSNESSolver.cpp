@@ -27,7 +27,6 @@
 #include <string>
 #include <utility>
 #include <petscsys.h>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -47,48 +46,55 @@ using namespace dolfin;
 // Mapping from method string to PETSc
 const std::map<std::string, std::pair<std::string, const SNESType> >
 PETScSNESSolver::_methods
-= boost::assign::map_list_of
-  ("default",     std::make_pair("default SNES method", ""))
-  ("ls",          std::make_pair("Line search method", SNESLS))
-  ("tr",          std::make_pair("Trust region method",  SNESTR))
-  ("test",        std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
-  ("ngmres",      std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
-  ("nrichardson", std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
-  ("virs",        std::make_pair("Reduced space active set solver method (for bounds)", SNESVIRS))
-  ("viss",        std::make_pair("Reduced space active set solver method (for bounds)", SNESVISS))
-  ("qn",          std::make_pair("Limited memory quasi-Newton", SNESQN))
-  ("ncg",         std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
-  ("fas",         std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
-  ("ms",          std::make_pair("Multistage smoothers", SNESMS));
+= { {"default",     {"default SNES method", ""}},
+    {"ls",          {"Line search method", SNESLS}},
+    ("tr",          {"Trust region method",  SNESTR}},
+    {"test",        {"Tool to verify Jacobian approximation", SNESTEST}},
+    {"ngmres",      {"Nonlinear generalised minimum residual method",
+                     SNESNGMRES}},
+    {"nrichardson", {"Richardson nonlinear method (Picard iteration)",
+                     SNESNRICHARDSON}},
+    {"virs",        {"Reduced space active set solver method (for bounds)",
+                     SNESVIRS}},
+    {"viss",        {"Reduced space active set solver method (for bounds)",
+                     SNESVISS}},
+    {"qn",          {"Limited memory quasi-Newton", SNESQN}},
+    {"ncg",         {"Nonlinear conjugate gradient method", SNESNCG}},
+    {"fas",         {"Full Approximation Scheme nonlinear multigrid method",
+                     SNESFAS}},
+    {"ms",          {"Multistage smoothers", SNESMS}} };
 #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 4
 // Mapping from method string to PETSc
 const std::map<std::string, std::pair<std::string, const SNESType> >
 PETScSNESSolver::_methods
-= boost::assign::map_list_of
-  ("default",      std::make_pair("default SNES method", ""))
-  ("newtonls",     std::make_pair("Line search method", SNESNEWTONLS))
-  ("newtontr",     std::make_pair("Trust region method", SNESNEWTONTR))
-  ("test",         std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
-  ("ngmres",       std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
-  ("nrichardson",  std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
-  ("vinewtonrsls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONRSLS))
-  ("vinewtonssls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONSSLS))
-  ("qn",           std::make_pair("Limited memory quasi-Newton", SNESQN))
-  ("ncg",          std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
-  ("fas",          std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
-  ("nasm",         std::make_pair("Nonlinear Additive Schwartz", SNESNASM))
-  ("anderson",     std::make_pair("Anderson mixing method", SNESANDERSON))
-  ("aspin",        std::make_pair("Additive-Schwarz Preconditioned Inexact Newton", SNESASPIN))
-  ("ms",           std::make_pair("Multistage smoothers", SNESMS));
+= { {"default",      {"default SNES method", ""}},
+    {"newtonls",     {"Line search method", SNESNEWTONLS}},
+    {"newtontr",     {"Trust region method", SNESNEWTONTR}},
+    {"test",         {"Tool to verify Jacobian approximation", SNESTEST}},
+    {"ngmres",       {"Nonlinear generalised minimum residual method",
+                      SNESNGMRES}},
+    {"nrichardson",  {"Richardson nonlinear method (Picard iteration)",
+                      SNESNRICHARDSON}},
+    {"vinewtonrsls", {"Reduced space active set solver method (for bounds)",
+                      SNESVINEWTONRSLS}},
+    {"vinewtonssls", {"Reduced space active set solver method (for bounds)",
+                      SNESVINEWTONSSLS}},
+    {"qn",           {"Limited memory quasi-Newton", SNESQN}},
+    {"ncg",          {"Nonlinear conjugate gradient method", SNESNCG}},
+    {"fas",          {"Full Approximation Scheme nonlinear multigrid method",
+                      SNESFAS}},
+    {"nasm",         {"Nonlinear Additive Schwartz", SNESNASM}},
+    {"anderson",     {"Anderson mixing method", SNESANDERSON}},
+    {"aspin",        {"Additive-Schwarz Preconditioned Inexact Newton",
+                      SNESASPIN}},
+    {"ms",           {"Multistage smoothers", SNESMS}} };
 #endif
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> > PETScSNESSolver::methods()
 {
   std::vector<std::pair<std::string, std::string> > available_methods;
-  std::map<std::string, std::pair<std::string,
-                                  const SNESType> >::const_iterator it;
-  for (it = _methods.begin(); it != _methods.end(); ++it)
+  for (auto it = _methods.begin(); it != _methods.end(); ++it)
     available_methods.push_back(std::make_pair(it->first, it->second.first));
   return available_methods;
 }
@@ -104,19 +110,8 @@ Parameters PETScSNESSolver::default_parameters()
   p.remove("relaxation_parameter");
   p.remove("method");
   p.add("method", "default");
-
-  std::set<std::string> line_searches;
-  line_searches.insert("basic");
-  line_searches.insert("bt");
-  line_searches.insert("l2");
-  line_searches.insert("cp");
-  p.add("line_search", "basic", line_searches);
-
-  std::set<std::string> bound_types;
-  bound_types.insert("default");
-  bound_types.insert("nonnegative");
-  bound_types.insert("nonpositive");
-  p.add("sign", "default", bound_types);
+  p.add("line_search", "basic",  {"basic", "bt", "l2", "cp" });
+  p.add("sign", "default", {"default", "nonnegative", "nonpositive"});
 
   return p;
 }

@@ -20,6 +20,7 @@
 # First added:  2013-04-18
 # Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 
 from dolfin import intersect
@@ -61,7 +62,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         self.assertEqual(intersection.intersected_cells(), [816])
 
 if __name__ == "__main__":
-    print ""
-    print "Testing intersection computation"
-    print "------------------------------------------------"
+    print("")
+    print("Testing intersection computation")
+    print("------------------------------------------------")
     unittest.main()

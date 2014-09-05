@@ -44,7 +44,7 @@ ghost_vertices = range(num_regular_vertices, mesh.topology().size(0))
 
 verts_note = []
 if (n == 0):
-    for k,val in mesh.topology().shared_entities(0).iteritems():
+    for k,val in six.iteritems(mesh.topology().shared_entities(0)):
         vtx = Vertex(mesh, k)
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 elif (n == 1):

@@ -23,7 +23,6 @@
 // Last changed: 2011-12-21
 
 #include <memory>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/Table.h>
@@ -268,8 +267,7 @@ dolfin::linear_algebra_backends()
   std::vector<std::pair<std::string, std::string> > backends;
 
   std::map<std::string, std::string> default_backend
-    = boost::assign::map_list_of("uBLAS",  " (default)")
-                                ("PETSc", "");
+    = { {"uBLAS",  " (default)"},  {"PETSc", ""} };
   #ifdef HAS_PETSC
   default_backend["uBLAS"] = "";
   default_backend["PETSc"] = " (default)";

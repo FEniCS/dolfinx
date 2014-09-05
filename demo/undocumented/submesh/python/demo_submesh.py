@@ -21,6 +21,7 @@ from a common mesh."""
 # First added:  2009-02-11
 # Last changed: 2009-03-02
 
+from __future__ import print_function
 from dolfin import *
 
 # Structure sub domain
@@ -59,4 +60,4 @@ interactive()
 
 # Build mapping from structure to fluid mesh
 structure_to_fluid = compute_vertex_map(structure_mesh, fluid_mesh)
-print structure_to_fluid
+print(structure_to_fluid)

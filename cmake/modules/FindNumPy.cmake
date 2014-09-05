@@ -43,7 +43,7 @@ if(NUMPY_INCLUDE_DIR)
 endif(NUMPY_INCLUDE_DIR)
 
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import numpy; print numpy.get_include()"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
   OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
   RESULT_VARIABLE NUMPY_NOT_FOUND
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -58,7 +58,7 @@ endif(NUMPY_INCLUDE_DIR)
 
 if(NUMPY_FOUND)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import numpy; print numpy.version.version"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.version.version)"
     OUTPUT_VARIABLE NUMPY_VERSION
     RESULT_VARIABLE NUMPY_NOT_FOUND
     OUTPUT_STRIP_TRAILING_WHITESPACE

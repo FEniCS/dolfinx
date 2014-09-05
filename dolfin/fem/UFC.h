@@ -74,12 +74,16 @@ namespace dolfin
                 const ufc::cell& ufc_cell1,
                 const std::vector<bool> & enabled_coefficients);
 
-    /// Update current cell (TODO: Remove this when PointIntegralSolver supports the version with enabled_coefficients)
+    /// Update current cell (TODO: Remove this when
+    /// PointIntegralSolver supports the version with
+    /// enabled_coefficients)
     void update(const Cell& cell,
                 const std::vector<double>& vertex_coordinates0,
                 const ufc::cell& ufc_cell);
 
-    /// Update current pair of cells for macro element (TODO: Remove this when PointIntegralSolver supports the version with enabled_coefficients)
+    /// Update current pair of cells for macro element (TODO: Remove
+    /// this when PointIntegralSolver supports the version with
+    /// enabled_coefficients)
     void update(const Cell& cell0,
                 const std::vector<double>& vertex_coordinates0,
                 const ufc::cell& ufc_cell0,
@@ -121,8 +125,8 @@ namespace dolfin
     std::vector<std::shared_ptr<ufc::interior_facet_integral> >
       interior_facet_integrals;
 
-    // Point integrals (access through
-    // get_point_integral to get proper fallback to default)
+    // Point integrals (access through get_point_integral to get
+    // proper fallback to default)
     std::vector<std::shared_ptr<ufc::point_integral> >
       point_integrals;
 
