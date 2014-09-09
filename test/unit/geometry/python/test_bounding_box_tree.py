@@ -27,9 +27,8 @@ from dolfin import BoundingBoxTree
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 from dolfin import Point
 from dolfin import MPI, mpi_comm_world
+from dolfin_utils.test import skip_in_parallel
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                      reason="Skipping unit test(s) not working in parallel")
 
 #--- compute_collisions with point ---
 

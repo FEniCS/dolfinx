@@ -26,9 +26,8 @@ from __future__ import print_function
 import pytest
 
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                        reason="Skipping unit test(s) not working in parallel")
 
 @skip_in_parallel
 def test_issue_97():

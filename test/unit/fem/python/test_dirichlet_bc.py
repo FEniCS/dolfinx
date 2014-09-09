@@ -30,6 +30,7 @@ import os
 import pytest
 import numpy
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
 
 
 def test_instantiation():
@@ -101,8 +102,7 @@ def test_meshdomain_bcs():
     [bc.apply(b) for bc in bcs]
     assert round(norm(b) - 16.55294535724685, 7) == 0
 
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                    reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_bc_for_piola_on_manifolds():
     "Testing DirichletBC for piolas over standard domains vs manifolds."
 

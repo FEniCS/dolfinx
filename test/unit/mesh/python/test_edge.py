@@ -24,12 +24,13 @@
 
 import pytest
 from dolfin import *
+from dolfin_utils.test import fixture, skip_in_parallel
 
-@pytest.fixture(scope='module')
+@fixture
 def cube():
     return UnitCubeMesh(5, 5, 5)
 
-@pytest.fixture(scope='module')
+@fixture
 def square():
     return UnitSquareMesh(5, 5)
 
@@ -38,10 +39,8 @@ def meshes(cube, square, request):
     mesh = [cube, square]
     return mesh[request.param]
 
-skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                       reason="Skipping unit test(s) not working in parallel")
 
-@skip_in_paralell
+@skip_in_parallel
 def test_2DEdgeLength(square):
     """Iterate over edges and sum length."""
     length = 0.0
@@ -49,7 +48,7 @@ def test_2DEdgeLength(square):
         length += e.length()
     assert round(length - 19.07106781186544708362, 7) == 0
 
-@skip_in_paralell
+@skip_in_parallel
 def test_3DEdgeLength(cube):
     """Iterate over edges and sum length."""
     length = 0.0

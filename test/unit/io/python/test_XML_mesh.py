@@ -27,9 +27,10 @@
 import pytest
 from dolfin import *
 import os
+from dolfin_utils.test import skip_in_parallel, fixture
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -38,9 +39,6 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                      reason="Skipping unit test(s) not working in parallel")
 
 @skip_in_parallel
 def test_save_plain_mesh2D(temppath):

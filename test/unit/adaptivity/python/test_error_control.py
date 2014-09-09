@@ -24,7 +24,7 @@ from ufl.algorithms import replace
 
 from dolfin import *
 from dolfin.fem.adaptivesolving import *
-
+from dolfin_utils.test import skip_in_parallel
 
 # FIXME: Move this to dolfin for user access?
 def reconstruct_refined_form(form, functions, mesh):
@@ -37,9 +37,6 @@ def reconstruct_refined_form(form, functions, mesh):
     newform = replace_integral_domains(replace(form, function_mapping), domain)
     return newform, function_mapping
 
-
-skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                    reason="Skipping unit test(s) not working in parallel")
 
 # This must be scope function, because the tests will modify some of the objects,
 # including the mesh which gets its hierarchial adapted submeshes attached.

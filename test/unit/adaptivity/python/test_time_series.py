@@ -23,9 +23,10 @@ from __future__ import print_function
 import pytest
 from dolfin import *
 import os
+from dolfin_utils.test import skip_in_paralleli, fixture
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -34,8 +35,6 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                     reason="Skipping unit test(s) not working in parallel")
 
 @skip_parallel
 def test_retrieve_compressed(temppath):

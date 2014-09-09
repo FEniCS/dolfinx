@@ -25,6 +25,7 @@
 import pytest
 import numpy
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
 
 class Quadratic2D(Expression):
     def eval(self, values, x):
@@ -34,8 +35,7 @@ class Quadratic3D(Expression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + x[2]*x[2] + 1.0
 
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_functional2D():
     """Test integration of function interpolated in non-matching meshes"""
 

@@ -25,12 +25,11 @@ import pytest
 import os
 from dolfin import *
 from six.moves import xrange as range
+from dolfin_utils.test import skip_in_parallel, fixture
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                     reason="Skipping unit test(s) not working in parallel")
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")

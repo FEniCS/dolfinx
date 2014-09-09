@@ -26,7 +26,7 @@ from dolfin import *
 from math   import sin, cos, exp, tan
 from numpy  import array, zeros, float_
 
-from dolfin_utils.test import fixture
+from dolfin_utils.test import fixture, skip_in_parallel
 
 @fixture
 def mesh():
@@ -540,8 +540,7 @@ def test_doc_string_complex_compiled_expression(mesh):
     assert values[0] == 0.0
 
 @pytest.mark.slow
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                    reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_doc_string_compiled_expression_with_system_headers():
     """
     This test tests all features documented in the doc string of

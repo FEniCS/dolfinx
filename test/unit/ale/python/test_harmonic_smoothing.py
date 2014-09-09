@@ -24,6 +24,7 @@ import pytest
 from dolfin import UnitSquareMesh, BoundaryMesh, Expression, \
                    CellFunction, SubMesh, Constant, MPI, MeshQuality,\
                    mpi_comm_world
+from dolfin_utils.test import skip_in_parallel
 
 def test_HarmonicSmoothing():
     #print("Testing HarmonicSmoothing::move(Mesh& mesh, "const BoundaryMesh& new_boundary)")
@@ -54,9 +55,7 @@ def test_HarmonicSmoothing():
     rmin = MeshQuality.radius_ratio_min_max(mesh)[0]
     assert rmin > magic_number
 
-
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                    reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_ale():
     #print("Testing ALE::move(Mesh& mesh0, const Mesh& mesh1)")
 

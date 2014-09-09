@@ -26,10 +26,7 @@ from __future__ import print_function
 import pytest
 import numpy
 from dolfin import *
-
-
-skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                     reason="Skipping unit test(s) not working in parallel")
+from dolfin_utils.test import skip_in_parallel
 
 
 def test_radius_ratio_triangle():
@@ -85,7 +82,7 @@ def test_radius_ratio_matplotlib():
     print(test)
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_radius_ratio_min_radius_ratio_max():
     mesh1d = UnitIntervalMesh(4)
     mesh1d.coordinates()[4] = mesh1d.coordinates()[3]

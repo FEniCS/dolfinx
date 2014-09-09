@@ -34,8 +34,6 @@ def cube():
 def square():
     return UnitSquareMesh(5, 5)
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                           reason="Skipping unit test(s) not working in parallel")
 
 @skip_in_parallel
 def test_Area(cube, square):

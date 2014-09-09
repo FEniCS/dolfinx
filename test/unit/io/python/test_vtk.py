@@ -23,26 +23,27 @@
 import pytest
 from dolfin import *
 import os
+from dolfin_utils.test import skip_in_paralleli, fixture
 
 # VTK file options
-@pytest.fixture(scope="module")
+@fixture
 def file_options():
     return ["ascii", "base64", "compressed"]
 
-@pytest.fixture(scope="module")
+@fixture
 def mesh_functions():
     return [CellFunction, FacetFunction, FaceFunction, EdgeFunction, VertexFunction]
 
-@pytest.fixture(scope="module")
+@fixture
 def mesh_function_types():
     return ["size_t", "int", "double", "bool"]
 
-@pytest.fixture(scope="module")
+@fixture
 def type_conv():
     return dict(size_t=int, int=int, double=float, bool=bool)
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -55,7 +56,7 @@ def test_save_1d_meshfunctions(temppath, mesh_functions, \
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitIntervalMesh(32)
     for F in mesh_functions:
-        if F in [FaceFunction, EdgeFunction]: continue
+       if F in [FaceFunction, EdgeFunction]: continue
         for t in mesh_function_types:
             mf = F(t, mesh, type_conv[t](1))
             File(temppath + "mf.pvd") << mf
@@ -184,8 +185,7 @@ def test_save_3d_vector(temppath, file_options):
         File(temppath + "u.pvd", file_option) << u
 
 # FFC fails for tensor spaces in 1D
-#@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-#                reason="Skipping unit test(s) not working in parallel")
+#@pskip_in_parallel
 #def test_save_1d_tensor(temppath, file_options):
 #    mesh = UnitIntervalMesh(32)
 #    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))

@@ -35,9 +35,8 @@ from dolfin_utils.meshconvert.meshconvert import DataHandler
 from dolfin import MPI, mpi_comm_world
 import six
 from functools import reduce
+from dolfin_utils.test import skip_in_parallel
 
-skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                    reason="Skipping unit test(s) not working in parallel")
 
 class Tester:
     def assertTrue(self, a):
@@ -428,7 +427,7 @@ class TestGmsh(_ConverterTest):
         meshconvert.convert(fname, handler)
         return handler
 
-@skip_in_paralell
+@skip_in_parallel
 class TestTriangle(Tester):
 
     def test_convert_triangle(self): # Disabled because it fails, see FIXME below
@@ -517,7 +516,7 @@ class TestTriangle(Tester):
         os.unlink(dfname)
         os.unlink(dfname0)
 
-@skip_in_paralell
+@skip_in_parallel
 class TestDiffPack(Tester):
     def test_convert_diffpack(self):
 

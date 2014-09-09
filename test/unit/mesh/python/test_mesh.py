@@ -34,8 +34,10 @@ import numpy
 from dolfin import *
 import os
 
+from dolfin_utils.test import fixture, skip_in_parallel
+
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -44,24 +46,21 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                     reason="Skipping unit test(s) not working in parallel")
-
-@pytest.fixture(scope="module")
+@fixture
 def mesh1d():
     # Create 1D mesh with degenerate cell
     mesh1d = UnitIntervalMesh(4)
     mesh1d.coordinates()[4] = mesh1d.coordinates()[3]
     return mesh1d
 
-@pytest.fixture(scope="module")
+@fixture
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
     mesh2d = UnitSquareMesh(1, 1, 'left')
     mesh2d.coordinates()[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
 
-@pytest.fixture(scope="module")
+@fixture
 def mesh3d():
     # Create 3D mesh with regular tetrahedron and degenerate cells
     mesh3d = UnitCubeMesh(1, 1, 1)
@@ -69,46 +68,46 @@ def mesh3d():
     mesh3d.coordinates()[7][1] = 0.0
     return mesh3d
 
-@pytest.fixture(scope="module")
+@fixture
 def c0(mesh3d):
     # Original tetrahedron from UnitCubeMesh(1, 1, 1)
     return Cell(mesh3d, 0)
     
-@pytest.fixture(scope="module")
+@fixture
 def c1(mesh3d):
     # Degenerate cell
     return Cell(mesh3d, 1)
 
-@pytest.fixture(scope="module")
+@fixture
 def c5(mesh3d):
     # Regular tetrahedron with edge sqrt(2)
     return Cell(mesh3d, 5)
                      
-@pytest.fixture(scope="module")
+@fixture
 def interval():
     return UnitIntervalMesh(10)
 
-@pytest.fixture(scope="module")
+@fixture
 def square():
     return UnitSquareMesh(5, 5)
 
-@pytest.fixture(scope="module")
+@fixture
 def rectangle():
     return RectangleMesh(0, 0, 2, 2, 5, 5)
 
-@pytest.fixture(scope="module")
+@fixture
 def cube():
     return UnitCubeMesh(3, 3, 3)
 
-@pytest.fixture(scope="module")
+@fixture
 def box():
     return BoxMesh(0, 0, 0, 2, 2, 2, 2, 2, 5)
 
-@pytest.fixture(scope="module")
+@fixture
 def mesh():
     return UnitSquareMesh(3, 3)
 
-@pytest.fixture(scope="module")
+@fixture
 def f(mesh):
     return MeshFunction('int', mesh, 0)
 
@@ -223,7 +222,7 @@ def test_BoundaryBoundary():
     assert b1.num_cells() == 0
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_Assign(mesh, f):
     """Assign value of mesh function."""
     f = f
@@ -231,7 +230,7 @@ def test_Assign(mesh, f):
     v = Vertex(mesh, 3)
     assert f[v] == 10
 
-@skip_in_paralell
+@skip_in_parallel
 def test_Write(temppath, f):
     """Construct and save a simple meshfunction."""
     f = f
@@ -240,7 +239,7 @@ def test_Write(temppath, f):
     file = File(temppath + "saved_mesh_function.xml")
     file << f
 
-@skip_in_paralell
+@skip_in_parallel
 def test_Read(temppath):
     """Construct and save a simple meshfunction. Then read it back from
     file."""
@@ -256,7 +255,7 @@ def test_Read(temppath):
     #f = MeshFunction('int', mesh, temppath + "saved_mesh_function.xml")
     #assert all(f.array() == f.array())
 
-@skip_in_paralell
+@skip_in_parallel
 def test_SubsetIterators(mesh):
     def inside1(x):
         return x[0] <= 0.5
@@ -277,7 +276,7 @@ def test_SubsetIterators(mesh):
 
 
 # FIXME: Mesh IO tests should be in io test directory
-@skip_in_paralell
+@skip_in_parallel
 def test_MeshXML2D(temppath):
     """Write and read 2D mesh to/from file"""
     mesh_out = UnitSquareMesh(3, 3)
@@ -288,7 +287,7 @@ def test_MeshXML2D(temppath):
     assert mesh_in.num_vertices() == 16
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_MeshXML3D(temppath):
     """Write and read 3D mesh to/from file"""
     mesh_out = UnitCubeMesh(3, 3, 3)
@@ -299,7 +298,7 @@ def test_MeshXML3D(temppath):
     assert mesh_in.num_vertices() == 64
 
 
-@skip_in_paralell
+@skip_in_parallel
 def xtest_MeshFunction(temppath):
     """Write and read mesh function to/from file"""
     mesh = UnitSquareMesh(1, 1)
@@ -322,7 +321,7 @@ def test_GetGeometricalDimension():
     assert mesh.geometry().dim() == 2
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_GetCoordinates():
     """Get coordinates of vertices"""
     mesh = UnitSquareMesh(5, 5)
@@ -335,14 +334,14 @@ def test_GetCells():
     assert MPI.sum(mesh.mpi_comm(), len(mesh.cells())) == 50
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_cell_inradius(c0, c1, c5):
     assert round(c0.inradius() - (3.0-sqrt(3.0))/6.0, 7) == 0
     assert round(c1.inradius() - 0.0, 7) == 0
     assert round(c5.inradius() - sqrt(3.0)/6.0, 7) == 0
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_cell_diameter(c0, c1, c5):
     from math import isnan
     assert round(c0.diameter() - sqrt(3.0), 7) == 0
@@ -352,14 +351,14 @@ def test_cell_diameter(c0, c1, c5):
     assert round(c5.diameter() - sqrt(3.0), 7) == 0
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
     assert round(c0.radius_ratio() - sqrt(3.0) + 1.0, 7) == 0
     assert round(c1.radius_ratio() - 0.0, 7) == 0
     assert round(c5.radius_ratio() - 1.0, 7) == 0
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_hmin_hmax(mesh1d, mesh2d, mesh3d):
     assert round(mesh1d.hmin() - 0.0, 7) == 0
     assert round(mesh1d.hmax() - 0.25, 7) == 0
@@ -370,7 +369,7 @@ def test_hmin_hmax(mesh1d, mesh2d, mesh3d):
     assert round(mesh3d.hmax() - sqrt(3.0), 7) == 0
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
     assert round(mesh1d.rmin() - 0.0, 7) == 0
     assert round(mesh1d.rmax() - 0.125, 7) == 0
@@ -392,7 +391,7 @@ def test_basic_cell_orientations():
     assert mesh.cell_orientations()[0] == 1
 
 
-@skip_in_paralell
+@skip_in_parallel
 def test_cell_orientations():
     "Test that cell orientations update as expected."
     mesh = UnitIntervalMesh(12)
