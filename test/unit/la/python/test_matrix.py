@@ -324,9 +324,8 @@ class TestMatrixForAnyBackend:
     #def test_resize(self):
 
 
-# A DataTester class that test the acces of the raw data through pointers
-# This is only available for uBLAS and MTL4 backends
-class DataTester:
+    # Test the access of the raw data through pointers
+    # This is only available for uBLAS and MTL4 backends
     def test_matrix_data(self, use_backend, data_backend):
         """ Test for ordinary Matrix"""
         self.backend, self.sub_backend = data_backend
@@ -364,8 +363,7 @@ class DataTester:
                 assert array[row,cols[k]] == values[k]
 
 
-class DataNotWorkingTester:
-    def test_matrix_data(self, no_data_backend):
+    def test_matrix_no_data(self, no_data_backend):
         self.backend, self.sub_backend = no_data_backend
 
         A, B = self.assemble_matrices()
