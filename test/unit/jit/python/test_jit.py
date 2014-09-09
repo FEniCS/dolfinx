@@ -28,7 +28,8 @@ def test_nasty_jit_caching_bug():
     # This may result in something like "matrices are not aligned"
     # from FIAT if the JIT caching does not recognize that the two
     # forms are different
-
+    
+    default_parameters = parameters["form_compiler"]["representation"]
     for representation in ["tensor", "quadrature"]:
 
         parameters["form_compiler"]["representation"] = representation
@@ -39,6 +40,7 @@ def test_nasty_jit_caching_bug():
         assert round(M1 - 1.0, 7) == 0
         assert round(M2 - 1.0, 7) == 0
 
+    parameters["form_compiler"]["representation"] = default_parameters
 
 @pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
                     reason="Skipping unit test(s) depending on PETSc and slepc.")
