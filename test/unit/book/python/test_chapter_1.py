@@ -25,7 +25,7 @@ from __future__ import print_function
 import pytest
 import inspect, os, sys
 from dolfin import *
-
+from dolfin_utils.test import skip_in_parallel
 from runpy import run_path as runpy_run_path
 
 def run_path(path, args):
@@ -39,9 +39,6 @@ def run_path(path, args):
             pass
         else:
             raise e
-
-skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                      reason="Skipping unit test(s) not working in parallel")
 
 
 def run_test(path, args=[]):
@@ -58,8 +55,7 @@ def run_test(path, args=[]):
     print("-------------------------------------------------------------------------")
 
     # Remember default DOLFIN parameters
-    dolfin_parameters = {}
-    dolfin_parameters.update(parameters)
+    dolfin_parameters = parameters.copy()
 
     # Run script with default parameters
     run_path(file_path, args)
@@ -84,111 +80,111 @@ def run_test(path, args=[]):
         run_path(file_path, args)
 
     # Reset parameters
-    parameters.update(dolfin_parameters)
+    parameters.assign(dolfin_parameters)
 
 
-@skip_parallel
+@skip_in_parallel
 def test_dn3_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_dn3_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_dnr_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_d5_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_d1_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_paD():
     run_test(["stationary", "poisson"], [8, 8])
 
-@skip_parallel
+@skip_in_parallel
 def test_d3_p2D():
     run_test(["stationary", "poisson"], [1])
 
-@skip_parallel
+@skip_in_parallel
 def test_d6_p2D():
     run_test(["stationary", "poisson"], [1])
 
-@skip_parallel
+@skip_in_parallel
 def test_dn2_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_d2_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_mat2x_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_dn1_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_dn4_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def disabled_test_vcp2D():
     # Disabled since it depends on scitools
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_d4_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_mat2_p2D():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_membrane1v():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_membrane1():
     run_test(["stationary", "poisson"])
 
-@skip_parallel
+@skip_in_parallel
 def test_pde_newton_np():
     run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
 
-@skip_parallel
+@skip_in_parallel
 def test_picard_np():
     run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
 
-@skip_parallel
+@skip_in_parallel
 def test_vp1_np():
     run_test(["stationary", "nonlinear_poisson"], ["a", "g", 1, 8, 8])
 
-@skip_parallel
+@skip_in_parallel
 def test_vp2_np():
     run_test(["stationary", "nonlinear_poisson"], ["a", "g", 1, 8, 8])
 
-@skip_parallel
+@skip_in_parallel
 def test_alg_newton_np():
     run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
 
-@skip_parallel
+@skip_in_parallel
 def test_d1_d2D():
     run_test(["transient", "diffusion"])
 
-@skip_parallel
+@skip_in_parallel
 def test_d2_d2D():
     run_test(["transient", "diffusion"])
 
-@skip_parallel
+@skip_in_parallel
 def disabled_test_sin_daD():
     # Disabled since it depends on scitools
     run_test(["transient", "diffusion"], [1, 1.5, 4, 40])
