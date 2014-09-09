@@ -28,7 +28,7 @@ from dolfin import *
 
 from dolfin_utils.test import skip_in_parallel
 
-@skip_in_paralell
+@skip_in_parallel
 def test_distance_interval():
 
     mesh = UnitIntervalMesh(1)
@@ -37,7 +37,7 @@ def test_distance_interval():
     assert round(cell.distance(Point(-1.0)) - 1.0, 7) == 0
     assert round(cell.distance(Point(0.5)) - 0.0, 7) == 0
 
-@skip_in_paralell
+@skip_in_parallel
 def test_distance_triangle():
 
     mesh = UnitSquareMesh(1, 1)
@@ -47,7 +47,7 @@ def test_distance_triangle():
     assert round(cell.distance(Point(-1.0, 0.5)) - 1, 7) == 0
     assert round(cell.distance(Point(0.5, 0.5)) - 0.0, 7) == 0
 
-@skip_in_paralell
+@skip_in_parallel
 def test_distance_tetrahedron():
 
     mesh = UnitCubeMesh(1, 1, 1)
