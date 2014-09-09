@@ -141,9 +141,8 @@ SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
   // Conversion if python long
   if (int_type == _LONG_PYTHON_INTEGER_TYPE)
   {
-    const npy_longlong signed_value = PyLong_AsLong(in);
-    value = static_cast<std::size_t>(signed_value);
-    return signed_value>=0;
+    value = static_cast<std::size_t>(PyLong_AsUnsignedLongLong(in));
+    return !PyErr_Occurred();
   }
   
   // Should never reach this point
