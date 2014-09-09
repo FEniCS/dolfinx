@@ -1,3 +1,5 @@
+#!/usr/bin/env py.test
+
 "Run all tests"
 
 # Copyright (C) 2011 Anders Logg
@@ -23,18 +25,42 @@
 from __future__ import print_function
 import os, re
 
-cpp_tests = []
-python_tests = []
 
-def test_codingstyle(topdir, language, subdir, suffixes, tests):
+def pytest_generate_tests(metafunc):
+    # List of C++ tests
+    cpp_tests = [dolfin_error, uint]
+
+    # List of Python tests
+    python_tests = [dolfin_error, raise_exception]
+
+    # Set up paths
+    pwd = os.path.dirname(os.path.abspath(__file__))
+    topdir = os.path.join(pwd, "..", "..")
+
+    # Check C++ files
+    cpp_call = {'topdir': topdir, 
+                'language': "C++", 
+                'subdir': "dolfin", 
+                'suffixes':[".cpp", ".h"]}
+
+    python_call = {'topdir': topdir, 
+                   'language': "Python", 
+                   'subdir': "site-packages", 
+                   'suffixes':[".py"]}
+
+    for test in python_tests:
+        python_call['test'] = test
+        metafunc.addcall(funcargs=python_call)
+
+    for test in cpp_tests:
+        cpp_call['test'] = test
+        metafunc.addcall(funcargs=cpp_call)
+
+                        
+def test_codingstyle(topdir, language, subdir, suffixes, test):
     "Main function for performing tests"
 
-    print("Running tests for %s coding style, watch out..." % language)
-    print("----------------------------------------------------")
-
     # Iterate over all files
-    num_errors = 0
-    num_warnings = 0
     for subdir, dirs, files in os.walk(os.path.join(topdir, subdir)):
         for filename in files:
 
@@ -48,23 +74,10 @@ def test_codingstyle(topdir, language, subdir, suffixes, tests):
             f.close()
 
             # Perform all tests
-            for test in tests:
-                result = test(code, filename)
-                if result == "error":
-                    num_errors += 1
-                elif result == "warning":
-                    num_warnings += 1
+            result = test(code, filename)
 
-    # Print summary
-    print()
-    print("Ran %d test(s)" % len(tests))
-    if num_errors == 0:
-        print("OK")
-    else:
-        print("*** %d tests failed" % num_failed)
-    print()
 
-def test_dolfin_error(code, filename):
+def dolfin_error(code, filename):
     "Test for use of dolfin_error vs error"
 
     # Skip exceptions
@@ -78,11 +91,10 @@ def test_dolfin_error(code, filename):
         return True
 
     # Write an error message
-    print("*** error() used in %s when dolfin_error() should be used" % filename)
-
+    assert(False, "*** error() used in %s when dolfin_error() should be used" % filename)
     return False
 
-def test_raise_exception(code, filename):
+def raise_exception(code, filename):
     "Test for use of dolfin_error vs raising exception"
 
     # Skip exceptions
@@ -95,11 +107,10 @@ def test_raise_exception(code, filename):
         return True
 
     # Write an error message
-    print("* Warning: exception raised in %s when dolfin_error() should be used" % filename)
-
+    assert(False, "* Warning: exception raised in %s when dolfin_error() should be used" % filename)
     return False
 
-def test_uint(code, filename):
+def uint(code, filename):
     "Test for use of uint"
 
     # Skip exceptions
@@ -112,26 +123,5 @@ def test_uint(code, filename):
         return True
 
     # Write an error message
-    print("* Warning: uint is used in %s when std::size_t should be used" % filename)
-
+    assert(False, "* Warning: uint is used in %s when std::size_t should be used" % filename)
     return False
-
-# List of C++ tests
-cpp_tests = [test_dolfin_error, test_uint]
-
-# List of Python tests
-python_tests = [test_dolfin_error, test_raise_exception]
-
-if __name__ == "__main__":
-
-    # Set up paths
-    pwd = os.path.dirname(os.path.abspath(__file__))
-    topdir = os.path.join(pwd, "..", "..")
-
-    # Check C++ files
-    test_codingstyle(topdir, "C++", "dolfin", [".cpp", ".h"], cpp_tests)
-
-    # Check Python files
-    test_codingstyle(topdir, "Python", "site-packages", [".py"], python_tests)
-
-#sys.exit(len(failed))
