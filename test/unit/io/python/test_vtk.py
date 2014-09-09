@@ -63,7 +63,6 @@ def test_save_1d_meshfunctions(tempfile, mesh_functions, \
        if F in [FaceFunction, EdgeFunction]: continue
        for t in mesh_function_types:
             mf = F(t, mesh, type_conv[t](1))
-            file_mf = MPI.common()
             File(tempfile + "mf.pvd") << mf
             f = File(tempfile + "mf.pvd")
             f << (mf, 0.)
