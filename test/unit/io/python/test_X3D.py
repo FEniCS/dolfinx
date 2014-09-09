@@ -23,9 +23,10 @@
 import pytest
 from dolfin import * 
 import os
+from dolfin_utils.test import fixture
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")

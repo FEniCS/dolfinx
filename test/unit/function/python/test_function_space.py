@@ -27,37 +27,37 @@
 import pytest
 from dolfin import *
 
-fixt = pytest.fixture(scope='module')
+from dolfin_utils.test import fixture
 
-@fixt
+@fixture
 def mesh():
     return UnitCubeMesh(8, 8, 8)
 
-@fixt
+@fixture
 def V(mesh):
     return FunctionSpace(mesh, 'CG', 1)
 
-@fixt
+@fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 
-@fixt
+@fixture
 def Q(W, V):
     return W*V
 
-@fixt
+@fixture
 def f(V):
     return Function(V)
 
-@fixt
+@fixture
 def V2(f):
     return f.function_space()
 
-@fixt
+@fixture
 def g(W):
     return Function(W)
 
-@fixt
+@fixture
 def W2(g):
     return g.function_space()
 

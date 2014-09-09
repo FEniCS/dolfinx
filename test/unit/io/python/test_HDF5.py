@@ -24,9 +24,10 @@
 import pytest
 import os
 from dolfin import *
+from dolfin_utils.test import skip_if_not_HDF5, fixture
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -35,10 +36,8 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-skip_if_no_hdf5 = pytest.mark.skipif(not has_hdf5(),
-                                     reason="Skipping unit test(s) depending on HDF5.")
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_vector(temppath):
     filename = os.path.join(temppath, "x.h5")
     x = Vector(mpi_comm_world(), 305)
@@ -46,7 +45,7 @@ def test_save_vector(temppath):
     vector_file = HDF5File(x.mpi_comm(), filename, "w")
     vector_file.write(x, "/my_vector")
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_read_vector(temppath):
     filename = os.path.join(temppath, "vector.h5")
 
@@ -64,7 +63,7 @@ def test_save_and_read_vector(temppath):
     assert y.size() == x.size()
     assert (x - y).norm("l1") == 0.0
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_read_meshfunction_2D(temppath):
     filename = os.path.join(temppath, "meshfn-2d.h5")
 
@@ -93,7 +92,7 @@ def test_save_and_read_meshfunction_2D(temppath):
         for cell in entities(mesh, i):
             assert meshfunctions[i][cell] == mf2[cell]
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_read_meshfunction_3D(temppath):
     filename = os.path.join(temppath, "meshfn-3d.h5")
 
@@ -122,7 +121,7 @@ def test_save_and_read_meshfunction_3D(temppath):
         for cell in entities(mesh, i):
             assert meshfunctions[i][cell] == mf2[cell]
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_read_mesh_value_collection(temppath):
     filename = os.path.join(temppath, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(5, 5, 5)
@@ -142,7 +141,7 @@ def test_save_and_read_mesh_value_collection(temppath):
         mvc = MeshValueCollection("size_t", mesh, dim)
         hdf5_file.read(mvc, "/mesh_value_collection_%d" % dim)
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_read_function(temppath):
     filename = os.path.join(temppath, "function.h5")
 
@@ -165,7 +164,7 @@ def test_save_and_read_function(temppath):
     result = F0.vector() - F1.vector()
     assert len(result.array().nonzero()[0]) == 0
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_read_mesh_2D(temppath):
     filename = os.path.join(temppath, "mesh2d.h5")
 
@@ -184,7 +183,7 @@ def test_save_and_read_mesh_2D(temppath):
     dim = mesh0.topology().dim()
     assert mesh0.size_global(dim) == mesh1.size_global(dim)
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_read_mesh_3D(temppath):
     filename = os.path.join(temppath, "mesh3d.h5")
 

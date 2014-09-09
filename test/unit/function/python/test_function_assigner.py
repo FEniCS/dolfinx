@@ -26,7 +26,7 @@ import pytest
 from dolfin import *
 import numpy as np
 
-fixt = pytest.fixture(scope='module')
+from dolfin_utils.test import fixture as fixt
 
 @fixt
 def mesh():

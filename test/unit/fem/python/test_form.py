@@ -128,7 +128,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     assert round(a - b, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
 
     V = FunctionSpace(square, 'CG', 1)
@@ -165,7 +165,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     assert round(bar - foo, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
 
     V = FunctionSpace(cube, 'CG', 1)
@@ -240,7 +240,7 @@ def W3(base):
     return base[0][1] * base[1][1]
 
 
-@skip_parallel
+@skip_in_parallel
 def test_basic_rt(RT2, RT3):
 
     f2 = Expression(("2.0", "1.0"))
@@ -281,7 +281,7 @@ def test_basic_rt(RT2, RT3):
     assert round(pa2 - pa3, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_mixed_poisson_solve(W2, W3):
 
     f = Constant(1.0)
@@ -348,7 +348,7 @@ def bottom3(mesh3, line):
     return SubMesh(mesh3, line)
 
     
-@skip_parallel
+@skip_in_parallel
 def test_normals_2D_1D(bottom1, m):
     "Testing assembly of normals for 1D meshes embedded in 2D"
 
@@ -364,7 +364,7 @@ def test_normals_2D_1D(bottom1, m):
     assert round(c1 + b1, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_normals_3D_1D(bottom3, m):
     "Testing assembly of normals for 1D meshes embedded in 3D"
 
@@ -380,7 +380,7 @@ def test_normals_3D_1D(bottom3, m):
     assert round(c1 + b1, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_normals_3D_2D(bottom2):
     "Testing assembly of normals for 2D meshes embedded in 3D"
 
@@ -396,7 +396,7 @@ def test_normals_3D_2D(bottom2):
     assert round(c1 + b1, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_cell_volume(m, bottom1, bottom2, bottom3):
     "Testing assembly of volume for embedded meshes"
 
@@ -416,7 +416,7 @@ def test_cell_volume(m, bottom1, bottom2, bottom3):
     assert round(b - 1.0/(2*m*m), 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_circumradius(m, bottom1, bottom2, bottom3):
     "Testing assembly of circumradius for embedded meshes"
 
@@ -441,7 +441,7 @@ def test_circumradius(m, bottom1, bottom2, bottom3):
     assert round(b0 - b1, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_facetarea(bottom1, bottom2, bottom3, m):
     "Testing assembly of facet area for embedded meshes"
 

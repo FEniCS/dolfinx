@@ -23,7 +23,7 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_in_paralleli, fixture
+from dolfin_utils.test import skip_in_parallel, fixture
 
 # VTK file options
 @fixture
@@ -57,7 +57,7 @@ def test_save_1d_meshfunctions(temppath, mesh_functions, \
     mesh = UnitIntervalMesh(32)
     for F in mesh_functions:
        if F in [FaceFunction, EdgeFunction]: continue
-        for t in mesh_function_types:
+       for t in mesh_function_types:
             mf = F(t, mesh, type_conv[t](1))
             File(temppath + "mf.pvd") << mf
             f = File(temppath + "mf.pvd")

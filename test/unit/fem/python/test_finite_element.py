@@ -26,21 +26,21 @@ import pytest
 import numpy
 from dolfin import *
 from six.moves import xrange as range
+from dolfin_utils.test import fixture
 
-
-@pytest.fixture(scope='module')
+@fixture
 def mesh():
     return UnitSquareMesh(4, 4)
 
-@pytest.fixture(scope='module')
+@fixture
 def V(mesh):
     return FunctionSpace(mesh, "CG", 1)
 
-@pytest.fixture(scope='module')
+@fixture
 def Q(mesh):
     return VectorFunctionSpace(mesh, "CG", 1)
 
-@pytest.fixture(scope='module')
+@fixture
 def W(V, Q):
     return V * Q
 

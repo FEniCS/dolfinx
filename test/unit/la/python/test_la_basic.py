@@ -65,7 +65,7 @@ use_backend = true_false_fixture
 
 
 class TestBasicLaOperations:
-    pytest.fixture(autouse=True)
+    @pytest.fixture(autouse=True)
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
 

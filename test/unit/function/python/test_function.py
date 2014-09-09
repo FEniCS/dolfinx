@@ -25,21 +25,19 @@ import ufl
 
 from dolfin_utils.test import *
 
-fixt = pytest.fixture(scope='module')
-
-@fixt
+@fixture
 def mesh():
     return UnitCubeMesh(8, 8, 8)
 
-@fixt 
+@fixture 
 def R(mesh):
     return FunctionSpace(mesh, 'R', 0)
 
-@fixt 
+@fixture 
 def V(mesh):
     return FunctionSpace(mesh, 'CG', 1)
 
-@fixt 
+@fixture 
 def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 

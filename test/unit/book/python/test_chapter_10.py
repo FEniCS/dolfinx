@@ -925,8 +925,7 @@ def test_p50_box_3(default_parameters):
     # Reset linear algebra backend so that other tests work
     parameters.update(default_parameters)
 
-@pytest.mark.skipif(not has_linear_algebra_backend("MTL4"), 
-                      reason="Skipping unit test(s) depending on MTL4.") 
+@skip_if_not_MTL4 
 @skip_in_parallel
 def test_p50_box_4(default_parameters):
     mesh = UnitSquareMesh(8, 8)

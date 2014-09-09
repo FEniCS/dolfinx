@@ -23,7 +23,7 @@ from __future__ import print_function
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_in_paralleli, fixture
+from dolfin_utils.test import skip_in_parallel, fixture
 
 # create an output folder
 @fixture
@@ -36,15 +36,15 @@ def temppath():
     return temppath
 
 
-@skip_parallel
+@skip_in_parallel
 def test_retrieve_compressed(temppath):
     _test_retrieve(temppath, True, False)
 
-@skip_parallel
+@skip_in_parallel
 def test_retrieve_compressed_all_connectivities(temppath):
     _test_retrieve(temppath, True, True)
 
-@skip_parallel
+@skip_in_parallel
 def test_retrieve_all_connectivities(temppath):
     _test_retrieve(temppath, False, True)
 
@@ -88,7 +88,7 @@ def _test_retrieve(temppath, compressed, all_connectivities):
                               mesh_test.topology()(i, j).size()
 
 
-@skip_parallel
+@skip_in_parallel
 def test_subdirectory(temppath):
     "Test that retrieve/store works with nonexisting subdirectory"
     filename = os.path.join(temppath, "test_subdirectory")

@@ -22,9 +22,10 @@
 import pytest
 from dolfin import *
 import os
+from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_Epetra, fixture
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -33,11 +34,6 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-
-skip_if_not_PETSc = pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
-                                     reason="Skipping unit test(s) need backend to be PETSc.")
-skip_if_not_Epetra = pytest.mark.skipif(not has_linear_algebra_backend("Epetra"),
-                                     reason="Skipping unit test(s) need backend to be Epetra.")
 
 @skip_if_not_PETSc
 def test_save_vector_petsc(temppath):

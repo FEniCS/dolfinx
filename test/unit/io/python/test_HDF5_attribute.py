@@ -23,9 +23,10 @@ import pytest
 import os
 from dolfin import *
 import numpy
+from dolfin_utils.test import skip_if_not_HDF5, fixture
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -34,8 +35,6 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-skip_if_no_hdf5 = pytest.mark.skipif(not has_hdf5(),
-                                     reason="Skipping unit test(s) depending on HDF5.")
 
 @pytest.yield_fixture
 def hdf_file(temppath):
@@ -45,14 +44,14 @@ def hdf_file(temppath):
     yield hdf_file
     del hdf_file
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_read_write_str_attribute(hdf_file):
     attr = hdf_file.attributes("/a_vector")
     attr['name'] = 'Vector'
     assert attr.type_str("name") == "string"
     assert attr['name'] == 'Vector'
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_read_write_float_attribute(temppath):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "float.h5"), "w")
     x = Vector(mpi_comm_world(), 123)
@@ -63,7 +62,7 @@ def test_read_write_float_attribute(temppath):
     assert attr['val'] == -9.2554
     del hdf_file
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_read_write_int_attribute(temppath):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "int.h5"), "w")
     x = Vector(mpi_comm_world(), 123)
@@ -74,7 +73,7 @@ def test_read_write_int_attribute(temppath):
     assert attr['val'] == 1
     del hdf_file
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_read_write_vec_float_attribute(temppath):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "vec_float.h5"), "w")
     x = Vector(mpi_comm_world(), 123)
@@ -89,7 +88,7 @@ def test_read_write_vec_float_attribute(temppath):
         assert val1 == val2
     del hdf_file
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_read_write_vec_int_attribute(temppath):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "vec_int.h5"), "w")
     x = Vector(mpi_comm_world(), 123)

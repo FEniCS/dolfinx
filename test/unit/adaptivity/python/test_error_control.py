@@ -81,7 +81,7 @@ def ec(problem, goal):
     return generate_error_control(problem, goal)
 
 
-@skip_parallel
+@skip_in_parallel
 def test_check_domains(goal, mesh, a, L):
     # Asserting that domains are ok before trying error control generation
     msg = "Expecting only the domain from the mesh to get here through u."
@@ -93,7 +93,7 @@ def test_check_domains(goal, mesh, a, L):
     assert L.domains()[0] == mesh.ufl_domain(), msg
 
 
-@skip_parallel
+@skip_in_parallel
 def test_error_estimation(problem, u, ec):
 
     # Solve variational problem once
@@ -108,7 +108,7 @@ def test_error_estimation(problem, u, ec):
     assert round(error_estimate - reference, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def test_error_indicators(problem, u, mesh):
 
     # Solve variational problem once
@@ -124,7 +124,7 @@ def test_error_indicators(problem, u, mesh):
     assert round(indicators.sum() - reference, 7) == 0
 
 
-@skip_parallel
+@skip_in_parallel
 def _test_adaptive_solve(problem, goal, u, mesh):
 
     # Solve problem adaptively

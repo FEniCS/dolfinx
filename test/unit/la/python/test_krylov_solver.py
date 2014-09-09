@@ -26,10 +26,9 @@
 
 from dolfin import *
 import pytest
+from dolfin_utils.test import skip_if_not_PETSc
 
-
-@pytest.mark.skipif(not has_linear_algebra_backend("PETSc"), 
-                    reason="Skipping unit test(s) depending on PETSc.")
+@skip_if_not_PETSc
 def test_krylov_solver():
     "Test PETScKrylovSolver"
 

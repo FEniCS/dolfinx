@@ -20,9 +20,10 @@
 import pytest
 import os
 from dolfin import *
+from dolfin_utils.test import skip_if_not_HDF5, fixture
 
 # create an output folder
-@pytest.fixture(scope="module")
+@fixture
 def temppath():
     filedir = os.path.dirname(os.path.abspath(__file__))
     basename = os.path.basename(__file__).replace(".py", "_data")
@@ -31,10 +32,8 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-skip_if_no_hdf5 = pytest.mark.skipif(not has_hdf5(),
-                                     reason="Skipping unit test(s) depending on HDF5.")
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_load_1d_mesh(temppath):
     filename = os.path.join(temppath, "mesh.xdmf")
     mesh = UnitIntervalMesh(32)
@@ -45,7 +44,7 @@ def test_save_and_load_1d_mesh(temppath):
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_load_2d_mesh(temppath):
     filename = os.path.join(temppath, "mesh_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
@@ -56,7 +55,7 @@ def test_save_and_load_2d_mesh(temppath):
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_and_load_3d_mesh(temppath):
     filename = os.path.join(temppath, "mesh_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -67,7 +66,7 @@ def test_save_and_load_3d_mesh(temppath):
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_1d_scalar(temppath):
     filename = os.path.join(temppath, "u.xdmf")
     mesh = UnitIntervalMesh(32)
@@ -76,7 +75,7 @@ def test_save_1d_scalar(temppath):
     File(filename) << u
     XDMFFile(mesh.mpi_comm(), filename) << u
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_2d_scalar(temppath):
     filename = os.path.join(temppath, "u.xdmf")
     mesh = UnitSquareMesh(16, 16)
@@ -85,7 +84,7 @@ def test_save_2d_scalar(temppath):
     File(mesh.mpi_comm(), filename) << u
     XDMFFile(mesh.mpi_comm(), filename) << u
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_3d_scalar(temppath):
     filename = os.path.join(temppath, "u.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -94,7 +93,7 @@ def test_save_3d_scalar(temppath):
     File(mesh.mpi_comm(), filename) << u
     XDMFFile(mesh.mpi_comm(), filename) << u
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_2d_vector(temppath):
     filename = os.path.join(temppath, "u_2dv.xdmf")
     mesh = UnitSquareMesh(16, 16)
@@ -104,7 +103,7 @@ def test_save_2d_vector(temppath):
     File(mesh.mpi_comm(), filename) << u
     XDMFFile(mesh.mpi_comm(), filename) << u
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_3d_vector(temppath):
     filename = os.path.join(temppath, "u_3Dv.xdmf")
     mesh = UnitCubeMesh(1, 1, 1)
@@ -114,7 +113,7 @@ def test_save_3d_vector(temppath):
     File(mesh.mpi_comm(), filename) << u
     XDMFFile(mesh.mpi_comm(), filename) << u
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_3d_vector_series(temppath):
     filename = os.path.join(temppath, "u_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -142,7 +141,7 @@ def test_save_3d_vector_series(temppath):
     u.vector()[:] = 3.0
     file << (u, 0.3)
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_2d_tensor(temppath):
     filename = os.path.join(temppath, "tensor.xdmf")
     mesh = UnitSquareMesh(16, 16)
@@ -151,7 +150,7 @@ def test_save_2d_tensor(temppath):
     File(mesh.mpi_comm(), filename) << u
     XDMFFile(mesh.mpi_comm(), filename) << u
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_3d_tensor(temppath):
     filename = os.path.join(temppath, "u.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -160,7 +159,7 @@ def test_save_3d_tensor(temppath):
     File(mesh.mpi_comm(), filename) << u
     XDMFFile(mesh.mpi_comm(), filename) << u
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_1d_mesh(temppath):
     filename = os.path.join(temppath, "mf_1D.xdmf")
     mesh = UnitIntervalMesh(32)
@@ -170,7 +169,7 @@ def test_save_1d_mesh(temppath):
     File(mesh.mpi_comm(), filename) << mf
     XDMFFile(mesh.mpi_comm(), filename) << mf
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_2D_cell_function(temppath):
     filename = os.path.join(temppath, "mf_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
@@ -180,7 +179,7 @@ def test_save_2D_cell_function(temppath):
     File(mesh.mpi_comm(), filename) << mf
     XDMFFile(mesh.mpi_comm(), filename) << mf
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_3D_cell_function(temppath):
     mesh = UnitCubeMesh(8, 8, 8)
     mf = CellFunction("size_t", mesh)
@@ -189,7 +188,7 @@ def test_save_3D_cell_function(temppath):
     File(mesh.mpi_comm(), os.path.join(temppath, "mf_3D.xdmf")) << mf
     XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "mf_3D.xdmf")) << mf
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_2D_facet_function(temppath):
     mesh = UnitSquareMesh(32, 32)
     mf = FacetFunction("size_t", mesh)
@@ -198,7 +197,7 @@ def test_save_2D_facet_function(temppath):
     File(mesh.mpi_comm(), os.path.join(temppath, "mf_facet_2D.xdmf")) << mf
     XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "mf_facet_2D.xdmf")) << mf
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_3D_facet_function(temppath):
     mesh = UnitCubeMesh(8, 8, 8)
     mf = FacetFunction("size_t", mesh)
@@ -207,7 +206,7 @@ def test_save_3D_facet_function(temppath):
     File(mesh.mpi_comm(), os.path.join(temppath, "mf_facet_3D.xdmf")) << mf
     XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "mf_facet_3D.xdmf")) << mf
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_3D_edge_function(temppath):
     mesh = UnitCubeMesh(8, 8, 8)
     mf = EdgeFunction("size_t", mesh)
@@ -216,7 +215,7 @@ def test_save_3D_edge_function(temppath):
     File(mesh.mpi_comm(), os.path.join(temppath, "mf_edge_3D.xdmf")) << mf
     XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "mf_edge_3D.xdmf")) << mf
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_2D_vertex_function(temppath):
     mesh = UnitSquareMesh(32, 32)
     mf = VertexFunction("size_t", mesh)
@@ -225,7 +224,7 @@ def test_save_2D_vertex_function(temppath):
     File(mesh.mpi_comm(), os.path.join(temppath, "mf_vertex_2D.xdmf")) << mf
     XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "mf_vertex_2D.xdmf")) << mf
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_3D_vertex_function(temppath):
     filename = os.path.join(temppath, "mf_vertex_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -235,7 +234,7 @@ def test_save_3D_vertex_function(temppath):
     File(mesh.mpi_comm(), filename) << mf
     XDMFFile(mesh.mpi_comm(), filename) << mf
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_points_2D(temppath):
     import numpy
     mesh = UnitSquareMesh(16, 16)
@@ -251,7 +250,7 @@ def test_save_points_2D(temppath):
     file = XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "points_values_2D.xdmf"))
     file.write(points, vals)
 
-@skip_if_no_hdf5
+@skip_if_not_HDF5
 def test_save_points_3D(temppath):
     import numpy
     mesh = UnitCubeMesh(4, 4, 4)

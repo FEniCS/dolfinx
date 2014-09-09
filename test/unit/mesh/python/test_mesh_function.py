@@ -26,7 +26,7 @@ import pytest
 import numpy.random
 from dolfin import *
 from six.moves import xrange as range
-
+from dolfin_utils.test import fixture
 
 @pytest.fixture(scope="module", params=range(5))
 def name(request):
@@ -38,11 +38,11 @@ def tp(request):
     tps = ['int', 'size_t', 'bool', 'double']
     return tps[request.param]
 
-@pytest.fixture(scope="module")
+@fixture
 def mesh():
     return UnitCubeMesh(3, 3, 3)
 
-@pytest.fixture(scope="module")
+@fixture
 def funcs(mesh):
     names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
     tps = ['int', 'size_t', 'bool', 'double']
@@ -53,11 +53,11 @@ def funcs(mesh):
                                        (name, tp))
     return funcs
 
-@pytest.fixture(scope="module")
+@fixture
 def cube():
     return UnitCubeMesh(8, 8, 8)
 
-@pytest.fixture(scope="module")
+@fixture
 def f(cube):
     return MeshFunction('int', cube, 0)
 

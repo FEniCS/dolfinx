@@ -21,7 +21,7 @@
 
 import pytest
 from dolfin import *
-
+from dolfin_utils.test import skip_if_not_PETSc
 
 def test_nasty_jit_caching_bug():
 
@@ -42,8 +42,7 @@ def test_nasty_jit_caching_bug():
 
     parameters["form_compiler"]["representation"] = default_parameters
 
-@pytest.mark.skipif(not has_linear_algebra_backend("PETSc"),
-                    reason="Skipping unit test(s) depending on PETSc and slepc.")
+@skip_if_not_PETSc
 def test_compile_extension_module():
 
     # This test should do basically the same as the docstring of
