@@ -39,12 +39,10 @@ def pytest_generate_tests(metafunc):
 
     # Check C++ files
     cpp_call = {'topdir': topdir, 
-                'language': "C++", 
                 'subdir': "dolfin", 
                 'suffixes':[".cpp", ".h"]}
 
     python_call = {'topdir': topdir, 
-                   'language': "Python", 
                    'subdir': "site-packages", 
                    'suffixes':[".py"]}
 
@@ -57,7 +55,7 @@ def pytest_generate_tests(metafunc):
         metafunc.addcall(funcargs=cpp_call)
 
                         
-def test_codingstyle(topdir, language, subdir, suffixes, test):
+def test_codingstyle(topdir, subdir, suffixes, test):
     "Main function for performing tests"
 
     # Iterate over all files
@@ -91,7 +89,7 @@ def dolfin_error(code, filename):
         return True
 
     # Write an error message
-    assert(False, "*** error() used in %s when dolfin_error() should be used" % filename)
+    assert False, "*** error() used in %s when dolfin_error() should be used" % filename
     return False
 
 def raise_exception(code, filename):
@@ -107,7 +105,7 @@ def raise_exception(code, filename):
         return True
 
     # Write an error message
-    assert(False, "* Warning: exception raised in %s when dolfin_error() should be used" % filename)
+    assert False, "* Warning: exception raised in %s when dolfin_error() should be used" % filename
     return False
 
 def uint(code, filename):
@@ -123,5 +121,5 @@ def uint(code, filename):
         return True
 
     # Write an error message
-    assert(False, "* Warning: uint is used in %s when std::size_t should be used" % filename)
+    assert False, "* Warning: uint is used in %s when std::size_t should be used" % filename
     return False
