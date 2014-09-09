@@ -49,8 +49,8 @@ def test_diff_then_integrate():
     # likely that the default choice of quadrature rule is not perfect
     F_list = []
     def reg(exprs, acc=10):
-	for expr in exprs:
-	    F_list.append((expr, acc))
+        for expr in exprs:
+            F_list.append((expr, acc))
 
     # FIXME: 0*dx and 1*dx fails in the ufl-ffc-jit framework somewhere
     #reg([Constant(0.0, cell=cell)])
@@ -70,30 +70,30 @@ def test_diff_then_integrate():
     reg([tan(xs)], 7)
 
     try:
-	import scipy
+        import scipy
     except:
-	scipy = None
+        scipy = None
 
     if hasattr(math, 'erf') or scipy is not None:
-	reg([erf(xs)])
+        reg([erf(xs)])
     else:
-	print("Warning: skipping test of erf, old python version and no scipy.")
+        print("Warning: skipping test of erf, old python version and no scipy.")
 
     if 0:
-	print("Warning: skipping tests of bessel functions, doesn't build on all platforms.")
+        print("Warning: skipping tests of bessel functions, doesn't build on all platforms.")
     elif scipy is None:
-	print("Warning: skipping tests of bessel functions, missing scipy.")
+        print("Warning: skipping tests of bessel functions, missing scipy.")
     else:
-	for nu in (0,1,2):
-	    # Many of these are possibly more accurately integrated,
-	    # but 4 covers all and is sufficient for this test
-	    reg([bessel_J(nu, xs), bessel_Y(nu, xs), bessel_I(nu, xs), bessel_K(nu, xs)], 4)
+        for nu in (0,1,2):
+            # Many of these are possibly more accurately integrated,
+            # but 4 covers all and is sufficient for this test
+            reg([bessel_J(nu, xs), bessel_Y(nu, xs), bessel_I(nu, xs), bessel_K(nu, xs)], 4)
 
     # To handle tensor algebra, make an x dependent input tensor
     # xx and square all expressions
     def reg2(exprs, acc=10):
-	for expr in exprs:
-	    F_list.append((inner(expr,expr), acc))
+        for expr in exprs:
+            F_list.append((inner(expr,expr), acc))
     xx  = as_matrix([[2*x**2, 3*x**3], [11*x**5, 7*x**4]])
     x3v = as_vector([3*x**2, 5*x**3, 7*x**4])
     cc  = as_matrix([[2, 3], [4, 5]])
@@ -131,26 +131,26 @@ def test_diff_then_integrate():
     # Run through all operators defined above and compare integrals
     debug = 0
     for F, acc in F_list:
-	# Apply UFL differentiation
-	f = diff(F, SpatialCoordinate(mesh))[...,0]
-	if debug:
-	    print(F)
-	    print(x)
-	    print(f)
+        # Apply UFL differentiation
+        f = diff(F, SpatialCoordinate(mesh))[...,0]
+        if debug:
+            print(F)
+            print(x)
+            print(f)
 
-	# Apply integration with DOLFIN
-	# (also passes through form compilation and jit)
-	M = f*dx
-	f_integral = assemble(M)
+        # Apply integration with DOLFIN
+        # (also passes through form compilation and jit)
+        M = f*dx
+        f_integral = assemble(M)
 
-	# Compute integral of f manually from anti-derivative F
-	# (passes through PyDOLFIN interface and uses UFL evaluation)
-	F_diff = F((x1,)) - F((x0,))
+        # Compute integral of f manually from anti-derivative F
+        # (passes through PyDOLFIN interface and uses UFL evaluation)
+        F_diff = F((x1,)) - F((x0,))
 
-	# Compare results. Using custom relative delta instead
-	# of decimal digits here because some numbers are >> 1.
-	delta = min(abs(f_integral), abs(F_diff)) * 10**-acc
-	assert f_integral - F_diff <= delta
+        # Compare results. Using custom relative delta instead
+        # of decimal digits here because some numbers are >> 1.
+        delta = min(abs(f_integral), abs(F_diff)) * 10**-acc
+        assert f_integral - F_diff <= delta
 
 
 def test_div_grad_then_integrate_over_cells_and_boundary():
@@ -170,8 +170,8 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
     # default choice of quadrature rule is not perfect
     F_list = []
     def reg(exprs, acc=10):
-	for expr in exprs:
-	    F_list.append((expr, acc))
+        for expr in exprs:
+            F_list.append((expr, acc))
 
     # FIXME: 0*dx and 1*dx fails in the ufl-ffc-jit framework somewhere
     #reg([Constant(0.0, cell=cell)])
@@ -193,8 +193,8 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
     # To handle tensor algebra, make an x dependent input tensor
     # xx and square all expressions
     def reg2(exprs, acc=10):
-	for expr in exprs:
-	    F_list.append((inner(expr,expr), acc))
+        for expr in exprs:
+            F_list.append((inner(expr,expr), acc))
     xx = as_matrix([[2*x**2, 3*x**3], [11*x**5, 7*x**4]])
     xxs = as_matrix([[2*xs**2, 3*xs**3], [11*xs**5, 7*xs**4]])
     x3v = as_vector([3*x**2, 5*x**3, 7*x**4])
@@ -233,19 +233,19 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
     # Run through all operators defined above and compare integrals
     debug = 0
     if debug:
-	k = 2
-	F_list = F_list[1:]
+        k = 2
+        F_list = F_list[1:]
 
     for F,acc in F_list:
-	if debug: print('\n', "F:", str(F))
+        if debug: print('\n', "F:", str(F))
 
-	# Integrate over domain and its boundary
-	int_dx = assemble(div(grad(F))*dx(mesh))
-	int_ds = assemble(dot(grad(F), n)*ds(mesh))
+        # Integrate over domain and its boundary
+        int_dx = assemble(div(grad(F))*dx(mesh))
+        int_ds = assemble(dot(grad(F), n)*ds(mesh))
 
-	if debug: print(int_dx, int_ds)
+        if debug: print(int_dx, int_ds)
 
-	# Compare results. Using custom relative delta instead of
-	# decimal digits here because some numbers are >> 1.
-	delta = min(abs(int_dx), abs(int_ds)) * 10**-acc
-	assert int_dx - int_ds <= delta
+        # Compare results. Using custom relative delta instead of
+        # decimal digits here because some numbers are >> 1.
+        delta = min(abs(int_dx), abs(int_ds)) * 10**-acc
+        assert int_dx - int_ds <= delta
