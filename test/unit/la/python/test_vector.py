@@ -52,14 +52,16 @@ else:
 # Remove backends we haven't built with
 data_backends = list(filter(has_linear_algebra_backend, data_backends))
 no_data_backends = list(filter(has_linear_algebra_backend, no_data_backends))
+any_backends = data_backends + no_data_backends
 
 # Fixtures setting up and resetting the global linear algebra backend for a list of backends
 data_backend    = set_parameters_fixture("linear_algebra_backend", data_backends)
 no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backends)
-
+any_backend = set_parameters_fixture("linear_algebra_backend", any_backends)
 
 class TestVectorForAnyBackend:
-    pytest.fixture(autouse=True)
+
+    @pytest.fixture(autouse=True)
     def assemble_vectors(self):
         mesh = UnitSquareMesh(7, 4)
 
@@ -71,18 +73,18 @@ class TestVectorForAnyBackend:
 
         return assemble(v*dx), assemble(t*dx)
 
-    def test_create_empty_vector(self):
+    def test_create_empty_vector(self, any_backend):
         v0 = Vector()
         info(v0)
         info(v0, True)
         assert v0.size() == 0
 
-    def test_create_vector(self):
+    def test_create_vector(self, any_backend):
         n = 301
         v1 = Vector(mpi_comm_world(), n)
         assert v1.size() == n
 
-    def test_copy_vector(self):
+    def test_copy_vector(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v1 = Vector(v0)
@@ -90,7 +92,7 @@ class TestVectorForAnyBackend:
         del v0
         assert v1.size() == n
 
-    def test_assign_and_copy_vector(self):
+    def test_assign_and_copy_vector(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v0[:] = 1.0
@@ -99,58 +101,58 @@ class TestVectorForAnyBackend:
         del v0
         assert v1.sum() == n
 
-    def test_zero(self):
+    def test_zero(self, any_backend):
         v0 = Vector(mpi_comm_world(), 301)
         v0.zero()
         assert v0.sum() == 0.0
 
-    def test_apply(self):
+    def test_apply(self, any_backend):
         v0 = Vector(mpi_comm_world(), 301)
         v0.apply("insert")
         v0.apply("add")
 
-    def test_str(self):
+    def test_str(self, any_backend):
         v0 = Vector(mpi_comm_world(), 13)
         tmp = v0.str(False)
         tmp = v0.str(True)
 
-    def test_init_range(self):
+    def test_init_range(self, any_backend):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
         v0.init(mpi_comm_world(), local_range)
         assert v0.local_range() == local_range
 
-    def test_size(self):
+    def test_size(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), 301)
         assert v0.size() == n
 
-    def test_local_size(self):
+    def test_local_size(self, any_backend):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
         v0.init(mpi_comm_world(), local_range)
         assert v0.local_size() == local_range[1] - local_range[0]
 
-    def test_owns_index(self):
+    def test_owns_index(self, any_backend):
         m, n = 301, 25
         v0 = Vector(mpi_comm_world(), m)
         local_range = v0.local_range()
         in_range = local_range[0] <= n < local_range[1]
         assert v0.owns_index(n) == in_range
 
-    #def test_set(self):
+    #def test_set(self, any_backend):
 
-    #def test_add(self):
+    #def test_add(self, any_backend):
 
-    def test_get_local(self):
+    def test_get_local(self, any_backend):
         from numpy import empty
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         data = v0.get_local()
 
-    def test_set_local(self):
+    def test_set_local(self, any_backend):
         from numpy import zeros
         n = 301
         v0 = Vector(mpi_comm_world(), n)
@@ -158,7 +160,7 @@ class TestVectorForAnyBackend:
         v0.set_local(data)
         data = zeros((v0.local_size()*2), dtype='d')
 
-    def test_add_local(self):
+    def test_add_local(self, any_backend):
         from numpy import zeros
         n = 301
         v0 = Vector(mpi_comm_world(), n)
@@ -168,9 +170,9 @@ class TestVectorForAnyBackend:
         with pytest.raises(TypeError):
             v0.add_local(data[::2])
 
-    #def test_gather(self):
+    #def test_gather(self, any_backend):
 
-    def test_axpy(self):
+    def test_axpy(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v0[:] = 1.0
@@ -178,14 +180,14 @@ class TestVectorForAnyBackend:
         v0.axpy(2.0, v1)
         assert v0.sum() == 2*n + n
 
-    def test_abs(self):
+    def test_abs(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v0.abs()
         assert v0.sum() == n
 
-    def test_inner(self):
+    def test_inner(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v0[:] = 2.0
@@ -193,7 +195,7 @@ class TestVectorForAnyBackend:
         v1[:] = 3.0
         assert v0.inner(v1) == 6*n
 
-    def test_norm(self):
+    def test_norm(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v0[:] = -2.0
@@ -201,23 +203,23 @@ class TestVectorForAnyBackend:
         assert v0.norm("l2") == sqrt(4.0*n)
         assert v0.norm("linf") == 2.0
 
-    def test_min(self):
+    def test_min(self, any_backend):
         v0 = Vector(mpi_comm_world(), 301)
         v0[:] = 2.0
         assert v0.min() == 2.0
 
-    def test_max(self):
+    def test_max(self, any_backend):
         v0 = Vector(mpi_comm_world(),301)
         v0[:] = -2.0
         assert v0.max() == -2.0
 
-    def test_sum(self):
+    def test_sum(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v0[:] = -2.0
         assert v0.sum() == -2.0*n
 
-    def test_sum_entries(self):
+    def test_sum_entries(self, any_backend):
         from numpy import zeros
         n = 301
         v0 = Vector(mpi_comm_world(), n)
@@ -231,14 +233,14 @@ class TestVectorForAnyBackend:
         entries[4] = 97
         assert v0.sum(entries) == -2.0*5
 
-    def test_scalar_mult(self):
+    def test_scalar_mult(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v0 *= 2.0
         assert v0.sum() == -2.0*n
 
-    def test_vector_element_mult(self):
+    def test_vector_element_mult(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v1 = Vector(mpi_comm_world(), n)
@@ -247,14 +249,14 @@ class TestVectorForAnyBackend:
         v0 *= v1
         assert v0.sum() == -6.0*n
 
-    def test_scalar_divide(self):
+    def test_scalar_divide(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v0[:] = -1.0
         v0 /= -2.0
         assert v0.sum() == 0.5*n
 
-    def test_vector_add(self):
+    def test_vector_add(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v1 = Vector(mpi_comm_world(), n)
@@ -263,7 +265,7 @@ class TestVectorForAnyBackend:
         v0 += v1
         assert v0.sum() == n
 
-    def test_scalar_add(self):
+    def test_scalar_add(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v1 = Vector(mpi_comm_world(), n)
@@ -277,7 +279,7 @@ class TestVectorForAnyBackend:
         v0 = v0 - 1.0
         assert v0.sum() == n
 
-    def test_vector_subtract(self):
+    def test_vector_subtract(self, any_backend):
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v1 = Vector(mpi_comm_world(), n)
@@ -286,7 +288,7 @@ class TestVectorForAnyBackend:
         v0 -= v1
         assert v0.sum() == -3.0*n
 
-    def test_vector_assignment(self):
+    def test_vector_assignment(self, any_backend):
         m, n = 301, 345
         v0 = Vector(mpi_comm_world(), m)
         v1 = Vector(mpi_comm_world(), n)
@@ -295,7 +297,7 @@ class TestVectorForAnyBackend:
         v0 = v1
         assert v0.sum() == 2.0*n
 
-    def test_vector_assignment_length(self):
+    def test_vector_assignment_length(self, any_backend):
         # Test that assigning vectors of different lengths fails
         m, n = 301, 345
         v0 = Vector(mpi_comm_world(), m)
@@ -305,7 +307,7 @@ class TestVectorForAnyBackend:
         with pytest.raises(RuntimeError):
             wrong_assignment(v0, v1)
 
-    def test_vector_assignment_length(self):
+    def test_vector_assignment_length(self, any_backend):
         # Test that assigning with diffrent parallel layouts fails
         if MPI.size(mpi_comm_world()) > 1:
             m = 301
