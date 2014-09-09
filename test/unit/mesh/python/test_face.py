@@ -24,12 +24,13 @@
 
 import pytest
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel, fixture
 
-@pytest.fixture(scope='module')
+@fixture
 def cube():
     return UnitCubeMesh(5, 5, 5)
 
-@pytest.fixture(scope='module')
+@fixture
 def square():
     return UnitSquareMesh(5, 5)
 

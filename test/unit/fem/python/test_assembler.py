@@ -28,9 +28,7 @@ import os
 import numpy
 from dolfin import *
 
-
-skip_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                     reason="Skipping unit test(s) not working in parallel")
+from dolfin_utils.test import skip_in_parallel
 
 
 def test_cell_size_assembly_1D():
@@ -57,7 +55,7 @@ def test_cell_assembly_1D():
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
 
-@skip_parallel
+@skip_in_parallel
 def test_cell_assembly_1D_multithreaded():
 
     mesh = UnitIntervalMesh(48)
@@ -101,7 +99,7 @@ def test_cell_assembly():
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
 
-@skip_parallel
+@skip_in_parallel
 def test_cell_assembly_multithreaded():
 
     mesh = UnitCubeMesh(4, 4, 4)
@@ -163,7 +161,7 @@ def test_facet_assembly():
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
 
-@skip_parallel
+@skip_in_parallel
 def test_facet_assembly_multithreaded():
 
     mesh = UnitSquareMesh(24, 24)
@@ -212,7 +210,7 @@ def test_functional_assembly():
     M1 = f*ds(mesh)
     assert round(assemble(M1) - 4.0, 7) == 0
 
-@skip_parallel
+@skip_in_parallel
 def test_functional_assembly_multithreaded():
 
     mesh = UnitSquareMesh(24, 24)
@@ -283,7 +281,7 @@ def test_subdomain_and_fulldomain_assembly_meshdomains():
 	    #print sub[k] + full, subplusfull[k]
             assert round(sub[k] + full - subplusfull[k], 7) == 0
 
-@skip_parallel
+@skip_in_parallel
 def test_subdomain_assembly_form_1():
     "Test assembly over subdomains with markers stored as part of form"
 
@@ -352,7 +350,7 @@ def test_subdomain_assembly_form_1():
     reference = 0.0626219513355
     assert round(assemble(b).norm("l2") - reference, 8) == 0
 
-@skip_parallel
+@skip_in_parallel
 def test_subdomain_assembly_form_1_multithreaded():
     "Test assembly over subdomains with markers stored as part of form"
 
@@ -479,7 +477,7 @@ def test_subdomain_assembly_form_2():
     assert round(assemble(a0) - 0.25, 7) == 0
     assert round(assemble(a1) - 1.0, 7) == 0
 
-@skip_parallel
+@skip_in_parallel
 def test_colored_cell_assembly():
 
     old_mesh = UnitCubeMesh(4, 4, 4)
@@ -527,7 +525,7 @@ def test_nonsquare_assembly():
 
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
 
-@skip_parallel
+@skip_in_parallel
 def test_nonsquare_assembly_multithreaded():
     """Test assembly of a rectangular matrix"""
 
@@ -547,7 +545,7 @@ def test_nonsquare_assembly_multithreaded():
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     parameters["num_threads"] = 0
 
-@skip_parallel
+@skip_in_parallel
 def test_reference_assembly():
     "Test assembly against a reference solution"
 

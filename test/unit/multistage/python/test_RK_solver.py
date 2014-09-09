@@ -25,8 +25,8 @@ import pytest
 from dolfin import *
 import numpy as np
 
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1,
-                                      reason="Skipping unit test(s) not working in parallel")
+from dolfin_utils.test import *
+
 
 def convergence_order(errors, base = 2):
     import math

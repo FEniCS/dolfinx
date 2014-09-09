@@ -26,15 +26,17 @@ from dolfin import *
 from math   import sin, cos, exp, tan
 from numpy  import array, zeros, float_
 
-@pytest.fixture(scope='module')
+from dolfin_utils.test import fixture
+
+@fixture
 def mesh():
     return UnitCubeMesh(8, 8, 8)
 
-@pytest.fixture(scope='module')
+@fixture
 def V(mesh):
     return FunctionSpace(mesh, 'CG', 1)
 
-@pytest.fixture(scope='module')
+@fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 

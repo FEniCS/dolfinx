@@ -46,10 +46,8 @@ import os
 
 from dolfin_utils.test import *
 
-
 parameter_degree = set_parameters_fixture("form_compiler.quadrature_degree", [5])
 parameter_backend = set_parameters_fixture("linear_algebra_backend", ["PETSc"])
-
 
 @fixture
 def mesh():

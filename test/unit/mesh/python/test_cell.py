@@ -26,8 +26,7 @@ import pytest
 import numpy
 from dolfin import *
 
-skip_in_paralell = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                          reason="Skipping unit test(s) not working in parallel")
+from dolfin_utils.test import skip_in_parallel
 
 @skip_in_paralell
 def test_distance_interval():

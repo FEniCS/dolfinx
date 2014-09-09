@@ -28,6 +28,7 @@ import pytest
 from dolfin import *
 from six.moves import xrange as range
 
+from dolfin_utils.test import skip_in_parallel
 
 def triangulation_to_mesh_2d(triangulation):
     editor = MeshEditor()
@@ -44,9 +45,7 @@ def triangulation_to_mesh_2d(triangulation):
     editor.close()
     return mesh
 
-
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-        reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_integrate():
     # Create two meshes of the unit square
     mesh_0 = UnitSquareMesh(10, 10)

@@ -26,8 +26,9 @@ import pytest
 import numpy as np
 from dolfin import *
 
+from dolfin_utils.test import *
 
-@pytest.fixture(scope='module')
+@fixture
 def periodic_boundary():
     class PeriodicBoundary(SubDomain):
         def inside(self, x, on_boundary):
@@ -38,17 +39,14 @@ def periodic_boundary():
 
     return PeriodicBoundary()
 
-@pytest.fixture(scope='module')
+@fixture
 def pbc():
     return PeriodicBoundaryComputation()
 
-@pytest.fixture(scope='module')
+@fixture
 def mesh():
     return UnitSquareMesh(4, 4)
 
-
-skip_in_parallel = pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                      reason="Skipping unit test(s) not working in parallel")
 
 @skip_in_parallel
 def test_ComputePeriodicPairs(pbc, periodic_boundary, mesh):

@@ -26,6 +26,7 @@ import os
 import pytest
 from dolfin import *
 import six
+from dolfin_utils.test import skip_in_parallel
 
 @pytest.fixture(scope='module', params=range(3))
 def MeshFunc(request):
@@ -34,9 +35,7 @@ def MeshFunc(request):
                  (UnitCubeMesh, (10, 10, 10))]
     return test_mesh[request.param]
  
-
-@pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, 
-                     reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_creation(MeshFunc):
     """Create SubMesh."""
     args = MeshFunc[1]
