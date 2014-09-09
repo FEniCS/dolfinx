@@ -28,8 +28,8 @@ from dolfin import *
 from dolfin_utils.test import *
 
 
-# TODO: Use the fixture setup from matrix in a shared conftest.py when we move tests to one flat folder.
-
+# TODO: Use the fixture setup from matrix in a shared conftest.py when 
+#       we move tests to one flat folder.
 
 # Lists of backends supporting or not supporting data access
 data_backends = []
@@ -52,18 +52,14 @@ else:
 # Remove backends we haven't built with
 data_backends = list(filter(has_linear_algebra_backend, data_backends))
 no_data_backends = list(filter(has_linear_algebra_backend, no_data_backends))
-any_backends = data_backends + no_data_backends
-
 
 # Fixtures setting up and resetting the global linear algebra backend for a list of backends
-any_backend     = set_parameters_fixture("linear_algebra_backend", any_backends)
 data_backend    = set_parameters_fixture("linear_algebra_backend", data_backends)
 no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backends)
 
 
-@pytest.mark.usefixtures("any_backend")
 class TestVectorForAnyBackend:
-
+    pytest.fixture(autouse=True)
     def assemble_vectors(self):
         mesh = UnitSquareMesh(7, 4)
 
@@ -336,11 +332,9 @@ class TestVectorForAnyBackend:
                     wrong_assignment(v0, v1)
 
 
-# A DataTester class that test the acces of the raw data through pointers
-# This is only available for uBLAS backend
-@pytest.mark.usefixtures("data_backend")
-class DataTester:
-    def test_vector_data(self):
+    # Test the access of the raw data through pointers
+    # This is only available for uBLAS backend
+    def test_vector_data(self, data_backend):
         # Test for ordinary Vector
         v = Vector(mpi_comm_world(), 301)
         array = v.array()
@@ -358,10 +352,8 @@ class DataTester:
         v = as_backend_type(v)
         data = v.data()
         assert (data==array).all()
-
-@pytest.mark.usefixtures("no_data_backend")
-class DataNotWorkingTester:
-    def test_vector_data_exceptions(self):
+    
+    def test_vector_data_exceptions(self, no_data_backend):
         v = Vector(mpi_comm_world(), 301)
         with pytest.raises(RuntimeError):
             v.data()
