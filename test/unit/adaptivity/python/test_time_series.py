@@ -38,18 +38,18 @@ def temppath():
 
 @skip_in_parallel
 def test_retrieve_compressed(temppath):
-    _test_retrieve(temppath, True, False)
+    _test_retrieve(temppath, True, False, "test_retrieve_compressed")
 
 @skip_in_parallel
 def test_retrieve_compressed_all_connectivities(temppath):
-    _test_retrieve(temppath, True, True)
+    _test_retrieve(temppath, True, True, "test_retrieve_compressed_all_connectivities")
 
 @skip_in_parallel
 def test_retrieve_all_connectivities(temppath):
-    _test_retrieve(temppath, False, True)
+    _test_retrieve(temppath, False, True, "test_retrieve_all_connectivities")
 
-def _test_retrieve(temppath, compressed, all_connectivities):
-    filename = os.path.join(temppath, "test_retrieve")
+def _test_retrieve(temppath, compressed, all_connectivities, basename):
+    filename = os.path.join(temppath, basename)
 
     times = [t/10.0 for t in range(1, 11)]
 
