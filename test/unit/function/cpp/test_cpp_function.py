@@ -22,7 +22,14 @@ import pytest
 import platform
 from instant import get_status_output
 
+from dolfin_utils.test import skip_in_parallel
+
 def pytest_generate_tests(metafunc):
+    # Skip in parallel (the C++ test should be run in parallel but not the pytest python process)
+    from dolfin import MPI, mpi_comm_world
+    if MPI.size(mpi_comm_world()) > 1:
+        return
+
     # Set non-interactive
     os.putenv('DOLFIN_NOPLOT', '1')
 
@@ -49,6 +56,7 @@ def pytest_generate_tests(metafunc):
         funcargs['test'] = test
         metafunc.addcall(funcargs=funcargs)
 
+@skip_in_parallel
 @pytest.mark.cpp
 def test_cpp_mesh(test, curdir, filepath):
     os.chdir(filepath)
