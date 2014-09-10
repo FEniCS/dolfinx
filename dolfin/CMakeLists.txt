@@ -311,10 +311,14 @@ endif()
 #------------------------------------------------------------------------------
 # Install
 
-install(TARGETS dolfin
+install(TARGETS dolfin EXPORT DOLFINTargets
   RUNTIME DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeExecutables
   LIBRARY DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeLibraries
   ARCHIVE DESTINATION ${DOLFIN_LIB_DIR} COMPONENT Development
+  )
+install(EXPORT DOLFINTargets
+  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
+  COMPONENT Development
   )
 
 #------------------------------------------------------------------------------
@@ -375,9 +379,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
 
-# Export targets
-export(TARGETS dolfin FILE ${CMAKE_BINARY_DIR}/dolfin/DOLFINTargets.cmake)
-
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
@@ -393,7 +394,6 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
 install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
-    ${CMAKE_BINARY_DIR}/dolfin/DOLFINTargets.cmake
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake
