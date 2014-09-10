@@ -18,14 +18,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-09-01
-# Last changed: 2014-05-30
 
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import fixture
+from dolfin_utils.test import fixture, skip_in_parallel
 
 # create an output folder
 @fixture
@@ -37,8 +34,7 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-@pytest.mark.skipIf(MPI.size(mpi_comm_world()) > 1, 
-                      reason="Skipping unit test(s) not working in parallel")
+@skip_in_parallel
 def test_insertion_extraction_io(temppath):
     "Test input/output via << and >>."
 
@@ -79,9 +75,8 @@ def test_constructor_input(temppath):
     mesh = UnitCubeMesh(5, 5, 5)
 
     # Read from file
-    input_values = MeshValueCollection("size_t", mesh, 
-                                        os.path.join(os.path.dirname(__file__), 
-                                                      "xml_value_collection_ref.xml"))
+    input_values = MeshValueCollection("size_t", mesh,
+                                        os.path.join(temppath, "xml_value_collection_ref.xml"))
 
     # Check that size is correct
     assert MPI.sum(mesh.mpi_comm(), input_values.size()) == 6

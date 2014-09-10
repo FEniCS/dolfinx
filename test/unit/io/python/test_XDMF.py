@@ -68,7 +68,7 @@ def test_save_and_load_3d_mesh(temppath):
 
 @skip_if_not_HDF5
 def test_save_1d_scalar(temppath):
-    filename = os.path.join(temppath, "u.xdmf")
+    filename = os.path.join(temppath, "u1.xdmf")
     mesh = UnitIntervalMesh(32)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
@@ -77,7 +77,7 @@ def test_save_1d_scalar(temppath):
 
 @skip_if_not_HDF5
 def test_save_2d_scalar(temppath):
-    filename = os.path.join(temppath, "u.xdmf")
+    filename = os.path.join(temppath, "u2.xdmf")
     mesh = UnitSquareMesh(16, 16)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
@@ -86,7 +86,7 @@ def test_save_2d_scalar(temppath):
 
 @skip_if_not_HDF5
 def test_save_3d_scalar(temppath):
-    filename = os.path.join(temppath, "u.xdmf")
+    filename = os.path.join(temppath, "u3.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
@@ -152,7 +152,7 @@ def test_save_2d_tensor(temppath):
 
 @skip_if_not_HDF5
 def test_save_3d_tensor(temppath):
-    filename = os.path.join(temppath, "u.xdmf")
+    filename = os.path.join(temppath, "u3t.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
