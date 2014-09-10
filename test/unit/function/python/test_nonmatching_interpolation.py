@@ -60,6 +60,7 @@ def test_functional2D():
     u1.interpolate(u0)
     assert round(assemble(u0*dx) - assemble(u1*dx), 10) == 0
 
+@skip_in_parallel
 def test_functional3D():
     """Test integration of function interpolated in non-matching meshes"""
 
