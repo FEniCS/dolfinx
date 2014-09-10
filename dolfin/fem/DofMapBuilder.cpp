@@ -23,7 +23,7 @@
 // Modified by Chris Richardson, 2014
 //
 // First added:  2008-08-12
-// Last changed: 2014-09-08
+// Last changed: 2014-09-09
 
 #include <cstdlib>
 #include <random>
@@ -694,6 +694,7 @@ DofMapBuilder::compute_node_ownership(
   const std::size_t seed = process_number;
 
 #ifdef __INTEL_COMPILER
+  std::srand(seed);
   for (auto p = global_to_procs.begin(); p != global_to_procs.end(); ++p)
     std::random_shuffle(p->second.begin(), p->second.end());
 #else
