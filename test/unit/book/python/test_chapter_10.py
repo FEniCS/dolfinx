@@ -39,9 +39,11 @@ def temppath():
         os.mkdir(temppath)
     return temppath
 
-@fixture
+@pytest.yield_fixture
 def default_parameters():
-    return parameters.copy()
+    prev = parameters.copy()
+    yield parameters.copy()
+    parameters.assign(prev)
 
 
 def create_data(A=None):
@@ -168,9 +170,6 @@ def test_p9_box_1():
 @skip_in_parallel
 def test_p9_box_2(default_parameters):
     parameters["linear_algebra_backend"] = "PETSc"
-
-    # Reset parameter again so we don't mess with other tests
-    parameters.update(default_parameters)
 
 @skip_if_not_PETSc
 @skip_in_parallel
@@ -687,9 +686,6 @@ def test_p36_box_1(temppath, default_parameters):
     parameters_file << parameters
     parameters_file >> parameters
 
-    # Reset parameter again so we don't mess with other tests
-    parameters.update(default_parameters)
-
 @skip_in_parallel
 def test_p37_box_1(temppath):
     mesh = UnitSquareMesh(2, 2)
@@ -797,9 +793,6 @@ def test_p41_box_1(default_parameters):
     parameters["num_threads"] = 8
     parameters["allow_extrapolation"] = True
 
-    # Reset parameter again so we don't mess with other tests
-    parameters.update(default_parameters)
-
 @skip_in_parallel
 def test_p41_box_2():
     solver = KrylovSolver()
@@ -820,9 +813,6 @@ def test_p42_box_2(default_parameters):
     d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
     parameters.update(d)
 
-    # Reset parameter again so we don't mess with other tests
-    parameters.update(default_parameters)
-
 @skip_in_parallel
 def test_p42_box_3():
     my_parameters = Parameters("my_parameters", foo=3, bar=0.1,
@@ -832,24 +822,15 @@ def test_p42_box_3():
 def test_p42_box_4(default_parameters):
     parameters.parse()
 
-    # Reset parameter again so we don't mess with other tests
-    parameters.update(default_parameters)
-
 @skip_in_parallel
 def test_p43_box_1(temppath, default_parameters):
     file = File(temppath + "parameters.xml")
     file << parameters
     file >> parameters
 
-    # Reset parameter again so we don't mess with other tests
-    parameters.update(default_parameters)
-
 @skip_in_parallel
 def test_p45_box_1(default_parameters):
     parameters["mesh_partitioner"] = "ParMETIS"
-
-    # Reset parameter again so we don't mess with other tests
-    parameters.update(default_parameters)
 
 @skip_in_parallel
 def test_p45_box_2():
@@ -897,9 +878,6 @@ def test_p49_box_1():
 def test_p50_box_1(default_parameters):
     parameters["form_compiler"]["name"] = "sfc"
 
-    # Reset parameter again so we don't mess with other tests
-    parameters.update(default_parameters)
-
 @skip_in_parallel
 def test_p50_box_2():
     mesh = UnitSquareMesh(8, 8)
@@ -922,10 +900,7 @@ def test_p50_box_3(default_parameters):
     b = assemble(L)
     bb = b.data()
 
-    # Reset linear algebra backend so that other tests work
-    parameters.update(default_parameters)
-
-@skip_if_not_MTL4 
+@skip_if_not_MTL4
 @skip_in_parallel
 def test_p50_box_4(default_parameters):
     mesh = UnitSquareMesh(8, 8)
@@ -938,9 +913,6 @@ def test_p50_box_4(default_parameters):
     parameters["linear_algebra_backend"] = "MTL4"
     A = assemble(a)
     rows, columns, values = A.data()
-
-    # Reset linear algebra backend so that other tests work
-    parameters.update(default_parameters)
 
 @skip_in_parallel
 def test_p51_box_1(default_parameters):
@@ -959,9 +931,6 @@ def test_p51_box_1(default_parameters):
     else:
         rows, columns, values = A.data()
         csr = csr_matrix((values, columns, rows))
-
-    # Reset linear algebra backend so that other tests work
-    parameters.update(default_parameters)
 
 @skip_in_parallel
 def test_p51_box_2():
