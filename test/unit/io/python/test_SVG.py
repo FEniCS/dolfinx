@@ -22,19 +22,19 @@
 import os
 import pytest
 from dolfin import *
-from dolfin_utils.test import fixture, cleandir
+from dolfin_utils.test import fixture, cd_temp_path
 
-def test_write_mesh_1d(cleandir):
+def test_write_mesh_1d(cd_temp_path):
     mesh = UnitIntervalMesh(8)
     f = File("_1d.svg")
     f << mesh
 
-def test_write_mesh_2d(cleandir):
+def test_write_mesh_2d(cd_temp_path):
     mesh = UnitSquareMesh(8, 8)
     f = File("2d.svg")
     f << mesh
 
-def test_write_mesh_3d(cleandir):
+def test_write_mesh_3d(cd_temp_path):
     mesh = UnitCubeMesh(8, 8, 8)
     f = File("3d.svg")
     f << mesh

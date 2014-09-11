@@ -27,7 +27,9 @@ from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh
 from dolfin import Point, FunctionSpace, Expression, interpolate
 from dolfin import MPI, mpi_comm_world
 
+from dolfin_utils.test import skip_in_parallel
 
+@skip_in_parallel
 def test_mesh_point_1d():
     "Test mesh-point intersection in 1D"
 
@@ -38,6 +40,7 @@ def test_mesh_point_1d():
 
     assert intersection.intersected_cells() == [1]
 
+@skip_in_parallel
 def test_mesh_point_2d():
     "Test mesh-point intersection in 2D"
 
@@ -48,6 +51,7 @@ def test_mesh_point_2d():
 
     assert intersection.intersected_cells() == [98]
 
+@skip_in_parallel
 def test_mesh_point_3d():
     "Test mesh-point intersection in 3D"
 

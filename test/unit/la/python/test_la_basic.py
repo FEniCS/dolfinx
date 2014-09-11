@@ -64,22 +64,34 @@ no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backe
 use_backend = true_false_fixture
 
 
+def assemble_vectors():
+    mesh = UnitSquareMesh(3, 3)
+    V = FunctionSpace(mesh, "Lagrange", 2)
+    W = FunctionSpace(mesh, "Lagrange", 1)
+
+    v = TestFunction(V)
+    t = TestFunction(W)
+
+    return assemble(v*dx), assemble(t*dx)
+
+def get_forms():
+    mesh = UnitSquareMesh(3, 3)
+    V = FunctionSpace(mesh, "Lagrange", 2)
+    W = FunctionSpace(mesh, "Lagrange", 1)
+
+    v = TestFunction(V)
+    u = TrialFunction(V)
+    s = TrialFunction(W)
+
+    # Forms
+    a = dot(grad(u),grad(v))*dx
+    b = v*s*dx
+    return a, b
+
 class TestBasicLaOperations:
-    @pytest.fixture(autouse=True)
     def assemble_matrices(self, use_backend=False):
-        " Assemble a pair of matrices, one (square) MxM and one MxN"
-
-        mesh = UnitSquareMesh(3, 3)
-        V = FunctionSpace(mesh, "Lagrange", 2)
-        W = FunctionSpace(mesh, "Lagrange", 1)
-
-        v = TestFunction(V)
-        u = TrialFunction(V)
-        s = TrialFunction(W)
-
-        # Forms
-        a = dot(grad(u),grad(v))*dx
-        b = v*s*dx
+        "Assemble a pair of matrices, one (square) MxM and one MxN"
+        a, b = get_forms()
 
         if use_backend:
             if self.backend == "uBLAS":
@@ -90,22 +102,12 @@ class TestBasicLaOperations:
         else:
             return assemble(a), assemble(b)
 
-    def assemble_vectors(self):
-        mesh = UnitSquareMesh(3, 3)
-        V = FunctionSpace(mesh, "Lagrange", 2)
-        W = FunctionSpace(mesh, "Lagrange", 1)
-
-        v = TestFunction(V)
-        t = TestFunction(W)
-
-        return assemble(v*dx), assemble(t*dx)
-
     def test_vector(self, any_backend):
         self.backend, self.sub_backend = any_backend
         from numpy import ndarray, linspace, array, fromiter
         from numpy import int,int0,int16,int32,int64
         from numpy import uint,uint0,uint16,uint32,uint64
-        v, w = self.assemble_vectors()
+        v, w = assemble_vectors()
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
@@ -295,7 +297,7 @@ class TestBasicLaOperations:
             pytest.skip("Test not supported for use_backend=False and backend=uBlas")
 
         A, B = self.assemble_matrices(use_backend)
-        v, w = self.assemble_vectors()
+        v, w = assemble_vectors()
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
@@ -359,8 +361,9 @@ class TestBasicLaOperations:
             assert absolute(u.array() - u_numpy).sum() < DOLFIN_EPS*len(v)
             assert absolute(u_numpy2 - u_numpy).sum() < DOLFIN_EPS*len(v)
 
-
     def test_matrix_data(self, no_data_backend):
+        #self.backend, self.sub_backend = no_data_backend
+
         A, B = self.assemble_matrices()
         with pytest.raises(RuntimeError):
             A.data()
@@ -370,7 +373,7 @@ class TestBasicLaOperations:
             A.data()
 
     def test_vector_data(self, no_data_backend):
-        v, w = self.assemble_vectors()
+        v, w = assemble_vectors()
         with pytest.raises(RuntimeError):
             v.data()
 
