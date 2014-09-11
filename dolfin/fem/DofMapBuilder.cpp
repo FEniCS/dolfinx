@@ -23,7 +23,7 @@
 // Modified by Chris Richardson, 2014
 //
 // First added:  2008-08-12
-// Last changed: 2014-09-09
+// Last changed: 2013-01-08
 
 #include <cstdlib>
 #include <random>
@@ -49,6 +49,7 @@
 #include <dolfin/common/utils.h>
 
 using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                           std::shared_ptr<const SubDomain> constrained_domain)
@@ -692,16 +693,9 @@ DofMapBuilder::compute_node_ownership(
 
   // Randomise process order. First process will be owner.
   const std::size_t seed = process_number;
-
-#ifdef __INTEL_COMPILER
-  std::srand(seed);
-  for (auto p = global_to_procs.begin(); p != global_to_procs.end(); ++p)
-    std::random_shuffle(p->second.begin(), p->second.end());
-#else
   std::default_random_engine random_engine(seed);
   for (auto p = global_to_procs.begin(); p != global_to_procs.end(); ++p)
     std::shuffle(p->second.begin(), p->second.end(), random_engine);
-#endif
 
   // Add other sharing processes (ghosts etc) which cannot be owners
   for (unsigned int i = 0; i != num_processes; ++i)
