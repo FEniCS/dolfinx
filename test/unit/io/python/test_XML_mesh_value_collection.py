@@ -22,21 +22,12 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import fixture, skip_in_parallel
-
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename, "")
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
+from dolfin_utils.test import fixture, skip_in_parallel, cleandir, filedir
 
 @skip_in_parallel
-def test_insertion_extraction_io(temppath):
+def test_insertion_extraction_io(cleandir):
     "Test input/output via << and >>."
+    filename = "xml_mesh_value_collection_test_io.xml"
 
     # Create mesh
     mesh = UnitCubeMesh(5, 5, 5)
@@ -55,11 +46,11 @@ def test_insertion_extraction_io(temppath):
     output_values.rename(name, "a MeshValueCollection")
 
     # Write to file
-    output_file = File(temppath + "xml_mesh_value_collection_test_io.xml")
+    output_file = File(filename)
     output_file << output_values
 
     # Read from file
-    input_file = File(temppath + "xml_mesh_value_collection_test_io.xml")
+    input_file = File(filename)
     input_values = MeshValueCollection("size_t", mesh)
     input_file >> input_values
 
@@ -68,15 +59,15 @@ def test_insertion_extraction_io(temppath):
     assert input_values.dim() == output_values.dim()
     assert input_values.name() == name
 
-def test_constructor_input(temppath):
+def test_constructor_input(filedir):
     "Test input via constructor."
+    filename = os.path.join(filedir, "xml_value_collection_ref.xml")
 
     # Create mesh
     mesh = UnitCubeMesh(5, 5, 5)
 
     # Read from file
-    input_values = MeshValueCollection("size_t", mesh,
-                                        os.path.join(temppath, "xml_value_collection_ref.xml"))
+    input_values = MeshValueCollection("size_t", mesh, filename)
 
     # Check that size is correct
     assert MPI.sum(mesh.mpi_comm(), input_values.size()) == 6

@@ -18,36 +18,23 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2012-12-01
-# Last changed: 2012-12-01
 
 import os
 import pytest
 from dolfin import *
-from dolfin_utils.test import fixture
+from dolfin_utils.test import fixture, cleandir
 
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename, "")
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
-
-def test_write_mesh_1d(temppath):
+def test_write_mesh_1d(cleandir):
     mesh = UnitIntervalMesh(8)
-    f = File(temppath + "_1d.svg")
+    f = File("_1d.svg")
     f << mesh
 
-def test_write_mesh_2d(temppath):
+def test_write_mesh_2d(cleandir):
     mesh = UnitSquareMesh(8, 8)
-    f = File(temppath + "_2d.svg")
+    f = File("2d.svg")
     f << mesh
 
-def test_write_mesh_3d(temppath):
+def test_write_mesh_3d(cleandir):
     mesh = UnitCubeMesh(8, 8, 8)
-    f = File(temppath + "_3d.svg")
+    f = File("3d.svg")
     f << mesh
