@@ -820,7 +820,13 @@ def test_p42_box_3():
 
 @skip_in_parallel
 def test_p42_box_4(default_parameters):
-    parameters.parse()
+    argv = ["dummy.py"]
+    parameters.parse(argv)
+
+    # Original test was just:
+    #parameters.parse()
+    # but this is not testable without external sys.argv.
+    # Feel free to improve by adding something to argv above.
 
 @skip_in_parallel
 def test_p43_box_1(temppath, default_parameters):
