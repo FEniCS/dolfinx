@@ -30,11 +30,11 @@ from dolfin_utils.test import skip_in_parallel
 
 @pytest.fixture(scope='module', params=range(3))
 def MeshFunc(request):
-    test_mesh = [(UnitIntervalMesh, (10,)), 
-                 (UnitSquareMesh, (10, 10)), 
+    test_mesh = [(UnitIntervalMesh, (10,)),
+                 (UnitSquareMesh, (10, 10)),
                  (UnitCubeMesh, (10, 10, 10))]
     return test_mesh[request.param]
- 
+
 @skip_in_parallel
 def test_creation(MeshFunc):
     """Create SubMesh."""
@@ -62,7 +62,7 @@ def test_creation(MeshFunc):
     for cell0, cell1 in zip(cells(smesh0), cells(smesh1)):
         assert cell0.index() == cell1.index()
         assert smesh0.domains().get_marker(cell0.index(), dim_t) == \
-        	smesh1.domains().get_marker(cell1.index(), dim_t)
+               smesh1.domains().get_marker(cell1.index(), dim_t)
 
     # This test passed for unittest because it called SubMesh((mesh, 2))
     # and not SubMesh(mesh, 2)
@@ -70,9 +70,10 @@ def test_creation(MeshFunc):
     #    SubMesh(mesh, 2)
 
     mesh = MeshFunc(*args)
-    with pytest.raises(RuntimeError): 
+    with pytest.raises(RuntimeError):
         SubMesh(mesh, 1)
 
+@skip_in_parallel
 def test_facet_domain_propagation():
 
     # Boxes contains two subdomains with marked faces between

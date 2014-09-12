@@ -34,7 +34,7 @@ import numpy
 from dolfin import *
 import os
 
-from dolfin_utils.test import fixture, skip_in_parallel
+from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel
 
 # create an output folder
 @fixture
@@ -72,7 +72,7 @@ def mesh3d():
 def c0(mesh3d):
     # Original tetrahedron from UnitCubeMesh(1, 1, 1)
     return Cell(mesh3d, 0)
-    
+
 @fixture
 def c1(mesh3d):
     # Degenerate cell
@@ -82,7 +82,7 @@ def c1(mesh3d):
 def c5(mesh3d):
     # Regular tetrahedron with edge sqrt(2)
     return Cell(mesh3d, 5)
-                     
+
 @fixture
 def interval():
     return UnitIntervalMesh(10)
@@ -212,7 +212,7 @@ def test_BoundaryComputation():
     assert boundary.size_global(0) == 26
     assert boundary.size_global(2) == 48
 
-
+@xfail_in_parallel
 def test_BoundaryBoundary():
     """Compute boundary of boundary."""
     mesh = UnitCubeMesh(2, 2, 2)
