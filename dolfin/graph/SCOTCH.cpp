@@ -19,7 +19,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2014-03-16
+// Last changed: 2014-09-09
 
 #include <algorithm>
 #include <map>
@@ -390,6 +390,11 @@ void SCOTCH::partition(
     MPI_SCOTCH_Num = MPI_INT;
   else if (sizeof(SCOTCH_Num)==8)
     MPI_SCOTCH_Num = MPI_LONG_LONG_INT;
+
+  // Double check size is correct
+  int tsize;
+  MPI_Type_size(MPI_SCOTCH_Num, &tsize);
+  dolfin_assert(tsize == sizeof(SCOTCH_Num));
 
   if (SCOTCH_dgraphHalo(&dgrafdat, (void *)_cell_partition.data(),
                         MPI_SCOTCH_Num))
