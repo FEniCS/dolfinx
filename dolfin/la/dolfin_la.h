@@ -42,6 +42,7 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/TpetraVector.h>
 
+#include <dolfin/la/TensorLayout.h>
 #include <dolfin/la/SparsityPattern.h>
 
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
