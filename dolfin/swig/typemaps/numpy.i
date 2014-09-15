@@ -523,7 +523,9 @@ namespace __private {
     SWIG_exception(SWIG_TypeError, "expected contiguous NumPy array"
       " of dtype='uintp' and shape=(n, 2) as argument $argnum");
   std::size_t *data = static_cast<std::size_t*>(PyArray_DATA(xa));
-  for (std::size_t i = 0; i < PyArray_DIM(xa, 0); ++i)
+  const std::size_t dim0 = PyArray_DIM(xa, 0);
+  temp.reserve(dim0);
+  for (std::size_t i = 0; i < dim0; ++i)
     temp.push_back(std::make_pair(data[2*i], data[2*i+1]));
   $1 = &temp;
 }
