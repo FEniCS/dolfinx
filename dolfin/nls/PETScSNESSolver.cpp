@@ -26,6 +26,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <cmath>
 #include <petscsys.h>
 
 #include <dolfin/common/MPI.h>
@@ -117,9 +118,13 @@ Parameters PETScSNESSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScSNESSolver::PETScSNESSolver(std::string nls_type) :
-  _snes(NULL),
-  _snes_ctx({NULL, NULL, NULL, NULL})
+  _snes(NULL)
 {
+  _snes_ctx.x = NULL;
+  _snes_ctx.nonlinear_problem = NULL;
+  _snes_ctx.xl = NULL;
+  _snes_ctx.xu = NULL;
+
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
   {
@@ -138,6 +143,9 @@ PETScSNESSolver::~PETScSNESSolver()
 {
   if (_snes)
     SNESDestroy(&_snes);
+
+  if (_snes_ctx.f_tmp)
+    VecDestroy(&_snes_ctx.f_tmp);
 }
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::init(const std::string& method)
@@ -202,7 +210,6 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                        GenericVector& x)
 {
   Timer timer("SNES solver init");
-  PETScVector f;
   PETScMatrix A;
 
   // Set linear solver parameters
@@ -210,17 +217,20 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
 
   const bool report = parameters["report"];
 
+
+  _snes_ctx.nonlinear_problem = &nonlinear_problem;
+  _snes_ctx.x = &x.down_cast<PETScVector>();
+  VecDuplicate(_snes_ctx.x->vec(), &_snes_ctx.f_tmp);
+
   // Compute F(u)
+  PETScVector f(_snes_ctx.f_tmp);
   nonlinear_problem.form(A, f, x);
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
 
-  _snes_ctx.nonlinear_problem = &nonlinear_problem;
-  _snes_ctx.x = &x.down_cast<PETScVector>();
-
-  SNESSetFunction(_snes, f.vec(), PETScSNESSolver::FormFunction, &_snes_ctx);
-  SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
-                  &_snes_ctx);
+  SNESSetFunction(_snes, _snes_ctx.f_tmp, PETScSNESSolver::FormFunction, &_snes_ctx);
+  SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian, &_snes_ctx);
+  SNESSetObjective(_snes, PETScSNESSolver::FormObjective, &_snes_ctx);
 
   std::string prefix = std::string(parameters["options_prefix"]);
   if (prefix != "default")
@@ -368,6 +378,21 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   PETScMatrix A;
   nonlinear_problem->form(A, f_wrap, *_x);
   nonlinear_problem->F(f_wrap, *_x);
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+PetscErrorCode PETScSNESSolver::FormObjective(SNES snes, Vec x, PetscReal* out, void* ctx)
+{
+  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
+  PETScSNESSolver::FormFunction(snes, x, snes_ctx.f_tmp, ctx);
+  PetscReal f_norm;
+  VecNorm(snes_ctx.f_tmp, NORM_2, &f_norm);
+
+  if (std::isnan(f_norm) || std::isinf(f_norm))
+    *out = 1.0e100;
+  else
+    *out = f_norm;
 
   return 0;
 }
