@@ -290,8 +290,6 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
 
   // Set some options
   SNESSetFromOptions(_snes);
-  if (report)
-    SNESView(_snes, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
@@ -305,7 +303,14 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   SNESConvergedReason reason;
 
   this->init(nonlinear_problem, x);
-  SNESSolve(_snes, PETSC_NULL, _snes_ctx.x->vec());
+  // for line searches, making this copy is necessary:
+  // when linesearching, the working space can't be the
+  // same as the vector that holds the current solution
+  // guess in the dolfin form.
+  PETScVector x_copy(x.down_cast<PETScVector>());
+  SNESSolve(_snes, PETSC_NULL, x_copy.vec());
+  x.zero();
+  x.axpy(1.0, x_copy);
 
   // Update any ghost values
   PETScVector& _x = x.down_cast<PETScVector>();
