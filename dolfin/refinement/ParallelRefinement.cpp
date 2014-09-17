@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Chris Richardson
+// Copyright (C) 2013-2014 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -17,7 +17,6 @@
 //
 //
 // First Added: 2013-01-02
-// Last Changed: 2013-05-12
 
 #include <map>
 #include <unordered_map>
@@ -43,7 +42,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 ParallelRefinement::ParallelRefinement(const Mesh& mesh) : _mesh(mesh),
   shared_edges(DistributedMeshTools::compute_shared_entities(_mesh, 1)),
-  marked_edges(mesh.num_edges(), false)
+  marked_edges(mesh.num_edges(), false),
+  marked_for_update(MPI::size(mesh.mpi_comm()))
 {
   // Do nothing
 }
@@ -63,6 +63,24 @@ void ParallelRefinement::mark(std::size_t edge_index)
 {
   dolfin_assert(edge_index < _mesh.num_edges());
   marked_edges[edge_index] = true;
+  auto map_it = shared_edges.find(edge_index);
+
+
+  // If it is a shared edge, add all sharing procs to update set
+  if (map_it != shared_edges.end())
+  {
+    for (auto it = map_it->second.begin(); 
+         it != map_it->second.end(); ++it)
+    {
+      std::vector<std::size_t>& mark_on_proc = marked_for_update[it->first];
+      if (std::find(mark_on_proc.begin(), mark_on_proc.end(), it->second)
+          == mark_on_proc.end())
+      {
+        mark_on_proc.push_back(it->second);
+      }
+    }
+  }
+  
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark_all()
@@ -79,27 +97,25 @@ ParallelRefinement::edge_to_new_vertex() const
 void ParallelRefinement::mark(const MeshEntity& cell)
 {
   for (EdgeIterator edge(cell); !edge.end(); ++edge)
-    marked_edges[edge->index()] = true;
+    mark(edge->index());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const MeshFunction<bool>& refinement_marker)
 {
-  // Special case for EdgeFunction because EdgeIterator(Edge) will get all
-  // connected edge-edge entities otherwise
-  if (refinement_marker.dim() == 1)
-  {
-    for (EdgeIterator e(_mesh); !e.end(); ++e)
-      marked_edges[e->index()] = refinement_marker[*e];
-    return;
-  }
+  const std::size_t entity_dim = refinement_marker.dim();
 
-  for (MeshEntityIterator cell(_mesh, refinement_marker.dim()); !cell.end();
-       ++cell)
+  for (MeshEntityIterator entity(_mesh, entity_dim); !entity.end();
+       ++entity)
   {
-    if (refinement_marker[*cell])
+    if (refinement_marker[*entity])
     {
-      for (EdgeIterator edge(*cell); !edge.end(); ++edge)
-        marked_edges[edge->index()] = true;
+      // Special case for EdgeFunction because EdgeIterator(Edge) will get all
+      // connected edge-edge entities otherwise
+      if (entity_dim == 1)
+        mark(entity->index());
+      else
+        for (EdgeIterator edge(*entity); !edge.end(); ++edge)
+          mark(edge->index());
     }
   }
 }
@@ -120,28 +136,14 @@ std::vector<std::size_t> ParallelRefinement::marked_edge_list(const MeshEntity& 
 //-----------------------------------------------------------------------------
 void ParallelRefinement::update_logical_edgefunction()
 {
-  const std::size_t num_processes = MPI::size(_mesh.mpi_comm());
+  const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
 
-  // Create a list of edges on this process that are 'true' and copy
-  // to remote sharing processes
-  std::vector<std::vector<std::size_t> > values_to_send(num_processes);
-  for (auto sh_edge = shared_edges.begin(); sh_edge != shared_edges.end();
-       sh_edge++)
-  {
-    const std::size_t local_index = sh_edge->first;
-    if (marked_edges[local_index] == true)
-    {
-      for (auto proc_edge = sh_edge->second.begin();
-           proc_edge != sh_edge->second.end();
-           ++proc_edge)
-      {
-        values_to_send[proc_edge->first].push_back(proc_edge->second);
-      }
-    }
-  }
-
+  // Send all shared edges marked for update
   std::vector<std::vector<std::size_t> > received_values;
-  MPI::all_to_all(_mesh.mpi_comm(), values_to_send, received_values);
+  MPI::all_to_all(_mesh.mpi_comm(), marked_for_update, received_values);
+  
+  // Clear marked_for_update vectors
+  marked_for_update = std::vector<std::vector<std::size_t> >(mpi_size);
 
   // Flatten received values and set EdgeFunction true at each index
   // received
@@ -149,8 +151,7 @@ void ParallelRefinement::update_logical_edgefunction()
        r != received_values.end();
        ++r)
   {
-    for (auto local_index = r->begin();
-         local_index != r->end();
+    for (auto local_index = r->begin(); local_index != r->end();
          ++local_index)
     {
       marked_edges[*local_index] = true;
@@ -162,8 +163,8 @@ void ParallelRefinement::create_new_vertices()
 {
   // Take marked_edges and use to create new vertices
 
-  const std::size_t num_processes = MPI::size(_mesh.mpi_comm());
-  const std::size_t process_number = MPI::rank(_mesh.mpi_comm());
+  const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
+  const std::size_t mpi_rank = MPI::rank(_mesh.mpi_comm());
 
   // Copy over existing mesh vertices
   new_vertex_coordinates = _mesh.coordinates();
@@ -188,7 +189,7 @@ void ParallelRefinement::create_new_vertices()
              proc_edge != shared_edge_i->second.end();
              ++proc_edge)
         {
-          if (proc_edge->first < process_number)
+          if (proc_edge->first < mpi_rank)
             owner = false;
         }
       }
@@ -214,7 +215,7 @@ void ParallelRefinement::create_new_vertices()
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
-  std::vector<std::vector<std::size_t> > values_to_send(num_processes);
+  std::vector<std::vector<std::size_t> > values_to_send(mpi_size);
   for (auto local_edge = local_edge_to_new_vertex.begin();
        local_edge != local_edge_to_new_vertex.end();
        ++local_edge)
@@ -241,7 +242,7 @@ void ParallelRefinement::create_new_vertices()
   }
 
   // Send new vertex indices to remote processes and receive
-  std::vector<std::vector<std::size_t> > received_values(num_processes);
+  std::vector<std::vector<std::size_t> > received_values(mpi_size);
   MPI::all_to_all(_mesh.mpi_comm(), values_to_send, received_values);
 
   // Flatten and add received remote global vertex indices to map
@@ -285,9 +286,9 @@ void ParallelRefinement::reorder_vertices_by_global_indices(
                                                    global_indices.end())) + 1;
 
   // Send unwanted values off process
-  const std::size_t num_processes = MPI::size(_mesh.mpi_comm());
-  std::vector<std::vector<std::size_t> > values_to_send0(num_processes);
-  std::vector<std::vector<double> > values_to_send1(num_processes);
+  const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
+  std::vector<std::vector<std::size_t> > values_to_send0(mpi_size);
+  std::vector<std::vector<double> > values_to_send1(mpi_size);
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process
