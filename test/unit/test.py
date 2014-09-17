@@ -66,7 +66,7 @@ tests = {
     "nls":            ["PETScSNESSolver", "TAOLinearBoundSolver"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
-    "refinement":     ["refine"],
+    "refinement":     ["refine", "marker_refinement"],
     }
 
 # Run both C++ and Python tests as default
