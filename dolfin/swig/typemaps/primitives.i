@@ -32,7 +32,7 @@
 // Allow Python bool, scalar numpy booleans and 1 sized boolean arrays
 //-----------------------------------------------------------------------------
 %fragment(SWIG_AsVal_frag(bool2),"header",
-	  fragment=SWIG_AsVal_frag(long)) {
+          fragment=SWIG_AsVal_frag(long)) {
 SWIGINTERN int
 SWIG_AsVal_dec(bool2)(PyObject *obj, bool *val)
 {
@@ -48,7 +48,7 @@ SWIG_AsVal_dec(bool2)(PyObject *obj, bool *val)
 }
 
 // Include limit header
-%fragment("limits_header", "header") 
+%fragment("limits_header", "header")
 {
   // Include the limits header
   %#include <limits>
@@ -56,8 +56,8 @@ SWIG_AsVal_dec(bool2)(PyObject *obj, bool *val)
 
 // Make sure Python int from std::size_t can be constructed
 // It looks like SWIG_From_size_t is available but not SWIG_From_std_size_t
-%fragment("SWIG_From_std_size_t", "header", fragment=SWIG_From_frag(size_t), 
-	  fragment="limits_header")
+%fragment("SWIG_From_std_size_t", "header", fragment=SWIG_From_frag(size_t),
+          fragment="limits_header")
 {
   SWIGINTERNINLINE PyObject * SWIG_From_std_size_t(std::size_t value)
   {
@@ -98,7 +98,7 @@ SWIGINTERNINLINE PYTHON_INTEGER_TYPES PyInteger_Check(PyObject* in)
     return _LONG_PYTHON_INTEGER_TYPE;
   if (PyArray_CheckScalar(in) && PyArray_IsScalar(in,Integer))
     return _NPY_PYTHON_INTEGER_TYPE;
-  
+
   // No integer type
   return _NO_PYTHON_INTEGER_TYPE;
 }
@@ -116,7 +116,7 @@ SWIGINTERNINLINE PYTHON_INTEGER_TYPES PyInteger_Check(PyObject* in)
 
 SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
 {
-  
+
   // Get integer type
   PYTHON_INTEGER_TYPES int_type = PyInteger_Check(in);
 
@@ -126,8 +126,8 @@ SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
     return false;
   }
 
-  // Conversion if python int or numpy type
-  if (int_type == _INT_PYTHON_INTEGER_TYPE || int_type == _NPY_PYTHON_INTEGER_TYPE)
+  // Conversion if python int
+  if (int_type == _INT_PYTHON_INTEGER_TYPE)
   {
 %#if PY_MAJOR_VERSION >= 3
     const long signed_value = PyLong_AS_LONG(in);
@@ -137,15 +137,24 @@ SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
     value = static_cast<std::size_t>(signed_value);
     return signed_value>=0;
   }
-  
+
+  // Conversion if numpy scalar
+  if (int_type == _NPY_PYTHON_INTEGER_TYPE)
+  {
+    return PyArray_CastScalarToCtype(in, &value, PyArray_DescrFromType(NPY_UINTP))==0;
+  }
+
   // Conversion if python long
   if (int_type == _LONG_PYTHON_INTEGER_TYPE)
   {
-    const npy_longlong signed_value = PyLong_AsLong(in);
-    value = static_cast<std::size_t>(signed_value);
-    return signed_value>=0;
+%#if PY_MAJOR_VERSION >= 3
+    value = PyLong_AsSize_t(in);
+%#else
+    value = static_cast<std::size_t>(PyLong_AsUnsignedLongLong(in));
+%#endif
+    return !PyErr_Occurred();
   }
-  
+
   // Should never reach this point
   return false;
 }
@@ -163,7 +172,7 @@ SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
   // A check for int and converter for int
 SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
 {
-  
+
   // Get integer type
   PYTHON_INTEGER_TYPES int_type = PyInteger_Check(in);
 
@@ -179,7 +188,7 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
     value = static_cast<int>(PyInt_AsLong(in));
     return true;
   }
-  
+
   // Conversion if python long
   if (int_type == _LONG_PYTHON_INTEGER_TYPE)
   {
@@ -187,7 +196,7 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
     value = static_cast<int>(long_value);
     return true;
   }
-  
+
   // Should never reach this point
   return false;
 }
@@ -198,7 +207,7 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
   // A check for int and converter to uint
   SWIGINTERNINLINE bool Py_convert_uint(PyObject* in, unsigned int& value)
 {
-  
+
   // Get integer type
   PYTHON_INTEGER_TYPES int_type = PyInteger_Check(in);
 
@@ -219,7 +228,7 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
     value = static_cast<unsigned int>(signed_value);
     return signed_value>=0;
   }
-  
+
   // Conversion if python long
   if (int_type == _LONG_PYTHON_INTEGER_TYPE)
   {
@@ -227,7 +236,7 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
     value = static_cast<unsigned int>(signed_value);
     return signed_value>=0;
   }
-  
+
   // Should never reach this point
   return false;
 }
@@ -320,7 +329,7 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
 //-----------------------------------------------------------------------------
 // The typemaps (bool)
 //-----------------------------------------------------------------------------
-%typemap(in, fragment=SWIG_AsVal_frag(bool2)) bool 
+%typemap(in, fragment=SWIG_AsVal_frag(bool2)) bool
 {
   int swig_res = SWIG_AsVal_dec(bool2)($input, &$1);
   if (!SWIG_IsOK(swig_res))
@@ -346,4 +355,3 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
 %fragment("Py_convert_int");
 %fragment("Py_convert_uint");
 %fragment("Py_convert_std_size_t");
-
