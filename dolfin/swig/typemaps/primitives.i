@@ -126,8 +126,8 @@ SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
     return false;
   }
 
-  // Conversion if python int or numpy type
-  if (int_type == _INT_PYTHON_INTEGER_TYPE || int_type == _NPY_PYTHON_INTEGER_TYPE)
+  // Conversion if python int
+  if (int_type == _INT_PYTHON_INTEGER_TYPE)
   {
 %#if PY_MAJOR_VERSION >= 3
     const long signed_value = PyLong_AS_LONG(in);
@@ -136,6 +136,12 @@ SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
 %#endif
     value = static_cast<std::size_t>(signed_value);
     return signed_value>=0;
+  }
+
+  // Conversion if numpy scalar
+  if (int_type == _NPY_PYTHON_INTEGER_TYPE)
+  {
+    return PyArray_CastScalarToCtype(in, &value, PyArray_DescrFromType(NPY_UINTP))==0;
   }
 
   // Conversion if python long
