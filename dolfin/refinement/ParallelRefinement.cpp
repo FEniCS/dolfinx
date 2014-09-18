@@ -269,10 +269,11 @@ void ParallelRefinement::reorder_vertices_by_global_indices(
   Timer t("Parallel Refine: reorder vertices");
   // FIXME: be more efficient with MPI
 
-  dolfin_assert(gdim*global_indices.size() == vertex_coords.size());
+  const std::size_t num_local_vertices = global_indices.size();
+  dolfin_assert(gdim*num_local_vertices == vertex_coords.size());
 
   boost::multi_array_ref<double, 2> vertex_array(vertex_coords.data(),
-                      boost::extents[vertex_coords.size()/gdim][gdim]);
+                      boost::extents[num_local_vertices][gdim]);
 
   // Calculate size of overall global vector by finding max index value
   // anywhere
@@ -287,14 +288,13 @@ void ParallelRefinement::reorder_vertices_by_global_indices(
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process
-  for (std::size_t i = 0; i < vertex_array.shape()[0] ; ++i)
+
+  for (std::size_t i = 0; i != num_local_vertices ; ++i)
   {
     const std::size_t global_i = global_indices[i];
     const std::size_t process_i
       = MPI::index_owner(_mesh.mpi_comm(), global_i, global_vector_size);
     values_to_send0[process_i].push_back(global_i);
-    values_to_send0[process_i].push_back(vertex_array[i].shape()[0]);
-    values_to_send0[process_i].push_back(values_to_send1[process_i].size());
     values_to_send1[process_i].insert(values_to_send1[process_i].end(),
                                       vertex_array[i].begin(),
                                       vertex_array[i].end());
@@ -316,19 +316,17 @@ void ParallelRefinement::reorder_vertices_by_global_indices(
   boost::multi_array_ref<double, 2>
     new_vertex_array(vertex_coords.data(),
                      boost::extents[range.second - range.first][gdim]);
-  for (std::size_t p = 0; p < received_values0.size(); ++p)
+  for (std::size_t p = 0; p != received_values0.size(); ++p)
   {
     const std::vector<std::size_t>& received_global_data0
       = received_values0[p];
     const std::vector<double>& received_global_data1 = received_values1[p];
-    for (std::size_t j = 0; j < received_global_data0.size(); j += 3)
+    for (std::size_t j = 0; j != received_global_data0.size(); ++j)
     {
       const std::size_t global_i = received_global_data0[j];
-      const std::size_t num_vals = received_global_data0[j + 1];
-      const std::size_t offset = received_global_data0[j + 2];
       dolfin_assert(global_i >= range.first && global_i < range.second);
-      std::copy(received_global_data1.begin() + offset,
-                received_global_data1.begin() + offset + num_vals,
+      std::copy(received_global_data1.begin() + j*gdim,
+                received_global_data1.begin() + (j + 1)*gdim,
                 new_vertex_array[global_i - range.first].begin());
     }
   }
