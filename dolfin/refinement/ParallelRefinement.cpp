@@ -62,23 +62,19 @@ bool ParallelRefinement::is_marked(std::size_t edge_index) const
 void ParallelRefinement::mark(std::size_t edge_index)
 {
   dolfin_assert(edge_index < _mesh.num_edges());
+
+  // Already marked, so nothing to do
+  if (marked_edges[edge_index])
+    return;
+
   marked_edges[edge_index] = true;
   auto map_it = shared_edges.find(edge_index);
-
 
   // If it is a shared edge, add all sharing procs to update set
   if (map_it != shared_edges.end())
   {
-    for (auto it = map_it->second.begin(); 
-         it != map_it->second.end(); ++it)
-    {
-      std::vector<std::size_t>& mark_on_proc = marked_for_update[it->first];
-      if (std::find(mark_on_proc.begin(), mark_on_proc.end(), it->second)
-          == mark_on_proc.end())
-      {
-        mark_on_proc.push_back(it->second);
-      }
-    }
+    for (auto it = map_it->second.begin(); it != map_it->second.end(); ++it)
+      marked_for_update[it->first].push_back(it->second);
   }
   
 }
@@ -120,7 +116,8 @@ void ParallelRefinement::mark(const MeshFunction<bool>& refinement_marker)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> ParallelRefinement::marked_edge_list(const MeshEntity& cell) const
+std::vector<std::size_t> 
+ParallelRefinement::marked_edge_list(const MeshEntity& cell) const
 {
   std::vector<std::size_t> result;
 
@@ -147,11 +144,9 @@ void ParallelRefinement::update_logical_edgefunction()
 
   // Flatten received values and set EdgeFunction true at each index
   // received
-  for (auto r = received_values.begin();
-       r != received_values.end();
-       ++r)
+  for (auto r = received_values.begin(); r != received_values.end(); ++r)
   {
-    for (auto local_index = r->begin(); local_index != r->end();
+    for (auto local_index = r->begin(); local_index != r->end(); 
          ++local_index)
     {
       marked_edges[*local_index] = true;
@@ -262,9 +257,9 @@ void ParallelRefinement::create_new_vertices()
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::reorder_vertices_by_global_indices(
-                                 std::vector<double>& vertex_coords,
-                                 const std::size_t gdim,
-                                 const std::vector<std::size_t>& global_indices)
+                               std::vector<double>& vertex_coords,
+                               const std::size_t gdim,
+                               const std::vector<std::size_t>& global_indices)
 {
   // This is needed to interface with MeshPartitioning/LocalMeshData,
   // which expects the vertices in global order.  This is inefficient,
@@ -323,7 +318,8 @@ void ParallelRefinement::reorder_vertices_by_global_indices(
                      boost::extents[range.second - range.first][gdim]);
   for (std::size_t p = 0; p < received_values0.size(); ++p)
   {
-    const std::vector<std::size_t>& received_global_data0 = received_values0[p];
+    const std::vector<std::size_t>& received_global_data0
+      = received_values0[p];
     const std::vector<double>& received_global_data1 = received_values1[p];
     for (std::size_t j = 0; j < received_global_data0.size(); j += 3)
     {
@@ -353,8 +349,8 @@ void ParallelRefinement::build_local(Mesh& new_mesh) const
   ed.open(new_mesh, tdim, gdim);
   ed.init_vertices(num_vertices);
   std::size_t i = 0;
-  for (auto p = new_vertex_coordinates.begin(); p != new_vertex_coordinates.end();
-       p += gdim)
+  for (auto p = new_vertex_coordinates.begin(); 
+       p != new_vertex_coordinates.end(); p += gdim)
   {
     std::vector<double> vertex(p, p + gdim);
     ed.add_vertex(i, vertex);
@@ -393,14 +389,16 @@ void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
   for (std::size_t i = 0; i < num_local_cells ; i++)
     mesh_data.global_cell_indices[i] = idx_global_offset + i;
 
-  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
+  mesh_data.cell_vertices.resize(boost::extents[num_local_cells]
+                                 [mesh_data.num_vertices_per_cell]);
   std::copy(new_cell_topology.begin(), new_cell_topology.end(),
             mesh_data.cell_vertices.data());
 
   const std::size_t num_local_vertices = new_vertex_coordinates.size()/gdim;
   mesh_data.num_global_vertices = MPI::sum(_mesh.mpi_comm(),
                                            num_local_vertices);
-  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
+  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices]
+                                      [gdim]);
   std::copy(new_vertex_coordinates.begin(), new_vertex_coordinates.end(),
             mesh_data.vertex_coordinates.data());
 
