@@ -20,40 +20,27 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2011
-#
-# First added:  2011-06-17
-# Last changed: 2014-05-30
 
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_in_parallel, fixture
-
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename, "")
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
+from dolfin_utils.test import skip_in_parallel, fixture, cd_temppath
 
 
 @skip_in_parallel
-def test_save_plain_mesh2D(temppath):
+def test_save_plain_mesh2D(cd_temppath):
     mesh = UnitSquareMesh(8, 8)
-    f = File(temppath + "unit_square.xml")
+    f = File("unit_square.xml")
     f << mesh
 
 @skip_in_parallel
-def test_save_plain_mesh3D(temppath):
+def test_save_plain_mesh3D(cd_temppath):
     mesh = UnitCubeMesh(8, 8, 8)
-    f = File(temppath + "unit_cube.xml")
+    f = File("unit_cube.xml")
     f << mesh
 
 @skip_in_parallel
-def test_mesh_domains_io(temppath):
+def test_mesh_domains_io(cd_temppath):
     "Test input/output for mesh domains"
 
     # Define subdomains for the 6 faces of the unit cube
@@ -109,11 +96,11 @@ def test_mesh_domains_io(temppath):
     s1.mark_cells(output_mesh, 1)
 
     # Write to file
-    output_file = File(temppath + "XMLMesh_test_mesh_domains_io.xml")
+    output_file = File("XMLMesh_test_mesh_domains_io.xml")
     output_file << output_mesh
 
     # Read from file
-    input_file = File(temppath + "XMLMesh_test_mesh_domains_io.xml")
+    input_file = File("XMLMesh_test_mesh_domains_io.xml")
     input_mesh = Mesh()
     input_file >> input_mesh
 

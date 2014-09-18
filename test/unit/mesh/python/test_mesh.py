@@ -34,17 +34,7 @@ import numpy
 from dolfin import *
 import os
 
-from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel
-
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename, "")
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
+from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_temppath
 
 @fixture
 def mesh1d():
@@ -231,16 +221,16 @@ def test_Assign(mesh, f):
     assert f[v] == 10
 
 @skip_in_parallel
-def test_Write(temppath, f):
+def test_Write(cd_temppath, f):
     """Construct and save a simple meshfunction."""
     f = f
     f[0] = 1
     f[1] = 2
-    file = File(temppath + "saved_mesh_function.xml")
+    file = File("saved_mesh_function.xml")
     file << f
 
 @skip_in_parallel
-def test_Read(temppath):
+def test_Read(cd_temppath):
     """Construct and save a simple meshfunction. Then read it back from
     file."""
     #mf = mesh.data().create_mesh_function("mesh_data_function", 2)
@@ -250,9 +240,9 @@ def test_Read(temppath):
 
     #f[0] = 1
     #f[1] = 2
-    #file = File(temppath + "saved_mesh_function.xml")
+    #file = File("saved_mesh_function.xml")
     #file << f
-    #f = MeshFunction('int', mesh, temppath + "saved_mesh_function.xml")
+    #f = MeshFunction('int', mesh, "saved_mesh_function.xml")
     #assert all(f.array() == f.array())
 
 @skip_in_parallel
@@ -277,29 +267,29 @@ def test_SubsetIterators(mesh):
 
 # FIXME: Mesh IO tests should be in io test directory
 @skip_in_parallel
-def test_MeshXML2D(temppath):
+def test_MeshXML2D(cd_temppath):
     """Write and read 2D mesh to/from file"""
     mesh_out = UnitSquareMesh(3, 3)
     mesh_in  = Mesh()
-    file = File(temppath + "unitsquare.xml")
+    file = File("unitsquare.xml")
     file << mesh_out
     file >> mesh_in
     assert mesh_in.num_vertices() == 16
 
 
 @skip_in_parallel
-def test_MeshXML3D(temppath):
+def test_MeshXML3D(cd_temppath):
     """Write and read 3D mesh to/from file"""
     mesh_out = UnitCubeMesh(3, 3, 3)
     mesh_in  = Mesh()
-    file = File(temppath + "unitcube.xml")
+    file = File("unitcube.xml")
     file << mesh_out
     file >> mesh_in
     assert mesh_in.num_vertices() == 64
 
 
 @skip_in_parallel
-def xtest_MeshFunction(temppath):
+def xtest_MeshFunction(cd_temppath):
     """Write and read mesh function to/from file"""
     mesh = UnitSquareMesh(1, 1)
     f = MeshFunction('int', mesh, 0)
@@ -307,7 +297,7 @@ def xtest_MeshFunction(temppath):
     f[1] = 4
     f[2] = 6
     f[3] = 8
-    file = File(temppath + "meshfunction.xml")
+    file = File("meshfunction.xml")
     file << f
     g = MeshFunction('int', mesh, 0)
     file >> g

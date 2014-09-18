@@ -22,49 +22,39 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_Epetra, fixture
-
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename, "")
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
+from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_Epetra, fixture, cd_temppath
 
 
 @skip_if_not_PETSc
-def test_save_vector_petsc(temppath):
+def test_save_vector_petsc(cd_temppath):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
     x[:] = 1.0
-    f = File(temppath + "x.xml")
+    f = File("x.xml")
     f << x
 
 @skip_if_not_Epetra
-def test_save_vector_epetra(temppath):
+def test_save_vector_epetra(cd_temppath):
     # Create vector and write file
     x = EpetraVector(mpi_comm_world(), 197)
     x[:] = 1.0
-    f = File(temppath + "x.xml")
+    f = File("x.xml")
     f << x
 
 @skip_if_not_PETSc
-def test_save_gzipped_vector(temppath):
+def test_save_gzipped_vector(cd_temppath):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
     x[:] = 1.0
-    f = File(temppath + "x.xml.gz")
+    f = File("x.xml.gz")
     f << x
 
 @skip_if_not_PETSc
-def test_read_vector_petcs(temppath):
+def test_read_vector_petcs(cd_temppath):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
     x[:] = 1.0
-    f = File(temppath + "x.xml")
+    f = File("x.xml")
     f << x
 
     # Read vector from previous write
@@ -74,11 +64,11 @@ def test_read_vector_petcs(temppath):
     assert round(x.norm("l2") - y.norm("l2"), 7) == 0
 
 @skip_if_not_Epetra
-def test_read_vector_eptra(temppath):
+def test_read_vector_eptra(cd_temppath):
     # Create vector and write file
     x = EpetraVector(mpi_comm_world(), 197)
     x[:] = 1.0
-    f = File(temppath + "x.xml")
+    f = File("x.xml")
     f << x
 
     # Read vector from write
@@ -89,11 +79,11 @@ def test_read_vector_eptra(temppath):
 
 
 @skip_if_not_PETSc
-def test_read_gzipped_vector(temppath):
+def test_read_gzipped_vector(cd_temppath):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
     x[:] = 1.0
-    f = File(temppath + "x.xml")
+    f = File("x.xml")
     f << x
 
     # Read vector from previous write
@@ -102,12 +92,12 @@ def test_read_gzipped_vector(temppath):
     assert x.size() == y.size()
     assert round(x.norm("l2") - y.norm("l2"), 7) == 0
 
-def test_save_read_vector(temppath):
+def test_save_read_vector(cd_temppath):
     size = 512
     x = Vector(mpi_comm_world(), size)
     x[:] = 1.0
 
-    out_file = File(temppath + "test_vector_xml.xml")
+    out_file = File("test_vector_xml.xml")
     out_file << x
 
     y = Vector()

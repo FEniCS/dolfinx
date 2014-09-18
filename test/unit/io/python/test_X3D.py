@@ -16,62 +16,49 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2013-05-12
-# Last changed:
 
 import pytest
-from dolfin import * 
+from dolfin import *
 import os
-from dolfin_utils.test import fixture
+from dolfin_utils.test import fixture, cd_temppath
 
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename, "")
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
-
-def test_save_mesh1D(temppath):
+def test_save_mesh1D(cd_temppath):
     mesh = UnitIntervalMesh(16)
-    file = File(temppath + "mesh1D.x3d")
+    file = File("mesh1D.x3d")
     #self.assertRaises(RuntimeError, file << mesh)
 
-def test_save_mesh2D(temppath):
+def test_save_mesh2D(cd_temppath):
     mesh = UnitSquareMesh(16, 16)
-    file = File(temppath + "mesh2D.x3d")
+    file = File("mesh2D.x3d")
     file << mesh
 
-def test_save_mesh3D(temppath):
+def test_save_mesh3D(cd_temppath):
     mesh = UnitCubeMesh(16, 16, 16)
-    file = File(temppath + "mesh3D.x3d")
+    file = File("mesh3D.x3d")
     file << mesh
 
-def test_save_cell_meshfunction2D(temppath):
+def test_save_cell_meshfunction2D(cd_temppath):
     mesh = UnitSquareMesh(16, 16)
     mf = CellFunction("size_t", mesh, 12)
-    file = File(temppath + "cell_mf2D.x3d")
+    file = File("cell_mf2D.x3d")
     file << mf
 
-def test_save_facet_meshfunction2D(temppath):
+def test_save_facet_meshfunction2D(cd_temppath):
     mesh = UnitSquareMesh(16, 16)
     mf = FacetFunction("size_t", mesh, 12)
-    file = File(temppath + "facet_mf2D.x3d")
+    file = File("facet_mf2D.x3d")
     #with pytest.raises(RuntimeError):
     #    file << mf
 
-def test_save_cell_meshfunctio22D(temppath):
+def test_save_cell_meshfunctio22D(cd_temppath):
     mesh = UnitCubeMesh(16, 16, 16)
     mf = CellFunction("size_t", mesh, 12)
-    file = File(temppath + "cell_mf3D.x3d")
+    file = File("cell_mf3D.x3d")
     file << mf
 
-def test_save_facet_meshfunction3D(temppath):
+def test_save_facet_meshfunction3D(cd_temppath):
     mesh = UnitCubeMesh(16, 16, 16)
     mf = FacetFunction("size_t", mesh, 12)
-    file = File(temppath + "facet_mf3D.x3d")
+    file = File("facet_mf3D.x3d")
     #with pytest.raises(RuntimeError):
     #    file << mf

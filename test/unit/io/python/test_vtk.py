@@ -16,14 +16,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-05-18
-# Last changed:
 
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_in_parallel, fixture
+from dolfin_utils.test import skip_in_parallel, fixture, temppath
 
 # VTK file options
 @fixture
@@ -42,21 +39,11 @@ def mesh_function_types():
 def type_conv():
     return dict(size_t=int, int=int, double=float, bool=bool)
 
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename)
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
-
 @pytest.fixture(scope="function")
 def tempfile(temppath, request):
     return os.path.join(temppath, request.function.__name__)
 
-def test_save_1d_meshfunctions(tempfile, mesh_functions, \
+def test_save_1d_meshfunctions(tempfile, mesh_functions,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitIntervalMesh(32)
     for F in mesh_functions:
@@ -70,7 +57,7 @@ def test_save_1d_meshfunctions(tempfile, mesh_functions, \
             for file_option in file_options:
                 File(tempfile + "mf.pvd", file_option) << mf
 
-def test_save_2d_meshfunctions(tempfile, mesh_functions, \
+def test_save_2d_meshfunctions(tempfile, mesh_functions,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitSquareMesh(32, 32)
     for F in mesh_functions:
@@ -83,7 +70,7 @@ def test_save_2d_meshfunctions(tempfile, mesh_functions, \
             for file_option in file_options:
                 File(tempfile + "mf.pvd", file_option) << mf
 
-def test_save_3d_meshfunctions(tempfile, mesh_functions, \
+def test_save_3d_meshfunctions(tempfile, mesh_functions,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitCubeMesh(8, 8, 8)
     for F in mesh_functions:
@@ -121,7 +108,7 @@ def test_save_3d_mesh(tempfile, file_options):
     f << (mesh, 0.)
     f << (mesh, 1.)
     for file_option in file_options:
-        File(tempfile + "mesh.pvd", file_option) << mesh 
+        File(tempfile + "mesh.pvd", file_option) << mesh
 
 def test_save_1d_scalar(tempfile, file_options):
     mesh = UnitIntervalMesh(32)
@@ -156,15 +143,15 @@ def test_save_3d_scalar(tempfile, file_options):
     for file_option in file_options:
         File(tempfile + "u.pvd", file_option) << u
 
-# FFC fails for vector spaces in 1D
-#@pytest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
-#def test_save_1d_vector(tempfile, file_options):
-#    mesh = UnitIntervalMesh(32)
-#    u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-#    u.vector()[:] = 1.0
-#    File(tempfile + "u.pvd") << u
-#    for file_option in file_options:
-#        File(tempfile + "u.pvd", file_option) << u
+@pytest.mark.xfail(reason="FFC fails for tensor spaces in 1D")
+@skip_in_parallel
+def test_save_1d_vector(tempfile, file_options):
+    mesh = UnitIntervalMesh(32)
+    u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+    u.vector()[:] = 1.0
+    File(tempfile + "u.pvd") << u
+    for file_option in file_options:
+        File(tempfile + "u.pvd", file_option) << u
 
 def test_save_2d_vector(tempfile, file_options):
     mesh = UnitSquareMesh(16, 16)
@@ -188,15 +175,15 @@ def test_save_3d_vector(tempfile, file_options):
     for file_option in file_options:
         File(tempfile + "u.pvd", file_option) << u
 
-# FFC fails for tensor spaces in 1D
-#@pskip_in_parallel
-#def test_save_1d_tensor(tempfile, file_options):
-#    mesh = UnitIntervalMesh(32)
-#    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
-#    u.vector()[:] = 1.0
-#    File(tempfile + "u.pvd") << u
-#    for file_option in file_options:
-#        File(tempfile + "u.pvd", file_option) << u
+@pytest.mark.xfail(reason="FFC fails for tensor spaces in 1D")
+@skip_in_parallel
+def test_save_1d_tensor(tempfile, file_options):
+    mesh = UnitIntervalMesh(32)
+    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+    u.vector()[:] = 1.0
+    File(tempfile + "u.pvd") << u
+    for file_option in file_options:
+        File(tempfile + "u.pvd", file_option) << u
 
 def test_save_2d_tensor(tempfile, file_options):
     mesh = UnitSquareMesh(16, 16)

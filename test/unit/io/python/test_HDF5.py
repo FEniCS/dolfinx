@@ -24,17 +24,7 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_if_not_HDF5, fixture
-
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename, "")
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
+from dolfin_utils.test import skip_if_not_HDF5, fixture, temppath
 
 
 @skip_if_not_HDF5

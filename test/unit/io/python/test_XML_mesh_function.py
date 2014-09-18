@@ -25,22 +25,11 @@ import pytest
 import os
 from dolfin import *
 from six.moves import xrange as range
-from dolfin_utils.test import skip_in_parallel, fixture
-
-
-# create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename)
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
+from dolfin_utils.test import skip_in_parallel, fixture, cd_temppath
 
 
 @skip_in_parallel
-def test_io_size_t(temppath):
+def test_io_size_t(cd_temppath):
     "Test input/output for size_t"
 
     # Write some data
@@ -50,7 +39,7 @@ def test_io_size_t(temppath):
     f[2] = 3
     f[5] = 7
 
-    filename = os.path.join(temppath, "XMLMeshFunction_test_io_size_t.xml")
+    filename = "XMLMeshFunction_test_io_size_t.xml"
 
     # Write
     output_file = File(filename)
@@ -67,7 +56,7 @@ def test_io_size_t(temppath):
 
 
 @skip_in_parallel
-def test_io_int(temppath):
+def test_io_int(cd_temppath):
     "Test input/output for int"
 
     # Write some data
@@ -77,7 +66,7 @@ def test_io_int(temppath):
     f[2] = -3
     f[5] = 7
 
-    filename = os.path.join(temppath, "XMLMeshFunction_test_io_int.xml")
+    filename = "XMLMeshFunction_test_io_int.xml"
 
     # Write
     output_file = File(filename)
@@ -94,7 +83,7 @@ def test_io_int(temppath):
 
 
 @skip_in_parallel
-def test_io_double(temppath):
+def test_io_double(cd_temppath):
     "Test input/output for double"
 
     # Write some data
@@ -104,7 +93,7 @@ def test_io_double(temppath):
     f[2] = 3.14
     f[5] = 10000000.0
 
-    filename = os.path.join(temppath, "XMLMeshFunction_test_io_double.xml")
+    filename = "XMLMeshFunction_test_io_double.xml"
 
     # Write
     output_file = File(filename)
@@ -121,7 +110,7 @@ def test_io_double(temppath):
 
 
 @skip_in_parallel
-def test_io_bool(temppath):
+def test_io_bool(cd_temppath):
     "Test input/output for bool"
 
     # Write some data
@@ -131,7 +120,7 @@ def test_io_bool(temppath):
     f[2] = True
     f[5] = False
 
-    filename = os.path.join(temppath, "XMLMeshFunction_test_io_bool.xml")
+    filename = "XMLMeshFunction_test_io_bool.xml"
 
     # Write
     output_file = File(filename)

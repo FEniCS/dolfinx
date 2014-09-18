@@ -27,24 +27,7 @@ import pytest
 from dolfin import *
 import os
 
-from dolfin_utils.test import *
-
-#create an output folder
-@fixture
-def temppath():
-    filedir = os.path.dirname(os.path.abspath(__file__))
-    basename = os.path.basename(__file__).replace(".py", "_data")
-    temppath = os.path.join(filedir, basename)
-    if not os.path.exists(temppath):
-        os.mkdir(temppath)
-    return temppath
-
-@pytest.yield_fixture
-def default_parameters():
-    prev = parameters.copy()
-    yield parameters.copy()
-    parameters.assign(prev)
-
+from dolfin_utils.test import *#cd_temppath, pushpop_parameters, skip_in_parallel
 
 def create_data(A=None):
     "This function creates data used in the tests below"
@@ -168,7 +151,7 @@ def test_p9_box_1():
 
 @skip_if_not_PETSc
 @skip_in_parallel
-def test_p9_box_2(default_parameters):
+def test_p9_box_2(pushpop_parameters):
     parameters["linear_algebra_backend"] = "PETSc"
 
 @skip_if_not_PETSc
@@ -653,41 +636,41 @@ def test_p34_box_2():
     #plot(element)
 
 @skip_in_parallel
-def test_p35_box_1(temppath):
+def test_p35_box_1(cd_temppath):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
 
-    file = File(temppath + "solution.pvd")
+    file = File("solution.pvd")
     file << u
 
 @skip_in_parallel
-def test_p35_box_2(temppath):
+def test_p35_box_2(cd_temppath):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
     t = 1.0
 
-    file = File(temppath + "solution.pvd", "compressed");
+    file = File("solution.pvd", "compressed");
     file << (u, t)
 
 @skip_in_parallel
-def test_p36_box_1(temppath, default_parameters):
+def test_p36_box_1(cd_temppath, pushpop_parameters):
     mesh = UnitSquareMesh(2, 2)
     matrix, x, vector = create_data()
 
-    vector_file = File(temppath + "vector.xml")
+    vector_file = File("vector.xml")
     vector_file << vector
     vector_file >> vector
-    mesh_file = File(temppath + "mesh.xml")
+    mesh_file = File("mesh.xml")
     mesh_file << mesh
     mesh_file >> mesh
-    parameters_file = File(temppath + "parameters.xml")
+    parameters_file = File("parameters.xml")
     parameters_file << parameters
     parameters_file >> parameters
 
 @skip_in_parallel
-def test_p37_box_1(temppath):
+def test_p37_box_1(cd_temppath):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -695,15 +678,15 @@ def test_p37_box_1(temppath):
     t = 0.0
     T = 1.0
 
-    time_series = TimeSeries(temppath + "simulation_data")
+    time_series = TimeSeries("simulation_data")
     while t < T:
         time_series.store(u.vector(), t)
         time_series.store(mesh, t)
         t += dt
 
 @skip_in_parallel
-def test_p37_box_2(temppath):
-    time_series = TimeSeries(temppath + "simulation_data")
+def test_p37_box_2(cd_temppath):
+    time_series = TimeSeries("simulation_data")
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -786,7 +769,7 @@ def test_p40_box_2():
     solve(None, None)
 
 @skip_in_parallel
-def test_p41_box_1(default_parameters):
+def test_p41_box_1(pushpop_parameters):
     info(parameters, True)
     num_threads = parameters["num_threads"]
     allow_extrapolation = parameters["allow_extrapolation"]
@@ -809,7 +792,7 @@ def test_p42_box_1():
     my_parameters.add("bar", 0.1)
 
 @skip_in_parallel
-def test_p42_box_2(default_parameters):
+def test_p42_box_2(pushpop_parameters):
     d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
     parameters.update(d)
 
@@ -819,7 +802,7 @@ def test_p42_box_3():
                                 nested=Parameters("nested", baz=True))
 
 @skip_in_parallel
-def test_p42_box_4(default_parameters):
+def test_p42_box_4(pushpop_parameters):
     argv = ["dummy.py"]
     parameters.parse(argv)
 
@@ -829,13 +812,13 @@ def test_p42_box_4(default_parameters):
     # Feel free to improve by adding something to argv above.
 
 @skip_in_parallel
-def test_p43_box_1(temppath, default_parameters):
-    file = File(temppath + "parameters.xml")
+def test_p43_box_1(cd_temppath, pushpop_parameters):
+    file = File("parameters.xml")
     file << parameters
     file >> parameters
 
 @skip_in_parallel
-def test_p45_box_1(default_parameters):
+def test_p45_box_1(pushpop_parameters):
     parameters["mesh_partitioner"] = "ParMETIS"
 
 @skip_in_parallel
@@ -881,7 +864,7 @@ def test_p49_box_1():
     A = assemble(a)
 
 @skip_in_parallel
-def test_p50_box_1(default_parameters):
+def test_p50_box_1(pushpop_parameters):
     parameters["form_compiler"]["name"] = "sfc"
 
 @skip_in_parallel
@@ -896,7 +879,7 @@ def test_p50_box_2():
     AA = A.array()
 
 @skip_in_parallel
-def test_p50_box_3(default_parameters):
+def test_p50_box_3(pushpop_parameters):
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
     v = TestFunction(V)
@@ -908,7 +891,7 @@ def test_p50_box_3(default_parameters):
 
 @skip_if_not_MTL4
 @skip_in_parallel
-def test_p50_box_4(default_parameters):
+def test_p50_box_4(pushpop_parameters):
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
@@ -921,7 +904,7 @@ def test_p50_box_4(default_parameters):
     rows, columns, values = A.data()
 
 @skip_in_parallel
-def test_p51_box_1(default_parameters):
+def test_p51_box_1(pushpop_parameters):
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
