@@ -63,12 +63,13 @@ void SCOTCH::compute_partition(
   GraphBuilder::compute_dual_graph(mpi_comm, mesh_data, local_graph,
                                    ghost_vertices);
 
-  std::vector<std::size_t> node_weights;
-
   // Compute partitions
   const std::size_t num_global_vertices = mesh_data.num_global_cells;
   const std::vector<std::size_t>& global_cell_indices
     = mesh_data.global_cell_indices;
+  const std::vector<std::size_t>& node_weights
+    = mesh_data.cell_weight;
+
   partition(mpi_comm, local_graph, node_weights,
             ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition, ghost_procs);

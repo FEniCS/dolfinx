@@ -182,6 +182,7 @@ void GraphBuilder::compute_local_dual_graph(const MPI_Comm mpi_comm,
   const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
 
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
+  dolfin_assert(num_vertices_per_cell > 0);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
 
   local_graph.resize(num_local_cells);
