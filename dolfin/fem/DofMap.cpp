@@ -24,7 +24,7 @@
 // Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-09-19
+// Last changed: 2014-09-08
 
 #include <unordered_map>
 
@@ -49,7 +49,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
   dolfin_assert(_ufc_dofmap);
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, NULL);
+  DofMapBuilder::build(*this, mesh, std::shared_ptr<const SubDomain>());
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
