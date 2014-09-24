@@ -23,6 +23,7 @@
 optimisation problems to solve the same minimization problem for testing
 TAOLinearBoundSolver."""
 
+from __future__ import print_function
 from dolfin import *
 import unittest
 
@@ -110,10 +111,11 @@ class TAOSolverTester(unittest.TestCase):
             self.assertAlmostEqual(assemble(energy), Ly, 4)
 
 if __name__ == "__main__":
+    
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print ""
-    print "Testing DOLFIN nls/PETScTAOSolver interface"
-    print "--------------------------------------------"
+    print("")
+    print("Testing DOLFIN nls/PETScTAOSolver interface")
+    print("--------------------------------------------")
     unittest.main()

@@ -25,10 +25,11 @@ upwards (and not downwards) in order to minimise the potential energy."""
 #
 # First added:  2014-07-19
 
+from __future__ import print_function
 from dolfin import *
 
 if not has_petsc_tao():
-    print "DOLFIN must be compiled at least with PETSc 3.5 to run this demo."
+    print("DOLFIN must be compiled at least with PETSc 3.5 to run this demo.")
     exit(0)
 
 # Read mesh
