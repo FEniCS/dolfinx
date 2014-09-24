@@ -392,7 +392,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       std::map<std::size_t, std::size_t>::const_iterator it;
       for (it = domain.begin(); it != domain.end(); ++it)
         collection.set_value(it->first, it->second);
-      const std::string marker_dataset =  name + "/domain_" + std::to_string(d);
+      const std::string marker_dataset =  name + "/domain_" + boost::lexical_cast<std::string>(d);
       write_mesh_value_collection(collection, marker_dataset);
     }
 
@@ -1434,7 +1434,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   // Check if we have any domains
   for (std::size_t d = 0; d <= input_mesh.topology().dim(); ++d)
   {
-    const std::string marker_dataset = mesh_name + "/domain_" + std::to_string(d);
+    const std::string marker_dataset = mesh_name + "/domain_" + boost::lexical_cast<std::string>(d);
     if (!has_dataset(marker_dataset))
       continue;
 
