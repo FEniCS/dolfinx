@@ -19,11 +19,12 @@
 # First added:  2014-07-19
 # Last changed: 2014-07-28
 
+from __future__ import print_function
+
 """This demo uses PETSc TAO solver for nonlinear (bound-constrained)
 optimisation problems to solve the same minimization problem for testing
 TAOLinearBoundSolver."""
 
-from __future__ import print_function
 from dolfin import *
 import unittest
 
