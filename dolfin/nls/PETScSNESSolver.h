@@ -112,6 +112,7 @@ namespace dolfin
     {
       NonlinearProblem* nonlinear_problem;
       PETScVector* x;
+      Vec f_tmp;
       const PETScVector* xl;
       const PETScVector* xu;
     };
@@ -140,6 +141,8 @@ namespace dolfin
     static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat A, Mat B,
                                        void* ctx);
     #endif
+
+    static PetscErrorCode FormObjective(SNES snes, Vec x, PetscReal* out, void* ctx);
 
     // Set the bounds on the problem from the parameters, if desired
     // Here, x is passed in as a model vector from which we make our
