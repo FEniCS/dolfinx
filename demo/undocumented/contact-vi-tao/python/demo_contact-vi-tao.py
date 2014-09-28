@@ -24,7 +24,7 @@ in a box of the same size."""
 #
 # First added:  2012-09-03
 # Last changed: 2014-07-19
-#
+
 from __future__ import print_function
 from dolfin import *
 
@@ -111,6 +111,7 @@ solver = PETScTAOSolver()
 # Set some parameters
 solver.parameters["method"] = "tron"  # when using gpcg make sure that you have a constant Hessian
 # solver.parameters["linear_solver"] = "nash"
+solver.parameters["line_search"] = "gpcg"
 # solver.parameters["preconditioner"] = "ml_amg"
 solver.parameters["monitor_convergence"] = True
 solver.parameters["report"] = True
@@ -122,13 +123,12 @@ solver.parameters["report"] = True
 parameters.parse()
 
 # Solve the problem
-sol = Function(V)
-solver.solve(ContactProblem(), sol.vector(), u_min.vector(), u_max.vector())
+solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
 
 # Save solution in XDMF format
-out = File("sol.xdmf")
-out << sol
+out = File("u.xdmf")
+out << u
 
 # Plot the current configuration
-plot(sol, mode="displacement", wireframe=True, title="Displacement field")
+plot(u, mode="displacement", wireframe=True, title="Displacement field")
 interactive()

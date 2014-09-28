@@ -248,10 +248,15 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
   Timer timer("PETSc TAO solver execution");
 
   // Initialise the TAO solver
-  init(optimisation_problem, x, lb, ub);
+  PETScVector x_copy(x);
+  init(optimisation_problem, x_copy, lb, ub);
 
   // Solve
   TaoSolve(_tao);
+
+  // Get the solution vector
+  x.zero();
+  x.axpy(1.0, x_copy);
 
   // Update ghost values
   x.update_ghost_values();

@@ -123,13 +123,12 @@ solver.parameters["report"] = True
 parameters.parse()
 
 # Solve the problem
-sol = Function(V)
-solver.solve(BucklingProblem(), sol.vector(), u_min.vector(), u_max.vector())
+solver.solve(BucklingProblem(), u.vector(), u_min.vector(), u_max.vector())
 
 # Save solution in XDMF format
-out = File("sol.xdmf")
-out << sol
+out = File("u.xdmf")
+out << u
 
 # Plot the current configuration
-plot(sol, mode="displacement", wireframe=True, title="Displacement field")
+plot(u, mode="displacement", wireframe=True, title="Displacement field")
 interactive()

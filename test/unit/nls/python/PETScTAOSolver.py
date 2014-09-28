@@ -105,10 +105,9 @@ class TAOSolverTester(unittest.TestCase):
     if has_petsc_tao():
 
         def test_tao_solver(self):
-            sol = Function(V)
-            solver.solve(TestProblem(), sol.vector(), lb.vector(), ub.vector())
+            solver.solve(TestProblem(), u.vector(), lb.vector(), ub.vector())
             
-            # Verify that energy(sol) = Ly
+            # Verify that energy(u) = Ly
             self.assertAlmostEqual(assemble(energy), Ly, 4)
 
 if __name__ == "__main__":
