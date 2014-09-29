@@ -18,9 +18,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2013-02-06
-# Last changed: 2014-05-30
 
 import os
 import pytest
@@ -109,7 +106,7 @@ def test_facet_domain_propagation():
 
     # Check we have the same number of value-marked facets
     for value in [5, 10, 15]:
-        assert (inner_facets.array()==value).sum() == \
-        		  (outer_facets.array()==value).sum()
-        assert (parent_facets.array()==value).sum() == \
-        		  (outer_facets.array()==value).sum()
+        assert ((inner_facets.array()==value).sum() ==
+                (outer_facets.array()==value).sum())
+        assert ((parent_facets.array()==value).sum() ==
+                (outer_facets.array()==value).sum())
