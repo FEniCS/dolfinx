@@ -103,8 +103,7 @@ u.vector()[:] = u_array
 #u.vector().set_local(u_array)  # safer for parallel computing
 print('\nNormalized solution:\n', u.vector().array())
 
-file_path = os.path.join(os.path.dirname(__file__), "poisson.pvd")
-file = File(file_path)
+file = File('poisson.pvd')
 file << u
 file << grad_u
 file << grad_u_x

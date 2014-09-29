@@ -27,7 +27,7 @@ import pytest
 from dolfin import *
 import os
 
-from dolfin_utils.test import *#cd_temppath, pushpop_parameters, skip_in_parallel
+from dolfin_utils.test import * #cd_temppath, pushpop_parameters, skip_in_parallel
 
 def create_data(A=None):
     "This function creates data used in the tests below"
@@ -685,7 +685,7 @@ def test_p37_box_1(cd_temppath):
         t += dt
 
 @skip_in_parallel
-def test_p37_box_2(cd_temppath):
+def test_p37_box_2():
     time_series = TimeSeries("simulation_data")
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)

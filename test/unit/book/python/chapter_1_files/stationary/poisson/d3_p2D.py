@@ -56,8 +56,7 @@ solver.solve()
 #plot(mesh)
 
 # Dump solution to file in VTK format
-file_path = os.path.join(os.path.dirname(__file__), "poisson.pvd")
-file = File(file_path)
+file = File('poisson.pvd')
 file << u
 
 # Hold plot
