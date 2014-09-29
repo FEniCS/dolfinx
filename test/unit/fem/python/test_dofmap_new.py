@@ -1,3 +1,4 @@
+#!/usr/bin/env py.test
 """Unit tests for the DofMap interface"""
 
 # Copyright (C) 2014 Garth N. Wells
