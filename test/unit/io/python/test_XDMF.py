@@ -27,8 +27,15 @@ from dolfin_utils.test import skip_if_not_HDF5, skip_in_parallel, fixture, tempp
 def test_save_and_load_1d_mesh(temppath):
     filename = os.path.join(temppath, "mesh.xdmf")
     mesh = UnitIntervalMesh(32)
-    File(filename) << mesh
-    XDMFFile(mesh.mpi_comm(), filename) << mesh
+
+    file = File(filename)
+    file << mesh
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mesh
+    del file
+
     mesh2 = Mesh(filename)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
@@ -38,8 +45,15 @@ def test_save_and_load_1d_mesh(temppath):
 def test_save_and_load_2d_mesh(temppath):
     filename = os.path.join(temppath, "mesh_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
-    File(filename) << mesh
-    XDMFFile(mesh.mpi_comm(), filename) << mesh
+
+    file = File(filename)
+    file << mesh
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mesh
+    del file
+
     mesh2 = Mesh(filename)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
@@ -49,8 +63,15 @@ def test_save_and_load_2d_mesh(temppath):
 def test_save_and_load_3d_mesh(temppath):
     filename = os.path.join(temppath, "mesh_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
-    File(filename) << mesh
-    XDMFFile(mesh.mpi_comm(), filename) << mesh
+
+    file = File(filename)
+    file << mesh
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mesh
+    del file
+
     mesh2 = Mesh(filename)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
@@ -64,8 +85,14 @@ def test_save_1d_scalar(temppath):
     V = FunctionSpace(mesh, "Lagrange", 2) # FIXME: This randomly hangs in parallel
     u = Function(V)
     u.vector()[:] = 1.0
-    File(filename1) << u
-    XDMFFile(mesh.mpi_comm(), filename2) << u
+
+    file = File(filename1)
+    file << u
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename2)
+    file << u
+    del file
 
 @skip_if_not_HDF5
 def test_save_2d_scalar(temppath):
@@ -74,8 +101,13 @@ def test_save_2d_scalar(temppath):
     V = FunctionSpace(mesh, "Lagrange", 2)  # FIXME: This randomly hangs in parallel
     u = Function(V)
     u.vector()[:] = 1.0
-    File(mesh.mpi_comm(), filename) << u
-    XDMFFile(mesh.mpi_comm(), filename) << u
+
+    file = File(mesh.mpi_comm(), filename)
+    file << u
+    del file
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << u
+    del file
 
 @skip_if_not_HDF5
 def test_save_3d_scalar(temppath):
@@ -84,8 +116,12 @@ def test_save_3d_scalar(temppath):
     V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
     u.vector()[:] = 1.0
-    File(mesh.mpi_comm(), filename) << u
-    XDMFFile(mesh.mpi_comm(), filename) << u
+    file = File(mesh.mpi_comm(), filename)
+    file << u
+    del file
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << u
+    del file
 
 @skip_if_not_HDF5
 def test_save_2d_vector(temppath):
@@ -95,8 +131,12 @@ def test_save_2d_vector(temppath):
     u = Function(V)
     c = Constant((1.0, 2.0))
     u.interpolate(c)
-    File(mesh.mpi_comm(), filename) << u
-    XDMFFile(mesh.mpi_comm(), filename) << u
+    file = File(mesh.mpi_comm(), filename)
+    file << u
+    del file
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << u
+    del file
 
 @skip_if_not_HDF5
 def test_save_3d_vector(temppath):
@@ -105,8 +145,12 @@ def test_save_3d_vector(temppath):
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 1))
     c = Constant((1.0, 2.0, 3.0))
     u.interpolate(c)
-    File(mesh.mpi_comm(), filename) << u
-    XDMFFile(mesh.mpi_comm(), filename) << u
+    file = File(mesh.mpi_comm(), filename)
+    file << u
+    del file
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << u
+    del file
 
 @skip_if_not_HDF5
 def test_save_3d_vector_series(temppath):
@@ -123,6 +167,7 @@ def test_save_3d_vector_series(temppath):
 
     u.vector()[:] = 3.0
     file << (u, 0.3)
+
     del file
 
     file = XDMFFile(mesh.mpi_comm(), filename)
@@ -136,14 +181,22 @@ def test_save_3d_vector_series(temppath):
     u.vector()[:] = 3.0
     file << (u, 0.3)
 
+    del file
+
 @skip_if_not_HDF5
 def test_save_2d_tensor(temppath):
     filename = os.path.join(temppath, "tensor.xdmf")
     mesh = UnitSquareMesh(16, 16)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(mesh.mpi_comm(), filename) << u
-    XDMFFile(mesh.mpi_comm(), filename) << u
+
+    file = File(mesh.mpi_comm(), filename)
+    file << u
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << u
+    del file
 
 @skip_if_not_HDF5
 def test_save_3d_tensor(temppath):
@@ -151,8 +204,12 @@ def test_save_3d_tensor(temppath):
     mesh = UnitCubeMesh(8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    File(mesh.mpi_comm(), filename) << u
-    XDMFFile(mesh.mpi_comm(), filename) << u
+    file = File(mesh.mpi_comm(), filename)
+    file << u
+    del file
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << u
+    del file
 
 @skip_if_not_HDF5
 def test_save_1d_mesh(temppath):
@@ -161,8 +218,14 @@ def test_save_1d_mesh(temppath):
     mf = CellFunction("size_t", mesh)
     for cell in cells(mesh):
         mf[cell] = cell.index()
-    File(mesh.mpi_comm(), filename) << mf
-    XDMFFile(mesh.mpi_comm(), filename) << mf
+
+    file = File(mesh.mpi_comm(), filename)
+    file << mf
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mf
+    del file
 
 @skip_if_not_HDF5
 def test_save_2D_cell_function(temppath):
@@ -171,8 +234,14 @@ def test_save_2D_cell_function(temppath):
     mf = CellFunction("size_t", mesh)
     for cell in cells(mesh):
         mf[cell] = cell.index()
-    File(mesh.mpi_comm(), filename) << mf
-    XDMFFile(mesh.mpi_comm(), filename) << mf
+
+    file = File(mesh.mpi_comm(), filename)
+    file << mf
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mf
+    del file
 
 @skip_if_not_HDF5
 def test_save_3D_cell_function(temppath):
@@ -181,8 +250,14 @@ def test_save_3D_cell_function(temppath):
     for cell in cells(mesh):
         mf[cell] = cell.index()
     filename = os.path.join(temppath, "mf_3D.xdmf")
-    File(mesh.mpi_comm(), filename) << mf
-    XDMFFile(mesh.mpi_comm(), filename) << mf
+
+    file = File(mesh.mpi_comm(), filename)
+    file << mf
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mf
+    del file
 
 @skip_if_not_HDF5
 def test_save_2D_facet_function(temppath):
@@ -191,8 +266,14 @@ def test_save_2D_facet_function(temppath):
     for facet in facets(mesh):
         mf[facet] = facet.index()
     filename = os.path.join(temppath, "mf_facet_2D.xdmf")
-    File(mesh.mpi_comm(), filename) << mf
-    XDMFFile(mesh.mpi_comm(), filename) << mf
+
+    file = File(mesh.mpi_comm(), filename)
+    file << mf
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mf
+    del file
 
 @skip_if_not_HDF5
 def test_save_3D_facet_function(temppath):
@@ -201,8 +282,14 @@ def test_save_3D_facet_function(temppath):
     for facet in facets(mesh):
         mf[facet] = facet.index()
     filename = os.path.join(temppath, "mf_facet_3D.xdmf")
-    File(mesh.mpi_comm(), filename) << mf
-    XDMFFile(mesh.mpi_comm(), filename) << mf
+
+    file = File(mesh.mpi_comm(), filename)
+    file << mf
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mf
+    del file
 
 @skip_if_not_HDF5
 def test_save_3D_edge_function(temppath):
@@ -210,8 +297,14 @@ def test_save_3D_edge_function(temppath):
     mf = EdgeFunction("size_t", mesh)
     for edge in edges(mesh):
         mf[edge] = edge.index()
-    File(mesh.mpi_comm(), os.path.join(temppath, "mf_edge_3D.xdmf")) << mf
-    XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "mf_edge_3D.xdmf")) << mf
+
+    file = File(mesh.mpi_comm(), os.path.join(temppath, "mf_edge_3D.xdmf"))
+    file << mf
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "mf_edge_3D.xdmf"))
+    file << mf
+    del file
 
 @skip_if_not_HDF5
 def test_save_2D_vertex_function(temppath):
@@ -220,8 +313,14 @@ def test_save_2D_vertex_function(temppath):
     for vertex in vertices(mesh):
         mf[vertex] = vertex.index()
     filename = os.path.join(temppath, "mf_vertex_2D.xdmf")
-    File(mesh.mpi_comm(), filename) << mf
-    XDMFFile(mesh.mpi_comm(), filename) << mf
+
+    file = File(mesh.mpi_comm(), filename)
+    file << mf
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mf
+    del file
 
 @skip_if_not_HDF5
 def test_save_3D_vertex_function(temppath):
@@ -230,8 +329,14 @@ def test_save_3D_vertex_function(temppath):
     mf = VertexFunction("size_t", mesh)
     for vertex in vertices(mesh):
         mf[vertex] = vertex.index()
-    File(mesh.mpi_comm(), filename) << mf
-    XDMFFile(mesh.mpi_comm(), filename) << mf
+
+    file = File(mesh.mpi_comm(), filename)
+    file << mf
+    del file
+
+    file = XDMFFile(mesh.mpi_comm(), filename)
+    file << mf
+    del file
 
 @skip_if_not_HDF5
 def test_save_points_2D(temppath):
@@ -245,9 +350,11 @@ def test_save_points_2D(temppath):
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "points_2D.xdmf"))
     file.write(points)
+    del file
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "points_values_2D.xdmf"))
     file.write(points, vals)
+    del file
 
 @skip_if_not_HDF5
 def test_save_points_3D(temppath):
@@ -261,6 +368,8 @@ def test_save_points_3D(temppath):
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "points_3D.xdmf"))
     file.write(points)
+    del file
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(temppath, "points_values_3D.xdmf"))
     file.write(points, vals)
+    del file

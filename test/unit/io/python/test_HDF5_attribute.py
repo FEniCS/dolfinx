@@ -27,48 +27,36 @@ from dolfin_utils.test import skip_if_not_HDF5, fixture, temppath
 
 
 @pytest.yield_fixture
-def hdf_file(temppath):
-    hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "str.h5"), "w")
+def attr(temppath):
+    hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "hdf_file.h5"), "w")
     x = Vector(mpi_comm_world(), 123)
     hdf_file.write(x, "/a_vector")
-    yield hdf_file
+    attr = hdf_file.attributes("/a_vector")
+
+    yield attr
+
     del hdf_file
 
 @skip_if_not_HDF5
-def test_read_write_str_attribute(hdf_file):
-    attr = hdf_file.attributes("/a_vector")
+def test_read_write_str_attribute(attr):
     attr['name'] = 'Vector'
     assert attr.type_str("name") == "string"
     assert attr['name'] == 'Vector'
 
 @skip_if_not_HDF5
-def test_read_write_float_attribute(temppath):
-    hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "float.h5"), "w")
-    x = Vector(mpi_comm_world(), 123)
-    hdf_file.write(x, "/a_vector")
-    attr = hdf_file.attributes("/a_vector")
+def test_read_write_float_attribute(attr):
     attr['val'] = -9.2554
     assert attr.type_str("val") == "float"
     assert attr['val'] == -9.2554
-    del hdf_file
 
 @skip_if_not_HDF5
-def test_read_write_int_attribute(temppath):
-    hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "int.h5"), "w")
-    x = Vector(mpi_comm_world(), 123)
-    hdf_file.write(x, "/a_vector")
-    attr = hdf_file.attributes("/a_vector")
+def test_read_write_int_attribute(attr):
     attr['val'] = 1
     assert attr.type_str("val") == "int"
     assert attr['val'] == 1
-    del hdf_file
 
 @skip_if_not_HDF5
-def test_read_write_vec_float_attribute(temppath):
-    hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "vec_float.h5"), "w")
-    x = Vector(mpi_comm_world(), 123)
-    hdf_file.write(x, "/a_vector")
-    attr = hdf_file.attributes("/a_vector")
+def test_read_write_vec_float_attribute(attr):
     vec = numpy.array([1,2,3,4.5], dtype='float')
     attr['val'] = vec
     ans = attr['val']
@@ -76,14 +64,9 @@ def test_read_write_vec_float_attribute(temppath):
     assert len(vec) == len(ans)
     for val1, val2 in zip(vec, ans):
         assert val1 == val2
-    del hdf_file
 
 @skip_if_not_HDF5
-def test_read_write_vec_int_attribute(temppath):
-    hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "vec_int.h5"), "w")
-    x = Vector(mpi_comm_world(), 123)
-    hdf_file.write(x, "/a_vector")
-    attr = hdf_file.attributes("/a_vector")
+def test_read_write_vec_int_attribute(attr):
     vec = numpy.array([1,2,3,4,5], dtype=numpy.uintp)
     attr['val'] = vec
     ans = attr['val']
@@ -91,4 +74,3 @@ def test_read_write_vec_int_attribute(temppath):
     assert len(vec) == len(ans)
     for val1, val2 in zip(vec, ans):
         assert val1 == val2
-    del hdf_file
