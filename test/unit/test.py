@@ -157,4 +157,7 @@ def main():
     sys.exit(len(failed) != 0)
 
 if __name__ == "__main__":
-    main()
+    #main()
+    print("The test.py file is deprecated. Run 'py.test' or look in the scripts/ directory for other running examples.")
+    sys.exit(-1)
+
