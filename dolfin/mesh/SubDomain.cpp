@@ -82,7 +82,8 @@ void SubDomain::mark(Mesh& mesh,
 {
   //dolfin_assert(mesh.domains().markers(dim));
   //error("Not yet updated (SubDomain::mark) ");
-  apply_markers(mesh.domains().markers(dim), dim, sub_domain, mesh, check_midpoint);
+  apply_markers(mesh.domains().markers(dim), dim, sub_domain, mesh,
+                check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<std::size_t>& sub_domains,

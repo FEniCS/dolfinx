@@ -83,6 +83,14 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   // Create data structure for local assembly data
   UFC ufc(a);
 
+  // Skip assembly if there are no point integrals
+  if (ufc.form.has_point_integrals())
+  {
+    dolfin_error("Assembler.cpp",
+                 "assemble form",
+                 "Point integrals (dP) are not supported by the Assembler");
+  }
+
   // Update off-process coefficients
   const std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = a.coefficients();
