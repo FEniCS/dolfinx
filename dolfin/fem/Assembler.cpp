@@ -464,13 +464,43 @@ void Assembler::assemble_vertices(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
+  // Compute facets and vertex - cell connectivity if not already computed
+  const std::size_t D = mesh.topology().dim();
+  mesh.init(0);
+  mesh.init(0, D);
+  dolfin_assert(mesh.ordered());
+
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (std::size_t i = 0; i < form_rank; ++i)
+  {
     dofmaps.push_back(a.function_space(i)->dofmap().get());
+
+    // Check that the test and trial space as dofs on the vertices
+    if (dofmaps[i]->num_entity_dofs(0)==0)
+    {
+      dolfin_error("Assembler.cpp",
+                   "assemble form over vertices",
+                   "Expecting test and trial spaces to have dofs on "\
+                   "vertices for point integrals");
+    }
+    
+    // Check that the test and trial spaces do not have dofs other
+    // than on vertices
+    for (std::size_t j = 1; j <= D; j++)
+    {
+      if (dofmaps[i]->num_entity_dofs(j)!=0)
+      {
+        dolfin_error("Assembler.cpp",
+                     "assemble form over vertices",
+                     "Expecting test and trial spaces to only have dofs on " \
+                     "vertices for point integrals");
+      }
+    }
+  }
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
@@ -481,12 +511,6 @@ void Assembler::assemble_vertices(GenericTensor& A,
 
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
-
-  // Compute facets and facet - cell connectivity if not already computed
-  const std::size_t D = mesh.topology().dim();
-  mesh.init(0);
-  mesh.init(0, D);
-  dolfin_assert(mesh.ordered());
 
   // Assemble over exterior facets (the cells of the boundary)
   ufc::cell ufc_cell;
