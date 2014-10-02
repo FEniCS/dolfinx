@@ -218,9 +218,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       {
         _data_values[count++] = data_values[*cell_offset];
         _data_values[count++] = data_values[*cell_offset + 1];
-        count++;
+        ++count;
+        ++cell_offset;
       }
-      ++cell_offset;
     }
     else if (value_rank == 2 && value_size == 4)
     {
@@ -231,7 +231,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
         {
           _data_values[count++] = data_values[*cell_offset + 2*i];
           _data_values[count++] = data_values[*cell_offset + 2*i + 1];
-          count++;
+          ++count;
         }
         count += 3;
         ++cell_offset;
