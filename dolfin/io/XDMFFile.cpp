@@ -139,7 +139,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
 
   // Get number of local/global cells/vertices
-  const std::size_t num_local_cells = mesh.num_cells();
+  const std::size_t num_local_cells = mesh.topology().ghost_offset(tdim);
   const std::size_t num_local_vertices = mesh.num_vertices();
   const std::size_t num_global_cells = mesh.size_global(tdim);
 
