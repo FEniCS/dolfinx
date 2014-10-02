@@ -89,6 +89,11 @@ namespace dolfin
                                   const MeshFunction<std::size_t>* domains,
                                   std::vector<double>* values);
 
+    /// Assemble tensor from given form over vertices. This function is
+    /// provided for users who wish to build a customized assembler.
+    void assemble_vertices(GenericTensor& A, const Form& a, UFC& ufc,
+                           const MeshFunction<std::size_t>* domains);
+
   };
 
 }

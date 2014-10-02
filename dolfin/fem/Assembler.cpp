@@ -28,6 +28,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
@@ -77,19 +78,15 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   const MeshFunction<std::size_t>* interior_facet_domains
       = a.interior_facet_domains().get();
 
+  // Get vertex domains
+  // FIXME: Add vertex domains to dolfin::Form
+  const MeshFunction<std::size_t>* vertex_domains = 0;
+
   // Check form
   AssemblerBase::check(a);
 
   // Create data structure for local assembly data
   UFC ufc(a);
-
-  // Skip assembly if there are no point integrals
-  if (ufc.form.has_point_integrals())
-  {
-    dolfin_error("Assembler.cpp",
-                 "assemble form",
-                 "Point integrals (dP) are not supported by the Assembler");
-  }
 
   // Update off-process coefficients
   const std::vector<std::shared_ptr<const GenericFunction>>
@@ -106,6 +103,9 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
 
   // Assemble over interior facets
   assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
+
+  // Assemble over vertices
+  assemble_vertices(A, a, ufc, vertex_domains);
 
   // Finalize assembly of global tensor
   if (finalize_tensor)
@@ -447,5 +447,94 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     p++;
   }
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble_vertices(GenericTensor& A,
+                                  const Form& a,
+                                  UFC& ufc,
+                                  const MeshFunction<std::size_t>* domains)
+{
+  // Skip assembly if there are no point integrals
+  if (!ufc.form.has_point_integrals())
+    return;
+
+  // Set timer
+  Timer timer("Assemble vertices");
+
+  // Extract mesh
+  const Mesh& mesh = a.mesh();
+
+  // Form rank
+  const std::size_t form_rank = ufc.form.rank();
+
+  // Collect pointers to dof maps
+  std::vector<const GenericDofMap*> dofmaps;
+  for (std::size_t i = 0; i < form_rank; ++i)
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
+
+  // Vector to hold dof map for a cell
+  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
+
+  // Exterior facet integral
+  const ufc::point_integral* integral
+    = ufc.default_point_integral.get();
+
+  // Check whether integral is domain-dependent
+  bool use_domains = domains && !domains->empty();
+
+  // Compute facets and facet - cell connectivity if not already computed
+  const std::size_t D = mesh.topology().dim();
+  mesh.init(0);
+  mesh.init(0, D);
+  dolfin_assert(mesh.ordered());
+
+  // Assemble over exterior facets (the cells of the boundary)
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
+  Progress p(AssemblerBase::progress_message(A.rank(), "vertices"),
+             mesh.num_facets());
+  for (VertexIterator vert(mesh); !vert.end(); ++vert)
+  {
+    // Get integral for sub domain (if any)
+    if (use_domains)
+      integral = ufc.get_point_integral((*domains)[*vert]);
+    
+    // Skip integral if zero
+    if (!integral)
+      continue;
+
+    // Get mesh cell to which mesh vertex belongs (pick first)
+    Cell mesh_cell(mesh, vert->entities(D)[0]);
+
+    // Check that cell is not a ghost
+    dolfin_assert(!mesh_cell.is_ghost());
+    
+    // Get local index of facet with respect to the cell
+    const std::size_t local_vertex = mesh_cell.index(*vert);
+    
+    // Update UFC cell
+    mesh_cell.get_cell_data(ufc_cell);
+    mesh_cell.get_vertex_coordinates(vertex_coordinates);
+
+    // Update UFC object
+    ufc.update(mesh_cell, vertex_coordinates, ufc_cell,
+               integral->enabled_coefficients());
+
+    // Get local-to-global dof maps for cell
+    for (std::size_t i = 0; i < form_rank; ++i)
+      dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
+
+    // Tabulate exterior facet tensor
+    integral->tabulate_tensor(ufc.A.data(),
+                              ufc.w(),
+                              vertex_coordinates.data(),
+                              local_vertex,
+                              ufc_cell.orientation);
+
+    // Add entries to global tensor
+    A.add_local(ufc.A.data(), dofs);
+
+    p++;
+  }  
 }
 //-----------------------------------------------------------------------------
