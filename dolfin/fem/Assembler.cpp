@@ -464,7 +464,7 @@ void Assembler::assemble_vertices(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Compute facets and vertex - cell connectivity if not already computed
+  // Compute cell and vertex - cell connectivity if not already computed
   const std::size_t D = mesh.topology().dim();
   mesh.init(0);
   mesh.init(0, D);
@@ -475,6 +475,19 @@ void Assembler::assemble_vertices(GenericTensor& A,
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
+
+  // Create a vector for storying local to local map for vertex entity dofs
+  std::vector<std::vector<std::size_t> > local_to_local_dofs(form_rank);
+
+  // Create a values vector to be used to fan out local tabulated
+  // values to the global tensor
+  std::vector<double> local_values(1);
+
+  // Vector to hold local dof map for a vertex
+  std::vector< std::vector<dolfin::la_index> > global_dofs(form_rank);
+  std::vector< const std::vector<dolfin::la_index>* > global_dofs_p(form_rank);
+  std::vector<dolfin::la_index> local_dof_size(form_rank);
+
   for (std::size_t i = 0; i < form_rank; ++i)
   {
     dofmaps.push_back(a.function_space(i)->dofmap().get());
@@ -500,23 +513,40 @@ void Assembler::assemble_vertices(GenericTensor& A,
                      "vertices for point integrals");
       }
     }
+    
+    // Resize local values so it can hold dofs on one vertex
+    local_values.resize(local_values.size()*dofmaps[i]->num_entity_dofs(0));
+
+    // Resize local to local map according to the number of vertex entities dofs
+    local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
+
+    // Resize local dof map vector
+    global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
+    
+    // Get size of local dofs
+    local_dof_size[i] = dofmaps[i]->ownership_range().second    \
+      - dofmaps[i]->ownership_range().first;
+
+    // Get pointer to global dofs 
+    global_dofs_p[i] = &global_dofs[i];
+
   }
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
-  // Exterior facet integral
+  // Exterior point integral
   const ufc::point_integral* integral
     = ufc.default_point_integral.get();
 
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
 
-  // Assemble over exterior facets (the cells of the boundary)
+  // Assemble over vertices 
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
   Progress p(AssemblerBase::progress_message(A.rank(), "vertices"),
-             mesh.num_facets());
+             mesh.num_vertices());
   for (VertexIterator vert(mesh); !vert.end(); ++vert)
   {
     // Get integral for sub domain (if any)
@@ -533,7 +563,7 @@ void Assembler::assemble_vertices(GenericTensor& A,
     // Check that cell is not a ghost
     dolfin_assert(!mesh_cell.is_ghost());
     
-    // Get local index of facet with respect to the cell
+    // Get local index of vertex with respect to the cell
     const std::size_t local_vertex = mesh_cell.index(*vert);
     
     // Update UFC cell
@@ -544,20 +574,74 @@ void Assembler::assemble_vertices(GenericTensor& A,
     ufc.update(mesh_cell, vertex_coordinates, ufc_cell,
                integral->enabled_coefficients());
 
-    // Get local-to-global dof maps for cell
-    for (std::size_t i = 0; i < form_rank; ++i)
-      dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
-
-    // Tabulate exterior facet tensor
+    // Tabulate vertex tensor
     integral->tabulate_tensor(ufc.A.data(),
                               ufc.w(),
                               vertex_coordinates.data(),
                               local_vertex,
                               ufc_cell.orientation);
 
-    // Add entries to global tensor
-    A.add_local(ufc.A.data(), dofs);
+    // Get local-to-global dof maps for cell
+    bool owns_all_dofs = true;
+    for (std::size_t i = 0; i < form_rank; ++i)
+    {
+      dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
+      dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0, local_vertex);
 
+      // Copy cell dofs to local dofs and tabulated values to 
+      for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
+      {
+        global_dofs[i][j] = (*dofs[i])[local_to_local_dofs[i][j]];
+
+        // It is the dofs for the test space that determines if a dof
+        // is owned by a process, therefore i==0
+        if (i==0 && global_dofs[i][j] >= local_dof_size[i])
+        {
+          owns_all_dofs = false;
+          break;
+        }
+      }
+    }
+
+    // If not owning all dofs
+    if (!owns_all_dofs)
+      continue;
+
+    if (form_rank==1)
+    {
+      
+      for (std::size_t i = 0; i < local_to_local_dofs[0].size(); ++i)
+      {
+        local_values[i] = ufc.A[local_to_local_dofs[0][i]];
+      }
+
+      // Add entries to global tensor
+      A.add_local(local_values.data(), global_dofs_p);
+
+    }
+    else if (form_rank==2)
+    {
+      const std::size_t num_cols = dofs[1]->size();
+      for (std::size_t i = 0; i < local_to_local_dofs[0].size(); ++i)
+      {
+        for (std::size_t j = 0; j < local_to_local_dofs[1].size(); ++j)
+        {
+          local_values[i*local_to_local_dofs[1].size()+j] = \
+            ufc.A[local_to_local_dofs[0][i]*num_cols+local_to_local_dofs[1][j]];
+        }        
+      }
+
+      // Add entries to global tensor
+      A.add_local(local_values.data(), global_dofs_p);
+    }
+    else 
+    {
+
+      // Add entries to global tensor
+      A.add_local(ufc.A.data(), dofs);
+      
+    }
+    
     p++;
   }  
 }

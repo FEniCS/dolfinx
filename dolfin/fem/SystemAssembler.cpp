@@ -220,6 +220,14 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   // Create data structures for local assembly data
   UFC A_ufc(*_a), b_ufc(*_l);
 
+  // Raise error for Point integrals
+  if (A_ufc.form.has_point_integrals() || b_ufc.form.has_point_integrals())
+  {
+    dolfin_error("SystemAssembler.cpp",
+                 "assemble system",
+                 "Point integrals are not supported (yet)");
+  }
+
   // Gather UFC  objects
   std::array<UFC*, 2> ufc = { { &A_ufc, &b_ufc} } ;
 
