@@ -79,8 +79,8 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
       = a.interior_facet_domains().get();
 
   // Get vertex domains
-  // FIXME: Add vertex domains to dolfin::Form
-  const MeshFunction<std::size_t>* vertex_domains = 0;
+  const MeshFunction<std::size_t>* vertex_domains 
+    = a.vertex_domains().get();
 
   // Check form
   AssemblerBase::check(a);
@@ -470,6 +470,11 @@ void Assembler::assemble_vertices(GenericTensor& A,
   mesh.init(0, D);
   dolfin_assert(mesh.ordered());
 
+  // Logics for shared vertices
+  const bool has_shared_vertices = mesh.topology().have_shared_entities(0);
+  const std::map<unsigned int, std::set<unsigned int> >& shared_vertices = \
+    mesh.topology().shared_entities(0);
+
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
 
@@ -552,10 +557,42 @@ void Assembler::assemble_vertices(GenericTensor& A,
     // Get integral for sub domain (if any)
     if (use_domains)
       integral = ufc.get_point_integral((*domains)[*vert]);
-    
+
     // Skip integral if zero
     if (!integral)
       continue;
+
+    // Check if assembling a scalar and a vertex is shared
+    if (form_rank == 0 && has_shared_vertices)
+    {
+      // Find shared processes for this global vertex
+      std::map<unsigned int, std::set<unsigned int> >::const_iterator e;
+      e = shared_vertices.find(vert->index());
+      
+      // If vertex is shared and this rank is not the lowest do not
+      // include the contribution from this vertex to scalar sum
+      if (e != shared_vertices.end())
+      {
+
+        const unsigned int my_mpi_rank = MPI::rank(mesh.mpi_comm());
+        
+        bool skip_vertex = false;
+        std::set<unsigned int>::const_iterator it;
+        for (it=e->second.begin(); it!=e->second.end(); it++)
+        {
+          // Check if a shared vertex has a lower process rank
+          if (*it<my_mpi_rank)
+          {
+            skip_vertex = true;
+            break;
+          }
+        }
+        
+        if (skip_vertex)
+          continue;
+
+      }
+    }
 
     // Get mesh cell to which mesh vertex belongs (pick first)
     Cell mesh_cell(mesh, vert->entities(D)[0]);
