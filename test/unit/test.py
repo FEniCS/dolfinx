@@ -46,9 +46,9 @@ tests = {
     "geometry":       ["BoundingBoxTree", "CollisionDetection", "Intersection",
                        "IntersectionTriangulation", "Issues"],
     "graph":          ["GraphBuild"],
-    "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
-                       "XMLMeshValueCollection", "XMLVector", \
-                       "XMLMeshData", "XMLLocalMeshData", \
+    "io":             ["vtk", "XMLFunction", "XMLMeshFunction", "XMLMesh",
+                       "XMLMeshValueCollection", "XMLVector",
+                       "XMLMeshData", "XMLLocalMeshData",
                        "XDMF", "HDF5", "Exodus", "X3D"],
     "jit":            ["test"],
     "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \

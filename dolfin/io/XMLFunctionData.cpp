@@ -212,16 +212,28 @@ void XMLFunctionData::build_global_to_cell_dof(
     const std::size_t D = mesh.topology().dim();
     dolfin_assert(mesh.topology().have_global_indices(D));
 
+    // Get local-to-global map
+    std::vector<std::size_t> local_to_global_dof;
+    dofmap.tabulate_local_to_global_dofs(local_to_global_dof);
+
     // Build dof map data with global cell indices
+    std::vector<la_index> cell_dofs_global;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const std::size_t local_cell_index = cell->index();
       const std::size_t global_cell_index = cell->global_index();
+
+      const std::vector<la_index>& cell_dofs = dofmap.cell_dofs(local_cell_index);
+
+      cell_dofs_global.resize(cell_dofs.size());
+      for(std::size_t i = 0; i < cell_dofs.size(); ++i)
+        cell_dofs_global[i] = local_to_global_dof[cell_dofs[i]];
+
       local_dofmap.push_back(global_cell_index);
-      local_dofmap.push_back(dofmap.cell_dofs(local_cell_index).size());
+      local_dofmap.push_back(cell_dofs.size());
       local_dofmap.insert(local_dofmap.end(),
-                          dofmap.cell_dofs(local_cell_index).begin(),
-                          dofmap.cell_dofs(local_cell_index).end());
+                          cell_dofs_global.begin(),
+                          cell_dofs_global.end());
     }
   }
   else
