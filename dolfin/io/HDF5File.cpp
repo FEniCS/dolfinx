@@ -186,14 +186,22 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
   // Get dataset rank
   const std::size_t rank = HDF5Interface::dataset_rank(hdf5_file_id,
                                                        dataset_name);
-  dolfin_assert(rank == 1);
+
+  if (rank != 1)
+    warning("Reading non-scalar data in HDF5 Vector");
 
   // Get global dataset size
   const std::vector<std::size_t> data_size
       = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
 
-  // Check that rank is 1
-  dolfin_assert(data_size.size() == 1);
+  // Check that rank is 1 or 2 
+  std::size_t num_data = 0;
+  if (data_size.size() == 1)
+    num_data = data_size[0];
+  else if (data_size.size() == 2)
+    num_data = data_size[0] * data_size[1];
+  else
+    dolfin_error("HDF5File.cpp", "read vector", "Rank > 2 not supported");
 
   // Check input vector, and re-size if not already sized
   if (x.empty())
@@ -215,7 +223,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       }
 
       // Add global size at end of partition vectors
-      partitions.push_back(data_size[0]);
+      partitions.push_back(num_data);
 
       // Initialise vector
       const std::size_t process_num = MPI::rank(_mpi_comm);
@@ -224,9 +232,9 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       x.init(_mpi_comm, local_range);
     }
     else
-      x.init(_mpi_comm, data_size[0]);
+      x.init(_mpi_comm, num_data);
   }
-  else if (x.size() != data_size[0])
+  else if (x.size() != num_data)
   {
     dolfin_error("HDF5File.cpp",
                  "read vector from file",
