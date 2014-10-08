@@ -345,7 +345,7 @@ void DirichletBC::zero(GenericMatrix& A) const
     dofs[i++] = bv->first;
 
   // Modify linear system (A_ii = 1)
-  A.zero(boundary_values.size(), dofs.data());
+  A.zero_local(boundary_values.size(), dofs.data());
 
   // Finalise changes to A
   A.apply("insert");
