@@ -1,7 +1,7 @@
 """Unit tests for the solve function on manifolds
 embedded in higher dimensional spaces."""
 
-# Copyright (C) 2012 Imperial College London and others.
+# Copyright (C) 2014 Imperial College London, David Bernstein and others.
 #
 # This file is part of DOLFIN.
 #
@@ -267,6 +267,117 @@ class ManifoldBasisEvaluation(unittest.TestCase):
 
                     self.assertAlmostEqual(abs(derivs_rot2-derivs_cmp).max(), 0.0, 10)
                     self.assertAlmostEqual(abs(values_cmp-values_rot).max(), 0.0, 10)
+
+
+class IntersectingSurfaceTest(unittest.TestCase):
+    """Solves -grad^2 u + u = f on domain of two intersecting square
+     surfaces embedded in 3D with natural bcs. Test passes if at end
+     \int u dx = \int f dx over whole domain
+    """
+    def test_elliptic_eqn(self):
+        # this needs to be odd
+        self.num_vertices_side = 31
+
+        self.make_mesh()
+
+        # function space, etc
+        V = FunctionSpace(self.mesh, "CG", 2)
+        u = TrialFunction(V)
+        v = TestFunction(V)
+
+        class Source(Expression):
+            def eval(self, value, x):
+                # r0 should be less than 0.5 * sqrt(2) in order for source to be
+                # exactly zero on vertical part of domain
+                r0 = 0.7
+                r = sqrt(x[0] * x[0] + x[1] * x[1])
+                if r < r0:
+                    value[0] = 20.0 * pow((r0 - r), 2)
+                else:
+                    value[0] = 0.0
+
+        f = Function(V)
+        f.interpolate(Source())
+
+        a = inner(grad(u), grad(v))*dx + u*v*dx
+        L = f*v*dx
+
+        u = Function(V)
+        solve(a == L, u)
+
+        f_tot = assemble(f*dx)
+        u_tot = assemble(u*dx)
+
+        # test passes if f_tot = u_tot
+        self.assertAlmostEqual(f_tot, u_tot)
+
+    def make_mesh(self):
+        # each square has unit side length
+        domain_size = 1.0
+
+        center_index = (self.num_vertices_side - 1) / 2
+        self.mesh = Mesh()
+        editor = MeshEditor()
+        editor.open(self.mesh, 2, 3)
+
+        num_vertices = 2 * self.num_vertices_side * self.num_vertices_side - center_index - 1
+        num_cells = 4 * (self.num_vertices_side - 1) * (self.num_vertices_side - 1)
+
+        editor.init_vertices(num_vertices)
+        editor.init_cells(num_cells)
+
+        spacing = domain_size / (self.num_vertices_side - 1.0)
+
+        # array of vertex indices
+        v = [[0]*self.num_vertices_side for i in range(self.num_vertices_side)]
+
+        # horizontal part of domain vertices
+        vertex_count = 0
+
+        for i in range(0, self.num_vertices_side):
+            y = i * spacing
+            for j in range(0, self.num_vertices_side):
+                x = j * spacing
+                p = Point(x, y, 0.0)
+                editor.add_vertex(vertex_count, p)
+                v[i][j] = vertex_count
+                vertex_count += 1
+
+        # cells
+        cell_count = 0
+        for i in range(0, self.num_vertices_side - 1):
+            for j in range(0, self.num_vertices_side - 1):
+                editor.add_cell(cell_count, v[i][j], v[i][j+1], v[i+1][j])
+                cell_count += 1
+
+                editor.add_cell(cell_count, v[i][j+1], v[i+1][j], v[i+1][j+1])
+                cell_count += 1
+
+        # vertical part of domain
+        # vertices
+        for i in range(0, self.num_vertices_side):
+            z = i * spacing - 0.5
+            for j in range(0, self.num_vertices_side):
+                x = j * spacing + 0.5
+                if not (i == center_index and j <= center_index):
+                    p = Point(x, 0.5, z)
+                    editor.add_vertex(vertex_count, p)
+                    v[i][j] = vertex_count
+                    vertex_count += 1
+                else:
+                    v[i][j] += center_index
+
+        # cells
+        for i in range(0, self.num_vertices_side - 1):
+            for j in range(0, self.num_vertices_side - 1):
+                editor.add_cell(cell_count, v[i][j], v[i][j+1], v[i+1][j])
+                cell_count += 1
+
+                editor.add_cell(cell_count, v[i][j+1], v[i+1][j], v[i+1][j+1])
+                cell_count += 1
+
+        editor.close()
+        return
 
 if __name__ == "__main__":
     print("")
