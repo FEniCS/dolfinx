@@ -121,7 +121,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   }
 
   // Initialize matrix
-  if (row_range.first == 0 && row_range.second == M)
+  if (MPI::size(sparsity_pattern.mpi_comm()) == 1)
   {
     // Get number of nonzeros for each row from sparsity pattern
     dolfin_assert(tensor_layout.sparsity_pattern());
