@@ -27,7 +27,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -50,13 +50,13 @@ namespace dolfin
     virtual BlockVector* copy() const;
 
     /// Set function
-    void set_block(std::size_t i, boost::shared_ptr<GenericVector> v);
+    void set_block(std::size_t i, std::shared_ptr<GenericVector> v);
 
     /// Get sub-vector (const)
-    const boost::shared_ptr<GenericVector> get_block(std::size_t i) const;
+    std::shared_ptr<const GenericVector> get_block(std::size_t i) const;
 
     /// Get sub-vector (non-const)
-    boost::shared_ptr<GenericVector> get_block(std::size_t);
+    std::shared_ptr<GenericVector> get_block(std::size_t);
 
     /// Add multiple of given vector (AXPY operation)
     void axpy(double a, const BlockVector& x);
@@ -102,7 +102,7 @@ namespace dolfin
 
   private:
 
-    std::vector<boost::shared_ptr<GenericVector> > vectors;
+    std::vector<std::shared_ptr<GenericVector> > vectors;
 
   };
 

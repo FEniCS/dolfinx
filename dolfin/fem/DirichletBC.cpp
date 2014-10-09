@@ -22,12 +22,13 @@
 // Modified by Mikael Mortensen, 2013
 //
 // First added:  2007-04-10
-// Last changed: 2013-06-19
+// Last changed: 2014-01-23
 
 #include <map>
+#include <cinttypes>
+#include <cstdlib>
 #include <utility>
 #include <ufc.h>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
@@ -46,7 +47,6 @@
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
-#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
@@ -59,7 +59,7 @@
 using namespace dolfin;
 
 const std::set<std::string> DirichletBC::methods
-            = boost::assign::list_of("topological")("geometric")("pointwise");
+= {"topological", "geometric", "pointwise"};
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
@@ -78,9 +78,9 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const GenericFunction> g,
-                         boost::shared_ptr<const SubDomain> sub_domain,
+DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
+                         std::shared_ptr<const SubDomain> sub_domain,
                          std::string method,
                          bool check_midpoint)
   : Hierarchical<DirichletBC>(*this),
@@ -108,9 +108,9 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const GenericFunction> g,
-                         boost::shared_ptr<const MeshFunction<std::size_t> > sub_domains,
+DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
+                         std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
                          std::size_t sub_domain,
                          std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
@@ -134,8 +134,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const GenericFunction> g,
+DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
                          std::size_t sub_domain, std::string method)
   : Hierarchical<DirichletBC>(*this),
     _function_space(V),
@@ -148,8 +148,8 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const GenericFunction> g,
+DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
                          const std::vector<std::size_t>& markers,
                          std::string method)
   : Hierarchical<DirichletBC>(*this),
@@ -157,6 +157,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     _g(g),
     _method(method),
     _facets(markers),
+    _user_sub_domain_marker(0),
     _check_midpoint(true)
 {
   check();
@@ -164,7 +165,9 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc)
-  : Hierarchical<DirichletBC>(*this)
+  : Hierarchical<DirichletBC>(*this),
+   _user_sub_domain_marker(0),
+   _check_midpoint(true)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -222,50 +225,94 @@ void DirichletBC::gather(Map& boundary_values) const
 {
   Timer timer("DirichletBC gather");
 
-  typedef std::vector<std::pair<std::size_t, double> > bv_vec_type;
-  typedef std::map<std::size_t, bv_vec_type> map_type;
+  typedef std::unordered_map<int, std::vector<int>> shared_node_type;
+  typedef shared_node_type::const_iterator shared_node_iterator;
+  typedef std::vector<int>::const_iterator proc_iterator;
 
-  typedef boost::unordered_map<std::size_t, std::vector<unsigned int> >
-    shared_dof_type;
-  typedef shared_dof_type::const_iterator shared_dof_iterator;
-  typedef std::vector<unsigned int>::const_iterator proc_iterator;
+  dolfin_assert(_function_space->mesh());
+  MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
+  std::size_t comm_size = MPI::size(mpi_comm);
 
   // Get dofmap
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
-  const shared_dof_type& shared_dofs = dofmap.shared_dofs();
+  const shared_node_type& shared_nodes = dofmap.shared_nodes();
+  const int bs = dofmap.block_size;
 
   // Create list of boundary values to send to each processor
-  map_type proc_map;
+  std::vector<std::vector<std::size_t>> proc_map0(comm_size);
+  std::vector<std::vector<double>> proc_map1(comm_size);
   for (Map::const_iterator bv = boundary_values.begin();
        bv != boundary_values.end(); ++bv)
   {
     // If the boundary value is attached to a shared dof, add it to
     // the list of boundary values for each of the processors that
     // share it
-    shared_dof_iterator shared_dof = shared_dofs.find(bv->first);
-    if (shared_dof != shared_dofs.end())
+    const int node_index = bv->first/bs;
+
+    shared_node_iterator shared_node = shared_nodes.find(node_index);
+    if (shared_node != shared_nodes.end())
     {
-      for (proc_iterator proc = shared_dof->second.begin();
-           proc != shared_dof->second.end(); ++proc)
+      for (proc_iterator proc = shared_node->second.begin();
+           proc != shared_node->second.end(); ++proc)
       {
-        proc_map[*proc].push_back(*bv);
+        proc_map0[*proc].push_back(dofmap.local_to_global_index(bv->first));
+        proc_map1[*proc].push_back(bv->second);
       }
     }
   }
 
   // Distribute the lists between neighbours
-  map_type received_bvs;
-  dolfin_assert(_function_space->mesh());
-  MPI::distribute(_function_space->mesh()->mpi_comm(),
-                  dofmap.neighbours(), proc_map, received_bvs);
+  std::vector<std::vector<std::size_t>> received_bvc0;
+  std::vector<std::vector<double>> received_bvc1;
+  MPI::all_to_all(mpi_comm, proc_map0, received_bvc0);
+  MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
+
+  const std::size_t n0 = dofmap.ownership_range().first;
+  const std::size_t n1 = dofmap.ownership_range().second;
+  const std::size_t owned_size = n1 - n0;
 
   // Add the received boundary values to the local boundary values
-
-  for (map_type::const_iterator it = received_bvs.begin();
-       it != received_bvs.end(); ++it)
+  for (std::size_t p = 0; p < comm_size; ++p)
   {
-    boundary_values.insert(it->second.begin(), it->second.end());
+    dolfin_assert(received_bvc0[p].size() == received_bvc1[p].size());
+    std::vector<std::pair<std::size_t, double>> _vec(received_bvc0[p].size());
+    for (std::size_t i = 0; i < _vec.size(); ++i)
+    {
+      // Global dof index
+      _vec[i].first = received_bvc0[p][i];
+
+      // Convert to local (process) dof index
+      if (_vec[i].first >= n0 && _vec[i].first < n1)
+      {
+        // Case 0: dof is owned by this process
+        _vec[i].first  = received_bvc0[p][i] - n0;
+      }
+      else
+      {
+        const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
+        const std::size_t node = div.quot;
+        const int component = div.rem;
+
+        // Case 1: dof is not owned by this process
+        auto it = std::find(dofmap.local_to_global_unowned().begin(),
+                            dofmap.local_to_global_unowned().end(),
+                            node);
+        if (it == dofmap.local_to_global_unowned().end())
+        {
+          // Throw error if dof is not in local map
+          error("Cannot find dof in local_to_global_unowned array");
+        }
+        else
+        {
+          const std::size_t pos
+            = std::distance(dofmap.local_to_global_unowned().begin(), it);
+          _vec[i].first = owned_size + bs*pos + component;
+        }
+      }
+      _vec[i].second = received_bvc1[p][i];
+    }
+    boundary_values.insert(_vec.begin(), _vec.end());
   }
 }
 //-----------------------------------------------------------------------------
@@ -378,7 +425,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
     }
   }
 
-  b.add(&b_vals.front(), b_rows.size(), &b_rows.front());
+  b.add_local(&b_vals.front(), b_rows.size(), &b_rows.front());
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
@@ -387,12 +434,12 @@ const std::vector<std::size_t>& DirichletBC::markers() const
   return _facets;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunction> DirichletBC::value() const
+std::shared_ptr<const GenericFunction> DirichletBC::value() const
 {
   return _g;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const SubDomain> DirichletBC::user_sub_domain() const
+std::shared_ptr<const SubDomain> DirichletBC::user_sub_domain() const
 {
   return _user_sub_domain;
 }
@@ -476,14 +523,14 @@ void DirichletBC::homogenize()
   const std::size_t value_rank = _g->value_rank();
   if (!value_rank)
   {
-    boost::shared_ptr<Constant> zero(new Constant(0.0));
+    std::shared_ptr<Constant> zero(new Constant(0.0));
     set_value(zero);
   }
   else if (value_rank == 1)
   {
     const std::size_t value_dim = _g->value_dimension(0);
     std::vector<double> values(value_dim, 0.0);
-    boost::shared_ptr<Constant> zero(new Constant(values));
+    std::shared_ptr<Constant> zero(new Constant(values));
     set_value(zero);
   }
   else
@@ -492,12 +539,12 @@ void DirichletBC::homogenize()
     for (std::size_t i = 0; i < value_rank; i++)
       value_shape.push_back(_g->value_dimension(i));
     std::vector<double> values(_g->value_size(), 0.0);
-    boost::shared_ptr<Constant> zero(new Constant(value_shape, values));
+    std::shared_ptr<Constant> zero(new Constant(value_shape, values));
     set_value(zero);
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::set_value(boost::shared_ptr<const GenericFunction> g)
+void DirichletBC::set_value(std::shared_ptr<const GenericFunction> g)
 {
   _g = g;
 }
@@ -555,7 +602,7 @@ void DirichletBC::apply(GenericMatrix* A,
   // Modify RHS vector (b[i] = value) and apply changes
   if (b)
   {
-    b->set(values.data(), size, dofs.data());
+    b->set_local(values.data(), size, dofs.data());
     b->apply("insert");
   }
 
@@ -564,7 +611,7 @@ void DirichletBC::apply(GenericMatrix* A,
   {
     const bool use_ident = parameters["use_ident"];
     if (use_ident)
-      A->ident(size, dofs.data());
+      A->ident_local(size, dofs.data());
     else
     {
       A->zero(size, dofs.data());
@@ -652,7 +699,7 @@ void DirichletBC::init_facets(const MPI_Comm mpi_comm) const
     init_from_mesh(_user_sub_domain_marker);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain>
+void DirichletBC::init_from_sub_domain(std::shared_ptr<const SubDomain>
                                        sub_domain) const
 {
   dolfin_assert(_facets.size() == 0);
@@ -735,7 +782,7 @@ void DirichletBC::compute_bc(Map& boundary_values, LocalData& data,
 {
   Timer timer("DirichletBC compute bc");
 
-  // Set method if dafault
+  // Set method if default
   if (method == "default")
     method = _method;
 
@@ -786,10 +833,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   mesh.init(D);
   mesh.init(D - 1, D);
 
-  // Get restriction if any
-  boost::shared_ptr<const Restriction> restriction
-    = _function_space->dofmap()->restriction();
-
   // Create UFC cell
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
@@ -803,26 +846,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Create facet
     const Facet facet(mesh, _facets[f]);
 
-    // Get cell to which facet belongs. If mesh is restricted, make
-    // sure we pick the right cell in case there are two.
+    // Get cell to which facet belongs.
     dolfin_assert(facet.num_entities(D) > 0);
-    const unsigned int* cell_indices = facet.entities(D);
-    std::size_t cell_index = 0;
-    if (restriction && facet.num_entities(D) > 1)
-    {
-      if (restriction->contains(D, cell_indices[0]))
-        cell_index = cell_indices[0];
-      else if (restriction->contains(D, cell_indices[1]))
-        cell_index = cell_indices[1];
-      else
-      {
-        dolfin_error("DirichletBC.cpp",
-                     "create Dirichlet boundary condition",
-                     "Boundary facet is not adjacent to a cell inside the restriction.");
-      }
-    }
-    else
-      cell_index = facet.entities(D)[0];
+    const std::size_t cell_index = facet.entities(D)[0];
 
     // Create attached cell
     const Cell cell(mesh, cell_index);
@@ -848,9 +874,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Pick values for facet
     for (std::size_t i = 0; i < dofmap.num_facet_dofs(); i++)
     {
-      const std::size_t global_dof = cell_dofs[data.facet_dofs[i]];
+      const std::size_t local_dof = cell_dofs[data.facet_dofs[i]];
       const double value = data.w[data.facet_dofs[i]];
-      boundary_values[global_dof] = value;
+      boundary_values[local_dof] = value;
     }
     p++;
   }
@@ -1001,59 +1027,107 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                  : dofmap.ownership_range());
 
   // Iterate over cells
-  Progress p("Computing Dirichlet boundary values, pointwise search",
-             mesh.num_cells());
   std::vector<double> vertex_coordinates;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
   {
-    // Update UFC cell
-    cell->get_vertex_coordinates(vertex_coordinates);
-    cell->get_cell_data(ufc_cell);
-
-    // Tabulate coordinates of dofs on cell
-    dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
-                                *cell);
-
-    // Tabulate dofs on cell
-    const std::vector<dolfin::la_index>& cell_dofs
-      = dofmap.cell_dofs(cell->index());
-
-    // Interpolate function only once and only on cells where necessary
-    bool already_interpolated = false;
-
-    // Loop all dofs on cell
-    for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+    // First time around all cells must be iterated over.
+    // Create map from cells attached to boundary to local dofs.
+    Progress p("Computing Dirichlet boundary values, pointwise search",
+               mesh.num_cells());
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      const std::size_t global_dof = cell_dofs[i];
+      // Update UFC cell
+      cell->get_vertex_coordinates(vertex_coordinates);
+      cell->get_cell_data(ufc_cell);
 
-      // Skip already checked dofs
-      if (already_visited.in_range(global_dof)
-          && !already_visited.insert(global_dof))
+      // Tabulate coordinates of dofs on cell
+      dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
+                                  *cell);
+
+      // Tabulate dofs on cell
+      const std::vector<dolfin::la_index>& cell_dofs
+        = dofmap.cell_dofs(cell->index());
+
+      // Interpolate function only once and only on cells where necessary
+      bool already_interpolated = false;
+
+      std::vector<std::size_t> dofs;
+
+      // Loop all dofs on cell
+      for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
       {
-        continue;
+        const std::size_t global_dof = cell_dofs[i];
+
+        // Skip already checked dofs
+        if (already_visited.in_range(global_dof)
+            && !already_visited.insert(global_dof))
+        {
+          continue;
+        }
+
+        // Check if the coordinates are part of the sub domain (calls
+        // user-defined 'inside' function)
+        Array<double> x(gdim, &data.coordinates[i][0]);
+        if (!_user_sub_domain->inside(x, false))
+          continue;
+
+        if (!already_interpolated)
+        {
+          already_interpolated = true;
+
+          // Restrict coefficient to cell
+          _g->restrict(data.w.data(), *_function_space->element(), *cell,
+                      vertex_coordinates.data(), ufc_cell);
+
+          // Put cell index in storage for next time function is called
+          _cells_to_localdofs.insert(std::make_pair(cell->index(), dofs));
+        }
+
+        // Add local dof to map
+        _cells_to_localdofs[cell->index()].push_back(i);
+
+        // Set boundary value
+        const double value = data.w[i];
+        boundary_values[global_dof] = value;
       }
-
-      // Check if the coordinates are part of the sub domain (calls
-      // user-defined 'inside' function)
-      Array<double> x(gdim, &data.coordinates[i][0]);
-      if (!_user_sub_domain->inside(x, false))
-        continue;
-
-      if (!already_interpolated)
-      {
-        already_interpolated = true;
-
-        // Restrict coefficient to cell
-        _g->restrict(data.w.data(), *_function_space->element(), *cell,
-                     vertex_coordinates.data(), ufc_cell);
-      }
-
-      // Set boundary value
-      const double value = data.w[i];
-      boundary_values[global_dof] = value;
+      p++;
     }
+  }
+  else
+  {
+    // Loop over cells that contain dofs on boundary.
+    std::map<std::size_t, std::vector<std::size_t>>::const_iterator it;
+    for (it = _cells_to_localdofs.begin(); it != _cells_to_localdofs.end();
+         ++it)
+    {
+      const Cell cell(mesh, it->first);
+      // Update UFC cell
+      cell.get_vertex_coordinates(vertex_coordinates);
+      cell.get_cell_data(ufc_cell);
 
-    p++;
+      // Tabulate coordinates of dofs on cell
+      dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
+                                  cell);
+
+      // Restrict coefficient to cell
+      _g->restrict(data.w.data(), *_function_space->element(), cell,
+                    vertex_coordinates.data(), ufc_cell);
+
+      // Tabulate dofs on cell
+      const std::vector<dolfin::la_index>& cell_dofs
+        = dofmap.cell_dofs(cell.index());
+
+      // Loop dofs on boundary of cell
+      for (std::size_t i = 0; i < it->second.size(); ++i)
+      {
+        const std::size_t local_dof  = it->second[i];
+        const std::size_t global_dof = cell_dofs[local_dof];
+
+        // Set boundary value
+        const double value = data.w[local_dof];
+        boundary_values[global_dof] = value;
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------

@@ -75,30 +75,24 @@ namespace dolfin
       // DOF reordering when running in serial
       p.add("reorder_dofs_serial", true);
 
-      // Allowed dofs ordering libraries and set default
-      std::set<std::string> allowed_dof_ordering_libraries;
-      allowed_dof_ordering_libraries.insert("Boost");
-      allowed_dof_ordering_libraries.insert("random");
-      allowed_dof_ordering_libraries.insert("SCOTCH");
+      // Add dof ordering library
       std::string default_dof_ordering_library = "Boost";
       #ifdef HAS_SCOTCH
       default_dof_ordering_library = "SCOTCH";
       #endif
-
-      // Add dof ordering library
       p.add("dof_ordering_library", default_dof_ordering_library,
-            allowed_dof_ordering_libraries);
+            {"Boost", "random", "SCOTCH"});
 
       // Print the level of thread support provided by the MPI library
       p.add("print_mpi_thread_support_level", false);
 
-      // Allowed partitioners (not necessarily installed)
-      std::set<std::string> allowed_mesh_partitioners;
-      allowed_mesh_partitioners.insert("ParMETIS");
-      allowed_mesh_partitioners.insert("SCOTCH");
-      allowed_mesh_partitioners.insert("Zoltan_RCB");
-      allowed_mesh_partitioners.insert("Zoltan_PHG");
-      allowed_mesh_partitioners.insert("None");
+      // Mesh ghosting type
+      p.add("ghost_mode", "none",
+            {"shared_facet", "shared_vertex", "none"});
+
+      // Mesh ordering via SCOTCH and GPS
+      p.add("reorder_cells_gps", false);
+      p.add("reorder_vertices_gps", false);
 
       // Set default graph/mesh partitioner
       std::string default_mesh_partitioner = "SCOTCH";
@@ -107,21 +101,13 @@ namespace dolfin
         default_mesh_partitioner = "ParMETIS";
         #endif
       #endif
-
-      // Add mesh/graph partitioner
       p.add("mesh_partitioner", default_mesh_partitioner,
-            allowed_mesh_partitioners);
+            {"ParMETIS", "SCOTCH", "Zoltan_RCB", "Zoltan_PHG", "None"});
 
       // Approaches to partitioning (following Zoltan syntax)
       // but applies to both Zoltan PHG and ParMETIS
-      std::set<std::string> allowed_partitioning_approaches;
-      allowed_partitioning_approaches.insert("PARTITION");
-      allowed_partitioning_approaches.insert("REPARTITION");
-      allowed_partitioning_approaches.insert("REFINE");
-
-      p.add("partitioning_approach",
-            "PARTITION",
-            allowed_partitioning_approaches);
+      p.add("partitioning_approach", "PARTITION",
+            {"PARTITION", "REPARTITION", "REFINE"});
 
       #ifdef HAS_PARMETIS
       // Repartitioning parameter, determines how strongly to hold on
@@ -143,21 +129,14 @@ namespace dolfin
       p.add("graph_coloring_library", "Boost", allowed_coloring_libraries);
 
       // Mesh refinement
-      std::set<std::string> allowed_refinement_algorithms;
-      std::string default_refinement_algorithm("recursive_bisection");
-      allowed_refinement_algorithms.insert("bisection");
-      allowed_refinement_algorithms.insert("iterative_bisection");
-      allowed_refinement_algorithms.insert("recursive_bisection");
-      allowed_refinement_algorithms.insert("regular_cut");
       p.add("refinement_algorithm",
-            default_refinement_algorithm,
-            allowed_refinement_algorithms);
+        "recursive_bisection",
+        {"recursive_bisection", "bisection", "iterative_bisection",
+        "recursive_bisection", "regular_cut"});
 
       // Linear algebra
-      std::set<std::string> allowed_backends;
-      std::string default_backend("uBLAS");
-      allowed_backends.insert("uBLAS");
-      allowed_backends.insert("STL");
+      std::string  default_backend = "uBLAS";
+      std::set<std::string> allowed_backends = {"uBLAS", "STL", "uBLAS"};
       #ifdef HAS_PETSC
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";

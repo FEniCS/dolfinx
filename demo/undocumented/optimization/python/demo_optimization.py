@@ -18,6 +18,7 @@
 # First added:  2008-10-17
 # Last changed: 2012-11-12
 
+from __future__ import print_function
 from dolfin import *
 
 # Create mesh
@@ -48,7 +49,7 @@ class DirichletBoundary(SubDomain):
 bc = DirichletBC(P1, u0, DirichletBoundary())
 
 # Goal functional
-J = (u - u0)*(u - u0)*dx
+J = (u - u0)*(u - u0)*dx(mesh)
 
 # Forward problem
 problem = (inner(grad(v1), p*grad(w1))*dx, v1*f*dx)
@@ -84,9 +85,9 @@ for i in range(100):
     px -= dp
 
     # Print value of functional
-    jval = assemble(J, mesh = mesh)
-    print "J = ", jval
-    print u.vector().max()
+    jval = assemble(J)
+    print("J = ", jval)
+    print(u.vector().max())
 
 # Plot solution and parameter
 plot(u,  title="Solution",  rescale=True)

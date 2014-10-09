@@ -20,12 +20,12 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2007-05-24
-# Last changed: 2012-11-12
+# Last changed: 2014-08-12
 
 import unittest
 from dolfin import *
-from math   import sin
-from numpy  import array, zeros
+from math   import sin, cos, exp, tan
+from numpy  import array, zeros, float_
 
 mesh = UnitCubeMesh(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
@@ -82,19 +82,11 @@ class Eval(unittest.TestCase):
           self.assertAlmostEqual(u11, same_result)
           self.assertAlmostEqual(u21, same_result)
 
-          # Projection requires CGAL
-          if not has_cgal():
-               return
-
           x = (mesh.coordinates()[0]+mesh.coordinates()[1])/2
           f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
           V2 = FunctionSpace(mesh, 'CG', 2)
           g0 = interpolate(f2, V=V2)
           g1 = project(f2, V=V2)
-
-          # Update ghost values
-          g0.update()
-          g1.update()
 
           u3 = f2(x)
           u4 = g0(x)
@@ -190,7 +182,7 @@ class Eval(unittest.TestCase):
 
           mesh = UnitCubeMesh(3,3,3)
           f1 = F1()
-          self.assertRaises(StandardError, lambda : assemble(f1*dx, mesh=mesh))
+          self.assertRaises(Exception, lambda : assemble(f1*dx(mesh)))
 
 class MeshEvaluation(unittest.TestCase):
 
@@ -330,8 +322,8 @@ class Instantiation(unittest.TestCase):
      def test_name_space_usage(self):
           e0 = Expression("std::sin(x[0])*cos(x[1])")
           e1 = Expression("sin(x[0])*std::cos(x[1])")
-          self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
-                                 assemble(e1*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(e0*dx(mesh)), \
+                                 assemble(e1*dx(mesh)))
 
      def test_generic_function_attributes(self):
           tc = Constant(2.0)
@@ -344,37 +336,34 @@ class Instantiation(unittest.TestCase):
           tf = Function(V)
           tf.vector()[:] = 1.0
 
-          # Update ghost values
-          tf.update()
-
           e0 = Expression(["2*t", "-t"], t=tc)
           e1 = Expression(["2*t", "-t"], t=1.0)
           e2 = Expression("t", t=te)
           e3 = Expression("t", t=tf)
 
-          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                                 assemble(inner(e1,e1)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx(mesh)), \
+                                 assemble(inner(e1,e1)*dx(mesh)))
 
-          self.assertAlmostEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                                 assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                                 assemble(inner(e3,e3)*dx(mesh)))
 
           tc.assign(3.0)
           e1.t = float(tc)
 
-          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                                 assemble(inner(e1,e1)*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx(mesh)), \
+                                 assemble(inner(e1,e1)*dx(mesh)))
           tc.assign(5.0)
 
-          self.assertNotEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                              assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertNotEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                              assemble(inner(e3,e3)*dx(mesh)))
 
-          self.assertAlmostEqual(assemble(e0[0]*dx, mesh=mesh), \
-                                 assemble(2*e2*dx, mesh=mesh))
+          self.assertAlmostEqual(assemble(e0[0]*dx(mesh)), \
+                                 assemble(2*e2*dx(mesh)))
 
           e2.t = e3.t
 
-          self.assertEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
-                           assemble(inner(e3,e3)*dx, mesh=mesh))
+          self.assertEqual(assemble(inner(e2,e2)*dx(mesh)), \
+                           assemble(inner(e3,e3)*dx(mesh)))
 
           # Test wrong kwargs
           self.assertRaises(TypeError, lambda : Expression("t", t=Constant((1,0))))
@@ -404,6 +393,262 @@ class Instantiation(unittest.TestCase):
           # Test wrong assignment
           self.assertRaises(TypeError, lambda : te.user_parameters.__setitem__("value", 1.0))
           self.assertRaises(KeyError, lambda : te.user_parameters.__setitem__("values", 1.0))
+
+     def test_doc_string_eval(self):
+          """
+          This test tests all features documented in the doc string of
+          Expression. If this test breaks and it is fixed the corresponding fixes
+          need also be updated in the docstring.
+          """
+
+          square = UnitSquareMesh(10,10)
+          V = VectorFunctionSpace(square, "CG", 1)
+
+          f0 = Expression('sin(x[0]) + cos(x[1])')
+          f1 = Expression(('cos(x[0])', 'sin(x[1])'), element = V.ufl_element())
+          self.assertAlmostEqual(f0(0,0), sum(f1(0,0)))
+
+          f2 = Expression((('exp(x[0])','sin(x[1])'),
+                           ('sin(x[0])','tan(x[1])')))
+          self.assertAlmostEqual(sum(f2(0,0)), 1.0)
+
+          f = Expression('A*sin(x[0]) + B*cos(x[1])', A=2.0, B=Constant(4.0))
+          self.assertAlmostEqual(f(pi/4, pi/4), 6./sqrt(2))
+
+          f.A = 5.0
+          f.B = Expression("value", value=6.0)
+          self.assertAlmostEqual(f(pi/4, pi/4), 11./sqrt(2))
+
+          f.user_parameters["A"] = 1.0
+          f.user_parameters["B"] = Constant(5.0)
+          self.assertAlmostEqual(f(pi/4, pi/4), 6./sqrt(2))
+
+     def test_doc_string_complex_compiled_expression(self):
+          """
+          This test tests all features documented in the doc string of
+          Expression. If this test breaks and it is fixed the corresponding fixes
+          need also be updated in the docstring.
+          """
+
+          code = '''
+          class MyFunc : public Expression
+          {
+          public:
+
+            std::shared_ptr<MeshFunction<std::size_t> > cell_data;
+
+            MyFunc() : Expression()
+            {
+            }
+
+          void eval(Array<double>& values, const Array<double>& x,
+                    const ufc::cell& c) const
+            {
+              assert(cell_data);
+              const Cell cell(*cell_data->mesh(), c.index);
+              switch ((*cell_data)[cell.index()])
+              {
+              case 0:
+                values[0] = exp(-x[0]);
+                break;
+              case 1:
+                values[0] = exp(-x[2]);
+                break;
+              default:
+                values[0] = 0.0;
+              }
+            }
+          };'''
+
+          cell_data = CellFunction('uint', mesh)
+          f = Expression(code)
+          f.cell_data = cell_data
+
+          CompiledSubDomain("x[0]<=0.25").mark(cell_data, 0)
+          CompiledSubDomain("x[0]>0.25 && x[0]<0.75").mark(cell_data, 1)
+          CompiledSubDomain("x[0]>=0.75").mark(cell_data, 2)
+
+          bb = mesh.bounding_box_tree()
+          p0 = Point(0.1, 1.0, 0)
+          c0 = bb.compute_first_entity_collision(p0)
+
+          # If run in paralell
+          if c0 > mesh.num_cells():
+              return
+
+          p1 = Point(0.5, 1.0, 0)
+          c1 = bb.compute_first_entity_collision(p1)
+
+          # If run in paralell
+          if c1 > mesh.num_cells():
+              return
+
+          p2 = Point(1.0, 1.0, 1.0)
+          c2 = bb.compute_first_entity_collision(p2)
+
+          # If run in paralell
+          if c2 > mesh.num_cells():
+              return
+
+          # Create cells for evaluation
+          c0 = Cell(mesh, c0)
+          c1 = Cell(mesh, c1)
+          c2 = Cell(mesh, c2)
+
+          coords = array([p0.x(), p0.y(), p0.z()], dtype=float_)
+          values = zeros(1, dtype=float_)
+
+          f.eval_cell(values, coords, c0)
+          self.assertEqual(values[0], exp(-p0.x()))
+
+          coords = array([p1.x(), p1.y(), p1.z()], dtype=float_)
+
+          f.eval_cell(values, coords, c1)
+          self.assertEqual(values[0], exp(-p1.z()))
+
+          f.eval_cell(values, coords, c2)
+          self.assertEqual(values[0], 0.0)
+
+     @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+     def test_doc_string_compiled_expression_with_system_headers(self):
+          """
+          This test tests all features documented in the doc string of
+          Expression. If this test breaks and it is fixed the corresponding fixes
+          need also be updated in the docstring.
+          """
+
+          # Add header and it should compile
+          code_compile = '''
+          #include "dolfin/fem/GenericDofMap.h"
+          namespace dolfin
+          {
+            class Delta : public Expression
+            {
+            public:
+
+              Delta() : Expression() {}
+
+              void eval(Array<double>& values, const Array<double>& data,
+                        const ufc::cell& cell) const
+              { }
+
+              void update(const std::shared_ptr<const Function> u,
+                          double nu, double dt, double C1,
+                          double U_infty, double chord)
+              {
+                const std::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
+                const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
+                const uint ncells = mesh->num_cells();
+                uint ndofs_per_cell;
+                if (ncells > 0)
+                {
+                  CellIterator cell(*mesh);
+                  ndofs_per_cell = dofmap->cell_dimension(cell->index());
+                }
+                else
+                {
+                   return;
+                }
+              }
+            };
+          }'''
+
+          e = Expression(code_compile)
+          self.assertTrue(hasattr(e, "update"))
+
+          # Test not compile
+          code_not_compile = '''
+          namespace dolfin
+          {
+            class Delta : public Expression
+            {
+            public:
+
+              Delta() : Expression() {}
+
+              void eval(Array<double>& values, const Array<double>& data,
+                        const ufc::cell& cell) const
+              { }
+
+              void update(const std::shared_ptr<const Function> u,
+                          double nu, double dt, double C1,
+                          double U_infty, double chord)
+              {
+                const std::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
+                const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
+                const uint ncells = mesh->num_cells();
+                uint ndofs_per_cell;
+                if (ncells > 0)
+                {
+                  CellIterator cell(*mesh);
+                  ndofs_per_cell = dofmap->cell_dimension(cell->index());
+                }
+                else
+                {
+                   return;
+                }
+              }
+            };
+          }'''
+
+          self.assertRaises(RuntimeError, Expression, code_not_compile)
+
+     def test_doc_string_python_expressions(self):
+          """
+          This test tests all features documented in the doc string of
+          Expression. If this test breaks and it is fixed the corresponding fixes
+          need also be updated in the docstring.
+          """
+
+          square = UnitSquareMesh(4,4)
+
+          class MyExpression0(Expression):
+              def eval(self, value, x):
+                  dx = x[0] - 0.5
+                  dy = x[1] - 0.5
+                  value[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
+                  value[1] = 250.0*exp(-(dx*dx + dy*dy)/0.01)
+              def value_shape(self):
+                  return (2,)
+
+          f0 = MyExpression0()
+          values = f0(0.2,0.3)
+          dx = 0.2-0.5
+          dy = 0.3-0.5
+
+          self.assertAlmostEqual(values[0], 500.0*exp(-(dx*dx + dy*dy)/0.02))
+          self.assertAlmostEqual(values[1], 250.0*exp(-(dx*dx + dy*dy)/0.01))
+
+          ufc_cell_attrs = ["cell_shape", "index", "topological_dimension",
+                            "geometric_dimension", "local_facet", "mesh_identifier"]
+
+          class MyExpression1(Expression):
+              def eval_cell(self_expr, value, x, ufc_cell):
+                  if ufc_cell.index > 10:
+                      value[0] = 1.0
+                  else:
+                      value[0] = -1.0
+
+               # Check attributes in ufc cell
+                  for attr in ufc_cell_attrs:
+                       self.assertTrue(hasattr(ufc_cell, attr))
+
+          f1 = MyExpression1()
+          assemble(f1*ds(square))
+
+          class MyExpression2(Expression):
+              def __init__(self, mesh, domain):
+                  self._mesh = mesh
+                  self._domain = domain
+              def eval(self, values, x):
+                  pass
+
+          cell_data = CellFunction('uint', square)
+
+          f3 = MyExpression2(square, cell_data)
+
+          self.assertEqual(id(f3._mesh), id(square))
+          self.assertEqual(id(f3._domain), id(cell_data))
 
 if __name__ == "__main__":
     unittest.main()

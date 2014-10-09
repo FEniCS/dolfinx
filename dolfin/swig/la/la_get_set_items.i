@@ -180,19 +180,19 @@ double _get_vector_single_item(dolfin::GenericVector* self, int index)
     throw std::runtime_error("index must belong to this process, cannot "\
 			     "index off-process entries in a GenericVector");
 
-  self->get_local(&value, 1, &i);
+  self->get(&value, 1, &i);
   return value;
 }
 
 // Get item for slice, list, or numpy array object
-boost::shared_ptr<dolfin::GenericVector>
+std::shared_ptr<dolfin::GenericVector>
 _get_vector_sub_vector(const dolfin::GenericVector* self,
                        PyObject* op )
 {
   Indices* inds;
   dolfin::la_index* range;
   dolfin::la_index* indices;
-  boost::shared_ptr<dolfin::GenericVector> return_vec;
+  std::shared_ptr<dolfin::GenericVector> return_vec;
   std::size_t m;
 
   // Get the correct Indices
@@ -221,12 +221,12 @@ _get_vector_sub_vector(const dolfin::GenericVector* self,
   // Create a default Vector
   return_vec = self->factory().create_vector();
 
-  // Resize the vector to the size of the indices
-  return_vec->resize(MPI_COMM_SELF, m);
+  // Initialize the vector to the size of the indices
+  return_vec->init(MPI_COMM_SELF, m);
   range = inds->range();
 
   std::vector<double> values(m);
-  self->get_local(values.data(), m, indices);
+  self->get(values.data(), m, indices);
 
   return_vec->set(values.data(), m, range);
   return_vec->apply("insert");
@@ -273,7 +273,7 @@ void _set_vector_items_vector(dolfin::GenericVector* self, PyObject* op,
   std::vector<double> values(m);
 
   // Get and set values
-  other.get_local(&values[0], m, range);
+  other.get(&values[0], m, range);
   self->set(&values[0], m, indices);
   self->apply("insert");
 
@@ -385,7 +385,7 @@ void _set_vector_items_value(dolfin::GenericVector* self, PyObject* op, double v
 // Get single item from Matrix
 double _get_matrix_single_item(const dolfin::GenericMatrix* self, int m, int n)
 {
-  double value;
+  double value = 0.0;
   dolfin::la_index _m(Indices::check_index(m, self->size(0)));
   dolfin::la_index _n(Indices::check_index(n, self->size(1)));
   self->get(&value, 1, &_m, 1, &_n);
@@ -393,7 +393,7 @@ double _get_matrix_single_item(const dolfin::GenericMatrix* self, int m, int n)
  }
 
 // Get items for slice, list, or numpy array object
-boost::shared_ptr<dolfin::GenericVector>
+std::shared_ptr<dolfin::GenericVector>
 _get_matrix_sub_vector(dolfin::GenericMatrix* self, dolfin::la_index single,
                        PyObject* op, bool row )
 {
@@ -430,9 +430,9 @@ _get_matrix_sub_vector(dolfin::GenericMatrix* self, dolfin::la_index single,
   }
 
   // Create the return vector and set the values
-  boost::shared_ptr<dolfin::GenericVector> return_vec
+  std::shared_ptr<dolfin::GenericVector> return_vec
     = self->factory().create_vector();
-  self->resize(*return_vec, 1);
+  self->init_vector(*return_vec, 1);
 
   return_vec->set_local(values);
   return_vec->apply("insert");

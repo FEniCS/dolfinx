@@ -18,12 +18,13 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2008-09-30
-# Last changed: 2013-08-07
+# Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
+from six import integer_types
 from dolfin import *
 import sys
-
 
 mesh = UnitSquareMesh(3, 3)
 
@@ -35,7 +36,7 @@ class AbstractBaseTest(object):
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
-            print "\nRunning:",type(self).__name__
+            print("\nRunning:",type(self).__name__)
 
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
@@ -83,7 +84,7 @@ class AbstractBaseTest(object):
 
         # Test set and access with different integers
         ind = 2
-        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,long]:
+        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,integer_types[-1]]:
             v[t(ind)] = 2.0
             if v.owns_index(t(ind)): self.assertAlmostEqual(v[t(ind)], 2.0)
 
@@ -342,30 +343,27 @@ if has_linear_algebra_backend("PETSc"):
                       unittest.TestCase):
         backend    = "PETSc"
 
-if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
-                       unittest.TestCase):
-        backend    = "Epetra"
-if MPI.size(mpi_comm_world()) == 1:
-    class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Sparse"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)")
+class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
+    backend     = "uBLAS"
+    sub_backend = "Sparse"
 
-    class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Dense"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)")
+class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
+    backend     = "uBLAS"
+    sub_backend = "Dense"
 
-    if has_linear_algebra_backend("PETScCusp"):
-        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, \
-                              unittest.TestCase):
-            backend    = "PETScCusp"
+if has_linear_algebra_backend("PETScCusp"):
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel)")
+    class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "PETScCusp"
 
 if __name__ == "__main__":
 
     # Turn off DOLFIN output
     #set_log_active(False);
 
-    print ""
-    print "Testing basic PyDOLFIN linear algebra operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing basic PyDOLFIN linear algebra operations")
+    print("------------------------------------------------")
     unittest.main()

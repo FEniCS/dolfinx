@@ -59,7 +59,7 @@ namespace dolfin
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
-    const MPI_Comm mpi_comm() const
+    MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
     bool base_one() const
@@ -77,7 +77,7 @@ namespace dolfin
     // Storage of values
     std::vector<double> _vals;
 
-    // Gobal size
+    // Global size
     std::size_t _size[2];
 
     // Symmetric storage

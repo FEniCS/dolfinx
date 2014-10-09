@@ -118,7 +118,6 @@ void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Function& u)
 {
-  u.update();
   write_function(u, counter);
 }
 //----------------------------------------------------------------------------
@@ -156,7 +155,6 @@ void VTKFile::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 void VTKFile::operator<<(const std::pair<const Function*, double> u)
 {
   dolfin_assert(u.first);
-  u.first->update();
   write_function(*(u.first), u.second);
 }
 //----------------------------------------------------------------------------
@@ -168,7 +166,7 @@ void VTKFile::write_function(const Function& u, double time)
   // Get MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
-  // Get vtu file name and intialise
+  // Get vtu file name and initialise
   std::string vtu_filename = init(mesh, mesh.topology().dim());
 
   // Write mesh
@@ -178,7 +176,7 @@ void VTKFile::write_function(const Function& u, double time)
   // Write results
   results_write(u, vtu_filename);
 
-  // Parallel-specfic files
+  // Parallel-specific files
   const std::size_t num_processes = MPI::size(mpi_comm);
   if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
   {
@@ -203,7 +201,7 @@ void VTKFile::write_mesh(const Mesh& mesh, double time)
   // Get MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
-  // Get vtu file name and intialise out files
+  // Get vtu file name and initialise out files
   std::string vtu_filename = init(mesh, mesh.topology().dim());
 
   // Write local mesh to vtu file
@@ -739,7 +737,7 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   // Close file
   fp.close();
 
-  // Parallel-specfic files
+  // Parallel-specific files
   const std::size_t num_processes = MPI::size(mesh.mpi_comm());
   const std::size_t process_number = MPI::rank(mesh.mpi_comm());
   if (num_processes > 1 && process_number == 0)

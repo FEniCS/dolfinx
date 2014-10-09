@@ -13,6 +13,7 @@ Solution method: automatic, i.e., by a NonlinearVariationalProblem/Solver
 (Newton method).
 """
 
+from __future__ import print_function
 from dolfin import *
 import numpy, sys
 
@@ -76,7 +77,7 @@ prm['newton_solver']['relative_tolerance'] = 1E-7
 prm['newton_solver']['maximum_iterations'] = 25
 prm['newton_solver']['relaxation_parameter'] = 1.0
 if iterative_solver:
-    prec = 'jacobi' if 'jacobi' in zip(*krylov_solver_preconditioners())[0] else 'ilu'
+    prec = 'jacobi' if 'jacobi' in list(zip(*krylov_solver_preconditioners()))[0] else 'ilu'
     prm['newton_solver']['linear_solver'] = 'gmres'
     prm['newton_solver']['preconditioner'] = prec
     prm['newton_solver']['krylov_solver']['absolute_tolerance'] = 1E-9
@@ -91,15 +92,15 @@ PROGRESS = 16
 set_log_level(PROGRESS)
 solver.solve()
 
-print """
+print("""
 Solution of the nonlinear Poisson problem div(q(u)*nabla_grad(u)) = f,
 with f=0, q(u) = (1+u)^m, u=0 at x=0 and u=1 at x=1.
 %s
-""" % mesh
+""" % mesh)
 
 # Find max error
 u_exact = Expression('pow((pow(2, m+1)-1)*x[0] + 1, 1.0/(m+1)) - 1', m=m)
 u_e = interpolate(u_exact, V)
 import numpy
 diff = numpy.abs(u_e.vector().array() - u_.vector().array()).max()
-print 'Max error:', diff
+print('Max error:', diff)

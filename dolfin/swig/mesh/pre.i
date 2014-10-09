@@ -81,6 +81,11 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------
+// Ignores for MultiMesh
+//-----------------------------------------------------------------------------
+%ignore dolfin::MultiMesh::plot;
+
+//-----------------------------------------------------------------------------
 // Rename methods which get called by a re-implemented method from the
 // Python layer
 //-----------------------------------------------------------------------------
@@ -164,7 +169,7 @@ def __iter__(self):
     self.first = True
     return self
 
-def next(self):
+def __next__(self):
     self.first = self.first if hasattr(self,"first") else True
     if not self.first:
         self._increment()
@@ -173,6 +178,10 @@ def next(self):
         raise StopIteration
     self.first = False
     return self._dereference()
+
+# Py2/Py3
+next = __next__
+
 %}
 
 }
@@ -218,7 +227,7 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 
     def __str__(self):
         """Pretty print of MeshEntity"""
-        return self.str(0)
+        return self.str(False)
 %}
 }
 

@@ -18,16 +18,16 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2002-12-06
-// Last changed: 2013-05-25
+// Last changed: 2014-02-06
 
 #include <map>
+#include <memory>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "pugixml.hpp"
 
@@ -92,7 +92,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   const std::size_t gdim = mesh_node.attribute("dim").as_uint();
 
   // Get topological dimension
-  boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
   const std::size_t tdim = cell_type->dim();
 
   // Create mesh for editing
@@ -105,7 +105,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 
   // Get number of vertices and init editor
   const std::size_t num_vertices = xml_vertices.attribute("size").as_uint();
-  editor.init_vertices(num_vertices, num_vertices);
+  editor.init_vertices_global(num_vertices, num_vertices);
 
   // Iterate over vertices and add to mesh
   Point p;
@@ -125,7 +125,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 
   // Get number of cells and init editor
   const std::size_t num_cells = xml_cells.attribute("size").as_uint();
-  editor.init_cells(num_cells, num_cells);
+  editor.init_cells_global(num_cells, num_cells);
 
   // Create list of vertex index attribute names
   const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);
@@ -285,7 +285,7 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
     mesh.init(dim);
 
     // Read data into a mesh value collection
-    boost::shared_ptr<const Mesh> _mesh = reference_to_no_delete_pointer(mesh);
+    std::shared_ptr<const Mesh> _mesh = reference_to_no_delete_pointer(mesh);
     MeshValueCollection<std::size_t> mvc(_mesh);
     XMLMeshValueCollection::read(mvc, type, *it);
 
@@ -461,7 +461,7 @@ void XMLMesh::write_data(const Mesh& mesh, const MeshData& data,
       std::string name = it->first;
       const std::vector<std::size_t>& array = it->second;
 
-      // Check data lenght
+      // Check data length
       if (array.size() != mesh.num_entities(dim))
       {
         dolfin_error("XMLMesh.cpp",

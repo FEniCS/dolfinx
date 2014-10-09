@@ -22,6 +22,7 @@
 # First added:  2010-04-30
 # Last changed: 2012-11-12
 
+from __future__ import print_function
 from dolfin import *
 
 # Form compiler options
@@ -137,7 +138,7 @@ dss = ds[boundary_subdomains]
 
 # Stress tensor
 def sigma(r):
-    return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.cell().d)
+    return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.geometric_dimension())
 
 # Forms
 a = factor_m1*inner(u, r)*dx + factor_d1*inner(u, r)*dx \
@@ -162,7 +163,7 @@ vtk_file = File("elasticity.pvd")
 while t <= T:
 
     t += dt
-    print "Time: ", t
+    print("Time: ", t)
 
     p.t = t
     p0.t = t

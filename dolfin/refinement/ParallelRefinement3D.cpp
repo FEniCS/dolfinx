@@ -19,9 +19,9 @@
 // First Added: 2012-12-19
 // Last Changed: 2013-01-23
 
-#include <vector>
 #include <map>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
+#include <vector>
 #include <boost/multi_array.hpp>
 
 #include <dolfin/common/types.h>
@@ -124,7 +124,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      const std::size_t n_marked = p.marked_edge_count(*cell);
+      const std::size_t n_marked = p.marked_edge_list(*cell).size();
 
       // If more than 3 edges are already marked, mark all edges
       if (n_marked == 4 || n_marked == 5)
@@ -140,7 +140,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         std::size_t nmax = 0;
         for (FaceIterator face(*cell); !face.end(); ++face)
         {
-          const std::size_t n_face = p.marked_edge_count(*face);
+          const std::size_t n_face = p.marked_edge_list(*face).size();
           nmax = (n_face > nmax) ? n_face : nmax;
         }
         if (nmax != 3)
@@ -304,7 +304,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   p.partition(new_mesh, redistribute);
 
   // Save some data about partial refinements to assist with future subdivision
-  //  boost::shared_ptr<std::vector<std::size_t> > mesh_out_array =
+  //  std::shared_ptr<std::vector<std::size_t> > mesh_out_array =
   // new_mesh.data().create_array("experimental_data");
 }
 //-----------------------------------------------------------------------------

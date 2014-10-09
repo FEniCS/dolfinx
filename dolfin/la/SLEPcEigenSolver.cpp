@@ -37,7 +37,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
-  : _A(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
+  : _matA(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
 {
   dolfin_assert(A.size(0) == A.size(1));
 
@@ -49,7 +49,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
-  : _A(reference_to_no_delete_pointer(A)), _B(reference_to_no_delete_pointer(B))
+  : _matA(reference_to_no_delete_pointer(A)), _matB(reference_to_no_delete_pointer(B))
 {
   dolfin_assert(A.size(0) == A.size(1));
   dolfin_assert(B.size(0) == A.size(0));
@@ -62,8 +62,8 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
   EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
-  : _A(A)
+SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A)
+  : _matA(A)
 {
   dolfin_assert(A->size(0) == A->size(1));
 
@@ -74,9 +74,9 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
   EPSCreate(PETSC_COMM_WORLD, &eps);
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
-                                   boost::shared_ptr<const PETScMatrix> B)
-  : _A(A), _B(B)
+SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
+                                   std::shared_ptr<const PETScMatrix> B)
+  : _matA(A), _matB(B)
 
 {
   dolfin_assert(A->size(0) == A->size(1));
@@ -99,42 +99,51 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
 {
-  solve(_A->size(0));
+  solve(_matA->size(0));
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::size_t n)
 {
-  dolfin_assert(_A);
+  dolfin_assert(_matA);
 
   // Associate matrix (matrices) with eigenvalue solver
-  dolfin_assert(_A->size(0) == _A->size(1));
-  if (_B)
+  dolfin_assert(_matA->size(0) == _matA->size(1));
+  if (_matB)
   {
-    dolfin_assert(_B->size(0) == _B->size(1) && _B->size(0) == _A->size(0));
-    EPSSetOperators(eps, _A->mat(), _B->mat());
+    dolfin_assert(_matB->size(0) == _matB->size(1) && _matB->size(0) == _matA->size(0));
+    EPSSetOperators(eps, _matA->mat(), _matB->mat());
   }
   else
-    EPSSetOperators(eps, _A->mat(), PETSC_NULL);
+    EPSSetOperators(eps, _matA->mat(), NULL);
 
   // Set number of eigenpairs to compute
-  dolfin_assert(n <= _A->size(0));
+  dolfin_assert(n <= _matA->size(0));
   EPSSetDimensions(eps, n, PETSC_DECIDE, PETSC_DECIDE);
 
   // Set parameters from local parameters
   read_parameters();
 
   // Set parameters from PETSc parameter database
+  std::string prefix = std::string(parameters["options_prefix"]);
+  if (prefix != "default")
+  {
+    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    char lastchar = *prefix.rbegin();
+    if (lastchar != '_')
+      prefix += "_";
+
+    EPSSetOptionsPrefix(eps, prefix.c_str());
+  }
   EPSSetFromOptions(eps);
 
   if (parameters["verbose"])
   {
     KSP ksp;
     ST st;
-    EPSMonitorSet(eps, EPSMonitorAll, PETSC_NULL, PETSC_NULL);
-    EPSSetType(eps, EPSARPACK);
+    EPSMonitorSet(eps, EPSMonitorAll, NULL, NULL);
     EPSGetST(eps, &st);
     STGetKSP(st, &ksp);
-    KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
+    KSPMonitorSet(ksp, KSPMonitorDefault, NULL, NULL);
     EPSView(eps, PETSC_VIEWER_STDOUT_SELF);
   }
 
@@ -220,9 +229,9 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
   if (ii < num_computed_eigenvalues)
   {
-    dolfin_assert(_A);
-    _A->resize(r, 0);
-    _A->resize(c, 0);
+    dolfin_assert(_matA);
+    _matA->init_vector(r, 0);
+    _matA->init_vector(c, 0);
 
     dolfin_assert(r.vec());
     dolfin_assert(c.vec());

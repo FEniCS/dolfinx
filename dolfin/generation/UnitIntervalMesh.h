@@ -17,14 +17,16 @@
 //
 // Modified by Anders Logg, 2010.
 // Modified by Benjamin Kehlet 2012
+// Modified by Mikael Mortensen, 2014
 //
 // First added:  2007-11-23
-// Last changed: 2012-11-09
+// Last changed: 2014-02-17
 
 #ifndef __UNIT_INTERVAL_MESH_H
 #define __UNIT_INTERVAL_MESH_H
 
 #include <cstddef>
+#include <dolfin/common/MPI.h>
 #include "IntervalMesh.h"
 
 namespace dolfin
@@ -38,8 +40,36 @@ namespace dolfin
   {
   public:
 
-    /// Create mesh of unit interval
-    UnitIntervalMesh(std::size_t nx=1) : IntervalMesh(nx, 0.0, 1.0) {}
+    /// Constructor
+    ///
+    /// *Arguments*
+    ///     nx (std::size_t)
+    ///         The number of cells.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         // Create a mesh of 25 cells in the interval [0,1]
+    ///         UnitIntervalMesh mesh(25);
+    ///
+    UnitIntervalMesh(std::size_t nx) : IntervalMesh(nx, 0.0, 1.0) {}
+
+    /// Constructor
+    ///
+    /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         MPI communicator
+    ///     nx (std::size_t)
+    ///         The number of cells.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         // Create a mesh of 25 cells in the interval [0,1]
+    ///         UnitIntervalMesh mesh(MPI_COMM_WORLD, 25);
+    ///
+    UnitIntervalMesh(MPI_Comm comm, std::size_t nx)
+      : IntervalMesh(comm, nx, 0.0, 1.0) {}
 
   };
 

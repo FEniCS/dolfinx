@@ -18,16 +18,27 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-04-05
-# Last changed: 2011-06-17
+# Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
-#from unittest import skipIf # Awaiting Python 2.7
 from ufl.algorithms import replace
 
 from dolfin import *
 from dolfin.fem.adaptivesolving import *
 
-#@skipIf("Skipping error control test in parallel", MPI.size() > 1)
+# FIXME: Move this to dolfin for user access?
+def reconstruct_refined_form(form, functions, mesh):
+    function_mapping = {}
+    for u in functions:
+        w = Function(u.leaf_node().function_space())
+        w.assign(u.leaf_node())
+        function_mapping[u] = w
+    domain = mesh.leaf_node().ufl_domain()
+    newform = replace_integral_domains(replace(form, function_mapping), domain)
+    return newform, function_mapping
+
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class ErrorControlTest(unittest.TestCase):
 
     def setUp(self):
@@ -54,6 +65,14 @@ class ErrorControlTest(unittest.TestCase):
         M = u*dx()
         self.goal = M
 
+        # Asserting that domains are ok before trying error control generation
+        assert len(M.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert M.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+        assert len(a.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert a.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+        assert len(L.domains()) == 1, "Expecting only the domain from the mesh to get here through u."
+        assert L.domains()[0] == mesh.ufl_domain(), "Expecting only the domain from the mesh to get here through u."
+
         # Generate ErrorControl object
         ec = generate_error_control(problem, M)
 
@@ -64,9 +83,6 @@ class ErrorControlTest(unittest.TestCase):
         self.ec = ec
 
     def test_error_estimation(self):
-
-        if MPI.size(self.mesh.mpi_comm()) > 1:
-            return
 
         # Solve variational problem once
         solver = LinearVariationalSolver(self.problem)
@@ -80,9 +96,6 @@ class ErrorControlTest(unittest.TestCase):
         self.assertAlmostEqual(error_estimate, reference)
 
     def test_error_indicators(self):
-
-        if MPI.size(self.mesh.mpi_comm()) > 1:
-            return
 
         # Solve variational problem once
         solver = LinearVariationalSolver(self.problem)
@@ -98,25 +111,22 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_adaptive_solve(self):
 
-        if MPI.size(self.mesh.mpi_comm()) > 1:
-            return
-
         # Solve problem adaptively
         solver = AdaptiveLinearVariationalSolver(self.problem, self.goal)
         tol = 0.00087
         solver.solve(tol)
 
-        # Extract solution and update goal
-        w = Function(self.u.leaf_node().function_space())
-        w.assign(self.u.leaf_node())
-        M = replace(self.goal, {self.u: w})
+        # Note: This old approach is now broken, as it doesn't change the integration domain:
+        #M = replace(self.goal, {self.u: w})
+        # This new approach handles the integration domain properly:
+        M, fm = reconstruct_refined_form(self.goal, [self.u], self.mesh)
 
         # Compare computed goal with reference
         reference = 0.12583303389560166
         self.assertAlmostEqual(assemble(M), reference)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing automated adaptivity operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing automated adaptivity operations")
+    print("------------------------------------------------")
     unittest.main()

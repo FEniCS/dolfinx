@@ -27,8 +27,8 @@
 
 #include <string>
 #include <utility>
-#include <vector>
 #include <boost/unordered_map.hpp>
+#include <vector>
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
@@ -69,6 +69,10 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout);
 
+    /// Return true if empty
+    virtual bool empty() const
+    { return _values.empty(); }
+
     /// Return size of given dimension
     virtual std::size_t size(std::size_t dim) const;
 
@@ -83,7 +87,7 @@ namespace dolfin
     virtual void apply(std::string mode);
 
     /// Return MPI communicator
-    virtual const MPI_Comm mpi_comm() const
+    virtual MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
@@ -92,20 +96,20 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const
+    virtual std::shared_ptr<GenericMatrix> copy() const
     {
-      boost::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
+      std::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
       return A;
     }
 
-    /// Resize vector z to be compatible with the matrix-vector product
-    /// y = Ax. In the parallel case, both size and layout are
+    /// Initialize vector z to be compatible with the matrix-vector
+    /// product y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, std::size_t dim) const
+    virtual void init_vector(GenericVector& z, std::size_t dim) const
     { dolfin_not_implemented(); }
 
     /// Get block of values
@@ -114,16 +118,28 @@ namespace dolfin
                      const dolfin::la_index* cols) const
     { dolfin_not_implemented(); }
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols)
     { dolfin_not_implemented(); }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows, std::size_t n,
+                           const dolfin::la_index* cols)
+    { dolfin_not_implemented(); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols);
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows, std::size_t n,
+                           const dolfin::la_index* cols)
+    { dolfin_not_implemented(); }
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -150,12 +166,20 @@ namespace dolfin
     /// Set given rows to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
 
+    /// Set given rows to identity matrix
+    virtual void ident_local(std::size_t m, const dolfin::la_index* rows)
+    { dolfin_not_implemented(); }
+
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const
     { dolfin_not_implemented(); }
 
     // Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const
+    { dolfin_not_implemented(); }
+
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x)
     { dolfin_not_implemented(); }
 
     /// Multiply matrix by given number

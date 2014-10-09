@@ -47,7 +47,7 @@ namespace dolfin
     // This destructor should be uncommented, but it causes a problem
     // in parallel with MPI calls being made after MPI is shutdown. Needs
     // further investigation.
-    //virtual ~GenericVTKPlottable() {}
+    virtual ~GenericVTKPlottable() {}
 
     /// To be redefined in classes that require special parameters. Called
     /// once with the default parameters.
@@ -65,7 +65,7 @@ namespace dolfin
 
     /// Update the plottable data. The variable may be empty, or it may
     /// be a new variable to plot. is_compatible(var) must be true.
-    virtual void update(boost::shared_ptr<const Variable> var,
+    virtual void update(std::shared_ptr<const Variable> var,
                         const Parameters& p, int framecounter) = 0;
 
     /// Return whether this plottable is compatible with the variable

@@ -20,8 +20,9 @@
 # Modified by Jan Blechta 2012
 #
 # First added:
-# Last changed: 2012-11-23
+# Last changed: 2014-05-30
 
+from __future__ import print_function
 from unittest import TestCase as _TestCase
 import unittest
 import os
@@ -30,7 +31,9 @@ import tempfile
 
 from dolfin_utils.meshconvert import meshconvert
 from dolfin_utils.meshconvert.meshconvert import DataHandler
-
+from dolfin import MPI, mpi_comm_world
+import six
+from functools import reduce
 
 class TestCase(_TestCase):
     def _get_tempfname(self, suffix=None):
@@ -142,7 +145,7 @@ class AbaqusTest(_ConverterTest):
         self.assert_(handler.cells_ended)
 
         # Verify materials
-        print handler.functions.keys()
+        print(list(handler.functions.keys()))
         #self.assertEqual(handler.functions.keys(), ["material"])
         #dim, sz, entries, ended = handler.functions["material"]
         #self.assertEqual(dim, 3)
@@ -220,7 +223,7 @@ class AbaqusTest(_ConverterTest):
         self.assert_(handler.vertices_ended)
         self.assert_(handler.cells_ended)
 
-        self.assert_("facet_region" in handler.functions.keys())
+        self.assert_("facet_region" in list(handler.functions.keys()))
         cell_type = DataHandler.CellType_Triangle
         function_dim, sz, entries, ended = handler.functions["facet_region"]
 
@@ -232,7 +235,7 @@ class AbaqusTest(_ConverterTest):
 
 
         # Check that the right number of facets are marked
-        for marker, count in marker_counter.iteritems():
+        for marker, count in six.iteritems(marker_counter):
             self.assert_(len([i for i in entries if i == marker]) == count)
 
         self.assert_(ended)
@@ -283,7 +286,7 @@ class GmshTest(_ConverterTest):
         self.assert_(handler.cells_ended)
 
         # Verify physical regions
-        self.assertEqual(handler.functions.keys(), ["physical_region"])
+        self.assertEqual(list(handler.functions.keys()), ["physical_region"])
         dim, sz, entries, ended = handler.functions["physical_region"]
         self.assertEqual(dim, 3)
         self.assertEqual(sz, 10)        # There are 10 cells
@@ -353,7 +356,7 @@ class GmshTest(_ConverterTest):
 
         handler = self.__convert("gmsh_test_facet_regions_%dD_%d.msh" % (dim, id), cell_type, dim)
 
-        free_facets = range(size)
+        free_facets = list(range(size))
 
         for i in marked_facets:
             free_facets.remove(i)
@@ -380,14 +383,14 @@ class GmshTest(_ConverterTest):
         meshconvert.convert(fname, handler)
         return handler
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class TriangleTester(_TestCase):
+
     def test_convert_triangle(self): # Disabled because it fails, see FIXME below
+
         # test no. 1
         from dolfin import Mesh, MPI, mpi_comm_world
 
-        # MPI_COMM_WORLD wrapper
-        if MPI.size(mpi_comm_world()) != 1:
-            return
         fname = os.path.join("data", "triangle")
         dfname = fname+".xml"
 
@@ -402,13 +405,11 @@ class TriangleTester(_TestCase):
         # Clean up
         os.unlink(dfname)
 
-
         # test no. 2
         from dolfin import MPI, Mesh, MeshFunction, \
                            edges, Edge, faces, Face, \
                            SubsetIterator, facets, CellFunction, mpi_comm_world
-        if MPI.size(mpi_comm_world()) != 1:
-            return
+
         fname = os.path.join("data", "test_Triangle_3")
         dfname = fname+".xml"
         dfname0 = fname+".attr0.xml"
@@ -451,7 +452,7 @@ class TriangleTester(_TestCase):
         #length0 = reduce(add, (Edge(mesh, e.index()).length() \
         #                    for e in SubsetIterator(edge_markers, 0)), 0.0)
         length0, length1 = 0.0, 0.0
-        for item in edge_markers.items():
+        for item in list(edge_markers.items()):
             if item[1] == 0:
                 e = Edge(mesh, int(item[0]))
                 length0 +=  Edge(mesh, int(item[0])).length()
@@ -471,11 +472,12 @@ class TriangleTester(_TestCase):
         os.unlink(dfname)
         os.unlink(dfname0)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class DiffPackTester(_TestCase):
     def test_convert_diffpack(self):
+
         from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
-        if MPI.size(mpi_comm_world()) != 1:
-            return
+
         fname = os.path.join("data", "diffpack_tet")
         dfname = fname+".xml"
 
@@ -491,6 +493,34 @@ class DiffPackTester(_TestCase):
 
         mf_basename = dfname.replace(".xml", "_marker_%d.xml")
         for marker, num in [(3, 9), (6, 9), (7, 3), (8, 1)]:
+
+            mf_name = mf_basename % marker
+            mf = MeshFunction("size_t", mesh, mf_name)
+            self.assertEqual(sum(mf.array()==marker), num)
+            os.unlink(mf_name)
+
+        # Clean up
+        os.unlink(dfname)
+
+    def test_convert_diffpack_2d(self):
+
+        from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
+
+        fname = os.path.join("data", "diffpack_tri")
+        dfname = fname+".xml"
+
+        # Read triangle file and convert to a dolfin xml mesh file
+        meshconvert.diffpack2xml(fname+".grid", dfname)
+
+        # Read in dolfin mesh and check number of cells and vertices
+        mesh = Mesh(dfname)
+
+        self.assertEqual(mesh.num_vertices(), 41)
+        self.assertEqual(mesh.num_cells(), 64)
+        self.assertEqual(len(mesh.domains().markers(2)), 64)
+
+        mf_basename = dfname.replace(".xml", "_marker_%d.xml")
+        for marker, num in [(1,10), (2,5), (3,5)]:
 
             mf_name = mf_basename % marker
             mf = MeshFunction("size_t", mesh, mf_name)

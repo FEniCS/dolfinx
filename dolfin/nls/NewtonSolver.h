@@ -25,7 +25,7 @@
 #define __NEWTON_SOLVER_H
 
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
@@ -56,7 +56,7 @@ namespace dolfin
     ///         The linear solver.
     ///     factory (_GenericLinearAlgebraFactory_)
     ///         The factory.
-    NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
+    NewtonSolver(std::shared_ptr<GenericLinearSolver> solver,
                  GenericLinearAlgebraFactory& factory);
 
     /// Destructor
@@ -123,20 +123,20 @@ namespace dolfin
     // Current number of Newton iterations
     std::size_t _newton_iteration;
 
-    // Most recent residual and intitial residual
+    // Most recent residual and initial residual
     double _residual, _residual0;
 
     // Solver
-    boost::shared_ptr<GenericLinearSolver> _solver;
+    std::shared_ptr<GenericLinearSolver> _solver;
 
     // Jacobian matrix
-    boost::shared_ptr<GenericMatrix> _A;
+    std::shared_ptr<GenericMatrix> _matA;
 
     // Solution vector
-    boost::shared_ptr<GenericVector> _dx;
+    std::shared_ptr<GenericVector> _dx;
 
-    // Resdiual vector
-    boost::shared_ptr<GenericVector> _b;
+    // Residual vector
+    std::shared_ptr<GenericVector> _b;
 
     // MPI communicator
     MPI_Comm _mpi_comm;

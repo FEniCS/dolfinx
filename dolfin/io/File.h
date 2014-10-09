@@ -25,10 +25,10 @@
 #ifndef __FILE_H
 #define __FILE_H
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <utility>
-#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/MPI.h>
 #include "GenericFile.h"
 
@@ -63,7 +63,7 @@ namespace dolfin
     ///     filename (std::string)
     ///         Name of file.
     ///     encoding (std::string)
-    ///         Optional argument specifying encoding, ascii is default.
+    ///         Optional argument specifying encoding, ASCII is default.
     ///
     /// *Example*
     ///    .. code-block:: c++
@@ -266,7 +266,7 @@ namespace dolfin
     const MPI_Comm _mpi_comm;
 
     // Pointer to implementation (envelope-letter design)
-    boost::scoped_ptr<GenericFile> file;
+    std::unique_ptr<GenericFile> file;
 
   };
 

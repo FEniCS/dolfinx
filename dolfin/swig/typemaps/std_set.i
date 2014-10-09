@@ -49,16 +49,18 @@ namespace std
 }
 
 //-----------------------------------------------------------------------------
-// Argout typemap, returning a NumPy array for the boost::unordered_set<TYPE>
+// Argout typemap, returning a NumPy array for the std::unordered_set<TYPE>
 //-----------------------------------------------------------------------------
 %typemap(argout) std::set<TYPE> & ARG_NAME
 {
   npy_intp size = $1->size();
-  PyArrayObject *ret = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
+  PyArrayObject *ret
+    = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
 
   int i = 0;
-  for (std::set<TYPE>::const_iterator it = (*$1).begin(); it != (*$1).end(); ++it)
+  for (std::set<TYPE>::const_iterator it = (*$1).begin(); it != (*$1).end();
+       ++it)
   {
     data[i] = *it;
     ++i;
@@ -71,28 +73,29 @@ namespace std
 %enddef
 
 //-----------------------------------------------------------------------------
-// Macro for defining an out typemap for a boost::unordered_set of primitives
+// Macro for defining an out typemap for a std::unordered_set of primitives
 // The typemaps makes a function returning a NumPy array of that primitive
 //
 // TYPE       : The primitive type
 // NUMPY_TYPE : The type of the NumPy array that will be returned
 //-----------------------------------------------------------------------------
 %define OUT_SET_TYPEMAP_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
-SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(boost::unordered_map, TYPE, NUMPY_TYPE)
+SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(std::unordered_map, TYPE, NUMPY_TYPE)
 SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(std::set, TYPE, NUMPY_TYPE)
 %enddef
 
 
 //-----------------------------------------------------------------------------
-// Argout typemap, returning a NumPy array for the boost::unordered_set<TYPE>
+// Argout typemap, returning a NumPy array for the std::unordered_set<TYPE>
 //-----------------------------------------------------------------------------
 %define SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(SET_TYPE, TYPE, NUMPY_TYPE)
 
 // Value version
-%typemap(out) SET_TYPE<TYPE> 
+%typemap(out) SET_TYPE<TYPE>
 {
   npy_intp size = $1.size();
-  PyArrayObject *ret = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
+  PyArrayObject *ret
+    = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
 
   int i = 0;
@@ -110,12 +113,16 @@ SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(std::set, TYPE, NUMPY_TYPE)
 %typemap(out) const SET_TYPE<TYPE> &
 {
   npy_intp size = $1->size();
-  PyArrayObject *ret = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
+  PyArrayObject *ret
+    = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
 
   int i = 0;
-  for (SET_TYPE<TYPE>::const_iterator it = $1->begin(); it != $1->end(); it++, i++)
+  for (SET_TYPE<TYPE>::const_iterator it = $1->begin(); it != $1->end();
+       it++, i++)
+  {
     data[i] = *it;
+  }
 
   // Append the output to $result
   $result = PyArray_Return(ret);
@@ -124,9 +131,11 @@ SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(std::set, TYPE, NUMPY_TYPE)
 %enddef
 
 // NOTE: SWIG BUG
-// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions
-// NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
-// NOTE: in typemaps
+// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use
+// templated versions
+// NOTE: of typdefs, which means we need to use unsigned int instead
+// of dolfin::uint NOTE: in typemaps
 ARGOUT_TYPEMAP_STD_SET_OF_PRIMITIVES(std::size_t, ids_result, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_SET_OF_PRIMITIVES(std::size_t, cells, NPY_UINTP)
 OUT_SET_TYPEMAP_OF_PRIMITIVES(std::size_t, NPY_UINTP)
+OUT_SET_TYPEMAP_OF_PRIMITIVES(int, NPY_INT)

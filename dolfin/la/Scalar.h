@@ -54,16 +54,16 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Resize tensor to given dimensions
-    virtual void resize(std::size_t rank, const std::size_t* dims)
-    { dolfin_assert(rank == 0); _value = 0.0; }
-
     /// Initialize zero tensor using sparsity pattern
     void init(const TensorLayout& tensor_layout)
     {
       _value = 0.0;
       _mpi_comm = tensor_layout.mpi_comm();
     }
+
+    /// Return true if empty
+    bool empty() const
+    { return false; }
 
     /// Return tensor rank (number of dimensions)
     std::size_t rank() const
@@ -97,20 +97,30 @@ namespace dolfin
              const dolfin::la_index * const * rows) const
     { block[0] = _value; }
 
-    /// Set block of values
+    /// Set block of values using global indices
     void set(const double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows)
     { _value = block[0]; }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    void set_local(const double* block, const dolfin::la_index* num_rows,
+                   const dolfin::la_index * const * rows)
+    { _value = block[0]; }
+
+    /// Add block of values using global indices
     void add(const double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows)
+    { add_local(block, num_rows, rows); }
+
+    /// Add block of values using local indices
+    void add_local(const double* block, const dolfin::la_index* num_rows,
+                   const dolfin::la_index * const * rows)
     {
       dolfin_assert(block);
       _value += block[0];
     }
 
-    /// Add block of values
+    /// Add block of values using global indices
     void add(const double* block,
              const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
@@ -118,8 +128,24 @@ namespace dolfin
       _value += block[0];
     }
 
-    /// Add block of values
+    /// Add block of values using local indices
+    void add_local(const double* block,
+             const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    {
+      dolfin_assert(block);
+      _value += block[0];
+    }
+
+    /// Add block of values using global indices
     void add(const double* block,
+             const std::vector<std::vector<dolfin::la_index> >& rows)
+    {
+      dolfin_assert(block);
+      _value += block[0];
+    }
+
+    /// Add block of values using local indices
+    void add_local(const double* block,
              const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
@@ -135,7 +161,7 @@ namespace dolfin
     { _value = MPI::sum(_mpi_comm, _value); }
 
     /// Return MPI communicator
-    const MPI_Comm mpi_comm() const
+    MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
@@ -149,9 +175,9 @@ namespace dolfin
     //--- Scalar interface ---
 
     /// Return copy of scalar
-    virtual boost::shared_ptr<Scalar> copy() const
+    virtual std::shared_ptr<Scalar> copy() const
     {
-      boost::shared_ptr<Scalar> s(new Scalar);
+      std::shared_ptr<Scalar> s(new Scalar);
       s->_value = _value;
       return s;
     }

@@ -61,7 +61,6 @@ class CahnHilliardEquation : public NonlinearProblem
     // Constructor
   CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
                          const Constant& theta, const Constant& lambda)
-      : reset_b(true), reset_A(true)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
@@ -84,9 +83,7 @@ class CahnHilliardEquation : public NonlinearProblem
     {
       // Assemble RHS (Neumann boundary conditions)
       Assembler assembler;
-      assembler.reset_sparsity = reset_b;
       assembler.assemble(b, *L);
-      reset_b = false;
     }
 
     // User defined assemble of Jacobian
@@ -94,9 +91,7 @@ class CahnHilliardEquation : public NonlinearProblem
     {
       // Assemble system
       Assembler assembler;
-      assembler.reset_sparsity = reset_A;
       assembler.assemble(A, *a);
-      reset_A = false;
     }
 
     // Return solution function
@@ -114,14 +109,15 @@ class CahnHilliardEquation : public NonlinearProblem
               const Constant& lambda)
     {
       // Create function space and functions
-      boost::shared_ptr<X> V(new X(mesh));
+      std::shared_ptr<X> V(new X(mesh));
       _u.reset(new Function(V));
       _u0.reset(new Function(V));
 
       // Create forms and attach functions
       Y* _a = new Y(V, V);
       Z* _L = new Z(V);
-      _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
+      _a->u = *_u;
+      _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
       _L->u = *_u; _L->u0 = *_u0;
       _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
 
@@ -139,8 +135,6 @@ class CahnHilliardEquation : public NonlinearProblem
     boost::scoped_ptr<Form> L;
     boost::scoped_ptr<Function> _u;
     boost::scoped_ptr<Function> _u0;
-    bool reset_b;
-    bool reset_A;
 };
 
 

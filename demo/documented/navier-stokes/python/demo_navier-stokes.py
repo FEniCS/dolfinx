@@ -25,6 +25,7 @@ on an L-shaped domain using Chorin's splitting method."""
 
 # Begin demo
 
+from __future__ import print_function
 from dolfin import *
 
 # Print log messages only from the root process in parallel
@@ -114,7 +115,7 @@ while t < T + DOLFIN_EPS:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
-    solve(A2, p1.vector(), b2, "gmres", prec)
+    solve(A2, p1.vector(), b2, "cg", prec)
     end()
 
     # Velocity correction
@@ -135,7 +136,7 @@ while t < T + DOLFIN_EPS:
     # Move to next time step
     u0.assign(u1)
     t += dt
-    print "t =", t
+    print("t =", t)
 
 # Hold plot
 interactive()

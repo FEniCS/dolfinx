@@ -20,6 +20,7 @@
 # First added:  2011-05-12
 # Last changed: 2011-05-12
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -35,13 +36,17 @@ class JIT(unittest.TestCase):
 
             parameters["form_compiler"]["representation"] = representation
 
-            M1 = assemble(Constant(1.0)*dx, mesh=UnitSquareMesh(4, 4))
-            M2 = assemble(Constant(1.0)*dx, mesh=UnitCubeMesh(4, 4, 4))
+            M1 = assemble(Constant(1.0)*dx(UnitSquareMesh(4, 4)))
+            M2 = assemble(Constant(1.0)*dx(UnitCubeMesh(4, 4, 4)))
 
             self.assertAlmostEqual(M1, 1.0)
             self.assertAlmostEqual(M2, 1.0)
 
     def test_compile_extension_module(self):
+
+        # This test should do basically the same as the docstring of
+        # the compile_extension_module function in compilemodule.py.
+        # Remember to update the docstring if the test is modified!
 
         if not has_linear_algebra_backend("PETSc"):
             return
@@ -50,7 +55,7 @@ class JIT(unittest.TestCase):
         code = """
         namespace dolfin {
 
-          void PETSc_exp(boost::shared_ptr<dolfin::PETScVector> vec)
+          void PETSc_exp(std::shared_ptr<dolfin::PETScVector> vec)
           {
             Vec x = vec->vec();
             assert(x);
@@ -70,8 +75,16 @@ class JIT(unittest.TestCase):
             np_vec[:] = exp(np_vec)
             self.assertTrue((np_vec == vec.array()).all())
 
+    def test_compile_extension_module_kwargs(self):
+        # This test check that instant_kwargs of compile_extension_module
+        # are taken into account when computing signature
+        m2 = compile_extension_module('', cppargs='-O2')
+        m0 = compile_extension_module('', cppargs='')
+        self.assertFalse(m2.__file__ == m0.__file__)
+
+
 if __name__ == "__main__":
-    print ""
-    print "Testing JIT compiler"
-    print "------------------------------------------------"
+    print("")
+    print("Testing JIT compiler")
+    print("------------------------------------------------")
     unittest.main()

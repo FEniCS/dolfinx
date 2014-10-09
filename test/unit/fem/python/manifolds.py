@@ -21,14 +21,15 @@ embedded in higher dimensional spaces."""
 # Modified by David Ham 2012
 #
 # First added:  2012-12-06
-# Last changed: 2012-12-06
+# Last changed: 2014-05-28
 
 # MER: The solving test should be moved into test/regression/..., the
 # evaluatebasis part should be moved into test/unit/FiniteElement.py
 
+from __future__ import print_function
 import unittest
 from dolfin import *
-from itertools import izip
+from six.moves import zip
 
 import numpy
 
@@ -162,16 +163,13 @@ def rotate_2d_mesh(theta):
 
     return mesh
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
 class ManifoldSolving(unittest.TestCase):
 
     def test_poisson2D_in_3D(self):
         """This test solves Poisson's equation on a unit square in 2D,
         and then on a unit square embedded in 3D and rotated pi/4
         radians about each of the z and x axes."""
-
-        # Boundary mesh not working in parallel
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         u_2D = poisson_2d()
         u_manifold = poisson_manifold()
@@ -185,13 +183,10 @@ class ManifoldSolving(unittest.TestCase):
 
 class ManifoldBasisEvaluation(unittest.TestCase):
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_basis_evaluation_2D_in_3D(self):
         """This test checks that basis functions and their derivatives are
         unaffected by rotations."""
-
-        # Boundary mesh not working in parallel
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         self.basemesh = rotate_2d_mesh(0.0)
         self.rotmesh  = rotate_2d_mesh(numpy.pi/4)
@@ -206,16 +201,14 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         for i in range(4):
             self.basis_test("RT", i + 1, piola=True)
         for i in range(4):
+            self.basis_test("DRT", i + 1, piola=True)
+        for i in range(4):
             self.basis_test("BDM", i + 1, piola=True)
         for i in range(4):
             self.basis_test("N1curl", i + 1, piola=True)
         self.basis_test("BDFM", 2, piola=True)
 
     def basis_test(self, family, degree, piola=False):
-
-        # Boundary mesh not working in parallel
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         parameters["form_compiler"]["no-evaluate_basis_derivatives"] = False
 
@@ -227,7 +220,7 @@ class ManifoldBasisEvaluation(unittest.TestCase):
                               [0.3, 0.7, 0.0],
                               [0.4, 0.0, 0.0]])
 
-        for cell_base, cell_rot in izip(cells(self.basemesh), cells(self.rotmesh)):
+        for cell_base, cell_rot in zip(cells(self.basemesh), cells(self.rotmesh)):
 
             values_base = numpy.zeros(f_base.element().value_dimension(0))
             derivs_base = numpy.zeros(f_base.element().value_dimension(0)*3)
@@ -276,8 +269,8 @@ class ManifoldBasisEvaluation(unittest.TestCase):
                     self.assertAlmostEqual(abs(values_cmp-values_rot).max(), 0.0, 10)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing solving and evaluate basis over manifolds"
-    print "-------------------------------------------------"
+    print("")
+    print("Testing solving and evaluate basis over manifolds")
+    print("-------------------------------------------------")
 
     unittest.main()

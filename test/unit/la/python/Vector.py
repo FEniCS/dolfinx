@@ -20,8 +20,9 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-03-01
-# Last changed: 2011-11-17
+# Last changed: 2014-05-30
 
+from __future__ import print_function
 import unittest
 from dolfin import *
 
@@ -34,7 +35,7 @@ class AbstractBaseTest(object):
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
-            print "\nRunning:",type(self).__name__
+            print("\nRunning:",type(self).__name__)
 
     def assemble_vectors(self):
         mesh = UnitSquareMesh(7, 4)
@@ -90,19 +91,11 @@ class AbstractBaseTest(object):
         tmp = v0.str(False)
         tmp = v0.str(True)
 
-    def test_resize(self):
-        m, n = 301, 409
-        v0 = Vector()
-        v0.resize(mpi_comm_world(), m)
-        self.assertEqual(v0.size(), m)
-        v0.resize(mpi_comm_world(), n)
-        self.assertEqual(v0.size(), n)
-
-    def test_resize_range(self):
+    def test_init_range(self):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
-        v0.resize(mpi_comm_world(), local_range)
+        v0.init(mpi_comm_world(), local_range)
         self.assertEqual(v0.local_range(), local_range)
 
     def test_size(self):
@@ -114,7 +107,7 @@ class AbstractBaseTest(object):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
         v0 = Vector()
-        v0.resize(mpi_comm_world(), local_range)
+        v0.init(mpi_comm_world(), local_range)
         self.assertEqual(v0.local_size(), local_range[1] - local_range[0])
 
     def test_owns_index(self):
@@ -123,8 +116,6 @@ class AbstractBaseTest(object):
         local_range = v0.local_range()
         in_range = local_range[0] <= n < local_range[1]
         self.assertEqual(v0.owns_index(n), in_range)
-
-    #def test_get_local(self):
 
     #def test_set(self):
 
@@ -249,8 +240,6 @@ class AbstractBaseTest(object):
         self.assertEqual(v0.sum(), n)
 
     def test_scalar_add(self):
-        #if self.backend == "Epetra":
-        #    return
         n = 301
         v0 = Vector(mpi_comm_world(), n)
         v1 = Vector(mpi_comm_world(), n)
@@ -296,7 +285,7 @@ class AbstractBaseTest(object):
         if MPI.size(mpi_comm_world()) > 1:
             m = 301
             local_range0 = MPI.local_range(mpi_comm_world(), m)
-            print "local range", local_range0[0], local_range0[1]
+            print("local range", local_range0[0], local_range0[1])
 
             # Shift parallel partitiong but preserve global size
             if MPI.rank(mpi_comm_world()) == 0:
@@ -307,9 +296,9 @@ class AbstractBaseTest(object):
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
 
             v0 = Vector()
-            v0.resize(mpi_comm_world(), local_range0)
+            v0.init(mpi_comm_world(), local_range0)
             v1 = Vector()
-            v1.resize(mpi_comm_world(), local_range1)
+            v1.init(mpi_comm_world(), local_range1)
             self.assertEqual(v0.size(), v1.size())
 
             def wrong_assignment(v0, v1):
@@ -331,7 +320,7 @@ class DataTester:
         data = v.data(False)
         def write_data(data):
             data[0] = 1
-        self.assertRaises(StandardError, write_data, data)
+        self.assertRaises(Exception, write_data, data)
 
         # Test for as_backend_typeed Vector
         v = as_backend_type(v)
@@ -348,34 +337,30 @@ class DataNotWorkingTester:
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-if MPI.size(mpi_comm_world()) == 1:
-    class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Sparse"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
+    backend     = "uBLAS"
+    sub_backend = "Sparse"
 
-    class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Dense"
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
+    backend     = "uBLAS"
+    sub_backend = "Dense"
 
-    if has_linear_algebra_backend("PETScCusp"):
-        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, \
-                              unittest.TestCase):
-            backend    = "PETScCusp"
+if has_linear_algebra_backend("PETScCusp"):
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "PETScCusp"
 
 if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, AbstractBaseTest, \
                       unittest.TestCase):
         backend    = "PETSc"
 
-if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, \
-                       unittest.TestCase):
-        backend    = "Epetra"
-
-# If we have PETSc or Epetra STL Vector gets typedefed to one of these and
-# data test will not work. If none of these backends are available
+# If we have PETSc, STL Vector gets typedefed to one of these and data
+# test will not work. If none of these backends are available
 # STLVector defaults to uBLASVEctor, which data will work
-if has_linear_algebra_backend("Epetra") or has_linear_algebra_backend("PETSc"):
+if has_linear_algebra_backend("PETSc"):
     class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "STL"
 else:
@@ -387,7 +372,7 @@ if __name__ == "__main__":
     # Turn off DOLFIN output
     set_log_active(False)
 
-    print ""
-    print "Testing DOLFIN Vector classes"
-    print "------------------------------------------------"
+    print("")
+    print("Testing DOLFIN Vector classes")
+    print("------------------------------------------------")
     unittest.main()

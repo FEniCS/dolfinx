@@ -24,37 +24,27 @@
 // Modified by Andre Massing, 2013.
 //
 // First added:  2007-11-25
-// Last changed: 2013-10-30
+// Last changed: 2014-08-11
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
 //
 // Objects of these classes can then be passed to c++ functions
-// demanding a boost::shared_ptr<type>
+// demanding a std::shared_ptr<type>
 //=============================================================================
 
 //-----------------------------------------------------------------------------
 // Include macros for shared_ptr support
 //-----------------------------------------------------------------------------
-%include <boost_shared_ptr.i>
-
-//-----------------------------------------------------------------------------
-// define to make SWIG_SHARED_PTR_QNAMESPACE available in inlined C++ code
-//-----------------------------------------------------------------------------
-%{
-#define SWIG_SHARED_PTR_QNAMESPACE boost
-%}
+%include <std_shared_ptr.i>
 
 //-----------------------------------------------------------------------------
 // Make DOLFIN aware of the types defined in UFC
 //-----------------------------------------------------------------------------
-%shared_ptr(ufc::cell_integral)
-%shared_ptr(ufc::dofmap)
-%shared_ptr(ufc::finite_element)
-%shared_ptr(ufc::function)
-%shared_ptr(ufc::form)
-%shared_ptr(ufc::exterior_facet_integral)
-%shared_ptr(ufc::interior_facet_integral)
+%{
+#include <ufc.h>
+%}
+%include <swig/ufc_shared_ptr_classes.i>
 %import(module="ufc") "ufc.h"
 
 //-----------------------------------------------------------------------------
@@ -82,7 +72,7 @@
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
 %shared_ptr(dolfin::GenericDofMap)
 %shared_ptr(dolfin::DofMap)
-%shared_ptr(dolfin::CCFEMDofMap)
+%shared_ptr(dolfin::MultiMeshDofMap)
 %shared_ptr(dolfin::Form)
 %shared_ptr(dolfin::FiniteElement)
 %shared_ptr(dolfin::BasisFunction)
@@ -94,7 +84,6 @@
 %shared_ptr(dolfin::NonlinearVariationalProblem)
 %shared_ptr(dolfin::LinearVariationalSolver)
 %shared_ptr(dolfin::NonlinearVariationalSolver)
-%shared_ptr(dolfin::VariationalProblem)
 %shared_ptr(dolfin::PointIntegralSolver)
 
 %shared_ptr(dolfin::Hierarchical<dolfin::DirichletBC>)
@@ -112,6 +101,8 @@
 %shared_ptr(dolfin::FacetArea)
 %shared_ptr(dolfin::Constant)
 %shared_ptr(dolfin::MeshCoordinates)
+%shared_ptr(dolfin::MultiMeshFunctionSpace)
+%shared_ptr(dolfin::MultiMeshSubSpace)
 
 // geometry
 %shared_ptr(dolfin::BoundingBoxTree)
@@ -119,56 +110,22 @@
 // mesh
 %shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
 %shared_ptr(dolfin::BoundaryMesh)
-%shared_ptr(dolfin::CircleMesh)
-%shared_ptr(dolfin::EllipseMesh)
-%shared_ptr(dolfin::EllipsoidMesh)
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::Restriction)
-%shared_ptr(dolfin::SphereMesh)
 %shared_ptr(dolfin::SubMesh)
 %shared_ptr(dolfin::UnitTetrahedronMesh)
-%shared_ptr(dolfin::UnitTetrahedron)
 %shared_ptr(dolfin::UnitCubeMesh)
-%shared_ptr(dolfin::UnitCube)
 %shared_ptr(dolfin::UnitIntervalMesh)
-%shared_ptr(dolfin::UnitInterval)
 %shared_ptr(dolfin::IntervalMesh)
-%shared_ptr(dolfin::Interval)
 %shared_ptr(dolfin::UnitTriangleMesh)
-%shared_ptr(dolfin::UnitTriangle)
 %shared_ptr(dolfin::UnitSquareMesh)
-%shared_ptr(dolfin::UnitSquare)
-%shared_ptr(dolfin::UnitCircleMesh)
-%shared_ptr(dolfin::UnitCircle)
 %shared_ptr(dolfin::BoxMesh)
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
 %shared_ptr(dolfin::Rectangle)
-
- //csg
-%shared_ptr(dolfin::CSGGeometry)
-%shared_ptr(dolfin::CSGOperator)
-%shared_ptr(dolfin::CSGUnion)
-%shared_ptr(dolfin::CSGDifference)
-%shared_ptr(dolfin::CSGIntersection)
-%shared_ptr(dolfin::CSGPrimitive)
-%shared_ptr(dolfin::CSGPrimitive2D)
-%shared_ptr(dolfin::CSGPrimitive3D)
-%shared_ptr(dolfin::Circle)
-%shared_ptr(dolfin::Ellipse)
-%shared_ptr(dolfin::Polygon)
-%shared_ptr(dolfin::Sphere)
-%shared_ptr(dolfin::Cone)
-%shared_ptr(dolfin::Cylinder)
-%shared_ptr(dolfin::Tetrahedron)
-%shared_ptr(dolfin::Surface3D)
-%shared_ptr(dolfin::CSGCGALMeshGenerator2D)
-%shared_ptr(dolfin::CSGCGALMeshGenerator3D)
-
+%shared_ptr(dolfin::MultiMesh)
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)
-
-// mesh
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
 
@@ -222,15 +179,6 @@
 %shared_ptr(dolfin::SLEPcEigenSolver)
 #endif
 
-#ifdef HAS_TRILINOS
-%shared_ptr(dolfin::EpetraKrylovSolver)
-%shared_ptr(dolfin::EpetraLUSolver)
-%shared_ptr(dolfin::EpetraMatrix)
-%shared_ptr(dolfin::EpetraSparsityPattern)
-%shared_ptr(dolfin::EpetraVector)
-%shared_ptr(dolfin::TrilinosPreconditioner)
-#endif
-
 #ifdef HAS_PASTIX
 %shared_ptr(dolfin::PaStiXLUSolver)
 #endif
@@ -265,10 +213,9 @@
 // nls
 %shared_ptr(dolfin::NewtonSolver)
 %shared_ptr(dolfin::PETScSNESSolver)
-#ifdef HAS_TAO
+#ifdef ENABLE_PETSC_TAO
 %shared_ptr(dolfin::TAOLinearBoundSolver)
 #endif
-
 // plot
 %shared_ptr(dolfin::VTKPlotter)
 %shared_ptr(dolfin::GenericVTKPlottable)

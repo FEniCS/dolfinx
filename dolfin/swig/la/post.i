@@ -247,24 +247,22 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return self.__getitem__(slice(i, j, 1))
 
     def __getitem__(self, indices):
-        from numpy import ndarray, integer
-        from types import SliceType
+        from numpy import ndarray, integer, long
         if isinstance(indices, (int, integer, long)):
             return _get_vector_single_item(self, indices)
-        elif isinstance(indices, (SliceType, ndarray, list) ):
+        elif isinstance(indices, (slice, ndarray, list) ):
             return as_backend_type(_get_vector_sub_vector(self, indices))
         else:
             raise TypeError("expected an int, slice, list or numpy array of integers")
 
     def __setitem__(self, indices, values):
-        from numpy import ndarray, integer, isscalar
-        from types import SliceType
+        from numpy import ndarray, integer, isscalar, long
         if isinstance(indices, (int, integer, long)):
             if isscalar(values):
                 return _set_vector_items_value(self, indices, values)
             else:
                 raise TypeError("provide a scalar to set single item")
-        elif isinstance(indices, (SliceType, ndarray, list)):
+        elif isinstance(indices, (slice, ndarray, list)):
             if isscalar(values):
                 _set_vector_items_value(self, indices, values)
             elif isinstance(values, GenericVector):
@@ -280,7 +278,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return self.size()
 
     def __iter__(self):
-        for i in xrange(self.size()):
+        for i in range(self.size()):
             yield _get_vector_single_item(self, i)
 
     def __add__(self, other):
@@ -323,6 +321,15 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return NotImplemented
 
     def __div__(self,other):
+        """x.__div__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            ret = self.copy()
+            ret._scale(1.0 / other)
+            return ret
+        return NotImplemented
+
+    def __truediv__(self,other):
         """x.__div__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
@@ -393,6 +400,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return self
         return NotImplemented
 
+    def __itruediv__(self, other):
+        """x.__idiv__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            self._scale(1.0 / other)
+            return self
+        return NotImplemented
+
   %}
 }
 
@@ -411,14 +426,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
   PyObject* _data()
   {
     PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-						  boost::tuples::get<0>(self->data()),
-						  false);
+                                                 boost::tuples::get<0>(self->data()),
+                                                 false);
     PyObject* cols = %make_numpy_array(1, size_t)(boost::tuples::get<3>(self->data()),
-						 boost::tuples::get<1>(self->data()),
-						 false);
+                                                 boost::tuples::get<1>(self->data()),
+                                                 false);
     PyObject* values = %make_numpy_array(1, double)(boost::tuples::get<3>(self->data()),
-						    boost::tuples::get<2>(self->data()),
-						    false);
+                                                   boost::tuples::get<2>(self->data()),
+                                                   false);
 
     if ( rows == NULL || cols == NULL || values == NULL)
       return NULL;
@@ -440,7 +455,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import zeros
         m_range = self.local_range(0);
         A = zeros((m_range[1] - m_range[0], self.size(1)))
-        for i, row in enumerate(xrange(*m_range)):
+        for i, row in enumerate(range(*m_range)):
             column, values = self.getrow(row)
             A[i, column] = values
         return A
@@ -482,9 +497,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import ndarray
         from types import SliceType
         if not (isinstance(indices, tuple) and len(indices) == 2):
-            raise TypeError, "expected two indices"
+            raise TypeError("expected two indices")
         if not all(isinstance(ind, (int, SliceType, list, ndarray)) for ind in indices):
-            raise TypeError, "an int, slice, list or numpy array as indices"
+            raise TypeError("an int, slice, list or numpy array as indices")
 
         if isinstance(indices[0], int):
             if isinstance(indices[1], int):
@@ -510,14 +525,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import ndarray, isscalar
         from types import SliceType
         if not (isinstance(indices, tuple) and len(indices) == 2):
-            raise TypeError, "expected two indices"
+            raise TypeError("expected two indices")
         if not all(isinstance(ind, (int, SliceType, list, ndarray)) for ind in indices):
-            raise TypeError, "an int, slice, list or numpy array as indices"
+            raise TypeError("an int, slice, list or numpy array as indices")
 
         if isinstance(indices[0], int):
             if isinstance(indices[1], int):
                 if not isscalar(values):
-                    raise TypeError, "expected scalar for single value assigment"
+                    raise TypeError("expected scalar for single value assigment")
                 _set_matrix_single_item(self, indices[0], indices[1], values)
             else:
                 raise NotImplementedError
@@ -526,7 +541,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 elif isinstance(values,ndarray):
                     _set_matrix_items_array_of_float(self, indices[0], indices[1], values, True)
                 else:
-                    raise TypeError, "expected a GenericVector or numpy array of float"
+                    raise TypeError("expected a GenericVector or numpy array of float")
         elif isinstance(indices[1], int):
             raise NotImplementedError
             if isinstance(values, GenericVector):
@@ -534,7 +549,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             elif isinstance(values, ndarray):
                 _set_matrix_items_array_of_float(self, indices[1], indices[0], values, False)
             else:
-                raise TypeError, "expected a GenericVector or numpy array of float"
+                raise TypeError("expected a GenericVector or numpy array of float")
 
         else:
             raise NotImplementedError
@@ -552,14 +567,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 elif isinstance(values, ndarray) and len(values.shape)==2:
                     _set_matrix_items_array_of_float(self, indices[0], None, values)
                 else:
-                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+                    raise TypeError("expected a GenericMatrix or 2D numpy array of float")
             else:
                 if isinstance(values,GenericMatrix):
                     _set_matrix_items_matrix(self, indices[0], indices[1], values)
                 elif isinstance(values,ndarray) and len(values.shape) == 2:
                     _set_matrix_items_array_of_float(self, indices[0], indices[1], values)
                 else:
-                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+                    raise TypeError("expected a GenericMatrix or 2D numpy array of float")
     """
 
     def __add__(self,other):
@@ -604,7 +619,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 raise ValueError("Provide a NumPy array with length %d"%self.size(1))
             vec_type = _matrix_vector_mul_map[get_tensor_type(self)][0]
             vec = vec_type()
-            vec.resize(self.mpi_comm(), vec_size)
+            vec.init(self.mpi_comm(), vec_size)
             vec.set_local(other)
             vec.apply("insert")
             result_vec = vec.copy()
@@ -616,6 +631,15 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return NotImplemented
 
     def __div__(self,other):
+        """x.__div__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            ret = self.copy()
+            ret._scale(1.0/other)
+            return ret
+        return NotImplemented
+
+    def __truediv__(self,other):
         """x.__div__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
@@ -675,6 +699,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return self
         return NotImplemented
 
+    def __itruediv__(self,other):
+        """x.__idiv__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            self._scale(1.0 / other)
+            return self
+        return NotImplemented
+
   %}
 }
 
@@ -723,10 +755,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 %define AS_BACKEND_TYPE_MACRO(TENSOR_TYPE)
 %inline %{
-bool _has_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::TENSOR_TYPE>(*tensor); }
 
-boost::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::TENSOR_TYPE>(tensor); }
 %}
 
@@ -757,19 +789,20 @@ _matrix_vector_mul_map = {}
 // Run the downcast macro
 // ---------------------------------------------------------------------------
 AS_BACKEND_TYPE_MACRO(uBLASVector)
+AS_BACKEND_TYPE_MACRO(uBLASLinearOperator)
 
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
-bool _has_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(*tensor); }
 
-boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(tensor); }
 
-bool _has_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor > tensor)
+bool _has_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(*tensor); }
 
-const boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+const std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(tensor); }
 %}
 
@@ -785,7 +818,8 @@ _as_backend_type_map[uBLASSparseMatrix] = _as_backend_type_uBLASSparseMatrix
 // ---------------------------------------------------------------------------
 %pythoncode %{
 _matrix_vector_mul_map[uBLASSparseMatrix] = [uBLASVector]
-_matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
+_matrix_vector_mul_map[uBLASDenseMatrix] = [uBLASVector]
+_matrix_vector_mul_map[uBLASLinearOperator] = [uBLASVector]
 %}
 
 // ---------------------------------------------------------------------------
@@ -794,9 +828,11 @@ _matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
 #ifdef HAS_PETSC
 AS_BACKEND_TYPE_MACRO(PETScVector)
 AS_BACKEND_TYPE_MACRO(PETScMatrix)
+AS_BACKEND_TYPE_MACRO(PETScLinearOperator)
 
 %pythoncode %{
 _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
+_matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
 %}
 
 #ifdef HAS_PETSC4PY
@@ -892,85 +928,6 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 
 #endif  // HAS_PETSC4PY
 #endif  // HAS_PETSC
-
-#ifdef HAS_TRILINOS
-
-%runtime%{
-#include <Teuchos_RCP.hpp>
-#include <Epetra_CrsGraph.h>
-#include <Epetra_FECrsMatrix.h>
-#include <Epetra_FEVector.h>
-%}
-
-AS_BACKEND_TYPE_MACRO(EpetraVector)
-AS_BACKEND_TYPE_MACRO(EpetraMatrix)
-
-%pythoncode %{
-_matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
-%}
-
-%extend dolfin::EpetraMatrix{
-  Teuchos::RCP<Epetra_FECrsMatrix> _mat ()
-  {
-    Epetra_FECrsMatrix* tmp = self->mat().get();
-    return Teuchos::RCP<Epetra_FECrsMatrix>(tmp, false);
-  }
-
-%pythoncode %{
-    def mat(self):
-        "Return the Epetra_FECrsMatrix"
-        # Try importing PyTrilinos
-        try:
-            import PyTrilinos
-        except:
-            common.dolfin_error("dolfin/swig/la/post.i",
-                                "import PyTrilinos before accessing underlying Matrix",
-                                "PyTrilinos is not installed")
-
-        A = self._mat()
-
-        # Store the tensor to avoid garbage collection
-        # Need to be in try clause as this wont work when PyTrilinos
-        # is not installed
-        try:
-            A._org_vec = self
-        except:
-            pass
-
-        return A
-%}
-}
-
-%extend dolfin::EpetraVector{
-  Teuchos::RCP<Epetra_FEVector> _vec ()
-  {
-    Epetra_FEVector* tmp = self->vec().get();
-    return Teuchos::RCP<Epetra_FEVector>(tmp, false);
-  }
-
-%pythoncode %{
-    def vec(self):
-        "Return the Epetra_FEVector"
-        try:
-            import PyTrilinos
-        except:
-            common.dolfin_error("dolfin/swig/la/post.i",
-                                "import PyTrilinos before accessing underlying Vector",
-                                "PyTrilinos is not installed")
-        v = self._vec()
-
-        # Store the tensor to avoid garbage collection
-        # Need to be in try clause as this wont work when PyTrilinos
-        # is not installed
-        try:
-            v._org_vec = self
-        except:
-            pass
-
-        return v
-%}
-}
-#endif
 
 // ---------------------------------------------------------------------------
 // Dynamic wrappers for GenericTensor::as_backend_type and GenericTensor::has_type,

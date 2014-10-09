@@ -16,11 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-28
-// Last changed: 2013-02-27
+// Last changed: 2014-03-25
 
 #include <string>
+#include <dolfin/common/Array.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/Point.h>
+#include <dolfin/log/log.h>
 #include "GenericFunction.h"
 
 using namespace dolfin;
@@ -50,7 +52,7 @@ void GenericFunction::eval(Array<double>& values, const Array<double>& x) const
                "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
-double GenericFunction::operator() (double x)
+double GenericFunction::operator() (double x) const
 {
   // Check that function is scalar
   if (value_rank() != 0)
@@ -71,7 +73,7 @@ double GenericFunction::operator() (double x)
   return values[0];
 }
 //-----------------------------------------------------------------------------
-double GenericFunction::operator() (double x, double y)
+double GenericFunction::operator() (double x, double y) const
 {
   // Check that function is scalar
   if (value_rank() != 0)
@@ -94,7 +96,7 @@ double GenericFunction::operator() (double x, double y)
   return values[0];
 }
 //-----------------------------------------------------------------------------
-double GenericFunction::operator() (double x, double y, double z)
+double GenericFunction::operator() (double x, double y, double z) const
 {
   // Check that function is scalar
   if (value_rank() != 0)
@@ -118,13 +120,13 @@ double GenericFunction::operator() (double x, double y, double z)
   return values[0];
 }
 //-----------------------------------------------------------------------------
-double GenericFunction::operator() (const Point& p)
+double GenericFunction::operator() (const Point& p) const
 {
   return (*this)(p.x(), p.y(), p.z());
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::operator() (Array<double>& values,
-                                  double x)
+                                  double x) const
 {
   // Set up Array argument
   const Array<double> _x(1, &x);
@@ -134,7 +136,7 @@ void GenericFunction::operator() (Array<double>& values,
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::operator() (Array<double>& values,
-                                  double x, double y)
+                                  double x, double y) const
 {
   // Set up Array argument
   Array<double> _x(2);
@@ -146,7 +148,7 @@ void GenericFunction::operator() (Array<double>& values,
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::operator() (Array<double>& values,
-                                  double x, double y, double z)
+                                  double x, double y, double z) const
 {
   // Set up Array argument
   Array<double> _x(3);
@@ -158,7 +160,7 @@ void GenericFunction::operator() (Array<double>& values,
   eval(values, _x);
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& values, const Point& p)
+void GenericFunction::operator() (Array<double>& values, const Point& p) const
 {
   (*this)(values, p.x(), p.y(), p.z());
 }
@@ -196,8 +198,7 @@ void GenericFunction::restrict_as_ufc_function(double* w,
   dolfin_assert(w);
 
   // Evaluate dofs to get the expansion coefficients
-  const int cell_orientation = 0;
-  element.evaluate_dofs(w, *this, vertex_coordinates, cell_orientation,
+  element.evaluate_dofs(w, *this, vertex_coordinates, ufc_cell.orientation,
                         ufc_cell);
 }
 //-----------------------------------------------------------------------------

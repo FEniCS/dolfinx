@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-07
-// Last changed: 2013-08-02
+// Last changed: 2014-02-06
 
 #include <vector>
 
@@ -259,8 +259,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   const std::size_t num_vertices = mesh.num_vertices() + marked_edges.size();
   MeshEditor editor;
   editor.open(refined_mesh, mesh.topology().dim(), mesh.geometry().dim());
-  editor.init_vertices(num_vertices, num_vertices);
-  editor.init_cells(num_cells, num_cells);
+  editor.init_vertices_global(num_vertices, num_vertices);
+  editor.init_cells_global(num_cells, num_cells);
 
   // Set vertex coordinates
   std::size_t current_vertex = 0;
@@ -332,7 +332,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     }
     else if (marker == regular_refinement)
     {
-      // Regular refinement: divide into subsimplicies
+      // Regular refinement: divide into sub-simplices
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges

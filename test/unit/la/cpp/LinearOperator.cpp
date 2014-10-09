@@ -64,7 +64,6 @@ public:
 
         // Assemble action
         Assembler assembler;
-        assembler.reset_sparsity = false;
         assembler.assemble(y, a_action);
       }
 

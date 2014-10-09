@@ -21,8 +21,9 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-10-04
-# Last changed: 2013-06-02
+# Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -118,73 +119,67 @@ class TestSystemAssembler(unittest.TestCase):
         assembler.assemble(b)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-        # Do not reset sparsity
-        assemble.reset_sparsity = False
-        assembler.assemble(A)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        assembler.assemble(b)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
-
     def test_facet_assembly(self):
 
+        def test(mesh):
+            V = FunctionSpace(mesh, "DG", 1)
+
+            # Define test and trial functions
+            v = TestFunction(V)
+            u = TrialFunction(V)
+
+            # Define normal component, mesh size and right-hand side
+            n = FacetNormal(mesh)
+            h = CellSize(mesh)
+            h_avg = (h('+') + h('-'))/2
+            f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+
+            # Define bilinear form
+            a = dot(grad(v), grad(u))*dx \
+                - dot(avg(grad(v)), jump(u, n))*dS \
+                - dot(jump(v, n), avg(grad(u)))*dS \
+                + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+                - dot(grad(v), u*n)*ds \
+                - dot(v*n, grad(u))*ds \
+                + 8.0/h*v*u*ds
+
+            # Define linear form
+            L = v*f*dx
+
+            # Reference values
+            A_frobenius_norm = 157.867392938645
+            b_l2_norm = 1.48087142738768
+
+            # Assemble system
+            A, b = assemble_system(a, L)
+            self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+            # Test SystemAssembler
+            assembler = SystemAssembler(a, L)
+            A = Matrix()
+            b = Vector()
+
+            assembler.assemble(A, b)
+            self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+            A = Matrix()
+            b = Vector()
+            assembler.assemble(A)
+            self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+            assembler.assemble(b)
+            self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+        parameters["ghost_mode"] = "shared_facet"
         mesh = UnitSquareMesh(24, 24)
+        test(mesh)
 
-        if MPI.size(mesh.mpi_comm()) > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
+        parameters["ghost_mode"] = "shared_vertex"
+        mesh = UnitSquareMesh(24, 24)
+        test(mesh)
 
-        V = FunctionSpace(mesh, "DG", 1)
-
-        # Define test and trial functions
-        v = TestFunction(V)
-        u = TrialFunction(V)
-
-        # Define normal component, mesh size and right-hand side
-        n = V.cell().n
-        h = CellSize(mesh)
-        h_avg = (h('+') + h('-'))/2
-        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
-
-        # Define bilinear form
-        a = dot(grad(v), grad(u))*dx \
-            - dot(avg(grad(v)), jump(u, n))*dS \
-            - dot(jump(v, n), avg(grad(u)))*dS \
-            + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
-            - dot(grad(v), u*n)*ds \
-            - dot(v*n, grad(u))*ds \
-            + 8.0/h*v*u*ds
-
-        # Define linear form
-        L = v*f*dx
-
-        # Reference values
-        A_frobenius_norm = 157.867392938645
-        b_l2_norm = 1.48087142738768
-
-        # Assemble system
-        A, b = assemble_system(a, L)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
-        # Test SystemAssembler
-        assembler = SystemAssembler(a, L)
-        A = Matrix()
-        b = Vector()
-
-        assembler.assemble(A, b)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
-        A = Matrix()
-        b = Vector()
-
-        assembler.assemble(A)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-
-        assembler.assemble(b)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-
+        parameters["ghost_mode"] = "none"
 
     def test_incremental_assembly(self):
 
@@ -202,7 +197,6 @@ class TestSystemAssembler(unittest.TestCase):
             u = Function(V)
             x = u.vector()
             x[:] = 30.0
-            u.update()
 
             # Assemble incremental system
             assembler = SystemAssembler(a, -L, bc)
@@ -216,19 +210,112 @@ class TestSystemAssembler(unittest.TestCase):
 
             # Update solution
             x[:] -= Dx[:]
-            u.update()
 
             # Check solution
             u_true = Function(V)
             solve(a == L, u_true, bc)
             u.vector()[:] -= u_true.vector()[:]
-            u.update()
             error = norm(u.vector(), 'linf')
             self.assertAlmostEqual(error, 0.0)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_domains(self):
+
+        class RightSubDomain(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] > 0.5
+
+        mesh = UnitSquareMesh(24, 24)
+
+        sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
+        sub_domains.set_all(1)
+        right = RightSubDomain()
+        right.mark(sub_domains, 2)
+
+        V = FunctionSpace(mesh, "DG", 1)
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        # the numerical answer (initialized to some number)
+        x = Function(V)
+        x.vector()[:] = 30.0
+
+        dx = Measure("dx")[sub_domains]
+        # the forms
+        a = v*u*dx(1) + 2*v*u*dx(2)
+        L = v*Constant(1.0)*dx(1) + v*Constant(2.0)*dx(2)
+        # test cell-wise assembly
+        assembler = SystemAssembler(a, L)
+
+        A0 = Matrix()
+        b = Vector()
+        assembler.assemble(A0, b)
+
+        solve(A0, x.vector(), b)
+
+        # check solution
+        x.vector()[:] -= 1.0
+        error = norm(x.vector(), 'linf')
+        self.assertAlmostEqual(error, 0.0)
+
+        # now give the form some internal facet integrals
+        a += v('+')*u('+')*Constant(0.0)('+')*dS
+        assembler = SystemAssembler(a, L)
+        A1 = Matrix()
+        # test facet-wise assembly
+        assembler.assemble(A1, b)
+
+        # reset solution vector to some number
+        x.vector()[:] = 30.0
+        solve(A1, x.vector(), b)
+
+        # check solution
+        x.vector()[:] -= 1.0
+        error = norm(x.vector(), 'linf')
+        self.assertAlmostEqual(error, 0.0)
+
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+    def test_facet_assembly_cellwise_insertion(self):
+
+        mesh = UnitIntervalMesh(10)
+
+        c_f = FunctionSpace(mesh, "DG", 0)
+        v = Constant((-1.0,))
+        dt = Constant(1.0)
+
+        c_t = TestFunction(c_f)
+        c_a = TrialFunction(c_f)
+
+        n = FacetNormal(mesh)
+        vn = dot(v, n)
+        vout = 0.5*(vn + abs(vn))
+
+        # forms:
+        # a has no facet integrals
+        a = c_t*c_a*dx
+        # L has facet integrals so we end up in facet wise assembly
+        L = c_t('+')*vout('+')*dt('+')*dS + c_t('-')*vout('-')*dt('-')*dS  \
+            + c_t*vout*dt*ds
+        # but have to use cell wise insertion because the sparsity
+        # pattern doesn't support the macro element
+
+        A = Matrix()
+        b = Vector()
+
+        assembler = SystemAssembler(a, L)
+        assembler.assemble(A, b)
+
+        x = Function(c_f)
+        x.vector()[:] = 30.0
+        solve(A, x.vector(), b)
+
+        x.vector()[:] -= 10.0
+        error = norm(x.vector(), 'linf')
+        self.assertAlmostEqual(error, 0.0)
+
 
 if __name__ == "__main__":
-    print ""
-    print "Testing class SystemAssembler"
-    print "-----------------------------"
+    print("")
+    print("Testing class SystemAssembler")
+    print("-----------------------------")
     unittest.main()

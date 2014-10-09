@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-30
-// Last changed: 2012-11-12
+// Last changed: 2014-08-11
 //
 // Eddy currents phenomena in low conducting body can be
 // described using electric vector potential and curl-curl operator:
@@ -39,8 +39,6 @@
 #include "CurrentDensity.h"
 
 using namespace dolfin;
-
-#ifdef HAS_CGAL
 
 int main()
 {
@@ -80,13 +78,11 @@ int main()
   class DirichletBoundary: public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return on_boundary;
-    }
+    { return on_boundary; }
   };
 
-  // Create sphere mesh
-  SphereMesh mesh(Point(0.0, 0.0, 0.0), 1.0, 0.1);
+  // Load sphere mesh
+  Mesh mesh("../sphere.xml.gz");
 
   // Define functions
   Source dbdt;
@@ -125,13 +121,3 @@ int main()
 
   return 0;
 }
-
-#else
-
-int main()
-{
-  info("DOLFIN must be compiled with CGAL to run this demo.");
-  return 0;
-}
-
-#endif

@@ -21,7 +21,7 @@
 #ifndef __DOLFIN_STL_FACTORY_CSC_H
 #define __DOLFIN_STL_FACTORY_CSC_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "TensorLayout.h"
 #include "STLFactory.h"
 
@@ -36,9 +36,9 @@ namespace dolfin
     virtual ~STLFactoryCSC() {}
 
     /// Create empty tensor layout
-    virtual boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
+    virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
     {
-      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(1, false));
+      std::shared_ptr<TensorLayout> pattern(new TensorLayout(1, false));
       return pattern;
     }
 

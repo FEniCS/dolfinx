@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "3")
+set(DOLFIN_VERSION_MINOR "4")
 set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
@@ -36,6 +36,9 @@ endif()
 if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
   cmake_policy(SET CMP0004 OLD)
+  if(POLICY CMP0042)
+    cmake_policy(SET CMP0042 NEW)
+  endif()
 endif()
 
 # Set location of our FindFoo.cmake modules
@@ -63,6 +66,11 @@ option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #------------------------------------------------------------------------------
+# This should be removed when petsc version > 3.4 is out
+
+option(DOLFIN_ENABLE_TAO "Enable TAO solver." OFF)
+
+#------------------------------------------------------------------------------
 # Enable or disable optional packages
 
 # List optional packages
@@ -72,14 +80,12 @@ list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "PETSc4py")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
-list(APPEND OPTIONAL_PACKAGES "TAO")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
@@ -103,7 +109,7 @@ endif()
 #------------------------------------------------------------------------------
 # Package-specific options
 
-option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
+# None at the moment
 
 #------------------------------------------------------------------------------
 # Compiler flags
@@ -127,9 +133,41 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
-if (HAVE_STD AND CMAKE_COMPILER_IS_GNUCXX)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++98 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+# Workaround https://bugs.launchpad.net/ubuntu/+source/gcc-4.6/+bug/1352356
+# NOTE: Remove this block when bug is fixed upstream or GCC 4.6 support is dropped
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if (NOT DEFINED CMAKE_CXX_COMPILER_VERSION)
+    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+                    OUTPUT_VARIABLE CMAKE_CXX_COMPILER_VERSION)
+  endif()
+  if ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" AND
+      "${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER "4.5.99")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
+  endif()
+endif()
+
+if (CYGWIN OR (WIN32 AND UNIX))
+  # Use -std=gnu++11 instead of -std=c++11 on Cygwin to work around
+  # problem when using vsnprintf.
+  CHECK_CXX_COMPILER_FLAG(-std=gnu++11 HAVE_STD_GNUPP11)
+  if (HAVE_STD_GNUPP11)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+  else()
+    CHECK_CXX_COMPILER_FLAG(-std=gnu++0x HAVE_STD_GNUPP0x)
+    if (HAVE_STD_GNUPP0x)
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
+    endif()
+  endif()
+else()
+  CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
+  if (HAVE_STD_CPP11)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  else()
+    CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
+    if (HAVE_STD_CPP0x)
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    endif()
+  endif()
 endif()
 
 # Debug flags
@@ -204,6 +242,17 @@ if (Fortran_language_works)
 endif()
 
 #------------------------------------------------------------------------------
+# Check type sizes
+
+include(CheckTypeSize)
+
+# Check size of size_t
+check_type_size("size_t" size_t_size)
+if (size_t_size)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_SIZE_T=${size_t_size}")
+endif()
+
+#------------------------------------------------------------------------------
 # Check for MPI and OpenMP
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
@@ -235,7 +284,7 @@ endif()
 # Run tests to find required packages
 
 # Check for Boost
-set(BOOST_ROOT $ENV{BOOST_DIR})
+set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
 if (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
@@ -244,26 +293,18 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
+set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
-find_package(Boost 1.36 QUIET REQUIRED)
+find_package(Boost 1.48 QUIET REQUIRED)
 
 set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
-if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
-endif()
-
-# Boost timer was not a separate Boost component until version 1.48
-if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  list(APPEND DOLFIN_BOOST_COMPONENTS timer chrono)
-endif()
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 2.3.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.4.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 2.3.0.\n"
+    "compatible with requested version 1.4.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -280,6 +321,7 @@ find_package(LibXml2 REQUIRED)
 
 # Note: Check for Python interpreter even when Python is disabled because it
 #       is used to get the installation path for dolfin_utils
+# FIXME PY3: Select python 3 based on config flag?
 find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
 
@@ -319,6 +361,9 @@ if (DOLFIN_ENABLE_PYTHON)
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
     find_package(NumPy REQUIRED)
 
+    if (DEFINED UFC_SWIG_EXECUTABLE)
+      set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
+    endif()
     find_package(SWIG REQUIRED)
     if (${SWIG_VERSION} LESS 2.0)
       message(FATAL_ERROR " DOLFIN requires SWIG version 2.0 or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to False or install correct SWIG version.")
@@ -329,25 +374,35 @@ if (DOLFIN_ENABLE_PYTHON)
 
 endif()
 
-# Check for PETSc, SLEPc, TAO and petsc4py
+# Check for PETSc, SLEPc and petsc4py
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.2)
+  find_package(PETSc 3.3)
+
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.2)
+    find_package(SLEPc 3.3)
   endif()
-  if (PETSC_FOUND AND DOLFIN_ENABLE_TAO)
-    find_package(TAO)
-  endif()
+
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
     if (PETSC4PY_FOUND)
-      if (NOT (${PETSC4PY_VERSION_MAJOR} EQUAL ${PETSC_VERSION_MAJOR}
-               AND ${PETSC4PY_VERSION_MINOR} EQUAL ${PETSC_VERSION_MINOR}))
+      if (NOT ("${PETSC4PY_VERSION_MAJOR}" EQUAL "${PETSC_VERSION_MAJOR}"
+               AND "${PETSC4PY_VERSION_MINOR}" EQUAL "${PETSC_VERSION_MINOR}"))
         message(WARNING "PETSc version ${PETSC_VERSION} and petsc4py version ${PETSC4PY_VERSION} do not match.  Disabling petsc4py support")
         set(PETSC4PY_FOUND FALSE)
       endif()
     endif()
   endif()
+
+  # Enable PETSc SNES for PETSc verion > 3.3
+  if (PETSC_VERSION VERSION_GREATER 3.3.100)
+    set(PETSC_ENABLE_SNES TRUE)
+  endif()
+
+  # Enable TAO from PETSc for PETSc verion > 3.4
+  if ((PETSC_VERSION VERSION_GREATER 3.4.100) OR (DOLFIN_ENABLE_TAO))
+    set(PETSC_ENABLE_TAO TRUE)
+  endif()
+
 endif()
 
 # Check for ParMETIS and SCOTCH
@@ -403,7 +458,7 @@ endif()
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
-  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos;Belos")
 
   if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
     set(Trilinos_FOUND FALSE)
@@ -420,8 +475,12 @@ if (DOLFIN_ENABLE_TRILINOS)
     foreach (required_package ${DOLFIN_TRILINOS_PACKAGES})
 
       # Search for required package in list of available packages
-      set(${required_trilinos_package}_found false)
-      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_found)
+      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_index)
+      if(required_trilinos_package_index EQUAL -1)
+          set(required_trilinos_package_found false)
+      else()
+          set(required_trilinos_package_found true)
+      endif()
 
       # Print whether or not package is found
       if (required_trilinos_package_found)
@@ -466,12 +525,6 @@ if (DOLFIN_ENABLE_TRILINOS)
   endif()
 endif()
 
-
-# Check for CGAL
-if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL 4.1)
-endif()
-
 # Check for zlib
 if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
@@ -480,6 +533,18 @@ endif()
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit)
+
+  # Older version of CPPUNIT use std::auto_ptr, which is deprecated
+  if (CPPUNIT_FOUND)
+    if (${CPPUNIT_VERSION} LESS 1.13.1)
+      include(CheckCXXCompilerFlag)
+      CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
+      if (HAVE_NO_DEPRECATED)
+        set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-deprecated")
+      endif()
+    endif()
+  endif()
+
 endif()
 
 # Check for Sphinx
@@ -494,7 +559,7 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.2")
@@ -504,6 +569,15 @@ if (DOLFIN_ENABLE_VTK)
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
   endif()
+endif()
+
+#------------------------------------------------------------------------------
+# Set size of dolfin::la_index
+
+if (PETSC_FOUND)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=${PETSC_INT_SIZE}")
+else()
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=4")
 endif()
 
 #------------------------------------------------------------------------------
@@ -605,7 +679,7 @@ if (PYTHONINTERP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN Python module
+# Installation of DOLFIN and FEniCS Python modules
 
 if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(DIRECTORY
@@ -622,6 +696,14 @@ if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
   install(FILES ${CMAKE_BINARY_DIR}/globalparameters.py
     DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/common/
     COMPONENT RuntimeLibraries
+    )
+
+  install(DIRECTORY
+    ${CMAKE_SOURCE_DIR}/site-packages/fenics
+    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+    USE_SOURCE_PERMISSIONS
+    COMPONENT RuntimeLibraries
+    PATTERN "*.in" EXCLUDE
     )
 endif()
 
@@ -913,10 +995,10 @@ if (CPPUNIT_FOUND)
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
-  # Add target "test" for building tests
-  add_custom_target(test
-    COMMAND ${MAKE_PROGRAM}
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
+  # Add target "tests" for building tests
+  add_custom_target(tests
+                    COMMAND ${MAKE_PROGRAM}
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 
 if (DOLFIN_ENABLE_TESTING)

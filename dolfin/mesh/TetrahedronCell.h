@@ -20,7 +20,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2013-08-26
+// Last changed: 2014-01-31
 
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
@@ -45,7 +45,7 @@ namespace dolfin
     /// Return topological dimension of cell
     std::size_t dim() const;
 
-    /// Return number of entitites of given topological dimension
+    /// Return number of entities of given topological dimension
     std::size_t num_entities(std::size_t dim) const;
 
     /// Return number of vertices for entity of given topological dimension
@@ -98,6 +98,10 @@ namespace dolfin
     /// Check whether given entity collides with cell
     bool collides(const Cell& cell, const MeshEntity& entity) const;
 
+    /// Compute triangulation of intersection of two cells
+    virtual std::vector<double>
+    triangulate_intersection(const Cell& c0, const Cell& c1) const;
+    
     /// Return description of cell type
     std::string description(bool plural) const;
 
@@ -113,7 +117,7 @@ namespace dolfin
                                 const Point& B,
                                 const Point& C,
                                 const Point& D) const;
-
+ 
   };
 
 }

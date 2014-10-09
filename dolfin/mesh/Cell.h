@@ -21,12 +21,12 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2013-08-26
+// Last changed: 2014-04-24
 
 #ifndef __CELL_H
 #define __CELL_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/geometry/Point.h>
 #include "CellType.h"
@@ -34,6 +34,8 @@
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
+#include <dolfin/geometry/CollisionDetection.h>
+#include <dolfin/geometry/IntersectionTriangulation.h>
 
 namespace dolfin
 {
@@ -63,6 +65,10 @@ namespace dolfin
     /// Return type of cell
     CellType::Type type() const
     { return _mesh->type().cell_type(); }
+
+    /// Return number of vertices of cell
+    std::size_t num_vertices() const
+    { return _mesh->type().num_vertices(); }
 
     /// Compute orientation of cell
     ///
@@ -275,9 +281,9 @@ namespace dolfin
     ///     bool
     ///         True iff point is contained in cell.
     bool contains(const Point& point) const
-    { return _mesh->type().collides(*this, point); }
+    { return CollisionDetection::collides(*this, point); }
 
-    /// Check whether given point collides with cell.
+    /// Check whether given point collides with cell
     ///
     /// *Arguments*
     ///     point (_Point_)
@@ -287,9 +293,9 @@ namespace dolfin
     ///     bool
     ///         True iff point collides with cell.
     bool collides(const Point& point) const
-    { return _mesh->type().collides(*this, point); }
+    { return CollisionDetection::collides(*this, point); }
 
-    /// Check whether given entity collides with cell.
+    /// Check whether given entity collides with cell
     ///
     /// *Arguments*
     ///     entity (_MeshEntity_)
@@ -299,14 +305,42 @@ namespace dolfin
     ///     bool
     ///         True iff entity collides with cell.
     bool collides(const MeshEntity& entity) const
-    { return _mesh->type().collides(*this, entity); }
+    { return CollisionDetection::collides(*this, entity); }
+
+    /// Compute triangulation of intersection with given entity
+    ///
+    /// *Arguments*
+    ///     entity (_MeshEntity_)
+    ///         The entity with which to intersect.
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         A flattened array of simplices of dimension
+    ///         num_simplices x num_vertices x gdim =
+    ///         num_simplices x (tdim + 1) x gdim
+    std::vector<double>
+    triangulate_intersection(const MeshEntity& entity) const
+    { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
+
+    // FIXME: This function is part of a UFC transition
+    /// Get cell vertex coordinates
+    void get_vertex_coordinates(double* coordinates) const
+    {
+      dolfin_assert(coordinates);
+      const std::size_t gdim = _mesh->geometry().dim();
+      const std::size_t num_vertices = this->num_vertices();
+      const unsigned int* vertices = this->entities(0);
+      for (std::size_t i = 0; i < num_vertices; i++)
+        for (std::size_t j = 0; j < gdim; j++)
+          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+    }
 
     // FIXME: This function is part of a UFC transition
     /// Get cell vertex coordinates
     void get_vertex_coordinates(std::vector<double>& coordinates) const
     {
       const std::size_t gdim = _mesh->geometry().dim();
-      const std::size_t num_vertices = this->num_entities(0);
+      const std::size_t num_vertices = this->num_vertices();
       const unsigned int* vertices = this->entities(0);
       coordinates.resize(num_vertices*gdim);
       for (std::size_t i = 0; i < num_vertices; i++)
@@ -353,8 +387,10 @@ namespace dolfin
         }
       }
       ufc_cell.entity_indices[tdim].resize(1);
-
-      ufc_cell.entity_indices[tdim][0] = index();
+      if (topology.have_global_indices(tdim))
+        ufc_cell.entity_indices[tdim][0] = global_index();
+      else
+        ufc_cell.entity_indices[tdim][0] = index();
 
       // FIXME: Using the local cell index is inconsistent with UFC, but
       //        necessary to make DOLFIN run
@@ -375,13 +411,13 @@ namespace dolfin
     CellFunction(const Mesh& mesh)
       : MeshFunction<T>(mesh, mesh.topology().dim()) {}
 
-    CellFunction(boost::shared_ptr<const Mesh> mesh)
+    CellFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, mesh->topology().dim()) {}
 
     CellFunction(const Mesh& mesh, const T& value)
       : MeshFunction<T>(mesh, mesh.topology().dim(), value) {}
 
-    CellFunction(boost::shared_ptr<const Mesh> mesh, const T& value)
+    CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, mesh->topology().dim(), value) {}
   };
 

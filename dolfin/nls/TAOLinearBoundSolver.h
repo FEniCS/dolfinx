@@ -21,7 +21,9 @@
 #ifndef _TAOLinearBoundSolver_H
 #define _TAOLinearBoundSolver_H
 
-#ifdef HAS_TAO
+#ifdef ENABLE_PETSC_TAO
+
+#include <memory>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -29,10 +31,7 @@
 #include <map>
 #include <petscksp.h>
 #include <petscpc.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <tao.h>
-#include <taosolver.h>
+#include <petsctao.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/KrylovSolver.h>
 
@@ -109,7 +108,7 @@ namespace dolfin
     void set_ksp( const std::string ksp_type = "default");
 
     // Return TAO solver pointer
-    TaoSolver tao() const;
+    Tao tao() const;
 
     /// Return a list of available Tao solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -134,6 +133,7 @@ namespace dolfin
       p.add("gradient_t_tol"         , 0.0);
       p.add("error_on_nonconvergence", true);
       p.add("maximum_iterations"     , 100);
+      p.add("options_prefix"         , "default");
 
       Parameters ksp("krylov_solver");
       ksp = KrylovSolver::default_parameters();
@@ -143,20 +143,20 @@ namespace dolfin
     }
 
     // Return Matrix shared pointer
-    boost::shared_ptr<const PETScMatrix> get_matrix() const;
+    std::shared_ptr<const PETScMatrix> get_matrix() const;
 
     // Return load vector shared pointer
-    boost::shared_ptr<const PETScVector> get_vector() const;
+    std::shared_ptr<const PETScVector> get_vector() const;
 
   private:
 
     // Set operators with GenericMatrix and GenericVector
-    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-		       const boost::shared_ptr<const GenericVector> b);
+    void set_operators(std::shared_ptr<const GenericMatrix> A,
+		       std::shared_ptr<const GenericVector> b);
 
     // Set operators with shared pointer to PETSc objects
-    void set_operators(const boost::shared_ptr<const PETScMatrix> A,
-		       const boost::shared_ptr<const PETScVector> b);
+    void set_operators(std::shared_ptr<const PETScMatrix> A,
+		       std::shared_ptr<const PETScVector> b);
 
     // Callback for changes in parameter values
     void read_parameters();
@@ -175,27 +175,27 @@ namespace dolfin
     void init(const std::string& method);
 
     // Tao solver pointer
-    TaoSolver _tao;
+    Tao _tao;
 
     // Petsc preconditioner
-    boost::shared_ptr<PETScPreconditioner> preconditioner;
+    std::shared_ptr<PETScPreconditioner> preconditioner;
 
     // Operator (the matrix) and the vector
-    boost::shared_ptr<const PETScMatrix> A;
-    boost::shared_ptr<const PETScVector> b;
+    std::shared_ptr<const PETScMatrix> A;
+    std::shared_ptr<const PETScVector> b;
 
     bool preconditioner_set;
 
     // Computes the value of the objective function and its gradient.
     static PetscErrorCode
-      __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X,
+      __TAOFormFunctionGradientQuadraticProblem(Tao tao, Vec X,
                                                 PetscReal *ener, Vec G,
                                                 void *ptr);
 
     // Computes the hessian of the quadratic objective function
     static PetscErrorCode
-      __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X, Mat *H, Mat *Hpre,
-                                       MatStructure *flg, void *ptr);
+      __TAOFormHessianQuadraticProblem(Tao tao,Vec X, Mat H, Mat Hpre,
+                                       void *ptr);
 
     //-------------------------------------------------------------------------
     //  Monitor the state of the solution at each iteration. The
@@ -206,12 +206,12 @@ namespace dolfin
     //	gnorm 	- the square of the gradient norm, duality gap, or other
     //             measure
     //            indicating distance from optimality.
-    // cnorm - the infeasibility of the current solution with regard
+    //  cnorm - the infeasibility of the current solution with regard
     //         to the constraints.
-    // xdiff - the step length or trust region radius of the most
+    //  xdiff - the step length or trust region radius of the most
     //         recent iterate.
     //-------------------------------------------------------------------------
-    static PetscErrorCode __TAOMonitor(TaoSolver tao, void *ctx);
+    static PetscErrorCode __TAOMonitor(Tao tao, void *ctx);
 
   };
 

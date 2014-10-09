@@ -22,8 +22,9 @@
 # Modified by Martin Alnaes 2012
 #
 # First added:  2011-09-19
-# Last changed: 2012-10-16
+# Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
@@ -99,12 +100,9 @@ class DirichletBCTest(unittest.TestCase):
         [bc.apply(b) for bc in bcs]
         self.assertAlmostEqual(norm(b), 16.55294535724685)
 
+    @unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
     def test_bc_for_piola_on_manifolds(self):
         "Testing DirichletBC for piolas over standard domains vs manifolds."
-
-        if MPI.size(mpi_comm_world()) > 1:
-            # SubMesh not working in parallel (the rest should)
-            return
 
         n = 4
         side = CompiledSubDomain("near(x[2], 0.0)")
@@ -114,13 +112,16 @@ class DirichletBCTest(unittest.TestCase):
         mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
 
         RT1 = lambda mesh: FunctionSpace(mesh, "RT", 1)
+        RT2 = lambda mesh: FunctionSpace(mesh, "RT", 2)
+        DRT1 = lambda mesh: FunctionSpace(mesh, "DRT", 1)
+        DRT2 = lambda mesh: FunctionSpace(mesh, "DRT", 2)
         BDM1 = lambda mesh: FunctionSpace(mesh, "BDM", 1)
         BDM2 = lambda mesh: FunctionSpace(mesh, "BDM", 2)
         N1curl1 = lambda mesh: FunctionSpace(mesh, "N1curl", 1)
         N2curl1 = lambda mesh: FunctionSpace(mesh, "N2curl", 1)
         N1curl2 = lambda mesh:FunctionSpace(mesh, "N1curl", 2)
         N2curl2 = lambda mesh: FunctionSpace(mesh, "N2curl", 2)
-        elements = [N1curl1, N2curl1,  N1curl2, N2curl2, RT1, BDM1, BDM2]
+        elements = [N1curl1, N2curl1,  N1curl2, N2curl2, RT1, RT2, BDM1, BDM2, DRT1, DRT2]
 
         for element in elements:
             V = element(mesh)
@@ -137,7 +138,7 @@ class DirichletBCTest(unittest.TestCase):
             self.assertAlmostEqual(b0, b1)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing Dirichlet boundary conditions"
-    print "------------------------------------------------"
+    print("")
+    print("Testing Dirichlet boundary conditions")
+    print("------------------------------------------------")
     unittest.main()

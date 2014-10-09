@@ -57,7 +57,7 @@ namespace dolfin
     /// It is useful for visualising and debugging the Expression::map
     /// function that is used to apply periodic boundary conditions.
     static MeshFunction<std::size_t>
-      masters_slaves(boost::shared_ptr<const Mesh> mesh,
+      masters_slaves(std::shared_ptr<const Mesh> mesh,
                      const SubDomain& sub_domain, const std::size_t dim);
 
   private:

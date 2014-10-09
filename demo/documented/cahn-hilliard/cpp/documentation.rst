@@ -23,14 +23,18 @@ UFL form files
 
 The UFL code for this problem in two and three dimensions are in
 :download:`CahnHilliard2D.ufl` and :download:`CahnHilliard3D.ufl` respectively.
-However, only the two dimensional case is explained in detail in the following.
+They differ only in the first line setting the cell:
+
+.. code-block:: python
+
+    cell = triangle
 
 First, a mixed function spaces of linear Lagrange functions on triangles
 is created:
 
 .. code-block:: python
 
-    P1 = FiniteElement("Lagrange", triangle, 1)
+    P1 = FiniteElement("Lagrange", cell, 1)
     ME = P1*P1
 
 On the mixed space, trial and test functions are defined:
@@ -64,9 +68,9 @@ without recompiling the UFL file.  Lastly, the value of
 
 .. code-block:: python
 
-    lmbda    = Constant(triangle) # surface energy parameter
-    dt       = Constant(triangle) # time step
-    theta    = Constant(triangle) # time stepping parameter
+    lmbda    = Constant(cell) # surface energy parameter
+    dt       = Constant(cell) # time step
+    theta    = Constant(cell) # time stepping parameter
 
     # mu_(n+theta)
     mu_mid = (1-theta)*mu0 + theta*mu
@@ -176,7 +180,6 @@ function ``init``:
     // Constructor
     CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
                          const Constant& theta, const Constant& lambda)
-                       : reset_b(true), reset_A(true)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
@@ -204,18 +207,11 @@ assembly of the form ``L``:
       {
         // Assemble RHS (Neumann boundary conditions)
         Assembler assembler;
-        assembler.reset_sparsity = reset_b;
         assembler.assemble(b, *L);
-        reset_b = false;
       }
 
 The function ``J`` computes the Jacobian matrix, which corresponds to
-the assembly of the form ``a``. The variable ``reset_Jacobian``, which
-was set set equal to ``true`` in the constructor, instructs the
-assembler whether or not the sparse matrix structure needs to be
-reset. Since the sparsity structure does not change for this problem,
-``reset_Jacobian`` is set to ``false`` after the first assembly
-operation.
+the assembly of the form ``a``.
 
 .. code-block:: c++
 
@@ -224,9 +220,7 @@ operation.
       {
         // Assemble system
         Assembler assembler;
-        assembler.reset_sparsity = reset_A;
         assembler.assemble(A, *a);
-        reset_A = false;
       }
 
 The following two functions are helper functions which allow access to
@@ -266,14 +260,15 @@ initial condition (by interpolation).
               const Constant& lambda)
     {
       // Create function space and functions
-      boost::shared_ptr<X> V(new X(mesh));
+      std::shared_ptr<X> V(new X(mesh));
       _u.reset(new Function(V));
       _u0.reset(new Function(V));
 
       // Create forms and attach functions
       Y* _a = new Y(V, V);
       Z* _L = new Z(V);
-      _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
+      _a->u = *_u;
+      _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
       _L->u = *_u; _L->u0 = *_u0;
       _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
 
@@ -296,8 +291,6 @@ computing the residual vector and the Jacobian matrix as private data:
       boost::scoped_ptr<Form> L;
       boost::scoped_ptr<Function> _u;
       boost::scoped_ptr<Function> _u0;
-      bool reset_b;
-      bool reset_A;
   };
 
 The main program is started, and declared such that it can accept

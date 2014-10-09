@@ -60,6 +60,9 @@ class SubDomainTester(unittest.TestCase):
                            (CompiledSubDomain("near(x[0], 0.0)"),
                             CompiledSubDomain("near(x[0], 1.0)"))]
 
+        empty = CompiledSubDomain("false")
+        every = CompiledSubDomain("true")
+
         for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
             dim = ind+1
             args = [10]*dim
@@ -94,6 +97,18 @@ class SubDomainTester(unittest.TestCase):
                                             MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
                                             MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
                                             ]))
+
+            for MeshFunc, f_dim in [(VertexFunction, 0),
+                                    (FacetFunction, dim-1),
+                                    (CellFunction, dim)]:
+                f = MeshFunc("size_t", mesh, 0)
+
+                empty.mark(f, 1)
+                every.mark(f, 2)
+
+                # Check that the number of marked entities is correct
+                self.assertEqual(sum(f.array()==1), 0)
+                self.assertEqual(sum(f.array()==2), mesh.num_entities(f_dim))
 
 
 if __name__ == "__main__":

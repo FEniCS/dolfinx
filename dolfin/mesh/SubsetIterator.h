@@ -25,7 +25,7 @@
 
 #include <vector>
 
-#include<boost/shared_ptr.hpp>
+#include<memory>
 
 #include <dolfin/log/log.h>
 #include "Mesh.h"
@@ -38,7 +38,7 @@ namespace dolfin
 
   /// A _SubsetIterator_ is similar to a _MeshEntityIterator_ but
   /// iterates over a specified subset of the range of entities as
-  /// specified by a _MeshFunction_ that labels the entites.
+  /// specified by a _MeshFunction_ that labels the entities.
 
   class SubsetIterator
   {
@@ -122,7 +122,7 @@ namespace dolfin
     MeshEntity _entity;
 
     // Subset in shared data form
-    boost::shared_ptr< std::vector<std::size_t> > _subset;
+    std::shared_ptr< std::vector<std::size_t> > _subset;
 
     //Subset reference for convenience / speed
     std::vector<std::size_t> & subset;

@@ -20,9 +20,11 @@
 # First added:  2009-07-28
 # Last changed: 2009-07-28
 
+from __future__ import print_function
 import unittest
 import numpy
 from dolfin import *
+from six.moves import xrange as range
 
 class FiniteElementTest(unittest.TestCase):
 
@@ -54,7 +56,7 @@ class FiniteElementTest(unittest.TestCase):
             vx = cell.get_vertex_coordinates()
             orientation = cell.orientation()
             self.V.dofmap().tabulate_coordinates(cell, coords)
-            for i in xrange(coords.shape[0]):
+            for i in range(coords.shape[0]):
                 coord[:] = coords[i,:]
                 values0[i] = e(*coord)
             L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
@@ -71,10 +73,6 @@ class FiniteElementTest(unittest.TestCase):
 
     def test_evaluate_dofs_manifolds_affine(self):
         "Testing evaluate_dofs vs tabulated coordinates."
-
-        # Boundary mesh not running in parallel
-        if MPI.size(mpi_comm_world()) > 1:
-            return
 
         n = 4
         mesh = BoundaryMesh(UnitSquareMesh(n, n), "exterior")
@@ -101,7 +99,7 @@ class FiniteElementTest(unittest.TestCase):
                 vx = cell.get_vertex_coordinates()
                 orientation = cell.orientation()
                 V.dofmap().tabulate_coordinates(cell, coords)
-                for i in xrange(coords.shape[0]):
+                for i in range(coords.shape[0]):
                     coord[:] = coords[i,:]
                     values0[i] = f(*coord)
                 V.element().evaluate_dofs(values1, f, vx, orientation, cell)
@@ -144,7 +142,7 @@ class DofMapTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print ""
-    print "Testing PyDOLFIN FiniteElement operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing PyDOLFIN FiniteElement operations")
+    print("------------------------------------------------")
     unittest.main()

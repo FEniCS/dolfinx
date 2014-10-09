@@ -18,16 +18,10 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Johan Hake, 2009
-#
-# First added:  2008-03-17
-# Last changed: 2012-11-12
 
+from __future__ import print_function
 from dolfin import *
 from numpy import array
-
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0)
 
 # Create mesh and a point in the mesh
 mesh = UnitCubeMesh(8, 8, 8);
@@ -43,10 +37,10 @@ fv = Expression(("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
 # Project to a discrete function
 g = project(fs, V=Vs)
 
-print """
+print("""
 Evaluate user-defined scalar function fs
 fs(x) = %f
 Evaluate discrete function g (projection of fs)
 g(x) = %f
 Evaluate user-defined vector valued function fv
-fs(x) = %s"""%(fs(x),g(x),str(fv(x)))
+fs(x) = %s""" % (fs(x), g(x), str(fv(x))) )

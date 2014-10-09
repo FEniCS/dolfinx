@@ -20,6 +20,7 @@
 # First added:  2011-20-09
 # Last changed: 2011-20-09
 
+from __future__ import print_function
 import unittest
 import numpy
 import math
@@ -38,8 +39,7 @@ class IntegrateDerivatives(unittest.TestCase):
         mesh.coordinates()[:] *= (x1 - x0)
         mesh.coordinates()[:] += x0
 
-        cell = mesh.ufl_cell()
-        x = cell.x[0]
+        x = SpatialCoordinate(mesh)[0]
         xs = 0.1+0.8*x/x1 # scaled to be within [0.1,0.9]
 
         # Define list of expressions to test, and configure
@@ -76,12 +76,12 @@ class IntegrateDerivatives(unittest.TestCase):
         if hasattr(math, 'erf') or scipy is not None:
             reg([erf(xs)])
         else:
-            print "Warning: skipping test of erf, old python version and no scipy."
+            print("Warning: skipping test of erf, old python version and no scipy.")
 
         if 0:
-            print "Warning: skipping tests of bessel functions, doesn't build on all platforms."
+            print("Warning: skipping tests of bessel functions, doesn't build on all platforms.")
         elif scipy is None:
-            print "Warning: skipping tests of bessel functions, missing scipy."
+            print("Warning: skipping tests of bessel functions, missing scipy.")
         else:
             for nu in (0,1,2):
                 # Many of these are possibly more accurately integrated,
@@ -131,19 +131,16 @@ class IntegrateDerivatives(unittest.TestCase):
         debug = 0
         for F, acc in F_list:
             # Apply UFL differentiation
-            f = diff(F, cell.x)[...,0]
+            f = diff(F, SpatialCoordinate(mesh))[...,0]
             if debug:
-                print F
-                print x
-                print f
+                print(F)
+                print(x)
+                print(f)
 
             # Apply integration with DOLFIN
             # (also passes through form compilation and jit)
             M = f*dx
-            if debug:
-                print M
-                print M.compute_form_data().preprocessed_form
-            f_integral = assemble(M, mesh=mesh)
+            f_integral = assemble(M)
 
             # Compute integral of f manually from anti-derivative F
             # (passes through PyDOLFIN interface and uses UFL evaluation)
@@ -158,9 +155,9 @@ class IntegrateDerivatives(unittest.TestCase):
         # Keyword delta to assertAlmostEqual is not supported in Python < 2.7
         r = abs(a - b) <= delta
         if not r:
-            print "Not equal within delta %g:" % delta
-            print a
-            print b
+            print("Not equal within delta %g:" % delta)
+            print(a)
+            print(b)
         self.assertTrue(r)
 
     def test_div_grad_then_integrate_over_cells_and_boundary(self):
@@ -169,16 +166,15 @@ class IntegrateDerivatives(unittest.TestCase):
         n = 10
         mesh = RectangleMesh(0.0, 0.0, 2.0, 3.0, 2*n, 3*n)
 
-        cell = mesh.ufl_cell()
-        x, y = cell.x
+        x, y = SpatialCoordinate(mesh)
         xs = 0.1+0.8*x/2 # scaled to be within [0.1,0.9]
         ys = 0.1+0.8*y/3 # scaled to be within [0.1,0.9]
-        n = cell.n
+        n = FacetNormal(mesh)
 
-        # Define list of expressions to test, and configure
-        # accuracies these expressions are known to pass with.
-        # The reason some functions are less accurately integrated is
-        # likely that the default choice of quadrature rule is not perfect
+        # Define list of expressions to test, and configure accuracies
+        # these expressions are known to pass with.  The reason some
+        # functions are less accurately integrated is likely that the
+        # default choice of quadrature rule is not perfect
         F_list = []
         def reg(exprs, acc=10):
             for expr in exprs:
@@ -248,22 +244,22 @@ class IntegrateDerivatives(unittest.TestCase):
             F_list = F_list[1:]
 
         for F,acc in F_list:
-            if debug: print '\n', "F:", str(F)
+            if debug: print('\n', "F:", str(F))
 
             # Integrate over domain and its boundary
-            int_dx = assemble(div(grad(F))*dx, mesh=mesh)
-            int_ds = assemble(dot(grad(F), n)*ds, mesh=mesh)
+            int_dx = assemble(div(grad(F))*dx(mesh))
+            int_ds = assemble(dot(grad(F), n)*ds(mesh))
 
-            if debug: print int_dx, int_ds
+            if debug: print(int_dx, int_ds)
 
-            # Compare results. Using custom relative delta instead
-            # of decimal digits here because some numbers are >> 1.
+            # Compare results. Using custom relative delta instead of
+            # decimal digits here because some numbers are >> 1.
             delta = min(abs(int_dx), abs(int_ds)) * 10**-acc
             self.assertAlmostEqualDelta(int_dx, int_ds, delta=delta)
 
 
 if __name__ == "__main__":
-    print ""
-    print "Testing DOLFIN integration of UFL derivatives"
-    print "---------------------------------------------"
+    print("")
+    print("Testing DOLFIN integration of UFL derivatives")
+    print("---------------------------------------------")
     unittest.main()

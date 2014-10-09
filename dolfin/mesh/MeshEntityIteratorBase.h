@@ -18,7 +18,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2006-05-09
-// Last changed: 2011-11-08
+// Last changed: 2014-07-02
 
 #ifndef __MESH_ENTITY_ITERATOR_BASE_H
 #define __MESH_ENTITY_ITERATOR_BASE_H
@@ -43,8 +43,31 @@ namespace dolfin
       if (mesh.num_vertices() == 0)
         return;
 
-      // Get number of entities
-      pos_end = mesh.init(_entity.dim());
+      // Get number of entities (excluding ghosts)
+      const std::size_t dim = _entity.dim();
+      mesh.init(dim);
+      
+      // End at ghost cells for normal iterator
+      pos_end = mesh.topology().ghost_offset(dim);
+    }
+
+    /// Iterator over MeshEntity of dimension dim on mesh, with string option
+    /// to iterate over "regular", "ghost" or "all" entities
+    MeshEntityIteratorBase(const Mesh& mesh, std::string opt)
+      : _entity(mesh, 0), _pos(0), pos_end(0), index(0)
+    {
+      // Check if mesh is empty
+      if (mesh.num_vertices() == 0)
+        return;
+
+      const std::size_t dim = _entity.dim();
+      mesh.init(dim);
+
+      pos_end = mesh.topology().size(dim);
+      if (opt == "regular")
+        pos_end = mesh.topology().ghost_offset(dim);
+      else if (opt == "ghost")
+        _pos = mesh.topology().ghost_offset(dim);
     }
 
     /// Create iterator for entities of given dimension connected to given entity

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Mikael Mortensen, 2014
+//
 // First added:  2005-12-02
-// Last changed: 2012-11-12
+// Last changed: 2014-02-17
 
 #ifndef __RECTANGLE_MESH_H
 #define __RECTANGLE_MESH_H
@@ -32,38 +34,63 @@ namespace dolfin
   /// Given the number of cells (nx, ny) in each direction,
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
-  ///
-  /// *Arguments*
-  ///     x0 (double)
-  ///         :math:`x`-min.
-  ///     y0 (double)
-  ///         :math:`y`-min.
-  ///     x1 (double)
-  ///         :math:`x`-max.
-  ///     y1 (double)
-  ///         :math:`y`-max.
-  ///     xn (double)
-  ///         Number of cells in :math:`x`-direction.
-  ///     yn (double)
-  ///         Number of cells in :math:`y`-direction.
-  ///     diagonal (string)
-  ///         Direction of diagonals: "left", "right", "left/right", "crossed"
-  ///
-  /// *Example*
-  ///     .. code-block:: c++
-  ///
-  ///         // Mesh with 6 cells in each direction on the
-  ///         // set [-1,2] x [-1,2]
-  ///         Box mesh(-1, -1, 2, 2, 6, 6;
 
   class RectangleMesh : public Mesh
   {
   public:
 
+    /// *Arguments*
+    ///     x0 (double)
+    ///         :math:`x`-min.
+    ///     y0 (double)
+    ///         :math:`y`-min.
+    ///     x1 (double)
+    ///         :math:`x`-max.
+    ///     y1 (double)
+    ///         :math:`y`-max.
+    ///     xn (double)
+    ///         Number of cells in :math:`x`-direction.
+    ///     yn (double)
+    ///         Number of cells in :math:`y`-direction.
+    ///     diagonal (string)
+    ///         Direction of diagonals: "left", "right", "left/right", "crossed"
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         // Mesh with 6 cells in each direction on the
+    ///         // set [-1,2] x [-1,2]
+    ///         RectangleMesh mesh(-1, -1, 2, 2, 6, 6);
+    ///
     RectangleMesh(double x0, double y0, double x1, double y1,
                   std::size_t nx, std::size_t ny,
                   std::string diagonal="right");
 
+    /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         MPI communicator
+    ///     x0 (double)
+    ///         :math:`x`-min.
+    ///     y0 (double)
+    ///         :math:`y`-min.
+    ///     x1 (double)
+    ///         :math:`x`-max.
+    ///     y1 (double)
+    ///         :math:`y`-max.
+    ///     xn (double)
+    ///         Number of cells in :math:`x`-direction.
+    ///     yn (double)
+    ///         Number of cells in :math:`y`-direction.
+    ///     diagonal (string)
+    ///         Direction of diagonals: "left", "right", "left/right", "crossed"
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         // Mesh with 6 cells in each direction on the
+    ///         // set [-1,2] x [-1,2]
+    ///         RectangleMesh mesh(MPI_COMM_WORLD, -1, -1, 2, 2, 6, 6);
+    ///
     RectangleMesh(MPI_Comm comm, double x0, double y0, double x1, double y1,
                   std::size_t nx, std::size_t ny,
                   std::string diagonal="right");

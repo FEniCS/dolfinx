@@ -32,6 +32,16 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
+// Extend Point for Python 3
+//-----------------------------------------------------------------------------
+%extend dolfin::Point {
+%pythoncode %{
+__truediv__ = __div__
+__itruediv__ = __idiv__
+%}
+}
+
+//-----------------------------------------------------------------------------
 // Extend mesh entity iterators to work as Python iterators
 //-----------------------------------------------------------------------------
 %extend dolfin::MeshEntityIterator {
@@ -41,7 +51,7 @@ def __iter__(self):
     self.first = True
     return self
 
-def next(self):
+def __next__(self):
     self.first = self.first if hasattr(self,"first") else True
     if not self.first:
         self._increment()
@@ -50,6 +60,8 @@ def next(self):
         raise StopIteration
     self.first = False
     return self._dereference()
+# Py2/Py3
+next = __next__
 %}
 }
 
@@ -63,7 +75,7 @@ def __iter__(self):
     self.first = True
     return self
 
-def next(self):
+def __next__(self):
     self.first = self.first if hasattr(self,"first") else True
     if not self.first:
         self._increment()
@@ -71,6 +83,8 @@ def next(self):
         raise StopIteration
     self.first = False
     return self._dereference()
+# Py2/Py3
+next = __next__
 %}
 }
 
@@ -88,7 +102,7 @@ _subdomain_mark_doc_string = SubDomain._mark.__doc__
 # NOTE: This is a hardcoded check, which rely on SubDomain::mark only taking
 # a MeshFunction as its first argument when mark is called with two arguments
 def mark(self, *args):
-    import common
+    from . import common
     if len(args) == 2 and not isinstance(args[0], \
                     (MeshFunctionSizet, MeshFunctionInt,
                      MeshFunctionDouble, MeshFunctionBool)):
@@ -97,13 +111,16 @@ def mark(self, *args):
                             "Expected a MeshFunction of type \"size_t\", \"int\", \"double\" or \"bool\"")
 
     self._mark(*args)
-
 %}
 }
 
 %pythoncode
 %{
-SubDomain.mark.__func__.__doc__ = _subdomain_mark_doc_string
+import sys
+if sys.version_info[0] > 2:
+    SubDomain.mark.__doc__ = _subdomain_mark_doc_string
+else:
+    SubDomain.mark.__func__.__doc__ = _subdomain_mark_doc_string
 del _subdomain_mark_doc_string
 %}
 
@@ -168,6 +185,11 @@ def __setitem__(self, index, value):
 
 def __len__(self):
     return self.size()
+
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
 %}
 }
 
@@ -223,11 +245,12 @@ class MeshFunction(object):
     __doc__ = _doc_string
     def __new__(cls, tp, *args):
         if not isinstance(tp, str):
-            raise TypeError, "expected a 'str' as first argument"
+            raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return MeshFunctionInt(*args)
         if tp == "uint":
-            common.deprecation("uint-valued MeshFunction", "1.1.0",
+            from . import common
+            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshFunctionSizet(*args)
         elif tp == "size_t":
@@ -237,7 +260,7 @@ class MeshFunction(object):
         elif tp == "bool":
             return MeshFunctionBool(*args)
         else:
-            raise RuntimeError, "Cannot create a MeshFunction of type '%s'." % (tp,)
+            raise RuntimeError("Cannot create a MeshFunction of type '%s'." % (tp,))
 
 del _doc_string
 
@@ -245,7 +268,7 @@ def _new_closure(MeshType):
     assert(isinstance(MeshType, str))
     def new(cls, tp, mesh, value=0):
         if not isinstance(tp, str):
-            raise TypeError, "expected a 'str' as first argument"
+            raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
@@ -255,9 +278,10 @@ def _new_closure(MeshType):
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
+            value = bool(value) if isinstance(value, int) else value
             return eval("%sBool(mesh, value)"%MeshType)
         else:
-            raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
+            raise RuntimeError("Cannot create a %sFunction of type '%s'." % (MeshType, tp))
 
     return new
 
@@ -347,11 +371,12 @@ class MeshValueCollection(object):
     __doc__ = _meshvaluecollection_doc_string
     def __new__(cls, tp, *args):
         if not isinstance(tp, str):
-            raise TypeError, "expected a 'str' as first argument"
+            raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return MeshValueCollectionInt(*args)
         if tp == "uint":
-            common.deprecation("uint-valued MeshFunction", "1.1.0",
+            from . import common
+            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
                                "Typename \"uint\" has been changed to \"size_t\".")
             return MeshValueCollectionSizet(*args)
         elif tp == "size_t":
@@ -361,29 +386,17 @@ class MeshValueCollection(object):
         elif tp == "bool":
             return MeshValueCollectionBool(*args)
         else:
-            raise RuntimeError, "Cannot create a MeshValueCollection of type '%s'." % (tp,)
+            raise RuntimeError("Cannot create a MeshValueCollection of type '%s'." % (tp,))
 
 del _meshvaluecollection_doc_string
 %}
 
 //-----------------------------------------------------------------------------
-// Extend Mesh interface with ufl cell method
+// Extend Mesh interface with some convenient data access methods
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
 %pythoncode
 %{
-def ufl_cell(self):
-    """
-    Returns the ufl cell of the mesh
-
-    The cell corresponds to the topological dimension of the mesh.
-    """
-    import ufl
-    tdim = self.topology().dim()
-    gdim = self.geometry().dim()
-    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    return ufl.Cell(dim2domain[tdim], geometric_dimension=gdim)
-
 def coordinates(self):
     """
     * coordinates\ ()
@@ -457,11 +470,74 @@ def cells(self):
 }
 
 //-----------------------------------------------------------------------------
+// Extend Mesh interface with some ufl_* methods
+//-----------------------------------------------------------------------------
+%extend dolfin::Mesh {
+%pythoncode
+%{
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
+def ufl_cell(self):
+    """
+    Returns the ufl cell of the mesh.
+
+    The cell corresponds to the topological dimension of the mesh.
+    """
+    import ufl
+    tdim = self.topology().dim()
+    gdim = self.geometry().dim()
+    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
+    cellname = dim2domain[tdim]
+    return ufl.Cell(cellname, geometric_dimension=gdim)
+
+def ufl_domain(self):
+    """Returns the ufl Domain corresponding to the mesh."""
+    import ufl
+    label = "dolfin_mesh_with_id_%d" % self.id()
+    return ufl.Domain(self.ufl_cell(), label=label, data=self)
+%}
+}
+
+//-----------------------------------------------------------------------------
+// Extend SubMesh interface with some ufl_* methods
+//-----------------------------------------------------------------------------
+// TODO: It would be nice if this was inherited from the Mesh extension above!
+%extend dolfin::SubMesh {
+%pythoncode
+%{
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
+def ufl_cell(self):
+    """
+    Returns the ufl cell of the mesh.
+
+    The cell corresponds to the topological dimension of the mesh.
+    """
+    import ufl
+    tdim = self.topology().dim()
+    gdim = self.geometry().dim()
+    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
+    cellname = dim2domain[tdim]
+    return ufl.Cell(cellname, geometric_dimension=gdim)
+
+def ufl_domain(self):
+    """Returns the ufl Domain corresponding to the mesh."""
+    import ufl
+    label = "dolfin_mesh_with_id_%d" % self.id()
+    return ufl.Domain(self.ufl_cell(), label=label, data=self)
+%}
+}
+
+//-----------------------------------------------------------------------------
 // Modifying the interface of Hierarchical
 //-----------------------------------------------------------------------------
 %pythoncode %{
-HierarchicalMesh.leaf_node = HierarchicalMesh._leaf_node
-HierarchicalMesh.root_node = HierarchicalMesh._root_node
-HierarchicalMesh.child = HierarchicalMesh._child
-HierarchicalMesh.parent = HierarchicalMesh._parent
+HierarchicalMesh.leaf_node = new_instancemethod(_mesh.HierarchicalMesh__leaf_node,None,HierarchicalMesh)
+HierarchicalMesh.root_node = new_instancemethod(_mesh.HierarchicalMesh__root_node,None,HierarchicalMesh)
+HierarchicalMesh.child = new_instancemethod(_mesh.HierarchicalMesh__child,None,HierarchicalMesh)
+HierarchicalMesh.parent = new_instancemethod(_mesh.HierarchicalMesh__parent,None,HierarchicalMesh)
 %}

@@ -26,9 +26,9 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <unordered_set>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
-#include <boost/unordered_set.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -61,7 +61,7 @@ uBLASVector::uBLASVector(const uBLASVector& x) : _x(new ublas_vector(*(x._x)))
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(boost::shared_ptr<ublas_vector> x) : _x(x)
+uBLASVector::uBLASVector(std::shared_ptr<ublas_vector> x) : _x(x)
 {
   // Do nothing
 }
@@ -71,62 +71,10 @@ uBLASVector::~uBLASVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> uBLASVector::copy() const
+std::shared_ptr<GenericVector> uBLASVector::copy() const
 {
-  boost::shared_ptr<GenericVector> y(new uBLASVector(*this));
+  std::shared_ptr<GenericVector> y(new uBLASVector(*this));
   return y;
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm, std::size_t N)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  if (_x->size() == N)
-    return;
-  _x->resize(N, false);
-
-  // Set vector to zero to prevent random numbers entering the vector.
-  // Fixes this bug: https://bugs.launchpad.net/dolfin/+bug/594954
-  _x->clear();
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  resize(comm, range.second - range.first);
-}
-//-----------------------------------------------------------------------------
-void uBLASVector::resize(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> range,
-                         const std::vector<la_index>& ghost_indices)
-{
-  if (MPI::size(comm) > 1)
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  if (!ghost_indices.empty())
-  {
-    dolfin_error("uBLASVector.cpp",
-                 "resize uBLAS vector",
-                 "Distributed vectors not supported by uBLAS backend");
-  }
-
-  resize(comm, range.second - range.first);
 }
 //-----------------------------------------------------------------------------
 bool uBLASVector::empty() const
@@ -186,8 +134,10 @@ void uBLASVector::gather(GenericVector& x,
   const std::size_t _size = indices.size();
   dolfin_assert(this->size() >= _size);
 
-  x.resize(mpi_comm(), _size);
+  if (x.empty())
+    x.init(mpi_comm(), _size);
   ublas_vector& tmp = as_type<uBLASVector>(x).vec();
+  dolfin_assert(x.size(0) == _size);
   for (std::size_t i = 0; i < _size; i++)
     tmp(i) = (*_x)(indices[i]);
 }
@@ -270,7 +220,7 @@ double uBLASVector::sum() const
 //-----------------------------------------------------------------------------
 double uBLASVector::sum(const Array<std::size_t>& rows) const
 {
-  boost::unordered_set<std::size_t> row_set;
+  std::unordered_set<std::size_t> row_set;
   double _sum = 0.0;
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
@@ -409,5 +359,16 @@ std::string uBLASVector::str(bool verbose) const
 GenericLinearAlgebraFactory& uBLASVector::factory() const
 {
   return uBLASFactory<>::instance();
+}
+//-----------------------------------------------------------------------------
+void uBLASVector::resize(std::size_t N)
+{
+  if (_x->size() == N)
+    return;
+  else
+    _x->resize(N, false);
+
+  // Set vector to zero
+  _x->clear();
 }
 //-----------------------------------------------------------------------------

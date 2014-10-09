@@ -22,7 +22,6 @@
 #include <numeric>
 #include <string>
 #include <vector>
-#include <boost/assign/list_of.hpp>
 
 // Necessary since pastix.h does not include it
 #include <stdint.h>
@@ -58,12 +57,11 @@ Parameters PaStiXLUSolver::default_parameters()
   p.add<std::size_t>("num_threads");
 
   // Thread mode (see PaStiX user documentation)
-  const std::set<std::string> thread_modes
-    = boost::assign::list_of("multiple")("single")("funnel");
+  const std::set<std::string> thread_modes = {"multiple", "single", "funnel"};
   p.add<std::string>("thread_mode", thread_modes);
 
-  // Min/max block size for BLAS. This paramerers can have a significant
-  // effect on peformance. Best settings depends on systems and BLAS
+  // Min/max block size for BLAS. This parameters can have a significant
+  // effect on performance. Best settings depends on systems and BLAS
   // implementation.
   p.add("min_block_size", 180);
   p.add("max_block_size", 340);
@@ -84,7 +82,7 @@ PaStiXLUSolver::PaStiXLUSolver(const STLMatrix& A)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A) : A(A)
+PaStiXLUSolver::PaStiXLUSolver(std::shared_ptr<const STLMatrix> A) : A(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -105,7 +103,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // MPI communicator
   MPI_Comm mpi_comm = A->mpi_comm();
 
-  // Intitialise PaStiX parameters
+  // Initialise PaStiX parameters
   pastix_int_t iparm[IPARM_SIZE];
   double dparm[DPARM_SIZE];
   for (int i = 0; i < IPARM_SIZE; i++)
@@ -276,8 +274,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             _b.data(), nrhs, iparm, dparm);
 
   // Distribute solution
-  //assert(b.size() == x.size());
-  x.resize(mpi_comm, b.local_range());
+  x.init(mpi_comm, b.local_range());
   x.set(_b.data(), idx.size(), idx.data());
   x.apply("insert");
 

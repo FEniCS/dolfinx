@@ -21,6 +21,7 @@ special functions that are available in UFL."""
 # First added:  2011-10-24
 # Last changed: 2011-10-24
 
+from __future__ import print_function
 from dolfin import *
 
 # Form compiler options
@@ -32,7 +33,7 @@ n = 100
 eps = 1e-8
 mesh = Interval(n, -2.0, +2.0)
 mesh2 = Interval(n, 0.0+eps, 1.0-eps)
-x = interval.x[0]
+x = SpatialCoordinate(interval)[0]
 
 k = 0
 def plotstrings(strings, mesh):
@@ -50,5 +51,5 @@ plotstrings(('exp(x)', 'ln(x)', 'sqrt(x)', 'erf(x)'), mesh2)
 for nu in (0, 1):
     plotstrings(['bessel_%s(%d, x)' % (c, nu) for c in ('J', 'Y', 'I', 'K')], mesh2)
 
-print "Note that you must press 'q' in the first plot window ('cos(x)') to quit."
+print("Note that you must press 'q' in the first plot window ('cos(x)') to quit.")
 interactive()

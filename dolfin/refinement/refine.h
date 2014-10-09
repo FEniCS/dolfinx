@@ -39,7 +39,7 @@ namespace dolfin
   ///     mesh (_Mesh_)
   ///         The mesh to refine.
   ///     redistribute (_bool_)
-  ///         Optional argument to redistribiute the refined mesh if mesh is a
+  ///         Optional argument to redistribute the refined mesh if mesh is a
   ///         distributed mesh.
   ///
   /// *Returns*
@@ -61,7 +61,7 @@ namespace dolfin
   ///     mesh (_Mesh_)
   ///         The original mesh.
   ///     redistribute (_bool_)
-  ///         Optional argument to redistribiute the refined mesh if mesh is a
+  ///         Optional argument to redistribute the refined mesh if mesh is a
   ///         distributed mesh.
   void refine(Mesh& refined_mesh, const Mesh& mesh,
               bool redistribute = true);
@@ -75,7 +75,7 @@ namespace dolfin
   ///         A mesh function over booleans specifying which cells
   ///         that should be refined (and which should not).
   ///     redistribute (_bool_)
-  ///         Optional argument to redistribiute the refined mesh if mesh is a
+  ///         Optional argument to redistribute the refined mesh if mesh is a
   ///         distributed mesh.
   ///
   /// *Returns*
@@ -110,7 +110,7 @@ namespace dolfin
   ///         A mesh function over booleans specifying which cells
   ///         that should be refined (and which should not).
   ///     redistribute (_bool_)
-  ///         Optional argument to redistribiute the refined mesh if mesh is a
+  ///         Optional argument to redistribute the refined mesh if mesh is a
   ///         distributed mesh.
   void refine(Mesh& refined_mesh, const Mesh& mesh,
               const MeshFunction<bool>& cell_markers, bool redistribute = true);

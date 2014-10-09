@@ -27,7 +27,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
 #include "GenericFile.h"
@@ -163,7 +163,7 @@ namespace dolfin
 
     static pugi::xml_node write_dolfin(pugi::xml_document& doc);
 
-    boost::shared_ptr<std::ostream> outstream;
+    std::shared_ptr<std::ostream> outstream;
 
     // MPI communicator
     MPI_Comm _mpi_comm;

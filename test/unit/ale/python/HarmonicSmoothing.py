@@ -18,8 +18,9 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-03-02
-# Last changed: 2013-03-04
+# Last changed: 2014-05-28
 
+from __future__ import print_function
 import unittest
 from dolfin import UnitSquareMesh, BoundaryMesh, Expression, \
                    CellFunction, SubMesh, Constant, MPI, MeshQuality,\
@@ -29,9 +30,9 @@ class HarmonicSmoothingTest(unittest.TestCase):
 
     def test_HarmonicSmoothing(self):
 
-        print ""
-        print "Testing HarmonicSmoothing::move(Mesh& mesh, " \
-              "const BoundaryMesh& new_boundary)"
+        print("")
+        print("Testing HarmonicSmoothing::move(Mesh& mesh, " \
+              "const BoundaryMesh& new_boundary)")
 
         # Create some mesh and its boundary
         mesh = UnitSquareMesh(10, 10)
@@ -52,7 +53,7 @@ class HarmonicSmoothingTest(unittest.TestCase):
         # Check that coordinates are almost equal
         err = sum(sum(abs(boundary.coordinates() \
                         - boundary_new.coordinates()))) / mesh.num_vertices()
-        print "Current CG solver produced error in boundary coordinates", err
+        print("Current CG solver produced error in boundary coordinates", err)
         self.assertAlmostEqual(err, 0.0, places=5)
 
         # Check mesh quality
@@ -60,56 +61,53 @@ class HarmonicSmoothingTest(unittest.TestCase):
         rmin = MeshQuality.radius_ratio_min_max(mesh)[0]
         self.assertTrue(rmin > magic_number)
 
+@unittest.skipIf(MPI.size(mpi_comm_world()) > 1, "Skipping unit test(s) not working in parallel")
+class ALETest(unittest.TestCase):
 
-if MPI.size(mpi_comm_world()) == 1:
+    def test_ale(self):
 
-    class ALETest(unittest.TestCase):
+        print("")
+        print("Testing ALE::move(Mesh& mesh0, const Mesh& mesh1)")
 
-        def test_ale(self):
+        # Create some mesh
+        mesh = UnitSquareMesh(4, 5)
 
-            print ""
-            print "Testing ALE::move(Mesh& mesh0, const Mesh& mesh1)"
+        # Make some cell function
+        # FIXME: Initialization by array indexing is probably
+        #        not a good way for parallel test
+        cellfunc = CellFunction('size_t', mesh)
+        cellfunc.array()[0:4] = 0
+        cellfunc.array()[4:]  = 1
 
-            # Create some mesh
-            mesh = UnitSquareMesh(4, 5)
+        # Create submeshes - this does not work in parallel
+        submesh0 = SubMesh(mesh, cellfunc, 0)
+        submesh1 = SubMesh(mesh, cellfunc, 1)
 
-            # Make some cell function
-            # FIXME: Initialization by array indexing is probably
-            #        not a good way for parallel test
-            cellfunc = CellFunction('size_t', mesh)
-            cellfunc.array()[0:4] = 0
-            cellfunc.array()[4:]  = 1
+        # Move submesh0
+        disp = Constant(("0.1", "-0.1"))
+        submesh0.move(disp)
 
-            # Create submeshes - this does not work in parallel
-            submesh0 = SubMesh(mesh, cellfunc, 0)
-            submesh1 = SubMesh(mesh, cellfunc, 1)
+        # Move and smooth submesh1 accordignly
+        submesh1.move(submesh0)
 
-            # Move submesh0
-            disp = Constant(("0.1", "-0.1"))
-            submesh0.move(disp)
+        # Move mesh accordingly
+        parent_vertex_indices_0 = \
+            submesh0.data().array('parent_vertex_indices', 0)
+        parent_vertex_indices_1 = \
+            submesh1.data().array('parent_vertex_indices', 0)
+        mesh.coordinates()[parent_vertex_indices_0[:]] = \
+            submesh0.coordinates()[:]
+        mesh.coordinates()[parent_vertex_indices_1[:]] = \
+            submesh1.coordinates()[:]
 
-            # Move and smooth submesh1 accordignly
-            submesh1.move(submesh0)
-
-            # Move mesh accordingly
-            parent_vertex_indices_0 = \
-                     submesh0.data().array('parent_vertex_indices', 0)
-            parent_vertex_indices_1 = \
-                     submesh1.data().array('parent_vertex_indices', 0)
-            mesh.coordinates()[parent_vertex_indices_0[:]] = \
-                     submesh0.coordinates()[:]
-            mesh.coordinates()[parent_vertex_indices_1[:]] = \
-                     submesh1.coordinates()[:]
-
-            # If test passes here then it is probably working
-            # Check for cell quality for sure
-            magic_number = 0.28
-            rmin = MeshQuality.radius_ratio_min_max(mesh)[0]
-            self.assertTrue(rmin > magic_number)
-
+        # If test passes here then it is probably working
+        # Check for cell quality for sure
+        magic_number = 0.28
+        rmin = MeshQuality.radius_ratio_min_max(mesh)[0]
+        self.assertTrue(rmin > magic_number)
 
 if __name__ == "__main__":
-    print ""
-    print "Testing HarmonicSmoothing and ALE operations"
-    print "------------------------------------------------"
+    print("")
+    print("Testing HarmonicSmoothing and ALE operations")
+    print("------------------------------------------------")
     unittest.main()

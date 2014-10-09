@@ -27,7 +27,7 @@
 
 #include <exception>
 #include <typeinfo>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
@@ -53,6 +53,9 @@ namespace dolfin
     /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout) = 0;
 
+    /// Return true if empty
+    virtual bool empty() const = 0;
+
     /// Return tensor rank (number of dimensions)
     virtual std::size_t rank() const = 0;
 
@@ -67,23 +70,41 @@ namespace dolfin
     virtual void get(double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows) const = 0;
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows) = 0;
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows) = 0;
+
+    /// Add block of values using global indices
     virtual
       void add(const double* block,
            const std::vector<const std::vector<dolfin::la_index>* >& rows) = 0;
 
-    /// Add block of values
+    /// Add block of values using local indices
+    virtual
+      void add_local(const double* block,
+                     const std::vector<const std::vector<dolfin::la_index>* >& rows) = 0;
+
+    /// Add block of values using global indices
     virtual
       void add(const double* block,
                const std::vector<std::vector<dolfin::la_index> >& rows) = 0;
 
-    /// Add block of values
+    /// Add block of values using local indices
+    virtual
+      void add_local(const double* block,
+                     const std::vector<std::vector<dolfin::la_index> >& rows) = 0;
+
+    /// Add block of values using global indices
     virtual void add(const double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows) = 0;
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows) = 0;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
@@ -92,7 +113,7 @@ namespace dolfin
     virtual void apply(std::string mode) = 0;
 
     /// Return MPI communicator
-    virtual const MPI_Comm mpi_comm() const = 0;
+    virtual MPI_Comm mpi_comm() const = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;

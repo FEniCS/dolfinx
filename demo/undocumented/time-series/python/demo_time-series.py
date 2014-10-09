@@ -32,11 +32,11 @@ x = Vector()
 t = 0.0
 while t < 1.0:
 
-    # Refine mesh and resize vector
+    # Refine mesh
     mesh = refine(mesh);
-    x.resize(mesh.mpi_comm(), mesh.num_vertices());
 
     # Set some vector values
+    x = Vector(mesh.mpi_comm(), mesh.num_vertices());
     x[:] = ones(x.size())
 
     # Append to series
@@ -47,6 +47,7 @@ while t < 1.0:
 
 # Retrieve mesh and vector at some point in time
 series.retrieve(mesh, 0.29)
+x = Vector()
 series.retrieve(x, 0.31, False)
 
 # Plot mesh

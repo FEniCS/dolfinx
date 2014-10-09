@@ -19,6 +19,8 @@
 # First added:  2012-10-17
 # Last changed: 2013-11-22
 
+from __future__ import print_function
+
 """Solve the Yamabe PDE which arises in the differential geometry of
 general relativity. http://arxiv.org/abs/1107.0360.
 
@@ -38,7 +40,7 @@ more complex bounds as GenericVectors or Function.
 from dolfin import *
 import unittest
 
-if has_petsc():
+if has_petsc_snes():
     try:
         parameters["linear_algebra_backend"] = "PETSc"
     except RuntimeError:
@@ -54,7 +56,9 @@ if has_petsc():
     v = TestFunction(V)
     u.interpolate(Constant(-1000.0))
 
-    r = sqrt(triangle.x[0]**2 + triangle.x[1]**2)
+    #x = SpatialCoordinate(triangle)
+    x = SpatialCoordinate(mesh)
+    r = sqrt(x[0]**2 + x[1]**2)
     rho = 1.0/r**3
 
     F = (8*inner(grad(u), grad(v))*dx + rho * inner(u**5, v)*dx \
@@ -84,7 +88,7 @@ if has_petsc():
 
 class SNESSolverTester(unittest.TestCase):
 
-    if has_petsc():
+    if has_petsc_snes():
 
         def test_snes_solver(self):
             u.interpolate(Constant(-1000.0))
@@ -117,7 +121,7 @@ if __name__ == "__main__":
   # Turn off DOLFIN output
   set_log_active(False)
 
-  print ""
-  print "Testing DOLFIN nls/PETScSNESSolver interface"
-  print "--------------------------------------------"
+  print("")
+  print("Testing DOLFIN nls/PETScSNESSolver interface")
+  print("--------------------------------------------")
   unittest.main()
