@@ -118,6 +118,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   const std::size_t D = mesh.topology().dim();
   if (vertices)
   {
+    mesh.init(0);
+    mesh.init(0, D);
+
     std::vector< std::vector<dolfin::la_index> > global_dofs(rank);
     std::vector< const std::vector<dolfin::la_index>* > global_dofs_p(rank);
     std::vector<std::vector<std::size_t> > local_to_local_dofs(rank);
