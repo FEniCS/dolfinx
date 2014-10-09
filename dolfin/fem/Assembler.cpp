@@ -548,6 +548,9 @@ void Assembler::assemble_vertices(GenericTensor& A,
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
 
+  // MPI rank
+  const unsigned int my_mpi_rank = MPI::rank(mesh.mpi_comm());
+
   // Assemble over vertices 
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
@@ -575,8 +578,6 @@ void Assembler::assemble_vertices(GenericTensor& A,
       if (e != shared_vertices.end())
       {
 
-        const unsigned int my_mpi_rank = MPI::rank(mesh.mpi_comm());
-        
         bool skip_vertex = false;
         std::set<unsigned int>::const_iterator it;
         for (it=e->second.begin(); it!=e->second.end(); it++)
@@ -619,14 +620,19 @@ void Assembler::assemble_vertices(GenericTensor& A,
                               local_vertex,
                               ufc_cell.orientation);
 
-    // Get local-to-global dof maps for cell
+    // For rank 1 and 2 tensors we need to check if tabulated dofs for
+    // the test space is within the local range 
+
     bool owns_all_dofs = true;
     for (std::size_t i = 0; i < form_rank; ++i)
     {
+      // Get local-to-global dof maps for cell
       dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
+      
+      // Get local dofs of the local vertex
       dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0, local_vertex);
 
-      // Copy cell dofs to local dofs and tabulated values to 
+      // Copy cell dofs to local dofs and check owner ship range
       for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
       {
         global_dofs[i][j] = (*dofs[i])[local_to_local_dofs[i][j]];
@@ -645,20 +651,35 @@ void Assembler::assemble_vertices(GenericTensor& A,
     if (!owns_all_dofs)
       continue;
 
-    if (form_rank==1)
+    // Scalar
+    if (form_rank==0)
+    {
+
+      // Add entries to global tensor
+      A.add_local(ufc.A.data(), dofs);
+      
+    }
+
+    // Vector
+    else if (form_rank==1)
     {
       
+      // Copy tabulated tensor to local value vector
       for (std::size_t i = 0; i < local_to_local_dofs[0].size(); ++i)
       {
         local_values[i] = ufc.A[local_to_local_dofs[0][i]];
       }
 
-      // Add entries to global tensor
+      // Add local entries to global tensor
       A.add_local(local_values.data(), global_dofs_p);
 
     }
-    else if (form_rank==2)
+
+    // Matrix
+    else
     {
+
+      // Copy tabulated tensor to local value vector
       const std::size_t num_cols = dofs[1]->size();
       for (std::size_t i = 0; i < local_to_local_dofs[0].size(); ++i)
       {
@@ -669,15 +690,8 @@ void Assembler::assemble_vertices(GenericTensor& A,
         }        
       }
 
-      // Add entries to global tensor
+      // Add local entries to global tensor
       A.add_local(local_values.data(), global_dofs_p);
-    }
-    else 
-    {
-
-      // Add entries to global tensor
-      A.add_local(ufc.A.data(), dofs);
-      
     }
     
     p++;
