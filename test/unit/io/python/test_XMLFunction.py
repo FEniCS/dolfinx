@@ -17,29 +17,25 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
 from dolfin import *
+from dolfin_utils.test import cd_temppath
 
+def test_save_and_read_xml_function(cd_temppath):
+    mesh = UnitSquareMesh(10, 10)
+    Q = FunctionSpace(mesh, "CG", 3)
+    F0 = Function(Q)
+    F1 = Function(Q)
+    E = Expression("x[0]")
+    F0.interpolate(E)
 
-class XMLFunction(unittest.TestCase):
-    def test_save_and_read_function(self):
-        mesh = UnitSquareMesh(10, 10)
-        Q = FunctionSpace(mesh, "CG", 3)
-        F0 = Function(Q)
-        F1 = Function(Q)
-        E = Expression("x[0]")
-        F0.interpolate(E)
+    # Save to XML File
+    xml_file = File("function.xml")
+    xml_file << F0
+    del xml_file
 
-        # Save to XML File
-        xml_file = File("function.xml")
-        xml_file << F0
-        del xml_file
+    # Read back from XML File
+    xml_file = File("function.xml")
+    xml_file >> F1
+    result = F0.vector() - F1.vector()
 
-        # Read back from XML File
-        xml_file = File("function.xml")
-        xml_file >> F1
-        result = F0.vector() - F1.vector()
-        self.assertTrue(len(result.array().nonzero()[0]) == 0)
-
-if __name__ == "__main__":
-    unittest.main()
+    assert len(result.array().nonzero()[0]) == 0
