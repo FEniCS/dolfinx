@@ -68,19 +68,19 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   #endif
 
   // Get cell domains
-  const MeshFunction<std::size_t>* cell_domains = a.cell_domains().get();
+  std::shared_ptr<const MeshFunction<std::size_t> > cell_domains = a.cell_domains();
 
   // Get exterior facet domains
-  const MeshFunction<std::size_t>* exterior_facet_domains
-      = a.exterior_facet_domains().get();
+  std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains
+      = a.exterior_facet_domains();
 
   // Get interior facet domains
-  const MeshFunction<std::size_t>* interior_facet_domains
-      = a.interior_facet_domains().get();
+  std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains
+      = a.interior_facet_domains();
 
   // Get vertex domains
-  const MeshFunction<std::size_t>* vertex_domains 
-    = a.vertex_domains().get();
+  std::shared_ptr<const MeshFunction<std::size_t> > vertex_domains 
+    = a.vertex_domains();
 
   // Check form
   AssemblerBase::check(a);
@@ -115,7 +115,7 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
 void Assembler::assemble_cells(GenericTensor& A,
                                const Form& a,
                                UFC& ufc,
-                               const MeshFunction<std::size_t>* domains,
+                               std::shared_ptr<const MeshFunction<std::size_t> > domains,
                                std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
@@ -200,7 +200,7 @@ void Assembler::assemble_cells(GenericTensor& A,
 void Assembler::assemble_exterior_facets(GenericTensor& A,
                                          const Form& a,
                                          UFC& ufc,
-                                         const MeshFunction<std::size_t>* domains,
+                                         std::shared_ptr<const MeshFunction<std::size_t> > domains,
                                          std::vector<double>* values)
 {
   // Skip assembly if there are no exterior facet integrals
@@ -295,10 +295,11 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
-                                      UFC& ufc,
-                                      const MeshFunction<std::size_t>* domains,
-                                      std::vector<double>* values)
+void Assembler::assemble_interior_facets(GenericTensor& A, 
+                                         const Form& a,
+                                         UFC& ufc,
+                                         std::shared_ptr<const MeshFunction<std::size_t> > domains,
+                                         std::vector<double>* values)
 {
   // Skip assembly if there are no interior facet integrals
   if (!ufc.form.has_interior_facet_integrals())
@@ -452,7 +453,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 void Assembler::assemble_vertices(GenericTensor& A,
                                   const Form& a,
                                   UFC& ufc,
-                                  const MeshFunction<std::size_t>* domains)
+                                  std::shared_ptr<const MeshFunction<std::size_t> > domains)
 {
   // Skip assembly if there are no point integrals
   if (!ufc.form.has_point_integrals())

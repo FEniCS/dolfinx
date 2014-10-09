@@ -65,7 +65,7 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
                  "The OpenMp assembler has not been tested in combination with MPI");
   }
 
-   dolfin_assert(a.ufc_form());
+  dolfin_assert(a.ufc_form());
 
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -74,15 +74,15 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
   // interface.
 
   // Get cell domains
-  const MeshFunction<std::size_t>* cell_domains = a.cell_domains().get();
+  std::shared_ptr<const MeshFunction<std::size_t> > cell_domains = a.cell_domains();
 
   // Get exterior facet domains
-  const MeshFunction<std::size_t>* exterior_facet_domains
-    = a.exterior_facet_domains().get();
+  std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains
+    = a.exterior_facet_domains();
 
   // Get interior facet domains
-  const MeshFunction<std::size_t>* interior_facet_domains
-    = a.interior_facet_domains().get();
+  std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains
+    = a.interior_facet_domains();
 
   // Check form
   AssemblerBase::check(a);
@@ -94,7 +94,6 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
   init_global_tensor(A, a);
 
   // FIXME: The below selections should be made robust
-
   if (a.ufc_form()->has_interior_facet_integrals())
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
@@ -113,7 +112,7 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
                                      UFC& _ufc,
-                                     const MeshFunction<std::size_t>* domains,
+                                     std::shared_ptr<const MeshFunction<std::size_t> > domains,
                                      std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
@@ -245,8 +244,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
           const Form& a, UFC& _ufc,
-          const MeshFunction<std::size_t>* cell_domains,
-          const MeshFunction<std::size_t>* exterior_facet_domains,
+          std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+          std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains,
           std::vector<double>* values)
 {
   Timer timer("Assemble cells and exterior facets");
@@ -438,10 +437,10 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
-                                               UFC& _ufc,
-                                       const MeshFunction<std::size_t>* domains,
-                                       std::vector<double>* values)
+void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, 
+                       const Form& a, UFC& _ufc,
+                       std::shared_ptr<const MeshFunction<std::size_t> > domains,
+                       std::vector<double>* values)
 {
   warning("OpenMpAssembler::assemble_interior_facets is untested.");
 

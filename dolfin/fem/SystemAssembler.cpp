@@ -157,10 +157,10 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   }
 }
 //-----------------------------------------------------------------------------
-const MeshFunction<std::size_t>*
+std::shared_ptr<const MeshFunction<std::size_t> >
 _pick_one_meshfunction(std::string name,
-                       const MeshFunction<std::size_t> * a,
-                       const MeshFunction<std::size_t> * b)
+                       std::shared_ptr<const MeshFunction<std::size_t> > a,
+                       std::shared_ptr<const MeshFunction<std::size_t> > b)
 {
   if ((a && b) && a != b)
   {
@@ -185,21 +185,21 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
-  const MeshFunction<std::size_t>* cell_domains
-    = _pick_one_meshfunction("cell_domains", _a->cell_domains().get(),
-                             _l->cell_domains().get());
+  std::shared_ptr<const MeshFunction<std::size_t> > cell_domains
+    = _pick_one_meshfunction("cell_domains", _a->cell_domains(),
+                             _l->cell_domains());
 
   // Get exterior facet domains
-  const MeshFunction<std::size_t>* exterior_facet_domains
+  std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains
     = _pick_one_meshfunction("exterior_facet_domains",
-                             _a->exterior_facet_domains().get(),
-                             _l->exterior_facet_domains().get());
+                             _a->exterior_facet_domains(),
+                             _l->exterior_facet_domains());
 
   // Get interior facet domains
-  const MeshFunction<std::size_t>* interior_facet_domains
+  std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains
     = _pick_one_meshfunction("interior_facet_domains",
-                             _a->interior_facet_domains().get(),
-                             _l->interior_facet_domains().get());
+                             _a->interior_facet_domains(),
+                             _l->interior_facet_domains());
 
   // Check forms
   AssemblerBase::check(*_a);
@@ -308,11 +308,11 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
 //-----------------------------------------------------------------------------
 void
 SystemAssembler::cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
-                                    std::array<UFC*, 2>& ufc,
-                                    Scratch& data,
-                                    const DirichletBC::Map& boundary_values,
-                                    const MeshFunction<std::size_t>* cell_domains,
-                                    const MeshFunction<std::size_t>* exterior_facet_domains)
+                std::array<UFC*, 2>& ufc,
+                Scratch& data,
+                const DirichletBC::Map& boundary_values,
+                std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+                std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains)
 {
   // Extract mesh
   const Mesh& mesh = ufc[0]->dolfin_form.mesh();
@@ -493,12 +493,12 @@ SystemAssembler::cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
 //-----------------------------------------------------------------------------
 void
 SystemAssembler::facet_wise_assembly(std::array<GenericTensor*, 2>& tensors,
-                                     std::array<UFC*, 2>& ufc,
-                                     Scratch& data,
-                                     const DirichletBC::Map& boundary_values,
-                      const MeshFunction<std::size_t>* cell_domains,
-                      const MeshFunction<std::size_t>* exterior_facet_domains,
-                      const MeshFunction<std::size_t>* interior_facet_domains)
+                std::array<UFC*, 2>& ufc,
+                Scratch& data,
+                const DirichletBC::Map& boundary_values,
+                std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+                std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains,
+                std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains)
 {
   // Extract mesh
   const Mesh& mesh = ufc[0]->dolfin_form.mesh();
