@@ -25,7 +25,7 @@ from __future__ import print_function
 import pytest
 import inspect, os, sys
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, cd_temppath
+from dolfin_utils.test import skip_in_parallel, cd_tempdir
 from runpy import run_path as runpy_run_path
 
 def run_path(path, args):
@@ -96,11 +96,11 @@ def test_dnr_p2D():
     run_test(["stationary", "poisson"])
 
 @skip_in_parallel
-def test_d5_p2D(cd_temppath):
+def test_d5_p2D(cd_tempdir):
     run_test(["stationary", "poisson"])
 
 @skip_in_parallel
-def test_d1_p2D(cd_temppath):
+def test_d1_p2D(cd_tempdir):
     run_test(["stationary", "poisson"])
 
 @skip_in_parallel
@@ -108,7 +108,7 @@ def test_paD():
     run_test(["stationary", "poisson"], [8, 8])
 
 @skip_in_parallel
-def test_d3_p2D(cd_temppath):
+def test_d3_p2D(cd_tempdir):
     run_test(["stationary", "poisson"], [1])
 
 @skip_in_parallel
@@ -120,7 +120,7 @@ def test_dn2_p2D():
     run_test(["stationary", "poisson"])
 
 @skip_in_parallel
-def test_d2_p2D(cd_temppath):
+def test_d2_p2D(cd_tempdir):
     run_test(["stationary", "poisson"])
 
 @skip_in_parallel

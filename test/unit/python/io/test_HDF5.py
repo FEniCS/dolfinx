@@ -24,12 +24,12 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_if_not_HDF5, fixture, temppath
+from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir
 
 
 @skip_if_not_HDF5
-def test_save_vector(temppath):
-    filename = os.path.join(temppath, "x.h5")
+def test_save_vector(tempdir):
+    filename = os.path.join(tempdir, "x.h5")
     x = Vector(mpi_comm_world(), 305)
     x[:] = 1.0
     vector_file = HDF5File(x.mpi_comm(), filename, "w")
@@ -37,8 +37,8 @@ def test_save_vector(temppath):
     vector_file.close()
 
 @skip_if_not_HDF5
-def test_save_and_read_vector(temppath):
-    filename = os.path.join(temppath, "vector.h5")
+def test_save_and_read_vector(tempdir):
+    filename = os.path.join(tempdir, "vector.h5")
 
     # Write to file
     x = Vector(mpi_comm_world(), 305)
@@ -56,8 +56,8 @@ def test_save_and_read_vector(temppath):
     vector_file.close()
 
 @skip_if_not_HDF5
-def test_save_and_read_meshfunction_2D(temppath):
-    filename = os.path.join(temppath, "meshfn-2d.h5")
+def test_save_and_read_meshfunction_2D(tempdir):
+    filename = os.path.join(tempdir, "meshfn-2d.h5")
 
     # Write to file
     mesh = UnitSquareMesh(20, 20)
@@ -85,8 +85,8 @@ def test_save_and_read_meshfunction_2D(temppath):
     mf_file.close()
 
 @skip_if_not_HDF5
-def test_save_and_read_meshfunction_3D(temppath):
-    filename = os.path.join(temppath, "meshfn-3d.h5")
+def test_save_and_read_meshfunction_3D(tempdir):
+    filename = os.path.join(tempdir, "meshfn-3d.h5")
 
     # Write to file
     mesh = UnitCubeMesh(10, 10, 10)
@@ -114,8 +114,8 @@ def test_save_and_read_meshfunction_3D(temppath):
     mf_file.close()
 
 @skip_if_not_HDF5
-def test_save_and_read_mesh_value_collection(temppath):
-    filename = os.path.join(temppath, "mesh_value_collection.h5")
+def test_save_and_read_mesh_value_collection(tempdir):
+    filename = os.path.join(tempdir, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(5, 5, 5)
 
     # Writ to file
@@ -134,8 +134,8 @@ def test_save_and_read_mesh_value_collection(temppath):
         hdf5_file.read(mvc, "/mesh_value_collection_%d" % dim)
 
 @skip_if_not_HDF5
-def test_save_and_read_function(temppath):
-    filename = os.path.join(temppath, "function.h5")
+def test_save_and_read_function(tempdir):
+    filename = os.path.join(tempdir, "function.h5")
 
     mesh = UnitSquareMesh(10, 10)
     Q = FunctionSpace(mesh, "CG", 3)
@@ -158,8 +158,8 @@ def test_save_and_read_function(temppath):
     hdf5_file.close()
 
 @skip_if_not_HDF5
-def test_save_and_read_mesh_2D(temppath):
-    filename = os.path.join(temppath, "mesh2d.h5")
+def test_save_and_read_mesh_2D(tempdir):
+    filename = os.path.join(tempdir, "mesh2d.h5")
 
     # Write to file
     mesh0 = UnitSquareMesh(20, 20)
@@ -178,8 +178,8 @@ def test_save_and_read_mesh_2D(temppath):
     assert mesh0.size_global(dim) == mesh1.size_global(dim)
 
 @skip_if_not_HDF5
-def test_save_and_read_mesh_3D(temppath):
-    filename = os.path.join(temppath, "mesh3d.h5")
+def test_save_and_read_mesh_3D(tempdir):
+    filename = os.path.join(tempdir, "mesh3d.h5")
 
     # Write to file
     mesh0 = UnitCubeMesh(10, 10, 10)

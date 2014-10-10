@@ -20,43 +20,43 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import fixture, cd_temppath
+from dolfin_utils.test import fixture, cd_tempdir
 
-def test_save_mesh1D(cd_temppath):
+def test_save_mesh1D(cd_tempdir):
     mesh = UnitIntervalMesh(16)
     file = File("mesh1D.x3d")
     #self.assertRaises(RuntimeError, file << mesh)
 
-def test_save_mesh2D(cd_temppath):
+def test_save_mesh2D(cd_tempdir):
     mesh = UnitSquareMesh(16, 16)
     file = File("mesh2D.x3d")
     file << mesh
 
-def test_save_mesh3D(cd_temppath):
+def test_save_mesh3D(cd_tempdir):
     mesh = UnitCubeMesh(16, 16, 16)
     file = File("mesh3D.x3d")
     file << mesh
 
-def test_save_cell_meshfunction2D(cd_temppath):
+def test_save_cell_meshfunction2D(cd_tempdir):
     mesh = UnitSquareMesh(16, 16)
     mf = CellFunction("size_t", mesh, 12)
     file = File("cell_mf2D.x3d")
     file << mf
 
-def test_save_facet_meshfunction2D(cd_temppath):
+def test_save_facet_meshfunction2D(cd_tempdir):
     mesh = UnitSquareMesh(16, 16)
     mf = FacetFunction("size_t", mesh, 12)
     file = File("facet_mf2D.x3d")
     #with pytest.raises(RuntimeError):
     #    file << mf
 
-def test_save_cell_meshfunctio22D(cd_temppath):
+def test_save_cell_meshfunctio22D(cd_tempdir):
     mesh = UnitCubeMesh(16, 16, 16)
     mf = CellFunction("size_t", mesh, 12)
     file = File("cell_mf3D.x3d")
     file << mf
 
-def test_save_facet_meshfunction3D(cd_temppath):
+def test_save_facet_meshfunction3D(cd_tempdir):
     mesh = UnitCubeMesh(16, 16, 16)
     mf = FacetFunction("size_t", mesh, 12)
     file = File("facet_mf3D.x3d")

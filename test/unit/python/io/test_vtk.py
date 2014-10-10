@@ -20,7 +20,7 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_in_parallel, fixture, temppath
+from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
 # VTK file options
 @fixture
@@ -40,8 +40,8 @@ def type_conv():
     return dict(size_t=int, int=int, double=float, bool=bool)
 
 @pytest.fixture(scope="function")
-def tempfile(temppath, request):
-    return os.path.join(temppath, request.function.__name__)
+def tempfile(tempdir, request):
+    return os.path.join(tempdir, request.function.__name__)
 
 def test_save_1d_meshfunctions(tempfile, mesh_functions,
                                 mesh_function_types, file_options, type_conv):

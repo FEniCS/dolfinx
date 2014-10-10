@@ -23,22 +23,22 @@ from __future__ import print_function
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_in_parallel, fixture, temppath
+from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
 @skip_in_parallel
-def test_retrieve_compressed(temppath):
-    _test_retrieve(temppath, True, False, "test_retrieve_compressed")
+def test_retrieve_compressed(tempdir):
+    _test_retrieve(tempdir, True, False, "test_retrieve_compressed")
 
 @skip_in_parallel
-def test_retrieve_compressed_all_connectivities(temppath):
-    _test_retrieve(temppath, True, True, "test_retrieve_compressed_all_connectivities")
+def test_retrieve_compressed_all_connectivities(tempdir):
+    _test_retrieve(tempdir, True, True, "test_retrieve_compressed_all_connectivities")
 
 @skip_in_parallel
-def test_retrieve_all_connectivities(temppath):
-    _test_retrieve(temppath, False, True, "test_retrieve_all_connectivities")
+def test_retrieve_all_connectivities(tempdir):
+    _test_retrieve(tempdir, False, True, "test_retrieve_all_connectivities")
 
-def _test_retrieve(temppath, compressed, all_connectivities, basename):
-    filename = os.path.join(temppath, basename)
+def _test_retrieve(tempdir, compressed, all_connectivities, basename):
+    filename = os.path.join(tempdir, basename)
 
     times = [t/10.0 for t in range(1, 11)]
 
@@ -78,9 +78,9 @@ def _test_retrieve(temppath, compressed, all_connectivities, basename):
 
 
 @skip_in_parallel
-def test_subdirectory(temppath):
+def test_subdirectory(tempdir):
     "Test that retrieve/store works with nonexisting subdirectory"
-    filename = os.path.join(temppath, "test_subdirectory")
+    filename = os.path.join(tempdir, "test_subdirectory")
 
     m0 = UnitSquareMesh(3, 3)
 

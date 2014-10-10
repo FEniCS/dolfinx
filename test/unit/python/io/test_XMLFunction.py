@@ -18,9 +18,9 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from dolfin import *
-from dolfin_utils.test import cd_temppath
+from dolfin_utils.test import cd_tempdir
 
-def test_save_and_read_xml_function(cd_temppath):
+def test_save_and_read_xml_function(cd_tempdir):
     mesh = UnitSquareMesh(10, 10)
     Q = FunctionSpace(mesh, "CG", 3)
     F0 = Function(Q)

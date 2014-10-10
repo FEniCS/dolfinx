@@ -23,12 +23,12 @@ import pytest
 import os
 from dolfin import *
 import numpy
-from dolfin_utils.test import skip_if_not_HDF5, fixture, temppath
+from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir
 
 
 @pytest.yield_fixture
-def attr(temppath):
-    hdf_file = HDF5File(mpi_comm_world(), os.path.join(temppath, "hdf_file.h5"), "w")
+def attr(tempdir):
+    hdf_file = HDF5File(mpi_comm_world(), os.path.join(tempdir, "hdf_file.h5"), "w")
     x = Vector(mpi_comm_world(), 123)
     hdf_file.write(x, "/a_vector")
     attr = hdf_file.attributes("/a_vector")

@@ -34,7 +34,7 @@ import numpy
 from dolfin import *
 import os
 
-from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_temppath
+from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir
 
 @fixture
 def mesh1d():
@@ -221,7 +221,7 @@ def test_Assign(mesh, f):
     assert f[v] == 10
 
 @skip_in_parallel
-def test_Write(cd_temppath, f):
+def test_Write(cd_tempdir, f):
     """Construct and save a simple meshfunction."""
     f = f
     f[0] = 1
@@ -230,7 +230,7 @@ def test_Write(cd_temppath, f):
     file << f
 
 @skip_in_parallel
-def test_Read(cd_temppath):
+def test_Read(cd_tempdir):
     """Construct and save a simple meshfunction. Then read it back from
     file."""
     #mf = mesh.data().create_mesh_function("mesh_data_function", 2)
@@ -267,7 +267,7 @@ def test_SubsetIterators(mesh):
 
 # FIXME: Mesh IO tests should be in io test directory
 @skip_in_parallel
-def test_MeshXML2D(cd_temppath):
+def test_MeshXML2D(cd_tempdir):
     """Write and read 2D mesh to/from file"""
     mesh_out = UnitSquareMesh(3, 3)
     mesh_in  = Mesh()
@@ -278,7 +278,7 @@ def test_MeshXML2D(cd_temppath):
 
 
 @skip_in_parallel
-def test_MeshXML3D(cd_temppath):
+def test_MeshXML3D(cd_tempdir):
     """Write and read 3D mesh to/from file"""
     mesh_out = UnitCubeMesh(3, 3, 3)
     mesh_in  = Mesh()
@@ -289,7 +289,7 @@ def test_MeshXML3D(cd_temppath):
 
 
 @skip_in_parallel
-def xtest_MeshFunction(cd_temppath):
+def xtest_MeshFunction(cd_tempdir):
     """Write and read mesh function to/from file"""
     mesh = UnitSquareMesh(1, 1)
     f = MeshFunction('int', mesh, 0)

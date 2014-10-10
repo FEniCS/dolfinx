@@ -25,11 +25,11 @@ import pytest
 import os
 from dolfin import *
 from six.moves import xrange as range
-from dolfin_utils.test import skip_in_parallel, fixture, cd_temppath
+from dolfin_utils.test import skip_in_parallel, fixture, cd_tempdir
 
 
 @skip_in_parallel
-def test_io_size_t(cd_temppath):
+def test_io_size_t(cd_tempdir):
     "Test input/output for size_t"
 
     # Write some data
@@ -56,7 +56,7 @@ def test_io_size_t(cd_temppath):
 
 
 @skip_in_parallel
-def test_io_int(cd_temppath):
+def test_io_int(cd_tempdir):
     "Test input/output for int"
 
     # Write some data
@@ -83,7 +83,7 @@ def test_io_int(cd_temppath):
 
 
 @skip_in_parallel
-def test_io_double(cd_temppath):
+def test_io_double(cd_tempdir):
     "Test input/output for double"
 
     # Write some data
@@ -110,7 +110,7 @@ def test_io_double(cd_temppath):
 
 
 @skip_in_parallel
-def test_io_bool(cd_temppath):
+def test_io_bool(cd_tempdir):
     "Test input/output for bool"
 
     # Write some data

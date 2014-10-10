@@ -27,7 +27,7 @@ import pytest
 from dolfin import *
 import os
 
-from dolfin_utils.test import * #cd_temppath, pushpop_parameters, skip_in_parallel
+from dolfin_utils.test import * #cd_tempdir, pushpop_parameters, skip_in_parallel
 
 def create_data(A=None):
     "This function creates data used in the tests below"
@@ -636,7 +636,7 @@ def test_p34_box_2():
     #plot(element)
 
 @skip_in_parallel
-def test_p35_box_1(cd_temppath):
+def test_p35_box_1(cd_tempdir):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -645,7 +645,7 @@ def test_p35_box_1(cd_temppath):
     file << u
 
 @skip_in_parallel
-def test_p35_box_2(cd_temppath):
+def test_p35_box_2(cd_tempdir):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -655,7 +655,7 @@ def test_p35_box_2(cd_temppath):
     file << (u, t)
 
 @skip_in_parallel
-def test_p36_box_1(cd_temppath, pushpop_parameters):
+def test_p36_box_1(cd_tempdir, pushpop_parameters):
     mesh = UnitSquareMesh(2, 2)
     matrix, x, vector = create_data()
 
@@ -670,7 +670,7 @@ def test_p36_box_1(cd_temppath, pushpop_parameters):
     parameters_file >> parameters
 
 @skip_in_parallel
-def test_p37_box_1(cd_temppath):
+def test_p37_box_1(cd_tempdir):
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -812,7 +812,7 @@ def test_p42_box_4(pushpop_parameters):
     # Feel free to improve by adding something to argv above.
 
 @skip_in_parallel
-def test_p43_box_1(cd_temppath, pushpop_parameters):
+def test_p43_box_1(cd_tempdir, pushpop_parameters):
     file = File("parameters.xml")
     file << parameters
     file >> parameters

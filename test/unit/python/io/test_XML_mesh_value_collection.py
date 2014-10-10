@@ -22,10 +22,10 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import fixture, skip_in_parallel, cd_temppath, filedir
+from dolfin_utils.test import fixture, skip_in_parallel, cd_tempdir, filedir
 
 @skip_in_parallel
-def test_insertion_extraction_io(cd_temppath):
+def test_insertion_extraction_io(cd_tempdir):
     "Test input/output via << and >>."
     filename = "xml_mesh_value_collection_test_io.xml"
 

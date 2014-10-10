@@ -22,11 +22,11 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_Epetra, fixture, cd_temppath
+from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_Epetra, fixture, cd_tempdir
 
 
 @skip_if_not_PETSc
-def test_save_vector_petsc(cd_temppath):
+def test_save_vector_petsc(cd_tempdir):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
     x[:] = 1.0
@@ -34,7 +34,7 @@ def test_save_vector_petsc(cd_temppath):
     f << x
 
 @skip_if_not_Epetra
-def test_save_vector_epetra(cd_temppath):
+def test_save_vector_epetra(cd_tempdir):
     # Create vector and write file
     x = EpetraVector(mpi_comm_world(), 197)
     x[:] = 1.0
@@ -42,7 +42,7 @@ def test_save_vector_epetra(cd_temppath):
     f << x
 
 @skip_if_not_PETSc
-def test_save_gzipped_vector(cd_temppath):
+def test_save_gzipped_vector(cd_tempdir):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
     x[:] = 1.0
@@ -50,7 +50,7 @@ def test_save_gzipped_vector(cd_temppath):
     f << x
 
 @skip_if_not_PETSc
-def test_read_vector_petcs(cd_temppath):
+def test_read_vector_petcs(cd_tempdir):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
     x[:] = 1.0
@@ -64,7 +64,7 @@ def test_read_vector_petcs(cd_temppath):
     assert round(x.norm("l2") - y.norm("l2"), 7) == 0
 
 @skip_if_not_Epetra
-def test_read_vector_eptra(cd_temppath):
+def test_read_vector_eptra(cd_tempdir):
     # Create vector and write file
     x = EpetraVector(mpi_comm_world(), 197)
     x[:] = 1.0
@@ -79,7 +79,7 @@ def test_read_vector_eptra(cd_temppath):
 
 
 @skip_if_not_PETSc
-def test_read_gzipped_vector(cd_temppath):
+def test_read_gzipped_vector(cd_tempdir):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
     x[:] = 1.0
@@ -92,7 +92,7 @@ def test_read_gzipped_vector(cd_temppath):
     assert x.size() == y.size()
     assert round(x.norm("l2") - y.norm("l2"), 7) == 0
 
-def test_save_read_vector(cd_temppath):
+def test_save_read_vector(cd_tempdir):
     size = 512
     x = Vector(mpi_comm_world(), size)
     x[:] = 1.0

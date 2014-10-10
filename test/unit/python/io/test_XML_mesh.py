@@ -24,23 +24,23 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_in_parallel, fixture, cd_temppath
+from dolfin_utils.test import skip_in_parallel, fixture, cd_tempdir
 
 
 @skip_in_parallel
-def test_save_plain_mesh2D(cd_temppath):
+def test_save_plain_mesh2D(cd_tempdir):
     mesh = UnitSquareMesh(8, 8)
     f = File("unit_square.xml")
     f << mesh
 
 @skip_in_parallel
-def test_save_plain_mesh3D(cd_temppath):
+def test_save_plain_mesh3D(cd_tempdir):
     mesh = UnitCubeMesh(8, 8, 8)
     f = File("unit_cube.xml")
     f << mesh
 
 @skip_in_parallel
-def test_mesh_domains_io(cd_temppath):
+def test_mesh_domains_io(cd_tempdir):
     "Test input/output for mesh domains"
 
     # Define subdomains for the 6 faces of the unit cube

@@ -27,7 +27,7 @@ from dolfin import *
 from dolfin_utils.test import *
 
 @skip_in_parallel
-def test_simple(temppath):
+def test_simple(tempdir):
 
     # Create some parameters
     p0 = Parameters("test")
@@ -37,12 +37,12 @@ def test_simple(temppath):
     p0.add("monitor_convergence", True)
 
     # Save to file
-    f0 = File(os.path.join(temppath, "test_parameters.xml"))
+    f0 = File(os.path.join(tempdir, "test_parameters.xml"))
     f0 << p0
 
     # Read from file
     p1 = Parameters()
-    f1 = File(os.path.join(temppath, "test_parameters.xml"))
+    f1 = File(os.path.join(tempdir, "test_parameters.xml"))
     f1 >> p1
 
     # Check values
@@ -53,7 +53,7 @@ def test_simple(temppath):
     assert p1["monitor_convergence"] == True
 
 @skip_in_parallel
-def test_gzipped_simple(temppath):
+def test_gzipped_simple(tempdir):
 
     # Create some parameters
     p0 = Parameters("test")
@@ -63,12 +63,12 @@ def test_gzipped_simple(temppath):
     p0.add("monitor_convergence", True)
 
     # Save to file
-    f0 = File(os.path.join(temppath, "test_parameters.xml.gz"))
+    f0 = File(os.path.join(tempdir, "test_parameters.xml.gz"))
     f0 << p0
 
     # Read from file
     p1 = Parameters()
-    f1 = File(os.path.join(temppath, "test_parameters.xml.gz"))
+    f1 = File(os.path.join(tempdir, "test_parameters.xml.gz"))
     f1 >> p1
 
     # Check values
@@ -79,7 +79,7 @@ def test_gzipped_simple(temppath):
     assert p1["monitor_convergence"] == True
 
 @skip_in_parallel
-def test_nested(temppath):
+def test_nested(tempdir):
 
     # Create some nested parameters
     p0 = Parameters("test")
@@ -95,12 +95,12 @@ def test_nested(temppath):
     p0.add(p01)
 
     # Save to file
-    f0 = File(os.path.join(temppath, "test_parameters.xml"))
+    f0 = File(os.path.join(tempdir, "test_parameters.xml"))
     f0 << p0
 
     # Read from file
     p1 = Parameters()
-    f1 = File(os.path.join(temppath, "test_parameters.xml"))
+    f1 = File(os.path.join(tempdir, "test_parameters.xml"))
     f1 >> p1
 
     # Check values
@@ -112,11 +112,11 @@ def test_nested(temppath):
     assert p1["sub0"]["monitor_convergence"] == True
 
 @skip_in_parallel
-def test_nested_read_existing(temppath):
+def test_nested_read_existing(tempdir):
     """Test that we can read in a nested parameter database into
        an existing (and matching) parameter database"""
 
-    file = File(os.path.join(temppath, "test_parameters.xml"))
+    file = File(os.path.join(tempdir, "test_parameters.xml"))
     file << parameters
 
     p = Parameters("test")
