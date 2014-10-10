@@ -29,7 +29,7 @@ import pytest
 from dolfin import *
 from six.moves import zip
 from six.moves import xrange as range
-
+import os
 import numpy
 from dolfin_utils.test import *
 
@@ -269,7 +269,7 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
     parameters["form_compiler"]["no-evaluate_basis_derivatives"] = basis_derivatives
 
 
-def test_elliptic_eqn_on_intersecting_surface(self):
+def test_elliptic_eqn_on_intersecting_surface(filedir):
     """Solves -grad^2 u + u = f on domain of two intersecting square
      surfaces embedded in 3D with natural bcs. Test passes if at end
      \int u dx = \int f dx over whole domain
@@ -279,7 +279,8 @@ def test_elliptic_eqn_on_intersecting_surface(self):
     #mesh = make_mesh(num_vertices_side)
     #file = File("intersecting_surfaces.xml.gz", "compressed")
     #file << mesh
-    mesh = Mesh("intersecting_surfaces.xml.gz")
+    filename = os.path.join(filedir, "intersecting_surfaces.xml.gz")
+    mesh = Mesh(filename)
 
     # function space, etc
     V = FunctionSpace(mesh, "CG", 2)
@@ -310,7 +311,7 @@ def test_elliptic_eqn_on_intersecting_surface(self):
     u_tot = assemble(u*dx)
 
     # test passes if f_tot = u_tot
-    assert near(f_tot, u_tot)
+    assert abs(f_tot - u_tot) < 1e-7
 
 def make_mesh(num_vertices_side):
     # each square has unit side length
