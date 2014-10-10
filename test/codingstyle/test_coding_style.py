@@ -24,7 +24,7 @@
 
 from __future__ import print_function
 import os, re
-
+import pytest
 
 def pytest_generate_tests(metafunc):
     # List of C++ tests
@@ -123,3 +123,7 @@ def uint(code, filename):
     # Write an error message
     assert False, "* Warning: uint is used in %s when std::size_t should be used" % filename
     return False
+
+if __name__ == "__main__":
+    pytest.main()
+
