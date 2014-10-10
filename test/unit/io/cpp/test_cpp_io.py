@@ -22,45 +22,33 @@ import pytest
 import platform
 from instant import get_status_output
 
-from dolfin_utils.test import skip_in_parallel
-
-def pytest_generate_tests(metafunc):
-    # Skip in parallel (the C++ test should be run in parallel but not the pytest python process)
-    from dolfin import MPI, mpi_comm_world
-    if MPI.size(mpi_comm_world()) > 1:
-        return
-
-    # Set non-interactive
-    os.putenv('DOLFIN_NOPLOT', '1')
-
-    curdir = os.getcwd()
-    filepath = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(filepath)
-    out_cmake = os.system('cmake .')
-    out_make = os.system('make')
-
-    #Find all tests
-    list_of_tests = []
-    for file in os.listdir('.'):
-        if file.startswith("test_") and not '.' in file:
-            if platform.system() == 'Windows':
-                file += '.exe'
-            list_of_tests.append(file)
-
-    # Create tests
-    os.chdir(curdir)
-    funcargs = {}
-    funcargs['curdir'] = curdir
-    funcargs['filepath'] = filepath
-    for test in list_of_tests:
-        funcargs['test'] = test
-        metafunc.addcall(funcargs=funcargs)
+# Skip in parallel (the C++ test should be run in parallel but not the pytest python process)
+from dolfin_utils.test import skip_in_parallel, filedir
 
 @skip_in_parallel
 @pytest.mark.cpp
-def test_cpp_mesh(test, curdir, filepath):
-    os.chdir(filepath)
-    status, output = get_status_output(os.path.join('.', test))
-    assert 'OK' in output
-    assert status == 0
-    os.chdir(curdir)
+def test_cpp_io(filedir):
+    curdir = os.getcwd()
+    os.chdir(filedir)
+    try:
+        # Set non-interactive, configure and build
+        os.putenv('DOLFIN_NOPLOT', '1')
+        out_cmake = os.system('cmake .')
+        out_make = os.system('make')
+
+        # Find all built test binaries
+        list_of_tests = []
+        for file in os.listdir('.'):
+            if file.startswith("test_") and not '.' in file:
+                if platform.system() == 'Windows':
+                    file += '.exe'
+                list_of_tests.append(file)
+
+        # Run test binaries
+        for test in list_of_tests:
+            status, output = get_status_output(os.path.join('.', test))
+
+            assert 'OK' in output
+            assert status == 0
+    finally:
+        os.chdir(curdir)

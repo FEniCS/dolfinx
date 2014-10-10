@@ -23,7 +23,7 @@ import os
 import pytest
 from dolfin import *
 import six
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, datadir
 
 @pytest.fixture(scope='module', params=range(3))
 def MeshFunc(request):
@@ -71,11 +71,11 @@ def test_creation(MeshFunc):
         SubMesh(mesh, 1)
 
 @skip_in_parallel
-def test_facet_domain_propagation():
+def test_facet_domain_propagation(datadir):
 
     # Boxes contains two subdomains with marked faces between
     # them.  These faces are marked with 5, 10, 15.
-    mesh = Mesh(os.path.join(os.path.dirname(__file__), "..", "boxes.xml.gz"))
+    mesh = Mesh(os.path.join(datadir, "boxes.xml.gz"))
     inner = SubMesh(mesh, 1)
     outer = SubMesh(mesh, 2)
 

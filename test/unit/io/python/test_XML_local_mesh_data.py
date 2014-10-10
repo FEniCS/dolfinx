@@ -18,18 +18,16 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2009-01-02
-# Last changed: 2009-01-02
 
 import pytest
 import os
 from dolfin import *
+from dolfin_utils.test import *
 
 # FIXME: Not a proper unit test. When LocalMeshData has a public interface
 # FIXME: we can expand on these
 
-def test_read_local_mesh_data():
-    file = File(os.path.join(os.path.dirname(__file__), "..", "snake.xml.gz"))
+def test_read_local_mesh_data(datadir):
+    file = File(os.path.join(datadir, "snake.xml.gz"))
     localdata = cpp.LocalMeshData(mpi_comm_world())
     file >> localdata

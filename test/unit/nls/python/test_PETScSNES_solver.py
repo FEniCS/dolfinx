@@ -50,9 +50,8 @@ parameter_degree = set_parameters_fixture("form_compiler.quadrature_degree", [5]
 parameter_backend = set_parameters_fixture("linear_algebra_backend", ["PETSc"])
 
 @fixture
-def mesh():
-    filedir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-    return Mesh(os.path.join(filedir, "doughnut.xml.gz"))
+def mesh(datadir):
+    return Mesh(os.path.join(datadir, "doughnut.xml.gz"))
 
 @fixture
 def V(mesh):

@@ -22,15 +22,12 @@
 # Modified by Kent-Andre Mardal 2011
 # Modified by Anders Logg 2011
 # Modified by Martin Alnaes 2012
-#
-# First added:  2011-09-19
-# Last changed: 2014-05-28
 
 import os
 import pytest
 import numpy
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, datadir
 
 
 def test_instantiation():
@@ -78,12 +75,12 @@ def test_get_values():
     bc = DirichletBC(V, 0.0, upper)
     bc_values = bc.get_boundary_values()
 
-def test_meshdomain_bcs():
+def test_meshdomain_bcs(datadir):
     """Test application of Dirichlet boundary conditions stored as
     part of the mesh. This test is also a compatibility test for
     VMTK."""
 
-    mesh = Mesh(os.path.join(os.path.dirname(__file__), "aneurysm.xml.gz"))
+    mesh = Mesh(os.path.join(datadir, "aneurysm.xml.gz"))
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
 

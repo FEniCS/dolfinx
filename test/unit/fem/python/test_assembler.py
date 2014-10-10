@@ -28,7 +28,7 @@ import os
 import numpy
 from dolfin import *
 
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, filedir
 
 
 def test_cell_size_assembly_1D():
@@ -546,7 +546,7 @@ def test_nonsquare_assembly_multithreaded():
     parameters["num_threads"] = 0
 
 @skip_in_parallel
-def test_reference_assembly():
+def test_reference_assembly(filedir):
     "Test assembly against a reference solution"
 
     # NOTE: This test is not robust as it relies on specific
@@ -555,7 +555,7 @@ def test_reference_assembly():
     parameters["reorder_dofs_serial"] = False
 
     # Load reference mesh (just a simple tetrahedron)
-    mesh = Mesh(os.path.join(os.path.dirname(__file__), "tetrahedron.xml.gz"))
+    mesh = Mesh(os.path.join(filedir, "tetrahedron.xml.gz"))
 
     # Assemble stiffness and mass matrices
     V = FunctionSpace(mesh, "Lagrange", 1)
