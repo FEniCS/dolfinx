@@ -78,15 +78,11 @@ os.putenv('G_DEBUG','gc-friendly')
 print(pythontests)
 
 # Demos that need command line arguments are treated seperately
-cppdemos.remove('./../../demo/undocumented/quadrature/cpp')
-cppdemos.remove('./../../demo/undocumented/method-weights/cpp')
-cppdemos.remove('./../../demo/undocumented/stiff/cpp')
+#cppdemos.remove('./../../demo/undocumented/quadrature/cpp')
 
 # Demos that are too time consuming to Valgrind
-cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
+cppdemos.remove('./../../demo/documented/cahn-hilliard/cpp')
 cppdemos.remove('./../../demo/undocumented/elastodynamics/cpp')
-cppdemos.remove('./../../demo/undocumented/reaction/cpp')
-cppdemos.remove('./../../demo/undocumented/courtemanche/cpp')
 
 re_def_lost = re.compile("definitely lost: 0 bytes in 0 blocks.")
 re_pos_lost = re.compile("possibly lost: 0 bytes in 0 blocks.")
@@ -97,7 +93,15 @@ dolfin_supp = os.path.join(os.path.abspath(os.getcwd()), 'dolfin_valgrind.supp')
 vg_comm = 'valgrind --error-exitcode=9 --tool=memcheck --leak-check=full --show-reachable=yes --suppressions=%s' % dolfin_supp
 
 def run_and_analyse(path, run_str, prog_type, no_reachable_check = False):
-    output = get_status_output("cd %s && %s %s" % (path, vg_comm, run_str))
+    cmd = "%s %s" % (vg_comm, run_str)
+
+    curdir = os.getcwd()
+    os.chdir(path)
+    try:
+        status, output = get_status_output(cmd)
+    finally:
+        os.chdir(curdir)
+
     if "No such file or directory" in "".join([str(l) for l in output]):
         print("*** FAILED: Unable to run demo")
         return [(demo, "C++", output[1])]
@@ -164,7 +168,7 @@ for demo_path in cppdemos:
     print("----------------------------------------------------------------------")
     print("Running Valgrind on C++ demo %s" % demo_path)
     print("")
-    demo_name = "./" + demo_path.split("/")[-2] + "-demo"
+    demo_name = "./demo_" + demo_path.split("/")[-2]
     print(demo_name)
     if os.path.isfile(os.path.join(demo_path, demo_name)):
         failed += run_and_analyse(demo_path, demo_name, "C++")

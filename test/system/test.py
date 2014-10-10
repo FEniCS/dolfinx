@@ -29,7 +29,7 @@ from instant import get_status_output
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
-tests = ["parallel-assembly-solve", "ufl-jit-assemble-chain"]
+tests = ["parallel-assembly-solve"]
 
 failed = []
 

@@ -27,7 +27,7 @@ source files (.ufl, .py, .cpp) that is associated with the demo."""
 
 from __future__ import print_function
 import sys
-
+import os
 from os import chdir, path, getcwd, curdir, pardir, listdir
 from sys import stderr, path as sys_path
 
@@ -158,6 +158,8 @@ if __name__ == "__main__":
         for demo in demos:
             chdir(demo)
             for directory in directories:
+                if not os.path.isdir(directory):
+                    continue
                 chdir(directory)
                 stderr.write("Checking %s: " % path.join(category, demo, directory))
                 # Get files in demo directory and sort in rst and source files.
