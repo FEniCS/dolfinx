@@ -69,6 +69,7 @@ download_mesh demo/undocumented/multimesh                    propeller_2d_fine.x
 download_mesh demo/undocumented/curl-curl                    sphere.xml.gz
 download_mesh demo/undocumented/collision-detection          circle.xml.gz
 download_mesh test/unit/fem/python                           aneurysm.xml.gz
+download_mesh test/unit/fem/python                           intersecting_surfaces.xml.gz
 download_mesh test/unit/io                                   snake.xml.gz
 download_mesh test/unit/nls/python                           doughnut.xml.gz
 download_mesh test/unit/mesh                                 boxes.xml.gz

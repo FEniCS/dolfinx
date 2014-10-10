@@ -21,9 +21,6 @@ embedded in higher dimensional spaces."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by David Ham 2012
-#
-# First added:  2012-12-06
-# Last changed: 2014-05-28
 
 # MER: The solving test should be moved into test/regression/..., the
 # evaluatebasis part should be moved into test/unit/FiniteElement.py
@@ -31,6 +28,7 @@ embedded in higher dimensional spaces."""
 import pytest
 from dolfin import *
 from six.moves import zip
+from six.moves import xrange as range
 
 import numpy
 from dolfin_utils.test import *
@@ -182,6 +180,7 @@ def test_poisson2D_in_3D():
     assert round(u_2D.vector().min() - u_manifold.vector().min(), 10) == 0
 
 
+# TODO: Use pytest parameterization
 @skip_in_parallel
 def test_basis_evaluation_2D_in_3D():
     """This test checks that basis functions and their derivatives are
@@ -256,7 +255,7 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
                     derivs_rot2 = derivs_rot.reshape(f_rot.element().value_dimension(0),3)
                     derivs_base2 = derivs_base.reshape(f_base.element().value_dimension(0),3)
                     # If D is the unrotated derivative tensor, then RDR^T is the rotated version.
-                    derivs_cmp = numpy.dot(rotation.mat, 
+                    derivs_cmp = numpy.dot(rotation.mat,
                                             rotation.rotate_point(derivs_base2))
                 else:
                     values_cmp = values_base
@@ -268,3 +267,116 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
                 assert round(abs(values_cmp-values_rot).max() - 0.0, 10) == 0
 
     parameters["form_compiler"]["no-evaluate_basis_derivatives"] = basis_derivatives
+
+
+def test_elliptic_eqn_on_intersecting_surface(self):
+    """Solves -grad^2 u + u = f on domain of two intersecting square
+     surfaces embedded in 3D with natural bcs. Test passes if at end
+     \int u dx = \int f dx over whole domain
+    """
+    # This needs to be odd
+    #num_vertices_side = 31
+    #mesh = make_mesh(num_vertices_side)
+    #file = File("intersecting_surfaces.xml.gz", "compressed")
+    #file << mesh
+    mesh = Mesh("intersecting_surfaces.xml.gz")
+
+    # function space, etc
+    V = FunctionSpace(mesh, "CG", 2)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+
+    class Source(Expression):
+        def eval(self, value, x):
+            # r0 should be less than 0.5 * sqrt(2) in order for source to be
+            # exactly zero on vertical part of domain
+            r0 = 0.7
+            r = sqrt(x[0] * x[0] + x[1] * x[1])
+            if r < r0:
+                value[0] = 20.0 * pow((r0 - r), 2)
+            else:
+                value[0] = 0.0
+
+    f = Function(V)
+    f.interpolate(Source())
+
+    a = inner(grad(u), grad(v))*dx + u*v*dx
+    L = f*v*dx
+
+    u = Function(V)
+    solve(a == L, u)
+
+    f_tot = assemble(f*dx)
+    u_tot = assemble(u*dx)
+
+    # test passes if f_tot = u_tot
+    assert near(f_tot, u_tot)
+
+def make_mesh(num_vertices_side):
+    # each square has unit side length
+    domain_size = 1.0
+
+    center_index = (num_vertices_side - 1) / 2
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, 2, 3)
+
+    num_vertices = 2 * num_vertices_side * num_vertices_side - center_index - 1
+    num_cells = 4 * (num_vertices_side - 1) * (num_vertices_side - 1)
+
+    editor.init_vertices(num_vertices)
+    editor.init_cells(num_cells)
+
+    spacing = domain_size / (num_vertices_side - 1.0)
+
+    # array of vertex indices
+    v = [[0]*num_vertices_side for i in range(num_vertices_side)]
+
+    # horizontal part of domain vertices
+    vertex_count = 0
+
+    for i in range(num_vertices_side):
+        y = i * spacing
+        for j in range(num_vertices_side):
+            x = j * spacing
+            p = Point(x, y, 0.0)
+            editor.add_vertex(vertex_count, p)
+            v[i][j] = vertex_count
+            vertex_count += 1
+
+    # cells
+    cell_count = 0
+    for i in range(num_vertices_side - 1):
+        for j in range(num_vertices_side - 1):
+            editor.add_cell(cell_count, v[i][j], v[i][j+1], v[i+1][j])
+            cell_count += 1
+
+            editor.add_cell(cell_count, v[i][j+1], v[i+1][j], v[i+1][j+1])
+            cell_count += 1
+
+    # vertical part of domain
+    # vertices
+    for i in range(num_vertices_side):
+        z = i * spacing - 0.5
+        for j in range(num_vertices_side):
+            x = j * spacing + 0.5
+            if not (i == center_index and j <= center_index):
+                p = Point(x, 0.5, z)
+                editor.add_vertex(vertex_count, p)
+                v[i][j] = vertex_count
+                vertex_count += 1
+            else:
+                v[i][j] += center_index
+
+    # cells
+    for i in range(num_vertices_side - 1):
+        for j in range(num_vertices_side - 1):
+            editor.add_cell(cell_count, v[i][j], v[i][j+1], v[i+1][j])
+            cell_count += 1
+
+            editor.add_cell(cell_count, v[i][j+1], v[i+1][j], v[i+1][j+1])
+            cell_count += 1
+
+    editor.close()
+
+    return mesh
