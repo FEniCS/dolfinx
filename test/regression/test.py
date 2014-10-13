@@ -1,6 +1,6 @@
 """Run all demos."""
 
-# Copyright (C) 2008 Ilmar Wilbers
+# Copyright (C) 2008-2014 Ilmar Wilbers
 #
 # This file is part of DOLFIN.
 #

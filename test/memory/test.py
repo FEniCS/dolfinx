@@ -1,6 +1,6 @@
 """Run Valgrind on all demos."""
 
-# Copyright (C) 2008 Ilmar Wilbers
+# Copyright (C) 2008-2014 Ilmar Wilbers
 #
 # This file is part of DOLFIN.
 #
@@ -21,76 +21,11 @@
 # Modified by Dag Lindbo 2008
 # Modified by Johannes Ring 2008
 # Modified by Johan Hake 2009
-#
-# First added:  2008-04-08
-# Last changed: 2009-05-19
 
 from __future__ import print_function
 import sys, os, re
 import platform
 from instant import get_status_output
-
-if "--only-python" in sys.argv:
-    print("Skipping C++ only memory tests")
-    sys.exit()
-
-if platform.system() in ['Darwin', 'Windows']:
-    print("No support for Valgrind on this platform.")
-    sys.exit(0)
-
-# Demos to run
-cppdemos = []
-for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "..", "demo")):
-    if os.path.basename(dpath) == 'cpp':
-        if os.path.isfile(os.path.join(dpath, 'Makefile')):
-            cppdemos.append(dpath)
-
-unit_test_excludes = ['graph']
-
-# Python unit test to run
-pythontests = []
-for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "unit")):
-    if os.path.basename(dpath) == 'python':
-        if os.path.isfile(os.path.join(dpath, 'test.py')):
-            pythontests.append(dpath)
-
-pythontests = [test for test in pythontests if not any([exclude in test for exclude in unit_test_excludes])]
-
-unit_test_excludes.append('meshconvert')
-
-# cpp unit test to run
-cpptests = []
-for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "unit")):
-    if os.path.basename(dpath) == 'cpp':
-        if os.path.isfile(os.path.join(dpath, 'test')):
-            cpptests.append(dpath)
-
-cpptests = [test for test in cpptests if not any([exclude in test for exclude in unit_test_excludes])]
-
-# Set non-interactive
-os.putenv('DOLFIN_NOPLOT', '1')
-
-# Helpful env vars
-os.putenv('G_SLICE','always-malloc')
-os.putenv('GLIBCXX_FORCE_NEW','1')
-os.putenv('G_DEBUG','gc-friendly')
-
-print(pythontests)
-
-# Demos that need command line arguments are treated seperately
-#cppdemos.remove('./../../demo/undocumented/quadrature/cpp')
-
-# Demos that are too time consuming to Valgrind
-cppdemos.remove('./../../demo/documented/cahn-hilliard/cpp')
-cppdemos.remove('./../../demo/undocumented/elastodynamics/cpp')
-
-re_def_lost = re.compile("definitely lost: 0 bytes in 0 blocks.")
-re_pos_lost = re.compile("possibly lost: 0 bytes in 0 blocks.")
-re_reachable = re.compile("still reachable: 0 bytes in 0 blocks.")
-re_error = re.compile("0 errors from 0 contexts")
-
-dolfin_supp = os.path.join(os.path.abspath(os.getcwd()), 'dolfin_valgrind.supp')
-vg_comm = 'valgrind --error-exitcode=9 --tool=memcheck --leak-check=full --show-reachable=yes --suppressions=%s' % dolfin_supp
 
 def run_and_analyse(path, run_str, prog_type, no_reachable_check = False):
     cmd = "%s %s" % (vg_comm, run_str)
@@ -121,74 +56,140 @@ def run_and_analyse(path, run_str, prog_type, no_reachable_check = False):
     print("*** FAILED: Memory error")
     return [(path, prog_type, output[1])]
 
-failed = []
+def main():
+    if "--only-python" in sys.argv:
+        print("Skipping C++ only memory tests")
+        sys.exit()
 
-# Run C++ unittests
-print("----------------------------------------------------------------------")
-print("Running Valgrind on all C++ unittests")
-print("")
-print("Found %d C++ unittests" % len(cpptests))
-print("")
+    if platform.system() in ['Darwin', 'Windows']:
+        print("No support for Valgrind on this platform.")
+        sys.exit(0)
 
-for test_path in cpptests:
+    # Demos to run
+    cppdemos = []
+    for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "..", "demo")):
+        if os.path.basename(dpath) == 'cpp':
+            if os.path.isfile(os.path.join(dpath, 'Makefile')):
+                cppdemos.append(dpath)
+
+    unit_test_excludes = ['graph']
+
+    # Python unit test to run
+    pythontests = []
+    for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "unit")):
+        if os.path.basename(dpath) == 'python':
+            if os.path.isfile(os.path.join(dpath, 'test.py')):
+                pythontests.append(dpath)
+
+    pythontests = [test for test in pythontests if not any([exclude in test for exclude in unit_test_excludes])]
+
+    unit_test_excludes.append('meshconvert')
+
+    # cpp unit test to run
+    cpptests = []
+    for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "unit")):
+        if os.path.basename(dpath) == 'cpp':
+            if os.path.isfile(os.path.join(dpath, 'test')):
+                cpptests.append(dpath)
+
+    cpptests = [test for test in cpptests if not any([exclude in test for exclude in unit_test_excludes])]
+
+    # Set non-interactive
+    os.putenv('DOLFIN_NOPLOT', '1')
+
+    # Helpful env vars
+    os.putenv('G_SLICE','always-malloc')
+    os.putenv('GLIBCXX_FORCE_NEW','1')
+    os.putenv('G_DEBUG','gc-friendly')
+
+    print(pythontests)
+
+    # Demos that need command line arguments are treated seperately
+    #cppdemos.remove('./../../demo/undocumented/quadrature/cpp')
+
+    # Demos that are too time consuming to Valgrind
+    cppdemos.remove('./../../demo/documented/cahn-hilliard/cpp')
+    cppdemos.remove('./../../demo/undocumented/elastodynamics/cpp')
+
+    re_def_lost = re.compile("definitely lost: 0 bytes in 0 blocks.")
+    re_pos_lost = re.compile("possibly lost: 0 bytes in 0 blocks.")
+    re_reachable = re.compile("still reachable: 0 bytes in 0 blocks.")
+    re_error = re.compile("0 errors from 0 contexts")
+
+    dolfin_supp = os.path.join(os.path.abspath(os.getcwd()), 'dolfin_valgrind.supp')
+    vg_comm = 'valgrind --error-exitcode=9 --tool=memcheck --leak-check=full --show-reachable=yes --suppressions=%s' % dolfin_supp
+
+    failed = []
+
+    # Run C++ unittests
     print("----------------------------------------------------------------------")
-    print("Running Valgrind on C++ unittest %s" % test_path)
+    print("Running Valgrind on all C++ unittests")
     print("")
-    if os.path.isfile(os.path.join(test_path, 'test')):
-        failed += run_and_analyse(test_path,"./test","C++")
-    else:
-        print("*** Warning: missing test")
+    print("Found %d C++ unittests" % len(cpptests))
+    print("")
 
-# Outcommenting the Python unittests due to troubles with valgrind suppresions
-#
-#print "----------------------------------------------------------------------"
-#print "Running Valgrind on all Python unittests"
-#print ""
-#print "Found %d Python unittests" % len(pythontests)
-#print ""
+    for test_path in cpptests:
+        print("----------------------------------------------------------------------")
+        print("Running Valgrind on C++ unittest %s" % test_path)
+        print("")
+        if os.path.isfile(os.path.join(test_path, 'test')):
+            failed += run_and_analyse(test_path,"./test","C++")
+        else:
+            print("*** Warning: missing test")
 
-# Run Python unittests
-#for test_path in pythontests:
-#    print "----------------------------------------------------------------------"
-#    print "Running Valgrind on Python unittest %s" % test_path
-#    print ""
-#    if os.path.isfile(os.path.join(test_path, 'test.py')):
-#        failed += run_and_analyse(test_path,"python test.py","Python",True)
-#    else:
-#        print "*** Warning: missing test"
+    # Outcommenting the Python unittests due to troubles with valgrind suppresions
+    #
+    #print "----------------------------------------------------------------------"
+    #print "Running Valgrind on all Python unittests"
+    #print ""
+    #print "Found %d Python unittests" % len(pythontests)
+    #print ""
 
-# Run C++ demos
-print("----------------------------------------------------------------------")
-print("Running Valgrind on all demos (non-interactively)")
-print("")
-print("Found %d C++ demos" % len(cppdemos))
-print("")
+    # Run Python unittests
+    #for test_path in pythontests:
+    #    print "----------------------------------------------------------------------"
+    #    print "Running Valgrind on Python unittest %s" % test_path
+    #    print ""
+    #    if os.path.isfile(os.path.join(test_path, 'test.py')):
+    #        failed += run_and_analyse(test_path,"python test.py","Python",True)
+    #    else:
+    #        print "*** Warning: missing test"
 
-for demo_path in cppdemos:
+    # Run C++ demos
     print("----------------------------------------------------------------------")
-    print("Running Valgrind on C++ demo %s" % demo_path)
+    print("Running Valgrind on all demos (non-interactively)")
     print("")
-    demo_name = "./demo_" + demo_path.split("/")[-2]
-    print(demo_name)
-    if os.path.isfile(os.path.join(demo_path, demo_name)):
-        failed += run_and_analyse(demo_path, demo_name, "C++")
+    print("Found %d C++ demos" % len(cppdemos))
+    print("")
+
+    for demo_path in cppdemos:
+        print("----------------------------------------------------------------------")
+        print("Running Valgrind on C++ demo %s" % demo_path)
+        print("")
+        demo_name = "./demo_" + demo_path.split("/")[-2]
+        print(demo_name)
+        if os.path.isfile(os.path.join(demo_path, demo_name)):
+            failed += run_and_analyse(demo_path, demo_name, "C++")
+        else:
+            print("*** Warning: missing demo")
+
+    # Print output for failed tests
+    print("")
+    if len(failed) > 0:
+        print("%d demo(s) and/or unit test(s) failed memcheck, see memcheck.log for details." % len(failed))
+        file = open("memcheck.log", "w")
+        for (test, interface, output) in failed:
+            file.write("----------------------------------------------------------------------\n")
+            file.write("%s (%s)\n" % (test, interface))
+            file.write("\n")
+            file.write(output)
+            file.write("\n")
+            file.write("\n")
     else:
-        print("*** Warning: missing demo")
+        print("All demos and unit tests checked for memory leaks and errors: OK")
 
-# Print output for failed tests
-print("")
-if len(failed) > 0:
-    print("%d demo(s) and/or unit test(s) failed memcheck, see memcheck.log for details." % len(failed))
-    file = open("memcheck.log", "w")
-    for (test, interface, output) in failed:
-        file.write("----------------------------------------------------------------------\n")
-        file.write("%s (%s)\n" % (test, interface))
-        file.write("\n")
-        file.write(output)
-        file.write("\n")
-        file.write("\n")
-else:
-    print("All demos and unit tests checked for memory leaks and errors: OK")
+    # Return error code if tests failed
+    return len(failed)
 
-# Return error code if tests failed
-sys.exit(len(failed) != 0)
+if __name__ == "__main__":
+    sys.exit(main())
