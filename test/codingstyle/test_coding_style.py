@@ -1,8 +1,5 @@
 #!/usr/bin/env py.test
-
-"Run all tests"
-
-# Copyright (C) 2011 Anders Logg
+# Copyright (C) 2011-2014 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -18,9 +15,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-11-14
-# Last changed: 2011-11-14
 
 from __future__ import print_function
 import os, re
@@ -38,12 +32,12 @@ def pytest_generate_tests(metafunc):
     topdir = os.path.join(pwd, "..", "..")
 
     # Check C++ files
-    cpp_call = {'topdir': topdir, 
-                'subdir': "dolfin", 
+    cpp_call = {'topdir': topdir,
+                'subdir': "dolfin",
                 'suffixes':[".cpp", ".h"]}
 
-    python_call = {'topdir': topdir, 
-                   'subdir': "site-packages", 
+    python_call = {'topdir': topdir,
+                   'subdir': "site-packages",
                    'suffixes':[".py"]}
 
     for test in python_tests:
@@ -54,7 +48,7 @@ def pytest_generate_tests(metafunc):
         cpp_call['test'] = test
         metafunc.addcall(funcargs=cpp_call)
 
-                        
+
 def test_codingstyle(topdir, subdir, suffixes, test):
     "Main function for performing tests"
 
@@ -73,7 +67,6 @@ def test_codingstyle(topdir, subdir, suffixes, test):
 
             # Perform all tests
             result = test(code, filename)
-
 
 def dolfin_error(code, filename):
     "Test for use of dolfin_error vs error"
@@ -126,4 +119,3 @@ def uint(code, filename):
 
 if __name__ == "__main__":
     pytest.main()
-

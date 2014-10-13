@@ -3,7 +3,7 @@ the norm of the solution vector with a known solution (obtained when
 running in serial). It is used for validating mesh partitioning and
 parallel assembly/solve."""
 
-# Copyright (C) 2009 Anders Logg
+# Copyright (C) 2009-2014 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -21,9 +21,6 @@ parallel assembly/solve."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Garth N. Wells, 2013
-#
-# First added:  2009-08-17
-# Last changed: 2013-07-06
 
 from __future__ import print_function
 import sys
@@ -90,34 +87,38 @@ def check_results(results, reference, tol):
 
     return status
 
-# Reference values for norm of solution vector
-reference = { ("16x16 unit square", 1): 9.547454087328376 ,
-              ("16x16 unit square", 2): 18.42366670418269 ,
-              ("16x16 unit square", 3): 27.29583104732836 ,
-              ("16x16 unit square", 4): 36.16867128121694 ,
-              ("4x4x4 unit cube", 1): 12.23389289626038 ,
-              ("4x4x4 unit cube", 2): 28.96491629163837 ,
-              ("4x4x4 unit cube", 3): 49.97350551329799 ,
-              ("4x4x4 unit cube", 4): 74.49938266409099 }
+def main():
+    # Reference values for norm of solution vector
+    reference = { ("16x16 unit square", 1): 9.547454087328376 ,
+                  ("16x16 unit square", 2): 18.42366670418269 ,
+                  ("16x16 unit square", 3): 27.29583104732836 ,
+                  ("16x16 unit square", 4): 36.16867128121694 ,
+                  ("4x4x4 unit cube", 1): 12.23389289626038 ,
+                  ("4x4x4 unit cube", 2): 28.96491629163837 ,
+                  ("4x4x4 unit cube", 3): 49.97350551329799 ,
+                  ("4x4x4 unit cube", 4): 74.49938266409099 }
 
-# Mesh files and degrees to check
-meshes= [(UnitSquareMesh(16, 16), "16x16 unit square"),\
-         (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
-degrees = [1, 2, 3, 4]
+    # Mesh files and degrees to check
+    meshes= [(UnitSquareMesh(16, 16), "16x16 unit square"),\
+             (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
+    degrees = [1, 2, 3, 4]
 
 
-# Iterate over test cases and collect results
-results = []
-for mesh in meshes:
-    for degree in degrees:
-        norm = test_solve(mesh[0], degree)
-        results.append((mesh[1], degree, norm))
+    # Iterate over test cases and collect results
+    results = []
+    for mesh in meshes:
+        for degree in degrees:
+            norm = test_solve(mesh[0], degree)
+            results.append((mesh[1], degree, norm))
 
-# Uncomment to print results for use as reference
-#print_reference(results)
+    # Uncomment to print results for use as reference
+    #print_reference(results)
 
-# Check results
-status = check_results(results, reference, tol)
+    # Check results
+    status = check_results(results, reference, tol)
 
-# Resturn exit status
-sys.exit(status)
+    # Resturn exit status
+    return status
+
+if __name__ == "__main__":
+    sys.exit(main())

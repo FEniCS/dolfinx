@@ -21,6 +21,7 @@
 # Modified by Johannes Ring, 2009, 2011-2012.
 # Modified by Johan Hake, 2009.
 # Modified by Benjamin Kehlet 2012
+# Modified by Martin Sandve Alnaes, 2014
 
 from __future__ import print_function
 import sys, os, re
