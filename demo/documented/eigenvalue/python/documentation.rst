@@ -32,11 +32,11 @@ PETSc and SLEPc are available, and exit if not, as follows:
 
   # Test for PETSc and SLEPc
   if not has_linear_algebra_backend("PETSc"):
-      print "DOLFIN has not been configured with PETSc. Exiting."
+      print("DOLFIN has not been configured with PETSc. Exiting.")
       exit()
 
   if not has_slepc():
-      print "DOLFIN has not been configured with SLEPc. Exiting."
+      print("DOLFIN has not been configured with SLEPc. Exiting.")
       exit()
 
 First, we need to construct the matrix :math:`A`. This will be done in
@@ -81,7 +81,7 @@ hence take a while.
 .. code-block:: python
 
   # Compute all eigenvalues of A x = \lambda x
-  print "Computing eigenvalues. This can take a minute."
+  print("Computing eigenvalues. This can take a minute.")
   eigensolver.solve()
 
 The result is kept by the eigensolver, but can fortunately be
@@ -107,7 +107,7 @@ eigenfunction can be manipulated as any other :py:class:`Function
 
 .. code-block:: python
 
-  print "Largest eigenvalue: ", r
+  print("Largest eigenvalue: ", r)
 
   # Initialize function and assign eigenvector
   u = Function(V)

@@ -216,12 +216,12 @@ examples:
     n = FacetNormal(mesh)
     m1 = dot(grad(u), n)*ds(2)
     v1 = assemble(m1)
-    print "\int grad(u) * n ds(2) = ", v1
+    print("\int grad(u) * n ds(2) = ", v1)
 
     # Evaluate integral of u over the obstacle
     m2 = u*dx(1)
     v2 = assemble(m2)
-    print "\int u dx(1) = ", v2
+    print("\int u dx(1) = ", v2)
 
 We also plot the solution and its gradient:
 
