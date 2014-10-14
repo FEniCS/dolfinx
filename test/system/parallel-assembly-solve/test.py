@@ -1,6 +1,6 @@
 "Run solver.py in parallel"
 
-# Copyright (C) 2009 Anders Logg
+# Copyright (C) 2009-2014 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -20,35 +20,37 @@
 # Modified by Johan Hake
 # Modified by Johannes Ring 2011
 # Modified by Garth N. Wells 2013
-#
-# First added:  2009-08-17
-# Last changed: 2013-07-06
+# Modified by Martin Sandve Alnaes, 2014
 
 from __future__ import print_function
 import sys
 import subprocess
 from dolfin import has_mpi, has_parmetis, has_scotch
 
-if not (has_mpi()):
-    print("DOLFIN has not been compiled with MPI. Test is not run.")
-    sys.exit(0)
-elif not (has_parmetis() or has_scotch()):
-    print("DOLFIN has not been compiled with ParMETIS or SCOTCH. Test is not run.")
-    sys.exit(0)
+def main():
+    if not (has_mpi()):
+        print("DOLFIN has not been compiled with MPI. Test is not run.")
+        sys.exit(0)
+    elif not (has_parmetis() or has_scotch()):
+        print("DOLFIN has not been compiled with ParMETIS or SCOTCH. Test is not run.")
+        sys.exit(0)
 
-# Number of processes
-num_processes = 3
+    # Number of processes
+    num_processes = 3
 
-# Run solver.py
-output = subprocess.check_output(['mpirun', '-np', str(num_processes),
-                                  sys.executable, 'solver.py'])
-if len(sys.argv) > 1 and sys.argv[1] == "--debug":
-    print(output)
+    # Run solver.py
+    output = subprocess.check_output(['mpirun', '-np', str(num_processes),
+                                      sys.executable, 'solver.py'])
+    if len(sys.argv) > 1 and sys.argv[1] == "--debug":
+        print(output)
 
-# Return exit status
-if "ERROR" in output:
-    print(output)
-    sys.exit(1)
-else:
-    print("OK")
-    sys.exit(0)
+    # Return exit status
+    if "ERROR" in output:
+        print(output)
+        return 1
+    else:
+        print("OK")
+        return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
