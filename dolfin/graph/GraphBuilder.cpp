@@ -169,8 +169,6 @@ void GraphBuilder::compute_dual_graph(const Mesh& mesh,
                                                      true);
   local_graph.resize(num_local_cells);
 
-  const std::map<unsigned int, std::set<unsigned int> >& shared_facets 
-    = mesh.topology().shared_entities(tdim - 1);
   std::vector<std::vector<std::size_t> > send_request(mpi_size);
   std::vector<std::vector<std::size_t> > recv_request(mpi_size);
 
@@ -189,6 +187,9 @@ void GraphBuilder::compute_dual_graph(const Mesh& mesh,
     }
     else if (num_cells == 1 and num_global_cells == 2)
     {
+      // Only in parallel
+      const std::map<unsigned int, std::set<unsigned int> >& shared_facets 
+        = mesh.topology().shared_entities(tdim - 1);
       const std::size_t cell0 = f->entities(tdim)[0];
       // Need to send cell index to sharing process
       auto map_it = shared_facets.find(f->index());
