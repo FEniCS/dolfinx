@@ -172,6 +172,15 @@ namespace dolfin
     ///         The ownership range.
     std::pair<std::size_t, std::size_t> ownership_range() const;
 
+    /// Return number of dofs on this process including unowned ones
+    ///
+    /// *Returns*
+    ///     int
+    ///         Size of local to global map.
+    int local_to_global_map_size() const
+    { return _local_ownership_size
+        + block_size*_local_to_global_unowned.size(); }
+
     /// Return map from nonlocal dofs that appear in local dof map to
     /// owning process
     ///

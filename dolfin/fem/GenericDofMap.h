@@ -86,6 +86,9 @@ namespace dolfin
     /// this process)
     virtual std::pair<std::size_t, std::size_t> ownership_range() const = 0;
 
+    /// Return number of dofs on this process including unowned ones
+    virtual int local_to_global_map_size() const = 0;
+
     /// Return map from nonlocal-dofs (that appear in local dof map)
     /// to owning process
     virtual const std::vector<int>& off_process_owner() const = 0;
