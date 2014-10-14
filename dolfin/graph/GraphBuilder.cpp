@@ -34,6 +34,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -149,6 +150,80 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   }
 
   return graph;
+}
+//-----------------------------------------------------------------------------
+void GraphBuilder::compute_dual_graph(const Mesh& mesh,
+                            std::vector<std::set<std::size_t> >& local_graph,
+                            std::set<std::size_t>& ghost_vertices)
+{
+  MPI_Comm mpi_comm = mesh.mpi_comm();
+  const std::size_t mpi_size = MPI::size(mpi_comm);
+
+  // Make sure Facet-Cell connections exist
+  const std::size_t tdim = mesh.topology().dim();
+  mesh.init(tdim - 1, tdim);
+
+  // Get offset for this process
+  const std::size_t num_local_cells = mesh.size(tdim);
+  const std::size_t cell_offset = MPI::global_offset(mpi_comm, num_local_cells,
+                                                     true);
+  local_graph.resize(num_local_cells);
+
+  const std::map<unsigned int, std::set<unsigned int> >& shared_facets 
+    = mesh.topology().shared_entities(tdim - 1);
+  std::vector<std::vector<std::size_t> > send_request(mpi_size);
+  std::vector<std::vector<std::size_t> > recv_request(mpi_size);
+
+  for (FacetIterator f(mesh); !f.end(); ++f)
+  {
+    // Only deal with simple meshes - will fail for complex manifolds
+    const unsigned int num_cells = f->num_entities(tdim);
+    const unsigned int num_global_cells = f->num_global_entities(tdim);
+    dolfin_assert(num_cells == 2 or num_cells == 1);
+    if (num_cells == 2)
+    {
+      const std::size_t cell0 = f->entities(tdim)[0];
+      const std::size_t cell1 = f->entities(tdim)[1];
+      local_graph[cell0].insert(cell1 + cell_offset);
+      local_graph[cell1].insert(cell0 + cell_offset);
+    }
+    else if (num_cells == 1 and num_global_cells == 2)
+    {
+      const std::size_t cell0 = f->entities(tdim)[0];
+      // Need to send cell index to sharing process
+      auto map_it = shared_facets.find(f->index());
+      dolfin_assert(map_it != shared_facets.end());
+      dolfin_assert(map_it->second.size() == 1);
+      const unsigned int proc = *(map_it->second.begin());
+      send_request[proc].push_back(f->global_index());
+      send_request[proc].push_back(cell0 + cell_offset);
+    }
+  }
+
+  // Swap information on shared facets
+  MPI::all_to_all(mpi_comm, send_request, recv_request);
+
+  // Match up facets and make connection
+  for (unsigned int i = 0; i != mpi_size; ++i)
+  {
+    // Convenience references
+    const std::vector<std::size_t>& sendv = send_request[i];
+    const std::vector<std::size_t>& recvv = recv_request[i];
+
+    dolfin_assert(sendv.size() == recvv.size());
+    for (unsigned int j = 0; j != sendv.size(); j += 2)
+    {
+      for (unsigned int k = 0; k != recvv.size(); k += 2)
+      {
+        if (sendv[j] == recvv[k])
+        {
+          local_graph[sendv[j + 1] - cell_offset]
+            .insert(recvv[k + 1]);
+          ghost_vertices.insert(recvv[k + 1]);
+        }
+      }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
