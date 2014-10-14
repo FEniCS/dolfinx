@@ -60,6 +60,12 @@ namespace dolfin
             const LocalMeshData& mesh_data,
             std::string mode="partition");
 
+
+    static void compute_partition(const Mesh &mesh,
+            std::vector<std::size_t>& cell_partition,
+            std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+            std::string mode="partition");
+
   private:
 
 #ifdef HAS_PARMETIS

@@ -31,6 +31,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/mesh/Mesh.h>
 #include "GraphBuilder.h"
 #include "SCOTCH.h"
 
@@ -47,7 +48,30 @@ extern "C"
 using namespace dolfin;
 
 #ifdef HAS_SCOTCH
+//-----------------------------------------------------------------------------
+void SCOTCH::compute_partition(const Mesh& mesh,
+                               std::vector<std::size_t>& cell_partition,
+                               std::map<std::size_t,
+                               dolfin::Set<unsigned int> >& ghost_procs)
+{
+  // Create data structures to hold graph
+  std::vector<std::set<std::size_t> > local_graph;
+  std::set<std::size_t> ghost_vertices;
 
+  // Compute local dual graph
+  GraphBuilder::compute_dual_graph(mesh, local_graph,
+                                   ghost_vertices);
+
+  // Compute partitions
+  const std::size_t num_global_vertices = mesh.topology().size_global(0);
+
+  const std::vector<std::size_t> global_cell_indices; // not used
+  const std::vector<std::size_t> node_weights; // not used (yet)
+
+  partition(mesh.mpi_comm(), local_graph, node_weights,
+            ghost_vertices, global_cell_indices,
+            num_global_vertices, cell_partition, ghost_procs);
+}
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_partition(
   const MPI_Comm mpi_comm,
@@ -287,7 +311,7 @@ void SCOTCH::partition(
   std::vector<SCOTCH_Num> vload;
   if (node_weights.size() == 0)
     veloloctab = NULL;
-  else 
+  else
   {
     vload.resize(node_weights.size());
     std::copy(node_weights.begin(), node_weights.end(), vload.begin());
