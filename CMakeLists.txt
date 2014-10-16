@@ -1032,25 +1032,25 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_unittests_cpp" for running only C++ unit tests (TODO: Use google test)
   add_custom_target(run_unittests_cpp
-    COMMAND ${PYTHON_EXECUTABLE} "-m" "pytest" "-s" "-k" "cpp"
+    COMMAND ${PYTHON_EXECUTABLE} "-m" "pytest" "-k" "cpp"
     DEPENDS copy_data_test_demo test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_unittests_py" for running unit tests
   add_custom_target(run_unittests_py
-    COMMAND ${PYTHON_EXECUTABLE} "-m" "pytest" "-s"
+    COMMAND ${PYTHON_EXECUTABLE} "-m" "pytest"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_unittests_py_mpi" for running unit tests with mpi (Python only!)
   add_custom_target(run_unittests_py_mpi
-    COMMAND ${MPIEXEC} "-np" "3" ${PYTHON_EXECUTABLE} "-m" "pytest" "-s"
+    COMMAND ${MPIEXEC} "-np" "3" ${PYTHON_EXECUTABLE} "-m" "pytest"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_quicktest" for running only Python unit tests not marked as 'slow'
   add_custom_target(run_quicktest
-    COMMAND ${PYTHON_EXECUTABLE} "-m" "pytest" "-s" "-k" "'not" "slow'"
+    COMMAND ${PYTHON_EXECUTABLE} "-m" "pytest" "-k" "'not" "slow'"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
