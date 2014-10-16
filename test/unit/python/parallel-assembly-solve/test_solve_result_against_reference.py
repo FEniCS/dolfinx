@@ -77,7 +77,6 @@ def check_results(results, reference, tol):
         else:
             ref = reference[(mesh_file, degree)]
             diff = abs(norm - ref) / abs(ref)
-            tol = 0
             if diff >= tol:
                 errors.append((mesh_file, degree, norm, ref, diff))
     return errors

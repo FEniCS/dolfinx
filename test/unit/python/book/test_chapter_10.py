@@ -27,7 +27,7 @@ import pytest
 from dolfin import *
 import os
 
-from dolfin_utils.test import * #cd_tempdir, pushpop_parameters, skip_in_parallel
+from dolfin_utils.test import * #cd_tempdir, pushpop_parameters, skip_in_parallel, use_gc_barrier
 
 def create_data(A=None):
     "This function creates data used in the tests below"
@@ -237,6 +237,7 @@ def test_p12_box_1():
     editor.add_cell(1, 0, 2, 3)
     editor.close()
 
+@use_gc_barrier
 @skip_in_parallel
 def test_p13_box_2():
     mesh = Mesh(os.path.join(os.path.dirname(__file__), "mesh.xml"))
@@ -607,6 +608,7 @@ def test_p33_box_1():
 
     info(solver.parameters, True)
 
+@use_gc_barrier
 @skip_in_parallel
 def test_p33_box_2():
     mesh = Mesh(os.path.join(os.path.dirname(__file__), "mesh.xml"))
@@ -635,6 +637,7 @@ def test_p34_box_2():
     # Disabled since it claims the terminal
     #plot(element)
 
+@use_gc_barrier
 @skip_in_parallel
 def test_p35_box_1(cd_tempdir):
     mesh = UnitSquareMesh(2, 2)
@@ -644,6 +647,7 @@ def test_p35_box_1(cd_tempdir):
     file = File("solution.pvd")
     file << u
 
+@use_gc_barrier
 @skip_in_parallel
 def test_p35_box_2(cd_tempdir):
     mesh = UnitSquareMesh(2, 2)
@@ -654,6 +658,7 @@ def test_p35_box_2(cd_tempdir):
     file = File("solution.pvd", "compressed");
     file << (u, t)
 
+@use_gc_barrier
 @skip_in_parallel
 def test_p36_box_1(cd_tempdir, pushpop_parameters):
     mesh = UnitSquareMesh(2, 2)
@@ -669,6 +674,7 @@ def test_p36_box_1(cd_tempdir, pushpop_parameters):
     parameters_file << parameters
     parameters_file >> parameters
 
+@use_gc_barrier
 @skip_in_parallel
 def test_p37_box_1(cd_tempdir):
     mesh = UnitSquareMesh(2, 2)
@@ -684,6 +690,7 @@ def test_p37_box_1(cd_tempdir):
         time_series.store(mesh, t)
         t += dt
 
+@use_gc_barrier
 @skip_in_parallel
 def test_p37_box_2():
     time_series = TimeSeries("simulation_data")
@@ -811,6 +818,7 @@ def test_p42_box_4(pushpop_parameters):
     # but this is not testable without external sys.argv.
     # Feel free to improve by adding something to argv above.
 
+@use_gc_barrier
 @skip_in_parallel
 def test_p43_box_1(cd_tempdir, pushpop_parameters):
     file = File("parameters.xml")
@@ -832,12 +840,14 @@ def test_p46_box_1():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
+@use_gc_barrier
 def test_p47_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
 
+@use_gc_barrier
 def test_p47_box_2():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "Lagrange", 1)
