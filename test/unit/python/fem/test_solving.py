@@ -21,7 +21,7 @@
 
 import pytest
 from dolfin import *
-from dolfin_utils.test import use_gc_barrier
+from dolfin_utils.test import *
 
 @use_gc_barrier
 def test_bcs():
