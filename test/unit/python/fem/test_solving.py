@@ -18,14 +18,12 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-11-10
-# Last changed: 2011-11-10
 
 import pytest
 from dolfin import *
+from dolfin_utils.test import use_gc_barrier
 
-
+@use_gc_barrier
 def test_bcs():
     "Check that the bcs argument is picked up"
 
@@ -62,6 +60,7 @@ def test_bcs():
     assert round(u3.vector().norm("l2") - 14.9362601686, 10) == 0
     assert round(u4.vector().norm("l2") - 14.9362601686, 10) == 0
 
+@use_gc_barrier
 def test_calling():
     "Test that unappropriate arguments are not allowed"
     mesh = UnitSquareMesh(4, 4)
