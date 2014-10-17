@@ -1,3 +1,4 @@
+#!/usr/bin/env py.test
 """Unit tests for the XML input/output of Function"""
 
 # Copyright (C) 2014 Matthias Liertzer
