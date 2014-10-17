@@ -50,7 +50,7 @@ TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
   dolfin_assert(dims.size() == ownership_range.size());
 
   // Create empty sparsity pattern
-  if (_sparsity_pattern)
+  if (sparsity_pattern)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
