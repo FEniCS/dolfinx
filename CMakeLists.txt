@@ -1020,6 +1020,10 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
+  # Add target "run_systemtests" for running system tests
+  add_custom_target(run_systemtests
+    COMMAND echo "System tests are removed.")
+
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
