@@ -1024,23 +1024,25 @@ if (DOLFIN_ENABLE_TESTING)
   add_custom_target(run_systemtests
     COMMAND echo "System tests are removed.")
 
+  # TODO: Make buildbot run the dependencies here separately?
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
-    DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
+    DEPENDS run_unittests_cpp run_unittests_py_mpi run_unittests_py)
 
-  # Add target "run_unittests_cpp" for running only C++ unit tests (TODO: Use google test)
+  # TODO: Use google test for C++ unit tests?
+  # Add target "run_unittests_cpp" for running only C++ unit tests
   add_custom_target(run_unittests_cpp
     COMMAND ${PYTHON_EXECUTABLE} "-B" "-m" "pytest" "-k" "cpp"
     DEPENDS copy_data_test_demo test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
-  # Add target "run_unittests_py" for running unit tests
+  # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
     COMMAND ${PYTHON_EXECUTABLE} "-B" "-m" "pytest"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
-  # Add target "run_unittests_py_mpi" for running unit tests with mpi (Python only!)
+  # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
   add_custom_target(run_unittests_py_mpi
     COMMAND ${MPIEXEC} "-np" "3" ${PYTHON_EXECUTABLE} "-B" "-m" "pytest"
     DEPENDS copy_data_test_demo
