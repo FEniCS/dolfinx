@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-03-09
-// Last changed: 2011-03-11
+// Last changed: 2014-10-03
 
 #include <dolfin/common/NoDeleter.h>
 #include "Form.h"
@@ -64,6 +64,20 @@ const InteriorFacetDomainAssigner&
 InteriorFacetDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   _form.set_interior_facet_domains(domains);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const VertexDomainAssigner&
+VertexDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
+{
+  _form.set_vertex_domains(reference_to_no_delete_pointer(domains));
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const VertexDomainAssigner&
+VertexDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains)
+{
+  _form.set_vertex_domains(domains);
   return *this;
 }
 //-----------------------------------------------------------------------------
