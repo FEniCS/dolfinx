@@ -9,6 +9,7 @@ u0 = u = 1 + x^2 + 2y^2, f = -6.
 """
 
 from __future__ import print_function
+import os
 from dolfin import *
 
 # Create mesh and define function space

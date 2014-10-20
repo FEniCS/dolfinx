@@ -1,7 +1,8 @@
 #!/usr/bin/env py.test
-"""Unit tests for the DofMap interface"""
 
-# Copyright (C) 2014 Garth N. Wells
+"Unit tests for the MeshData class"
+
+# Copyright (C) 2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -17,22 +18,20 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2011-08-22
+# Last changed: 2011-08-22
 
-from __future__ import print_function
 import pytest
-import numpy as np
 from dolfin import *
 
-def test_dofmap_clear_submap():
-    mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*V
+def test_meshfunction():
+    "Test input/output"
 
-    # Check block size
-    assert W.dofmap().block_size == 2
+    mesh = UnitCubeMesh(3, 3, 3)
 
-    W.dofmap().clear_sub_map_data()
-    with pytest.raises(RuntimeError):
-        W0 = W.sub(0)
-    with pytest.raises(RuntimeError):
-        W1 = W.sub(1)
+    f = mesh.data().create_array("foo", 3)
+    #f[:] = 0.0
+    #g = mesh.data().array("foo")
+
+    #assert len(g) == mesh.num_vertices()

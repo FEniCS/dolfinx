@@ -1,7 +1,8 @@
 #!/usr/bin/env py.test
-"""Unit tests for the DofMap interface"""
 
-# Copyright (C) 2014 Garth N. Wells
+"""Unit tests for LocalSolver"""
+
+# Copyright (C) 2013 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -17,22 +18,36 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2013-02-13
+# Last changed:
 
-from __future__ import print_function
 import pytest
-import numpy as np
+import numpy
 from dolfin import *
 
-def test_dofmap_clear_submap():
-    mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*V
 
-    # Check block size
-    assert W.dofmap().block_size == 2
+def test_local_solver():
 
-    W.dofmap().clear_sub_map_data()
-    with pytest.raises(RuntimeError):
-        W0 = W.sub(0)
-    with pytest.raises(RuntimeError):
-        W1 = W.sub(1)
+    mesh = UnitCubeMesh(16, 16, 16)
+    V = FunctionSpace(mesh, "Lagrange", 2)
+
+    v = TestFunction(V)
+    u = TrialFunction(V)
+    f = Constant(10.0)
+
+    # Forms for projection
+    a = inner(v, u)*dx
+    L = inner(v, f)*dx
+
+    # Wrap forms as DOLFIN forms (LocalSolver hasn't been properly
+    # wrapped in Python yet)
+    a = Form(a)
+    L = Form(L)
+
+    u = Function(V)
+    local_solver = cpp.LocalSolver()
+    local_solver.solve(u.vector(), a, L)
+    x = u.vector().copy()
+    x[:] = 10.0
+    assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0

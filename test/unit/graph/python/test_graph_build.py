@@ -1,7 +1,8 @@
 #!/usr/bin/env py.test
-"""Unit tests for the DofMap interface"""
 
-# Copyright (C) 2014 Garth N. Wells
+"""Unit tests for graph building"""
+
+# Copyright (C) 2013 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -17,22 +18,21 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2013-08-10
+# Last changed:
 
-from __future__ import print_function
 import pytest
-import numpy as np
 from dolfin import *
 
-def test_dofmap_clear_submap():
-    mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*V
 
-    # Check block size
-    assert W.dofmap().block_size == 2
+def test_build_from_mesh_simple():
+    """Build mesh graph """
 
-    W.dofmap().clear_sub_map_data()
-    with pytest.raises(RuntimeError):
-        W0 = W.sub(0)
-    with pytest.raises(RuntimeError):
-        W1 = W.sub(1)
+    mesh = UnitCubeMesh(16, 16, 16)
+    D = mesh.topology().dim()
+    GraphBuilder.local_graph(mesh, D, 0)
+    GraphBuilder.local_graph(mesh, D, 1)
+    GraphBuilder.local_graph(mesh, 2, D)
+    GraphBuilder.local_graph(mesh, 1, D)
+    GraphBuilder.local_graph(mesh, 0, D)

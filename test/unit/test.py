@@ -30,127 +30,134 @@ from instant import get_status_output
 from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
 from six import print_
 
-# Tests to run
-tests = {
-    "adaptivity":     ["errorcontrol", "TimeSeries"],
-    "ale":            ["HarmonicSmoothing"],
-    "book":           ["chapter_1", "chapter_10"],
-    "fem":            ["solving", "Assembler", "DirichletBC", "DofMap", \
-                       "FiniteElement", "Form", "SystemAssembler",
-                       "LocalSolver", "manifolds"],
-    "function":       ["Constant", "ConstrainedFunctionSpace", \
-                       "Expression", "Function", "FunctionAssigner", \
-                       "FunctionSpace", "SpecialFunctions", \
-                       "LagrangeInterpolator", \
-                       "nonmatching_interpolation"],
-    "geometry":       ["BoundingBoxTree", "CollisionDetection", "Intersection",
-                       "IntersectionTriangulation", "Issues"],
-    "graph":          ["GraphBuild"],
-    "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
-                       "XMLMeshValueCollection", "XMLVector", \
-                       "XMLMeshData", "XMLLocalMeshData", \
-                       "XDMF", "HDF5", "Exodus", "X3D"],
-    "jit":            ["test"],
-    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \
-                       "KrylovSolver", "LinearOperator"],
-    "math":           ["test"],
-    "mesh":           ["Cell", "Edge", "Face", "MeshColoring", \
-                       "MeshData", "MeshEditor", "MeshFunction", \
-                       "MeshIterator", "MeshMarkers", "MeshQuality", \
-                       "MeshValueCollection", "BoundaryMesh", "Mesh", \
-                       "SubMesh", "MeshTransformation", "SubDomain", \
-                       "PeriodicBoundaryComputation", \
-                           "MultiMesh"],
-    "meshconvert":    ["test"],
-    "multistage":     ["RKSolver", "PointIntegralSolver"],
-    "nls":            ["PETScSNESSolver", "TAOLinearBoundSolver"],
-    "parameter":      ["Parameters"],
-    "python-extras":  ["test"],
-    "refinement":     ["refine"],
-    }
+def main():
+    # Tests to run
+    tests = {
+        "adaptivity":     ["errorcontrol", "TimeSeries"],
+        "ale":            ["HarmonicSmoothing"],
+        "book":           ["chapter_1", "chapter_10"],
+        "fem":            ["solving", "Assembler", "DirichletBC", "DofMap", \
+                           "FiniteElement", "Form", "SystemAssembler",
+                           "LocalSolver", "manifolds"],
+        "function":       ["Constant", "ConstrainedFunctionSpace", \
+                           "Expression", "Function", "FunctionAssigner", \
+                           "FunctionSpace", "SpecialFunctions", \
+                           "LagrangeInterpolator", \
+                           "nonmatching_interpolation"],
+        "geometry":       ["BoundingBoxTree", "CollisionDetection", "Intersection",
+                           "IntersectionTriangulation", "Issues"],
+        "graph":          ["GraphBuild"],
+        "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
+                           "XMLMeshValueCollection", "XMLVector", \
+                           "XMLMeshData", "XMLLocalMeshData", \
+                           "XDMF", "HDF5", "Exodus", "X3D"],
+        "jit":            ["test"],
+        "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \
+                           "KrylovSolver", "LinearOperator"],
+        "math":           ["test"],
+        "mesh":           ["Cell", "Edge", "Face", "MeshColoring", \
+                           "MeshData", "MeshEditor", "MeshFunction", \
+                           "MeshIterator", "MeshMarkers", "MeshQuality", \
+                           "MeshValueCollection", "BoundaryMesh", "Mesh", \
+                           "SubMesh", "MeshTransformation", "SubDomain", \
+                           "PeriodicBoundaryComputation", \
+                               "MultiMesh"],
+        "meshconvert":    ["test"],
+        "multistage":     ["RKSolver", "PointIntegralSolver"],
+        "nls":            ["PETScSNESSolver", "TAOLinearBoundSolver"],
+        "parameter":      ["Parameters"],
+        "python-extras":  ["test"],
+        "refinement":     ["refine"],
+        }
 
-# Run both C++ and Python tests as default
-only_python = False
+    # Run both C++ and Python tests as default
+    only_python = False
 
-# Check if we should run only Python tests, use for quick testing
-if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
-    only_python = True
+    # Check if we should run only Python tests, use for quick testing
+    if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
+        only_python = True
 
-# Build prefix list
-prefixes = [""]
-if has_mpi() and (has_parmetis() or has_scotch()) and \
-       (has_linear_algebra_backend("Epetra") or \
-        has_linear_algebra_backend("PETSc")):
-    prefixes.append("mpirun -np 3 ")
-else:
-    print("DOLFIN has not been compiled with MPI and/or ParMETIS/SCOTCH. " \
-          "Unit tests will not be run in parallel.")
-
-# Allow to disable parallel testing
-if "DISABLE_PARALLEL_TESTING" in os.environ:
+    # Build prefix list
     prefixes = [""]
+    if has_mpi() and (has_parmetis() or has_scotch()) and \
+           (has_linear_algebra_backend("Epetra") or \
+            has_linear_algebra_backend("PETSc")):
+        prefixes.append("mpirun -np 3 ")
+    else:
+        print("DOLFIN has not been compiled with MPI and/or ParMETIS/SCOTCH. " \
+              "Unit tests will not be run in parallel.")
 
-# Set non-interactive
-os.putenv('DOLFIN_NOPLOT', '1')
+    # Allow to disable parallel testing
+    if "DISABLE_PARALLEL_TESTING" in os.environ:
+        prefixes = [""]
 
-failed = []
-# Run tests in serial, then in parallel
-for prefix in prefixes:
-    for test, subtests in list(tests.items()):
-        for subtest in subtests:
-            print("Running unit tests for %s (%s) with prefix '%s'" % (test,  subtest, prefix))
-            print("----------------------------------------------------------------------")
+    # Set non-interactive
+    os.putenv('DOLFIN_NOPLOT', '1')
 
-            cpptest_executable = "test_" + subtest
-            if platform.system() == 'Windows':
-                cpptest_executable += '.exe'
-            print_("C++:   ", end=' ')
-            if only_python:
-                print("Skipping tests as requested (--only-python)")
-            elif not os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
-                print("This test set does not have a C++ version")
-            else:
-                os.chdir(os.path.join(test, "cpp"))
-                status, output = get_status_output("%s.%s%s" % \
-                                   (prefix, os.path.sep, cpptest_executable))
-                os.chdir(os.path.join(os.pardir, os.pardir))
-                if status == 0 and "OK" in output:
-                    print_("OK", end=' ')
-                    match = re.search("OK \((\d+)\)", output)
-                    if match:
-                        num_tests = int(match.groups()[0])
-                        print_("(%d tests)" % num_tests, end=' ')
-                    print()
+    failed = []
+    # Run tests in serial, then in parallel
+    for prefix in prefixes:
+        for test, subtests in list(tests.items()):
+            for subtest in subtests:
+                print("Running unit tests for %s (%s) with prefix '%s'" % (test,  subtest, prefix))
+                print("----------------------------------------------------------------------")
+
+                cpptest_executable = "test_" + subtest
+                if platform.system() == 'Windows':
+                    cpptest_executable += '.exe'
+                print_("C++:   ", end=' ')
+                if only_python:
+                    print("Skipping tests as requested (--only-python)")
+                elif not os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
+                    print("This test set does not have a C++ version")
                 else:
-                    print("*** Failed")
-                    failed += [(test, subtest, "C++", output)]
+                    os.chdir(os.path.join(test, "cpp"))
+                    status, output = get_status_output("%s.%s%s" % \
+                                       (prefix, os.path.sep, cpptest_executable))
+                    os.chdir(os.path.join(os.pardir, os.pardir))
+                    if status == 0 and "OK" in output:
+                        print_("OK", end=' ')
+                        match = re.search("OK \((\d+)\)", output)
+                        if match:
+                            num_tests = int(match.groups()[0])
+                            print_("(%d tests)" % num_tests, end=' ')
+                        print()
+                    else:
+                        print("*** Failed")
+                        failed += [(test, subtest, "C++", output)]
 
-            print_("Python:", end=' ')
-            if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
-                os.chdir(os.path.join(test,"python"))
-                status, output = get_status_output("%s%s .%s%s.py" % \
-                                   (prefix, sys.executable, os.path.sep, subtest))
-                os.chdir(os.path.join(os.pardir, os.pardir))
-                if status == 0 and "OK" in output:
-                    print_("OK", end=' ')
-                    match = re.search("Ran (\d+) test", output)
-                    if match:
-                        num_tests = int(match.groups()[0])
-                        print_("(%d tests)" % num_tests, end=' ')
-                    print()
+                print_("Python:", end=' ')
+                if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
+                    os.chdir(os.path.join(test,"python"))
+                    status, output = get_status_output("%s%s .%s%s.py" % \
+                                       (prefix, sys.executable, os.path.sep, subtest))
+                    os.chdir(os.path.join(os.pardir, os.pardir))
+                    if status == 0 and "OK" in output:
+                        print_("OK", end=' ')
+                        match = re.search("Ran (\d+) test", output)
+                        if match:
+                            num_tests = int(match.groups()[0])
+                            print_("(%d tests)" % num_tests, end=' ')
+                        print()
+                    else:
+                        print("*** Failed")
+                        failed += [(test, subtest, "Python", output)]
                 else:
-                    print("*** Failed")
-                    failed += [(test, subtest, "Python", output)]
-            else:
-                print("Skipping")
+                    print("Skipping")
 
-            print("")
+                print("")
 
-    # Print output for failed tests
-    for (test, subtest, interface, output) in failed:
-        print("One or more unit tests failed for %s (%s, %s):" % (test, subtest, interface))
-        print(output)
-        open("fail.log", "w").write(output)
+        # Print output for failed tests
+        for (test, subtest, interface, output) in failed:
+            print("One or more unit tests failed for %s (%s, %s):" % (test, subtest, interface))
+            print(output)
+            open("fail.log", "w").write(output)
 
-# Return error code if tests failed
-sys.exit(len(failed) != 0)
+    # Return error code if tests failed
+    sys.exit(len(failed) != 0)
+
+if __name__ == "__main__":
+    #main()
+    print("The test.py file is deprecated. Run 'py.test' or look in the scripts/ directory for other running examples.")
+    sys.exit(-1)
+

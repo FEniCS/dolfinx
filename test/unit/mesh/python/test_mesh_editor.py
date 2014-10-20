@@ -1,7 +1,8 @@
 #!/usr/bin/env py.test
-"""Unit tests for the DofMap interface"""
 
-# Copyright (C) 2014 Garth N. Wells
+"Unit tests for the MeshEditor class"
+
+# Copyright (C) 2006-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -17,22 +18,30 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2006-08-08
+# Last changed: 2014-02-06
 
-from __future__ import print_function
-import pytest
-import numpy as np
 from dolfin import *
 
-def test_dofmap_clear_submap():
-    mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*V
+def test_triangle_mesh():
 
-    # Check block size
-    assert W.dofmap().block_size == 2
+    # Create mesh object and open editor
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, 2, 2)
+    editor.init_vertices(3) # test both versions of interface
+    editor.init_vertices_global(3, 3)
+    editor.init_cells(1)    # test both versions of interface
+    editor.init_cells_global(1, 1)
 
-    W.dofmap().clear_sub_map_data()
-    with pytest.raises(RuntimeError):
-        W0 = W.sub(0)
-    with pytest.raises(RuntimeError):
-        W1 = W.sub(1)
+    # Add vertices
+    editor.add_vertex(0, 0.0, 0.0)
+    editor.add_vertex(1, 1.0, 0.0)
+    editor.add_vertex(2, 0.0, 1.0)
+
+    # Add cell
+    editor.add_cell(0, 0, 1, 2)
+
+    # Close editor
+    editor.close()

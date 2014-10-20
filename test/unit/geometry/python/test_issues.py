@@ -1,7 +1,8 @@
 #!/usr/bin/env py.test
-"""Unit tests for the DofMap interface"""
 
-# Copyright (C) 2014 Garth N. Wells
+"""Unit tests for intersection computation"""
+
+# Copyright (C) 2013 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -17,22 +18,36 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2013-12-09
+# Last changed: 2014-05-30
 
 from __future__ import print_function
 import pytest
-import numpy as np
+
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
 
-def test_dofmap_clear_submap():
-    mesh = UnitSquareMesh(8, 8)
+
+@skip_in_parallel
+def test_issue_97():
+    "Test from Mikael Mortensen (issue #97)"
+
+    N = 2
+    L = 1000
+    mesh = BoxMesh(0, 0, 0, L, L, L, N, N, N)
+    V = FunctionSpace(mesh, 'CG', 1)
+    v = interpolate(Expression('x[0]'), V)
+    x = Point(0.5*L, 0.5*L, 0.5*L)
+    vx = v(x)
+
+
+@skip_in_parallel
+def test_issue_168():
+    "Test from Torsten Wendav (issue #168)"
+
+    mesh = UnitCubeMesh(14, 14, 14)
     V = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*V
-
-    # Check block size
-    assert W.dofmap().block_size == 2
-
-    W.dofmap().clear_sub_map_data()
-    with pytest.raises(RuntimeError):
-        W0 = W.sub(0)
-    with pytest.raises(RuntimeError):
-        W1 = W.sub(1)
+    v = Function(V)
+    x = (0.75, 0.25, 0.125)
+    vx = v(x)

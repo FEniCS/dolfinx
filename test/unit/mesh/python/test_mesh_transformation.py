@@ -1,7 +1,8 @@
 #!/usr/bin/env py.test
-"""Unit tests for the DofMap interface"""
 
-# Copyright (C) 2014 Garth N. Wells
+"Unit tests for the mesh library"
+
+# Copyright (C) 2012 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -17,22 +18,34 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2012-01-16
+# Last changed: 2013-06-28
 
-from __future__ import print_function
-import pytest
-import numpy as np
+
 from dolfin import *
 
-def test_dofmap_clear_submap():
+def test_translate_2d():
     mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*V
+    p = Point(1, 2)
+    mesh.translate(p)
 
-    # Check block size
-    assert W.dofmap().block_size == 2
+def test_translate_3d():
+    mesh = UnitCubeMesh(8, 8, 8)
+    p = Point(1, 2, 3)
+    mesh.translate(p)
 
-    W.dofmap().clear_sub_map_data()
-    with pytest.raises(RuntimeError):
-        W0 = W.sub(0)
-    with pytest.raises(RuntimeError):
-        W1 = W.sub(1)
+def test_rotate_2d():
+    mesh = UnitSquareMesh(8, 8)
+    p = Point(1, 2)
+    mesh.rotate(10)
+    mesh.rotate(10, 2)
+    mesh.rotate(10, 2, p)
+
+def test_rotate_3d():
+    mesh = UnitCubeMesh(8, 8, 8)
+    p = Point(1, 2, 3)
+    mesh.rotate(30, 0)
+    mesh.rotate(30, 1)
+    mesh.rotate(30, 2)
+    mesh.rotate(30, 0, p)
