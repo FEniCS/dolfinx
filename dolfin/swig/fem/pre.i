@@ -133,6 +133,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::Form::dx;
 %ignore dolfin::Form::ds;
 %ignore dolfin::Form::dS;
+%ignore dolfin::Form::dP;
 %ignore dolfin::Form::operator==;
 
 //-----------------------------------------------------------------------------

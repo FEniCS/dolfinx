@@ -50,6 +50,7 @@ namespace dolfin
                       bool cells,
                       bool interior_facets,
                       bool exterior_facets,
+                      bool vertices,
                       bool diagonal,
                       bool init=true,
                       bool finalize=true);

@@ -38,7 +38,7 @@ public:
   void testRead()
   {
     // Create undirected graph with edges added out of order (should pass)
-    File file("../snake.xml.gz");
+    File file("../../../data/snake.xml.gz");
     LocalMeshData localdata(MPI_COMM_WORLD);
     file >> localdata;
   }
