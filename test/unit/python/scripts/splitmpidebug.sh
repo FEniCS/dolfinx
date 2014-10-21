@@ -32,6 +32,8 @@ echo
 
 for f in $FILES
 do
+    #p = 2 and 4 triggers alternate bugs, some reported on bitbucket
+    #for p in 2 3 4
     for p in 3
     do
         n=1
