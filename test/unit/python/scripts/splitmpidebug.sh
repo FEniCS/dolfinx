@@ -14,17 +14,15 @@
 #
 
 # ... Max number of times to run each test file
-m=10
+m=4
 
 # ... FILES = test files or modules to try
 # All test files separately:
 #FILES=*/test_*.py
-# All la/ test files separately:
-#FILES=la/test_*.py
 # All modules separately:
 #FILES=*
-# Just the fem/ module:
-FILES=fem
+# Commandline args:
+FILES=$@
 
 
 echo
@@ -34,22 +32,20 @@ echo
 
 for f in $FILES
 do
-    n=1
-    # Loop at most $m times, continue even if file fails
-    #while [ $n -lt $m ]
-    # Loop at most $m times until file fails
-    while [ $? -eq 0 -a  $n -le $m ]
+    for p in 2
     do
-        echo === Take $n, `date`: $f
-        n=$((n+1))
-
-        # Clean before each run to remove error sources from file system
-        ./scripts/clean.sh
-
-        # Run!
-        mpirun -n 3 xterm -e gdb -ex r -ex q -args python -B -m pytest -sv $f $@
-
-        # To simulate failure for testing of this script enable this:
-        #false
+        n=1
+        # Loop at most $m times, continue even if file fails
+        #while [ $n -lt $m ]
+        # Loop at most $m times until file fails
+        while [ $? -eq 0 -a  $n -le $m ]
+        do
+            echo === Take $n, $p processes, `date`: $f
+            n=$((n+1))
+            # Clean before each run to remove error sources from file system
+            ./scripts/clean.sh
+            # Run!
+            mpirun -n $p xterm -e gdb -ex r -ex q -args python -B -m pytest -sv $f
+        done
     done
 done

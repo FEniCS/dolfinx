@@ -26,17 +26,17 @@ m=1
 # Each la/ test file separately:
 #FILES=la/test_*.py
 # Just the la/test_matrix.py file:
-FILES=la/test_matrix.py
+#FILES=la/test_matrix.py
 # Just the fem/ module:
 #FILES=fem
 
 
 echo
 echo Running $m times each of
-echo $FILES
+echo $@
 echo
 
-for f in $FILES
+for f in $@
 do
     n=1
     # Loop at most $m times, continue even if file fails
@@ -51,7 +51,7 @@ do
         ./scripts/clean.sh
 
         # Run!
-        python -B -m pytest -sv $@ $f
+        mpirun -np 3 python -B -m pytest -sv $f
 
         # To simulate failure for testing of this script enable this:
         #false
