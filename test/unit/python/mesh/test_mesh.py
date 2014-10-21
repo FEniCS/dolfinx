@@ -404,8 +404,6 @@ def test_cell_orientations():
 
 def test_shared_entities():
     for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
-        #if MeshClass not in [UnitSquareMesh]:
-        #    continue
         dim = ind+1
         args = [4]*dim
         mesh = MeshClass(*args)
