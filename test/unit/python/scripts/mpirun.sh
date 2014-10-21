@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 # NB! Run as e.g.
-#  ./scripts/mpirun.sh io/python/
+#  cd test/unit/python
+#  ./scripts/mpirun.sh <pytest args>
 #
-./scripts/clean.sh && mpirun -n 3 python -m pytest $@
+./scripts/clean.sh
+mpirun -n 3 python -m pytest $@
