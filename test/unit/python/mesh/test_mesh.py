@@ -404,15 +404,15 @@ def test_cell_orientations():
 
 def test_shared_entities():
     for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
-        if MeshClass not in [UnitSquareMesh]:
-            continue
+        #if MeshClass not in [UnitSquareMesh]:
+        #    continue
         dim = ind+1
         args = [4]*dim
         mesh = MeshClass(*args)
         mesh.init()
 
         # FIXME: Implement a proper test
-        for shared_dim in range(dim):
+        for shared_dim in range(dim+1):
             assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
             assert isinstance(mesh.topology().global_indices(shared_dim), numpy.ndarray)
 
