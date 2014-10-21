@@ -415,3 +415,10 @@ def test_shared_entities():
         for shared_dim in range(dim):
             assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
             assert isinstance(mesh.topology().global_indices(shared_dim), numpy.ndarray)
+
+            EntityIterator = {0: vertices, 1: edges, 2: faces, 3: cells}[shared_dim]
+            if mesh.topology().have_shared_entities(shared_dim):
+                for e in EntityIterator(mesh):
+                    sharing = e.sharing_processes()
+                    assert isinstance(sharing, numpy.ndarray)
+                    assert (sharing.size > 0) == e.is_shared()
