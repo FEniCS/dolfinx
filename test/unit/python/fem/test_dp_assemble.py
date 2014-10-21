@@ -25,10 +25,13 @@ import os
 import numpy as np
 from dolfin import *
 
-# FIXME: Uncomment when merging py.test branch
-#from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import *
 
-def _create_dp_problem(dim=1):
+@pytest.fixture(params=[1,2,3])
+def dim(request):
+    return request.param
+
+def _create_dp_problem(dim):
     assert dim in [1,2,3]
     if dim == 1:
         mesh = UnitIntervalMesh(20)
@@ -36,7 +39,7 @@ def _create_dp_problem(dim=1):
         mesh = UnitSquareMesh(10, 10)
     else:
         mesh = UnitCubeMesh(4, 4, 4)
-    
+
     V = FunctionSpace(mesh, "P", 1)
     VV = V*V
 
@@ -66,71 +69,66 @@ def _create_dp_problem(dim=1):
     dPP = dP[vertex_domain]
 
     return (u, uu), (v, vv), (U, UU), dPP, bc
-    
-def test_scalar_assemble():
 
-    # FIXME: Use test fixture instead of this loop?
+@use_gc_barrier
+def test_scalar_assemble(dim):
     eps = 1000*DOLFIN_EPS
-    for dim in range(1,4):
-        (u, uu), (v, vv), (U, UU), dPP, bc = _create_dp_problem(dim)
 
-        scalar_value = assemble(u*dP)
-        assert abs(scalar_value-u.vector().sum()) < eps
+    (u, uu), (v, vv), (U, UU), dPP, bc = _create_dp_problem(dim)
 
-        scalar_value = assemble((uu[0]+uu[1])*dPP)
-        assert abs(scalar_value-uu.vector().sum()) < eps
+    scalar_value = assemble(u*dP)
+    assert abs(scalar_value-u.vector().sum()) < eps
 
-        scalar_value = assemble((uu[0]+uu[1])*dPP(1))
-        bc.apply(uu.vector())
-        assert abs(scalar_value-uu.vector().sum()) < eps
+    scalar_value = assemble((uu[0]+uu[1])*dPP)
+    assert abs(scalar_value-uu.vector().sum()) < eps
 
-def test_vector_assemble():
-    
-    # FIXME: Use test fixture instead of this loop?
+    scalar_value = assemble((uu[0]+uu[1])*dPP(1))
+    bc.apply(uu.vector())
+    assert abs(scalar_value-uu.vector().sum()) < eps
+
+@use_gc_barrier
+def test_vector_assemble(dim):
     eps = 1000*DOLFIN_EPS
-    for dim in range(1,4):
-        (u, uu), (v, vv), (U, UU), dPP, bc = _create_dp_problem(dim)
 
-        # In parallel vec.array() will return only local to process values
-        vec = assemble(u*v*dPP)
-        assert sum(np.absolute(vec.array() - u.vector().array())) < eps 
+    (u, uu), (v, vv), (U, UU), dPP, bc = _create_dp_problem(dim)
 
-        vec = assemble(inner(uu,vv)*dP)
-        assert sum(np.absolute(vec.array() - uu.vector().array())) < eps
+    # In parallel vec.array() will return only local to process values
+    vec = assemble(u*v*dPP)
+    assert sum(np.absolute(vec.array() - u.vector().array())) < eps
 
-        vec = assemble(inner(uu,vv)*dPP(1))
-        bc.apply(uu.vector())
-        assert sum(np.absolute(vec.array() - uu.vector().array())) < eps
-        
-def test_matrix_assemble():
-    
-    # FIXME: Use test fixture instead of this loop?
+    vec = assemble(inner(uu,vv)*dP)
+    assert sum(np.absolute(vec.array() - uu.vector().array())) < eps
+
+    vec = assemble(inner(uu,vv)*dPP(1))
+    bc.apply(uu.vector())
+    assert sum(np.absolute(vec.array() - uu.vector().array())) < eps
+
+@use_gc_barrier
+def test_matrix_assemble(dim):
     eps = 1000*DOLFIN_EPS
-    for dim in range(1,4):
 
-        (u, uu), (v, vv), (U, UU), dPP, bc = _create_dp_problem(dim)
+    (u, uu), (v, vv), (U, UU), dPP, bc = _create_dp_problem(dim)
 
-        # Scalar assemble
-        mat = assemble(u*v*U*dPP)
+    # Scalar assemble
+    mat = assemble(u*v*U*dPP)
 
-        # Create a numpy matrix based on the local size of the vector
-        # and populate it with values from local vector
-        loc_range = u.vector().local_range()
-        vec_mat = np.zeros_like(mat.array())
-        vec_mat[range(loc_range[1]-loc_range[0]),
-                range(loc_range[0],loc_range[1])] = u.vector().array()
+    # Create a numpy matrix based on the local size of the vector
+    # and populate it with values from local vector
+    loc_range = u.vector().local_range()
+    vec_mat = np.zeros_like(mat.array())
+    vec_mat[range(loc_range[1]-loc_range[0]),
+            range(loc_range[0],loc_range[1])] = u.vector().array()
 
-        assert np.sum(np.absolute(mat.array() - vec_mat)) < eps
+    assert np.sum(np.absolute(mat.array() - vec_mat)) < eps
 
-        # Vector assemble
-        mat = assemble((uu[0]*vv[0]*UU[0] + uu[1]*vv[1]*UU[1])*dPP)
+    # Vector assemble
+    mat = assemble((uu[0]*vv[0]*UU[0] + uu[1]*vv[1]*UU[1])*dPP)
 
-        # Create a numpy matrix based on the local size of the vector
-        # and populate it with values from local vector
-        loc_range = uu.vector().local_range()
-        vec_mat = np.zeros_like(mat.array())
-        vec_mat[range(loc_range[1]-loc_range[0]),
-                range(loc_range[0],loc_range[1])] = uu.vector().array()
+    # Create a numpy matrix based on the local size of the vector
+    # and populate it with values from local vector
+    loc_range = uu.vector().local_range()
+    vec_mat = np.zeros_like(mat.array())
+    vec_mat[range(loc_range[1]-loc_range[0]),
+            range(loc_range[0],loc_range[1])] = uu.vector().array()
 
-        assert np.sum(np.absolute(mat.array() - vec_mat)) < eps
-
+    assert np.sum(np.absolute(mat.array() - vec_mat)) < eps
