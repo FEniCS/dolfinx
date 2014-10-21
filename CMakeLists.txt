@@ -995,8 +995,8 @@ if (CPPUNIT_FOUND)
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
-  # Add target "tests" for building tests
-  add_custom_target(tests
+  # Add target "test" for building tests
+  add_custom_target(test
                     COMMAND ${MAKE_PROGRAM}
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
@@ -1005,50 +1005,77 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(copy_data_test_demo
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} "-B" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(run_memorytests
-    COMMAND ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS copy_data_test_demo
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
 
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
-    COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
     DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_systemtests" for running system tests
   add_custom_target(run_systemtests
-    COMMAND ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/system")
+    COMMAND echo "System tests are removed.")
 
+  # TODO: Make buildbot run the dependencies here separately?
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
-    COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    DEPENDS run_unittests_2)
+  # ... attempt at controlling dependency execution order ...
+  add_custom_target(run_unittests_2
+    DEPENDS run_unittests_py_mpi run_unittests_1)
+  add_custom_target(run_unittests_1
+    DEPENDS run_unittests_cpp run_unittests_0)
+  add_custom_target(run_unittests_0
+    DEPENDS run_unittests_py)
+
+  # TODO: Use google test for C++ unit tests?
+  # Add target "run_unittests_cpp" for running only C++ unit tests
+  add_custom_target(run_unittests_cpp
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-m" "pytest" "-k" "cpp"
     DEPENDS copy_data_test_demo test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
-  # Add target "run_quicktest" for running only Python unit tests
-  add_custom_target(run_quicktest
-    COMMAND ${PYTHON_EXECUTABLE} test.py --only-python
+  # Add target "run_unittests_py" for running Python unit tests
+  add_custom_target(run_unittests_py
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-m" "pytest"
     DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
+
+  # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
+  add_custom_target(run_unittests_py_mpi
+    COMMAND ${MPIEXEC} "-np" "3" ${PYTHON_EXECUTABLE} "-B" "-m" "pytest"
+    DEPENDS copy_data_test_demo
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
+
+  # Add target "run_quicktest" for running only Python unit tests not marked as 'slow'
+  add_custom_target(run_quicktest
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-m" "pytest" "-k" "'not" "slow'"
+    DEPENDS copy_data_test_demo
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_doctest" for running documentation tests
   add_custom_target(run_doctest
-    COMMAND ${PYTHON_EXECUTABLE} test.py
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
 
+  # Add target "run_styletest" for running documentation tests
+  #add_custom_target(run_styletest
+  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
+  #  DEPENDS copy_data_test_demo
+  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
+
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS copy_data_test_demo demo test
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
+    DEPENDS run_doctest run_regressiontests run_unittests)# run_styletest)
 endif()
 
 #------------------------------------------------------------------------------

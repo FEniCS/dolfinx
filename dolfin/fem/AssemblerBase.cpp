@@ -117,6 +117,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
                                 a.ufc_form()->has_cell_integrals(),
                                 a.ufc_form()->has_interior_facet_integrals(),
                                 a.ufc_form()->has_exterior_facet_integrals(),
+                                a.ufc_form()->has_point_integrals(),
                                 keep_diagonal);
     }
     t0.stop();

@@ -41,7 +41,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Form::Form(std::size_t rank, std::size_t num_coefficients)
   : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this),
+    dx(*this), ds(*this), dS(*this), dP(*this), 
     _function_spaces(rank), _coefficients(num_coefficients), _rank(rank)
 {
   // Do nothing
@@ -51,7 +51,7 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
            std::vector<std::shared_ptr<const FunctionSpace>> function_spaces,
            std::vector<std::shared_ptr<const GenericFunction>> coefficients)
   : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this), _ufc_form(ufc_form),
+    dx(*this), ds(*this), dS(*this), dP(*this), _ufc_form(ufc_form),
     _function_spaces(function_spaces), _coefficients(coefficients),
     _rank(ufc_form->rank())
 {
@@ -151,6 +151,8 @@ const Mesh& Form::mesh() const
     meshes.push_back(_exterior_facet_domains->mesh());
   if (_interior_facet_domains)
     meshes.push_back(_interior_facet_domains->mesh());
+  if (_vertex_domains)
+    meshes.push_back(_vertex_domains->mesh());
 
   // Extract meshes from coefficients. Note that this is only done
   // when we don't already have a mesh sine it may otherwise conflict
@@ -317,6 +319,11 @@ std::shared_ptr<const MeshFunction<std::size_t>> Form::interior_facet_domains() 
   return _interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const MeshFunction<std::size_t>> Form::vertex_domains() const
+{
+  return _vertex_domains;
+}
+//-----------------------------------------------------------------------------
 void Form::set_cell_domains
 (std::shared_ptr<const MeshFunction<std::size_t>> cell_domains)
 {
@@ -333,6 +340,12 @@ void Form::set_interior_facet_domains
 (std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
 {
   _interior_facet_domains = interior_facet_domains;
+}
+//-----------------------------------------------------------------------------
+void Form::set_vertex_domains
+(std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains)
+{
+  _vertex_domains = vertex_domains;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const ufc::form> Form::ufc_form() const
