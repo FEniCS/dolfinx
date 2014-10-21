@@ -461,8 +461,7 @@ void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 
   PetscErrorCode ierr;
   PetscScalar null = 0.0;
-  const PetscInt _m = m;
-  ierr = MatZeroRows(_matA, m, rows, null, NULL, NULL);
+  ierr = MatZeroRows(_matA, static_cast<PetscInt>(m), rows, null, NULL, NULL);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRows");
 }
 //-----------------------------------------------------------------------------
@@ -472,8 +471,7 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index* rows)
 
   PetscErrorCode ierr;
   PetscScalar null = 0.0;
-  const PetscInt _m = m;
-  ierr = MatZeroRowsLocal(_matA, m, rows, null, NULL, NULL);
+  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, null, NULL, NULL);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
 }
 
@@ -501,7 +499,7 @@ void PETScMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
 
   PetscErrorCode ierr;
   PetscScalar one = 1.0;
-  ierr = MatZeroRowsLocal(_matA, m, rows, one, NULL, NULL);
+  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, one, NULL, NULL);
   if (ierr == PETSC_ERR_ARG_WRONGSTATE)
   {
     dolfin_error("PETScMatrix.cpp",
