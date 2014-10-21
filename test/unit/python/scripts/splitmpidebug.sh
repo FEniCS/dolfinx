@@ -14,15 +14,15 @@
 #
 
 # ... Max number of times to run each test file
-m=4
+m=10
 
 # ... FILES = test files or modules to try
 # All test files separately:
-#FILES=*/test_*.py
+FILES=*/test_*.py
 # All modules separately:
 #FILES=*
 # Commandline args:
-FILES=$@
+#FILES=$@
 
 
 echo
@@ -32,7 +32,7 @@ echo
 
 for f in $FILES
 do
-    for p in 2
+    for p in 3
     do
         n=1
         # Loop at most $m times, continue even if file fails
