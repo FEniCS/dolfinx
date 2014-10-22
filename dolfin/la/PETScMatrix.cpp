@@ -460,16 +460,21 @@ void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
   dolfin_assert(_matA);
 
   PetscErrorCode ierr;
-  IS is = 0;
   PetscScalar null = 0.0;
-  const PetscInt _m = m;
-  ierr = ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
-  ierr = MatZeroRowsIS(_matA, is, null, NULL, NULL);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsIS");
-  ierr = ISDestroy(&is);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
+  ierr = MatZeroRows(_matA, static_cast<PetscInt>(m), rows, null, NULL, NULL);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRows");
 }
+//-----------------------------------------------------------------------------
+void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index* rows)
+{
+  dolfin_assert(_matA);
+
+  PetscErrorCode ierr;
+  PetscScalar null = 0.0;
+  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, null, NULL, NULL);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
+}
+
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
@@ -481,7 +486,7 @@ void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   if (ierr == PETSC_ERR_ARG_WRONGSTATE)
   {
     dolfin_error("PETScMatrix.cpp",
-                 "set given rows to identity matrix",
+                 "set given (global) rows to identity matrix",
                  "some diagonal elements not preallocated "
                  "(try assembler option keep_diagonal)");
   }
@@ -494,11 +499,11 @@ void PETScMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
 
   PetscErrorCode ierr;
   PetscScalar one = 1.0;
-  ierr = MatZeroRowsLocal(_matA, m, rows, one, NULL, NULL);
+  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, one, NULL, NULL);
   if (ierr == PETSC_ERR_ARG_WRONGSTATE)
   {
     dolfin_error("PETScMatrix.cpp",
-                 "set given rows to identity matrix",
+                 "set given (local) rows to identity matrix",
                  "some diagonal elements not preallocated "
                  "(try assembler option keep_diagonal)");
   }

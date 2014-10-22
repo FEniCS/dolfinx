@@ -170,8 +170,12 @@ namespace dolfin
                         const std::vector<std::size_t>& columns,
                         const std::vector<double>& values);
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows)
+    { zero(m, rows); }
 
     /// Set given rows to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
