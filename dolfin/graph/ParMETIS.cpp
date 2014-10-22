@@ -112,7 +112,7 @@ void ParMETIS::compute_partition(
   {
     dolfin_error("ParMETIS.cpp",
                  "compute mesh partitioning using ParMETIS",
-                 "partition model %s is unknown. Must be \"partition\", \"adactive_partition\" or \"refine\"",
+                 "partition model %s is unknown. Must be \"partition\", \"adaptive_repartition\" or \"refine\"",
                  mode.c_str());
   }
 
