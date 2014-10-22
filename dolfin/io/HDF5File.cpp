@@ -186,14 +186,17 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
   // Get dataset rank
   const std::size_t rank = HDF5Interface::dataset_rank(hdf5_file_id,
                                                        dataset_name);
-  dolfin_assert(rank == 1);
+
+  if (rank != 1)
+    warning("Reading non-scalar data in HDF5 Vector");
 
   // Get global dataset size
   const std::vector<std::size_t> data_size
       = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
 
-  // Check that rank is 1
-  dolfin_assert(data_size.size() == 1);
+  // Check that rank is 1 or 2 
+  dolfin_assert(data_size.size() == 1 
+                or (data_size.size() == 2 and data_size[1] == 1));
 
   // Check input vector, and re-size if not already sized
   if (x.empty())
