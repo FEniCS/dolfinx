@@ -18,15 +18,37 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-03-01
-# Last changed: 2011-03-01
 
 from dolfin import *
 
-def test_parallel_sum():
+def test_scalar_parallel_sum():
     a = Scalar()
     b = 1.0
     a.assign(b)
     a.apply("add")
     assert round(a.getval() - b*MPI.size(a.mpi_comm()), 7) == 0
+
+def test_scalar_parallel_insert():
+    a = Scalar()
+    b = 1.0
+    a.assign(b)
+    a.apply("insert")
+    assert round(a.getval() - b, 7) == 0
+
+def test_scalar_assembly():
+    mesh = UnitSquareMesh(3, 3)
+
+    S = Scalar()
+    assemble(Constant(1.0)*dx(mesh), tensor=S)
+    assemble(Constant(1.0)*dx(mesh), tensor=S)
+    assert round(S.getval() - 1.0, 7) == 0
+
+    S = Scalar()
+    assemble(Constant(1.0)*dx(mesh), tensor=S)
+    assemble(Constant(1.0)*dx(mesh), tensor=S, add_values=True)
+    assert round(S.getval() - 2.0, 7) == 0
+
+    S = Scalar()
+    assemble(Constant(1.0)*dx(mesh), tensor=S, add_values=True)
+    assemble(Constant(1.0)*dx(mesh), tensor=S, add_values=True)
+    assert round(S.getval() - 2.0, 7) == 0

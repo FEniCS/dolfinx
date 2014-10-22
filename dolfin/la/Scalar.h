@@ -46,7 +46,7 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), _value(0.0), _mpi_comm(MPI_COMM_WORLD)
+    Scalar() : GenericTensor(), _value(0.0), _local_value(0.0), _mpi_comm(MPI_COMM_WORLD)
     { SubSystemsManager::init_mpi(); }
 
     /// Destructor
@@ -58,6 +58,7 @@ namespace dolfin
     void init(const TensorLayout& tensor_layout)
     {
       _value = 0.0;
+      _local_value = 0.0;
       _mpi_comm = tensor_layout.mpi_comm();
     }
 
@@ -72,6 +73,11 @@ namespace dolfin
     /// Return size of given dimension
     std::size_t size(std::size_t dim) const
     {
+      // TODO: This is inconsistent in two ways:
+      // - tensor.size(i) is defined for i < tensor.rank(), so not at all for a Scalar.
+      // - the number of components of a tensor is the product of the sizes, returning 0 here makes no sense.
+      // Is this used for anything? If yes, consider fixing that code. If no, just make this an error for any dim.
+
       if (dim != 0)
       {
         dolfin_error("Scalar.h",
@@ -95,29 +101,32 @@ namespace dolfin
     /// Get block of values
     void get(double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows) const
-    { block[0] = _value; }
+    { block[0] = _local_value; }
 
     /// Set block of values using global indices
     void set(const double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows)
-    { _value = block[0]; }
+    { _local_value = block[0]; }
 
     /// Set block of values using local indices
     void set_local(const double* block, const dolfin::la_index* num_rows,
                    const dolfin::la_index * const * rows)
-    { _value = block[0]; }
+    { _local_value = block[0]; }
 
     /// Add block of values using global indices
     void add(const double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows)
-    { add_local(block, num_rows, rows); }
+    {
+      dolfin_assert(block);
+      _local_value += block[0];
+    }
 
     /// Add block of values using local indices
     void add_local(const double* block, const dolfin::la_index* num_rows,
                    const dolfin::la_index * const * rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_value += block[0];
     }
 
     /// Add block of values using global indices
@@ -125,7 +134,7 @@ namespace dolfin
              const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_value += block[0];
     }
 
     /// Add block of values using local indices
@@ -133,7 +142,7 @@ namespace dolfin
              const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_value += block[0];
     }
 
     /// Add block of values using global indices
@@ -141,7 +150,7 @@ namespace dolfin
              const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_value += block[0];
     }
 
     /// Add block of values using local indices
@@ -149,16 +158,35 @@ namespace dolfin
              const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_value += block[0];
     }
 
     /// Set all entries to zero and keep any sparse structure
     void zero()
-    { _value = 0.0; }
+    {
+      _value = 0.0;
+      _local_value = 0.0;
+    }
 
     /// Finalize assembly of tensor
     void apply(std::string mode)
-    { _value = MPI::sum(_mpi_comm, _value); }
+    {
+      if (mode == "insert")
+      {
+        _value = _local_value;
+      }
+      else if (mode == "add")
+      {
+        _value += MPI::sum(_mpi_comm, _local_value);
+      }
+      else
+      {
+        dolfin_error("Scalar.h",
+                     "apply",
+                     "Invalid mode in scalar apply");
+      }
+      _local_value = 0.0;
+    }
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
@@ -179,6 +207,8 @@ namespace dolfin
     {
       std::shared_ptr<Scalar> s(new Scalar);
       s->_value = _value;
+      s->_local_value = _local_value;
+      s->_mpi_comm = _mpi_comm;
       return s;
     }
 
@@ -188,7 +218,13 @@ namespace dolfin
 
     /// Assignment from double
     const Scalar& operator= (double value)
-    { _value = value; return *this; }
+    {
+      //_value = value;
+      //_local_value = 0.0;
+      _value = 0.0;
+      _local_value = value;
+      return *this;
+    }
 
     //--- Special functions
 
@@ -198,7 +234,6 @@ namespace dolfin
       DefaultFactory f;
       return f.factory();
     }
-    //{ return dolfin::uBLASFactory<>::instance(); }
 
     /// Get value
     double getval() const
@@ -208,6 +243,9 @@ namespace dolfin
 
     // Value of scalar
     double _value;
+
+    // Local intermediate value of scalar prior to apply call
+    double _local_value;
 
     // MPI communicator
      MPI_Comm _mpi_comm;
