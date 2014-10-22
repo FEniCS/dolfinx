@@ -22,30 +22,9 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import *
 
-def test_xdmf_cell_scalar_ghost(cd_tempdir):
-    parameters['ghost_mode'] = 'shared_vertex'
-    n = 8
-    mesh = UnitSquareMesh(n, n)
-    Q = FunctionSpace(mesh, "DG", 0)
-    F = Function(Q)
-    E = Expression("x[0]")
-    F.interpolate(E)
+ghost_mode = set_parameters_fixture("ghost_mode", ["shared_vertex", "none"])
 
-    xdmf = File("dg0.xdmf")
-    xdmf << F
-    del xdmf
-
-    hdf = HDF5File(mesh.mpi_comm(), "dg0.h5", "r")
-    vec = Vector()
-    hdf.read(vec, "/VisualisationVector/0", False)
-    del hdf
-
-    area = MPI.sum(mesh.mpi_comm(), sum(vec.array()))
-    assert abs(n*n - area) < 1e-9
-
-def test_xdmf_cell_scalar(cd_tempdir):
-    parameters['ghost_mode'] = 'none'
-
+def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
     n = 8
     mesh = UnitSquareMesh(n, n)
     Q = FunctionSpace(mesh, "DG", 0)
