@@ -124,7 +124,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   if (dolfin::MPI::size(sparsity_pattern.mpi_comm()) == 1)
   {
     // Get number of nonzeros for each row from sparsity pattern
-    dolfin_assert(tensor_layout.sparsity_pattern());
     std::vector<std::size_t> num_nonzeros(M);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
