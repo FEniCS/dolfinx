@@ -218,11 +218,10 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
 
   // Iterate over given local dofs for V on patch cell
   dolfin_assert(W.element());
-  for (std::map<std::size_t, std::size_t>::iterator it = dof2row.begin();
-       it!= dof2row.end(); it++)
+  for (auto it: dof2row)
   {
-    const std::size_t i = it->first;
-    const std::size_t row = it->second;
+    const std::size_t i = it.first;
+    const std::size_t row = it.second;
 
     // Iterate over basis functions for W on center cell
     for (std::size_t j = 0; j < W.element()->space_dimension(); ++j)

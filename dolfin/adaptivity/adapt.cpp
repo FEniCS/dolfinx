@@ -618,13 +618,8 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
   }
 
   // Use above map to construct refined markers
-  std::vector<std::size_t> child_facets;
-  std::vector<std::size_t>::const_iterator it;
-  for (it = markers.begin(); it != markers.end(); ++it)
-  {
-    child_facets = children[*it];
-    for (std::size_t k = 0; k < child_facets.size(); k++)
-      refined_markers.push_back(child_facets[k]);
-  }
+  for (auto marker: markers)
+    for (auto child_facet: children[marker])
+      refined_markers.push_back(child_facet);
 }
 //-----------------------------------------------------------------------------
