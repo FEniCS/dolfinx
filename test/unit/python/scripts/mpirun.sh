@@ -5,4 +5,4 @@
 #  ./scripts/mpirun.sh <pytest args>
 #
 ./scripts/clean.sh
-mpirun -n 3 python -m pytest $@
+mpirun -n 3 python -B -m pytest -v $@

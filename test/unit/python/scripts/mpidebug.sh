@@ -19,10 +19,10 @@
 PYTESTARGS=${@:-.}
 
 # ... Max number of times to run each test file
-REPEAT=${REPEAT:-3}
+REPEAT=${REPEAT:-1}
 
 # ... List of number of mpi processes to try
-PROCS=${PROCS:-2}
+PROCS=${PROCS:-3}
 
 echo
 echo Running $REPEAT times with $PROCS processes with pytest args
