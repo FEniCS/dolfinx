@@ -218,7 +218,7 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
 
   // Iterate over given local dofs for V on patch cell
   dolfin_assert(W.element());
-  for (auto it: dof2row)
+  for (auto const &it: dof2row)
   {
     const std::size_t i = it.first;
     const std::size_t row = it.second;
