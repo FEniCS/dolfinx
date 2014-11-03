@@ -875,7 +875,7 @@ void HDF5File::read(Function& u, const std::string name)
   const std::string x_cell_dofs_dataset_name = basename + "/x_cell_dofs";
 
   // Check datasets exist
-  if (!HDF5Interface::has_group(hdf5_file_id, name))
+  if (!HDF5Interface::has_group(hdf5_file_id, basename))
     error("Group with name \"%s\" does not exist", name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, cells_dataset_name))
     error("Dataset with name \"%s\" does not exist",
