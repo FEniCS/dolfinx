@@ -31,10 +31,12 @@ optimize = set_parameters_fixture('form_compiler.optimize', [True])
 
 # Build test methods using function closure so 1 test is generated per Scheme and
 # test case
-@pytest.fixture(params=[ForwardEuler, ExplicitMidPoint, RK4,
-                        BackwardEuler, CN2, ESDIRK3, ESDIRK4, RL1])
+#@pytest.fixture(params=["ForwardEuler", "ExplicitMidPoint", "RK4",
+#                        "BackwardEuler", "CN2", "ESDIRK3", "ESDIRK4", "RL1"])
+@pytest.fixture(params=["RL1"])
+
 def Scheme(request):
-    return request.param
+    return eval(request.param)
 
 def convergence_order(errors, base = 2):
     import math
@@ -49,7 +51,7 @@ def convergence_order(errors, base = 2):
 
 
 @pytest.mark.slow
-def test_butcher_schemes_scalar_time(Scheme, optimize):
+def xtest_butcher_schemes_scalar_time(Scheme, optimize):
     mesh = UnitSquareMesh(10, 10)
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
@@ -86,10 +88,10 @@ def test_butcher_schemes_scalar(Scheme, optimize):
     v = TestFunction(V)
 
     tstop = 1.0
-    u_true = Expression("exp(t)", t=tstop)
+    u_true = Expression("exp(t)/(exp(t)+1.)", t=tstop)
 
     u = Function(V)
-    form = u*v*dP
+    form = u*(1-u)*v*dP
 
     scheme = Scheme(form, u)
     info(scheme)
@@ -98,14 +100,25 @@ def test_butcher_schemes_scalar(Scheme, optimize):
     for dt in [0.05, 0.025, 0.0125]:
         solver.reset_newton_solver()
         solver.reset_stage_solutions()
-        u.interpolate(Constant(1.0))
-        solver.step_interval(0., tstop, dt)
+        u.interpolate(Constant(.5))
+        scheme.t().assign(0.0)
+        next_dt = dt
+        while float(scheme.t()) + next_dt <= tstop:
+            if next_dt < 1000*DOLFIN_EPS:
+                break
+
+            u_true.t = float(scheme.t())
+            print(u(0.,0.), u_true(0.,0.))
+            solver.step(next_dt)
+            next_dt = min(tstop-float(scheme.t()), dt)
+
+        #solver.step_interval(0., tstop, dt)
         u_errors.append(errornorm(u_true, u))
     assert scheme.order()-min(convergence_order(u_errors))<0.1
 
 
 @pytest.mark.slow
-def test_butcher_schemes_vector(Scheme, optimize):
+def xtest_butcher_schemes_vector(Scheme, optimize):
 
     mesh = UnitSquareMesh(10, 10)
     V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
