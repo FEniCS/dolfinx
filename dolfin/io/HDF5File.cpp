@@ -753,30 +753,33 @@ void HDF5File::write(const Function& u,  const std::string name,
   if (!HDF5Interface::has_dataset(hdf5_file_id, name))
   {
     write(u, name);
-    std::vector<double> vectime(1, timestamp);
-    attributes(name).set("series", vectime);
+    const std::size_t vec_count = 1;
+    attributes(name).set("count", vec_count);
+    const std::string vec_name = name + "/vector";
+    attributes(vec_name).set("timestamp", timestamp);
   }
   else
   {
     HDF5Attribute attr = attributes(name);
-    if (!attr.exists("series"))
+    if (!attr.exists("count"))
     {
       dolfin_error("HDF5File.cpp",
                    "append to series",
                    "Function dataset does not contain a 'series' attribute");
     }
 
-    std::vector<double> vectime;
-    attr.get("series", vectime);
+    // Get count of vectors in dataset, and increment
+    std::size_t vec_count;
+    attr.get("count", vec_count);
+    std::string vec_name = name
+      + "/vector_" + boost::lexical_cast<std::string>(vec_count);
+    ++vec_count;
+    attr.set("count", vec_count);
 
-    std::size_t nvec = vectime.size();
-    std::string vecname = name
-      + "/vector_" + boost::lexical_cast<std::string>(nvec);
+    // Write new vector and save timestamp
+    write(*u.vector(), vec_name);
+    attributes(vec_name).set("timestamp", timestamp);
 
-    vectime.push_back(timestamp);
-    attr.set("series", vectime);
-
-    write(*u.vector(), vecname);
   }
 }
 //-----------------------------------------------------------------------------
