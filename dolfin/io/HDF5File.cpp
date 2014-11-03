@@ -304,7 +304,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         = mesh.topology().shared_entities(cell_dim);
 
       const std::size_t tdim = mesh.topology().dim();
-      
+
       std::set<unsigned int> non_local_entities;
 
       if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
@@ -319,7 +319,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       }
       else
       {
-        // Iterate through ghost cells, adding non-ghost entities which are 
+        // Iterate through ghost cells, adding non-ghost entities which are
         // in lower rank process cells to a set for exclusion from output
         for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
         {
@@ -722,7 +722,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     }
     else
     {
-      // Iterate through ghost cells, adding non-ghost entities which are 
+      // Iterate through ghost cells, adding non-ghost entities which are
       // shared from lower rank process cells to a set for exclusion from output
       for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
       {
@@ -732,14 +732,14 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
               non_local_entities.insert(ent->index());
       }
     }
-    
+
     for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
     {
       if (non_local_entities.find(ent->index()) == non_local_entities.end())
         data_values.push_back(meshfunction[*ent]);
     }
   }
-  
+
   // Write values to HDF5
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
                                                    data_values.size()));
@@ -765,7 +765,7 @@ void HDF5File::write(const Function& u,  const std::string name,
     {
       dolfin_error("HDF5File.cpp",
                    "append to series",
-                   "Function dataset does not contain a 'series' attribute");
+                   "Function dataset does not contain a series 'count' attribute");
     }
 
     // Get count of vectors in dataset, and increment
