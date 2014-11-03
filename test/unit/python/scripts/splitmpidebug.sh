@@ -1,46 +1,41 @@
 #!/bin/bash
 #
-# NB! Run as e.g.
-#  cd test/unit/python
-#  ./scripts/splitmpidebug.sh <additional pytest args>
+# Run from test/unit/python/ as:
+#  ./scripts/splitmpidebug.sh <list of test files or modules>
 #
-# This script runs each test*.py file with pytest from python under gdb in an xterm via mpirun in three processes.
-# Dizzy? The point is this:
-# - run this and wait
-# - if it deadlocks, you can go into gdb in each subprocess:
-#    - press Ctrl+C in each of the 3 xterms and follow instructions
-#    - now you can inspect where each of the processes are stuck, probably in different MPI calls
-#    - make a note of which test file you ran, now you know a single file that can fail
+# Configure number of repeats and number of mpi processes like this:
+#  REPEAT=2 PROCS='3 4' ./scripts/splitmpidebug.sh fem book
 #
+# This script runs pytest in with mpi such that output from each process
+# is visible in separate xterm windows, and on a crash you can abort
+# and exit into gdb to inspect the stacktrace in each xterm separately.
+#
+# You can pass a list of test files or test modules as arguments to this script.
+# These tests are executed in separate pytest instances.
+# See also mpidebug.sh.
+#
+
+# ... FILES = list of test files or modules to try separately (default .)
+FILES=${@:-.}
 
 # ... Max number of times to run each test file
-m=10
+REPEAT=${REPEAT:-1}
 
-# ... FILES = test files or modules to try
-# All test files separately:
-FILES=*/test_*.py
-# All modules separately:
-#FILES=*
-# Commandline args:
-#FILES=$@
-
+# ... List of number of mpi processes to try
+PROCS=${PROCS:-3}
 
 echo
-echo Running $m times each of
+echo Running $REPEAT times with $PROCS processes each of
 echo $FILES
 echo
 
 for f in $FILES
 do
-    #p = 2 and 4 triggers alternate bugs, some reported on bitbucket
-    #for p in 2 3 4
-    for p in 3
+    for p in $PROCS
     do
         n=1
-        # Loop at most $m times, continue even if file fails
-        #while [ $n -lt $m ]
         # Loop at most $m times until file fails
-        while [ $? -eq 0 -a  $n -le $m ]
+        while [ $? -eq 0 -a  $n -le $REPEAT ]
         do
             echo === Take $n, $p processes, `date`: $f
             n=$((n+1))

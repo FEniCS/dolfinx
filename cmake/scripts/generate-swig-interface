@@ -354,6 +354,17 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
                 module_info[present_module]["dependencies"]["function"].add(\
                     dolfin_type_def[dolfin_type]["header"])
 
+        # Need special treatment to include constants.h if not allready included
+        if present_module != "common":
+
+            # If no dependencies of common add it
+            if "common" not in module_info[present_module]["dependencies"]:
+                module_info[present_module]["dependencies"]["common"] = \
+                                        set("dolfin/common/constants.h")
+            else:
+                module_info[present_module]["dependencies"]["common"].add(\
+                    "dolfin/common/constants.h")
+
         # Over write old submodules dependencies with sorted version
         module_info[present_module]["dependencies"] = \
             sort_submodule_dependencies(\

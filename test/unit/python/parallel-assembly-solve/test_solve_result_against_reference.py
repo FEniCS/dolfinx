@@ -27,6 +27,7 @@ from __future__ import print_function
 import pytest
 import sys
 from dolfin import *
+from dolfin_utils.test import *
 from six import print_
 
 # Relative tolerance for regression test
@@ -95,6 +96,7 @@ def print_errors(errors):
                 print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
     MPI.barrier(mpi_comm_world())
 
+@use_gc_barrier
 def test_computed_norms_against_references():
     # Reference values for norm of solution vector
     reference = { ("16x16 unit square", 1): 9.547454087328376 ,
@@ -115,6 +117,7 @@ def test_computed_norms_against_references():
     results = []
     for mesh in meshes:
         for degree in degrees:
+            gc_barrier()
             norm = compute_norm(mesh[0], degree)
             results.append((mesh[1], degree, norm))
 
