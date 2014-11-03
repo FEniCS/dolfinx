@@ -32,10 +32,9 @@ optimize = set_parameters_fixture('form_compiler.optimize', [True])
 # Build test methods using function closure so 1 test is generated per Scheme and
 # test case
 @pytest.fixture(params=[ForwardEuler, ExplicitMidPoint, RK4,
-                        BackwardEuler, CN2, ESDIRK3, ESDIRK4])
+                        BackwardEuler, CN2, ESDIRK3, ESDIRK4, RL1])
 def Scheme(request):
     return request.param
-
 
 def convergence_order(errors, base = 2):
     import math
