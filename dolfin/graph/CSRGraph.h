@@ -37,22 +37,22 @@ namespace dolfin
 
   public:
 
-    explicit CSRGraph(MPI_Comm mpi_comm) : _mpi_comm(mpi_comm)
+    explicit CSRGraph(MPI_Comm mpi_comm) : node_vec(1, 0), _mpi_comm(mpi_comm)
     {
     }
 
     /// Create a CSR Graph from a collection of edges
     CSRGraph(MPI_Comm mpi_comm, const std::vector<std::vector<T> >& graph)
+      : node_vec(1, 0), _mpi_comm(mpi_comm)
     {
-      node_vec.push_back(0);
       for (auto const &p: graph)
         append(p);
     }
 
     /// Create a CSR Graph from a collection of edges
     CSRGraph(MPI_Comm mpi_comm, const std::vector<std::set<std::size_t> >& graph)
+      : node_vec(1, 0), _mpi_comm(mpi_comm)
     {
-      node_vec.push_back(0);
       for (auto const &p: graph)
       {
         edge_vec.insert(edge_vec.end(), p.begin(), p.end());
