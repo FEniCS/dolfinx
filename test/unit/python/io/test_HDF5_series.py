@@ -38,8 +38,7 @@ def test_save_and_read_function_timeseries(tempdir):
 
     # Save to HDF5 File
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "w")
-    hdf5_file.write(F0, "/function", 0.0)
-    for t in range(1, 10):
+    for t in range(10):
         E.t = t
         F0.interpolate(E)
         hdf5_file.write(F0, "/function", t)
@@ -47,7 +46,7 @@ def test_save_and_read_function_timeseries(tempdir):
 
     #Read back from file
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
-    for t in range(1, 10):
+    for t in range(10):
         E.t = t
         F1.interpolate(E)
         hdf5_file.read(F0, "/function/vector_%d"%t)

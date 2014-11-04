@@ -758,7 +758,7 @@ void HDF5File::write(const Function& u,  const std::string name,
     write(u, name);
     const std::size_t vec_count = 1;
     attributes(name).set("count", vec_count);
-    const std::string vec_name = name + "/vector";
+    const std::string vec_name = name + "/vector_0";
     attributes(vec_name).set("timestamp", timestamp);
   }
   else
@@ -849,7 +849,7 @@ void HDF5File::write(const Function& u, const std::string name)
   write_data(name + "/cells", cells, global_size, mpi_io);
 
   // Save vector
-  write(*u.vector(), name + "/vector");
+  write(*u.vector(), name + "/vector_0");
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(Function& u, const std::string name)
@@ -865,7 +865,7 @@ void HDF5File::read(Function& u, const std::string name)
   // variables
 
   std::string basename = name;
-  std::string vector_dataset_name = name + "/vector";
+  std::string vector_dataset_name = name + "/vector_0";
 
   // Check that the name we have been given corresponds to a "group"
   // If not, then maybe we have been given the vector dataset name
