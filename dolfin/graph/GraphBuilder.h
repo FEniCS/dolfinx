@@ -55,18 +55,11 @@ namespace dolfin
     static Graph local_graph(const Mesh& mesh, std::size_t dim0,
                                                std::size_t dim1);
 
-    /// Build distributed dual graph (cell-cell connections) from
+    /// Build distributed dual graph (cell-cell connections) for from
     /// LocalMeshData
     static void
       compute_dual_graph(const MPI_Comm mpi_comm,
                          const LocalMeshData& mesh_data,
-                         std::vector<std::set<std::size_t> >& local_graph,
-                         std::set<std::size_t>& ghost_vertices);
-
-    /// Build distributed dual graph (cell-cell connections) from
-    /// existing Mesh
-    static void
-      compute_dual_graph(const Mesh& mesh,
                          std::vector<std::set<std::size_t> >& local_graph,
                          std::set<std::size_t>& ghost_vertices);
 

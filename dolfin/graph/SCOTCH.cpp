@@ -31,7 +31,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/mesh/Mesh.h>
 #include "GraphBuilder.h"
 #include "SCOTCH.h"
 
@@ -48,30 +47,7 @@ extern "C"
 using namespace dolfin;
 
 #ifdef HAS_SCOTCH
-//-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(const Mesh& mesh,
-                               std::vector<std::size_t>& cell_partition,
-                               std::map<std::size_t,
-                               dolfin::Set<unsigned int> >& ghost_procs)
-{
-  // Create data structures to hold graph
-  std::vector<std::set<std::size_t> > local_graph;
-  std::set<std::size_t> ghost_vertices;
 
-  // Compute local dual graph
-  GraphBuilder::compute_dual_graph(mesh, local_graph,
-                                   ghost_vertices);
-
-  // Compute partitions
-  const std::size_t num_global_vertices = mesh.topology().size_global(0);
-
-  const std::vector<std::size_t> global_cell_indices; // not used
-  const std::vector<std::size_t> node_weights; // not used (yet)
-
-  partition(mesh.mpi_comm(), local_graph, node_weights,
-            ghost_vertices, global_cell_indices,
-            num_global_vertices, cell_partition, ghost_procs);
-}
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_partition(
   const MPI_Comm mpi_comm,
@@ -91,11 +67,7 @@ void SCOTCH::compute_partition(
   const std::size_t num_global_vertices = mesh_data.num_global_cells;
   const std::vector<std::size_t>& global_cell_indices
     = mesh_data.global_cell_indices;
-  const std::vector<std::size_t>& node_weights
-    = mesh_data.cell_weight;
-
-  partition(mpi_comm, local_graph, node_weights,
-            ghost_vertices, global_cell_indices,
+  partition(mpi_comm, local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition, ghost_procs);
 
 }
@@ -227,7 +199,6 @@ void SCOTCH::compute_reordering(const Graph& graph,
 void SCOTCH::partition(
   const MPI_Comm mpi_comm,
   const std::vector<std::set<std::size_t> >& local_graph,
-  const std::vector<std::size_t>& node_weights,
   const std::set<std::size_t>& ghost_vertices,
   const std::vector<std::size_t>& global_cell_indices,
   const std::size_t num_global_vertices,
@@ -281,7 +252,6 @@ void SCOTCH::partition(
   const SCOTCH_Num local_graph_size = local_graph.size();
   MPI::all_gather(mpi_comm, local_graph_size, proccnttab);
 
-  #ifdef DEBUG
   // FIXME: explain this test
   // Array containing . . . . (some sanity checks)
   std::vector<std::size_t> procvrttab(num_processes + 1);
@@ -296,7 +266,59 @@ void SCOTCH::partition(
   // Sanity check
   for (std::size_t i = 1; i <= proc_num; ++i)
     dolfin_assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
-  #endif
+
+  // Print graph data -------------------------------------
+  /*
+  {
+    const SCOTCH_Num vertgstnbr = local_graph.size() + ghost_vertices.size();
+
+    // Total  (global) number of vertices (cells) in the graph
+    const SCOTCH_Num vertglbnbr = num_global_vertices;
+
+    // Total (global) number of edges (cell-cell connections) in the graph
+    const SCOTCH_Num edgeglbnbr = MPI::sum(mpi_comm, edgelocnbr);
+
+    for (std::size_t proc = 0; proc < num_processes; ++proc)
+    {
+      // Print data for one process at a time
+      if (proc == proc_num)
+      {
+        // Number of processes
+        const SCOTCH_Num procglbnbr = num_processes;
+
+        cout << "--------------------------------------------------" << endl;
+        cout << "Num vertices (vertglbnbr)     : " << vertglbnbr << endl;
+        cout << "Num edges (edgeglbnbr)        : " << edgeglbnbr << endl;
+        cout << "Num of processes (procglbnbr) : " << procglbnbr << endl;
+        cout << "Vert per processes (proccnttab) : " << endl;
+        for (std::size_t i = 0; i < proccnttab.size(); ++i)
+          cout << "  " << proccnttab[i];
+        cout << endl;
+        cout << "Offsets (procvrttab): " << endl;
+        for (std::size_t i = 0; i < procvrttab.size(); ++i)
+          cout << "  " << procvrttab[i];
+        cout << endl;
+
+        //------ Print local data
+        cout << "(*) Num vertices (vertlocnbr)        : " << vertlocnbr << endl;
+        cout << "(*) Num vert (inc ghost) (vertgstnbr): " << vertgstnbr << endl;
+        cout << "(*) Num edges (edgelocnbr)           : " << edgelocnbr << endl;
+        cout << "(*) Vertloctab: " << endl;
+        for (std::size_t i = 0; i < vertloctab.size(); ++i)
+          cout << "  " << vertloctab[i];
+        cout << endl;
+        cout << "edgeloctab: " << endl;
+        for (std::size_t i = 0; i < edgeloctab.size(); ++i)
+          cout << "  " << edgeloctab[i];
+        cout << endl;
+        cout << "--------------------------------------------------" << endl;
+      }
+      MPI::barrier(mpi_comm);
+    }
+    MPI::barrier(mpi_comm);
+  }
+  */
+  // ------------------------------------------------------
 
   // Create SCOTCH graph and initialise
   SCOTCH_Dgraph dgrafdat;
@@ -307,20 +329,9 @@ void SCOTCH::partition(
                  "Error initializing SCOTCH graph");
   }
 
-  SCOTCH_Num* veloloctab;
-  std::vector<SCOTCH_Num> vload;
-  if (node_weights.size() == 0)
-    veloloctab = NULL;
-  else
-  {
-    vload.resize(node_weights.size());
-    std::copy(node_weights.begin(), node_weights.end(), vload.begin());
-    veloloctab = vload.data();
-  }
-
   // Build SCOTCH distributed graph
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                              &vertloctab[0], NULL, veloloctab, NULL,
+                              &vertloctab[0], NULL, NULL, NULL,
                               edgelocnbr, edgelocnbr,
                               &edgeloctab[0], NULL, NULL) )
   {

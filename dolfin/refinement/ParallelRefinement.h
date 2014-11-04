@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 Chris Richardson
+// Copyright (C) 2012 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -17,6 +17,7 @@
 //
 //
 // First Added: 2013-01-02
+// Last Changed: 2013-01-17
 
 #ifndef __PARALLEL_REFINEMENT_H
 #define __PARALLEL_REFINEMENT_H
@@ -99,7 +100,7 @@ namespace dolfin
     // Mesh reference
     const Mesh& _mesh;
 
-    // Shared edges between processes. In R^2, vector size is 1
+    // Shared edges between processes. In 2D, vector size is 1
     std::unordered_map<unsigned int, std::vector<std::pair<unsigned int,
       unsigned int> > > shared_edges;
 
@@ -115,9 +116,6 @@ namespace dolfin
 
     // Management of marked edges
     std::vector<bool> marked_edges;
-
-    // Temporary storage for edges that have been recently marked
-    std::vector<std::vector<std::size_t> > marked_for_update;
 
     // Reorder vertices into global order for partitioning
     void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,

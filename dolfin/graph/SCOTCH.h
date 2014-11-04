@@ -35,7 +35,6 @@ namespace dolfin
 {
   // Forward declarations
   class LocalMeshData;
-  class Mesh;
 
   /// This class provides an interface to SCOTCH-PT (parallel version)
 
@@ -53,12 +52,6 @@ namespace dolfin
       std::vector<std::size_t>& cell_partition,
       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
       const LocalMeshData& mesh_data);
-
-    // Compute a new cell partition from a Mesh
-    static void compute_partition(const Mesh& mesh,
-                                  std::vector<std::size_t>& cell_partition,
-                                  std::map<std::size_t,
-                                  dolfin::Set<unsigned int> >& ghost_procs);
 
     /// Compute reordering (map[old] -> new) using
     /// Gibbs-Poole-Stockmeyer re-ordering
@@ -83,7 +76,6 @@ namespace dolfin
     static void partition(
       const MPI_Comm mpi_comm,
       const std::vector<std::set<std::size_t> >& local_graph,
-      const std::vector<std::size_t>& node_weights,
       const std::set<std::size_t>& ghost_vertices,
       const std::vector<std::size_t>& global_cell_indices,
       const std::size_t num_global_vertices,

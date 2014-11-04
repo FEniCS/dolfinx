@@ -26,7 +26,6 @@
 #include "LocalMeshRefinement.h"
 #include "ParallelRefinement2D.h"
 #include "ParallelRefinement3D.h"
-#include "PlazaRefinementND.h"
 #include "refine.h"
 
 using namespace dolfin;
@@ -50,7 +49,7 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
   else if(D == 2)
     ParallelRefinement2D::refine(refined_mesh, mesh, redistribute);
   else if(D == 3)
-    PlazaRefinementND::refine(refined_mesh, mesh, redistribute);
+    ParallelRefinement3D::refine(refined_mesh, mesh, redistribute);
   else
   {
     dolfin_error("refine.cpp",
@@ -84,8 +83,8 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
   }
   else if (D == 3)
   {
-    PlazaRefinementND::refine(refined_mesh, mesh, cell_markers,
-                              redistribute);
+    ParallelRefinement3D::refine(refined_mesh, mesh, cell_markers,
+                                 redistribute);
   }
   else
   {

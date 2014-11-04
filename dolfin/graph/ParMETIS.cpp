@@ -27,7 +27,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/mesh/Mesh.h>
 #include "ParMETIS.h"
 #include "GraphBuilder.h"
 
@@ -49,9 +48,6 @@ namespace dolfin
 
     // Constructor
     ParMETISDualGraph(MPI_Comm mpi_comm, const LocalMeshData& mesh_data);
-
-    // Constructor from Mesh using existing connectivity to build
-    explicit ParMETISDualGraph(const Mesh& mesh);
 
     // Destructor
     ~ParMETISDualGraph();
@@ -77,46 +73,7 @@ namespace dolfin
     idx_t wgtflag;
     idx_t edgecut;
 
-    // Flag to determine if METIS has been used to allocate memory
-    bool metis_allocated_arrays;
-
-    // Alternative storage when not using METIS allocation
-    std::vector<idx_t> adjncy_vec;
-    std::vector<idx_t> xadj_vec;
-
   };
-}
-//-----------------------------------------------------------------------------
-void ParMETIS::compute_partition(
-  const Mesh& mesh,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
-  std::string mode)
-{
-  // Build dual graph
-  ParMETISDualGraph g(mesh);
-
-  // Duplicate MPI communicator (ParMETIS does not take const
-  // arguments, so duplicate communicator to be sure it isn't changed)
-  MPI_Comm comm;
-  MPI_Comm_dup(mesh.mpi_comm(), &comm);
-
-  // Partition graph
-  if (mode == "partition")
-    partition(comm, cell_partition, ghost_procs, g);
-  else if (mode == "adaptive_repartition")
-    adaptive_repartition(comm, cell_partition, g);
-  else if (mode == "refine")
-    refine(comm, cell_partition, g);
-  else
-  {
-    dolfin_error("ParMETIS.cpp",
-                 "compute mesh partitioning using ParMETIS",
-                 "partition model %s is unknown. Must be \"partition\", \"adaptive_repartition\" or \"refine\"",
-                 mode.c_str());
-  }
-
-  MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(
@@ -176,7 +133,6 @@ void ParMETIS::partition(
   const std::size_t num_local_cells = g.eptr.size() - 1;
   std::vector<idx_t> part(num_local_cells);
   dolfin_assert(!part.empty());
-
   int err = ParMETIS_V3_PartKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
                                  NULL, &g.wgtflag, &g.numflag, &g.ncon,
                                  &g.nparts,
@@ -366,61 +322,8 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
-ParMETISDualGraph::ParMETISDualGraph(const Mesh& mesh)
-  : metis_allocated_arrays(false)
-{
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-
-  std::vector<std::set<std::size_t> > local_graph;
-  std::set<std::size_t> ghost_nodes;
-  GraphBuilder::compute_dual_graph(mesh, local_graph, ghost_nodes);
-
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t num_local_cells = mesh.topology().size(tdim);
-
-  // Communicate number of cells between all processors
-  std::vector<std::size_t> num_cells;
-  MPI::all_gather(mpi_comm, num_local_cells, num_cells);
-
-  // Build elmdist array with cell offsets for all processors
-  elmdist.assign(num_processes + 1, 0);
-  for (std::size_t i = 1; i < num_processes + 1; ++i)
-    elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
-
-  // Resize to give num_local_cells
-  eptr.resize(num_local_cells + 1);
-
-  for (auto p = local_graph.begin(); p != local_graph.end(); ++p)
-  {
-    xadj_vec.push_back(adjncy_vec.size());
-    adjncy_vec.insert(adjncy_vec.end(), p->begin(), p->end());
-  }
-  xadj_vec.push_back(adjncy_vec.size());
-
-  xadj = xadj_vec.data();
-  adjncy = adjncy_vec.data();
-
-  // Number of nodes shared for dual graph (partition along facets)
-  numflag = 0;
-
-  // Number of partitions (one for each process)
-  nparts = num_processes;
-
-  // Strange weight arrays needed by ParMETIS
-  ncon = 1;
-  tpwgts.assign(ncon*nparts, 1.0/static_cast<real_t>(nparts));
-  ubvec.assign(ncon, 1.05);
-
-  // Prepare remaining arguments for ParMETIS
-  elmwgt = NULL;
-  wgtflag = 0;
-  edgecut = 0;
-}
-//-----------------------------------------------------------------------------
 ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
-                                     const LocalMeshData& mesh_data) 
-  : metis_allocated_arrays(true)
+                                     const LocalMeshData& mesh_data)
 {
   // Get number of processes and process number
   const std::size_t num_processes = MPI::size(mpi_comm);
@@ -494,11 +397,8 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
 ParMETISDualGraph::~ParMETISDualGraph()
 {
   // Free metis data structures
-  if (metis_allocated_arrays)
-  {
-    METIS_Free(xadj);
-    METIS_Free(adjncy);
-  }
+  METIS_Free(xadj);
+  METIS_Free(adjncy);
 }
 //-----------------------------------------------------------------------------
 #else
