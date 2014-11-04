@@ -33,6 +33,7 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include "GraphBuilder.h"
 #include "SCOTCH.h"
+#include "CSRGraph.h"
 
 #include <dolfin/common/dolfin_common.h>
 
@@ -219,31 +220,23 @@ void SCOTCH::partition(
   // Local data ---------------------------------
 
   // Number of local graph vertices (cells)
-  const SCOTCH_Num vertlocnbr = local_graph.size();
-  const std::size_t vertgstnbr = vertlocnbr + ghost_vertices.size();
+  //  const SCOTCH_Num vertlocnbr = local_graph.size();
+  const std::size_t vertgstnbr = local_graph.size() + ghost_vertices.size();
 
   // Data structures for graph input to SCOTCH (add 1 for case that
   // local graph size is zero)
-  std::vector<SCOTCH_Num> vertloctab;
-  vertloctab.reserve(local_graph.size() + 1);
-  std::vector<SCOTCH_Num> edgeloctab;
 
-  // Build local graph input for SCOTCH
-  // (number of local + ghost graph vertices (cells),
-  // number of local edges + edges connecting to ghost vertices)
-  SCOTCH_Num edgelocnbr = 0;
-  vertloctab.push_back((SCOTCH_Num) 0);
-  std::vector<std::set<std::size_t> >::const_iterator vertex;
-  for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
-  {
-    edgelocnbr += vertex->size();
-    vertloctab.push_back(vertloctab.back() + vertex->size());
-    edgeloctab.insert(edgeloctab.end(), vertex->begin(), vertex->end());
-  }
+  // Create CSR Graph
+  CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
+  SCOTCH_Num edgelocnbr = csr_graph.num_edges();
+  SCOTCH_Num vertlocnbr = csr_graph.num_nodes();
 
   // Handle case that local graph size is zero
-  if (edgeloctab.empty())
-    edgeloctab.resize(1);
+  // FIXME: why does this matter? 
+  if (edgelocnbr == 0)
+  {
+    warning("Local graph empty in SCOTCH");
+  }
 
   // Global data ---------------------------------
 
@@ -331,9 +324,9 @@ void SCOTCH::partition(
 
   // Build SCOTCH distributed graph
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                              &vertloctab[0], NULL, NULL, NULL,
-                              edgelocnbr, edgelocnbr,
-                              &edgeloctab[0], NULL, NULL) )
+                         const_cast<SCOTCH_Num*>(csr_graph.nodes().data()), NULL, NULL, NULL,
+                         edgelocnbr, edgelocnbr,
+                         const_cast<SCOTCH_Num*>(csr_graph.edges().data()), NULL, NULL) )
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
@@ -413,6 +406,8 @@ void SCOTCH::partition(
 
   // Iterate through SCOTCH's local compact graph to find partition
   // boundaries and save to map
+  const std::vector<SCOTCH_Num>& vertloctab = csr_graph.nodes();
+
   for(SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
     const std::size_t proc_this =  _cell_partition[i];
