@@ -99,7 +99,7 @@ namespace dolfin
   private:
 
     // Edges in compressed form. Edges for node i
-    // are stored in edges[nodes[i]:nodes[i + 1]]
+    // are stored in edges[node_vec[i]:node_vec[i + 1]]
     std::vector<T> edge_vec;
 
     // Offsets of each node into edges (see above)
