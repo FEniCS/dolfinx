@@ -119,7 +119,7 @@ namespace dolfin
     /// Total number of nodes in parallel graph
     T num_nodes_global() const
     {
-      return node_distribution.back();
+      return node_distribution_vec.back();
     }
 
     const std::vector<T>& node_distribution() const
