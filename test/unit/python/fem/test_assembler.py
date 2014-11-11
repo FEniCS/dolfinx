@@ -274,10 +274,10 @@ def test_subdomain_and_fulldomain_assembly_meshdomains():
     # Assemble forms on subdomains and full domain and compare
     krange = list(range(5))
     for dmu in (dx, ds):
-	full = assemble(Constant(3.0)*dmu(mesh))
-	subplusfull = [assemble(Constant(3.0)*dmu(mesh) + Constant(1.0)*dmu(k, domain=mesh)) for k in krange]
-	sub = [assemble(Constant(1.0)*dmu(k, domain=mesh)) for k in krange]
-	for k in krange:
+        full = assemble(Constant(3.0)*dmu(mesh))
+        subplusfull = [assemble(Constant(3.0)*dmu(mesh) + Constant(1.0)*dmu(k, domain=mesh)) for k in krange]
+        sub = [assemble(Constant(1.0)*dmu(k, domain=mesh)) for k in krange]
+        for k in krange:
 	    #print sub[k] + full, subplusfull[k]
             assert round(sub[k] + full - subplusfull[k], 7) == 0
 
@@ -491,7 +491,7 @@ def test_colored_cell_assembly():
     u = TrialFunction(V)
     f = Constant((10, 20, 30))
     def epsilon(v):
-	return 0.5*(grad(v) + grad(v).T)
+        return 0.5*(grad(v) + grad(v).T)
     a = inner(epsilon(v), epsilon(u))*dx
     L = inner(v, f)*dx
 
@@ -567,9 +567,9 @@ def test_reference_assembly(filedir):
     # Create reference matrices and set entries
     A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
     if sizeof_la_index() == 4:
-	dtype = numpy.intc
+        dtype = numpy.intc
     else:
-	dtype = numpy.int64
+        dtype = numpy.int64
     pos = numpy.array([0, 1, 2, 3], dtype=dtype)
     A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
                         [-1.0/6.0, 1.0/6.0, 0.0, 0.0],

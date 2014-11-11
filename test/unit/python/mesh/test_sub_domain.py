@@ -55,14 +55,14 @@ def test_creation_and_marking():
             return x[0] > 1.0 - DOLFIN_EPS
 
     subdomain_pairs = [(Left(), Right()),
-        		(AutoSubDomain(\
-        		    lambda x, on_boundary: x[0] < DOLFIN_EPS),
-        		AutoSubDomain(\
-        		    lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
-        		(CompiledSubDomain("near(x[0], a)", a = 0.0),
-        		CompiledSubDomain("near(x[0], a)", a = 1.0)),
-        		(CompiledSubDomain("near(x[0], 0.0)"),
-        		CompiledSubDomain("near(x[0], 1.0)"))]
+                        (AutoSubDomain(\
+                            lambda x, on_boundary: x[0] < DOLFIN_EPS),
+                        AutoSubDomain(\
+                            lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
+                        (CompiledSubDomain("near(x[0], a)", a = 0.0),
+                        CompiledSubDomain("near(x[0], a)", a = 1.0)),
+                        (CompiledSubDomain("near(x[0], 0.0)"),
+                        CompiledSubDomain("near(x[0], 1.0)"))]
 
     empty = CompiledSubDomain("false")
     every = CompiledSubDomain("true")
@@ -77,34 +77,34 @@ def test_creation_and_marking():
         for left, right in subdomain_pairs:
 
             for MeshFunc, f_dim in [(VertexFunction, 0),
-        			    (FacetFunction, dim-1),
-        			    (CellFunction, dim)]:
-        	f = MeshFunc("size_t", mesh, 0)
+                                    (FacetFunction, dim-1),
+                                    (CellFunction, dim)]:
+                f = MeshFunc("size_t", mesh, 0)
 
-        	left.mark(f, 1)
-        	right.mark(f, 2)
+                left.mark(f, 1)
+                right.mark(f, 2)
 
-        	correct = {(1,0):1,
-        		    (1,0):1,
-        		    (1,1):0,
-        		    (2,0):11,
-        		    (2,1):10,
-        		    (2,2):0,
-        		    (3,0):121,
-        		    (3,2):200,
-        		    (3,3):0}
+                correct = {(1,0):1,
+                            (1,0):1,
+                            (1,1):0,
+                            (2,0):11,
+                            (2,1):10,
+                            (2,2):0,
+                            (3,0):121,
+                            (3,2):200,
+                            (3,3):0}
 
-        	# Check that the number of marked entities are at least the
-        	# correct number (it can be larger in parallel)
-        	assert all(value >= correct[dim, f_dim]
-        		    for value in [
-        		      MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
-        		      MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
-        		      ])
+                # Check that the number of marked entities are at least the
+                # correct number (it can be larger in parallel)
+                assert all(value >= correct[dim, f_dim]
+                            for value in [
+                              MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
+                              MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
+                              ])
 
         for MeshFunc, f_dim in [(VertexFunction, 0),
-        			(FacetFunction, dim-1),
-        			(CellFunction, dim)]:
+                                (FacetFunction, dim-1),
+                                (CellFunction, dim)]:
             f = MeshFunc("size_t", mesh, 0)
 
             empty.mark(f, 1)

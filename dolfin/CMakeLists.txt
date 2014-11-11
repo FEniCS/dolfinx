@@ -301,6 +301,19 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
     message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
   endif()
 
+  # Add numpy defines to DOLFIN_PYTHON_DEFINITIONS
+  if (NUMPY_FOUND)
+
+    # Set numpy version define
+    set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS};-DNUMPY_VERSION_MAJOR=${NUMPY_VERSION_MAJOR};-DNUMPY_VERSION_MINOR=${NUMPY_VERSION_MINOR};-DNUMPY_VERSION_MICRO=${NUMPY_VERSION_MICRO})
+
+    # Only set define for none depricated API for NUMPY version 1.7 and larger
+    if(NUMPY_VERSION VERSION_GREATER 1.6.2)
+      set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS} -DNPY_NO_DEPRECATED_API=NPY_${NUMPY_VERSION_MAJOR}_${NUMPY_VERSION_MINOR}_API_VERSION)
+    endif()
+
+  endif()
+
   # If suitble UFC SWIG extension is found, add SWIG subdirectory
   if (NOT UFC_MODULE_NOT_FOUND AND ("${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
     add_subdirectory(swig)
