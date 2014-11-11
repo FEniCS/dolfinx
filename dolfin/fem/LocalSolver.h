@@ -48,6 +48,13 @@ namespace dolfin
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x.
+    void solve(Function& u, GenericVector& x, const Form& a, const Form& L,
+               bool symmetric=false) const;
+
+  public:
+
+    /// Solve local (cell-wise) problem and copy result into global
+    /// vector x.
     void solve(GenericVector& x, const Form& a, const Form& L,
                bool symmetric=false) const;
 
