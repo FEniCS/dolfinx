@@ -30,7 +30,7 @@ from dolfin import *
 def test_local_solver():
 
     mesh = UnitCubeMesh(16, 16, 16)
-    V = FunctionSpace(mesh, "Lagrange", 2)
+    V = FunctionSpace(mesh, "DG", 2)
 
     v = TestFunction(V)
     u = TrialFunction(V)
@@ -50,4 +50,4 @@ def test_local_solver():
     local_solver.solve(u.vector(), a, L)
     x = u.vector().copy()
     x[:] = 10.0
-    assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+    assert round((u.vector() - x).norm("l2") - 0.0, 9) == 0

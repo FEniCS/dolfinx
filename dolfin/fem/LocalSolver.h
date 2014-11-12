@@ -21,6 +21,8 @@
 #ifndef __LOCAL_SOLVER_H
 #define __LOCAL_SOLVER_H
 
+#include <Eigen/Dense>
+
 namespace dolfin
 {
 
@@ -42,21 +44,40 @@ namespace dolfin
   class GenericVector;
   class Form;
 
-  class LocalSolver
+  class LocalSolver : public Hierarchical<LocalSolver>
   {
   public:
 
+     /// Create local solver
+    LocalSolver(const Form& a, const Form& L);
+                             
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x.
     void solve(Function& u, GenericVector& x, const Form& a, const Form& L,
                bool symmetric=false) const;
 
-  public:
+    /// Solve local (cell-wise) problem and copy result into global
+    /// vector x.
+    void solve(Function& u, GenericVector& x) const;
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x.
     void solve(GenericVector& x, const Form& a, const Form& L,
                bool symmetric=false) const;
+
+  private:
+
+    // Check forms
+    void check_forms() const;
+
+    // The bilinear form
+    std::shared_ptr<const Form> _a;
+
+    // The linear form
+    std::shared_ptr<const Form> _l;
+
+    // The Dirichlet boundary conditions
+    std::vector<Eigen::PartialPivLU< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > _lus;
 
   };
 
