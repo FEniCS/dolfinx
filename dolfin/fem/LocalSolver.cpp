@@ -152,10 +152,8 @@ void LocalSolver::solve(Function& u, GenericVector& x, const Form& a, const Form
                                 
     std::cout << "b " << b << std::endl;
     myfile << b << std::endl;
-    (*Gb).get_local(b.data(), dofs_L.size(), dofs_L.data());
+    (*Gb).get_local(b.data(), dofs_a0.size(), dofs_a0.data());
     std::cout << "Gb " << b << std::endl;
-
-//    (*Gb).get_local(b.data(), dofs_a0.size(), dofs_a0.data());
 
      // Solve local problem
     x_local = A.partialPivLu().solve(b);
