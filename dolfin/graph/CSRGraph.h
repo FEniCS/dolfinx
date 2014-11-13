@@ -45,7 +45,7 @@ namespace dolfin
   public:
 
     explicit CSRGraph(MPI_Comm mpi_comm)
-      : node_vec(1, 0), node_distribution_vec(1, 0), _mpi_comm(mpi_comm)
+      : _node_offets(1, 0), node_distribution_vec(1, 0), _mpi_comm(mpi_comm)
     {}
 
     /// Create a CSR Graph from a collection of edges (X is a
@@ -53,7 +53,7 @@ namespace dolfin
     /// std::set<std::size_t>
     template<typename X>
     CSRGraph(MPI_Comm mpi_comm, const std::vector<X>& graph)
-      : node_vec(1, 0), _mpi_comm(mpi_comm)
+      : _node_offets(1, 0), _mpi_comm(mpi_comm)
     {
       // Count number of outgoing edges
       std::size_t num_edges = 0;
@@ -61,13 +61,14 @@ namespace dolfin
         num_edges += edges.size();
 
       // Reserve memory
-      node_vec.reserve(graph.size());
-      edge_vec.reserve(num_edges);
+      _node_offets.reserve(graph.size());
+      _edges.reserve(num_edges);
 
       for (auto const &p : graph)
       {
-        edge_vec.insert(edge_vec.end(), p.begin(), p.end());
-        node_vec.push_back(edge_vec.size());
+        _edges.insert(_edges.end(), p.begin(), p.end());
+        //_node_offets.push_back(_edges.size());
+        _node_offets.push_back(_node_offets.back() + p.size());
       }
 
       calculate_node_distribution();
@@ -79,21 +80,21 @@ namespace dolfin
     /// Vector containing all edges for all local nodes
     const std::vector<T>& edges() const
     {
-      return edge_vec;
+      return _edges;
     }
 
     /// Vector containing index offsets into edges for all local nodes
     /// (plus extra entry marking end)
     const std::vector<T>& nodes() const
-    { return node_vec; }
+    { return _node_offets; }
 
     /// Number of local edges in graph
     T num_edges() const
-    { return edge_vec.size(); }
+    { return _edges.size(); }
 
     /// Number of local nodes in graph
     T num_nodes() const
-    { return node_vec.size() - 1; }
+    { return _node_offets.size() - 1; }
 
     /// Total number of nodes in parallel graph
     T num_nodes_global() const
@@ -115,11 +116,11 @@ namespace dolfin
     }
 
     // Edges in compressed form. Edges for node i
-    // are stored in edges[node_vec[i]:node_vec[i + 1]]
-    std::vector<T> edge_vec;
+    // are stored in edges[_node_offets[i]:_node_offets[i + 1]]
+    std::vector<T> _edges;
 
     // Offsets of each node into edges (see above)
-    std::vector<T> node_vec;
+    std::vector<T> _node_offets;
 
     // Distribution of nodes across processes in parallel
     std::vector<T> node_distribution_vec;
