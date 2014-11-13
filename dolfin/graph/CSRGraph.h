@@ -15,32 +15,29 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added: 
+// First added:
 // Last changed:
 
 #ifndef __CSRGRAPH_H
 #define __CSRGRAPH_H
 
-#include <dolfin/common/MPI.h>
-
 #include <vector>
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
-
-  // Forward declarations
-
-  /// This class provides a Compressed Sparse Row Graph
-  /// defined by a vector containing edges for each node
-  /// and a vector of offsets into the edge vector for each node
+  /// This class provides a Compressed Sparse Row Graph defined by a
+  /// vector containing edges for each node and a vector of offsets
+  /// into the edge vector for each node
   ///
-  /// In parallel, all nodes must be numbered uniquely across processes
-  /// and the connectivity for local nodes, including connections
-  /// to off-process nodes are given by edges(), as usual.
-  /// The distribution of nodes amongst processes is calculated automatically
-  /// at instantiation. The format of the nodes, edges and distribution is
-  /// compatible with the formats for ParMETIS and PT-SCOTCH. See the manuals
-  /// for these libraries for further information.
+  /// In parallel, all nodes must be numbered uniquely across
+  /// processes and the connectivity for local nodes, including
+  /// connections to off-process nodes are given by edges(), as usual.
+  /// The distribution of nodes amongst processes is calculated
+  /// automatically at instantiation. The format of the nodes, edges
+  /// and distribution is compatible with the formats for ParMETIS and
+  /// PT-SCOTCH. See the manuals for these libraries for further
+  /// information.
 
   template<typename T> class CSRGraph
   {
@@ -49,47 +46,35 @@ namespace dolfin
 
     explicit CSRGraph(MPI_Comm mpi_comm)
       : node_vec(1, 0), node_distribution_vec(1, 0), _mpi_comm(mpi_comm)
-    {
-    }
+    {}
 
-    /// Create a CSR Graph from a collection of edges
-    CSRGraph(MPI_Comm mpi_comm, const std::vector<std::vector<T> >& graph)
+    /// Create a CSR Graph from a collection of edges (X is a
+    /// container some type, e.g. std::vector<unsigned int> or
+    /// std::set<std::size_t>
+    template<typename X>
+    CSRGraph(MPI_Comm mpi_comm, const std::vector<X>& graph)
       : node_vec(1, 0), _mpi_comm(mpi_comm)
     {
-      node_vec.reserve(graph.size());
-      // FIXME: better guess at size of the edge_vec
-      edge_vec.reserve(graph.size()*3);
+      // Count number of outgoing edges
+      std::size_t num_edges = 0;
+      for (auto const &edges : graph)
+        num_edges += edges.size();
 
-      for (auto const &p: graph)
+      // Reserve memory
+      node_vec.reserve(graph.size());
+      edge_vec.reserve(num_edges);
+
+      for (auto const &p : graph)
       {
         edge_vec.insert(edge_vec.end(), p.begin(), p.end());
         node_vec.push_back(edge_vec.size());
       }
-      calculate_node_distribution();
-    }
 
-    /// Create a CSR Graph from a collection of edges
-    CSRGraph(MPI_Comm mpi_comm, const std::vector<std::set<std::size_t> >& graph)
-      : node_vec(1, 0), _mpi_comm(mpi_comm)
-    {
-      // FIXME: can this constructor be templated? (code is the same as for std::vector)
-      node_vec.reserve(graph.size());
-      // FIXME: better guess at size of the edge_vec
-      edge_vec.reserve(graph.size()*3);
-
-      for (auto const &p: graph)
-      {
-        edge_vec.insert(edge_vec.end(), p.begin(), p.end());
-        node_vec.push_back(edge_vec.size());
-      }
       calculate_node_distribution();
     }
 
     /// Destructor
-    ~CSRGraph()
-    {
-      // Do nothing
-    }
+    ~CSRGraph() {}
 
     /// Vector containing all edges for all local nodes
     const std::vector<T>& edges() const
@@ -97,35 +82,25 @@ namespace dolfin
       return edge_vec;
     }
 
-    /// Vector containing index offsets into edges for
-    /// all local nodes (plus extra entry marking end)
+    /// Vector containing index offsets into edges for all local nodes
+    /// (plus extra entry marking end)
     const std::vector<T>& nodes() const
-    {
-      return node_vec;
-    }
+    { return node_vec; }
 
     /// Number of local edges in graph
     T num_edges() const
-    {
-      return edge_vec.size();
-    }
+    { return edge_vec.size(); }
 
     /// Number of local nodes in graph
     T num_nodes() const
-    {
-      return node_vec.size() - 1;
-    }
+    { return node_vec.size() - 1; }
 
     /// Total number of nodes in parallel graph
     T num_nodes_global() const
-    {
-      return node_distribution_vec.back();
-    }
+    { return node_distribution_vec.back(); }
 
     const std::vector<T>& node_distribution() const
-    {
-      return node_distribution_vec;
-    }
+    { return node_distribution_vec; }
 
   private:
 
@@ -136,9 +111,7 @@ namespace dolfin
 
       node_distribution_vec.insert(node_distribution_vec.begin(), 0);
       for (std::size_t i = 1; i != node_distribution_vec.size(); ++i)
-      {
         node_distribution_vec[i] += node_distribution_vec[i - 1];
-      }
     }
 
     // Edges in compressed form. Edges for node i
@@ -151,7 +124,9 @@ namespace dolfin
     // Distribution of nodes across processes in parallel
     std::vector<T> node_distribution_vec;
 
+    // MPI communicator attached to graph
     MPI_Comm _mpi_comm;
+
   };
 
 }
