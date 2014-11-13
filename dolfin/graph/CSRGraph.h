@@ -55,7 +55,7 @@ namespace dolfin
     CSRGraph(MPI_Comm mpi_comm, const std::vector<X>& graph)
       : _node_offets(1, 0), _mpi_comm(mpi_comm)
     {
-      // Count number of outgoing edges
+      // Count number of outgoing edges (to pre-allocate memory)
       std::size_t num_edges = 0;
       for (auto const &edges : graph)
         num_edges += edges.size();
@@ -64,11 +64,11 @@ namespace dolfin
       _node_offets.reserve(graph.size());
       _edges.reserve(num_edges);
 
-      for (auto const &p : graph)
+      // Node-by-node, add outgoing edges
+      for (auto const &node_edges : graph)
       {
-        _edges.insert(_edges.end(), p.begin(), p.end());
-        //_node_offets.push_back(_edges.size());
-        _node_offets.push_back(_node_offets.back() + p.size());
+        _edges.insert(_edges.end(), node_edges.begin(), node_edges.end());
+        _node_offets.push_back(_node_offets.back() + node_edges.size());
       }
 
       calculate_node_distribution();
@@ -79,9 +79,7 @@ namespace dolfin
 
     /// Vector containing all edges for all local nodes
     const std::vector<T>& edges() const
-    {
-      return _edges;
-    }
+    { return _edges; }
 
     /// Vector containing index offsets into edges for all local nodes
     /// (plus extra entry marking end)
@@ -89,11 +87,11 @@ namespace dolfin
     { return _node_offets; }
 
     /// Number of local edges in graph
-    T num_edges() const
+    std::size_t num_edges() const
     { return _edges.size(); }
 
     /// Number of local nodes in graph
-    T num_nodes() const
+    std::size_t num_nodes() const
     { return _node_offets.size() - 1; }
 
     /// Total number of nodes in parallel graph
@@ -108,7 +106,8 @@ namespace dolfin
     void calculate_node_distribution()
     {
       // Communicate number of nodes between all processors
-      MPI::all_gather(_mpi_comm, num_nodes(), node_distribution_vec);
+      const std::size_t _num_nodes = num_nodes();
+      MPI::all_gather(_mpi_comm, (T) _num_nodes, node_distribution_vec);
 
       node_distribution_vec.insert(node_distribution_vec.begin(), 0);
       for (std::size_t i = 1; i != node_distribution_vec.size(); ++i)
