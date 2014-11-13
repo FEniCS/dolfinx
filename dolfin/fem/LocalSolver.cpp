@@ -82,7 +82,6 @@ LocalSolver::LocalSolver(const Form& a, const Form& L) : Hierarchical<LocalSolve
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
-  // declare _lus to vector of length num cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell
@@ -113,7 +112,7 @@ LocalSolver::LocalSolver(const Form& a, const Form& L) : Hierarchical<LocalSolve
                                 ufc_cell.orientation);
 
      // Solve local problem
-    _lus[cell->index()] = A.partialPivLu();
+    _lus.push_back(A.partialPivLu());
 
     p++;
   }
