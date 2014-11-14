@@ -45,7 +45,7 @@ namespace dolfin
   public:
 
     explicit CSRGraph(MPI_Comm mpi_comm)
-      : _node_offets(1, 0), node_distribution_vec(1, 0), _mpi_comm(mpi_comm)
+      : _node_offsets(1, 0), _node_distribution(1, 0), _mpi_comm(mpi_comm)
     {}
 
     /// Create a CSR Graph from a collection of edges (X is a
@@ -53,7 +53,7 @@ namespace dolfin
     /// std::set<std::size_t>
     template<typename X>
     CSRGraph(MPI_Comm mpi_comm, const std::vector<X>& graph)
-      : _node_offets(1, 0), _mpi_comm(mpi_comm)
+      : _node_offsets(1, 0), _mpi_comm(mpi_comm)
     {
       // Count number of outgoing edges (to pre-allocate memory)
       std::size_t num_edges = 0;
@@ -61,14 +61,14 @@ namespace dolfin
         num_edges += edges.size();
 
       // Reserve memory
-      _node_offets.reserve(graph.size());
+      _node_offsets.reserve(graph.size());
       _edges.reserve(num_edges);
 
       // Node-by-node, add outgoing edges
       for (auto const &node_edges : graph)
       {
         _edges.insert(_edges.end(), node_edges.begin(), node_edges.end());
-        _node_offets.push_back(_node_offets.back() + node_edges.size());
+        _node_offsets.push_back(_node_offsets.back() + node_edges.size());
       }
 
       calculate_node_distribution();
@@ -84,7 +84,7 @@ namespace dolfin
     /// Vector containing index offsets into edges for all local nodes
     /// (plus extra entry marking end)
     const std::vector<T>& nodes() const
-    { return _node_offets; }
+    { return _node_offsets; }
 
     /// Number of local edges in graph
     std::size_t num_edges() const
@@ -92,14 +92,14 @@ namespace dolfin
 
     /// Number of local nodes in graph
     std::size_t num_nodes() const
-    { return _node_offets.size() - 1; }
+    { return _node_offsets.size() - 1; }
 
     /// Total number of nodes in parallel graph
     T num_nodes_global() const
-    { return node_distribution_vec.back(); }
+    { return _node_distribution.back(); }
 
     const std::vector<T>& node_distribution() const
-    { return node_distribution_vec; }
+    { return _node_distribution; }
 
   private:
 
@@ -107,22 +107,22 @@ namespace dolfin
     {
       // Communicate number of nodes between all processors
       const std::size_t _num_nodes = num_nodes();
-      MPI::all_gather(_mpi_comm, (T) _num_nodes, node_distribution_vec);
+      MPI::all_gather(_mpi_comm, (T) _num_nodes, _node_distribution);
 
-      node_distribution_vec.insert(node_distribution_vec.begin(), 0);
-      for (std::size_t i = 1; i != node_distribution_vec.size(); ++i)
-        node_distribution_vec[i] += node_distribution_vec[i - 1];
+      _node_distribution.insert(_node_distribution.begin(), 0);
+      for (std::size_t i = 1; i != _node_distribution.size(); ++i)
+        _node_distribution[i] += _node_distribution[i - 1];
     }
 
     // Edges in compressed form. Edges for node i
-    // are stored in edges[_node_offets[i]:_node_offets[i + 1]]
+    // are stored in _edges[_node_offsets[i]:_node_offsets[i + 1]]
     std::vector<T> _edges;
 
     // Offsets of each node into edges (see above)
-    std::vector<T> _node_offets;
+    std::vector<T> _node_offsets;
 
     // Distribution of nodes across processes in parallel
-    std::vector<T> node_distribution_vec;
+    std::vector<T> _node_distribution;
 
     // MPI communicator attached to graph
     MPI_Comm _mpi_comm;
