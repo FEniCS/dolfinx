@@ -52,6 +52,14 @@ LocalSolver::LocalSolver(const Form& a, const Form& L) : Hierarchical<LocalSolve
   UFC ufc_a(a);
   UFC ufc_L(L);
   
+  // Raise error for Point integrals
+  if (ufc_a.form.has_point_integrals() || ufc_L.form.has_point_integrals())
+  {
+    dolfin_error("LocalSolver.cpp",
+                 "assemble system",
+                 "Point integrals are not supported (yet)");
+  }
+  
   // Set timer
   Timer timer("Prepare Local solver");
 
@@ -211,6 +219,24 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   UFC ufc_a(a);
   UFC ufc_L(L);
 
+  // Raise error for Point integrals
+  if (ufc_a.form.has_point_integrals() || ufc_L.form.has_point_integrals())
+  {
+    dolfin_error("LocalSolver.cpp",
+                 "assemble system",
+                 "Point integrals are not supported (yet)");
+  }
+  
+  // Raise error for Point integrals
+  if (ufc_L.form.has_interior_facet_integrals() || 
+      ufc_L.form.has_exterior_facet_integrals())
+  {
+    dolfin_error("LocalSolver.cpp",
+                 "assemble system",
+                 "Facet integrals are not supported by this function. \r\n \
+                 Use the local solver which reuses factorization in stead");
+  }
+  
   // Set timer
   Timer timer("Local solver");
 
