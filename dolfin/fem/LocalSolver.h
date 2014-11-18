@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-12
-// Last changed:
+// Last changed: 2014-11-18
 
 #ifndef __LOCAL_SOLVER_H
 #define __LOCAL_SOLVER_H
@@ -49,16 +49,14 @@ namespace dolfin
   public:
 
      /// Create local solver
+    LocalSolver();
+                             
+     /// Create local solver for reusing factorizations
     LocalSolver(const Form& a, const Form& L);
                              
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x.
-    void solve(Function& u, GenericVector& x, const Form& a, const Form& L,
-               bool symmetric=false) const;
-
-    /// Solve local (cell-wise) problem and copy result into global
-    /// vector x.
-    void solve(Function& u, GenericVector& x) const;
+    void solve(GenericVector& x) const;
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x.
@@ -77,7 +75,9 @@ namespace dolfin
     std::shared_ptr<const Form> _l;
 
     // The Dirichlet boundary conditions
-    std::vector<Eigen::PartialPivLU< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > _lus;
+    std::vector<Eigen::PartialPivLU< Eigen::Matrix<
+                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor 
+                > > > _lus;
 
   };
 
