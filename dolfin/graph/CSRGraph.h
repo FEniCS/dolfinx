@@ -30,14 +30,14 @@ namespace dolfin
   /// vector containing edges for each node and a vector of offsets
   /// into the edge vector for each node
   ///
-  /// In parallel, all nodes must be numbered uniquely across
-  /// processes and the connectivity for local nodes, including
-  /// connections to off-process nodes are given by edges(), as usual.
-  /// The distribution of nodes amongst processes is calculated
-  /// automatically at instantiation. The format of the nodes, edges
-  /// and distribution is compatible with the formats for ParMETIS and
-  /// PT-SCOTCH. See the manuals for these libraries for further
-  /// information.
+  /// In parallel, all nodes must be numbered from zero on process zero
+  /// continuously through increasing rank processes. Edges must be defined
+  /// in terms of the global node numbers. The global node offset of each process
+  /// is given by node_distribution()
+  ///
+  /// The format of the nodes, edges and distribution is identical with
+  /// the formats for ParMETIS and PT-SCOTCH.
+  /// See the manuals for these libraries for further information.
 
   template<typename T> class CSRGraph
   {
@@ -119,9 +119,12 @@ namespace dolfin
     std::vector<T> _edges;
 
     // Offsets of each node into edges (see above)
+    // corresponding to the nodes on this process (see below)
     std::vector<T> _node_offsets;
 
     // Distribution of nodes across processes in parallel
+    // i.e. the range of nodes stored on process j is
+    // _node_distribution[j]:_node_distribution[j+1]
     std::vector<T> _node_distribution;
 
     // MPI communicator attached to graph
