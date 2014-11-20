@@ -467,7 +467,8 @@ void PETScSNESSolver::set_linear_solver_parameters()
   ierr = SNESGetKSP(_snes, &ksp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESGetKSP");
 
-  KSPGetPC(ksp, &pc);
+  ierr = KSPGetPC(ksp, &pc);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
 
   MPI_Comm comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_snes, &comm);

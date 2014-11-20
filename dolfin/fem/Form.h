@@ -298,6 +298,14 @@ namespace dolfin
     ///         The interior facet domains.
     std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains() const;
 
+    /// Return vertex domains (zero pointer if no domains have been
+    /// specified)
+    ///
+    /// *Returns*
+    ///     _MeshFunction_ <std::size_t>
+    ///         The vertex domains.
+    std::shared_ptr<const MeshFunction<std::size_t> > vertex_domains() const;
+
     /// Set cell domains
     ///
     /// *Arguments*
@@ -319,6 +327,13 @@ namespace dolfin
     ///         The interior facet domains.
     void set_interior_facet_domains(std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
 
+    /// Set vertex domains
+    ///
+    /// *Arguments*
+    ///     vertex_domains (_MeshFunction_ <std::size_t>)
+    ///         The vertex domains.
+    void set_vertex_domains(std::shared_ptr<const MeshFunction<std::size_t> > vertex_domains);
+
     /// Return UFC form shared pointer
     ///
     /// *Returns*
@@ -339,6 +354,7 @@ namespace dolfin
     CellDomainAssigner dx;
     ExteriorFacetDomainAssigner ds;
     InteriorFacetDomainAssigner dS;
+    VertexDomainAssigner dP;
 
   protected:
 
@@ -362,6 +378,9 @@ namespace dolfin
 
     // Markers for interior facet domains
     std::shared_ptr<const MeshFunction<std::size_t> > _interior_facet_domains;
+
+    // Markers for vertex domains
+    std::shared_ptr<const MeshFunction<std::size_t> > _vertex_domains;
 
   private:
 

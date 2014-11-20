@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-04-25
+// Last changed: 2014-10-16
 
 #ifndef __MULTI_MESH_FORM_H
 #define __MULTI_MESH_FORM_H
@@ -40,17 +40,23 @@ namespace dolfin
   {
   public:
 
-    /// Create empty linear MultiMesh variational form (shared pointer version)
+    /// Create empty multimesh functional (shared pointer version)
+    MultiMeshForm(std::shared_ptr<const MultiMesh> multimesh);
+
+    /// Create empty multimesh functional (reference version)
+    MultiMeshForm(const MultiMesh& multimesh);
+
+    /// Create empty linear multimesh variational form (shared pointer version)
     MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space);
 
-    /// Create empty linear MultiMesh variational form (reference version)
+    /// Create empty linear multimesh variational form (reference version)
     MultiMeshForm(const MultiMeshFunctionSpace& function_space);
 
-    /// Create empty bilinear MultiMesh variational form (shared pointer version)
+    /// Create empty bilinear multimesh variational form (shared pointer version)
     MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space_0,
               std::shared_ptr<const MultiMeshFunctionSpace> function_space_1);
 
-    /// Create empty bilinear MultiMesh variational form (reference version)
+    /// Create empty bilinear multimesh variational form (reference version)
     MultiMeshForm(const MultiMeshFunctionSpace& function_space_0,
               const MultiMeshFunctionSpace& function_space_1);
 
@@ -122,6 +128,9 @@ namespace dolfin
     // The rank of the form
     std::size_t _rank;
 
+    // Multimesh
+    std::shared_ptr<const MultiMesh> _multimesh;
+
     // Function spaces (one for each argument)
     std::vector<std::shared_ptr<const MultiMeshFunctionSpace> > _function_spaces;
 
@@ -133,4 +142,3 @@ namespace dolfin
 }
 
 #endif
-

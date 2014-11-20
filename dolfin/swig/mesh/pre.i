@@ -231,13 +231,24 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %}
 }
 
-#endif // End ifdef for MESHMODULE
+// Exclude from ifdef as it is used by other modules
+%define FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(TYPE, TYPENAME)
 
-%define FORWARD_DECLARE_MESHFUNCTIONS(TYPE, TYPENAME)
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<TYPE> >)
 %template (HierarchicalMeshFunction ## TYPENAME) \
     dolfin::Hierarchical<dolfin::MeshFunction<TYPE> >;
 
+%enddef
+
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(unsigned int, UInt)
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(int, Int)
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(double, Double)
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(bool, Bool)
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(std::size_t, Sizet)
+
+#endif // End ifdef for MESHMODULE
+
+%define FORWARD_DECLARE_MESHFUNCTIONS(TYPE, TYPENAME)
 
 // Forward declaration of template
 %template() dolfin::MeshFunction<TYPE>;
@@ -284,7 +295,6 @@ FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
 FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 
-// Exclude from ifdef as it is used by other modules
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
 
 //-----------------------------------------------------------------------------

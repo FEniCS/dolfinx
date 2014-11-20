@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-03-03
+// Last changed: 2014-10-16
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -26,6 +26,18 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+MultiMeshForm::MultiMeshForm(std::shared_ptr<const MultiMesh> multimesh)
+  : _rank(0)
+{
+  _multimesh = multimesh;
+}
+//-----------------------------------------------------------------------------
+MultiMeshForm::MultiMeshForm(const MultiMesh& multimesh)
+  : _rank(0)
+{
+  _multimesh = reference_to_no_delete_pointer(multimesh);
+}
 //-----------------------------------------------------------------------------
 MultiMeshForm::MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space)
   : _rank(0)
@@ -72,6 +84,10 @@ std::size_t MultiMeshForm::num_parts() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const MultiMesh> MultiMeshForm::multimesh() const
 {
+  // Return multimesh if stored (from functional)
+  if (_multimesh)
+    return _multimesh;
+
   // Extract meshes from function spaces
   std::vector<std::shared_ptr<const MultiMesh> > multimeshes;
   for (std::size_t i = 0; i < _function_spaces.size(); i++)
@@ -153,6 +169,7 @@ void MultiMeshForm::build()
 void MultiMeshForm::clear()
 {
   _rank = 0;
+  _multimesh = 0;
   _function_spaces.clear();
   _forms.clear();
 }

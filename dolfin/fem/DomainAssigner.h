@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-03-09
-// Last changed: 2011-06-01
+// Last changed: 2014-10-03
 
 #ifndef __DOMAIN_ASSIGNER_H
 #define __DOMAIN_ASSIGNER_H
@@ -93,6 +93,27 @@ namespace dolfin
 
     // Assign shared pointer
     const InteriorFacetDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
+
+  private:
+
+    // The form
+    Form& _form;
+
+  };
+
+  /// Assignment of vertex domains
+  class VertexDomainAssigner
+  {
+  public:
+
+    // Constructor
+    VertexDomainAssigner(Form& form) : _form(form) {}
+
+    // Assign reference
+    const VertexDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
+
+    // Assign shared pointer
+    const VertexDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
 
   private:
 

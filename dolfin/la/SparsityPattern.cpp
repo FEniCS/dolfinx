@@ -102,15 +102,13 @@ void SparsityPattern::init(
                  "Primary dimension must be less than 2 (0=row major, 1=column major");
   }
 
+  const std::size_t local_size = _local_range[_primary_dim].second - _local_range[_primary_dim].first;
+
   // Resize diagonal block
-  dolfin_assert(_local_range[_primary_dim].second
-                > _local_range[_primary_dim].first);
-  diagonal.resize(_local_range[_primary_dim].second
-                  - _local_range[_primary_dim].first);
+  diagonal.resize(local_size);
 
   // Resize off-diagonal block (only needed when local range != global range)
-  off_diagonal.resize(_local_range[_primary_dim].second
-                      - _local_range[_primary_dim].first);
+  off_diagonal.resize(local_size);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
