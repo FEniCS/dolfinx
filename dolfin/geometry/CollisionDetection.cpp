@@ -700,7 +700,9 @@ CollisionDetection::collides_tetrahedron_point(const Point& p0,
     // Find which side of plane points v and v3 lie
     const double t1 = n1.dot(v);
     const double t2 = n1.dot(v3);
-    if (std::signbit(t1) != std::signbit(t2))
+    // Catch case where point is exactly on plane
+    // otherwise require points to be on same side
+    if (t1 != 0.0 and std::signbit(t1) != std::signbit(t2))
       return false;
   }
   return true;
