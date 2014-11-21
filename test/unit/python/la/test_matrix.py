@@ -243,16 +243,9 @@ class TestMatrixForAnyBackend:
         C_norm = C.norm('frobenius')
         assert round(A_norm - C_norm, 7) == 0
 
-    @skip_in_parallel # FIXME (see error below)
+    @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, reason="Disabled because it tends to crash the tests in parallel.")
     @pytest.mark.slow
     def test_ident_zeros(self, use_backend, any_backend):
-        # FIXME: FAILS: _________ TestMatrixForAnyBackend.test_ident_zeros[True-any_backend0] __________
-        #test_matrix.py:94:
-        #E       *** -------------------------------------------------------------------------
-        #E       *** Error:   Unable to successfully call PETSc function 'MatSetValuesLocal'.
-        #E       *** Reason:  PETSc error code is: 63.
-        #E       *** Where:   This error was encountered inside ../../dolfin/la/PETScMatrix.cpp.
-
         self.backend, self.sub_backend = any_backend
 
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error

@@ -3,4 +3,4 @@
 # NB! Run as e.g.
 #  ./scripts/prun.sh io/python/
 #
-./scripts/clean.sh && python -m pytest $@
+./scripts/clean.sh && python -B -m pytest -v $@

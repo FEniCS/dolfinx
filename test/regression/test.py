@@ -47,6 +47,68 @@ def get_executable_name(demo, lang) :
   truncated_directories = directories[demo_index+2:lang_index]
   return 'demo_' + "_".join(truncated_directories)
 
+def run_cpp_demo(prefix, demo, rootdir, timing, failed):
+    print("----------------------------------------------------------------------")
+    print("Running C++ demo %s%s" % (prefix, demo))
+    print("")
+
+    cppdemo_executable = get_executable_name(demo, "cpp")
+    if platform.system() == 'Windows':
+        cppdemo_executable += '.exe'
+
+    if not os.path.isfile(os.path.join(demo, cppdemo_executable)):
+        print("*** Warning: missing demo")
+        return
+
+    t1 = time()
+    os.chdir(demo)
+    status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep, cppdemo_executable))
+    os.chdir(rootdir)
+    t2 = time()
+    timing += [(t2 - t1, demo)]
+
+    if status == 0:
+        print("OK")
+    elif status == 10: # Failing but exiting gracefully
+        print("ok (graceful exit on fail)")
+    else:
+        print("*** Failed")
+        print(output)
+        failed += [(demo, "C++", prefix, output)]
+
+def run_python_demo(prefix, demo, rootdir, timing, failed):
+    print("----------------------------------------------------------------------")
+    print("Running Python demo %s%s" % (prefix, demo))
+    print("")
+
+    demofile = get_executable_name(demo, "python") + '.py'
+
+    if not os.path.isfile(os.path.join(demo, demofile)):
+        print("*** Warning: missing demo")
+        return
+
+    t1 = time()
+    os.chdir(demo)
+    status, output = get_status_output("%s %s %s" % (prefix, sys.executable, demofile))
+    os.chdir(rootdir)
+    t2 = time()
+    timing += [(t2 - t1, demo)]
+
+    if status == 0:
+        print("OK")
+    elif status == 10: # Failing but exiting gracefully
+        print("ok (graceful exit on fail)")
+    else:
+        print("*** Failed")
+        print(output)
+
+        # Add contents from Instant's compile.log to output
+        instant_compile_log = os.path.join(instant.get_default_error_dir(), "compile.log")
+        if os.path.isfile(instant_compile_log):
+            instant_error = file(instant_compile_log).read()
+            output += "\n\nInstant compile.log for %s:\n\n" % demo
+            output += instant_error
+        failed += [(demo, "Python", prefix, output)]
 
 def main():
     # Location of all demos
@@ -154,67 +216,11 @@ def main():
             cppdemos_to_run = cppdemos
             pydemos_to_run  = pydemos
 
-        # Run C++ demos
+        # Run demos
         for demo in cppdemos_to_run:
-            print("----------------------------------------------------------------------")
-            print("Running C++ demo %s%s" % (prefix, demo))
-            print("")
-
-            cppdemo_executable = get_executable_name(demo, "cpp")
-
-            if platform.system() == 'Windows':
-                cppdemo_executable += '.exe'
-            if os.path.isfile(os.path.join(demo, cppdemo_executable)):
-                t1 = time()
-                os.chdir(demo)
-                output = get_status_output("%s .%s%s" % \
-                                           (prefix, os.path.sep, cppdemo_executable))
-                os.chdir(rootdir)
-                t2 = time()
-                timing += [(t2 - t1, demo)]
-                if output[0] == 0:
-                    print("OK")
-                elif output[0] == 10: # Failing but exiting gracefully
-                    print("ok (graceful exit on fail)")
-                else:
-                    print("*** Failed")
-                    print(output[1])
-                    failed += [(demo, "C++", prefix, output[1])]
-            else:
-                print("*** Warning: missing demo")
-
-        # Run Python demos
+            run_cpp_demo(prefix, demo, rootdir, timing, failed)
         for demo in pydemos_to_run:
-            print("----------------------------------------------------------------------")
-            print("Running Python demo %s%s" % (prefix, demo))
-            print("")
-            demofile = get_executable_name(demo, "python") + '.py'
-            if os.path.isfile(os.path.join(demo, demofile)):
-                t1 = time()
-                os.chdir(demo)
-                status, output = get_status_output("%s %s %s" % \
-                                                   (prefix, sys.executable, demofile))
-                #status, output = get_status_output("%s python %s" % (prefix, demofile))
-                os.chdir(rootdir)
-                t2 = time()
-                timing += [(t2 - t1, demo)]
-                if status == 0:
-                    print("OK")
-                elif status == 10: # Failing but exiting gracefully
-                    print("ok (graceful exit on fail)")
-                else:
-                    print("*** Failed")
-                    print(output)
-
-                    # Add contents from Instant's compile.log to output
-                    instant_compile_log = os.path.join(instant.get_default_error_dir(), "compile.log")
-                    if os.path.isfile(instant_compile_log):
-                        instant_error = file(instant_compile_log).read()
-                        output += "\n\nInstant compile.log for %s:\n\n" % demo
-                        output += instant_error
-                    failed += [(demo, "Python", prefix, output)]
-            else:
-                print("*** Warning: missing demo")
+            run_python_demo(prefix, demo, rootdir, timing, failed)
 
     # Print summary of time to run demos
     timing.sort()

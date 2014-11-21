@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -17,9 +17,7 @@
 //
 // Modified by Garth N. Wells, 2007-2011.
 // Modified by Ola Skavhaug, 2007.
-//
-// First added:  2007-03-15
-// Last changed: 2011-11-11
+// Modified by Martin Alnaes, 2014.
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
@@ -46,7 +44,7 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), _value(0.0), _mpi_comm(MPI_COMM_WORLD)
+    Scalar() : GenericTensor(), _value(0.0), _local_increment(0.0), _mpi_comm(MPI_COMM_WORLD)
     { SubSystemsManager::init_mpi(); }
 
     /// Destructor
@@ -55,23 +53,29 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
-    void init(const TensorLayout& tensor_layout)
+    virtual void init(const TensorLayout& tensor_layout)
     {
       _value = 0.0;
+      _local_increment = 0.0;
       _mpi_comm = tensor_layout.mpi_comm();
     }
 
     /// Return true if empty
-    bool empty() const
+    virtual bool empty() const
     { return false; }
 
     /// Return tensor rank (number of dimensions)
-    std::size_t rank() const
+    virtual std::size_t rank() const
     { return 0; }
 
     /// Return size of given dimension
-    std::size_t size(std::size_t dim) const
+    virtual std::size_t size(std::size_t dim) const
     {
+      // TODO: This is inconsistent in two ways:
+      // - tensor.size(i) is defined for i < tensor.rank(), so not at all for a Scalar.
+      // - the number of components of a tensor is the product of the sizes, returning 0 here makes no sense.
+      // Is this used for anything? If yes, consider fixing that code. If no, just make this an error for any dim.
+
       if (dim != 0)
       {
         dolfin_error("Scalar.h",
@@ -93,79 +97,100 @@ namespace dolfin
     }
 
     /// Get block of values
-    void get(double* block, const dolfin::la_index* num_rows,
+    virtual void get(double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows) const
-    { block[0] = _value; }
+    {
+      dolfin_error("Scalar.h",
+                   "get global value of scalar",
+                   "The get() function is not available for scalars");
+    }
 
     /// Set block of values using global indices
-    void set(const double* block, const dolfin::la_index* num_rows,
+    virtual void set(const double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows)
-    { _value = block[0]; }
+    {
+      dolfin_error("Scalar.h",
+                   "set global value of scalar",
+                   "The set() function is not available for scalars");
+    }
 
     /// Set block of values using local indices
-    void set_local(const double* block, const dolfin::la_index* num_rows,
+    virtual void set_local(const double* block, const dolfin::la_index* num_rows,
                    const dolfin::la_index * const * rows)
-    { _value = block[0]; }
+    {
+      dolfin_error("Scalar.h",
+                   "set local value of scalar",
+                   "The set_local() function is not available for scalars");
+    }
 
     /// Add block of values using global indices
-    void add(const double* block, const dolfin::la_index* num_rows,
+    virtual void add(const double* block, const dolfin::la_index* num_rows,
              const dolfin::la_index * const * rows)
-    { add_local(block, num_rows, rows); }
+    {
+      dolfin_assert(block);
+      _local_increment += block[0];
+    }
 
     /// Add block of values using local indices
-    void add_local(const double* block, const dolfin::la_index* num_rows,
+    virtual void add_local(const double* block, const dolfin::la_index* num_rows,
                    const dolfin::la_index * const * rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_increment += block[0];
     }
 
     /// Add block of values using global indices
-    void add(const double* block,
+    virtual void add(const double* block,
              const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_increment += block[0];
     }
 
     /// Add block of values using local indices
-    void add_local(const double* block,
+    virtual void add_local(const double* block,
              const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_increment += block[0];
     }
 
     /// Add block of values using global indices
-    void add(const double* block,
+    virtual void add(const double* block,
              const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_increment += block[0];
     }
 
     /// Add block of values using local indices
-    void add_local(const double* block,
+    virtual void add_local(const double* block,
              const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
-      _value += block[0];
+      _local_increment += block[0];
     }
 
     /// Set all entries to zero and keep any sparse structure
-    void zero()
-    { _value = 0.0; }
+    virtual void zero()
+    {
+      _value = 0.0;
+      _local_increment = 0.0;
+    }
 
     /// Finalize assembly of tensor
-    void apply(std::string mode)
-    { _value = MPI::sum(_mpi_comm, _value); }
+    virtual void apply(std::string mode)
+    {
+      _value = _value + MPI::sum(_mpi_comm, _local_increment);
+      _local_increment = 0.0;
+    }
 
     /// Return MPI communicator
-    MPI_Comm mpi_comm() const
+    virtual MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose) const
+    virtual std::string str(bool verbose) const
     {
       std::stringstream s;
       s << "<Scalar value " << _value << ">";
@@ -179,35 +204,35 @@ namespace dolfin
     {
       std::shared_ptr<Scalar> s(new Scalar);
       s->_value = _value;
+      s->_local_increment = _local_increment;
+      s->_mpi_comm = _mpi_comm;
       return s;
     }
-
-    /// Cast to double
-    operator double() const
-    { return _value; }
-
-    /// Assignment from double
-    const Scalar& operator= (double value)
-    { _value = value; return *this; }
 
     //--- Special functions
 
     /// Return a factory for the default linear algebra backend
-    GenericLinearAlgebraFactory& factory() const
+    virtual GenericLinearAlgebraFactory& factory() const
     {
       DefaultFactory f;
       return f.factory();
     }
-    //{ return dolfin::uBLASFactory<>::instance(); }
 
-    /// Get value
-    double getval() const
+    /// Get final value (assumes prior apply(), not part of GenericTensor interface)
+    double get_scalar_value() const
     { return _value; }
+
+    /// Add to local increment (added for testing, remove if we add a better way from python)
+    void add_local_value(double value)
+    { _local_increment += value; }
 
   private:
 
     // Value of scalar
     double _value;
+
+    // Local intermediate value of scalar prior to apply call
+    double _local_increment;
 
     // MPI communicator
      MPI_Comm _mpi_comm;

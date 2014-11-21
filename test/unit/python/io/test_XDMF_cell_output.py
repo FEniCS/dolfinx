@@ -1,7 +1,6 @@
-#!/usr/bin/env py.test
-"""Unit tests for the XML input/output of Function"""
+"""Unit test for XDMF output of DG0"""
 
-# Copyright (C) 2014 Matthias Liertzer
+# Copyright (C) 2014 Chris Richardson
 #
 # This file is part of DOLFIN.
 #
@@ -18,25 +17,29 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+import pytest
 from dolfin import *
-from dolfin_utils.test import cd_tempdir
+from dolfin_utils.test import *
 
-def test_save_and_read_xml_function(cd_tempdir):
-    mesh = UnitSquareMesh(10, 10)
-    Q = FunctionSpace(mesh, "CG", 3)
-    F0 = Function(Q)
-    F1 = Function(Q)
+ghost_mode = set_parameters_fixture("ghost_mode", ["shared_vertex", "none"])
+
+def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
+    n = 8
+    mesh = UnitSquareMesh(n, n)
+    Q = FunctionSpace(mesh, "DG", 0)
+    F = Function(Q)
     E = Expression("x[0]")
-    F0.interpolate(E)
+    F.interpolate(E)
 
-    # Save to XML File
-    xml_file = File("function.xml")
-    xml_file << F0
-    del xml_file
+    xdmf = File("dg0.xdmf")
+    xdmf << F
+    del xdmf
 
-    # Read back from XML File
-    xml_file = File("function.xml")
-    xml_file >> F1
-    result = F0.vector() - F1.vector()
+    hdf = HDF5File(mesh.mpi_comm(), "dg0.h5", "r")
+    vec = Vector()
+    hdf.read(vec, "/VisualisationVector/0", False)
+    del hdf
 
-    assert len(result.array().nonzero()[0]) == 0
+    area = MPI.sum(mesh.mpi_comm(), sum(vec.array()))
+    assert abs(n*n - area) < 1e-9

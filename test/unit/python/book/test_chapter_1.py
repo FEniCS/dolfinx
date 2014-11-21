@@ -25,7 +25,7 @@ from __future__ import print_function
 import pytest
 import inspect, os, sys
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, cd_tempdir
+from dolfin_utils.test import skip_in_parallel, cd_tempdir, gc_barrier
 from runpy import run_path as runpy_run_path
 
 def run_path(path, args):
@@ -43,6 +43,7 @@ def run_path(path, args):
 
 def run_test(path, args=[]):
     "Run test script implied by name of calling function, neat trick..."
+    gc_barrier()
 
     # Figure out name of script to be run
     script_name = inspect.stack()[1][3].split("test_")[1] + ".py"
@@ -81,6 +82,8 @@ def run_test(path, args=[]):
 
     # Reset parameters
     parameters.assign(dolfin_parameters)
+
+    gc_barrier()
 
 
 @skip_in_parallel

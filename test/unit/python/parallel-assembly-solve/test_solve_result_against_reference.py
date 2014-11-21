@@ -1,3 +1,4 @@
+#!/usr/bin/env py.test
 """This file solves a simple reaction-diffusion problem and compares
 the norm of the solution vector with a known solution (obtained when
 running in serial). It is used for validating mesh partitioning and
@@ -23,14 +24,16 @@ parallel assembly/solve."""
 # Modified by Garth N. Wells, 2013
 
 from __future__ import print_function
+import pytest
 import sys
 from dolfin import *
+from dolfin_utils.test import *
 from six import print_
 
 # Relative tolerance for regression test
 tol = 1e-10
 
-def test_solve(mesh, degree):
+def compute_norm(mesh, degree):
     "Solve on given mesh file and degree of function space."
 
     # Create function space
@@ -53,41 +56,48 @@ def test_solve(mesh, degree):
 
 def print_reference(results):
     "Print nicely formatted values for gluing into code as a reference"
-    print_("reference = {", end=' ')
-    for (i, result) in enumerate(results):
-        if i > 0:
-            print_("             ", end=' ')
-        print_("(\"%s\", %d): %.16g" % result, end=' ')
-        if i < len(results) - 1:
-            print(",")
-        else:
-            print("}")
+    MPI.barrier(mpi_comm_world())
+    if MPI.rank(mpi_comm_world()) == 0:
+        print_("reference = {", end=' ')
+        for (i, result) in enumerate(results):
+            if i > 0:
+                print_("             ", end=' ')
+            print_("(\"%s\", %d): %.16g" % result, end=' ')
+            if i < len(results) - 1:
+                print(",")
+            else:
+                print("}")
+    MPI.barrier(mpi_comm_world())
 
 def check_results(results, reference, tol):
     "Compare results with reference"
-
-    status = 0
-
-    print("Checking results")
-    print("----------------")
-
+    errors = []
     for (mesh_file, degree, norm) in results:
-        print_("(%s, %d):\t" % (mesh_file, degree), end=' ')
-        if (mesh_file, degree) in reference:
-            ref = reference[(mesh_file, degree)]
-            diff =  abs(norm - ref) / abs(ref)
-            if diff < tol:
-                print_("OK", end=' ')
-            else:
-                status = 1
-                print_("*** ERROR", end=' ')
-            print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
+        if (mesh_file, degree) not in reference:
+            errors.append((mesh_file, degree, None, None, None))
         else:
-            print("missing reference")
+            ref = reference[(mesh_file, degree)]
+            diff = abs(norm - ref) / abs(ref)
+            if diff >= tol:
+                errors.append((mesh_file, degree, norm, ref, diff))
+    return errors
 
-    return status
+def print_errors(errors):
+    MPI.barrier(mpi_comm_world())
+    if MPI.rank(mpi_comm_world()) == 0:
+        print("Checking results")
+        print("----------------")
+        for (mesh_file, degree, norm, ref, diff) in errors:
+            print_("(%s, %d):\t" % (mesh_file, degree), end=' ')
+            if diff is None:
+                print("missing reference")
+            else:
+                print_("*** ERROR", end=' ')
+                print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
+    MPI.barrier(mpi_comm_world())
 
-def main():
+@use_gc_barrier
+def test_computed_norms_against_references():
     # Reference values for norm of solution vector
     reference = { ("16x16 unit square", 1): 9.547454087328376 ,
                   ("16x16 unit square", 2): 18.42366670418269 ,
@@ -99,26 +109,28 @@ def main():
                   ("4x4x4 unit cube", 4): 74.49938266409099 }
 
     # Mesh files and degrees to check
-    meshes= [(UnitSquareMesh(16, 16), "16x16 unit square"),\
-             (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
+    meshes = [(UnitSquareMesh(16, 16), "16x16 unit square"),
+              (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
     degrees = [1, 2, 3, 4]
-
 
     # Iterate over test cases and collect results
     results = []
     for mesh in meshes:
         for degree in degrees:
-            norm = test_solve(mesh[0], degree)
+            gc_barrier()
+            norm = compute_norm(mesh[0], degree)
             results.append((mesh[1], degree, norm))
 
-    # Uncomment to print results for use as reference
-    #print_reference(results)
-
     # Check results
-    status = check_results(results, reference, tol)
+    errors = check_results(results, reference, tol)
 
-    # Resturn exit status
-    return status
+    # Print errors for debugging if they fail
+    if errors:
+        print_errors(errors)
 
-if __name__ == "__main__":
-    sys.exit(main())
+    # Print results for use as reference
+    if any(e[-1] is None for e in errors): # e[-1] is diff
+        print_reference(results)
+
+    # A passing test should have no errors
+    assert len(errors) == 0 # See stdout for detailed norms and diffs.

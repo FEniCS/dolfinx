@@ -50,3 +50,4 @@ def test_lhs_rhs_simple():
 
     assert round(n - n0, 7) == 0
     assert round(n - nl, 7) == 0
+
