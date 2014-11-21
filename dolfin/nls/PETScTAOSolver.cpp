@@ -238,6 +238,9 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
     TaoSetOptionsPrefix(_tao, prefix.c_str());
   }
   TaoSetFromOptions(_tao);
+
+  // Set the convergence test
+  TaoSetConvergenceTest(_tao, TaoConvergenceTest, this);
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
@@ -337,6 +340,22 @@ PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
   return 0;
 }
 //-----------------------------------------------------------------------------
+PetscErrorCode PETScTAOSolver::TaoConvergenceTest(Tao tao, void *ctx)
+{
+  PetscInt its;
+  PetscReal f, gnorm, cnorm, xdiff;
+  TaoConvergedReason reason;
+  TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
+
+  // We enforce Tao to do at least one iteration
+  if (its < 1)
+    TaoSetConvergedReason(tao, TAO_CONTINUE_ITERATING);
+  else
+    TaoDefaultConvergenceTest(tao, &ctx);
+
+  return 0;
+}
+//------------------------------------------------------------------------------
 void PETScTAOSolver::set_tao_options()
 {
   dolfin_assert(_tao);

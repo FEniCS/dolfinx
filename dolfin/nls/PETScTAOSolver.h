@@ -177,6 +177,9 @@ namespace dolfin
     /// Compute the hessian :math:`J(x)=f''(x)`
     static PetscErrorCode FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
                                       void *ctx);
+
+    /// Tao convergence test
+    static PetscErrorCode TaoConvergenceTest(Tao tao, void *ctx);
   };
 
 }
