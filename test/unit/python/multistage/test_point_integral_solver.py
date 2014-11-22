@@ -33,7 +33,7 @@ optimize = set_parameters_fixture('form_compiler.optimize', [True])
 # test case
 #@pytest.fixture(params=["ForwardEuler", "ExplicitMidPoint", "RK4",
 #                        "BackwardEuler", "CN2", "ESDIRK3", "ESDIRK4", "RL1"])
-@pytest.fixture(params=["RL1"])
+@pytest.fixture(params=["RL1", "GRL1"])
 
 def Scheme(request):
     return eval(request.param)
@@ -51,7 +51,7 @@ def convergence_order(errors, base = 2):
 
 
 @pytest.mark.slow
-def xtest_butcher_schemes_scalar_time(Scheme, optimize):
+def test_butcher_schemes_scalar_time(Scheme, optimize):
     mesh = UnitSquareMesh(10, 10)
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
@@ -68,6 +68,7 @@ def xtest_butcher_schemes_scalar_time(Scheme, optimize):
     form = (2+time+compound_time_expr-time**4)*v*dP
 
     scheme = Scheme(form, u, time)
+
     info(scheme)
     solver = PointIntegralSolver(scheme)
     u_errors = []
@@ -88,19 +89,20 @@ def test_butcher_schemes_scalar(Scheme, optimize):
     v = TestFunction(V)
 
     tstop = 1.0
-    u_true = Expression("exp(t)/(exp(t)+1.)", t=tstop)
+    u_true = Expression("1.0-(exp(-t))", t=tstop)
 
     u = Function(V)
-    form = u*(1-u)*v*dP
+    form = (1-u)*v*dP
 
     scheme = Scheme(form, u)
+        
     info(scheme)
     u_errors = []
     solver = PointIntegralSolver(scheme)
     for dt in [0.05, 0.025, 0.0125]:
         solver.reset_newton_solver()
         solver.reset_stage_solutions()
-        u.interpolate(Constant(.5))
+        u.interpolate(Constant(0.))
         scheme.t().assign(0.0)
         next_dt = dt
         while float(scheme.t()) + next_dt <= tstop:
@@ -108,7 +110,7 @@ def test_butcher_schemes_scalar(Scheme, optimize):
                 break
 
             u_true.t = float(scheme.t())
-            print(u(0.,0.), u_true(0.,0.))
+            #print(u(0.,0.), u_true(0.,0.))
             solver.step(next_dt)
             next_dt = min(tstop-float(scheme.t()), dt)
 
@@ -118,7 +120,7 @@ def test_butcher_schemes_scalar(Scheme, optimize):
 
 
 @pytest.mark.slow
-def xtest_butcher_schemes_vector(Scheme, optimize):
+def test_butcher_schemes_vector(Scheme, optimize):
 
     mesh = UnitSquareMesh(10, 10)
     V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
@@ -127,9 +129,10 @@ def xtest_butcher_schemes_vector(Scheme, optimize):
     u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
 
     u = Function(V)
-    form = inner(as_vector((-u[1], u[0])), v)*dP
+    form = (-u[1]*v[0]+u[0]*v[1])*dP
 
     scheme = Scheme(form, u)
+        
     info(scheme)
     solver = PointIntegralSolver(scheme)
     u_errors = []
