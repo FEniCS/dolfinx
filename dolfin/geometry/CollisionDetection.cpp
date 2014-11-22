@@ -210,10 +210,18 @@ bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
 
   const MeshGeometry& geometry = triangle.mesh().geometry();
   const unsigned int* vertices = triangle.entities(0);
-  return collides_triangle_point(geometry.point(vertices[0]),
-				 geometry.point(vertices[1]),
-				 geometry.point(vertices[2]),
-				 point);
+
+  if (triangle.mesh().geometry().dim() == 2)
+    return collides_triangle_point_2d(geometry.point(vertices[0]),
+                                      geometry.point(vertices[1]),
+                                      geometry.point(vertices[2]),
+                                      point);
+  else
+    return collides_triangle_point(geometry.point(vertices[0]),
+                                   geometry.point(vertices[1]),
+                                   geometry.point(vertices[2]),
+                                   point);
+
 }
 //-----------------------------------------------------------------------------
 bool
@@ -486,6 +494,43 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
 }
 
 //-----------------------------------------------------------------------------
+bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
+                                                    const Point& p1,
+                                                    const Point& p2,
+                                                    const Point &point)
+{
+  // Simplified algorithm for coplanar triangles and points (z=0)
+
+  // Vectors defining each edge in consistent orientation
+  const Point r0 = p0 - p2;
+  const Point r1 = p1 - p0;
+  const Point r2 = p2 - p1;
+
+  // Normal to triangle
+  double normal = r1.x()*r0.y() - r1.y()*r0.x();
+
+  // Compute normal to triangle based on point and first edge
+  // Will have opposite sign if outside triangle
+
+  Point r = point - p0;
+  double pnormal = r.x()*r0.y() - r.y()*r0.x();
+  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal)) 
+    return false;
+
+  // Repeat for each edge
+  r = point - p1;
+  pnormal = r.x()*r1.y() - r.y()*r1.x();
+  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
+    return false;
+
+  r = point - p2;
+  pnormal = r.x()*r2.y() - r.y()*r2.x();
+  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
+    return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const Point& p0,
                                                  const Point& p1,
                                                  const Point& p2,
@@ -686,18 +731,19 @@ CollisionDetection::collides_tetrahedron_point(const Point& p0,
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
   // See also "Real-Time Collision Detection" by Christer Ericson.
 
-  const std::vector<Point> p = {p0, p1, p2, p3};
+  const Point *p[4] = {&p0, &p1, &p2, &p3};
 
-  // Worst case 48 multiply ops
+  // Consider each face in turn
   for (unsigned int i = 0; i != 4; ++i)
   {
     // Compute vectors relative to p[i]
-    const Point v1 = p[(i + 1)%4] - p[i];
-    const Point v2 = p[(i + 2)%4] - p[i];
-    const Point v3 = p[(i + 3)%4] - p[i];
-    const Point v = point - p[i];
+    const Point v1 = *p[(i + 1)%4] - *p[i];
+    const Point v2 = *p[(i + 2)%4] - *p[i];
+    const Point v3 = *p[(i + 3)%4] - *p[i];
+    const Point v = point - *p[i];
+    // Normal to plane containing v1 and v2
     const Point n1 = v1.cross(v2);
-    // Find which side of plane points v and v3 lie
+    // Find which side of face plane points v and v3 lie
     const double t1 = n1.dot(v);
     const double t2 = n1.dot(v3);
     // Catch case where point is exactly on plane
@@ -706,42 +752,6 @@ CollisionDetection::collides_tetrahedron_point(const Point& p0,
       return false;
   }
   return true;
-
-  // // Compute entries of linear system
-  // const double a11 = v1.dot(v1);
-  // const double a12 = v1.dot(v2);
-  // const double a13 = v1.dot(v3);
-  // const double a22 = v2.dot(v2);
-  // const double a23 = v2.dot(v3);
-  // const double a33 = v3.dot(v3);
-  // const double b1 = v.dot(v1);
-  // const double b2 = v.dot(v2);
-  // const double b3 = v.dot(v3);
-
-  // // Compute subdeterminants
-  // const double d11 = a22*a33 - a23*a23;
-  // const double d12 = a12*a33 - a23*a13;
-  // const double d13 = a12*a23 - a22*a13;
-  // const double d22 = a11*a33 - a13*a13;
-  // const double d23 = a11*a23 - a12*a13;
-  // const double d33 = a11*a22 - a12*a12;
-
-  // // Compute inverse of determinant determinant
-  // const double inv_det = 1.0 / (a11*d11 - a12*d12 + a13*d13);
-
-  // // Solve linear system
-  // const double x1 = inv_det*( d11*b1 - d12*b2 + d13*b3);
-  // const double x2 = inv_det*(-d12*b1 + d22*b2 - d23*b3);
-  // const double x3 = inv_det*( d13*b1 - d23*b2 + d33*b3);
-
-  // // Tolerance for numeric test (using vector v1)
-  // const double dx = std::abs(v1.x());
-  // const double dy = std::abs(v1.y());
-  // const double dz = std::abs(v1.z());
-  // const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*std::max(dx, std::max(dy, dz)));
-
-  // // Check if point is inside cell
-  // return x1 >= -eps && x2 >= -eps && x3 >= -eps && x1 + x2 + x3 <= 1.0 + eps;
 }
 //-----------------------------------------------------------------------------
 bool
