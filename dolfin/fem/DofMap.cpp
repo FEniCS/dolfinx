@@ -285,10 +285,9 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       const std::size_t dof = dofs[i];
-      if (dof >= _global_offset
-          && dof < (_global_offset + _local_ownership_size))
+      if (dof<local_size)
       {
-        const std::size_t local_index = dof - offset;
+        const std::size_t local_index = dof;
         for (std::size_t j = 0; j < gdim; ++j)
         {
           dolfin_assert(gdim*local_index + j < x.size());
