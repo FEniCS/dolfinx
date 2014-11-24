@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Chris Richardson, 2014.
+//
 // First added:  2014-02-03
 // Last changed: 2014-04-03
 //
@@ -514,7 +516,7 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
 
   Point r = point - p0;
   double pnormal = r.x()*r0.y() - r.y()*r0.x();
-  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal)) 
+  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
     return false;
 
   // Repeat for each edge
