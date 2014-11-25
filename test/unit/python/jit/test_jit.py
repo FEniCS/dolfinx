@@ -21,7 +21,7 @@
 
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_if_not_PETSc
+from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_petsc4py, skip_in_serial
 
 def test_nasty_jit_caching_bug():
 
@@ -41,6 +41,53 @@ def test_nasty_jit_caching_bug():
         assert round(M2 - 1.0, 7) == 0
 
     parameters["form_compiler"]["representation"] = default_parameters
+
+@skip_in_serial
+@skip_if_not_petsc4py
+def test_mpi_dependent_jiting():
+    try:
+        import mpi4py.MPI as mpi
+    except:
+        return
+
+    import petsc4py
+    
+    # Set communicator and get process information
+    comm = mpi.COMM_WORLD
+    group = comm.Get_group()
+    size = comm.Get_size()
+
+    rank = MPI.rank(mpi_comm_world())
+    group_0 = comm.Create(group.Incl(range(1)))
+    group_1 = comm.Create(group.Incl(range(1,2)))
+
+    if size > 2:
+        group_3 = comm.Create(group.Incl(range(2,size)))
+
+    # Init PETSc with the different groups
+    if rank == 0:
+        petsc4py.init(comm=group_0)
+        import petsc4py.PETSc as petsc
+        group_comm = petsc.Comm(group_0)
+    elif rank == 1:
+        petsc4py.init(comm=group_1)
+        import petsc4py.PETSc as petsc
+        group_comm = petsc.Comm(group_1)
+    elif rank >= 2:
+        petsc4py.init(comm=group_3)
+        import petsc4py.PETSc as petsc
+        group_comm = petsc.Comm(group_2)
+        
+    if rank == 0:
+        e = Expression("4", mpi_comm=group_comm)
+    elif rank == 0:
+        e = Expression("5", mpi_comm=group_comm)
+    else:
+        mesh = UnitSquareMesh(group_comm, 2,2)
+        V = FunctionSpace(mesh, "P", 1)
+        u = Function(V)
+        v = TestFunction(V)
+        Form(u*v*dx)
 
 @skip_if_not_PETSc
 def test_compile_extension_module():
