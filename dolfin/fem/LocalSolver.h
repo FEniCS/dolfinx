@@ -46,18 +46,22 @@ namespace dolfin
   class GenericVector;
   class Form;
 
-  class LocalSolver : public Hierarchical<LocalSolver>
+  class LocalSolver
   {
   public:
 
-     /// Create local solver
+     /// Constructor
     LocalSolver();
-                             
-     /// Create local solver for reusing factorizations
+
+     /// Constructor for reusing factorizations
     LocalSolver(const Form& a, const Form& L);
-                             
+
+     /// Constructor for reusing factorizations
+    LocalSolver(std::shared_ptr<const Form> a,
+                std::shared_ptr<const Form> L);
+
     /// Solve local (cell-wise) problem and copy result into global
-    /// vector x.
+    /// vector x, reusing factorizations of local matrices.
     void solve(GenericVector& x) const;
 
     /// Solve local (cell-wise) problem and copy result into global
@@ -70,15 +74,18 @@ namespace dolfin
     // Check forms
     void check_forms() const;
 
+    // Assemble RHS matrices
+    void init();
+
     // The bilinear form
     std::shared_ptr<const Form> _a;
 
     // The linear form
     std::shared_ptr<const Form> _l;
 
-    // The Dirichlet boundary conditions
+    // The stored RHS matrices
     std::vector<Eigen::PartialPivLU< Eigen::Matrix<
-                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor 
+                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor
                 > > > _lus;
 
   };

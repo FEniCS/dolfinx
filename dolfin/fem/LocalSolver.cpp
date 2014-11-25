@@ -41,17 +41,28 @@
 
 using namespace dolfin;
 
-LocalSolver::LocalSolver() : Hierarchical<LocalSolver>(*this)
+LocalSolver::LocalSolver()
 {
-
 }
 //----------------------------------------------------------------------------
-LocalSolver::LocalSolver(const Form& a, const Form& L) : Hierarchical<LocalSolver>(*this),
+LocalSolver::LocalSolver(const Form& a, const Form& L) :
   _a(reference_to_no_delete_pointer(a)), _l(reference_to_no_delete_pointer(L))
 {
-  UFC ufc_a(a);
-  UFC ufc_L(L);
-  
+  init();
+}
+//----------------------------------------------------------------------------
+LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
+                         std::shared_ptr<const Form> L) :
+  _a(a), _l(L)
+{
+  init();
+}
+//----------------------------------------------------------------------------
+void LocalSolver::init()
+{
+  UFC ufc_a(*this->_a);
+  UFC ufc_L(*this->_l);
+
   // Raise error for Point integrals
   if (ufc_a.form.has_point_integrals() || ufc_L.form.has_point_integrals())
   {
@@ -59,38 +70,38 @@ LocalSolver::LocalSolver(const Form& a, const Form& L) : Hierarchical<LocalSolve
                  "assemble system",
                  "Point integrals are not supported (yet)");
   }
-  
+
   // Set timer
   Timer timer("Prepare Local solver");
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  const Mesh& mesh = _a->mesh();
 
   // Form ranks
   const std::size_t rank_a = ufc_a.form.rank();
   const std::size_t rank_L = ufc_L.form.rank();
-  
+
   // Check form ranks
   dolfin_assert(rank_a == 2);
   dolfin_assert(rank_L == 1);
 
   // Collect pointers to dof maps
   std::shared_ptr<const GenericDofMap> dofmap_a0
-    = a.function_space(0)->dofmap();
+    = _a->function_space(0)->dofmap();
   std::shared_ptr<const GenericDofMap> dofmap_a1
-    = a.function_space(1)->dofmap();
+    = _a->function_space(1)->dofmap();
   std::shared_ptr<const GenericDofMap> dofmap_L
-    = a.function_space(0)->dofmap();
+    = _a->function_space(0)->dofmap();
   dolfin_assert(dofmap_a0);
   dolfin_assert(dofmap_a1);
   dolfin_assert(dofmap_L);
 
   // Cell integrals
   ufc::cell_integral* integral_a = ufc_a.default_cell_integral.get();
-  
+
   // Eigen data structures
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A;
-  
+
   // Assemble over cells
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
   ufc::cell ufc_cell;
@@ -110,7 +121,7 @@ LocalSolver::LocalSolver(const Form& a, const Form& L) : Hierarchical<LocalSolve
       = dofmap_a1->cell_dofs(cell->index());
     const std::vector<dolfin::la_index>& dofs_L
       = dofmap_L->cell_dofs(cell->index());
-    
+
     // Check that local problem is square and a and L match
     dolfin_assert(dofs_a0.size() == dofs_a1.size());
     dolfin_assert(dofs_a1.size() == dofs_L.size());
@@ -136,7 +147,7 @@ void LocalSolver::solve(GenericVector& x) const
   UFC ufc_a(*this->_a);
   UFC ufc_L(*this->_l);
   std::shared_ptr<const GenericVector> _x(reference_to_no_delete_pointer(x));
-  
+
   // Set timer
   Timer timer("Local solver");
 
@@ -146,7 +157,7 @@ void LocalSolver::solve(GenericVector& x) const
   // Form ranks
   const std::size_t rank_a = ufc_a.form.rank();
   const std::size_t rank_L = ufc_L.form.rank();
-  
+
   // Check form ranks
   dolfin_assert(rank_a == 2);
   dolfin_assert(rank_L == 1);
@@ -169,16 +180,16 @@ void LocalSolver::solve(GenericVector& x) const
       = dofmap_L->ownership_range();
     x.init(mesh.mpi_comm(), local_range);
   }
-  
+
   // Eigen data structures
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A;
   Eigen::VectorXd b, x_local;;
   std::shared_ptr<GenericVector> Gb = _x->factory().create_vector();
-  
+
   // Globally assemble RHS
   if (this->_l->ufc_form())
     assemble(*Gb, *this->_l);
-    
+
   // Assemble over cells
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
   ufc::cell ufc_cell;
@@ -194,7 +205,7 @@ void LocalSolver::solve(GenericVector& x) const
       = dofmap_a0->cell_dofs(cell->index());
     const std::vector<dolfin::la_index>& dofs_L
       = dofmap_L->cell_dofs(cell->index());
-      
+
     // Resize b
     b.resize(dofs_L.size());
 
@@ -226,9 +237,9 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
                  "assemble system",
                  "Point integrals are not supported (yet)");
   }
-  
+
   // Raise error for Point integrals
-  if (ufc_L.form.has_interior_facet_integrals() || 
+  if (ufc_L.form.has_interior_facet_integrals() ||
       ufc_L.form.has_exterior_facet_integrals())
   {
     dolfin_error("LocalSolver.cpp",
@@ -236,7 +247,7 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
                  "Facet integrals are not supported by this function. \r\n \
                  Use the local solver which reuses factorization in stead");
   }
-  
+
   // Set timer
   Timer timer("Local solver");
 

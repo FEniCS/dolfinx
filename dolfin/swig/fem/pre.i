@@ -110,6 +110,8 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&,
                          const std::vector<const DirichletBC*>);
 
+%ignore dolfin::LocalSolver::LocalSolver(const Form&, const Form&);
+
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
 //-----------------------------------------------------------------------------
