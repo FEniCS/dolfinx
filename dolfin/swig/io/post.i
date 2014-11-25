@@ -32,6 +32,18 @@
 %template(__lshift__) dolfin::File::operator<< <Parameters>;
 %template(__lshift__) dolfin::File::operator<< <Function>;
 
+%extend dolfin::File {
+%pythoncode %{
+def __enter__(self) :
+    return self
+
+def __exit__(self, type, value, traceback) :
+    pass
+    # Do Nothing...
+    #self.close()
+%}
+}
+
 #ifdef HAS_HDF5
 %extend dolfin::HDF5Attribute {
   void __setitem__(std::string key, double value)
@@ -59,6 +71,20 @@ def __getitem__(self, key):
     elif attr_type=="vectorint":
         return [int(x) for x in self.str(key).split(",")]
     return None
+
+def to_dict(self):
+    "Return a dict representation (copy) of all data"
+    return dict((key, self[key]) for key in self.list_attributes())
+%}
+}
+
+%extend dolfin::HDF5File {
+%pythoncode %{
+def __enter__(self) :
+    return self
+
+def __exit__(self, type, value, traceback) :
+    self.close()
 %}
 }
 #endif
