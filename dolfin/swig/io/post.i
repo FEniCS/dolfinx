@@ -92,7 +92,7 @@ def values(self):
 
 def keys(self):
     "Returns a list of all values"
-    return return self.list_attributes()
+    return self.list_attributes()
 
 def to_dict(self):
     "Return a dict representation (copy) of all data"
