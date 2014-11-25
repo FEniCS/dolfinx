@@ -102,3 +102,4 @@ def test_attribute_container_interface(attr):
     for value in attr.values():
         assert(value in values)
 
+    assert(attr.keys()==attr.list_attributes())

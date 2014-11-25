@@ -90,6 +90,10 @@ def values(self):
     "Returns a list of all values"
     return [self[key] for key in self]
 
+def keys(self):
+    "Returns a list of all values"
+    return return self.list_attributes()
+
 def to_dict(self):
     "Return a dict representation (copy) of all data"
     return dict(t for t in self.items())
