@@ -502,6 +502,9 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
                                                     const Point &point)
 {
   // Simplified algorithm for coplanar triangles and points (z=0)
+  // This algorithm is robust because it will perform the same numerical
+  // test on each edge of neighbouring triangles. Points cannot slip
+  // between the edges, and evade detection.
 
   // Vectors defining each edge in consistent orientation
   const Point r0 = p0 - p2;
@@ -539,9 +542,6 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
                                                  const Point &point)
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
-  //
-  // Note: This function could be optimized for 2D vectors
-  // Cross product in 2D is a scalar (2 multiply ops, not 6)
 
   // Vectors defining each edge in consistent orientation
   const Point r0 = p0 - p2;
@@ -554,14 +554,12 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
 
   Point r = point - p0;
   // Check point is in plane of triangle (for manifold)
-  // Could skip this in 2D
   double volume = r.dot(normal);
   if (volume > DOLFIN_EPS)
     return false;
 
   // Compute normal to triangle based on point and first edge
-  // Will have opposite sign if outside triangle
-  // Could just check the sign of z-components in 2D
+  // Dot product of two normals should be positive, if inside.
   Point pnormal = r.cross(r0);
   double t1 = normal.dot(pnormal);
   if (t1 < 0) return false;
