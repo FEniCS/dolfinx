@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-10-16
-// Last changed: 2013-11-05
+// Last changed: 2014-11-24
 
 #ifndef __DOLFIN_HDF5ATTRIBUTE_H
 #define __DOLFIN_HDF5ATTRIBUTE_H
@@ -95,6 +95,10 @@ namespace dolfin
 
     /// Get the names of all the attributes on this dataset
     const std::string str() const;
+
+    /// Get the names of all the attributes on this dataset as a
+    /// std::vector<std::string>
+    const std::vector<std::string> list_attributes() const;
 
   private:
 

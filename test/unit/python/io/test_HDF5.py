@@ -32,9 +32,8 @@ def test_save_vector(tempdir):
     filename = os.path.join(tempdir, "x.h5")
     x = Vector(mpi_comm_world(), 305)
     x[:] = 1.0
-    vector_file = HDF5File(x.mpi_comm(), filename, "w")
-    vector_file.write(x, "/my_vector")
-    vector_file.close()
+    with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
+        vector_file.write(x, "/my_vector")
 
 @skip_if_not_HDF5
 def test_save_and_read_vector(tempdir):
@@ -43,17 +42,15 @@ def test_save_and_read_vector(tempdir):
     # Write to file
     x = Vector(mpi_comm_world(), 305)
     x[:] = 1.2
-    vector_file = HDF5File(x.mpi_comm(), filename, "w")
-    vector_file.write(x, "/my_vector")
-    vector_file.close()
+    with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
+        vector_file.write(x, "/my_vector")
 
     # Read from file
     y = Vector()
-    vector_file = HDF5File(x.mpi_comm(), filename, "r")
-    vector_file.read(y, "/my_vector", False)
-    assert y.size() == x.size()
-    assert (x - y).norm("l1") == 0.0
-    vector_file.close()
+    with HDF5File(x.mpi_comm(), filename, "r") as vector_file:
+        vector_file.read(y, "/my_vector", False)
+        assert y.size() == x.size()
+        assert (x - y).norm("l1") == 0.0
 
 @skip_if_not_HDF5
 def test_save_and_read_meshfunction_2D(tempdir):
@@ -61,28 +58,26 @@ def test_save_and_read_meshfunction_2D(tempdir):
 
     # Write to file
     mesh = UnitSquareMesh(20, 20)
-    mf_file = HDF5File(mesh.mpi_comm(), filename, "w")
+    with HDF5File(mesh.mpi_comm(), filename, "w") as mf_file:
 
-    # save meshfuns to compare when reading back
-    meshfunctions = []
-    for i in range(0,3):
-        mf = MeshFunction('double', mesh, i)
-        # NB choose a value to set which will be the same
-        # on every process for each entity
-        for cell in entities(mesh, i):
-            mf[cell] = cell.midpoint()[0]
-        meshfunctions.append(mf)
-        mf_file.write(mf, "/meshfunction/meshfun%d" % i)
-    mf_file.close()
+        # save meshfuns to compare when reading back
+        meshfunctions = []
+        for i in range(0,3):
+            mf = MeshFunction('double', mesh, i)
+            # NB choose a value to set which will be the same
+            # on every process for each entity
+            for cell in entities(mesh, i):
+                mf[cell] = cell.midpoint()[0]
+            meshfunctions.append(mf)
+            mf_file.write(mf, "/meshfunction/meshfun%d" % i)
 
     # Read back from file
-    mf_file = HDF5File(mesh.mpi_comm(), filename, "r")
-    for i in range(0,3):
-        mf2 = MeshFunction('double', mesh, i)
-        mf_file.read(mf2, "/meshfunction/meshfun%d" % i)
-        for cell in entities(mesh, i):
-            assert meshfunctions[i][cell] == mf2[cell]
-    mf_file.close()
+    with HDF5File(mesh.mpi_comm(), filename, "r") as mf_file:
+        for i in range(0,3):
+            mf2 = MeshFunction('double', mesh, i)
+            mf_file.read(mf2, "/meshfunction/meshfun%d" % i)
+            for cell in entities(mesh, i):
+                assert meshfunctions[i][cell] == mf2[cell]
 
 @skip_if_not_HDF5
 def test_save_and_read_meshfunction_3D(tempdir):
