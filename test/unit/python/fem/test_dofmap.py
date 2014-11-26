@@ -71,6 +71,45 @@ def test_tabulate_coord(mesh, V, W):
         assert (coord4[:3] == coord0).all()
         assert (coord4[3:] == coord0).all()
 
+def test_tabulate_all_coordinates(mesh, V, W):
+    D = mesh.geometry().dim()
+    
+    all_coords_V = V.dofmap().tabulate_all_coordinates(V.mesh())
+    all_coords_W = W.dofmap().tabulate_all_coordinates(W.mesh())
+    
+    local_size_V = V.dofmap().ownership_range()[1]-V.dofmap().ownership_range()[0]
+    local_size_W = W.dofmap().ownership_range()[1]-W.dofmap().ownership_range()[0]
+    
+    assert all_coords_V.shape == (D*local_size_V,)
+    assert all_coords_W.shape == (D*local_size_W,)
+    
+    all_coords_V = all_coords_V.reshape(local_size_V, D)
+    all_coords_W = all_coords_W.reshape(local_size_W, D)
+    
+    checked_V = [False]*local_size_V
+    checked_W = [False]*local_size_W
+    
+    # Check that all coordinates are within the cell it should be
+    for cell in cells(mesh):
+        dofs_V = V.dofmap().cell_dofs(cell.index())
+        for di in dofs_V:
+            if di >= local_size_V:
+                continue
+            assert cell.contains(Point(all_coords_V[di]))
+            checked_V[di] = True
+
+        dofs_W = W.dofmap().cell_dofs(cell.index())
+        for di in dofs_W:
+            if di >= local_size_W:
+                continue
+            assert cell.contains(Point(all_coords_W[di]))
+            checked_W[di] = True
+    
+    # Assert that all dofs have been checked by the above
+    assert all(checked_V)
+    assert all(checked_W)
+    
+
 def test_tabulate_dofs(mesh, W):
 
     L0   = W.sub(0)
