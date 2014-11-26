@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2007-03-13
-// Last changed: 2011-01-02
+// Last changed: 2014-11-26
 
 #include <algorithm>
 
