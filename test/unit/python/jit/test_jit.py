@@ -21,7 +21,7 @@
 
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_if_not_PETSc
+from dolfin_utils.test import skip_if_not_PETSc, skip_in_serial
 
 def test_nasty_jit_caching_bug():
 
