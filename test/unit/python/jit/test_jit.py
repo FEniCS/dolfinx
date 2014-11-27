@@ -21,7 +21,7 @@
 
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_if_not_PETSc, skip_in_serial
+from dolfin_utils.test import skip_if_not_PETSc, skip_in_serial, skip_if_not_petsc4py
 
 def test_nasty_jit_caching_bug():
 
@@ -81,3 +81,54 @@ def test_compile_extension_module_kwargs():
     m2 = compile_extension_module('', cppargs='-O2')
     m0 = compile_extension_module('', cppargs='')
     assert not m2.__file__ == m0.__file__
+
+@skip_if_not_petsc4py
+@skip_in_serial
+def test_mpi_dependent_jiting():
+    # FIXME: Not a proper unit test...
+    from dolfin import Expression, UnitSquareMesh, Function, TestFunction, \
+         Form, FunctionSpace, dx, CompiledSubDomain, SubSystemsManager
+    
+    # Init petsc (needed to initalize petsc and slepc collectively on
+    # all processes)
+    SubSystemsManager.init_petsc()
+
+    try:
+        import mpi4py.MPI as mpi
+    except:
+        return
+
+    try:
+        import petsc4py.PETSc as petsc
+    except:
+        return
+    
+    # Set communicator and get process information
+    comm = mpi.COMM_WORLD
+    group = comm.Get_group()
+    size = comm.Get_size()
+
+    # Only consider parallel runs
+    if size == 1:
+        return
+
+    rank = comm.Get_rank()
+    group_comm_0 = petsc.Comm(comm.Create(group.Incl(range(1))))
+    group_comm_1 = petsc.Comm(comm.Create(group.Incl(range(1,2))))
+
+    if size > 2:
+        group_comm_2 = petsc.Comm(comm.Create(group.Incl(range(2,size))))
+
+    if rank == 0:
+        e = Expression("4", mpi_comm=group_comm_0)
+
+    elif rank == 1:
+        e = Expression("5", mpi_comm=group_comm_1)
+        domain = CompiledSubDomain("on_boundary", mpi_comm=group_comm_1)
+
+    else:
+        mesh = UnitSquareMesh(group_comm_2, 2, 2)
+        V = FunctionSpace(mesh, "P", 1)
+        u = Function(V)
+        v = TestFunction(V)
+        Form(u*v*dx)
