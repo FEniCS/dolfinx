@@ -892,9 +892,20 @@ void HDF5File::read(Function& u, const std::string name)
   if (!HDF5Interface::has_dataset(hdf5_file_id, x_cell_dofs_dataset_name))
     error("Dataset with name \"%s\" does not exist",
           x_cell_dofs_dataset_name.c_str());
+
+  // Check if it has the vector_0-dataset. If not, it may be stored with an
+  // older version, and instead have a vector-dataset.
   if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
-    error("Dataset with name \"%s\" does not exist",
-          vector_dataset_name.c_str());
+  {
+    std::string tmp_name = vector_dataset_name;
+    const std::size_t N = vector_dataset_name.rfind("/vector_0");
+    if (N != std::string::npos)
+      vector_dataset_name = vector_dataset_name.substr(0, N) + "/vector";
+    
+    if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
+      error("Dataset with name \"%s\" does not exist",
+            tmp_name.c_str());
+  }
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the Function
