@@ -289,3 +289,25 @@
   std::shared_ptr< const dolfin::uBLASVector > *smartresult = new std::shared_ptr< const dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
 }
+
+//-----------------------------------------------------------------------------
+// Director typemaps for dolfin::TpetraVector - just copied from above for PETSc. No idea if this is right.
+//-----------------------------------------------------------------------------
+%typemap(directorin, fragment="NoDelete") dolfin::TpetraVector&
+{
+  // Director in dolfin::TpetraVector&
+  std::shared_ptr< dolfin::TpetraVector > *smartresult
+    = new std::shared_ptr< dolfin::TpetraVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::TpetraVector > *), SWIG_POINTER_OWN);
+}
+
+%typemap(directorin, fragment="NoDelete") const dolfin::TpetraVector&
+{
+  // Director in const dolfin::TpetraVector&
+  std::shared_ptr< const dolfin::TpetraVector > *smartresult
+    = new std::shared_ptr< const dolfin::TpetraVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::TpetraVector > *), SWIG_POINTER_OWN);
+}
+
+
+

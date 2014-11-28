@@ -175,6 +175,10 @@
 %shared_ptr(dolfin::PETScUserPreconditioner)
 #endif
 
+#ifdef HAS_TRILINOS
+%shared_ptr(dolfin::TpetraVector)
+#endif
+
 #ifdef HAS_SLEPC
 %shared_ptr(dolfin::SLEPcEigenSolver)
 #endif

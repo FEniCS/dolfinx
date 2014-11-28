@@ -41,6 +41,7 @@
 #include <dolfin/la/CoordinateMatrix.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/TpetraVector.h>
 
 #include <dolfin/la/SparsityPattern.h>
 
