@@ -244,7 +244,7 @@ namespace dolfin
   private:
 
     // Initialise Tpetra vector
-    void _init(MPI_Comm comm, std::size_t N);
+    void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range);
 
     // Return true if vector is distributed
     bool distributed() const;
