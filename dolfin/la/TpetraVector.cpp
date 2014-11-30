@@ -163,7 +163,7 @@ void TpetraVector::get(double* block, std::size_t m,
 
   // Make map of global indices
   std::vector<global_ordinal_type> _rows(rows, rows + m);
-  const Teuchos::ArrayView<global_ordinal_type> local_indices(_rows);
+  const Teuchos::ArrayView<const global_ordinal_type> local_indices(_rows);
   Teuchos::RCP<const Teuchos::Comm<int> > 
     _comm(new Teuchos::MpiComm<int>(MPI_COMM_SELF));
   Teuchos::RCP<const map_type> 
@@ -178,9 +178,6 @@ void TpetraVector::get(double* block, std::size_t m,
   // Copy to memory
   Teuchos::ArrayRCP<const scalar_type> arr = y->getData();
   std::copy(arr.get(), arr.get() + m, block);
-  
-  //  for (std::size_t i = 0; i != m; ++i)
-  //    block[i] = arr[i];
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get_local(double* block, std::size_t m,
