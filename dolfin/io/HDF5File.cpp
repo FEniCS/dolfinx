@@ -1139,7 +1139,7 @@ template <typename T>
 void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
                                           const std::string name) const
 {
-  Timer t1("HDF5: read mesh value collection '"+name+"'");
+  Timer t1("HDF5: read mesh value collection");
   dolfin_assert(hdf5_file_open);
   mesh_vc.clear();
   if (!HDF5Interface::has_group(hdf5_file_id, name))
@@ -1235,10 +1235,13 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
       else if (*i > *j) ++j;
       else
       {
+        // Here we do not increment j because cells_data is increasing
+        // but not *strictly*, i.e. we could have
+        // cells_data[i] = cells_data[i+1]
         std::size_t ii = i - global_cell_index.begin();
         std::size_t jj = j - cells_data.begin();
         mvc_map[std::make_pair(ii, entities_data[jj])] = values_data[jj];
-        ++i; ++j;
+        ++j;
       }
     }
   }
