@@ -160,7 +160,27 @@ void TpetraVector::get(double* block, std::size_t m,
                        const dolfin::la_index* rows) const
 {
   dolfin_assert(!_x.is_null());
-  // ?
+
+  // Make map of global indices
+  std::vector<global_ordinal_type> _rows(rows, rows + m);
+  const Teuchos::ArrayView<global_ordinal_type> local_indices(_rows);
+  Teuchos::RCP<const Teuchos::Comm<int> > 
+    _comm(new Teuchos::MpiComm<int>(MPI_COMM_SELF));
+  Teuchos::RCP<const map_type> 
+    ymap(new map_type(m, local_indices, 0, _comm));  
+
+  // Create local Vector on map and import to it
+  Teuchos::RCP<vector_type> y(new vector_type(ymap));
+  const Tpetra::Import<global_ordinal_type> 
+    importer(_x->getMap(), y->getMap());
+  y->doImport(*_x, importer, Tpetra::INSERT);
+ 
+  // Copy to memory
+  Teuchos::ArrayRCP<const scalar_type> arr = y->getData();
+  std::copy(arr.get(), arr.get() + m, block);
+  
+  //  for (std::size_t i = 0; i != m; ++i)
+  //    block[i] = arr[i];
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get_local(double* block, std::size_t m,
@@ -299,7 +319,7 @@ void TpetraVector::gather_on_zero(std::vector<double>& v) const
   else
     v.resize(0);
 
-  TPetraVector y;
+  TpetraVector y;
   y.init(v.size(), MPI_COMM_SELF);
   
   const Tpetra::Import<global_ordinal_type> 
@@ -363,6 +383,7 @@ double TpetraVector::max() const
 double TpetraVector::sum() const
 {
   dolfin_assert(!_x.is_null());
+  dolfin_not_implemented();
   return 0.0;
 }
 //-----------------------------------------------------------------------------
