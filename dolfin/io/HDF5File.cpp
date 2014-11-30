@@ -1219,28 +1219,33 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
       = mesh_vc.values();
 
     // Find cells which are on this process,
-    // under the assumption that both array are ordered,
-    dolfin_assert(std::is_sorted(cells_data.begin(), cells_data.end()));
+    // under the assumption that global_cell_index is ordered.
     dolfin_assert(std::is_sorted(global_cell_index.begin(),
                                  global_cell_index.end()));
+    
+    // cells_data in general is not ordered, so we sort it
+    // keeping track of the indices
+    std::vector<std::size_t> cells_data_index(cells_data.size());
+    std::iota(cells_data_index.begin(), cells_data_index.end(), 0);
+    std::sort(cells_data_index.begin(), cells_data_index.end(),
+              [&cells_data](std::size_t i, size_t j)
+              { return cells_data[i] < cells_data[j]; });
 
     // The implementation follows std::set_intersection, which
     // we are not able to use it here since we need the indices
     // of the intersection, not just the values.
     std::vector<std::size_t>::const_iterator i = global_cell_index.begin();
-    std::vector<std::size_t>::const_iterator j = cells_data.begin();
-    while (i!=global_cell_index.end() && j!=cells_data.end())
+    std::vector<std::size_t>::const_iterator j = cells_data_index.begin();
+    while (i!=global_cell_index.end() && j!=cells_data_index.end())
     {
-      if (*i < *j) ++i;
-      else if (*i > *j) ++j;
+      if (*i < cells_data[*j]) ++i;
+      else if (*i > cells_data[*j]) ++j;
       else
       {
-        // Here we do not increment j because cells_data is increasing
-        // but not *strictly*, i.e. we could have
-        // cells_data[i] = cells_data[i+1]
-        std::size_t ii = i - global_cell_index.begin();
-        std::size_t jj = j - cells_data.begin();
-        mvc_map[std::make_pair(ii, entities_data[jj])] = values_data[jj];
+        // Here we do not increment j because cells_data_index is ordered
+        // but not *strictly* ordered.
+        std::size_t lidx = i - global_cell_index.begin();
+        mvc_map[std::make_pair(lidx, entities_data[*j])] = values_data[*j];
         ++j;
       }
     }
