@@ -153,7 +153,7 @@ bool TpetraVector::owns_index(std::size_t i) const
 {
   dolfin_assert(!_x.is_null());
   Teuchos::RCP<const map_type> xmap(_x->getMap());  
-  return xmap->isNodeLocalElement(i);
+  return xmap->isNodeGlobalElement(i);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get(double* block, std::size_t m,
@@ -245,8 +245,6 @@ void TpetraVector::set_local(const std::vector<double>& values)
 
   Teuchos::ArrayRCP<scalar_type> arr = _x->getDataNonConst();
   std::copy(values.begin(), values.end(), arr.get());
-  //  for (std::size_t i = 0; i != num_values; ++i)
-  //    _x->replaceLocalValue(i, values[i]);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::add_local(const Array<double>& values)
@@ -380,8 +378,25 @@ double TpetraVector::max() const
 double TpetraVector::sum() const
 {
   dolfin_assert(!_x.is_null());
-  dolfin_not_implemented();
-  return 0.0;
+
+  std::vector<int> node_list(local_size());
+  Teuchos::ArrayView<int> _node_list(node_list);
+  std::vector<int> local_indices(local_size());
+  Teuchos::ArrayView<local_ordinal_type> _local_indices(local_indices);
+  
+  _x->getMap()->getRemoteIndexList(_x->getMap()->getNodeElementList(),
+                                   _node_list,
+                                   _local_indices);
+
+  Teuchos::ArrayRCP<const scalar_type> arr(_x->getData());
+  
+  int mpi_rank = _x->getMap()->getComm()->getRank();
+  double _sum = 0.0;
+  for (std::size_t i = 0; i != local_size(); ++i)
+    if (node_list[i] == mpi_rank)
+      _sum += arr[i];
+
+  return MPI::sum(mpi_comm(), _sum);
 }
 //-----------------------------------------------------------------------------
 double TpetraVector::sum(const Array<std::size_t>& rows) const
