@@ -325,9 +325,12 @@ def test_mpi_dofmap_stats(mesh):
         assert owner in neighbours
 
 
-def test_local_to_global_map_size(V, Q, W):
+def test_local_dimension(V, Q, W):
     for space in [V, Q, W]:
         dofmap = space.dofmap()
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
-        size = dofmap.local_to_global_map_size()
-        assert local_to_global_map.size == size
+        ownership_range = dofmap.ownership_range()
+        dim1 = dofmap.local_dimension(False)
+        dim2 = dofmap.local_dimension(True)
+        assert dim1 == ownership_range[1] - ownership_range[0]
+        assert dim2 == local_to_global_map.size

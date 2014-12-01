@@ -115,6 +115,21 @@ namespace dolfin
     ///         The dimension of the global finite element function space.
     std::size_t global_dimension() const;
 
+    /// Return number of dofs on this process without or with unowned dofs.
+    ///
+    /// *Arguments*
+    ///     with_unowned (bool)
+    ///         Include unowned dofs
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         Number of local dofs.
+    std::size_t local_dimension(bool with_unowned) const
+    { return with_unowned
+        ? _local_ownership_size + block_size*_local_to_global_unowned.size()
+        : _local_ownership_size; }
+
+
     // FIXME: Rename this function, 'cell_dimension' sounds confusing
 
     /// Return the dimension of the local finite element function
@@ -171,15 +186,6 @@ namespace dolfin
     ///     std::pair<std::size_t, std::size_t>
     ///         The ownership range.
     std::pair<std::size_t, std::size_t> ownership_range() const;
-
-    /// Return number of dofs on this process including unowned ones
-    ///
-    /// *Returns*
-    ///     int
-    ///         Size of local to global map.
-    int local_to_global_map_size() const
-    { return _local_ownership_size
-        + block_size*_local_to_global_unowned.size(); }
 
     /// Return map from nonlocal dofs that appear in local dof map to
     /// owning process

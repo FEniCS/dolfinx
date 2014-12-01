@@ -64,6 +64,9 @@ namespace dolfin
     /// space
     virtual std::size_t global_dimension() const = 0;
 
+    /// Return number of dofs on this process without or with unowned dofs.
+    virtual std::size_t local_dimension(bool with_unowned) const = 0;
+
     /// Return the dimension of the local finite element function
     /// space on a cell
     virtual std::size_t cell_dimension(std::size_t index) const = 0;
@@ -85,9 +88,6 @@ namespace dolfin
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
     virtual std::pair<std::size_t, std::size_t> ownership_range() const = 0;
-
-    /// Return number of dofs on this process including unowned ones
-    virtual int local_to_global_map_size() const = 0;
 
     /// Return map from nonlocal-dofs (that appear in local dof map)
     /// to owning process
