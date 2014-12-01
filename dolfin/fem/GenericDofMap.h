@@ -155,6 +155,10 @@ namespace dolfin
     virtual void set_x(GenericVector& x, double value, std::size_t component,
                        const Mesh& mesh) const = 0;
 
+    /// Return the map from unowned local dofmap nodes to global dofmap
+    /// nodes. Dofmap node is dof index modulo block size.
+    virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
+
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;
 
@@ -183,10 +187,6 @@ namespace dolfin
     /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
     // ordered dofmap
     std::size_t block_size;
-
-    // FIXME
-    virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
-
 
   };
 
