@@ -1231,15 +1231,27 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
               [&cells_data](std::size_t i, size_t j)
               { return cells_data[i] < cells_data[j]; });
 
-    // The implementation follows std::set_intersection, which
-    // we are not able to use it here since we need the indices
-    // of the intersection, not just the values.
+    // The implementation follows std::set_intersection, which we are
+    // not able to use here since we need the indices of the
+    // intersection, not just the values.
     std::vector<std::size_t>::const_iterator i = global_cell_index.begin();
     std::vector<std::size_t>::const_iterator j = cells_data_index.begin();
     while (i!=global_cell_index.end() && j!=cells_data_index.end())
     {
-      if (*i < cells_data[*j]) ++i;
-      else if (*i > cells_data[*j]) ++j;
+
+      // Global cell index is less than the cell_data index read from file
+      if (*i < cells_data[*j]) 
+      {
+        ++i;
+      }
+
+      // Global cell index is larger than the cell_data index read from file
+      else if (*i > cells_data[*j])
+      {
+        ++j;
+      }
+
+      // Global cell index is the same as the cell_data index read from file
       else
       {
         // Here we do not increment j because cells_data_index is ordered
