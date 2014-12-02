@@ -110,23 +110,33 @@ def test_save_and_read_meshfunction_3D(tempdir):
 
 @skip_if_not_HDF5
 def test_save_and_read_mesh_value_collection(tempdir):
+    ndiv = 5
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
-    mesh = UnitCubeMesh(5, 5, 5)
+    mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
 
-    # Writ to file
-    hdf5_file = HDF5File(mesh.mpi_comm(), filename, "w")
-    for dim in range(mesh.topology().dim()):
-        mvc = MeshValueCollection("size_t", mesh, dim)
-        for i, cell in enumerate(entities(mesh, dim)):
-            mvc.set_value(cell.index(), i)
-        hdf5_file.write(mvc, "/mesh_value_collection_%d" % dim)
-    del hdf5_file
+    point2list = lambda p : [ p.x(), p.y(), p.z() ]
 
-    # Read from file
-    hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
-    for dim in range(mesh.topology().dim()):
-        mvc = MeshValueCollection("size_t", mesh, dim)
-        hdf5_file.read(mvc, "/mesh_value_collection_%d" % dim)
+    # write to file
+    with HDF5File(mesh.mpi_comm(), filename, 'w') as f :
+        for dim in range(mesh.topology().dim()) :
+            mvc = MeshValueCollection("size_t", mesh, dim)
+            mesh.init(dim)
+            for e in entities(mesh, dim) :
+                # this can be easily computed to the check the value
+                val = int(ndiv*sum(point2list(e.midpoint()))) + 1
+                mvc.set_value(e.index(), val)
+            f.write(mvc, "/mesh_value_collection_{}".format(dim))
+
+    # read from file
+    with HDF5File(mesh.mpi_comm(), filename, 'r') as f :
+        for dim in range(mesh.topology().dim()) :
+            mvc = MeshValueCollection("size_t", mesh, dim)
+            f.read(mvc, "/mesh_value_collection_{}".format(dim))
+            # check the values
+            for (cell, lidx), val in mvc.values().items() :
+                eidx = Cell(mesh, cell).entities(dim)[lidx]
+                mid = point2list(MeshEntity(mesh, dim, eidx).midpoint())
+                assert val == int(ndiv*sum(mid)) + 1
 
 @skip_if_not_HDF5
 def test_save_and_read_function(tempdir):

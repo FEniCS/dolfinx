@@ -892,9 +892,20 @@ void HDF5File::read(Function& u, const std::string name)
   if (!HDF5Interface::has_dataset(hdf5_file_id, x_cell_dofs_dataset_name))
     error("Dataset with name \"%s\" does not exist",
           x_cell_dofs_dataset_name.c_str());
+
+  // Check if it has the vector_0-dataset. If not, it may be stored with an
+  // older version, and instead have a vector-dataset.
   if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
-    error("Dataset with name \"%s\" does not exist",
-          vector_dataset_name.c_str());
+  {
+    std::string tmp_name = vector_dataset_name;
+    const std::size_t N = vector_dataset_name.rfind("/vector_0");
+    if (N != std::string::npos)
+      vector_dataset_name = vector_dataset_name.substr(0, N) + "/vector";
+    
+    if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
+      error("Dataset with name \"%s\" does not exist",
+            tmp_name.c_str());
+  }
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the Function
@@ -1139,6 +1150,7 @@ template <typename T>
 void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
                                           const std::string name) const
 {
+  Timer t1("HDF5: read mesh value collection");
   dolfin_assert(hdf5_file_open);
   mesh_vc.clear();
   if (!HDF5Interface::has_group(hdf5_file_id, name))
@@ -1217,20 +1229,49 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
     std::map<std::pair<std::size_t, std::size_t>, T>& mvc_map
       = mesh_vc.values();
 
-    // Find cells which are on this process
-    for (std::size_t i = 0; i < cells_data.size(); ++i)
+    // Find cells which are on this process,
+    // under the assumption that global_cell_index is ordered.
+    dolfin_assert(std::is_sorted(global_cell_index.begin(),
+                                 global_cell_index.end()));
+    
+    // cells_data in general is not ordered, so we sort it
+    // keeping track of the indices
+    std::vector<std::size_t> cells_data_index(cells_data.size());
+    std::iota(cells_data_index.begin(), cells_data_index.end(), 0);
+    std::sort(cells_data_index.begin(), cells_data_index.end(),
+              [&cells_data](std::size_t i, size_t j)
+              { return cells_data[i] < cells_data[j]; });
+
+    // The implementation follows std::set_intersection, which we are
+    // not able to use here since we need the indices of the
+    // intersection, not just the values.
+    std::vector<std::size_t>::const_iterator i = global_cell_index.begin();
+    std::vector<std::size_t>::const_iterator j = cells_data_index.begin();
+    while (i!=global_cell_index.end() && j!=cells_data_index.end())
     {
-      const std::vector<std::size_t>::const_iterator lidx
-        = std::find(global_cell_index.begin(), global_cell_index.end(),
-                    cells_data[i]);
-      if (lidx != global_cell_index.end())
+
+      // Global cell index is less than the cell_data index read from file
+      if (*i < cells_data[*j]) 
       {
-        const std::size_t local_index = lidx - global_cell_index.begin();
-        mvc_map[std::make_pair(local_index, entities_data[i])]
-          = values_data[i];
+        ++i;
+      }
+
+      // Global cell index is larger than the cell_data index read from file
+      else if (*i > cells_data[*j])
+      {
+        ++j;
+      }
+
+      // Global cell index is the same as the cell_data index read from file
+      else
+      {
+        // Here we do not increment j because cells_data_index is ordered
+        // but not *strictly* ordered.
+        std::size_t lidx = i - global_cell_index.begin();
+        mvc_map[std::make_pair(lidx, entities_data[*j])] = values_data[*j];
+        ++j;
       }
     }
-
   }
   else
   {
@@ -1444,8 +1485,6 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
     if (!has_dataset(marker_dataset))
       continue;
 
-    input_mesh.init(d);
-
     MeshValueCollection<std::size_t> mvc(input_mesh, d);
     read_mesh_value_collection(mvc, marker_dataset);
 
@@ -1459,6 +1498,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
              std::size_t>::const_iterator entry;
     if (d != input_mesh.topology().dim())
     {
+      input_mesh.init(d);
       for (entry = values.begin(); entry != values.end(); ++entry)
       {
         const Cell cell(input_mesh, entry->first.first);
