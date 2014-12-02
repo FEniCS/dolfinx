@@ -176,9 +176,20 @@ std::pair<std::size_t, std::size_t> TpetraVector::local_range() const
 bool TpetraVector::owns_index(std::size_t i) const
 {
   dolfin_assert(!_x.is_null());
+
+  // FIXME: inefficient? call to getRemoteIndexList requires communication
+
+  // First check if global index exists on this process
   Teuchos::RCP<const map_type> xmap(_x->getMap());
-  // FIXME: wrong with ghost entries
-  return xmap->isNodeGlobalElement(i);
+  const local_ordinal_type idx = xmap->getLocalElement(i);
+  if (idx == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
+    return false;
+
+  // Second check if this process is the owner
+  std::vector<int> node_list(local_size());
+  Teuchos::ArrayView<int> _node_list(node_list);
+  xmap->getRemoteIndexList(xmap->getNodeElementList(), _node_list);
+  return (node_list[idx] == xmap->getComm()->getRank());
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get(double* block, std::size_t m,
