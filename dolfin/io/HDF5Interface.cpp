@@ -153,19 +153,16 @@ const std::string HDF5Interface::get_attribute_type(
   else
     attribute_type_description = "unsupported";
 
+  // Close dataspace
+  status = H5Sclose(dataspace);
+  dolfin_assert(status != HDF5_FAIL);
+
   // Close attribute type
   status = H5Tclose(attr_type);
   dolfin_assert(status != HDF5_FAIL);
 
-  status = H5Tclose(h5class);
-  dolfin_assert(status != HDF5_FAIL);
-
   // Close attribute
   status = H5Aclose(attr_id);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Close dataspace
-  status = H5Sclose(dataspace);
   dolfin_assert(status != HDF5_FAIL);
 
   // Close dataset or group
@@ -221,6 +218,10 @@ HDF5Interface::list_attributes(const hid_t hdf5_file_handle,
   herr_t status = H5Aiterate2(dset_id, H5_INDEX_NAME, H5_ITER_INC, &n,
                               attribute_iteration_function,
                               (void *)&out_string);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close dataset or group
+  status = H5Oclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
   return out_string;

@@ -25,10 +25,11 @@
 # First added:  2012-09-03
 # Last changed: 2013-04-15
 #
+from __future__ import print_function
 from dolfin import *
 
 if not has_petsc_tao():
-    print "DOLFIN must be compiled with TAO to run this demo."
+    print("DOLFIN must be compiled with TAO to run this demo.")
     exit(0)
 
 # Read mesh

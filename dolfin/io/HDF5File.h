@@ -86,7 +86,12 @@ namespace dolfin
     void write(const Function& u, const std::string name, double timestamp);
 
     /// Read Function from file and distribute data according to
-    /// the Mesh and dofmap associated with the Function
+    /// the Mesh and dofmap associated with the Function.
+    /// If the 'name' refers to a HDF5 group, then it is assumed
+    /// that the Function data is stored in the datasets within that group.
+    /// If the 'name' refers to a HDF5 dataset within a group, then
+    /// it is assumed that it is a Vector, and the Function will be filled from
+    /// that Vector
     void read(Function& u, const std::string name);
 
     /// Read Mesh from file and optionally re-use any partition data

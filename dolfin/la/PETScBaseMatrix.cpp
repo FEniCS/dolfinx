@@ -108,18 +108,28 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   Vec x = NULL;
   if (dim == 0)
   {
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5 && PETSC_VERSION_RELEASE == 1
     ierr = MatGetVecs(_matA, PETSC_NULL, &x);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
+    #else
+    ierr = MatCreateVecs(_matA, PETSC_NULL, &x);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateVecs");
+    #endif
   }
   else if (dim == 1)
   {
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5 && PETSC_VERSION_RELEASE == 1
     ierr = MatGetVecs(_matA, &x, PETSC_NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
+    #else
+    ierr = MatCreateVecs(_matA, &x, PETSC_NULL);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateVecs");
+    #endif
   }
   else
   {
     dolfin_error("PETScBaseMatrix.cpp",
-                 "intialize PETSc vector to match PETSc matrix",
+                 "initialize PETSc vector to match PETSc matrix",
                  "Dimension must be 0 or 1, not %d", dim);
   }
 

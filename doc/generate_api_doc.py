@@ -19,6 +19,7 @@
 #
 # Utility script for generating .rst documentation for DOLFIN
 
+from __future__ import print_function
 import os, sys
 
 dolfin_import_error_msg = """
@@ -61,7 +62,7 @@ def generate_dolfin_doc(input_dir, output_dir, version=None):
     api_output_dir = os.path.join(output_dir, "python", "programmers-reference")
     generate_python_api_documentation(module, api_output_dir, version)
 
-    print "\nSuccessfully generated API documentation.\n"
+    print("\nSuccessfully generated API documentation.\n")
 
 if __name__ == "__main__":
 
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 
     if len(args) != 3:
         usage= "Usage: python generate_api_doc.py source_dir output_dir version"
-        print usage
+        print(usage)
         sys.exit(2)
 
     generate_dolfin_doc(args[0], args[1], args[2])

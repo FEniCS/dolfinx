@@ -62,7 +62,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     receiving_spaces (std::vector<_FunctionSpace_>)
-    ///         The recieving function spaces
+    ///         The receiving function spaces
     ///     assigning_space (_FunctionSpace_)
     ///         The assigning function space
     FunctionAssigner(std::vector<std::shared_ptr<const FunctionSpace> > receiving_spaces,
@@ -77,7 +77,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     receiving_space (std::shared_ptr<_FunctionSpace_>)
-    ///         The recieving function space
+    ///         The receiving function space
     ///     assigning_spaces (std::vector<std::shared_ptr<_FunctionSpace_> >)
     ///         The assigning function spaces
     FunctionAssigner(std::shared_ptr<const FunctionSpace> receiving_space,
@@ -87,7 +87,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     receiving_func (std::shared_ptr<_Function_>)
-    ///         The recieving function
+    ///         The receiving function
     ///     assigning_func (std::shared_ptr<_Function_>)
     ///         The assigning function
     void assign(std::shared_ptr<Function> receiving_func,
@@ -98,7 +98,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     receiving_func (std::shared_ptr<_Function_>)
-    ///         The recieving mixed function
+    ///         The receiving mixed function
     ///     assigning_funcs (std::vector<std::shared_ptr<_Function_> >)
     ///         The assigning functions
     void assign(std::shared_ptr<Function> receiving_func,
@@ -109,7 +109,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     receiving_funcs (std::vector<std::shared_ptr<_Function_> >)
-    ///         The recieving functions
+    ///         The receiving functions
     ///     assigning_func (std::shared_ptr<_Function_>)
     ///         The assigning mixed function
     void assign(std::vector<std::shared_ptr<Function> > receiving_funcs,
@@ -118,7 +118,7 @@ namespace dolfin
     /// Destructor
     ~FunctionAssigner();
 
-    /// Return the number of assiging functions
+    /// Return the number of assigning functions
     inline std::size_t num_assigning_functions() const
     { return _assigning_spaces.size(); }
 
@@ -132,11 +132,11 @@ namespace dolfin
     void _assign(std::vector<std::shared_ptr<Function> > receiving_funcs,
 	std::vector<std::shared_ptr<const Function> > assigning_funcs) const;
 
-    // Check the compatability of the meshes and return a reference to
+    // Check the compatibility of the meshes and return a reference to
     // the mesh
     const Mesh& _get_mesh() const;
 
-    // Check the compatability of the arguments to the constructor and
+    // Check the compatibility of the arguments to the constructor and
     // build indices for assignment
     void _check_and_build_indices(const Mesh& mesh,
 	  const std::vector<std::shared_ptr<const FunctionSpace> >& receiving_spaces,

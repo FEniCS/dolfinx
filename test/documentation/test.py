@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Marie E. Rognes
+# Copyright (C) 2011-2014 Marie E. Rognes
 #
 # This file is part of DOLFIN.
 #
@@ -14,25 +14,27 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-05-22
-# Last changed: 2011-05-22
 
+from __future__ import print_function
 import sys
 from instant import get_status_output
 
-tests = ["verify_demo_code_snippets.py"]
+def main():
+    tests = ["verify_demo_code_snippets.py"]
 
-failed = []
-for test in tests:
-    command = "%s %s" % (sys.executable, test)
-    fail, output = get_status_output(command)
+    failed = []
+    for test in tests:
+        command = "%s %s" % (sys.executable, test)
+        fail, output = get_status_output(command)
 
-    if fail:
-        failed.append(fail)
-        print "*** %s failed" % test
-        print output
-    else:
-        print "OK"
+        if fail:
+            failed.append(fail)
+            print("*** %s failed" % test)
+            print(output)
+        else:
+            print("OK")
 
-sys.exit(len(failed))
+    return len(failed)
+
+if __name__ == "__main__":
+    sys.exit(main())

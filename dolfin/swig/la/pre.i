@@ -88,8 +88,8 @@
 //-----------------------------------------------------------------------------
 // Modify the Scalar interface
 //-----------------------------------------------------------------------------
-%rename(__float__) dolfin::Scalar::operator double;
-%rename(assign) dolfin::Scalar::operator=;
+//%rename(__float__) dolfin::Scalar::operator double;
+//%rename(assign) dolfin::Scalar::operator=;
 
 //-----------------------------------------------------------------------------
 // Typemaps for GenericMatrix get and set functions

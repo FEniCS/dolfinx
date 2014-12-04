@@ -118,7 +118,7 @@ namespace dolfin
     /// 'sorted' and 'unsorted'.
     std::vector<std::vector<std::size_t> > diagonal_pattern(Type type) const;
 
-    /// Return underlying sparsity pattern (off-diagional). Options are
+    /// Return underlying sparsity pattern (off-diagonal). Options are
     /// 'sorted' and 'unsorted'.
     std::vector<std::vector<std::size_t> >
       off_diagonal_pattern(Type type) const;
@@ -141,7 +141,7 @@ namespace dolfin
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<std::size_t> non_local;
 
-    // Array map from un-owned local indices to global indcies
+    // Array map from un-owned local indices to global indices
     std::vector<std::vector<std::size_t> > _local_to_global;
 
     // Map from non-local vertex to owning process index

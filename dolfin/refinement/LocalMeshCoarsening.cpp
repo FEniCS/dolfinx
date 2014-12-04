@@ -205,13 +205,13 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   const std::size_t num_vertices = mesh.size(0);
   const std::size_t num_cells = mesh.size(mesh.topology().dim());
 
-  // Initialise forbidden verticies
+  // Initialise forbidden vertices
   MeshFunction<bool> vertex_forbidden(mesh);
   vertex_forbidden.init(0);
   for (VertexIterator v(mesh); !v.end(); ++v)
     vertex_forbidden[v->index()] = false;
 
-  // Initialise boundary verticies
+  // Initialise boundary vertices
   MeshFunction<bool> vertex_boundary(mesh);
   vertex_boundary.init(0);
   for (VertexIterator v(mesh); !v.end(); ++v)
@@ -385,7 +385,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 
   editor.close();
 
-  // Set volume tolerance. This parameter detemines a quality criterion
+  // Set volume tolerance. This parameter determines a quality criterion
   // for the new mesh: higher value indicates a sharper criterion.
   double vol_tol = 1.0e-3;
 

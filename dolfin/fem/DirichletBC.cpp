@@ -25,10 +25,10 @@
 // Last changed: 2014-01-23
 
 #include <map>
+#include <cinttypes>
 #include <cstdlib>
 #include <utility>
 #include <ufc.h>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
@@ -47,7 +47,6 @@
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
-#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
@@ -60,7 +59,7 @@
 using namespace dolfin;
 
 const std::set<std::string> DirichletBC::methods
-            = boost::assign::list_of("topological")("geometric")("pointwise");
+= {"topological", "geometric", "pointwise"};
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
@@ -291,8 +290,8 @@ void DirichletBC::gather(Map& boundary_values) const
       }
       else
       {
-        const std::div_t div = std::div(_vec[i].first, bs);
-        const int node = div.quot;
+        const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
+        const std::size_t node = div.quot;
         const int component = div.rem;
 
         // Case 1: dof is not owned by this process
@@ -346,7 +345,7 @@ void DirichletBC::zero(GenericMatrix& A) const
     dofs[i++] = bv->first;
 
   // Modify linear system (A_ii = 1)
-  A.zero(boundary_values.size(), dofs.data());
+  A.zero_local(boundary_values.size(), dofs.data());
 
   // Finalise changes to A
   A.apply("insert");
@@ -615,10 +614,12 @@ void DirichletBC::apply(GenericMatrix* A,
       A->ident_local(size, dofs.data());
     else
     {
-      A->zero(size, dofs.data());
+      A->zero_local(size, dofs.data());
+
+      const std::size_t offset = _function_space->dofmap()->ownership_range().first;
       for (std::size_t i = 0; i < size; i++)
       {
-        std::pair<std::size_t, std::size_t> ij(dofs[i], dofs[i]);
+        std::pair<std::size_t, std::size_t> ij(offset + dofs[i], offset + dofs[i]);
         A->setitem(ij, 1.0);
       }
     }
@@ -783,7 +784,7 @@ void DirichletBC::compute_bc(Map& boundary_values, LocalData& data,
 {
   Timer timer("DirichletBC compute bc");
 
-  // Set method if dafault
+  // Set method if default
   if (method == "default")
     method = _method;
 
@@ -834,10 +835,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   mesh.init(D);
   mesh.init(D - 1, D);
 
-  // Get restriction if any
-  std::shared_ptr<const Restriction> restriction
-    = _function_space->dofmap()->restriction();
-
   // Create UFC cell
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
@@ -851,26 +848,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Create facet
     const Facet facet(mesh, _facets[f]);
 
-    // Get cell to which facet belongs. If mesh is restricted, make
-    // sure we pick the right cell in case there are two.
+    // Get cell to which facet belongs.
     dolfin_assert(facet.num_entities(D) > 0);
-    const unsigned int* cell_indices = facet.entities(D);
-    std::size_t cell_index = 0;
-    if (restriction && facet.num_entities(D) > 1)
-    {
-      if (restriction->contains(D, cell_indices[0]))
-        cell_index = cell_indices[0];
-      else if (restriction->contains(D, cell_indices[1]))
-        cell_index = cell_indices[1];
-      else
-      {
-        dolfin_error("DirichletBC.cpp",
-                     "create Dirichlet boundary condition",
-                     "Boundary facet is not adjacent to a cell inside the restriction.");
-      }
-    }
-    else
-      cell_index = facet.entities(D)[0];
+    const std::size_t cell_index = facet.entities(D)[0];
 
     // Create attached cell
     const Cell cell(mesh, cell_index);

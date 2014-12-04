@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2012 Niclas Jansson, Ola Skavhaug, Anders Logg and
-// Garth N. Wells
+// Copyright (C) 2008-2013 Niclas Jansson, Ola Skavhaug, Anders Logg,
+// Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,10 @@
 //
 // Modified by Garth N. Wells, 2010
 // Modified by Kent-Andre Mardal, 2011
+// Modified by Chris Richardson, 2013
 //
 // First added:  2008-12-01
-// Last changed: 2012-12-24
+// Last changed: 2014-06-20
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -30,9 +31,11 @@
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <dolfin/log/log.h>
+#include <dolfin/common/Set.h>
 #include "DistributedMeshTools.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
+
 
 namespace dolfin
 {
@@ -81,47 +84,83 @@ namespace dolfin
 
     // Compute cell partitioning for local mesh data. Returns
     // cell->process vector for cells in LocalMeshData
-    static std::vector<std::size_t> partition_cells(Mesh& mesh,
-                                                    const LocalMeshData& data);
+    // and a map from local index->processes to which ghost cells must be sent
+    static void partition_cells(const MPI_Comm& mpi_comm, 
+                                const LocalMeshData& mesh_data,
+         std::vector<std::size_t>& cell_partition,
+         std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
-                      const std::vector<std::size_t>& cell_partition);
+     const std::vector<std::size_t>& cell_partition,
+     const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
 
+    // Distribute a layer of cells attached by vertex to boundary
+    // updating new_mesh_data and shared_cells
+    static void distribute_cell_layer(MPI_Comm mpi_comm,
+      unsigned int num_regular_cells,
+      std::map<unsigned int, std::set<unsigned int> >& shared_cells,
+      LocalMeshData& new_mesh_data);
+
+    // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
+    static void reorder_cells_gps(MPI_Comm mpi_comm,
+     unsigned int num_regular_cells,
+     std::map<unsigned int, std::set<unsigned int> >& shared_cells,
+     LocalMeshData& new_mesh_data);
+    
+    // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
+    static void reorder_vertices_gps(MPI_Comm mpi_comm,
+     unsigned int num_regular_vertices,
+     unsigned int num_regular_cells,
+     std::map<std::size_t, std::size_t>& vertex_global_to_local,
+     LocalMeshData& new_mesh_data);
+    
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
-    // LocalMeshData on this process belongs. We use MPI::distribute to
-    // redistribute all cells (the global vertex indices of all cells).
-    static void
+    // LocalMeshData on this process belongs) and sends the cells
+    // to the appropriate owning process. Ghost cells are also sent,
+    // along with the list of sharing processes.
+    // A new LocalMeshData object is populated with the redistributed
+    // cells. Return the number of non-ghost cells on this process.
+    static unsigned int 
       distribute_cells(const MPI_Comm mpi_comm,
-                       const LocalMeshData& data,
-                       const std::vector<std::size_t>& cell_partition,
-                       std::vector<std::size_t>& cell_local_to_global_indices,
-                       boost::multi_array<std::size_t, 2>& cell_local_vertices);
+        const LocalMeshData& data,
+        const std::vector<std::size_t>& cell_partition,
+        const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+        std::map<unsigned int, std::set<unsigned int> >& shared_cells,
+        LocalMeshData& new_mesh_data);
 
-    // Distribute vertices
+    // Utility to convert received_vertex_indices into
+    // vertex sharing information
+    static void build_shared_vertices(MPI_Comm mpi_comm,
+     std::map<unsigned int, std::set<unsigned int> >& shared_vertices,
+     const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+     const std::vector<std::vector<std::size_t> >& received_vertex_indices);
+
+    // Distribute vertices and vertex sharing information,
+    // returning the number of vertices which are not ghosted.
     static void
       distribute_vertices(const MPI_Comm mpi_comm,
-                          const LocalMeshData& data,
-            const boost::multi_array<std::size_t, 2>& cell_local_vertices,
-            std::vector<std::size_t>& vertex_local_to_global_indices,
-            std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-            boost::multi_array<double, 2>& vertex_coordinates);
+        const LocalMeshData& mesh_data,
+        LocalMeshData& new_mesh_data,
+        std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+        std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local);
+
+    // Work out the mapping from global index to local index for the set of
+    // vertices which are on this process
+    static std::size_t compute_vertex_mapping(MPI_Comm mpi_comm, 
+                  unsigned int num_regular_cells,
+                  LocalMeshData& new_mesh_data,
+                  std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
     // Build mesh
-    static void
-      build_mesh(Mesh& mesh,
-                 const std::vector<std::size_t>& global_cell_indices,
-                 const boost::multi_array<std::size_t, 2>& cell_vertices,
-                 const std::vector<std::size_t>& vertex_indices,
-                 const boost::multi_array<double, 2>& vertex_coordinates,
-                 const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-                 std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
-                 std::size_t num_global_vertices);
-
+    static void build_mesh(Mesh& mesh,
+      const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+      const LocalMeshData& new_mesh_data);
+            
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh,
-                                   const LocalMeshData& local_data);
+      const LocalMeshData& local_data);
 
     // Create and attach distributed MeshDomains from local_data
     // [entry, (cell_index, local_index, value)]
@@ -166,13 +205,6 @@ namespace dolfin
 
     // Initialise global entity numbering
     DistributedMeshTools::number_entities(mesh, dim);
-
-    if (dim == 0)
-    {
-      // MeshPartitioning::build_mesh_value_collection needs updating
-      // for vertices
-      dolfin_not_implemented();
-    }
 
     // Get mesh value collection used for marking
     MeshValueCollection& markers = mesh_values;

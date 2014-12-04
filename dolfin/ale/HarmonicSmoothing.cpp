@@ -131,7 +131,7 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   A.ident(num_boundary_dofs, boundary_dofs.data());
   A.apply("insert");
 
-  // Arrays for storing dirichlet condition and solution
+  // Arrays for storing Dirichlet condition and solution
   std::vector<double> boundary_values(num_boundary_dofs);
   std::vector<double> displacement;
   displacement.reserve(d*num_vertices);

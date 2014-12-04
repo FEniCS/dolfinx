@@ -387,8 +387,10 @@ namespace dolfin
         }
       }
       ufc_cell.entity_indices[tdim].resize(1);
-
-      ufc_cell.entity_indices[tdim][0] = index();
+      if (topology.have_global_indices(tdim))
+        ufc_cell.entity_indices[tdim][0] = global_index();
+      else
+        ufc_cell.entity_indices[tdim][0] = index();
 
       // FIXME: Using the local cell index is inconsistent with UFC, but
       //        necessary to make DOLFIN run

@@ -119,7 +119,7 @@ namespace dolfin
     /// Resize matrix to M x N
     virtual void resize(std::size_t M, std::size_t N);
 
-    /// Intialixe vector z to be compatible with the matrix-vector product
+    /// Initialise vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
@@ -170,8 +170,12 @@ namespace dolfin
                         const std::vector<std::size_t>& columns,
                         const std::vector<double>& values);
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows)
+    { zero(m, rows); }
 
     /// Set given rows to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
@@ -198,7 +202,7 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
-    /// Return pointers to underlying compresssed storage data
+    /// Return pointers to underlying compressed storage data
     /// See GenericMatrix for documentation.
     virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
       const double*, int> data() const;
@@ -447,7 +451,7 @@ namespace dolfin
     const std::size_t M = _matA.size1();
     dolfin_assert(M == _matA.size2());
 
-    // Create indentity matrix
+    // Create identity matrix
     Mat X(M, M);
     X.assign(ublas::identity_matrix<double>(M));
 

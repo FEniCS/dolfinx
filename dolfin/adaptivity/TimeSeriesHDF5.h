@@ -50,6 +50,8 @@ namespace dolfin
     /// Create empty time series
     ///
     /// *Arguments*
+    ///     mpi_comm (MPI_Comm)
+    ///         An MPI communicator
     ///     name (std::string)
     ///         The time series name
     TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name);

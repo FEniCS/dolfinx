@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-01
-// Last changed: 2013-02-21
+// Last changed: 2014-11-24
 
 %ignore dolfin::GenericFile::operator>> (std::vector<int>& x);
 %ignore dolfin::GenericFile::operator>> (std::vector<std::size_t>& x);
@@ -37,3 +37,7 @@
 %ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<int> >& array_map);
 %ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<std::size_t> >& array_map);
 %ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<double> >& array_map);
+
+%ignore dolfin::HDF5Attribute::get;
+%ignore dolfin::HDF5Attribute::set;
+

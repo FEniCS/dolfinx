@@ -81,6 +81,11 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------
+// Ignores for MultiMesh
+//-----------------------------------------------------------------------------
+%ignore dolfin::MultiMesh::plot;
+
+//-----------------------------------------------------------------------------
 // Rename methods which get called by a re-implemented method from the
 // Python layer
 //-----------------------------------------------------------------------------
@@ -164,7 +169,7 @@ def __iter__(self):
     self.first = True
     return self
 
-def next(self):
+def __next__(self):
     self.first = self.first if hasattr(self,"first") else True
     if not self.first:
         self._increment()
@@ -173,6 +178,10 @@ def next(self):
         raise StopIteration
     self.first = False
     return self._dereference()
+
+# Py2/Py3
+next = __next__
+
 %}
 
 }
@@ -222,13 +231,24 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %}
 }
 
-#endif // End ifdef for MESHMODULE
+// Exclude from ifdef as it is used by other modules
+%define FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(TYPE, TYPENAME)
 
-%define FORWARD_DECLARE_MESHFUNCTIONS(TYPE, TYPENAME)
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<TYPE> >)
 %template (HierarchicalMeshFunction ## TYPENAME) \
     dolfin::Hierarchical<dolfin::MeshFunction<TYPE> >;
 
+%enddef
+
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(unsigned int, UInt)
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(int, Int)
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(double, Double)
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(bool, Bool)
+FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(std::size_t, Sizet)
+
+#endif // End ifdef for MESHMODULE
+
+%define FORWARD_DECLARE_MESHFUNCTIONS(TYPE, TYPENAME)
 
 // Forward declaration of template
 %template() dolfin::MeshFunction<TYPE>;
@@ -275,7 +295,6 @@ FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
 FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 
-// Exclude from ifdef as it is used by other modules
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
 
 //-----------------------------------------------------------------------------

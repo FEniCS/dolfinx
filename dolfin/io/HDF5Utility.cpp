@@ -364,25 +364,33 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
     = mesh.topology().shared_entities(0);
 
   // My process rank
-  const unsigned int my_rank = MPI::rank(mpi_comm);
+  const unsigned int mpi_rank = MPI::rank(mpi_comm);
 
   // Number of processes
   const unsigned int num_processes = MPI::size(mpi_comm);
 
-  // Build list of vertex data to send. Only send shared vertex if I'm the
-  // lowest rank process
-  std::vector<bool> vertex_sender(mesh.num_vertices(), true);
-  std::map<unsigned int, std::set<unsigned int> >::const_iterator it;
-  for (it = shared_vertices.begin(); it != shared_vertices.end(); ++it)
+  const std::size_t tdim = mesh.topology().dim();
+  std::set<unsigned int> non_local_vertices;
+  if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
   {
-    // Check if vertex is shared
-    if (!it->second.empty())
+    // No ghost cells - exclude shared entities which are on lower rank processes
+    for (auto sh = shared_vertices.begin(); sh != shared_vertices.end(); ++sh)
     {
-      // Check if I am the lowest rank owner
-      const std::size_t sharing_min_rank
-        = *std::min_element(it->second.begin(), it->second.end());
-      if (my_rank > sharing_min_rank)
-        vertex_sender[it->first] = false;
+      const unsigned int lowest_proc = *(sh->second.begin());
+      if (lowest_proc < mpi_rank)
+        non_local_vertices.insert(sh->first);
+    }
+  }
+  else
+  {
+    // Iterate through ghost cells, adding non-ghost vertices which are 
+    // in lower rank process cells to a set for exclusion from output
+    for (CellIterator c(mesh, "ghost"); !c.end(); ++c)
+    {
+      const unsigned int cell_owner = c->owner();
+      for (VertexIterator v(*c); !v.end(); ++v)
+        if (!v->is_ghost() && cell_owner < mpi_rank)
+          non_local_vertices.insert(v->index());
     }
   }
 
@@ -405,7 +413,7 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const std::size_t vidx = v->index();
-    if (vertex_sender[vidx])
+    if (non_local_vertices.find(vidx) == non_local_vertices.end())
     {
       std::size_t owner = MPI::index_owner(mpi_comm, v->global_index(), N);
       send_buffer_index[owner].push_back(v->global_index());

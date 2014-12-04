@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2014-05-20
+// Last changed: 2014-11-24
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -565,6 +565,23 @@ const std::vector<TYPE>&  ARG_NAME
 }
 
 //-----------------------------------------------------------------------------
+// Out typemap for std::vector<std::pair<std:string, std:string>
+//-----------------------------------------------------------------------------
+%typemap(out) std::vector< std::string >
+   (std::vector< std::string >::const_iterator it,
+    PyObject* tmp_Py_str, Py_ssize_t ind)
+{
+  // std::vector<std::pair<std:string, std:string> >
+  $result = PyList_New((&$1)->size());
+  ind = 0;
+  for (it = (&$1)->begin(); it !=(&$1)->end(); ++it)
+  {
+    tmp_Py_str = PyString_FromString(it->c_str());
+    PyList_SetItem($result, ind++, tmp_Py_str);
+  }
+}
+
+//-----------------------------------------------------------------------------
 // Run the different macros and instantiate the typemaps
 //-----------------------------------------------------------------------------
 // NOTE: SWIG BUG
@@ -583,12 +600,14 @@ TYPEMAPS_STD_VECTOR_OF_POINTERS(Parameters)
 
 #if (DOLFIN_SIZE_T==4)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, cells, NPY_UINTP)
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, columns, NPY_INTP)
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, dofs, NPY_INTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, columns, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, dofs, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, local_to_global_map, NPY_UINTP)
 #else
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, cells, NPY_UINTP)
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, columns, NPY_INTP)
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, dofs, NPY_INTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, columns, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, dofs, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, local_to_global_map, NPY_UINTP)
 #endif
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE)
 

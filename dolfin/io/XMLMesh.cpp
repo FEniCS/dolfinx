@@ -461,7 +461,7 @@ void XMLMesh::write_data(const Mesh& mesh, const MeshData& data,
       std::string name = it->first;
       const std::vector<std::size_t>& array = it->second;
 
-      // Check data lenght
+      // Check data length
       if (array.size() != mesh.num_entities(dim))
       {
         dolfin_error("XMLMesh.cpp",

@@ -99,8 +99,12 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
           = dofmaps[i]->local_to_global_unowned();
         tensor_layout->local_to_global_map[i].resize(local_size
                                                   + bs*local_to_global_unowned.size());
-        for (std::size_t j = 0; j < tensor_layout->local_to_global_map[i].size(); ++j)
-          tensor_layout->local_to_global_map[i][j] = dofmaps[i]->local_to_global_index(j);
+        for (std::size_t j = 0;
+             j < tensor_layout->local_to_global_map[i].size(); ++j)
+        {
+          tensor_layout->local_to_global_map[i][j]
+            = dofmaps[i]->local_to_global_index(j);
+        }
       }
     }
 
@@ -113,6 +117,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
                                 a.ufc_form()->has_cell_integrals(),
                                 a.ufc_form()->has_interior_facet_integrals(),
                                 a.ufc_form()->has_exterior_facet_integrals(),
+                                a.ufc_form()->has_point_integrals(),
                                 keep_diagonal);
     }
     t0.stop();
@@ -198,9 +203,11 @@ void AssemblerBase::check(const Form& a)
     }
 
     // unique_ptr deletes its object when it exits its scope
-    std::unique_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
+    std::unique_ptr<ufc::finite_element>
+      fe(a.ufc_form()->create_finite_element(i + a.rank()));
 
-    // Checks out-commented since they only work for Functions, not Expressions
+    // Checks out-commented since they only work for Functions, not
+    // Expressions
     const std::size_t r = coefficients[i]->value_rank();
     const std::size_t fe_r = fe->value_rank();
     if (fe_r != r)
@@ -228,21 +235,25 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   // Check that the cell dimension matches the mesh dimension
   if (a.rank() + a.ufc_form()->num_coefficients() > 0)
   {
-    std::unique_ptr<ufc::finite_element> element(a.ufc_form()->create_finite_element(0));
+    std::unique_ptr<ufc::finite_element>
+      element(a.ufc_form()->create_finite_element(0));
     dolfin_assert(element);
-    if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
+    if (mesh.type().cell_type() == CellType::interval && element->cell_shape()
+        != ufc::interval)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (intervals) does not match cell type of form");
     }
-    if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
+    if (mesh.type().cell_type() == CellType::triangle && element->cell_shape()
+        != ufc::triangle)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (triangles) does not match cell type of form");
     }
-    if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
+    if (mesh.type().cell_type() == CellType::tetrahedron
+        && element->cell_shape() != ufc::tetrahedron)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",

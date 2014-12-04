@@ -18,6 +18,7 @@
 # First added:  2008-10-17
 # Last changed: 2012-11-12
 
+from __future__ import print_function
 from dolfin import *
 
 # Create mesh
@@ -85,8 +86,8 @@ for i in range(100):
 
     # Print value of functional
     jval = assemble(J)
-    print "J = ", jval
-    print u.vector().max()
+    print("J = ", jval)
+    print(u.vector().max())
 
 # Plot solution and parameter
 plot(u,  title="Solution",  rescale=True)

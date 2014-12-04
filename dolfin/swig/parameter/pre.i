@@ -73,11 +73,21 @@
     PyErr_SetString(PyExc_ValueError,"expected a list with length > 0");
     return NULL;
   }
-  for (i = 0; i < list_length; i++) {
+  for (i = 0; i < list_length; i++) 
+  {
     PyObject *o = PyList_GetItem($input,i);
-    if (PyString_Check(o)) {
-      tmp.insert(std::string(PyString_AsString(o)));
-    } else {
+%#if PY_VERSION_HEX>=0x03000000
+    if (PyUnicode_Check(o)) 
+%#else  
+    if (PyString_Check(o))
+%#endif
+    {
+      char* str_o = SWIG_Python_str_AsChar(o);
+      tmp.insert(std::string(str_o));
+      SWIG_Python_str_DelForPy3(str_o);
+    } 
+    else 
+    {
       PyErr_SetString(PyExc_TypeError,"provide a list of strings");
       return NULL;
     }

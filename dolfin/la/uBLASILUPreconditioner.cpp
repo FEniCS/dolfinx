@@ -153,7 +153,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
 //-----------------------------------------------------------------------------
 void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
 {
-  // Get uderlying uBLAS matrices and vectors
+  // Get underlying uBLAS matrices and vectors
   ublas_vector& _x = x.vec();
   const ublas_vector& _b = b.vec();
   const ublas_sparse_matrix & _matM = M.mat();
@@ -165,7 +165,7 @@ void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
   // Solve in-place
   _x.assign(_b);
 
-  // Perform substutions for compressed row storage. This is the fastest.
+  // Perform substitutions for compressed row storage. This is the fastest.
   const std::size_t size = _matM.size1();
   for(std::size_t i =0; i < size; ++i)
   {

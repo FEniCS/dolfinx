@@ -19,13 +19,19 @@
 // First Added: 2013-01-02
 // Last Changed: 2013-01-17
 
+#ifndef __PARALLEL_REFINEMENT3D_H
+#define __PARALLEL_REFINEMENT3D_H
+
+#include <utility>
+#include <vector>
 
 namespace dolfin
 {
-  class Mesh;
-  class Edge;
   class Cell;
+  class Edge;
+  class Mesh;
   class ParallelRefinement;
+  template<typename T> class MeshFunction;
 
   /// Simple class to perform uniform refinement in 3D in parallel
 
@@ -53,3 +59,5 @@ namespace dolfin
    };
 
 }
+
+#endif

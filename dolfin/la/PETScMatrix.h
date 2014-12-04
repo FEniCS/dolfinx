@@ -106,7 +106,7 @@ namespace dolfin
     /// Return copy of matrix
     virtual std::shared_ptr<GenericMatrix> copy() const;
 
-    /// Intialize vector z to be compatible with the matrix-vector product
+    /// Initialize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
@@ -155,8 +155,11 @@ namespace dolfin
                         const std::vector<std::size_t>& columns,
                         const std::vector<double>& values);
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows);
 
     /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);

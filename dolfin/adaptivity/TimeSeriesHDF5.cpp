@@ -25,6 +25,7 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/HDF5Interface.h>
@@ -89,6 +90,9 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
 {
   // Set default parameters
   parameters = default_parameters();
+
+  // In case MPI is not already initialised
+  SubSystemsManager::init_mpi();
 
   if (File::exists(_name))
   {
@@ -183,6 +187,13 @@ void TimeSeriesHDF5::store(const Mesh& mesh, double t)
 void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
                               bool interpolate) const
 {
+  if (!File::exists(_name))
+  {
+    dolfin_error("TimeSeriesHDF5.cpp",
+                 "open file to retrieve series",
+                 "File does not exist");
+  }
+
   HDF5File hdf5_file(MPI_COMM_WORLD, _name, "r");
 
   // Interpolate value
@@ -249,6 +260,14 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
 //-----------------------------------------------------------------------------
 void TimeSeriesHDF5::retrieve(Mesh& mesh, double t) const
 {
+
+  if (!File::exists(_name))
+  {
+    dolfin_error("TimeSeriesHDF5.cpp",
+                 "open file to retrieve series",
+                 "File does not exist");
+  }
+
   // Get index closest to given time
   const std::size_t index = find_closest_index(t, _mesh_times, _name, "mesh");
 
@@ -353,7 +372,7 @@ TimeSeriesHDF5::find_closest_pair(double t, const std::vector<double>& times,
   if (times.empty())
   {
     dolfin_error("TimeSeries.cpp",
-                 "to retrieve data from time seris",
+                 "to retrieve data from time series",
                  "No %s stored in time series",
                  type_name.c_str());
   }
@@ -382,7 +401,7 @@ TimeSeriesHDF5::find_closest_pair(double t, const std::vector<double>& times,
                              std::less<double>());
   }
 
-  // Set indexlower and upper bound
+  // Set index lower and upper bound
   std::size_t i0 = 0;
   std::size_t i1 = 0;
   if (lower == times.begin())

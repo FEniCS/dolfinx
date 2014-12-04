@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-03-10
+// Last changed: 2014-10-01
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -76,11 +76,12 @@ namespace dolfin
       pn.add("always_recompute_jacobian", false);
       pn.add("recompute_jacobian_each_solve", false);
       pn.add("relaxation_parameter", 1., 0., 1.);
-      pn.add("relative_tolerance", 1e-10, 1e-20, 1e-3);
+      pn.add("relative_tolerance", 1e-10, 1e-20, 2.);
+      pn.add("absolute_tolerance", 1e-15, 1e-20, 2.);
 
       pn.add("kappa", 0.1, 0.05, 1.0);
       pn.add("eta_0", 1., 1e-15, 1.0);
-      pn.add("max_relative_previous_residual", 1e-1, 1e-5, 1.0);
+      pn.add("max_relative_previous_residual", 1e-1, 1e-5, 1.);
       pn.add("reset_each_step", true);
       pn.add("report", false);
       pn.add("report_vertex", 0, 0, 32767);
@@ -105,7 +106,7 @@ namespace dolfin
 
   private:
 
-    // Convergence critera for simplified Newton solver
+    // Convergence criteria for simplified Newton solver
     enum convergence_criteria_t
     {
 
@@ -120,7 +121,7 @@ namespace dolfin
     void _lu_factorize(std::vector<double>& A);
 
     // Forward backward substitution, assume that mat is already
-    // inplace LU factorized
+    // in place LU factorized
     void _forward_backward_subst(const std::vector<double>& A,
 				 const std::vector<double>& b,
 				 std::vector<double>& x) const;
@@ -140,7 +141,7 @@ namespace dolfin
     // test functions
     void _check_forms();
 
-    // Build map between vertices, cells and the correspondning local
+    // Build map between vertices, cells and the corresponding local
     // vertex and initialize UFC data for each form
     void _init();
 

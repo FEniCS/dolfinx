@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-03-05
+// Last changed: 2014-10-13
 
 #include <sstream>
 #include <memory>
@@ -124,7 +124,7 @@ bool MultiStageScheme::implicit(unsigned int stage) const
   if (stage >= _stage_forms.size())
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "quering if stage is implicit",
+		 "querying if stage is implicit",
 		 "Expecting a stage less than the number of total stages in "
 		 "the scheme.");
   }
@@ -143,7 +143,7 @@ int MultiStageScheme::jacobian_index(unsigned int stage) const
   if (stage >= _jacobian_indices.size())
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "quering for jacobian index",
+		 "querying for jacobian index",
 		 "Expecting a stage less than the number of total stages in "
 		 "the scheme.");
   }
@@ -163,7 +163,7 @@ std::string MultiStageScheme::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void MultiStageScheme::_check_arguments()
 {
-  // Check number of stage sollutions is same as number of stage forms
+  // Check number of stage solutions is same as number of stage forms
   if (_stage_solutions.size()!=_stage_forms.size())
   {
     dolfin_error("MultiStageScheme.cpp",
@@ -183,7 +183,8 @@ void MultiStageScheme::_check_arguments()
   */
   
   // Check solution is in the same space as the last stage solution
-  if (!_u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space()))
+  if (!(_stage_solutions.size()==0 || \
+        _u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space())))
   {
     dolfin_error("MultiStageScheme.cpp",
 		 "construct MultiStageScheme",

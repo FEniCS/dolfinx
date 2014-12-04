@@ -124,7 +124,7 @@ namespace dolfin
                      const dolfin::la_index* cols)
     { dolfin_not_implemented(); }
 
-    /// Set block of values using local indies
+    /// Set block of values using local indices
     virtual void set_local(const double* block, std::size_t m,
                            const dolfin::la_index* rows, std::size_t n,
                            const dolfin::la_index* cols)
@@ -159,9 +159,13 @@ namespace dolfin
                         const std::vector<double>& values)
     { dolfin_not_implemented(); }
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows)
     { dolfin_not_implemented(); }
+
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows)
+    { zero(m, rows); }
 
     /// Set given rows to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);

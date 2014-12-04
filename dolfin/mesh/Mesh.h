@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-06-27
+// Last changed: 2014-08-11
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -49,7 +49,6 @@ namespace dolfin
 {
   class BoundaryMesh;
   class CellType;
-  class CSGGeometry;
   class Expression;
   class GenericFunction;
   class LocalMeshData;
@@ -133,25 +132,6 @@ namespace dolfin
     ///     local_mesh_data (_LocalMeshData_)
     ///         Data from which to build the mesh.
     Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data);
-
-    /// Create mesh defined by Constructive Solid Geometry (CSG)
-    ///
-    /// *Arguments*
-    ///     geometry (_CSGGeometry_)
-    ///         The CSG geometry
-    ///     resolution (std::size_t)
-    ///         An integer specifying the mesh resolution
-    Mesh(const CSGGeometry& geometry, std::size_t resolution);
-
-    /// Create mesh defined by Constructive Solid Geometry (CSG)
-    ///
-    /// *Arguments*
-    ///     geometry (_CSGGeometry_)
-    ///         The CSG geometry
-    ///     resolution (std::size_t)
-    ///         An integer specifying the mesh resolution
-    Mesh(std::shared_ptr<const CSGGeometry> geometry,
-         std::size_t resolution);
 
     /// Destructor.
     ~Mesh();
@@ -547,7 +527,7 @@ namespace dolfin
     /// *Arguments*
     ///     coloring_type (std::vector<std::size_t>)
     ///         Coloring type given as list of topological dimensions,
-    ///         specifying what relation makes two mesh entinties neighbors.
+    ///         specifying what relation makes two mesh entities neighbors.
     ///
     /// *Returns*
     ///     std::vector<std::size_t>

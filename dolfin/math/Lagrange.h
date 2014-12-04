@@ -37,7 +37,7 @@ namespace dolfin
   ///   p.set(0, 0.0);
   ///   p.set(1, 1.0);
   ///
-  /// It is the callers reponsibility that the points are distinct.
+  /// It is the callers responsibility that the points are distinct.
   ///
   /// This creates a Lagrange polynomial (actually two Lagrange
   /// polynomials):

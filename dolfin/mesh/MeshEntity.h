@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2013-06-23
+// Last changed: 2014-07-02
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -71,7 +71,7 @@ namespace dolfin
     ///         The index.
     void init(const Mesh& mesh, std::size_t dim, std::size_t index);
 
-    /// Comparision Operator
+    /// Comparison Operator
     ///
     /// *Arguments*
     ///     another (_MeshEntity_)
@@ -86,7 +86,7 @@ namespace dolfin
               && _local_index == e._local_index);
     }
 
-    /// Comparision Operator
+    /// Comparison Operator
     ///
     /// *Arguments*
     ///     another (MeshEntity)
@@ -160,7 +160,7 @@ namespace dolfin
     std::size_t num_global_entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim).size_global(_local_index); }
 
-    /// Return array of indices for incident mesh entitites of given
+    /// Return array of indices for incident mesh entities of given
     /// topological dimension
     ///
     /// *Arguments*
@@ -211,6 +211,38 @@ namespace dolfin
     ///         The midpoint of the cell.
     Point midpoint() const;
 
+    /// Determine whether an entity is a 'ghost' from another
+    /// process
+    bool is_ghost() const
+    { return (_local_index >= _mesh->topology().ghost_offset(_dim)); }
+
+    /// Return set of sharing processes
+    std::set<unsigned int> sharing_processes() const
+    {
+      const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+        = _mesh->topology().shared_entities(_dim);
+      const auto map_it = sharing_map.find(_local_index);
+      if (map_it == sharing_map.end())
+        return std::set<unsigned int>();
+      else
+        return map_it->second;
+    }
+
+    /// Determine if an entity is shared or not    
+    bool is_shared() const
+    {
+      if (_mesh->topology().have_shared_entities(_dim))
+      {
+        const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+          = _mesh->topology().shared_entities(_dim);
+        return (sharing_map.find(_local_index) != sharing_map.end());
+      }
+      return false;
+    }
+
+    /// Get ownership of this entity - only really valid for cells
+    unsigned int owner() const;
+    
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)
     ///

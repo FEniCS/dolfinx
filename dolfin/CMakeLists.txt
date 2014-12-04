@@ -148,23 +148,6 @@ if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PARMETIS_LIBRARIES})
 endif()
 
-# CGAL
-if (DOLFIN_ENABLE_CGAL AND CGAL_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_CGAL")
-  list(APPEND DOLFIN_CXX_DEFINITIONS "${CGAL_DEFINITIONS}")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${CGAL_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CGAL_LIBRARIES})
-
-  # Add necessary CGAL flags (usually related to floating point)
-  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CGAL_CXX_FLAGS_INIT}")
-
-  # Add options that will allow valgrind to run
-  if (CGAL_DISABLE_ROUNDING_MATH_CHECK)
-    list(APPEND DOLFIN_CXX_DEFINITIONS "-DCGAL_DISABLE_ROUNDING_MATH_CHECK")
-  endif()
-
-endif()
-
 # ZLIB
 if (DOLFIN_ENABLE_ZLIB AND ZLIB_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_ZLIB")
@@ -318,6 +301,19 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
     message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
   endif()
 
+  # Add numpy defines to DOLFIN_PYTHON_DEFINITIONS
+  if (NUMPY_FOUND)
+
+    # Set numpy version define
+    set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS};-DNUMPY_VERSION_MAJOR=${NUMPY_VERSION_MAJOR};-DNUMPY_VERSION_MINOR=${NUMPY_VERSION_MINOR};-DNUMPY_VERSION_MICRO=${NUMPY_VERSION_MICRO})
+
+    # Only set define for none depricated API for NUMPY version 1.7 and larger
+    if(NUMPY_VERSION VERSION_GREATER 1.6.2)
+      set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS} -DNPY_NO_DEPRECATED_API=NPY_${NUMPY_VERSION_MAJOR}_${NUMPY_VERSION_MINOR}_API_VERSION)
+    endif()
+
+  endif()
+
   # If suitble UFC SWIG extension is found, add SWIG subdirectory
   if (NOT UFC_MODULE_NOT_FOUND AND ("${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
     add_subdirectory(swig)
@@ -328,10 +324,14 @@ endif()
 #------------------------------------------------------------------------------
 # Install
 
-install(TARGETS dolfin
+install(TARGETS dolfin EXPORT DOLFINTargets
   RUNTIME DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeExecutables
   LIBRARY DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeLibraries
   ARCHIVE DESTINATION ${DOLFIN_LIB_DIR} COMPONENT Development
+  )
+install(EXPORT DOLFINTargets
+  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
+  COMPONENT Development
   )
 
 #------------------------------------------------------------------------------
@@ -392,9 +392,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
 
-# Export targets
-export(TARGETS dolfin FILE ${CMAKE_BINARY_DIR}/dolfin/DOLFINTargets.cmake)
-
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
@@ -410,7 +407,6 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
 install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
-    ${CMAKE_BINARY_DIR}/dolfin/DOLFINTargets.cmake
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake

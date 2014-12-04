@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-04-09
+// Last changed: 2014-10-14
 
 #include <cmath>
 #include <algorithm>
@@ -45,8 +45,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme) :
   Variable("PointIntegralSolver", "unnamed"), _scheme(scheme),
-  _mesh(_scheme->stage_forms()[0][0]->mesh()),
-  _dofmap(*_scheme->stage_forms()[0][0]->function_space(0)->dofmap()),
+  _mesh(_scheme->last_stage()->mesh()),
+  _dofmap(*_scheme->last_stage()->function_space(0)->dofmap()),
   _system_size(_dofmap.num_entity_dofs(0)),
   _dof_offset(_mesh.type().num_entities(0)),
   _num_stages(_scheme->stage_forms().size()),
@@ -185,7 +185,7 @@ void PointIntegralSolver::step(double dt)
     const ufc::point_integral& integral
       = *_last_stage_ufc->default_point_integral;
 
-    // Update coeffcients for last stage
+    // Update coefficients for last stage
     // TODO: Pass suitable bool vector here to avoid tabulating all
     // coefficient dofs:
     _last_stage_ufc->update(cell, vertex_coordinates, ufc_cell);
@@ -602,6 +602,7 @@ void PointIntegralSolver::_simplified_newton_solve(
   const size_t report_vertex = newton_solver_params["report_vertex"];
   const double kappa = newton_solver_params["kappa"];
   const double rtol = newton_solver_params["relative_tolerance"];
+  const double atol = newton_solver_params["absolute_tolerance"];
   std::size_t max_iterations = newton_solver_params["maximum_iterations"];
   const double max_relative_previous_residual
     = newton_solver_params["max_relative_previous_residual"];
@@ -624,8 +625,8 @@ void PointIntegralSolver::_simplified_newton_solve(
 
   bool newton_solve_restared = false;
   unsigned int newton_iterations = 0;
-  double relative_previous_residual = 1.0, residual, prev_residual = 1.0,
-    initial_residual = 1.0, relative_residual = 1.0;
+  double relative_previous_residual = 0., residual, prev_residual = 1.,
+    initial_residual = 1., relative_residual = 1.;
 
   // Get point integrals
   const ufc::point_integral& F_integral = *loc_ufc_F.default_point_integral;
@@ -662,8 +663,10 @@ void PointIntegralSolver::_simplified_newton_solve(
 
     relative_residual = residual/initial_residual;
 
-    // Check for relative residual convergence
-    if (relative_residual < rtol)
+    // Check for relative residual convergence together with a check for absolute tolerance
+    // The absolute tolerance check is combined a check that the residual is not changing
+    // FIXME: Make the relative_previous_residual check configurable
+    if (relative_residual < rtol || (residual < atol && relative_previous_residual > 0.99))
       break;
 
     // Should we recompute jacobian
@@ -675,7 +678,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     }
 
     // Perform linear solve By forward backward substitution
-    //Timer forward_backward_substitution("Implicit stage: fb substituion");
+    //Timer forward_backward_substitution("Implicit stage: fb substitution");
     _forward_backward_subst(jac, _residual, _dx);
     //forward_backward_substitution.stop();
 
@@ -788,7 +791,7 @@ void PointIntegralSolver::_simplified_newton_solve(
 	     "relative_residual: %.3e, residual: %.3e.", max_iterations, vert_ind,
 	     relative_previous_residual, relative_residual, residual);
       }
-      error("Newton solver in PointIntegralSolver exeeded maximal iterations.");
+      error("Newton solver in PointIntegralSolver exceeded maximal iterations.");
     }
 
     // Update solution

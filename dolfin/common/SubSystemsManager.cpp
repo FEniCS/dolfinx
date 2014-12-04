@@ -124,7 +124,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
         printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
         break;
       default:
-        printf("MPI_Init_thread level = unkown\n");
+        printf("MPI_Init_thread level = unknown\n");
       }
   }
 
@@ -165,13 +165,13 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
     return;
 
   // Initialized MPI (do it here rather than letting PETSc do it to make
-  // sure we MPI is intialized with thread suppport
+  // sure we MPI is initialized with thread support
   init_mpi();
 
   // Get status of MPI before PETSc initialisation
   const bool mpi_init_status = mpi_initialized();
 
-  // Print message if PETSc is intialised with command line arguments
+  // Print message if PETSc is initialised with command line arguments
   if (argc > 1)
     log(TRACE, "Initializing PETSc with given command-line arguments.");
 
@@ -242,7 +242,7 @@ void SubSystemsManager::finalize_mpi()
   if (mpi_initialized && singleton().control_mpi)
   {
     // Check in MPI has already been finalised (possibly incorrectly by a
-    // 3rd party libary). Is it hasn't, finalise as normal.
+    // 3rd party library). If it hasn't, finalise as normal.
     int mpi_finalized;
     MPI_Finalized(&mpi_finalized);
     if (!mpi_finalized)
