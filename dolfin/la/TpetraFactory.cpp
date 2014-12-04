@@ -24,6 +24,7 @@
 
 #include "SparsityPattern.h"
 #include "TpetraVector.h"
+#include "TpetraMatrix.h"
 #include "TpetraFactory.h"
 
 using namespace dolfin;
@@ -34,7 +35,7 @@ TpetraFactory TpetraFactory::factory;
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericMatrix> TpetraFactory::create_matrix() const
 {
-  std::shared_ptr<GenericMatrix> A; //(new TpetraMatrix);
+  std::shared_ptr<GenericMatrix> A(new TpetraMatrix);
   return A;
 }
 //-----------------------------------------------------------------------------
