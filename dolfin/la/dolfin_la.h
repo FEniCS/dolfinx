@@ -29,6 +29,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScLinearOperator.h>
 #include <dolfin/la/PETScPreconditioner.h>
+#include <dolfin/la/TpetraMatrix.h>
 
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>

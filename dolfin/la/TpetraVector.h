@@ -241,6 +241,8 @@ namespace dolfin
     /// Assignment operator
     const TpetraVector& operator= (const TpetraVector& x);
 
+    friend class TpetraMatrix;
+
   private:
 
     // Initialise Tpetra vector

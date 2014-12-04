@@ -168,6 +168,7 @@ std::pair<std::size_t, std::size_t> TpetraVector::local_range() const
 {
   dolfin_assert(!_x.is_null());
   Teuchos::RCP<const map_type> xmap(_x->getMap());
+
   // FIXME: wrong with ghost entries
   return std::make_pair(xmap->getMinGlobalIndex(),
                         xmap->getMaxGlobalIndex());
