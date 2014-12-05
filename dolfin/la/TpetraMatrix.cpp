@@ -103,32 +103,43 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   Teuchos::RCP<const map_type> row_map(new map_type(M, m, 0, _comm));
   Teuchos::RCP<const map_type> col_map(new map_type(N, n, 0, _comm));
 
-  //  typedef Tpetra::CrsGraph<> graph_type;
+  typedef Tpetra::CrsGraph<> graph_type;
   //
   // // Make a Tpetra::CrsGraph of the sparsity_pattern
   // // Get the number of entries on each row
-  // std::vector<std::size_t> num_local_nz;
-  // sparsity_pattern.num_local_nonzeros(num_local_nz);
+  std::vector<std::size_t> num_local_nz;
+  sparsity_pattern.num_local_nonzeros(num_local_nz);
 
-  // const Teuchos::ArrayRCP<const std::size_t> _entries_per_row(num_local_nz.size(), 10);
-  // Teuchos::RCP<graph_type> _graph(new graph_type(row_map, _entries_per_row));
-  // std::pair<std::size_t, std::size_t> range = sparsity_pattern.local_range(0);
-  // std::vector<std::vector<std::size_t> > pattern = sparsity_pattern.off_diagonal_pattern(GenericSparsityPattern::unsorted);
+  const Teuchos::ArrayRCP<const std::size_t> _entries_per_row(num_local_nz.size(), 10);
+  Teuchos::RCP<graph_type> _graph(new graph_type(row_map, _entries_per_row));
+  std::pair<std::size_t, std::size_t> range = sparsity_pattern.local_range(0);
+  std::vector<std::vector<std::size_t> > pattern = sparsity_pattern.diagonal_pattern(GenericSparsityPattern::unsorted);
 
-  // std::vector<global_ordinal_type> indices;
-  // for (std::size_t i = 0; i != range.second - range.first; ++i)
-  // {
-  //   indices.clear();
-  //   std::copy(pattern[i].begin(), pattern[i].end(), indices.begin());
+  for (std::size_t i = 0; i != range.second - range.first; ++i)
+  {
+    std::vector<global_ordinal_type> indices(pattern[i].begin(),
+                                             pattern[i].end());
 
-  //   Teuchos::ArrayView<global_ordinal_type> _indices(indices);
-  //   _graph->insertGlobalIndices(range.first + i, _indices);
-  // }
-  // _graph->fillComplete();
+    Teuchos::ArrayView<global_ordinal_type> _indices(indices);
+     _graph->insertGlobalIndices(range.first + i, _indices);
+  }
 
-  _matA = Teuchos::rcp(new matrix_type(row_map, col_map, 0));
-  //  _matA = Teuchos::rcp(new matrix_type(_graph));
+  pattern = sparsity_pattern.off_diagonal_pattern(GenericSparsityPattern::unsorted);
+  for (std::size_t i = 0; i != range.second - range.first; ++i)
+  {
+    std::vector<global_ordinal_type> indices(pattern[i].begin(),
+                                             pattern[i].end());
 
+    Teuchos::ArrayView<global_ordinal_type> _indices(indices);
+     _graph->insertGlobalIndices(range.first + i, _indices);
+  }
+
+  _graph->fillComplete();
+
+  std::cout << _graph->description() << "\n";
+
+  //  _matA = Teuchos::rcp(new matrix_type(row_map, col_map, 0));
+  _matA = Teuchos::rcp(new matrix_type(_graph));
 }
 //-----------------------------------------------------------------------------
 std::size_t TpetraMatrix::size(std::size_t dim) const
@@ -154,7 +165,19 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
 std::pair<std::size_t, std::size_t> TpetraMatrix::local_range(std::size_t dim) const
 {
   std::cout << "TpetraMatrix::local_range()\n";
-  
+  if (dim == 0)
+  {
+    Teuchos::RCP<const map_type> row_map(_matA->getRowMap());
+    return std::make_pair<std::size_t, std::size_t>
+      (row_map->getMinGlobalIndex(), row_map->getMaxGlobalIndex());
+  }
+  else if (dim == 1)
+  {
+    Teuchos::RCP<const map_type> col_map(_matA->getColMap());
+    return std::make_pair<std::size_t, std::size_t>
+      (col_map->getMinGlobalIndex(), col_map->getMaxGlobalIndex());
+  }
+
   return std::make_pair(0,0);
 }
 //-----------------------------------------------------------------------------
@@ -222,7 +245,7 @@ void TpetraMatrix::set(const double* block,
   for (std::size_t i = 0 ; i != m; ++i)
   {
     Teuchos::ArrayView<const scalar_type> data(block + i*n, n);
-    _matA->insertGlobalValues(rows[i], column_idx, data);
+    _matA->replaceGlobalValues(rows[i], column_idx, data);
   }
 
 }
@@ -241,7 +264,7 @@ void TpetraMatrix::set_local(const double* block,
   for (std::size_t i = 0 ; i != m; ++i)
   {
     Teuchos::ArrayView<const scalar_type> data(block + i*n, n);
-    _matA->insertLocalValues(rows[i], column_idx, data);
+    _matA->replaceLocalValues(rows[i], column_idx, data);
   }
 }
 //-----------------------------------------------------------------------------
@@ -263,7 +286,7 @@ void TpetraMatrix::add(const double* block,
   for (std::size_t i = 0 ; i != m; ++i)
   {
     Teuchos::ArrayView<const scalar_type> data(block + i*n, n);
-    _matA->insertGlobalValues(rows[i], column_idx, data);
+    _matA->sumIntoGlobalValues(rows[i], column_idx, data);
   }
 
 }
@@ -289,7 +312,7 @@ void TpetraMatrix::add_local(const double* block,
   {
     Teuchos::ArrayView<const scalar_type> data(block + i*n, n);
     if (_matA->getRowMap()->isNodeLocalElement(rows[i]))
-      _matA->insertLocalValues(rows[i], column_idx, data);
+      _matA->sumIntoLocalValues(rows[i], column_idx, data);
   }
 
 }
@@ -319,6 +342,13 @@ void TpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   dolfin_assert(!_matA.is_null());
 
   const std::size_t ncols = _matA->getNumEntriesInGlobalRow(row);
+  if (ncols == Tpetra::OrdinalTraits<std::size_t>::invalid())
+  {
+    dolfin_error("TpetraMatrix.cpp",
+                 "get TpetraMatrix row",
+                 "Row %d not in range", row);
+  }
+
   columns.resize(ncols);
   values.resize(ncols);
 
@@ -360,7 +390,7 @@ void TpetraMatrix::setrow(std::size_t row,
   // Tpetra View of values
   Teuchos::ArrayView<const scalar_type> data(values);
 
-  _matA->insertGlobalValues(row, column_idx, data);
+  _matA->replaceGlobalValues(row, column_idx, data);
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::zero(std::size_t m, const dolfin::la_index* rows)
