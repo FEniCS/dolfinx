@@ -178,19 +178,26 @@ bool TpetraVector::owns_index(std::size_t i) const
 {
   dolfin_assert(!_x.is_null());
 
-  // FIXME: inefficient? call to getRemoteIndexList requires communication
-
-  // First check if global index exists on this process
   Teuchos::RCP<const map_type> xmap(_x->getMap());
-  const local_ordinal_type idx = xmap->getLocalElement(i);
-  if (idx == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
-    return false;
+  int mpi_rank = xmap->getComm()->getRank();
 
-  // Second check if this process is the owner
+  // FIXME: inefficient? call to getRemoteIndexList requires communication
   std::vector<int> node_list(local_size());
   Teuchos::ArrayView<int> _node_list(node_list);
   xmap->getRemoteIndexList(xmap->getNodeElementList(), _node_list);
-  return (node_list[idx] == xmap->getComm()->getRank());
+
+  // First check if global index exists on this process
+  // Second check if this process is the owner
+  const local_ordinal_type idx = xmap->getLocalElement(i);
+
+  bool status;
+
+  if (idx == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
+    status = false;
+  else
+    status = (node_list[idx] == mpi_rank);
+
+  return status;
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get(double* block, std::size_t m,

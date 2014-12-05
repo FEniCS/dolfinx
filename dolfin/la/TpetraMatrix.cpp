@@ -103,17 +103,21 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   Teuchos::RCP<const map_type> row_map(new map_type(M, m, 0, _comm));
   Teuchos::RCP<const map_type> col_map(new map_type(N, n, 0, _comm));
 
+  std::cout << "N, n = (" << n << ", " << N << ")\n";
+
   typedef Tpetra::CrsGraph<> graph_type;
-  //
-  // // Make a Tpetra::CrsGraph of the sparsity_pattern
-  // // Get the number of entries on each row
+
+  // Make a Tpetra::CrsGraph of the sparsity_pattern
+  // Get the number of entries on each row
   std::vector<std::size_t> num_local_nz;
   sparsity_pattern.num_local_nonzeros(num_local_nz);
 
-  const Teuchos::ArrayRCP<const std::size_t> _entries_per_row(num_local_nz.size(), 10);
+  const Teuchos::ArrayRCP<const std::size_t>
+    _entries_per_row(num_local_nz.size(), 10);
   Teuchos::RCP<graph_type> _graph(new graph_type(row_map, _entries_per_row));
   std::pair<std::size_t, std::size_t> range = sparsity_pattern.local_range(0);
-  std::vector<std::vector<std::size_t> > pattern = sparsity_pattern.diagonal_pattern(GenericSparsityPattern::unsorted);
+  std::vector<std::vector<std::size_t> > pattern
+    = sparsity_pattern.diagonal_pattern(GenericSparsityPattern::unsorted);
 
   for (std::size_t i = 0; i != range.second - range.first; ++i)
   {
@@ -124,7 +128,8 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
      _graph->insertGlobalIndices(range.first + i, _indices);
   }
 
-  pattern = sparsity_pattern.off_diagonal_pattern(GenericSparsityPattern::unsorted);
+  pattern
+    = sparsity_pattern.off_diagonal_pattern(GenericSparsityPattern::unsorted);
   for (std::size_t i = 0; i != range.second - range.first; ++i)
   {
     std::vector<global_ordinal_type> indices(pattern[i].begin(),
