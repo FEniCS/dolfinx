@@ -1,5 +1,5 @@
 
-from dolfin.multistage.factorize import extract_tested_expressions
+from dolfin.multistage.factorize import extract_tested_expressions, ScalarFactorizer, map_expr_dag
 from ufl import *
 
 def test_scalar_factorizer():
