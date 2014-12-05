@@ -446,7 +446,8 @@ def test_p26_box_1():
     lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
 
     def sigma(v):
-        return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.cell().d)
+        # Note: Changed from v.cell().d to len(v), cell.d is being removed.
+        return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(len(v))
 
     a = inner(sigma(u), sym(grad(v)))*dx
     L = dot(f, v)*dx
