@@ -59,9 +59,8 @@ UseDOLFIN.cmake
 dolfin-config-version.cmake
 
 # Demos and tests
-demo_*
-test_*
 build_demo.*
+test_*_tempdir
 test/unit/mesh/{cpp,python}/*.{xml,m}
 test/unit/parameter/{cpp,python}/*.{xml,xml.gz}
 bench/**/**/cpp/forms/*.h
