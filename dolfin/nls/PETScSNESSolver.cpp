@@ -120,10 +120,6 @@ Parameters PETScSNESSolver::default_parameters()
 PETScSNESSolver::PETScSNESSolver(std::string nls_type) :
   _snes(NULL)
 {
-  _snes_ctx.x = NULL;
-  _snes_ctx.nonlinear_problem = NULL;
-  _snes_ctx.xl = NULL;
-  _snes_ctx.xu = NULL;
 
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
@@ -143,9 +139,6 @@ PETScSNESSolver::~PETScSNESSolver()
 {
   if (_snes)
     SNESDestroy(&_snes);
-
-  if (_snes_ctx.f_tmp)
-    VecDestroy(&_snes_ctx.f_tmp);
 }
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::init(const std::string& method)
