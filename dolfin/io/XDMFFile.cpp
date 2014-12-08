@@ -69,7 +69,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
 
   // HDF5 file restart interval. Use 0 to collect all output in one file.
   parameters.add("multi_file", 0);
-  
+
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -89,7 +89,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Conditions for starting a new HDF5 file
   if ( (mf_interval != 0 and counter%mf_interval == 0) or hdf5_filemode != "w" )
-  { 
+  {
     // Make name for HDF5 file (used to store data)
     boost::filesystem::path p(_filename);
     p.replace_extension(".h5");
@@ -101,7 +101,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       s << std::setw(6) << std::setfill('0') << counter;
       hdf5_filename += "_" + s.str();
     }
-    
+
     // Create new HDF5 file (truncate),
     // closing any open file from a previous timestep
     hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
@@ -615,7 +615,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   hdf5_file->write(meshfunction, h5_mesh_name);
 
   // Saved MeshFunction values are in the /Mesh group
-  const std::string dataset_name =  current_mesh_name + "/values";
+  const std::string dataset_name = h5_mesh_name + "/values";
 
   // Write the XML meta description (see http://www.xdmf.org) on
   // process zero
