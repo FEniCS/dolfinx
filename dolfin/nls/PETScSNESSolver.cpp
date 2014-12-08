@@ -120,10 +120,6 @@ Parameters PETScSNESSolver::default_parameters()
 PETScSNESSolver::PETScSNESSolver(std::string nls_type) :
   _snes(NULL)
 {
-  _snes_ctx.x = NULL;
-  _snes_ctx.nonlinear_problem = NULL;
-  _snes_ctx.xl = NULL;
-  _snes_ctx.xu = NULL;
 
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
@@ -143,9 +139,6 @@ PETScSNESSolver::~PETScSNESSolver()
 {
   if (_snes)
     SNESDestroy(&_snes);
-
-  if (_snes_ctx.f_tmp)
-    VecDestroy(&_snes_ctx.f_tmp);
 }
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::init(const std::string& method)
@@ -357,9 +350,9 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 {
-  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
-  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
-  PETScVector* _x = snes_ctx.x;
+  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
+  NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
+  PETScVector* _x = snes_ctx->x;
 
   // Wrap the PETSc Vec as DOLFIN PETScVector
   PETScVector x_wrap(x);
@@ -384,10 +377,10 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScSNESSolver::FormObjective(SNES snes, Vec x, PetscReal* out, void* ctx)
 {
-  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
-  PETScSNESSolver::FormFunction(snes, x, snes_ctx.f_tmp, ctx);
+  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
+  PETScSNESSolver::FormFunction(snes, x, snes_ctx->f_tmp, ctx);
   PetscReal f_norm;
-  VecNorm(snes_ctx.f_tmp, NORM_2, &f_norm);
+  VecNorm(snes_ctx->f_tmp, NORM_2, &f_norm);
 
   if (std::isnan(f_norm) || std::isinf(f_norm))
     *out = 1.0e100;
@@ -411,8 +404,8 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
   }
 
   // Get nonlinear problem object
-  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
-  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
+  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
+  NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
 
   // Wrap the PETSc objects
   PETScMatrix A_wrap(*P);
@@ -442,8 +435,8 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
   }
 
   // Get nonlinear problem object
-  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
-  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
+  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
+  NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
 
   // Wrap the PETSc objects
   PETScMatrix A_wrap(P);
