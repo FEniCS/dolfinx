@@ -386,9 +386,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // ---------- Markers
     for (std::size_t d = 0; d <= mesh.domains().max_dim(); d++)
     {
-      if (mesh.domains().markers(d).empty())
-        continue;
-
       const std::map<std::size_t, std::size_t>& domain = mesh.domains().markers(d);
 
       MeshValueCollection<std::size_t> collection(mesh, d);
@@ -1137,13 +1134,18 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
 
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
                                                    data_values.size()));
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
-  write_data(name + "/values", data_values, global_size, mpi_io);
-  write_data(name + "/entities", entities, global_size, mpi_io);
-  write_data(name + "/cells", cells, global_size, mpi_io);
 
-  HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
-                               mesh_values.dim());
+  // Only write if the global size is larger than 0
+  if (global_size[0] > 0)
+  {
+    const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+    write_data(name + "/values", data_values, global_size, mpi_io);
+    write_data(name + "/entities", entities, global_size, mpi_io);
+    write_data(name + "/cells", cells, global_size, mpi_io);
+
+    HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
+                                 mesh_values.dim());
+  }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
