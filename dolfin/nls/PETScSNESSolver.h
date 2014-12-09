@@ -110,6 +110,23 @@ namespace dolfin
   private:
     struct snes_ctx_t
     {
+      // Constructor
+      snes_ctx_t()
+      {
+        x = NULL;
+        nonlinear_problem = NULL;
+        xl = NULL;
+        xu = NULL;
+        f_tmp = NULL;
+      } 
+
+      // Destructor
+      ~snes_ctx_t()
+      {
+        if (f_tmp)
+          VecDestroy(&f_tmp);
+      }
+      
       NonlinearProblem* nonlinear_problem;
       PETScVector* x;
       Vec f_tmp;
