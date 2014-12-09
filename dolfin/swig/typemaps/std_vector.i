@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2014-05-20
+// Last changed: 2014-11-24
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -561,6 +561,23 @@ const std::vector<TYPE>&  ARG_NAME
   {
     tuple = Py_BuildValue("ss", it->first.c_str(), it->second.c_str());
     PyList_SetItem($result, ind++, tuple);
+  }
+}
+
+//-----------------------------------------------------------------------------
+// Out typemap for std::vector<std::pair<std:string, std:string>
+//-----------------------------------------------------------------------------
+%typemap(out) std::vector< std::string >
+   (std::vector< std::string >::const_iterator it,
+    PyObject* tmp_Py_str, Py_ssize_t ind)
+{
+  // std::vector<std::pair<std:string, std:string> >
+  $result = PyList_New((&$1)->size());
+  ind = 0;
+  for (it = (&$1)->begin(); it !=(&$1)->end(); ++it)
+  {
+    tmp_Py_str = PyString_FromString(it->c_str());
+    PyList_SetItem($result, ind++, tmp_Py_str);
   }
 }
 
