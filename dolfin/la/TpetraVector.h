@@ -241,6 +241,11 @@ namespace dolfin
     /// Assignment operator
     const TpetraVector& operator= (const TpetraVector& x);
 
+    /// output map
+
+    static void mapdump(Teuchos::RCP<const map_type> xmap,
+                        const std::string desc);
+
     friend class TpetraMatrix;
 
   private:
