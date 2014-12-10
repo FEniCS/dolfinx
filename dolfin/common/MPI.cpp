@@ -20,6 +20,7 @@
 // Modified by Ola Skavhaug 2008-2009
 // Modified by Niclas Jansson 2009
 // Modified by Joachim B Haga 2012
+// Modified by Martin Sandve Alnes 2014
 
 #include <numeric>
 #include <dolfin/log/dolfin_log.h>
@@ -46,38 +47,6 @@ MPI_Info& dolfin::MPIInfo::operator*()
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::process_number()
-{
-  deprecation("MPI::process_number",
-              "1.4", "1.5",
-              "MPI::process_number() has been replaced by MPI::rank(MPI_Comm).");
-
-#ifdef HAS_MPI
-  SubSystemsManager::init_mpi();
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  return rank;
-#else
-  return 0;
-#endif
-}
-//-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::num_processes()
-{
-  deprecation("MPI::num_processes",
-              "1.4", "1.5",
-              "MPI::num_processes() has been replaced by MPI::size(MPI_Comm).");
-
-#ifdef HAS_MPI
-  SubSystemsManager::init_mpi();
-  int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  return size;
-#else
-  return 1;
-#endif
-}
 //-----------------------------------------------------------------------------
 unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 {
