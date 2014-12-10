@@ -43,6 +43,7 @@ typedef Tpetra::Vector<>::node_type node_type;
 typedef Tpetra::Map<> map_type;
 typedef Tpetra::Vector<> vector_type;
 typedef Tpetra::CrsMatrix<> matrix_type;
+typedef Tpetra::CrsGraph<> graph_type;
 
 namespace dolfin
 {
@@ -203,6 +204,13 @@ namespace dolfin
 
     /// Assignment operator
     const TpetraMatrix& operator= (const TpetraMatrix& A);
+
+    Teuchos::RCP<matrix_type> mat()
+    {
+      return _matA;
+    }
+
+    static void graphdump(const Teuchos::RCP<graph_type> graph);
 
   private:
 

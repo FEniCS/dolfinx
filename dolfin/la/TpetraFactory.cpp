@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2006 Ola Skavhaug
+// Copyright (C) 2014
 //
 // This file is part of DOLFIN.
 //
@@ -15,10 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2009-2012
-//
-// First added:  2007-12-06
-// Last changed: 2012-08-21
+// First added:  2014-12-06
 
 #ifdef HAS_TRILINOS
 

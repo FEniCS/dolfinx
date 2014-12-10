@@ -19,6 +19,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include<cstdio>
+
 #include <cmath>
 #include <numeric>
 #include <dolfin/common/Timer.h>
@@ -151,16 +153,20 @@ void TpetraVector::init(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 bool TpetraVector::empty() const
 {
-  return (_x.is_null() or size() == 0);
+  return (size() == 0);
 }
 //-----------------------------------------------------------------------------
 std::size_t TpetraVector::size() const
 {
-  return _x->getGlobalLength();
+  if (_x.is_null())
+    return 0;
+  return (_x->getMap()->getMaxAllGlobalIndex() + 1);
 }
 //-----------------------------------------------------------------------------
 std::size_t TpetraVector::local_size() const
 {
+  if (_x.is_null())
+    return 0;
   return _x->getLocalLength();
 }
 //-----------------------------------------------------------------------------
@@ -178,19 +184,26 @@ bool TpetraVector::owns_index(std::size_t i) const
 {
   dolfin_assert(!_x.is_null());
 
-  // FIXME: inefficient? call to getRemoteIndexList requires communication
-
-  // First check if global index exists on this process
   Teuchos::RCP<const map_type> xmap(_x->getMap());
-  const local_ordinal_type idx = xmap->getLocalElement(i);
-  if (idx == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
-    return false;
+  int mpi_rank = xmap->getComm()->getRank();
 
-  // Second check if this process is the owner
+  // FIXME: inefficient? call to getRemoteIndexList requires communication
   std::vector<int> node_list(local_size());
   Teuchos::ArrayView<int> _node_list(node_list);
   xmap->getRemoteIndexList(xmap->getNodeElementList(), _node_list);
-  return (node_list[idx] == xmap->getComm()->getRank());
+
+  // First check if global index exists on this process
+  // Second check if this process is the owner
+  const local_ordinal_type idx = xmap->getLocalElement(i);
+
+  bool status;
+
+  if (idx == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
+    status = false;
+  else
+    status = (node_list[idx] == mpi_rank);
+
+  return status;
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get(double* block, std::size_t m,
@@ -246,8 +259,18 @@ void TpetraVector::add_local(const double* block, std::size_t m,
                              const dolfin::la_index* rows)
 {
   dolfin_assert(!_x.is_null());
+  std::stringstream fname;
+  fname << "add_local" << _x->getMap()->getComm()->getRank() << ".txt";
+
+  FILE *fd=fopen(fname.str().c_str(), "a");
+
   for (std::size_t i = 0; i != m; ++i)
+  {
+    fprintf(fd, "%d %d %f\n", rows[i], _x->getMap()->getGlobalElement(rows[i]) , block[i]);
     _x->sumIntoLocalValue(rows[i], block[i]);
+  }
+  fclose(fd);
+
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get_local(std::vector<double>& values) const
@@ -287,9 +310,6 @@ void TpetraVector::add_local(const Array<double>& values)
                  "add local values to Tpetra vector",
                  "Size of values array is not equal to local vector size");
   }
-
-  if (num_values == 0)
-    return;
 
   for (std::size_t i = 0; i != num_values; ++i)
     _x->sumIntoLocalValue(i, values[i]);
@@ -389,7 +409,7 @@ double TpetraVector::min() const
   dolfin_assert(!_x.is_null());
   Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
   double min_local
-    = *std::min_element(arr.get(), arr.get() + local_size());
+    = *std::min_element(arr.get(), arr.get() + arr.size());
  
   return MPI::min(mpi_comm(), min_local);
 }
@@ -399,7 +419,7 @@ double TpetraVector::max() const
   dolfin_assert(!_x.is_null());
   Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
   double max_local
-    = *std::max_element(arr.get(), arr.get() + local_size());
+    = *std::max_element(arr.get(), arr.get() + arr.size());
 
   return MPI::max(mpi_comm(), max_local);
 }
@@ -581,4 +601,45 @@ Teuchos::RCP<vector_type> TpetraVector::vec() const
   return _x;
 }
 //-----------------------------------------------------------------------------
+void TpetraVector::mapdump(Teuchos::RCP<const map_type> xmap,
+                           const std::string desc)
+{
+  std::stringstream ss;
+
+  int rank = xmap->getComm()->getRank();
+  int m = xmap->getMaxAllGlobalIndex() + 1;
+  if (rank == 0)
+  {
+    ss << xmap->description() << "\n" << desc << "\n---";
+    for (int j = 0; j != m ; ++j)
+      ss << "-";
+    ss << "\n";
+  }
+
+  ss << rank << "] ";
+  for (int j = 0; j != m ; ++j)
+    if (xmap->isNodeGlobalElement(j))
+      ss << "X";
+    else
+      ss << " ";
+  ss << "\n";
+
+  const Teuchos::RCP<const Teuchos::MpiComm<int> > _mpi_comm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >
+    (xmap()->getComm());
+
+  MPI_Comm mpi_comm = *(_mpi_comm->getRawMpiComm());
+
+  std::vector<std::string> out_str;
+  MPI::gather(mpi_comm, ss.str(), out_str);
+
+  if (rank == 0)
+  {
+    for (auto &s: out_str)
+      std::cout << s;
+  }
+
+}
+
+
 #endif
