@@ -108,7 +108,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   row_map = Teuchos::rcp<const map_type>
     (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(), _global_indices0, 0, _comm));
 
-
   std::vector<global_ordinal_type> global_indices1
     (tensor_layout.local_to_global_map[1].begin(),
      tensor_layout.local_to_global_map[1].end());
@@ -117,7 +116,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
     (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(), _global_indices1, 0, _comm));
 
   // Create a non-overlapping "range" map, similar to "row" map.
-  Teuchos::RCP<const map_type> range_map(new map_type(M, m, 0, _comm));
+  Teuchos::RCP<const map_type>  range_map(new map_type(M, m, 0, _comm));
   Teuchos::RCP<const map_type> domain_map(new map_type(N, n, 0, _comm));
 
   // Make a Tpetra::CrsGraph of the sparsity_pattern
@@ -176,9 +175,9 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
   if (_matA.is_null())
     num_elements = 0;
   else if (dim == 0)
-    num_elements = (_matA->getRowMap()->getMaxAllGlobalIndex() + 1);
+    num_elements = _matA->getRangeMap()->getGlobalNumElements();
   else
-    num_elements = (_matA->getColMap()->getMaxAllGlobalIndex() + 1);
+    num_elements = _matA->getDomainMap()->getGlobalNumElements();
 
   return num_elements;
 }
