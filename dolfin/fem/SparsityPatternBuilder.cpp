@@ -19,13 +19,14 @@
 // Modified by Anders Logg 2008-2014
 //
 // First added:  2007-05-24
-// Last changed: 2014-04-28
+// Last changed: 2014-11-26
 
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -45,6 +46,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                                    bool cells,
                                    bool interior_facets,
                                    bool exterior_facets,
+                                   bool vertices,
                                    bool diagonal,
                                    bool init,
                                    bool finalize)
@@ -112,11 +114,58 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
   }
 
+  // Build sparsity pattern for vertex/point integrals
+  const std::size_t D = mesh.topology().dim();
+  if (vertices)
+  {
+    mesh.init(0);
+    mesh.init(0, D);
+
+    std::vector< std::vector<dolfin::la_index> > global_dofs(rank);
+    std::vector< const std::vector<dolfin::la_index>* > global_dofs_p(rank);
+    std::vector<std::vector<std::size_t> > local_to_local_dofs(rank);
+
+    // Resize local dof map vector
+    for (std::size_t i = 0; i < rank; ++i)
+    {
+      global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
+      local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
+      global_dofs_p[i] = &global_dofs[i];
+    }
+
+    Progress p("Building sparsity pattern over vertices", mesh.num_vertices());
+    for (VertexIterator vert(mesh); !vert.end(); ++vert)
+    {
+
+      // Get mesh cell to which mesh vertex belongs (pick first)
+      Cell mesh_cell(mesh, vert->entities(D)[0]);
+
+      // Check that cell is not a ghost
+      dolfin_assert(!mesh_cell.is_ghost());
+
+      // Get local index of vertex with respect to the cell
+      const std::size_t local_vertex = mesh_cell.index(*vert);
+
+      for (std::size_t i = 0; i < rank; ++i)
+      {
+        dofs[i] = &dofmaps[i]->cell_dofs(mesh_cell.index());
+        dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0, local_vertex);
+
+        // Copy cell dofs to local dofs and tabulated values to
+        for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
+          global_dofs[i][j] = (*dofs[i])[local_to_local_dofs[i][j]];
+      }
+
+      // Insert non-zeroes in sparsity pattern
+      sparsity_pattern.insert_local(global_dofs_p);
+      p++;
+    }
+  }
+
   // Note: no need to iterate over exterior facets since those dofs
   //       are included when tabulating dofs on all cells
 
   // Build sparsity pattern for interior/exterior facet integrals
-  const std::size_t D = mesh.topology().dim();
   if (interior_facets || exterior_facets)
   {
     // Compute facets and facet - cell connectivity if not already computed
@@ -221,7 +270,7 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
 (GenericSparsityPattern& sparsity_pattern,
  const MultiMeshForm& form)
 {
-   // Get global dimensions and local range
+  // Get global dimensions and local range
   const std::size_t rank = form.rank();
   std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
@@ -253,17 +302,23 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
     for (std::size_t i = 0; i < form.rank(); i++)
       dofmaps.push_back(&*form.function_space(i)->dofmap()->part(part));
 
+    log(PROGRESS, "Building intra-mesh sparsity pattern on part %d.", part);
+
     // Build sparsity pattern for part by calling the regular dofmap
     // builder. This builds the sparsity pattern for all interacting
     // dofs on the current part.
     build(sparsity_pattern, mesh, dofmaps,
           true, false, false, true, false, false);
 
+    log(PROGRESS, "Building inter-mesh sparsity pattern on part %d.", part);
+
     // Build sparsity pattern for interface. This builds the sparsity
     // pattern for all dofs that may interact across the interface
     // between cutting meshes.
     _build_multimesh_sparsity_pattern_interface(sparsity_pattern, form, part);
   }
+
+  log(PROGRESS, "Applying changes to sparsity pattern.");
 
   // Finalize sparsity pattern
   sparsity_pattern.apply();
@@ -275,7 +330,7 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
  std::size_t part)
 {
   // Get multimesh
-  const auto multimesh = form.multimesh();
+  const auto& multimesh = form.multimesh();
 
   // Get collision map
   const auto& cmap = multimesh->collision_map_cut_cells(part);
@@ -301,7 +356,7 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
     // Get dofs for cut cell
     for (std::size_t i = 0; i < form.rank(); i++)
     {
-      const auto dofmap = form.function_space(i)->dofmap()->part(part);
+      const auto& dofmap = form.function_space(i)->dofmap()->part(part);
       dofs_0[i] = &dofmap->cell_dofs(cut_cell_index);
     }
 
@@ -317,7 +372,7 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
       for (std::size_t i = 0; i < form.rank(); i++)
       {
         // Get dofs for cutting cell
-        const auto dofmap = form.function_space(i)->dofmap()->part(cutting_part);
+        const auto& dofmap = form.function_space(i)->dofmap()->part(cutting_part);
         dofs_1[i] = &dofmap->cell_dofs(cutting_cell_index);
 
         // Collect dofs for cut and cutting cell

@@ -135,17 +135,17 @@ namespace dolfin
                          std::array<UFC*, 2>& ufc,
                          Scratch& data,
                          const DirichletBC::Map& boundary_values,
-                         const MeshFunction<std::size_t>* cell_domains,
-                       const MeshFunction<std::size_t>* exterior_facet_domains);
+                         std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+                         std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains);
 
     static void
     facet_wise_assembly(std::array<GenericTensor*, 2>& tensors,
                         std::array<UFC*, 2>& ufc,
                         Scratch& data,
                         const DirichletBC::Map& boundary_values,
-                        const MeshFunction<std::size_t>* cell_domains,
-                        const MeshFunction<std::size_t>* exterior_facet_domains,
-                       const MeshFunction<std::size_t>* interior_facet_domains);
+                        std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+                        std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains,
+                        std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
 
     // Compute exterior facet (and possibly connected cell)
     // contribution

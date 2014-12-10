@@ -29,7 +29,7 @@ therefore :math:`(n_x+1)`.
 .. code-block:: python
 
    mesh = UnitIntervalMesh(10)
-   print "Plotting a UnitIntervalMesh"
+   print("Plotting a UnitIntervalMesh")
    plot(mesh, title="Unit interval")
 
 This produces a mesh looking as follows:
@@ -50,7 +50,7 @@ can also omit this argument and thereby use the default direction
 .. code-block:: python
 
    mesh = UnitSquareMesh(10, 10)
-   print "Plotting a UnitSquareMesh"
+   print("Plotting a UnitSquareMesh")
    plot(mesh, title="Unit square")
 
 .. image:: unitsquaremesh.png
@@ -63,15 +63,15 @@ has diagonals to both left and right:
 .. code-block:: python
 
    mesh = UnitSquareMesh(10, 10, "left")
-   print "Plotting a UnitSquareMesh"
+   print("Plotting a UnitSquareMesh")
    plot(mesh, title="Unit square (left)")
 
    mesh = UnitSquareMesh(10, 10, "crossed")
-   print "Plotting a UnitSquareMesh"
+   print("Plotting a UnitSquareMesh")
    plot(mesh, title="Unit square (crossed)")
 
    mesh = UnitSquareMesh(10, 10, "right/left")
-   print "Plotting a UnitSquareMesh"
+   print("Plotting a UnitSquareMesh")
    plot(mesh, title="Unit square (right/left)")
 
 .. image:: unitsquaremesh_left.png
@@ -97,11 +97,11 @@ mesh we use diagonals to both left and right.
 .. code-block:: python
 
    mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
-   print "Plotting a RectangleMesh"
+   print("Plotting a RectangleMesh")
    plot(mesh, title="Rectangle")
 
    mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
-   print "Plotting a RectangleMesh"
+   print("Plotting a RectangleMesh")
    plot(mesh, title="Rectangle (right/left)")
 
 .. image:: rectanglemesh.png
@@ -120,7 +120,7 @@ arguments.
 .. code-block:: python
 
    mesh = UnitCubeMesh(10, 10, 10)
-   print "Plotting a UnitCubeMesh"
+   print("Plotting a UnitCubeMesh")
    plot(mesh, title="Unit cube")
 
 .. image:: unitcubemesh.png
@@ -143,7 +143,7 @@ more details, refer to the mshr documentation.
 .. code-block:: python
 
    mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
-   print "Plotting a BoxMesh"
+   print("Plotting a BoxMesh")
    plot(mesh, title="Box")
 
 .. image:: boxmesh.png

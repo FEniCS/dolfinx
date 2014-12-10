@@ -220,6 +220,10 @@ HDF5Interface::list_attributes(const hid_t hdf5_file_handle,
                               (void *)&out_string);
   dolfin_assert(status != HDF5_FAIL);
 
+  // Close dataset or group
+  status = H5Oclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+
   return out_string;
 }
 //-----------------------------------------------------------------------------
