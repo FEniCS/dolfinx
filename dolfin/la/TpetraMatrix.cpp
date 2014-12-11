@@ -108,7 +108,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   row_map = Teuchos::rcp<const map_type>
     (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(), _global_indices0, 0, _comm));
 
-
   std::vector<global_ordinal_type> global_indices1
     (tensor_layout.local_to_global_map[1].begin(),
      tensor_layout.local_to_global_map[1].end());
@@ -117,14 +116,14 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
     (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(), _global_indices1, 0, _comm));
 
   // Create a non-overlapping "range" map, similar to "row" map.
-  Teuchos::RCP<const map_type> range_map(new map_type(M, m, 0, _comm));
-  Teuchos::RCP<const map_type> domain_map(new map_type(N, n, 0, _comm));
+  range_map0 = Teuchos::rcp(new map_type(M, m, 0, _comm));
+  domain_map0 = Teuchos::rcp(new map_type(N, n, 0, _comm));
 
   // Make a Tpetra::CrsGraph of the sparsity_pattern
   typedef Tpetra::CrsGraph<> graph_type;
   // Create non-overlapping graph from sparsity pattern
   // FIXME: allocate memory based on number of non-zeros per row (not just "5")
-  Teuchos::RCP<graph_type> _graph0(new graph_type(range_map, 5));
+  Teuchos::RCP<graph_type> _graph0(new graph_type(range_map0, 5));
 
   std::vector<std::vector<std::size_t> > pattern_diag
     = sparsity_pattern.diagonal_pattern(GenericSparsityPattern::unsorted);
@@ -147,17 +146,23 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 
   //  _graph0->fillComplete();
 
-  // Translation (mapping) from overlapping to non-overlapping maps
-  Tpetra::Export<global_ordinal_type> exporter(row_map, range_map);
+  // Initial graph, _graph0 is non-overlapping, i.e. is not replicated across processes
+  // In order to do a local fill using add_local(), we need to replicate the graph
+  // on all sharing processes.
 
-  // Reverse import to create a complete graph on all processes
+  // Translation (mapping) from overlapping to non-overlapping maps
+  Tpetra::Export<global_ordinal_type> exporter(row_map, range_map0);
+
+  // Reverse import to create a replicated graph on all processes
   Teuchos::RCP<graph_type> _graph(new graph_type(row_map, 5));
   _graph->doImport(*_graph0, exporter, Tpetra::INSERT);
 
-  _graph->fillComplete(); //col_map, range_map);
+  // Do not use the domain and range maps here, as it will prevent insertion
+  // on rows which are not in the domain.
+  _graph->fillComplete();
 
-  TpetraVector::mapdump(domain_map, "Mat::domain");
-  TpetraVector::mapdump(range_map, "Mat::range");
+  TpetraVector::mapdump(domain_map0, "Mat::domain");
+  TpetraVector::mapdump(range_map0, "Mat::range");
   graphdump(_graph);
 
   _matA = Teuchos::rcp(new matrix_type(_graph));
@@ -176,9 +181,9 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
   if (_matA.is_null())
     num_elements = 0;
   else if (dim == 0)
-    num_elements = (_matA->getRowMap()->getMaxAllGlobalIndex() + 1);
+    num_elements = _matA->getRangeMap()->getGlobalNumElements();
   else
-    num_elements = (_matA->getColMap()->getMaxAllGlobalIndex() + 1);
+    num_elements = _matA->getDomainMap()->getGlobalNumElements();
 
   return num_elements;
 }
@@ -590,23 +595,21 @@ void TpetraMatrix::apply(std::string mode)
     // add_local() seems not to work.
     // In order to convert to a non-overlapping map, which seems necessary,
     // export to another matrix with the correct maps...
-    // This needs a fix further up.
+    // This needs a fix higher up.
 
-    Teuchos::RCP<const map_type>
-      range_map(Tpetra::createOneToOne(_matA->getCrsGraph()->getRangeMap()));
-    Teuchos::RCP<const map_type>
-      domain_map(Tpetra::createOneToOne(_matA->getCrsGraph()->getDomainMap()));
+    // New matrix with same Row and Col maps
     Teuchos::RCP<matrix_type> matB(new matrix_type(_matA->getCrsGraph()->getRowMap(),
                                                    _matA->getCrsGraph()->getColMap(), 0));
 
-    // Export from overlapping row map, to non-overlapping map for matB
     Tpetra::Export<global_ordinal_type> exporter(_matA->getRowMap(), matB->getRowMap());
 
+    // Fill complete with non-overlapping domain and range maps
     matB->doExport(*_matA, exporter, Tpetra::INSERT);
-    matB->fillComplete(domain_map, range_map);
+    matB->fillComplete(domain_map0, range_map0);
 
     _matA = matB;
 
+    // This does not work:-
     //    _matA->fillComplete(domain_map, range_map);
 
   }
@@ -684,7 +687,7 @@ std::string TpetraMatrix::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void TpetraMatrix::graphdump(const Teuchos::RCP<graph_type> graph)
+void TpetraMatrix::graphdump(const Teuchos::RCP<const graph_type> graph)
 {
   int mpi_rank = graph->getRowMap()->getComm()->getRank();
 
