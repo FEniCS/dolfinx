@@ -77,7 +77,7 @@ Parameters PETScTAOSolver::default_parameters()
   p.add("method"                 , "default");
   p.add("linear_solver"          , "default");
   p.add("preconditioner"         , "default");
-  
+
   std::set<std::string> line_searches;
   line_searches.insert("default");
   line_searches.insert("unit");
@@ -86,7 +86,7 @@ Parameters PETScTAOSolver::default_parameters()
   line_searches.insert("armijo");
   line_searches.insert("owarmijo");
   line_searches.insert("ipm");
-  
+
   p.add("line_search", "default", line_searches);
 
   p.add(KrylovSolver::default_parameters());
@@ -496,12 +496,15 @@ void PETScTAOSolver::set_ksp_options()
     if (krylov_parameters["monitor_convergence"])
       KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
+    // Get integer tolerances (to take care of casting to PetscInt)
+    const int max_iter = krylov_parameters["maximum_iterations"];
+
     // Set tolerances
     KSPSetTolerances(ksp,
                      krylov_parameters["relative_tolerance"],
                      krylov_parameters["absolute_tolerance"],
                      krylov_parameters["divergence_limit"],
-                     krylov_parameters["maximum_iterations"]);
+                     max_iter);
   }
   else
   {
