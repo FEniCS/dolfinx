@@ -210,14 +210,18 @@ namespace dolfin
       return _matA;
     }
 
-    static void graphdump(const Teuchos::RCP<graph_type> graph);
+    static void graphdump(const Teuchos::RCP<const graph_type> graph);
 
   private:
 
     // Tpetra norm types
     //    static const std::map<std::string, NormType> norm_types;
 
+    // The matrix
     Teuchos::RCP<matrix_type> _matA;
+
+    // Keep references to initial domain and range maps, needed in "apply"
+    Teuchos::RCP<map_type> domain_map0, range_map0;
 
   };
 

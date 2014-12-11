@@ -1,7 +1,5 @@
 
 #include <dolfin.h>
-// #include <Amesos2.hpp>
-
 #include "Poisson.h"
 
 using namespace dolfin;
@@ -15,167 +13,146 @@ class Source : public Expression
   }
 };
 
+bool compare_tpetra_petsc_vectors(const TpetraVector& t,
+                                  const GenericVector& p)
+{
+  std::vector<double> g_tpetra;
+  std::vector<double> g_petsc;
+
+  t.gather_on_zero(g_tpetra);
+  p.gather_on_zero(g_petsc);
+
+  bool err = false;
+
+  int mpi_rank = t.vec()->getMap()->getComm()->getRank();
+
+  if(mpi_rank == 0)
+    for (unsigned int i = 0; i != g_tpetra.size(); ++i)
+    {
+      double diff = std::abs(g_petsc[i] - g_tpetra[i]);
+      if (diff > 1e-9)
+      {
+        err = true;
+        std::cout << "Difference at " << i << ": PETSC=" << g_petsc[i] 
+                  << ", TPETRA=" << g_tpetra[i] << "\n";
+      }
+    }
+
+  return err;
+}
 
 int main()
 {
+  bool dump_matrix = false;
+
   UnitSquareMesh mesh(2, 5);
   Poisson::FunctionSpace V(mesh);
   Poisson::LinearForm L(V);
   Poisson::BilinearForm a(V, V);
 
-  TpetraVector t, t2;
-  PETScVector tp, tp2;
+  TpetraVector tpetraB;
+  PETScVector petscB;
 
-  TpetraMatrix mat;
-  PETScMatrix matp;
+  TpetraMatrix tpetraA;
+  PETScMatrix petscA;
 
   Source f;
   L.f = f;
 
-  assemble(mat, a);
-  assemble(matp, a);
+  assemble(tpetraA, a);
+  assemble(petscA, a);
 
-  typedef Tpetra::CrsGraph<> graph_type;
-  Teuchos::RCP<const graph_type> g = mat.mat()->getCrsGraph();
-  std::stringstream ss;
+  TpetraMatrix::graphdump(tpetraA.mat()->getCrsGraph());
 
-  ss << g->description();
-  ss << "\n Rank" << MPI::rank(mat.mpi_comm()) << "\n";
-  for(int i=0; i!= g->getRowMap()->getNodeNumElements(); ++i)
+  TpetraVector::mapdump(tpetraA.mat()->getDomainMap(), "domain");
+  TpetraVector::mapdump(tpetraA.mat()->getRangeMap(), "range");
+  TpetraVector::mapdump(tpetraA.mat()->getRowMap(), "row");
+  TpetraVector::mapdump(tpetraA.mat()->getColMap(), "col");
+
+  assemble(tpetraB, L);
+  assemble(petscB, L);
+
+  compare_tpetra_petsc_vectors(tpetraB, petscB);
+
+  std::cout << "Check transpmult operation ----------------\n";
+  TpetraVector tpetraX;
+  PETScVector petscX;
+  tpetraA.transpmult(tpetraB, tpetraX);
+  petscA.transpmult(petscB, petscX);
+  tpetraX.apply("add");
+  compare_tpetra_petsc_vectors(tpetraX, petscX);
+
+  std::cout << "Check mult operation ----------------\n";
+  TpetraVector tpetraY;
+  PETScVector petscY;
+  tpetraA.transpmult(tpetraB, tpetraY);
+  petscA.mult(petscB, petscY);
+
+  tpetraY.apply("add");
+  compare_tpetra_petsc_vectors(tpetraY, petscY);
+
+  std::cout << "Check max, min, sum --------------------\n";
+
+  double diff = std::abs(petscB.max() - tpetraB.max());
+  if (diff < 1e-12)
+    std::cout << "Max OK\n";
+  else
+    error("MAX");
+
+  diff = std::abs(petscB.min() - tpetraB.min());
+  if (diff < 1e-12)
+    std::cout << "Min OK\n";
+  else
+    error("MIN");
+
+  diff = std::abs(petscB.sum() - tpetraB.sum());
+  if (diff < 1e-12)
+    std::cout << "Sum OK\n";
+  else
+    error("SUM");
+
+  if (dump_matrix)
   {
-    global_ordinal_type idx = g->getRowMap()->getGlobalElement(i);
+    std::cout << "Matrix properties ----------------------\n";
 
-    const int nx = g->getNumEntriesInGlobalRow(idx);
-    std::vector<global_ordinal_type> rowvec(nx);
-    Teuchos::ArrayView<global_ordinal_type> _rowvec(rowvec);
-    std::size_t n;
-    g->getGlobalRowCopy(idx, _rowvec, n);
-    ss << idx << "] ";
-    for (int j=0; j !=nx; ++j)
-      ss << rowvec[j] << " ";
-    ss<< "\n";
-  }
-  std::cout << ss.str();
+    std::cout << tpetraA.str(true) << "\n";
+    std::pair<std::size_t, std::size_t> range1 = tpetraA.local_range(1);
+    std::cout << "r(1) = " << range1.first << " - " << range1.second << "\n";
+    std::pair<std::size_t, std::size_t> range = petscA.local_range(0);
+    std::cout << "r(0) = " << range.first << " - " << range.second << "\n";
 
+    std::stringstream ss;
 
-  if (true)
-  {
+    Teuchos::RCP<matrix_type> m = tpetraA.mat();
 
-  TpetraVector::mapdump(mat.mat()->getDomainMap(), "domain");
-  TpetraVector::mapdump(mat.mat()->getRangeMap(), "range");
-  TpetraVector::mapdump(mat.mat()->getRowMap(), "row");
-  TpetraVector::mapdump(mat.mat()->getColMap(), "col");
-
-  assemble(t, L);
-  assemble(tp, L);
-
-  mat.transpmult(t, t2);
-  matp.transpmult(tp, tp2);
-
-  //  Teuchos::RCP<Amesos2::Solver<matrix_type, vector_type> > solver 
-  //    = Amesos2::create<matrix_type, vector_type> ("Superlu", mat.mat(), 
-  //                                                 t.vec(), t2.vec());
-
-  //  solver->solve();
-
-  std::cout << "VECTOR: " << t.str(true) << "\n";
-
-  std::cout << "t.size() = " << t.size() << "\n";
-
-  std::cout << mat.str(true) << "\n";
-
-  std::pair<std::size_t, std::size_t> range1 = mat.local_range(1);
-  std::cout << "r(1) = " << range1.first << " - " << range1.second << "\n";
-  std::pair<std::size_t, std::size_t> range = matp.local_range(0);
-  std::cout << "r(0) = " << range.first << " - " << range.second << "\n";
-
-  std::stringstream ss;
-
-  Teuchos::RCP<matrix_type> m = mat.mat();
-
-  for (std::size_t i = 0; i != m->getRowMap()->getNodeNumElements(); ++i)
-  {
-    std::vector<double> data;
-    std::vector<std::size_t> cols;
-    std::size_t gi = m->getRowMap()->getGlobalElement(i);
-
-    mat.getrow(gi, cols, data);
-
-    ss << gi << "] ";
-    for (std::size_t j = 0; j != data.size(); ++j)
-      ss << "(" << cols[j] << ", " << data[j] << ") ";
-     ss << "\n";
-
-  }
-
-  for (std::size_t i = range.first; i != range.second; ++i)
-  {
-    std::vector<double> data;
-    std::vector<std::size_t> cols;
-    matp.getrow(i, cols, data);
-
-    ss << "P "<<  i << "] ";
-    for (std::size_t j = 0; j != data.size(); ++j)
-      ss << "(" << cols[j] << ", " << data[j] << ") ";
-    ss << "\n";
-  }
-
-  std::cout << ss.str();
-
-  std::cout << "t.max() = " << t.max() << "\n";
-
-  std::cout << t.str(true) << ", local_size - " << t.local_size() << ": ";
-  std::cout << t.local_range().first << " - " << t.local_range().second << "\n";
-
-  std::cout << "t.sum() = " << t.sum() < "\n";
-
-  ss.str("");
-
-  ss << "[" << MPI::rank(mesh.mpi_comm()) << "] ";
-  for (unsigned int i = 0; i != t.size(); ++i)
-    ss << t.owns_index(i);
-
-  ss << " " << t.local_range().first << "-" << t.local_range().second << "\n";
-
-  std::cout << ss.str();
-  ss.str("");
-
-  for (int i = 0; i != (int)t.size(); ++i)
-  {
-    double val = 0;
-    t.get(&val, 1, &i);
-    if (t.owns_index(i))
+    for (std::size_t i = 0; i != m->getRowMap()->getNodeNumElements(); ++i)
     {
-      ss << "Tpetra: " << i << ") " << val << "\n";
+      std::vector<double> data;
+      std::vector<std::size_t> cols;
+      std::size_t gi = m->getRowMap()->getGlobalElement(i);
+
+      tpetraA.getrow(gi, cols, data);
+
+      ss << gi << "] ";
+      for (std::size_t j = 0; j != data.size(); ++j)
+        ss << "(" << cols[j] << ", " << data[j] << ") ";
+      ss << "\n";
+
     }
 
-  }
-
-  std::cout << ss.str();
-  ss.str("");
-
-  for (int i = 0; i != (int)tp.size(); ++i)
-  {
-    double val = 0;
-    if (tp.owns_index(i))
+    for (std::size_t i = range.first; i != range.second; ++i)
     {
-      tp.get(&val, 1, &i);
-      ss << "PETSC: " << i << ") " << val << "\n";
+      std::vector<double> data;
+      std::vector<std::size_t> cols;
+      petscA.getrow(i, cols, data);
+
+      ss << "P "<<  i << "] ";
+      for (std::size_t j = 0; j != data.size(); ++j)
+        ss << "(" << cols[j] << ", " << data[j] << ") ";
+      ss << "\n";
     }
 
-  }
-
-  std::cout << ss.str() << "\n";
-
-  std::vector<double> g_tpetra;
-  std::vector<double> g_petsc;
-
-  t2.gather_on_zero(g_tpetra);
-  tp2.gather_on_zero(g_petsc);
-
-  if(MPI::rank(mesh.mpi_comm()) == 0)
-    for (unsigned int i = 0; i != g_tpetra.size(); ++i)
-      std::cout << g_tpetra[i] << "/ P" << g_petsc[i] << " / ";
+    std::cout << ss.str();
   }
 
   return 0;
