@@ -155,6 +155,9 @@ PROBLEM_RENAMES(NonlinearVariational)
                                 const std::vector<double>& vertex_coordinates,
                                 const ufc::cell& cell) const;
 
+%ignore dolfin::LocalDimensionType;
+%ignore dolfin::GenericDofMap::local_dimension(LocalDimensionType type) const;
+
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell
 //-----------------------------------------------------------------------------

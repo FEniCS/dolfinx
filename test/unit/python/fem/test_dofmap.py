@@ -330,7 +330,9 @@ def test_local_dimension(V, Q, W):
         dofmap = space.dofmap()
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
         ownership_range = dofmap.ownership_range()
-        dim1 = dofmap.local_dimension(False)
-        dim2 = dofmap.local_dimension(True)
+        dim1 = dofmap.local_dimension('owned_dofs')
+        dim2 = dofmap.local_dimension('unowned_dofs')
+        dim3 = dofmap.local_dimension('all_dofs')
         assert dim1 == ownership_range[1] - ownership_range[0]
-        assert dim2 == local_to_global_map.size
+        assert dim3 == local_to_global_map.size
+        assert dim1 + dim2 == dim3

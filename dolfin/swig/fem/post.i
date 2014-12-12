@@ -92,6 +92,18 @@ def function_space(self, i):
         data[i*gdim + j] = tmparray[i][j];
   }
 
+  std::size_t local_dimension(std::string local_dim_type) const {
+    if (local_dim_type == "all_dofs")
+      return self->local_dimension(dolfin::all_dofs);
+    else if (local_dim_type == "unowned_dofs")
+      return self->local_dimension(dolfin::unowned_dofs);
+    else if (local_dim_type == "owned_dofs")
+      return self->local_dimension(dolfin::owned_dofs);
+    else
+      throw std::runtime_error("expected owned_dofs, unowned_dofs, or all_dofs as argument");
+  }
+
+
 %pythoncode %{
 def tabulate_coordinates(self, cell, coordinates=None):
     """ Tabulate the coordinates of all dofs on a cell

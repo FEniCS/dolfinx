@@ -115,19 +115,26 @@ namespace dolfin
     ///         The dimension of the global finite element function space.
     std::size_t global_dimension() const;
 
-    /// Return number of dofs on this process without or with unowned dofs.
+    /// Return number of owned, unowned, or all dofs on this process
     ///
     /// *Arguments*
-    ///     with_unowned (bool)
-    ///         Include unowned dofs
+    ///     type (LocalDimensionType)
+    ///         Either (dolfin::)owned_dofs, unowned_dofs, or all_dofs
     ///
     /// *Returns*
     ///     std::size_t
     ///         Number of local dofs.
-    std::size_t local_dimension(bool with_unowned) const
-    { return with_unowned
-        ? _local_ownership_size + block_size*_local_to_global_unowned.size()
-        : _local_ownership_size; }
+    std::size_t local_dimension(LocalDimensionType type) const
+    {
+      switch(type) {
+      case owned_dofs:
+        return _local_ownership_size;
+      case unowned_dofs:
+        return block_size*_local_to_global_unowned.size();
+      case all_dofs:
+        return _local_ownership_size + block_size*_local_to_global_unowned.size();
+      }
+    }
 
 
     // FIXME: Rename this function, 'cell_dimension' sounds confusing

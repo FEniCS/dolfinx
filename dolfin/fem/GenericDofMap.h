@@ -48,6 +48,12 @@ namespace dolfin
   class Mesh;
   class SubDomain;
 
+  enum LocalDimensionType {
+    owned_dofs,
+    unowned_dofs,
+    all_dofs,
+  };
+
   /// This class provides a generic interface for dof maps
 
   class GenericDofMap : public Variable
@@ -64,8 +70,8 @@ namespace dolfin
     /// space
     virtual std::size_t global_dimension() const = 0;
 
-    /// Return number of dofs on this process without or with unowned dofs.
-    virtual std::size_t local_dimension(bool with_unowned) const = 0;
+    /// Return number of owned, unowned, or all dofs on this process.
+    virtual std::size_t local_dimension(LocalDimensionType type) const = 0;
 
     /// Return the dimension of the local finite element function
     /// space on a cell
