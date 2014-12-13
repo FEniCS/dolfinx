@@ -932,14 +932,21 @@ def test_p51_box_1(pushpop_parameters):
         rows, columns, values = A.data()
         csr = csr_matrix((values, columns, rows))
 
-@skip_in_parallel
+#@skip_in_parallel
 def test_p51_box_2():
+    from numpy import arange
     b = Vector(mpi_comm_world(), 10)
     c = Vector(mpi_comm_world(), 10)
     b_copy = b[:]
     b[:] = c
     b[b < 0] = 0
-    b2 = b[::2]
+
+    # Since 1.5 we do not support slicing access as it does not make
+    # sense in parallel
+    #b2 = b[::2]
+
+    # You can use an alternative syntax though
+    b2 = b[arange(0, b.local_size(), 2)]
 
 @skip_in_parallel
 def test_p51_box_3():

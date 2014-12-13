@@ -566,11 +566,7 @@ def test_reference_assembly(filedir):
 
     # Create reference matrices and set entries
     A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
-    if sizeof_la_index() == 4:
-        dtype = numpy.intc
-    else:
-        dtype = numpy.int64
-    pos = numpy.array([0, 1, 2, 3], dtype=dtype)
+    pos = numpy.array([0, 1, 2, 3], dtype=la_index_dtype())
     A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
                         [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
                         [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
