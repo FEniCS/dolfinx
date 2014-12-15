@@ -256,7 +256,7 @@ def la_index_dtype():
 
         # Convert to correct indextypes
         if isinstance(indices, ndarray):
-            if indices.dtype != la_index_dtype():
+            if indices.dtype.char != la_index_dtype().char:
                 indices = indices.astype(la_index_dtype())
         else:
             indices = asarray(indices, dtype=la_index_dtype())
