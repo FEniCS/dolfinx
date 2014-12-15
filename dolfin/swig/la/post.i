@@ -260,8 +260,10 @@ def la_index_dtype():
             # For some obscure reason we need to compare the char
             # attribute of the dtype to be able to differentiate
             # between correct dtypes. And to get the char attribute we
-            # need to instantiate the bloody dtype...
-            if indices.dtype.char != la_index_dtype()().char:
+            # need to instantiate the bloody dtype and then access the
+            # fraking dtype of the dtype, which can be asked for its
+            # char...
+            if indices.dtype().char != la_index_dtype()().dtype.char:
                 indices = indices.astype(la_index_dtype())
         else:
             indices = asarray(indices, dtype=la_index_dtype())
