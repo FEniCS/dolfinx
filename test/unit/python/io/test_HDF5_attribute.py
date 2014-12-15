@@ -78,7 +78,7 @@ def test_read_write_vec_int_attribute(attr):
 @skip_if_not_HDF5
 def test_attribute_container_interface(attr):
     names = ["data_0", "data_1", "data_2", "data_3"]
-    values = range(4)
+    values = [i for i in range(4)]
     
     for name, value in zip(names, values):
         attr[name] = value
