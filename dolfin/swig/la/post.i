@@ -263,7 +263,7 @@ def la_index_dtype():
             # need to instantiate the bloody dtype and then access the
             # fraking dtype of the dtype, which can be asked for its
             # char...
-            if indices.dtype().char != la_index_dtype()().dtype.char:
+            if indices.dtype.char != la_index_dtype()().dtype.char:
                 indices = indices.astype(la_index_dtype())
         else:
             indices = asarray(indices, dtype=la_index_dtype())
