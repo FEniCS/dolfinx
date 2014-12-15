@@ -51,7 +51,7 @@ namespace dolfin
   enum LocalDimensionType {
     owned_dofs,
     unowned_dofs,
-    all_dofs,
+    all_dofs
   };
 
   /// This class provides a generic interface for dof maps

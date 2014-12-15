@@ -134,6 +134,10 @@ namespace dolfin
       case all_dofs:
         return _local_ownership_size + block_size*_local_to_global_unowned.size();
       }
+
+      // We should not get here
+      dolfin_assert(false);
+      return 0;
     }
 
 
