@@ -1,6 +1,6 @@
  - Remove CGAL dependency and mesh generation, now provided by mshr
  - Python 2.7 required
- - Experimental Python 3 support (some flaws left)
+ - Add experimental Python 3 support. Need swig version 3.0.3 or later
  - Move to py.test, speed up unit tests and make tests more robust in parallel
  - Repeated initialization of PETScMatrix is now an error
  - MPI interface change: num_processes -> size, process_number -> rank
@@ -16,6 +16,11 @@
    inspecting the UFL form
  - Speed up assembly of forms with multiple integrals depending on
    different functions, e.g. f*dx(1) + g*dx(2).
+ - Handle accessing of GenericVectors using numpy arrays in python layer instead of in hard-to-maintain C++ layer
+ - Add support for mpi groups in jit-compilation
+ - Make access to HDFAttributes more dict like
+ - Add 1st and 2nd order Rush Larsen schemes for the PointIntegralSolver
+ - Add vertex assembler for PointIntegrals
 1.4.0 [2014-06-02]
  - Feature: Add set_diagonal (with GenericVector) to GenericMatrix
  - Fix many bugs associated with cell orientations on manifolds
