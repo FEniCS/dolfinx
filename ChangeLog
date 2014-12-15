@@ -1,4 +1,9 @@
- - Add argument 'function' to project, to store the result into a preallocated function
+- Fix to Cell-Point collision detection to prevent Points inside the mesh from falling between Cells due to rounding errors
+- Enable reordering of cells and vertices in parallel via SCOTCH and the Giibs-Poole-Stockmeyer algorithm
+- Efficiency improvements in dof assignment in parallel, working on HPC up to 24000 cores
+- Introduction of PlazaRefinement methods based on refinement of the Mesh skeleton, giving better quality refinement in 3D in parallel
+- Basic support for 'ghost cells' allowing integration over interior facets in parallel
+- Add argument 'function' to project, to store the result into a preallocated function
  - Remove CGAL dependency and mesh generation, now provided by mshr
  - Remove excessive printing of points during extrapolation
 1.4.0 [2014-06-02]
