@@ -641,7 +641,7 @@ PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64, value_shape,
                                                std_size_t, -1)
 #endif
 #if (DOLFIN_LA_INDEX_SIZE==4)
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT32, , NPY_INT32, intc,
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT, , NPY_INT32, intc,
                                     intc)
 #else
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT64, , NPY_INT64, int64,
@@ -665,7 +665,7 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, NPY_UINT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, NPY_UINTP)
 #if (DOLFIN_LA_INDEX_SIZE==4)
-OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT32)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT)
 #else
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT64)
 #endif
