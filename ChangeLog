@@ -21,6 +21,8 @@
  - Make access to HDFAttributes more dict like
  - Add 1st and 2nd order Rush Larsen schemes for the PointIntegralSolver
  - Add vertex assembler for PointIntegrals
+ - Add support for assembly of custom_integral
+ - Add support for multimesh assembly, function spaces, dofmaps and functions
 1.4.0 [2014-06-02]
  - Feature: Add set_diagonal (with GenericVector) to GenericMatrix
  - Fix many bugs associated with cell orientations on manifolds
