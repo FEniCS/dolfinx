@@ -335,7 +335,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
       // more robust)
       #if PETSC_HAVE_SUPERLU_DIST
       method = "superlu_dist";
-      #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
+      #elif PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
       method = "umfpack";
       #else
       method = "petsc";
