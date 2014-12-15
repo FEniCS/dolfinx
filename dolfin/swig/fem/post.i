@@ -64,6 +64,18 @@ def function_space(self, i):
 //-----------------------------------------------------------------------------
 // Extend GenericDofMap.tabulate_coordinates()
 //-----------------------------------------------------------------------------
+%feature("docstring") dolfin::GenericDofMap::local_dimension "
+Return number of owned, unowned, or all dofs on this process
+
+*Arguments*
+    type (string)
+        Either 'owned', 'unowned' or 'all_dofs'
+
+*Returns*
+    std::size_t
+        Number of local dofs.
+";
+
 %extend dolfin::GenericDofMap {
   void _tabulate_coordinates(PyObject* coordinates, const Cell& cell)
   {
