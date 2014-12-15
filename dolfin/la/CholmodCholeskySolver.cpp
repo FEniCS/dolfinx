@@ -93,8 +93,8 @@ std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 
   // Initialise cholmod data
   // NOTE: Casting away const here
-  cholmod.init((UF_long*) boost::tuples::get<0>(data),
-               (UF_long*) boost::tuples::get<1>(data),
+  cholmod.init((SuiteSparse_long*) boost::tuples::get<0>(data),
+               (SuiteSparse_long*) boost::tuples::get<1>(data),
                (double*) boost::tuples::get<2>(data), M, nnz);
 
   // Factorize
@@ -199,7 +199,7 @@ void CholmodCholeskySolver::Cholmod::clear()
   }
 }
 //-----------------------------------------------------------------------------
-void CholmodCholeskySolver::Cholmod::init(UF_long* Ap, UF_long* Ai, double* Ax,
+void CholmodCholeskySolver::Cholmod::init(SuiteSparse_long* Ap, SuiteSparse_long* Ai, double* Ax,
                                           std::size_t M, std::size_t nz)
 {
   if (factorized)
@@ -333,7 +333,7 @@ void CholmodCholeskySolver::Cholmod::refine_once(cholmod_dense* x,
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::check_status(std::string function)
 {
-  UF_long status = c.status;
+  SuiteSparse_long status = c.status;
 
   if ( status < 0)
   {
