@@ -114,8 +114,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 %{
 def la_index_dtype():
     "Return the numpy dtype equivalent to the type of la_index"
-    from numpy import int32, int64
-    return int32 if common.sizeof_la_index() == 4 else int64
+    from numpy import intc, int64
+    return intc if common.sizeof_la_index() == 4 else int64
 %}
 
 // ---------------------------------------------------------------------------
@@ -254,9 +254,12 @@ def la_index_dtype():
         elif isinstance(indices, ndarray) and indices.dtype==bool:
             indices = indices.nonzero()[0]
 
-        # Convert to correct indextypes, if correct already asarray will
-        # just return the same array
-        indices = asarray(indices, dtype=la_index_dtype())
+        # Convert to correct indextypes
+        if isinstance(indices, ndarray):
+            if indices.dtype != la_index_dtype():
+                indices = indices.astype(la_index_dtype())
+        else:
+            indices = asarray(indices, dtype=la_index_dtype())
 
         # Check range
         # FIXME: What should local_size mean?
