@@ -362,3 +362,14 @@ def test_mpi_dofmap_stats(mesh):
 
     for owner in V.dofmap().off_process_owner():
         assert owner in neighbours
+
+def test_rectangular_matrix():
+    mesh = UnitSquareMesh(6, 6)
+
+    V = VectorFunctionSpace(mesh, "CG", 2)
+    Q = FunctionSpace(mesh, "CG", 1)
+
+    v = TestFunction(V)
+    p = TrialFunction(Q)
+
+    assemble(inner(grad(p), v)*dx)

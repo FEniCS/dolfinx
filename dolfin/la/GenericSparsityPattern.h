@@ -59,7 +59,7 @@ namespace dolfin
            const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
            const std::vector<const std::vector<std::size_t>* > local_to_global,
            const std::vector<const std::vector<int>* > off_process_owner,
-           const std::size_t block_size) = 0;
+           const std::vector<std::size_t> block_size) = 0;
 
     /// Insert non-zero entries using global indices
     virtual void insert_global(const std::vector<

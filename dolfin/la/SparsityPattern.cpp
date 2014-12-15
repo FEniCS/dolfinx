@@ -44,7 +44,7 @@ SparsityPattern::SparsityPattern(
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
   const std::vector<const std::vector<std::size_t>* > local_to_global,
   const std::vector<const std::vector<int>* > off_process_owner,
-  const std::size_t block_size,
+  const std::vector<std::size_t> block_size,
   std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
@@ -58,10 +58,11 @@ void SparsityPattern::init(
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
   const std::vector<const std::vector<std::size_t>* > local_to_global,
   const std::vector<const std::vector<int>* > off_process_owner,
-  const std::size_t block_size)
+  const std::vector<std::size_t> block_size)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
+  dolfin_assert(block_size.size() == 2);
 
   _mpi_comm = mpi_comm;
 
@@ -231,6 +232,7 @@ void SparsityPattern::insert_local(
   {
     // Parallel mode, use either diagonal, off_diagonal or non_local
     std::vector<dolfin::la_index>::const_iterator i_index;
+    std::size_t codim_block_size = _block_size[primary_codim];
     for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
     {
       if (*i_index < local_size0)
@@ -248,12 +250,12 @@ void SparsityPattern::insert_local(
           {
             dolfin_assert(*i_index < (int) off_diagonal.size());
             const std::div_t div
-              = std::div(int( *j_index - local_size1), (int) _block_size);
+              = std::div(int( *j_index - local_size1), (int) codim_block_size);
             const int j_node = div.quot;
             const int j_component = div.rem;
 
             const std::size_t J_node = _local_to_global[primary_codim][j_node];
-            const std::size_t J = _block_size*J_node + j_component;
+            const std::size_t J = codim_block_size*J_node + j_component;
             off_diagonal[*i_index].insert(J);
           }
         }
@@ -262,6 +264,7 @@ void SparsityPattern::insert_local(
       {
         // Store non-local entry (communicated later during apply())
         std::vector<dolfin::la_index>::const_iterator j_index;
+        std::size_t codim_block_size = _block_size[primary_codim];
         for (j_index = map_j->begin(); j_index != map_j->end(); ++j_index)
         {
           // Get global index
@@ -271,12 +274,12 @@ void SparsityPattern::insert_local(
           else
           {
             const std::div_t div
-              = std::div((int) (*j_index - local_size1), (int) _block_size);
+              = std::div((int) (*j_index - local_size1), (int) codim_block_size);
             const int j_node = div.quot;
             const int j_component = div.rem;
 
             const std::size_t J_node = _local_to_global[primary_codim][j_node];
-            J = _block_size*J_node + j_component;
+            J = codim_block_size*J_node + j_component;
           }
 
           // Store indices
@@ -387,6 +390,7 @@ void SparsityPattern::apply()
     dolfin_assert(non_local.size() % 2 == 0);
     std::vector<std::vector<std::size_t> > non_local_send(num_processes);
 
+    std::size_t dim_block_size = _block_size[_primary_dim];
     for (std::size_t i = 0; i < non_local.size(); i += 2)
     {
       // Get local indices of off-process dofs
@@ -395,7 +399,7 @@ void SparsityPattern::apply()
 
       // Figure out which process owns the row
       dolfin_assert(i_index >= local_size0);
-      const std::size_t i_offset = (i_index - local_size0)/_block_size;
+      const std::size_t i_offset = (i_index - local_size0)/dim_block_size;
       dolfin_assert(i_offset < _off_process_owner[_primary_dim].size());
       const std::size_t p = _off_process_owner[_primary_dim][i_offset];
 
@@ -409,12 +413,12 @@ void SparsityPattern::apply()
       else
       {
         std::size_t tmp = i_index - local_size0;
-        const std::div_t div = std::div((int) tmp, (int) _block_size);
+        const std::div_t div = std::div((int) tmp, (int) dim_block_size);
         const int i_node = div.quot;
         const int i_component = div.rem;
 
         const std::size_t I_node = _local_to_global[_primary_dim][i_node];
-        I = _block_size*I_node + i_component;
+        I = dim_block_size*I_node + i_component;
       }
 
       // Buffer local/global index pair to send

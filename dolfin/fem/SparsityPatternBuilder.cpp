@@ -67,12 +67,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   dolfin_assert(!dofmaps.empty());
   dolfin_assert(dofmaps[0]);
-  const std::size_t block_size = dofmaps[0]->block_size;
+  std::vector<std::size_t> block_size(rank);
   for (std::size_t i = 0; i < rank; ++i)
-  {
-    if (dofmaps[i]->block_size != block_size)
-      error("All dofmaps must have same block size (for now)");
-  }
+    block_size[i] = dofmaps[i]->block_size;
 
   // Initialise sparsity pattern
   if (init)
@@ -286,10 +283,11 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
   }
 
   // Initialize sparsity pattern
+  std::vector<std::size_t> block_size(global_dimensions.size(), 1);
   sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
                         global_dimensions,
                         local_range, local_to_global,
-                        off_process_owner, 1);
+                        off_process_owner, block_size);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
