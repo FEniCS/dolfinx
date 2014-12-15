@@ -640,12 +640,11 @@ PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64,
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64, value_shape,
                                                std_size_t, -1)
 #endif
+
 #if (DOLFIN_LA_INDEX_SIZE==4)
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT32, , NPY_INT, intc,
-                                    intc)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT32, , NPY_INT, int, intc)
 #else
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT64, , NPY_INT64, int64,
-                                    int64)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT64, , NPY_INT64, int64, int64)
 #endif
 
 // This typemap handles PETSc index typemap. Untested for 64-bit integers
