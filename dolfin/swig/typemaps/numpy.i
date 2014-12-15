@@ -314,17 +314,17 @@ SAFE_NUMPY_TYPEMAPS(std::size_t,INT64,NPY_UINTP,size_t,uintp)
 UNSAFE_NUMPY_TYPEMAPS(double, DOUBLE, NPY_DOUBLE, double, float_)
 
 #if (DOLFIN_LA_INDEX_SIZE==4)
-UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT,dolfin_index,intc)
-SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT,dolfin_index,intc)
+UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT32,dolfin_index,intc)
+SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT32,dolfin_index,intc)
 #else
 UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT64,NPY_INT64,dolfin_index,int64)
 SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT64,NPY_INT64,dolfin_index,int64)
 #endif
 
-UNSAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,intc)
+UNSAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT32,int,intc)
 UNSAFE_NUMPY_TYPEMAPS(long int,INT64,NPY_INT64,long_int,int64)
 
-SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,dolfin_index,intc)
+SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT32,dolfin_index,intc)
 SAFE_NUMPY_TYPEMAPS(long int,INT64,NPY_INT64,long_int,int64)
 
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
