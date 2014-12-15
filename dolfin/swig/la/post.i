@@ -269,7 +269,15 @@ def la_index_dtype():
     def __getitem__(self, indices):
         """Return values corresponding to the given local indices"""
         from numpy import ndarray, integer, long, array, zeros, float_
-        if isinstance(indices, (int, integer, long)):
+
+        # If indices is a slice
+        if isinstance(indices, slice):
+            if not (indices.start is None and indices.stop is None and \
+                    indices.step is None):
+                raise IndexError("can only return full slices v[:]")
+            return self.__getslice__(0, len(self))
+                
+        elif isinstance(indices, (int, integer, long)):
             indices = array([indices], dtype=la_index_dtype())
 
         indices = self._check_indices(indices)
@@ -288,8 +296,16 @@ def la_index_dtype():
         from numpy import asarray, ndarray, array, integer, isscalar, long, float_, ones
         try:
 
+            # If indices is a slice
+            if isinstance(indices, slice):
+                if not (indices.start is None and indices.stop is None and \
+                        indices.step is None):
+                    raise IndexError("can only set full slices v[:]")
+                self.__setslice__(0, len(self), values)
+                return
+                
             # If indices is a single integer
-            if isinstance(indices, (int, integer, long)):
+            elif isinstance(indices, (int, integer, long)):
                 if isscalar(values):
                     indices = array([indices], dtype=la_index_dtype())
                 else:

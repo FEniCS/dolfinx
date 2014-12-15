@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2014-11-24
+// Last changed: 2014-12-15
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -628,25 +628,21 @@ IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, , NPY_UINT, uint,
 #if (DOLFIN_SIZE_T==4)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, , NPY_UINTP, uintp,
                                     uintp)
-#else
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp,
-                                    uintp)
-#endif
-
-// This typemap handles PETSc index typemap. Untested for 64-bit integers
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
-
-#if (DOLFIN_SIZE_T==4)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32,
                                                coloring_type, std_size_t, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, value_shape,
                                                std_size_t, -1)
 #else
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp,
+                                    uintp)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64,
                                                coloring_type, std_size_t, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64, value_shape,
                                                std_size_t, -1)
 #endif
+
+// This typemap handles PETSc index typemap. Untested for 64-bit integers
+//IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
 
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double,
                                                -1)
@@ -664,6 +660,25 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, NPY_UINT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, NPY_UINTP)
 
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(double, double)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(int, int)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(unsigned int, uint)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(std::size_t, size_t)
+
+// This typemap handles dolfin::la_index, which can be a 32 or 64 bit integer
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(dolfin::la_index, dolfin_index)
+
+IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
+IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)
+#if (DOLFIN_SIZE_T==4)
+IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, facets,
+                                                  std_size_t)
+#else
+IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, facets,
+                                                  std_size_t)
+#endif
+
+// Specialized typemaps for dolfin::la_index
 %typemap(out) std::vector<dolfin::la_index>
 {
   // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT32)
@@ -685,23 +700,56 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, NPY_UINTP)
 
 }
 
-// Need specialized typemap for dolfin::la_index
-//OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, dolfin_index)
+// The typecheck
+%typecheck(SWIG_TYPECHECK_INT32_ARRAY) const std::vector<dolfin::la_index>& 
+{
+  $1 = PyArray_Check($input) ? PyArray_TYPE(reinterpret_cast<PyArrayObject*>($input))==:0;
+}
 
-OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(double, double)
-OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(int, int)
-OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(unsigned int, uint)
-OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(std::size_t, size_t)
+// The typemap
+%typemap(in) const std::vector<dolfin::la_index>&  (std::vector<dolfin::la_index> temp)
+{
+  // IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT32/INT64, ,
+  //                                     NPY_INT32/NPY_INT64, intc/int64, intc/int64)
+  if (!PyArray_Check($input))
+  {
+    SWIG_exception(SWIG_TypeError, "(2) numpy array of 'TYPE_NAME' expected. " \
+		     "Make sure that the numpy array use dtype=DESCR.");
+  }
 
-// This typemap handles dolfin::la_index, which can be a 32 or 64 bit integer
-OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(dolfin::la_index, dolfin_index)
+  PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
 
-IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
-IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)
-#if (DOLFIN_SIZE_T==4)
-IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, facets,
-                                                  std_size_t)
-#else
-IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, facets,
-                                                  std_size_t)
-#endif
+  if (sizeof(dolfin::la_index) == 4)
+  {
+    if ( PyArray_TYPE(xa) != NPY_INT32 )
+    {
+      SWIG_exception(SWIG_TypeError, "(1) numpy array of 'intc' expected." \
+                     " Make sure that the numpy array use dtype=intc.");
+    }
+  }
+  else if (sizeof(dolfin::la_index) == 8)
+  {
+    if ( PyArray_TYPE(xa) != NPY_INT64 )
+    {
+      SWIG_exception(SWIG_TypeError, "(1) numpy array of 'int64' expected." \
+                     " Make sure that the numpy array use dtype=int64.");
+    }
+  }
+  else
+    SWIG_exception(SWIG_TypeError, "sizeof(dolfin::la_index) incompatible NumPy types");
+
+  const std::size_t size = PyArray_DIM(xa, 0);
+  temp.resize(size);
+  dolfin::la_index* array = static_cast<dolfin::la_index*>(PyArray_DATA(xa));
+  if (PyArray_ISCONTIGUOUS(xa))
+  {
+    std::copy(array, array + size, temp.begin());
+  }
+  else
+  {
+    const npy_intp strides = PyArray_STRIDE(xa, 0)/sizeof(dolfin::la_index);
+    for (std::size_t i = 0; i < size; i++)
+      temp[i] = array[i*strides];
+  }
+  $1 = &temp;
+}
