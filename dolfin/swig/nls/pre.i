@@ -30,6 +30,7 @@
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::NonlinearProblem;
+%feature("director") dolfin::OptimisationProblem;
 
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::GenericFoo
