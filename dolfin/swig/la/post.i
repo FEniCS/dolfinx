@@ -114,8 +114,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 %{
 def la_index_dtype():
     "Return the numpy dtype equivalent to the type of la_index"
-    from numpy import int32, int64
-    return int32 if common.sizeof_la_index() == 4 else int64
+    from numpy import intc, int64
+    return intc if common.sizeof_la_index() == 4 else int64
 %}
 
 // ---------------------------------------------------------------------------
