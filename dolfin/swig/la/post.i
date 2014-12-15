@@ -254,9 +254,12 @@ def la_index_dtype():
         elif isinstance(indices, ndarray) and indices.dtype==bool:
             indices = indices.nonzero()[0]
 
-        # Convert to correct indextypes, if correct already asarray will
-        # just return the same array
-        indices = asarray(indices, dtype=la_index_dtype())
+        # Convert to correct indextypes
+        if isinstance(indices, ndarray):
+            if indices.dtype != la_index_dtype():
+                indices = indices.astype(la_index_dtype())
+        else:
+            indices = asarray(indices, dtype=la_index_dtype())
 
         # Check range
         # FIXME: What should local_size mean?
