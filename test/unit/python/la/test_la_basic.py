@@ -54,7 +54,6 @@ data_backends = [b for b in data_backends if has_linear_algebra_backend(b[0])]
 no_data_backends = [b for b in no_data_backends if has_linear_algebra_backend(b[0])]
 any_backends = data_backends + no_data_backends
 
-
 # Fixtures setting up and resetting the global linear algebra backend for a list of backends
 any_backend     = set_parameters_fixture("linear_algebra_backend", 
                                          any_backends, lambda x: x[0])
@@ -118,7 +117,7 @@ class TestBasicLaOperations:
         for T in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,\
                   int0,integer_types[-1]]:
             v[T(lind)] = 2.0
-            assert round(v[T(lind)] - 2.0, 7) == 0
+            assert round(sum(v[T(lind)] - 2.0), 7) == 0
 
         A = v.copy()
         B = as_backend_type(v.copy())
@@ -127,45 +126,45 @@ class TestBasicLaOperations:
         
         # Test global index access
         if A.owns_index(gind):
-            assert round(A[lind] - B[lind], 7) == 0
+            assert round(sum(A[lind] - B[lind]), 7) == 0
 
         lind0 = 5
-        round(A[lind0] - B[lind0], 7) == 0
+        round(sum(A[lind0] - B[lind0]), 7) == 0
 
         B *= 0.5
         A *= 2
-        assert round(A[lind0] - 4*B[lind0], 7) == 0
+        assert round(sum(A[lind0] - 4*B[lind0]), 7) == 0
 
         B /= 2
         A /= 0.5
-        assert round(A[lind0] - 16*B[lind0], 7) == 0
+        assert round(sum(A[lind0] - 16*B[lind0]), 7) == 0
 
         val1 = A[lind0]
         val2 = B[lind0]
 
         A += B
-        assert round(A[lind0] - val1-val2, 7) == 0
+        assert round(sum(A[lind0] - val1-val2), 7) == 0
 
         A -= B
-        assert round(A[lind0] - val1, 7) == 0
+        assert round(sum(A[lind0] - val1), 7) == 0
 
         C = 16*B
-        assert round(A[lind0] - C[lind0], 7) == 0
+        assert round(sum(A[lind0] - C[lind0]), 7) == 0
 
         D = (C + B)*5
-        assert round(D[lind0] - (val1 + val2)*5, 7) == 0
+        assert round(sum(D[lind0] - (val1 + val2)*5), 7) == 0
 
         F = (A-B)/4
-        assert round(F[lind0] - (val1 - val2)/4, 7) == 0
+        assert round(sum(F[lind0] - (val1 - val2)/4), 7) == 0
 
         A.axpy(100, B)
-        assert round(A[lind0] - val1 - val2*100, 7) == 0
+        assert round(sum(A[lind0] - val1 - val2*100), 7) == 0
 
         A2 = A.array()
         assert isinstance(A2,ndarray)
         assert A2.shape == (n1 - n0, )
 
-        assert round(A2[lind0] - A[lind0], 7) == 0
+        assert round(sum(A2[lind0] - A[lind0]), 7) == 0
         assert round(MPI.sum(A.mpi_comm(), A2.sum()) - A.sum(), 7) == 0
 
         B2 = B.array()
@@ -219,8 +218,8 @@ class TestBasicLaOperations:
 
         C[:] = 2
         D._assign(2)
-        assert round(C[0] - 2, 7) == 0
-        assert round(C[len(linds0)-1] - 2, 7) == 0
+        assert round(sum(C[0] - 2), 7) == 0
+        assert round(sum(C[len(linds0)-1] - 2), 7) == 0
         assert round(C.sum() - D.sum(), 7) == 0
 
         C[linds0] = 3
@@ -249,7 +248,7 @@ class TestBasicLaOperations:
 
         with pytest.raises(IndexError):
             wrong_dim([0,2], [0,2,4])
-        with pytest.raises(TypeError):
+        with pytest.raises(IndexError):
             wrong_dim([0,2], slice(0,4,1))
 
         # Tests bailout for these choices
@@ -333,10 +332,10 @@ class TestBasicLaOperations:
 
         # Miscellaneous tests
         u2 = 2*u - A*v
-        assert round(u2[4] - u[4], 7) == 0
+        assert round(sum(u2[4] - u[4]), 7) == 0
 
         u3 = 2*u + -1.0*(A*v)
-        assert round(u3[4] - u[4], 7) == 0
+        assert round(sum(u3[4] - u[4]), 7) == 0
 
         # Numpy arrays are not alligned in parallel
         if distributed:
