@@ -22,6 +22,7 @@
 // Modified by Patrick E. Farrell, 2012.
 // Modified by Benjamin Kehlet, 2012.
 // Modified by Andre Massing, 2013.
+// Modified by Tianyi Li, 2014.
 //
 // First added:  2007-11-25
 // Last changed: 2014-08-11
@@ -220,6 +221,7 @@
 %shared_ptr(dolfin::PETScSNESSolver)
 #ifdef ENABLE_PETSC_TAO
 %shared_ptr(dolfin::TAOLinearBoundSolver)
+%shared_ptr(dolfin::PETScTAOSolver)
 #endif
 // plot
 %shared_ptr(dolfin::VTKPlotter)

@@ -21,9 +21,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 // Modified by Fredrik Valdmanis 2011-2012
 // Modified by Jan Blechta 2013
-//
-// First added:  2004
-// Last changed: 2013-09-24
+// Modified by Martin Sandve Alnæs 2014
 
 #ifdef HAS_PETSC
 
@@ -112,11 +110,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
   if (_matA)
   {
-    #ifdef DOLFIN_DEPRECATION_ERROR
-    error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
-    #else
-    warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error.");
-    #endif
+    dolfin_error("PETScMatrix.cpp",
+                 "init PETSc matrix",
+                 "PETScMatrix may not be initialized more than once.");
     MatDestroy(&_matA);
   }
 
@@ -703,11 +699,9 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   {
     if (_matA)
     {
-      #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScVector may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
-      #else
-      warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
-      #endif
+      dolfin_error("PETScMatrix.cpp",
+                   "assign to PETSc matrix",
+                   "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
     _matA = NULL;
@@ -725,11 +719,9 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
                      "assign to PETSc matrix",
                      "More than one object points to the underlying PETSc object");
       }
-      #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
-      #else
-      warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
-      #endif
+      dolfin_error("PETScMatrix.cpp",
+                   "assign to PETSc matrix",
+                   "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
 
