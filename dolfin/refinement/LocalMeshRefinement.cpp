@@ -22,7 +22,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include "BisectionRefinement.h"
 #include "RegularCutRefinement.h"
 #include "LocalMeshRefinement.h"
 
@@ -48,14 +47,12 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
 
   // Call refinement algorithm
   const std::string refinement_algorithm = parameters["refinement_algorithm"];
-  if (refinement_algorithm == "recursive_bisection")
-    BisectionRefinement::refine_by_recursive_bisection(refined_mesh, mesh, cell_markers);
-  else if (refinement_algorithm == "regular_cut")
+  if (refinement_algorithm == "regular_cut")
     RegularCutRefinement::refine(refined_mesh, mesh, cell_markers);
   else
     dolfin_error("LocalMeshRefinement.cpp",
                  "refine mesh locally",
-                 "Unknown local mesh refinement algorithm: %s. Allowed algorithms are 'recursive_bisection' and 'regular_cut'", refinement_algorithm.c_str());
+                 "Unknown local mesh refinement algorithm: %s. Allowed algorithms are 'regular_cut'", refinement_algorithm.c_str());
 
   // Report the number of refined cells
   if (refined_mesh.topology().dim() > 0)
