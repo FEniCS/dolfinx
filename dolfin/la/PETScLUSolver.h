@@ -109,6 +109,8 @@ namespace dolfin
 
     friend class PETScSNESSolver;
 
+    friend class PETScTAOSolver;
+
   private:
 
     const MatSolverPackage _solver_package;

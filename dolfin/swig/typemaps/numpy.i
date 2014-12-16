@@ -341,7 +341,7 @@ NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)
 NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_UINTP, size_t)
 
 #if (DOLFIN_LA_INDEX_SIZE==4)
-NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT32, dolfin_index)
+NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT, dolfin_index)
 #else
 NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT64, dolfin_index)
 #endif

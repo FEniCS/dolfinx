@@ -16,11 +16,8 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2005-2010
-// Modified by Martin Sandve Alnes 2008
+// Modified by Martin Sandve Alnes 2008-2014
 // Modified by Andre Massing 2009
-//
-// First added:  2003-11-28
-// Last changed: 2014-06-04
 
 #include <algorithm>
 #include <map>
@@ -667,12 +664,6 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values)
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
   compute_vertex_values(vertex_values, *_function_space->mesh());
-}
-//-----------------------------------------------------------------------------
-void Function::update() const
-{
-  deprecation("Function::update()", "1.4", "1.5",
-              "Calling Function::update to update ghost values is no longer required.");
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()
