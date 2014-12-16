@@ -130,9 +130,8 @@ namespace dolfin
 
       // Mesh refinement
       p.add("refinement_algorithm",
-        "recursive_bisection",
-        {"recursive_bisection", "bisection", "iterative_bisection",
-        "recursive_bisection", "regular_cut"});
+        "regular_cut",
+            {"regular_cut", "plaza"});
 
       // Linear algebra
       std::string  default_backend = "uBLAS";

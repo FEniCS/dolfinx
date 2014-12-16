@@ -23,6 +23,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "RegularCutRefinement.h"
+#include "PlazaRefinementND.h"
 #include "LocalMeshRefinement.h"
 
 using namespace dolfin;
@@ -49,10 +50,12 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
   const std::string refinement_algorithm = parameters["refinement_algorithm"];
   if (refinement_algorithm == "regular_cut")
     RegularCutRefinement::refine(refined_mesh, mesh, cell_markers);
+  if (refinement_algorithm == "plaza")
+    PlazaRefinementND::refine(refined_mesh, mesh, cell_markers, false);
   else
     dolfin_error("LocalMeshRefinement.cpp",
                  "refine mesh locally",
-                 "Unknown local mesh refinement algorithm: %s. Allowed algorithms are 'regular_cut'", refinement_algorithm.c_str());
+                 "Unknown local mesh refinement algorithm: %s. Allowed algorithms are 'regular_cut', 'plaza'", refinement_algorithm.c_str());
 
   // Report the number of refined cells
   if (refined_mesh.topology().dim() > 0)
