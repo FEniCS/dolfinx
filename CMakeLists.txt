@@ -13,6 +13,20 @@ set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
 #------------------------------------------------------------------------------
+# Check compiler version
+
+# Check for GCC version - earlier versions have insuffcient C++11
+# support, or bugs. Version info is only available in CMake 2.8.0 and
+# later.
+if (NOT CMAKE_VERSION VERSION_LESS 2.8.10)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+      message(FATAL_ERROR "GCC version must be at least 4.6 (for sufficient C++11  support. You have version ${CMAKE_CXX_COMPILER_VERSION}")
+    endif()
+  endif()
+endif()
+
+#------------------------------------------------------------------------------
 # Get GIT changeset, if available
 
 # Check for git
