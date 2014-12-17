@@ -995,8 +995,8 @@ if (CPPUNIT_FOUND)
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
-  # Add target "test" for building tests
-  add_custom_target(test
+  # Add target "tests" for building tests
+  add_custom_target(tests
                     COMMAND ${MAKE_PROGRAM}
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
