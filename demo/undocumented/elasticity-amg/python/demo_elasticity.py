@@ -19,10 +19,17 @@ smoothed aggregation algerbaric multigrid"""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 from dolfin import *
 
+# Test for PETSc
+if not has_linear_algebra_backend("PETSc"):
+    print("DOLFIN has not been configured with PETSc. Exiting.")
+    exit()
+
+
 def build_nullspace(V, x):
-    """Function build null space for 3D elasticity"""
+    """Function to build null space for 3D elasticity"""
 
     # Create list of vectors for null space
     nullspace_basis = [x.copy() for i in range(6)]
@@ -47,7 +54,7 @@ def build_nullspace(V, x):
 
 
 # Load mesh and define function space
-mesh = Mesh("../pulley.xml")
+mesh = Mesh("../pulley.xml.gz")
 
 def inner_surface(x, on_boundary):
     r = 3.75 - x[2]*0.17
@@ -57,15 +64,15 @@ def inner_surface(x, on_boundary):
 omega = 300.0
 rho = 10.0
 
-# Loading due to centripetal acceleration
-f = Expression(("rho*omega*omega*sqrt(x[0]*x[0] + x[1]*x[1])", \
-                "rho*omega*omega*sqrt(x[0]*x[0] + x[1]*x[1])", \
+# Loading due to centripetal acceleration (rho*omega^2*x_i)
+f = Expression(("rho*omega*omega*x[0]", \
+                "rho*omega*omega*x[1]", \
                 "0.0"), omega=omega, rho=rho)
 
 # Elasticity parameters
-E  = 10.0
+E  = 1.0e9
 nu = 0.3
-mu    = E / (2.0*(1.0 + nu))
+mu = E/(2.0*(1.0 + nu))
 lmbda = E*nu / ((1.0 + nu)*(1.0 - 2.0*nu))
 
 # Stress computation
