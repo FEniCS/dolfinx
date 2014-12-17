@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Garth N. Wells
+// Copyright (C) 2005-2014 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,6 @@
 // Modified by Anders Logg 2008-2012
 // Modified by Marie Rognes 2009
 // Modified by Fredrik Valdmanis 2011
-//
-// First added:  2005-08-31
-// Last changed: 2012-02-22
 
 #ifdef HAS_SLEPC
 
