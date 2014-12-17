@@ -27,6 +27,8 @@ if not has_linear_algebra_backend("PETSc"):
     print("DOLFIN has not been configured with PETSc. Exiting.")
     exit()
 
+# Set backend to PETSC
+parameters["linear_algebra_backend"] = "PETSc"
 
 def build_nullspace(V, x):
     """Function to build null space for 3D elasticity"""
@@ -131,7 +133,7 @@ if MPI.size(mesh.mpi_comm()) > 1:
 # Project and write stress field to post-processing file
 W = TensorFunctionSpace(mesh, "Discontinuous Lagrange", 0)
 stress = project(sigma(u), V=W)
-File("streess.pvd") << stress
+File("stress.pvd") << stress
 
 # Plot solution
 plot(u, interactive=True)
