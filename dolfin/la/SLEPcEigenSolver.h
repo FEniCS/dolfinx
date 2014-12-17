@@ -177,14 +177,17 @@ namespace dolfin
     void get_eigenpair(double& lr, double& lc,
                        PETScVector& r, PETScVector& c, std::size_t i) const;
 
-    // Get the number of iterations used by the solver
+    /// Get the number of iterations used by the solver
     std::size_t get_iteration_number() const;
 
-    // Get the number of converged eigenvalues
+    /// Get the number of converged eigenvalues
     std::size_t get_number_converged() const;
 
-    // Set deflation space
+    /// Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
+
+    /// Return SLEPc EPS pointer
+    EPS eps() const;
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -229,7 +232,7 @@ namespace dolfin
     std::shared_ptr<const PETScMatrix> _matB;
 
     // SLEPc solver pointer
-    EPS eps;
+    EPS _eps;
 
   };
 
