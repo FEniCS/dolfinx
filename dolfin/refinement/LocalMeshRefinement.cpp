@@ -50,7 +50,7 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
   const std::string refinement_algorithm = parameters["refinement_algorithm"];
   if (refinement_algorithm == "regular_cut")
     RegularCutRefinement::refine(refined_mesh, mesh, cell_markers);
-  if (refinement_algorithm == "plaza")
+  else if (refinement_algorithm == "plaza")
     PlazaRefinementND::refine(refined_mesh, mesh, cell_markers, false);
   else
     dolfin_error("LocalMeshRefinement.cpp",
