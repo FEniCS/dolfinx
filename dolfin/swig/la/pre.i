@@ -220,6 +220,7 @@
 #ifdef HAS_SLEPC
 %ignore dolfin::SLEPcEigenSolver(const PETScMatrix&);
 %ignore dolfin::SLEPcEigenSolver(const PETScMatrix&, const PETScMatrix&);
+%ignore dolfin::SLEPcEigenSolver::eps;
 #endif
 
 //-----------------------------------------------------------------------------
