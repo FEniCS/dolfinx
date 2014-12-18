@@ -1,3 +1,5 @@
+ - Add GenericMatrix::nnz() function to return number of nonzero
+	entries in matrix (fixes #110)
  - Remove CGAL dependency and mesh generation, now provided by mshr
  - Python 2.7 required
  - Add experimental Python 3 support. Need swig version 3.0.3 or later
