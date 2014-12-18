@@ -33,6 +33,9 @@ parameters["linear_algebra_backend"] = "PETSc"
 def build_nullspace(V, x):
     """Function to build null space for 3D elasticity"""
 
+    # Get mesh
+    mesh = V.mesh()
+
     # Create list of vectors for null space
     nullspace_basis = [x.copy() for i in range(6)]
 
