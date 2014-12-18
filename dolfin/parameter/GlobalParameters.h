@@ -131,7 +131,7 @@ namespace dolfin
       // Mesh refinement
       p.add("refinement_algorithm",
         "regular_cut",
-            {"regular_cut", "plaza"});
+            {"regular_cut", "plaza", "plaza_with_parent_facets"});
 
       // Linear algebra
       std::string  default_backend = "uBLAS";

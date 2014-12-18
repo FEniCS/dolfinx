@@ -46,9 +46,9 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
   if(MPI::size(mesh.mpi_comm()) == 1)
     UniformMeshRefinement::refine(refined_mesh, mesh);
   else if(D == 2)
-    PlazaRefinementND::refine(refined_mesh, mesh, redistribute);
+    PlazaRefinementND::refine(refined_mesh, mesh, redistribute, false);
   else if(D == 3)
-    PlazaRefinementND::refine(refined_mesh, mesh, redistribute);
+    PlazaRefinementND::refine(refined_mesh, mesh, redistribute, false);
   else
   {
     dolfin_error("refine.cpp",
@@ -78,12 +78,12 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
   else if (D == 2)
   {
     PlazaRefinementND::refine(refined_mesh, mesh, cell_markers,
-                                 redistribute);
+                              redistribute, false);
   }
   else if (D == 3)
   {
     PlazaRefinementND::refine(refined_mesh, mesh, cell_markers,
-                                 redistribute);
+                              redistribute, false);
   }
   else
   {
