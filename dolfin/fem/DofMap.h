@@ -118,28 +118,13 @@ namespace dolfin
     /// Return number of owned, unowned, or all dofs on this process
     ///
     /// *Arguments*
-    ///     type (LocalDimensionType)
-    ///         Either (dolfin::)owned_dofs, unowned_dofs, or all_dofs
+    ///     type (std::string)
+    ///         Either "owned_dofs", "unowned_dofs", or "all_dofs"
     ///
     /// *Returns*
     ///     std::size_t
     ///         Number of local dofs.
-    std::size_t local_dimension(LocalDimensionType type) const
-    {
-      switch(type) {
-      case owned_dofs:
-        return _local_ownership_size;
-      case unowned_dofs:
-        return block_size*_local_to_global_unowned.size();
-      case all_dofs:
-        return _local_ownership_size + block_size*_local_to_global_unowned.size();
-      }
-
-      // We should not get here
-      dolfin_assert(false);
-      return 0;
-    }
-
+    std::size_t local_dimension(std::string type) const;
 
     // FIXME: Rename this function, 'cell_dimension' sounds confusing
 

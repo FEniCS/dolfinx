@@ -336,3 +336,5 @@ def test_local_dimension(V, Q, W):
         assert dim1 == ownership_range[1] - ownership_range[0]
         assert dim3 == local_to_global_map.size
         assert dim1 + dim2 == dim3
+        with pytest.raises(RuntimeError):
+            dofmap.local_dimension('foo')

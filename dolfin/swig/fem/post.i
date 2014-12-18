@@ -64,18 +64,6 @@ def function_space(self, i):
 //-----------------------------------------------------------------------------
 // Extend GenericDofMap.tabulate_coordinates()
 //-----------------------------------------------------------------------------
-%feature("docstring") dolfin::GenericDofMap::local_dimension "
-Return number of owned, unowned, or all dofs on this process
-
-*Arguments*
-    type (string)
-        Either 'owned', 'unowned' or 'all_dofs'
-
-*Returns*
-    std::size_t
-        Number of local dofs.
-";
-
 %extend dolfin::GenericDofMap {
   void _tabulate_coordinates(PyObject* coordinates, const Cell& cell)
   {
@@ -103,18 +91,6 @@ Return number of owned, unowned, or all dofs on this process
       for (std::size_t j = 0; j < gdim; j++)
         data[i*gdim + j] = tmparray[i][j];
   }
-
-  std::size_t local_dimension(std::string local_dim_type) const {
-    if (local_dim_type == "all_dofs")
-      return self->local_dimension(dolfin::all_dofs);
-    else if (local_dim_type == "unowned_dofs")
-      return self->local_dimension(dolfin::unowned_dofs);
-    else if (local_dim_type == "owned_dofs")
-      return self->local_dimension(dolfin::owned_dofs);
-    else
-      throw std::runtime_error("expected owned_dofs, unowned_dofs, or all_dofs as argument");
-  }
-
 
 %pythoncode %{
 def tabulate_coordinates(self, cell, coordinates=None):
