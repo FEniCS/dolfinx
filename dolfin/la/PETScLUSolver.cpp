@@ -331,16 +331,27 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   if (method == "default")
   {
     #if defined(PETSC_USE_64BIT_INDICES)
-      // Favour SuperLU_dist as default with 64 bit indices (appears
-      // more robust)
+    if (MPI::size(MPI_COMM_WORLD) == 1)
+    {
+      #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
+      method = "umfpack";
+      #elif PETSC_HAVE_SUPERLU_DIST
+      method = "superlu_dist";
+      #else
+      method = "petsc";
+      warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. Umfpack, SuperLU_dist).");
+      #endif
+    }
+    else
+    {
       #if PETSC_HAVE_SUPERLU_DIST
       method = "superlu_dist";
-      #elif PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
-      method = "umfpack";
       #else
       method = "petsc";
       warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. SuperLU_dist).");
       #endif
+
+    }
     #else
     if (MPI::size(MPI_COMM_WORLD) == 1)
     {
