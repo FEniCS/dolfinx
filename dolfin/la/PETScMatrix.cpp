@@ -642,6 +642,13 @@ MPI_Comm PETScMatrix::mpi_comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
+std::size_t PETScMatrix::nnz() const
+{
+  MatInfo info;
+  MatGetInfo(_matA, MAT_GLOBAL_SUM, &info);
+  return info.nz_allocated;
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
   dolfin_assert(_matA);

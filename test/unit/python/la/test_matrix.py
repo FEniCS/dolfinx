@@ -39,7 +39,8 @@ no_data_backends = [("PETSc", "")]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
-    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't used in the old test.
+    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
+    # used in the old test.
     data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse")]
     no_data_backends += [("PETScCusp", "")]
 
@@ -94,8 +95,10 @@ class TestMatrixForAnyBackend:
         return A, B
 
     def test_basic_la_operations(self, use_backend, any_backend):
-        # Hack to make old tests work in new framework. The original setup was a bit exoteric...
-        # TODO: Removing use of self in this class will make it clearer what happens in this test.
+        # Hack to make old tests work in new framework. The original
+        # setup was a bit exoteric...
+        # TODO: Removing use of self in this class will make it
+        # clearer what happens in this test.
         self.backend, self.sub_backend = any_backend
 
         from numpy import ndarray, array, ones, sum
@@ -377,3 +380,9 @@ class TestMatrixForAnyBackend:
         A = as_backend_type(A)
         with pytest.raises(RuntimeError):
             A.data()
+
+
+    def test_matrix_nnz(self, any_backend):
+        A, B = self.assemble_matrices()
+        assert A.nnz() == 2992
+        assert B.nnz() == 9398
