@@ -88,7 +88,6 @@ int main()
   public:
 
     CentripetalLoading() : Expression(3) {}
-
     void eval(Array<double>& values, const Array<double>& x) const
     {
       const double omega = 300.0;
@@ -97,7 +96,6 @@ int main()
       values[1] = rho*omega*omega*x[1];
       values[2] = 0.0;
     }
-
   };
 
   // Read mesh
@@ -200,7 +198,8 @@ int main()
   interactive();
 
   #else
-  dolfin::cout << "DOLFIN must be configured with PETSc to run this demo." << dolfin::endl;
+  dolfin::cout << "DOLFIN must be configured with PETSc to run this demo."
+               << dolfin::endl;
   #endif
 
  return 0;

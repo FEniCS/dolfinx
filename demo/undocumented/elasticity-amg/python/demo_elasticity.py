@@ -1,6 +1,6 @@
 """This demo solves the equations of static linear elasticity for a
 pulley subjected to centripetal accelerations. The solver uses
-smoothed aggregation algerbaric multigrid"""
+smoothed aggregation algerbaric multigrid."""
 
 # Copyright (C) 2014 Garth N. Wells
 #
@@ -33,9 +33,6 @@ parameters["linear_algebra_backend"] = "PETSc"
 def build_nullspace(V, x):
     """Function to build null space for 3D elasticity"""
 
-    # Get mesh
-    mesh = V.mesh()
-
     # Create list of vectors for null space
     nullspace_basis = [x.copy() for i in range(6)]
 
@@ -45,12 +42,12 @@ def build_nullspace(V, x):
     V.sub(2).dofmap().set(nullspace_basis[2], 1.0);
 
     # Build rotational null space basis
-    V.sub(0).dofmap().set_x(nullspace_basis[3], -1.0, 1, mesh);
-    V.sub(1).dofmap().set_x(nullspace_basis[3],  1.0, 0, mesh);
-    V.sub(0).dofmap().set_x(nullspace_basis[4],  1.0, 2, mesh);
-    V.sub(2).dofmap().set_x(nullspace_basis[4], -1.0, 0, mesh);
-    V.sub(2).dofmap().set_x(nullspace_basis[5],  1.0, 1, mesh);
-    V.sub(1).dofmap().set_x(nullspace_basis[5], -1.0, 2, mesh);
+    V.sub(0).dofmap().set_x(nullspace_basis[3], -1.0, 1, V.mesh());
+    V.sub(1).dofmap().set_x(nullspace_basis[3],  1.0, 0, V.mesh());
+    V.sub(0).dofmap().set_x(nullspace_basis[4],  1.0, 2, V.mesh());
+    V.sub(2).dofmap().set_x(nullspace_basis[4], -1.0, 0, V.mesh());
+    V.sub(2).dofmap().set_x(nullspace_basis[5],  1.0, 1, V.mesh());
+    V.sub(1).dofmap().set_x(nullspace_basis[5], -1.0, 2, V.mesh());
 
     for x in nullspace_basis:
         x.apply("insert")
@@ -61,6 +58,7 @@ def build_nullspace(V, x):
 # Load mesh and define function space
 mesh = Mesh("../pulley.xml.gz")
 
+# Function to mark inner surface of pulley
 def inner_surface(x, on_boundary):
     r = 3.75 - x[2]*0.17
     return (x[0]*x[0] + x[1]*x[1]) < r*r and on_boundary
@@ -75,14 +73,15 @@ f = Expression(("rho*omega*omega*x[0]", \
                 "0.0"), omega=omega, rho=rho)
 
 # Elasticity parameters
-E  = 1.0e9
+E = 1.0e9
 nu = 0.3
 mu = E/(2.0*(1.0 + nu))
-lmbda = E*nu / ((1.0 + nu)*(1.0 - 2.0*nu))
+lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
 
 # Stress computation
 def sigma(v):
-    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.geometric_dimension())
+    gdim = v.geometric_dimension()
+    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(gdim)
 
 # Create function space
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
@@ -90,7 +89,6 @@ V = VectorFunctionSpace(mesh, "Lagrange", 1)
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-
 a = inner(sigma(u), grad(v))*dx
 L = inner(f, v)*dx
 
@@ -107,7 +105,7 @@ u = Function(V)
 
 # Create near null space basis (required for smoothed aggregation
 # AMG). The solution vector is passed so that it can be copied to
-# generate compatible vectors for the nullspace
+# generate compatible vectors for the nullspace.
 null_space = build_nullspace(V, u.vector())
 
 # Create PETSC smoothed aggregation AMG preconditioner and attach near
