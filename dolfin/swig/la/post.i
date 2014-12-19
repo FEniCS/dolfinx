@@ -114,8 +114,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 %{
 def la_index_dtype():
     "Return the numpy dtype equivalent to the type of la_index"
-    from numpy import int32, int64
-    return int32 if common.sizeof_la_index() == 4 else int64
+    from numpy import intc, int64
+    return intc if common.sizeof_la_index() == 4 else int64
 %}
 
 // ---------------------------------------------------------------------------
@@ -254,9 +254,19 @@ def la_index_dtype():
         elif isinstance(indices, ndarray) and indices.dtype==bool:
             indices = indices.nonzero()[0]
 
-        # Convert to correct indextypes, if correct already asarray will
-        # just return the same array
-        indices = asarray(indices, dtype=la_index_dtype())
+        # Convert to correct indextypes
+        if isinstance(indices, ndarray):
+
+            # For some obscure reason we need to compare the char
+            # attribute of the dtype to be able to differentiate
+            # between correct dtypes. And to get the char attribute we
+            # need to instantiate the bloody dtype and then access the
+            # fraking dtype of the dtype, which can be asked for its
+            # char...
+            if indices.dtype.char != la_index_dtype()().dtype.char:
+                indices = indices.astype(la_index_dtype())
+        else:
+            indices = asarray(indices, dtype=la_index_dtype())
 
         # Check range
         # FIXME: What should local_size mean?
@@ -269,7 +279,15 @@ def la_index_dtype():
     def __getitem__(self, indices):
         """Return values corresponding to the given local indices"""
         from numpy import ndarray, integer, long, array, zeros, float_
-        if isinstance(indices, (int, integer, long)):
+
+        # If indices is a slice
+        if isinstance(indices, slice):
+            if not (indices.start is None and indices.stop is None and \
+                    indices.step is None):
+                raise IndexError("can only return full slices v[:]")
+            return self.__getslice__(0, len(self))
+                
+        elif isinstance(indices, (int, integer, long)):
             indices = array([indices], dtype=la_index_dtype())
 
         indices = self._check_indices(indices)
@@ -288,8 +306,16 @@ def la_index_dtype():
         from numpy import asarray, ndarray, array, integer, isscalar, long, float_, ones
         try:
 
+            # If indices is a slice
+            if isinstance(indices, slice):
+                if not (indices.start is None and indices.stop is None and \
+                        indices.step is None):
+                    raise IndexError("can only set full slices v[:]")
+                self.__setslice__(0, len(self), values)
+                return
+                
             # If indices is a single integer
-            if isinstance(indices, (int, integer, long)):
+            elif isinstance(indices, (int, integer, long)):
                 if isscalar(values):
                     indices = array([indices], dtype=la_index_dtype())
                 else:

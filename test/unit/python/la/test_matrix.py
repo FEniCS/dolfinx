@@ -251,7 +251,7 @@ class TestMatrixForAnyBackend:
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
             A, B = self.assemble_matrices(use_backend=use_backend)
-            with pytest.raises(RuntimeError):
+            with pytest.raises(Exception):
                 A.ident_zeros()
 
         # Assemble matrix A with diagonal entries

@@ -1,6 +1,16 @@
 set(DOLFIN_H dolfin.h)
 install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR} COMPONENT Development)
 
+# Configure and install dolfin/common/version.h file
+string(REPLACE "+" "" DOLFIN_VERSION_MICRO_STRIPPED ${DOLFIN_VERSION_MICRO})
+configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
+  ${CMAKE_BINARY_DIR}/dolfin/common/version.h @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
+  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/common/
+  COMPONENT Development
+  )
+include_directories(${CMAKE_BINARY_DIR})
+
 #set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
