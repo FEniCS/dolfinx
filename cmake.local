@@ -16,7 +16,7 @@
 CMAKE_EXTRA_ARGS=$@
 
 # Get branch name
-BRANCH=`git branch | grep '*' | cut -d' ' -f2 | sed s:/:.:g`
+BRANCH=`git symbolic-ref --short HEAD 2> /dev/null || git describe HEAD`
 
 # Set installation and build directory
 INSTALLDIR=$PWD/local.$BRANCH
