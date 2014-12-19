@@ -93,11 +93,15 @@ def test_krylov_samg_solver_elasticity():
         return solver.solve(u.vector(), b)
 
 
-    # Set some multigrid parameters
+    # Set some multigrid smoother parameters
     PETScOptions.set("mg_levels_ksp_type", "chebyshev")
     PETScOptions.set("mg_levels_pc_type", "jacobi")
+
+    # Improve estimate of eigenvalues for Chebyshev smoothing
     PETScOptions.set("mg_levels_est_ksp_type", "cg")
     PETScOptions.set("mg_levels_est_ksp_max_it", 50)
+    PETScOptions.set("gamg_est_ksp_type", "cg")
+    PETScOptions.set("gamg_est_ksp_max_it", 50)
 
     methods = ["petsc_amg"]
     if "ml_amg" in map(list, zip(*PETScPreconditioner.preconditioners()))[0]:
@@ -108,4 +112,4 @@ def test_krylov_samg_solver_elasticity():
         for N in [4, 8, 16, 32, 64]:
             print("Testing method '{}' with {} x {} mesh".format(method, N, N))
             niter = amg_solve(N, method)
-            assert niter < 15
+            assert niter < 12
