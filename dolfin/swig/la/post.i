@@ -1009,6 +1009,30 @@ _matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
 #endif  // HAS_PETSC4PY
 #endif  // HAS_PETSC
 
+#ifdef HAS_SLEPC
+#ifdef HAS_SLEPC4PY
+// Override default SLEPcEigenSolver.eps() call.
+// These are wrapped up by slepcc4py typemaps so that
+// we see a slepc4py object on the python side.
+%feature("docstring") dolfin::SLEPcEigenSolver::eps "Return slepc4py representation of SLEPc EPS";
+%extend dolfin::SLEPcEigenSolver
+{
+  void eps(EPS &e)
+  { e = self->eps(); }
+}
+#else
+%extend dolfin::SLEPcEigenSolver{
+    %pythoncode %{
+        def eps(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access SLEPcEigenSolver objects in python",
+                                "dolfin must be configured with slepc4py enabled")
+            return None
+    %}
+}
+#endif  // HAS_PETSC4PY
+#endif  // HAS_PETSC
+
 // ---------------------------------------------------------------------------
 // Dynamic wrappers for GenericTensor::as_backend_type and GenericTensor::has_type,
 // using dict of tensor types to select from C++ template instantiations
