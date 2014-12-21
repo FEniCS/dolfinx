@@ -81,7 +81,8 @@ void SubSystemsManager::init_mpi()
     return;
 
   // Init MPI with highest level of thread support and take responsibility
-  char* c;
+  std::string s("");
+  char* c = const_cast<char *>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
   singleton().control_mpi = true;
   #else

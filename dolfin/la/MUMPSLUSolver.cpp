@@ -23,6 +23,7 @@
 
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/MPI.h"
+#include "dolfin/common/types.h"
 #include "dolfin/log/log.h"
 #include "CoordinateMatrix.h"
 #include "GenericVector.h"
@@ -185,8 +186,16 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
     x_local_indices[i]--;
 
   // Set x values
-  x.set(x_local_vals.data(), x_local_indices.size(),
-        x_local_indices.data());
+  #if defined(PETSC_USE_64BIT_INDICES)
+  // Cast indices to 64 bit
+  std::vector<dolfin::la_index> _x_local_indices(x_local_indices.begin(),
+                                                 x_local_indices.end());
+  x.set_local(x_local_vals.data(), x_local_indices.size(),
+              _x_local_indices.data());
+  #else
+  x.set_local(x_local_vals.data(), x_local_indices.size(),
+              x_local_indices.data());
+  #endif
   x.apply("insert");
 
   // Clean up
