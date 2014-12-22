@@ -84,6 +84,9 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
     { return PETScBaseMatrix::local_range(dim); }
 
+    /// Return number of non-zero entries in matrix (collective)
+    std::size_t nnz() const;
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -155,8 +158,11 @@ namespace dolfin
                         const std::vector<std::size_t>& columns,
                         const std::vector<double>& values);
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows);
 
     /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);

@@ -32,6 +32,18 @@
 %template(__lshift__) dolfin::File::operator<< <Parameters>;
 %template(__lshift__) dolfin::File::operator<< <Function>;
 
+%extend dolfin::File {
+%pythoncode %{
+def __enter__(self) :
+    return self
+
+def __exit__(self, type, value, traceback) :
+    pass
+    # Do Nothing...
+    #self.close()
+%}
+}
+
 #ifdef HAS_HDF5
 %extend dolfin::HDF5Attribute {
   void __setitem__(std::string key, double value)
@@ -59,6 +71,42 @@ def __getitem__(self, key):
     elif attr_type=="vectorint":
         return [int(x) for x in self.str(key).split(",")]
     return None
+
+def __contains__(self, key):
+    return self.exists(key)
+
+def __len__(self, key):
+    return len(self.list_attributes())
+
+def __iter__(self):
+    for key in self.list_attributes():
+        yield key
+
+def items(self):
+    "Returns a list of all key and value pairs"
+    return [(key, self[key]) for key in self]
+
+def values(self):
+    "Returns a list of all values"
+    return [self[key] for key in self]
+
+def keys(self):
+    "Returns a list of all values"
+    return self.list_attributes()
+
+def to_dict(self):
+    "Return a dict representation (copy) of all data"
+    return dict(t for t in self.items())
+%}
+}
+
+%extend dolfin::HDF5File {
+%pythoncode %{
+def __enter__(self) :
+    return self
+
+def __exit__(self, type, value, traceback) :
+    self.close()
 %}
 }
 #endif

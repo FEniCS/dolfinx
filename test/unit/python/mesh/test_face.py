@@ -41,12 +41,12 @@ def test_Area(cube, square):
 
     area = 0.0
     for f in faces(cube):
-	area += f.area()
+        area += f.area()
     assert round(area - 39.21320343559672494393, 7) == 0
 
     area = 0.0
     for f in faces(square):
-	area += f.area()
+        area += f.area()
     assert round(area - 1.0, 7) == 0
 
 
@@ -54,12 +54,12 @@ def test_Area(cube, square):
 def test_NormalPoint(cube, square):
     """Compute normal vector to each face."""
     for f in faces(cube):
-	n = f.normal()
-	assert round(n.norm() - 1.0, 7) == 0
+        n = f.normal()
+        assert round(n.norm() - 1.0, 7) == 0
 
     f = Face(square, 0)
     with pytest.raises(RuntimeError):
-	f.normal()
+        f.normal()
 
 
 @skip_in_parallel
@@ -67,10 +67,10 @@ def test_NormalComponent(cube, square):
     """Compute normal vector components to each face."""
     D = cube.topology().dim()
     for f in faces(cube):
-	n = [f.normal(i) for i in range(D)]
-	norm = sum([x*x for x in n])
-	assert round(norm - 1.0, 7) == 0
+        n = [f.normal(i) for i in range(D)]
+        norm = sum([x*x for x in n])
+        assert round(norm - 1.0, 7) == 0
 
     f = Face(square, 0)
     with pytest.raises(RuntimeError):
-	f.normal(0)
+        f.normal(0)

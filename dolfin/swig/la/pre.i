@@ -88,8 +88,8 @@
 //-----------------------------------------------------------------------------
 // Modify the Scalar interface
 //-----------------------------------------------------------------------------
-%rename(__float__) dolfin::Scalar::operator double;
-%rename(assign) dolfin::Scalar::operator=;
+//%rename(__float__) dolfin::Scalar::operator double;
+//%rename(assign) dolfin::Scalar::operator=;
 
 //-----------------------------------------------------------------------------
 // Typemaps for GenericMatrix get and set functions
@@ -220,6 +220,7 @@
 #ifdef HAS_SLEPC
 %ignore dolfin::SLEPcEigenSolver(const PETScMatrix&);
 %ignore dolfin::SLEPcEigenSolver(const PETScMatrix&, const PETScMatrix&);
+%ignore dolfin::SLEPcEigenSolver::eps;
 #endif
 
 //-----------------------------------------------------------------------------

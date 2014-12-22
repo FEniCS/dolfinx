@@ -20,7 +20,7 @@
 // Modified by Fredrik Valdmanis 2011
 //
 // First added:  2005-12-02
-// Last changed: 2013-11-25
+// Last changed: 2014-07-09
 
 #ifdef HAS_PETSC
 
@@ -50,7 +50,9 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
     {"minres",     KSPMINRES},
     {"tfqmr",      KSPTFQMR},
     {"richardson", KSPRICHARDSON},
-    {"bicgstab",   KSPBCGS} };
+    {"bicgstab",   KSPBCGS},
+    {"nash",       KSPNASH},
+    {"stcg",       KSPSTCG} };
 
 // Mapping from method string to description
 const std::vector<std::pair<std::string, std::string> >
@@ -297,7 +299,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %d rows and right-hand side vector has %d rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld rows and right-hand side vector has %ld rows)",
                  _matA->size(0), b.size());
   }
 
@@ -699,7 +701,7 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %d rows and right-hand side vector has %d rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld rows and right-hand side vector has %ld rows)",
                  A.size(0), b.size());
   }
 
@@ -708,7 +710,7 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %d columns and solution vector has %d rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld columns and solution vector has %ld rows)",
                  A.size(1), x.size());
   }
 

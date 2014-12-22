@@ -330,13 +330,35 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   // Choose appropriate 'default' solver
   if (method == "default")
   {
+    #if defined(PETSC_USE_64BIT_INDICES)
+    if (MPI::size(MPI_COMM_WORLD) == 1)
+    {
+      #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
+      method = "umfpack";
+      #elif PETSC_HAVE_SUPERLU_DIST
+      method = "superlu_dist";
+      #else
+      method = "petsc";
+      warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. Umfpack, SuperLU_dist).");
+      #endif
+    }
+    else
+    {
+      #if PETSC_HAVE_SUPERLU_DIST
+      method = "superlu_dist";
+      #else
+      method = "petsc";
+      warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. SuperLU_dist).");
+      #endif
+
+    }
+    #else
     if (MPI::size(MPI_COMM_WORLD) == 1)
     {
       #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
       method = "umfpack";
       #elif PETSC_HAVE_MUMPS
       method = "mumps";
-      PETScOptions::set("mat_mumps_icntl_7", 0);
       #elif PETSC_HAVE_PASTIX
       method = "pastix";
       #elif PETSC_HAVE_SUPERLU
@@ -352,7 +374,6 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
     {
       #if PETSC_HAVE_MUMPS
       method = "mumps";
-      PETScOptions::set("mat_mumps_icntl_7", 0);
       #elif PETSC_HAVE_SUPERLU_DIST
       method = "superlu_dist";
       #elif PETSC_HAVE_PASTIX
@@ -363,6 +384,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
                    "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
       #endif
     }
+    #endif
   }
 
   return _methods.find(method)->second;

@@ -78,6 +78,10 @@ namespace dolfin
       local_range(std::size_t dim) const
     { return matrix->local_range(dim); }
 
+    /// Return number of non-zero entries in matrix (collective)
+    virtual std::size_t nnz() const
+    { return matrix->nnz(); }
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()
     { matrix->zero(); }
@@ -162,6 +166,10 @@ namespace dolfin
     /// Set given rows to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows)
     { matrix->zero(m, rows); }
+
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows)
+    { matrix->zero_local(m, rows); }
 
     /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows)

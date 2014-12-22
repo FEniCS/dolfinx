@@ -3,6 +3,7 @@ Authors/contributors in alphabetical order:
   Ido Akkerman          <I.Akkerman@tudelft.nl>             (-)
   Martin Sandve Alnæs   <martinal@simula.no>                (C)
   Fredrik Bengzon       <bengzon@math.chalmers.se>          (-)
+  Aslak Bergersen       <aslak.bergersen@gmail.com>         (C)
   Jan Blechta           <blechta@karlin.mff.cuni.cz>        (C)
   Rolv Erlend Bredesen  <rolv@simula.no>                    (C)
   Jed Brown             <fenics@59A2.org>                   (C)
@@ -27,6 +28,7 @@ Authors/contributors in alphabetical order:
   Karin Kraft           <kakr@math.chalmers.se>             (-)
   Aleksandra Krusper    <PDE project course 2001/2002>      (-)
   Evan Lezar            <mail@evanlezar.com>                (C)
+  Tianyi Li             <<tianyi.li@polytechnique.edu>>     (C)
   Dag Lindbo            <dag@csc.kth.se>                    (C)
   Glenn Terje Lines     <glennli@simula.no>                 (C)
   Anders Logg           <logg@simula.no>                    (C)
@@ -64,7 +66,7 @@ Authors/contributors in alphabetical order:
   Ilmar Wilbers         <ilmarw@simula.dot.no>              (C)
   Cian Wilson           <cwilson@ldeo.columbia.edu>         (C)
   Åsmund Ødegård        <aasmund@simula.no>                 (C)
-  Kristian Ølgaard      <k.b.oelgaard@tudelft.nl>           (C)
+  Kristian Ølgaard      <kbo@civil.aau.dk>                  (C)
 
 (C) = copyright form signed
 (!) = missing copyright form!

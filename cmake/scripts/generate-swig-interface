@@ -209,6 +209,9 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
 
             # Iterate over header files and collect info
             for header_file in submodule_info[submodule]["headers"]:
+                # Skip version.h (generated from version.h.in via CMake)
+                if os.path.split(header_file)[-1] == "version.h":
+                    continue
 
                 # Read code
                 code = open(header_file).read()
@@ -353,6 +356,17 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
             for dolfin_type in ["FunctionSpace", "Function"]:
                 module_info[present_module]["dependencies"]["function"].add(\
                     dolfin_type_def[dolfin_type]["header"])
+
+        # Need special treatment to include constants.h if not allready included
+        if present_module != "common":
+
+            # If no dependencies of common add it
+            if "common" not in module_info[present_module]["dependencies"]:
+                module_info[present_module]["dependencies"]["common"] = \
+                                        set("dolfin/common/constants.h")
+            else:
+                module_info[present_module]["dependencies"]["common"].add(\
+                    "dolfin/common/constants.h")
 
         # Over write old submodules dependencies with sorted version
         module_info[present_module]["dependencies"] = \

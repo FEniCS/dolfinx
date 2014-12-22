@@ -1,6 +1,16 @@
 set(DOLFIN_H dolfin.h)
 install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR} COMPONENT Development)
 
+# Configure and install dolfin/common/version.h file
+string(REPLACE "+" "" DOLFIN_VERSION_MICRO_STRIPPED ${DOLFIN_VERSION_MICRO})
+configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
+  ${CMAKE_BINARY_DIR}/dolfin/common/version.h @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
+  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/common/
+  COMPONENT Development
+  )
+include_directories(${CMAKE_BINARY_DIR})
+
 #set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -299,6 +309,19 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
   # Check that UFC was built with the version of SWIG that is being used
   if (NOT UFC_MODULE_NOT_FOUND AND (NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
     message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
+  endif()
+
+  # Add numpy defines to DOLFIN_PYTHON_DEFINITIONS
+  if (NUMPY_FOUND)
+
+    # Set numpy version define
+    set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS};-DNUMPY_VERSION_MAJOR=${NUMPY_VERSION_MAJOR};-DNUMPY_VERSION_MINOR=${NUMPY_VERSION_MINOR};-DNUMPY_VERSION_MICRO=${NUMPY_VERSION_MICRO})
+
+    # Only set define for none depricated API for NUMPY version 1.7 and larger
+    if(NUMPY_VERSION VERSION_GREATER 1.6.2)
+      set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS} -DNPY_NO_DEPRECATED_API=NPY_${NUMPY_VERSION_MAJOR}_${NUMPY_VERSION_MINOR}_API_VERSION)
+    endif()
+
   endif()
 
   # If suitble UFC SWIG extension is found, add SWIG subdirectory

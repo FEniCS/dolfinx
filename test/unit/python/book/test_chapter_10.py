@@ -446,7 +446,8 @@ def test_p26_box_1():
     lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
 
     def sigma(v):
-        return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.cell().d)
+        # Note: Changed from v.cell().d to len(v), cell.d is being removed.
+        return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(len(v))
 
     a = inner(sigma(u), sym(grad(v)))*dx
     L = dot(f, v)*dx
@@ -931,14 +932,20 @@ def test_p51_box_1(pushpop_parameters):
         rows, columns, values = A.data()
         csr = csr_matrix((values, columns, rows))
 
-@skip_in_parallel
 def test_p51_box_2():
+    from numpy import arange
     b = Vector(mpi_comm_world(), 10)
     c = Vector(mpi_comm_world(), 10)
     b_copy = b[:]
     b[:] = c
     b[b < 0] = 0
-    b2 = b[::2]
+
+    # Since 1.5 we do not support slicing access as it does not make
+    # sense in parallel
+    #b2 = b[::2]
+
+    # You can use an alternative syntax though
+    b2 = b[arange(0, b.local_size(), 2)]
 
 @skip_in_parallel
 def test_p51_box_3():

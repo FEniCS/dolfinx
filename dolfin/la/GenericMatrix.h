@@ -61,6 +61,9 @@ namespace dolfin
     virtual std::pair<std::size_t, std::size_t>
       local_range(std::size_t dim) const = 0;
 
+    /// Return number of non-zero entries in matrix (collective)
+    virtual std::size_t nnz() const = 0;
+
     /// Get block of values
     virtual void get(double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows) const
@@ -178,17 +181,21 @@ namespace dolfin
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const = 0;
 
-    /// Get non-zero values of given row on local process
+    /// Get non-zero values of given row (global index) on local process
+
     virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
                         std::vector<double>& values) const = 0;
 
-    /// Set values for given row on local process
+    /// Set values for given row (global index) on local process
     virtual void setrow(std::size_t row,
                         const std::vector<std::size_t>& columns,
                         const std::vector<double>& values) = 0;
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows) = 0;
+
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows) = 0;
 
     /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows) = 0;

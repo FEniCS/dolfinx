@@ -453,6 +453,7 @@ def test_doc_string_eval():
     f.user_parameters["B"] = Constant(5.0)
     assert round(f(pi/4, pi/4) - 6./sqrt(2), 7) == 0
 
+@skip_in_parallel
 def test_doc_string_complex_compiled_expression(mesh):
     """
     This test tests all features documented in the doc string of
@@ -484,6 +485,9 @@ def test_doc_string_complex_compiled_expression(mesh):
         case 1:
           values[0] = exp(-x[2]);
           break;
+        case 2:
+          values[0] = exp(-x[1]);
+          break;
         default:
           values[0] = 0.0;
         }
@@ -491,53 +495,53 @@ def test_doc_string_complex_compiled_expression(mesh):
     };'''
 
     cell_data = CellFunction('uint', mesh)
-    f = Expression(code)
-    f.cell_data = cell_data
-
+    cell_data.set_all(3)
     CompiledSubDomain("x[0]<=0.25").mark(cell_data, 0)
     CompiledSubDomain("x[0]>0.25 && x[0]<0.75").mark(cell_data, 1)
     CompiledSubDomain("x[0]>=0.75").mark(cell_data, 2)
 
-    bb = mesh.bounding_box_tree()
+    # Points manually chosen to be in cells marked in cell_data as 0, 1, 2
     p0 = Point(0.1, 1.0, 0)
-    c0 = bb.compute_first_entity_collision(p0)
-
-    # If run in paralell
-    if c0 > mesh.num_cells():
-        return
-
     p1 = Point(0.5, 1.0, 0)
-    c1 = bb.compute_first_entity_collision(p1)
-
-    # If run in paralell
-    if c1 > mesh.num_cells():
-        return
-
     p2 = Point(1.0, 1.0, 1.0)
+
+    # Find cell indices
+    bb = mesh.bounding_box_tree()
+    c0 = bb.compute_first_entity_collision(p0)
+    c1 = bb.compute_first_entity_collision(p1)
     c2 = bb.compute_first_entity_collision(p2)
 
-    # If run in paralell
-    if c2 > mesh.num_cells():
-        return
+    # Cell indices should be valid
+    assert c0 < mesh.num_cells()
+    assert c1 < mesh.num_cells()
+    assert c2 < mesh.num_cells()
+
+    # Cell data should be 0,1,2 by construction
+    assert cell_data[c0] == 0
+    assert cell_data[c1] == 1
+    assert cell_data[c2] == 2
 
     # Create cells for evaluation
     c0 = Cell(mesh, c0)
     c1 = Cell(mesh, c1)
     c2 = Cell(mesh, c2)
-
-    coords = array([p0.x(), p0.y(), p0.z()], dtype=float_)
     values = zeros(1, dtype=float_)
 
+    # Create compiled expression and attach cell data
+    f = Expression(code)
+    f.cell_data = cell_data
+
+    coords = array([p0.x(), p0.y(), p0.z()], dtype=float_)
     f.eval_cell(values, coords, c0)
     assert values[0] == exp(-p0.x())
 
     coords = array([p1.x(), p1.y(), p1.z()], dtype=float_)
-
     f.eval_cell(values, coords, c1)
     assert values[0] == exp(-p1.z())
 
+    coords = array([p2.x(), p2.y(), p2.z()], dtype=float_)
     f.eval_cell(values, coords, c2)
-    assert values[0] == 0.0
+    assert values[0] == exp(-p2.y())
 
 @pytest.mark.slow
 @skip_in_parallel
@@ -622,7 +626,7 @@ def test_doc_string_compiled_expression_with_system_headers():
       };
     }'''
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(Exception):
         Expression(code_not_compile)
 
 def test_doc_string_python_expressions(mesh):

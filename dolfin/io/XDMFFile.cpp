@@ -69,7 +69,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
 
   // HDF5 file restart interval. Use 0 to collect all output in one file.
   parameters.add("multi_file", 0);
-  
+
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -89,7 +89,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Conditions for starting a new HDF5 file
   if ( (mf_interval != 0 and counter%mf_interval == 0) or hdf5_filemode != "w" )
-  { 
+  {
     // Make name for HDF5 file (used to store data)
     boost::filesystem::path p(_filename);
     p.replace_extension(".h5");
@@ -101,7 +101,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       s << std::setw(6) << std::setfill('0') << counter;
       hdf5_filename += "_" + s.str();
     }
-    
+
     // Create new HDF5 file (truncate),
     // closing any open file from a previous timestep
     hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
@@ -139,7 +139,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
 
   // Get number of local/global cells/vertices
-  const std::size_t num_local_cells = mesh.num_cells();
+  const std::size_t num_local_cells = mesh.topology().ghost_offset(tdim);
   const std::size_t num_local_vertices = mesh.num_vertices();
   const std::size_t num_global_cells = mesh.size_global(tdim);
 
@@ -218,9 +218,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       {
         _data_values[count++] = data_values[*cell_offset];
         _data_values[count++] = data_values[*cell_offset + 1];
-        count++;
+        ++count;
+        ++cell_offset;
       }
-      ++cell_offset;
     }
     else if (value_rank == 2 && value_size == 4)
     {
@@ -231,7 +231,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
         {
           _data_values[count++] = data_values[*cell_offset + 2*i];
           _data_values[count++] = data_values[*cell_offset + 2*i + 1];
-          count++;
+          ++count;
         }
         count += 3;
         ++cell_offset;
@@ -615,7 +615,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   hdf5_file->write(meshfunction, h5_mesh_name);
 
   // Saved MeshFunction values are in the /Mesh group
-  const std::string dataset_name =  current_mesh_name + "/values";
+  const std::string dataset_name = h5_mesh_name + "/values";
 
   // Write the XML meta description (see http://www.xdmf.org) on
   // process zero

@@ -21,9 +21,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 // Modified by Fredrik Valdmanis 2011-2012
 // Modified by Jan Blechta 2013
-//
-// First added:  2004
-// Last changed: 2013-09-24
+// Modified by Martin Sandve Alnæs 2014
 
 #ifdef HAS_PETSC
 
@@ -112,19 +110,16 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
   if (_matA)
   {
-    #ifdef DOLFIN_DEPRECATION_ERROR
-    error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
-    #else
-    warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error.");
-    #endif
+    dolfin_error("PETScMatrix.cpp",
+                 "init PETSc matrix",
+                 "PETScMatrix may not be initialized more than once.");
     MatDestroy(&_matA);
   }
 
   // Initialize matrix
-  if (row_range.first == 0 && row_range.second == M)
+  if (dolfin::MPI::size(sparsity_pattern.mpi_comm()) == 1)
   {
     // Get number of nonzeros for each row from sparsity pattern
-    dolfin_assert(tensor_layout.sparsity_pattern());
     std::vector<std::size_t> num_nonzeros(M);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
@@ -460,16 +455,21 @@ void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
   dolfin_assert(_matA);
 
   PetscErrorCode ierr;
-  IS is = 0;
   PetscScalar null = 0.0;
-  const PetscInt _m = m;
-  ierr = ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
-  ierr = MatZeroRowsIS(_matA, is, null, NULL, NULL);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsIS");
-  ierr = ISDestroy(&is);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "ISDestroy");
+  ierr = MatZeroRows(_matA, static_cast<PetscInt>(m), rows, null, NULL, NULL);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRows");
 }
+//-----------------------------------------------------------------------------
+void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index* rows)
+{
+  dolfin_assert(_matA);
+
+  PetscErrorCode ierr;
+  PetscScalar null = 0.0;
+  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, null, NULL, NULL);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
+}
+
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
@@ -481,7 +481,7 @@ void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   if (ierr == PETSC_ERR_ARG_WRONGSTATE)
   {
     dolfin_error("PETScMatrix.cpp",
-                 "set given rows to identity matrix",
+                 "set given (global) rows to identity matrix",
                  "some diagonal elements not preallocated "
                  "(try assembler option keep_diagonal)");
   }
@@ -494,11 +494,11 @@ void PETScMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
 
   PetscErrorCode ierr;
   PetscScalar one = 1.0;
-  ierr = MatZeroRowsLocal(_matA, m, rows, one, NULL, NULL);
+  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, one, NULL, NULL);
   if (ierr == PETSC_ERR_ARG_WRONGSTATE)
   {
     dolfin_error("PETScMatrix.cpp",
-                 "set given rows to identity matrix",
+                 "set given (local) rows to identity matrix",
                  "some diagonal elements not preallocated "
                  "(try assembler option keep_diagonal)");
   }
@@ -642,6 +642,13 @@ MPI_Comm PETScMatrix::mpi_comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
+std::size_t PETScMatrix::nnz() const
+{
+  MatInfo info;
+  MatGetInfo(_matA, MAT_GLOBAL_SUM, &info);
+  return info.nz_allocated;
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
   dolfin_assert(_matA);
@@ -699,11 +706,9 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   {
     if (_matA)
     {
-      #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScVector may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
-      #else
-      warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
-      #endif
+      dolfin_error("PETScMatrix.cpp",
+                   "assign to PETSc matrix",
+                   "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
     _matA = NULL;
@@ -721,11 +726,9 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
                      "assign to PETSc matrix",
                      "More than one object points to the underlying PETSc object");
       }
-      #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
-      #else
-      warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
-      #endif
+      dolfin_error("PETScMatrix.cpp",
+                   "assign to PETSc matrix",
+                   "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
 

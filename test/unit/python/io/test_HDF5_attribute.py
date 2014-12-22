@@ -74,3 +74,32 @@ def test_read_write_vec_int_attribute(attr):
     assert len(vec) == len(ans)
     for val1, val2 in zip(vec, ans):
         assert val1 == val2
+
+@skip_if_not_HDF5
+def test_attribute_container_interface(attr):
+    names = ["data_0", "data_1", "data_2", "data_3"]
+    values = [i for i in range(4)]
+    
+    for name, value in zip(names, values):
+        attr[name] = value
+        
+    # Added from the vector storage call above
+    if "partition" in attr:
+        names.append("partition")
+        values.append(attr["partition"])
+    
+    assert(attr.list_attributes()==names)
+    assert(attr.to_dict() == dict(zip(names, values)))
+
+    for name, value in attr.items():
+        assert(name in names)
+        assert(value in values)
+        assert(names.index(name)==values.index(value))
+
+    for name in attr:
+        assert(name in names)
+
+    for value in attr.values():
+        assert(value in values)
+
+    assert(attr.keys()==attr.list_attributes())

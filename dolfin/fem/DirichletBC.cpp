@@ -345,7 +345,7 @@ void DirichletBC::zero(GenericMatrix& A) const
     dofs[i++] = bv->first;
 
   // Modify linear system (A_ii = 1)
-  A.zero(boundary_values.size(), dofs.data());
+  A.zero_local(boundary_values.size(), dofs.data());
 
   // Finalise changes to A
   A.apply("insert");
@@ -614,10 +614,12 @@ void DirichletBC::apply(GenericMatrix* A,
       A->ident_local(size, dofs.data());
     else
     {
-      A->zero(size, dofs.data());
+      A->zero_local(size, dofs.data());
+
+      const std::size_t offset = _function_space->dofmap()->ownership_range().first;
       for (std::size_t i = 0; i < size; i++)
       {
-        std::pair<std::size_t, std::size_t> ij(dofs[i], dofs[i]);
+        std::pair<std::size_t, std::size_t> ij(offset + dofs[i], offset + dofs[i]);
         A->setitem(ij, 1.0);
       }
     }

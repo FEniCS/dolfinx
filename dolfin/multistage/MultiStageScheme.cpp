@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-03-05
+// Last changed: 2014-10-13
 
 #include <sstream>
 #include <memory>
@@ -183,7 +183,8 @@ void MultiStageScheme::_check_arguments()
   */
   
   // Check solution is in the same space as the last stage solution
-  if (!_u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space()))
+  if (!(_stage_solutions.size()==0 || \
+        _u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space())))
   {
     dolfin_error("MultiStageScheme.cpp",
 		 "construct MultiStageScheme",

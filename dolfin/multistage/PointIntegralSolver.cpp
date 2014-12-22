@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-10-01
+// Last changed: 2014-10-14
 
 #include <cmath>
 #include <algorithm>
@@ -45,8 +45,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme) :
   Variable("PointIntegralSolver", "unnamed"), _scheme(scheme),
-  _mesh(_scheme->stage_forms()[0][0]->mesh()),
-  _dofmap(*_scheme->stage_forms()[0][0]->function_space(0)->dofmap()),
+  _mesh(_scheme->last_stage()->mesh()),
+  _dofmap(*_scheme->last_stage()->function_space(0)->dofmap()),
   _system_size(_dofmap.num_entity_dofs(0)),
   _dof_offset(_mesh.type().num_entities(0)),
   _num_stages(_scheme->stage_forms().size()),

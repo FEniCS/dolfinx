@@ -109,20 +109,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
 %}
 }
-// ---------------------------------------------------------------------------
-// Indices.i defines helper functions to extract C++ indices from Python
-// indices. These functions are not wrapped to the Python interface. They are
-// only included in the C++ wrapper file.
-//
-// la_get_set_items.i defines helper functions that are wrapped to the
-// Python. These are then used in the extended Python classes. See below.
-// ---------------------------------------------------------------------------
-%{
-#include "dolfin/swig/la/Indices.i"
-#include "dolfin/swig/la/la_get_set_items.i"
-%}
 
-%include "dolfin/swig/la/la_get_set_items.i"
+%pythoncode
+%{
+def la_index_dtype():
+    "Return the numpy dtype equivalent to the type of la_index"
+    from numpy import intc, int64
+    return intc if common.sizeof_la_index() == 4 else int64
+%}
 
 // ---------------------------------------------------------------------------
 // Modify the GenericVector interface
@@ -161,64 +155,60 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def array(self):
         "Return a numpy array representation of the local part of a Vector"
-        #from numpy import zeros, arange, uint0
-        #v = zeros(self.local_size())
-        #self.get_local(v)
-        #return v
         return self.get_local()
 
     def __contains__(self, value):
         from numpy import isscalar
-        if not isscalar(value):
-            raise TypeError("expected scalar")
-        return _contains(self,value)
+        if isscalar(value):
+            return value in self.get_local()
+        return NotImplemented
 
     def __gt__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_gt)
+            return self.get_local() > value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_gt)
+            return self.get_local() > value.get_local()
         return NotImplemented
 
-    def __ge__(self,value):
+    def __ge__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_ge)
+            return self.get_local() >= value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_ge)
+            return self.get_local() >= value.get_local()
         return NotImplemented
 
-    def __lt__(self,value):
+    def __lt__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_lt)
+            return self.get_local() < value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_lt)
+            return self.get_local() < value.get_local()
         return NotImplemented
 
-    def __le__(self,value):
+    def __le__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_le)
+            return self.get_local() <= value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_le)
+            return self.get_local() <= value.get_local()
         return NotImplemented
 
-    def __eq__(self,value):
+    def __eq__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_eq)
+            return self.get_local() == value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_eq)
+            return self.get_local() == value.get_local()
         return NotImplemented
 
-    def __neq__(self,value):
+    def __neq__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_neq)
+            return self.get_local() != value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_neq)
+            return self.get_local() != value.get_local()
         return NotImplemented
 
     def __neg__(self):
@@ -233,53 +223,141 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         raise ValueError("cannot delete Vector elements")
 
     def __setslice__(self, i, j, values):
+        from numpy import ndarray, arange
         if i == 0 and (j >= len(self) or j == -1): # slice == whole
             from numpy import isscalar
             # No test for equal lengths because this is checked by DOLFIN in _assign
             if isinstance(values, GenericVector) or isscalar(values):
                 self._assign(values)
+                return 
+            elif isinstance(values, ndarray):
+                indices = arange(self.local_size(), dtype=la_index_dtype())
+                self[indices] = values
                 return
-        self.__setitem__(slice(i, j, 1), values)
+        
+        raise IndexError("can only set full slices v[:]")
 
     def __getslice__(self, i, j):
         if i == 0 and (j >= len(self) or j == -1):
             return self.copy()
-        return self.__getitem__(slice(i, j, 1))
+        raise IndexError("can only return full slices v[:]")
+
+    def _check_indices(self, indices):
+        from numpy import asarray, ndarray
+
+        # Only accpect list and ndarrays
+        if not isinstance(indices, (ndarray, list)):
+            raise TypeError("expected an int or a list or numpy array of "\
+                            "integers or a boolean numpy array as indices.")
+
+        # If boolean array
+        elif isinstance(indices, ndarray) and indices.dtype==bool:
+            indices = indices.nonzero()[0]
+
+        # Convert to correct indextypes
+        if isinstance(indices, ndarray):
+
+            # For some obscure reason we need to compare the char
+            # attribute of the dtype to be able to differentiate
+            # between correct dtypes. And to get the char attribute we
+            # need to instantiate the bloody dtype and then access the
+            # fraking dtype of the dtype, which can be asked for its
+            # char...
+            if indices.dtype.char != la_index_dtype()().dtype.char:
+                indices = indices.astype(la_index_dtype())
+        else:
+            indices = asarray(indices, dtype=la_index_dtype())
+
+        # Check range
+        # FIXME: What should local_size mean?
+        if not ((0<=indices).all() and (indices<self.local_size()).all()):
+            raise IndexError("expected indices to be in [0..{}]".format(\
+                self.local_size()))
+        
+        return indices
 
     def __getitem__(self, indices):
-        from numpy import ndarray, integer, long
-        if isinstance(indices, (int, integer, long)):
-            return _get_vector_single_item(self, indices)
-        elif isinstance(indices, (slice, ndarray, list) ):
-            return as_backend_type(_get_vector_sub_vector(self, indices))
-        else:
-            raise TypeError("expected an int, slice, list or numpy array of integers")
+        """Return values corresponding to the given local indices"""
+        from numpy import ndarray, integer, long, array, zeros, float_
 
+        # If indices is a slice
+        if isinstance(indices, slice):
+            if not (indices.start is None and indices.stop is None and \
+                    indices.step is None):
+                raise IndexError("can only return full slices v[:]")
+            return self.__getslice__(0, len(self))
+                
+        elif isinstance(indices, (int, integer, long)):
+            indices = array([indices], dtype=la_index_dtype())
+
+        indices = self._check_indices(indices)
+        
+        values = zeros(len(indices), dtype=float_)
+        if len(values)>0:
+            self.get_local(values, indices)
+        return values
+        
     def __setitem__(self, indices, values):
-        from numpy import ndarray, integer, isscalar, long
-        if isinstance(indices, (int, integer, long)):
+        """Set values corresponding to the given local indices
+
+        This method is collective and user need to take care when this
+        method is called, preventing MPI-deadlocks.
+        """
+        from numpy import asarray, ndarray, array, integer, isscalar, long, float_, ones
+        try:
+
+            # If indices is a slice
+            if isinstance(indices, slice):
+                if not (indices.start is None and indices.stop is None and \
+                        indices.step is None):
+                    raise IndexError("can only set full slices v[:]")
+                self.__setslice__(0, len(self), values)
+                return
+                
+            # If indices is a single integer
+            elif isinstance(indices, (int, integer, long)):
+                if isscalar(values):
+                    indices = array([indices], dtype=la_index_dtype())
+                else:
+                    raise TypeError("provide a scalar to set single item")
+
+            # Check indices
+            indices = self._check_indices(indices)
+
+            # Check passed values and convert scalar to ndarray of that value
             if isscalar(values):
-                return _set_vector_items_value(self, indices, values)
-            else:
-                raise TypeError("provide a scalar to set single item")
-        elif isinstance(indices, (slice, ndarray, list)):
-            if isscalar(values):
-                _set_vector_items_value(self, indices, values)
+                vec_values = ones(len(indices), dtype=float_)
+                vec_values *= values
+                values = vec_values
+
             elif isinstance(values, GenericVector):
-                _set_vector_items_vector(self, indices, values)
+                values = values.get_local()
+                    
             elif isinstance(values, ndarray):
-                _set_vector_items_array_of_float(self, indices, values)
+                values = asarray(values, dtype=float_)
+                    
             else:
-                raise TypeError("provide a scalar, GenericVector or numpy array of float to set items in Vector")
-        else:
-            raise TypeError("index must be an int, slice or a list or numpy array of integers")
+                raise TypeError("provide a scalar, GenericVector or numpy array of "\
+                                "float to set items in Vector")
+            
+            if len(values) != len(indices):
+                raise IndexError("expected same size of indices and values")
+
+            # If values passed.
+            if len(values) > 0:
+                self.set_local(values, indices)
+                
+        finally:
+            # Always call apply insert to avoid MPI dead locks if one or more
+            # ranks fails
+            self.apply("insert")
 
     def __len__(self):
         return self.size()
 
     def __iter__(self):
         for i in range(self.size()):
-            yield _get_vector_single_item(self, i)
+            yield self[i]
 
     def __add__(self, other):
         """x.__add__(y) <==> x+y"""
@@ -408,6 +486,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return self
         return NotImplemented
 
+    def __iter__(self):
+        return iter(self.array())
   %}
 }
 
