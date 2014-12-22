@@ -80,3 +80,20 @@ else(SLEPC4PY_FOUND)
 endif(SLEPC4PY_FOUND)
 
 mark_as_advanced(SLEPC4PY_INCLUDE_DIRS, SLEPC4PY_VERSION, SLEPC4PY_VERSION_MAJOR, SLEPC4PY_VERSION_MINOR)
+
+if (SLEPc4py_FIND_VERSION)
+  # Check if version found is >= required version
+  if (NOT "${SLEPC4PY_VERSION}" VERSION_LESS "${SLEPc4py_FIND_VERSION}")
+    set(SLEPC4PY_VERSION_OK TRUE)
+  endif()
+else()
+  # No specific version requested
+  set(SLEPC4PY_VERSION_OK TRUE)
+endif()
+mark_as_advanced(SLEPC4PY_VERSION_OK)
+
+# Standard package handling
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(SLEPc4py
+  "SLEPc4py could not be found. Be sure to set PYTHONPATH appropriately."
+  SLEPC4PY_INCLUDE_DIRS SLEPC4PY_VERSION SLEPC4PY_VERSION_OK)
