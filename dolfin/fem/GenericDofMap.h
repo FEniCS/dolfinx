@@ -64,7 +64,9 @@ namespace dolfin
     /// space
     virtual std::size_t global_dimension() const = 0;
 
-    /// Return number of owned, unowned, or all dofs on this process
+    /// Return number of owned (type="owned"), unowned
+    /// (type="unowned"), or all (type="all") dofs in the map on this
+    /// process
     virtual std::size_t local_dimension(std::string type) const = 0;
 
     /// Return the dimension of the local finite element function

@@ -115,11 +115,12 @@ namespace dolfin
     ///         The dimension of the global finite element function space.
     std::size_t global_dimension() const;
 
-    /// Return number of owned, unowned, or all dofs on this process
+    /// Return number of owned, unowned, or all dofs in the dofmap on
+    /// this process
     ///
     /// *Arguments*
     ///     type (std::string)
-    ///         Either "owned_dofs", "unowned_dofs", or "all_dofs"
+    ///         Either "owned", "unowned", or "all"
     ///
     /// *Returns*
     ///     std::size_t

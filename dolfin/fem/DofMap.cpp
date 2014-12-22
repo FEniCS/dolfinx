@@ -154,18 +154,18 @@ std::size_t DofMap::global_dimension() const
 //-----------------------------------------------------------------------------
 std::size_t DofMap::local_dimension(std::string type) const
 {
-  if (type == "owned_dofs")
+  if (type == "owned")
     return _local_ownership_size;
-  else if (type == "unowned_dofs")
+  else if (type == "unowned")
     return block_size*_local_to_global_unowned.size();
-  else if (type == "all_dofs")
+  else if (type == "all")
     return _local_ownership_size + block_size*_local_to_global_unowned.size();
   else
   {
     dolfin_error("DofMap.h",
                  "report DofMap local dimension",
-                 "unknown dof type given. Use either \"owned_dofs\", "
-                 "\"unowned_dofs\", or \"all_dofs\"");
+                 "unknown dof type given. Use either \"owned\", "
+                 "\"unowned\", or \"all\"");
     return 0;
   }
 }
