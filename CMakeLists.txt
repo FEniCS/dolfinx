@@ -409,7 +409,7 @@ if (DOLFIN_ENABLE_PETSC)
     find_package(SLEPc 3.3)
 
     if (SLEPC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_SLEPC4PY)
-      find_package(SLEPc4py)
+      find_package(SLEPc4py 3.5.1)
       if (SLEPC4PY_FOUND)
         if (NOT ("${SLEPC4PY_VERSION_MAJOR}" EQUAL "${SLEPC_VERSION_MAJOR}"
                  AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
