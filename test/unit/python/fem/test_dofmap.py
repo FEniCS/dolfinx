@@ -73,22 +73,22 @@ def test_tabulate_coord(mesh, V, W):
 
 def test_tabulate_all_coordinates(mesh, V, W):
     D = mesh.geometry().dim()
-    
+
     all_coords_V = V.dofmap().tabulate_all_coordinates(V.mesh())
     all_coords_W = W.dofmap().tabulate_all_coordinates(W.mesh())
-    
+
     local_size_V = V.dofmap().ownership_range()[1]-V.dofmap().ownership_range()[0]
     local_size_W = W.dofmap().ownership_range()[1]-W.dofmap().ownership_range()[0]
-    
+
     assert all_coords_V.shape == (D*local_size_V,)
     assert all_coords_W.shape == (D*local_size_W,)
-    
+
     all_coords_V = all_coords_V.reshape(local_size_V, D)
     all_coords_W = all_coords_W.reshape(local_size_W, D)
-    
+
     checked_V = [False]*local_size_V
     checked_W = [False]*local_size_W
-    
+
     # Check that all coordinates are within the cell it should be
     for cell in cells(mesh):
         dofs_V = V.dofmap().cell_dofs(cell.index())
@@ -104,11 +104,11 @@ def test_tabulate_all_coordinates(mesh, V, W):
                 continue
             assert cell.contains(Point(all_coords_W[di]))
             checked_W[di] = True
-    
+
     # Assert that all dofs have been checked by the above
     assert all(checked_V)
     assert all(checked_W)
-    
+
 
 def test_tabulate_dofs(mesh, W):
 
@@ -149,8 +149,10 @@ def test_tabulate_coord_periodic():
 
     mesh = UnitSquareMesh(4, 4)
 
-    V = FunctionSpace(mesh, "Lagrange", 1,  constrained_domain=periodic_boundary)
-    Q = VectorFunctionSpace(mesh, "Lagrange", 1,  constrained_domain=periodic_boundary)
+    V = FunctionSpace(mesh, "Lagrange", 1,  \
+                      constrained_domain=periodic_boundary)
+    Q = VectorFunctionSpace(mesh, "Lagrange", 1,  \
+                            constrained_domain=periodic_boundary)
     W = V*Q
 
     L0  = W.sub(0)
@@ -191,7 +193,8 @@ def test_tabulate_dofs_periodic():
     periodic_boundary = PeriodicBoundary2()
 
     V = FunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
-    Q = VectorFunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
+    Q = VectorFunctionSpace(mesh, "Lagrange", 2, \
+                            constrained_domain=periodic_boundary)
     W = V*Q
 
     L0   = W.sub(0)
@@ -332,7 +335,7 @@ def test_entity_dofs(mesh):
         assert all(d==cd for d, cd in zip(dofs, cdofs))
 
 
-def test_clear_sub_map_data(mesh):
+def test_clear_sub_map_data_scalar(mesh):
     V = FunctionSpace(mesh, "CG", 2)
     with pytest.raises(ValueError):
         V.sub(1)
@@ -350,6 +353,38 @@ def test_clear_sub_map_data(mesh):
     with pytest.raises(RuntimeError):
         V.sub(0)
 
+def test_clear_sub_map_data_vector(mesh):
+    mesh = UnitSquareMesh(8, 8)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    W = V*V
+
+    # Check block size
+    assert W.dofmap().block_size == 2
+
+    W.dofmap().clear_sub_map_data()
+    with pytest.raises(RuntimeError):
+        W0 = W.sub(0)
+    with pytest.raises(RuntimeError):
+        W1 = W.sub(1)
+
+
+def test_block_size(mesh):
+    meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4)]
+    for mesh in meshes:
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        assert V.dofmap().block_size == 1
+
+        W = V*V
+        assert W.dofmap().block_size == 2
+
+        for i in range(1, 6):
+            W = MixedFunctionSpace([V]*i)
+            assert W.dofmap().block_size == i
+
+        V = VectorFunctionSpace(mesh, "Lagrange", 2)
+        assert V.dofmap().block_size == mesh.geometry().dim()
+
+
 @skip_in_serial
 def test_mpi_dofmap_stats(mesh):
 
@@ -362,6 +397,7 @@ def test_mpi_dofmap_stats(mesh):
 
     for owner in V.dofmap().off_process_owner():
         assert owner in neighbours
+
 
 
 def test_local_dimension(V, Q, W):
