@@ -117,9 +117,9 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   // Initialize sparsity pattern
   if (new_sparsity_pattern)
   {
-    std::vector<std::size_t> block_size(global_dimensions.size(), 1);
+    const std::vector<std::size_t> block_sizes(2, 1);
     new_sparsity_pattern->init(MPI_COMM_WORLD, global_dimensions, local_range,
-                               local_to_global, off_process_owner, block_size);
+                               local_to_global, off_process_owner, block_sizes);
   }
 
   // Declare some variables used to extract matrix information

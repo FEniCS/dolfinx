@@ -44,12 +44,12 @@ SparsityPattern::SparsityPattern(
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
   const std::vector<const std::vector<std::size_t>* > local_to_global,
   const std::vector<const std::vector<int>* > off_process_owner,
-  const std::vector<std::size_t> block_size,
+  const std::vector<std::size_t>& block_sizes,
   std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
   init(mpi_comm, dims, local_range, local_to_global, off_process_owner,
-    block_size);
+       block_sizes);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(
@@ -58,11 +58,11 @@ void SparsityPattern::init(
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
   const std::vector<const std::vector<std::size_t>* > local_to_global,
   const std::vector<const std::vector<int>* > off_process_owner,
-  const std::vector<std::size_t> block_size)
+  const std::vector<std::size_t>& block_sizes)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
-  dolfin_assert(block_size.size() == 2);
+  dolfin_assert(block_sizes.size() == 2);
 
   _mpi_comm = mpi_comm;
 
@@ -80,7 +80,7 @@ void SparsityPattern::init(
   _off_process_owner.clear();
 
   // Set block size
-  _block_size = block_size;
+  _block_size = block_sizes;
 
   // Set ownership range
   _local_range = local_range;
@@ -103,12 +103,14 @@ void SparsityPattern::init(
                  "Primary dimension must be less than 2 (0=row major, 1=column major");
   }
 
-  const std::size_t local_size = _local_range[_primary_dim].second - _local_range[_primary_dim].first;
+  const std::size_t local_size
+    = _local_range[_primary_dim].second - _local_range[_primary_dim].first;
 
   // Resize diagonal block
   diagonal.resize(local_size);
 
-  // Resize off-diagonal block (only needed when local range != global range)
+  // Resize off-diagonal block (only needed when local range != global
+  // range)
   off_diagonal.resize(local_size);
 }
 //-----------------------------------------------------------------------------
