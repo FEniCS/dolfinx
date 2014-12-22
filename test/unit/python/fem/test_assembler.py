@@ -36,8 +36,8 @@ def test_cell_size_assembly_1D():
     assert round(assemble(CellSize(mesh)*dx) - 0.1, 12) == 0
     assert round(assemble(CellVolume(mesh)*dx) - 0.1, 12) == 0
 
-def test_cell_assembly_1D():
 
+def test_cell_assembly_1D():
     mesh = UnitIntervalMesh(48)
     V = FunctionSpace(mesh, "CG", 1)
 
@@ -77,8 +77,8 @@ def test_cell_assembly_1D_multithreaded():
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
     parameters["num_threads"] = 0
 
-def test_cell_assembly():
 
+def test_cell_assembly():
     mesh = UnitCubeMesh(4, 4, 4)
     V = VectorFunctionSpace(mesh, "DG", 1)
 
@@ -99,9 +99,9 @@ def test_cell_assembly():
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
 
+
 @skip_in_parallel
 def test_cell_assembly_multithreaded():
-
     mesh = UnitCubeMesh(4, 4, 4)
     V = VectorFunctionSpace(mesh, "DG", 1)
 
@@ -124,8 +124,8 @@ def test_cell_assembly_multithreaded():
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
     parameters["num_threads"] = 0
 
-def test_facet_assembly():
 
+def test_facet_assembly():
     parameters["ghost_mode"] = "shared_facet"
     mesh = UnitSquareMesh(24, 24)
     parameters["ghost_mode"] = "none"
@@ -161,9 +161,9 @@ def test_facet_assembly():
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
 
+
 @skip_in_parallel
 def test_facet_assembly_multithreaded():
-
     mesh = UnitSquareMesh(24, 24)
     V = FunctionSpace(mesh, "DG", 1)
 
@@ -199,8 +199,8 @@ def test_facet_assembly_multithreaded():
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
     parameters["num_threads"] = 0
 
-def test_functional_assembly():
 
+def test_functional_assembly():
     mesh = UnitSquareMesh(24, 24)
 
     f = Constant(1.0)
@@ -225,6 +225,7 @@ def test_functional_assembly_multithreaded():
     parameters["num_threads"] = 4
     assert round(assemble(M0) - 1.0, 7) == 0
     parameters["num_threads"] = 0
+
 
 def test_subdomain_and_fulldomain_assembly_meshdomains():
     """Test assembly over subdomains AND the full domain with markers
@@ -280,6 +281,7 @@ def test_subdomain_and_fulldomain_assembly_meshdomains():
         for k in krange:
 	    #print sub[k] + full, subplusfull[k]
             assert round(sub[k] + full - subplusfull[k], 7) == 0
+
 
 @skip_in_parallel
 def test_subdomain_assembly_form_1():
@@ -349,6 +351,7 @@ def test_subdomain_assembly_form_1():
     # Check that domain data carries across transformations:
     reference = 0.0626219513355
     assert round(assemble(b).norm("l2") - reference, 8) == 0
+
 
 @skip_in_parallel
 def test_subdomain_assembly_form_1_multithreaded():
@@ -440,6 +443,7 @@ def test_subdomain_assembly_form_1_multithreaded():
     assert round(assemble(b).norm("l2") - reference, 8) == 0
     parameters["num_threads"] = 0
 
+
 def test_subdomain_assembly_form_2():
     "Test assembly over subdomains with markers stored as part of form"
 
@@ -477,6 +481,7 @@ def test_subdomain_assembly_form_2():
     assert round(assemble(a0) - 0.25, 7) == 0
     assert round(assemble(a1) - 1.0, 7) == 0
 
+
 @skip_in_parallel
 def test_colored_cell_assembly():
 
@@ -508,22 +513,27 @@ def test_colored_cell_assembly():
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
     parameters["num_threads"] = 0
 
+
 def test_nonsquare_assembly():
     """Test assembly of a rectangular matrix"""
 
     mesh = UnitSquareMesh(16, 16)
-
     V = VectorFunctionSpace(mesh, "CG", 2)
     Q = FunctionSpace(mesh, "CG", 1)
-    W = V*Q
 
+    W = V*Q
     (v, q) = TestFunctions(W)
     (u, p) = TrialFunctions(W)
-
     a = div(v)*p*dx
     A_frobenius_norm = 9.6420303878382718e-01
-
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
+
+    v = TestFunction(V)
+    p = TrialFunction(Q)
+    a = inner(grad(p), v)*dx
+    A_frobenius_norm = 0.935414346693
+    assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
+
 
 @skip_in_parallel
 def test_nonsquare_assembly_multithreaded():
@@ -544,6 +554,7 @@ def test_nonsquare_assembly_multithreaded():
     parameters["num_threads"] = 4
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     parameters["num_threads"] = 0
+
 
 @skip_in_parallel
 def test_reference_assembly(filedir):
@@ -584,6 +595,7 @@ def test_reference_assembly(filedir):
     assert round(D.norm("frobenius") - 0.0, 7) == 0
 
     parameters["reorder_dofs_serial"] = reorder_dofs
+
 
 def test_ways_to_pass_mesh_to_assembler():
     mesh = UnitSquareMesh(16, 16)
