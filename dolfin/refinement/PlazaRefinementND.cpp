@@ -359,13 +359,13 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
       // and make bool vector of marked edges
       std::vector<bool> markers(num_cell_edges, false);
       EdgeIterator e(*cell);
-      for (auto p = marked_edge_list.begin(); p != marked_edge_list.end(); ++p)
+      for (auto &p : marked_edge_list)
       {
-        markers[*p] = true;
-        const std::size_t edge_index = e[*p].index();
+        markers[p] = true;
+        const std::size_t edge_index = e[p].index();
         auto it = new_vertex_map.find(edge_index);
         dolfin_assert (it != new_vertex_map.end());
-        indices[num_cell_vertices + *p] = it->second;
+        indices[num_cell_vertices + p] = it->second;
       }
 
       // Need longest edges of each facet in cell local indexing
@@ -379,14 +379,13 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
         longest_edge.push_back(long_edge[cell->index()]);
 
       // Convert to cell local index
-      for (std::vector<std::size_t>::iterator
-             p = longest_edge.begin(); p != longest_edge.end(); ++p)
+      for (auto &p : longest_edge)
       {
         for (EdgeIterator ej(*cell); !ej.end(); ++ej)
         {
-          if (*p == ej->index())
+          if (p == ej->index())
           {
-            *p = ej.pos();
+            p = ej.pos();
             break;
           }
         }
@@ -396,11 +395,11 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
       get_simplices(simplex_set, markers, longest_edge, tdim);
 
       // Convert from cell local index to mesh index
-      for (auto it = simplex_set.begin(); it != simplex_set.end(); ++it)
+      for (auto &it : simplex_set)
       {
-        for (auto vit = it->begin(); vit != it->end(); ++vit)
-          *vit = indices[*vit];
-        p_ref.new_cell(*it);
+        for (auto &vit : it)
+          vit = indices[vit];
+        p_ref.new_cell(it);
         parent_cell.push_back(cell->index());
       }
     }
@@ -441,8 +440,8 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
 
   // Make reverse map from new vertex to parent edge
   std::map<std::size_t, std::size_t> reverse_map;
-  for (auto p = new_vertex_map.begin(); p != new_vertex_map.end(); ++p)
-    reverse_map.insert(std::make_pair(p->second, p->first));
+  for (auto &p : new_vertex_map)
+    reverse_map.insert(std::make_pair(p.second, p.first));
 
   // Make a map for every facet in old mesh
   // FIXME: this is fairly ruinous for performance
