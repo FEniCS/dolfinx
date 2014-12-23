@@ -399,13 +399,17 @@ def test_mpi_dofmap_stats(mesh):
         assert owner in neighbours
 
 
-def test_rectangular_matrix():
-    mesh = UnitSquareMesh(6, 6)
 
-    V = VectorFunctionSpace(mesh, "CG", 2)
-    Q = FunctionSpace(mesh, "CG", 1)
-
-    v = TestFunction(V)
-    p = TrialFunction(Q)
-
-    assemble(inner(grad(p), v)*dx)
+def test_local_dimension(V, Q, W):
+    for space in [V, Q, W]:
+        dofmap = space.dofmap()
+        local_to_global_map = dofmap.tabulate_local_to_global_dofs()
+        ownership_range = dofmap.ownership_range()
+        dim1 = dofmap.local_dimension('owned')
+        dim2 = dofmap.local_dimension('unowned')
+        dim3 = dofmap.local_dimension('all')
+        assert dim1 == ownership_range[1] - ownership_range[0]
+        assert dim3 == local_to_global_map.size
+        assert dim1 + dim2 == dim3
+        with pytest.raises(RuntimeError):
+            dofmap.local_dimension('foo')

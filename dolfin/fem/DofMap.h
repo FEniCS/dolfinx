@@ -115,6 +115,18 @@ namespace dolfin
     ///         The dimension of the global finite element function space.
     std::size_t global_dimension() const;
 
+    /// Return number of owned, unowned, or all dofs in the dofmap on
+    /// this process
+    ///
+    /// *Arguments*
+    ///     type (std::string)
+    ///         Either "owned", "unowned", or "all"
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         Number of local dofs.
+    std::size_t local_dimension(std::string type) const;
+
     // FIXME: Rename this function, 'cell_dimension' sounds confusing
 
     /// Return the dimension of the local finite element function
@@ -350,11 +362,20 @@ namespace dolfin
     void set_x(GenericVector& x, double value, std::size_t component,
                const Mesh& mesh) const;
 
+    /// Return the map from unowned local dofmap nodes to global dofmap
+    /// nodes. Dofmap node is dof index modulo block size.
+    ///
+    /// *Returns*
+    ///     _std::vector<std::size_t>_
+    ///         The unonwed local-to-global node map.
+    const std::vector<std::size_t>& local_to_global_unowned() const
+    { return _local_to_global_unowned; }
+
     /// Compute the map from local (this process) dof indices to
     /// global dof indices.
     ///
     /// *Arguments*
-    ///     local_to_global_map (_std::vector<la_index>_)
+    ///     local_to_global_map (_std::vector<std::size_t>_)
     ///         The local-to-global map to fill.
     void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const;
 
@@ -445,15 +466,6 @@ namespace dolfin
     // Number of dofs owned by this process
     std::size_t _global_offset;
     int _local_ownership_size;
-
-    // FIXME
-    //
-  public:
-
-    const std::vector<std::size_t>& local_to_global_unowned() const
-    { return _local_to_global_unowned; }
-
-  private:
 
     // Temporary until MultiMeshDofMap runs in parallel
     friend class MultiMeshDofMap;
