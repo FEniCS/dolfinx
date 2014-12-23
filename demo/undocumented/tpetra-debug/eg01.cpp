@@ -33,7 +33,7 @@ bool compare_tpetra_petsc_vectors(const TpetraVector& t,
       if (diff > 1e-9)
       {
         err = true;
-        std::cout << "Difference at " << i << ": PETSC=" << g_petsc[i] 
+        std::cout << "Difference at " << i << ": PETSC=" << g_petsc[i]
                   << ", TPETRA=" << g_tpetra[i] << "\n";
       }
     }
@@ -50,6 +50,11 @@ int main()
   Poisson::LinearForm L(V);
   Poisson::BilinearForm a(V, V);
 
+  std::size_t rank = MPI::rank(mesh.mpi_comm());
+
+  std::shared_ptr<FunctionSpace> Vptr(new Poisson::FunctionSpace(mesh));
+  std::shared_ptr<TpetraVector> TVptr(new TpetraVector());
+
   TpetraVector tpetraB;
   PETScVector petscB;
 
@@ -61,6 +66,15 @@ int main()
 
   assemble(tpetraA, a);
   assemble(petscA, a);
+
+  tpetraA.init_vector(*TVptr, 1);
+
+  std::cout << rank << "] " << TVptr->local_range().first << " - " << TVptr->local_range().second << "\n";
+
+  Function F2(Vptr, TVptr);
+  F2.interpolate(f);
+
+  std::cout << "F2.sum() = " << F2.vector()->sum() << "\n";
 
   TpetraMatrix::graphdump(tpetraA.mat()->getCrsGraph());
 

@@ -64,6 +64,8 @@ TpetraVector::~TpetraVector()
 void TpetraVector::zero()
 {
   dolfin_assert(!_x.is_null());
+  std::cout << "zero()\n";
+
   _x->putScalar(0.0);
 }
 //-----------------------------------------------------------------------------
@@ -71,6 +73,11 @@ void TpetraVector::apply(std::string mode)
 {
   dolfin_assert(!_x.is_null());
   std::cout << "Apply called with: " << mode << "\n";
+
+  std::cout << "Is one to one? " << _x->getMap()->isOneToOne() << "\n";
+
+  if(_x->getMap()->isOneToOne())
+    return;
 
   // Make a one-to-one map from xmap, and a vector based on it
   Teuchos::RCP<const map_type> xmap(_x->getMap());
@@ -236,7 +243,10 @@ void TpetraVector::set(const double* block, std::size_t m,
 {
   dolfin_assert(!_x.is_null());
   for (std::size_t i = 0; i != m; ++i)
-    _x->replaceGlobalValue(rows[i], block[i]);
+  {
+    if(_x->getMap()->isNodeGlobalElement(rows[i]))
+      _x->replaceGlobalValue(rows[i], block[i]);
+  }
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::set_local(const double* block, std::size_t m,
@@ -244,7 +254,10 @@ void TpetraVector::set_local(const double* block, std::size_t m,
 {
   dolfin_assert(!_x.is_null());
   for (std::size_t i = 0; i != m; ++i)
-    _x->replaceLocalValue(rows[i], block[i]);
+  {
+    if(_x->getMap()->isNodeLocalElement(rows[i]))
+      _x->replaceLocalValue(rows[i], block[i]);
+  }
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::add(const double* block, std::size_t m,
@@ -252,25 +265,22 @@ void TpetraVector::add(const double* block, std::size_t m,
 {
   dolfin_assert(!_x.is_null());
   for (std::size_t i = 0; i != m; ++i)
-    _x->sumIntoGlobalValue(rows[i], block[i]);
+  {
+    if(_x->getMap()->isNodeGlobalElement(rows[i]))
+      _x->sumIntoGlobalValue(rows[i], block[i]);
+  }
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::add_local(const double* block, std::size_t m,
                              const dolfin::la_index* rows)
 {
   dolfin_assert(!_x.is_null());
-  std::stringstream fname;
-  fname << "add_local" << _x->getMap()->getComm()->getRank() << ".txt";
-
-  FILE *fd=fopen(fname.str().c_str(), "a");
 
   for (std::size_t i = 0; i != m; ++i)
   {
-    fprintf(fd, "%d %d %f\n", rows[i], _x->getMap()->getGlobalElement(rows[i]) , block[i]);
-    _x->sumIntoLocalValue(rows[i], block[i]);
+    if(_x->getMap()->isNodeLocalElement(rows[i]))
+      _x->sumIntoLocalValue(rows[i], block[i]);
   }
-  fclose(fd);
-
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get_local(std::vector<double>& values) const
@@ -410,7 +420,7 @@ double TpetraVector::min() const
   Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
   double min_local
     = *std::min_element(arr.get(), arr.get() + arr.size());
- 
+
   return MPI::min(mpi_comm(), min_local);
 }
 //-----------------------------------------------------------------------------
@@ -572,7 +582,7 @@ void TpetraVector::_init(MPI_Comm comm,
     error("TpetraVector cannot be initialized more than once.");
 
   // Make a Trilinos version of the MPI Comm
-  Teuchos::RCP<const Teuchos::Comm<int> > 
+  Teuchos::RCP<const Teuchos::Comm<int> >
     _comm(new Teuchos::MpiComm<int>(comm));
 
   // Mapping across processes
