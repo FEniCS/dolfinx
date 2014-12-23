@@ -103,11 +103,16 @@ def test_krylov_samg_solver_elasticity():
     PETScOptions.set("gamg_est_ksp_type", "cg")
     PETScOptions.set("gamg_est_ksp_max_it", 50)
 
+    # Get list of available preconditioners
+    pcs = [pc[0] for pc in PETScPreconditioner.preconditioners()]
+
+    # Build list of smoothed aggregation preconditioners
     methods = ["petsc_amg"]
-    if "ml_amg" in map(list, zip(*PETScPreconditioner.preconditioners()))[0]:
+    if "ml_amg" in pcs:
         methods.append("ml_amg")
 
-    # Test iteration count with increasing mesh size
+    # Test iteration count with increasing mesh size for each
+    # preconditioner
     for method in methods:
         for N in [4, 8, 16, 32, 64]:
             print("Testing method '{}' with {} x {} mesh".format(method, N, N))
