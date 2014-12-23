@@ -62,13 +62,11 @@ w = Function(W)
 solve(a == L, w)
 (sigma, u, r) = w.split()
 
-print w.vector().norm("l2")
-
 # Plot CG1 representation of solutions
 sigma_cg = project(sigma, VectorFunctionSpace(mesh, "CG", 1))
 u_cg = project(u, FunctionSpace(mesh, "CG", 1))
-#plot(sigma_cg, interactive=True)
-#plot(u_cg)
+plot(sigma_cg, interactive=True)
+plot(u_cg)
 
 # Store solutions
 file = File("sigma.pvd")
