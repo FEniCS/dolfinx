@@ -207,6 +207,12 @@ std::pair<std::size_t, std::size_t> TpetraMatrix::local_range(std::size_t dim) c
   return std::make_pair(0,0);
 }
 //-----------------------------------------------------------------------------
+std::size_t TpetraMatrix::nnz() const
+{
+  dolfin_not_implemented();
+  return 0;
+}
+//-----------------------------------------------------------------------------
 bool TpetraMatrix::empty() const
 {
   return _matA.is_null();
