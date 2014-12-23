@@ -1067,7 +1067,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests_cpp" for running only C++ unit tests
   add_custom_target(run_unittests_cpp
     COMMAND ${PYTHON_EXECUTABLE} "-B" "-m" "pytest" "-vs" "-k" "cpp"
-    DEPENDS copy_data_test_demo test
+    DEPENDS copy_data_test_demo tests
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_unittests_py" for running Python unit tests
