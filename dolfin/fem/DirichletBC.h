@@ -103,6 +103,9 @@ namespace dolfin
   /// approach. The three possibilities are "topological", "geometric"
   /// and "pointwise".
   ///
+  /// Note: when using "pointwise", the boolean argument `on_boundary`
+  /// in SubDomain::inside will always be false.
+  ///
   /// The 'check_midpoint' variable can be used to decide whether or
   /// not the midpoint of each facet should be checked when a
   /// user-defined _SubDomain_ is used to define the domain of the
@@ -505,8 +508,10 @@ namespace dolfin
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;
 
-    // Cells attached to boundary, stored by cell index with map to local dof number
-    mutable std::map<std::size_t, std::vector<std::size_t> > _cells_to_localdofs;
+    // Cells attached to boundary, stored by cell index with map to
+    // local dof number
+    mutable std::map<std::size_t, std::vector<std::size_t> >
+    _cells_to_localdofs;
 
     // User defined mesh function
     std::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;
