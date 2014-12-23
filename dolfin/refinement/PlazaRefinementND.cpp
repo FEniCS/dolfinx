@@ -444,6 +444,19 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
   for (auto p = new_vertex_map.begin(); p != new_vertex_map.end(); ++p)
     reverse_map.insert(std::make_pair(p->second, p->first));
 
+  // Make a map for every facet in old mesh
+  // FIXME: this is fairly ruinous for performance
+  std::map<std::pair<std::size_t, std::size_t>, std::size_t> old_fmap;
+  for (FacetIterator fold(mesh); !fold.end(); ++fold)
+  {
+    const unsigned int *v = fold->entities(0);
+    const std::size_t v0 = Vertex(mesh, v[0]).global_index();
+    const std::size_t v1 = Vertex(mesh, v[1]).global_index();
+    std::pair<std::size_t, std::size_t> idx
+      = (v0 < v1) ? std::make_pair(v0, v1) : std::make_pair(v1, v0);
+    old_fmap.insert(std::make_pair(idx, fold->index()));
+  }
+
   new_mesh.init(new_mesh.topology().dim() - 1);
   new_parent_facet.resize(new_mesh.num_facets());
   for (FacetIterator f(new_mesh); !f.end(); ++f)
@@ -451,21 +464,29 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
     const unsigned int *v = f->entities(0);
     const std::size_t gv0 = Vertex(new_mesh, v[0]).global_index();
     const std::size_t gv1 = Vertex(new_mesh, v[1]).global_index();
-    // Look for old facet
-    auto map_it0 = reverse_map.find(gv0);
-    if (map_it0 != reverse_map.end())
-    {
-      const Facet old_facet(mesh, map_it0->second);
-      const unsigned int *old_verts = old_facet.entities(0);
-      const std::size_t fv0 = Vertex(mesh, old_verts[0]).global_index();
-      const std::size_t fv1 = Vertex(mesh, old_verts[1]).global_index();
-      if (fv0 == gv1 or fv1 == gv1)
-        new_parent_facet[f->index()] = map_it0->second;
-    }
+
+    // First look for direct (unrefined) facet
+    std::pair<std::size_t, std::size_t> idx
+      = (gv0 < gv1) ? std::make_pair(gv0, gv1) : std::make_pair(gv1, gv0);
+    auto old_facet_it = old_fmap.find(idx);
+
+    if (old_facet_it != old_fmap.end())
+      new_parent_facet[f->index()] = old_facet_it->second;
     else
     {
+      // Look for refined facet
+      auto map_it0 = reverse_map.find(gv0);
       auto map_it1 = reverse_map.find(gv1);
-      if (map_it1 != reverse_map.end())
+      if (map_it0 != reverse_map.end())
+      {
+        const Facet old_facet(mesh, map_it0->second);
+        const unsigned int *old_verts = old_facet.entities(0);
+        const std::size_t fv0 = Vertex(mesh, old_verts[0]).global_index();
+        const std::size_t fv1 = Vertex(mesh, old_verts[1]).global_index();
+        if (fv0 == gv1 or fv1 == gv1)
+          new_parent_facet[f->index()] = map_it0->second;
+      }
+      else if (map_it1 != reverse_map.end())
       {
         const Facet old_facet(mesh, map_it1->second);
         const unsigned int *old_verts = old_facet.entities(0);
@@ -474,6 +495,8 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
         if (fv0 == gv0 or fv1 == gv0)
           new_parent_facet[f->index()] = map_it1->second;
       }
+      else
+        new_parent_facet[f->index()] = std::numeric_limits<std::size_t>::max();
     }
   }
 }
