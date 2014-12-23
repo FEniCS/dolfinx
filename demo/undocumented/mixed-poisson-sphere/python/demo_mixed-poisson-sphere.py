@@ -50,22 +50,25 @@ g = Expression("sin(0.5*pi*x[2])")
 a = (inner(sigma, tau) + div(sigma)*v + div(tau)*u + r*v + t*u)*dx
 L = g*v*dx
 
-# Set PETSc MUMPS paramter (this is required to prevent a memory error
-# when using MUMPS LU solver, which is probably due to the Real
+# Set PETSc MUMPS parameters (this is required to prevent a memory
+# error when using MUMPS LU solver, which is probably due to the Real
 # space).
 if has_petsc():
     PETScOptions.set("mat_mumps_icntl_14", 40.0)
+    PETScOptions.set("mat_mumps_icntl_7", "0")
 
 # Solve problem
 w = Function(W)
 solve(a == L, w)
 (sigma, u, r) = w.split()
 
+print w.vector().norm("l2")
+
 # Plot CG1 representation of solutions
 sigma_cg = project(sigma, VectorFunctionSpace(mesh, "CG", 1))
 u_cg = project(u, FunctionSpace(mesh, "CG", 1))
-plot(sigma_cg, interactive=True)
-plot(u_cg)
+#plot(sigma_cg, interactive=True)
+#plot(u_cg)
 
 # Store solutions
 file = File("sigma.pvd")

@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Garth N. Wells
+// Copyright (C) 2005-2014 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,6 @@
 // Modified by Ola Skavhaug, 2008.
 // Modified by Anders Logg, 2008.
 // Modified by Marie Rognes, 2009.
-//
-// First added:  2005-08-31
-// Last changed: 2011-02-02
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
@@ -177,14 +174,17 @@ namespace dolfin
     void get_eigenpair(double& lr, double& lc,
                        PETScVector& r, PETScVector& c, std::size_t i) const;
 
-    // Get the number of iterations used by the solver
+    /// Get the number of iterations used by the solver
     std::size_t get_iteration_number() const;
 
-    // Get the number of converged eigenvalues
+    /// Get the number of converged eigenvalues
     std::size_t get_number_converged() const;
 
-    // Set deflation space
+    /// Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
+
+    /// Return SLEPc EPS pointer
+    EPS eps() const;
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -229,7 +229,7 @@ namespace dolfin
     std::shared_ptr<const PETScMatrix> _matB;
 
     // SLEPc solver pointer
-    EPS eps;
+    EPS _eps;
 
   };
 

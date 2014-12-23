@@ -61,6 +61,9 @@ namespace dolfin
     virtual std::pair<std::size_t, std::size_t>
       local_range(std::size_t dim) const = 0;
 
+    /// Return number of non-zero entries in matrix (collective)
+    virtual std::size_t nnz() const = 0;
+
     /// Get block of values
     virtual void get(double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows) const

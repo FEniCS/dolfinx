@@ -1,33 +1,47 @@
+ - Add GenericMatrix::nnz() function to return number of nonzero
+	entries in matrix (fixes #110)
+ - Add smoothed aggregation algerbraic multigrid demo for elasticity
+ - Add argument 'function' to project, to store the result into a preallocated
+	function
  - Remove CGAL dependency and mesh generation, now provided by mshr
  - Python 2.7 required
  - Add experimental Python 3 support. Need swig version 3.0.3 or later
  - Move to py.test, speed up unit tests and make tests more robust in parallel
  - Repeated initialization of PETScMatrix is now an error
  - MPI interface change: num_processes -> size, process_number -> rank
- - Add optional argument project(..., function=f), to avoid superfluous allocation
+ - Add optional argument project(..., function=f), to avoid superfluous
+	allocation
  - Remove excessive printing of points during extrapolation
  - Clean up DG demos by dropping restrictions of Constants: c('+') -> c
- - Fix systemassembler warning when a and L both provide the same subdomain data.
+ - Fix systemassembler warning when a and L both provide the same subdomain
+	data.
  - Require mesh instead of cell argument to FacetArea, FacetNormal, CellSize,
-   CellVolume, SpatialCoordinate, Circumradius,	MinFacetEdgeLength, MaxFacetEdgeLength
+   CellVolume, SpatialCoordinate, Circumradius,	MinFacetEdgeLength,
+	MaxFacetEdgeLength
  - Remove argument reset_sparsity to assemble()
  - Simplify assemble() and Form() signature: remove arguments mesh,
    coefficients, function_spaces, common_cell. These are now all found by
    inspecting the UFL form
  - Speed up assembly of forms with multiple integrals depending on
    different functions, e.g. f*dx(1) + g*dx(2).
- - Handle accessing of GenericVectors using numpy arrays in python layer instead of in hard-to-maintain C++ layer
+ - Handle accessing of GenericVectors using numpy arrays in python layer
+	instead of in hard-to-maintain C++ layer
  - Add support for mpi groups in jit-compilation
  - Make access to HDFAttributes more dict like
  - Add 1st and 2nd order Rush Larsen schemes for the PointIntegralSolver
  - Add vertex assembler for PointIntegrals
  - Add support for assembly of custom_integral
  - Add support for multimesh assembly, function spaces, dofmaps and functions
- - Fix to Cell-Point collision detection to prevent Points inside the mesh from falling between Cells due to rounding errors
- - Enable reordering of cells and vertices in parallel via SCOTCH and the Giibs-Poole-Stockmeyer algorithm
- - Efficiency improvements in dof assignment in parallel, working on HPC up to 24000 cores
- - Introduction of PlazaRefinement methods based on refinement of the Mesh skeleton, giving better quality refinement in 3D in parallel
- - Basic support for 'ghost cells' allowing integration over interior facets in parallel
+ - Fix to Cell-Point collision detection to prevent Points inside the mesh
+	from falling between Cells due to rounding errors
+ - Enable reordering of cells and vertices in parallel via SCOTCH and the
+	Giibs-Poole-Stockmeyer algorithm
+ - Efficiency improvements in dof assignment in parallel, working on HPC up to
+	24000 cores
+ - Introduction of PlazaRefinement methods based on refinement of the Mesh
+	skeleton, giving better quality refinement in 3D in parallel
+ - Basic support for 'ghost cells' allowing integration over interior facets in
+	parallel
 1.4.0 [2014-06-02]
  - Feature: Add set_diagonal (with GenericVector) to GenericMatrix
  - Fix many bugs associated with cell orientations on manifolds

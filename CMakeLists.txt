@@ -7,10 +7,25 @@ cmake_minimum_required(VERSION 2.8)
 # Set project name and version number
 
 project(DOLFIN)
+set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "1")
 set(DOLFIN_VERSION_MINOR "4")
 set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
+
+#------------------------------------------------------------------------------
+# Check compiler version
+
+# Check for GCC version - earlier versions have insuffcient C++11
+# support, or bugs. Version info is only available in CMake 2.8.0 and
+# later.
+if (NOT CMAKE_VERSION VERSION_LESS 2.8.10)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+      message(FATAL_ERROR "GCC version must be at least 4.6 (for sufficient C++11  support. You have version ${CMAKE_CXX_COMPILER_VERSION}")
+    endif()
+  endif()
+endif()
 
 #------------------------------------------------------------------------------
 # Get GIT changeset, if available
@@ -80,6 +95,7 @@ list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "PETSc4py")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
+list(APPEND OPTIONAL_PACKAGES "SLEPc4py")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
@@ -374,13 +390,9 @@ if (DOLFIN_ENABLE_PYTHON)
 
 endif()
 
-# Check for PETSc, SLEPc and petsc4py
+# Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc 3.3)
-
-  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.3)
-  endif()
 
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
@@ -389,6 +401,21 @@ if (DOLFIN_ENABLE_PETSC)
                AND "${PETSC4PY_VERSION_MINOR}" EQUAL "${PETSC_VERSION_MINOR}"))
         message(WARNING "PETSc version ${PETSC_VERSION} and petsc4py version ${PETSC4PY_VERSION} do not match.  Disabling petsc4py support")
         set(PETSC4PY_FOUND FALSE)
+      endif()
+    endif()
+  endif()
+
+  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+    find_package(SLEPc 3.3)
+
+    if (SLEPC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_SLEPC4PY)
+      find_package(SLEPc4py 3.5.1)
+      if (SLEPC4PY_FOUND)
+        if (NOT ("${SLEPC4PY_VERSION_MAJOR}" EQUAL "${SLEPC_VERSION_MAJOR}"
+                 AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
+          message(WARNING "SLEPc version ${SLEPC_VERSION} and slepc4py version ${SLEPC4PY_VERSION} do not match.  Disabling slepc4py support")
+          set(SLEPC4PY_FOUND FALSE)
+        endif()
       endif()
     endif()
   endif()
@@ -995,8 +1022,8 @@ if (CPPUNIT_FOUND)
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
-  # Add target "test" for building tests
-  add_custom_target(test
+  # Add target "tests" for building tests
+  add_custom_target(tests
                     COMMAND ${MAKE_PROGRAM}
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
@@ -1040,7 +1067,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests_cpp" for running only C++ unit tests
   add_custom_target(run_unittests_cpp
     COMMAND ${PYTHON_EXECUTABLE} "-B" "-m" "pytest" "-vs" "-k" "cpp"
-    DEPENDS copy_data_test_demo test
+    DEPENDS copy_data_test_demo tests
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_unittests_py" for running Python unit tests

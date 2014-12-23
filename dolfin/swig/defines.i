@@ -33,5 +33,15 @@ namespace dolfin {
     return false;
 #endif
   }
+
+  bool has_slepc4py()
+  {
+#ifdef HAS_SLEPC4PY
+    return true;
+#else
+    return false;
+#endif
+  }
+
 }
 %}
