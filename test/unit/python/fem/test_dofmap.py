@@ -385,6 +385,14 @@ def test_block_size(mesh):
         assert V.dofmap().block_size == mesh.geometry().dim()
 
 
+def test_block_size_real(mesh):
+    mesh = UnitIntervalMesh(12)
+    V = FunctionSpace(mesh, 'DG', 0)
+    R = FunctionSpace(mesh, 'R', 0)
+    X = MixedFunctionSpace([V, R])
+    assert X.dofmap().block_size == 1
+
+
 @skip_in_serial
 def test_mpi_dofmap_stats(mesh):
 
