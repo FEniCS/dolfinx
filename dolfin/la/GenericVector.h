@@ -110,24 +110,24 @@ namespace dolfin
     virtual void
       add(const double* block,
           const std::vector<const std::vector<dolfin::la_index>* >& rows)
-    { add(block, rows[0]->size(), &(*rows[0])[0]); }
+    { add(block, rows[0]->size(), rows[0]->data()); }
 
     /// Add block of values using local indices
     virtual void
       add_local(const double* block,
           const std::vector<const std::vector<dolfin::la_index>* >& rows)
-    { add_local(block, rows[0]->size(), &(*rows[0])[0]); }
+    { add_local(block, rows[0]->size(), rows[0]->data()); }
 
     /// Add block of values using global indices
     virtual void add(const double* block,
                      const std::vector<std::vector<dolfin::la_index> >& rows)
-    { add(block, rows[0].size(), &(rows[0])[0]); }
+    { add(block, rows[0].size(), rows[0].data()); }
 
     /// Add block of values using local indices
     virtual void
       add_local(const double* block,
                 const std::vector<std::vector<dolfin::la_index> >& rows)
-    { add_local(block, rows[0].size(), &(rows[0])[0]); }
+    { add_local(block, rows[0].size(), rows[0].data()); }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;

@@ -699,7 +699,7 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
 
   // Get local values (using global indices)
   std::vector<double> local_values(local_rows.size());
-  get(&local_values[0], local_rows.size(), &local_rows.set()[0]);
+  get(local_values.data(), local_rows.size(), &local_rows.set()[0]);
 
   // Compute local sum
   const double local_sum = std::accumulate(local_values.begin(),
