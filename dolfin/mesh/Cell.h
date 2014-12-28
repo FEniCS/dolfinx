@@ -352,9 +352,15 @@ namespace dolfin
     /// Fill UFC cell with miscellaneous data
     void get_cell_data(ufc::cell& ufc_cell, int local_facet=-1) const
     {
-      ufc_cell.geometric_dimension = _mesh->geometry().dim();;
+      ufc_cell.geometric_dimension = _mesh->geometry().dim();
       ufc_cell.local_facet = local_facet;
-      ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      if (_mesh->cell_orientations().empty())
+        ufc_cell.orientation = -1;
+      else
+      {
+        dolfin_assert(index() < _mesh->cell_orientations().size());
+        ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      }
       ufc_cell.mesh_identifier = mesh_id();
       ufc_cell.index = index();
     }
@@ -367,8 +373,13 @@ namespace dolfin
 
       const std::size_t tdim = topology.dim();
       ufc_cell.topological_dimension = tdim;
-      ufc_cell.orientation = _mesh->cell_orientations()[index()];
-
+      if (_mesh->cell_orientations().empty())
+        ufc_cell.orientation = -1;
+      else
+      {
+        dolfin_assert(index() < _mesh->cell_orientations().size());
+        ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      }
       ufc_cell.entity_indices.resize(tdim + 1);
       for (std::size_t d = 0; d < tdim; d++)
       {

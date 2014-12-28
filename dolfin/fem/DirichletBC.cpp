@@ -1007,7 +1007,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   if (!_user_sub_domain)
   {
     dolfin_error("DirichletBC.cpp",
-                 "computing Dirichlet boundary values, pointwise search",
+                 "compute Dirichlet boundary values, pointwise search",
                  "A SubDomain is required for pointwise search");
   }
 

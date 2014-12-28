@@ -612,18 +612,13 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
-    /// Return cell_orientations
-    ///
-    /// *Returns*
-    ///     std::vector<int>
-    ///         Map from cell index to orientation of cell
-    std::vector<int>& cell_orientations();
-
     /// Return cell_orientations (const version)
     ///
     /// *Returns*
     ///     std::vector<int>
-    ///         Map from cell index to orientation of cell
+
+    ///         Map from cell index to orientation of cell. Is empty
+    ///         if cell orientations have not been computed.
     const std::vector<int>& cell_orientations() const;
 
     /// Compute and initialize cell_orientations relative to a given
