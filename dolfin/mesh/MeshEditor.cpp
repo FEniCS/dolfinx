@@ -77,7 +77,7 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
   _tdim = tdim;
 
   // Set cell type
-  mesh._cell_type = CellType::create(type);
+  mesh._cell_type.reset(CellType::create(type));
 
   // Initialize topological dimension
   mesh._topology.init(tdim);
