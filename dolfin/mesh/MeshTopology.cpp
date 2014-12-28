@@ -51,11 +51,6 @@ MeshTopology::~MeshTopology()
 //-----------------------------------------------------------------------------
 MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
 {
-  // Clear old data if any
-  clear();
-
-  // Copy data
-
   // Public data
   coloring = topology.coloring;
 
