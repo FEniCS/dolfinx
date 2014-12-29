@@ -23,7 +23,6 @@
 #include <sstream>
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
-#include "MeshFunction.h"
 #include "MeshData.h"
 
 using namespace dolfin;
@@ -76,26 +75,6 @@ void MeshData::clear()
   _arrays.clear();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<dolfin::MeshFunction<std::size_t> >
-MeshData::create_mesh_function(std::string name)
-{
-  dolfin_error("MeshData.cpp",
-               "create a MeshFunction via mesh data",
-               "MeshFunctions can no longer be stored in MeshData. Use arrays instead");
-
-  return std::shared_ptr<MeshFunction<std::size_t> >();
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<dolfin::MeshFunction<std::size_t> >
-MeshData::create_mesh_function(std::string name, std::size_t dim)
-{
-  dolfin_error("MeshData.cpp",
-               "create a MeshFunction via mesh data",
-               "MeshFunctions can no longer be stored in MeshData. Use arrays instead");
-
-  return std::shared_ptr<MeshFunction<std::size_t> >();
-}
-//-----------------------------------------------------------------------------
 std::vector<std::size_t>& MeshData::create_array(std::string name,
                                                  std::size_t dim)
 {
@@ -123,16 +102,6 @@ std::vector<std::size_t>& MeshData::create_array(std::string name,
   return ins.first->second;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<MeshFunction<std::size_t> >
-MeshData::mesh_function(const std::string name) const
-{
-  dolfin_error("MeshData.cpp",
-               "access a MeshFunction via mesh data",
-               "MeshFunctions can no longer be stored in MeshData. Use arrays instead");
-
-  return std::shared_ptr<MeshFunction<std::size_t> >();
-}
-//-----------------------------------------------------------------------------
 std::vector<std::size_t>& MeshData::array(std::string name, std::size_t dim)
 {
   dolfin_assert(dim < _arrays.size());
@@ -152,9 +121,8 @@ std::vector<std::size_t>& MeshData::array(std::string name, std::size_t dim)
 const std::vector<std::size_t>& MeshData::array(std::string name,
                                                 std::size_t dim) const
 {
-  dolfin_assert(dim < _arrays.size());
-
   // Check if data exists
+  dolfin_assert(dim < _arrays.size());
   a_const_iterator it = _arrays[dim].find(name);
   if (it == _arrays[dim].end())
   {
