@@ -31,9 +31,9 @@
 #ifndef __MESH_H
 #define __MESH_H
 
+#include <memory>
 #include <string>
 #include <utility>
-#include <memory>
 
 #include <dolfin/ale/MeshDisplacement.h>
 #include <dolfin/common/Hierarchical.h>
@@ -660,7 +660,7 @@ namespace dolfin
     mutable std::shared_ptr<BoundingBoxTree> _tree;
 
     // Cell type
-    CellType* _cell_type;
+    std::unique_ptr<CellType> _cell_type;
 
     // True if mesh has been ordered
     mutable bool _ordered;
