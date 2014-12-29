@@ -81,8 +81,8 @@ namespace dolfin
   /// apply and the boundary markers would still remain intact.
   ///
   /// Alternatively, the boundary may be specified by a _MeshFunction_
-  /// labeling all mesh facets together with a number that specifies
-  /// which facets should be included in the boundary.
+  /// over facets labeling all mesh facets together with a number that
+  /// specifies which facets should be included in the boundary.
   ///
   /// The third option is to attach the boundary information to the
   /// mesh. This is handled automatically when exporting a mesh from
@@ -249,8 +249,7 @@ namespace dolfin
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
                 std::shared_ptr<const GenericFunction> g,
-                const std::vector<std::size_t>&
-                markers,
+                const std::vector<std::size_t>& markers,
                 std::string method="topological");
 
     /// Copy constructor
