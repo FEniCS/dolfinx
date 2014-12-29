@@ -29,7 +29,7 @@ def test_normalize_average():
     value = 2.0
     x = Vector(mpi_comm_world(), size)
     x[:] = value
-    factor =normalize(x, "average")
+    factor = normalize(x, "average")
     assert factor == value
     assert x.sum() == 0.0
 

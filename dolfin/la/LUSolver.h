@@ -77,12 +77,13 @@ namespace dolfin
       p.add("report", true);
       p.add("verbose", false);
       p.add("symmetric", false);
-      p.add("same_nonzero_pattern", false);
-      p.add("reuse_factorization", false);
+      p.add("same_nonzero_pattern", false);   // deprecated
+      p.add("reuse_factorization", false);   // deprecated
       return p;
     }
 
-    /// Update solver parameters (pass parameters down to wrapped implementation)
+    /// Update solver parameters (pass parameters down to wrapped
+    /// implementation)
     virtual void update_parameters(const Parameters& parameters)
     {
       this->parameters.update(parameters);
@@ -90,12 +91,10 @@ namespace dolfin
     }
 
     // FIXME: This should not be needed. Need to cleanup linear solver
-    // name jungle: default, lu, iterative, direct, krylov, etc
-    /// Return parameter type: "krylov_solver" or "lu_solver"
+    // name jungle: default, lu, iterative, direct, krylov, etc /
+    // Return parameter type: "krylov_solver" or "lu_solver"
     std::string parameter_type() const
-    {
-      return "lu_solver";
-    }
+    { return "lu_solver"; }
 
   private:
 
