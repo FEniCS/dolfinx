@@ -104,9 +104,6 @@ Mesh::~Mesh()
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
-  // Clear all data
-  clear();
-
   // Assign data
   _topology = mesh._topology;
   _geometry = mesh._geometry;
@@ -114,6 +111,9 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _data = mesh._data;
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cell_type());
+  else
+    _cell_type = NULL;
+  _ordered = mesh._ordered;
   _cell_orientations = mesh._cell_orientations;
 
   // Rename
