@@ -36,6 +36,7 @@ def test_lu_solver(backend):
 
     # Check that we have UMFPACK if using uBLAS
     if backend == "uBLAS" and not has_lu_solver_method("umfpack"):
+        parameters["linear_algebra_backend"] = prev_backend
         pytest.skip('Need UMFPACK to run this test with UBLAS as backend')
 
     mesh = UnitSquareMesh(12, 12)
@@ -73,6 +74,7 @@ def test_lu_solver_reuse(backend):
 
     # Check whether backend is available
     if not has_linear_algebra_backend(backend):
+        parameters["linear_algebra_backend"] = prev_backend
         pytest.skip('Need %s as backend to run this test' % backend)
 
     # Set linear algebra backend
@@ -81,6 +83,7 @@ def test_lu_solver_reuse(backend):
 
     # Check that we have UMFPACK if using uBLAS
     if backend == "uBLAS" and not has_lu_solver_method("umfpack"):
+        parameters["linear_algebra_backend"] = prev_backend
         pytest.skip('Need UMFPACK to run this test with UBLAS as backend')
 
     mesh = UnitSquareMesh(12, 12)
