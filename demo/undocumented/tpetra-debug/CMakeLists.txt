@@ -35,7 +35,7 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 # Compiler flags
 set(CMAKE_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
-set(AMESOS2_LIBRARIES $ENV{TRILINOS_DIR}/lib/libamesos2.so)
+# set(AMESOS2_LIBRARIES $ENV{TRILINOS_DIR}/lib/libamesos2.so)
 
 # Include directories
 include_directories(${DOLFIN_INCLUDE_DIRS})
