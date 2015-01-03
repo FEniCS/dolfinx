@@ -78,10 +78,10 @@ namespace dolfin
     // Perform symbolic factorisation
     void symbolic_factorize();
 
-    /// LU factorisation
+    // LU factorisation
     void numeric_factorize();
 
-    /// Solve factorized system (UMFPACK).
+    // Solve factorized system (UMFPACK).
     std::size_t solve_factorized(GenericVector& x,
                                  const GenericVector& b) const;
 

@@ -32,9 +32,8 @@ def test_save_vector(tempdir):
     filename = os.path.join(tempdir, "x.h5")
     x = Vector(mpi_comm_world(), 305)
     x[:] = 1.0
-    vector_file = HDF5File(x.mpi_comm(), filename, "w")
-    vector_file.write(x, "/my_vector")
-    vector_file.close()
+    with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
+        vector_file.write(x, "/my_vector")
 
 @skip_if_not_HDF5
 def test_save_and_read_vector(tempdir):
@@ -43,17 +42,15 @@ def test_save_and_read_vector(tempdir):
     # Write to file
     x = Vector(mpi_comm_world(), 305)
     x[:] = 1.2
-    vector_file = HDF5File(x.mpi_comm(), filename, "w")
-    vector_file.write(x, "/my_vector")
-    vector_file.close()
+    with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
+        vector_file.write(x, "/my_vector")
 
     # Read from file
     y = Vector()
-    vector_file = HDF5File(x.mpi_comm(), filename, "r")
-    vector_file.read(y, "/my_vector", False)
-    assert y.size() == x.size()
-    assert (x - y).norm("l1") == 0.0
-    vector_file.close()
+    with HDF5File(x.mpi_comm(), filename, "r") as vector_file:
+        vector_file.read(y, "/my_vector", False)
+        assert y.size() == x.size()
+        assert (x - y).norm("l1") == 0.0
 
 @skip_if_not_HDF5
 def test_save_and_read_meshfunction_2D(tempdir):
@@ -61,28 +58,26 @@ def test_save_and_read_meshfunction_2D(tempdir):
 
     # Write to file
     mesh = UnitSquareMesh(20, 20)
-    mf_file = HDF5File(mesh.mpi_comm(), filename, "w")
+    with HDF5File(mesh.mpi_comm(), filename, "w") as mf_file:
 
-    # save meshfuns to compare when reading back
-    meshfunctions = []
-    for i in range(0,3):
-        mf = MeshFunction('double', mesh, i)
-        # NB choose a value to set which will be the same
-        # on every process for each entity
-        for cell in entities(mesh, i):
-            mf[cell] = cell.midpoint()[0]
-        meshfunctions.append(mf)
-        mf_file.write(mf, "/meshfunction/meshfun%d" % i)
-    mf_file.close()
+        # save meshfuns to compare when reading back
+        meshfunctions = []
+        for i in range(0,3):
+            mf = MeshFunction('double', mesh, i)
+            # NB choose a value to set which will be the same
+            # on every process for each entity
+            for cell in entities(mesh, i):
+                mf[cell] = cell.midpoint()[0]
+            meshfunctions.append(mf)
+            mf_file.write(mf, "/meshfunction/meshfun%d" % i)
 
     # Read back from file
-    mf_file = HDF5File(mesh.mpi_comm(), filename, "r")
-    for i in range(0,3):
-        mf2 = MeshFunction('double', mesh, i)
-        mf_file.read(mf2, "/meshfunction/meshfun%d" % i)
-        for cell in entities(mesh, i):
-            assert meshfunctions[i][cell] == mf2[cell]
-    mf_file.close()
+    with HDF5File(mesh.mpi_comm(), filename, "r") as mf_file:
+        for i in range(0,3):
+            mf2 = MeshFunction('double', mesh, i)
+            mf_file.read(mf2, "/meshfunction/meshfun%d" % i)
+            for cell in entities(mesh, i):
+                assert meshfunctions[i][cell] == mf2[cell]
 
 @skip_if_not_HDF5
 def test_save_and_read_meshfunction_3D(tempdir):
@@ -115,23 +110,55 @@ def test_save_and_read_meshfunction_3D(tempdir):
 
 @skip_if_not_HDF5
 def test_save_and_read_mesh_value_collection(tempdir):
+    ndiv = 5
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
-    mesh = UnitCubeMesh(5, 5, 5)
+    mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
 
-    # Writ to file
-    hdf5_file = HDF5File(mesh.mpi_comm(), filename, "w")
-    for dim in range(mesh.topology().dim()):
-        mvc = MeshValueCollection("size_t", mesh, dim)
-        for i, cell in enumerate(entities(mesh, dim)):
-            mvc.set_value(cell.index(), i)
-        hdf5_file.write(mvc, "/mesh_value_collection_%d" % dim)
-    del hdf5_file
+    point2list = lambda p : [ p.x(), p.y(), p.z() ]
 
-    # Read from file
-    hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
-    for dim in range(mesh.topology().dim()):
-        mvc = MeshValueCollection("size_t", mesh, dim)
-        hdf5_file.read(mvc, "/mesh_value_collection_%d" % dim)
+    # write to file
+    with HDF5File(mesh.mpi_comm(), filename, 'w') as f :
+        for dim in range(mesh.topology().dim()) :
+            mvc = MeshValueCollection("size_t", mesh, dim)
+            mesh.init(dim)
+            for e in entities(mesh, dim) :
+                # this can be easily computed to the check the value
+                val = int(ndiv*sum(point2list(e.midpoint()))) + 1
+                mvc.set_value(e.index(), val)
+            f.write(mvc, "/mesh_value_collection_{}".format(dim))
+
+    # read from file
+    with HDF5File(mesh.mpi_comm(), filename, 'r') as f :
+        for dim in range(mesh.topology().dim()) :
+            mvc = MeshValueCollection("size_t", mesh, dim)
+            f.read(mvc, "/mesh_value_collection_{}".format(dim))
+            # check the values
+            for (cell, lidx), val in mvc.values().items() :
+                eidx = Cell(mesh, cell).entities(dim)[lidx]
+                mid = point2list(MeshEntity(mesh, dim, eidx).midpoint())
+                assert val == int(ndiv*sum(mid)) + 1
+
+@skip_if_not_HDF5
+def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir):
+    ndiv = 5
+    filename = os.path.join(tempdir, "mesh_value_collection.h5")
+    mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
+    mvc = MeshValueCollection("size_t", mesh, 3)
+    mesh.init(3)
+    if MPI.rank(mesh.mpi_comm()) == 0:
+        mvc.set_value(0, 1)
+
+    # write to file
+    with HDF5File(mesh.mpi_comm(), filename, 'w') as f :
+        f.write(mvc, "/mesh_value_collection")
+
+    # read from file
+    with HDF5File(mesh.mpi_comm(), filename, 'r') as f :
+        mvc = MeshValueCollection("size_t", mesh, 3)
+        f.read(mvc, "/mesh_value_collection")
+        assert MPI.sum(mesh.mpi_comm(), mvc.size()) == 1
+        if MPI.rank(mesh.mpi_comm()) == 0:
+            assert mvc.get_value(0, 0) == 1
 
 @skip_if_not_HDF5
 def test_save_and_read_function(tempdir):

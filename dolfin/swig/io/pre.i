@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-01
-// Last changed: 2014-08-29
+// Last changed: 2014-11-24
 
 %ignore dolfin::GenericFile::operator>> (std::vector<int>& x);
 %ignore dolfin::GenericFile::operator>> (std::vector<std::size_t>& x);
@@ -40,3 +40,4 @@
 
 %ignore dolfin::HDF5Attribute::get;
 %ignore dolfin::HDF5Attribute::set;
+

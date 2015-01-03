@@ -67,7 +67,7 @@ PROBLEM_RENAMES(NonlinearVariational)
                      std::string method="topological");
 %ignore dolfin::DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace>,
                      std::shared_ptr<const GenericFunction>,
-                     const std::vector<std::pair<std::size_t, std::size_t> >&,
+                     const std::vector<std::size_t>&,
                      std::string method="topological");
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,

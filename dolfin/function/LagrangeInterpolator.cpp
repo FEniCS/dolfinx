@@ -79,7 +79,7 @@ void LagrangeInterpolator::interpolate(Function& u, const Expression& u0)
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Create map from coordinates to dofs sharing that coordinate
-  std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+  const std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
     coords_to_dofs = tabulate_coordinates_to_dofs(dofmap, mesh);
 
   // Get a map from global dofs to component number in mixed space
@@ -305,7 +305,6 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   std::vector<std::vector<double> > points_recv;
   MPI::all_to_all(mpi_comm, coefficients_found, coefficients_recv);
   MPI::all_to_all(mpi_comm, points_found, points_recv);
-
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     if (p == MPI::rank(mpi_comm))
@@ -347,8 +346,7 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
     coords_to_dofs(lt_coordinate(1.0e-12));
 
   // Geometric dimension
-  const std::size_t gdim = dofmap.geometric_dimension();
-  dolfin_assert(gdim == mesh.geometry().dim());
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Loop over cells and tabulate dofs
   boost::multi_array<double, 2> coordinates;

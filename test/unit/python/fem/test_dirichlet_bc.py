@@ -99,13 +99,25 @@ def test_meshdomain_bcs(datadir):
     [bc.apply(b) for bc in bcs]
     assert round(norm(b) - 16.55294535724685, 7) == 0
 
+
+def test_user_meshfunction_domains():
+    mesh0 = UnitSquareMesh(12, 12)
+    mesh1 = UnitSquareMesh(12, 12)
+    V = FunctionSpace(mesh0, "CG", 1)
+
+    DirichletBC(V, Constant(0.0), EdgeFunction("size_t", mesh0), 0)
+    DirichletBC(V, Constant(0.0), FacetFunction("size_t", mesh0), 0)
+    with pytest.raises(RuntimeError):
+        DirichletBC(V, 0.0, CellFunction("size_t", mesh0), 0)
+        DirichletBC(V, 0.0, VertexFunction("size_t", mesh0), 0)
+        DirichletBC(V, 0.0, FacetFunction("size_t", mesh1), 0)
+
+
 @skip_in_parallel
 def test_bc_for_piola_on_manifolds():
     "Testing DirichletBC for piolas over standard domains vs manifolds."
-
     n = 4
     side = CompiledSubDomain("near(x[2], 0.0)")
-
     mesh = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), side)
     square = UnitSquareMesh(n, n)
     mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
@@ -120,7 +132,8 @@ def test_bc_for_piola_on_manifolds():
     N2curl1 = lambda mesh: FunctionSpace(mesh, "N2curl", 1)
     N1curl2 = lambda mesh:FunctionSpace(mesh, "N1curl", 2)
     N2curl2 = lambda mesh: FunctionSpace(mesh, "N2curl", 2)
-    elements = [N1curl1, N2curl1,  N1curl2, N2curl2, RT1, RT2, BDM1, BDM2, DRT1, DRT2]
+    elements = [N1curl1, N2curl1,  N1curl2, N2curl2, RT1, RT2, BDM1,
+                BDM2, DRT1, DRT2]
 
     for element in elements:
         V = element(mesh)

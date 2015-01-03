@@ -109,6 +109,8 @@ namespace dolfin
 
     friend class PETScSNESSolver;
 
+    friend class PETScTAOSolver;
+
   private:
 
     const MatSolverPackage _solver_package;
@@ -121,7 +123,7 @@ namespace dolfin
 
     // Available LU solvers descriptions
     static const std::vector<std::pair<std::string, std::string> >
-      _methods_descr;
+    _methods_descr;
 
     // Select LU solver type
     const MatSolverPackage select_solver(std::string& method) const;
@@ -135,13 +137,10 @@ namespace dolfin
     // Configure PETSc options
     void configure_ksp(const MatSolverPackage solver_package);
 
-    // Set PETSc operators
-    void set_petsc_operators();
-
     // Print pre-solve report
     void pre_report(const PETScMatrix& A) const;
 
-    /// PETSc solver pointer
+    // PETSc solver pointer
     KSP _ksp;
 
     // Operator (the matrix)

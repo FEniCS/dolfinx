@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-02-25
-// Last changed: 2011-10-19
+// Last changed: 2014-07-09
 
 #ifndef __DOLFIN_PETSC_PRECONDITIONER_H
 #define __DOLFIN_PETSC_PRECONDITIONER_H
@@ -94,6 +94,8 @@ namespace dolfin
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
+
+    friend class PETScTAOSolver;
 
   private:
 

@@ -134,11 +134,15 @@ del _subdomain_mark_doc_string
 // Extend MeshFunction interface for get and set items
 %extend dolfin::MeshFunction<TYPE>
 {
-  TYPE _getitem(std::size_t i) { return (*self)[i]; }
-  void _setitem(std::size_t i, TYPE val) { (*self)[i] = val; }
+  TYPE _getitem(std::size_t i)
+  { return (*self)[i]; }
+  void _setitem(std::size_t i, TYPE val)
+  { (*self)[i] = val; }
 
-  TYPE _getitem(dolfin::MeshEntity& e) { return (*self)[e]; }
-  void _setitem(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
+  TYPE _getitem(dolfin::MeshEntity& e)
+  { return (*self)[e]; }
+  void _setitem(dolfin::MeshEntity& e, TYPE val)
+  { (*self)[e] = val; }
 
 %pythoncode%{
 def array(self):
@@ -472,7 +476,8 @@ def cells(self):
 //-----------------------------------------------------------------------------
 // Extend Mesh interface with some ufl_* methods
 //-----------------------------------------------------------------------------
-%extend dolfin::Mesh {
+%extend dolfin::Mesh
+{
 %pythoncode
 %{
 def ufl_id(self):
@@ -504,7 +509,8 @@ def ufl_domain(self):
 // Extend SubMesh interface with some ufl_* methods
 //-----------------------------------------------------------------------------
 // TODO: It would be nice if this was inherited from the Mesh extension above!
-%extend dolfin::SubMesh {
+%extend dolfin::SubMesh
+{
 %pythoncode
 %{
 def ufl_id(self):
