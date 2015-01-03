@@ -24,8 +24,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
-#include "ParallelRefinement2D.h"
-#include "ParallelRefinement3D.h"
+#include "PlazaRefinementND.h"
 #include "refine.h"
 
 using namespace dolfin;
@@ -47,9 +46,9 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
   if(MPI::size(mesh.mpi_comm()) == 1)
     UniformMeshRefinement::refine(refined_mesh, mesh);
   else if(D == 2)
-    ParallelRefinement2D::refine(refined_mesh, mesh, redistribute);
+    PlazaRefinementND::refine(refined_mesh, mesh, redistribute, false);
   else if(D == 3)
-    ParallelRefinement3D::refine(refined_mesh, mesh, redistribute);
+    PlazaRefinementND::refine(refined_mesh, mesh, redistribute, false);
   else
   {
     dolfin_error("refine.cpp",
@@ -78,13 +77,13 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
     LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
   else if (D == 2)
   {
-    ParallelRefinement2D::refine(refined_mesh, mesh, cell_markers,
-                                 redistribute);
+    PlazaRefinementND::refine(refined_mesh, mesh, cell_markers,
+                              redistribute, false);
   }
   else if (D == 3)
   {
-    ParallelRefinement3D::refine(refined_mesh, mesh, cell_markers,
-                                 redistribute);
+    PlazaRefinementND::refine(refined_mesh, mesh, cell_markers,
+                              redistribute, false);
   }
   else
   {

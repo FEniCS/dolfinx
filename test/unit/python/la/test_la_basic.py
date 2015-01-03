@@ -54,11 +54,13 @@ data_backends = [b for b in data_backends if has_linear_algebra_backend(b[0])]
 no_data_backends = [b for b in no_data_backends if has_linear_algebra_backend(b[0])]
 any_backends = data_backends + no_data_backends
 
-
 # Fixtures setting up and resetting the global linear algebra backend for a list of backends
-any_backend     = set_parameters_fixture("linear_algebra_backend", any_backends, lambda x: x[0])
-data_backend    = set_parameters_fixture("linear_algebra_backend", data_backends, lambda x: x[0])
-no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backends, lambda x: x[0])
+any_backend     = set_parameters_fixture("linear_algebra_backend", 
+                                         any_backends, lambda x: x[0])
+data_backend    = set_parameters_fixture("linear_algebra_backend",
+                                         data_backends, lambda x: x[0])
+no_data_backend = set_parameters_fixture("linear_algebra_backend",
+                                         no_data_backends, lambda x: x[0])
 
 # With and without explicit backend choice
 use_backend = true_false_fixture
@@ -111,95 +113,91 @@ class TestBasicLaOperations:
             distributed = False
 
         # Test set and access with different integers
-        ind = 2
-        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,integer_types[-1]]:
-            v[t(ind)] = 2.0
-            if v.owns_index(t(ind)): assert round(v[t(ind)] - 2.0, 7) == 0
+        lind = 2
+        for T in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,\
+                  int0,integer_types[-1]]:
+            v[T(lind)] = 2.0
+            assert round(sum(v[T(lind)] - 2.0), 7) == 0
 
         A = v.copy()
         B = as_backend_type(v.copy())
-        if A.owns_index(5): assert round(A[5] - B[5], 7) == 0
+        gind = 5
+        lind = gind-n0
+        
+        # Test global index access
+        if A.owns_index(gind):
+            assert round(sum(A[lind] - B[lind]), 7) == 0
+
+        lind0 = 5
+        round(sum(A[lind0] - B[lind0]), 7) == 0
 
         B *= 0.5
         A *= 2
-        if A.owns_index(5): assert round(A[5] - 4*B[5], 7) == 0
+        assert round(sum(A[lind0] - 4*B[lind0]), 7) == 0
 
         B /= 2
         A /= 0.5
-        if A.owns_index(5): assert round(A[5] - 16*B[5], 7) == 0
+        assert round(sum(A[lind0] - 16*B[lind0]), 7) == 0
 
-        if n0 <= 5 and 5 < n1:
-            val1 = A[5]
-            val2 = B[5]
+        val1 = A[lind0]
+        val2 = B[lind0]
+
         A += B
-        if A.owns_index(5): assert round(A[5] - val1-val2, 7) == 0
+        assert round(sum(A[lind0] - val1-val2), 7) == 0
 
         A -= B
-        if A.owns_index(5): assert round(A[5] - val1, 7) == 0
+        assert round(sum(A[lind0] - val1), 7) == 0
 
         C = 16*B
-        if A.owns_index(5): assert round(A[5] - C[5], 7) == 0
+        assert round(sum(A[lind0] - C[lind0]), 7) == 0
 
         D = (C + B)*5
-        if A.owns_index(5): assert round(D[5] - (val1 + val2)*5, 7) == 0
+        assert round(sum(D[lind0] - (val1 + val2)*5), 7) == 0
 
         F = (A-B)/4
-        if A.owns_index(5): assert round(F[5] - (val1 - val2)/4, 7) == 0
+        assert round(sum(F[lind0] - (val1 - val2)/4), 7) == 0
 
-        A.axpy(100,B)
-        if A.owns_index(5): assert round(A[5] - val1 - val2*100, 7) == 0
+        A.axpy(100, B)
+        assert round(sum(A[lind0] - val1 - val2*100), 7) == 0
 
         A2 = A.array()
         assert isinstance(A2,ndarray)
         assert A2.shape == (n1 - n0, )
-        if A.owns_index(5): assert round(A2[5] - A[5], 7) == 0
+
+        assert round(sum(A2[lind0] - A[lind0]), 7) == 0
         assert round(MPI.sum(A.mpi_comm(), A2.sum()) - A.sum(), 7) == 0
 
         B2 = B.array()
-        # TODO: test strides in parallel also
-        if not distributed:
-            A[1:16:2] = B[1:16:2]
-            A2[1:16:2] = B2[1:16:2]
-            assert round(A2[1] - A[1], 7) == 0
 
-        ind = [1,3,6,9,15,20,24,28,32,40,50,60,70,100000]
+        inds = [1,3,6,9,15,20,24,28,32,40,50,60,70,100000]
 
-        # Extract owned indices
-        ind = [i for i in ind if v.owns_index(i)]
-        ind1 = array(ind, 'i')
-        ind2 = array(ind, 'I')
+        # Extract owned local indices
+        inds0  = array([i for i in inds if v.owns_index(i)])
+        linds0 = [i-n0 for i in inds0]
+        linds1 = array(linds0, 'i')
+        linds2 = array(linds0, 'I')
 
-        # Build indices with local numbering (for indexing arrays)
-        ind0 = [i-n0 for i in ind]
-        ind3 = list(array(ind0,'I'))
+        A[linds2] = inds0
+        A2[linds0] = inds0
 
-        if len(ind2)>0:
-          A[ind2] = ind2
-        else:
-          A.apply('insert') # workaround to issue 54
-        A2[ind3] = ind2
-
-        G  = A[ind]
-        G1 = A[ind1]
-        G2 = A2[ind0]
+        G  = A[linds0]
+        G1 = A[linds1]
+        G2 = A2[linds2]
 
         G3 = A[A > 1]
         G4 = A2[A2 > 1]
 
-        if not distributed:
-            A3 = fromiter(A, "d")
+        A3 = fromiter(A, "d")
 
         if A.owns_index(15):
-            a = A[15]
+            a = A[15-n0]
+
         b = 1.e10
 
         assert round(G1.sum() - G.sum(), 7) == 0
         assert round(G2.sum() - G.sum(), 7) == 0
         assert len(G3) == len(G4)
         assert round(G3.sum() - G4.sum(), 7) == 0
-        if A.owns_index(len(A)-1): assert A[-1] == A[len(A)-1]
-        if A.owns_index(0): assert A[-len(A)] == A[0]
-        assert len(ind) == len(G)
         assert all(val==G[i] for i, val in enumerate(G))
         assert (G==G1).all()
         assert (G<=G1).all()
@@ -208,59 +206,50 @@ class TestBasicLaOperations:
         assert not (G>G1).any()
         if A.owns_index(15): assert a in A
         assert b not in A
-        if not distributed:
-            assert (A3==A2).all()
 
-        # operator== returns array of global size with Falses at
-        # not-owned items
-        X = A==A
-        for i in range(len(X)):  # gather X, because of issue 54
-            X[i] = MPI.max(A.mpi_comm(), float(X[i]))
-        A[:] = X
-        assert A.sum()==len(A)
+        assert (A3==A2).all()
 
-        if not distributed: # issue 54
-            A[:] = A2
-            assert (A==A2).all()
+        A[:] = A2
+        assert (A.array()==A2).all()
 
         H  = A.copy()
         H._assign(0.0)
-        H[ind] = G
+        H[linds0] = G
 
         C[:] = 2
         D._assign(2)
-        if C.owns_index(0): assert round(C[0] - 2, 7) == 0
-        if C.owns_index(len(A)-1): assert round(C[-1] - 2, 7) == 0
+        assert round(sum(C[0] - 2), 7) == 0
+        assert round(sum(C[len(linds0)-1] - 2), 7) == 0
         assert round(C.sum() - D.sum(), 7) == 0
 
-        C[ind] = 3
-        assert round(C[ind].sum() - 3*len(ind), 7) == 0
+        C[linds0] = 3
+        assert round(C[linds0].sum() - 3*len(linds0), 7) == 0
 
         def wrong_index(ind):
             A[ind]
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(IndexError):
             wrong_index(-len(A)-1)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(IndexError):
+            wrong_index(A[-1])
+        with pytest.raises(IndexError):
             wrong_index(len(A)+1)
         with pytest.raises(TypeError):
             wrong_index("jada")
         with pytest.raises(TypeError):
             wrong_index(.5)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(IndexError):
             wrong_index([-len(A)-1, 2])
-        with pytest.raises(RuntimeError):
+        with pytest.raises(IndexError):
             wrong_index([len(A), 2])
 
         def wrong_dim(ind0, ind1):
             A[ind0] = B[ind1]
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(IndexError):
             wrong_dim([0,2], [0,2,4])
-        with pytest.raises(RuntimeError):
+        with pytest.raises(IndexError):
             wrong_dim([0,2], slice(0,4,1))
-        #with pytest.raises(TypeError):
-        #    wrong_dim(0, slice(0,4,1))
 
         # Tests bailout for these choices
         if self.backend == "uBLAS" and sys.version_info[0]==2 and \
@@ -272,24 +261,19 @@ class TestBasicLaOperations:
         A2 *= B2
         I = A*B
         I2 = A2*B2
+
         assert round(A.sum() - MPI.sum(A.mpi_comm(), A2.sum()), 7) == 0
         assert round(I.sum() - MPI.sum(A.mpi_comm(), I2.sum()), 7) == 0
 
         def wrong_assign(A, ind):
-            A[ind[::2]] = ind[::2]
+            A[linds0[::2]] = linds0[::2]
 
-        if len(ind[::2]) > 1:
-            with pytest.raises(RuntimeError):
-                wrong_assign(A, ind2)
-
+        with pytest.raises(TypeError):
+            wrong_assign(A, linds2)
 
     def test_matrix_vector(self, any_backend, use_backend):
         self.backend, self.sub_backend = any_backend
         from numpy import dot, absolute
-
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and not use_backend:
-            pytest.skip("Test not supported for use_backend=False and backend=uBlas")
 
         mesh = UnitSquareMesh(3, 3)
 
@@ -298,6 +282,7 @@ class TestBasicLaOperations:
             backend = getattr(cpp, self.backend+self.sub_backend+'Factory').instance()
         else:
             backend = None
+
         A = assemble(a, backend=backend)
         B = assemble(b, backend=backend)
 
@@ -305,6 +290,7 @@ class TestBasicLaOperations:
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
+
         distributed = True
         if (n1 - n0) == v.size():
             distributed = False
@@ -323,27 +309,19 @@ class TestBasicLaOperations:
         assert round(A.norm('frobenius') - A_norm, 7) == 0
         assert round(B.norm('frobenius') - B_norm, 7) == 0
 
-        print(A.size(0), A.size(1), v.size(0))
-        print(A.local_range(0),  v.local_range())
-
         u = A*v
-
-    def _fo():
 
         assert isinstance(u, type(v))
         assert len(u) == len(v)
 
         # Test basic square matrix multiply results
-
         assert round(v.norm('l2') - v_norm, 7) == 0
         assert round(u.norm('l2') - Av_norm, 7) == 0
 
         # Test rectangular matrix multiply results
-
         assert round((B*w).norm('l2') - Bw_norm, 7) == 0
 
         # Test transpose multiply (rectangular)
-
         x = Vector()
         if self.backend == 'uBLAS':
             with pytest.raises(RuntimeError):
@@ -353,22 +331,24 @@ class TestBasicLaOperations:
             assert round(x.norm('l2') - Cv_norm, 7) == 0
 
         # Miscellaneous tests
-
         u2 = 2*u - A*v
-        if u2.owns_index(4): assert round(u2[4] - u[4], 7) == 0
+        assert round(sum(u2[4] - u[4]), 7) == 0
 
         u3 = 2*u + -1.0*(A*v)
-        if u3.owns_index(4): assert round(u3[4] - u[4], 7) == 0
+        assert round(sum(u3[4] - u[4]), 7) == 0
 
-        if not distributed:
-            v_numpy = v.array()
-            A_numpy = A.array()
+        # Numpy arrays are not alligned in parallel
+        if distributed:
+            return
 
-            u_numpy = dot(A_numpy,v_numpy)
-            u_numpy2 = A*v_numpy
+        v_numpy = v.array()
+        A_numpy = A.array()
 
-            assert absolute(u.array() - u_numpy).sum() < DOLFIN_EPS*len(v)
-            assert absolute(u_numpy2 - u_numpy).sum() < DOLFIN_EPS*len(v)
+        u_numpy = dot(A_numpy, v_numpy)
+        u_numpy2 = A*v_numpy
+
+        assert absolute(u.array() - u_numpy).sum() < DOLFIN_EPS*len(v)
+        assert absolute(u_numpy2 - u_numpy).sum() < DOLFIN_EPS*len(v)
 
     def test_matrix_data(self, no_data_backend):
         #self.backend, self.sub_backend = no_data_backend

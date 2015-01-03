@@ -209,6 +209,9 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
 
             # Iterate over header files and collect info
             for header_file in submodule_info[submodule]["headers"]:
+                # Skip version.h (generated from version.h.in via CMake)
+                if os.path.split(header_file)[-1] == "version.h":
+                    continue
 
                 # Read code
                 code = open(header_file).read()

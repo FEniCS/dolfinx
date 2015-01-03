@@ -149,20 +149,12 @@ std::size_t UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(_matA);
 
-  // Get some parameters
-  const bool reuse_fact   = parameters["reuse_factorization"];
-  const bool same_pattern = parameters["same_nonzero_pattern"];
-
   // Perform symbolic factorization if required
   if (!symbolic)
-    symbolic_factorize();
-  else if (!reuse_fact && !same_pattern)
     symbolic_factorize();
 
   // Perform numerical factorization if required
   if (!numeric)
-    numeric_factorize();
-  else if (!reuse_fact)
     numeric_factorize();
 
   // Solve
@@ -327,10 +319,10 @@ UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
     umfpack_check_status(status, "symbolic");
     return std::shared_ptr<void>(symbolic, UmfpackIntSymbolicDeleter());
   }
-  else if (sizeof(std::size_t) == sizeof(UF_long))
+  else if (sizeof(std::size_t) == sizeof(SuiteSparse_long))
   {
-    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
-    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    const SuiteSparse_long* _Ap = reinterpret_cast<const SuiteSparse_long*>(Ap);
+    const SuiteSparse_long* _Ai = reinterpret_cast<const SuiteSparse_long*>(Ai);
     long int status = umfpack_dl_symbolic(M, N, _Ap, _Ai, Ax, &symbolic,
                                           dnull.get(), dnull.get());
     umfpack_check_status(status, "symbolic");
@@ -371,10 +363,10 @@ UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
     umfpack_check_status(status, "numeric");
     return std::shared_ptr<void>(numeric, UmfpackIntNumericDeleter());
   }
-  else if (sizeof(std::size_t) == sizeof(UF_long))
+  else if (sizeof(std::size_t) == sizeof(SuiteSparse_long))
   {
-    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
-    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    const SuiteSparse_long* _Ap = reinterpret_cast<const SuiteSparse_long*>(Ap);
+    const SuiteSparse_long* _Ai = reinterpret_cast<const SuiteSparse_long*>(Ai);
     status = umfpack_dl_numeric(_Ap, _Ai, Ax, symbolic, &numeric, dnull.get(),
                                 dnull.get());
     umfpack_check_status(status, "numeric");
@@ -414,10 +406,10 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
     status = umfpack_di_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric,
                               dnull.get(), dnull.get());
   }
-  else if (sizeof(std::size_t) == sizeof(UF_long))
+  else if (sizeof(std::size_t) == sizeof(SuiteSparse_long))
   {
-    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
-    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    const SuiteSparse_long* _Ap = reinterpret_cast<const SuiteSparse_long*>(Ap);
+    const SuiteSparse_long* _Ai = reinterpret_cast<const SuiteSparse_long*>(Ai);
     status = umfpack_dl_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric,
                               dnull.get(), dnull.get());
   }

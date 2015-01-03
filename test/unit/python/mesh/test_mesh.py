@@ -373,12 +373,14 @@ def test_basic_cell_orientations():
     "Test that default cell orientations initialize and update as expected."
     mesh = UnitIntervalMesh(12)
     orientations = mesh.cell_orientations()
+    print(len(orientations))
+    assert len(orientations) == 0
+
+    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
+    orientations = mesh.cell_orientations()
     assert len(orientations) == mesh.num_cells()
     for i in range(mesh.num_cells()):
-        assert orientations[i] == -1
-
-    orientations[0] = 1
-    assert mesh.cell_orientations()[0] == 1
+        assert mesh.cell_orientations()[i] == 0
 
 
 @skip_in_parallel
@@ -404,14 +406,19 @@ def test_cell_orientations():
 
 def test_shared_entities():
     for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
-        if MeshClass not in [UnitSquareMesh]:
-            continue
         dim = ind+1
         args = [4]*dim
         mesh = MeshClass(*args)
         mesh.init()
 
         # FIXME: Implement a proper test
-        for shared_dim in range(dim):
+        for shared_dim in range(dim+1):
             assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
             assert isinstance(mesh.topology().global_indices(shared_dim), numpy.ndarray)
+
+            EntityIterator = {0: vertices, 1: edges, 2: faces, 3: cells}[shared_dim]
+            if mesh.topology().have_shared_entities(shared_dim):
+                for e in EntityIterator(mesh):
+                    sharing = e.sharing_processes()
+                    assert isinstance(sharing, numpy.ndarray)
+                    assert (sharing.size > 0) == e.is_shared()

@@ -120,10 +120,6 @@ Parameters PETScSNESSolver::default_parameters()
 PETScSNESSolver::PETScSNESSolver(std::string nls_type) :
   _snes(NULL)
 {
-  _snes_ctx.x = NULL;
-  _snes_ctx.nonlinear_problem = NULL;
-  _snes_ctx.xl = NULL;
-  _snes_ctx.xu = NULL;
 
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
@@ -143,9 +139,6 @@ PETScSNESSolver::~PETScSNESSolver()
 {
   if (_snes)
     SNESDestroy(&_snes);
-
-  if (_snes_ctx.f_tmp)
-    VecDestroy(&_snes_ctx.f_tmp);
 }
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::init(const std::string& method)
@@ -159,9 +152,7 @@ void PETScSNESSolver::init(const std::string& method)
   // Set solver type
   if (method != "default")
   {
-    std::map<std::string, std::pair<std::string,
-                                    const SNESType> >::const_iterator it;
-    it = _methods.find(method);
+    auto it = _methods.find(method);
     dolfin_assert(it != _methods.end());
     SNESSetType(_snes, it->second.second);
   }
@@ -228,14 +219,17 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
 
-  SNESSetFunction(_snes, _snes_ctx.f_tmp, PETScSNESSolver::FormFunction, &_snes_ctx);
-  SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian, &_snes_ctx);
+  SNESSetFunction(_snes, _snes_ctx.f_tmp, PETScSNESSolver::FormFunction,
+                  &_snes_ctx);
+  SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
+                  &_snes_ctx);
   SNESSetObjective(_snes, PETScSNESSolver::FormObjective, &_snes_ctx);
 
   std::string prefix = std::string(parameters["options_prefix"]);
   if (prefix != "default")
   {
-    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    // Make sure that the prefix has a '_' at the end if the user
+    // didn't provide it
     char lastchar = *prefix.rbegin();
     if (lastchar != '_')
       prefix += "_";
@@ -253,9 +247,7 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   // Set the method
   if (std::string(parameters["method"]) != "default")
   {
-    std::map<std::string, std::pair<std::string,
-                                    const SNESType> >::const_iterator it;
-    it = _methods.find(std::string(parameters["method"]));
+    auto it = _methods.find(std::string(parameters["method"]));
     dolfin_assert(it != _methods.end());
     SNESSetType(_snes, it->second.second);
   // If
@@ -266,12 +258,10 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   }
   else if (std::string(parameters["method"]) == "default" && is_vi())
   {
-    std::map<std::string, std::pair<std::string,
-                                    const SNESType> >::const_iterator it;
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 && PETSC_VERSION_RELEASE
-    it = _methods.find("viss");
+    auto it = _methods.find("viss");
     #else
-    it = _methods.find("vinewtonssls");
+    auto it = _methods.find("vinewtonssls");
     #endif
     dolfin_assert(it != _methods.end());
     SNESSetType(_snes, it->second.second);
@@ -357,9 +347,9 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 {
-  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
-  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
-  PETScVector* _x = snes_ctx.x;
+  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
+  NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
+  PETScVector* _x = snes_ctx->x;
 
   // Wrap the PETSc Vec as DOLFIN PETScVector
   PETScVector x_wrap(x);
@@ -382,12 +372,13 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScSNESSolver::FormObjective(SNES snes, Vec x, PetscReal* out, void* ctx)
+PetscErrorCode PETScSNESSolver::FormObjective(SNES snes, Vec x,
+                                              PetscReal* out, void* ctx)
 {
-  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
-  PETScSNESSolver::FormFunction(snes, x, snes_ctx.f_tmp, ctx);
+  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
+  PETScSNESSolver::FormFunction(snes, x, snes_ctx->f_tmp, ctx);
   PetscReal f_norm;
-  VecNorm(snes_ctx.f_tmp, NORM_2, &f_norm);
+  VecNorm(snes_ctx->f_tmp, NORM_2, &f_norm);
 
   if (std::isnan(f_norm) || std::isinf(f_norm))
     *out = 1.0e100;
@@ -411,13 +402,12 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
   }
 
   // Get nonlinear problem object
-  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
-  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
+  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
+  NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
 
   // Wrap the PETSc objects
   PETScMatrix A_wrap(*P);
   PETScVector x_wrap(x);
-
 
   // Form Jacobian
   PETScVector f;
@@ -442,8 +432,8 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
   }
 
   // Get nonlinear problem object
-  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
-  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
+  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
+  NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
 
   // Wrap the PETSc objects
   PETScMatrix A_wrap(P);
@@ -485,15 +475,13 @@ void PETScSNESSolver::set_linear_solver_parameters()
   }
   else if (PETScKrylovSolver::_methods.count(linear_solver) != 0)
   {
-    std::map<std::string, const KSPType>::const_iterator
-      solver_pair = PETScKrylovSolver::_methods.find(linear_solver);
+    auto  solver_pair = PETScKrylovSolver::_methods.find(linear_solver);
     dolfin_assert(solver_pair != PETScKrylovSolver::_methods.end());
     KSPSetType(ksp, solver_pair->second);
     if (preconditioner != "default"
         && PETScPreconditioner::_methods.count(preconditioner) != 0)
     {
-      std::map<std::string, const PCType>::const_iterator it
-        = PETScPreconditioner::_methods.find(preconditioner);
+      auto it = PETScPreconditioner::_methods.find(preconditioner);
       dolfin_assert(it != PETScPreconditioner::_methods.end());
       PCSetType(pc, it->second);
     }
@@ -566,8 +554,7 @@ void PETScSNESSolver::set_linear_solver_parameters()
 
     KSPSetType(ksp, KSPPREONLY);
     PCSetType(pc, PCLU);
-    std::map<std::string, const MatSolverPackage>::const_iterator
-      it = PETScLUSolver::_methods.find(lu_method);
+    auto it = PETScLUSolver::_methods.find(lu_method);
     dolfin_assert(it != PETScLUSolver::_methods.end());
     PCFactorSetMatSolverPackage(pc, it->second);
   }

@@ -80,3 +80,20 @@ else(PETSC4PY_FOUND)
 endif(PETSC4PY_FOUND)
 
 mark_as_advanced(PETSC4PY_INCLUDE_DIRS, PETSC4PY_VERSION, PETSC4PY_VERSION_MAJOR, PETSC4PY_VERSION_MINOR)
+
+if (PETSc4py_FIND_VERSION)
+  # Check if version found is >= required version
+  if (NOT "${PETSC4PY_VERSION}" VERSION_LESS "${PETSc4py_FIND_VERSION}")
+    set(PETSC4PY_VERSION_OK TRUE)
+  endif()
+else()
+  # No specific version requested
+  set(PETSC4PY_VERSION_OK TRUE)
+endif()
+mark_as_advanced(PETSC4PY_VERSION_OK)
+
+# Standard package handling
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(PETSc4py
+  "PETSc4py could not be found. Be sure to set PYTHONPATH appropriately."
+  PETSC4PY_INCLUDE_DIRS PETSC4PY_VERSION PETSC4PY_VERSION_OK)

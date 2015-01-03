@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-06-01
-// Last changed: 2013-11-05
+// Last changed: 2014-11-24
 
 #ifdef HAS_HDF5
 
@@ -199,6 +199,11 @@ const std::string HDF5Attribute::str() const
     str_result += *s + " ";
   }
   return str_result;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::string> HDF5Attribute::list_attributes() const
+{
+  return HDF5Interface::list_attributes(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
 const std::string

@@ -178,6 +178,12 @@ namespace dolfin
 					const Point& p2,
 					const Point& point);
 
+    // Specialised implementation of collides_triangle_point in 2D
+    static bool collides_triangle_point_2d(const Point& p0,
+                                           const Point& p1,
+                                           const Point& p2,
+                                           const Point& point);
+
     // The implementation of collides_tetrahedron_point
     static bool collides_tetrahedron_point(const Point& p0,
 					   const Point& p1,

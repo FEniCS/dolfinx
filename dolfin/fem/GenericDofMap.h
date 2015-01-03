@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Anders Logg and Garth N. Wells
+// Copyright (C) 2010-2015 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Joachim B Haga, 2012
+// Modified by Joachim B. Haga, 2012
 // Modified by Jan Blechta, 2013
-//
-// First added:  2010-05-26
-// Last changed: 2014-07-04
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -34,6 +31,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/log/log.h>
 
 namespace ufc
 {
@@ -64,6 +62,11 @@ namespace dolfin
     /// space
     virtual std::size_t global_dimension() const = 0;
 
+    /// Return number of owned (type="owned"), unowned
+    /// (type="unowned"), or all (type="all") dofs in the map on this
+    /// process
+    virtual std::size_t local_dimension(std::string type) const = 0;
+
     /// Return the dimension of the local finite element function
     /// space on a cell
     virtual std::size_t cell_dimension(std::size_t index) const = 0;
@@ -75,9 +78,17 @@ namespace dolfin
     /// Return the number of dofs for a given entity dimension
     virtual std::size_t num_entity_dofs(std::size_t dim) const = 0;
 
+    // DEPRECATED
     /// Return the geometric dimension of the coordinates this dof map
-    // provides
-    virtual std::size_t geometric_dimension() const = 0;
+    /// provides
+    virtual std::size_t geometric_dimension() const
+    {
+      // Throw error if not provided by sub-class
+      dolfin_error("GenericDofMap.cpp",
+                   "get dofmap geometric dimension",
+                   "dofmap generic dimension is deprecated and not supported by this implementation of GenericDofMap interface.");
+      return 0;
+    }
 
     /// Return number of facet dofs
     virtual std::size_t num_facet_dofs() const = 0;
@@ -152,6 +163,10 @@ namespace dolfin
     virtual void set_x(GenericVector& x, double value, std::size_t component,
                        const Mesh& mesh) const = 0;
 
+    /// Return the map from unowned local dofmap nodes to global dofmap
+    /// nodes. Dofmap node is dof index modulo block size.
+    virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
+
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;
 
@@ -180,10 +195,6 @@ namespace dolfin
     /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
     // ordered dofmap
     std::size_t block_size;
-
-    // FIXME
-    virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
-
 
   };
 

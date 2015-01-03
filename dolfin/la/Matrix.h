@@ -78,6 +78,10 @@ namespace dolfin
       local_range(std::size_t dim) const
     { return matrix->local_range(dim); }
 
+    /// Return number of non-zero entries in matrix (collective)
+    virtual std::size_t nnz() const
+    { return matrix->nnz(); }
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()
     { matrix->zero(); }

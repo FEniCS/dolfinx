@@ -6,6 +6,9 @@
 #  SLEPC_LIBARIES     - libraries for SLEPc
 #  SLEPC_DIR          - directory where SLEPc is built
 #  SLEPC_VERSION      - version of SLEPc
+#  SLEPC_VERSION_MAJOR - First number in SLEPC_VERSION
+#  SLEPC_VERSION_MINOR - Second number in SLEPC_VERSION
+#  SLEPC_VERSION_SUBMINOR - Third number in SLEPC_VERSION
 #
 # Assumes that PETSC_DIR and PETSC_ARCH has been set by
 # alredy calling find_package(PETSc)
@@ -179,7 +182,12 @@ int main() {
 
   if (SLEPC_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
     set(SLEPC_VERSION ${OUTPUT} CACHE TYPE STRING)
+    string(REPLACE "." ";" SLEPC_VERSION_LIST ${SLEPC_VERSION})
+    list(GET SLEPC_VERSION_LIST 0 SLEPC_VERSION_MAJOR)
+    list(GET SLEPC_VERSION_LIST 1 SLEPC_VERSION_MINOR)
+    list(GET SLEPC_VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
     mark_as_advanced(SLEPC_VERSION)
+    mark_as_advanced(SLEPC_VERSION_MAJOR, SLEPC_VERSION_MINOR, SLEPC_VERSION_SUBMINOR)
   endif()
 
   if (SLEPc_FIND_VERSION)

@@ -56,6 +56,7 @@ class Pressure : public Expression
 int main()
 {
   parameters["allow_extrapolation"] = true;
+  parameters["refinement_algorithm"] = "plaza_with_parent_facets";
 
   // Create mesh and function space
   Mesh mesh("../channel_with_flap.xml.gz");

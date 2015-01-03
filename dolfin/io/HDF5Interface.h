@@ -520,7 +520,7 @@ namespace dolfin
     dolfin_assert(attribute_id != HDF5_FAIL);
 
     // Write attribute to dataset
-    herr_t status = H5Awrite(attribute_id, h5type, &attribute_value[0]);
+    herr_t status = H5Awrite(attribute_id, h5type, attribute_value.data());
     dolfin_assert(status != HDF5_FAIL);
 
     // Close dataspace

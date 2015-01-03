@@ -20,7 +20,7 @@
 // Modified by Fredrik Valdmanis 2011
 //
 // First added:  2005-12-02
-// Last changed: 2013-11-25
+// Last changed: 2014-07-09
 
 #ifdef HAS_PETSC
 
@@ -50,7 +50,9 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
     {"minres",     KSPMINRES},
     {"tfqmr",      KSPTFQMR},
     {"richardson", KSPRICHARDSON},
-    {"bicgstab",   KSPBCGS} };
+    {"bicgstab",   KSPBCGS},
+    {"nash",       KSPNASH},
+    {"stcg",       KSPSTCG} };
 
 // Mapping from method string to description
 const std::vector<std::pair<std::string, std::string> >
@@ -191,7 +193,8 @@ PETScKrylovSolver::~PETScKrylovSolver()
     MatNullSpaceDestroy(&petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
+void
+PETScKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
@@ -201,8 +204,9 @@ void PETScKrylovSolver::set_operator(std::shared_ptr<const PETScBaseMatrix> A)
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(std::shared_ptr<const  GenericLinearOperator> A,
-                                      std::shared_ptr<const GenericLinearOperator> P)
+void PETScKrylovSolver::set_operators(
+  std::shared_ptr<const  GenericLinearOperator> A,
+  std::shared_ptr<const GenericLinearOperator> P)
 {
   set_operators(as_type<const PETScBaseMatrix>(A),
                 as_type<const PETScBaseMatrix>(P));
@@ -216,6 +220,47 @@ PETScKrylovSolver::set_operators(std::shared_ptr<const PETScBaseMatrix> A,
   _matP = P;
   dolfin_assert(_matA);
   dolfin_assert(_matP);
+  dolfin_assert(_ksp);
+
+  PetscErrorCode ierr;
+
+  // Get parameter
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
+  const std::string mat_structure = parameters("preconditioner")["structure"];
+
+  // Set operators with appropriate option
+  if (mat_structure == "same")
+  {
+    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
+                           SAME_PRECONDITIONER);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
+  else if (mat_structure == "same_nonzero_pattern")
+  {
+    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
+                           SAME_NONZERO_PATTERN);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
+  else if (mat_structure == "different_nonzero_pattern")
+  {
+    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
+                           DIFFERENT_NONZERO_PATTERN);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
+  else
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "set PETSc Krylov solver operators",
+                 "Preconditioner re-use parameter \"%s \" is unknown",
+                 mat_structure.c_str());
+  }
+  #else
+  ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  #endif
+
+
+
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
@@ -273,8 +318,8 @@ std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(const GenericLinearOperator& A,
-                                      GenericVector& x,
-                                      const GenericVector& b)
+                                     GenericVector& x,
+                                     const GenericVector& b)
 {
   return solve(as_type<const PETScBaseMatrix>(A),
                as_type<PETScVector>(x),
@@ -297,14 +342,17 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %d rows and right-hand side vector has %d rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld rows and right-hand side vector has %ld rows)",
                  _matA->size(0), b.size());
   }
 
   // Write a message
   const bool report = parameters["report"];
   if (report && dolfin::MPI::rank(PETSC_COMM_WORLD) == 0)
-    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).", M, N);
+  {
+    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).",
+         M, N);
+  }
 
   // Reinitialize solution vector if necessary
   if (x.empty())
@@ -317,7 +365,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   set_petsc_ksp_options();
 
   // Set operators
-  set_petsc_operators();
+  //set_petsc_operators();
 
   // Set near null space for preconditioner
   if (_preconditioner)
@@ -387,7 +435,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   std::string prefix = std::string(parameters["options_prefix"]);
   if (prefix != "default")
   {
-    // Make sure that the prefix has a '_' at the end if the user didn't provide it
+    // Make sure that the prefix has a '_' at the end if the user
+    // didn't provide it
     char lastchar = *prefix.rbegin();
     if (lastchar != '_')
       prefix += "_";
@@ -428,7 +477,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   ierr = KSPGetIterationNumber(_ksp, &num_iterations);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetIterationNumber");
 
-  // Check if the solution converged and print error/warning if not converged
+  // Check if the solution converged and print error/warning if not
+  // converged
   KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(_ksp, &reason);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetConvergedReason");
@@ -462,8 +512,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(const PETScBaseMatrix& A,
-                                      PETScVector& x,
-                                      const PETScVector& b)
+                                     PETScVector& x,
+                                     const PETScVector& b)
 {
   // Set operator
   std::shared_ptr<const PETScBaseMatrix> Atmp(&A, NoDeleter());
@@ -514,6 +564,7 @@ void PETScKrylovSolver::init(const std::string& method)
   }
 }
 //-----------------------------------------------------------------------------
+/*
 void PETScKrylovSolver::set_petsc_operators()
 {
   dolfin_assert(_matA);
@@ -529,12 +580,14 @@ void PETScKrylovSolver::set_petsc_operators()
   // Set operators with appropriate option
   if (mat_structure == "same")
   {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(), SAME_PRECONDITIONER);
+    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
+                           SAME_PRECONDITIONER);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
   else if (mat_structure == "same_nonzero_pattern")
   {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(), SAME_NONZERO_PATTERN);
+    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
+                           SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
   else if (mat_structure == "different_nonzero_pattern")
@@ -555,6 +608,7 @@ void PETScKrylovSolver::set_petsc_operators()
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   #endif
 }
+*/
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_ksp_options()
 {
@@ -699,7 +753,7 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %d rows and right-hand side vector has %d rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld rows and right-hand side vector has %ld rows)",
                  A.size(0), b.size());
   }
 
@@ -708,7 +762,7 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %d columns and solution vector has %d rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld columns and solution vector has %ld rows)",
                  A.size(1), x.size());
   }
 
