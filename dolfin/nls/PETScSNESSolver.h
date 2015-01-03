@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Corrado Maurini, 2013.
-//
-// First added:  2012-10-13
-// Last changed: 2013-11-21
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -39,10 +36,10 @@ namespace dolfin
   /// Forward declarations
   class PETScVector;
 
-  /// This class implements methods for solving nonlinear systems
-  /// via PETSc's SNES interface. It includes line search and trust
-  /// region techniques for globalising the convergence of the
-  /// nonlinear iteration.
+  /// This class implements methods for solving nonlinear systems via
+  /// PETSc's SNES interface. It includes line search and trust region
+  /// techniques for globalising the convergence of the nonlinear
+  /// iteration.
 
   class PETScSNESSolver : public PETScObject
   {
@@ -108,17 +105,12 @@ namespace dolfin
     { return _snes; }
 
   private:
+
     struct snes_ctx_t
     {
       // Constructor
-      snes_ctx_t()
-      {
-        x = NULL;
-        nonlinear_problem = NULL;
-        xl = NULL;
-        xu = NULL;
-        f_tmp = NULL;
-      } 
+      snes_ctx_t() : nonlinear_problem(NULL), x(NULL), f_tmp(NULL), xl(NULL),
+                     xu(NULL) {}
 
       // Destructor
       ~snes_ctx_t()
@@ -126,7 +118,7 @@ namespace dolfin
         if (f_tmp)
           VecDestroy(&f_tmp);
       }
-      
+
       NonlinearProblem* nonlinear_problem;
       PETScVector* x;
       Vec f_tmp;
@@ -159,7 +151,8 @@ namespace dolfin
                                        void* ctx);
     #endif
 
-    static PetscErrorCode FormObjective(SNES snes, Vec x, PetscReal* out, void* ctx);
+    static PetscErrorCode FormObjective(SNES snes, Vec x, PetscReal* out,
+                                        void* ctx);
 
     // Set the bounds on the problem from the parameters, if desired
     // Here, x is passed in as a model vector from which we make our

@@ -147,7 +147,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Pass matrix data to MUMPS. Trust MUMPS not to change it
   data.irn_loc = const_cast<int*>(reinterpret_cast<const int*>(rows.data()));
   data.jcn_loc = const_cast<int*>(reinterpret_cast<const int*>(cols.data()));
-  data.a_loc   = const_cast<double*>(&vals[0]);
+  data.a_loc   = const_cast<double*>(vals.data());
 
   // Analyse and factorize
   data.job = 4;
@@ -160,7 +160,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Gather RHS on root process and attach
   std::vector<double> _b;
   b.gather_on_zero(_b);
-  data.rhs = &_b[0];
+  data.rhs = _b.data();
 
   // Scaling strategy (77 is default)
   data.ICNTL(8) = 77;

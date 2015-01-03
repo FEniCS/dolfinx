@@ -373,16 +373,26 @@ if (DOLFIN_ENABLE_PYTHON)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH_SAVE})
   endif()
 
-  # If Python is found, check for NumPy and SWIG
+  # If Python is found, check for NumPy, SWIG and ply
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
+
+    # Check for NumPy
     find_package(NumPy REQUIRED)
 
+    # Check for ply
+    include(FindPythonModule)
+    find_python_module(ply REQUIRED)
+    if (NOT PY_PLY_FOUND)
+      message(FATAL_ERROR "Required Python module 'ply' (http://www.dabeaz.com/ply/) could not be found. Install ply or set DOLFIN_ENABLE_PYTHON to false.")
+    endif()
+
+    # Check for SWIG
     if (DEFINED UFC_SWIG_EXECUTABLE)
       set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
     endif()
     find_package(SWIG REQUIRED)
     if (${SWIG_VERSION} LESS 2.0)
-      message(FATAL_ERROR " DOLFIN requires SWIG version 2.0 or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to False or install correct SWIG version.")
+      message(FATAL_ERROR " DOLFIN requires SWIG version 2.0 or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to false or install correct SWIG version.")
     endif()
     include(UseSWIG)
     set(PYTHON_FOUND TRUE)

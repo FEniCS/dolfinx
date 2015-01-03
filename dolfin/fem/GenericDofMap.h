@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Anders Logg and Garth N. Wells
+// Copyright (C) 2010-2015 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Joachim B Haga, 2012
+// Modified by Joachim B. Haga, 2012
 // Modified by Jan Blechta, 2013
-//
-// First added:  2010-05-26
-// Last changed: 2014-07-04
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -34,6 +31,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/log/log.h>
 
 namespace ufc
 {
@@ -80,9 +78,17 @@ namespace dolfin
     /// Return the number of dofs for a given entity dimension
     virtual std::size_t num_entity_dofs(std::size_t dim) const = 0;
 
+    // DEPRECATED
     /// Return the geometric dimension of the coordinates this dof map
-    // provides
-    virtual std::size_t geometric_dimension() const = 0;
+    /// provides
+    virtual std::size_t geometric_dimension() const
+    {
+      // Throw error if not provided by sub-class
+      dolfin_error("GenericDofMap.cpp",
+                   "get dofmap geometric dimension",
+                   "dofmap generic dimension is deprecated and not supported by this implementation of GenericDofMap interface.");
+      return 0;
+    }
 
     /// Return number of facet dofs
     virtual std::size_t num_facet_dofs() const = 0;

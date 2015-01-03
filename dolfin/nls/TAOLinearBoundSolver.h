@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-12-03
-// Last changed: 2013-04-02
 
 #ifndef _TAOLinearBoundSolver_H
 #define _TAOLinearBoundSolver_H
@@ -38,7 +35,7 @@
 namespace dolfin
 {
 
-  /// Forward declarations
+  // Forward declarations
   class GenericMatrix;
   class GenericVector;
   class PETScMatrix;

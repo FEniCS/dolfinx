@@ -48,9 +48,6 @@ MeshConnectivity::~MeshConnectivity()
 const MeshConnectivity&
 MeshConnectivity::operator= (const MeshConnectivity& connectivity)
 {
-  // Clear old data if any
-  clear();
-
   // Copy data
   _d0 = connectivity._d0;
   _d1 = connectivity._d1;

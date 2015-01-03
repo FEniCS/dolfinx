@@ -28,6 +28,7 @@ def test_krylov_samg_solver_elasticity():
     "Test PETScKrylovSolver with smoothed aggregation AMG"
 
     # Set backend
+    previous_backend = parameters["linear_algebra_backend"]
     parameters["linear_algebra_backend"] = "PETSc"
 
     def build_nullspace(V, x):
@@ -118,3 +119,5 @@ def test_krylov_samg_solver_elasticity():
             print("Testing method '{}' with {} x {} mesh".format(method, N, N))
             niter = amg_solve(N, method)
             assert niter < 12
+
+    parameters["linear_algebra_backend"] = previous_backend

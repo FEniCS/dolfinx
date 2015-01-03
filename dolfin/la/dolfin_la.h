@@ -65,6 +65,7 @@
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/solve.h>
+#include <dolfin/la/test_nullspace.h>
 #include <dolfin/la/BlockVector.h>
 #include <dolfin/la/BlockMatrix.h>
 #include <dolfin/la/LinearOperator.h>

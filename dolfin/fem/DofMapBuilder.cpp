@@ -583,7 +583,12 @@ void DofMapBuilder::build_local_ufc_dofmap(
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     const std::size_t cell_index = cell->index();
-    ufc_cell.orientation = cell->mesh().cell_orientations()[cell_index];
+    ufc_cell.orientation = -1;
+    if (!cell->mesh().cell_orientations().empty())
+    {
+      dolfin_assert(cell_index < cell->mesh().cell_orientations().size());
+      ufc_cell.orientation = cell->mesh().cell_orientations()[cell_index];
+    }
     ufc_cell.topological_dimension = D;
 
     for (std::size_t d = 0; d < D; d++)
@@ -1093,8 +1098,12 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     // Set cell orientation
-    const int cell_orientation
-      = cell->mesh().cell_orientations()[cell->index()];
+    int cell_orientation = -1;
+    if(!cell->mesh().cell_orientations().empty())
+    {
+      dolfin_assert(cell->index() < cell->mesh().cell_orientations().size());
+     cell_orientation = cell->mesh().cell_orientations()[cell->index()];
+    }
     ufc_cell_global.orientation = cell_orientation;
     ufc_cell_local.orientation = cell_orientation;
 

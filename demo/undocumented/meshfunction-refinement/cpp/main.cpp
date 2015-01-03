@@ -41,7 +41,10 @@ int main()
     }
   };
 
+
   UnitSquareMesh mesh(5, 5);
+
+  parameters["refinement_algorithm"] = "plaza_with_parent_facets";
 
   // Create MeshFunction over cells
   MeshFunction<std::size_t> right_cells(mesh, mesh.topology().dim(), 0);

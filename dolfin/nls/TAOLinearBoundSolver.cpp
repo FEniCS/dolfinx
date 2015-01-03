@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added : 2012-12-03
-// Last changed: 2013-04-04
 
 #ifdef ENABLE_PETSC_TAO
 
@@ -245,7 +242,7 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
     }
     else
     {
-      log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method,"\
+      log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method," \
 	  " adjust some parameters", tao_type);
     }
   }

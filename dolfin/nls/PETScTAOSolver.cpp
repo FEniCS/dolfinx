@@ -39,18 +39,17 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 const std::map<std::string, std::pair<std::string, const TaoType> >
-  PETScTAOSolver::_methods
-    = { {"default", {"Default TAO method (ntl or tron)", TAOTRON}},
-        {"tron",    {"Newton Trust Region method", TAOTRON}},
-        {"bqpip",   {"Interior-Point Newton's method", TAOBQPIP}},
-        {"gpcg",    {"Gradient projection conjugate gradient method", TAOGPCG}},
-        {"blmvm",   {"Limited memory variable metric method", TAOBLMVM}},
-        {"nls",     {"Newton's method with line search", TAONLS}},
-        {"ntr",     {"Newton's method with trust region", TAONTR}},
-        {"ntl",     {"Newton's method with trust region and line search", TAONTL}},
-        {"cg",      {"Nonlinear conjugate gradient method", TAOCG}},
-        {"nm",      {"Nelder-Mead algorithm", TAONM}} };
-
+PETScTAOSolver::_methods
+= { {"default", {"Default TAO method (ntl or tron)", TAOTRON}},
+    {"tron",    {"Newton Trust Region method", TAOTRON}},
+    {"bqpip",   {"Interior-Point Newton's method", TAOBQPIP}},
+    {"gpcg",    {"Gradient projection conjugate gradient method", TAOGPCG}},
+    {"blmvm",   {"Limited memory variable metric method", TAOBLMVM}},
+    {"nls",     {"Newton's method with line search", TAONLS}},
+    {"ntr",     {"Newton's method with trust region", TAONTR}},
+    {"ntl",     {"Newton's method with trust region and line search", TAONTL}},
+    {"cg",      {"Nonlinear conjugate gradient method", TAOCG}},
+    {"nm",      {"Nelder-Mead algorithm", TAONM}} };
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> > PETScTAOSolver::methods()
 {
@@ -121,8 +120,10 @@ void PETScTAOSolver::update_parameters(const std::string tao_type,
   // Update parameters when tao/ksp/pc_types are explictly given
   if (tao_type != "default")
     parameters["method"] = tao_type;
+
   if (ksp_type != "default")
     parameters["linear_solver"] = ksp_type;
+
   if (pc_type != "default")
     parameters["preconditioner"] = pc_type;
 }
@@ -139,14 +140,15 @@ void PETScTAOSolver::set_tao(const std::string tao_type)
                  "Unknown TAO method \"%s\"", tao_type.c_str());
   }
 
-  // In case of an unconstrained minimisation problem, set the TAO method
-  // to TAONTL
+  // In case of an unconstrained minimisation problem, set the TAO
+  // method to TAONTL
   if (!has_bounds && tao_type == "default")
     TaoSetType(_tao, TAONTL);
   else
   {
     // Set solver type
-    std::map<std::string, std::pair<std::string, const TaoType> >::const_iterator it;
+    std::map<std::string, std::pair<std::string,
+                                    const TaoType> >::const_iterator it;
     it = _methods.find(tao_type);
     dolfin_assert(it != _methods.end());
     TaoSetType(_tao, it->second.second);
@@ -181,7 +183,6 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   // Unconstrained minimisation problem
   has_bounds = false;
   PETScVector lb, ub;
-
   init(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
 }
 //-----------------------------------------------------------------------------
@@ -200,13 +201,13 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   set_ksp_options();
 
   // Initialise the Hessian matrix during the first call
-  if (!_H.mat())
+  if (!_matH.mat())
   {
     PETScVector g;
-    optimisation_problem.form(_H, g, x);
-    optimisation_problem.J(_H, x);
+    optimisation_problem.form(_matH, g, x);
+    optimisation_problem.J(_matH, x);
   }
-  dolfin_assert(_H.mat());
+  dolfin_assert(_matH.mat());
 
   // Set initial vector
   TaoSetInitialVector(_tao, x.vec());
@@ -217,7 +218,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
 
   // Set the objective function, gradient and Hessian evaluation routines
   TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
-  TaoSetHessianRoutine(_tao, _H.mat(), _H.mat(), FormHessian, &_tao_ctx);
+  TaoSetHessianRoutine(_tao, _matH.mat(), _matH.mat(), FormHessian, &_tao_ctx);
 
   // Clear previous monitors
   TaoCancelMonitors(_tao);
@@ -419,59 +420,55 @@ void PETScTAOSolver::set_ksp_options()
         PCSetType(pc, pc_pair->second);
       }
     }
-
-    // Set type for direct LU solver
     else if (ksp_type == "lu" || PETScLUSolver::_methods.count(ksp_type) != 0)
     {
-    std::string lu_method;
-    if (PETScLUSolver::_methods.find(ksp_type) != PETScLUSolver::_methods.end())
-    {
-      lu_method = ksp_type;
-    }
-    else
-    {
-      MPI_Comm comm = MPI_COMM_NULL;
-      PetscObjectGetComm((PetscObject)_tao, &comm);
-      if (MPI::size(comm) == 1)
+      std::string lu_method;
+      if (PETScLUSolver::_methods.find(ksp_type) != PETScLUSolver::_methods.end())
       {
-        #if PETSC_HAVE_UMFPACK
-        lu_method = "umfpack";
-        #elif PETSC_HAVE_MUMPS
-        lu_method = "mumps";
-        #elif PETSC_HAVE_PASTIX
-        lu_method = "pastix";
-        #elif PETSC_HAVE_SUPERLU
-        lu_method = "superlu";
-        #else
-        lu_method = "petsc";
-        warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
-        #endif
+        lu_method = ksp_type;
       }
       else
       {
-        #if PETSC_HAVE_SUPERLU_DIST
-        lu_method = "superlu_dist";
-        #elif PETSC_HAVE_PASTIX
-        lu_method = "pastix";
-        #elif PETSC_HAVE_MUMPS
-        lu_method = "mumps";
-        #else
-        dolfin_error("PETScTAOSolver.cpp",
+        MPI_Comm comm = MPI_COMM_NULL;
+        PetscObjectGetComm((PetscObject)_tao, &comm);
+        if (MPI::size(comm) == 1)
+        {
+          #if PETSC_HAVE_UMFPACK
+          lu_method = "umfpack";
+          #elif PETSC_HAVE_MUMPS
+          lu_method = "mumps";
+          #elif PETSC_HAVE_PASTIX
+          lu_method = "pastix";
+          #elif PETSC_HAVE_SUPERLU
+          lu_method = "superlu";
+          #else
+          lu_method = "petsc";
+          warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
+#endif
+        }
+        else
+        {
+          #if PETSC_HAVE_SUPERLU_DIST
+          lu_method = "superlu_dist";
+          #elif PETSC_HAVE_PASTIX
+          lu_method = "pastix";
+          #elif PETSC_HAVE_MUMPS
+          lu_method = "mumps";
+          #else
+          dolfin_error("PETScTAOSolver.cpp",
                      "solve linear system using PETSc LU solver",
                      "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
-        #endif
+          #endif
+        }
       }
+      KSPSetType(ksp, KSPPREONLY);
+      PCSetType(pc, PCLU);
+      std::map<std::string, const MatSolverPackage>::const_iterator lu_pair
+        = PETScLUSolver::_methods.find(lu_method);
+      dolfin_assert(lu_pair != PETScLUSolver::_methods.end());
+      PCFactorSetMatSolverPackage(pc, lu_pair->second);
     }
-    KSPSetType(ksp, KSPPREONLY);
-    PCSetType(pc, PCLU);
-    std::map<std::string, const MatSolverPackage>::const_iterator lu_pair
-      = PETScLUSolver::_methods.find(lu_method);
-    dolfin_assert(lu_pair != PETScLUSolver::_methods.end());
-    PCFactorSetMatSolverPackage(pc, lu_pair->second);
-    }
-
-    // Unknown KSP method
-    else
+    else     // Unknown KSP method
     {
       dolfin_error("PETScTAOSolver.cpp",
                    "set linear solver options",

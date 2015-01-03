@@ -190,6 +190,8 @@ std::size_t DofMap::num_entity_dofs(std::size_t dim) const
 //-----------------------------------------------------------------------------
 std::size_t DofMap::geometric_dimension() const
 {
+  deprecation("DofMap::geometric_dimension()", "1.5", "1.6",
+            "DofMap::geometric_dimension() is deprecated and will be removed");
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->geometric_dimension();
 }

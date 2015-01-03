@@ -141,7 +141,6 @@ namespace dolfin
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
-
     friend class PETScTAOSolver;
 
   private:
@@ -150,7 +149,7 @@ namespace dolfin
     void init(const std::string& method);
 
     // Set PETSc operators
-    void set_petsc_operators();
+    //void set_petsc_operators();
 
     // Set options that affect KSP object
     void set_petsc_ksp_options();

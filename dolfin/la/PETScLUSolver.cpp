@@ -150,14 +150,33 @@ PETScLUSolver::~PETScLUSolver()
 void
 PETScLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
-  _matA = as_type<const PETScMatrix>(require_matrix(A));
-  dolfin_assert(_matA);
+  // Attempt to cast as PETScMatrix
+  std::shared_ptr<const PETScMatrix> mat
+    = as_type<const PETScMatrix>(require_matrix(A));
+  dolfin_assert(mat);
+
+  // Set operator
+  set_operator(mat);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(std::shared_ptr<const PETScMatrix> A)
 {
   _matA = A;
   dolfin_assert(_matA);
+
+  dolfin_assert(_ksp);
+  dolfin_assert(_matA->mat());
+
+  PetscErrorCode ierr;
+
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
+  ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat(),
+                         DIFFERENT_NONZERO_PATTERN);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  #else
+  ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  #endif
 }
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& PETScLUSolver::get_operator() const
@@ -183,7 +202,6 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
 
   dolfin_assert(_ksp);
   dolfin_assert(_matA);
-
   PetscErrorCode ierr;
 
   // Downcast matrix and vectors
@@ -204,7 +222,7 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
     _matA->init_vector(x, 1);
 
   // Set PETSc operators (depends on factorization re-use options);
-  set_petsc_operators();
+  //set_petsc_operators();
 
   // Write a pre-solve message
   pre_report(*_matA);
@@ -212,7 +230,8 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
   // Get package used to solve system
   PC pc;
   ierr = KSPGetPC(_ksp, &pc);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPGetPC");
 
   configure_ksp(_solver_package);
 
@@ -249,7 +268,7 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolveTranspose");
   }
 
-  // Update ghost values
+  // Update ghost values following solve
   _x.update_ghost_values();
 
   return 1;
@@ -454,41 +473,6 @@ void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)
   if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftType");
   ierr = PCFactorSetShiftAmount(pc, PETSC_DECIDE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftAmount");
-}
-//-----------------------------------------------------------------------------
-void PETScLUSolver::set_petsc_operators()
-{
-  dolfin_assert(_matA->mat());
-
-  PetscErrorCode ierr;
-
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-  // Get some parameters
-  const bool reuse_fact   = parameters["reuse_factorization"];
-  const bool same_pattern = parameters["same_nonzero_pattern"];
-
-  // Set operators with appropriate preconditioner option
-
-  if (reuse_fact)
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat(), SAME_PRECONDITIONER);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else if (same_pattern)
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat(), SAME_NONZERO_PATTERN);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat(),
-                           DIFFERENT_NONZERO_PATTERN);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  #else
-  ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::pre_report(const PETScMatrix& A) const
