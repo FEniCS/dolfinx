@@ -62,7 +62,8 @@ cp dolfin.conf ${CONFIG_FILE}
 
 # Print information
 echo
-echo "- Installed branch '${BRANCH}' to ${INSTALL_PREFIX}."
+echo "- Installed branch '${BRANCH}' to ${FENICS_INSTALL_PREFIX}."
 echo
-echo "- Config file written to ${CONFIG_FILE} (source this file)."
+echo "- Config file written to ${CONFIG_FILE}"
+echo "  (source this file)."
 echo
