@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+#
+# Developer script for configure + build + rebuild.
+#
+# Notes:
+#
+# - This script is what most developers use to build/rebuild this package.
+# - This script is common to all CMake-based FEniCS packages.
+# - If this script is updated in one package, please propagate to the others!
+#
+# Environment variables:
+#
+# - $FENICS_DIR : controls installation directory $FENICS_DIR/$BRANCH
+#               : defaults to $HOME/opt/fenics
+# - $PROCS      : controls number of processors to use for build
+#               : defaults to 6
+
+# Check and set FENICS_DIR
+if [ -z "${FENICS_DIR}" ]; then
+    FENICS_DIR=${HOME}/opt/fenics
+fi
+
+# Get branch name
+BRANCH=`(git symbolic-ref --short HEAD 2> /dev/null || git describe HEAD) | sed s:/:.:g`
+
+# Set installation prefix
+FENICS_INSTALL_PREFIX="${FENICS_DIR}/${BRANCH}"
+echo "Installation prefix set to ${FENICS_INSTALL_PREFIX}."
+
+# Set build directory
+if [ "${BRANCH}" = "master" ]; then
+    BUILD_DIR=build.${BRANCH}
+elif [ "${BRANCH}" = "next" ]; then
+    BUILD_DIR=build.${BRANCH}
+else
+    BUILD_DIR="build.wip" # use for all other branches to save disk space
+fi
+
+# Number of processes to use during build
+: ${PROCS:=6}
+
+# Extract any extra argument(s)
+CMAKE_EXTRA_ARGS=$@
+
+# Configure
+mkdir -p ${BUILD_DIR}
+cd ${BUILD_DIR}
+time cmake -DCMAKE_INSTALL_PREFIX=${FENICS_INSTALL_PREFIX} \
+           -DDOLFIN_ENABLE_TESTING=true \
+           -DDOLFIN_ENABLE_BENCHMARKS=true \
+           -DCMAKE_BUILD_TYPE=Developer \
+           -DDOLFIN_DEPRECATION_ERROR=false \
+           ${CMAKE_EXTRA_ARGS} \
+           ..
+
+# Build and install
+time make -j ${PROCS} -k && make install -j ${PROCS}
+
+# Copy config file (this line is specific to DOLFIN)
+CONFIG_FILE="${FENICS_DIR}/fenics-$BRANCH.conf"
+cp dolfin.conf ${CONFIG_FILE}
+
+# Print information
+echo
+echo "- Installed branch '${BRANCH}' to ${INSTALL_PREFIX}."
+echo
+echo "- Config file written to ${CONFIG_FILE} (source this file)."
+echo
