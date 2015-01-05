@@ -573,7 +573,7 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
 
   # Older version of CPPUNIT use std::auto_ptr, which is deprecated
   if (CPPUNIT_FOUND)
-    if (${CPPUNIT_VERSION} LESS 1.13.1)
+    if ("${CPPUNIT_VERSION}" VERSION_LESS "1.13.1")
       include(CheckCXXCompilerFlag)
       CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
       if (HAVE_NO_DEPRECATED)
