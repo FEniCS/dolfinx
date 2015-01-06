@@ -48,7 +48,7 @@ elif [ "${BRANCH}" = "next" ]; then
     BUILD_DIR=build.${BRANCH}
 else
     BUILD_DIR="build.wip" # use for all other branches to save disk space
-if
+fi
 
 # Configure
 CMAKE_EXTRA_ARGS=$@
@@ -71,12 +71,22 @@ rm -f ${CONFIG_FILE}
 cat << EOF > ${CONFIG_FILE}
 # FEniCS configuration file created by fenics-dev-install.sh on $(date)
 export FENICS_INSTALL_PREFIX=${FENICS_INSTALL_PREFIX}
-export PATH=\${FENICS_INSTALL_PREFIX}/bin:\$PATH
+export FENICS_PYTHON_EXECUTABLE=${FENICS_PYTHON_EXECUTABLE}
+export FENICS_PYTHON_VERSION=${FENICS_PYTHON_VERSION}
+
+# Common Unix variables
+export LD_LIBRARY_PATH=\${FENICS_INSTALL_PREFIX}/lib:\${LD_LIBRARY_PATH}
+export PATH=\${FENICS_INSTALL_PREFIX}/bin:\${PATH}
+export PKG_CONFIG_PATH=\${FENICS_INSTALL_PREFIX}/pkgconfig:\${PKG_CONFIG_PATH}
 export PYTHONPATH=\${FENICS_INSTALL_PREFIX}/lib/python${FENICS_PYTHON_VERSION}/site-packages:\${PYTHONPATH}
+export MANPATH=\${FENICS_INSTALL_PREFIX}/share/man:\${MANPATH}
+
+# Cmake search path
 export CMAKE_PREFIX_PATH=\${FENICS_INSTALL_PREFIX}:\${CMAKE_PREFIX_PATH}
 EOF
 if [ $(uname) = "Darwin" ]; then
     cat << EOF >> $CONFIG_FILE
+# Mac specific path
 export DYLD_FALLBACK_LIBRARY_PATH=\${FENICS_INSTALL_PREFIX}:\${DYLD_FALLBACK_LIBRARY_PATH}
 EOF
 fi
