@@ -190,7 +190,7 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> TpetraMatrix::local_range(std::size_t dim) const
 {
-  std::cout << "TpetraMatrix::local_range()\n";
+  //  std::cout << "TpetraMatrix::local_range()\n";
   if (dim == 0)
   {
     Teuchos::RCP<const map_type> row_map(_matA->getRowMap());
@@ -268,8 +268,9 @@ void TpetraMatrix::set(const double* block,
                       std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
 
-  std::cout << "Set " << m << ", " << n << "\n";
+  //  std::cout << "Set " << m << ", " << n << "\n";
 
   // Tpetra View of column indices
   Teuchos::ArrayView<const global_ordinal_type> column_idx(cols, n);
@@ -287,8 +288,9 @@ void TpetraMatrix::set_local(const double* block,
                             std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
 
-  std::cout << "Set local  " << m << ", " << n << "\n";
+  //  std::cout << "Set local  " << m << ", " << n << "\n";
 
   // Tpetra View of column indices
   Teuchos::ArrayView<const local_ordinal_type> column_idx(cols, n);
@@ -305,8 +307,9 @@ void TpetraMatrix::add(const double* block,
                       std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
 
-  std::cout << "Add  " << m << ", " << n << "\n";
+  //  std::cout << "Add  " << m << ", " << n << "\n";
   // Tpetra View of column indices
   Teuchos::ArrayView<const global_ordinal_type> column_idx(cols, n);
 
@@ -323,6 +326,7 @@ void TpetraMatrix::add_local(const double* block,
                             std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
 
   // Tpetra View of column indices
   std::vector<local_ordinal_type> idx(cols, cols + n);
@@ -396,6 +400,7 @@ void TpetraMatrix::setrow(std::size_t row,
                          const std::vector<double>& values)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
 
   dolfin_not_implemented();
 
@@ -423,6 +428,7 @@ void TpetraMatrix::setrow(std::size_t row,
 void TpetraMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
 
   for (std::size_t i = 0 ; i != m; ++i)
   {
@@ -439,6 +445,8 @@ void TpetraMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 void TpetraMatrix::zero_local(std::size_t m, const dolfin::la_index* rows)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
+
   for (std::size_t i = 0 ; i != m; ++i)
   {
     Teuchos::ArrayView<const global_ordinal_type> cols;
@@ -454,6 +462,7 @@ void TpetraMatrix::zero_local(std::size_t m, const dolfin::la_index* rows)
 void TpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
 
   // Clear affected rows to zero
   zero(m, rows);
@@ -480,6 +489,12 @@ void TpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 void TpetraMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
 {
   dolfin_assert(!_matA.is_null());
+  //  dolfin_assert(!_matA->isFillComplete());
+
+  // Will need to call 'apply' again after this
+  if(_matA->isFillComplete())
+    _matA->resumeFill();
+
   zero_local(m, rows);
   Teuchos::RCP<const map_type>colmap(_matA->getColMap());
   const scalar_type one = 1;
@@ -556,6 +571,7 @@ void TpetraMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 void TpetraMatrix::set_diagonal(const GenericVector& x)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
   dolfin_not_implemented();
 
   const TpetraVector& xx = x.down_cast<TpetraVector>();
@@ -638,6 +654,7 @@ MPI_Comm TpetraMatrix::mpi_comm() const
 void TpetraMatrix::zero()
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
   _matA->setAllToScalar(0.0);
 }
 //-----------------------------------------------------------------------------
@@ -651,6 +668,7 @@ const TpetraMatrix& TpetraMatrix::operator*= (double a)
 const TpetraMatrix& TpetraMatrix::operator/= (double a)
 {
   dolfin_assert(!_matA.is_null());
+  dolfin_assert(!_matA->isFillComplete());
   _matA->scale(1.0/a);
   return *this;
 }

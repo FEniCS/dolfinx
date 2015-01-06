@@ -64,7 +64,7 @@ TpetraVector::~TpetraVector()
 void TpetraVector::zero()
 {
   dolfin_assert(!_x.is_null());
-  std::cout << "zero()\n";
+  //  std::cout << "zero()\n";
 
   _x->putScalar(0.0);
 }
@@ -72,9 +72,8 @@ void TpetraVector::zero()
 void TpetraVector::apply(std::string mode)
 {
   dolfin_assert(!_x.is_null());
-  std::cout << "Apply called with: " << mode << "\n";
-
-  std::cout << "Is one to one? " << _x->getMap()->isOneToOne() << "\n";
+  //  std::cout << "Apply called with: " << mode << "\n";
+  //  std::cout << "Is one to one? " << _x->getMap()->isOneToOne() << "\n";
 
   if(_x->getMap()->isOneToOne())
     return;

@@ -209,9 +209,10 @@ namespace dolfin
     const TpetraMatrix& operator= (const TpetraMatrix& A);
 
     Teuchos::RCP<matrix_type> mat()
-    {
-      return _matA;
-    }
+    { return _matA; }
+
+    Teuchos::RCP<const matrix_type> mat() const
+    { return _matA; }
 
     static void graphdump(const Teuchos::RCP<const graph_type> graph);
 

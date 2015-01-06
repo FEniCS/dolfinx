@@ -33,7 +33,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 BelosKrylovSolver::BelosKrylovSolver(std::string method,
                                      std::string preconditioner)
-  : _solver(NULL)
 {
   // Check that the requested method is known
   // if (_methods.count(method) == 0)
@@ -51,6 +50,26 @@ BelosKrylovSolver::BelosKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 BelosKrylovSolver::~BelosKrylovSolver()
 {
+}
+//-----------------------------------------------------------------------------
+Parameters BelosKrylovSolver::default_parameters()
+{
+  Parameters p(KrylovSolver::default_parameters());
+  p.rename("belos_krylov_solver");
+
+  // Norm type used in convergence test
+  // std::set<std::string> allowed_norm_types;
+  // allowed_norm_types.insert("preconditioned");
+  // allowed_norm_types.insert("true");
+  // allowed_norm_types.insert("none");
+  // p.add("convergence_norm_type", allowed_norm_types);
+
+  // // Control PETSc performance profiling
+  // p.add<bool>("profile");
+
+  // p.add("options_prefix", "default");
+
+  return p;
 }
 //-----------------------------------------------------------------------------
 void
@@ -76,11 +95,16 @@ void
 BelosKrylovSolver::set_operators(std::shared_ptr<const TpetraMatrix> A,
                                  std::shared_ptr<const TpetraMatrix> P)
 {
+  dolfin_assert(!_solver.is_null());
+  dolfin_assert(!_problem.is_null());
+  dolfin_assert(A);
+  dolfin_assert(!A->mat().is_null());
+
   _matA = A;
-  _matP = P;
-  dolfin_assert(_matA);
-  dolfin_assert(_matP);
-  //  dolfin_assert(_solver);
+  _problem->setOperator(A->mat());
+
+  std::cout << "Operator = " << _problem->getOperator()->description() <<" \n";
+
 }
 //-----------------------------------------------------------------------------
 const TpetraMatrix& BelosKrylovSolver::get_operator() const
@@ -153,10 +177,20 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
         _matA->size(0), _matA->size(1));
   }
 
+  _problem->setProblem(x.vec(), b.vec());
+
+  //  std::cout << "x = " << _problem->getLHS()->description() << "\n";
+  //  std::cout << "b = " << _problem->getRHS()->description() << "\n";
+
+  _solver->setProblem(_problem);
 
   Belos::ReturnType result =_solver->solve();
   if (result == Belos::Converged)
     std::cout << "Converged OK\n";
+  else
+    std::cout << "Did not converge\n";
+
+  //  std::cout << "Tol = " << _solver->achievedTol() << "\n";
 
   const std::size_t num_iterations = _solver->getNumIters();
 
@@ -186,23 +220,22 @@ std::string BelosKrylovSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::init(const std::string& method)
 {
-
-  typedef Belos::LinearProblem<scalar_type, mv_type, op_type> problem_type;
-
   Teuchos::RCP<Teuchos::ParameterList> solverParams = Teuchos::parameterList();
-  solverParams->set ("Num Blocks", 40);
-  solverParams->set ("Maximum Iterations", 400);
-  solverParams->set ("Convergence Tolerance", 1.0e-8);
+  solverParams->set("Num Blocks", 40);
+  solverParams->set("Maximum Iterations", 400);
+  solverParams->set("Convergence Tolerance", 1.0e-8);
+  solverParams->set("Verbosity",
+    Belos::Warnings | Belos::IterationDetails | Belos::StatusTestDetails
+                    | Belos::TimingDetails | Belos::FinalSummary);
+  solverParams->set("Output Style", Belos::Brief);
+  solverParams->set("Output Frequency", 1);
 
   Belos::SolverFactory<scalar_type, mv_type, op_type> factory;
   _solver = factory.create("GMRES", solverParams);
+  _solver->getCurrentParameters()->print();
+  std::cout << _solver->description() << "\n";
 
-  Teuchos::RCP<problem_type> problem
-    = Teuchos::rcp(new problem_type);
-
-  // problem->setProblem();
-
-  _solver->setProblem(problem);
+  _problem = Teuchos::rcp(new problem_type);
 }
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::check_dimensions(const TpetraMatrix& A,

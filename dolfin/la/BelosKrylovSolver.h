@@ -35,6 +35,9 @@ typedef Tpetra::Operator<scalar_type, local_ordinal_type,
 typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> mv_type;
 
+typedef Belos::LinearProblem<scalar_type, mv_type, op_type> problem_type;
+
+
 namespace dolfin
 {
 
@@ -146,6 +149,8 @@ namespace dolfin
     // Belos solver pointer
     Teuchos::RCP<Belos::SolverManager<scalar_type, mv_type, op_type> >
       _solver;
+
+    Teuchos::RCP<problem_type> _problem;
 
     // Operator (the matrix)
     std::shared_ptr<const TpetraMatrix> _matA;
