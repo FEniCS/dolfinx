@@ -5,7 +5,7 @@
 # Notes:
 #
 # - This script is what most developers use to build/rebuild this package.
-# - This script is common to all CMake based FEniCS packages.
+# - Automatically selects cmake (dolfin) or distutils (the rest) based on the existense of CMakeLists.txt or setup.py.
 # - If this script is updated in one package, please propagate to the others!
 #
 # Environment variables:
@@ -37,33 +37,44 @@ echo "Installation prefix set to '${FENICS_INSTALL_PREFIX}'."
 FENICS_PYTHON_VERSION=$(${FENICS_PYTHON_EXECUTABLE} -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
 echo "Python executable and version set to '${FENICS_PYTHON_EXECUTABLE} ${FENICS_PYTHON_VERSION}'."
 
-
 # Get number of processes to use for build
 : ${PROCS:=6}
 
-# Set build directory
-if [ "${BRANCH}" = "master" ]; then
-    BUILD_DIR=build.${BRANCH}
-elif [ "${BRANCH}" = "next" ]; then
-    BUILD_DIR=build.${BRANCH}
-else
-    BUILD_DIR="build.wip" # use for all other branches to save disk space
+
+# Build and install distutils based FEniCS package
+if [ -e setup.py ]; then
+    ${FENICS_PYTHON_EXECUTABLE} setup.py build
+    ${FENICS_PYTHON_EXECUTABLE} setup.py install --prefix=${FENICS_INSTALL_PREFIX}
 fi
 
-# Configure
-CMAKE_EXTRA_ARGS=$@
-mkdir -p ${BUILD_DIR}
-cd ${BUILD_DIR}
-time cmake -DCMAKE_INSTALL_PREFIX=${FENICS_INSTALL_PREFIX} \
-           -DDOLFIN_ENABLE_TESTING=true \
-           -DDOLFIN_ENABLE_BENCHMARKS=true \
-           -DCMAKE_BUILD_TYPE=Developer \
-           -DDOLFIN_DEPRECATION_ERROR=false \
-           ${CMAKE_EXTRA_ARGS} \
-           ..
 
-# Build and install
-time make -j ${PROCS} -k && make install -j ${PROCS}
+# Build and install dolfin
+if [ -e CMakeLists.txt ]; then
+    # Set build directory
+    if [ "${BRANCH}" = "master" ]; then
+        BUILD_DIR=build.${BRANCH}
+    elif [ "${BRANCH}" = "next" ]; then
+        BUILD_DIR=build.${BRANCH}
+    else
+        BUILD_DIR="build.wip" # use for all other branches to save disk space
+    fi
+
+    # Configure
+    CMAKE_EXTRA_ARGS=$@
+    mkdir -p ${BUILD_DIR}
+    cd ${BUILD_DIR}
+    time cmake -DCMAKE_INSTALL_PREFIX=${FENICS_INSTALL_PREFIX} \
+               -DDOLFIN_ENABLE_TESTING=true \
+               -DDOLFIN_ENABLE_BENCHMARKS=true \
+               -DCMAKE_BUILD_TYPE=Developer \
+               -DDOLFIN_DEPRECATION_ERROR=false \
+               ${CMAKE_EXTRA_ARGS} \
+               ..
+
+    # Build and install
+    time make -j ${PROCS} -k && make install -j ${PROCS}
+fi
+
 
 # Write config file
 CONFIG_FILE="${FENICS_INSTALL_PREFIX}/fenics.conf"
