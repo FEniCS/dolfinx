@@ -48,7 +48,7 @@ elif [ "${BRANCH}" = "next" ]; then
     BUILD_DIR=build.${BRANCH}
 else
     BUILD_DIR="build.wip" # use for all other branches to save disk space
-fi
+if
 
 # Configure
 CMAKE_EXTRA_ARGS=$@
@@ -65,9 +65,21 @@ time cmake -DCMAKE_INSTALL_PREFIX=${FENICS_INSTALL_PREFIX} \
 # Build and install
 time make -j ${PROCS} -k && make install -j ${PROCS}
 
-# Copy config file (this line is specific to DOLFIN)
+# Write config file
 CONFIG_FILE="${FENICS_INSTALL_PREFIX}/fenics.conf"
-cp dolfin.conf ${CONFIG_FILE}
+rm -f ${CONFIG_FILE}
+cat << EOF > ${CONFIG_FILE}
+# FEniCS configuration file created by fenics-dev-install.sh on $(date)
+export FENICS_INSTALL_PREFIX=${FENICS_INSTALL_PREFIX}
+export PATH=\${FENICS_INSTALL_PREFIX}/bin:\$PATH
+export PYTHONPATH=\${FENICS_INSTALL_PREFIX}/lib/python${FENICS_PYTHON_VERSION}/site-packages:\${PYTHONPATH}
+export CMAKE_PREFIX_PATH=\${FENICS_INSTALL_PREFIX}:\${CMAKE_PREFIX_PATH}
+EOF
+if [ $(uname) = "Darwin" ]; then
+    cat << EOF >> $CONFIG_FILE
+export DYLD_FALLBACK_LIBRARY_PATH=\${FENICS_INSTALL_PREFIX}:\${DYLD_FALLBACK_LIBRARY_PATH}
+EOF
+fi
 
 # Print information
 echo
