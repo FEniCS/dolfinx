@@ -156,7 +156,7 @@ def test_local_solver_dg_solve_xb():
     solve(a == L, u_lu, solver_parameters = {"linear_solver" : "lu"})
 
     # Prepare LocalSolver
-    local_solver = LocalSolver(a, L)
+    local_solver = LocalSolver(a)
     b = assemble(L)
     local_solver.solve(u_ls.vector(), b)
 
