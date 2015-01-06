@@ -58,13 +58,21 @@ LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
   init();
 }
 //----------------------------------------------------------------------------
+LocalSolver::LocalSolver(std::shared_ptr<const Form> a) :
+  _a(a)
+{
+  init();
+}
+//----------------------------------------------------------------------------
+// This function sets up the factorization of the A matrix
 void LocalSolver::init()
 {
   UFC ufc_a(*this->_a);
-  UFC ufc_L(*this->_l);
+  //UFC ufc_L(*this->_l);
 
   // Raise error for Point integrals
-  if (ufc_a.form.has_point_integrals() || ufc_L.form.has_point_integrals())
+//  if (ufc_a.form.has_point_integrals() || ufc_L.form.has_point_integrals())
+  if (ufc_a.form.has_point_integrals())
   {
     dolfin_error("LocalSolver.cpp",
                  "assemble system",
@@ -79,22 +87,22 @@ void LocalSolver::init()
 
   // Form ranks
   const std::size_t rank_a = ufc_a.form.rank();
-  const std::size_t rank_L = ufc_L.form.rank();
+  //const std::size_t rank_L = ufc_L.form.rank();
 
   // Check form ranks
   dolfin_assert(rank_a == 2);
-  dolfin_assert(rank_L == 1);
+  //dolfin_assert(rank_L == 1);
 
   // Collect pointers to dof maps
   std::shared_ptr<const GenericDofMap> dofmap_a0
     = _a->function_space(0)->dofmap();
   std::shared_ptr<const GenericDofMap> dofmap_a1
     = _a->function_space(1)->dofmap();
-  std::shared_ptr<const GenericDofMap> dofmap_L
-    = _a->function_space(0)->dofmap();
+  //std::shared_ptr<const GenericDofMap> dofmap_L
+    //= _a->function_space(0)->dofmap();
   dolfin_assert(dofmap_a0);
   dolfin_assert(dofmap_a1);
-  dolfin_assert(dofmap_L);
+  //dolfin_assert(dofmap_L);
 
   // Cell integrals
   ufc::cell_integral* integral_a = ufc_a.default_cell_integral.get();
@@ -119,14 +127,14 @@ void LocalSolver::init()
       = dofmap_a0->cell_dofs(cell->index());
     const std::vector<dolfin::la_index>& dofs_a1
       = dofmap_a1->cell_dofs(cell->index());
-    const std::vector<dolfin::la_index>& dofs_L
-      = dofmap_L->cell_dofs(cell->index());
+    //const std::vector<dolfin::la_index>& dofs_L
+      //= dofmap_L->cell_dofs(cell->index());
 
     // Check that local problem is square and a and L match
     dolfin_assert(dofs_a0.size() == dofs_a1.size());
-    dolfin_assert(dofs_a1.size() == dofs_L.size());
+    //dolfin_assert(dofs_a1.size() == dofs_L.size());
 
-    // Resize A and b SVDK: just set size
+    // Set size of A
     A.resize(dofs_a0.size(), dofs_a1.size());
 
     // Tabulate A on cell
@@ -214,6 +222,87 @@ void LocalSolver::solve(GenericVector& x) const
 
      // Solve local problem
     x_local = _lus[cell->index()].solve(b);
+
+    // Set solution in global vector
+    x.set_local(x_local.data(), dofs_a0.size(), dofs_a0.data());
+
+    p++;
+  }
+  // Finalise vector
+  x.apply("insert");
+}
+//----------------------------------------------------------------------------
+void LocalSolver::solve(GenericVector& x, const GenericVector& b) const
+{
+  UFC ufc_a(*this->_a);
+  //UFC ufc_L(*this->_l);
+  std::shared_ptr<const GenericVector> _x(reference_to_no_delete_pointer(x));
+
+  // Set timer
+  Timer timer("Local solver");
+
+  // Extract mesh
+  const Mesh& mesh = (*this->_a).mesh();
+
+  // Form ranks
+  const std::size_t rank_a = ufc_a.form.rank();
+  //const std::size_t rank_L = ufc_L.form.rank();
+
+  // Check form ranks
+  dolfin_assert(rank_a == 2);
+  //dolfin_assert(rank_L == 1);
+
+  // Collect pointers to dof maps
+  std::shared_ptr<const GenericDofMap> dofmap_a0
+    = (*this->_a).function_space(0)->dofmap();
+  std::shared_ptr<const GenericDofMap> dofmap_a1
+    = (*this->_a).function_space(1)->dofmap();
+  //std::shared_ptr<const GenericDofMap> dofmap_L
+    //= (*this->_a).function_space(0)->dofmap();
+  dolfin_assert(dofmap_a0);
+  dolfin_assert(dofmap_a1);
+  //dolfin_assert(dofmap_L);
+
+  // Initialise vector
+  if (x.empty())
+  {
+    std::pair<std::size_t, std::size_t> local_range
+      = b.local_range();
+    x.init(mesh.mpi_comm(), local_range);
+  }
+
+  // Eigen data structures
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A;
+  Eigen::VectorXd b_local, x_local;;
+
+  // Globally assemble RHS
+  //if (this->_l->ufc_form())
+    //assemble(*Gb, *this->_l);
+
+  // Assemble over cells
+  Progress p("Performing local (cell-wise) solve", mesh.num_cells());
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_cell_data(ufc_cell);
+
+    // Get local-to-global dof maps for cell
+    const std::vector<dolfin::la_index>& dofs_a0
+      = dofmap_a0->cell_dofs(cell->index());
+    //const std::vector<dolfin::la_index>& dofs_L
+      //= dofmap_L->cell_dofs(cell->index());
+
+    // Resize b
+    b_local.resize(dofs_a0.size());
+
+    // Extract local RHS info from global RHS
+    b.get_local(b_local.data(), dofs_a0.size(), dofs_a0.data());
+
+     // Solve local problem
+    x_local = _lus[cell->index()].solve(b_local);
 
     // Set solution in global vector
     x.set_local(x_local.data(), dofs_a0.size(), dofs_a0.data());

@@ -92,11 +92,11 @@ def test_local_solver_dg():
     u = TrialFunction(U)
 
     # Set time step size
-    DT = Constant(2.e-10)
+    DT = Constant(2.e-4)
 
     # Define fluxes on interior and exterior facets
     uhat    = avg(u0) + 0.25*jump(u0)
-    uhatbnd = -ubdr + .25*(u0-ubdr)
+    uhatbnd = -u0 + .25*(u0-ubdr)
 
     # Define variational formulation
     a = u*v*dx
@@ -116,3 +116,48 @@ def test_local_solver_dg():
     local_solver.solve(u_ls.vector())
 
     assert (u_lu.vector() - u_ls.vector()).norm("l2") < 1e-14
+    
+def test_local_solver_dg_solve_xb():
+    # Prepare a mesh
+    mesh = UnitIntervalMesh(50)
+
+    # Define function space
+    U = FunctionSpace(mesh, "DG", 2)
+
+    # Set some expressions
+    uinit = Expression("cos(pi*x[0])")
+    ubdr  = Constant("1.0")
+
+    # Set initial values
+    u0 = interpolate(uinit, U)
+
+    # Define test and trial functions
+    v = TestFunction(U)
+    u = TrialFunction(U)
+
+    # Set time step size
+    DT = Constant(2.e-4)
+
+    # Define fluxes on interior and exterior facets
+    uhat    = avg(u0) + 0.25*jump(u0)
+    uhatbnd = -u0 + .25*(u0-ubdr)
+
+    # Define variational formulation
+    a = u*v*dx
+    L = (u0*v + DT*u0*v.dx(0))*dx \
+        -DT* uhat * jump(v)*dS \
+        -DT* uhatbnd * v*ds
+
+    # Prepare solution
+    u_lu = Function(U)
+    u_ls = Function(U)
+
+    # Compute reference with global LU solver
+    solve(a == L, u_lu, solver_parameters = {"linear_solver" : "lu"})
+
+    # Prepare LocalSolver
+    local_solver = LocalSolver(a, L)
+    b = assemble(L)
+    local_solver.solve(u_ls.vector(), b)
+
+    assert (u_lu.vector() - u_ls.vector()).norm("l2") < 1e-14    

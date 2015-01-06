@@ -60,9 +60,16 @@ namespace dolfin
     LocalSolver(std::shared_ptr<const Form> a,
                 std::shared_ptr<const Form> L);
 
+     /// Constructor for reusing factorizations
+    LocalSolver(std::shared_ptr<const Form> a);
+
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x, reusing factorizations of local matrices.
     void solve(GenericVector& x) const;
+
+    /// Solve local (cell-wise) problem and copy result into global
+    /// vector x, reusing factorizations of local matrices.
+    void solve(GenericVector& x, const GenericVector& b) const;
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x.
