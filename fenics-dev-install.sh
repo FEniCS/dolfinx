@@ -92,6 +92,9 @@ export PKG_CONFIG_PATH=\${FENICS_INSTALL_PREFIX}/pkgconfig:\${PKG_CONFIG_PATH}
 export PYTHONPATH=\${FENICS_INSTALL_PREFIX}/lib/python${FENICS_PYTHON_VERSION}/site-packages:\${PYTHONPATH}
 export MANPATH=\${FENICS_INSTALL_PREFIX}/share/man:\${MANPATH}
 
+# Let instant cache modules separately for each install
+export INSTANT_CACHE_DIR=\${FENICS_INSTALL_PREFIX}/cache/instant
+
 # Cmake search path
 export CMAKE_PREFIX_PATH=\${FENICS_INSTALL_PREFIX}:\${CMAKE_PREFIX_PATH}
 EOF
