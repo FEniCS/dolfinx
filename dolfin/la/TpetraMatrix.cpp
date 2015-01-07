@@ -161,9 +161,9 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // on rows which are not in the domain.
   _graph->fillComplete();
 
-  TpetraVector::mapdump(domain_map0, "Mat::domain");
-  TpetraVector::mapdump(range_map0, "Mat::range");
-  graphdump(_graph);
+  //  TpetraVector::mapdump(domain_map0, "Mat::domain");
+  //  TpetraVector::mapdump(range_map0, "Mat::range");
+  //  graphdump(_graph);
 
   _matA = Teuchos::rcp(new matrix_type(_graph));
 }

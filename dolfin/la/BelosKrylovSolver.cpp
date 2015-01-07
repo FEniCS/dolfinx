@@ -31,6 +31,29 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+BelosKrylovSolver::preconditioners()
+{
+  std::vector<std::pair<std::string, std::string> > result;
+  result.push_back(std::make_pair("default", "default preconditioner"));
+  return result;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+BelosKrylovSolver::methods()
+{
+  Belos::SolverFactory<scalar_type, mv_type, op_type> factory;
+  Teuchos::Array<std::string> methods = factory.supportedSolverNames();
+
+  std::vector<std::pair<std::string, std::string> > result;
+  result.push_back(std::make_pair("default", "default method"));
+
+  for (auto m = methods.begin(); m != methods.end(); ++m)
+    result.push_back(std::make_pair(*m, *m));
+
+  return result;
+}
+//-----------------------------------------------------------------------------
 BelosKrylovSolver::BelosKrylovSolver(std::string method,
                                      std::string preconditioner)
 {
@@ -103,8 +126,6 @@ BelosKrylovSolver::set_operators(std::shared_ptr<const TpetraMatrix> A,
   _matA = A;
   _problem->setOperator(A->mat());
 
-  std::cout << "Operator = " << _problem->getOperator()->description() <<" \n";
-
 }
 //-----------------------------------------------------------------------------
 const TpetraMatrix& BelosKrylovSolver::get_operator() const
@@ -161,14 +182,14 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
   }
 
   // Reinitialize solution vector if necessary
-  if (x.empty())
-  {
-    _matA->init_vector(x, 1);
-    x.zero();
-  }
+  //  if (x.empty())
+  //  {
+  _matA->init_vector(x, 1);
+  x.zero();
+  //  }
 
   // Set any Belos-specific options
-  //   set_options();
+  set_options();
 
   // Solve linear system
   if (mpi_rank == 0)
@@ -185,14 +206,12 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
   _solver->setProblem(_problem);
 
   Belos::ReturnType result =_solver->solve();
-  if (result == Belos::Converged)
-    std::cout << "Converged OK\n";
-  else
-    std::cout << "Did not converge\n";
-
-  //  std::cout << "Tol = " << _solver->achievedTol() << "\n";
-
   const std::size_t num_iterations = _solver->getNumIters();
+
+  if (result == Belos::Converged)
+    log(PROGRESS, "Belos Krylov Solver converged in %d iterations.", num_iterations);
+  else
+    log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.", num_iterations);
 
   return num_iterations;
 }
@@ -220,22 +239,38 @@ std::string BelosKrylovSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::init(const std::string& method)
 {
-  Teuchos::RCP<Teuchos::ParameterList> solverParams = Teuchos::parameterList();
-  solverParams->set("Num Blocks", 40);
-  solverParams->set("Maximum Iterations", 400);
-  solverParams->set("Convergence Tolerance", 1.0e-8);
-  solverParams->set("Verbosity",
-    Belos::Warnings | Belos::IterationDetails | Belos::StatusTestDetails
-                    | Belos::TimingDetails | Belos::FinalSummary);
-  solverParams->set("Output Style", Belos::Brief);
-  solverParams->set("Output Frequency", 1);
+  Teuchos::RCP<Teuchos::ParameterList> dummyParams = Teuchos::parameterList();
+
+  std::string method_name = method;
+  if (method=="default")
+    method_name = "GMRES";
 
   Belos::SolverFactory<scalar_type, mv_type, op_type> factory;
-  _solver = factory.create("GMRES", solverParams);
-  _solver->getCurrentParameters()->print();
-  std::cout << _solver->description() << "\n";
-
+  _solver = factory.create(method_name, dummyParams);
   _problem = Teuchos::rcp(new problem_type);
+}
+//-----------------------------------------------------------------------------
+void BelosKrylovSolver::set_options()
+{
+  dolfin_assert(!_solver.is_null());
+
+  Teuchos::RCP<Teuchos::ParameterList> solverParams
+    = Teuchos::parameterList(*_solver->getCurrentParameters());
+  solverParams->set("Num Blocks", 40);
+  const int max_iterations = parameters["maximum_iterations"];
+  solverParams->set("Maximum Iterations", max_iterations);
+  const double rel_tol = parameters["relative_tolerance"];
+  solverParams->set("Convergence Tolerance", rel_tol);
+  const bool monitor_convergence = parameters["monitor_convergence"];
+  if (monitor_convergence)
+  {
+    solverParams->set("Verbosity",
+                      Belos::Warnings | Belos::IterationDetails | Belos::StatusTestDetails
+                      | Belos::TimingDetails | Belos::FinalSummary);
+    solverParams->set("Output Style", (int)Belos::Brief);
+    solverParams->set("Output Frequency", 1);
+  }
+  _solver->setParameters(solverParams);
 }
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::check_dimensions(const TpetraMatrix& A,

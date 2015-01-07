@@ -62,12 +62,12 @@ namespace dolfin
     //      lu_solver_methods() const;
 
     /// Return a list of available Krylov solver methods
-    //    std::vector<std::pair<std::string, std::string> >
-    //      krylov_solver_methods() const;
+    std::vector<std::pair<std::string, std::string> >
+      krylov_solver_methods() const;
 
     /// Return a list of available preconditioners
-    //    std::vector<std::pair<std::string, std::string> >
-    //      krylov_solver_preconditioners() const;
+    std::vector<std::pair<std::string, std::string> >
+      krylov_solver_preconditioners() const;
 
     /// Return singleton instance
     static TpetraFactory& instance()

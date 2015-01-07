@@ -54,7 +54,7 @@ int main()
 {
   bool dump_matrix = false;
 
-  UnitSquareMesh mesh(25, 25);
+  UnitSquareMesh mesh(12, 12);
   Poisson::FunctionSpace V(mesh);
   Poisson::LinearForm L(V);
   Poisson::BilinearForm a(V, V);
@@ -80,6 +80,7 @@ int main()
   assemble(*tpetraA, a);
   assemble(*petscA, a);
 
+  petscA->apply("add");
 
   tpetraA->init_vector(*tpetraB, 1);
 
@@ -108,7 +109,13 @@ int main()
 
   compare_tpetra_petsc_vectors(*tpetraB, *petscB);
 
-  BelosKrylovSolver belos;
+  std::vector<std::pair<std::string, std::string> >
+    meths = BelosKrylovSolver::methods();
+  for (auto &m : meths)
+    std::cout << m.first << "\n";
+
+  BelosKrylovSolver belos("GMRES");
+  belos.parameters["monitor_convergence"] = true;
   std::shared_ptr<const TpetraMatrix> Aptr(tpetraA);
   belos.set_operator(Aptr);
 
@@ -125,11 +132,12 @@ int main()
   std::cout << "N_it = " << n_it << "\n";
 
   Function F1(Vptr, petscX);
-  Function F2(Vptr, tpetraX);
+  File xdmf1("petsc.xdmf");
+  xdmf1 << F1;
 
-  File xdmf("a.xdmf");
-  xdmf << F1;
-  xdmf << F2;
+  Function F2(Vptr, tpetraX);
+  File xdmf2("tpetra.xdmf");
+  xdmf2 << F2;
 
   exit(0);
 

@@ -20,6 +20,7 @@
 #ifdef HAS_TRILINOS
 
 #include "SparsityPattern.h"
+#include "BelosKrylovSolver.h"
 #include "TpetraVector.h"
 #include "TpetraMatrix.h"
 #include "TpetraFactory.h"
@@ -56,6 +57,8 @@ std::shared_ptr<GenericLinearOperator>
 TpetraFactory::create_linear_operator() const
 {
   std::shared_ptr<GenericLinearOperator> A; //(new TpetraLinearOperator);
+  dolfin_not_implemented();
+
   return A;
 }
 //-----------------------------------------------------------------------------
@@ -63,6 +66,7 @@ std::shared_ptr<GenericLUSolver>
 TpetraFactory::create_lu_solver(std::string method) const
 {
   std::shared_ptr<GenericLUSolver> solver; //(new TpetraLUSolver(method));
+  dolfin_not_implemented();
   return solver;
 }
 //-----------------------------------------------------------------------------
@@ -71,9 +75,20 @@ TpetraFactory::create_krylov_solver(std::string method,
                                    std::string preconditioner) const
 {
   std::shared_ptr<GenericLinearSolver>
-    solver; //(new TpetraKrylovSolver(method, preconditioner));
+    solver(new BelosKrylovSolver(method, preconditioner));
   return solver;
 }
 //-----------------------------------------------------------------------------
-
+std::vector<std::pair<std::string, std::string> >
+TpetraFactory::krylov_solver_methods() const
+{
+  return BelosKrylovSolver::methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+TpetraFactory::krylov_solver_preconditioners() const
+{
+  return BelosKrylovSolver::preconditioners();
+}
+//-----------------------------------------------------------------------------
 #endif

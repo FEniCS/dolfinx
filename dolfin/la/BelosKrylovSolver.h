@@ -29,6 +29,9 @@
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 
+#include "TpetraVector.h"
+#include "TpetraMatrix.h"
+
 typedef Tpetra::Operator<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> op_type;
 
@@ -142,6 +145,9 @@ namespace dolfin
 
     // Initialize solver
     void init(const std::string& method);
+
+    // Set options for solver
+    void set_options();
 
     void check_dimensions(const TpetraMatrix& A, const GenericVector& x,
                           const GenericVector& b) const;
