@@ -36,9 +36,6 @@
 #include "MultiMeshDofMap.h"
 #include "MultiMeshAssembler.h"
 
-// FIXME: Testing
-#include <dolfin/la/Scalar.h>
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -54,39 +51,22 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   // - interior facets
   // - exterior facets
 
-  return;
-
   begin(PROGRESS, "Assembling tensor over multimesh function space.");
 
   // Initialize global tensor
   _init_global_tensor(A, a);
 
-  if (A.rank() == 0)
-    cout << "SCALAR (start) = " << static_cast<Scalar&>(A).get_scalar_value() << endl;
-
   // Assemble over uncut cells
   _assemble_uncut_cells(A, a);
-
-  if (A.rank() == 0)
-    cout << "SCALAR (uncut) = " << static_cast<Scalar&>(A).get_scalar_value() << endl;
 
   // Assemble over cut cells
   _assemble_cut_cells(A, a);
 
-  if (A.rank() == 0)
-    cout << "SCALAR (cut) = " << static_cast<Scalar&>(A).get_scalar_value() << endl;
-
   // Assemble over interface
   _assemble_interface(A, a);
 
-  if (A.rank() == 0)
-    cout << "SCALAR (interface) = " << static_cast<Scalar&>(A).get_scalar_value() << endl;
-
   // Assemble over overlap
   _assemble_overlap(A, a);
-
-  if (A.rank() == 0)
-    cout << "SCALAR (overlap) = " << static_cast<Scalar&>(A).get_scalar_value() << endl;
 
   // Finalize assembly of global tensor
   if (finalize_tensor)
