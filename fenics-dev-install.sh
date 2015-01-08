@@ -81,6 +81,12 @@ export FENICS_INSTALL_PREFIX=${FENICS_INSTALL_PREFIX}
 export FENICS_PYTHON_EXECUTABLE=${FENICS_PYTHON_EXECUTABLE}
 export FENICS_PYTHON_VERSION=${FENICS_PYTHON_VERSION}
 
+# Source FEniCS dependencies if found
+FENICS_DEPS_CONF=\${HOME}/opt/fenics/fenics.deps
+if [ -e \${FENICS_DEPS_CONF} ]; then
+    source \${FENICS_DEPS_CONF}
+fi
+
 # Common Unix variables
 export LD_LIBRARY_PATH=\${FENICS_INSTALL_PREFIX}/lib:\${LD_LIBRARY_PATH}
 export PATH=\${FENICS_INSTALL_PREFIX}/bin:\${PATH}
