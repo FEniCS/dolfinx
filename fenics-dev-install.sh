@@ -5,7 +5,7 @@
 # Notes:
 #
 # - This script is what most developers use to build/rebuild this package.
-# - Automatically selects cmake (dolfin) or distutils (the rest) based on the existense of CMakeLists.txt or setup.py.
+# - This script works for both CMake and distutils based packages.
 # - If this script is updated in one package, please propagate to the others!
 #
 # Environment variables:
@@ -16,10 +16,6 @@
 #                             : defaults to "python"
 # - $FENICS_INSTALL_PREFIX    : path to FEniCS installation prefix
 #                             : defaults to "${HOME}/opt/<branchname>"
-#
-# Note: Some of the code below may be redundant for either distutils or
-# CMake based installations but it helps keeping the scripts up-to-date
-# if the different scripts share as much code as possible.
 
 # Exit on first error
 set -e
@@ -92,10 +88,10 @@ export PKG_CONFIG_PATH=\${FENICS_INSTALL_PREFIX}/pkgconfig:\${PKG_CONFIG_PATH}
 export PYTHONPATH=\${FENICS_INSTALL_PREFIX}/lib/python${FENICS_PYTHON_VERSION}/site-packages:\${PYTHONPATH}
 export MANPATH=\${FENICS_INSTALL_PREFIX}/share/man:\${MANPATH}
 
-# Set instant cache modules separately for each install
+# Set Instant cache modules separately for each install
 export INSTANT_CACHE_DIR=\${FENICS_INSTALL_PREFIX}/cache/instant
 
-# Cmake search path
+# CMake search path
 export CMAKE_PREFIX_PATH=\${FENICS_INSTALL_PREFIX}:\${CMAKE_PREFIX_PATH}
 EOF
 if [ $(uname) = "Darwin" ]; then
