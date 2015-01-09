@@ -56,9 +56,21 @@ namespace dolfin
     /// Constructor
     //LocalSolver(std::shared_ptr<const Form> a);
 
-    /// Solve local (cell-wise) problem and copy result into global
-    /// vector x, reusing factorizations of local matrices.
-    void solve(GenericVector& x);
+    /// Solve local (cell-wise) problems A_e x_e = b_e, where A_e is
+    /// the cell matrix LHS and b_e is the global RHS vector b
+    /// restricted to the cell, i.e. b_e may contain contributions
+    /// from neighbouring cells. The solution is exact for the case in
+    /// which there is no coupling between cell contributions to the
+    /// global matrix A, e.g. the discontinuous Galerkin matrix. The
+    /// result is copied into x.
+    void solve_global_rhs(GenericVector& x);
+
+    /// Solve local (cell-wise) problems A_e x_e = b_e where A_e and
+    /// b_e are the cell element tensors. This function is useful for
+    /// computing (approximate) cell-wise projections, for example for
+    /// post-processing. It much more efficient than computing global
+    /// projections.
+    void solve_local_rhs(GenericVector& x);
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x, reusing factorizations of local matrices.

@@ -28,7 +28,7 @@ import pytest
 import numpy
 from dolfin import *
 
-def test_local_solver():
+def test_local_solver_global_rhs():
     mesh = UnitCubeMesh(2, 3, 3)
     V = FunctionSpace(mesh, "Discontinuous Lagrange", 2)
     W = FunctionSpace(mesh, "Lagrange", 2)
@@ -39,43 +39,57 @@ def test_local_solver():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    # Wrap forms as DOLFIN forms (LocalSolver hasn't been properly
-    # wrapped in Python yet)
-    a, L = Form(a), Form(L)
-
+    # First solve
     u = Function(V)
-    local_solver = cpp.LocalSolver(a, L)
-    local_solver.solve(u.vector())
+    local_solver = LocalSolver(a, L)
+    local_solver.solve_global_rhs(u.vector())
     error = assemble((u - f)*(u - f)*dx)
     assert round(error, 10) == 0
 
-    u = Function(V)
-    local_solver = cpp.LocalSolver(a, L)
+    # Test cached factorization
+    u.vector().zero()
     local_solver.factorize()
-    local_solver.solve(u.vector())
+    local_solver.solve_global_rhs(u.vector())
+    error = assemble((u - f)*(u - f)*dx)
+    assert round(error, 10) == 0
+
+    # Clear cache and re-compute
+    u.vector().zero()
+    local_solver.clear_factorization()
+    local_solver.solve_global_rhs(u.vector())
     error = assemble((u - f)*(u - f)*dx)
     assert round(error, 10) == 0
 
 
-def xtest_local_solver_reuse_factorization():
+def test_local_solver_local_rhs():
+    mesh = UnitCubeMesh(1, 5, 1)
+    V = FunctionSpace(mesh, "Lagrange", 2)
+    W = FunctionSpace(mesh, "Lagrange", 2)
 
-    mesh = UnitCubeMesh(16, 16, 16)
-    V = FunctionSpace(mesh, "DG", 2)
-
-    v = TestFunction(V)
-    u = TrialFunction(V)
+    u, v = TrialFunction(V), TestFunction(V)
     f = Constant(10.0)
 
     # Forms for projection
-    a = inner(v, u)*dx
-    L = inner(v, f)*dx
+    a, L = inner(v, u)*dx, inner(v, f)*dx
 
+    # First solve
     u = Function(V)
     local_solver = LocalSolver(a, L)
-    local_solver.solve(u.vector())
+    local_solver.solve_local_rhs(u.vector())
     x = u.vector().copy()
     x[:] = 10.0
-    assert round((u.vector() - x).norm("l2") - 0.0, 9) == 0
+    assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+
+    u.vector().zero()
+    local_solver.factorize()
+    local_solver.solve_local_rhs(u.vector())
+    assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+
+    u.vector().zero()
+    local_solver.clear_factorization()
+    local_solver.solve_local_rhs(u.vector())
+    assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+
 
 def xtest_local_solver_dg():
     # Prepare a mesh
@@ -96,7 +110,7 @@ def xtest_local_solver_dg():
     u = TrialFunction(U)
 
     # Set time step size
-    DT = Constant(2.e-4)
+    dt = Constant(2.-e-4)
 
     # Define fluxes on interior and exterior facets
     uhat    = avg(u0) + 0.25*jump(u0)
@@ -104,9 +118,7 @@ def xtest_local_solver_dg():
 
     # Define variational formulation
     a = u*v*dx
-    L = (u0*v + DT*u0*v.dx(0))*dx \
-        -DT* uhat * jump(v)*dS \
-        -DT* uhatbnd * v*ds
+    L = (u0*v + dt*u0*v.dx(0))*dx - dt*uhat*jump(v)*dS - dt*uhatbnd*v*ds
 
     # Prepare solution
     u_lu = Function(U)
@@ -120,6 +132,7 @@ def xtest_local_solver_dg():
     local_solver.solve(u_ls.vector())
 
     assert (u_lu.vector() - u_ls.vector()).norm("l2") < 1e-14
+
 
 def xtest_local_solver_dg_solve_xb():
     # Prepare a mesh
@@ -140,7 +153,7 @@ def xtest_local_solver_dg_solve_xb():
     u = TrialFunction(U)
 
     # Set time step size
-    DT = Constant(2.e-4)
+    dt = Constant(2.0e-4)
 
     # Define fluxes on interior and exterior facets
     uhat    = avg(u0) + 0.25*jump(u0)
@@ -148,9 +161,7 @@ def xtest_local_solver_dg_solve_xb():
 
     # Define variational formulation
     a = u*v*dx
-    L = (u0*v + DT*u0*v.dx(0))*dx \
-        -DT* uhat * jump(v)*dS \
-        -DT* uhatbnd * v*ds
+    L = (u0*v + dt*u0*v.dx(0))*dx - dt*uhat*jump(v)*dS - dt*uhatbnd*v*ds
 
     # Prepare solution
     u_lu = Function(U)
