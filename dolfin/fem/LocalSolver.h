@@ -51,7 +51,7 @@ namespace dolfin
 
     /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a,
-                std::shared_ptr<const Form> L);
+                std::shared_ptr<const Form> L, bool SPD=false);
 
     /// Constructor
     //LocalSolver(std::shared_ptr<const Form> a);
@@ -100,9 +100,17 @@ namespace dolfin
     // Bilinear and linear forms
     std::shared_ptr<const Form> _a, _L;
 
+    const bool _spd;
+
     // Cached LU factorisations of matrices
     std::vector<Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic,
-      Eigen::Dynamic, Eigen::RowMajor>>> _lus;
+                                                  Eigen::Dynamic,
+                                                  Eigen::RowMajor>>> _lu_cache;
+
+    // Cached Cholesky factorisations of matrices
+    std::vector<Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic,
+                                         Eigen::Dynamic,
+                                         Eigen::RowMajor>>> _cholesky_cache;
   };
 
 }

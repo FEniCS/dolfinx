@@ -41,7 +41,8 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
-                         std::shared_ptr<const Form> L) : _a(a), _L(L)
+                         std::shared_ptr<const Form> L, bool SPD)
+  : _a(a), _L(L), _spd(SPD)
 {
   dolfin_assert(a);
   dolfin_assert(a->rank() == 2);
@@ -104,8 +105,12 @@ void LocalSolver::solve_global_rhs(GenericVector& x)
   // Eigen data structures
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_e;
   Eigen::VectorXd b_e, x_e;;
+
+  // Eigen factorizations
   Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>> lu;
+  Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                           Eigen::RowMajor>> cholesky;
 
   // Assemble LHS over cells and solve
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
@@ -130,7 +135,7 @@ void LocalSolver::solve_global_rhs(GenericVector& x)
     b->get_local(b_e.data(), dofs_L.size(), dofs_L.data());
 
     // Solve local problem
-    if (_lus.empty())
+    if (_cholesky_cache.empty() and _lu_cache.empty())
     {
       // Update UFC object
       ufc_a.update(*cell, vertex_coordinates, ufc_cell,
@@ -144,13 +149,29 @@ void LocalSolver::solve_global_rhs(GenericVector& x)
       integral_a->tabulate_tensor(A_e.data(), ufc_a.w(),
                                   vertex_coordinates.data(),
                                   ufc_cell.orientation);
-      lu.compute(A_e);
-      x_e = lu.solve(b_e);
+      if (_spd)
+      {
+        cholesky.compute(A_e);
+        x_e = cholesky.solve(b_e);
+      }
+      else
+      {
+        lu.compute(A_e);
+        x_e = lu.solve(b_e);
+      }
     }
     else
     {
-      dolfin_assert(cell->index() < _lus.size());
-      x_e = _lus[cell->index()].solve(b_e);
+      if (_spd)
+      {
+        dolfin_assert(cell->index() < _cholesky_cache.size());
+        x_e = _cholesky_cache[cell->index()].solve(b_e);
+      }
+      else
+      {
+        dolfin_assert(cell->index() < _lu_cache.size());
+        x_e = _lu_cache[cell->index()].solve(b_e);
+      }
     }
 
     // Set solution in global vector
@@ -210,8 +231,12 @@ void LocalSolver::solve_local_rhs(GenericVector& x)
   // Eigen data structures
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_e;
   Eigen::VectorXd b_e, x_e;;
+
+  // Eigen factorizations
   Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>> lu;
+  Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                           Eigen::RowMajor>> cholesky;
 
   // Assemble LHS over cells and solve
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
@@ -242,7 +267,7 @@ void LocalSolver::solve_local_rhs(GenericVector& x)
                                 ufc_cell.orientation);
 
     // Solve local problem
-    if (_lus.empty())
+    if (_cholesky_cache.empty() and _lu_cache.empty())
     {
       // Update UFC object
       ufc_a.update(*cell, vertex_coordinates, ufc_cell,
@@ -256,13 +281,29 @@ void LocalSolver::solve_local_rhs(GenericVector& x)
       integral_a->tabulate_tensor(A_e.data(), ufc_a.w(),
                                   vertex_coordinates.data(),
                                   ufc_cell.orientation);
-      lu.compute(A_e);
-      x_e = lu.solve(b_e);
+      if (_spd)
+      {
+        cholesky.compute(A_e);
+        x_e = cholesky.solve(b_e);
+      }
+      else
+      {
+        lu.compute(A_e);
+        x_e = lu.solve(b_e);
+      }
     }
     else
     {
-      dolfin_assert(cell->index() < _lus.size());
-      x_e = _lus[cell->index()].solve(b_e);
+      if (_spd)
+      {
+        dolfin_assert(cell->index() < _cholesky_cache.size());
+        x_e = _cholesky_cache[cell->index()].solve(b_e);
+      }
+      else
+      {
+        dolfin_assert(cell->index() < _lu_cache.size());
+        x_e = _lu_cache[cell->index()].solve(b_e);
+      }
     }
 
     // Set solution in global vector
@@ -346,7 +387,7 @@ void LocalSolver::solve(GenericVector& x, const GenericVector& b) const
     b.get_local(b_local.data(), dofs_a0.size(), dofs_a0.data());
 
      // Solve local problem
-    x_local = _lus[cell->index()].solve(b_local);
+    x_local = _lu_cache[cell->index()].solve(b_local);
 
     // Set solution in global vector
     x.set_local(x_local.data(), dofs_a0.size(), dofs_a0.data());
@@ -360,7 +401,8 @@ void LocalSolver::solve(GenericVector& x, const GenericVector& b) const
 //----------------------------------------------------------------------------
 void LocalSolver::clear_factorization()
 {
-  _lus.clear();
+  _cholesky_cache.clear();
+  _lu_cache.clear();
 }
 //-----------------------------------------------------------------------------
 void LocalSolver::factorize()
@@ -398,7 +440,10 @@ void LocalSolver::factorize()
   dolfin_assert(integral);
 
   // Resize LU cache
-  _lus.resize(mesh.num_cells());
+  if (_spd)
+    _cholesky_cache.resize(mesh.num_cells());
+  else
+    _lu_cache.resize(mesh.num_cells());
 
   // Eigen data structure for cell matrix
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A;
@@ -430,10 +475,12 @@ void LocalSolver::factorize()
                               ufc_cell.orientation);
 
      // Compute LU decomposition and store
-    _lus[cell->index()].compute(A);
+    if (_spd)
+      _cholesky_cache[cell->index()].compute(A);
+    else
+      _lu_cache[cell->index()].compute(A);
 
     p++;
   }
-
 }
 //-----------------------------------------------------------------------------
