@@ -49,12 +49,6 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
-    //LocalSolver();
-
-    /// Constructor
-    //LocalSolver(const Form& a, const Form& L);
-
     /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a,
                 std::shared_ptr<const Form> L);
@@ -64,7 +58,7 @@ namespace dolfin
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x, reusing factorizations of local matrices.
-    void solve(GenericVector& x) const;
+    void solve(GenericVector& x);
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x, reusing factorizations of local matrices.
@@ -77,23 +71,19 @@ namespace dolfin
                bool symmetric=false) const;
     */
 
+    // Factorise LHS for all cells and store
+    void factorize();
+
     /// Cache the LU factorisation for local matrices for re-use
-    void cache_factorization(bool cache);
+    //void cache_factorization(bool cache);
 
     /// Reset (clear) any stored factorisations
-    void reset_factorization();
-
+    void clear_factorization();
 
   private:
 
     // Check forms
     void check_forms() const;
-
-    // Assemble RHS matrices
-    //void init();
-
-    // Factorise RHS for all all
-    void factorize();
 
     // Bilinear and linear forms
     std::shared_ptr<const Form> _a, _L;
