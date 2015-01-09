@@ -47,11 +47,12 @@ def test_local_solver():
     L = Form(L)
 
     u = Function(V)
-    local_solver = cpp.LocalSolver()
-    local_solver.solve(u.vector(), a, L)
+    local_solver = cpp.LocalSolver(a, L)
+    local_solver.solve(u.vector())
     x = u.vector().copy()
     x[:] = 10.0
     assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+
 
 def test_local_solver_reuse_factorization():
 
@@ -116,7 +117,7 @@ def test_local_solver_dg():
     local_solver.solve(u_ls.vector())
 
     assert (u_lu.vector() - u_ls.vector()).norm("l2") < 1e-14
-    
+
 def test_local_solver_dg_solve_xb():
     # Prepare a mesh
     mesh = UnitIntervalMesh(50)
@@ -160,4 +161,4 @@ def test_local_solver_dg_solve_xb():
     b = assemble(L)
     local_solver.solve(u_ls.vector(), b)
 
-    assert (u_lu.vector() - u_ls.vector()).norm("l2") < 1e-14    
+    assert (u_lu.vector() - u_ls.vector()).norm("l2") < 1e-14

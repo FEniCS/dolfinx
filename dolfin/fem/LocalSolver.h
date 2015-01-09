@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Garth N. Wells
+// Copyright (C) 2013-2015 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,13 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Steven Vandekerckhove, 2014.
-//
-// First added:  2013-02-12
-// Last changed: 2014-11-18
 
 #ifndef __LOCAL_SOLVER_H
 #define __LOCAL_SOLVER_H
 
+#include <memory>
+#include <vector>
 #include <Eigen/Dense>
 
 namespace dolfin
@@ -43,25 +42,25 @@ namespace dolfin
   /// global projections.
 
   // Forward declarations
-  class GenericVector;
   class Form;
+  class GenericVector;
 
   class LocalSolver
   {
   public:
 
-     /// Constructor
-    LocalSolver();
+    /// Constructor
+    //LocalSolver();
 
-     /// Constructor for reusing factorizations
-    LocalSolver(const Form& a, const Form& L);
+    /// Constructor
+    //LocalSolver(const Form& a, const Form& L);
 
-     /// Constructor for reusing factorizations
+    /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a,
                 std::shared_ptr<const Form> L);
 
-     /// Constructor for reusing factorizations
-    LocalSolver(std::shared_ptr<const Form> a);
+    /// Constructor
+    //LocalSolver(std::shared_ptr<const Form> a);
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x, reusing factorizations of local matrices.
@@ -69,12 +68,21 @@ namespace dolfin
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x, reusing factorizations of local matrices.
-    void solve(GenericVector& x, const GenericVector& b) const;
+    //void solve(GenericVector& x, const GenericVector& b) const;
 
     /// Solve local (cell-wise) problem and copy result into global
     /// vector x.
+    /*
     void solve(GenericVector& x, const Form& a, const Form& L,
                bool symmetric=false) const;
+    */
+
+    /// Cache the LU factorisation for local matrices for re-use
+    void cache_factorization(bool cache);
+
+    /// Reset (clear) any stored factorisations
+    void reset_factorization();
+
 
   private:
 
@@ -82,19 +90,17 @@ namespace dolfin
     void check_forms() const;
 
     // Assemble RHS matrices
-    void init();
+    //void init();
 
-    // The bilinear form
-    std::shared_ptr<const Form> _a;
+    // Factorise RHS for all all
+    void factorize();
 
-    // The linear form
-    std::shared_ptr<const Form> _l;
+    // Bilinear and linear forms
+    std::shared_ptr<const Form> _a, _L;
 
-    // The stored RHS matrices
-    std::vector<Eigen::PartialPivLU< Eigen::Matrix<
-                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor
-                > > > _lus;
-
+    // Cached LU factorisations of matrices
+    std::vector<Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic,
+      Eigen::Dynamic, Eigen::RowMajor>>> _lus;
   };
 
 }
