@@ -1,3 +1,18 @@
+ - DG demos working is parallel
+ - Simplify re-use of LU factorisations
+ - CMake 3 compatibility
+ - Make underlying SLEPc object accessible
+ - Full support for linear algebra backends with 64-bit integers
+ - Add smoothed aggregation AMG elasticity demo
+ - Add support for slepc4py
+ - Some self-assignment fixes in mesh data structures
+ - Deprecated GenericDofMap::geometric_dimension()
+ - Experimental support for ghosted meshes (overlapping region in parallel)
+ - Significant memory reduction in dofmap storage
+ - Re-write dofmap construction with significant performance and scaling
+	improvements in parallel
+ - Switch to local (process-wise) indexing for dof indices
+ - Support local (process-wise) indexing in linear algerbra backends
  - Added support for PETSc 3.5, require version >= 3.3
  - Exposed DofMap::tabulate_local_to_global_dofs,
 	MeshEntity::sharing_processes in Python
