@@ -81,6 +81,9 @@ PROBLEM_RENAMES(NonlinearVariational)
                                        Function&,
                                        std::vector<const DirichletBC*>);
 
+
+%ignore dolfin::LocalSolver::LocalSolver(const Form&, const Form&, bool);
+
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                                      Function&);
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,

@@ -39,6 +39,13 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
+LocalSolver::LocalSolver(const Form& a, const Form& L, bool SPD)
+  : LocalSolver::LocalSolver(std::shared_ptr<const Form>(&a, NoDeleter()),
+                             std::shared_ptr<const Form>(&L, NoDeleter()))
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
 LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
                          std::shared_ptr<const Form> L, bool SPD)
   : _a(a), _L(L), _spd(SPD)
@@ -110,8 +117,7 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector* b) const
 
   // Get dofmaps
   std::array<std::shared_ptr<const GenericDofMap>, 2> dofmaps_a
-             = {_a->function_space(0)->dofmap(),
-                _a->function_space(1)->dofmap()};
+    = {{_a->function_space(0)->dofmap(), _a->function_space(1)->dofmap()}};
   dolfin_assert(dofmaps_a[0] and dofmaps_a[1]);
 
   dolfin_assert(_L->function_space(0)->dofmap());
@@ -244,9 +250,8 @@ void LocalSolver::factorize()
   const Mesh& mesh = _a->mesh();
 
   // Collect pointers to dof maps
-  std::array<std::shared_ptr<const GenericDofMap>, 2>
-    dofmaps = {_a->function_space(0)->dofmap(),
-               _a->function_space(1)->dofmap()};
+  std::array<std::shared_ptr<const GenericDofMap>, 2> dofmaps
+    = {{_a->function_space(0)->dofmap(), _a->function_space(1)->dofmap()}};
   dolfin_assert(dofmaps[0]);
   dolfin_assert(dofmaps[1]);
 

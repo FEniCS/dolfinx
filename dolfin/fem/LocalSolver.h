@@ -59,6 +59,9 @@ namespace dolfin
   public:
 
     /// Constructor (shared pointer version)
+    LocalSolver(const Form& a, const Form& L, bool SPD=false);
+
+    /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a,
                 std::shared_ptr<const Form> L, bool SPD=false);
 
