@@ -65,9 +65,6 @@ namespace dolfin
     LocalSolver(std::shared_ptr<const Form> a,
                 std::shared_ptr<const Form> L, bool SPD=false);
 
-    /// Constructor
-    //LocalSolver(std::shared_ptr<const Form> a);
-
     /// Solve local (cell-wise) problems A_e x_e = b_e, where A_e is
     /// the cell matrix LHS and b_e is the global RHS vector b
     /// restricted to the cell, i.e. b_e may contain contributions
