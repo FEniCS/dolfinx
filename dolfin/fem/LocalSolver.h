@@ -58,12 +58,14 @@ namespace dolfin
   {
   public:
 
+    enum SolverType {LU, Cholesky};
+
     /// Constructor (shared pointer version)
-    LocalSolver(const Form& a, const Form& L, bool SPD=false);
+    LocalSolver(const Form& a, const Form& L, SolverType solver_type=LU);
 
     /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a,
-                std::shared_ptr<const Form> L, bool SPD=false);
+                std::shared_ptr<const Form> L, SolverType solver_type=LU);
 
     /// Solve local (cell-wise) problems A_e x_e = b_e, where A_e is
     /// the cell matrix LHS and b_e is the global RHS vector b
@@ -96,8 +98,8 @@ namespace dolfin
     // Bilinear and linear forms
     std::shared_ptr<const Form> _a, _L;
 
-    // True if local matrix is symmetric positive-definite
-    const bool _spd;
+    // Solver type to use
+    const SolverType _solver_type;
 
     // Cached LU factorisations of matrices (_spd==false)
     std::vector<Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic,

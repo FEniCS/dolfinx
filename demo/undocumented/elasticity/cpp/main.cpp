@@ -172,7 +172,7 @@ int main()
   L_s.disp = u;
 
   Function stress(W);
-  LocalSolver local_solver(a_s, L_s);
+  LocalSolver local_solver(a_s, L_s, LocalSolver::Cholesky);
   local_solver.solve_local_rhs(stress);
 
   File file_stress("stress.pvd");

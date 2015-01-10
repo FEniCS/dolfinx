@@ -39,12 +39,12 @@ def test_local_solver_global_rhs():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    modes = [True, False]
-    for mode in modes:
+    solvers = [LocalSolver.LU, LocalSolver.Cholesky]
+    for solver_type in solvers:
 
         # First solve
         u = Function(V)
-        local_solver = LocalSolver(a, L, mode)
+        local_solver = LocalSolver(a, L, solver_type)
         local_solver.solve_global_rhs(u)
         error = assemble((u - f)*(u - f)*dx)
         assert round(error, 10) == 0
@@ -75,12 +75,12 @@ def test_local_solver_local_rhs():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    modes = [True, False]
-    for mode in modes:
+    solvers = [LocalSolver.LU, LocalSolver.Cholesky]
+    for solver_type in solvers:
 
         # First solve
         u = Function(V)
-        local_solver = LocalSolver(a, L, mode)
+        local_solver = LocalSolver(a, L, solver_type)
         local_solver.solve_local_rhs(u)
         x = u.vector().copy()
         x[:] = 10.0

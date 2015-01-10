@@ -38,16 +38,18 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-LocalSolver::LocalSolver(const Form& a, const Form& L, bool SPD)
+LocalSolver::LocalSolver(const Form& a, const Form& L, SolverType solver_type)
   : LocalSolver::LocalSolver(std::shared_ptr<const Form>(&a, NoDeleter()),
-                             std::shared_ptr<const Form>(&L, NoDeleter()))
+                             std::shared_ptr<const Form>(&L, NoDeleter()),
+                             solver_type)
 {
   // Do nothing
 }
 //----------------------------------------------------------------------------
 LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
-                         std::shared_ptr<const Form> L, bool SPD)
-  : _a(a), _L(L), _spd(SPD)
+                         std::shared_ptr<const Form> L,
+                         SolverType solver_type)
+  : _a(a), _L(L), _solver_type(solver_type)
 {
   dolfin_assert(a);
   dolfin_assert(a->rank() == 2);
@@ -110,7 +112,7 @@ void LocalSolver::factorize()
   dolfin_assert(integral);
 
   // Resize LU cache
-  if (_spd)
+  if (_solver_type==SolverType::Cholesky)
     _cholesky_cache.resize(mesh.num_cells());
   else
     _lu_cache.resize(mesh.num_cells());
@@ -145,7 +147,7 @@ void LocalSolver::factorize()
                               ufc_cell.orientation);
 
      // Compute LU decomposition and store
-    if (_spd)
+    if (_solver_type==SolverType::Cholesky)
       _cholesky_cache[cell->index()].compute(A);
     else
       _lu_cache[cell->index()].compute(A);
@@ -267,7 +269,7 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector* b) const
                                   vertex_coordinates.data(),
                                   ufc_cell.orientation);
       // Solve local problem
-      if (_spd)
+      if (_solver_type==SolverType::Cholesky)
       {
         cholesky.compute(A_e);
         x_e = cholesky.solve(b_e);
@@ -280,7 +282,7 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector* b) const
     }
     else
     {
-      if (_spd)
+      if (_solver_type==SolverType::Cholesky)
         x_e = _cholesky_cache[cell->index()].solve(b_e);
       else
         x_e = _lu_cache[cell->index()].solve(b_e);
