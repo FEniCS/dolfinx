@@ -39,26 +39,29 @@ def test_local_solver_global_rhs():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    # First solve
-    u = Function(V)
-    local_solver = LocalSolver(a, L)
-    local_solver.solve_global_rhs(u)
-    error = assemble((u - f)*(u - f)*dx)
-    assert round(error, 10) == 0
+    modes = [True, False]
+    for mode in modes:
 
-    # Test cached factorization
-    u.vector().zero()
-    local_solver.factorize()
-    local_solver.solve_global_rhs(u)
-    error = assemble((u - f)*(u - f)*dx)
-    assert round(error, 10) == 0
+        # First solve
+        u = Function(V)
+        local_solver = LocalSolver(a, L, mode)
+        local_solver.solve_global_rhs(u)
+        error = assemble((u - f)*(u - f)*dx)
+        assert round(error, 10) == 0
 
-    # Clear cache and re-compute
-    u.vector().zero()
-    local_solver.clear_factorization()
-    local_solver.solve_global_rhs(u)
-    error = assemble((u - f)*(u - f)*dx)
-    assert round(error, 10) == 0
+        # Test cached factorization
+        u.vector().zero()
+        local_solver.factorize()
+        local_solver.solve_global_rhs(u)
+        error = assemble((u - f)*(u - f)*dx)
+        assert round(error, 10) == 0
+
+        # Clear cache and re-compute
+        u.vector().zero()
+        local_solver.clear_factorization()
+        local_solver.solve_global_rhs(u)
+        error = assemble((u - f)*(u - f)*dx)
+        assert round(error, 10) == 0
 
 
 def test_local_solver_local_rhs():
@@ -72,23 +75,26 @@ def test_local_solver_local_rhs():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    # First solve
-    u = Function(V)
-    local_solver = LocalSolver(a, L)
-    local_solver.solve_local_rhs(u)
-    x = u.vector().copy()
-    x[:] = 10.0
-    assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+    modes = [True, False]
+    for mode in modes:
 
-    u.vector().zero()
-    local_solver.factorize()
-    local_solver.solve_local_rhs(u)
-    assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+        # First solve
+        u = Function(V)
+        local_solver = LocalSolver(a, L, mode)
+        local_solver.solve_local_rhs(u)
+        x = u.vector().copy()
+        x[:] = 10.0
+        assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
-    u.vector().zero()
-    local_solver.clear_factorization()
-    local_solver.solve_local_rhs(u)
-    assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+        u.vector().zero()
+        local_solver.factorize()
+        local_solver.solve_local_rhs(u)
+        assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
+
+        u.vector().zero()
+        local_solver.clear_factorization()
+        local_solver.solve_local_rhs(u)
+        assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
 
 def test_local_solver_dg():
@@ -118,6 +124,12 @@ def test_local_solver_dg():
 
     # Compute solution with local solver and compare
     local_solver = LocalSolver(a, L)
+    u_ls = Function(U)
+    local_solver.solve_global_rhs(u_ls)
+    assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
+
+    # Compute solution with local solver (Cholesky) and compare
+    local_solver = LocalSolver(a, L, True)
     u_ls = Function(U)
     local_solver.solve_global_rhs(u_ls)
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
