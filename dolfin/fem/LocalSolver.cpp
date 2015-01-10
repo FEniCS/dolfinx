@@ -73,7 +73,7 @@ void LocalSolver::solve_local_rhs(Function& u) const
 {
   // Solve local problems
   dolfin_assert(u.vector());
-  solve_local(*u.vector(), NULL);
+  solve_local(*u.vector(), nullptr);
 }
 //----------------------------------------------------------------------------
 void LocalSolver::factorize()
