@@ -42,21 +42,21 @@ def test_local_solver_global_rhs():
     # First solve
     u = Function(V)
     local_solver = LocalSolver(a, L)
-    local_solver.solve_global_rhs(u.vector())
+    local_solver.solve_global_rhs(u)
     error = assemble((u - f)*(u - f)*dx)
     assert round(error, 10) == 0
 
     # Test cached factorization
     u.vector().zero()
     local_solver.factorize()
-    local_solver.solve_global_rhs(u.vector())
+    local_solver.solve_global_rhs(u)
     error = assemble((u - f)*(u - f)*dx)
     assert round(error, 10) == 0
 
     # Clear cache and re-compute
     u.vector().zero()
     local_solver.clear_factorization()
-    local_solver.solve_global_rhs(u.vector())
+    local_solver.solve_global_rhs(u)
     error = assemble((u - f)*(u - f)*dx)
     assert round(error, 10) == 0
 
@@ -75,104 +75,49 @@ def test_local_solver_local_rhs():
     # First solve
     u = Function(V)
     local_solver = LocalSolver(a, L)
-    local_solver.solve_local_rhs(u.vector())
+    local_solver.solve_local_rhs(u)
     x = u.vector().copy()
     x[:] = 10.0
     assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
     u.vector().zero()
     local_solver.factorize()
-    local_solver.solve_local_rhs(u.vector())
+    local_solver.solve_local_rhs(u)
     assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
     u.vector().zero()
     local_solver.clear_factorization()
-    local_solver.solve_local_rhs(u.vector())
+    local_solver.solve_local_rhs(u)
     assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
 
-def xtest_local_solver_dg():
-    # Prepare a mesh
+def test_local_solver_dg():
     mesh = UnitIntervalMesh(50)
-
-    # Define function space
     U = FunctionSpace(mesh, "DG", 2)
 
-    # Set some expressions
-    uinit = Expression("cos(pi*x[0])")
-    ubdr  = Constant("1.0")
-
     # Set initial values
-    u0 = interpolate(uinit, U)
+    u0 = interpolate(Expression("cos(pi*x[0])"), U)
 
     # Define test and trial functions
-    v = TestFunction(U)
-    u = TrialFunction(U)
-
-    # Set time step size
-    dt = Constant(2.-e-4)
-
-    # Define fluxes on interior and exterior facets
-    uhat    = avg(u0) + 0.25*jump(u0)
-    uhatbnd = -u0 + .25*(u0-ubdr)
-
-    # Define variational formulation
-    a = u*v*dx
-    L = (u0*v + dt*u0*v.dx(0))*dx - dt*uhat*jump(v)*dS - dt*uhatbnd*v*ds
-
-    # Prepare solution
-    u_lu = Function(U)
-    u_ls = Function(U)
-
-    # Compute reference with global LU solver
-    solve(a == L, u_lu, solver_parameters = {"linear_solver" : "lu"})
-
-    # Prepare LocalSolver
-    local_solver = LocalSolver(a, L)
-    local_solver.solve(u_ls.vector())
-
-    assert (u_lu.vector() - u_ls.vector()).norm("l2") < 1e-14
-
-
-def xtest_local_solver_dg_solve_xb():
-    # Prepare a mesh
-    mesh = UnitIntervalMesh(50)
-
-    # Define function space
-    U = FunctionSpace(mesh, "DG", 2)
-
-    # Set some expressions
-    uinit = Expression("cos(pi*x[0])")
-    ubdr  = Constant("1.0")
-
-    # Set initial values
-    u0 = interpolate(uinit, U)
-
-    # Define test and trial functions
-    v = TestFunction(U)
-    u = TrialFunction(U)
+    v, u = TestFunction(U), TrialFunction(U)
 
     # Set time step size
     dt = Constant(2.0e-4)
 
     # Define fluxes on interior and exterior facets
-    uhat    = avg(u0) + 0.25*jump(u0)
-    uhatbnd = -u0 + .25*(u0-ubdr)
+    u_hat = avg(u0) + 0.25*jump(u0)
+    u_hatbnd = -u0 + 0.25*(u0 - 1.0)
 
     # Define variational formulation
     a = u*v*dx
-    L = (u0*v + dt*u0*v.dx(0))*dx - dt*uhat*jump(v)*dS - dt*uhatbnd*v*ds
+    L = (u0*v + dt*u0*v.dx(0))*dx - dt*u_hat*jump(v)*dS - dt*u_hatbnd*v*ds
 
-    # Prepare solution
+    # Compute reference solution with global LU solver
     u_lu = Function(U)
-    u_ls = Function(U)
-
-    # Compute reference with global LU solver
     solve(a == L, u_lu, solver_parameters = {"linear_solver" : "lu"})
 
-    # Prepare LocalSolver
-    local_solver = LocalSolver(a)
-    b = assemble(L)
-    local_solver.solve(u_ls.vector(), b)
-
-    assert (u_lu.vector() - u_ls.vector()).norm("l2") < 1e-14
+    # Compute solution with local solver and compare
+    local_solver = LocalSolver(a, L)
+    u_ls = Function(U)
+    local_solver.solve_global_rhs(u_ls)
+    assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0

@@ -22,7 +22,14 @@
 
 #include <memory>
 #include <vector>
+#include <Eigen/Cholesky>
 #include <Eigen/Dense>
+#include <Eigen/LU>
+
+namespace ufc
+{
+  class cell_integral;
+}
 
 namespace dolfin
 {
@@ -43,7 +50,9 @@ namespace dolfin
 
   // Forward declarations
   class Form;
+  class Function;
   class GenericVector;
+  class UFC;
 
   class LocalSolver
   {
@@ -63,51 +72,39 @@ namespace dolfin
     /// which there is no coupling between cell contributions to the
     /// global matrix A, e.g. the discontinuous Galerkin matrix. The
     /// result is copied into x.
-    void solve_global_rhs(GenericVector& x);
+    void solve_global_rhs(Function& u) const;
 
     /// Solve local (cell-wise) problems A_e x_e = b_e where A_e and
     /// b_e are the cell element tensors. This function is useful for
     /// computing (approximate) cell-wise projections, for example for
     /// post-processing. It much more efficient than computing global
     /// projections.
-    void solve_local_rhs(GenericVector& x);
-
-    /// Solve local (cell-wise) problem and copy result into global
-    /// vector x, reusing factorizations of local matrices.
-    //void solve(GenericVector& x, const GenericVector& b) const;
-
-    /// Solve local (cell-wise) problem and copy result into global
-    /// vector x.
-    /*
-    void solve(GenericVector& x, const Form& a, const Form& L,
-               bool symmetric=false) const;
-    */
+    void solve_local_rhs(Function& u) const;
 
     // Factorise LHS for all cells and store
     void factorize();
-
-    /// Cache the LU factorisation for local matrices for re-use
-    //void cache_factorization(bool cache);
 
     /// Reset (clear) any stored factorisations
     void clear_factorization();
 
   private:
 
-    // Check forms
-    void check_forms() const;
+    // Solve local problem. If b==NULL, then RHS is computed
+    // cell-by-cell
+    void solve_local(GenericVector& x, const GenericVector* b) const;
 
     // Bilinear and linear forms
     std::shared_ptr<const Form> _a, _L;
 
+    // True if local matrix is symmetric positive-definite
     const bool _spd;
 
-    // Cached LU factorisations of matrices
+    // Cached LU factorisations of matrices (_spd==false)
     std::vector<Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic,
                                                   Eigen::Dynamic,
                                                   Eigen::RowMajor>>> _lu_cache;
 
-    // Cached Cholesky factorisations of matrices
+    // Cached Cholesky factorisations of matrices (_spd==true)
     std::vector<Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic,
                                          Eigen::Dynamic,
                                          Eigen::RowMajor>>> _cholesky_cache;
