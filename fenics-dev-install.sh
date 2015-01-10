@@ -81,8 +81,8 @@ export FENICS_INSTALL_PREFIX=${FENICS_INSTALL_PREFIX}
 export FENICS_PYTHON_EXECUTABLE=${FENICS_PYTHON_EXECUTABLE}
 export FENICS_PYTHON_VERSION=${FENICS_PYTHON_VERSION}
 
-# Source FEniCS dependencies if found
-FENICS_DEPS_CONF=\${HOME}/opt/fenics/fenics.deps
+# Source FEniCS dependencies if found in parent directory
+FENICS_DEPS_CONF=\${FENICS_INSTALL_PREFIX}/../fenics.deps
 if [ -e \${FENICS_DEPS_CONF} ]; then
     source \${FENICS_DEPS_CONF}
 fi
