@@ -819,7 +819,6 @@ def test_p42_box_4(pushpop_parameters):
     # but this is not testable without external sys.argv.
     # Feel free to improve by adding something to argv above.
 
-@use_gc_barrier
 @skip_in_parallel
 def test_p43_box_1(cd_tempdir, pushpop_parameters):
     file = File("parameters.xml")
@@ -841,7 +840,7 @@ def test_p46_box_1():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
-@use_gc_barrier
+@skip_in_parallel
 def test_p47_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "Lagrange", 1)

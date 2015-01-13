@@ -22,6 +22,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include "BisectionRefinement1D.h"
 #include "RegularCutRefinement.h"
 #include "PlazaRefinementND.h"
 #include "LocalMeshRefinement.h"
@@ -48,7 +49,9 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
 
   // Call refinement algorithm
   const std::string refinement_algorithm = parameters["refinement_algorithm"];
-  if (refinement_algorithm == "regular_cut")
+  if (mesh.topology().dim() == 1)
+    BisectionRefinement1D::refine(refined_mesh, mesh, cell_markers);
+  else if (refinement_algorithm == "regular_cut")
     RegularCutRefinement::refine(refined_mesh, mesh, cell_markers);
   else if (refinement_algorithm == "plaza")
     PlazaRefinementND::refine(refined_mesh, mesh, cell_markers, false, false);
