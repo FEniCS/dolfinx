@@ -232,9 +232,16 @@ void TpetraVector::get_local(double* block, std::size_t m,
                              const dolfin::la_index* rows) const
 {
   dolfin_assert(!_x.is_null());
+
   Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
   for (std::size_t i = 0; i!=m; ++i)
-    block[i] = arr[rows[i]];
+  {
+    if (_x->getMap()->isNodeLocalElement(rows[i]))
+      block[i] = arr[rows[i]];
+    else
+      std::cout << "!! Not local " << rows[i] << " on " << _x->getMap()->getComm()->getRank() <<" \n";
+  }
+
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::set(const double* block, std::size_t m,
@@ -285,6 +292,7 @@ void TpetraVector::add_local(const double* block, std::size_t m,
 void TpetraVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(!_x.is_null());
+  std::cout << "get_local (vector)" << "\n";
   values.resize(local_size());
   Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
   std::copy(arr.get(), arr.get() + values.size(), values.begin());
@@ -589,16 +597,16 @@ void TpetraVector::_init(MPI_Comm comm,
   std::size_t Nlocal = local_range.second - local_range.first;
   std::size_t N = MPI::sum(comm, Nlocal);
 
-  if (local_to_global_map.size()==0)
-    _map = Teuchos::rcp(new map_type(N, Nlocal, 0, _comm));
-  else
-  {
-    std::vector<global_ordinal_type> ltmp(local_to_global_map.begin(),
-                                          local_to_global_map.end());
-
-    const Teuchos::ArrayView<global_ordinal_type> local_indices(ltmp);
-    _map = Teuchos::rcp(new map_type(N, local_indices, 0, _comm));
-  }
+  //  if (local_to_global_map.size()==0)
+  _map = Teuchos::rcp(new map_type(N, Nlocal, 0, _comm));
+    //  else
+    //  {
+    //    std::vector<global_ordinal_type> ltmp(local_to_global_map.begin(),
+    //                                          local_to_global_map.end());
+    //
+    //    const Teuchos::ArrayView<global_ordinal_type> local_indices(ltmp);
+    //    _map = Teuchos::rcp(new map_type(N, local_indices, 0, _comm));
+    //  }
 
   // Vector
   _x = Teuchos::rcp(new vector_type(_map));

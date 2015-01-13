@@ -54,7 +54,7 @@ int main()
 {
   bool dump_matrix = false;
 
-  UnitSquareMesh mesh(12, 12);
+  UnitSquareMesh mesh(50, 50);
   Poisson::FunctionSpace V(mesh);
   Poisson::LinearForm L(V);
   Poisson::BilinearForm a(V, V);
@@ -79,8 +79,6 @@ int main()
 
   assemble(*tpetraA, a);
   assemble(*petscA, a);
-
-  petscA->apply("add");
 
   tpetraA->init_vector(*tpetraB, 1);
 
