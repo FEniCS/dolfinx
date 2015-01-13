@@ -1,7 +1,8 @@
-"""This demo program solves the equations of static linear elasticity
-for a gear clamped at two of its ends and twisted 30 degrees."""
+"""This demo solves the equations of static linear elasticity for a
+pulley subjected to centripetal accelerations. The solver uses
+smoothed aggregation algerbaric multigrid."""
 
-# Copyright (C) 2007 Kristian B. Oelgaard
+# Copyright (C) 2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -17,82 +18,110 @@ for a gear clamped at two of its ends and twisted 30 degrees."""
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# Modified by Anders Logg 2008-2011
-#
-# First added:  2007-11-14
-# Last changed: 2011-06-28
 
+from __future__ import print_function
 from dolfin import *
 
+# Test for PETSc
+if not has_linear_algebra_backend("PETSc"):
+    print("DOLFIN has not been configured with PETSc. Exiting.")
+    exit()
+
+# Set backend to PETSC
+parameters["linear_algebra_backend"] = "PETSc"
+
+def build_nullspace(V, x):
+    """Function to build null space for 3D elasticity"""
+
+    # Create list of vectors for null space
+    nullspace_basis = [x.copy() for i in range(6)]
+
+    # Build translational null space basis
+    V.sub(0).dofmap().set(nullspace_basis[0], 1.0);
+    V.sub(1).dofmap().set(nullspace_basis[1], 1.0);
+    V.sub(2).dofmap().set(nullspace_basis[2], 1.0);
+
+    # Build rotational null space basis
+    V.sub(0).dofmap().set_x(nullspace_basis[3], -1.0, 1, V.mesh());
+    V.sub(1).dofmap().set_x(nullspace_basis[3],  1.0, 0, V.mesh());
+    V.sub(0).dofmap().set_x(nullspace_basis[4],  1.0, 2, V.mesh());
+    V.sub(2).dofmap().set_x(nullspace_basis[4], -1.0, 0, V.mesh());
+    V.sub(2).dofmap().set_x(nullspace_basis[5],  1.0, 1, V.mesh());
+    V.sub(1).dofmap().set_x(nullspace_basis[5], -1.0, 2, V.mesh());
+
+    for x in nullspace_basis:
+        x.apply("insert")
+
+    return VectorSpaceBasis(nullspace_basis)
+
+
 # Load mesh and define function space
-mesh = Mesh("../gear.xml.gz")
-mesh.order()
-V = VectorFunctionSpace(mesh, "CG", 1)
+mesh = Mesh("../pulley.xml.gz")
 
-# Sub domain for clamp at left end
-def left(x, on_boundary):
-    return x[0] < 0.5 and on_boundary
+# Function to mark inner surface of pulley
+def inner_surface(x, on_boundary):
+    r = 3.75 - x[2]*0.17
+    return (x[0]*x[0] + x[1]*x[1]) < r*r and on_boundary
 
-# Dirichlet boundary condition for rotation at right end
-class Rotation(Expression):
+# Rotation rate and mass density
+omega = 300.0
+rho = 10.0
 
-    def eval(self, values, x):
+# Loading due to centripetal acceleration (rho*omega^2*x_i)
+f = Expression(("rho*omega*omega*x[0]", \
+                "rho*omega*omega*x[1]", \
+                "0.0"), omega=omega, rho=rho)
 
-        # Center of rotation
-        y0 = 0.5
-        z0 = 0.219
+# Elasticity parameters
+E = 1.0e9
+nu = 0.3
+mu = E/(2.0*(1.0 + nu))
+lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
 
-        # Angle of rotation (30 degrees)
-        theta = 0.5236
+# Stress computation
+def sigma(v):
+    gdim = v.geometric_dimension()
+    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(gdim)
 
-        # New coordinates
-        y = y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta)
-        z = z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta)
-
-        # Clamp at right end
-        values[0] = 0.0
-        values[1] = y - x[1]
-        values[2] = z - x[2]
-
-    def value_shape(self):
-        return (3,)
-
-# Sub domain for rotation at right end
-def right(x, on_boundary):
-    return x[0] > 0.9 and on_boundary
+# Create function space
+V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = Constant((0.0, 0.0, 0.0))
-
-E  = 10.0
-nu = 0.3
-
-mu    = E / (2.0*(1.0 + nu))
-lmbda = E*nu / ((1.0 + nu)*(1.0 - 2.0*nu))
-
-def sigma(v):
-    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.geometric_dimension())
-
 a = inner(sigma(u), grad(v))*dx
 L = inner(f, v)*dx
 
-# Set up boundary condition at left end
+# Set up boundary condition on inner surface
 c = Constant((0.0, 0.0, 0.0))
-bcl = DirichletBC(V, c, left)
+bc = DirichletBC(V, c, inner_surface)
 
-# Set up boundary condition at right end
-r = Rotation()
-bcr = DirichletBC(V, r, right)
+# Assemble system, applying boundary conditions and preserving
+# symmetry)
+A, b = assemble_system(a, L, bc)
 
-# Set up boundary conditions
-bcs = [bcl, bcr]
+# Create solution function
+u = Function(V)
+
+# Create near null space basis (required for smoothed aggregation
+# AMG). The solution vector is passed so that it can be copied to
+# generate compatible vectors for the nullspace.
+null_space = build_nullspace(V, u.vector())
+
+# Create PETSC smoothed aggregation AMG preconditioner and attach near
+# null space
+pc = PETScPreconditioner("petsc_amg")
+pc.set_nullspace(null_space)
+
+# Create CG Krylov solver and turn convergence monitoring on
+solver = PETScKrylovSolver("cg", pc)
+solver.parameters["monitor_convergence"] = True
+
+# Set matrix operator
+solver.set_operator(A);
 
 # Compute solution
-u = Function(V)
-solve(a == L, u, bcs, solver_parameters={"symmetric": True})
+solver.solve(u.vector(), b);
 
 # Save solution to VTK format
 File("elasticity.pvd", "compressed") << u
@@ -105,7 +134,7 @@ if MPI.size(mesh.mpi_comm()) > 1:
 # Project and write stress field to post-processing file
 W = TensorFunctionSpace(mesh, "Discontinuous Lagrange", 0)
 stress = project(sigma(u), V=W)
-File("streess.pvd") << stress
+File("stress.pvd") << stress
 
 # Plot solution
 plot(u, interactive=True)

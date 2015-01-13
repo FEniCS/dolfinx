@@ -220,6 +220,14 @@
 #ifdef HAS_SLEPC
 %ignore dolfin::SLEPcEigenSolver(const PETScMatrix&);
 %ignore dolfin::SLEPcEigenSolver(const PETScMatrix&, const PETScMatrix&);
+
+// Only ignore C++ accessors if slepc4py is enabled
+#ifdef HAS_SLEPC4PY
+%ignore dolfin::SLEPcEigenSolver::eps() const;
+#else
+// Ignore everything
+%ignore dolfin::SLEPcEigenSolver::eps;
+#endif
 #endif
 
 //-----------------------------------------------------------------------------

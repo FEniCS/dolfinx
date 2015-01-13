@@ -30,9 +30,10 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
 
-  /// This is a base class for nonlinear optimisation problems which return
-  /// the real-valued objective function :math:`f(x)`, its gradient :math:`F(x)=f'(x)`
-  /// and its Hessian :math:`J(x)=f''(x)`
+  /// This is a base class for nonlinear optimisation problems which
+  /// return the real-valued objective function :math:`f(x)`, its
+  /// gradient :math:`F(x) = f'(x)` and its Hessian :math:`J(x) =
+  /// f''(x)`
 
   class OptimisationProblem : public NonlinearProblem
   {
@@ -47,16 +48,18 @@ namespace dolfin
     /// Compute the objective function :math:`f(x)`
     virtual double f(const GenericVector& x) = 0;
 
-    /// Compute the Hessian :math:`J(x)=f''(x)` and the gradient :math:`F(x)=f'(x)`
-    virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+    /// Compute the Hessian :math:`J(x)=f''(x)` and the gradient
+    /// :math:`F(x)=f'(x)`
+    virtual void form(GenericMatrix& A, GenericVector& b,
+                      const GenericVector& x)
     {
       // Do nothing if not supplied by the user
     }
 
-    /// Compute the gradient :math:`F(x)=f'(x)`
+    /// Compute the gradient :math:`F(x) = f'(x)`
     virtual void F(GenericVector& b, const GenericVector& x) = 0;
 
-    /// Compute the Hessian :math:`J(x)=f''(x)`
+    /// Compute the Hessian :math:`J(x) = f''(x)`
     virtual void J(GenericMatrix& A, const GenericVector& x) = 0;
 
   };

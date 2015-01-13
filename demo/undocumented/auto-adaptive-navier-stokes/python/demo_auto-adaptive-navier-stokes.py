@@ -38,6 +38,7 @@ parameters["form_compiler"]["cpp_optimize"] = True
 # Allow approximating values for points that may be generated outside
 # of domain (because of numerical inaccuracies)
 parameters["allow_extrapolation"] = True
+parameters["refinement_algorithm"] = "plaza_with_parent_facets"
 
 # Material parameters
 nu = Constant(0.02)

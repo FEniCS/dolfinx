@@ -447,7 +447,7 @@ void PETScMatrix::setrow(std::size_t row,
   // Set values
   const PetscInt _row = row;
   const std::vector<PetscInt> _columns(columns.begin(), columns.end());
-  set(&values[0], 1, &_row, n, _columns.data());
+  set(values.data(), 1, &_row, n, _columns.data());
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
@@ -640,6 +640,13 @@ MPI_Comm PETScMatrix::mpi_comm() const
   MPI_Comm mpi_comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
   return mpi_comm;
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScMatrix::nnz() const
+{
+  MatInfo info;
+  MatGetInfo(_matA, MAT_GLOBAL_SUM, &info);
+  return info.nz_allocated;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()

@@ -124,7 +124,7 @@ void BinaryFile::operator>> (Mesh& mesh)
     g.local_index_to_position[i] = i;
 
   // Read cell type
-  mesh._cell_type = CellType::create(static_cast<CellType::Type>(read_uint()));
+  mesh._cell_type.reset(CellType::create(static_cast<CellType::Type>(read_uint())));
 
   // Read mesh data
   // FIXME: Not implemented

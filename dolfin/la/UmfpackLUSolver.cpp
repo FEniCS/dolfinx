@@ -149,20 +149,12 @@ std::size_t UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(_matA);
 
-  // Get some parameters
-  const bool reuse_fact   = parameters["reuse_factorization"];
-  const bool same_pattern = parameters["same_nonzero_pattern"];
-
   // Perform symbolic factorization if required
   if (!symbolic)
-    symbolic_factorize();
-  else if (!reuse_fact && !same_pattern)
     symbolic_factorize();
 
   // Perform numerical factorization if required
   if (!numeric)
-    numeric_factorize();
-  else if (!reuse_fact)
     numeric_factorize();
 
   // Solve

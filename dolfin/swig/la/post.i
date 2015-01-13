@@ -114,8 +114,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 %{
 def la_index_dtype():
     "Return the numpy dtype equivalent to the type of la_index"
-    from numpy import int32, int64
-    return int32 if common.sizeof_la_index() == 4 else int64
+    from numpy import intc, int64
+    return intc if common.sizeof_la_index() == 4 else int64
 %}
 
 // ---------------------------------------------------------------------------
@@ -254,9 +254,19 @@ def la_index_dtype():
         elif isinstance(indices, ndarray) and indices.dtype==bool:
             indices = indices.nonzero()[0]
 
-        # Convert to correct indextypes, if correct already asarray will
-        # just return the same array
-        indices = asarray(indices, dtype=la_index_dtype())
+        # Convert to correct indextypes
+        if isinstance(indices, ndarray):
+
+            # For some obscure reason we need to compare the char
+            # attribute of the dtype to be able to differentiate
+            # between correct dtypes. And to get the char attribute we
+            # need to instantiate the bloody dtype and then access the
+            # fraking dtype of the dtype, which can be asked for its
+            # char...
+            if indices.dtype.char != la_index_dtype()().dtype.char:
+                indices = indices.astype(la_index_dtype())
+        else:
+            indices = asarray(indices, dtype=la_index_dtype())
 
         # Check range
         # FIXME: What should local_size mean?
@@ -996,6 +1006,30 @@ _matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
     %}
 }
 
+#endif  // HAS_PETSC4PY
+#endif  // HAS_PETSC
+
+#ifdef HAS_SLEPC
+#ifdef HAS_SLEPC4PY
+// Override default SLEPcEigenSolver.eps() call.
+// These are wrapped up by slepcc4py typemaps so that
+// we see a slepc4py object on the python side.
+%feature("docstring") dolfin::SLEPcEigenSolver::eps "Return slepc4py representation of SLEPc EPS";
+%extend dolfin::SLEPcEigenSolver
+{
+  void eps(EPS &e)
+  { e = self->eps(); }
+}
+#else
+%extend dolfin::SLEPcEigenSolver{
+    %pythoncode %{
+        def eps(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access SLEPcEigenSolver objects in python",
+                                "dolfin must be configured with slepc4py enabled")
+            return None
+    %}
+}
 #endif  // HAS_PETSC4PY
 #endif  // HAS_PETSC
 

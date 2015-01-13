@@ -373,12 +373,14 @@ def test_basic_cell_orientations():
     "Test that default cell orientations initialize and update as expected."
     mesh = UnitIntervalMesh(12)
     orientations = mesh.cell_orientations()
+    print(len(orientations))
+    assert len(orientations) == 0
+
+    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
+    orientations = mesh.cell_orientations()
     assert len(orientations) == mesh.num_cells()
     for i in range(mesh.num_cells()):
-        assert orientations[i] == -1
-
-    orientations[0] = 1
-    assert mesh.cell_orientations()[0] == 1
+        assert mesh.cell_orientations()[i] == 0
 
 
 @skip_in_parallel

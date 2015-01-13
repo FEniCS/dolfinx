@@ -41,8 +41,8 @@ namespace dolfin
   class OptimisationProblem;
 
   /// This class implements methods for solving nonlinear optimisation
-  /// problems via PETSc TAO solver. It supports unconstrained
-  /// as well as bound-constrained minimisation problem
+  /// problems via PETSc TAO solver. It supports unconstrained as well
+  /// as bound-constrained minimisation problem
 
   class PETScTAOSolver : public PETScObject
   {
@@ -104,16 +104,15 @@ namespace dolfin
     { return _tao; }
 
     /// Initialise the TAO solver for a bound-constrained minimisation
-    /// problem, in case the user wants to access the TAO object directly
-    void init(OptimisationProblem& optimisation_problem,
-              PETScVector& x,
-              const PETScVector& lb,
-              const PETScVector& ub);
+    /// problem, in case the user wants to access the TAO object
+    /// directly
+    void init(OptimisationProblem& optimisation_problem, PETScVector& x,
+              const PETScVector& lb, const PETScVector& ub);
 
     /// Initialise the TAO solver for an unconstrained minimisation
-    /// problem, in case the user wants to access the TAO object directly
-    void init(OptimisationProblem& optimisation_problem,
-              PETScVector& x);
+    /// problem, in case the user wants to access the TAO object
+    /// directly
+    void init(OptimisationProblem& optimisation_problem, PETScVector& x);
 
   private:
 
@@ -133,52 +132,52 @@ namespace dolfin
     ///     num_iterations (std::size_t)
     ///         Number of iterations
     std::size_t solve(OptimisationProblem& optimisation_problem,
-                      PETScVector& x,
-                      const PETScVector& lb,
+                      PETScVector& x, const PETScVector& lb,
                       const PETScVector& ub);
 
-    /// TAO context for optimisation problems
+    // TAO context for optimisation problems
     struct tao_ctx_t
     {
       OptimisationProblem* optimisation_problem;
     };
+
     struct tao_ctx_t _tao_ctx;
 
-    /// TAO pointer
+    // TAO pointer
     Tao _tao;
 
-    /// Update parameters when tao/ksp/pc_types are explictly given
+    // Update parameters when tao/ksp/pc_types are explictly given
     void update_parameters(const std::string tao_type,
                            const std::string ksp_type,
                            const std::string pc_type);
 
-    /// Set options
+    // Set options
     void set_tao_options();
     void set_ksp_options();
 
-    /// Set the TAO solver type
+    // Set the TAO solver type
     void set_tao(const std::string tao_type="default");
 
-    /// Flag to indicate if the bounds are set
+    // Flag to indicate if the bounds are set
     bool has_bounds;
 
-    /// Hessian matrix
-    PETScMatrix _H;
+    // Hessian matrix
+    PETScMatrix _matH;
 
-    /// Available solvers
-    static const std::map<std::string, std::pair<std::string, const TaoType> > _methods;
+    // Available solvers
+    static const std::map<std::string,
+                          std::pair<std::string, const TaoType> > _methods;
 
-    /// Compute the nonlinear objective function :math:`f(x)` as well as
-    /// its gradient :math:`F(x)=f'(x)`
-    static PetscErrorCode FormFunctionGradient(Tao tao, Vec x,
-                                               PetscReal *fobj, Vec G,
-                                               void *ctx);
+    // Compute the nonlinear objective function :math:`f(x)` as well
+    // as its gradient :math:`F(x) = f'(x)`
+    static PetscErrorCode FormFunctionGradient(Tao tao, Vec x, PetscReal *fobj,
+                                               Vec G, void *ctx);
 
-    /// Compute the hessian :math:`J(x)=f''(x)`
+    // Compute the hessian :math:`J(x) = f''(x)`
     static PetscErrorCode FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
                                       void *ctx);
 
-    /// Tao convergence test
+    // Tao convergence test
     static PetscErrorCode TaoConvergenceTest(Tao tao, void *ctx);
   };
 

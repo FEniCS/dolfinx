@@ -81,7 +81,8 @@ void SubSystemsManager::init_mpi()
     return;
 
   // Init MPI with highest level of thread support and take responsibility
-  char* c;
+  std::string s("");
+  char* c = const_cast<char *>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
   singleton().control_mpi = true;
   #else
@@ -164,8 +165,8 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (singleton().petsc_initialized)
     return;
 
-  // Initialized MPI (do it here rather than letting PETSc do it to make
-  // sure we MPI is initialized with thread support
+  // Initialized MPI (do it here rather than letting PETSc do it to
+  // make sure we MPI is initialized with any thread support
   init_mpi();
 
   // Get status of MPI before PETSc initialisation
@@ -177,7 +178,6 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
-
   if (is_initialized)
   {
     PetscOptionsInsert(&argc, &argv, PETSC_NULL);
@@ -185,8 +185,18 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   else
   {
     // Initialize PETSc
-    PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+    PetscInitializeNoArguments();
+
+    // Set options to avoid common failures with some 3rd party solvers
+    PetscOptionsSetValue("-mat_mumps_icntl_7", "0");
+    PetscOptionsSetValue("-mat_superlu_dist_colperm", "MMD_AT_PLUS_A");
+
+    // Pass command line arguments to PETSc (will overwrite any
+    // default above)
+    PetscOptionsInsert(&argc, &argv, PETSC_NULL);
   }
+
+  // Set PETSc
 
   #ifdef HAS_SLEPC
   // Initialize SLEPc
@@ -201,7 +211,8 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   // Remember that PETSc has been initialized
   singleton().petsc_initialized = true;
 
-  // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
+  // Determine if PETSc initialised MPI (and is therefore responsible
+  // for MPI finalization)
   if (mpi_initialized() && !mpi_init_status)
     singleton().control_mpi = false;
 

@@ -7,10 +7,25 @@ cmake_minimum_required(VERSION 2.8)
 # Set project name and version number
 
 project(DOLFIN)
+set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "4")
+set(DOLFIN_VERSION_MINOR "5")
 set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
+
+#------------------------------------------------------------------------------
+# Check compiler version
+
+# Check for GCC version - earlier versions have insuffcient C++11
+# support, or bugs. Version info is only available in CMake 2.8.0 and
+# later.
+if (NOT CMAKE_VERSION VERSION_LESS 2.8.10)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+      message(FATAL_ERROR "GCC version must be at least 4.6 (for sufficient C++11  support. You have version ${CMAKE_CXX_COMPILER_VERSION}")
+    endif()
+  endif()
+endif()
 
 #------------------------------------------------------------------------------
 # Get GIT changeset, if available
@@ -80,6 +95,7 @@ list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "PETSc4py")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
+list(APPEND OPTIONAL_PACKAGES "SLEPc4py")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
@@ -301,10 +317,10 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 1.4.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.5.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.4.0.\n"
+    "compatible with requested version 1.5.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -357,16 +373,32 @@ if (DOLFIN_ENABLE_PYTHON)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH_SAVE})
   endif()
 
-  # If Python is found, check for NumPy and SWIG
+  # If Python is found, check for NumPy, SWIG and ply
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
+
+    # Check for NumPy
     find_package(NumPy REQUIRED)
 
+    # Check for ply
+    include(FindPythonModule)
+    find_python_module(ply REQUIRED)
+    if (NOT PY_PLY_FOUND)
+      message(FATAL_ERROR "Required Python module 'ply' (http://www.dabeaz.com/ply/) could not be found. Install ply or set DOLFIN_ENABLE_PYTHON to false.")
+    endif()
+
+    # Check for SWIG
     if (DEFINED UFC_SWIG_EXECUTABLE)
       set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
     endif()
     find_package(SWIG REQUIRED)
-    if (${SWIG_VERSION} LESS 2.0)
-      message(FATAL_ERROR " DOLFIN requires SWIG version 2.0 or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to False or install correct SWIG version.")
+    # SWIG >= 2.0 is required for Python 2 and >= 3.0.3 for Python 3
+    if ("${PYTHON_VERSION_STRING}" VERSION_LESS "3")
+      set(REQUIRED_SWIG_VERSION "2.0")
+    else()
+      set(REQUIRED_SWIG_VERSION "3.0.3")
+    endif()
+    if ("${SWIG_VERSION}" VERSION_LESS "${REQUIRED_SWIG_VERSION}")
+      message(FATAL_ERROR " DOLFIN requires SWIG version ${REQUIRED_SWIG_VERSION} or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to false or install correct SWIG version.")
     endif()
     include(UseSWIG)
     set(PYTHON_FOUND TRUE)
@@ -374,13 +406,9 @@ if (DOLFIN_ENABLE_PYTHON)
 
 endif()
 
-# Check for PETSc, SLEPc and petsc4py
+# Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc 3.3)
-
-  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.3)
-  endif()
 
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
@@ -389,6 +417,21 @@ if (DOLFIN_ENABLE_PETSC)
                AND "${PETSC4PY_VERSION_MINOR}" EQUAL "${PETSC_VERSION_MINOR}"))
         message(WARNING "PETSc version ${PETSC_VERSION} and petsc4py version ${PETSC4PY_VERSION} do not match.  Disabling petsc4py support")
         set(PETSC4PY_FOUND FALSE)
+      endif()
+    endif()
+  endif()
+
+  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+    find_package(SLEPc 3.3)
+
+    if (SLEPC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_SLEPC4PY)
+      find_package(SLEPc4py 3.5.1)
+      if (SLEPC4PY_FOUND)
+        if (NOT ("${SLEPC4PY_VERSION_MAJOR}" EQUAL "${SLEPC_VERSION_MAJOR}"
+                 AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
+          message(WARNING "SLEPc version ${SLEPC_VERSION} and slepc4py version ${SLEPC4PY_VERSION} do not match.  Disabling slepc4py support")
+          set(SLEPC4PY_FOUND FALSE)
+        endif()
       endif()
     endif()
   endif()
@@ -536,7 +579,7 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
 
   # Older version of CPPUNIT use std::auto_ptr, which is deprecated
   if (CPPUNIT_FOUND)
-    if (${CPPUNIT_VERSION} LESS 1.13.1)
+    if ("${CPPUNIT_VERSION}" VERSION_LESS "1.13.1")
       include(CheckCXXCompilerFlag)
       CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
       if (HAVE_NO_DEPRECATED)
@@ -995,8 +1038,8 @@ if (CPPUNIT_FOUND)
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
-  # Add target "test" for building tests
-  add_custom_target(test
+  # Add target "tests" for building tests
+  add_custom_target(tests
                     COMMAND ${MAKE_PROGRAM}
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
@@ -1040,7 +1083,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests_cpp" for running only C++ unit tests
   add_custom_target(run_unittests_cpp
     COMMAND ${PYTHON_EXECUTABLE} "-B" "-m" "pytest" "-vs" "-k" "cpp"
-    DEPENDS copy_data_test_demo test
+    DEPENDS copy_data_test_demo tests
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_unittests_py" for running Python unit tests

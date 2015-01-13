@@ -1,11 +1,72 @@
- - Fix to Cell-Point collision detection to prevent Points inside the mesh from falling between Cells due to rounding errors
- - Enable reordering of cells and vertices in parallel via SCOTCH and the Giibs-Poole-Stockmeyer algorithm
- - Efficiency improvements in dof assignment in parallel, working on HPC up to 24000 cores
- - Introduction of PlazaRefinement methods based on refinement of the Mesh skeleton, giving better quality refinement in 3D in parallel
- - Basic support for 'ghost cells' allowing integration over interior facets in parallel
- - Add argument 'function' to project, to store the result into a preallocated function
+1.5.0 [2015-01-12]
+ - DG demos working is parallel
+ - Simplify re-use of LU factorisations
+ - CMake 3 compatibility
+ - Make underlying SLEPc object accessible
+ - Full support for linear algebra backends with 64-bit integers
+ - Add smoothed aggregation AMG elasticity demo
+ - Add support for slepc4py
+ - Some self-assignment fixes in mesh data structures
+ - Deprecated GenericDofMap::geometric_dimension()
+ - Experimental support for ghosted meshes (overlapping region in parallel)
+ - Significant memory reduction in dofmap storage
+ - Re-write dofmap construction with significant performance and scaling
+	improvements in parallel
+ - Switch to local (process-wise) indexing for dof indices
+ - Support local (process-wise) indexing in linear algerbra backends
+ - Added support for PETSc 3.5, require version >= 3.3
+ - Exposed DofMap::tabulate_local_to_global_dofs,
+	MeshEntity::sharing_processes in Python
+ - Added GenericDofmap::local_dimension("all"|"owned"|"unowned")
+ - Added access to SLEPc or slepc4py EPS object of SLEPcEigenSolver
+	(requires slepc4py version >= 3.5.1)
+ - LinearOperator can now be accessed using petsc4py
+ - Add interface (PETScTAOSolver) for the PETSc nonlinear (bound-constrained)
+	optimisation solver (TAO)
+ - Add GenericMatrix::nnz() function to return number of nonzero
+	entries in matrix (fixes #110)
+ - Add smoothed aggregation algerbraic multigrid demo for elasticity
+ - Add argument 'function' to project, to store the result into a preallocated
+	function
  - Remove CGAL dependency and mesh generation, now provided by mshr
+ - Python 2.7 required
+ - Add experimental Python 3 support. Need swig version 3.0.3 or later
+ - Move to py.test, speed up unit tests and make tests more robust in parallel
+ - Repeated initialization of PETScMatrix is now an error
+ - MPI interface change: num_processes -> size, process_number -> rank
+ - Add optional argument project(..., function=f), to avoid superfluous
+	allocation
  - Remove excessive printing of points during extrapolation
+ - Clean up DG demos by dropping restrictions of Constants: c('+') -> c
+ - Fix systemassembler warning when a and L both provide the same subdomain
+	data.
+ - Require mesh instead of cell argument to FacetArea, FacetNormal,
+	CellSize, CellVolume, SpatialCoordinate, Circumradius,
+	MinFacetEdgeLength, MaxFacetEdgeLength
+ - Remove argument reset_sparsity to assemble()
+ - Simplify assemble() and Form() signature: remove arguments mesh,
+	coefficients, function_spaces, common_cell. These are now
+	all found by inspecting the UFL form
+ - Speed up assembly of forms with multiple integrals depending on
+	different functions, e.g. f*dx(1) + g*dx(2).
+ - Handle accessing of GenericVectors using numpy arrays in python layer
+	instead of in hard-to-maintain C++ layer
+ - Add support for mpi groups in jit-compilation
+ - Make access to HDFAttributes more dict like
+ - Add 1st and 2nd order Rush Larsen schemes for the PointIntegralSolver
+ - Add vertex assembler for PointIntegrals
+ - Add support for assembly of custom_integral
+ - Add support for multimesh assembly, function spaces, dofmaps and functions
+ - Fix to Cell-Point collision detection to prevent Points inside the mesh
+	from falling between Cells due to rounding errors
+ - Enable reordering of cells and vertices in parallel via SCOTCH and the
+	Giibs-Poole-Stockmeyer algorithm
+ - Efficiency improvements in dof assignment in parallel, working on HPC up to
+	24000 cores
+ - Introduction of PlazaRefinement methods based on refinement of the Mesh
+	skeleton, giving better quality refinement in 3D in parallel
+ - Basic support for 'ghost cells' allowing integration over interior facets in
+	parallel
 1.4.0 [2014-06-02]
  - Feature: Add set_diagonal (with GenericVector) to GenericMatrix
  - Fix many bugs associated with cell orientations on manifolds

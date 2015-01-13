@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Johan Jansson and Anders Logg
+// Copyright (C) 2014 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,129 +15,140 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2008
-//
-// First added:  2006-02-07
-// Last changed: 2012-07-05
-//
-// This demo program solves the equations of static
-// linear elasticity for a gear clamped at two of its
-// ends and twisted 30 degrees.
+// This demo solves the equations of static linear elasticity for a
+// pulley subjected to centripetal accelerations. The solver uses
+// smoothed aggregation algerbaric multigri
 
 #include <dolfin.h>
 #include "Elasticity.h"
 
 using namespace dolfin;
 
+// Function to compute the near nullspace for elasticity - it is made
+// up of the six rigid body modes
+dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
+                                         const GenericVector& x)
+{
+  dolfin_assert(V.mesh());
+  const dolfin::Mesh& mesh = *(V.mesh());
+
+  // Get subspaces
+  dolfin::SubSpace V0(V, 0);
+  dolfin::SubSpace V1(V, 1);
+  dolfin::SubSpace V2(V, 2);
+
+  // Create vectors for nullspace basis
+  std::vector<std::shared_ptr<dolfin::GenericVector> > basis(6);
+  for (std::size_t i = 0; i < basis.size(); ++i)
+    basis[i] = x.copy();
+
+  // x0, x1, x2 translations
+  V0.dofmap()->set(*basis[0], 1.0);
+  V1.dofmap()->set(*basis[1], 1.0);
+  V2.dofmap()->set(*basis[2], 1.0);
+
+  // Rotations
+  V0.dofmap()->set_x(*basis[3], -1.0, 1, mesh);
+  V1.dofmap()->set_x(*basis[3],  1.0, 0, mesh);
+
+  V0.dofmap()->set_x(*basis[4],  1.0, 2, mesh);
+  V2.dofmap()->set_x(*basis[4], -1.0, 0, mesh);
+
+  V2.dofmap()->set_x(*basis[5],  1.0, 1, mesh);
+  V1.dofmap()->set_x(*basis[5], -1.0, 2, mesh);
+
+  // Apply
+  for (std::size_t i = 0; i < basis.size(); ++i)
+    basis[i]->apply("add");
+
+  return dolfin::VectorSpaceBasis(basis);
+}
+
+
 int main()
 {
-  // Dirichlet boundary condition for clamp at left end
-  class Clamp : public Expression
+  #ifdef HAS_PETSC
+
+  // Set backend to PETSC
+  parameters["linear_algebra_backend"] = "PETSc";
+
+  // Inner surface subdomain
+  class InnerSurface : public SubDomain
+  {
+    bool inside(const Array<double>& x, bool on_boundary) const
+    {
+      const double r = 3.75 - x[2]*0.17;
+      return (x[0]*x[0] + x[1]*x[1]) < r*r and on_boundary;
+    }
+  };
+
+  // Centripetal loading function
+  class CentripetalLoading : public Expression
   {
   public:
 
-    Clamp() : Expression(3) {}
-
+    CentripetalLoading() : Expression(3) {}
     void eval(Array<double>& values, const Array<double>& x) const
     {
-      values[0] = 0.0;
-      values[1] = 0.0;
+      const double omega = 300.0;
+      const double rho = 10.0;
+      values[0] = rho*omega*omega*x[0];;
+      values[1] = rho*omega*omega*x[1];
       values[2] = 0.0;
     }
-
   };
 
-  // Sub domain for clamp at left end
-  class Left : public SubDomain
-  {
-    bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return x[0] < 0.5 && on_boundary;
-    }
-  };
+  // Read mesh
+  Mesh mesh("../pulley.xml.gz");
 
-  // Dirichlet boundary condition for rotation at right end
-  class Rotation : public Expression
-  {
-  public:
-
-    Rotation() : Expression(3) {}
-
-    void eval(Array<double>& values, const Array<double>& x) const
-    {
-      // Center of rotation
-      const double y0 = 0.5;
-      const double z0 = 0.219;
-
-      // Angle of rotation (30 degrees)
-      const double theta = 0.5236;
-
-      // New coordinates
-      const double y = y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta);
-      const double z = z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta);
-
-      // Clamp at right end
-      values[0] = 0.0;
-      values[1] = y - x[1];
-      values[2] = z - x[2];
-    }
-
-  };
-
-  // Sub domain for rotation at right end
-  class Right : public SubDomain
-  {
-    bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return x[0] > 0.9 && on_boundary;
-    }
-  };
-
-  // Read mesh and create function space
-  Mesh mesh("../gear.xml.gz");
-  Elasticity::Form_a::TestSpace V(mesh);
-
-  // Create right-hand side
-  Constant f(0.0, 0.0, 0.0);
-
-  // Set up boundary condition at left end
-  Clamp c;
-  Left left;
-  DirichletBC bcl(V, c, left);
-
-  // Set up boundary condition at right end
-  Rotation r;
-  Right right;
-  DirichletBC bcr(V, r, right);
-
-  // Collect boundary conditions
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bcl);
-  bcs.push_back(&bcr);
-
-  std::vector<const DirichletBC*> _bcs;
-  _bcs.push_back(&bcl);
-  _bcs.push_back(&bcr);
+  // Create right-hand side loading function
+  CentripetalLoading f;
 
   // Set elasticity parameters
   double E  = 10.0;
   double nu = 0.3;
-  Constant mu(E / (2*(1 + nu)));
-  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
+  Constant mu(E/(2.0*(1.0 + nu)));
+  Constant lambda(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
+
+  // Create function space
+  Elasticity::Form_a::TestSpace V(mesh);
 
   // Define variational problem
   Elasticity::Form_a a(V, V);
   a.mu = mu; a.lmbda = lambda;
   Elasticity::Form_L L(V);
   L.f = f;
-  Function u(V);
-  LinearVariationalProblem problem(a, L, u, bcs);
 
-  // Compute solution
-  LinearVariationalSolver solver(problem);
-  solver.parameters["symmetric"] = true;
-  solver.parameters["linear_solver"] = "direct";
-  solver.solve();
+  // Set up boundary condition on inner surface
+  InnerSurface inner_surface;
+  Constant zero(0.0, 0.0, 0.0);
+  DirichletBC bc(V, zero, inner_surface);
+
+  // Assemble system, applying boundary conditions and preserving
+  // symmetry)
+  PETScMatrix A;
+  PETScVector b;
+  assemble_system(A, b, a, L, bc);
+
+  // Create solution function
+  Function u(V);
+
+  // Create near null space basis (required for smoothed aggregation
+  // AMG). The solution vector is passed so that it can be copied to
+  // generate compatible vectors for the nullspace.
+  VectorSpaceBasis null_space = build_nullspace(V, *u.vector());
+
+  // Create PETSc smoothed aggregation AMG preconditioner
+  PETScPreconditioner pc("petsc_amg");
+  pc.parameters["report"] = true;
+  pc.set_nullspace(null_space);
+
+  // Create CG PETSc linear solver and turn on convergence monitor
+  PETScKrylovSolver solver("cg", pc);
+  solver.parameters["monitor_convergence"] = true;
+
+  // Solve
+  solver.solve(A, *(u.vector()), b);
 
   // Extract solution components (deep copy)
   Function ux = u[0];
@@ -176,13 +187,6 @@ int main()
     file << partitions;
   }
 
-  // Write boundary condition facets markers to VTK format
-  MeshFunction<std::size_t> facet_markers(mesh, 2, 0);
-  left.mark(facet_markers, 1);
-  right.mark(facet_markers, 2);
-  File facet_file("facet_markers.pvd");
-  facet_file << facet_markers;
-
   // Plot solution
   plot(u, "Displacement", "displacement");
 
@@ -192,6 +196,11 @@ int main()
 
   // Make plot windows interactive
   interactive();
+
+  #else
+  dolfin::cout << "DOLFIN must be configured with PETSc to run this demo."
+               << dolfin::endl;
+  #endif
 
  return 0;
 }

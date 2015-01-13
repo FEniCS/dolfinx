@@ -63,13 +63,13 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   if (!mesh.ordered())
   {
      dolfin_error("DofMapBuilder.cpp",
-                  "create mapping of degrees of freedom",
-                  "Mesh is not ordered according to the UFC numbering convention. "
-                  "Consider calling mesh.order()");
+               "create mapping of degrees of freedom",
+               "Mesh is not ordered according to the UFC numbering convention. "
+               "Consider calling mesh.order()");
   }
 
   // Check if dofmap is distributed (based on mesh MPI communicator)
-  const bool distributed = MPI::size(mesh.mpi_comm()) > 1;
+  const bool distributed = dolfin::MPI::size(mesh.mpi_comm()) > 1;
 
   // Check if UFC dofmap should not be re-ordered (only applicable in
   // serial)
@@ -83,9 +83,26 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                 == mesh.geometry().dim());
   dolfin_assert(dofmap._ufc_dofmap->topological_dimension() == D);
 
+  // For mesh entities required by UFC dofmap, compute number of
+  // entities on this process
+  const std::vector<std::size_t> num_mesh_entities_local
+    = compute_num_mesh_entities_local(mesh, *dofmap._ufc_dofmap);
+
+  // NOTE: We test for global dofs here because the the function
+  // DofMapBuilder::compute_block size cannot distinguish between
+  // global and discontinuous Lagrange elements because the UFC dofmap
+  // associates global dofs with cells, which is not correct. See
+  // https://bitbucket.org/fenics-project/ffc/issue/61. If global dofs
+  // are present, we set the block size to 1.
+
+  // Compute local UFC indices of any 'global' dofs
+  const std::set<std::size_t> global_dofs
+    = compute_global_dofs(dofmap._ufc_dofmap, num_mesh_entities_local);
+
   // Determine and set dof block size (block size must be 1 if UFC map
-  // is not re-ordered)
-  const std::size_t bs = reorder ? compute_blocksize(*dofmap._ufc_dofmap) : 1;
+  // is not re-ordered or if global dofs are present)
+  const std::size_t bs = (global_dofs.empty() and reorder)
+    ? compute_blocksize(*dofmap._ufc_dofmap) : 1;
   dofmap.block_size = bs;
 
   // Compute a 'node' dofmap based on a UFC dofmap. Returns:
@@ -103,21 +120,21 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   {
     ufc_node_dofmap
       = build_ufc_node_graph(node_graph0, node_local_to_global0,
-                              dofmap._num_mesh_entities_global,
-                              dofmap._ufc_dofmap,
-                              mesh, constrained_domain, bs);
+                             dofmap._num_mesh_entities_global,
+                             dofmap._ufc_dofmap,
+                             mesh, constrained_domain, bs);
     dolfin_assert(ufc_node_dofmap);
   }
   else
   {
     ufc_node_dofmap
       = build_ufc_node_graph_constrained(node_graph0,
-                                          node_local_to_global0,
-                                          node_ufc_local_to_local0,
-                                          dofmap._num_mesh_entities_global,
-                                          dofmap._ufc_dofmap,
-                                          mesh, constrained_domain,
-                                          bs);
+                                         node_local_to_global0,
+                                         node_ufc_local_to_local0,
+                                         dofmap._num_mesh_entities_global,
+                                         dofmap._ufc_dofmap,
+                                         mesh, constrained_domain,
+                                         bs);
   }
 
   // Set global dimension
@@ -126,8 +143,6 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
 
   // Compute local UFC indices of any 'global' dofs, and re-map if
   // required, e.g., in case that dofmap is periodic
-  const std::vector<std::size_t> num_mesh_entities_local
-    = compute_num_mesh_entities_local(mesh, *dofmap._ufc_dofmap);
   std::set<std::size_t> global_nodes0
     = compute_global_dofs(ufc_node_dofmap, num_mesh_entities_local);
   if (!node_ufc_local_to_local0.empty())
@@ -568,7 +583,12 @@ void DofMapBuilder::build_local_ufc_dofmap(
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     const std::size_t cell_index = cell->index();
-    ufc_cell.orientation = cell->mesh().cell_orientations()[cell_index];
+    ufc_cell.orientation = -1;
+    if (!cell->mesh().cell_orientations().empty())
+    {
+      dolfin_assert(cell_index < cell->mesh().cell_orientations().size());
+      ufc_cell.orientation = cell->mesh().cell_orientations()[cell_index];
+    }
     ufc_cell.topological_dimension = D;
 
     for (std::size_t d = 0; d < D; d++)
@@ -816,9 +836,7 @@ std::set<std::size_t> DofMapBuilder::compute_global_dofs(
   // Compute global dof indices
   std::size_t offset_local = 0;
   std::set<std::size_t> global_dof_indices;
-  compute_global_dofs(global_dof_indices,
-                      offset_local,
-                      ufc_dofmap,
+  compute_global_dofs(global_dof_indices, offset_local, ufc_dofmap,
                       num_mesh_entities_local);
 
   return global_dof_indices;
@@ -887,7 +905,7 @@ void DofMapBuilder::compute_global_dofs(
 
       // Get offset
       if (sub_dofmap->num_sub_dofmaps() == 0)
-        offset_local  += sub_dofmap->global_dimension(num_mesh_entities_local);
+        offset_local += sub_dofmap->global_dimension(num_mesh_entities_local);
     }
   }
 }
@@ -968,7 +986,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
       ufc_sub_dofmap0(ufc_dofmap.create_sub_dofmap(0));
     dolfin_assert(ufc_sub_dofmap0);
 
-    // Create UFC sub-dofmaps and check that all sub dofmaps have the
+    // Create UFC sub-dofmaps and check if all sub dofmaps have the
     // same number of dofs per entity
     if (ufc_sub_dofmap0->num_sub_dofmaps() != 0)
       has_block_structure = false;
@@ -1080,8 +1098,12 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     // Set cell orientation
-    const int cell_orientation
-      = cell->mesh().cell_orientations()[cell->index()];
+    int cell_orientation = -1;
+    if(!cell->mesh().cell_orientations().empty())
+    {
+      dolfin_assert(cell->index() < cell->mesh().cell_orientations().size());
+     cell_orientation = cell->mesh().cell_orientations()[cell->index()];
+    }
     ufc_cell_global.orientation = cell_orientation;
     ufc_cell_local.orientation = cell_orientation;
 
