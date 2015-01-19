@@ -16,14 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by N. Lopes, 2008.
+// Modified by Mikael Mortensen, 2014.
 //
 // First added:  2007-11-23
-// Last changed: 2012-11-12
+// Last changed: 2014-02-17
 
 #ifndef __INTERVAL_MESH_H
 #define __INTERVAL_MESH_H
 
 #include <cstddef>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -51,9 +53,34 @@ namespace dolfin
     ///     .. code-block:: c++
     ///
     ///         // Create a mesh of 25 cells in the interval [-1,1]
-    ///         Interval mesh(25, -1.0, 1.0);
+    ///         IntervalMesh mesh(25, -1.0, 1.0);
     ///
     IntervalMesh(std::size_t nx, double a, double b);
+
+    /// Constructor
+    ///
+    /// *Arguments*
+    ///     comm (MPI_Comm)
+    ///         MPI communicator
+    ///     nx (std::size_t)
+    ///         The number of cells.
+    ///     a (double)
+    ///         The minimum point (inclusive).
+    ///     b (double)
+    ///         The maximum point (inclusive).
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         // Create a mesh of 25 cells in the interval [-1,1]
+    ///         IntervalMesh mesh(MPI_COMM_WORLD, 25, -1.0, 1.0);
+    ///
+    IntervalMesh(MPI_Comm comm, std::size_t nx, double a, double b);
+
+  private:
+
+    // Build mesh
+    void build(std::size_t nx, double a, double b);
 
   };
 

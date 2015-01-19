@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2011
 // Modified by Niclas Jansson 2009
 // Modified by Joachim B Haga 2012
-//
+// Modified by Martin Sandve Alnes 2014
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
@@ -69,14 +69,6 @@ namespace dolfin
   class MPI
   {
   public:
-
-    /// Return process rank (uses MPI_COMM_WORLD)
-    /// Warning: This function is deprecated. Use dolfin::MPI::rank
-    static unsigned int process_number();
-
-    /// Return number of processes for MPI_COMM_WORLD.
-    /// Warning: This function is deprecated. Use dolfin::MPI::size.
-    static unsigned int num_processes();
 
     /// Return process rank for the communicator
     static unsigned int rank(const MPI_Comm comm);
@@ -137,7 +129,7 @@ namespace dolfin
                        std::vector<std::string>& out_values,
                        unsigned int receiving_process=0);
 
-    /// Gather values from all proceses. Same data count from each
+    /// Gather values from all processes. Same data count from each
     /// process (wrapper for MPI_Allgather)
     template<typename T>
       static void all_gather(const MPI_Comm comm,
@@ -247,6 +239,8 @@ namespace dolfin
   { return MPI_UNSIGNED; }
   template<> inline MPI_Datatype MPI::mpi_type<unsigned long int>()
   { return MPI_UNSIGNED_LONG; }
+  template<> inline MPI_Datatype MPI::mpi_type<long long>()
+  { return MPI_LONG_LONG; }
   #endif
   //---------------------------------------------------------------------------
   template<typename T>
@@ -255,8 +249,8 @@ namespace dolfin
   {
     #ifdef HAS_MPI
     // Broadcast cast size
-    int bsize = value.size();
-    MPI_Bcast(&bsize, 1, mpi_type<T>(), broadcaster, comm);
+    std::size_t bsize = value.size();
+    MPI_Bcast(&bsize, 1, mpi_type<std::size_t>(), broadcaster, comm);
 
     // Broadcast
     value.resize(bsize);

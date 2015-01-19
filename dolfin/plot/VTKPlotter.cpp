@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-11-14
+// Last changed: 2014-08-11
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -31,7 +31,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/generation/CSGGeometry.h>
 #include "ExpressionWrapper.h"
 #include "VTKPlotter.h"
 
@@ -42,7 +41,6 @@
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableMeshFunction.h"
 #include "VTKPlottableDirichletBC.h"
-#include "VTKPlottableCSGGeometry.h"
 
 #ifdef HAS_QVTK
 #include <QApplication>
@@ -85,16 +83,15 @@ namespace // anonymous
 //----------------------------------------------------------------------------
 namespace dolfin
 {
-  GenericVTKPlottable *CreateVTKPlottable(boost::shared_ptr<const Variable> var)
+  GenericVTKPlottable* CreateVTKPlottable(std::shared_ptr<const Variable> var)
   {
 #define DISPATCH(T) do                                                  \
     {                                                                   \
-      boost::shared_ptr<const T > t = boost::dynamic_pointer_cast<const T >(var); \
+      std::shared_ptr<const T > t = std::dynamic_pointer_cast<const T >(var); \
       if (t)                                                            \
         return CreateVTKPlottable(t);                                   \
     } while (0)
 
-    DISPATCH(CSGGeometry);
     DISPATCH(DirichletBC);
     DISPATCH(ExpressionWrapper);
     DISPATCH(Function);
@@ -116,7 +113,7 @@ namespace dolfin
   }
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Variable> obj, QVTKWidget *widget)
+VTKPlotter::VTKPlotter(std::shared_ptr<const Variable> obj, QVTKWidget *widget)
   : _initialized(false),
     _plottable(CreateVTKPlottable(obj)),
     vtk_pipeline(new VTKWindowOutputStage(widget)),
@@ -128,8 +125,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Variable> obj, QVTKWidget *widget
   set_title_from(*obj);
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-    boost::shared_ptr<const Mesh> mesh, QVTKWidget *widget)
+VTKPlotter::VTKPlotter(std::shared_ptr<const Expression> expression,
+    std::shared_ptr<const Mesh> mesh, QVTKWidget *widget)
   : _initialized(false),
     _plottable(CreateVTKPlottable(expression, mesh)),
     vtk_pipeline(new VTKWindowOutputStage(widget)),
@@ -146,7 +143,7 @@ VTKPlotter::~VTKPlotter()
   active_plotters->remove(this);
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
+void VTKPlotter::plot(std::shared_ptr<const Variable> variable)
 {
   init();
 
@@ -336,7 +333,8 @@ std::string VTKPlotter::get_helptext()
   text << "   s: Synchronize cameras (keep pressed for continuous sync)\n";
   text << "   m: Toggle mesh overlay\n";
   text << "   b: Toggle bounding box\n";
-  text << "  cv: Toggle cell or vertex indices\n";
+  if (_plottable->dim() <= 2)
+    text << "  cv: Toggle cell or vertex indices\n";
   text << "   w: Toggle between wireframe/point/surface view\n";
   text << "  +-: Resize widths (points and lines)\n";
   text << "C-+-: Rescale plot (glyphs and warping)\n";
@@ -420,6 +418,9 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
 
   case 'v': // Toggle vertex labels
     {
+      if (_plottable->dim() > 2)
+        return false;
+
       // Check if label actor is present. If not get from plottable.
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor(vtk_pipeline->get_renderer());
 
@@ -436,6 +437,9 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
 
   case 'c': // Toggle cell labels
     {
+      if (_plottable->dim() > 2)
+        return false;
+
       // Check if label actor is present. If not get from plottable. If it
       // is, toggle off
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_cell_label_actor(vtk_pipeline->get_renderer());
@@ -703,7 +707,7 @@ void VTKPlotter::rescale()
   vtk_pipeline->reset_camera_clipping_range();
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
+void VTKPlotter::update_pipeline(std::shared_ptr<const Variable> variable)
 {
   if (!is_compatible(variable))
   {
@@ -749,7 +753,7 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
     vtk_pipeline->reset_camera();
 }
 //----------------------------------------------------------------------------
-bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
+bool VTKPlotter::is_compatible(std::shared_ptr<const Variable> variable) const
 {
   return (no_plot || !variable || _plottable->is_compatible(*variable));
 }
@@ -792,9 +796,15 @@ namespace dolfin
   class VTKWindowOutputStage {}; // dummy class
 }
 
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Variable>, QVTKWidget*) { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression>,
-		       boost::shared_ptr<const Mesh>, QVTKWidget*)  { init(); }
+VTKPlotter::VTKPlotter(std::shared_ptr<const Variable>, QVTKWidget*):
+  _initialized(false),
+  _frame_counter(0),
+  no_plot(false)
+{
+  init();
+}
+VTKPlotter::VTKPlotter(std::shared_ptr<const Expression>,
+		       std::shared_ptr<const Mesh>, QVTKWidget*)  { init(); }
 VTKPlotter::~VTKPlotter() {}
 
 // (Ab)use init() to issue a warning.
@@ -807,7 +817,7 @@ void VTKPlotter::init()
   warning("Plotting not available. DOLFIN has been compiled without VTK support.");
 }
 
-void VTKPlotter::plot         (boost::shared_ptr<const Variable>) {}
+void VTKPlotter::plot         (std::shared_ptr<const Variable>) {}
 void VTKPlotter::interactive  (bool)                              {}
 void VTKPlotter::write_png    (std::string)                       {}
 void VTKPlotter::write_pdf    (std::string)                       {}
@@ -823,7 +833,7 @@ void VTKPlotter::all_interactive(bool)                            {}
 void VTKPlotter::set_key(std::string key)                         {}
 
 bool VTKPlotter::key_pressed(int, char, std::string)                    { return false; }
-bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable>) const { return false; }
+bool VTKPlotter::is_compatible(std::shared_ptr<const Variable>) const { return false; }
 
 std::string        VTKPlotter::to_key(const Variable &) { return ""; }
 const std::string& VTKPlotter::key() const              { return _key; }
@@ -832,7 +842,7 @@ QVTKWidget *       VTKPlotter::get_widget() const       { return NULL; }
 #endif // HAS_VTK
 
 // Define the static members
-boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::list<VTKPlotter*>());
+std::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::list<VTKPlotter*>());
 int VTKPlotter::hardcopy_counter = 0;
 bool VTKPlotter::run_to_end = false;
 

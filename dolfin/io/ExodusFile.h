@@ -38,7 +38,7 @@ namespace dolfin
   template <typename T> class MeshFunction;
 
   /// This class supports the output of meshes and functions.
-  /// Exodus format for visualistion purposes. It is not suitable to
+  /// Exodus format for visualisation purposes. It is not suitable to
   /// checkpointing as it may decimate some data.
 
   class ExodusFile : public GenericFile

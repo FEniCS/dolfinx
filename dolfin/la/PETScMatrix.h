@@ -31,7 +31,7 @@
 
 #include <map>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <petscmat.h>
 #include <petscsys.h>
 
@@ -84,6 +84,9 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
     { return PETScBaseMatrix::local_range(dim); }
 
+    /// Return number of non-zero entries in matrix (collective)
+    std::size_t nnz() const;
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -104,9 +107,9 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface --
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const;
+    virtual std::shared_ptr<GenericMatrix> copy() const;
 
-    /// Intialize vector z to be compatible with the matrix-vector product
+    /// Initialize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
@@ -121,15 +124,25 @@ namespace dolfin
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols) const;
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block,
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols);
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block,
+                           std::size_t m, const dolfin::la_index* rows,
+                           std::size_t n, const dolfin::la_index* cols);
+
+    /// Add block of values using global indices
     virtual void add(const double* block,
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols);
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           std::size_t m, const dolfin::la_index* rows,
+                           std::size_t n, const dolfin::la_index* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -145,17 +158,26 @@ namespace dolfin
                         const std::vector<std::size_t>& columns,
                         const std::vector<double>& values);
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows);
 
-    /// Set given rows to identity matrix
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows (local row indices) to identity matrix
+    virtual void ident_local(std::size_t m, const dolfin::la_index* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;
 
     // Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const;
+
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x);
 
     /// Multiply matrix by given number
     virtual const PETScMatrix& operator*= (double a);

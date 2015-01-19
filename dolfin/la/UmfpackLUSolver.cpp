@@ -22,6 +22,8 @@
 // Last changed: 2012-08-20
 
 
+#include <memory>
+
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "UmfpackLUSolver.h"
@@ -111,8 +113,8 @@ UmfpackLUSolver::UmfpackLUSolver()
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-UmfpackLUSolver::UmfpackLUSolver(boost::shared_ptr<const GenericLinearOperator> A)
-  : _A(A)
+UmfpackLUSolver::UmfpackLUSolver(std::shared_ptr<const GenericLinearOperator> A)
+  : _matA(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -124,43 +126,35 @@ UmfpackLUSolver::~UmfpackLUSolver()
 }
 //-----------------------------------------------------------------------------
 void
-UmfpackLUSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+UmfpackLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   symbolic.reset();
   numeric.reset();
-  _A = A;
-  dolfin_assert(_A);
+  _matA = A;
+  dolfin_assert(_matA);
 }
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& UmfpackLUSolver::get_operator() const
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("UmfpackLUSolver.cpp",
                  "access operator for PETSc Krylov solver",
                  "Operator has not been set");
   }
-  return *_A;
+  return *_matA;
 }
 //-----------------------------------------------------------------------------
 std::size_t UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  dolfin_assert(_A);
-
-  // Get some parameters
-  const bool reuse_fact   = parameters["reuse_factorization"];
-  const bool same_pattern = parameters["same_nonzero_pattern"];
+  dolfin_assert(_matA);
 
   // Perform symbolic factorization if required
   if (!symbolic)
     symbolic_factorize();
-  else if (!reuse_fact && !same_pattern)
-    symbolic_factorize();
 
   // Perform numerical factorization if required
   if (!numeric)
-    numeric_factorize();
-  else if (!reuse_fact)
     numeric_factorize();
 
   // Solve
@@ -171,14 +165,14 @@ std::size_t
 UmfpackLUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
                        const GenericVector& b)
 {
-  boost::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
+  std::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::symbolic_factorize()
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("UmfpackLUSolver.cpp",
                  "factorize matrix with UMFPACK LU solver (symbolic)",
@@ -190,7 +184,7 @@ void UmfpackLUSolver::symbolic_factorize()
   numeric.reset();
 
   // Need matrix data
-  boost::shared_ptr<const GenericMatrix> A = require_matrix(_A);
+  std::shared_ptr<const GenericMatrix> A = require_matrix(_matA);
 
   // Get matrix data
   boost::tuples::tuple<const std::size_t*, const std::size_t*,
@@ -215,7 +209,7 @@ void UmfpackLUSolver::symbolic_factorize()
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::numeric_factorize()
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("UmfpackLUSolver.cpp",
                  "factorize matrix with UMFPACK LU solver (numeric)",
@@ -223,7 +217,7 @@ void UmfpackLUSolver::numeric_factorize()
   }
 
   // Need matrix data
-  boost::shared_ptr<const GenericMatrix> A = require_matrix(_A);
+  std::shared_ptr<const GenericMatrix> A = require_matrix(_matA);
 
   // Get matrix data
   boost::tuples::tuple<const std::size_t*, const std::size_t*,
@@ -252,7 +246,7 @@ void UmfpackLUSolver::numeric_factorize()
 std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
                                               const GenericVector& b) const
 {
-  if (!_A)
+  if (!_matA)
   {
     dolfin_error("UmfpackLUSolver.cpp",
                  "solve linear system with UMFPACK LU solver",
@@ -260,7 +254,7 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   }
 
   // Need matrix data
-  boost::shared_ptr<const GenericMatrix> A = require_matrix(_A);
+  std::shared_ptr<const GenericMatrix> A = require_matrix(_matA);
 
   dolfin_assert(A->size(0) == A->size(0));
   dolfin_assert(A->size(0) == b.size());
@@ -290,10 +284,10 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   const std::size_t* Ai  = boost::tuples::get<1>(data);
   const double*      Ax  = boost::tuples::get<2>(data);
 
-  log(PROGRESS, "Solving linear system of size %d x %d (UMFPACK LU solver).",
+  log(PROGRESS, "Solving linear system of size %ld x %ld (UMFPACK LU solver).",
       A->size(0), A->size(1));
 
-  // Solve for tranpose since we use compressed rows and UMFPACK
+  // Solve for transpose since we use compressed rows and UMFPACK
   // expected compressed columns
   umfpack_solve(Ap, Ai, Ax, x.data(), b.data(), numeric.get());
 
@@ -302,7 +296,7 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
 //-----------------------------------------------------------------------------
-boost::shared_ptr<void>
+std::shared_ptr<void>
 UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
                                             const std::size_t* Ap,
                                             const std::size_t* Ai,
@@ -313,7 +307,7 @@ UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
   dolfin_assert(Ax);
 
   void* symbolic = 0;
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Symbolic factorisation step (reordering, etc)
   if (sizeof(std::size_t) == sizeof(int))
@@ -323,16 +317,16 @@ UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
     long int status = umfpack_di_symbolic(M, N, _Ap, _Ai, Ax, &symbolic,
                                           dnull.get(), dnull.get());
     umfpack_check_status(status, "symbolic");
-    return boost::shared_ptr<void>(symbolic, UmfpackIntSymbolicDeleter());
+    return std::shared_ptr<void>(symbolic, UmfpackIntSymbolicDeleter());
   }
-  else if (sizeof(std::size_t) == sizeof(UF_long))
+  else if (sizeof(std::size_t) == sizeof(SuiteSparse_long))
   {
-    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
-    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    const SuiteSparse_long* _Ap = reinterpret_cast<const SuiteSparse_long*>(Ap);
+    const SuiteSparse_long* _Ai = reinterpret_cast<const SuiteSparse_long*>(Ai);
     long int status = umfpack_dl_symbolic(M, N, _Ap, _Ai, Ax, &symbolic,
                                           dnull.get(), dnull.get());
     umfpack_check_status(status, "symbolic");
-    return boost::shared_ptr<void>(symbolic, UmfpackLongIntSymbolicDeleter());
+    return std::shared_ptr<void>(symbolic, UmfpackLongIntSymbolicDeleter());
   }
   else
   {
@@ -341,10 +335,10 @@ UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
                  "Could not determine correct types for casting integers to pass to UMFPACK");
   }
 
-  return boost::shared_ptr<void>();
+  return std::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<void>
+std::shared_ptr<void>
 UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
                                            const std::size_t* Ai,
                                            const double* Ax,
@@ -356,7 +350,7 @@ UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
   dolfin_assert(symbolic);
 
   void* numeric = 0;
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Factorization step
   long int status = 0;
@@ -367,16 +361,16 @@ UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
     status = umfpack_di_numeric(_Ap, _Ai, Ax, symbolic, &numeric, dnull.get(),
                                 dnull.get());
     umfpack_check_status(status, "numeric");
-    return boost::shared_ptr<void>(numeric, UmfpackIntNumericDeleter());
+    return std::shared_ptr<void>(numeric, UmfpackIntNumericDeleter());
   }
-  else if (sizeof(std::size_t) == sizeof(UF_long))
+  else if (sizeof(std::size_t) == sizeof(SuiteSparse_long))
   {
-    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
-    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    const SuiteSparse_long* _Ap = reinterpret_cast<const SuiteSparse_long*>(Ap);
+    const SuiteSparse_long* _Ai = reinterpret_cast<const SuiteSparse_long*>(Ai);
     status = umfpack_dl_numeric(_Ap, _Ai, Ax, symbolic, &numeric, dnull.get(),
                                 dnull.get());
     umfpack_check_status(status, "numeric");
-    return boost::shared_ptr<void>(numeric, UmfpackLongIntNumericDeleter());
+    return std::shared_ptr<void>(numeric, UmfpackLongIntNumericDeleter());
   }
   else
   {
@@ -385,7 +379,7 @@ UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
                  "Could not determine correct types for casting integers to pass to UMFPACK");
   }
 
-  return boost::shared_ptr<void>();
+  return std::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
@@ -400,7 +394,7 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
   dolfin_assert(b);
   dolfin_assert(numeric);
 
-  boost::scoped_ptr<double> dnull;
+  std::unique_ptr<double> dnull;
 
   // Solve system. We assume CSR storage, but UMFPACK expects CSC, so solve
   // for the transpose
@@ -412,10 +406,10 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
     status = umfpack_di_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric,
                               dnull.get(), dnull.get());
   }
-  else if (sizeof(std::size_t) == sizeof(UF_long))
+  else if (sizeof(std::size_t) == sizeof(SuiteSparse_long))
   {
-    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
-    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    const SuiteSparse_long* _Ap = reinterpret_cast<const SuiteSparse_long*>(Ap);
+    const SuiteSparse_long* _Ai = reinterpret_cast<const SuiteSparse_long*>(Ai);
     status = umfpack_dl_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric,
                               dnull.get(), dnull.get());
   }
@@ -470,7 +464,7 @@ void UmfpackLUSolver::umfpack_check_status(long int status,
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-boost::shared_ptr<void>
+std::shared_ptr<void>
 UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
                                             const std::size_t* Ap,
                                             const std::size_t* Ai,
@@ -479,10 +473,10 @@ UmfpackLUSolver::umfpack_factorize_symbolic(std::size_t M, std::size_t N,
   dolfin_error("UmfpackLUSolver.cpp",
                "factorize matrix with UMFPACK LU solver (symbolic)",
                "UMFPACK has not been installed");
-  return boost::shared_ptr<void>();
+  return std::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<void>
+std::shared_ptr<void>
 UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
                                            const std::size_t* Ai,
                                            const double* Ax,
@@ -491,7 +485,7 @@ UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
   dolfin_error("UmfpackLUSolver.cpp",
                "factorize matrix with UMFPACK LU solver (numeric)",
                "UMFPACK has not been installed");
-  return boost::shared_ptr<void>();
+  return std::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,

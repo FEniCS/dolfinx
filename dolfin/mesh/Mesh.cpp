@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-06-27
+// Last changed: 2014-08-11
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
@@ -34,7 +34,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/function/Expression.h>
-#include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -55,119 +54,66 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
-               Hierarchical<Mesh>(*this),
-               _cell_type(0),
-               _ordered(false),
-               _cell_orientations(0),
-               _mpi_comm(MPI_COMM_WORLD)
+Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
+               _ordered(false), _mpi_comm(MPI_COMM_WORLD)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
-               Hierarchical<Mesh>(*this),
-               _cell_type(0),
-               _ordered(false),
-               _cell_orientations(0),
-               _mpi_comm(comm)
+                            Hierarchical<Mesh>(*this), _ordered(false),
+                            _mpi_comm(comm)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
-                               Hierarchical<Mesh>(*this),
-                               _cell_type(0),
-                               _ordered(false),
-                               _cell_orientations(0),
+                               Hierarchical<Mesh>(*this), _ordered(false),
                                _mpi_comm(MPI_COMM_WORLD)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
-                                   Hierarchical<Mesh>(*this),
-                                   _cell_type(0),
-                                   _ordered(false),
-                                   _cell_orientations(0),
+                                   Hierarchical<Mesh>(*this), _ordered(false),
                                    _mpi_comm(MPI_COMM_WORLD)
 {
   File file(_mpi_comm, filename);
   file >> *this;
-  _cell_orientations.resize(this->num_cells(), -1);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, std::string filename)
-  : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-    _cell_type(0), _ordered(false), _cell_orientations(0), _mpi_comm(comm)
+  : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this), _ordered(false),
+    _mpi_comm(comm)
 {
   File file(_mpi_comm, filename);
   file >> *this;
-  _cell_orientations.resize(this->num_cells(), -1);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-    _cell_type(0), _ordered(false), _cell_orientations(0),
-    _mpi_comm(comm)
+    _ordered(false), _mpi_comm(comm)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
-  : Variable("mesh", "DOLFIN mesh"),
-    Hierarchical<Mesh>(*this),
-    _cell_type(0),
-    _ordered(false),
-    _cell_orientations(0),
-    _mpi_comm(MPI_COMM_WORLD)
-{
-  // Build mesh on process 0
-  if (MPI::rank(_mpi_comm) == 0)
-    CSGMeshGenerator::generate(*this, geometry, resolution);
-
-  // Build distributed mesh
-  if (MPI::size(_mpi_comm) > 1)
-    MeshPartitioning::build_distributed_mesh(*this);
-}
-//-----------------------------------------------------------------------------
-Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
-           std::size_t resolution)
-  : Variable("mesh", "DOLFIN mesh"),
-    Hierarchical<Mesh>(*this),
-    _cell_type(0),
-    _ordered(false),
-    _cell_orientations(0),
-    _mpi_comm(MPI_COMM_WORLD)
-{
-  assert(geometry);
-
-  // Build mesh on process 0
-  if (MPI::rank(_mpi_comm) == 0)
-    CSGMeshGenerator::generate(*this, *geometry, resolution);
-
-  // Build distributed mesh
-  if (MPI::size(_mpi_comm) > 1)
-    MeshPartitioning::build_distributed_mesh(*this);
-}
-//-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
-  clear();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
-  // Clear all data
-  clear();
-
   // Assign data
   _topology = mesh._topology;
   _geometry = mesh._geometry;
   _domains = mesh._domains;
   _data = mesh._data;
   if (mesh._cell_type)
-    _cell_type = CellType::create(mesh._cell_type->cell_type());
+    _cell_type.reset(CellType::create(mesh._cell_type->cell_type()));
+  else
+    _cell_type.reset();
+  _ordered = mesh._ordered;
   _cell_orientations = mesh._cell_orientations;
 
   // Rename
@@ -284,7 +230,7 @@ void Mesh::clear()
   _topology.clear();
   _geometry.clear();
   _data.clear();
-  delete _cell_type;
+  _cell_type.reset();
   _cell_type = 0;
   _ordered = false;
   _cell_orientations.clear();
@@ -311,7 +257,7 @@ void Mesh::order()
   // Remember that the mesh has been ordered
   _ordered = true;
 
-  // Clear cell_orientations (as these depend on the ordering)
+  // Clear any cell_orientations (as these depend on the ordering)
   _cell_orientations.clear();
 }
 //-----------------------------------------------------------------------------
@@ -350,12 +296,12 @@ void Mesh::rotate(double angle, std::size_t axis, const Point& point)
   MeshTransformation::rotate(*this, angle, axis, point);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
+std::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
 {
   return ALE::move(*this, boundary);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshDisplacement> Mesh::move(Mesh& mesh)
+std::shared_ptr<MeshDisplacement> Mesh::move(Mesh& mesh)
 {
   return ALE::move(*this, mesh);
 }
@@ -413,7 +359,7 @@ Mesh::color(std::vector<std::size_t> coloring_type) const
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
+std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 {
   // Allocate and build tree if necessary
   if (!_tree)
@@ -512,11 +458,6 @@ const std::vector<int>& Mesh::cell_orientations() const
   return _cell_orientations;
 }
 //-----------------------------------------------------------------------------
-std::vector<int>& Mesh::cell_orientations()
-{
-  return _cell_orientations;
-}
-//-----------------------------------------------------------------------------
 void Mesh::init_cell_orientations(const Expression& global_normal)
 {
   // Check that global_normal has the right size
@@ -528,6 +469,10 @@ void Mesh::init_cell_orientations(const Expression& global_normal)
                   global_normal.value_size());
   }
 
+  // Resize storage
+  _cell_orientations.resize(num_cells());
+
+  // Set orientation
   Array<double> values(3);
   Point up;
   for (CellIterator cell(*this); !cell.end(); ++cell)
@@ -543,6 +488,7 @@ void Mesh::init_cell_orientations(const Expression& global_normal)
       up[i] = values[i];
 
     // Set orientation as orientation relative to up direction.
+    dolfin_assert(cell->index() < _cell_orientations.size());
     _cell_orientations[cell->index()] = cell->orientation(up);
   }
 }

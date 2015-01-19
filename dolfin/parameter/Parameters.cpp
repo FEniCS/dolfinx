@@ -538,11 +538,13 @@ void Parameters::parse_petsc(int argc, char* argv[])
   if (argc <= 1)
     return;
 
-  // Print options
-  cout << "Passing options to PETSc:";
+  std::string s = "Passing options to PETSc:";
   for (int i = 1; i < argc; i++)
-    cout << " " << argv[i];
-  cout << endl;
+  {
+    s.append(" ");
+    s.append(std::string(argv[i]));
+  }
+  info(s);
 
   SubSystemsManager::init_petsc(argc, argv);
 }

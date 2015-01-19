@@ -23,12 +23,14 @@ This script assumes that all functions and classes lives in the dolfin namespace
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Johan Hake, 2010.
-# Modified by Anders E. Johansen, 2011.
+# Modified by Johan Hake 2010
+# Modified by Anders E. Johansen 2011
+# Modified by Anders Logg 2014
 #
 # First added:  2010-08-19
-# Last changed: 2013-09-04
+# Last changed: 2014-03-03
 
+from __future__ import print_function
 import os, shutil, types, sys
 
 # Add path to dolfin_utils and import the documentation extractor.
@@ -44,7 +46,7 @@ debug_output = False
 def output(out):
     global debug_output
     if debug_output:
-        print out
+        print(out)
 
 docstring = '%%feature("docstring")  %s "\n%s\n";\n\n'
 
@@ -91,17 +93,17 @@ def group_overloaded_functions(docs):
     for (classname, parent, comment, function_documentation) in docs:
         func_doc = {}
         order = []
-#        print "cls: ", classname
+#        print("cls: ", classname)
         # Iterate over class functions
         for (signature, comm) in function_documentation:
             # No need to put empty docstrings in the docstrings.i file!
             if comm is None:
                 continue
-#            print "sig: ", signature
+#            print("sig: ", signature)
             name = get_function_name(signature)
             if not name in order:
                 order.append(name)
-#            print "name: '%s'" % name
+#            print("name: '%s'" % name)
             if not name in func_doc:
                 func_doc[name] = [(signature, comm)]
             else:
@@ -192,11 +194,15 @@ def handle_std_vector(cpp_type, classnames):
 
     # Special case: vector of pairs
     if "std::pair" in cpp_type and not cpp_type.startswith("std::pair"):
-        arg1, arg2 = cpp_type.split("<")[2].split(">")[0].split(",")
-        pair = "std::pair<%s,%s>" % (arg1, arg2)
-        if handle_std_pair(pair, classnames) is not None:
-            return "numpy.array(%s)" % handle_std_pair(pair, classnames)
-        else:
+        try:
+            arg1, arg2 = cpp_type.split("<")[2].split(">")[0].split(",")
+            pair = "std::pair<%s,%s>" % (arg1, arg2)
+            if handle_std_pair(pair, classnames) is not None:
+                return "numpy.array(%s)" % handle_std_pair(pair, classnames)
+            else:
+                return None
+        except:
+            # Failed to handle complex type, fail gracefully
             return None
     else:
         arg = cpp_type.split("<")[1].split(">")[0].strip()
@@ -347,9 +353,9 @@ def modify_doc(text, classnames, classname, signature):
 
 def get_args(signature):
     "Get argument names (for Python) from signature."
-#    print "sig: ", signature
+#    print("sig: ", signature)
     arg_string = signature.split("(")[-1].split(")")[0]
-#    print "arg_string: '%s'" % arg_string
+#    print("arg_string: '%s'" % arg_string)
     args = []
     if arg_string:
         # This does not handle ',' inside type declaration,
@@ -362,7 +368,7 @@ def get_args(signature):
             # or boost::unordered_map.
             if not "::" in arg:
                 args.append(arg)
-#    print "args: '%s'" % args
+#    print("args: '%s'" % args)
     return args
 
 

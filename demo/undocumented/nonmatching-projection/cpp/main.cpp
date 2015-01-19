@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2009-10-10
-// Last changed: 2012-11-12
+// Last changed: 2014-08-11
 //
 // This program demonstrates the L2 projection of a function onto a
 // non-matching mesh.
@@ -28,8 +28,6 @@
 #include "P3.h"
 
 using namespace dolfin;
-
-#ifdef HAS_CGAL
 
 class MyExpression : public Expression
 {
@@ -72,13 +70,3 @@ int main()
 
   return 0;
 }
-
-#else
-
-int main()
-{
-  info("DOLFIN must be compiled with CGAL to run this demo.");
-  return 0;
-}
-
-#endif

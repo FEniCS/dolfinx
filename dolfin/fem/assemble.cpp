@@ -91,6 +91,6 @@ double dolfin::assemble(const Form& a)
   Scalar s;
   Assembler assembler;
   assembler.assemble(s, a);
-  return s;
+  return s.get_scalar_value();
 }
 //-----------------------------------------------------------------------------

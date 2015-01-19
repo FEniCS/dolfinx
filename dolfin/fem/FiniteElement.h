@@ -14,16 +14,13 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2008-09-11
-// Last changed: 2013-03-01
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
 
+#include <memory>
 #include <vector>
 #include <ufc.h>
-#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
@@ -37,7 +34,7 @@ namespace dolfin
   public:
 
     /// Create finite element from UFC finite element (data may be shared)
-    FiniteElement(boost::shared_ptr<const ufc::finite_element> element);
+    FiniteElement(std::shared_ptr<const ufc::finite_element> element);
 
     /// Destructor
     virtual ~FiniteElement() {}
@@ -154,22 +151,6 @@ namespace dolfin
                                         cell_orientation, c);
     }
 
-    // FIXME: This is a temporary (?) shortcut.
-    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
-    // FIXME: ufc::finite_element.
-
-    /// Evaluate linear functional for dof i on the function f
-    /*
-    double evaluate_dof(std::size_t i,
-                        const ufc::function& function,
-                        const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      return _ufc_element->evaluate_dof(i, function,
-                                        c.vertex_coordinates.data(), 0, c);
-    }
-    */
-
     /// Evaluate linear functionals for all dofs on the function f
     void evaluate_dofs(double* values,
                        const ufc::function& f,
@@ -181,22 +162,6 @@ namespace dolfin
       _ufc_element->evaluate_dofs(values, f, vertex_coordinates,
                                   cell_orientation, c);
     }
-
-    // FIXME: This is a temporary (?) shortcut.
-    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
-    // FIXME: ufc::finite_element.
-
-    /// Evaluate linear functionals for all dofs on the function f
-    /*
-    void evaluate_dofs(double* values,
-                       const ufc::function& f,
-                       const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_dofs(values, f, c.vertex_coordinates.data(),
-                                  0, c);
-    }
-    */
 
     /// Interpolate vertex values from dof values
     void interpolate_vertex_values(double* vertex_values,
@@ -241,39 +206,44 @@ namespace dolfin
     { return _hash; }
 
     /// Create a new finite element for sub element i (for a mixed element)
-    boost::shared_ptr<const FiniteElement>
+    std::shared_ptr<const FiniteElement>
       create_sub_element(std::size_t i) const
     {
       dolfin_assert(_ufc_element);
-      boost::shared_ptr<const ufc::finite_element>
+      std::shared_ptr<const ufc::finite_element>
         ufc_element(_ufc_element->create_sub_element(i));
-      boost::shared_ptr<const FiniteElement>
+      std::shared_ptr<const FiniteElement>
         element(new const FiniteElement(ufc_element));
       return element;
     }
 
     /// Create a new class instance
-    boost::shared_ptr<const FiniteElement> create() const
+    std::shared_ptr<const FiniteElement> create() const
     {
       dolfin_assert(_ufc_element);
-      boost::shared_ptr<const ufc::finite_element>
+      std::shared_ptr<const ufc::finite_element>
         ufc_element(_ufc_element->create());
-      return boost::shared_ptr<const FiniteElement>(new FiniteElement(ufc_element));
+      return std::shared_ptr<const FiniteElement>(new FiniteElement(ufc_element));
     }
 
     /// Extract sub finite element for component
-    boost::shared_ptr<const FiniteElement>
+    std::shared_ptr<const FiniteElement>
       extract_sub_element(const std::vector<std::size_t>& component) const;
+
+    /// Return underlying UFC element. Intended for libray usage only
+    /// and may change.
+    std::shared_ptr<const ufc::finite_element> ufc_element() const
+    { return _ufc_element; }
 
   private:
 
+    // UFC finite element
+    std::shared_ptr<const ufc::finite_element> _ufc_element;
+
     // Recursively extract sub finite element
-    static boost::shared_ptr<const FiniteElement>
+    static std::shared_ptr<const FiniteElement>
       extract_sub_element(const FiniteElement& finite_element,
                           const std::vector<std::size_t>& component);
-
-    // UFC finite element
-    boost::shared_ptr<const ufc::finite_element> _ufc_element;
 
     // Simple hash of the signature string
     std::size_t _hash;

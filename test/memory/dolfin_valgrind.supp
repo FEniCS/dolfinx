@@ -2012,7 +2012,6 @@
    fun:_ZN6dolfin11PETScVector4initEjjSs
    fun:_ZN6dolfin11PETScVectorC1ESs
    fun:_ZNK6dolfin12PETScFactory13create_vectorEv
-   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
    fun:main
 }
 
@@ -2182,7 +2181,6 @@
 #   fun:_ZN6dolfin11PETScVector4initEjjSs
 #   fun:_ZN6dolfin11PETScVectorC1ESs
 #   fun:_ZNK6dolfin12PETScFactory13create_vectorEv
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2303,7 +2301,6 @@
 #   fun:_ZN6dolfin11PETScVector4initEjjSs
 #   fun:_ZN6dolfin11PETScVectorC1ESs
 #   fun:_ZNK6dolfin12PETScFactory13create_vectorEv
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #}
 
 #{
@@ -2318,7 +2315,6 @@
 #   fun:_ZN6dolfin13PETScLUSolver4initEv
 #   fun:_ZN6dolfin13PETScLUSolverC1Ev
 #   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2334,7 +2330,6 @@
 #   fun:_ZN6dolfin13PETScLUSolver4initEv
 #   fun:_ZN6dolfin13PETScLUSolverC1Ev
 #   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2348,7 +2343,6 @@
 #   fun:_ZN6dolfin13PETScLUSolver4initEv
 #   fun:_ZN6dolfin13PETScLUSolverC1Ev
 #   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2358,7 +2352,6 @@
 #   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERNS_3UFCES6_RKNS_4FormES9_RKNS_4CellERKNS_5FacetERKNS0_7ScratchE
 #   fun:_ZN6dolfin15SystemAssembler14facet_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_SF_
 #   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2368,7 +2361,6 @@
 #   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERNS_3UFCES6_RKNS_4FormES9_RKNS_4CellERKNS_5FacetERKNS0_7ScratchE
 #   fun:_ZN6dolfin15SystemAssembler14facet_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_SF_
 #   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2377,7 +2369,6 @@
 #   Memcheck:Addr8
 #   fun:_ZN6dolfin15SystemAssembler13cell_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_
 #   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2386,7 +2377,6 @@
 #   Memcheck:Addr8
 #   fun:_ZN6dolfin15SystemAssembler13cell_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_
 #   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2404,7 +2394,6 @@
 #   fun:_ZN6dolfin11PETScVector6resizeEj
 #   fun:_ZN6dolfin8Function4initEv
 #   fun:_ZN6dolfin8Function6vectorEv
-#   fun:_ZN6dolfin18VariationalProblem15solve_nonlinearERNS_8FunctionE
 #}
 
 #{
@@ -2421,7 +2410,6 @@
 #   fun:_ZN6dolfin11PETScVector6resizeEj
 #   fun:_ZN6dolfin8Function4initEv
 #   fun:_ZN6dolfin8Function6vectorEv
-#   fun:_ZN6dolfin18VariationalProblem15solve_nonlinearERNS_8FunctionE
 #}
 
 #{
@@ -2435,7 +2423,6 @@
 #   fun:_ZN6dolfin13PETScLUSolver4initEv
 #   fun:_ZN6dolfin13PETScLUSolverC1Ev
 #   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 
@@ -2451,7 +2438,6 @@
 #   fun:_ZN6dolfin13PETScLUSolver4initEv
 #   fun:_ZN6dolfin13PETScLUSolverC1Ev
 #   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
-#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
 #   fun:main
 #}
 

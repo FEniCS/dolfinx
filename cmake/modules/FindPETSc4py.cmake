@@ -46,7 +46,7 @@ if(PETSC4PY_INCLUDE_DIRS)
 endif(PETSC4PY_INCLUDE_DIRS)
 
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print petsc4py.get_include()"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIRS
   RESULT_VARIABLE PETSC4PY_NOT_FOUND
   ERROR_QUIET
@@ -62,7 +62,7 @@ endif(PETSC4PY_INCLUDE_DIRS)
 
 if(PETSC4PY_FOUND)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print petsc4py.__version__"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.__version__)"
     OUTPUT_VARIABLE PETSC4PY_VERSION
     RESULT_VARIABLE PETSC4PY_NOT_FOUND
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -80,3 +80,20 @@ else(PETSC4PY_FOUND)
 endif(PETSC4PY_FOUND)
 
 mark_as_advanced(PETSC4PY_INCLUDE_DIRS, PETSC4PY_VERSION, PETSC4PY_VERSION_MAJOR, PETSC4PY_VERSION_MINOR)
+
+if (PETSc4py_FIND_VERSION)
+  # Check if version found is >= required version
+  if (NOT "${PETSC4PY_VERSION}" VERSION_LESS "${PETSc4py_FIND_VERSION}")
+    set(PETSC4PY_VERSION_OK TRUE)
+  endif()
+else()
+  # No specific version requested
+  set(PETSC4PY_VERSION_OK TRUE)
+endif()
+mark_as_advanced(PETSC4PY_VERSION_OK)
+
+# Standard package handling
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(PETSc4py
+  "PETSc4py could not be found. Be sure to set PYTHONPATH appropriately."
+  PETSC4PY_INCLUDE_DIRS PETSC4PY_VERSION PETSC4PY_VERSION_OK)

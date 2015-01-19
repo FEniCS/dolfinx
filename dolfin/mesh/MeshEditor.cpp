@@ -60,7 +60,7 @@ void MeshEditor::open(Mesh& mesh, std::size_t tdim, std::size_t gdim)
   default:
     dolfin_error("MeshEditor.cpp",
                  "open mesh for editing",
-                 "Uknown cell type of topological dimension %d", tdim);
+                 "Unknown cell type of topological dimension %d", tdim);
   }
 }
 //-----------------------------------------------------------------------------
@@ -77,7 +77,7 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
   _tdim = tdim;
 
   // Set cell type
-  mesh._cell_type = CellType::create(type);
+  mesh._cell_type.reset(CellType::create(type));
 
   // Initialize topological dimension
   mesh._topology.init(tdim);
@@ -122,6 +122,7 @@ void MeshEditor::init_vertices_global(std::size_t num_local_vertices,
   // Initialize mesh data
   _num_vertices = num_local_vertices;
   _mesh->_topology.init(0, num_local_vertices, num_global_vertices);
+  _mesh->_topology.init_ghost(0, num_local_vertices);
   _mesh->_topology.init_global_indices(0, num_local_vertices);
   _mesh->_geometry.init(_gdim, num_local_vertices);
 }
@@ -140,6 +141,7 @@ void MeshEditor::init_cells_global(std::size_t num_local_cells,
   // Initialize mesh data
   _num_cells = num_local_cells;
   _mesh->_topology.init(_tdim, num_local_cells, num_global_cells);
+  _mesh->_topology.init_ghost(_tdim, num_local_cells);
   _mesh->_topology.init_global_indices(_tdim, num_local_cells);
   _mesh->_topology(_tdim, 0).init(_num_cells,
                                   _mesh->type().num_vertices(_tdim));
@@ -266,9 +268,6 @@ void MeshEditor::close(bool order)
   dolfin_assert(_mesh);
   if (order && !_mesh->ordered())
     _mesh->order();
-
-  // Initialize cell orientations
-  _mesh->cell_orientations().resize(_mesh->num_cells(), -1);
 
   // Clear data
   clear();

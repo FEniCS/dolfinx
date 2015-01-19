@@ -21,7 +21,6 @@
 #ifndef __VTK_WINDOW_OUTPUT_STAGE_H
 #define __VTK_WINDOW_OUTPUT_STAGE_H
 
-#include <boost/scoped_ptr.hpp>
 #include <vtkSmartPointer.h>
 
 // Forward declarations
@@ -87,7 +86,7 @@ namespace dolfin
 
     /// Return a pointer to the plotting widget. The pointer is valid
     /// from after init() is called (if no widget was passed in the
-    /// contructor).
+    /// constructor).
     QVTKWidget *get_widget() const;
 
     /// Close the plotting window (only Qt). The window is not destroyed.

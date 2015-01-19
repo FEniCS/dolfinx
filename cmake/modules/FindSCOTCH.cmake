@@ -48,7 +48,7 @@ message(STATUS "Checking for package 'SCOTCH-PT'")
 
 # Check for header file
 find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
-  HINTS ${SCOTCH_DIR}/include $ENV{SCOTCH_DIR}/include ${PETSC_DIR}/include
+  HINTS ${SCOTCH_DIR}/include $ENV{SCOTCH_DIR}/include ${PETSC_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include
   PATH_SUFFIXES scotch
   DOC "Directory where the SCOTCH-PT header is located"
   )
@@ -56,7 +56,7 @@ find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
 # Check for scotch
 find_library(SCOTCH_LIBRARY
   NAMES scotch
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
   NO_DEFAULT_PATH
   DOC "The SCOTCH library"
   )
@@ -80,7 +80,7 @@ find_library(SCOTCHERR_LIBRARY
 # Check for ptscotch
 find_library(PTSCOTCH_LIBRARY
   NAMES ptscotch
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH library"
   )
@@ -92,7 +92,7 @@ find_library(PTSCOTCH_LIBRARY
 # Check for ptesmumps
 find_library(PTESMUMPS_LIBRARY
   NAMES ptesmumps esmumps
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH-ESMUMPS library"
   )
@@ -104,7 +104,7 @@ find_library(PTESMUMPS_LIBRARY
 # Check for ptscotcherr
 find_library(PTSCOTCHERR_LIBRARY
   NAMES ptscotcherr
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH-ERROR library"
   )
@@ -113,15 +113,35 @@ find_library(PTSCOTCHERR_LIBRARY
   DOC "The PTSCOTCH-ERROR library"
   )
 
-#set(SCOTCH_DEBUG 1)
 set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY})
 if (PTESMUMPS_LIBRARY)
   set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES}  ${PTESMUMPS_LIBRARY})
 endif()
 set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES} ${PTSCOTCHERR_LIBRARY})
 
+# Basic check of SCOTCH_VERSION which does not require compilation
+if (SCOTCH_INCLUDE_DIRS)
+  file(STRINGS "${SCOTCH_INCLUDE_DIRS}/ptscotch.h" PTSCOTCH_H)
+  string(REGEX MATCH "SCOTCH_VERSION [0-9]+" SCOTCH_VERSION "${PTSCOTCH_H}")
+  string(REGEX MATCH "[0-9]+" SCOTCH_VERSION "${SCOTCH_VERSION}")
+endif()
+
+# If SCOTCH_VERSION was not found in ptscotch.h, look in scotch.h
+if (SCOTCH_INCLUDE_DIRS AND NOT SCOTCH_VERSION)
+  file(STRINGS "${SCOTCH_INCLUDE_DIRS}/scotch.h" SCOTCH_H)
+  string(REGEX MATCH "SCOTCH_VERSION [0-9]+" SCOTCH_VERSION "${SCOTCH_H}")
+  string(REGEX MATCH "[0-9]+" SCOTCH_VERSION "${SCOTCH_VERSION}")
+endif()
+
+# For SCOTCH version > 6, need to add libraries scotch and ptscotch
+if (NOT "${SCOTCH_VERSION}" VERSION_LESS "6")
+  set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY} ${SCOTCH_LIBRARY} ${PTSCOTCHERR_LIBRARY})
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARY})
+endif()
+
 # Try compiling and running test program
 if (DOLFIN_SKIP_BUILD_TESTS)
+  message(STATUS "Found SCOTCH (version ${SCOTCH_VERSION})")
   set(SCOTCH_TEST_RUNS TRUE)
 elseif (SCOTCH_INCLUDE_DIRS AND SCOTCH_LIBRARIES)
   if (SCOTCH_DEBUG)
@@ -181,12 +201,6 @@ int main() {
   if (SCOTCH_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
     set(SCOTCH_VERSION ${OUTPUT} CACHE TYPE STRING)
     message(STATUS "Found SCOTCH (version ${SCOTCH_VERSION})")
-  endif()
-
-  # For SCOTCH version > 6, need to add libraries scotch and ptscotch
-  if (NOT ${SCOTCH_VERSION} VERSION_LESS "6")
-    set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY} ${SCOTCH_LIBRARY} ${PTSCOTCHERR_LIBRARY})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARY})
   endif()
 
   # PT-SCOTCH was first introduced in SCOTCH version 5.0

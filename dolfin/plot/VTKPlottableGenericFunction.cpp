@@ -41,23 +41,29 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const Function> function)
+VTKPlottableGenericFunction::VTKPlottableGenericFunction(std::shared_ptr<const Function> function)
   : VTKPlottableMesh(function->function_space()->mesh()),
     _function(function)
 {
   // Do nothing
 }
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const Expression> expression,
-                                                         boost::shared_ptr<const Mesh> mesh)
+VTKPlottableGenericFunction::VTKPlottableGenericFunction(std::shared_ptr<const Expression> expression,
+                                                         std::shared_ptr<const Mesh> mesh)
   : VTKPlottableMesh(mesh), _function(expression)
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
+VTKPlottableGenericFunction:: ~VTKPlottableGenericFunction()
 {
   // Do nothing
 }
 //----------------------------------------------------------------------------
 std::size_t VTKPlottableGenericFunction::value_rank() const
 {
-  return _function->value_rank();
+  dolfin_assert(!_function.expired());
+  return _function.lock()->value_rank();
 }
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
@@ -71,8 +77,8 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
   _mode = (std::string)p["mode"];
 
   VTKPlottableMesh::init_pipeline(p);
-
-  switch (_function->value_rank())
+  dolfin_assert(!_function.expired());
+  switch (_function.lock()->value_rank())
   {
     // Setup pipeline for scalar functions
     case 0:
@@ -93,9 +99,7 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
         // In 2D, we warp the mesh according to the scalar values
         // (1D is normally plotted by separate Plottable class)
         if (_mode == "warp")
-        {
           insert_filter(_warpscalar);
-        }
       }
       else
       {
@@ -169,9 +173,9 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
 //----------------------------------------------------------------------------
 bool VTKPlottableGenericFunction::is_compatible(const Variable &var) const
 {
-  const GenericFunction *function(dynamic_cast<const Function*>(&var));
-  const ExpressionWrapper
-    *wrapper(dynamic_cast<const ExpressionWrapper*>(&var));
+  const GenericFunction*  function(dynamic_cast<const Function*>(&var));
+  const ExpressionWrapper*
+    wrapper(dynamic_cast<const ExpressionWrapper*>(&var));
   const Mesh *mesh(NULL);
 
   if (function)
@@ -195,16 +199,17 @@ bool VTKPlottableGenericFunction::is_compatible(const Variable &var) const
   return VTKPlottableMesh::is_compatible(*mesh);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
-                                         const Parameters& p, int frame_counter)
+void VTKPlottableGenericFunction::update(std::shared_ptr<const Variable> var,
+                                         const Parameters& p,
+                                         int frame_counter)
 {
-  boost::shared_ptr<const Mesh> mesh = VTKPlottableMesh::mesh();
+  std::shared_ptr<const Mesh> mesh = VTKPlottableMesh::mesh();
   if (var)
   {
-    boost::shared_ptr<const Function>
-      function(boost::dynamic_pointer_cast<const Function>(var));
-    boost::shared_ptr<const ExpressionWrapper>
-      wrapper(boost::dynamic_pointer_cast<const ExpressionWrapper>(var));
+    std::shared_ptr<const Function>
+      function(std::dynamic_pointer_cast<const Function>(var));
+    std::shared_ptr<const ExpressionWrapper>
+      wrapper(std::dynamic_pointer_cast<const ExpressionWrapper>(var));
     dolfin_assert(function || wrapper);
     if (function)
     {
@@ -222,7 +227,8 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
   VTKPlottableMesh::update(mesh, p, frame_counter);
 
   // Update the values on the mesh
-  const Function *func = dynamic_cast<const Function *>(_function.get());
+  dolfin_assert(!_function.expired());
+  const Function *func = dynamic_cast<const Function *>(_function.lock().get());
   if (func && func->vector()->local_size()
       == (std::size_t)grid()->GetNumberOfCells() && dim() > 1)
   {
@@ -238,7 +244,7 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
   else
   {
     std::vector<double> vertex_values;
-    _function->compute_vertex_values(vertex_values, *mesh);
+    _function.lock()->compute_vertex_values(vertex_values, *mesh);
     if (dim() == 1)
     {
       // Sort 1D data on x-coordinate because vtkXYPlotActor does not
@@ -260,7 +266,8 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::rescale(double range[2], const Parameters& p)
+void
+VTKPlottableGenericFunction::rescale(double range[2], const Parameters& p)
 {
   const double scale = p["scale"];
   const double* bounds = grid()->GetBounds();
@@ -298,14 +305,15 @@ vtkSmartPointer<vtkAlgorithmOutput>
 VTKPlottableGenericFunction::get_output() const
 {
   // In the 3D glyph case, return the glyphs' output
-  if (_function->value_rank() == 1 && _mode == "glyphs")
+  dolfin_assert(!_function.expired());
+  if (_function.lock()->value_rank() == 1 && _mode == "glyphs")
     return _glyphs->GetOutputPort();
   else
     return VTKPlottableMesh::get_output();
 }
 //----------------------------------------------------------------------------
 VTKPlottableGenericFunction*
-dolfin::CreateVTKPlottable(boost::shared_ptr<const Function> function)
+dolfin::CreateVTKPlottable(std::shared_ptr<const Function> function)
 {
   if (function->function_space()->mesh()->topology().dim() == 1)
     return new VTKPlottableGenericFunction1D(function);
@@ -314,14 +322,14 @@ dolfin::CreateVTKPlottable(boost::shared_ptr<const Function> function)
 }
 //----------------------------------------------------------------------------
 VTKPlottableGenericFunction*
-dolfin::CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper> wrapper)
+dolfin::CreateVTKPlottable(std::shared_ptr<const ExpressionWrapper> wrapper)
 {
   return CreateVTKPlottable(wrapper->expression(), wrapper->mesh());
 }
 //----------------------------------------------------------------------------
 VTKPlottableGenericFunction*
-dolfin::CreateVTKPlottable(boost::shared_ptr<const Expression> expr,
-                           boost::shared_ptr<const Mesh> mesh)
+dolfin::CreateVTKPlottable(std::shared_ptr<const Expression> expr,
+                           std::shared_ptr<const Mesh> mesh)
 {
   if (mesh->topology().dim() == 1)
     return new VTKPlottableGenericFunction1D(expr, mesh);

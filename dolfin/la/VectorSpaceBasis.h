@@ -22,7 +22,7 @@
 #define __VECTOR_SPACE_BASIS_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "GenericVector.h"
 
 namespace dolfin
@@ -37,7 +37,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    VectorSpaceBasis(const std::vector<boost::shared_ptr<GenericVector> > basis);
+    VectorSpaceBasis(const std::vector<std::shared_ptr<GenericVector> > basis);
 
     /// Destructor
     ~VectorSpaceBasis() {}
@@ -55,12 +55,12 @@ namespace dolfin
     std::size_t dim() const;
 
     /// Get a particular basis vector
-    boost::shared_ptr<const GenericVector> operator[] (std::size_t i) const;
+    std::shared_ptr<const GenericVector> operator[] (std::size_t i) const;
 
   private:
 
     // Basis vectors
-    const std::vector<boost::shared_ptr<GenericVector> > _basis;
+    const std::vector<std::shared_ptr<GenericVector> > _basis;
 
   };
 }

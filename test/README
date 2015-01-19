@@ -20,7 +20,7 @@ used targets for testing:
 
   make run_regressiontests  # run regression tests (demos) only
   make run_unittests        # run unit tests only
-  make run_quicktest        # run Python unit tests only
+  make run_quicktest        # run only Python unit tests not marked 'slow'
 
 Type 'make' followed by a space and tap 'tab' twice to see a complete
 list of make targets.

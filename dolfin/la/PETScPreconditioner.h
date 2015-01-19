@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-02-25
-// Last changed: 2011-10-19
+// Last changed: 2014-07-09
 
 #ifndef __DOLFIN_PETSC_PRECONDITIONER_H
 #define __DOLFIN_PETSC_PRECONDITIONER_H
@@ -27,7 +27,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <petscpc.h>
 
 #include <dolfin/common/types.h>
@@ -60,7 +60,7 @@ namespace dolfin
     /// Destructor
     virtual ~PETScPreconditioner();
 
-    /// Set the precondtioner type and parameters
+    /// Set the preconditioner type and parameters
     virtual void set(PETScKrylovSolver& solver);
 
     /// Set the (near) null space of the preconditioner operator
@@ -87,13 +87,15 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Rerturn a list of available preconditioners
+    /// Return a list of available preconditioners
     static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
+
+    friend class PETScTAOSolver;
 
   private:
 

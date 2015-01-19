@@ -23,6 +23,7 @@
 
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/MPI.h"
+#include "dolfin/common/types.h"
 #include "dolfin/log/log.h"
 #include "CoordinateMatrix.h"
 #include "GenericVector.h"
@@ -51,14 +52,14 @@ Parameters MUMPSLUSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 MUMPSLUSolver::MUMPSLUSolver(const CoordinateMatrix& A)
-  : _A(reference_to_no_delete_pointer(A))
+  : _matA(reference_to_no_delete_pointer(A))
 {
   // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-MUMPSLUSolver::MUMPSLUSolver(boost::shared_ptr<const CoordinateMatrix> A)
-  : _A(A)
+MUMPSLUSolver::MUMPSLUSolver(std::shared_ptr<const CoordinateMatrix> A)
+  : _matA(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -71,7 +72,7 @@ MUMPSLUSolver::~MUMPSLUSolver()
 //-----------------------------------------------------------------------------
 std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(_A);
+  dolfin_assert(_matA);
 
   DMUMPS_STRUC_C data;
 
@@ -83,7 +84,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Host participates in solve
   data.par = 1;
 
-  // Output related paramters
+  // Output related parameters
   //data.ICNTL(1) = 6; // error messages
   //data.ICNTL(2) = 0;
   //data.ICNTL(3) = 6; // Global information
@@ -93,7 +94,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     data.ICNTL(4) = 1;
 
-  // Matrix symmetry (0=non-symmetric, 2=symmetric postitve defn, 2=symmetric)
+  // Matrix symmetry (0=non-symmetric, 2=symmetric positive defn, 2=symmetric)
   data.sym = 0;
   if (parameters["symmetric"])
     data.sym = 2;
@@ -120,7 +121,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(18) = 3;
 
   // Parallel/serial analysis (0=auto, 1=serial, 2=parallel)
-  if (MPI::size(_A->mpi_comm()) > 1)
+  if (MPI::size(_matA->mpi_comm()) > 1)
     data.ICNTL(28) = 2;
   else
     data.ICNTL(28) = 0;
@@ -129,16 +130,16 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(29) = 0;
 
   // Global size
-  assert(_A->size(0) == _A->size(1));
-  data.n = _A->size(0);
+  dolfin_assert(_matA->size(0) == _matA->size(1));
+  data.n = _matA->size(0);
 
-  if (!_A->base_one())
+  if (!_matA->base_one())
     error("MUMPS requires a CoordinateMatrix with Fortran-style base 1 indexing.");
 
-  // Get matrix coordindate and value data
-  const std::vector<std::size_t>& rows = _A->rows();
-  const std::vector<std::size_t>& cols = _A->columns();
-  const std::vector<double>& vals = _A->values();
+  // Get matrix coordinate and value data
+  const std::vector<std::size_t>& rows = _matA->rows();
+  const std::vector<std::size_t>& cols = _matA->columns();
+  const std::vector<double>& vals = _matA->values();
 
   // Number of non-zero entries on this process
   data.nz_loc = rows.size();
@@ -146,7 +147,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Pass matrix data to MUMPS. Trust MUMPS not to change it
   data.irn_loc = const_cast<int*>(reinterpret_cast<const int*>(rows.data()));
   data.jcn_loc = const_cast<int*>(reinterpret_cast<const int*>(cols.data()));
-  data.a_loc   = const_cast<double*>(&vals[0]);
+  data.a_loc   = const_cast<double*>(vals.data());
 
   // Analyse and factorize
   data.job = 4;
@@ -159,7 +160,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Gather RHS on root process and attach
   std::vector<double> _b;
   b.gather_on_zero(_b);
-  data.rhs = &_b[0];
+  data.rhs = _b.data();
 
   // Scaling strategy (77 is default)
   data.ICNTL(8) = 77;
@@ -185,8 +186,16 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
     x_local_indices[i]--;
 
   // Set x values
-  x.set(x_local_vals.data(), x_local_indices.size(),
-        x_local_indices.data());
+  #if defined(PETSC_USE_64BIT_INDICES)
+  // Cast indices to 64 bit
+  std::vector<dolfin::la_index> _x_local_indices(x_local_indices.begin(),
+                                                 x_local_indices.end());
+  x.set_local(x_local_vals.data(), x_local_indices.size(),
+              _x_local_indices.data());
+  #else
+  x.set_local(x_local_vals.data(), x_local_indices.size(),
+              x_local_indices.data());
+  #endif
   x.apply("insert");
 
   // Clean up

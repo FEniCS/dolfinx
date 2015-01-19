@@ -35,13 +35,16 @@ A mesh is created, and a quadratic finite element function space:
 
 .. code-block:: python
 
+    # Make mesh ghosted for evaluation of DG terms
+    parameters["ghost_mode"] = "shared_facet"
+
     # Create mesh and define function space
     mesh = UnitSquareMesh(32, 32)
     V = FunctionSpace(mesh, "CG", 2)
 
 A subclass of :py:class:`SubDomain <dolfin.cpp.SubDomain>`,
 ``DirichletBoundary`` is created for later defining the boundary of
-the domian:
+the domain:
 
 .. code-block:: python
 
@@ -104,7 +107,7 @@ The bilinear and linear forms are defined:
     a = inner(div(grad(u)), div(grad(v)))*dx \
       - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
       - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
-      + alpha('+')/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
+      + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
 
     # Define linear form
     L = f*v*dx

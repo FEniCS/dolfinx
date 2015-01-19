@@ -109,20 +109,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
 %}
 }
-// ---------------------------------------------------------------------------
-// Indices.i defines helper functions to extract C++ indices from Python
-// indices. These functions are not wrapped to the Python interface. They are
-// only included in the C++ wrapper file.
-//
-// la_get_set_items.i defines helper functions that are wrapped to the
-// Python. These are then used in the extended Python classes. See below.
-// ---------------------------------------------------------------------------
-%{
-#include "dolfin/swig/la/Indices.i"
-#include "dolfin/swig/la/la_get_set_items.i"
-%}
 
-%include "dolfin/swig/la/la_get_set_items.i"
+%pythoncode
+%{
+def la_index_dtype():
+    "Return the numpy dtype equivalent to the type of la_index"
+    from numpy import intc, int64
+    return intc if common.sizeof_la_index() == 4 else int64
+%}
 
 // ---------------------------------------------------------------------------
 // Modify the GenericVector interface
@@ -161,64 +155,60 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def array(self):
         "Return a numpy array representation of the local part of a Vector"
-        #from numpy import zeros, arange, uint0
-        #v = zeros(self.local_size())
-        #self.get_local(v)
-        #return v
         return self.get_local()
 
     def __contains__(self, value):
         from numpy import isscalar
-        if not isscalar(value):
-            raise TypeError("expected scalar")
-        return _contains(self,value)
+        if isscalar(value):
+            return value in self.get_local()
+        return NotImplemented
 
     def __gt__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_gt)
+            return self.get_local() > value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_gt)
+            return self.get_local() > value.get_local()
         return NotImplemented
 
-    def __ge__(self,value):
+    def __ge__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_ge)
+            return self.get_local() >= value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_ge)
+            return self.get_local() >= value.get_local()
         return NotImplemented
 
-    def __lt__(self,value):
+    def __lt__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_lt)
+            return self.get_local() < value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_lt)
+            return self.get_local() < value.get_local()
         return NotImplemented
 
-    def __le__(self,value):
+    def __le__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_le)
+            return self.get_local() <= value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_le)
+            return self.get_local() <= value.get_local()
         return NotImplemented
 
-    def __eq__(self,value):
+    def __eq__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_eq)
+            return self.get_local() == value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_eq)
+            return self.get_local() == value.get_local()
         return NotImplemented
 
-    def __neq__(self,value):
+    def __neq__(self, value):
         from numpy import isscalar
         if isscalar(value):
-            return _compare_vector_with_value(self, value, dolfin_neq)
+            return self.get_local() != value
         if isinstance(value, GenericVector):
-            return _compare_vector_with_vector(self, value, dolfin_neq)
+            return self.get_local() != value.get_local()
         return NotImplemented
 
     def __neg__(self):
@@ -233,55 +223,141 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         raise ValueError("cannot delete Vector elements")
 
     def __setslice__(self, i, j, values):
+        from numpy import ndarray, arange
         if i == 0 and (j >= len(self) or j == -1): # slice == whole
             from numpy import isscalar
             # No test for equal lengths because this is checked by DOLFIN in _assign
             if isinstance(values, GenericVector) or isscalar(values):
                 self._assign(values)
+                return 
+            elif isinstance(values, ndarray):
+                indices = arange(self.local_size(), dtype=la_index_dtype())
+                self[indices] = values
                 return
-        self.__setitem__(slice(i, j, 1), values)
+        
+        raise IndexError("can only set full slices v[:]")
 
     def __getslice__(self, i, j):
         if i == 0 and (j >= len(self) or j == -1):
             return self.copy()
-        return self.__getitem__(slice(i, j, 1))
+        raise IndexError("can only return full slices v[:]")
+
+    def _check_indices(self, indices):
+        from numpy import asarray, ndarray
+
+        # Only accpect list and ndarrays
+        if not isinstance(indices, (ndarray, list)):
+            raise TypeError("expected an int or a list or numpy array of "\
+                            "integers or a boolean numpy array as indices.")
+
+        # If boolean array
+        elif isinstance(indices, ndarray) and indices.dtype==bool:
+            indices = indices.nonzero()[0]
+
+        # Convert to correct indextypes
+        if isinstance(indices, ndarray):
+
+            # For some obscure reason we need to compare the char
+            # attribute of the dtype to be able to differentiate
+            # between correct dtypes. And to get the char attribute we
+            # need to instantiate the bloody dtype and then access the
+            # fraking dtype of the dtype, which can be asked for its
+            # char...
+            if indices.dtype.char != la_index_dtype()().dtype.char:
+                indices = indices.astype(la_index_dtype())
+        else:
+            indices = asarray(indices, dtype=la_index_dtype())
+
+        # Check range
+        # FIXME: What should local_size mean?
+        if not ((0<=indices).all() and (indices<self.local_size()).all()):
+            raise IndexError("expected indices to be in [0..{}]".format(\
+                self.local_size()))
+        
+        return indices
 
     def __getitem__(self, indices):
-        from numpy import ndarray, integer
-        from types import SliceType
-        if isinstance(indices, (int, integer, long)):
-            return _get_vector_single_item(self, indices)
-        elif isinstance(indices, (SliceType, ndarray, list) ):
-            return as_backend_type(_get_vector_sub_vector(self, indices))
-        else:
-            raise TypeError("expected an int, slice, list or numpy array of integers")
+        """Return values corresponding to the given local indices"""
+        from numpy import ndarray, integer, long, array, zeros, float_
 
+        # If indices is a slice
+        if isinstance(indices, slice):
+            if not (indices.start is None and indices.stop is None and \
+                    indices.step is None):
+                raise IndexError("can only return full slices v[:]")
+            return self.__getslice__(0, len(self))
+                
+        elif isinstance(indices, (int, integer, long)):
+            indices = array([indices], dtype=la_index_dtype())
+
+        indices = self._check_indices(indices)
+        
+        values = zeros(len(indices), dtype=float_)
+        if len(values)>0:
+            self.get_local(values, indices)
+        return values
+        
     def __setitem__(self, indices, values):
-        from numpy import ndarray, integer, isscalar
-        from types import SliceType
-        if isinstance(indices, (int, integer, long)):
+        """Set values corresponding to the given local indices
+
+        This method is collective and user need to take care when this
+        method is called, preventing MPI-deadlocks.
+        """
+        from numpy import asarray, ndarray, array, integer, isscalar, long, float_, ones
+        try:
+
+            # If indices is a slice
+            if isinstance(indices, slice):
+                if not (indices.start is None and indices.stop is None and \
+                        indices.step is None):
+                    raise IndexError("can only set full slices v[:]")
+                self.__setslice__(0, len(self), values)
+                return
+                
+            # If indices is a single integer
+            elif isinstance(indices, (int, integer, long)):
+                if isscalar(values):
+                    indices = array([indices], dtype=la_index_dtype())
+                else:
+                    raise TypeError("provide a scalar to set single item")
+
+            # Check indices
+            indices = self._check_indices(indices)
+
+            # Check passed values and convert scalar to ndarray of that value
             if isscalar(values):
-                return _set_vector_items_value(self, indices, values)
-            else:
-                raise TypeError("provide a scalar to set single item")
-        elif isinstance(indices, (SliceType, ndarray, list)):
-            if isscalar(values):
-                _set_vector_items_value(self, indices, values)
+                vec_values = ones(len(indices), dtype=float_)
+                vec_values *= values
+                values = vec_values
+
             elif isinstance(values, GenericVector):
-                _set_vector_items_vector(self, indices, values)
+                values = values.get_local()
+                    
             elif isinstance(values, ndarray):
-                _set_vector_items_array_of_float(self, indices, values)
+                values = asarray(values, dtype=float_)
+                    
             else:
-                raise TypeError("provide a scalar, GenericVector or numpy array of float to set items in Vector")
-        else:
-            raise TypeError("index must be an int, slice or a list or numpy array of integers")
+                raise TypeError("provide a scalar, GenericVector or numpy array of "\
+                                "float to set items in Vector")
+            
+            if len(values) != len(indices):
+                raise IndexError("expected same size of indices and values")
+
+            # If values passed.
+            if len(values) > 0:
+                self.set_local(values, indices)
+                
+        finally:
+            # Always call apply insert to avoid MPI dead locks if one or more
+            # ranks fails
+            self.apply("insert")
 
     def __len__(self):
         return self.size()
 
     def __iter__(self):
-        for i in xrange(self.size()):
-            yield _get_vector_single_item(self, i)
+        for i in range(self.size()):
+            yield self[i]
 
     def __add__(self, other):
         """x.__add__(y) <==> x+y"""
@@ -323,6 +399,15 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return NotImplemented
 
     def __div__(self,other):
+        """x.__div__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            ret = self.copy()
+            ret._scale(1.0 / other)
+            return ret
+        return NotImplemented
+
+    def __truediv__(self,other):
         """x.__div__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
@@ -393,6 +478,16 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return self
         return NotImplemented
 
+    def __itruediv__(self, other):
+        """x.__idiv__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            self._scale(1.0 / other)
+            return self
+        return NotImplemented
+
+    def __iter__(self):
+        return iter(self.array())
   %}
 }
 
@@ -411,14 +506,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
   PyObject* _data()
   {
     PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-						  boost::tuples::get<0>(self->data()),
-						  false);
+                                                 boost::tuples::get<0>(self->data()),
+                                                 false);
     PyObject* cols = %make_numpy_array(1, size_t)(boost::tuples::get<3>(self->data()),
-						 boost::tuples::get<1>(self->data()),
-						 false);
+                                                 boost::tuples::get<1>(self->data()),
+                                                 false);
     PyObject* values = %make_numpy_array(1, double)(boost::tuples::get<3>(self->data()),
-						    boost::tuples::get<2>(self->data()),
-						    false);
+                                                   boost::tuples::get<2>(self->data()),
+                                                   false);
 
     if ( rows == NULL || cols == NULL || values == NULL)
       return NULL;
@@ -440,7 +535,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import zeros
         m_range = self.local_range(0);
         A = zeros((m_range[1] - m_range[0], self.size(1)))
-        for i, row in enumerate(xrange(*m_range)):
+        for i, row in enumerate(range(*m_range)):
             column, values = self.getrow(row)
             A[i, column] = values
         return A
@@ -482,9 +577,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import ndarray
         from types import SliceType
         if not (isinstance(indices, tuple) and len(indices) == 2):
-            raise TypeError, "expected two indices"
+            raise TypeError("expected two indices")
         if not all(isinstance(ind, (int, SliceType, list, ndarray)) for ind in indices):
-            raise TypeError, "an int, slice, list or numpy array as indices"
+            raise TypeError("an int, slice, list or numpy array as indices")
 
         if isinstance(indices[0], int):
             if isinstance(indices[1], int):
@@ -510,14 +605,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import ndarray, isscalar
         from types import SliceType
         if not (isinstance(indices, tuple) and len(indices) == 2):
-            raise TypeError, "expected two indices"
+            raise TypeError("expected two indices")
         if not all(isinstance(ind, (int, SliceType, list, ndarray)) for ind in indices):
-            raise TypeError, "an int, slice, list or numpy array as indices"
+            raise TypeError("an int, slice, list or numpy array as indices")
 
         if isinstance(indices[0], int):
             if isinstance(indices[1], int):
                 if not isscalar(values):
-                    raise TypeError, "expected scalar for single value assigment"
+                    raise TypeError("expected scalar for single value assigment")
                 _set_matrix_single_item(self, indices[0], indices[1], values)
             else:
                 raise NotImplementedError
@@ -526,7 +621,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 elif isinstance(values,ndarray):
                     _set_matrix_items_array_of_float(self, indices[0], indices[1], values, True)
                 else:
-                    raise TypeError, "expected a GenericVector or numpy array of float"
+                    raise TypeError("expected a GenericVector or numpy array of float")
         elif isinstance(indices[1], int):
             raise NotImplementedError
             if isinstance(values, GenericVector):
@@ -534,7 +629,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             elif isinstance(values, ndarray):
                 _set_matrix_items_array_of_float(self, indices[1], indices[0], values, False)
             else:
-                raise TypeError, "expected a GenericVector or numpy array of float"
+                raise TypeError("expected a GenericVector or numpy array of float")
 
         else:
             raise NotImplementedError
@@ -552,14 +647,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 elif isinstance(values, ndarray) and len(values.shape)==2:
                     _set_matrix_items_array_of_float(self, indices[0], None, values)
                 else:
-                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+                    raise TypeError("expected a GenericMatrix or 2D numpy array of float")
             else:
                 if isinstance(values,GenericMatrix):
                     _set_matrix_items_matrix(self, indices[0], indices[1], values)
                 elif isinstance(values,ndarray) and len(values.shape) == 2:
                     _set_matrix_items_array_of_float(self, indices[0], indices[1], values)
                 else:
-                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+                    raise TypeError("expected a GenericMatrix or 2D numpy array of float")
     """
 
     def __add__(self,other):
@@ -624,6 +719,15 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return ret
         return NotImplemented
 
+    def __truediv__(self,other):
+        """x.__div__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            ret = self.copy()
+            ret._scale(1.0/other)
+            return ret
+        return NotImplemented
+
     def __radd__(self,other):
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
@@ -668,6 +772,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return NotImplemented
 
     def __idiv__(self,other):
+        """x.__idiv__(y) <==> x/y"""
+        from numpy import isscalar
+        if isscalar(other):
+            self._scale(1.0 / other)
+            return self
+        return NotImplemented
+
+    def __itruediv__(self,other):
         """x.__idiv__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
@@ -723,10 +835,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 %define AS_BACKEND_TYPE_MACRO(TENSOR_TYPE)
 %inline %{
-bool _has_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::TENSOR_TYPE>(*tensor); }
 
-boost::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::TENSOR_TYPE>(tensor); }
 %}
 
@@ -757,19 +869,20 @@ _matrix_vector_mul_map = {}
 // Run the downcast macro
 // ---------------------------------------------------------------------------
 AS_BACKEND_TYPE_MACRO(uBLASVector)
+AS_BACKEND_TYPE_MACRO(uBLASLinearOperator)
 
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
-bool _has_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+bool _has_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(*tensor); }
 
-boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(tensor); }
 
-bool _has_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor > tensor)
+bool _has_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(*tensor); }
 
-const boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+const std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(tensor); }
 %}
 
@@ -785,7 +898,8 @@ _as_backend_type_map[uBLASSparseMatrix] = _as_backend_type_uBLASSparseMatrix
 // ---------------------------------------------------------------------------
 %pythoncode %{
 _matrix_vector_mul_map[uBLASSparseMatrix] = [uBLASVector]
-_matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
+_matrix_vector_mul_map[uBLASDenseMatrix] = [uBLASVector]
+_matrix_vector_mul_map[uBLASLinearOperator] = [uBLASVector]
 %}
 
 // ---------------------------------------------------------------------------
@@ -794,9 +908,11 @@ _matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
 #ifdef HAS_PETSC
 AS_BACKEND_TYPE_MACRO(PETScVector)
 AS_BACKEND_TYPE_MACRO(PETScMatrix)
+AS_BACKEND_TYPE_MACRO(PETScLinearOperator)
 
 %pythoncode %{
 _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
+_matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
 %}
 
 #ifdef HAS_PETSC4PY
@@ -893,84 +1009,29 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 #endif  // HAS_PETSC4PY
 #endif  // HAS_PETSC
 
-#ifdef HAS_TRILINOS
-
-%runtime%{
-#include <Teuchos_RCP.hpp>
-#include <Epetra_CrsGraph.h>
-#include <Epetra_FECrsMatrix.h>
-#include <Epetra_FEVector.h>
-%}
-
-AS_BACKEND_TYPE_MACRO(EpetraVector)
-AS_BACKEND_TYPE_MACRO(EpetraMatrix)
-
-%pythoncode %{
-_matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
-%}
-
-%extend dolfin::EpetraMatrix{
-  Teuchos::RCP<Epetra_FECrsMatrix> _mat ()
-  {
-    Epetra_FECrsMatrix* tmp = self->mat().get();
-    return Teuchos::RCP<Epetra_FECrsMatrix>(tmp, false);
-  }
-
-%pythoncode %{
-    def mat(self):
-        "Return the Epetra_FECrsMatrix"
-        # Try importing PyTrilinos
-        try:
-            import PyTrilinos
-        except:
-            common.dolfin_error("dolfin/swig/la/post.i",
-                                "import PyTrilinos before accessing underlying Matrix",
-                                "PyTrilinos is not installed")
-
-        A = self._mat()
-
-        # Store the tensor to avoid garbage collection
-        # Need to be in try clause as this wont work when PyTrilinos
-        # is not installed
-        try:
-            A._org_vec = self
-        except:
-            pass
-
-        return A
-%}
+#ifdef HAS_SLEPC
+#ifdef HAS_SLEPC4PY
+// Override default SLEPcEigenSolver.eps() call.
+// These are wrapped up by slepcc4py typemaps so that
+// we see a slepc4py object on the python side.
+%feature("docstring") dolfin::SLEPcEigenSolver::eps "Return slepc4py representation of SLEPc EPS";
+%extend dolfin::SLEPcEigenSolver
+{
+  void eps(EPS &e)
+  { e = self->eps(); }
 }
-
-%extend dolfin::EpetraVector{
-  Teuchos::RCP<Epetra_FEVector> _vec ()
-  {
-    Epetra_FEVector* tmp = self->vec().get();
-    return Teuchos::RCP<Epetra_FEVector>(tmp, false);
-  }
-
-%pythoncode %{
-    def vec(self):
-        "Return the Epetra_FEVector"
-        try:
-            import PyTrilinos
-        except:
+#else
+%extend dolfin::SLEPcEigenSolver{
+    %pythoncode %{
+        def eps(self):
             common.dolfin_error("dolfin/swig/la/post.i",
-                                "import PyTrilinos before accessing underlying Vector",
-                                "PyTrilinos is not installed")
-        v = self._vec()
-
-        # Store the tensor to avoid garbage collection
-        # Need to be in try clause as this wont work when PyTrilinos
-        # is not installed
-        try:
-            v._org_vec = self
-        except:
-            pass
-
-        return v
-%}
+                                "access SLEPcEigenSolver objects in python",
+                                "dolfin must be configured with slepc4py enabled")
+            return None
+    %}
 }
-#endif
+#endif  // HAS_PETSC4PY
+#endif  // HAS_PETSC
 
 // ---------------------------------------------------------------------------
 // Dynamic wrappers for GenericTensor::as_backend_type and GenericTensor::has_type,

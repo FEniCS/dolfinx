@@ -46,7 +46,7 @@ LinearVariationalSolver(LinearVariationalProblem& problem)
 }
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
-LinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem)
+LinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem)
   : _problem(problem)
 {
   // Set parameters
@@ -66,10 +66,10 @@ void LinearVariationalSolver::solve()
 
   // Get problem data
   dolfin_assert(_problem);
-  boost::shared_ptr<const Form> a(_problem->bilinear_form());
-  boost::shared_ptr<const Form> L(_problem->linear_form());
-  boost::shared_ptr<Function> u(_problem->solution());
-  std::vector<boost::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
+  std::shared_ptr<const Form> a(_problem->bilinear_form());
+  std::shared_ptr<const Form> L(_problem->linear_form());
+  std::shared_ptr<Function> u(_problem->solution());
+  std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   dolfin_assert(a);
   dolfin_assert(L);
@@ -77,8 +77,8 @@ void LinearVariationalSolver::solve()
 
   // Create matrix and vector
   dolfin_assert(u->vector());
-  boost::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix();
-  boost::shared_ptr<GenericVector> b = u->vector()->factory().create_vector();
+  std::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix();
+  std::shared_ptr<GenericVector> b = u->vector()->factory().create_vector();
 
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)
@@ -88,7 +88,7 @@ void LinearVariationalSolver::solve()
     {
       dolfin_error("LinearVariationalSolver.cpp",
                    "symmetric assembly in linear variational solver",
-                   "Empty linear forms cannot be used with symmetric assmebly");
+                   "Empty linear forms cannot be used with symmetric assembly");
     }
 
     // Need to cast to DirichletBC to use assemble_system
@@ -142,11 +142,11 @@ void LinearVariationalSolver::solve()
     info(*A, true);
 
   // Get list of available methods
-  std::vector<std::pair<std::string, std::string> >
+  std::vector<std::pair<std::string, std::string>>
     lu_methods = u->vector()->factory().lu_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
+  std::vector<std::pair<std::string, std::string>>
     krylov_methods = u->vector()->factory().krylov_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
+  std::vector<std::pair<std::string, std::string>>
     preconditioners = u->vector()->factory().krylov_solver_preconditioners();
 
   // Choose linear solver

@@ -204,14 +204,12 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void ExodusFile::operator<<(const Function& u)
 {
-  u.update();
   write_function(u, counter);
 }
 //----------------------------------------------------------------------------
 void ExodusFile::operator<<(const std::pair<const Function*, double> u)
 {
   dolfin_assert(u.first);
-  u.first->update();
   write_function(*(u.first), u.second);
 }
 //----------------------------------------------------------------------------
@@ -310,7 +308,7 @@ ExodusFile::create_vtk_mesh(const Mesh& mesh) const
   vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
     vtkSmartPointer<vtkUnstructuredGrid>::New();
 
-  // Toplogical dimension of mesh
+  // Topological dimension of mesh
   const std::size_t D = mesh.topology().dim();
 
   // Set the points

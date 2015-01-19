@@ -21,7 +21,7 @@
 #ifndef __RESTRICTION_H
 #define __RESTRICTION_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -75,7 +75,7 @@ namespace dolfin
     ///         Domain markers for the cells of the mesh.
     ///     domain_number (std::size_t)
     ///         Identifier for domain.
-    Restriction(boost::shared_ptr<const MeshFunction<std::size_t> > domain_markers,
+    Restriction(std::shared_ptr<const MeshFunction<std::size_t> > domain_markers,
                 std::size_t domain_number);
 
     /// Return the full unrestricted mesh
@@ -106,7 +106,7 @@ namespace dolfin
                              const SubDomain& sub_domain, std::size_t dim);
 
     // Domain markers
-    boost::shared_ptr<const MeshFunction<std::size_t> > _domain_markers;
+    std::shared_ptr<const MeshFunction<std::size_t> > _domain_markers;
 
     // Identifier for domain
     std::size_t _domain_number;

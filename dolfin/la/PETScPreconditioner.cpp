@@ -22,7 +22,6 @@
 
 #ifdef HAS_PETSC
 
-#include <boost/assign/list_of.hpp>
 #include <boost/lexical_cast.hpp>
 #include <petscksp.h>
 #include <petscmat.h>
@@ -40,61 +39,58 @@ using namespace dolfin;
 
 // Mapping from preconditioner string to PETSc
 const std::map<std::string, const PCType> PETScPreconditioner::_methods
-  = boost::assign::map_list_of("default",          "")
-                              ("none",             PCNONE)
-                              ("ilu",              PCILU)
-                              ("icc",              PCICC)
-                              ("jacobi",           PCJACOBI)
-                              ("bjacobi",          PCBJACOBI)
-                              ("sor",              PCSOR)
-                              ("additive_schwarz", PCASM)
-                              #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
-                              ("petsc_amg",        PCGAMG)
-                              #endif
-                              #if PETSC_HAVE_HYPRE
-                              ("hypre_amg",        PCHYPRE)
-                              ("hypre_euclid",     PCHYPRE)
-                              ("hypre_parasails",  PCHYPRE)
-                              #endif
-                              #if PETSC_HAVE_ML
-                              ("amg",              PCML)
-                              ("ml_amg",           PCML)
-                              #elif PETSC_HAVE_HYPRE
-                              ("amg",              PCHYPRE)
-                              #endif
-                              ;
+= { {"default",          ""},
+    {"ilu",              PCILU},
+    {"icc",              PCICC},
+    {"jacobi",           PCJACOBI},
+    {"bjacobi",          PCBJACOBI},
+    {"sor",              PCSOR},
+    {"additive_schwarz", PCASM},
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
+    {"petsc_amg",        PCGAMG},
+#endif
+#if PETSC_HAVE_HYPRE
+    {"hypre_amg",        PCHYPRE},
+    {"hypre_euclid",     PCHYPRE},
+    {"hypre_parasails",  PCHYPRE},
+#endif
+#if PETSC_HAVE_ML
+    {"amg",              PCML},
+    {"ml_amg",           PCML},
+#elif PETSC_HAVE_HYPRE
+    {"amg",              PCHYPRE},
+#endif
+    {"none",             PCNONE} };
 
 // Mapping from preconditioner string to description string
 const std::vector<std::pair<std::string, std::string> >
 PETScPreconditioner::_methods_descr
-  = boost::assign::pair_list_of
-    ("default",          "default preconditioner")
-    ("none",             "No preconditioner")
-    ("ilu",              "Incomplete LU factorization")
-    ("icc",              "Incomplete Cholesky factorization")
-    ("sor",              "Successive over-relaxation")
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
-    ("petsc_amg",        "PETSc algebraic multigrid")
-    #endif
-    #if HAS_PETSC_CUSP
-    ("jacobi",           "Jacobi iteration (GPU enabled)")
-    ("bjacobi",          "Block Jacobi iteration (GPU enabled)")
-    ("additive_schwarz", "Additive Schwarz (GPU enabled)")
+= { {"default",          "default preconditioner"},
+    {"ilu",              "Incomplete LU factorization"},
+    {"icc",              "Incomplete Cholesky factorization"},
+    {"sor",              "Successive over-relaxation"},
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
+    {"petsc_amg",        "PETSc algebraic multigrid"},
+#endif
+#if HAS_PETSC_CUSP
+    {"jacobi",           "Jacobi iteration (GPU enabled)"},
+    {"bjacobi",          "Block Jacobi iteration (GPU enabled)"},
+    {"additive_schwarz", "Additive Schwarz (GPU enabled)"},
     #else
-    ("jacobi",           "Jacobi iteration")
-    ("bjacobi",          "Block Jacobi iteration")
-    ("additive_schwarz", "Additive Schwarz")
-    #endif
-    #if PETSC_HAVE_HYPRE
-    ("amg",              "Algebraic multigrid")
-    ("hypre_amg",        "Hypre algebraic multigrid (BoomerAMG)")
-    ("hypre_euclid",     "Hypre parallel incomplete LU factorization")
-    ("hypre_parasails",  "Hypre parallel sparse approximate inverse")
-    #endif
-    #if PETSC_HAVE_ML
-    ("ml_amg",           "ML algebraic multigrid")
-    #endif
-    ;
+    {"jacobi",           "Jacobi iteration"},
+    {"bjacobi",          "Block Jacobi iteration"},
+    {"additive_schwarz", "Additive Schwarz"},
+#endif
+#if PETSC_HAVE_HYPRE
+    {"amg",              "Algebraic multigrid"},
+    {"hypre_amg",        "Hypre algebraic multigrid (BoomerAMG)"},
+    {"hypre_euclid",     "Hypre parallel incomplete LU factorization"},
+    {"hypre_parasails",  "Hypre parallel sparse approximate inverse"},
+#endif
+#if PETSC_HAVE_ML
+    {"ml_amg",           "ML algebraic multigrid"},
+#endif
+    {"none",             "No preconditioner"} };
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 PETScPreconditioner::preconditioners()
@@ -119,7 +115,7 @@ Parameters PETScPreconditioner::default_parameters()
   // ML package parameters
   Parameters p_ml("ml");
   p_ml.add<std::size_t>("print_level", 0, 10);
-  p_ml.add<std::string>("cycle_type", boost::assign::list_of("v")("w"));
+  p_ml.add<std::string>("cycle_type", {"v", "w"});
   p_ml.add<std::size_t>("max_num_levels");
   p_ml.add<std::size_t>("max_coarse_size");
   p_ml.add<double>("aggregation_damping_factor");
@@ -129,12 +125,11 @@ Parameters PETScPreconditioner::default_parameters()
   p_ml.add<double>("energy_minimization_threshold");
   p_ml.add<double>("auxiliary_threshold");
   p_ml.add<bool>("repartition");
-  p_ml.add<std::string>("repartition_type",
-                        boost::assign::list_of("Zoltan")("ParMETIS"));
+  p_ml.add<std::string>("repartition_type", {"Zoltan", "ParMETIS"});
   p_ml.add<std::string>("zoltan_repartition_scheme",
-               boost::assign::list_of("RCB")("hypergraph")("fast_hypergraph"));
+    {"RCB", "hypergraph", "fast_hypergraph"});
   p_ml.add<std::string>("aggregation_scheme",
-            boost::assign::list_of("Uncoupled")("Coupled")("MIS")("METIS"));
+    {"Uncoupled", "Coupled", "MIS", "METIS"});
   p.add(p_ml);
 
   // PETSc GAMG parameters
@@ -434,7 +429,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
 
     // --- PETSc parameters
 
-    // Number of smmoother applications
+    // Number of smoother applications
     if (parameters("mg")["num_sweeps"].is_set())
     {
       const std::size_t num_sweeps = parameters("mg")["num_sweeps"];
@@ -450,20 +445,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
       PetscOptionsSetValue("-pc_mg_cycles", type.c_str());
     }
 
-    // Coarse level solver
-    #if PETSC_HAVE_MUMPS
-    PetscOptionsSetValue("-mg_coarse_ksp_type", "preonly");
-    PetscOptionsSetValue("-mg_coarse_pc_type", "lu");
-    PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
-    #endif
-
     // Smoother on all levels
     PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
     //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
     //                      "0.0,1.1");
     //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
     PetscOptionsSetValue("-mg_levels_ksp_max_it",
-                          boost::lexical_cast<std::string>(4).c_str());
+                          boost::lexical_cast<std::string>(2).c_str());
 
     //PetscOptionsSetValue("-mg_levels_pc_type", "none");
     PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
@@ -491,7 +479,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
 
     #else
     warning("PETSc has not been compiled with the ML library for   "
-            "algerbraic multigrid. Default PETSc solver will be used. "
+            "algebraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of ML is recommended.");
     #endif
   }
@@ -499,20 +487,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   {
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
 
-    // The PETSc AMG (smoothed aggegration) preconditioner
+    // The PETSc AMG (smoothed aggregation) preconditioner
     //PetscOptionsSetValue("-log_summary",
     //                     boost::lexical_cast<std::string>(1).c_str());
 
     // Set preconditioner to ML
     ierr = PCSetType(pc, PCGAMG);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
-
-    // Coarse level solver
-    #if PETSC_HAVE_MUMPS
-    PetscOptionsSetValue("-mg_coarse_ksp_type", "preonly");
-    PetscOptionsSetValue("-mg_coarse_pc_type", "lu");
-    PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
-    #endif
 
     // Output level
     if (parameters("gamg")["verbose"].is_set())
@@ -595,7 +576,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
       if (ierr != 0) petsc_error(ierr, __FILE__, "PCGAMGSetRepartitioning");
     }
 
-    // Maximum numebr of levels
+    // Maximum number of levels
     if (parameters("gamg")["max_num_levels"].is_set())
     {
       const std::size_t num_levels = parameters("gamg")["max_num_levels"];
@@ -771,7 +752,7 @@ void PETScPreconditioner::set_fieldsplit(PETScKrylovSolver& solver,
     if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
 
     // Add split
-    PCFieldSplitSetIS(pc, split_names[i].c_str(), is);
+    ierr = PCFieldSplitSetIS(pc, split_names[i].c_str(), is);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCFieldSplitSetIS");
 
     // Clean up IndexSet

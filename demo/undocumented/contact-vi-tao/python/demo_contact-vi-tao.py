@@ -1,8 +1,8 @@
-"""This demo program uses of the interface to TAO solver for
- variational inequalities to solve a contact mechanics problem in
- FEnics.  The example considers a heavy elastic circle in a box of the
- same size.
- """
+"""This demo uses PETSc's TAO solver for nonlinear (bound-constrained)
+optimisation problems to solve a contact mechanics problem in FEniCS.
+We consider here a heavy hyperelastic circle under body force
+in a box of the same size."""
+
 # Copyright (C) 2012 Corrado Maurini
 #
 # This file is part of DOLFIN.
@@ -20,15 +20,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Corrado Maurini 2013
+# Modified by Tianyi Li 2014
 #
 # First added:  2012-09-03
-# Last changed: 2013-04-15
-#
+# Last changed: 2014-07-19
+
+from __future__ import print_function
 from dolfin import *
 
-if not has_tao():
-    print "DOLFIN must be compiled with TAO to run this demo."
+if not has_petsc_tao():
+    print("DOLFIN must be compiled with TAO to run this demo.")
     exit(0)
 
 # Read mesh
@@ -37,68 +38,97 @@ mesh = Mesh("../circle_yplane.xml.gz")
 # Create function space
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
-# Create test and trial functions, and source term
-u, w = TrialFunction(V), TestFunction(V)
+# Define functions
+du = TrialFunction(V)            # Incremental displacement
+v  = TestFunction(V)             # Test function
+u  = Function(V)                 # Displacement from previous iteration
+B  = Constant((0.0, -1.5))       # Body force per unit volume
+
+# Kinematics
+I = Identity(u.geometric_dimension())  # Identity tensor
+F = I + grad(u)             # Deformation gradient
+C = F.T*F                   # Right Cauchy-Green tensor
+
+# Invariants of deformation tensors
+Ic = tr(C)
+J  = det(F)
 
 # Elasticity parameters
 E, nu = 10.0, 0.3
-mu = Constant(E/(2.0*(1.0 + nu)))
-lmbda = Constant(E*nu/((1.0 + nu)*(1.0 -2.0*nu)))
-f = Constant((0.0, -0.1))
+mu, lmbda = Constant(E/(2*(1+nu))), Constant(E*nu/((1+nu)*(1-2*nu)))
 
-# Stress and strains
-def eps(u):
-    return sym(grad(u))
+# Stored strain energy density (compressible neo-Hookean model)
+psi = (mu/2)*(Ic-2) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 
-def sigma(epsilon):
-    return 2*mu*epsilon + lmbda*tr(epsilon)*Identity(w.geometric_dimension())
+# Total potential energy
+Pi = psi*dx - dot(B, u)*dx
 
-# Weak formulation
-F = inner(sigma(eps(u)), eps(w))*dx - dot(f, w)*dx
+# Compute first variation of Pi (directional derivative about u in the
+# direction of v)
+F = derivative(Pi, u, v)
 
-# Extract bilinear and linear forms from F
-a, L = lhs(F), rhs(F)
+# Compute Jacobian of F
+J = derivative(F, u, du)
 
-# Assemble the linear system
-A, b = assemble_system(a, L)
+# Define the minimisation problem by using OptimisationProblem class
+class ContactProblem(OptimisationProblem):
 
-# Define the constraints for the displacement
-# The displacement u must be such that the current configuration x+u
-# does dot escape the xbox [xmin,xmax]x[umin,ymax]
-# This formulation is imprecise because it assumes
-# large displacements while the energy assumes linearization
-constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  1.0, ymax =  1.0)
-constraint_l = Expression( ("xmin-x[0]","ymin-x[1]"), xmin = -1.0, ymin = -1.0)
+    def __init__(self):
+        OptimisationProblem.__init__(self)
+    
+    # Objective function
+    def f(self, x):
+        u.vector()[:] = x
+        return assemble(Pi)
+
+    # Gradient of the objective function
+    def F(self, b, x):
+        u.vector()[:] = x
+        assemble(F, tensor=b)
+
+    # Hessian of the objective function
+    def J(self, A, x):
+        u.vector()[:] = x
+        assemble(J, tensor=A)
+
+# The displacement u must be such that the current configuration
+# doesn't escape the box [xmin, xmax] x [ymin, ymax]
+constraint_u = Expression(("xmax-x[0]", "ymax-x[1]"), xmax=1.0, ymax=1.0)
+constraint_l = Expression(("xmin-x[0]", "ymin-x[1]"), xmin=-1.0, ymin=-1.0)
 u_min = interpolate(constraint_l, V)
 u_max = interpolate(constraint_u, V)
 
-# Define the function to store the solution
-usol=Function(V)
+# Symmetry condition (to block rigid body rotations)
+def symmetry_line(x, on_boundary):
+    return near(x[0], 0)
+bc = DirichletBC(V.sub(0), Constant(0.0), symmetry_line)
+bc.apply(u_min.vector())  # BC will be incorporated into the lower
+bc.apply(u_max.vector())  # and upper bounds
 
-# Create the TAOLinearBoundSolver
-solver=TAOLinearBoundSolver("tao_tron","tfqmr")
+# Create the PETScTAOSolver
+solver = PETScTAOSolver()
 
 # Set some parameters
-solver.parameters["monitor_convergence"]=True
-solver.parameters["report"]=True
-solver.parameters["krylov_solver"]["absolute_tolerance"] = 1e-7
-solver.parameters["krylov_solver"]["relative_tolerance"] = 1e-7
-solver.parameters["krylov_solver"]["monitor_convergence"] = False
+solver.parameters["method"] = "tron"  # when using gpcg make sure that you have a constant Hessian
+# solver.parameters["linear_solver"] = "nash"
+solver.parameters["line_search"] = "gpcg"
+# solver.parameters["preconditioner"] = "ml_amg"
+solver.parameters["monitor_convergence"] = True
+solver.parameters["report"] = True
 
 # Uncomment this line to see the available parameters
-info(solver.parameters, True)
+# info(parameters, True)
+
+# Parse (PETSc) parameters
+parameters.parse()
 
 # Solve the problem
-solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())
+solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
 
-# Save solution in VTK format
-file = File("displacement.pvd")
-file << usol
+# Save solution in XDMF format
+out = File("u.xdmf")
+out << u
 
-# plot the stress
-stress = sigma(eps(usol))
-plot(tr(stress),title = "Trace of the stress tensor" ,mode = "color")
-
-# plot the current configuration
-plot(usol, mode = "displacement",wireframe=True, title="Displacement field")
+# Plot the current configuration
+plot(u, mode="displacement", wireframe=True, title="Displacement field")
 interactive()

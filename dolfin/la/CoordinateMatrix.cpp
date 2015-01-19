@@ -49,11 +49,11 @@ CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
       _cols.insert(_cols.end(), columns.begin(), columns.end());
       _vals.insert(_vals.end(), values.begin(), values.end());
     }
-    assert(_rows.size() == _cols.size());
+    dolfin_assert(_rows.size() == _cols.size());
   }
   else
   {
-    assert(_size[0] == _size[1]);
+    dolfin_assert(_size[0] == _size[1]);
     for (std::size_t i = local_row_range.first; i < local_row_range.second; ++i)
     {
       // Get column and value data for row
@@ -71,7 +71,7 @@ CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
         }
       }
     }
-    assert(_rows.size() == _cols.size());
+    dolfin_assert(_rows.size() == _cols.size());
   }
 
   // Add 1 for Fortran-style indices
@@ -89,7 +89,7 @@ double CoordinateMatrix::norm(std::string norm_type) const
 {
   if (norm_type != "frobenius")
   {
-    error("Do not know to comput %s norm for CoordinateMatrix",
+    error("Do not know to compute %s norm for CoordinateMatrix",
           norm_type.c_str());
   }
 

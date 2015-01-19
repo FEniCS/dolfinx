@@ -22,9 +22,9 @@
 #define __GRAPH_BUILDER_H
 
 #include <set>
+#include <boost/unordered_map.hpp>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
 #include "Graph.h"
 
@@ -64,6 +64,8 @@ namespace dolfin
                          std::set<std::size_t>& ghost_vertices);
 
   private:
+
+    friend class MeshPartitioning;
 
     typedef boost::unordered_map<std::vector<std::size_t>, std::size_t>
       FacetCellMap;

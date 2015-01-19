@@ -25,7 +25,7 @@
 
 #include <set>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "ublas.h"
@@ -63,25 +63,25 @@ namespace dolfin
     ~uBLASKrylovSolver();
 
     /// Solve the operator (matrix)
-    void set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A)
     { set_operators(A, A); }
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                       boost::shared_ptr<const GenericLinearOperator> P)
-    { _A = A; _P = P; }
+    void set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                       std::shared_ptr<const GenericLinearOperator> P)
+    { _matA = A; _matP = P; }
 
 
     /// Return the operator (matrix)
     const GenericLinearOperator& get_operator() const
     {
-      if (!_A)
+      if (!_matA)
       {
         dolfin_error("uBLASKrylovSolver.cpp",
                      "access operator for uBLAS Krylov solver",
                      "Operator has not been set");
       }
-      return *_A;
+      return *_matA;
     }
 
     /// Solve linear system Ax = b and return number of iterations
@@ -136,7 +136,7 @@ namespace dolfin
     std::string _method;
 
     /// Preconditioner
-    boost::shared_ptr<uBLASPreconditioner> _pc;
+    std::shared_ptr<uBLASPreconditioner> _pc;
 
     /// Solver parameters
     double rtol, atol, div_tol;
@@ -144,10 +144,10 @@ namespace dolfin
     bool report;
 
     /// Operator (the matrix)
-    boost::shared_ptr<const GenericLinearOperator> _A;
+    std::shared_ptr<const GenericLinearOperator> _matA;
 
-    /// Matrix used to construct the preconditoner
-    boost::shared_ptr<const GenericLinearOperator> _P;
+    /// Matrix used to construct the preconditioner
+    std::shared_ptr<const GenericLinearOperator> _matP;
 
   };
   //---------------------------------------------------------------------------
@@ -172,7 +172,7 @@ namespace dolfin
     // Reinitialise x if necessary
     if (x.size() != b.size())
     {
-      x.resize(b.mpi_comm(), b.local_range());
+      x.resize(b.size());
       x.zero();
     }
 
@@ -181,7 +181,7 @@ namespace dolfin
 
     // Write a message
     if (report)
-      info("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
+      info("Solving linear system of size %ld x %ld (uBLAS Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
     _pc->init(P);
@@ -287,7 +287,7 @@ namespace dolfin
       // L2 norm of residual (for most recent restart)
       const double beta = norm_2(_r);
 
-     // Save intial residual (from restart 0)
+     // Save initial residual (from restart 0)
      if(iteration == 0)
        beta0 = beta;
 
@@ -297,7 +297,7 @@ namespace dolfin
        return iteration;
      }
 
-      // Intialise gamma
+      // Initialise gamma
       _gamma.clear();
       _gamma(0) = beta;
 
@@ -362,9 +362,9 @@ namespace dolfin
         _gamma(j) = temp1;
         r_norm = fabs(_gamma(j+1));
 
-        // Add h to H matrix. Would ne nice to use
+        // Add h to H matrix. Would be nice to use
         //   noalias(column(H, j)) = subrange(h, 0, restart);
-        // but this gives an error when uBLAS debugging is turned onand H
+        // but this gives an error when uBLAS debugging is turned on and H
         // is a triangular matrix
         for(std::size_t i=0; i<j+1; ++i)
           H(i,j) = _h(i);
@@ -401,7 +401,7 @@ namespace dolfin
                                                  const uBLASVector& b,
                                                  bool& converged) const
   {
-    // Get uderlying uBLAS vectors
+    // Get underlying uBLAS vectors
     ublas_vector& _x = x.vec();
     const ublas_vector& _b = b.vec();
 

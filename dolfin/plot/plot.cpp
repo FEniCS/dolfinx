@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg and Fredrik Valdmanis
+// Copyright (C) 2007-2014 Anders Logg and Fredrik Valdmanis
 //
 // This file is part of DOLFIN.
 //
@@ -20,13 +20,14 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2013-09-19
+// Last changed: 2014-06-11
 
 #include <cstdlib>
 #include <sstream>
 #include <list>
 
 #include <dolfin/common/utils.h>
+#include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -45,16 +46,17 @@ using namespace dolfin;
 // in this file.  Used to search for plotter objects in get_plotter()
 // and to ensure that plotter objects are correctly destroyed when the
 // program terminates.
-static std::list<boost::shared_ptr<VTKPlotter> > stored_plotters;
+static std::list<std::shared_ptr<VTKPlotter> > stored_plotters;
 
 //-----------------------------------------------------------------------------
 // Function for getting already instantiated VTKPlotter for
 // the given object. If none is found, a new one is created.
-boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const Variable> obj, std::string key)
+std::shared_ptr<VTKPlotter> get_plotter(std::shared_ptr<const Variable> obj,
+                                        std::string key)
 {
   log(TRACE, "Looking for cached VTKPlotter [%s].", key.c_str());
 
-  for (std::list<boost::shared_ptr<VTKPlotter> >::iterator it = stored_plotters.begin(); it != stored_plotters.end(); it++)
+  for (auto it = stored_plotters.begin(); it != stored_plotters.end(); it++)
   {
     if ( (*it)->key() == key && (*it)->is_compatible(obj) )
     {
@@ -65,7 +67,7 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const Variable> obj,
 
   // No previous plotter found, so create a new one
   log(TRACE, "No VTKPlotter found in cache, creating new plotter.");
-  boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(obj));
+  std::shared_ptr<VTKPlotter> plotter(new VTKPlotter(obj));
   plotter->set_key(key);
   stored_plotters.push_back(plotter);
 
@@ -73,9 +75,9 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const Variable> obj,
 }
 //-----------------------------------------------------------------------------
 // Function for plotting objects
-boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const Variable> obj,
-                                          boost::shared_ptr<const Parameters> p,
-                                          std::string key)
+std::shared_ptr<VTKPlotter> plot_object(std::shared_ptr<const Variable> obj,
+                                        std::shared_ptr<const Parameters> p,
+                                        std::string key)
 {
   // Get plotter from cache. Key given as parameter takes precedence.
   const Parameter *param_key = p->find_parameter("key");
@@ -84,7 +86,7 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const Variable> obj,
     key = (std::string)*param_key;
   }
 
-  boost::shared_ptr<VTKPlotter> plotter = get_plotter(obj, key);
+  std::shared_ptr<VTKPlotter> plotter = get_plotter(obj, key);
 
   // Set plotter parameters
   plotter->parameters.update(*p);
@@ -95,9 +97,9 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const Variable> obj,
   return plotter;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Parameters> new_parameters(std::string title, std::string mode)
+std::shared_ptr<Parameters> new_parameters(std::string title, std::string mode)
 {
-  boost::shared_ptr<Parameters> p(new Parameters());
+  std::shared_ptr<Parameters> p(new Parameters());
   if (!title.empty())
   {
     p->add("title", title);
@@ -111,62 +113,73 @@ void dolfin::interactive(bool really)
   VTKPlotter::all_interactive(really);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
-					   std::string title,
-					   std::string mode)
+std::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
+                                         std::string title,
+                                         std::string mode)
 {
   return plot(reference_to_no_delete_pointer(var), title, mode);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Variable> var,
-					   std::string title, std::string mode)
+std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Variable> var,
+                                         std::string title, std::string mode)
 {
   return plot(var, new_parameters(title, mode));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
-					   const Parameters& p)
+std::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
+                                         const Parameters& p)
 {
   return plot(reference_to_no_delete_pointer(var),
 	      reference_to_no_delete_pointer(p));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Variable> var,
-					   boost::shared_ptr<const Parameters> p)
+std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Variable> var,
+                                         std::shared_ptr<const Parameters> p)
 {
   return plot_object(var, p, VTKPlotter::to_key(*var));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
-					   const Mesh& mesh,
-					   std::string title, std::string mode)
+std::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
+                                         const Mesh& mesh,
+                                         std::string title, std::string mode)
 {
   return plot(reference_to_no_delete_pointer(expression),
 	      reference_to_no_delete_pointer(mesh), title, mode);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> expression,
-					   boost::shared_ptr<const Mesh> mesh,
-					   std::string title, std::string mode)
+std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Expression> expression,
+                                         std::shared_ptr<const Mesh> mesh,
+                                         std::string title, std::string mode)
 {
   return plot(expression, mesh, new_parameters(title, mode));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
-                                           const Mesh& mesh,
-                                            const Parameters& p)
+std::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
+                                         const Mesh& mesh,
+                                         const Parameters& p)
 {
   return plot(reference_to_no_delete_pointer(expression),
 	      reference_to_no_delete_pointer(mesh),
 	      reference_to_no_delete_pointer(p));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> expression,
-					   boost::shared_ptr<const Mesh> mesh,
-					   boost::shared_ptr<const Parameters> p)
+std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Expression> expression,
+                                         std::shared_ptr<const Mesh> mesh,
+                                         std::shared_ptr<const Parameters> p)
 {
-  boost::shared_ptr<const ExpressionWrapper>
+  std::shared_ptr<const ExpressionWrapper>
     wrapper(new ExpressionWrapper(expression, mesh));
   return plot_object(wrapper, p, VTKPlotter::to_key(*expression));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MultiMesh& multimesh)
+{
+  plot(reference_to_no_delete_pointer(multimesh));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(std::shared_ptr<const MultiMesh> multimesh)
+{
+  dolfin_assert(multimesh);
+  multimesh->_plot();
 }
 //-----------------------------------------------------------------------------

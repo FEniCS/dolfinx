@@ -81,7 +81,8 @@ void SubSystemsManager::init_mpi()
     return;
 
   // Init MPI with highest level of thread support and take responsibility
-  char* c;
+  std::string s("");
+  char* c = const_cast<char *>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
   singleton().control_mpi = true;
   #else
@@ -105,7 +106,8 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
   singleton().control_mpi = true;
 
-  const bool print_thread_support = dolfin::parameters["print_mpi_thread_support_level"];
+  const bool print_thread_support
+    = dolfin::parameters["print_mpi_thread_support_level"];
   if (print_thread_support)
   {
     switch (provided)
@@ -123,7 +125,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
         printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
         break;
       default:
-        printf("MPI_Init_thread level = unkown\n");
+        printf("MPI_Init_thread level = unknown\n");
       }
   }
 
@@ -163,20 +165,19 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (singleton().petsc_initialized)
     return;
 
-  // Initialized MPI (do it here rather than letting PETSc do it to make
-  // sure we MPI is intialized with thread suppport
+  // Initialized MPI (do it here rather than letting PETSc do it to
+  // make sure we MPI is initialized with any thread support
   init_mpi();
 
   // Get status of MPI before PETSc initialisation
   const bool mpi_init_status = mpi_initialized();
 
-  // Print message if PETSc is intialised with command line arguments
+  // Print message if PETSc is initialised with command line arguments
   if (argc > 1)
     log(TRACE, "Initializing PETSc with given command-line arguments.");
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
-
   if (is_initialized)
   {
     PetscOptionsInsert(&argc, &argv, PETSC_NULL);
@@ -184,8 +185,18 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   else
   {
     // Initialize PETSc
-    PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+    PetscInitializeNoArguments();
+
+    // Set options to avoid common failures with some 3rd party solvers
+    PetscOptionsSetValue("-mat_mumps_icntl_7", "0");
+    PetscOptionsSetValue("-mat_superlu_dist_colperm", "MMD_AT_PLUS_A");
+
+    // Pass command line arguments to PETSc (will overwrite any
+    // default above)
+    PetscOptionsInsert(&argc, &argv, PETSC_NULL);
   }
+
+  // Set PETSc
 
   #ifdef HAS_SLEPC
   // Initialize SLEPc
@@ -200,7 +211,8 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   // Remember that PETSc has been initialized
   singleton().petsc_initialized = true;
 
-  // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
+  // Determine if PETSc initialised MPI (and is therefore responsible
+  // for MPI finalization)
   if (mpi_initialized() && !mpi_init_status)
     singleton().control_mpi = false;
 
@@ -241,17 +253,19 @@ void SubSystemsManager::finalize_mpi()
   if (mpi_initialized && singleton().control_mpi)
   {
     // Check in MPI has already been finalised (possibly incorrectly by a
-    // 3rd party libary). Is it hasn't, finalise as normal.
+    // 3rd party library). If it hasn't, finalise as normal.
     int mpi_finalized;
     MPI_Finalized(&mpi_finalized);
     if (!mpi_finalized)
-      MPI::Finalize();
+      MPI_Finalize();
     else
     {
       // Use std::cout since log system may fail because MPI has been shut down.
       std::cout << "DOLFIN is responsible for MPI, but it has been finalized elsewhere prematurely." << std::endl;
-      std::cout << "This is usually due to a bug in a 3rd party library, and can lead to unpredictable behaviour." << std::endl;
-      std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are imported before the DOLFIN module." << std::endl;
+      std::cout << "This is usually due to a bug in a 3rd party library, and can lead to unpredictable behaviour."
+                << std::endl;
+      std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are imported before the DOLFIN module."
+                << std::endl;
     }
 
     singleton().control_mpi = false;

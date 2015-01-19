@@ -26,7 +26,6 @@
 
 namespace dolfin
 {
-
   class Cell;
   class FiniteElement;
   class Function;
@@ -67,7 +66,7 @@ namespace dolfin
 
     double _x[3];
 
-    boost::shared_ptr<const FiniteElement> _element;
+    std::shared_ptr<const FiniteElement> _element;
 
     boost::scoped_ptr<Cell> dolfin_cell;
 

@@ -44,6 +44,9 @@ from dolfin import *
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["optimize"] = True
 
+# Make mesh ghosted for evaluation of DG terms
+parameters["ghost_mode"] = "shared_facet"
+
 # Create mesh and define function space
 mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 2)
@@ -78,7 +81,7 @@ alpha = Constant(8.0)
 a = inner(div(grad(u)), div(grad(v)))*dx \
   - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
   - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
-  + alpha('+')/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
+  + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
 
 # Define linear form
 L = f*v*dx

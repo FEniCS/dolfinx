@@ -140,6 +140,9 @@ void HDF5Utility::get_global_dof(
   std::vector<std::vector<std::size_t> > receive_cell_dofs(num_processes);
   MPI::all_to_all(mpi_comm, send_cell_dofs, receive_cell_dofs);
 
+  std::vector<std::size_t> local_to_global_map;
+  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+
   // Return back the global dof to the process the request came from
   std::vector<std::vector<dolfin::la_index> >
     send_global_dof_back(num_processes);
@@ -150,7 +153,10 @@ void HDF5Utility::get_global_dof(
     {
       const std::vector<dolfin::la_index>& dmap = dofmap.cell_dofs(rdof[j]);
       dolfin_assert(rdof[j + 1] < dmap.size());
-      send_global_dof_back[i].push_back(dmap[rdof[j + 1]]);
+      const dolfin::la_index local_index = dmap[rdof[j + 1]];
+      dolfin_assert(local_index >= 0);
+      dolfin_assert((std::size_t)local_index < local_to_global_map.size());
+      send_global_dof_back[i].push_back(local_to_global_map[local_index]);
     }
   }
 
@@ -358,25 +364,33 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
     = mesh.topology().shared_entities(0);
 
   // My process rank
-  const unsigned int my_rank = MPI::rank(mpi_comm);
+  const unsigned int mpi_rank = MPI::rank(mpi_comm);
 
   // Number of processes
   const unsigned int num_processes = MPI::size(mpi_comm);
 
-  // Build list of vertex data to send. Only send shared vertex if I'm the
-  // lowest rank process
-  std::vector<bool> vertex_sender(mesh.num_vertices(), true);
-  std::map<unsigned int, std::set<unsigned int> >::const_iterator it;
-  for (it = shared_vertices.begin(); it != shared_vertices.end(); ++it)
+  const std::size_t tdim = mesh.topology().dim();
+  std::set<unsigned int> non_local_vertices;
+  if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
   {
-    // Check if vertex is shared
-    if (!it->second.empty())
+    // No ghost cells - exclude shared entities which are on lower rank processes
+    for (auto sh = shared_vertices.begin(); sh != shared_vertices.end(); ++sh)
     {
-      // Check if I am the lowest rank owner
-      const std::size_t sharing_min_rank
-        = *std::min_element(it->second.begin(), it->second.end());
-      if (my_rank > sharing_min_rank)
-        vertex_sender[it->first] = false;
+      const unsigned int lowest_proc = *(sh->second.begin());
+      if (lowest_proc < mpi_rank)
+        non_local_vertices.insert(sh->first);
+    }
+  }
+  else
+  {
+    // Iterate through ghost cells, adding non-ghost vertices which are 
+    // in lower rank process cells to a set for exclusion from output
+    for (CellIterator c(mesh, "ghost"); !c.end(); ++c)
+    {
+      const unsigned int cell_owner = c->owner();
+      for (VertexIterator v(*c); !v.end(); ++v)
+        if (!v->is_ghost() && cell_owner < mpi_rank)
+          non_local_vertices.insert(v->index());
     }
   }
 
@@ -399,7 +413,7 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const std::size_t vidx = v->index();
-    if (vertex_sender[vidx])
+    if (non_local_vertices.find(vidx) == non_local_vertices.end())
     {
       std::size_t owner = MPI::index_owner(mpi_comm, v->global_index(), N);
       send_buffer_index[owner].push_back(v->global_index());

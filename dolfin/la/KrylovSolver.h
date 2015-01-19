@@ -19,15 +19,14 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2013-11-25
+// Last changed: 2014-05-27
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include "GenericLinearSolver.h"
 
 namespace dolfin
@@ -38,7 +37,7 @@ namespace dolfin
   class VectorSpaceBasis;
 
   /// This class defines an interface for a Krylov solver. The
-  /// approproiate solver is chosen on the basis of the matrix/vector
+  /// appropriate solver is chosen on the basis of the matrix/vector
   /// type.
 
   class KrylovSolver : public GenericLinearSolver
@@ -50,7 +49,7 @@ namespace dolfin
                  std::string preconditioner="default");
 
     /// Constructor
-    KrylovSolver(boost::shared_ptr<const GenericLinearOperator> A,
+    KrylovSolver(std::shared_ptr<const GenericLinearOperator> A,
                  std::string method="default",
                  std::string preconditioner="default");
 
@@ -58,11 +57,11 @@ namespace dolfin
     ~KrylovSolver();
 
     /// Set operator (matrix)
-    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                       boost::shared_ptr<const GenericLinearOperator> P);
+    void set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                       std::shared_ptr<const GenericLinearOperator> P);
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
@@ -85,13 +84,21 @@ namespace dolfin
       solver->parameters.update(parameters);
     }
 
+    // FIXME: This should not be needed. Need to cleanup linear solver
+    // name jungle: default, lu, iterative, direct, krylov, etc
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    {
+      return "krylov_solver";
+    }
+
   private:
 
     // Initialize solver
     void init(std::string method, std::string preconditioner);
 
     // Solver
-    boost::shared_ptr<GenericLinearSolver> solver;
+    std::shared_ptr<GenericLinearSolver> solver;
 
   };
 }

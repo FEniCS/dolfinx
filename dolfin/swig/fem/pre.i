@@ -53,23 +53,22 @@ PROBLEM_RENAMES(NonlinearVariational)
 // version of constructors to these types
 //-----------------------------------------------------------------------------
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-					 const GenericFunction&,
-					 const SubDomain&,
-					 std::string method="topological");
+                     const GenericFunction&,
+                     const SubDomain&,
+                     std::string method="topological");
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-					 const GenericFunction&,
-					 const MeshFunction<std::size_t>&,
-					 std::size_t,
-					 std::string method="topological");
+                     const GenericFunction&,
+                     const MeshFunction<std::size_t>&,
+                     std::size_t,
+                     std::string method="topological");
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-					 const GenericFunction&,
-					 std::size_t,
-					 std::string method="topological");
-%ignore dolfin::DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace>,
-					 boost::shared_ptr<const GenericFunction>,
-					 const std::vector<std::pair<std::size_t, std::size_t> >&,
-					 std::string method="topological");
-
+                     const GenericFunction&,
+                     std::size_t,
+                     std::string method="topological");
+%ignore dolfin::DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace>,
+                     std::shared_ptr<const GenericFunction>,
+                     const std::vector<std::size_t>&,
+                     std::string method="topological");
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,
                                                                    Function&);
@@ -109,7 +108,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&);
 %ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&, const DirichletBC&);
 %ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&,
-						 const std::vector<const DirichletBC*>);
+                         const std::vector<const DirichletBC*>);
 
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
@@ -121,6 +120,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 //-----------------------------------------------------------------------------
 %rename (_function_space) dolfin::DirichletBC::function_space;
 %ignore dolfin::DirichletBC::set_value(const GenericFunction&);
+%ignore dolfin::DirichletBC::gather;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Form
@@ -133,6 +133,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::Form::dx;
 %ignore dolfin::Form::ds;
 %ignore dolfin::Form::dS;
+%ignore dolfin::Form::dP;
 %ignore dolfin::Form::operator==;
 
 //-----------------------------------------------------------------------------
@@ -149,7 +150,7 @@ PROBLEM_RENAMES(NonlinearVariational)
                                 const std::vector<double>& vertex_coordinates,
                                 const Cell& cell) const;
 
-%ignore dolfin::CCFEMDofMap::tabulate_coordinates(
+%ignore dolfin::MultiMeshDofMap::tabulate_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
                                 const std::vector<double>& vertex_coordinates,
                                 const ufc::cell& cell) const;
@@ -204,19 +205,19 @@ const ufc::cell& (void *argp, bool dolfin_cell, int res)
 %define IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(TYPE)
 
 //-----------------------------------------------------------------------------
-// The std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Type*> > >
+// The std::vector<std::vector<std::shared_ptr<dolfin::Type*> > >
 // typecheck
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_POINTER) std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > >
+%typecheck(SWIG_TYPECHECK_POINTER) std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > >
 {
   $1 = PyList_Check($input) ? 1 : 0;
 }
 
 //-----------------------------------------------------------------------------
-// The std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Type*> > >
+// The std::vector<std::vector<std::shared_ptr<dolfin::Type*> > >
 // typemap
 //-----------------------------------------------------------------------------
-   %typemap (in) std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > > (std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > >  tmp_vec_0, std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> >  tmp_vec_1, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
+   %typemap (in) std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > > (std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > >  tmp_vec_0, std::vector<std::shared_ptr<const dolfin::TYPE> >  tmp_vec_1, std::shared_ptr<dolfin::TYPE> tempshared)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
   if (!PyList_Check($input))
@@ -253,16 +254,16 @@ const ufc::cell& (void *argp, bool dolfin_cell, int res)
       py_item_1 = PyList_GetItem(py_item_0, j);
 
       // Try convert it
-      res = SWIG_ConvertPtrAndOwn(py_item_1, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+      res = SWIG_ConvertPtrAndOwn(py_item_1, &itemp, $descriptor(std::shared_ptr< dolfin::TYPE > *), 0, &newmem);
 
       if (!SWIG_IsOK(res))
-	SWIG_exception(SWIG_TypeError, "expected a list of list of TYPE (Bad conversion)");
+        SWIG_exception(SWIG_TypeError, "expected a list of list of TYPE (Bad conversion)");
 
-      tempshared = *(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
+      tempshared = *(reinterpret_cast<std::shared_ptr< dolfin::TYPE> *>(itemp));
       tmp_vec_1.push_back(tempshared);
 
       if (newmem & SWIG_CAST_NEW_MEMORY)
-	delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
+        delete reinterpret_cast<std::shared_ptr< dolfin::TYPE> *>(itemp);
     }
     tmp_vec_0.push_back(tmp_vec_1);
     tmp_vec_1.clear();

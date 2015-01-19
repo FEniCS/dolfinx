@@ -33,17 +33,14 @@ namespace std
   template <typename T0, typename T1> class map
   {
   };
-}
 
-namespace boost
-{
   template <typename T0, typename T1> class unordered_map
   {
   };
 }
 
 //-----------------------------------------------------------------------------
-// Help macro for defining (arg)out typemaps for either boost::unordered_map or
+// Help macro for defining (arg)out typemaps for either std::unordered_map or
 // std::map
 //
 //    const MAP_TYPE<KEY_TYPE, VALUE_TYPE>&, (out)
@@ -130,7 +127,8 @@ namespace boost
   for (it=$1->begin(); it!=$1->end(); ++it)
   {
     item0 = SWIG_From_dec(KEY_TYPE)(it->first);
-    item1 = %make_numpy_array(1, TYPENAME)(it->second.size(), &it->second[0], false);
+    item1 = %make_numpy_array(1, TYPENAME)(it->second.size(), &it->second[0],
+                                           false);
     PyDict_SetItem($result, item0, item1);
     Py_XDECREF(item0);
     Py_XDECREF(item1);
@@ -155,8 +153,11 @@ namespace boost
 
     // Fill numpy array
     unsigned int i=0;
-    for (set_it = map_it->second.begin(); set_it != map_it->second.end(); i++, set_it++)
+    for (set_it = map_it->second.begin(); set_it != map_it->second.end();
+         i++, set_it++)
+    {
       data[i] = *set_it;
+    }
 
     //item1 = %make_numpy_array(1, TYPENAME)(it->second.size(), &it->second[0], false);
     PyDict_SetItem($result, item0, item1);
@@ -200,19 +201,22 @@ namespace boost
 // NUMPY_TYPE : The NumPy type that is going to be checked for
 //-----------------------------------------------------------------------------
 %define MAP_OUT_TYPEMAPS(KEY_TYPE, VALUE_TYPE, TYPENAME, NUMPY_TYPE)
-MAP_SPECIFIC_OUT_TYPEMAPS(boost::unordered_map, KEY_TYPE, VALUE_TYPE, TYPENAME, NUMPY_TYPE)
+MAP_SPECIFIC_OUT_TYPEMAPS(std::unordered_map, KEY_TYPE, VALUE_TYPE, TYPENAME, NUMPY_TYPE)
 MAP_SPECIFIC_OUT_TYPEMAPS(std::map, KEY_TYPE, VALUE_TYPE, TYPENAME, NUMPY_TYPE)
 %enddef
 
 //-----------------------------------------------------------------------------
 // Run the macro and instantiate the typemaps
-//-----------------------------------------------------------------------------
-// NOTE: SWIG BUG
-// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions
-// NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
+// -----------------------------------------------------------------------------
+// NOTE: SWIG BUG NOTE: Because of bug introduced by SWIG 2.0.5 we
+// cannot use templated versions
+// NOTE: of typdefs, which means we need to use unsigned int instead
+// of dolfin::uint
 // NOTE: in typemaps
 // NOTE: Well... to get std::size_t up and running we need to use typedefs.
+MAP_OUT_TYPEMAPS(int, int, int, NPY_INT)
 MAP_OUT_TYPEMAPS(unsigned int, unsigned int, uint, NPY_UINT)
 MAP_OUT_TYPEMAPS(std::size_t, unsigned int, uint, NPY_UINT)
+MAP_OUT_TYPEMAPS(std::size_t, int, int, NPY_INT)
 MAP_OUT_TYPEMAPS(std::size_t, double, double, NPY_DOUBLE)
 MAP_OUT_TYPEMAPS(std::size_t, std::size_t, size_t, NPY_UINTP)

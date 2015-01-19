@@ -23,10 +23,9 @@
 #include <iostream>
 
 #include <map>
+#include <memory>
 #include <utility>
 #include <vector>
-#include <boost/assign/list_of.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -41,7 +40,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 XMLLocalMeshSAX::XMLLocalMeshSAX(MPI_Comm mpi_comm, LocalMeshData& mesh_data,
                                  const std::string filename)
-  : _mpi_comm(mpi_comm), _mesh_data(mesh_data), _filename(filename),
+  : gdim(0), tdim(0), domain_value_counter(0),
+    domain_dim(0),
+    _mpi_comm(mpi_comm),
+    _mesh_data(mesh_data),
+    _filename(filename),
     state(OUTSIDE)
 {
   // Do nothing
@@ -320,7 +323,7 @@ void XMLLocalMeshSAX::read_mesh(const xmlChar* name, const xmlChar** attrs,
                                                   num_attributes);
 
   // Create cell type to get topological dimension
-  boost::scoped_ptr<CellType> cell_type(CellType::create(type));
+  std::unique_ptr<CellType> cell_type(CellType::create(type));
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0

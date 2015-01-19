@@ -24,7 +24,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VectorSpaceBasis::VectorSpaceBasis(const std::vector<boost::shared_ptr<
+VectorSpaceBasis::VectorSpaceBasis(const std::vector<std::shared_ptr<
                                      GenericVector> > basis)
   : _basis(basis)
 {
@@ -41,7 +41,7 @@ bool VectorSpaceBasis::is_orthonormal() const
       dolfin_assert(_basis[j]);
       const double delta_ij = (i == j) ? 1.0 : 0.0;
       const double dot_ij = _basis[i]->inner(*_basis[j]);
-      if (abs(delta_ij - dot_ij) > DOLFIN_EPS)
+      if (std::abs(delta_ij - dot_ij) > DOLFIN_EPS)
         return false;
     }
   }
@@ -60,7 +60,7 @@ bool VectorSpaceBasis::is_orthogonal() const
       if (i != j)
       {
         const double dot_ij = _basis[i]->inner(*_basis[j]);
-        if (abs(dot_ij) > DOLFIN_EPS)
+        if (std::abs(dot_ij) > DOLFIN_EPS)
           return false;
       }
     }
@@ -84,7 +84,7 @@ std::size_t VectorSpaceBasis::dim() const
   return _basis.size();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector>
+std::shared_ptr<const GenericVector>
 VectorSpaceBasis::operator[] (std::size_t i) const
 {
   dolfin_assert(i < _basis.size());

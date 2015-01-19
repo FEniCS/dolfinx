@@ -28,7 +28,7 @@
 
 #include <string>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
@@ -63,15 +63,15 @@ namespace dolfin
     /// Copy constructor
     Vector(const Vector& x) : vector(x.vector->copy()) {}
 
-    /// Create a Vector from a GenericVetor
+    /// Create a Vector from a GenericVector
     Vector(const GenericVector& x) : vector(x.copy()) {}
 
     //--- Implementation of the GenericTensor interface ---
 
     /// Return copy of vector
-    virtual boost::shared_ptr<GenericVector> copy() const
+    virtual std::shared_ptr<GenericVector> copy() const
     {
-      boost::shared_ptr<Vector> x(new Vector(*this));
+      std::shared_ptr<Vector> x(new Vector(*this));
       return x;
     }
 
@@ -97,7 +97,7 @@ namespace dolfin
     virtual void init(MPI_Comm comm, std::size_t N)
     { vector->init(comm, N); }
 
-    /// Initlialize vector with given ownership range
+    /// Initialize vector with given ownership range
     virtual void init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range)
     { vector->init(comm, range); }
 
@@ -105,8 +105,9 @@ namespace dolfin
     /// values
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
+                      const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices)
-    { vector->init(comm, range, ghost_indices); }
+    { vector->init(comm, range, local_to_global_map, ghost_indices); }
 
     // Bring init function from GenericVector into scope
     using GenericVector::init;
@@ -131,20 +132,37 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const
     { return vector->owns_index(i); }
 
-    /// Get block of values (values must all live on the local process)
+    /// Get block of values using global indices (values must all live
+    /// on the local process, ghosts are no accessible)
+    virtual void get(double* block, std::size_t m,
+                     const dolfin::la_index* rows) const
+    { vector->get(block, m, rows); }
+
+    /// Get block of values using local indices (values must all live
+    /// on the local process)
     virtual void get_local(double* block, std::size_t m,
                            const dolfin::la_index* rows) const
-    { vector->get_local(block,m,rows); }
+    { vector->get_local(block, m, rows); }
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows)
     { vector->set(block, m, rows); }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, std::size_t m,
+                     const dolfin::la_index* rows)
+    { vector->set_local(block, m, rows); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows)
     { vector->add(block, m, rows); }
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows)
+    { vector->add_local(block, m, rows); }
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const
@@ -247,10 +265,6 @@ namespace dolfin
     virtual double* data()
     { return vector->data(); }
 
-    /// Update ghost values
-    virtual void update_ghost_values()
-    { vector->update_ghost_values(); }
-
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -267,10 +281,10 @@ namespace dolfin
     virtual GenericVector* instance()
     { return vector.get(); }
 
-    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
+    virtual std::shared_ptr<const LinearAlgebraObject> shared_instance() const
     { return vector; }
 
-    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
+    virtual std::shared_ptr<LinearAlgebraObject> shared_instance()
     { return vector; }
 
     //--- Special Vector functions ---
@@ -282,7 +296,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    boost::shared_ptr<GenericVector> vector;
+    std::shared_ptr<GenericVector> vector;
 
   };
 

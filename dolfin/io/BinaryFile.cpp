@@ -19,13 +19,12 @@
 // Last changed: 2011-11-23
 
 #include <fstream>
-#include <istream>
 #include <ios>
-#include <boost/scoped_array.hpp>
+#include <iosfwd>
+#include <istream>
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/operations.hpp>
-#include <iosfwd>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
@@ -125,7 +124,7 @@ void BinaryFile::operator>> (Mesh& mesh)
     g.local_index_to_position[i] = i;
 
   // Read cell type
-  mesh._cell_type = CellType::create(static_cast<CellType::Type>(read_uint()));
+  mesh._cell_type.reset(CellType::create(static_cast<CellType::Type>(read_uint())));
 
   // Read mesh data
   // FIXME: Not implemented

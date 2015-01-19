@@ -20,6 +20,8 @@
 # First added:  2012-01-17
 # Last changed: 2012-07-03
 
+import sys
+
 copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interface of DOLFIN
 %(comment)s
 %(comment)s Copyright (C) 2012 %(holder)s
@@ -42,7 +44,7 @@ copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interf
 
 """
 
-# FIXME: Removed date from copyright form 
+# FIXME: Removed date from copyright form
 """
 %(comment)s First added:  2012-01-18
 %(comment)s Last changed: %(year)d-%(month)0.2d-%(day)0.2d
@@ -52,8 +54,7 @@ copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interf
 # Template code for all combined SWIG modules
 module_template = r"""
 // The PyDOLFIN extension module for the %(module)s module
-%%module(package="dolfin.cpp.%(module)s", directors="1") %(module)s
-
+%%module(package="dolfin.cpp", directors="1") %(module)s
 // Define module name for conditional includes
 #define %(MODULE)sMODULE
 
@@ -82,6 +83,11 @@ import_array();
 
 """
 
+if sys.version_info[0] < 3:
+    py3 = ""
+else:
+    py3 = "\n  -py3 \n  -relativeimport"
+
 swig_cmakelists_str = \
 """# Automatic get the module name
 get_filename_component(SWIG_MODULE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
@@ -92,7 +98,7 @@ project(${SWIG_MODULE_NAME})
 # What does this do?
 get_directory_property(cmake_defs COMPILE_DEFINITIONS)
 
-# Set SWIG flags 
+# Set SWIG flags
 set(CMAKE_SWIG_FLAGS
   -module ${SWIG_MODULE_NAME}
   -shadow
@@ -106,7 +112,7 @@ set(CMAKE_SWIG_FLAGS
   -fastinit
   -fastunpack
   -fastquery
-  -nobuildnone
+  -nobuildnone%s
   -Iinclude/swig
   ${DOLFIN_CXX_DEFINITIONS}
   ${DOLFIN_PYTHON_DEFINITIONS}
@@ -121,23 +127,33 @@ set_source_files_properties(module.i PROPERTIES SWIG_MODULE_NAME ${SWIG_MODULE_N
 # Tell CMake SWIG has generated a C++ file
 set_source_files_properties(module.i PROPERTIES CPLUSPLUS ON)
 
-# Generate SWIG files in 
+# Generate SWIG files in
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 
-# Tell CMake which SWIG interface files should be checked for changes when recompile
+# Tell CMake which SWIG interface files should be checked for changes
+# when recompile
 set(SWIG_MODULE_${SWIG_MODULE_NAME}_EXTRA_DEPS copy_swig_files ${DOLFIN_SWIG_DEPENDENCIES})
+
+# Work-around for bug in CMake 3.0.0 (see
+# http://www.cmake.org/Bug/view.php?id=14990)
+set(SWIG_MODULE_NAME_ORIG "${SWIG_MODULE_NAME}")
+if (${CMAKE_VERSION} MATCHES "3.0.0")
+  set(SWIG_MODULE_NAME "_${SWIG_MODULE_NAME}")
+endif()
 
 # Tell CMake to run SWIG on module.i and to link against libdolfin
 swig_add_module(${SWIG_MODULE_NAME} python module.i)
 swig_link_libraries(${SWIG_MODULE_NAME} dolfin ${PYTHON_LIBRARIES})
 
-# Install Python .py files
-get_target_property(SWIG_MODULE_LOCATION ${SWIG_MODULE_${SWIG_MODULE_NAME}_REAL_NAME} LOCATION)
-install(FILES
-  ${SWIG_MODULE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME}.py
+# Install Python targets and .py files
+install(TARGETS
+  ${SWIG_MODULE_${SWIG_MODULE_NAME}_REAL_NAME}
   DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/cpp
   COMPONENT RuntimeLibraries
   )
-"""
-
-
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME_ORIG}.py
+  DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/cpp
+  COMPONENT RuntimeLibraries
+  )
+""" % py3

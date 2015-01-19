@@ -29,10 +29,6 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScLinearOperator.h>
 #include <dolfin/la/PETScPreconditioner.h>
-#include <dolfin/la/EpetraLUSolver.h>
-#include <dolfin/la/EpetraKrylovSolver.h>
-#include <dolfin/la/EpetraMatrix.h>
-#include <dolfin/la/EpetraVector.h>
 
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
@@ -53,10 +49,8 @@
 #include <dolfin/la/PETScUserPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/PETScCuspFactory.h>
-#include <dolfin/la/EpetraFactory.h>
 #include <dolfin/la/STLFactory.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
-#include <dolfin/la/TrilinosPreconditioner.h>
 #include <dolfin/la/uBLASSparseMatrix.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include <dolfin/la/uBLASPreconditioner.h>
@@ -69,6 +63,7 @@
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/solve.h>
+#include <dolfin/la/test_nullspace.h>
 #include <dolfin/la/BlockVector.h>
 #include <dolfin/la/BlockMatrix.h>
 #include <dolfin/la/LinearOperator.h>

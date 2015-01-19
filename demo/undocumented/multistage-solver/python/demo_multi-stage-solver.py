@@ -34,7 +34,11 @@
 # FIXME: This demo showcase experimental features of a RKSolver (time integrator)
 # FIXME: using a MultiStageScheme. It could be removed or changed anytime.
 
+from __future__ import print_function
 from dolfin import *
+
+print("RKSolver is temporarily unavailable")
+exit(0)
 
 # Load mesh and subdomains
 mesh = Mesh("../dolfin_fine.xml.gz")

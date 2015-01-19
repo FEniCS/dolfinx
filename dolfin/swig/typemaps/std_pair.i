@@ -17,10 +17,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-25
-// Last changed: 2013-08-27
+// Last changed: 2014-04-07
 
 //-----------------------------------------------------------------------------
-// User macro for defining in typmaps for std::pair of a pointer to some
+// User macro for defining in typemaps for std::pair of a pointer to some
 // DOLFIN type and a double
 //-----------------------------------------------------------------------------
 %define IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE)
@@ -28,7 +28,7 @@
 //-----------------------------------------------------------------------------
 // Make SWIG aware of the shared_ptr version of TYPE
 //-----------------------------------------------------------------------------
-%types(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE >*);
+%types(std::shared_ptr<TYPE >*);
 //
 ////-----------------------------------------------------------------------------
 //// Run the macros for the combination of const and no const of
@@ -66,13 +66,13 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
       // If failed with normal pointer conversion then
       // try with shared_ptr conversion
       int newmem = 0;
-      res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+      res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(std::shared_ptr< dolfin::TYPE > *), 0, &newmem);
       if (SWIG_IsOK(res))
       {
 	$1 = 1;
 	if (newmem & SWIG_CAST_NEW_MEMORY)
 	{
-	  delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+	  delete reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp);
 	}
       }
     }
@@ -86,7 +86,7 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
 //-----------------------------------------------------------------------------
 // The typemap
 //-----------------------------------------------------------------------------
-%typemap(in) CONST_PAIR std::pair<CONST dolfin::TYPE*, double> (std::pair<CONST dolfin::TYPE*, double> tmp_pair, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE > tempshared, dolfin::TYPE * arg)
+%typemap(in) CONST_PAIR std::pair<CONST dolfin::TYPE*, double> (std::pair<CONST dolfin::TYPE*, double> tmp_pair, std::shared_ptr<dolfin::TYPE > tempshared, dolfin::TYPE * arg)
 {
   // TYPEMAP IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE, CONST, CONST_PAIR)
   int res = 0;
@@ -117,18 +117,18 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
     // If failed with normal pointer conversion then
     // try with shared_ptr conversion
     newmem = 0;
-    res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+    res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(std::shared_ptr< dolfin::TYPE > *), 0, &newmem);
     if (SWIG_IsOK(res)){
       // If we need to release memory
       if (newmem & SWIG_CAST_NEW_MEMORY)
       {
-        tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE > * >(itemp);
-        delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+        tempshared = *reinterpret_cast< std::shared_ptr<dolfin::TYPE > * >(itemp);
+        delete reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp);
         arg = const_cast< dolfin::TYPE * >(tempshared.get());
       }
       else
       {
-        arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
+        arg = const_cast< dolfin::TYPE * >(reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp)->get());
       }
       tmp_pair.first = arg;
     }
@@ -233,6 +233,8 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
   $result = Py_BuildValue("id", $1.first, $1.second);
 }
 
+// FIXME: Add macro for the two typemaps below
+
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
 // If we need should need it for other types, we can make it into a macro later.
@@ -247,6 +249,27 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
 
   unsigned int* data0 = static_cast<unsigned int*>(PyArray_DATA(x0));
   unsigned int* data1 = static_cast<unsigned int*>(PyArray_DATA(x1));
+
+  std::copy($1.first.begin(),  $1.first.end(),  data0);
+  std::copy($1.second.begin(), $1.second.end(), data1);
+
+  $result = Py_BuildValue("OO", x0, x1);
+}
+
+//-----------------------------------------------------------------------------
+// Out typemap for std::pair<std::vector<double>, std::vector<double> >
+// If we need should need it for other types, we can make it into a macro later.
+//-----------------------------------------------------------------------------
+%typemap(out) std::pair<std::vector<double>, std::vector<double> >
+{
+  npy_intp n0 = $1.first.size();
+  npy_intp n1 = $1.second.size();
+
+  PyArrayObject *x0 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n0, NPY_DOUBLE));
+  PyArrayObject *x1 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n1, NPY_DOUBLE));
+
+  double* data0 = static_cast<double*>(PyArray_DATA(x0));
+  double* data1 = static_cast<double*>(PyArray_DATA(x1));
 
   std::copy($1.first.begin(),  $1.first.end(),  data0);
   std::copy($1.second.begin(), $1.second.end(), data1);

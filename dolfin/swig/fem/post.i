@@ -108,15 +108,16 @@ def tabulate_coordinates(self, cell, coordinates=None):
     import numpy as np
 
     # Check coordinate argument
-    shape = (self.max_cell_dimension(), self.geometric_dimension())
+    gdim = cell.mesh().geometry().dim()
+    shape = (self.max_cell_dimension(), gdim)
     if coordinates is None:
         coordinates = np.zeros(shape, 'd')
     if not isinstance(coordinates, np.ndarray) or \
        not (coordinates.flags.c_contiguous and \
             coordinates.dtype == np.dtype('d') and \
             coordinates.shape==shape):
-        raise TypeError, "expected a C-contiguous numpy array " \
-              "of 'double' (dtype='d') with shape %s"%str(shape)
+        raise TypeError("expected a C-contiguous numpy array " \
+              "of 'double' (dtype='d') with shape %s"%str(shape))
 
     # Call the extended method
     self._tabulate_coordinates(coordinates, cell)

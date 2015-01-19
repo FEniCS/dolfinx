@@ -24,15 +24,8 @@ extrapolated from there.
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2010-03-22
-# Last changed: 2013-01-23
 
 from dolfin import *
-
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0)
 
 # Set option to allow extrapolation
 parameters["allow_extrapolation"] = True

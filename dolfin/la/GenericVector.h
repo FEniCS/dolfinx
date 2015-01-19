@@ -55,7 +55,9 @@ namespace dolfin
     {
       if (!empty())
         error("GenericVector cannot be initialised more than once");
-      init(tensor_layout.mpi_comm(), tensor_layout.local_range(0));
+      std::vector<dolfin::la_index> ghosts;
+      init(tensor_layout.mpi_comm(), tensor_layout.local_range(0),
+           tensor_layout.local_to_global_map[0], ghosts);
       zero();
     }
 
@@ -72,31 +74,60 @@ namespace dolfin
       local_range(std::size_t dim) const
     { dolfin_assert(dim == 0); return local_range(); }
 
-    /// Get block of values
+    /// Get block of values using global indices
     virtual void get(double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows) const
+    { get(block, num_rows[0], rows[0]); }
+
+    /// Get block of values using local indices
+    virtual void get_local(double* block, const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows) const
     { get_local(block, num_rows[0], rows[0]); }
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows)
     { set(block, num_rows[0], rows[0]); }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block,
+                           const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows)
+    { set_local(block, num_rows[0], rows[0]); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
-    /// Add block of values
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows)
+    { add_local(block, num_rows[0], rows[0]); }
+
+    /// Add block of values using global indices
     virtual void
       add(const double* block,
           const std::vector<const std::vector<dolfin::la_index>* >& rows)
-    { add(block, rows[0]->size(), &(*rows[0])[0]); }
+    { add(block, rows[0]->size(), rows[0]->data()); }
 
-    /// Add block of values
+    /// Add block of values using local indices
+    virtual void
+      add_local(const double* block,
+          const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    { add_local(block, rows[0]->size(), rows[0]->data()); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block,
                      const std::vector<std::vector<dolfin::la_index> >& rows)
-    { add(block, rows[0].size(), &(rows[0])[0]); }
+    { add(block, rows[0].size(), rows[0].data()); }
+
+    /// Add block of values using local indices
+    virtual void
+      add_local(const double* block,
+                const std::vector<std::vector<dolfin::la_index> >& rows)
+    { add_local(block, rows[0].size(), rows[0].data()); }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
@@ -110,12 +141,12 @@ namespace dolfin
     //--- Vector interface ---
 
     /// Return copy of vector
-    virtual boost::shared_ptr<GenericVector> copy() const = 0;
+    virtual std::shared_ptr<GenericVector> copy() const = 0;
 
     /// Initialize vector to global size N
     virtual void init(MPI_Comm comm, std::size_t N) = 0;
 
-    /// Intitialize vector with given local ownership range
+    /// Initialize vector with given local ownership range
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range) = 0;
 
@@ -123,35 +154,8 @@ namespace dolfin
     /// values
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
+                      const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices) = 0;
-
-    /// Deprecated: resize vector to global size N
-    virtual void resize(MPI_Comm comm, std::size_t N)
-    {
-      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
-                  "Use GenericVector::init(...) (can only be called once).");
-      init(comm, N);
-    }
-
-    /// Deprecated: resize vector with given ownership range
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range)
-    {
-      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
-                  "Use GenericVector::init(...) (can only be called once).");
-      init(comm, range);
-    }
-
-    /// Deprevated: resize vector with given ownership range and with
-    /// ghost values
-    virtual void resize(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range,
-                        const std::vector<la_index>& ghost_indices)
-    {
-      deprecation("EpetraVector::resize(...)", "1.4", "1.5",
-                  "Use GenericVector::init(...) (can only be called once).");
-      init(comm, range, ghost_indices);
-    }
 
     /// Return global size of vector
     virtual std::size_t size() const = 0;
@@ -165,17 +169,31 @@ namespace dolfin
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(std::size_t i) const = 0;
 
-    /// Get block of values (values must all live on the local process)
+    /// Get block of values using global indices (values must all live
+    /// on the local process, ghosts cannot be accessed)
+    virtual void get(double* block, std::size_t m,
+                     const dolfin::la_index* rows) const = 0;
+
+    /// Get block of values using local indices (values must all live
+    /// on the local process, ghost are accessible)
     virtual void get_local(double* block, std::size_t m,
                            const dolfin::la_index* rows) const = 0;
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows) = 0;
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows) = 0;
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows) = 0;
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows) = 0;
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const = 0;
@@ -266,9 +284,6 @@ namespace dolfin
                    "Not implemented by current linear algebra backend");
       return 0;
     }
-
-    /// Update ghost values
-    virtual void update_ghost_values() {}
 
     //--- Convenience functions ---
 

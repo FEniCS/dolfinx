@@ -58,14 +58,16 @@ equation, we can write our problem as a linear system:
 where :math:`U` gives the coefficient for the basis functions expressing :math:`u`.
 
 Since we have pure Neumann boundary conditions, the matrix :math:`A`
-is singular. There exists a vector :math:`e` such that
+is singular. There exists a non-trival vector :math:`e` such that
 
 .. math::
 	Ae=0.
 
-span :math:`\{ e \}` is the null space of A, and by removing the
-components of :math:`b` that lie in the null space we make the system
-solvable.
+span :math:`\{ e \}` is the null space of A. Consequently, the matrix
+:math:`A` is rank deficient and the right-hand side vector :math:`b`
+may fail to be in the column space of :math:`A`. We therefore need
+to remove the components of :math:`b` that do not lie in the column
+space to make the system solvable.
 
 In this demo, we shall consider the following definitions of the input
 functions, the domain, and the boundaries:

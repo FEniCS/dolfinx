@@ -46,8 +46,8 @@ CholmodCholeskySolver::CholmodCholeskySolver()
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-CholmodCholeskySolver::CholmodCholeskySolver(boost::shared_ptr<const GenericLinearOperator> A)
-  : _A(A)
+CholmodCholeskySolver::CholmodCholeskySolver(std::shared_ptr<const GenericLinearOperator> A)
+  : _matA(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -79,22 +79,22 @@ std::size_t CholmodCholeskySolver::solve(const GenericLinearOperator& A,
 std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 {
   // Need matrix data
-  const GenericMatrix& _A = require_matrix(A);
+  const GenericMatrix& _matA = require_matrix(A);
 
   // Check dimensions and get number of non-zeroes
   boost::tuples::tuple<const std::size_t*,
                        const std::size_t*,
-                       const double*, int> data = _A.data();
-  const std::size_t M = _A.size(0);
+                       const double*, int> data = _matA.data();
+  const std::size_t M = _matA.size(0);
   const std::size_t nnz = boost::tuples::get<3>(data);
-  dolfin_assert(_A.size(0) == _A.size(1));
+  dolfin_assert(_matA.size(0) == _matA.size(1));
 
   dolfin_assert(nnz >= M);
 
   // Initialise cholmod data
   // NOTE: Casting away const here
-  cholmod.init((UF_long*) boost::tuples::get<0>(data),
-               (UF_long*) boost::tuples::get<1>(data),
+  cholmod.init((SuiteSparse_long*) boost::tuples::get<0>(data),
+               (SuiteSparse_long*) boost::tuples::get<1>(data),
                (double*) boost::tuples::get<2>(data), M, nnz);
 
   // Factorize
@@ -125,7 +125,7 @@ std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
   }
 
   // Initialise solution vector and solve
-  x.resize(b.mpi_comm(), b.local_range());
+  x.init(b.mpi_comm(), b.local_range());
 
   log(PROGRESS, "Solving factorized linear system of size %d x %d (CHOLMOD).",
       N, N);
@@ -141,16 +141,16 @@ std::size_t CholmodCholeskySolver::solve(const GenericLinearOperator& A,
                                          GenericVector& x,
                                           const GenericVector& b)
 {
-  warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
+  warning("CHOLMOD must be installed to perform a Cholesky solve for the current backend. Attempting to use UMFPACK solver.");
 
-  boost::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
+  std::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
   UmfpackLUSolver solver(Atmp);
   return solver.solve(x, b);
 }
 //-----------------------------------------------------------------------------
 std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 {
-  dolfin_error("CholdmodCholeskySolver.cpp",
+  dolfin_error("CholmodCholeskySolver.cpp",
                "perform factorization using CHOLMOD Cholesky solver",
                "CHOLMOD is not installed");
   return 0;
@@ -159,7 +159,7 @@ std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 std::size_t CholmodCholeskySolver::factorized_solve(GenericVector& x,
                                                     const GenericVector& b)
 {
-  dolfin_error("CholdmodCholeskySolver.cpp",
+  dolfin_error("CholmodCholeskySolver.cpp",
                "perform factorized solve using CHOLMOD Cholesky solver",
                "CHOLMOD is not installed");
   return 0;
@@ -199,7 +199,7 @@ void CholmodCholeskySolver::Cholmod::clear()
   }
 }
 //-----------------------------------------------------------------------------
-void CholmodCholeskySolver::Cholmod::init(UF_long* Ap, UF_long* Ai, double* Ax,
+void CholmodCholeskySolver::Cholmod::init(SuiteSparse_long* Ap, SuiteSparse_long* Ai, double* Ax,
                                           std::size_t M, std::size_t nz)
 {
   if (factorized)
@@ -333,7 +333,7 @@ void CholmodCholeskySolver::Cholmod::refine_once(cholmod_dense* x,
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::check_status(std::string function)
 {
-  UF_long status = c.status;
+  SuiteSparse_long status = c.status;
 
   if ( status < 0)
   {

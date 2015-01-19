@@ -133,12 +133,30 @@ Point MeshEntity::midpoint() const
     num_vertices++;
   }
 
+  dolfin_assert(num_vertices > 0);
+
   x /= double(num_vertices);
   y /= double(num_vertices);
   z /= double(num_vertices);
 
   Point p(x, y, z);
   return p;
+}
+//-----------------------------------------------------------------------------
+unsigned int MeshEntity::owner() const
+{
+  if (_dim != _mesh->topology().dim())
+    dolfin_error("MeshEntity.cpp",
+                 "get ownership of entity",
+                 "Entity ownership is only defined for cells");
+
+  const std::size_t offset = _mesh->topology().ghost_offset(_dim);
+  if (_local_index < offset)
+    dolfin_error("MeshEntity.cpp",
+                 "get ownership of entity",
+                 "Ownership of non-ghost cells is local process");
+  
+  return _mesh->topology().cell_owner()[_local_index - offset];
 }
 //-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const

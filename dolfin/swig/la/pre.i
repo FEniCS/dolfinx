@@ -34,6 +34,11 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
+// Ignore warnings about nested classes.
+//-----------------------------------------------------------------------------
+%warnfilter(325) dolfin::GenericLinearAlgebraFactory::NotImplementedLinearOperator;
+
+//-----------------------------------------------------------------------------
 // Rename solve so it wont clash with solve from fem
 //-----------------------------------------------------------------------------
 %rename(la_solve) dolfin::solve;
@@ -83,8 +88,8 @@
 //-----------------------------------------------------------------------------
 // Modify the Scalar interface
 //-----------------------------------------------------------------------------
-%rename(__float__) dolfin::Scalar::operator double;
-%rename(assign) dolfin::Scalar::operator=;
+//%rename(__float__) dolfin::Scalar::operator double;
+//%rename(assign) dolfin::Scalar::operator=;
 
 //-----------------------------------------------------------------------------
 // Typemaps for GenericMatrix get and set functions
@@ -215,67 +220,14 @@
 #ifdef HAS_SLEPC
 %ignore dolfin::SLEPcEigenSolver(const PETScMatrix&);
 %ignore dolfin::SLEPcEigenSolver(const PETScMatrix&, const PETScMatrix&);
+
+// Only ignore C++ accessors if slepc4py is enabled
+#ifdef HAS_SLEPC4PY
+%ignore dolfin::SLEPcEigenSolver::eps() const;
+#else
+// Ignore everything
+%ignore dolfin::SLEPcEigenSolver::eps;
 #endif
-
-//-----------------------------------------------------------------------------
-// Trilinos backend
-//-----------------------------------------------------------------------------
-#ifdef HAS_TRILINOS
-%ignore dolfin::EpetraMatrix::mat;
-%ignore dolfin::EpetraVector::vec;
-%ignore dolfin::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A);
-
-//-----------------------------------------------------------------------------
-// Typemaps for Teuchos::RCP (Trilinos backend)
-//-----------------------------------------------------------------------------
-
-%define %RCP_to_const_ref_typemap(Type)
-%typemap(in) const Type&
-{
-  int res = SWIG_ConvertPtr($input, (void**)&$1, $1_descriptor, 0);
-  if (!SWIG_IsOK(res))
-  {
-    Teuchos::RCP<Type> *rcp_ptr;
-    int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr,
-                                $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
-    if (!SWIG_IsOK(res))
-      SWIG_exception_fail(SWIG_ArgError(res), "in method '$symname', argument $argnum of type '$type'");
-    if (rcp_ptr)
-    {
-      $1 = rcp_ptr->get();
-      if (newmem & SWIG_CAST_NEW_MEMORY)
-        delete rcp_ptr;
-    }
-    else
-      $1 = NULL;
-  }
-  if (!$1)
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference in method '$symname', argument $argnum of type '$type'");
-}
-
-
-%typecheck(SWIG_TYPECHECK_POINTER) const Type&
-{
-  void *dummy;
-  int res;
-  res = SWIG_ConvertPtr($input, &dummy, $1_descriptor, 0);
-  if (!SWIG_IsOK(res))
-  {
-    Teuchos::RCP<Type> *rcp_ptr;
-    int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr,
-                                $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
-    if (rcp_ptr && (newmem & SWIG_CAST_NEW_MEMORY))
-      delete rcp_ptr;
-  }
-  $1 = SWIG_CheckState(res);
-}
-%enddef
-
-%RCP_to_const_ref_typemap(Epetra_CrsGraph);
-%RCP_to_const_ref_typemap(Epetra_BlockMap);
-%RCP_to_const_ref_typemap(Teuchos::ParameterList);
 #endif
 
 //-----------------------------------------------------------------------------
@@ -300,15 +252,15 @@
 %typemap(directorin, fragment="NoDelete") dolfin::GenericVector&
 {
   // Director in dolfin::GenericVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< dolfin::GenericVector > *smartresult = new std::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") const dolfin::GenericVector&
 {
   // Director in const dolfin::GenericVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< const dolfin::GenericVector > *smartresult = new std::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }
 
 //-----------------------------------------------------------------------------
@@ -317,17 +269,17 @@
 %typemap(directorin, fragment="NoDelete") dolfin::PETScVector&
 {
   // Director in dolfin::PETScVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *smartresult
-    = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< dolfin::PETScVector > *smartresult
+    = new std::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") const dolfin::PETScVector&
 {
   // Director in const dolfin::PETScVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector > *smartresult
-    = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< const dolfin::PETScVector > *smartresult
+    = new std::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
 
 //-----------------------------------------------------------------------------
@@ -336,12 +288,12 @@
 %typemap(directorin, fragment="NoDelete") dolfin::uBLASVector&
 {
   // Director in dolfin::uBLASVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< dolfin::uBLASVector > *smartresult = new std::shared_ptr< dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
 }
 
 %typemap(directorin, fragment="NoDelete") const dolfin::uBLASVector& {
   // Director in const dolfin::uBLASVector&
-  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::uBLASVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
+  std::shared_ptr< const dolfin::uBLASVector > *smartresult = new std::shared_ptr< const dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
 }

@@ -24,9 +24,10 @@
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
 
+#include <memory>
 #include <string>
-#include <boost/shared_ptr.hpp>
 
+#include <dolfin/log/log.h>
 #include "uBLASKrylovSolver.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
@@ -39,7 +40,7 @@ namespace dolfin
   // Forward declaration
   class GenericLinearSolver;
 
-  template<typename Mat = ublas_sparse_matrix>
+  template<typename Mat=ublas_sparse_matrix>
   class uBLASFactory : public GenericLinearAlgebraFactory
   {
   public:
@@ -48,48 +49,56 @@ namespace dolfin
     virtual ~uBLASFactory() {}
 
     /// Create empty matrix
-    boost::shared_ptr<GenericMatrix> create_matrix() const
+    std::shared_ptr<GenericMatrix> create_matrix() const
     {
-      boost::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>);
+      std::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>);
       return A;
     }
 
     /// Create empty vector
-    boost::shared_ptr<GenericVector> create_vector() const
+    std::shared_ptr<GenericVector> create_vector() const
     {
-      boost::shared_ptr<GenericVector> x(new uBLASVector);
+      std::shared_ptr<GenericVector> x(new uBLASVector);
       return x;
     }
 
     /// Create empty tensor layout
-    boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
+    std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
     {
       bool sparsity = false;
       if (rank > 1)
         sparsity = true;
-      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
+      std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
       return pattern;
     }
 
     /// Create empty linear operator
-    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const
+    std::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
-      boost::shared_ptr<GenericLinearOperator> A(new uBLASLinearOperator);
+      std::shared_ptr<GenericLinearOperator> A(new uBLASLinearOperator);
       return A;
     }
 
     /// Create LU solver
-    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
+    std::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
     {
-      boost::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
+      #ifdef HAS_UMFPACK
+      std::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
       return solver;
+      #else
+      dolfin_error("uBLASFactory.cpp",
+                   "create LU solver",
+                   "No LU solver for uBLAS available. Trying configuring DOLFIN with UMFPACK");
+      return std::shared_ptr<GenericLUSolver>();
+      #endif
     }
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
-                                              std::string preconditioner) const
+    std::shared_ptr<GenericLinearSolver>
+    create_krylov_solver(std::string method,
+                         std::string preconditioner) const
     {
-      boost::shared_ptr<GenericLinearSolver>
+      std::shared_ptr<GenericLinearSolver>
         solver(new uBLASKrylovSolver(method, preconditioner));
       return solver;
     }
@@ -101,21 +110,23 @@ namespace dolfin
       std::vector<std::pair<std::string, std::string> > methods;
       methods.push_back(std::make_pair("default",
                                        "default LU solver"));
+      #ifdef HAS_UMFPACK
       methods.push_back(std::make_pair("umfpack",
                                        "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+      #endif
       return methods;
     }
 
     /// Return a list of available Krylov solver methods
     std::vector<std::pair<std::string, std::string> >
-      krylov_solver_methods() const
+    krylov_solver_methods() const
     {
       return uBLASKrylovSolver::methods();
     }
 
     /// Return a list of available preconditioners
     std::vector<std::pair<std::string, std::string> >
-      krylov_solver_preconditioners() const
+    krylov_solver_preconditioners() const
     {
       return uBLASKrylovSolver::preconditioners();
     }
@@ -136,6 +147,7 @@ namespace dolfin
 }
 
 // Initialise static data
-template<typename Mat> dolfin::uBLASFactory<Mat> dolfin::uBLASFactory<Mat>::factory;
+template<typename Mat> dolfin::uBLASFactory<Mat>
+dolfin::uBLASFactory<Mat>::factory;
 
 #endif

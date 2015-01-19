@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2005-2010
 //
 // First added:  2005-12-02
-// Last changed: 2012-08-20
+// Last changed: 2014-07-09
 
 #ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
 #define __DOLFIN_PETSC_KRYLOV_SOLVER_H
@@ -30,7 +30,7 @@
 
 #include <map>
 #include <petscksp.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 #include "PETScObject.h"
@@ -69,7 +69,7 @@ namespace dolfin
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
     PETScKrylovSolver(std::string method,
-		      boost::shared_ptr<PETScPreconditioner> preconditioner);
+		      std::shared_ptr<PETScPreconditioner> preconditioner);
 
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner
@@ -79,7 +79,7 @@ namespace dolfin
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
     PETScKrylovSolver(std::string method,
-		    boost::shared_ptr<PETScUserPreconditioner> preconditioner);
+		    std::shared_ptr<PETScUserPreconditioner> preconditioner);
 
     /// Create solver wrapper of a PETSc KSP object
     explicit PETScKrylovSolver(KSP ksp);
@@ -88,18 +88,18 @@ namespace dolfin
     ~PETScKrylovSolver();
 
     /// Set operator (matrix)
-    void set_operator(boost::shared_ptr<const GenericLinearOperator> A);
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
-    void set_operator(boost::shared_ptr<const PETScBaseMatrix> A);
+    void set_operator(std::shared_ptr<const PETScBaseMatrix> A);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(boost::shared_ptr<const GenericLinearOperator> A,
-                       boost::shared_ptr<const GenericLinearOperator> P);
+    void set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                       std::shared_ptr<const GenericLinearOperator> P);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(boost::shared_ptr<const PETScBaseMatrix> A,
-                       boost::shared_ptr<const PETScBaseMatrix> P);
+    void set_operators(std::shared_ptr<const PETScBaseMatrix> A,
+                       std::shared_ptr<const PETScBaseMatrix> P);
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
@@ -141,6 +141,7 @@ namespace dolfin
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
+    friend class PETScTAOSolver;
 
   private:
 
@@ -148,7 +149,7 @@ namespace dolfin
     void init(const std::string& method);
 
     // Set PETSc operators
-    void set_petsc_operators();
+    //void set_petsc_operators();
 
     // Set options that affect KSP object
     void set_petsc_ksp_options();
@@ -173,13 +174,13 @@ namespace dolfin
     PETScUserPreconditioner* pc_dolfin;
 
     // Preconditioner
-    boost::shared_ptr<PETScPreconditioner> _preconditioner;
+    std::shared_ptr<PETScPreconditioner> _preconditioner;
 
     // Operator (the matrix)
-    boost::shared_ptr<const PETScBaseMatrix> _A;
+    std::shared_ptr<const PETScBaseMatrix> _matA;
 
-    // Matrix used to construct the preconditoner
-    boost::shared_ptr<const PETScBaseMatrix> _P;
+    // Matrix used to construct the preconditioner
+    std::shared_ptr<const PETScBaseMatrix> _matP;
 
     // Null space vectors
     std::vector<PETScVector> _nullspace;

@@ -16,17 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2005-2010
-// Modified by Martin Sandve Alnes 2008
+// Modified by Martin Sandve Alnes 2008-2014
 // Modified by Andre Massing 2009
-//
-// First added:  2003-11-28
-// Last changed: 2013-10-25
 
 #include <algorithm>
 #include <map>
 #include <utility>
 #include <vector>
-#include <boost/assign/list_of.hpp>
 
 #include <dolfin/adaptivity/Extrapolation.h>
 #include <dolfin/common/Array.h>
@@ -43,7 +39,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include "Expression.h"
@@ -70,7 +65,7 @@ Function::Function(const FunctionSpace& V)
   init_vector();
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V)
+Function::Function(std::shared_ptr<const FunctionSpace> V)
   : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -86,8 +81,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   init_vector();
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V,
-                   boost::shared_ptr<GenericVector> x)
+Function::Function(std::shared_ptr<const FunctionSpace> V,
+                   std::shared_ptr<GenericVector> x)
   : Hierarchical<Function>(*this), _function_space(V), _vector(x),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -129,7 +124,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V,
+Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::string filename)
   : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
@@ -204,24 +199,33 @@ const Function& Function::operator= (const Function& v)
   else
   {
     // Create new collapsed FunctionSpace
-    boost::unordered_map<std::size_t, std::size_t> collapsed_map;
+    std::unordered_map<std::size_t, std::size_t> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
 
     // Get row indices of original and new vectors
-    boost::unordered_map<std::size_t, std::size_t>::const_iterator entry;
+    std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
     std::vector<dolfin::la_index> new_rows(collapsed_map.size());
     std::vector<dolfin::la_index> old_rows(collapsed_map.size());
     std::size_t i = 0;
+    //const std::size_t local_owned_size
+    //  = v._function_space->dofmap()->ownership_range().second
+    //  - v._function_space->dofmap()->ownership_range().first;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
       new_rows[i]   = entry->first;
       old_rows[i++] = entry->second;
     }
+    MPI::barrier(MPI_COMM_WORLD);
 
     // Gather values into a vector
-    std::vector<double> gathered_values;
+    //std::vector<double> gathered_values;
+    //dolfin_assert(v.vector());
+    //v.vector()->gather(gathered_values, old_rows);
+
     dolfin_assert(v.vector());
-    v.vector()->gather(gathered_values, old_rows);
+    std::vector<double> gathered_values(collapsed_map.size());
+    v.vector()->get_local(gathered_values.data(), gathered_values.size(),
+                          old_rows.data());
 
     // Initial new vector (global)
     init_vector();
@@ -229,9 +233,10 @@ const Function& Function::operator= (const Function& v)
     dolfin_assert(_vector->size()
                   == _function_space->dofmap()->global_dimension());
 
+    // FIXME (local): Check this for local or global
     // Set values in vector
-    this->_vector->set(gathered_values.data(), collapsed_map.size(),
-                       new_rows.data());
+    this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
+                             new_rows.data());
     this->_vector->apply("insert");
   }
 
@@ -249,6 +254,7 @@ const Function& Function::operator= (const Expression& v)
 //-----------------------------------------------------------------------------
 Function& Function::operator[] (std::size_t i) const
 {
+
   // Check if sub-Function is in the cache, otherwise create and add
   // to cache
   boost::ptr_map<std::size_t, Function>::iterator sub_function
@@ -258,8 +264,8 @@ Function& Function::operator[] (std::size_t i) const
   else
   {
     // Extract function subspace
-    std::vector<std::size_t> component = boost::assign::list_of(i);
-    boost::shared_ptr<const FunctionSpace>
+    std::vector<std::size_t> component(1, i);
+    std::shared_ptr<const FunctionSpace>
       sub_space(_function_space->extract_sub_space(component));
 
     // Insert sub-Function into map and return reference
@@ -318,13 +324,13 @@ void Function::operator=(const FunctionAXPY& axpy)
     _vector->axpy(it->first, *(it->second->vector()));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace> Function::function_space() const
+std::shared_ptr<const FunctionSpace> Function::function_space() const
 {
   dolfin_assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> Function::vector()
+std::shared_ptr<GenericVector> Function::vector()
 {
   dolfin_assert(_vector);
   dolfin_assert(_function_space->dofmap());
@@ -340,7 +346,7 @@ boost::shared_ptr<GenericVector> Function::vector()
   return _vector;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector> Function::vector() const
+std::shared_ptr<const GenericVector> Function::vector() const
 {
   dolfin_assert(_vector);
   return _vector;
@@ -382,12 +388,11 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     if (allow_extrapolation)
     {
       id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
-      cout << "Extrapolating function value at x = " << point
-           << " (not inside domain)." << endl;
+      //cout << "Extrapolating function value at x = " << point
+      //     << " (not inside domain)." << endl;
     }
     else
     {
-      cout << point << endl;
       dolfin_error("Function.cpp",
                    "evaluate function at point",
                    "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
@@ -438,12 +443,11 @@ void Function::eval(Array<double>& values, const Array<double>& x,
     values[j] = 0.0;
 
   // Compute linear combination
-  const int cell_orientation = 0;
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, basis.data(), x.data(),
                            vertex_coordinates.data(),
-                           cell_orientation);
+                           ufc_cell.orientation);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }
@@ -453,9 +457,6 @@ void Function::interpolate(const GenericFunction& v)
 {
   dolfin_assert(_vector);
   dolfin_assert(_function_space);
-
-  // Gather off-process dofs
-  v.update();
 
   // Interpolate
   _function_space->interpolate(*_vector, v);
@@ -604,16 +605,9 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
                  "Non-matching mesh");
   }
 
-  // Update ghosts dofs
-  update();
-
   // Get finite element
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
-
-  // Get restriction if any
-  boost::shared_ptr<const Restriction> restriction
-    = _function_space->dofmap()->restriction();
 
   // Local data for interpolation on each cell
   const std::size_t num_cell_vertices
@@ -635,12 +629,8 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
-    // Skip cells not included in restriction
-    if (restriction && !restriction->contains(*cell))
-      continue;
-
     // Update to current cell
     cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
@@ -650,11 +640,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
              ufc_cell);
 
     // Interpolate values at the vertices
-    const int cell_orientation = 0;
     element.interpolate_vertex_values(cell_vertex_values.data(),
                                       coefficients.data(),
                                       vertex_coordinates.data(),
-                                      cell_orientation,
+                                      ufc_cell.orientation,
                                       ufc_cell);
 
     // Copy values to array of vertex values
@@ -677,11 +666,6 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values)
   compute_vertex_values(vertex_values, *_function_space->mesh());
 }
 //-----------------------------------------------------------------------------
-void Function::update() const
-{
-  _vector->update_ghost_values();
-}
-//-----------------------------------------------------------------------------
 void Function::init_vector()
 {
   Timer timer("Init dof vector");
@@ -695,18 +679,19 @@ void Function::init_vector()
                  "Cannot be created from subspace. Consider collapsing the function space");
   }
 
-  // Get global size
-  const std::size_t N = _function_space->dofmap()->global_dimension();
+  // Get dof map
+  dolfin_assert(_function_space->dofmap());
+  const GenericDofMap& dofmap = *(_function_space->dofmap());
 
   // Get local range
-  const std::pair<std::size_t, std::size_t> range
-    = _function_space->dofmap()->ownership_range();
-  const std::size_t local_size = range.second - range.first;
+  const std::pair<std::size_t, std::size_t> range = dofmap.ownership_range();
 
   // Determine ghost vertices if dof map is distributed
-  std::vector<la_index> ghost_indices;
-  if (N > local_size)
-    compute_ghost_indices(range, ghost_indices);
+  const std::size_t bs = dofmap.block_size;
+  std::vector<la_index> ghost_indices(bs*dofmap.local_to_global_unowned().size());
+  for (std::size_t i = 0; i < dofmap.local_to_global_unowned().size(); ++i)
+    for (std::size_t j = 0; j < bs; ++j)
+      ghost_indices[bs*i + j] = bs*dofmap.local_to_global_unowned()[i] + j;
 
   // Create vector of dofs
   if (!_vector)
@@ -716,10 +701,17 @@ void Function::init_vector()
   }
   dolfin_assert(_vector);
 
+  // Tabulate local-to-global map for dofs
+  std::vector<std::size_t> local_to_global_map;
+  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+
   // Initialize vector of dofs
   dolfin_assert(_function_space->mesh());
   if (_vector->empty())
-    _vector->init(_function_space->mesh()->mpi_comm(), range, ghost_indices);
+  {
+    _vector->init(_function_space->mesh()->mpi_comm(), range,
+                  local_to_global_map, ghost_indices);
+  }
   else
   {
     dolfin_error("Function.cpp",
@@ -744,7 +736,7 @@ Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
 
   // Get dof map
   dolfin_assert(_function_space->dofmap());
-  const GenericDofMap& dofmap = *_function_space->dofmap();
+  const GenericDofMap& dofmap = *(_function_space->dofmap());
 
   // Get local range
   const std::size_t n0 = range.first;

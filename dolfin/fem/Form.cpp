@@ -19,10 +19,11 @@
 // Modified by Martin Alnes 2008
 //
 // First added:  2007-12-10
-// Last changed: 2014-02-12
+// Last changed: 2014-02-14
 
+#include <memory>
 #include <string>
-#include <boost/scoped_ptr.hpp>
+
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -40,17 +41,17 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Form::Form(std::size_t rank, std::size_t num_coefficients)
   : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this),
+    dx(*this), ds(*this), dS(*this), dP(*this), 
     _function_spaces(rank), _coefficients(num_coefficients), _rank(rank)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Form::Form(boost::shared_ptr<const ufc::form> ufc_form,
-           std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces,
-           std::vector<boost::shared_ptr<const GenericFunction> > coefficients)
+Form::Form(std::shared_ptr<const ufc::form> ufc_form,
+           std::vector<std::shared_ptr<const FunctionSpace>> function_spaces,
+           std::vector<std::shared_ptr<const GenericFunction>> coefficients)
   : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this), _ufc_form(ufc_form),
+    dx(*this), ds(*this), dS(*this), dP(*this), _ufc_form(ufc_form),
     _function_spaces(function_spaces), _coefficients(coefficients),
     _rank(ufc_form->rank())
 {
@@ -117,7 +118,7 @@ std::vector<std::size_t> Form::coloring(std::size_t entity_dim) const
   return _coloring;
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(boost::shared_ptr<const Mesh> mesh)
+void Form::set_mesh(std::shared_ptr<const Mesh> mesh)
 {
   _mesh = mesh;
 }
@@ -129,7 +130,7 @@ const Mesh& Form::mesh() const
   // by calling set_mesh().
 
   // Extract meshes from function spaces
-  std::vector<boost::shared_ptr<const Mesh> > meshes;
+  std::vector<std::shared_ptr<const Mesh>> meshes;
   for (std::size_t i = 0; i < _function_spaces.size(); i++)
   {
     if (_function_spaces[i])
@@ -150,6 +151,8 @@ const Mesh& Form::mesh() const
     meshes.push_back(_exterior_facet_domains->mesh());
   if (_interior_facet_domains)
     meshes.push_back(_interior_facet_domains->mesh());
+  if (_vertex_domains)
+    meshes.push_back(_vertex_domains->mesh());
 
   // Extract meshes from coefficients. Note that this is only done
   // when we don't already have a mesh sine it may otherwise conflict
@@ -188,44 +191,43 @@ const Mesh& Form::mesh() const
   return *meshes[0];
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const dolfin::Mesh> Form::mesh_shared_ptr() const
+std::shared_ptr<const dolfin::Mesh> Form::mesh_shared_ptr() const
 {
   return _mesh;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace> Form::function_space(std::size_t i) const
+std::shared_ptr<const FunctionSpace> Form::function_space(std::size_t i) const
 {
   dolfin_assert(i < _function_spaces.size());
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const FunctionSpace> > Form::function_spaces() const
+std::vector<std::shared_ptr<const FunctionSpace>> Form::function_spaces() const
 {
   return _function_spaces;
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficient(std::size_t i,
-                           boost::shared_ptr<const GenericFunction> coefficient)
+                           std::shared_ptr<const GenericFunction> coefficient)
 {
   dolfin_assert(i < _coefficients.size());
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficient(std::string name,
-                           boost::shared_ptr<const GenericFunction> coefficient)
+                           std::shared_ptr<const GenericFunction> coefficient)
 {
   set_coefficient(coefficient_number(name), coefficient);
 }
 //-----------------------------------------------------------------------------
-void Form::set_coefficients(std::map<std::string,
-                                     boost::shared_ptr<const GenericFunction> > coefficients)
+void Form::set_coefficients(std::map<std::string, std::shared_ptr<const GenericFunction>> coefficients)
 {
   for (auto it = coefficients.begin(); it != coefficients.end(); ++it)
     set_coefficient(it->first, it->second);
 }
 //-----------------------------------------------------------------------------
 void Form::set_some_coefficients(std::map<std::string,
-                                          boost::shared_ptr<const GenericFunction> > coefficients)
+                                 std::shared_ptr<const GenericFunction>> coefficients)
 {
   // Build map of which coefficients has been set
   std::map<std::string, bool> markers;
@@ -271,18 +273,18 @@ void Form::set_some_coefficients(std::map<std::string,
   }
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunction> Form::coefficient(std::size_t i) const
+std::shared_ptr<const GenericFunction> Form::coefficient(std::size_t i) const
 {
   dolfin_assert(i < _coefficients.size());
   return _coefficients[i];
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunction> Form::coefficient(std::string name) const
+std::shared_ptr<const GenericFunction> Form::coefficient(std::string name) const
 {
   return coefficient(coefficient_number(name));
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const GenericFunction> > Form::coefficients() const
+std::vector<std::shared_ptr<const GenericFunction>> Form::coefficients() const
 {
   return _coefficients;
 }
@@ -302,40 +304,51 @@ std::string Form::coefficient_name(std::size_t i) const
   return name.str();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> > Form::cell_domains() const
+std::shared_ptr<const MeshFunction<std::size_t>> Form::cell_domains() const
 {
   return _cell_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> > Form::exterior_facet_domains() const
+std::shared_ptr<const MeshFunction<std::size_t>> Form::exterior_facet_domains() const
 {
   return _exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> > Form::interior_facet_domains() const
+std::shared_ptr<const MeshFunction<std::size_t>> Form::interior_facet_domains() const
 {
   return _interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const MeshFunction<std::size_t>> Form::vertex_domains() const
+{
+  return _vertex_domains;
+}
+//-----------------------------------------------------------------------------
 void Form::set_cell_domains
-(boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains)
+(std::shared_ptr<const MeshFunction<std::size_t>> cell_domains)
 {
   _cell_domains = cell_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains
-(boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains)
+(std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains)
 {
   _exterior_facet_domains = exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains
-(boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains)
+(std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
 {
   _interior_facet_domains = interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const ufc::form> Form::ufc_form() const
+void Form::set_vertex_domains
+(std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains)
+{
+  _vertex_domains = vertex_domains;
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const ufc::form> Form::ufc_form() const
 {
   return _ufc_form;
 }
@@ -365,7 +378,7 @@ void Form::check() const
   // Check argument function spaces
   for (std::size_t i = 0; i < _function_spaces.size(); ++i)
   {
-    boost::scoped_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
+    std::unique_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
     dolfin_assert(element);
     dolfin_assert(_function_spaces[i]->element());
     if (element->signature() != _function_spaces[i]->element()->signature())

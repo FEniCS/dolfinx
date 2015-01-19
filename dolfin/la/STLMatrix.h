@@ -27,8 +27,8 @@
 
 #include <string>
 #include <utility>
-#include <vector>
 #include <boost/unordered_map.hpp>
+#include <vector>
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
@@ -96,9 +96,9 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const
+    virtual std::shared_ptr<GenericMatrix> copy() const
     {
-      boost::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
+      std::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
       return A;
     }
 
@@ -118,16 +118,28 @@ namespace dolfin
                      const dolfin::la_index* cols) const
     { dolfin_not_implemented(); }
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
                      const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols)
     { dolfin_not_implemented(); }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows, std::size_t n,
+                           const dolfin::la_index* cols)
+    { dolfin_not_implemented(); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
                      const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols);
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block, std::size_t m,
+                           const dolfin::la_index* rows, std::size_t n,
+                           const dolfin::la_index* cols)
+    { dolfin_not_implemented(); }
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -147,12 +159,20 @@ namespace dolfin
                         const std::vector<double>& values)
     { dolfin_not_implemented(); }
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows)
     { dolfin_not_implemented(); }
 
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows)
+    { zero(m, rows); }
+
     /// Set given rows to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows);
+
+    /// Set given rows to identity matrix
+    virtual void ident_local(std::size_t m, const dolfin::la_index* rows)
+    { dolfin_not_implemented(); }
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const
@@ -160,6 +180,10 @@ namespace dolfin
 
     // Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const
+    { dolfin_not_implemented(); }
+
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x)
     { dolfin_not_implemented(); }
 
     /// Multiply matrix by given number

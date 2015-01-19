@@ -31,7 +31,7 @@ class Noslip : public SubDomain
   bool inside(const Array<double>& x, bool on_boundary) const
   {
     return ((x[1] < DOLFIN_EPS || x[1] > 1.0 - DOLFIN_EPS) ||
-            (on_boundary && abs(x[0] - 1.5) < 0.1 + DOLFIN_EPS));
+            (on_boundary && std::abs(x[0] - 1.5) < 0.1 + DOLFIN_EPS));
   }
 };
 
@@ -56,6 +56,7 @@ class Pressure : public Expression
 int main()
 {
   parameters["allow_extrapolation"] = true;
+  parameters["refinement_algorithm"] = "plaza_with_parent_facets";
 
   // Create mesh and function space
   Mesh mesh("../channel_with_flap.xml.gz");

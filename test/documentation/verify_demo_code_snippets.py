@@ -1,4 +1,4 @@
-# Copyright (C) 2010 Kristian B. Oelgaard
+# Copyright (C) 2010-2014 Kristian B. Oelgaard
 #
 # This file is part of DOLFIN.
 #
@@ -16,41 +16,25 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Marie E. Rognes (meg@simula.no)
-#
-# First added:  2011-05-22
-# Last changed: 2013-09-12
+# Modified by Martin Sandve Alnaes, 2014
 
 """This utility script will find all *.rst files in the source/demo
 directory and checks that any code snippets highlighted by the .. code-block::
 directive is legal in the sense that it is present in at least one of the
 source files (.ufl, .py, .cpp) that is associated with the demo."""
 
+from __future__ import print_function
 import sys
-
+import os
 from os import chdir, path, getcwd, curdir, pardir, listdir
 from sys import stderr, path as sys_path
-
-# Make sure we start where this test script is located.
-chdir(sys_path[0])
-
-# We currently only verify demo code.
-chdir(path.join(pardir, pardir, "demo"))
-
-# We have C++ and Python versions of the demos.
-directories = ["cpp", "python"]
-
-# Dictionary of code blocks that has to be checked for each subdirectory
-# including information about file types of the source.
-block_source =  {"cpp":     {"c++": ".cpp", "python": ".ufl"},
-                 "python":  {"python": ".py"}
-                }
 
 def verify_blocks(rst_file, source_files, source_dict):
     """Check that any code blocks in the rst file is present in at
     least one of the source files. Returns (False, block) if any block
     is not present, True otherwise."""
 
-    for block_type, source_type in source_dict.items():
+    for block_type, source_type in list(source_dict.items()):
         # Extract code blocks from rst file.
         blocks = get_blocks(rst_file, block_type)
         for line, block in blocks:
@@ -114,7 +98,7 @@ def block_in_source(line, block, source_files):
 
     # Return fail if no source files are provided
     if not source_files:
-        print "\ncode block:\n", block
+        print("\ncode block:\n", block)
         raise RuntimeError("No source file!")
 
     # Go through each source file and check if any contains code block
@@ -137,7 +121,21 @@ def block_in_source(line, block, source_files):
     #raise RuntimeError("Illegal code block.")
     return False
 
-if __name__ == "__main__":
+def main():
+    # Make sure we start where this test script is located.
+    chdir(sys_path[0])
+
+    # We currently only verify demo code.
+    chdir(path.join(pardir, pardir, "demo"))
+
+    # We have C++ and Python versions of the demos.
+    directories = ["cpp", "python"]
+
+    # Dictionary of code blocks that has to be checked for each subdirectory
+    # including information about file types of the source.
+    block_source =  {"cpp":     {"c++": ".cpp", "python": ".ufl"},
+                     "python":  {"python": ".py"}
+                    }
 
     # Loop categories/demos/directories
 
@@ -157,6 +155,8 @@ if __name__ == "__main__":
         for demo in demos:
             chdir(demo)
             for directory in directories:
+                if not os.path.isdir(directory):
+                    continue
                 chdir(directory)
                 stderr.write("Checking %s: " % path.join(category, demo, directory))
                 # Get files in demo directory and sort in rst and source files.
@@ -185,4 +185,7 @@ if __name__ == "__main__":
             chdir(pardir)
         chdir(pardir)
 
-    sys.exit(len(failed))
+    return len(failed)
+
+if __name__ == "__main__":
+    sys.exit(main())

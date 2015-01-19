@@ -32,11 +32,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 LUSolver::LUSolver(std::string method)
 {
-  // Initialize solver
   init(method);
 }
 //-----------------------------------------------------------------------------
-LUSolver::LUSolver(boost::shared_ptr<const GenericLinearOperator> A,
+LUSolver::LUSolver(std::shared_ptr<const GenericLinearOperator> A,
                    std::string method)
 {
   // Initialize solver
@@ -51,8 +50,7 @@ LUSolver::~LUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void
-LUSolver::set_operator(boost::shared_ptr<const GenericLinearOperator> A)
+void LUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
@@ -69,7 +67,7 @@ std::size_t LUSolver::solve(GenericVector& x, const GenericVector& b)
 }
 //-----------------------------------------------------------------------------
 std::size_t LUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
-                             const GenericVector& b)
+                            const GenericVector& b)
 {
   dolfin_assert(solver);
 

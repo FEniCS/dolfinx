@@ -61,36 +61,69 @@ namespace dolfin
     virtual std::pair<std::size_t, std::size_t>
       local_range(std::size_t dim) const = 0;
 
+    /// Return number of non-zero entries in matrix (collective)
+    virtual std::size_t nnz() const = 0;
+
     /// Get block of values
     virtual void get(double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows) const
     { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows)
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block,
+                           const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows)
+    { set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Add block of values using global indices
     virtual void add(const double* block, const dolfin::la_index* num_rows,
                      const dolfin::la_index * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
-    /// Add block of values
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows)
+    { add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Add block of values using global indices
     virtual void
       add(const double* block,
           const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
-      add(block, (rows[0])->size(), &(*rows[0])[0], (rows[1])->size(),
-          &(*rows[1])[0]);
+      add(block, rows[0]->size(), rows[0]->data(),
+          rows[1]->size(), rows[1]->data());
     }
 
-    /// Add block of values
+    /// Add block of values using local indices
+    virtual void
+      add_local(const double* block,
+                const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    {
+      add_local(block, rows[0]->size(), rows[0]->data(),
+                rows[1]->size(), rows[1]->data());
+    }
+
+    /// Add block of values using global indices
     virtual void add(const double* block,
                      const std::vector<std::vector<dolfin::la_index> >& rows)
     {
-      add(block, rows[0].size(), &(rows[0])[0], rows[1].size(),
-          &(rows[1])[0]);
+      add(block, rows[0].size(), rows[0].data(),
+          rows[1].size(), rows[1].data());
+    }
+
+    /// Add block of values using local indices
+    virtual void
+      add_local(const double* block,
+                const std::vector<std::vector<dolfin::la_index> >& rows)
+    {
+      add_local(block, rows[0].size(), rows[0].data(), rows[1].size(),
+                rows[1].data());
     }
 
     /// Set all entries to zero and keep any sparse structure
@@ -105,7 +138,7 @@ namespace dolfin
     //--- Matrix interface ---
 
     /// Return copy of matrix
-    virtual boost::shared_ptr<GenericMatrix> copy() const = 0;
+    virtual std::shared_ptr<GenericMatrix> copy() const = 0;
 
     /// Initialize vector z to be compatible with the matrix-vector
     /// product y = Ax. In the parallel case, both size and layout are
@@ -121,15 +154,25 @@ namespace dolfin
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols) const = 0;
 
-    /// Set block of values
+    /// Set block of values using global indices
     virtual void set(const double* block,
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols) = 0;
 
-    /// Add block of values
+    /// Set block of values using local indices
+    virtual void set_local(const double* block,
+                           std::size_t m, const dolfin::la_index* rows,
+                           std::size_t n, const dolfin::la_index* cols) = 0;
+
+    /// Add block of values using global indices
     virtual void add(const double* block,
                      std::size_t m, const dolfin::la_index* rows,
                      std::size_t n, const dolfin::la_index* cols) = 0;
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           std::size_t m, const dolfin::la_index* rows,
+                           std::size_t n, const dolfin::la_index* cols) = 0;
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -138,24 +181,34 @@ namespace dolfin
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const = 0;
 
-    /// Get non-zero values of given row on local process
+    /// Get non-zero values of given row (global index) on local process
+
     virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
                         std::vector<double>& values) const = 0;
 
-    /// Set values for given row on local process
+    /// Set values for given row (global index) on local process
     virtual void setrow(std::size_t row,
                         const std::vector<std::size_t>& columns,
                         const std::vector<double>& values) = 0;
 
-    /// Set given rows to zero
+    /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index* rows) = 0;
 
-    /// Set given rows to identity matrix
+    /// Set given rows (local row indices) to zero
+    virtual void zero_local(std::size_t m, const dolfin::la_index* rows) = 0;
+
+    /// Set given rows (global row indices) to identity matrix
     virtual void ident(std::size_t m, const dolfin::la_index* rows) = 0;
+
+    /// Set given rows (local row indices) to identity matrix
+    virtual void ident_local(std::size_t m, const dolfin::la_index* rows) = 0;
 
     /// Matrix-vector product, y = A^T x. The y vector must either be
     /// zero-sized or have correct size and parallel layout.
     virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
+
+    /// Set diagonal of a matrix
+    virtual void set_diagonal(const GenericVector& x) = 0;
 
     /// Multiply matrix by given number
     virtual const GenericMatrix& operator*= (double a) = 0;
@@ -189,7 +242,7 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
-    /// Return pointers to underlying compresssed row/column storage data
+    /// Return pointers to underlying compressed row/column storage data
     /// For compressed row storage, data = (row_pointer[#rows +1],
     /// column_index[#nz], matrix_values[#nz], nz)
     virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,

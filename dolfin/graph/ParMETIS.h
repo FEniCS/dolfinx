@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <vector>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Set.h>
 
 namespace dolfin
 {
@@ -35,30 +36,38 @@ namespace dolfin
 
   class ParMETISDualGraph;
 
-  /// This class proivdes an interface to ParMETIS
+  /// This class provides an interface to ParMETIS
 
   class ParMETIS
   {
   public:
 
-    /// Compute cell partition using ParMETIS. The mode argument
-    /// determines which ParMETIS function is called. It can be one of
-    /// "partition", "adaptive_repartition" or "refine". For meshes
+    /// Compute cell partition from local mesh data.
+    /// The output vector cell_partition contains the desired 
+    /// destination process numbers for each cell. 
+    /// Cells shared on multiple processes have an
+    /// entry in ghost_procs pointing to
+    /// the set of sharing process numbers.
+    /// The mode argument determines which ParMETIS function 
+    /// is called. It can be one of "partition", 
+    /// "adaptive_repartition" or "refine". For meshes
     /// that have already been partitioned or are already well
     /// partitioned, it can be advantageous to use
     /// "adaptive_repartition" or "refine".
     static void compute_partition(const MPI_Comm mpi_comm,
-                                  std::vector<std::size_t>& cell_partition,
-                                  const LocalMeshData& mesh_data,
-                                  std::string mode="partition");
+            std::vector<std::size_t>& cell_partition,
+            std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+            const LocalMeshData& mesh_data,
+            std::string mode="partition");
 
   private:
 
 #ifdef HAS_PARMETIS
     // Standard ParMETIS partition
     static void partition(MPI_Comm mpi_comm,
-                          std::vector<std::size_t>& cell_partition,
-                          ParMETISDualGraph& g);
+       std::vector<std::size_t>& cell_partition,
+       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+       ParMETISDualGraph& g);
 
     // ParMETIS adaptive repartition
     static void adaptive_repartition(MPI_Comm mpi_comm,

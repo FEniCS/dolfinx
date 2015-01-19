@@ -16,24 +16,23 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-02
+// Last changed: 2014-03-05
 
 #ifndef __BUTCHERSCHEME_H
 #define __BUTCHERSCHEME_H
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dolfin/common/Variable.h>
-#include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/fem/Form.h>
 
 namespace dolfin
 {
 
-  /// This class is a place holder for forms and solutions for a multi stage 
-  /// Butcher tableau based method
+  /// This class is a place holder for forms and solutions for a
+  /// multi-stage Butcher tableau based method
 
   // Forward declarations
   class Form;
@@ -47,50 +46,52 @@ namespace dolfin
 
     /// Constructor
     /// FIXME: This constructor is a MESS. Needs clean up...
-    MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
-		  const FunctionAXPY& last_stage, 
-		  std::vector<boost::shared_ptr<Function> > stage_solutions,
-		  boost::shared_ptr<Function> u, 
-		  boost::shared_ptr<Constant> t, 
-		  boost::shared_ptr<Constant> dt,
-		  std::vector<double> dt_stage_offset, 
+    MultiStageScheme(std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms,
+		  std::shared_ptr<const Form> last_stage,
+		  std::vector<std::shared_ptr<Function> > stage_solutions,
+		  std::shared_ptr<Function> u,
+		  std::shared_ptr<Constant> t,
+		  std::shared_ptr<Constant> dt,
+		  std::vector<double> dt_stage_offset,
+		  std::vector<int> jacobian_indices,
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form);
 
     /// Constructor with Boundary conditions
-    MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
-		  const FunctionAXPY& last_stage, 
-		  std::vector<boost::shared_ptr<Function> > stage_solutions,
-		  boost::shared_ptr<Function> u, 
-		  boost::shared_ptr<Constant> t, 
-		  boost::shared_ptr<Constant> dt, 
-		  std::vector<double> dt_stage_offset, 
+    MultiStageScheme(std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms,
+		  std::shared_ptr<const Form> last_stage,
+		  std::vector<std::shared_ptr<Function> > stage_solutions,
+		  std::shared_ptr<Function> u,
+		  std::shared_ptr<Constant> t,
+		  std::shared_ptr<Constant> dt,
+		  std::vector<double> dt_stage_offset,
+		  std::vector<int> jacobian_indices,
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form,
 		  std::vector<const DirichletBC* > bcs);
 
     /// Return the stages
-    std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms();
+    std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms();
 
     /// Return the last stage
-    FunctionAXPY& last_stage();
+    std::shared_ptr<const Form> last_stage();
 
     /// Return stage solutions
-    std::vector<boost::shared_ptr<Function> >& stage_solutions();
-    
+    std::vector<std::shared_ptr<Function> >& stage_solutions();
+
     /// Return solution variable
-    boost::shared_ptr<Function> solution();
+    std::shared_ptr<Function> solution();
 
     /// Return solution variable (const version)
-    boost::shared_ptr<const Function> solution() const;
+    std::shared_ptr<const Function> solution() const;
 
     /// Return local time
-    boost::shared_ptr<Constant> t();
+    std::shared_ptr<Constant> t();
 
     /// Return local timestep
-    boost::shared_ptr<Constant> dt();
+    std::shared_ptr<Constant> dt();
 
     /// Return local timestep
     const std::vector<double>& dt_stage_offset() const;
@@ -107,34 +108,41 @@ namespace dolfin
     /// Return true if the whole scheme is implicit
     bool implicit() const;
 
+    // Return a distinct jacobian index for a given stage if negative the
+    // stage is explicit and hence no jacobian needed.
+    int jacobian_index(unsigned int stage) const;
+
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
   private:
-    
+
     // Check sanity of arguments
     void _check_arguments();
 
     // Vector of forms for the different RK stages
-    std::vector<std::vector<boost::shared_ptr<const Form> > > _stage_forms;
+    std::vector<std::vector<std::shared_ptr<const Form> > > _stage_forms;
 
     // A linear combination of solutions for the last stage
-    FunctionAXPY _last_stage;
-    
+    std::shared_ptr<const Form> _last_stage;
+
     // Solutions for the different stages
-    std::vector<boost::shared_ptr<Function> > _stage_solutions;
+    std::vector<std::shared_ptr<Function> > _stage_solutions;
 
     // The solution
-    boost::shared_ptr<Function> _u;
+    std::shared_ptr<Function> _u;
 
-    // The local time 
-    boost::shared_ptr<Constant> _t;
+    // The local time
+    std::shared_ptr<Constant> _t;
 
     // The local time step
-    boost::shared_ptr<Constant> _dt;
-    
+    std::shared_ptr<Constant> _dt;
+
     // The time step offset. (c from the ButcherTableau)
     std::vector<double> _dt_stage_offset;
+
+    // Map for distinct storage of jacobians
+    std::vector<int> _jacobian_indices;
 
     // The order of the scheme
     unsigned int _order;

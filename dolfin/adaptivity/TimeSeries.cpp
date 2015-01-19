@@ -20,8 +20,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <sstream>
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
@@ -181,7 +181,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t,
 
     // Read vectors
     GenericVector& x0(vector);
-    boost::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
+    std::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
     File f0(filename_data(_name, "vector", i0, _compressed));
     File f1(filename_data(_name, "vector", i1, _compressed));
     f0 >> x0;
@@ -353,7 +353,7 @@ TimeSeries::find_closest_pair(double t, const std::vector<double>& times,
   if (times.empty())
   {
     dolfin_error("TimeSeries.cpp",
-                 "to retrieve data from time seris",
+                 "to retrieve data from time series",
                  "No %s stored in time series",
                  type_name.c_str());
   }
@@ -382,7 +382,7 @@ TimeSeries::find_closest_pair(double t, const std::vector<double>& times,
                              std::less<double>());
   }
 
-  // Set indexlower and upper bound
+  // Set index lower and upper bound
   std::size_t i0 = 0;
   std::size_t i1 = 0;
   if (lower == times.begin())
