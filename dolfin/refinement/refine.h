@@ -31,6 +31,7 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
+  class MeshHierarchy;
   template <typename T> class MeshFunction;
 
   /// Create uniformly refined mesh
@@ -52,6 +53,11 @@ namespace dolfin
   ///         mesh = refine(mesh);
   ///
   Mesh refine(const Mesh& mesh, bool redistribute = true);
+
+  /// Refine a MeshHierarchy
+  void refine(MeshHierarchy& refined_hierarchy,
+              const MeshHierarchy& hierarchy,
+              const MeshFunction<bool>& markers);
 
   /// Create uniformly refined mesh
   ///
