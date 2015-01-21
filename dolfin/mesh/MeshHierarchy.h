@@ -36,7 +36,8 @@ namespace dolfin
     {}
 
     /// Constructor with initial mesh
-    explicit MeshHierarchy(std::shared_ptr<const Mesh> mesh) : _meshes(1, mesh)
+    explicit MeshHierarchy(std::shared_ptr<const Mesh> mesh)
+      : _meshes(1, mesh), _parent(NULL)
     {}
 
     /// Destructor
@@ -56,12 +57,19 @@ namespace dolfin
     }
 
     /// Refine finest mesh of existing hierarchy, creating a new hierarchy
-    void refine(MeshHierarchy& refined_mesh_hierarchy, const MeshFunction<bool>& markers) const;
+    void refine(MeshHierarchy& refined_mesh_hierarchy,
+                const MeshFunction<bool>& markers) const;
+
+    std::shared_ptr<const MeshHierarchy> parent() const
+    { return _parent; }
 
   private:
 
-    // Basic store of mesh pointers
+    // Basic store of mesh pointers for easy access
     std::vector<std::shared_ptr<const Mesh> > _meshes;
+
+    // Parent MeshHierarchy
+    std::shared_ptr<const MeshHierarchy> _parent;
 
     // Intermesh relationship data
     // i.e. parent-child, child-parent etc. for given topological

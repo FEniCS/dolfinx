@@ -28,9 +28,13 @@ void MeshHierarchy::refine(MeshHierarchy& refined_mesh_hierarchy,
                            const MeshFunction<bool>& markers) const
 {
   std::shared_ptr<Mesh> refined_mesh(new Mesh);
-  //  dolfin_assert(markers.mesh() == *_meshes.back());
+
+  dolfin_assert(markers.mesh()->id() == _meshes.back()->id());
   dolfin::refine(*refined_mesh, *_meshes.back(), markers);
+
   refined_mesh_hierarchy._meshes = _meshes;
   refined_mesh_hierarchy._meshes.push_back(refined_mesh);
+
+  refined_mesh_hierarchy._parent = std::make_shared<const MeshHierarchy>(*this);
 }
 //-----------------------------------------------------------------------------
