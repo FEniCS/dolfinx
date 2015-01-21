@@ -49,18 +49,21 @@ namespace dolfin
     { return _meshes.size(); }
 
     /// Get shared pointer to mesh i
-    //    std::shared_ptr<const Mesh> operator[](unsigned int i) const
-    std::shared_ptr<const Mesh> __getitem__(unsigned int i) const
+    std::shared_ptr<const Mesh> operator[](int i) const
     {
-      dolfin_assert(i < _meshes.size());
-      return _meshes[i];
+      if (i < 0)
+        i += _meshes.size();
+      dolfin_assert(i < (int)_meshes.size());
+        return _meshes[i];
     }
 
     /// Refine finest mesh of existing hierarchy, creating a new hierarchy
     void refine(MeshHierarchy& refined_mesh_hierarchy,
                 const MeshFunction<bool>& markers) const;
 
-    std::shared_ptr<const MeshHierarchy> parent() const
+    /// Unrefine by returning the previous MeshHierarchy (if possible).
+    /// Returns NULL for a MeshHierarchy containing a single Mesh
+    std::shared_ptr<const MeshHierarchy> unrefine() const
     { return _parent; }
 
   private:

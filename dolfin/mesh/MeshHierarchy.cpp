@@ -29,6 +29,7 @@ void MeshHierarchy::refine(MeshHierarchy& refined_mesh_hierarchy,
 {
   std::shared_ptr<Mesh> refined_mesh(new Mesh);
 
+  // Make sure markers are on correct mesh, i.e. finest of hierarchy
   dolfin_assert(markers.mesh()->id() == _meshes.back()->id());
   dolfin::refine(*refined_mesh, *_meshes.back(), markers);
 
