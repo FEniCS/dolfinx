@@ -48,7 +48,8 @@ namespace dolfin
     { return _meshes.size(); }
 
     /// Get shared pointer to mesh i
-    std::shared_ptr<const Mesh> operator[](unsigned int i) const
+    //    std::shared_ptr<const Mesh> operator[](unsigned int i) const
+    std::shared_ptr<const Mesh> __getitem__(unsigned int i) const
     {
       dolfin_assert(i < _meshes.size());
       return _meshes[i];
