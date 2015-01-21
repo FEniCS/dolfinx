@@ -38,11 +38,11 @@ dolfin::Mesh dolfin::refine(const Mesh& mesh, bool redistribute)
   return refined_mesh;
 }
 //-----------------------------------------------------------------------------
-void dolfin::refine(MeshHierarchy& refined_hierarchy,
+std::shared_ptr<const MeshHierarchy> dolfin::refine(
                     const MeshHierarchy& hierarchy,
                     const MeshFunction<bool>& markers)
 {
-  hierarchy.refine(refined_hierarchy, markers);
+  return hierarchy.refine(markers);
 }
 //-----------------------------------------------------------------------------
 void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)

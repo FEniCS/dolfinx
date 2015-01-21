@@ -24,18 +24,36 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MeshHierarchy::refine(MeshHierarchy& refined_mesh_hierarchy,
+// void MeshHierarchy::refine(MeshHierarchy& refined_mesh_hierarchy,
+//                            const MeshFunction<bool>& markers) const
+// {
+//   std::shared_ptr<Mesh> refined_mesh(new Mesh);
+
+//   // Make sure markers are on correct mesh, i.e. finest of hierarchy
+//   dolfin_assert(markers.mesh()->id() == _meshes.back()->id());
+//   dolfin::refine(*refined_mesh, *_meshes.back(), markers);
+
+//   refined_mesh_hierarchy._meshes = _meshes;
+//   refined_mesh_hierarchy._meshes.push_back(refined_mesh);
+
+//   refined_mesh_hierarchy._parent = std::make_shared<const MeshHierarchy>(*this);
+// }
+//-----------------------------------------------------------------------------
+std::shared_ptr<const MeshHierarchy> MeshHierarchy::refine(
                            const MeshFunction<bool>& markers) const
 {
   std::shared_ptr<Mesh> refined_mesh(new Mesh);
+  std::shared_ptr<MeshHierarchy> refined_hierarchy(new MeshHierarchy);
 
   // Make sure markers are on correct mesh, i.e. finest of hierarchy
   dolfin_assert(markers.mesh()->id() == _meshes.back()->id());
   dolfin::refine(*refined_mesh, *_meshes.back(), markers);
 
-  refined_mesh_hierarchy._meshes = _meshes;
-  refined_mesh_hierarchy._meshes.push_back(refined_mesh);
+  refined_hierarchy->_meshes = _meshes;
+  refined_hierarchy->_meshes.push_back(refined_mesh);
 
-  refined_mesh_hierarchy._parent = std::make_shared<const MeshHierarchy>(*this);
+  refined_hierarchy->_parent = std::make_shared<const MeshHierarchy>(*this);
+
+  return refined_hierarchy;
 }
 //-----------------------------------------------------------------------------

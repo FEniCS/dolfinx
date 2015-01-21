@@ -55,7 +55,7 @@ namespace dolfin
   Mesh refine(const Mesh& mesh, bool redistribute = true);
 
   /// Refine a MeshHierarchy
-  void refine(MeshHierarchy& refined_hierarchy,
+  std::shared_ptr<const MeshHierarchy> refine(
               const MeshHierarchy& hierarchy,
               const MeshFunction<bool>& markers);
 

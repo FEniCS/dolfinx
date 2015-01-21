@@ -58,7 +58,11 @@ namespace dolfin
     }
 
     /// Refine finest mesh of existing hierarchy, creating a new hierarchy
-    void refine(MeshHierarchy& refined_mesh_hierarchy,
+    //    void refine(MeshHierarchy& refined_mesh_hierarchy,
+    //                const MeshFunction<bool>& markers) const;
+
+    /// Refine finest mesh of existing hierarchy, creating a new hierarchy
+    std::shared_ptr<const MeshHierarchy> refine(
                 const MeshFunction<bool>& markers) const;
 
     /// Unrefine by returning the previous MeshHierarchy (if possible).
