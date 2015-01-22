@@ -83,17 +83,18 @@ namespace dolfin
     /// projections.
     void solve_local_rhs(Function& u) const;
 
-    // Factorise LHS for all cells and store
+    /// Solve local problem. If b==NULL, then RHS is computed
+    /// cell-by-cell
+    void solve_local(GenericVector& x, const GenericVector* b,
+                     const GenericVector* dofmap) const;
+
+    /// Factorise LHS for all cells and store
     void factorize();
 
     /// Reset (clear) any stored factorisations
     void clear_factorization();
 
   private:
-
-    // Solve local problem. If b==NULL, then RHS is computed
-    // cell-by-cell
-    void solve_local(GenericVector& x, const GenericVector* b) const;
 
     // Bilinear and linear forms
     std::shared_ptr<const Form> _a, _L;
