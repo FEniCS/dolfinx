@@ -1,3 +1,28 @@
+1.5.0 [2015-01-12]
+ - DG demos working is parallel
+ - Simplify re-use of LU factorisations
+ - CMake 3 compatibility
+ - Make underlying SLEPc object accessible
+ - Full support for linear algebra backends with 64-bit integers
+ - Add smoothed aggregation AMG elasticity demo
+ - Add support for slepc4py
+ - Some self-assignment fixes in mesh data structures
+ - Deprecated GenericDofMap::geometric_dimension()
+ - Experimental support for ghosted meshes (overlapping region in parallel)
+ - Significant memory reduction in dofmap storage
+ - Re-write dofmap construction with significant performance and scaling
+	improvements in parallel
+ - Switch to local (process-wise) indexing for dof indices
+ - Support local (process-wise) indexing in linear algerbra backends
+ - Added support for PETSc 3.5, require version >= 3.3
+ - Exposed DofMap::tabulate_local_to_global_dofs,
+	MeshEntity::sharing_processes in Python
+ - Added GenericDofmap::local_dimension("all"|"owned"|"unowned")
+ - Added access to SLEPc or slepc4py EPS object of SLEPcEigenSolver
+	(requires slepc4py version >= 3.5.1)
+ - LinearOperator can now be accessed using petsc4py
+ - Add interface (PETScTAOSolver) for the PETSc nonlinear (bound-constrained)
+	optimisation solver (TAO)
  - Add GenericMatrix::nnz() function to return number of nonzero
 	entries in matrix (fixes #110)
  - Add smoothed aggregation algerbraic multigrid demo for elasticity
@@ -15,15 +40,15 @@
  - Clean up DG demos by dropping restrictions of Constants: c('+') -> c
  - Fix systemassembler warning when a and L both provide the same subdomain
 	data.
- - Require mesh instead of cell argument to FacetArea, FacetNormal, CellSize,
-   CellVolume, SpatialCoordinate, Circumradius,	MinFacetEdgeLength,
-	MaxFacetEdgeLength
+ - Require mesh instead of cell argument to FacetArea, FacetNormal,
+	CellSize, CellVolume, SpatialCoordinate, Circumradius,
+	MinFacetEdgeLength, MaxFacetEdgeLength
  - Remove argument reset_sparsity to assemble()
  - Simplify assemble() and Form() signature: remove arguments mesh,
-   coefficients, function_spaces, common_cell. These are now all found by
-   inspecting the UFL form
+	coefficients, function_spaces, common_cell. These are now
+	all found by inspecting the UFL form
  - Speed up assembly of forms with multiple integrals depending on
-   different functions, e.g. f*dx(1) + g*dx(2).
+	different functions, e.g. f*dx(1) + g*dx(2).
  - Handle accessing of GenericVectors using numpy arrays in python layer
 	instead of in hard-to-maintain C++ layer
  - Add support for mpi groups in jit-compilation
