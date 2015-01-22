@@ -75,6 +75,9 @@ namespace dolfin
 
   private:
 
+    // Utility function to recursively apply vertex locking
+    void impose_lock(MeshFunction<bool>& vmarkers, std::size_t index);
+
     // Basic store of mesh pointers for easy access
     std::vector<std::shared_ptr<const Mesh> > _meshes;
 

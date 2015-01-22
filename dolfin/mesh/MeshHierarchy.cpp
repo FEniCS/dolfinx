@@ -16,10 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "MeshHierarchy.h"
+#include<map>
+
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/refinement/refine.h>
+
+#include "MeshHierarchy.h"
 
 using namespace dolfin;
 
@@ -57,7 +62,7 @@ std::shared_ptr<const MeshHierarchy> MeshHierarchy::refine(
   return refined_hierarchy;
 }
 //-----------------------------------------------------------------------------
-void impose_lock(std::size_t index)
+void MeshHierarchy::impose_lock(MeshFunction<bool>& vmarkers, std::size_t index)
 {
   auto m_it = vertex_lock.find(index);
   // If this is a 'locking' vertex, impose constraint
@@ -70,12 +75,12 @@ void impose_lock(std::size_t index)
         // Prevent removal of this vertex
         vmarkers[r] = false;
         // Propagate lock recursively
-        impose_lock(r);
+        impose_lock(vmarkers, r);
       }
   }
 }
 //-----------------------------------------------------------------------------
-void coarsen(const MeshFunction<bool>& markers)
+void MeshHierarchy::coarsen(const MeshFunction<bool>& markers)
 {
   const Mesh& mesh = *(_meshes.back());
 
@@ -104,7 +109,7 @@ void coarsen(const MeshFunction<bool>& markers)
     // Non-refining vertices impose constraints on other vertices
     // recursively
     if (vmarkers[local_index] == false)
-      impose_lock(local_index);
+      impose_lock(vmarkers, local_index);
   }
 
 }
