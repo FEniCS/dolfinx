@@ -68,14 +68,15 @@ void LocalSolver::solve_global_rhs(Function& u) const
   // Solve local problems
   dolfin_assert(u.vector());
   dolfin_assert(b);
-  solve_local(*u.vector(), b.get());
+  dolfin_assert(_L->function_space(0)->dofmap().get());
+  solve_local(*u.vector(), b.get(), _L->function_space(0)->dofmap().get());
 }
 //----------------------------------------------------------------------------
 void LocalSolver::solve_local_rhs(Function& u) const
 {
   // Solve local problems
   dolfin_assert(u.vector());
-  solve_local(*u.vector(), nullptr);
+  solve_local(*u.vector(), nullptr, nullptr);
 }
 //----------------------------------------------------------------------------
 void LocalSolver::solve_local(GenericVector& x, const GenericVector* b,
@@ -83,9 +84,16 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector* b,
 {
   dolfin_assert(_a);
   dolfin_assert(_a->rank() == 2);
-  dolfin_assert(_L->rank() == 1);
 
-  if
+  if((b && !dofmap) or (!b && dofmap))
+  {
+    dolfin_error("LocalSolver.cpp",
+                 "solvelocal system",
+                 "If vector provide to solve_local, must also provide dofmap");
+  }
+
+  if (!b)
+    dolfin_assert(_L->rank() == 1);
 
   // Extract mesh
   dolfin_assert(_a->function_space(0)->mesh());
@@ -117,12 +125,16 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector* b,
     = {{_a->function_space(0)->dofmap(), _a->function_space(1)->dofmap()}};
   dolfin_assert(dofmaps_a[0] and dofmaps_a[1]);
 
-  dolfin_assert(_L->function_space(0)->dofmap());
-  const GenericDofMap& dofmap_L = *_L->function_space(0)->dofmap();
+  const GenericDofMap* dofmap_L = dofmap;
+  if (!dofmap)
+  {
+    dolfin_assert(_L->function_space(0)->dofmap());
+    dofmap_L = _L->function_space(0)->dofmap().get();
+  }
 
   // Check dimensions
   dolfin_assert(dofmaps_a[0]->global_dimension() == dofmaps_a[0]->global_dimension());
-  dolfin_assert(dofmaps_a[0]->global_dimension() == dofmap_L.global_dimension());
+  dolfin_assert(dofmaps_a[0]->global_dimension() == dofmap_L->global_dimension());
 
   // Eigen data structures for local tensors
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_e;
@@ -142,7 +154,7 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector* b,
   {
     // Get cell dofmaps
     const std::vector<dolfin::la_index>& dofs_L
-      = dofmap_L.cell_dofs(cell->index());
+      = dofmap_L->cell_dofs(cell->index());
     const std::vector<dolfin::la_index>& dofs_a0
       = dofmaps_a[0]->cell_dofs(cell->index());
 

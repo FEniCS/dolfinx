@@ -51,6 +51,7 @@ namespace dolfin
   // Forward declarations
   class Form;
   class Function;
+  class GenericDofMap;
   class GenericVector;
   class UFC;
 
@@ -86,7 +87,7 @@ namespace dolfin
     /// Solve local problem. If b==NULL, then RHS is computed
     /// cell-by-cell
     void solve_local(GenericVector& x, const GenericVector* b,
-                     const GenericVector* dofmap) const;
+                     const GenericDofMap* dofmap) const;
 
     /// Factorise LHS for all cells and store
     void factorize();
