@@ -70,6 +70,9 @@ namespace dolfin
     std::shared_ptr<const MeshHierarchy> unrefine() const
     { return _parent; }
 
+    /// Experiment/debug with coarsening algorithms
+    void coarsen(const MeshFunction<bool>& markers);
+
   private:
 
     // Basic store of mesh pointers for easy access
@@ -83,6 +86,10 @@ namespace dolfin
     // dimensions, could be "parent cell-cell" or "child facet-cell"
     // etc.
 
+    // Map from new vertices at this level to any other vertices
+    // at the same level which cannot be removed until this vertex
+    // is removed. Uses local indices.
+    std::map<std::size_t, std::vector<std::size_t> > vertex_lock;
 
   };
 }

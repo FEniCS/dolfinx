@@ -57,3 +57,55 @@ std::shared_ptr<const MeshHierarchy> MeshHierarchy::refine(
   return refined_hierarchy;
 }
 //-----------------------------------------------------------------------------
+void impose_lock(std::size_t index)
+{
+  auto m_it = vertex_lock.find(index);
+  // If this is a 'locking' vertex, impose constraint
+  // on vertices in m_it->second
+  if (m_it != vertex_lock.end())
+  {
+    for (auto &r : m_it->second)
+      if (vmarkers[r])
+      {
+        // Prevent removal of this vertex
+        vmarkers[r] = false;
+        // Propagate lock recursively
+        impose_lock(r);
+      }
+  }
+}
+//-----------------------------------------------------------------------------
+void coarsen(const MeshFunction<bool>& markers)
+{
+  const Mesh& mesh = *(_meshes.back());
+
+  // Make sure there is a parent Mesh
+  dolfin_assert(_parent != NULL);
+  // Make sure markers are on finest mesh
+  dolfin_assert(markers.mesh()->id() == mesh.id());
+  // Markers must be a CellFunction
+  dolfin_assert(markers.dim() == mesh.topology().dim());
+
+  // Mark vertices
+  // FIXME: copy across process boundaries in parallel
+  VertexFunction<bool> vmarkers(mesh, false);
+  for (CellIterator c(mesh); !c.end(); ++c)
+    if (markers[*c])
+    {
+      for (VertexIterator v(*c); !v.end(); ++v)
+        vmarkers[*v] = true;
+    }
+
+  // Check for consistency rules, using vertex_lock
+  // FIXME: parallel
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    const std::size_t local_index = v->index();
+    // Non-refining vertices impose constraints on other vertices
+    // recursively
+    if (vmarkers[local_index] == false)
+      impose_lock(local_index);
+  }
+
+}
+//-----------------------------------------------------------------------------
