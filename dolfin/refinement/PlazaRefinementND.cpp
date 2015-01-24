@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Chris Richardson
+// Copyright (C) 2014-2015 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -180,12 +180,13 @@ void PlazaRefinementND::get_tetrahedra(
   }
 
   // Iterate through all possible new vertices
+  std::vector<std::size_t> facet_set;
   for (std::size_t i = 0; i < 10; ++i)
   {
     for (std::size_t j = i + 1; j < 10; ++j)
       if (conn[i][j])
       {
-        std::vector<std::size_t> facet_set;
+        facet_set.clear();
         for (std::size_t k = j + 1; k < 10; ++k)
         {
           if (conn[i][k] && conn[j][k])
@@ -222,29 +223,18 @@ std::vector<std::size_t> PlazaRefinementND::face_long_edge(const Mesh& mesh)
     std::size_t gimax = 0;
     double max_len = 0.0;
 
-    std::vector<double> e_len;
-
     // Use vertex global index to decide ordering
     // if lengths are equal
-    VertexIterator v(*f);
-
     for (EdgeIterator e(*f); !e.end(); ++e)
     {
       const double e_len = e->length();
-      if (e_len > max_len)
+      const Vertex v(mesh, f->entities(0)[e.pos()]);
+      const std::size_t global_i = v.global_index();
+      if (e_len > max_len or (e_len == max_len and global_i > gimax))
       {
         max_len = e_len;
         imax = e->index();
-        gimax = v[e.pos()].global_index();
-      }
-      else if (e_len == max_len)
-      {
-        const std::size_t global_i = v[e.pos()].global_index();
-        if (global_i > gimax)
-        {
-          imax = e->index();
-          gimax = global_i;
-        }
+        gimax = global_i;
       }
     }
     result[f->index()] = imax;
@@ -431,6 +421,20 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
     if (new_mesh.topology().dim() == 2 and calculate_parent_facets)
       set_parent_facet_markers(mesh, new_mesh, new_vertex_map);
   }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t> PlazaRefinementND::make_vertex_to_edge_map
+(const std::map<std::size_t, std::size_t>& new_vertex_map)
+{
+  std::size_t idx_offset = std::numeric_limits<std::size_t>max();
+  for (const auto &edge_vertex: new_vertex_map)
+    idx_offset = std::min(idx_min, edge_vertex.second);
+
+  std::vector<std::size_t> vertex_to_edge(new_vertex_map.size());
+  for (const auto &edge_vertex: new_vertex_map)
+    vertex_to_edge[edge_vertex.second - idx_offset] = edge_vertex.first;
+
+  return vertex_to_edge;
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,

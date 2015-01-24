@@ -84,6 +84,10 @@ namespace dolfin
                               const Mesh& mesh,
                               const std::vector<std::size_t>& long_edge);
 
+    // Reverse map from edges->new vertices to vertices->old edges
+    static std::vector<std::size_t> make_vertex_to_edge_map
+      (const std::map<std::size_t, std::size_t>& new_vertex_map);
+
     // Add parent facet markers to new mesh, based on new vertices
     // Only works in 2D at present
     static void set_parent_facet_markers(const Mesh& mesh, Mesh& new_mesh,

@@ -102,7 +102,7 @@ void MeshHierarchy::coarsen(const MeshFunction<bool>& markers)
     }
 
   // Check for consistency rules, using vertex_lock
-  // FIXME: parallel
+  // FIXME: in parallel
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const std::size_t local_index = v->index();
@@ -111,6 +111,10 @@ void MeshHierarchy::coarsen(const MeshFunction<bool>& markers)
     if (vmarkers[local_index] == false)
       impose_lock(vmarkers, local_index);
   }
+
+  // At this point, vmarkers should be such that
+  // all vertices created on the finest mesh are marked correctly for
+  // potential removal.
 
 }
 //-----------------------------------------------------------------------------
