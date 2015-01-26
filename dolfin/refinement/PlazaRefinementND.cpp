@@ -364,7 +364,7 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
 
   // Make new vertices in parallel
   p_ref.create_new_vertices();
-  const std::map<std::size_t, std::size_t> new_vertex_map
+  const std::map<std::size_t, std::size_t>& new_vertex_map
     = *(p_ref.edge_to_new_vertex());
 
   std::vector<std::size_t> parent_cell;
