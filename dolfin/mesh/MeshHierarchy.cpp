@@ -19,6 +19,7 @@
 #include<map>
 
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshRelation.h>
 #include <dolfin/mesh/Cell.h>
@@ -66,15 +67,29 @@ MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
 
   // Make sure markers are on finest mesh
   dolfin_assert(coarsen_markers.mesh()->id() == mesh.id());
-  // Markers must be a VertexFunction (for now)
-  // FIXME: generalise
-  dolfin_assert(coarsen_markers.dim() == 0);
 
   // FIXME: copy across boundaries in parallel
   std::set<std::size_t> coarsening_vertices;
-  for (VertexIterator v(mesh); !v.end(); ++v)
-    if (coarsen_markers[*v])
-      coarsening_vertices.insert(v->global_index());
+  if (coarsen_markers.dim() == 0)
+  {
+    for (VertexIterator v(mesh); !v.end(); ++v)
+      if (coarsen_markers[*v])
+        coarsening_vertices.insert(v->global_index());
+  }
+  else
+  {
+    // FIXME: assumes "OR"-like behaviour, i.e. if any
+    // entity around a vertex is marked, then the vertex is
+    // marked. Should this be "AND"-like behaviour, i.e. require
+    // all surrounding entities to be marked?
+    for (MeshEntityIterator c(mesh, coarsen_markers.dim());
+         !c.end(); ++c)
+    {
+      if (coarsen_markers[*c])
+        for (VertexIterator v(*c); !v.end(); ++v)
+          coarsening_vertices.insert(v->global_index());
+    }
+  }
 
   // Set up refinement markers to re-refine the parent mesh
   EdgeFunction<bool> edge_markers(parent_mesh, false);

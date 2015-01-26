@@ -93,8 +93,12 @@ ParallelRefinement::edge_to_new_vertex() const
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const MeshEntity& cell)
 {
-  for (EdgeIterator edge(cell); !edge.end(); ++edge)
-    mark(edge->index());
+  // Special case for Edge, otherwise will mark all edge-edge connections
+  if (cell.dim() == 1)
+    mark(cell.index());
+  else
+    for (EdgeIterator edge(cell); !edge.end(); ++edge)
+      mark(edge->index());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const MeshFunction<bool>& refinement_marker)
