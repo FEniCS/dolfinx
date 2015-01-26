@@ -318,6 +318,31 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
             calculate_parent_facets, mesh_relation);
 }
 //-----------------------------------------------------------------------------
+void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
+                               const MeshFunction<bool>& refinement_marker,
+                               bool calculate_parent_facets,
+                               MeshRelation& mesh_relation)
+{
+  const std::size_t tdim = mesh.topology().dim();
+  if (tdim != 2 and tdim != 3)
+  {
+    dolfin_error("PlazaRefinementND.cpp",
+                 "refine mesh",
+                 "Topological dimension %d not supported", tdim);
+  }
+
+  Timer t0("PLAZA: refine");
+  std::vector<std::size_t> long_edge = face_long_edge(mesh);
+
+  ParallelRefinement p_ref(mesh);
+  p_ref.mark(refinement_marker);
+
+  enforce_rules(p_ref, mesh, long_edge);
+
+  do_refine(new_mesh, mesh, p_ref, long_edge, false,
+            calculate_parent_facets, mesh_relation);
+}
+//-----------------------------------------------------------------------------
 void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
                                   ParallelRefinement& p_ref,
                                   const std::vector<std::size_t>& long_edge,

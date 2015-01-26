@@ -47,8 +47,8 @@ namespace dolfin
     friend class MeshHierarchy;
     friend class PlazaRefinementND;
 
-    // Map from new vertices of a Mesh to any other vertices
-    // which cannot be removed until this vertex is removed. Uses global indices.
+    // Map from edge of parent Mesh to new vertex in child Mesh
+    // as calculated during ParallelRefinement process
     std::shared_ptr<const std::map<std::size_t, std::size_t> > edge_to_global_vertex;
 
   };

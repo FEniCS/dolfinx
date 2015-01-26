@@ -46,6 +46,14 @@ namespace dolfin
                        bool redistribute,
                        bool calculate_parent_facets);
 
+    /// Refine with markers, optionally calculating facet relations, and
+    /// saving relation data in MeshRelation structure
+    static void refine(Mesh& new_mesh, const Mesh& mesh,
+                       const MeshFunction<bool>& refinement_marker,
+                       bool calculate_parent_facets,
+                       MeshRelation& mesh_relation);
+
+
     /// Get the subdivision of an original simplex into smaller
     /// simplices, for a given set of marked edges, and the
     /// longest edge of each facet (cell local indexing)

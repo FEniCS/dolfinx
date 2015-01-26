@@ -22,6 +22,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshRelation.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/refinement/PlazaRefinementND.h>
 
@@ -42,7 +43,7 @@ std::shared_ptr<const MeshHierarchy> MeshHierarchy::refine(
 
   // Refine with no redistribution
   PlazaRefinementND::refine(*refined_mesh, *_meshes.back(),
-                            markers, false, true);
+                            markers, true, *refined_relation);
 
   refined_hierarchy->_meshes = _meshes;
   refined_hierarchy->_meshes.push_back(refined_mesh);
@@ -54,59 +55,65 @@ std::shared_ptr<const MeshHierarchy> MeshHierarchy::refine(
   return refined_hierarchy;
 }
 //-----------------------------------------------------------------------------
-// void MeshHierarchy::impose_lock(MeshFunction<bool>& vmarkers, std::size_t index)
-// {
-//   auto m_it = vertex_lock.find(index);
-//   // If this is a 'locking' vertex, impose constraint
-//   // on vertices in m_it->second
-//   if (m_it != vertex_lock.end())
-//   {
-//     for (auto &r : m_it->second)
-//       if (vmarkers[r])
-//       {
-//         // Prevent removal of this vertex
-//         vmarkers[r] = false;
-//         // Propagate lock recursively
-//         impose_lock(vmarkers, r);
-//       }
-//   }
-// }
-//-----------------------------------------------------------------------------
-void MeshHierarchy::coarsen(const MeshFunction<bool>& markers)
+std::shared_ptr<const MeshHierarchy>
+MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
 {
   const Mesh& mesh = *(_meshes.back());
 
-  // Make sure there is a parent Mesh
+  // Make sure there is a parent MeshHierarchy
   dolfin_assert(_parent != NULL);
+  const Mesh& parent_mesh = *(_parent->_meshes.back());
+
   // Make sure markers are on finest mesh
-  dolfin_assert(markers.mesh()->id() == mesh.id());
-  // Markers must be a CellFunction
-  dolfin_assert(markers.dim() == mesh.topology().dim());
+  dolfin_assert(coarsen_markers.mesh()->id() == mesh.id());
+  // Markers must be a VertexFunction (for now)
+  // FIXME: generalise
+  dolfin_assert(coarsen_markers.dim() == 0);
 
-  // Mark vertices
-  // FIXME: copy across process boundaries in parallel
-  VertexFunction<bool> vmarkers(mesh, false);
-  for (CellIterator c(mesh); !c.end(); ++c)
-    if (markers[*c])
+  // FIXME: copy across boundaries in parallel
+  std::set<std::size_t> coarsening_vertices;
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    if (coarsen_markers[*v])
+      coarsening_vertices.insert(v->global_index());
+
+  // Set up refinement markers to re-refine the parent mesh
+  EdgeFunction<bool> edge_markers(parent_mesh, false);
+  const std::map<std::size_t, std::size_t>& edge_to_vertex
+    = *(_relation->edge_to_global_vertex);
+
+  // Find edges which were previously refined, but now only mark them
+  // if not a parent of a "coarsening" vertex
+  for (EdgeIterator e(parent_mesh); !e.end(); ++e)
+  {
+    auto edge_it = edge_to_vertex.find(e->index());
+    if (edge_it != edge_to_vertex.end())
     {
-      for (VertexIterator v(*c); !v.end(); ++v)
-        vmarkers[*v] = true;
+      // Previously refined edge: find child vertex
+      const std::size_t child_vertex_global_index = edge_it->second;
+      if (coarsening_vertices.find(child_vertex_global_index)
+          == coarsening_vertices.end())
+      {
+        // Not a "coarsening" vertex, so mark edge for refinement
+        edge_markers[*e] = true;
+      }
     }
+  }
 
-  // Check for consistency rules, using vertex_lock
-  // FIXME: in parallel
-  //  for (VertexIterator v(mesh); !v.end(); ++v)
-  //  {
-  //const std::size_t local_index = v->index();
-    // Non-refining vertices impose constraints on other vertices
-    // recursively
-    //    if (vmarkers[local_index] == false)
-    //      impose_lock(vmarkers, local_index);
-  //  }
+  std::shared_ptr<Mesh> refined_mesh(new Mesh);
+  std::shared_ptr<MeshHierarchy> refined_hierarchy(new MeshHierarchy);
+  std::shared_ptr<MeshRelation> refined_relation(new MeshRelation);
 
-  // At this point, vmarkers should be such that
-  // all vertices created on the finest mesh are marked correctly for
-  // potential removal.
+  // Refine with no redistribution
+  PlazaRefinementND::refine(*refined_mesh, parent_mesh,
+                            edge_markers, true, *refined_relation);
 
+  refined_hierarchy->_meshes = _parent->_meshes;
+  refined_hierarchy->_meshes.push_back(refined_mesh);
+
+  refined_hierarchy->_parent = _parent;
+
+  refined_hierarchy->_relation = refined_relation;
+
+  return refined_hierarchy;
 }
 //-----------------------------------------------------------------------------

@@ -59,8 +59,8 @@ namespace dolfin
     }
 
     /// Refine finest mesh of existing hierarchy, creating a new hierarchy
-    std::shared_ptr<const MeshHierarchy> refine(
-                const MeshFunction<bool>& markers) const;
+    std::shared_ptr<const MeshHierarchy> refine
+      (const MeshFunction<bool>& markers) const;
 
     /// Unrefine by returning the previous MeshHierarchy (if possible).
     /// Returns NULL for a MeshHierarchy containing a single Mesh
@@ -68,12 +68,10 @@ namespace dolfin
     { return _parent; }
 
     /// Experiment/debug with coarsening algorithms
-    void coarsen(const MeshFunction<bool>& markers);
+    std::shared_ptr<const MeshHierarchy> coarsen
+      (const MeshFunction<bool>& markers) const;
 
   private:
-
-    // Utility function to recursively apply vertex locking
-    void impose_lock(MeshFunction<bool>& vmarkers, std::size_t index);
 
     // Basic store of mesh pointers for easy access
     std::vector<std::shared_ptr<const Mesh> > _meshes;
