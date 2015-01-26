@@ -26,6 +26,7 @@
 namespace dolfin
 {
   class Mesh;
+  class MeshRelation;
   template <typename T> class MeshFunction;
 
   class MeshHierarchy
@@ -37,7 +38,7 @@ namespace dolfin
 
     /// Constructor with initial mesh
     explicit MeshHierarchy(std::shared_ptr<const Mesh> mesh)
-      : _meshes(1, mesh), _parent(NULL)
+      : _meshes(1, mesh), _parent(NULL), _relation(NULL)
     {}
 
     /// Destructor
@@ -56,10 +57,6 @@ namespace dolfin
       dolfin_assert(i < (int)_meshes.size());
         return _meshes[i];
     }
-
-    /// Refine finest mesh of existing hierarchy, creating a new hierarchy
-    //    void refine(MeshHierarchy& refined_mesh_hierarchy,
-    //                const MeshFunction<bool>& markers) const;
 
     /// Refine finest mesh of existing hierarchy, creating a new hierarchy
     std::shared_ptr<const MeshHierarchy> refine(
@@ -84,15 +81,9 @@ namespace dolfin
     // Parent MeshHierarchy
     std::shared_ptr<const MeshHierarchy> _parent;
 
-    // Intermesh relationship data
-    // i.e. parent-child, child-parent etc. for given topological
-    // dimensions, could be "parent cell-cell" or "child facet-cell"
-    // etc.
-
-    // Map from new vertices at this level to any other vertices
-    // at the same level which cannot be removed until this vertex
-    // is removed. Uses local indices.
-    std::map<std::size_t, std::vector<std::size_t> > vertex_lock;
+    // Intermesh relationship data, i.e. parent cell, facet, vertex mappings
+    // instead of using MeshData
+    std::shared_ptr<const MeshRelation> _relation;
 
   };
 }

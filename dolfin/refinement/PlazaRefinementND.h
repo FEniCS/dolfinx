@@ -22,6 +22,7 @@
 namespace dolfin
 {
   class Mesh;
+  class MeshRelation;
   class ParallelRefinement;
 
   /// Implementation of the refinement method described in
@@ -76,17 +77,14 @@ namespace dolfin
                           ParallelRefinement& p_ref,
                           const std::vector<std::size_t>& long_edge,
                           bool redistribute,
-                          bool calculate_parent_facets);
+                          bool calculate_parent_facets,
+                          MeshRelation& mesh_relation);
 
     // Propagate edge markers according to rules (longest edge
     // of each face must be marked, if any edge of face is marked)
     static void enforce_rules(ParallelRefinement& p_ref,
                               const Mesh& mesh,
                               const std::vector<std::size_t>& long_edge);
-
-    // Reverse map from edges->new vertices to vertices->old edges
-    static std::vector<std::size_t> make_vertex_to_edge_map
-      (const std::map<std::size_t, std::size_t>& new_vertex_map);
 
     // Add parent facet markers to new mesh, based on new vertices
     // Only works in 2D at present

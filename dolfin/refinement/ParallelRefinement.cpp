@@ -42,6 +42,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 ParallelRefinement::ParallelRefinement(const Mesh& mesh) : _mesh(mesh),
   shared_edges(DistributedMeshTools::compute_shared_entities(_mesh, 1)),
+  local_edge_to_new_vertex(new std::map<std::size_t, std::size_t>()),
   marked_edges(mesh.num_edges(), false),
   marked_for_update(MPI::size(mesh.mpi_comm()))
 {
@@ -84,7 +85,7 @@ void ParallelRefinement::mark_all()
   marked_edges.assign(_mesh.num_edges(), true);
 }
 //-----------------------------------------------------------------------------
-const std::map<std::size_t, std::size_t>&
+std::shared_ptr<const std::map<std::size_t, std::size_t> >
 ParallelRefinement::edge_to_new_vertex() const
 {
   return local_edge_to_new_vertex;
@@ -193,7 +194,7 @@ void ParallelRefinement::create_new_vertices()
         const Point& midpoint = Edge(_mesh, local_i).midpoint();
         for (std::size_t j = 0; j < gdim; ++j)
           new_vertex_coordinates.push_back(midpoint[j]);
-        local_edge_to_new_vertex[local_i] = n++;
+        (*local_edge_to_new_vertex)[local_i] = n++;
       }
     }
   }
@@ -208,7 +209,7 @@ void ParallelRefinement::create_new_vertices()
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
   std::vector<std::vector<std::size_t> > values_to_send(mpi_size);
-  for (auto &local_edge : local_edge_to_new_vertex)
+  for (auto &local_edge : *local_edge_to_new_vertex)
   {
     // Add global_offset to map, to get new global index of new
     // vertices
@@ -236,7 +237,7 @@ void ParallelRefinement::create_new_vertices()
   // Flatten and add received remote global vertex indices to map
   for (auto const &p : received_values)
     for (auto q = p.begin(); q != p.end(); q += 2)
-      local_edge_to_new_vertex[*q] = *(q + 1);
+      (*local_edge_to_new_vertex)[*q] = *(q + 1);
 
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order

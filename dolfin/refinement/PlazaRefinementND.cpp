@@ -26,6 +26,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshRelation.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
@@ -286,8 +287,9 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
   ParallelRefinement p_ref(mesh);
   p_ref.mark_all();
 
+  MeshRelation mesh_relation;
   do_refine(new_mesh, mesh, p_ref, long_edge, redistribute,
-            calculate_parent_facets);
+            calculate_parent_facets, mesh_relation);
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
@@ -311,15 +313,17 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
 
   enforce_rules(p_ref, mesh, long_edge);
 
+  MeshRelation mesh_relation;
   do_refine(new_mesh, mesh, p_ref, long_edge, redistribute,
-            calculate_parent_facets);
+            calculate_parent_facets, mesh_relation);
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
                                   ParallelRefinement& p_ref,
                                   const std::vector<std::size_t>& long_edge,
                                   bool redistribute,
-                                  bool calculate_parent_facets)
+                                  bool calculate_parent_facets,
+                                  MeshRelation& mesh_relation)
 {
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cell_edges = tdim*3 - 3;
@@ -327,7 +331,7 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
 
   // Make new vertices in parallel
   p_ref.create_new_vertices();
-  const std::map<std::size_t, std::size_t>& new_vertex_map
+  std::shared_ptr<const std::map<std::size_t, std::size_t> > new_vertex_map
     = p_ref.edge_to_new_vertex();
 
   std::vector<std::size_t> parent_cell;
@@ -361,8 +365,8 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
       {
         markers[p] = true;
         const std::size_t edge_index = e[p].index();
-        auto it = new_vertex_map.find(edge_index);
-        dolfin_assert (it != new_vertex_map.end());
+        auto it = new_vertex_map->find(edge_index);
+        dolfin_assert (it != new_vertex_map->end());
         indices[num_cell_vertices + p] = it->second;
       }
 
@@ -418,23 +422,17 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
 
     new_parent_cell = parent_cell;
 
-    if (new_mesh.topology().dim() == 2 and calculate_parent_facets)
-      set_parent_facet_markers(mesh, new_mesh, new_vertex_map);
+    if (calculate_parent_facets)
+    {
+      if (new_mesh.topology().dim() == 2)
+        set_parent_facet_markers(mesh, new_mesh, *new_vertex_map);
+      else
+        dolfin_error("PlazaRefinementND.cpp", "calculate parent facets",
+                     "Parent facet markers are only supported in 2D");
+    }
+
+    mesh_relation.edge_to_global_vertex = new_vertex_map;
   }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::size_t> PlazaRefinementND::make_vertex_to_edge_map
-(const std::map<std::size_t, std::size_t>& new_vertex_map)
-{
-  std::size_t idx_offset = std::numeric_limits<std::size_t>max();
-  for (const auto &edge_vertex: new_vertex_map)
-    idx_offset = std::min(idx_min, edge_vertex.second);
-
-  std::vector<std::size_t> vertex_to_edge(new_vertex_map.size());
-  for (const auto &edge_vertex: new_vertex_map)
-    vertex_to_edge[edge_vertex.second - idx_offset] = edge_vertex.first;
-
-  return vertex_to_edge;
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,

@@ -20,65 +20,57 @@
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshRelation.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/refinement/refine.h>
+#include <dolfin/refinement/PlazaRefinementND.h>
 
 #include "MeshHierarchy.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-// void MeshHierarchy::refine(MeshHierarchy& refined_mesh_hierarchy,
-//                            const MeshFunction<bool>& markers) const
-// {
-//   std::shared_ptr<Mesh> refined_mesh(new Mesh);
-
-//   // Make sure markers are on correct mesh, i.e. finest of hierarchy
-//   dolfin_assert(markers.mesh()->id() == _meshes.back()->id());
-//   dolfin::refine(*refined_mesh, *_meshes.back(), markers);
-
-//   refined_mesh_hierarchy._meshes = _meshes;
-//   refined_mesh_hierarchy._meshes.push_back(refined_mesh);
-
-//   refined_mesh_hierarchy._parent = std::make_shared<const MeshHierarchy>(*this);
-// }
-//-----------------------------------------------------------------------------
 std::shared_ptr<const MeshHierarchy> MeshHierarchy::refine(
                            const MeshFunction<bool>& markers) const
 {
   std::shared_ptr<Mesh> refined_mesh(new Mesh);
   std::shared_ptr<MeshHierarchy> refined_hierarchy(new MeshHierarchy);
+  std::shared_ptr<MeshRelation> refined_relation(new MeshRelation);
 
   // Make sure markers are on correct mesh, i.e. finest of hierarchy
   dolfin_assert(markers.mesh()->id() == _meshes.back()->id());
-  dolfin::refine(*refined_mesh, *_meshes.back(), markers);
+
+  // Refine with no redistribution
+  PlazaRefinementND::refine(*refined_mesh, *_meshes.back(),
+                            markers, false, true);
 
   refined_hierarchy->_meshes = _meshes;
   refined_hierarchy->_meshes.push_back(refined_mesh);
 
   refined_hierarchy->_parent = std::make_shared<const MeshHierarchy>(*this);
 
+  refined_hierarchy->_relation = refined_relation;
+
   return refined_hierarchy;
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchy::impose_lock(MeshFunction<bool>& vmarkers, std::size_t index)
-{
-  auto m_it = vertex_lock.find(index);
-  // If this is a 'locking' vertex, impose constraint
-  // on vertices in m_it->second
-  if (m_it != vertex_lock.end())
-  {
-    for (auto &r : m_it->second)
-      if (vmarkers[r])
-      {
-        // Prevent removal of this vertex
-        vmarkers[r] = false;
-        // Propagate lock recursively
-        impose_lock(vmarkers, r);
-      }
-  }
-}
+// void MeshHierarchy::impose_lock(MeshFunction<bool>& vmarkers, std::size_t index)
+// {
+//   auto m_it = vertex_lock.find(index);
+//   // If this is a 'locking' vertex, impose constraint
+//   // on vertices in m_it->second
+//   if (m_it != vertex_lock.end())
+//   {
+//     for (auto &r : m_it->second)
+//       if (vmarkers[r])
+//       {
+//         // Prevent removal of this vertex
+//         vmarkers[r] = false;
+//         // Propagate lock recursively
+//         impose_lock(vmarkers, r);
+//       }
+//   }
+// }
 //-----------------------------------------------------------------------------
 void MeshHierarchy::coarsen(const MeshFunction<bool>& markers)
 {
@@ -103,14 +95,14 @@ void MeshHierarchy::coarsen(const MeshFunction<bool>& markers)
 
   // Check for consistency rules, using vertex_lock
   // FIXME: in parallel
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    const std::size_t local_index = v->index();
+  //  for (VertexIterator v(mesh); !v.end(); ++v)
+  //  {
+  //const std::size_t local_index = v->index();
     // Non-refining vertices impose constraints on other vertices
     // recursively
-    if (vmarkers[local_index] == false)
-      impose_lock(vmarkers, local_index);
-  }
+    //    if (vmarkers[local_index] == false)
+    //      impose_lock(vmarkers, local_index);
+  //  }
 
   // At this point, vmarkers should be such that
   // all vertices created on the finest mesh are marked correctly for
