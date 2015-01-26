@@ -349,8 +349,6 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       // Update to current cell
       cell.get_cell_data(ufc_cell);
       cell.get_vertex_coordinates(vertex_coordinates);
-      ufc.update(cell, vertex_coordinates, ufc_cell,
-                 cell_integral->enabled_coefficients());
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
@@ -364,6 +362,8 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       // Tabulate cell tensor if we have a cell_integral
       if (cell_integral)
       {
+        ufc.update(cell, vertex_coordinates, ufc_cell,
+                   cell_integral->enabled_coefficients());
         cell_integral->tabulate_tensor(ufc.A.data(),
                                        ufc.w(),
                                        vertex_coordinates.data(),
