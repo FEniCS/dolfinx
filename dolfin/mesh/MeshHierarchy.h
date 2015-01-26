@@ -49,7 +49,7 @@ namespace dolfin
     unsigned int size() const
     { return _meshes.size(); }
 
-    /// Get shared pointer to mesh i
+    /// Get Mesh i, in range [0:size()] where 0 is the coarsest Mesh.
     std::shared_ptr<const Mesh> operator[](int i) const
     {
       if (i < 0)
@@ -58,16 +58,26 @@ namespace dolfin
         return _meshes[i];
     }
 
+    /// Get the finest mesh of the MeshHierarchy
+    std::shared_ptr<const Mesh> finest() const
+    { return _meshes.back();  }
+
+    /// Get the coarsest mesh of the MeshHierarchy
+    std::shared_ptr<const Mesh> coarsest() const
+    { return _meshes.front();  }
+
     /// Refine finest mesh of existing hierarchy, creating a new hierarchy
+    /// (level n -> n+1)
     std::shared_ptr<const MeshHierarchy> refine
       (const MeshFunction<bool>& markers) const;
 
-    /// Unrefine by returning the previous MeshHierarchy (if possible).
+    /// Unrefine by returning the previous MeshHierarchy
+    /// (level n -> n-1)
     /// Returns NULL for a MeshHierarchy containing a single Mesh
     std::shared_ptr<const MeshHierarchy> unrefine() const
     { return _parent; }
 
-    /// Experiment/debug with coarsening algorithms
+    /// Coarsen finest mesh by one level, based on markers (level n->n)
     std::shared_ptr<const MeshHierarchy> coarsen
       (const MeshFunction<bool>& markers) const;
 

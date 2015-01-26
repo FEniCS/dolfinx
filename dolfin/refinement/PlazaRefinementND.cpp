@@ -281,6 +281,14 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
                                bool redistribute,
                                bool calculate_parent_facets)
 {
+  const std::size_t tdim = mesh.topology().dim();
+  if (tdim != 2 and tdim != 3)
+  {
+    dolfin_error("PlazaRefinementND.cpp",
+                 "refine mesh",
+                 "Topological dimension %d not supported", tdim);
+  }
+
   Timer t0("PLAZA: refine");
   std::vector<std::size_t> long_edge = face_long_edge(mesh);
 
@@ -356,8 +364,8 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
 
   // Make new vertices in parallel
   p_ref.create_new_vertices();
-  std::shared_ptr<const std::map<std::size_t, std::size_t> > new_vertex_map
-    = p_ref.edge_to_new_vertex();
+  const std::map<std::size_t, std::size_t> new_vertex_map
+    = *(p_ref.edge_to_new_vertex());
 
   std::vector<std::size_t> parent_cell;
   std::vector<std::size_t> indices(num_cell_vertices + num_cell_edges);
@@ -390,8 +398,8 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
       {
         markers[p] = true;
         const std::size_t edge_index = e[p].index();
-        auto it = new_vertex_map->find(edge_index);
-        dolfin_assert (it != new_vertex_map->end());
+        auto it = new_vertex_map.find(edge_index);
+        dolfin_assert (it != new_vertex_map.end());
         indices[num_cell_vertices + p] = it->second;
       }
 
@@ -448,15 +456,9 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
     new_parent_cell = parent_cell;
 
     if (calculate_parent_facets)
-    {
-      if (new_mesh.topology().dim() == 2)
-        set_parent_facet_markers(mesh, new_mesh, *new_vertex_map);
-      else
-        dolfin_error("PlazaRefinementND.cpp", "calculate parent facets",
-                     "Parent facet markers are only supported in 2D");
-    }
+      set_parent_facet_markers(mesh, new_mesh, new_vertex_map);
 
-    mesh_relation.edge_to_global_vertex = new_vertex_map;
+    mesh_relation.edge_to_global_vertex = p_ref.edge_to_new_vertex();
   }
 }
 //-----------------------------------------------------------------------------
