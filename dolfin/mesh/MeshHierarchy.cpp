@@ -132,3 +132,26 @@ MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
   return refined_hierarchy;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::size_t> MeshHierarchy::weight() const
+{
+  std::size_t level = size() - 1;
+  std::vector<std::size_t> cell_weights(finest()->num_cells(), 1);
+
+  while(level > 0)
+  {
+    const Mesh& mesh = *_meshes[level];
+    const Mesh& parent_mesh = *_meshes[level - 1];
+    const std::vector<std::size_t> parent_cell
+      = mesh.data().array("parent_cell", mesh.topology().dim());
+    dolfin_assert(parent_cell.size() == cell_weights.size());
+    std::vector<std::size_t> parent_cell_weights(parent_mesh.num_cells(), 0);
+    for (unsigned int i = 0; i != cell_weights.size(); ++i)
+      parent_cell_weights[parent_cell[i]] += cell_weights[i];
+
+    cell_weights = parent_cell_weights;
+    --level;
+  }
+
+  return cell_weights;
+}
+//-----------------------------------------------------------------------------

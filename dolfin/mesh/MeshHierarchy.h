@@ -81,6 +81,11 @@ namespace dolfin
     std::shared_ptr<const MeshHierarchy> coarsen
       (const MeshFunction<bool>& markers) const;
 
+    /// Calculate the number of cells on the finest Mesh
+    /// which are descendents of each cell on the coarsest Mesh,
+    /// returning a vector over the cells of the coarsest Mesh.
+    std::vector<std::size_t> weight() const;
+
   private:
 
     // Basic store of mesh pointers for easy access
