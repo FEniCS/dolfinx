@@ -118,11 +118,6 @@ namespace dolfin
 
     // Temporary storage for edges that have been recently marked
     std::vector<std::vector<std::size_t> > marked_for_update;
-
-    // Reorder vertices into global order for partitioning
-    void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
-                           const std::size_t gdim,
-                           const std::vector<std::size_t>& global_indices);
   };
 
 }

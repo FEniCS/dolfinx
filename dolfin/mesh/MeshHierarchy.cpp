@@ -18,9 +18,12 @@
 
 #include<map>
 
+#include <dolfin/mesh/DistributedMeshTools.h>
+#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshRelation.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
@@ -134,10 +137,11 @@ MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> MeshHierarchy::weight() const
 {
-  std::size_t level = size() - 1;
+  // Assign each fine cell a weight of 1.
+  // FIXME? Not all fine cells are the same size - possibly weight by size
   std::vector<std::size_t> cell_weights(finest()->num_cells(), 1);
 
-  while(level > 0)
+  for (std::size_t level = size() - 1; level > 0; --level)
   {
     const Mesh& mesh = *_meshes[level];
     const Mesh& parent_mesh = *_meshes[level - 1];
@@ -149,9 +153,73 @@ std::vector<std::size_t> MeshHierarchy::weight() const
       parent_cell_weights[parent_cell[i]] += cell_weights[i];
 
     cell_weights = parent_cell_weights;
-    --level;
   }
 
   return cell_weights;
+}
+//-----------------------------------------------------------------------------
+Mesh MeshHierarchy::rebalance() const
+{
+  // Make a new MeshHierarchy, with the same meshes, but rebalanced across
+  // processes.
+
+  // FIXME: this needs to be extended to all meshes in the Hierarchy
+  // and reconstruction of the MeshRelations between them... work in progress
+
+#ifndef HAS_SCOTCH
+  dolfin_error("MeshHierarchy.cpp",
+               "rebalance MeshHierarchy",
+               "Rebalancing requires SCOTCH library at present");
+#endif
+
+  const Mesh& coarse_mesh = *coarsest();
+  if (MPI::size(coarse_mesh.mpi_comm()) == 1)
+    dolfin_error("MeshHierarchy.cpp",
+                 "rebalance MeshHierarchy", "Not applicable in serial");
+
+  LocalMeshData local_mesh_data(coarse_mesh.mpi_comm());
+  local_mesh_data.cell_weight = weight();
+
+  const std::size_t tdim = coarse_mesh.topology().dim();
+  local_mesh_data.tdim = tdim;
+  const std::size_t gdim = coarse_mesh.geometry().dim();
+  local_mesh_data.gdim = gdim;
+  local_mesh_data.num_vertices_per_cell = tdim + 1;
+
+  // Cells
+
+  local_mesh_data.num_global_cells = coarse_mesh.size_global(tdim);
+  const std::size_t num_local_cells = coarse_mesh.size(tdim);
+  local_mesh_data.global_cell_indices.resize(num_local_cells);
+  local_mesh_data.cell_vertices.resize(boost::extents[num_local_cells]
+                               [local_mesh_data.num_vertices_per_cell]);
+
+  for (CellIterator c(coarse_mesh); !c.end(); ++c)
+  {
+    const std::size_t cell_index = c->index();
+    local_mesh_data.global_cell_indices[cell_index] = c->global_index();
+    for (VertexIterator v(*c); !v.end(); ++v)
+      local_mesh_data.cell_vertices[cell_index][v.pos()] = v->global_index();
+  }
+
+  // Vertices - must be reordered into global order
+
+  const std::size_t num_local_vertices = coarse_mesh.size(0);
+  local_mesh_data.num_global_vertices = coarse_mesh.size_global(0);
+  local_mesh_data.vertex_indices.resize(num_local_vertices);
+  for (VertexIterator v(coarse_mesh); !v.end(); ++v)
+    local_mesh_data.vertex_indices[v->index()] = v->global_index();
+  local_mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices]
+                                            [gdim]);
+
+  std::vector<double> vertex_coords =
+    DistributedMeshTools::reorder_vertices_by_global_indices(coarse_mesh);
+  std::copy(vertex_coords.begin(), vertex_coords.end(),
+            local_mesh_data.vertex_coordinates.data());
+
+  Mesh mesh(coarse_mesh.mpi_comm());
+  MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data);
+
+  return mesh;
 }
 //-----------------------------------------------------------------------------

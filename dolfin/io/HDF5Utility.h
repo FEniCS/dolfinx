@@ -31,6 +31,7 @@
 
 namespace dolfin
 {
+  class LocalMeshData;
   class GenericDofMap;
   class Mesh;
 
@@ -83,17 +84,6 @@ namespace dolfin
     /// Convert LocalMeshData structure to a Mesh, used when running
     /// in serial
     static void build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data);
-
-    /// Reorder vertices into global index order, so they can be saved
-    /// correctly for HDF5 mesh output
-    static std::vector<double>
-      reorder_vertices_by_global_indices(const Mesh& mesh);
-
-    /// Reorder data values of type double into global index order
-    /// Shape of 2D array is given in global_size
-    static void reorder_values_by_global_indices(const Mesh& mesh,
-                                                 std::vector<double>& data,
-                                                 std::size_t width);
 
   };
 

@@ -266,8 +266,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[1] = padded_value_size;
   if (vertex_data)
   {
-    HDF5Utility::reorder_values_by_global_indices(mesh, data_values,
-                                                  padded_value_size);
+    DistributedMeshTools::reorder_values_by_global_indices(mesh, data_values,
+                                                           padded_value_size);
     global_size[0] = mesh.size_global(0);
   }
   else
@@ -868,10 +868,10 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
     }
     xdmf_domain = xml_doc.child("Xdmf").child("Domain");
   }
-  
+
   dolfin_assert(xdmf_domain);
   const std::string ts_name = "TimeSeries_" + name;
-  for (pugi::xml_node grid = xdmf_domain.first_child(); 
+  for (pugi::xml_node grid = xdmf_domain.first_child();
        grid; grid = grid.next_sibling())
   {
     if (grid.attribute("Name").value() == ts_name)
@@ -880,7 +880,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
       break;
     }
   }
-    
+
   // If not found, create a new TimeSeries
   if (!xdmf_timegrid)
   {
@@ -898,7 +898,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
     xdmf_timedata.append_attribute("Dimensions") = "0";
     xdmf_timedata.append_child(pugi::node_pcdata);
   }
-    
+
   dolfin_assert(xdmf_timegrid);
 
   // Get time series node
@@ -965,7 +965,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
 
   xdmf_data.append_attribute("Dimensions") = s.c_str();
 
-  boost::filesystem::path p(hdf5_filename);  
+  boost::filesystem::path p(hdf5_filename);
   s = p.filename().string() + ":" + dataset_name;
   xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 

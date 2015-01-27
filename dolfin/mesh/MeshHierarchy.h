@@ -86,6 +86,9 @@ namespace dolfin
     /// returning a vector over the cells of the coarsest Mesh.
     std::vector<std::size_t> weight() const;
 
+    /// Rebalance across processes
+    Mesh rebalance() const;
+
   private:
 
     // Basic store of mesh pointers for easy access
