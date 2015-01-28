@@ -466,73 +466,95 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
                                                  Mesh& new_mesh,
            const std::map<std::size_t, std::size_t>& new_vertex_map)
 {
-  if (mesh.topology().dim() != 2)
-    dolfin_error("PlazaRefinementND.cpp",
-                 "set parent facet markers",
-                 "Only supported in 2D");
+  Timer t0("PLAZA: map parent-child facets");
+
+  const std::size_t tdim = mesh.topology().dim();
 
   std::vector<std::size_t>& new_parent_facet
     = new_mesh.data().create_array("parent_facet",
-                                   new_mesh.topology().dim() - 1);
+                                   tdim - 1);
 
-  // Make reverse map from new vertex to parent edge
-  std::map<std::size_t, std::size_t> reverse_map;
-  for (auto &p : new_vertex_map)
-    reverse_map.insert(std::make_pair(p.second, p.first));
+  new_mesh.init(tdim - 1);
+  new_parent_facet.clear();
+  new_parent_facet.resize(new_mesh.num_facets(),
+                          std::numeric_limits<std::size_t>::max());
 
-  // Make a map for every facet in old mesh
-  // FIXME: this is fairly ruinous for performance
-  std::map<std::pair<std::size_t, std::size_t>, std::size_t> old_fmap;
-  for (FacetIterator fold(mesh); !fold.end(); ++fold)
+  std::vector<std::size_t>& parent_cell
+    = new_mesh.data().array("parent_cell", tdim);
+
+  // Make a map from parent->child cells
+  std::vector<std::set<std::size_t> > reverse_cell_map(mesh.num_cells());
+  for (CellIterator cell(new_mesh); !cell.end(); ++cell)
   {
-    const unsigned int *v = fold->entities(0);
-    const std::size_t v0 = Vertex(mesh, v[0]).global_index();
-    const std::size_t v1 = Vertex(mesh, v[1]).global_index();
-    std::pair<std::size_t, std::size_t> idx
-      = (v0 < v1) ? std::make_pair(v0, v1) : std::make_pair(v1, v0);
-    old_fmap.insert(std::make_pair(idx, fold->index()));
+    const std::size_t cell_index = cell->index();
+    reverse_cell_map[parent_cell[cell_index]].insert(cell_index);
   }
 
-  new_mesh.init(new_mesh.topology().dim() - 1);
-  new_parent_facet.resize(new_mesh.num_facets());
-  for (FacetIterator f(new_mesh); !f.end(); ++f)
+  // Go through all parent cells, calculating sets of vertices
+  // which make up eligible facets
+  std::vector<std::set<std::size_t> > facet_sets;
+  for (CellIterator pcell(mesh); !pcell.end(); ++pcell)
   {
-    const unsigned int *v = f->entities(0);
-    const std::size_t gv0 = Vertex(new_mesh, v[0]).global_index();
-    const std::size_t gv1 = Vertex(new_mesh, v[1]).global_index();
-
-    // First look for direct (unrefined) facet
-    std::pair<std::size_t, std::size_t> idx
-      = (gv0 < gv1) ? std::make_pair(gv0, gv1) : std::make_pair(gv1, gv0);
-    auto old_facet_it = old_fmap.find(idx);
-
-    if (old_facet_it != old_fmap.end())
-      new_parent_facet[f->index()] = old_facet_it->second;
-    else
+    facet_sets.clear();
+    for (FacetIterator f(*pcell); !f.end(); ++f)
     {
-      // Look for refined facet
-      auto map_it0 = reverse_map.find(gv0);
-      auto map_it1 = reverse_map.find(gv1);
-      if (map_it0 != reverse_map.end())
+      // Add all parent facet vertices
+      std::set<std::size_t> vset;
+      for (VertexIterator v(*f); !v.end(); ++v)
+        vset.insert(v->global_index());
+
+      if (tdim == 2)
       {
-        const Facet old_facet(mesh, map_it0->second);
-        const unsigned int *old_verts = old_facet.entities(0);
-        const std::size_t fv0 = Vertex(mesh, old_verts[0]).global_index();
-        const std::size_t fv1 = Vertex(mesh, old_verts[1]).global_index();
-        if (fv0 == gv1 or fv1 == gv1)
-          new_parent_facet[f->index()] = map_it0->second;
+        // If edge was divided, add new vertex to set
+        const auto e_it = new_vertex_map.find(f->index());
+        if (e_it != new_vertex_map.end())
+          vset.insert(e_it->second);
       }
-      else if (map_it1 != reverse_map.end())
+      else if (tdim == 3)
       {
-        const Facet old_facet(mesh, map_it1->second);
-        const unsigned int *old_verts = old_facet.entities(0);
-        const std::size_t fv0 = Vertex(mesh, old_verts[0]).global_index();
-        const std::size_t fv1 = Vertex(mesh, old_verts[1]).global_index();
-        if (fv0 == gv0 or fv1 == gv0)
-          new_parent_facet[f->index()] = map_it1->second;
+        // FIXME: yet another example of where EdgeIterator(edge)
+        // does not make sense - i.e. if EdgeIterator(edge) just
+        // returned the edge itself rather than all its neighbours
+        // then this switch for tdim would not be needed
+        for (EdgeIterator e(*f); !e.end(); ++e)
+        {
+          // If edge was divided, add new vertex to set
+          const auto e_it = new_vertex_map.find(e->index());
+          if (e_it != new_vertex_map.end())
+            vset.insert(e_it->second);
+        }
       }
-      else
-        new_parent_facet[f->index()] = std::numeric_limits<std::size_t>::max();
+      facet_sets.push_back(vset);
+    }
+
+    // Now check child facet vertices to see
+    // if they belong to any of the parent facet sets
+    for (const auto &child_index : reverse_cell_map[pcell->index()])
+    {
+      Cell cell(new_mesh, child_index);
+      for (FacetIterator f(cell); !f.end(); ++f)
+      {
+        // Check not already assigned
+        if (new_parent_facet[f->index()] == std::numeric_limits<std::size_t>::max())
+        {
+          // Iterate through parent sets of vertices representing facets
+          for (unsigned int i = 0; i != facet_sets.size(); ++i)
+          {
+            // Check all vertices of child facet lie on parent facet
+            std::set<std::size_t>& vset = facet_sets[i];
+            bool vertex_match = true;
+            for (VertexIterator v(*f); !v.end(); ++v)
+              if (vset.count(v->global_index()) == 0)
+              {
+                vertex_match = false;
+                break;
+              }
+            if (vertex_match)
+              new_parent_facet[f->index()] = pcell->entities(tdim - 1)[i];
+          }
+        }
+      }
     }
   }
+
 }
