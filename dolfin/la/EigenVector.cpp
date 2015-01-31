@@ -1,0 +1,390 @@
+// Copyright (C) 2015 Garth N. Wells
+//
+// This file is part of DOLFIN.
+//
+// DOLFIN is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// DOLFIN is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+//
+// Modified by Anders Logg 2006-2012
+// Modified by Kent-Andre Mardal 2008
+// Modified by Martin Sandve Alnes 2008
+//
+// First added:  2006-04-04
+// Last changed: 2012-03-15
+
+#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <unordered_set>
+//#include <boost/numeric/ublas/vector.hpp>
+//#include <boost/numeric/ublas/vector_expression.hpp>
+
+#include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/common/Array.h>
+#include "EigenVector.h"
+#include "uBLASFactory.h"
+#include "GenericLinearAlgebraFactory.h"
+
+//#ifdef HAS_PETSC
+//#include "PETScVector.h"
+//#endif
+
+using namespace dolfin;
+
+//-----------------------------------------------------------------------------
+EigenVector::EigenVector() // : _x(new ublas_vector(0))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+EigenVector::EigenVector(std::size_t N)
+  : _x(new Eigen::VectorXd(N))
+{
+  // Set all entries to zero
+  //_x->clear();
+}
+//-----------------------------------------------------------------------------
+EigenVector::EigenVector(const EigenVector& x) : _x(new Eigen::VectorXd(*(x._x)))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+EigenVector::EigenVector(std::shared_ptr<Eigen::VectorXd> x) : _x(x)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+EigenVector::~EigenVector()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<GenericVector> EigenVector::copy() const
+{
+  std::shared_ptr<GenericVector> y(new EigenVector(*this));
+  return y;
+}
+//-----------------------------------------------------------------------------
+bool EigenVector::empty() const
+{
+  dolfin_assert(_x);
+  if (_x->size() == 0)
+    return true;
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+std::size_t EigenVector::size() const
+{
+  return _x->size();
+}
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, std::size_t> EigenVector::local_range() const
+{
+  return std::make_pair(0, size());
+}
+//-----------------------------------------------------------------------------
+bool EigenVector::owns_index(std::size_t i) const
+{
+  if (i < size())
+    return true;
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+void EigenVector::get_local(double* block, std::size_t m,
+                            const dolfin::la_index* rows) const
+{
+  for (std::size_t i = 0; i < m; i++)
+    block[i] = (*_x)(rows[i]);
+}
+//-----------------------------------------------------------------------------
+void EigenVector::get_local(std::vector<double>& values) const
+{
+  values.resize(size());
+  for (std::size_t i = 0; i < size(); i++)
+    values[i] = (*_x)(i);
+}
+//-----------------------------------------------------------------------------
+void EigenVector::set_local(const std::vector<double>& values)
+{
+  dolfin_assert(values.size() == size());
+  for (std::size_t i = 0; i < size(); i++)
+    (*_x)(i) = values[i];
+}
+//-----------------------------------------------------------------------------
+void EigenVector::add_local(const Array<double>& values)
+{
+  dolfin_assert(values.size() == size());
+  for (std::size_t i = 0; i < size(); i++)
+    (*_x)(i) += values[i];
+}
+//-----------------------------------------------------------------------------
+void EigenVector::gather(GenericVector& x,
+                         const std::vector<dolfin::la_index>& indices) const
+{
+  /*
+  const std::size_t _size = indices.size();
+  dolfin_assert(this->size() >= _size);
+
+  if (x.empty())
+    x.init(mpi_comm(), _size);
+  ublas_vector& tmp = as_type<EigenVector>(x).vec();
+  dolfin_assert(x.size(0) == _size);
+  for (std::size_t i = 0; i < _size; i++)
+    tmp(i) = (*_x)(indices[i]);
+  */
+}
+//-----------------------------------------------------------------------------
+void EigenVector::gather(std::vector<double>& x,
+                         const std::vector<dolfin::la_index>& indices) const
+{
+  const std::size_t _size = indices.size();
+  x.resize(_size);
+  dolfin_assert(x.size() == _size);
+  for (std::size_t i = 0; i < _size; i++)
+    x[i] = (*_x)(indices[i]);
+}
+//-----------------------------------------------------------------------------
+void EigenVector::gather_on_zero(std::vector<double>& x) const
+{
+  get_local(x);
+}
+//-----------------------------------------------------------------------------
+void EigenVector::set(const double* block, std::size_t m,
+                      const dolfin::la_index* rows)
+{
+  for (std::size_t i = 0; i < m; i++)
+    (*_x)(rows[i]) = block[i];
+}
+//-----------------------------------------------------------------------------
+void EigenVector::add(const double* block, std::size_t m,
+                      const dolfin::la_index* rows)
+{
+  for (std::size_t i = 0; i < m; i++)
+    (*_x)(rows[i]) += block[i];
+}
+//-----------------------------------------------------------------------------
+void EigenVector::apply(std::string mode)
+{
+  Timer timer("Apply (uBLAS vector)");
+
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void EigenVector::zero()
+{
+  dolfin_assert(_x);
+  _x->setZero();
+}
+//-----------------------------------------------------------------------------
+double EigenVector::norm(std::string norm_type) const
+{
+  dolfin_assert(_x);
+  if (norm_type == "l1")
+    return _x->lpNorm<1>();
+  else if (norm_type == "l2")
+    return _x->lpNorm<2>();
+  else if (norm_type == "linf")
+    return _x->lpNorm<Eigen::Infinity>();
+  else
+  {
+    dolfin_error("EigenVector.cpp",
+                 "compute norm of uBLAS vector",
+                 "Unknown norm type (\"%s\")", norm_type.c_str());
+  }
+
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+double EigenVector::min() const
+{
+  dolfin_assert(_x);
+  return _x->minCoeff();
+}
+//-----------------------------------------------------------------------------
+double EigenVector::max() const
+{
+  dolfin_assert(_x);
+  return _x->maxCoeff();
+}
+//-----------------------------------------------------------------------------
+double EigenVector::sum() const
+{
+  dolfin_assert(_x);
+  return _x->sum();
+}
+//-----------------------------------------------------------------------------
+double EigenVector::sum(const Array<std::size_t>& rows) const
+{
+  std::unordered_set<std::size_t> row_set;
+  double _sum = 0.0;
+  for (std::size_t i = 0; i < rows.size(); ++i)
+  {
+    const std::size_t index = rows[i];
+    dolfin_assert(index < size());
+    if (row_set.find(index) == row_set.end())
+    {
+      _sum += (*_x)[index];
+      row_set.insert(index);
+    }
+  }
+  return _sum;
+}
+//-----------------------------------------------------------------------------
+void EigenVector::axpy(double a, const GenericVector& y)
+{
+  error("No implemented");
+
+/*
+  if (size() != y.size())
+  {
+    dolfin_error("EigenVector.cpp",
+                 "perform axpy operation with uBLAS vector",
+                 "Vectors are not of the same size");
+  }
+
+  (*_x) += a * as_type<const EigenVector>(y).vec();
+  */
+}
+//-----------------------------------------------------------------------------
+void EigenVector::abs()
+{
+  dolfin_assert(_x);
+  _x->cwiseAbs();
+}
+//-----------------------------------------------------------------------------
+double EigenVector::inner(const GenericVector& y) const
+{
+  dolfin_assert(_x);
+  return _x->dot(as_type<const EigenVector>(y).vec());
+}
+//-----------------------------------------------------------------------------
+const GenericVector& EigenVector::operator= (const GenericVector& v)
+{
+  *this = as_type<const EigenVector>(v);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator= (const EigenVector& v)
+{
+  if (size() != v.size())
+  {
+    dolfin_error("EigenVector.cpp",
+                 "assign one vector to another",
+                 "Vectors must be of the same length when assigning. "
+                 "Consider using the copy constructor instead");
+  }
+
+  dolfin_assert(_x);
+  *_x = v.vec();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator= (double a)
+{
+  dolfin_assert(_x);
+  _x->setConstant(a);;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator*= (const double a)
+{
+  dolfin_assert(_x);
+  (*_x) *= a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator*= (const GenericVector& y)
+{
+  dolfin_assert(_x);
+  (*_x) = _x->cwiseProduct(as_type<const EigenVector>(y).vec());
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator/= (const double a)
+{
+  (*_x) /= a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator+= (const GenericVector& y)
+{
+  //*_x += as_type<const EigenVector>(y).vec();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator+= (double a)
+{
+  //boost::numeric::ublas::scalar_vector<double> _a(_x->size(), a);
+  //*_x += _a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator-= (const GenericVector& y)
+{
+  //*_x -= as_type<const EigenVector>(y).vec();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EigenVector& EigenVector::operator-= (double a)
+{
+  //boost::numeric::ublas::scalar_vector<double> _a(_x->size(), a);
+  //*_x -= _a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+std::string EigenVector::str(bool verbose) const
+{
+  std::stringstream s;
+
+  /*
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
+
+    s << "[";
+    for (ublas_vector::const_iterator it = _x->begin(); it != _x->end(); ++it)
+    {
+      std::stringstream entry;
+      entry << std::setiosflags(std::ios::scientific);
+      entry << std::setprecision(16);
+      entry << *it << " ";
+      s << entry.str() << std::endl;
+    }
+    s << "]";
+  }
+  else
+    s << "<EigenVector of size " << size() << ">";
+  */
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+GenericLinearAlgebraFactory& EigenVector::factory() const
+{
+  return uBLASFactory<>::instance();
+}
+//-----------------------------------------------------------------------------
+void EigenVector::resize(std::size_t N)
+{
+  if (_x->size() == N)
+    return;
+  else
+    _x->resize(N, false);
+
+  // Set vector to zero
+  _x->setZero();
+}
+//-----------------------------------------------------------------------------
