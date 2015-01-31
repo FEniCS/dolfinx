@@ -14,13 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2006-2012
-// Modified by Kent-Andre Mardal 2008
-// Modified by Martin Sandve Alnes 2008
-//
-// First added:  2006-04-04
-// Last changed: 2012-03-15
 
 #include <algorithm>
 #include <iomanip>
@@ -37,10 +30,6 @@
 #include "uBLASFactory.h"
 #include "GenericLinearAlgebraFactory.h"
 
-//#ifdef HAS_PETSC
-//#include "PETScVector.h"
-//#endif
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -49,14 +38,14 @@ EigenVector::EigenVector() // : _x(new ublas_vector(0))
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector(std::size_t N)
-  : _x(new Eigen::VectorXd(N))
+EigenVector::EigenVector(std::size_t N) : _x(new Eigen::VectorXd(N))
 {
   // Set all entries to zero
-  //_x->clear();
+  _x->setZero();
 }
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector(const EigenVector& x) : _x(new Eigen::VectorXd(*(x._x)))
+EigenVector::EigenVector(const EigenVector& x)
+  : _x(new Eigen::VectorXd(*(x._x)))
 {
   // Do nothing
 }
@@ -135,6 +124,7 @@ void EigenVector::add_local(const Array<double>& values)
 void EigenVector::gather(GenericVector& x,
                          const std::vector<dolfin::la_index>& indices) const
 {
+  error("Not implemented");
   /*
   const std::size_t _size = indices.size();
   dolfin_assert(this->size() >= _size);
@@ -179,8 +169,6 @@ void EigenVector::add(const double* block, std::size_t m,
 //-----------------------------------------------------------------------------
 void EigenVector::apply(std::string mode)
 {
-  Timer timer("Apply (uBLAS vector)");
-
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -247,8 +235,7 @@ double EigenVector::sum(const Array<std::size_t>& rows) const
 void EigenVector::axpy(double a, const GenericVector& y)
 {
   error("No implemented");
-
-/*
+  /*
   if (size() != y.size())
   {
     dolfin_error("EigenVector.cpp",
@@ -322,12 +309,14 @@ const EigenVector& EigenVector::operator/= (const double a)
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator+= (const GenericVector& y)
 {
+  error("Not implemented");
   //*_x += as_type<const EigenVector>(y).vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator+= (double a)
 {
+  error("Not implemented");
   //boost::numeric::ublas::scalar_vector<double> _a(_x->size(), a);
   //*_x += _a;
   return *this;
@@ -335,12 +324,14 @@ const EigenVector& EigenVector::operator+= (double a)
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator-= (const GenericVector& y)
 {
+  error("Not implemented");
   //*_x -= as_type<const EigenVector>(y).vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator-= (double a)
 {
+  error("Not implemented");
   //boost::numeric::ublas::scalar_vector<double> _a(_x->size(), a);
   //*_x -= _a;
   return *this;
