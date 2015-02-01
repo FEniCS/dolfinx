@@ -1,4 +1,5 @@
- - Add quadrature rules for multimesh/cut-cell integration up to order 6
+- Remove deprecated GenericDofMap::geometric_dim function (fixes Issue #443)
+- Add quadrature rules for multimesh/cut-cell integration up to order 6
 1.5.0 [2015-01-12]
  - DG demos working is parallel
  - Simplify re-use of LU factorisations
