@@ -383,16 +383,20 @@ EigenMatrix::init(const TensorLayout& tensor_layout)
   }
 
   // Reserve space for non-zeroes and get non-zero pattern
-  //    _matA.reserve(pattern_pointer->num_nonzeros());
-  //    const std::vector<std::vector<std::size_t> > pattern
-  //      = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
+  _matA.reserve(pattern_pointer->num_nonzeros());
+
+  const std::vector<std::vector<std::size_t> > pattern
+    = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
   // Add entries
   //    std::vector<std::vector<std::size_t> >::const_iterator row;
   //    Set<std::size_t>::const_iterator element;
-  //    for(row = pattern.begin(); row != pattern.end(); ++row)
-  //      for(element = row->begin(); element != row->end(); ++element)
-  //        _matA.push_back(row - pattern.begin(), *element, 0.0);
+  for (std::size_t i = 0; i != pattern.size(); ++i)
+  {
+    for (const auto &j : pattern[i])
+      _matA.insert(i, j) = 0.0;
+  }
+
 }
 //---------------------------------------------------------------------------
 std::size_t EigenMatrix::nnz() const
