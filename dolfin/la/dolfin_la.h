@@ -28,6 +28,8 @@
 #include <dolfin/la/uBLASMatrix.h>
 #include <dolfin/la/uBLASLinearOperator.h>
 
+#include <dolfin/la/EigenMatrix.h>
+
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScLinearOperator.h>
 #include <dolfin/la/PETScPreconditioner.h>
