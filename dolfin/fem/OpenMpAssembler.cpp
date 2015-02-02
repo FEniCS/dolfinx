@@ -148,7 +148,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Color mesh
   std::vector<std::size_t> coloring_type = a.coloring(mesh.topology().dim());
@@ -157,7 +157,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   // Get coloring data
   std::map<const std::vector<std::size_t>,
            std::pair<std::vector<std::size_t>,
-                     std::vector<std::vector<std::size_t>>>>::const_iterator mesh_coloring;
+                     std::vector<std::vector<std::size_t>>>>::const_iterator
+    mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
   if (mesh_coloring == mesh.topology().coloring.end())
   {
@@ -214,7 +215,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
-        dofs[i] = &(dofmaps[i]->cell_dofs(index));
+        dofs[i] = dofmaps[i]->cell_dofs(index);
 
       // Tabulate cell tensor
       integral->tabulate_tensor(ufc.A.data(),
@@ -289,7 +290,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof maps for a cell
-  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // FIXME: Pass or determine coloring type
   // Define graph type
@@ -352,12 +353,12 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
       // Get local-to-global dof maps for cell
       for (std::size_t i = 0; i < form_rank; ++i)
-        dofs[i] = &(dofmaps[i]->cell_dofs(cell_index));
+        dofs[i] = dofmaps[i]->cell_dofs(cell_index);
 
       // Get number of entries in cell tensor
       std::size_t dim = 1;
       for (std::size_t i = 0; i < form_rank; ++i)
-        dim *= dofs[i]->size();
+        dim *= dofs[i].size();
 
       // Tabulate cell tensor if we have a cell_integral
       if (cell_integral)
@@ -437,7 +438,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, 
+void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
                        const Form& a, UFC& _ufc,
                        std::shared_ptr<const MeshFunction<std::size_t> > domains,
                        std::vector<double>* values)
@@ -596,9 +597,9 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       for (std::size_t i = 0; i < form_rank; i++)
       {
         // Get dofs for each cell
-        const std::vector<dolfin::la_index>& cell_dofs0
+        const ArrayView<const dolfin::la_index> cell_dofs0
           = dofmaps[i]->cell_dofs(cell0.index());
-        const std::vector<dolfin::la_index>& cell_dofs1
+        const ArrayView<const dolfin::la_index> cell_dofs1
           = dofmaps[i]->cell_dofs(cell1.index());
 
         // Create space in macro dof vector
@@ -621,7 +622,14 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
                                 ufc_cell1.orientation);
 
       // Add entries to global tensor
-      A.add_local(ufc.macro_A.data(), macro_dofs);
+      std::vector<ArrayView<const la_index>>
+        macro_dofs_p(macro_dofs.size());
+      for (std::size_t i = 0; i < macro_dofs.size(); ++i)
+      {
+        macro_dofs_p[i] = ArrayView<const la_index>(macro_dofs[i].size(),
+                                                    macro_dofs[i].data());
+      }
+      A.add_local(ufc.macro_A.data(), macro_dofs_p);
 
       p++;
     }

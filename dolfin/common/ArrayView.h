@@ -64,6 +64,18 @@ namespace dolfin
     T& operator[] (std::size_t i)
     { dolfin_assert(i < _size); return _x[i]; }
 
+    T* begin()
+    { return &_x[0]; }
+
+    const T* begin() const
+    { return &_x[0]; }
+
+    T* end()
+    { return &_x[_size]; }
+
+    const T* end() const
+    { return &_x[_size]; }
+
     /// Return pointer to data (const version)
     const T* data() const
     { return _x; }

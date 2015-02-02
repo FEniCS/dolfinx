@@ -18,8 +18,9 @@
 // First added:  2013-09-05
 // Last changed: 2013-11-07
 
-#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 
@@ -114,7 +115,7 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
     }
 
     // Get all cell dofs
-    const std::vector<dolfin::la_index>& cell_dofs
+    const ArrayView<const dolfin::la_index> cell_dofs
       = dofmap.cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local vertex

@@ -18,6 +18,7 @@
 // Modified by Ola Skavhaug 2007
 // Modified by Anders Logg 2008-2014
 
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/GenericSparsityPattern.h>
@@ -85,7 +86,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   std::vector<std::vector<dolfin::la_index> > macro_dofs(rank);
 
   // Create vector to point to dofs
-  std::vector<const std::vector<dolfin::la_index>* > dofs(rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(rank);
 
   // FIXME: We iterate over the entire mesh even if the function space
   // is restricted. This works out fine since the local dofmap
@@ -100,7 +101,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     {
       // Tabulate dofs for each dimension and get local dimensions
       for (std::size_t i = 0; i < rank; ++i)
-        dofs[i] = &dofmaps[i]->cell_dofs(cell->index());
+        dofs[i] = dofmaps[i]->cell_dofs(cell->index());
 
       // Insert non-zeroes in sparsity pattern
       sparsity_pattern.insert_local(dofs);
@@ -115,8 +116,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     mesh.init(0);
     mesh.init(0, D);
 
-    std::vector< std::vector<dolfin::la_index> > global_dofs(rank);
-    std::vector< const std::vector<dolfin::la_index>* > global_dofs_p(rank);
+    std::vector<std::vector<dolfin::la_index> > global_dofs(rank);
+    //std::vector<const std::vector<dolfin::la_index>* > global_dofs_p(rank);
     std::vector<std::vector<std::size_t> > local_to_local_dofs(rank);
 
     // Resize local dof map vector
@@ -124,7 +125,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     {
       global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
       local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
-      global_dofs_p[i] = &global_dofs[i];
+      //global_dofs_p[i] = &global_dofs[i];
     }
 
     Progress p("Building sparsity pattern over vertices", mesh.num_vertices());
@@ -139,18 +140,24 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
       // Get local index of vertex with respect to the cell
       const std::size_t local_vertex = mesh_cell.index(*vert);
-
       for (std::size_t i = 0; i < rank; ++i)
       {
-        dofs[i] = &dofmaps[i]->cell_dofs(mesh_cell.index());
-        dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0, local_vertex);
+        dofs[i] = dofmaps[i]->cell_dofs(mesh_cell.index());
+        dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0,
+                                         local_vertex);
 
         // Copy cell dofs to local dofs and tabulated values to
         for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
-          global_dofs[i][j] = (*dofs[i])[local_to_local_dofs[i][j]];
+          global_dofs[i][j] = dofs[i][local_to_local_dofs[i][j]];
       }
 
       // Insert non-zeroes in sparsity pattern
+      std::vector<ArrayView<const dolfin::la_index>> global_dofs_p(rank);
+      for (std::size_t i = 0; i < rank; ++i)
+      {
+        global_dofs_p[i] = ArrayView<const la_index>(global_dofs[i].size(),
+                                                     global_dofs[i].data());
+      }
       sparsity_pattern.insert_local(global_dofs_p);
       p++;
     }
@@ -189,7 +196,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
         // Tabulate dofs for each dimension and get local dimensions
         for (std::size_t i = 0; i < rank; ++i)
-          dofs[i] = &dofmaps[i]->cell_dofs(cell.index());
+          dofs[i] = dofmaps[i]->cell_dofs(cell.index());
 
         // Insert dofs
         sparsity_pattern.insert_local(dofs);
@@ -211,9 +218,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         for (std::size_t i = 0; i < rank; i++)
         {
           // Get dofs for each cell
-          const std::vector<dolfin::la_index>& cell_dofs0
+          const ArrayView<const dolfin::la_index> cell_dofs0
             = dofmaps[i]->cell_dofs(cell0.index());
-          const std::vector<dolfin::la_index>& cell_dofs1
+          const ArrayView<const dolfin::la_index> cell_dofs1
             = dofmaps[i]->cell_dofs(cell1.index());
 
           // Create space in macro dof vector
@@ -226,7 +233,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                     macro_dofs[i].begin() + cell_dofs0.size());
 
           // Store pointer to macro dofs
-          dofs[i] = &macro_dofs[i];
+          //dofs[i] = macro_dofs[i];
+          dofs[i] = ArrayView<const la_index>(macro_dofs[i].size(),
+                                              macro_dofs[i].data());
         }
 
         // Insert dofs
@@ -243,7 +252,11 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
     std::vector<dolfin::la_index> diagonal_dof(1, 0);
     for (std::size_t i = 0; i < rank; ++i)
-      dofs[i] = &diagonal_dof;
+    {
+      dofs[i] = ArrayView<const la_index>(diagonal_dof.size(),
+                                          diagonal_dof.data());
+      //dofs[i] = &diagonal_dof;
+    }
 
     for (std::size_t j = 0; j < local_size; j++)
     {
@@ -331,16 +344,16 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
   const auto& cmap = multimesh->collision_map_cut_cells(part);
 
   // Data structures for storing dofs on cut (0) and cutting cell (1)
-  std::vector<const std::vector<dolfin::la_index>* > dofs_0(form.rank());
-  std::vector<const std::vector<dolfin::la_index>* > dofs_1(form.rank());
+  std::vector<ArrayView<const dolfin::la_index>> dofs_0(form.rank());
+  std::vector<ArrayView<const dolfin::la_index>> dofs_1(form.rank());
 
   // FIXME: We need two different lists here because the interface
   // FIXME: of insert() requires a list of pointers to dofs. Consider
   // FIXME: improving the interface of GenericSparsityPattern.
 
   // Data structure for storing dofs on macro cell (0 + 1)
-  std::vector<std::vector<dolfin::la_index> > dofs(form.rank());
-  std::vector<const std::vector<dolfin::la_index>* > _dofs(form.rank());
+  std::vector<std::vector<dolfin::la_index>> dofs(form.rank());
+  std::vector<ArrayView<const dolfin::la_index>> _dofs(form.rank());
 
   // Iterate over all cut cells in collision map
   for (auto it = cmap.begin(); it != cmap.end(); ++it)
@@ -352,7 +365,7 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
     for (std::size_t i = 0; i < form.rank(); i++)
     {
       const auto& dofmap = form.function_space(i)->dofmap()->part(part);
-      dofs_0[i] = &dofmap->cell_dofs(cut_cell_index);
+      dofs_0[i] = dofmap->cell_dofs(cut_cell_index);
     }
 
     // Iterate over cutting cells
@@ -367,15 +380,17 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
       for (std::size_t i = 0; i < form.rank(); i++)
       {
         // Get dofs for cutting cell
-        const auto& dofmap = form.function_space(i)->dofmap()->part(cutting_part);
-        dofs_1[i] = &dofmap->cell_dofs(cutting_cell_index);
+        const auto& dofmap
+          = form.function_space(i)->dofmap()->part(cutting_part);
+        dofs_1[i] = dofmap->cell_dofs(cutting_cell_index);
 
         // Collect dofs for cut and cutting cell
-        dofs[i].resize(dofs_0[i]->size() + dofs_1[i]->size());
-        std::copy(dofs_0[i]->begin(), dofs_0[i]->end(), dofs[i].begin());
-        std::copy(dofs_1[i]->begin(), dofs_1[i]->end(),
-                  dofs[i].begin() + dofs_0[i]->size());
-        _dofs[i] = &dofs[i]; // Silly extra step, fix GenericSparsityPattern interface
+        dofs[i].resize(dofs_0[i].size() + dofs_1[i].size());
+        std::copy(dofs_0[i].begin(), dofs_0[i].end(), dofs[i].begin());
+        std::copy(dofs_1[i].begin(), dofs_1[i].end(),
+                  dofs[i].begin() + dofs_0[i].size());
+        //_dofs[i] = &dofs[i]; // Silly extra step, fix GenericSparsityPattern interface
+        _dofs[i] = ArrayView<const la_index>(dofs[i].size(), dofs[i].data());
       }
 
       // Insert into sparsity pattern

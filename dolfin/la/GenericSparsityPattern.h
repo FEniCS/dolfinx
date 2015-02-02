@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
@@ -63,11 +64,11 @@ namespace dolfin
 
     /// Insert non-zero entries using global indices
     virtual void insert_global(const std::vector<
-                        const std::vector<dolfin::la_index>* >& entries) = 0;
+                               ArrayView<const dolfin::la_index>>& entries) = 0;
 
     /// Insert non-zero entries using local (process-wise) entries
     virtual void insert_local(const std::vector<
-                        const std::vector<dolfin::la_index>* >& entries) = 0;
+                              ArrayView<const dolfin::la_index>>& entries) = 0;
 
     /// Return rank
     virtual std::size_t rank() const = 0;

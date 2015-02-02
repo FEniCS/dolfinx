@@ -28,8 +28,9 @@
 #include <utility>
 #include <vector>
 
-#include "dolfin/common/Set.h"
-#include "dolfin/common/types.h"
+#include <dolfin/common/ArrayView.h>
+#include <dolfin/common/Set.h>
+#include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 
 namespace dolfin
@@ -74,11 +75,11 @@ namespace dolfin
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<
-                      const std::vector<dolfin::la_index>* >& entries);
+                       ArrayView<const dolfin::la_index>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices
     void insert_local(const std::vector<
-                      const std::vector<dolfin::la_index>* >& entries);
+                      ArrayView<const dolfin::la_index>>& entries);
 
     /// Return rank
     std::size_t rank() const;
