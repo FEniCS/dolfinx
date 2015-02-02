@@ -81,7 +81,7 @@ double EigenMatrix::norm(std::string norm_type) const
   //  else if (norm_type == "l1")
   //    return _matA.lpNorm<1>();
   //  else if (norm_type == "linf")
-  //    return _matA.lpNorm<Eigen::Infinity>;
+  //    return _matA.lpNorm<Eigen::Infinity>();
   else if (norm_type == "frobenius")
     return _matA.norm();
   else
@@ -121,12 +121,8 @@ void EigenMatrix::setrow(std::size_t row_idx,
   dolfin_assert(columns.size() == values.size());
   dolfin_assert(row_idx < this->size(0));
 
-  // FIXME: this assumes non-zero pattern is not set
   for(std::size_t i = 0; i < columns.size(); i++)
-  {
-    _matA.insert(row_idx, columns[i]) = values[i];
-  }
-
+    _matA.coeffRef(row_idx, columns[i]) = values[i];
 }
 //----------------------------------------------------------------------------
 void EigenMatrix::init_vector(GenericVector& z, std::size_t dim) const
@@ -229,9 +225,11 @@ void EigenMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 //----------------------------------------------------------------------------
 void EigenMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
-  dolfin_not_implemented();
   for(const dolfin::la_index* ptr = rows; ptr != rows + m; ++ptr)
+  {
     _matA.row(*ptr) *= 0.0;
+    _matA.coeffRef(*ptr, *ptr) = 1.0;
+  }
 }
 //---------------------------------------------------------------------------
 void EigenMatrix::mult(const GenericVector& x, GenericVector& y) const
@@ -269,8 +267,10 @@ void EigenMatrix::set_diagonal(const GenericVector& x)
                  "Matrix and vector dimensions don't match");
   }
 
-  //    const double* xx = x.down_cast<EigenVector>().data();
-  dolfin_not_implemented();
+  const Eigen::VectorXd& xx = x.down_cast<EigenVector>().vec();
+
+  for (std::size_t i = 0; i != x.size(); ++i)
+    _matA.coeffRef(i, i) = xx[i];
 }
 //----------------------------------------------------------------------------
 void EigenMatrix::transpmult(const GenericVector& x,
@@ -383,20 +383,19 @@ EigenMatrix::init(const TensorLayout& tensor_layout)
   }
 
   // Reserve space for non-zeroes and get non-zero pattern
-  _matA.reserve(pattern_pointer->num_nonzeros());
+  std::vector<std::size_t> num_nonzeros_per_row;
+  pattern_pointer->num_nonzeros_diagonal(num_nonzeros_per_row);
+  _matA.reserve(num_nonzeros_per_row);
 
   const std::vector<std::vector<std::size_t> > pattern
     = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
   // Add entries
-  //    std::vector<std::vector<std::size_t> >::const_iterator row;
-  //    Set<std::size_t>::const_iterator element;
   for (std::size_t i = 0; i != pattern.size(); ++i)
   {
     for (const auto &j : pattern[i])
       _matA.insert(i, j) = 0.0;
   }
-
 }
 //---------------------------------------------------------------------------
 std::size_t EigenMatrix::nnz() const
@@ -406,7 +405,6 @@ std::size_t EigenMatrix::nnz() const
 //---------------------------------------------------------------------------
 void EigenMatrix::apply(std::string mode)
 {
-  Timer timer("Apply (matrix)");
   // Make sure matrix assembly is complete
 }
 //---------------------------------------------------------------------------
