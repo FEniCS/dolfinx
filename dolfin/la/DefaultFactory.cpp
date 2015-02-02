@@ -22,6 +22,7 @@
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
+#include "EigenFactory.h"
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
 #include "STLFactory.h"
@@ -95,6 +96,8 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
   // Choose backend
   if (backend == "uBLAS")
     return uBLASFactory<>::instance();
+  else if (backend == "Eigen")
+    return EigenFactory::instance();
   else if (backend == "PETSc")
   {
     #ifdef HAS_PETSC

@@ -33,7 +33,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector() // : _x(new ublas_vector(0))
+EigenVector::EigenVector() : _x(new Eigen::VectorXd)
 {
   // Do nothing
 }
@@ -373,7 +373,7 @@ void EigenVector::resize(std::size_t N)
   if (_x->size() == (unsigned int)N)
     return;
   else
-    _x->resize(N, false);
+    _x->resize(N);
 
   // Set vector to zero
   _x->setZero();
