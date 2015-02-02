@@ -94,36 +94,17 @@ namespace dolfin
     /// Add block of values using global indices
     virtual void
       add(const double* block,
-          const std::vector<const std::vector<dolfin::la_index>* >& rows)
+          const std::vector<ArrayView<const dolfin::la_index> >& rows)
     {
-      add(block, rows[0]->size(), rows[0]->data(),
-          rows[1]->size(), rows[1]->data());
+      add(block, rows[0].size(), rows[0].data(), rows[1].size(), rows[1].data());
     }
 
     /// Add block of values using local indices
     virtual void
       add_local(const double* block,
-                const std::vector<const std::vector<dolfin::la_index>* >& rows)
+                const std::vector<ArrayView<const dolfin::la_index> >& rows)
     {
-      add_local(block, rows[0]->size(), rows[0]->data(),
-                rows[1]->size(), rows[1]->data());
-    }
-
-    /// Add block of values using global indices
-    virtual void add(const double* block,
-                     const std::vector<std::vector<dolfin::la_index> >& rows)
-    {
-      add(block, rows[0].size(), rows[0].data(),
-          rows[1].size(), rows[1].data());
-    }
-
-    /// Add block of values using local indices
-    virtual void
-      add_local(const double* block,
-                const std::vector<std::vector<dolfin::la_index> >& rows)
-    {
-      add_local(block, rows[0].size(), rows[0].data(), rows[1].size(),
-                rows[1].data());
+      add_local(block, rows[0].size(), rows[0].data(), rows[1].size(), rows[1].data());
     }
 
     /// Set all entries to zero and keep any sparse structure

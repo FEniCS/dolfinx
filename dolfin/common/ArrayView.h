@@ -33,14 +33,24 @@ namespace dolfin
 
   public:
 
+    /// Constructor
+    ArrayView() : _size(0), _x(NULL) {}
+
     /// Construct array from a pointer. Array does not take ownership.
     ArrayView(std::size_t N, T* x) : _size(N), _x(x) {}
 
     /// Copy constructor
-    ArrayView(const Array& x) : _size(x._size), _x(x._x) {}
+    ArrayView(const ArrayView& x) : _size(x._size), _x(x._x) {}
 
     /// Destructor
-    ~Array() {}
+    ~ArrayView() {}
+
+    /// Assignment operator
+    //ArrayView& operator=(const ArrayView& x)
+    // {
+    //  this->_size = x._size;
+    //  this->_x = x._x;
+    // }
 
     /// Return size of array
     std::size_t size() const
@@ -64,10 +74,10 @@ namespace dolfin
 
   private:
 
-    /// Length of array
-    const std::size_t _size;
+    // Length of array
+    std::size_t _size;
 
-    /// Array data
+    // Array data
     T* _x;
 
   };

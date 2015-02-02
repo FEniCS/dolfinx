@@ -28,9 +28,10 @@
 #include <exception>
 #include <typeinfo>
 #include <memory>
-#include <dolfin/log/log.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 #include "LinearAlgebraObject.h"
 
 namespace dolfin
@@ -81,22 +82,13 @@ namespace dolfin
     /// Add block of values using global indices
     virtual
       void add(const double* block,
-           const std::vector<const std::vector<dolfin::la_index>* >& rows) = 0;
+           const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
 
     /// Add block of values using local indices
     virtual
       void add_local(const double* block,
-                     const std::vector<const std::vector<dolfin::la_index>* >& rows) = 0;
+                     const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
 
-    /// Add block of values using global indices
-    virtual
-      void add(const double* block,
-               const std::vector<std::vector<dolfin::la_index> >& rows) = 0;
-
-    /// Add block of values using local indices
-    virtual
-      void add_local(const double* block,
-                     const std::vector<std::vector<dolfin::la_index> >& rows) = 0;
 
     /// Add block of values using global indices
     virtual void add(const double* block, const dolfin::la_index* num_rows,

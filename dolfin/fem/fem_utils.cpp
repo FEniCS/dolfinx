@@ -30,6 +30,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> dolfin::dof_to_vertex_map(const FunctionSpace& space)
 {
+  dolfin_assert(space.dofmap());
   const GenericDofMap& dofmap = *space.dofmap();
 
   if (dofmap.is_view())

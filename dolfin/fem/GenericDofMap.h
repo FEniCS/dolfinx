@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
@@ -90,8 +91,7 @@ namespace dolfin
     virtual const std::vector<int>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
-    virtual const std::vector<dolfin::la_index>&
-      cell_dofs(std::size_t cell_index) const = 0;
+    virtual ArrayView<const dolfin::la_index> cell_dofs(std::size_t cell_index) const = 0;
 
     /// Tabulate local-local facet dofs
     virtual void tabulate_facet_dofs(std::vector<std::size_t>& dofs,

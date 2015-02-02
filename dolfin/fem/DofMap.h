@@ -38,6 +38,7 @@
 #include <unordered_map>
 #include <ufc.h>
 
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
 #include "GenericDofMap.h"
@@ -216,10 +217,10 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<dolfin::la_index>
     ///         Local-to-global mapping of dofs.
-    const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const
+    ArrayView<const dolfin::la_index> cell_dofs(std::size_t cell_index) const
     {
       dolfin_assert(cell_index < _dofmap.size());
-      return _dofmap[cell_index];
+      return ArrayView<const dolfin::la_index>(_dofmap[cell_index].size(), _dofmap[cell_index].data());
     }
 
     /// Tabulate local-local facet dofs
