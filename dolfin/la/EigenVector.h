@@ -87,7 +87,7 @@ namespace dolfin
       if (!empty())
       {
         dolfin_error("EigenVector.cpp",
-                     "calling uBLASVector::init(...)",
+                     "calling EigenVector::init(...)",
                      "Cannot call init for a non-empty vector. Use EigenVector::resize instead");
       }
       resize(N);
@@ -267,16 +267,16 @@ namespace dolfin
     /// Return linear algebra backend factory
     virtual GenericLinearAlgebraFactory& factory() const;
 
-    //--- Special uBLAS functions ---
+    //--- Special Eigen functions ---
 
     /// Resize vector to size N
     virtual void resize(std::size_t N);
 
-    /// Return reference to uBLAS vector (const version)
+    /// Return reference to Eigen vector (const version)
     const Eigen::VectorXd& vec() const
     { return *_x; }
 
-    /// Return reference to uBLAS vector (non-const version)
+    /// Return reference to Eigen vector (non-const version)
     Eigen::VectorXd& vec()
     { return *_x; }
 
@@ -303,7 +303,7 @@ namespace dolfin
       }
     }
 
-    // Smart pointer to uBLAS vector object
+    // Smart pointer to Eigen vector object
     std::shared_ptr<Eigen::VectorXd> _x;
 
   };

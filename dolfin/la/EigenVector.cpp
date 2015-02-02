@@ -27,7 +27,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include "EigenVector.h"
-#include "uBLASFactory.h"
+#include "EigenFactory.h"
 #include "GenericLinearAlgebraFactory.h"
 
 using namespace dolfin;
@@ -190,7 +190,7 @@ double EigenVector::norm(std::string norm_type) const
   else
   {
     dolfin_error("EigenVector.cpp",
-                 "compute norm of uBLAS vector",
+                 "compute norm of Eigen vector",
                  "Unknown norm type (\"%s\")", norm_type.c_str());
   }
 
@@ -239,7 +239,7 @@ void EigenVector::axpy(double a, const GenericVector& y)
   if (size() != y.size())
   {
     dolfin_error("EigenVector.cpp",
-                 "perform axpy operation with uBLAS vector",
+                 "perform axpy operation with Eigen vector",
                  "Vectors are not of the same size");
   }
 
@@ -365,12 +365,12 @@ std::string EigenVector::str(bool verbose) const
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& EigenVector::factory() const
 {
-  return uBLASFactory<>::instance();
+  return EigenFactory::instance();
 }
 //-----------------------------------------------------------------------------
 void EigenVector::resize(std::size_t N)
 {
-  if (_x->size() == N)
+  if (_x->size() == (unsigned int)N)
     return;
   else
     _x->resize(N, false);

@@ -164,6 +164,8 @@
             boost::numeric::ublas::row_major> >)
 %shared_ptr(dolfin::uBLASVector)
 
+%shared_ptr(dolfin::EigenVector)
+
 #ifdef HAS_PETSC
 %shared_ptr(dolfin::PETScBaseMatrix)
 %shared_ptr(dolfin::PETScLinearOperator)

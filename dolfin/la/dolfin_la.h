@@ -22,10 +22,12 @@
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScBaseMatrix.h>
+
 #include <dolfin/la/uBLASFactory.h>
 
 #include <dolfin/la/uBLASMatrix.h>
 #include <dolfin/la/uBLASLinearOperator.h>
+
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScLinearOperator.h>
 #include <dolfin/la/PETScPreconditioner.h>
@@ -39,6 +41,7 @@
 
 #include <dolfin/la/STLMatrix.h>
 #include <dolfin/la/CoordinateMatrix.h>
+#include <dolfin/la/EigenVector.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/PETScVector.h>
 
