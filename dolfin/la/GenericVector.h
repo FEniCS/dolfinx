@@ -72,7 +72,7 @@ namespace dolfin
 
     /// Return local ownership range
     virtual std::pair<std::size_t, std::size_t>
-      local_range(std::size_t dim) const
+    local_range(std::size_t dim) const
     { dolfin_assert(dim == 0); return local_range(); }
 
     /// Get block of values using global indices
@@ -115,8 +115,8 @@ namespace dolfin
 
     /// Add block of values using local indices
     virtual void
-      add_local(const double* block,
-          const std::vector<ArrayView<const dolfin::la_index> >& rows)
+    add_local(const double* block,
+              const std::vector<ArrayView<const dolfin::la_index> >& rows)
     { add_local(block, rows[0].size(), rows[0].data()); }
 
     /// Set all entries to zero and keep any sparse structure

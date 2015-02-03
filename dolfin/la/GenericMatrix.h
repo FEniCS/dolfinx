@@ -59,7 +59,7 @@ namespace dolfin
 
     /// Return local ownership range
     virtual std::pair<std::size_t, std::size_t>
-      local_range(std::size_t dim) const = 0;
+    local_range(std::size_t dim) const = 0;
 
     /// Return number of non-zero entries in matrix (collective)
     virtual std::size_t nnz() const = 0;
@@ -93,18 +93,20 @@ namespace dolfin
 
     /// Add block of values using global indices
     virtual void
-      add(const double* block,
-          const std::vector<ArrayView<const dolfin::la_index> >& rows)
+    add(const double* block,
+        const std::vector<ArrayView<const dolfin::la_index> >& rows)
     {
-      add(block, rows[0].size(), rows[0].data(), rows[1].size(), rows[1].data());
+      add(block, rows[0].size(), rows[0].data(),
+          rows[1].size(), rows[1].data());
     }
 
     /// Add block of values using local indices
     virtual void
-      add_local(const double* block,
-                const std::vector<ArrayView<const dolfin::la_index> >& rows)
+    add_local(const double* block,
+              const std::vector<ArrayView<const dolfin::la_index> >& rows)
     {
-      add_local(block, rows[0].size(), rows[0].data(), rows[1].size(), rows[1].data());
+      add_local(block, rows[0].size(), rows[0].data(),
+                rows[1].size(), rows[1].data());
     }
 
     /// Set all entries to zero and keep any sparse structure

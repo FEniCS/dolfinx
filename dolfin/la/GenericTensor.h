@@ -65,7 +65,7 @@ namespace dolfin
 
     /// Return local ownership range
     virtual std::pair<std::size_t, std::size_t>
-      local_range(std::size_t dim) const = 0;
+    local_range(std::size_t dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block, const dolfin::la_index* num_rows,
@@ -76,7 +76,8 @@ namespace dolfin
                      const dolfin::la_index * const * rows) = 0;
 
     /// Set block of values using local indices
-    virtual void set_local(const double* block, const dolfin::la_index* num_rows,
+    virtual void set_local(const double* block,
+                           const dolfin::la_index* num_rows,
                            const dolfin::la_index * const * rows) = 0;
 
     /// Add block of values using global indices
@@ -85,9 +86,9 @@ namespace dolfin
            const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
 
     /// Add block of values using local indices
-    virtual
-      void add_local(const double* block,
-                     const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
+    virtual void add_local(
+      const double* block,
+      const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
 
 
     /// Add block of values using global indices
@@ -95,7 +96,8 @@ namespace dolfin
                      const dolfin::la_index * const * rows) = 0;
 
     /// Add block of values using local indices
-    virtual void add_local(const double* block, const dolfin::la_index* num_rows,
+    virtual void add_local(const double* block,
+                           const dolfin::la_index* num_rows,
                            const dolfin::la_index * const * rows) = 0;
 
     /// Set all entries to zero and keep any sparse structure
