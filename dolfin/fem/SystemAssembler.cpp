@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Kent-Andre Mardal and Garth N. Wells
+// Copyright (C) 2008-2015 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,12 +18,10 @@
 // Modified by Anders Logg 2008-2013
 // Modified by Joachim B Haga 2012
 // Modified by Jan Blechta 2013
-// Modified by Martin Alnaes 2013
-//
-// First added:  2009-06-22
-// Last changed: 2013-08-01
+// Modified by Martin Alnaes 2013-2015
 
 #include <array>
+#include <algorithm>
 #include <Eigen/Dense>
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/GenericFunction.h>
@@ -508,15 +506,6 @@ SystemAssembler::facet_wise_assembly(std::array<GenericTensor*, 2>& tensors,
   mesh.init(D - 1);
   mesh.init(D - 1, D);
 
-  // Facet orientation not supported
-  if (mesh.data().exists("facet_orientation", D - 1))
-  {
-    dolfin_error("SystemAssembler.cpp",
-                 "assemble system",
-                 "User-defined facet orientation is not supported by system \
-assembler");
-  }
-
   // My MPI rank
   const int my_mpi_rank = MPI::rank(mesh.mpi_comm());
 
@@ -582,10 +571,22 @@ assembler");
     // Interior facet
     if (num_cells == 2)
     {
+      // Get cells incident with facet (which is 0 and 1 here is arbitrary)
+      dolfin_assert(facet->num_entities(D) == 2);
+      std::array<std::size_t, 2> cell_indices = {
+          facet->entities(D)[0],
+          facet->entities(D)[1]
+        };
+
+      // Make sure cell marker for + side is larger than cell marker for - side.
+      // Note: by ffc convention, 0 is + and 1 is -
+      if (use_cell_domains && (*cell_domains)[cell_indices[0]] < (*cell_domains)[cell_indices[1]])
+        std::swap(cell_indices[0], cell_indices[1]);
+
       // Get cells incident with facet and associated data
       for (std::size_t c = 0; c < 2; ++c)
       {
-        cell[c] = Cell(mesh, facet->entities(D)[c]);
+        cell[c] = Cell(mesh, cell_indices[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(*facet);
         cell[c].get_vertex_coordinates(vertex_coordinates[c]);
