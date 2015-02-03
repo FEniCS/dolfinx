@@ -169,7 +169,7 @@ void GenericMatrix::compressed(GenericMatrix& B) const
     // Build new compressed sparsity pattern
     if (new_sparsity_pattern)
     {
-      dofs[1] = ArrayView(thiscolumn.size(), thiscolumn.data());
+      dofs[1] = ArrayView<const la_index>(thiscolumn.size(), thiscolumn.data());
       new_sparsity_pattern->insert_global(dofs);
     }
   }
@@ -186,7 +186,7 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   {
     const dolfin::la_index global_row = i + row_range.first;
     B.set(&allvalues[offset[i]], 1, &global_row,
-        offset[i+1] - offset[i], &allcolumns[offset[i]]);
+          offset[i+1] - offset[i], &allcolumns[offset[i]]);
   }
   B.apply("insert");
 }
