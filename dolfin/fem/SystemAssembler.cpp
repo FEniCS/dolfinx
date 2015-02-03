@@ -573,10 +573,10 @@ SystemAssembler::facet_wise_assembly(std::array<GenericTensor*, 2>& tensors,
     {
       // Get cells incident with facet (which is 0 and 1 here is arbitrary)
       dolfin_assert(facet->num_entities(D) == 2);
-      std::array<std::size_t, 2> cell_indices = {
+      std::array<std::size_t, 2> cell_indices = { {
           facet->entities(D)[0],
           facet->entities(D)[1]
-        };
+            } };
 
       // Make sure cell marker for + side is larger than cell marker for - side.
       // Note: by ffc convention, 0 is + and 1 is -
