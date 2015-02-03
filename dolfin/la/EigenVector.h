@@ -281,12 +281,12 @@ namespace dolfin
     { return *_x; }
 
     /// Access value of given entry (const version)
-    //virtual double operator[] (dolfin::la_index i) const
-    //{ return (*_x)(i); }
+    virtual double operator[] (dolfin::la_index i) const
+    { return (*_x)(i); }
 
     /// Access value of given entry (non-const version)
-    //double& operator[] (dolfin::la_index i)
-    //{ return (*_x)(i); }
+    double& operator[] (dolfin::la_index i)
+    { return (*_x)(i); }
 
     /// Assignment operator
     const EigenVector& operator= (const EigenVector& x);

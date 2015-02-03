@@ -25,6 +25,7 @@
 
 #include <dolfin/log/log.h>
 // #include "EigenKrylovSolver.h"
+#include "EigenLUSolver.h"
 #include "EigenMatrix.h"
 #include "EigenVector.h"
 #include "TensorLayout.h"
@@ -76,7 +77,7 @@ namespace dolfin
     /// Create LU solver
     std::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
     {
-      return std::shared_ptr<GenericLUSolver>();
+      return std::shared_ptr<GenericLUSolver>(new EigenLUSolver(method));
     }
 
     /// Create Krylov solver

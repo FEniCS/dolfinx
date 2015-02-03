@@ -38,6 +38,7 @@
 
 namespace dolfin
 {
+  typedef Eigen::SparseMatrix<double, Eigen::RowMajor> eigen_matrix_type;
 
   class EigenMatrix : public GenericMatrix
   {
@@ -192,12 +193,12 @@ namespace dolfin
     //--- Special Eigen functions ---
 
     /// Return reference to Eigen matrix (const version)
-    const Eigen::SparseMatrix<double, Eigen::RowMajor>& mat() const
+    const eigen_matrix_type& mat() const
     { return _matA; }
 
     /// Return reference to Eigen matrix (non-const version)
-    //    Mat& mat()
-    //    { return _matA; }
+    eigen_matrix_type& mat()
+    { return _matA; }
 
     /// Solve Ax = b out-of-place using Eigen (A is not destroyed)
     //    void solve(EigenVector& x, const EigenVector& b) const;
@@ -211,12 +212,12 @@ namespace dolfin
     /// Lump matrix into vector m
     //    void lump(EigenVector& m) const;
 
-    /// Compress matrix (eliminate all non-zeros from a sparse matrix)
-    //    void compress();
+    /// Compress matrix (eliminate all zeros from a sparse matrix)
+    // void compress();
 
     /// Access value of given entry
-    //    double operator() (dolfin::la_index i, dolfin::la_index j) const
-    //    { return _matA(i, j); }
+    double operator() (dolfin::la_index i, dolfin::la_index j) const
+    { return _matA.coeff(i, j); }
 
     /// Assignment operator
     const EigenMatrix& operator= (const EigenMatrix& A);
@@ -224,7 +225,7 @@ namespace dolfin
   private:
 
     // Eigen matrix object - row major access
-    Eigen::SparseMatrix<double, Eigen::RowMajor> _matA;
+    eigen_matrix_type _matA;
 
   };
   //---------------------------------------------------------------------------

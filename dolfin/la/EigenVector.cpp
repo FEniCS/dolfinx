@@ -20,8 +20,6 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_set>
-//#include <boost/numeric/ublas/vector.hpp>
-//#include <boost/numeric/ublas/vector_expression.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -125,17 +123,6 @@ void EigenVector::gather(GenericVector& x,
                          const std::vector<dolfin::la_index>& indices) const
 {
   error("Not implemented");
-  /*
-  const std::size_t _size = indices.size();
-  dolfin_assert(this->size() >= _size);
-
-  if (x.empty())
-    x.init(mpi_comm(), _size);
-  ublas_vector& tmp = as_type<EigenVector>(x).vec();
-  dolfin_assert(x.size(0) == _size);
-  for (std::size_t i = 0; i < _size; i++)
-    tmp(i) = (*_x)(indices[i]);
-  */
 }
 //-----------------------------------------------------------------------------
 void EigenVector::gather(std::vector<double>& x,
@@ -234,8 +221,6 @@ double EigenVector::sum(const Array<std::size_t>& rows) const
 //-----------------------------------------------------------------------------
 void EigenVector::axpy(double a, const GenericVector& y)
 {
-  error("No implemented");
-  /*
   if (size() != y.size())
   {
     dolfin_error("EigenVector.cpp",
@@ -243,8 +228,8 @@ void EigenVector::axpy(double a, const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  (*_x) += a * as_type<const EigenVector>(y).vec();
-  */
+  const Eigen::VectorXd& _y = as_type<const EigenVector>(y).vec();
+  (*_x) = _x->array() + a * _y.array();
 }
 //-----------------------------------------------------------------------------
 void EigenVector::abs()
@@ -283,7 +268,7 @@ const EigenVector& EigenVector::operator= (const EigenVector& v)
 const EigenVector& EigenVector::operator= (double a)
 {
   dolfin_assert(_x);
-  _x->setConstant(a);;
+  _x->setConstant(a);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -309,31 +294,27 @@ const EigenVector& EigenVector::operator/= (const double a)
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator+= (const GenericVector& y)
 {
-  error("Not implemented");
-  //*_x += as_type<const EigenVector>(y).vec();
+  const Eigen::VectorXd& _y = as_type<const EigenVector>(y).vec();
+  *_x = _x->array() + _y.array();
   return *this;
 }
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator+= (double a)
 {
-  error("Not implemented");
-  //boost::numeric::ublas::scalar_vector<double> _a(_x->size(), a);
-  //*_x += _a;
+  *_x = _x->array() + a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator-= (const GenericVector& y)
 {
-  error("Not implemented");
-  //*_x -= as_type<const EigenVector>(y).vec();
+  const Eigen::VectorXd& _y = as_type<const EigenVector>(y).vec();
+  *_x = _x->array() - _y.array();
   return *this;
 }
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator-= (double a)
 {
-  error("Not implemented");
-  //boost::numeric::ublas::scalar_vector<double> _a(_x->size(), a);
-  //*_x -= _a;
+  *_x = _x->array() - a;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -341,25 +322,24 @@ std::string EigenVector::str(bool verbose) const
 {
   std::stringstream s;
 
-  /*
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
 
     s << "[";
-    for (ublas_vector::const_iterator it = _x->begin(); it != _x->end(); ++it)
+    for (std::size_t i = 0; i != size(); ++i)
     {
       std::stringstream entry;
       entry << std::setiosflags(std::ios::scientific);
       entry << std::setprecision(16);
-      entry << *it << " ";
+      entry << (*_x)[i] << " ";
       s << entry.str() << std::endl;
     }
     s << "]";
   }
   else
     s << "<EigenVector of size " << size() << ">";
-  */
+
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -370,7 +350,7 @@ GenericLinearAlgebraFactory& EigenVector::factory() const
 //-----------------------------------------------------------------------------
 void EigenVector::resize(std::size_t N)
 {
-  if (_x->size() == (unsigned int)N)
+  if (size() == N)
     return;
   else
     _x->resize(N);

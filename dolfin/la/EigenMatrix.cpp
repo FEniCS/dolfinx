@@ -105,7 +105,7 @@ void EigenMatrix::getrow(std::size_t row_idx,
   values.clear();
 
   // This works because the storage is Eigen::RowMajor
-  for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator
+  for (eigen_matrix_type::InnerIterator
          it(_matA, row_idx); it; ++it)
   {
     columns.push_back(it.index());
@@ -346,8 +346,7 @@ std::string EigenMatrix::str(bool verbose) const
     for (dolfin::la_index it1 = 0; it1 != _matA.outerSize(); ++it1)
     {
       s << "|";
-      for (Eigen::SparseMatrix<double, Eigen::RowMajor>
-             ::InnerIterator it2(_matA, it1); it2; ++it2)
+      for (eigen_matrix_type::InnerIterator it2(_matA, it1); it2; ++it2)
       {
         std::stringstream entry;
         entry << std::setiosflags(std::ios::scientific);
