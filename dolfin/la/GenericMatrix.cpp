@@ -138,9 +138,9 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   offset[0] = 0;
   std::vector<dolfin::la_index> thisrow(1);
   std::vector<dolfin::la_index> thiscolumn;
-  std::vector<const std::vector<dolfin::la_index>* > dofs(2);
-  dofs[0] = &thisrow;
-  dofs[1] = &thiscolumn;
+  std::vector<ArrayView<const dolfin::la_index>> dofs(2);
+  dofs[0] = ArrayView<const dolfin::la_index>(1, thisrow.data());
+  //dofs[1] = &thiscolumn;
 
   // Iterate over rows
   for (std::size_t i = 0; i < m; i++)
@@ -168,7 +168,10 @@ void GenericMatrix::compressed(GenericMatrix& B) const
 
     // Build new compressed sparsity pattern
     if (new_sparsity_pattern)
+    {
+      dofs[1] = ArrayView(thiscolumn.size(), thiscolumn.data());
       new_sparsity_pattern->insert_global(dofs);
+    }
   }
 
   // Finalize sparsity pattern
