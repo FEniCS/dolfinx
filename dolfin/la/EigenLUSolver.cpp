@@ -22,6 +22,21 @@
 #include <dolfin/parameter/GlobalParameters.h>
 
 #include <Eigen/SparseLU>
+#ifdef EIGEN_CHOLMOD_SUPPORT
+#include <Eigen/CholmodSupport>
+#endif
+#ifdef EIGEN_UMFPACK_SUPPORT
+#include <Eigen/UmfPackSupport>
+#endif
+#ifdef EIGEN_PARDISO_SUPPORT
+#include <Eigen/PardisoSupport>
+#endif
+#ifdef EIGEN_SUPERLU_SUPPORT
+#include <Eigen/SuperLUSupport>
+#endif
+#ifdef EIGEN_PASTIX_SUPPORT
+#include <Eigen/PaStiXSupport>
+#endif
 
 #include "LUSolver.h"
 #include "EigenMatrix.h"
@@ -32,13 +47,47 @@ using namespace dolfin;
 
 // List of available LU solvers
 const std::map<std::string, std::string> EigenLUSolver::_methods
-= { {"default", ""},
-    {"SparseLU", "SparseLU"}};
+= { {"default", "default"},
+    {"sparselu", "sparselu"},
+    {"cholesky", "cholesky"},
+#ifdef EIGEN_CHOLMOD_SUPPORT
+    {"cholmod", "cholmod"},
+#endif
+#ifdef EIGEN_UMFPACK_SUPPORT
+    {"umfpack", "umfpack"},
+#endif
+#ifdef EIGEN_PARDISO_SUPPORT
+    {"pardiso", "pardiso"},
+#endif
+#ifdef EIGEN_SUPERLU_SUPPORT
+    {"superlu", "superlu"},
+#endif
+#ifdef EIGEN_PASTIX_SUPPORT
+    {"pastix", "pastix"}
+#endif
+};
 //-----------------------------------------------------------------------------
 const std::vector<std::pair<std::string, std::string> >
 EigenLUSolver::_methods_descr
 = { {"default", "default LU solver"},
-    {"SparseLU", "Supernodal LU factorization for general matrices"}};
+    {"sparselu", "Supernodal LU factorization for general matrices"},
+    {"cholesky", "Simplicial LDLT"},
+#ifdef EIGEN_CHOLMOD_SUPPORT
+    {"cholmod", "Cholmod"},
+#endif
+#ifdef EIGEN_UMFPACK_SUPPORT
+    {"umfpack", "umfpack"},
+#endif
+#ifdef EIGEN_PARDISO_SUPPORT
+    {"pardiso", "pardiso"},
+#endif
+#ifdef EIGEN_SUPERLU_SUPPORT
+    {"superlu", "superlu"},
+#endif
+#ifdef EIGEN_PASTIX_SUPPORT
+    {"pastix", "PasTiX"}
+#endif
+};
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 EigenLUSolver::methods()
@@ -59,8 +108,7 @@ EigenLUSolver::EigenLUSolver(std::string method)
   // Set parameter values
   parameters = default_parameters();
 
-  // Initialize Eigen LU solver
-  init_solver(method);
+  _method = select_solver(method);
 }
 //-----------------------------------------------------------------------------
 EigenLUSolver::EigenLUSolver(std::shared_ptr<const EigenMatrix> A,
@@ -77,8 +125,7 @@ EigenLUSolver::EigenLUSolver(std::shared_ptr<const EigenMatrix> A,
   // Set parameter values
   parameters = default_parameters();
 
-  // Initialize Eigen LU solver
-  init_solver(method);
+  _method = select_solver(method);
 }
 //-----------------------------------------------------------------------------
 EigenLUSolver::~EigenLUSolver()
@@ -120,8 +167,71 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b)
   return solve(x, b, false);
 }
 //-----------------------------------------------------------------------------
-std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
+std::size_t EigenLUSolver::solve(GenericVector& x,
+                                 const GenericVector& b,
                                  bool transpose)
+{
+  if (_method == "sparselu")
+  {
+    Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor>,
+                    Eigen::COLAMDOrdering<int> > solver;
+    call_solver(solver, x, b, transpose);
+  }
+  else if (_method == "cholesky")
+  {
+    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double, Eigen::ColMajor>,
+                          Eigen::Lower> solver;
+    call_solver(solver, x, b, transpose);
+  }
+#ifdef EIGEN_CHOLMOD_SUPPORT
+  else if (_method == "cholmod")
+  {
+    Eigen::CholmodDecomposition<Eigen::SparseMatrix<double, Eigen::ColMajor>,
+                                Eigen::Lower> solver;
+    solver.setMode(Eigen::CholmodLDLt);
+    call_solver(solver, x, b, transpose);
+  }
+#endif
+#ifdef EIGEN_PASTIX_SUPPORT
+  else if (_method == "pastix")
+  {
+    Eigen::PastixLU<Eigen::SparseMatrix<double, Eigen::ColMajor> > solver;
+    call_solver(solver, x, b, transpose);
+  }
+#endif
+#ifdef EIGEN_PARDISO_SUPPORT
+  else if (_method == "pardiso")
+  {
+    Eigen::PardisoLU<Eigen::SparseMatrix<double, Eigen::ColMajor> > solver;
+    call_solver(solver, x, b, transpose);
+  }
+#endif
+#ifdef EIGEN_SUPERLU_SUPPORT
+  else if (_method == "superlu")
+  {
+    Eigen::SuperLU<Eigen::SparseMatrix<double, Eigen::ColMajor> > solver;
+    call_solver(solver, x, b, transpose);
+  }
+#endif
+#ifdef EIGEN_UMFPACK_SUPPORT
+  else if (_method == "umfpack")
+  {
+    Eigen::UmfPackLU<Eigen::SparseMatrix<double, Eigen::ColMajor> > solver;
+    call_solver(solver, x, b, transpose);
+  }
+#endif
+  else
+    dolfin_error("EigenLUSolver.cpp", "solve A.x =b",
+                 "Unknown method \"%s\"", _method.c_str());
+
+  return 1;
+}
+//-----------------------------------------------------------------------------
+template <typename Solver>
+std::size_t EigenLUSolver::call_solver(Solver& solver,
+                                      GenericVector& x,
+                                      const GenericVector& b,
+                                      bool transpose)
 {
   Timer timer("Eigen LU solver");
 
@@ -139,22 +249,21 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
                  "Cannot factorize non-square Eigen matrix");
   }
 
-  // Initialize solution vector if required (make compatible with A in
-  // parallel)
+  // Initialize solution vector if required
   if (x.empty())
     _matA->init_vector(x, 1);
 
-  // Copy to column major format
-  Eigen::SparseMatrix<double, Eigen::ColMajor> _A;
+  // Copy to format suitable for solver
+  // FIXME: remove this if possible
+  // Eigen wants ColMajor matrices for solver
+
+  typename Solver::MatrixType _A;
   if (transpose)
     _A = _matA->mat().transpose();
   else
     _A = _matA->mat();
 
   _A.makeCompressed();
-
-  Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor>,
-                  Eigen::COLAMDOrdering<int> > solver;
 
   solver.analyzePattern(_A);
   solver.factorize(_A);
@@ -232,13 +341,8 @@ const std::string EigenLUSolver::select_solver(std::string& method) const
 
   // Choose appropriate 'default' solver
   if (method == "default")
-    method = "SparseLU";
+    method = "sparselu";
 
   return _methods.find(method)->second;
-}
-//-----------------------------------------------------------------------------
-void EigenLUSolver::init_solver(std::string& method)
-{
-  // Do nothing for now
 }
 //-----------------------------------------------------------------------------

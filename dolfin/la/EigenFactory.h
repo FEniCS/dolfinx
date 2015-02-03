@@ -70,6 +70,7 @@ namespace dolfin
     /// Create empty linear operator
     std::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
+      dolfin_not_implemented();
       std::shared_ptr<GenericLinearOperator> A;//(new EigenLinearOperator);
       return A;
     }
@@ -85,6 +86,7 @@ namespace dolfin
     create_krylov_solver(std::string method,
                          std::string preconditioner) const
     {
+      dolfin_not_implemented();
       std::shared_ptr<GenericLinearSolver>
         solver;//(new EigenKrylovSolver(method, preconditioner));
       return solver;
@@ -94,10 +96,7 @@ namespace dolfin
     std::vector<std::pair<std::string, std::string> >
       lu_solver_methods() const
     {
-      std::vector<std::pair<std::string, std::string> > methods;
-      methods.push_back(std::make_pair("default",
-                                       "default LU solver"));
-      return methods;
+      return EigenLUSolver::methods();
     }
 
     /// Return a list of available Krylov solver methods
@@ -106,7 +105,7 @@ namespace dolfin
     {
       std::vector<std::pair<std::string, std::string> > methods;
       return methods;
-      //return EigenKrylovSolver::methods();
+      // return EigenKrylovSolver::methods();
     }
 
     /// Return a list of available preconditioners
@@ -115,7 +114,7 @@ namespace dolfin
     {
       std::vector<std::pair<std::string, std::string> > methods;
       return methods;
-      //      return EigenKrylovSolver::preconditioners();
+      // return EigenKrylovSolver::preconditioners();
     }
 
     /// Return singleton instance

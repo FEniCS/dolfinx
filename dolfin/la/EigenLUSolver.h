@@ -26,7 +26,6 @@
 #include <map>
 #include <memory>
 #include <Eigen/Dense>
-#include <Eigen/Sparse>
 #include "GenericLUSolver.h"
 
 namespace dolfin
@@ -101,6 +100,13 @@ namespace dolfin
 
   private:
 
+    // Call generic solve
+    template <typename Solver>
+    std::size_t call_solver(Solver& solver,
+                            GenericVector& x,
+                            const GenericVector& b,
+                            bool transpose);
+
     // Available LU solvers
     static const std::map<std::string, std::string> _methods;
 
@@ -108,11 +114,11 @@ namespace dolfin
     static const std::vector<std::pair<std::string, std::string> >
     _methods_descr;
 
+    // Current selected method
+    std::string _method;
+
     // Select LU solver type
     const std::string select_solver(std::string& method) const;
-
-    // Initialise solver
-    void init_solver(std::string& method);
 
     // Operator (the matrix)
     std::shared_ptr<const EigenMatrix> _matA;
