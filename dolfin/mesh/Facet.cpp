@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2014 Anders Logg
+// Copyright (C) 2006-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,9 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2011
-//
-// First added:  2006-06-02
-// Last changed: 2014-05-22
+// Modified by Martin Alnaes, 2015
 
 #include <dolfin/geometry/Point.h>
 #include "IntervalCell.h"
@@ -102,32 +100,5 @@ bool Facet::exterior() const
     return true;
   else
     return false;
-}
-//-----------------------------------------------------------------------------
-std::pair<const Cell, const Cell>
-Facet::adjacent_cells(const std::vector<std::size_t>* facet_orientation) const
-{
-  dolfin_assert(num_entities(dim() + 1) == 2);
-
-  // Get cell indices
-  const std::size_t D = dim() + 1;
-  const std::size_t c0 = entities(D)[0];
-  const std::size_t c1 = entities(D)[1];
-
-  // Normal ordering
-  if (!facet_orientation || (*facet_orientation)[this->index()] == c0)
-    return std::make_pair(Cell(mesh(), c0), Cell(mesh(), c1));
-
-  // Sanity check
-  if ((*facet_orientation)[this->index()] != c1)
-  {
-    dolfin_error("Facet.cpp",
-                 "extract adjacent cells of facet",
-                 "Illegal facet orientation specified, cell %d is not a neighbor of facet %d",
-                 (*facet_orientation)[this->index()], index());
-  }
-
-  // Opposite ordering
-  return std::make_pair(Cell(mesh(), c1), Cell(mesh(), c0));
 }
 //-----------------------------------------------------------------------------

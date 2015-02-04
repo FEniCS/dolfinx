@@ -188,14 +188,6 @@ std::size_t DofMap::num_entity_dofs(std::size_t dim) const
   return _ufc_dofmap->num_entity_dofs(dim);
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::geometric_dimension() const
-{
-  deprecation("DofMap::geometric_dimension()", "1.5", "1.6",
-            "DofMap::geometric_dimension() is deprecated and will be removed");
-  dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->geometric_dimension();
-}
-//-----------------------------------------------------------------------------
 std::size_t DofMap::num_facet_dofs() const
 {
   dolfin_assert(_ufc_dofmap);

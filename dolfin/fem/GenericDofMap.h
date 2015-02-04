@@ -78,18 +78,6 @@ namespace dolfin
     /// Return the number of dofs for a given entity dimension
     virtual std::size_t num_entity_dofs(std::size_t dim) const = 0;
 
-    // DEPRECATED
-    /// Return the geometric dimension of the coordinates this dof map
-    /// provides
-    virtual std::size_t geometric_dimension() const
-    {
-      // Throw error if not provided by sub-class
-      dolfin_error("GenericDofMap.cpp",
-                   "get dofmap geometric dimension",
-                   "dofmap generic dimension is deprecated and not supported by this implementation of GenericDofMap interface.");
-      return 0;
-    }
-
     /// Return number of facet dofs
     virtual std::size_t num_facet_dofs() const = 0;
 
