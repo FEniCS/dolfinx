@@ -21,20 +21,28 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
 
+// #define EIGEN_CHOLMOD_SUPPORT 1
+// #define EIGEN_UMFPACK_SUPPORT 1
+
 #include <Eigen/SparseLU>
 #ifdef EIGEN_CHOLMOD_SUPPORT
+// Works with Cholmod downloaded by PETSc
 #include <Eigen/CholmodSupport>
 #endif
 #ifdef EIGEN_UMFPACK_SUPPORT
+// Works with Suitesparse downloaded by PETSc
 #include <Eigen/UmfPackSupport>
 #endif
 #ifdef EIGEN_PARDISO_SUPPORT
+// Requires Intel MKL
 #include <Eigen/PardisoSupport>
 #endif
 #ifdef EIGEN_SUPERLU_SUPPORT
+// SuperLU bundled with PETSc is not compatible
 #include <Eigen/SuperLUSupport>
 #endif
 #ifdef EIGEN_PASTIX_SUPPORT
+// Seems to require COMPLEX support
 #include <Eigen/PaStiXSupport>
 #endif
 
@@ -46,46 +54,25 @@
 using namespace dolfin;
 
 // List of available LU solvers
-const std::map<std::string, std::string> EigenLUSolver::_methods
-= { {"default", "default"},
-    {"sparselu", "sparselu"},
-    {"cholesky", "cholesky"},
-#ifdef EIGEN_CHOLMOD_SUPPORT
-    {"cholmod", "cholmod"},
-#endif
-#ifdef EIGEN_UMFPACK_SUPPORT
-    {"umfpack", "umfpack"},
-#endif
-#ifdef EIGEN_PARDISO_SUPPORT
-    {"pardiso", "pardiso"},
-#endif
-#ifdef EIGEN_SUPERLU_SUPPORT
-    {"superlu", "superlu"},
-#endif
-#ifdef EIGEN_PASTIX_SUPPORT
-    {"pastix", "pastix"}
-#endif
-};
-//-----------------------------------------------------------------------------
 const std::vector<std::pair<std::string, std::string> >
 EigenLUSolver::_methods_descr
 = { {"default", "default LU solver"},
     {"sparselu", "Supernodal LU factorization for general matrices"},
     {"cholesky", "Simplicial LDLT"},
 #ifdef EIGEN_CHOLMOD_SUPPORT
-    {"cholmod", "Cholmod"},
+    {"cholmod", "'CHOLMOD' sparse Cholesky factorisation"},
 #endif
 #ifdef EIGEN_UMFPACK_SUPPORT
-    {"umfpack", "umfpack"},
+    {"umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"},
 #endif
 #ifdef EIGEN_PARDISO_SUPPORT
-    {"pardiso", "pardiso"},
+    {"pardiso", "Intel MKL Pardiso"},
 #endif
 #ifdef EIGEN_SUPERLU_SUPPORT
-    {"superlu", "superlu"},
+    {"superlu", "SuperLU"},
 #endif
 #ifdef EIGEN_PASTIX_SUPPORT
-    {"pastix", "PasTiX"}
+    {"pastix", "PaStiX (Parallel Sparse matriX package)"}
 #endif
 };
 //-----------------------------------------------------------------------------
@@ -233,7 +220,8 @@ std::size_t EigenLUSolver::call_solver(Solver& solver,
                                       const GenericVector& b,
                                       bool transpose)
 {
-  Timer timer("Eigen LU solver");
+  std::string timer_title = "Eigen LU solver (" + _method + ")";
+  Timer timer(timer_title);
 
   dolfin_assert(_matA);
 
@@ -265,11 +253,26 @@ std::size_t EigenLUSolver::call_solver(Solver& solver,
 
   _A.makeCompressed();
 
-  solver.analyzePattern(_A);
-  solver.factorize(_A);
+  //  solver.analyzePattern(_A);
+  //  solver.factorize(_A);
+
+  solver.compute(_A);
+
+  if (solver.info() != Eigen::Success)
+  {
+    dolfin_error("EigenLUSolver.cpp",
+                 "compute matrix factorisation",
+                 "The provided data did not satisfy the prerequisites");
+  }
 
   // Solve linear system
   _x.vec() = solver.solve(_b.vec());
+  if (solver.info() != Eigen::Success)
+  {
+    dolfin_error("EigenLUSolver.cpp",
+                 "solve A.x = b",
+                 "Solver failed");
+  }
 
   return 1;
 }
@@ -331,18 +334,22 @@ std::string EigenLUSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 const std::string EigenLUSolver::select_solver(std::string& method) const
 {
-  // Check package string
-  if (_methods.count(method) == 0)
-  {
-    dolfin_error("EigenLUSolver.cpp",
-                 "solve linear system using Eigen LU solver",
-                 "Unknown LU method \"%s\"", method.c_str());
-  }
-
   // Choose appropriate 'default' solver
   if (method == "default")
     method = "sparselu";
 
-  return _methods.find(method)->second;
+  // Check package string
+  for (auto &m : _methods_descr)
+  {
+    if (m.first == method)
+      return method;
+  }
+
+  dolfin_error("EigenLUSolver.cpp",
+               "solve linear system using Eigen LU solver",
+               "Unknown LU method \"%s\"", method.c_str());
+
+  // Never reach here
+  return method;
 }
 //-----------------------------------------------------------------------------

@@ -24,7 +24,7 @@
 #include <string>
 
 #include <dolfin/log/log.h>
-// #include "EigenKrylovSolver.h"
+#include "EigenKrylovSolver.h"
 #include "EigenLUSolver.h"
 #include "EigenMatrix.h"
 #include "EigenVector.h"
@@ -86,9 +86,8 @@ namespace dolfin
     create_krylov_solver(std::string method,
                          std::string preconditioner) const
     {
-      dolfin_not_implemented();
       std::shared_ptr<GenericLinearSolver>
-        solver;//(new EigenKrylovSolver(method, preconditioner));
+        solver(new EigenKrylovSolver(method, preconditioner));
       return solver;
     }
 
@@ -103,18 +102,14 @@ namespace dolfin
     std::vector<std::pair<std::string, std::string> >
     krylov_solver_methods() const
     {
-      std::vector<std::pair<std::string, std::string> > methods;
-      return methods;
-      // return EigenKrylovSolver::methods();
+      return EigenKrylovSolver::methods();
     }
 
     /// Return a list of available preconditioners
     std::vector<std::pair<std::string, std::string> >
     krylov_solver_preconditioners() const
     {
-      std::vector<std::pair<std::string, std::string> > methods;
-      return methods;
-      // return EigenKrylovSolver::preconditioners();
+      return EigenKrylovSolver::preconditioners();
     }
 
     /// Return singleton instance

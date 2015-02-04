@@ -1,0 +1,152 @@
+// Copyright (C) 2015 Chris Richardson
+//
+// This file is part of DOLFIN.
+//
+// DOLFIN is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// DOLFIN is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+//
+// First added:  2005-02-04
+
+#ifndef __DOLFIN_EIGEN_KRYLOV_SOLVER_H
+#define __DOLFIN_EIGEN_KRYLOV_SOLVER_H
+
+#include <map>
+#include <memory>
+#include <dolfin/common/types.h>
+#include "GenericLinearSolver.h"
+
+namespace dolfin
+{
+
+  /// Forward declarations
+  class GenericMatrix;
+  class GenericVector;
+  class EigenMatrix;
+  class EigenVector;
+  class EigenPreconditioner;
+  //  class EigenUserPreconditioner;
+
+  /// This class implements Krylov methods for linear systems
+  /// of the form Ax = b. It is a wrapper for the Krylov solvers
+  /// of Eigen.
+
+  class EigenKrylovSolver : public GenericLinearSolver
+  {
+  public:
+
+    /// Create Krylov solver for a particular method and names
+    /// preconditioner
+    EigenKrylovSolver(std::string method = "default",
+                      std::string preconditioner = "default");
+
+    /// Create Krylov solver for a particular method and
+    /// EigenPreconditioner
+    EigenKrylovSolver(std::string method, EigenPreconditioner& preconditioner);
+
+    /// Create Krylov solver for a particular method and
+    /// EigenPreconditioner (shared_ptr version)
+    EigenKrylovSolver(std::string method,
+                      std::shared_ptr<EigenPreconditioner> preconditioner);
+
+    /// Create Krylov solver for a particular method and
+    /// EigenPreconditioner
+    //  EigenKrylovSolver(std::string method,
+    //                      EigenUserPreconditioner& preconditioner);
+
+    /// Create Krylov solver for a particular method and
+    /// EigenPreconditioner (shared_ptr version)
+    //    EigenKrylovSolver(std::string method,
+    //		    std::shared_ptr<EigenUserPreconditioner> preconditioner);
+
+    /// Destructor
+    ~EigenKrylovSolver();
+
+    /// Set operator (matrix)
+    void set_operator(std::shared_ptr<const GenericLinearOperator> A);
+
+    /// Set operator (matrix)
+    void set_operator(std::shared_ptr<const EigenMatrix> A);
+
+    /// Set operator (matrix) and preconditioner matrix
+    void set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                       std::shared_ptr<const GenericLinearOperator> P);
+
+    /// Set operator (matrix) and preconditioner matrix
+    void set_operators(std::shared_ptr<const EigenMatrix> A,
+                       std::shared_ptr<const EigenMatrix> P);
+
+    /// Get operator (matrix)
+    const EigenMatrix& get_operator() const;
+
+    /// Solve linear system Ax = b and return number of iterations
+    std::size_t solve(GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system Ax = b and return number of iterations
+    std::size_t solve(EigenVector& x, const EigenVector& b);
+
+    /// Solve linear system Ax = b and return number of iterations
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
+
+    /// Solve linear system Ax = b and return number of iterations
+    std::size_t solve(const EigenMatrix& A, EigenVector& x,
+                      const EigenVector& b);
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose) const;
+
+    /// Return a list of available solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
+
+    /// Return a list of available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
+
+    /// Default parameter values
+    static Parameters default_parameters();
+
+  private:
+
+    // Initialize solver
+    void init(const std::string& method);
+
+    // Call with an actual solver
+    template <typename Solver>
+    std::size_t call_solver(Solver& solver,
+                            GenericVector& x,
+                            const GenericVector& b);
+
+    // Chosen method
+    std::string _method;
+
+    // Available solvers descriptions
+    static const std::vector<std::pair<std::string, std::string> >
+      _methods_descr;
+
+    // DOLFIN-defined EigenUserPreconditioner
+    //    EigenUserPreconditioner* pc_dolfin;
+
+    // Preconditioner
+    std::shared_ptr<EigenPreconditioner> _preconditioner;
+
+    // Operator (the matrix)
+    std::shared_ptr<const EigenMatrix> _matA;
+
+    // Matrix used to construct the preconditioner
+    std::shared_ptr<const EigenMatrix> _matP;
+
+    bool preconditioner_set;
+  };
+
+}
+
+#endif

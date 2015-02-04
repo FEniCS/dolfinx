@@ -107,10 +107,7 @@ namespace dolfin
                             const GenericVector& b,
                             bool transpose);
 
-    // Available LU solvers
-    static const std::map<std::string, std::string> _methods;
-
-    // Available LU solvers descriptions
+    // Available LU solvers and descriptions
     static const std::vector<std::pair<std::string, std::string> >
     _methods_descr;
 
