@@ -143,8 +143,6 @@ void EigenMatrix::add(const double* block, std::size_t m,
                       const dolfin::la_index* rows,
                       std::size_t n, const dolfin::la_index* cols)
 {
-  Timer t0("EigenMatrix::add");
-
   for (std::size_t j = 0; j < n; ++j)
   {
     const dolfin::la_index col = cols[j];
@@ -217,9 +215,8 @@ void EigenMatrix::get(double* block, std::size_t m,
 //---------------------------------------------------------------------------
 void EigenMatrix::zero()
 {
-  std::cout << "zero\n";
-  // FIXME : this deletes the non-zero pattern
-  //  _matA.setZero();
+  // Set to zero whilst keeping the non-zero pattern
+  _matA *= 0.0;
 }
 //----------------------------------------------------------------------------
 void EigenMatrix::zero(std::size_t m, const dolfin::la_index* rows)
@@ -396,7 +393,7 @@ EigenMatrix::init(const TensorLayout& tensor_layout)
   const std::vector<std::vector<std::size_t> > pattern
     = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
-  // Add entries
+  // Add entries for RowMajor matrix
   for (std::size_t i = 0; i != pattern.size(); ++i)
   {
     for (const auto &j : pattern[i])
