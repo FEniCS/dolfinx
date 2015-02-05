@@ -208,9 +208,11 @@ endif()
 
 # FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
 
-# Add debug definitions
+# Set debug definitions
 if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DDEBUG")
+else()
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DNDEBUG")
 endif()
 
 # Add flags for generating code coverage reports
