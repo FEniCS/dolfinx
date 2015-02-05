@@ -104,7 +104,10 @@ void EigenMatrix::getrow(std::size_t row_idx,
   columns.clear();
   values.clear();
 
-  // This works because the storage is Eigen::RowMajor
+  // Check storage is RowMajor
+  if (!eigen_matrix_type::IsRowMajor)
+    error("Cannot get row from ColMajor matrix");
+
   for (eigen_matrix_type::InnerIterator
          it(_matA, row_idx); it; ++it)
   {
@@ -392,6 +395,9 @@ EigenMatrix::init(const TensorLayout& tensor_layout)
 
   const std::vector<std::vector<std::size_t> > pattern
     = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
+
+  if (!eigen_matrix_type::IsRowMajor)
+    warning ("Entering sparsity for RowMajor matrix - performance may be affected");
 
   // Add entries for RowMajor matrix
   for (std::size_t i = 0; i != pattern.size(); ++i)

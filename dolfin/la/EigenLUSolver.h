@@ -102,10 +102,10 @@ namespace dolfin
 
     // Call generic solve
     template <typename Solver>
-    std::size_t call_solver(Solver& solver,
-                            GenericVector& x,
-                            const GenericVector& b,
-                            bool transpose);
+    void call_solver(Solver& solver,
+                     GenericVector& x,
+                     const GenericVector& b,
+                     bool transpose);
 
     // Available LU solvers and descriptions
     static const std::vector<std::pair<std::string, std::string> >

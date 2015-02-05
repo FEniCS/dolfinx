@@ -213,7 +213,10 @@ namespace dolfin
     //    void lump(EigenVector& m) const;
 
     /// Compress matrix (eliminate all zeros from a sparse matrix)
-    // void compress();
+    void compress()
+    {
+      _matA.makeCompressed();
+    }
 
     /// Access value of given entry
     double operator() (dolfin::la_index i, dolfin::la_index j) const

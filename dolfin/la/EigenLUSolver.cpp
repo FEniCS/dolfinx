@@ -215,10 +215,10 @@ std::size_t EigenLUSolver::solve(GenericVector& x,
 }
 //-----------------------------------------------------------------------------
 template <typename Solver>
-std::size_t EigenLUSolver::call_solver(Solver& solver,
-                                      GenericVector& x,
-                                      const GenericVector& b,
-                                      bool transpose)
+void EigenLUSolver::call_solver(Solver& solver,
+                                GenericVector& x,
+                                const GenericVector& b,
+                                bool transpose)
 {
   std::string timer_title = "Eigen LU solver (" + _method + ")";
   Timer timer(timer_title);
@@ -253,9 +253,6 @@ std::size_t EigenLUSolver::call_solver(Solver& solver,
 
   _A.makeCompressed();
 
-  //  solver.analyzePattern(_A);
-  //  solver.factorize(_A);
-
   solver.compute(_A);
 
   if (solver.info() != Eigen::Success)
@@ -273,8 +270,6 @@ std::size_t EigenLUSolver::call_solver(Solver& solver,
                  "solve A.x = b",
                  "Solver failed");
   }
-
-  return 1;
 }
 //-----------------------------------------------------------------------------
 std::size_t EigenLUSolver::solve(const GenericLinearOperator& A,
