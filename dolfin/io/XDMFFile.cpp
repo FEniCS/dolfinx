@@ -432,7 +432,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
     boost::filesystem::path p(hdf5_filename);
     const std::string topology_reference = p.filename().string() + ":"
       + group_name + "/topology";
-    xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells,
+    xml_mesh_topology(xdmf_topology, cell_dim, 1, num_global_cells,
                       topology_reference);
 
     // Describe geometric coordinates
@@ -738,6 +738,7 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
                                  const std::size_t cell_dim,
+                                 const std::size_t cell_order,
                                  const std::size_t num_global_cells,
                                  const std::string topology_reference) const
 {
@@ -755,10 +756,18 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
     xdmf_topology.append_attribute("TopologyType") = "PolyLine";
     xdmf_topology.append_attribute("NodesPerElement") = "2";
   }
-  else if (cell_dim == 2)
+  else if (cell_dim == 2 and cell_order == 1)
     xdmf_topology.append_attribute("TopologyType") = "Triangle";
-  else if (cell_dim == 3)
+  else if (cell_dim == 2 and cell_order == 2)
+    xdmf_topology.append_attribute("TopologyType") = "Tri_6";
+  else if (cell_dim == 3 and cell_order == 1)
     xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
+  else if (cell_dim == 3 and cell_order == 2)
+    xdmf_topology.append_attribute("TopologyType") = "Tet_10";
+  else
+    dolfin_error("XDMFFile.cpp",
+                 "output mesh topology",
+                 "Invalid combination of cell dim and order");
 
   // Refer to all cells and dimensions
   pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
@@ -868,10 +877,10 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
     }
     xdmf_domain = xml_doc.child("Xdmf").child("Domain");
   }
-  
+
   dolfin_assert(xdmf_domain);
   const std::string ts_name = "TimeSeries_" + name;
-  for (pugi::xml_node grid = xdmf_domain.first_child(); 
+  for (pugi::xml_node grid = xdmf_domain.first_child();
        grid; grid = grid.next_sibling())
   {
     if (grid.attribute("Name").value() == ts_name)
@@ -880,7 +889,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
       break;
     }
   }
-    
+
   // If not found, create a new TimeSeries
   if (!xdmf_timegrid)
   {
@@ -898,7 +907,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
     xdmf_timedata.append_attribute("Dimensions") = "0";
     xdmf_timedata.append_child(pugi::node_pcdata);
   }
-    
+
   dolfin_assert(xdmf_timegrid);
 
   // Get time series node
@@ -929,7 +938,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   // the same directory
 
   std::string topology_reference = current_mesh_name + "/topology";
-  xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells,
+  xml_mesh_topology(xdmf_topology, cell_dim, 1, num_global_cells,
                     topology_reference);
 
   // Grid/Geometry
@@ -965,7 +974,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
 
   xdmf_data.append_attribute("Dimensions") = s.c_str();
 
-  boost::filesystem::path p(hdf5_filename);  
+  boost::filesystem::path p(hdf5_filename);
   s = p.filename().string() + ":" + dataset_name;
   xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 

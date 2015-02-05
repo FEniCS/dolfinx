@@ -146,6 +146,7 @@ namespace dolfin
     // Helper function to add topology reference to XDMF XML file
     void xml_mesh_topology(pugi::xml_node& xdmf_topology,
                            const std::size_t cell_dim,
+                           const std::size_t cell_order,
                            const std::size_t num_global_cells,
                            const std::string topology_dataset_name) const;
 

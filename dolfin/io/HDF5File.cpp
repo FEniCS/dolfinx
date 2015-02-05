@@ -194,8 +194,8 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
   const std::vector<std::size_t> data_size
       = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
 
-  // Check that rank is 1 or 2 
-  dolfin_assert(data_size.size() == 1 
+  // Check that rank is 1 or 2
+  dolfin_assert(data_size.size() == 1
                 or (data_size.size() == 2 and data_size[1] == 1));
 
   // Check input vector, and re-size if not already sized
@@ -386,13 +386,15 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // ---------- Markers
     for (std::size_t d = 0; d <= mesh.domains().max_dim(); d++)
     {
-      const std::map<std::size_t, std::size_t>& domain = mesh.domains().markers(d);
+      const std::map<std::size_t, std::size_t>& domain
+        = mesh.domains().markers(d);
 
       MeshValueCollection<std::size_t> collection(mesh, d);
       std::map<std::size_t, std::size_t>::const_iterator it;
       for (it = domain.begin(); it != domain.end(); ++it)
         collection.set_value(it->first, it->second);
-      const std::string marker_dataset =  name + "/domain_" + boost::lexical_cast<std::string>(d);
+      const std::string marker_dataset
+        = name + "/domain_" + boost::lexical_cast<std::string>(d);
       write_mesh_value_collection(collection, marker_dataset);
     }
 
@@ -712,8 +714,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     std::set<unsigned int> non_local_entities;
     if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
     {
-      // No ghost cells - exclude shared entities which are on lower rank processes
-      for (auto sh = shared_entities.begin(); sh != shared_entities.end(); ++sh)
+      // No ghost cells
+      // Exclude shared entities which are on lower rank processes
+      for (auto sh = shared_entities.begin();
+           sh != shared_entities.end(); ++sh)
       {
         const unsigned int lowest_proc = *(sh->second.begin());
         if (lowest_proc < mpi_rank)
@@ -723,7 +727,8 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     else
     {
       // Iterate through ghost cells, adding non-ghost entities which are
-      // shared from lower rank process cells to a set for exclusion from output
+      // shared from lower rank process cells to a set for exclusion
+      // from output
       for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
       {
         const unsigned int cell_owner = c->owner();
@@ -898,7 +903,7 @@ void HDF5File::read(Function& u, const std::string name)
     const std::size_t N = vector_dataset_name.rfind("/vector_0");
     if (N != std::string::npos)
       vector_dataset_name = vector_dataset_name.substr(0, N) + "/vector";
-    
+
     if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
       error("Dataset with name \"%s\" does not exist",
             tmp_name.c_str());
@@ -1235,7 +1240,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
     // under the assumption that global_cell_index is ordered.
     dolfin_assert(std::is_sorted(global_cell_index.begin(),
                                  global_cell_index.end()));
-    
+
     // cells_data in general is not ordered, so we sort it
     // keeping track of the indices
     std::vector<std::size_t> cells_data_index(cells_data.size());
@@ -1253,7 +1258,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
     {
 
       // Global cell index is less than the cell_data index read from file
-      if (*i < cells_data[*j]) 
+      if (*i < cells_data[*j])
       {
         ++i;
       }
