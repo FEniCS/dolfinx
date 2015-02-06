@@ -144,7 +144,6 @@ namespace dolfin
     // Matrix used to construct the preconditioner
     std::shared_ptr<const EigenMatrix> _matP;
 
-    bool preconditioner_set;
   };
 
 }

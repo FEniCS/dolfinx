@@ -67,7 +67,6 @@ Parameters EigenKrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::EigenKrylovSolver(std::string method,
                                      std::string preconditioner)
-  : preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -77,8 +76,7 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::EigenKrylovSolver(std::string method,
                                      EigenPreconditioner& preconditioner)
-  : _preconditioner(reference_to_no_delete_pointer(preconditioner)),
-    preconditioner_set(false)
+  : _preconditioner(reference_to_no_delete_pointer(preconditioner))
 {
   // Set parameter values
   parameters = default_parameters();
@@ -88,7 +86,7 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::EigenKrylovSolver(std::string method,
   std::shared_ptr<EigenPreconditioner> preconditioner)
-  : _preconditioner(preconditioner), preconditioner_set(false)
+  : _preconditioner(preconditioner)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -172,8 +170,7 @@ std::size_t EigenKrylovSolver::solve(const GenericLinearOperator& A,
                                      GenericVector& x,
                                      const GenericVector& b)
 {
-  return solve(as_type<const EigenMatrix>(A),
-               as_type<EigenVector>(x),
+  return solve(as_type<const EigenMatrix>(A), as_type<EigenVector>(x),
                as_type<const EigenVector>(b));
 }
 //-----------------------------------------------------------------------------
@@ -198,12 +195,6 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
     _matA->init_vector(x, 1);
     x.zero();
   }
-
-  // if (_preconditioner && !preconditioner_set)
-  // {
-  //   _preconditioner->set(*this);
-  //   preconditioner_set = true;
-  // }
 
   log(PROGRESS, "Eigen Krylov solver starting to solve %i x %i system.",
       _matA->size(0), _matA->size(1));
@@ -234,8 +225,7 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-std::size_t EigenKrylovSolver::solve(const EigenMatrix& A,
-                                     EigenVector& x,
+std::size_t EigenKrylovSolver::solve(const EigenMatrix& A, EigenVector& x,
                                      const EigenVector& b)
 {
   // Set operator
@@ -250,9 +240,7 @@ std::string EigenKrylovSolver::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
-  {
     s << "Eigen Krylov Solver";
-  }
   else
     s << "<EigenKrylovSolver>";
 
@@ -318,13 +306,17 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   if (solver.info() != Eigen::Success)
   {
     if (num_iterations >= max_iterations)
+    {
       dolfin_error("EigenKrylovSolver.cpp",
                    "solve A.x = b",
                    "Max iterations (%d) exceeded", max_iterations);
+    }
     else
+    {
       dolfin_error("EigenKrylovSolver.cpp",
                    "solve A.x = b",
                    "Solver failed");
+    }
   }
 
   return num_iterations;
