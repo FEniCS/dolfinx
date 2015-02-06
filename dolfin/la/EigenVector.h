@@ -254,14 +254,6 @@ namespace dolfin
     /// Assignment operator
     virtual const EigenVector& operator= (double a);
 
-    /// Return pointer to underlying data (const version)
-    virtual const double* data() const
-    { return &_x->data()[0]; }
-
-    /// Return pointer to underlying data
-    virtual double* data()
-    { return &_x->data()[0]; }
-
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -303,7 +295,7 @@ namespace dolfin
       }
     }
 
-    // Smart pointer to Eigen vector object
+    // Pointer to Eigen vector object
     std::shared_ptr<Eigen::VectorXd> _x;
 
   };

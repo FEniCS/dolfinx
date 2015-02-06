@@ -235,7 +235,7 @@ void EigenVector::axpy(double a, const GenericVector& y)
 void EigenVector::abs()
 {
   dolfin_assert(_x);
-  _x->cwiseAbs();
+  (*_x) = _x->array().abs();
 }
 //-----------------------------------------------------------------------------
 double EigenVector::inner(const GenericVector& y) const
