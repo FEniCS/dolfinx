@@ -22,21 +22,13 @@
 import pytest
 from dolfin import *
 import os
-from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_Epetra, fixture, cd_tempdir
+from dolfin_utils.test import skip_if_not_PETSc, fixture, cd_tempdir
 
 
 @skip_if_not_PETSc
 def test_save_vector_petsc(cd_tempdir):
     # Create vector and write file
     x = PETScVector(mpi_comm_world(), 197)
-    x[:] = 1.0
-    f = File("x.xml")
-    f << x
-
-@skip_if_not_Epetra
-def test_save_vector_epetra(cd_tempdir):
-    # Create vector and write file
-    x = EpetraVector(mpi_comm_world(), 197)
     x[:] = 1.0
     f = File("x.xml")
     f << x
@@ -59,20 +51,6 @@ def test_read_vector_petcs(cd_tempdir):
 
     # Read vector from previous write
     y = PETScVector()
-    f >> y
-    assert x.size() == y.size()
-    assert round(x.norm("l2") - y.norm("l2"), 7) == 0
-
-@skip_if_not_Epetra
-def test_read_vector_eptra(cd_tempdir):
-    # Create vector and write file
-    x = EpetraVector(mpi_comm_world(), 197)
-    x[:] = 1.0
-    f = File("x.xml")
-    f << x
-
-    # Read vector from write
-    y = EpetraVector()
     f >> y
     assert x.size() == y.size()
     assert round(x.norm("l2") - y.norm("l2"), 7) == 0
