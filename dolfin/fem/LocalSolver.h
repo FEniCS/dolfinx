@@ -106,12 +106,12 @@ namespace dolfin
     // Cached LU factorisations of matrices (_spd==false)
     std::vector<Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic,
                                                   Eigen::Dynamic,
-                                                  Eigen::RowMajor>>> _lu_cache;
+                                                  Eigen::RowMajor> > > _lu_cache;
 
     // Cached Cholesky factorisations of matrices (_spd==true)
     std::vector<Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic,
                                          Eigen::Dynamic,
-                                         Eigen::RowMajor>>> _cholesky_cache;
+                                         Eigen::RowMajor> > > _cholesky_cache;
   };
 
 }
