@@ -250,11 +250,11 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, const std::string name)
 {
-  write(mesh, mesh.topology().dim(), name);
+  write(mesh, mesh.topology().dim(), 1, name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
-                     const std::string name)
+                     std::size_t cell_order, const std::string name)
 {
   Timer t0("HDF5: write mesh to file");
 
@@ -786,6 +786,70 @@ void HDF5File::write(const Function& u,  const std::string name,
     attributes(vec_name).set("timestamp", timestamp);
 
   }
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write_p2coords(const Function& u, const std::string name)
+{
+  // Write a Function which is a P2 Vector function representing coordinates
+  Timer t0("HDF5: write P2 CoordinateFunction");
+
+  // Get mesh and dofmap
+  dolfin_assert(u.function_space()->mesh());
+  const Mesh& mesh = *u.function_space()->mesh();
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
+
+  dolfin_assert(u.function_space()->dofmap());
+  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+
+  // Should be vector components on each edge and vertex
+  dolfin_assert(dofmap.num_entity_dofs(0) == gdim);
+  dolfin_assert(dofmap.num_entity_dofs(1) == gdim);
+
+  // FIXME:
+  // Possibly sort cell_dofs into global cell order before writing?
+
+  // Save data in compressed format with an index to mark out
+  // the start of each row
+
+  std::vector<dolfin::la_index> cell_dofs;
+  std::vector<std::size_t> x_cell_dofs;
+  const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
+  x_cell_dofs.reserve(n_cells);
+
+  std::vector<std::size_t> local_to_global_map;
+  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+
+  // Number of vertices per cell
+  const std::size_t nv = tdim + 1;
+
+  for (std::size_t i = 0; i != n_cells; ++i)
+  {
+    const std::size_t n_coords = cell_dofs.size()/gdim;
+    const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
+    for (unsigned int i = 0; i != nv)
+    {
+      const std::size_t idx = cell_dofs_i[i];
+      dolfin_assert(idx < (dolfin::la_index)local_to_global_map.size());
+      cell_dofs.push_back(local_to_global_map[idx]/gdim);
+    }
+    for (unsigned int i = 0; i != nv)
+    {
+      const std::size_t idx = cell_dofs_i[i + nv];
+      dolfin_assert(idx < (dolfin::la_index)local_to_global_map.size());
+      cell_dofs.push_back(local_to_global_map[idx]/gdim);
+    }
+  }
+
+  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+
+  // Save DOFs on each cell
+  std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
+                                                   cell_dofs.size()));
+  write_data(name + "/topology", cell_dofs, global_size, mpi_io);
+
+  // Save vector
+  write(*u.vector(), name + "/coordinates");
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Function& u, const std::string name)

@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2015 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -409,7 +409,8 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // The XML below will obliterate any existing XDMF file
 
   const std::string group_name = "/Mesh/" + name;
-  hdf5_file->write(mesh, cell_dim, group_name);
+  const std::size_t cell_order = 1;
+  hdf5_file->write(mesh, cell_dim, cell_order, group_name);
 
   // Write the XML meta description on process zero
   if (MPI::rank(mesh.mpi_comm()) == 0)
