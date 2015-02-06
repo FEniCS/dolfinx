@@ -41,6 +41,7 @@ EigenKrylovSolver::_methods_descr =
   {"cg",         "Conjugate gradient method"},
   {"bicgstab_ilut",   "Biconjugate gradient stabilized method (ILU)"},
   {"bicgstab",   "Biconjugate gradient stabilized method"},
+  {"minres",   "Minimal residual"},
   {"gmres", "Generalised minimal residual (GMRES)"}};
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
@@ -219,6 +220,11 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
   else if (_method == "gmres")
   {
     Eigen::GMRES<eigen_matrix_type, Eigen::IncompleteLUT<double> > solver;
+    num_iterations = call_solver(solver, x, b);
+  }
+  else if (_method == "minres")
+  {
+    Eigen::MINRES<eigen_matrix_type> solver;
     num_iterations = call_solver(solver, x, b);
   }
 
