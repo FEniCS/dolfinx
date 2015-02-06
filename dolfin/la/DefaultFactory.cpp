@@ -87,7 +87,7 @@ DefaultFactory::krylov_solver_preconditioners() const
 GenericLinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
-  const std::string default_backend = "uBLAS";
+  const std::string default_backend = "Eigen";
   typedef uBLASFactory<> DefaultFactory;
 
   // Get backend from parameter system

@@ -76,7 +76,6 @@ def test_lu_solver_reuse(backend):
 
     # Check whether backend is available
     if not has_linear_algebra_backend(backend):
-        parameters["linear_algebra_backend"] = prev_backend
         pytest.skip('Need %s as backend to run this test' % backend)
 
     # Set linear algebra backend
