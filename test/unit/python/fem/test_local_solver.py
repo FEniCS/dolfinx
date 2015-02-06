@@ -63,7 +63,6 @@ def test_local_solver_global_rhs():
         error = assemble((u - f)*(u - f)*dx)
         assert round(error, 10) == 0
 
-
 def test_local_solver_local_rhs():
     mesh = UnitCubeMesh(1, 5, 1)
     V = FunctionSpace(mesh, "Lagrange", 2)
@@ -96,8 +95,8 @@ def test_local_solver_local_rhs():
         local_solver.solve_local_rhs(u)
         assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
-
 def test_local_solver_dg():
+    print "test"
     mesh = UnitIntervalMesh(50)
     U = FunctionSpace(mesh, "DG", 2)
 
@@ -132,4 +131,42 @@ def test_local_solver_dg():
     local_solver = LocalSolver(a, L, True)
     u_ls = Function(U)
     local_solver.solve_global_rhs(u_ls)
+    assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
+
+def test_local_solver_local_solve():
+    mesh = UnitIntervalMesh(50)
+    U = FunctionSpace(mesh, "DG", 2)
+
+    # Set initial values
+    u0 = interpolate(Expression("cos(pi*x[0])"), U)
+
+    # Define test and trial functions
+    v, u = TestFunction(U), TrialFunction(U)
+
+    # Set time step size
+    dt = Constant(2.0e-4)
+
+    # Define fluxes on interior and exterior facets
+    u_hat = avg(u0) + 0.25*jump(u0)
+    u_hatbnd = -u0 + 0.25*(u0 - 1.0)
+
+    # Define variational formulation
+    a = u*v*dx
+    L = (u0*v + dt*u0*v.dx(0))*dx - dt*u_hat*jump(v)*dS - dt*u_hatbnd*v*ds
+    b = assemble(L)
+
+    # Compute reference solution with global LU solver
+    u_lu = Function(U)
+    solve(a == L, u_lu, solver_parameters = {"linear_solver" : "lu"})
+
+    # Compute solution with local solver and compare
+    local_solver = LocalSolver(a, L)
+    u_ls = Function(U)
+    local_solver.solve_local(u_ls.vector(), b, U.dofmap())
+    assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
+
+    # Compute solution with local solver (Cholesky) and compare
+    local_solver = LocalSolver(a, L, True)
+    u_ls = Function(U)
+    local_solver.solve_local(u_ls.vector(), b, U.dofmap())
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
