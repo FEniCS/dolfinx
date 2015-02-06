@@ -51,6 +51,7 @@
 
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/DefaultFactory.h>
+#include <dolfin/la/EigenFactory.h>
 #include <dolfin/la/PETScUserPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/PETScCuspFactory.h>

@@ -36,8 +36,9 @@ no_data_backends = [("PETSc", "")]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
-    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't used in the old test.
-    data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse")]
+    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
+    # used in the old test.
+    data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse"), ("Eigen", "")]
     no_data_backends += [("PETScCusp", "")]
 
 # TODO: STL tests were disabled in old test framework, and do not work now:
@@ -55,7 +56,7 @@ no_data_backends = [b for b in no_data_backends if has_linear_algebra_backend(b[
 any_backends = data_backends + no_data_backends
 
 # Fixtures setting up and resetting the global linear algebra backend for a list of backends
-any_backend     = set_parameters_fixture("linear_algebra_backend", 
+any_backend     = set_parameters_fixture("linear_algebra_backend",
                                          any_backends, lambda x: x[0])
 data_backend    = set_parameters_fixture("linear_algebra_backend",
                                          data_backends, lambda x: x[0])
@@ -123,7 +124,7 @@ class TestBasicLaOperations:
         B = as_backend_type(v.copy())
         gind = 5
         lind = gind-n0
-        
+
         # Test global index access
         if A.owns_index(gind):
             assert round(sum(A[lind] - B[lind]), 7) == 0

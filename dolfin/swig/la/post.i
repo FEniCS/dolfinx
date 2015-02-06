@@ -229,12 +229,12 @@ def la_index_dtype():
             # No test for equal lengths because this is checked by DOLFIN in _assign
             if isinstance(values, GenericVector) or isscalar(values):
                 self._assign(values)
-                return 
+                return
             elif isinstance(values, ndarray):
                 indices = arange(self.local_size(), dtype=la_index_dtype())
                 self[indices] = values
                 return
-        
+
         raise IndexError("can only set full slices v[:]")
 
     def __getslice__(self, i, j):
@@ -273,7 +273,7 @@ def la_index_dtype():
         if not ((0<=indices).all() and (indices<self.local_size()).all()):
             raise IndexError("expected indices to be in [0..{}]".format(\
                 self.local_size()))
-        
+
         return indices
 
     def __getitem__(self, indices):
@@ -286,17 +286,17 @@ def la_index_dtype():
                     indices.step is None):
                 raise IndexError("can only return full slices v[:]")
             return self.__getslice__(0, len(self))
-                
+
         elif isinstance(indices, (int, integer, long)):
             indices = array([indices], dtype=la_index_dtype())
 
         indices = self._check_indices(indices)
-        
+
         values = zeros(len(indices), dtype=float_)
         if len(values)>0:
             self.get_local(values, indices)
         return values
-        
+
     def __setitem__(self, indices, values):
         """Set values corresponding to the given local indices
 
@@ -313,7 +313,7 @@ def la_index_dtype():
                     raise IndexError("can only set full slices v[:]")
                 self.__setslice__(0, len(self), values)
                 return
-                
+
             # If indices is a single integer
             elif isinstance(indices, (int, integer, long)):
                 if isscalar(values):
@@ -332,21 +332,21 @@ def la_index_dtype():
 
             elif isinstance(values, GenericVector):
                 values = values.get_local()
-                    
+
             elif isinstance(values, ndarray):
                 values = asarray(values, dtype=float_)
-                    
+
             else:
                 raise TypeError("provide a scalar, GenericVector or numpy array of "\
                                 "float to set items in Vector")
-            
+
             if len(values) != len(indices):
                 raise IndexError("expected same size of indices and values")
 
             # If values passed.
             if len(values) > 0:
                 self.set_local(values, indices)
-                
+
         finally:
             # Always call apply insert to avoid MPI dead locks if one or more
             # ranks fails
@@ -905,6 +905,13 @@ _matrix_vector_mul_map[uBLASLinearOperator] = [uBLASVector]
 // ---------------------------------------------------------------------------
 // Run backend specific macros
 // ---------------------------------------------------------------------------
+AS_BACKEND_TYPE_MACRO(EigenVector)
+AS_BACKEND_TYPE_MACRO(EigenMatrix)
+//AS_BACKEND_TYPE_MACRO(EigenLinearOperator)
+%pythoncode %{
+_matrix_vector_mul_map[EigenMatrix] = [EigenVector]
+%}
+
 #ifdef HAS_PETSC
 AS_BACKEND_TYPE_MACRO(PETScVector)
 AS_BACKEND_TYPE_MACRO(PETScMatrix)

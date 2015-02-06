@@ -23,7 +23,9 @@ from dolfin import *
 import pytest
 from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
-@pytest.mark.parametrize('backend', ["PETSc", skip_in_parallel("uBLAS")])
+backends = ["PETSc", skip_in_parallel("Eigen"), skip_in_parallel("uBLAS")]
+
+@pytest.mark.parametrize('backend', backends)
 def test_lu_solver(backend):
 
     # Check whether backend is available
@@ -67,7 +69,7 @@ def test_lu_solver(backend):
     parameters["linear_algebra_backend"] = prev_backend
 
 
-@pytest.mark.parametrize('backend', ["PETSc", skip_in_parallel("uBLAS")])
+@pytest.mark.parametrize('backend', backends)
 def test_lu_solver_reuse(backend):
     """Test that LU re-factorisation is only performed after
     set_operator(A) is called"""

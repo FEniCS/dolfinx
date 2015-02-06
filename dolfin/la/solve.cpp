@@ -226,6 +226,8 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
 {
   if (backend == "uBLAS")
     return true;
+  else if (backend == "Eigen")
+    return true;
   else if (backend == "PETSc")
   {
     #ifdef HAS_PETSC
@@ -276,11 +278,14 @@ dolfin::linear_algebra_backends()
   #endif
 
   // Add available backends
+  backends.push_back(std::make_pair("Eigen",
+                                    "Template-based linear algebra "
+				    " library" + default_backend["Eigen"]));
   backends.push_back(std::make_pair("uBLAS",
                                     "Template based basic linear algebra "
 				    "from boost" + default_backend["uBLAS"]));
   backends.push_back(std::make_pair("STL",
-                                  "Light weight storage backend for Tensors"));
+                                    "Light weight storage backend for Tensors"));
 
   #ifdef HAS_PETSC
   backends.push_back(std::make_pair("PETSc",
