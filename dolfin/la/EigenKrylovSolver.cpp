@@ -30,6 +30,7 @@
 #include "EigenKrylovSolver.h"
 
 #include <Eigen/IterativeLinearSolvers>
+#include <Eigen/../unsupported/Eigen/IterativeSolvers>
 
 using namespace dolfin;
 
@@ -39,7 +40,8 @@ EigenKrylovSolver::_methods_descr =
 { {"default",    "default Krylov method"},
   {"cg",         "Conjugate gradient method"},
   {"bicgstab_ilut",   "Biconjugate gradient stabilized method (ILU)"},
-  {"bicgstab",   "Biconjugate gradient stabilized method"} };
+  {"bicgstab",   "Biconjugate gradient stabilized method"},
+  {"gmres", "Generalised minimal residual (GMRES)"}};
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 EigenKrylovSolver::methods()
@@ -221,6 +223,11 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
   else if (_method == "bicgstab_ilut")
   {
     Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IncompleteLUT<double> > solver;
+    num_iterations = call_solver(solver, x, b);
+  }
+  else if (_method == "gmres")
+  {
+    Eigen::GMRES<eigen_matrix_type, Eigen::IncompleteLUT<double> > solver;
     num_iterations = call_solver(solver, x, b);
   }
 
