@@ -57,6 +57,21 @@ LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
   dolfin_assert(L->rank() == 1);
 }
 //----------------------------------------------------------------------------
+LocalSolver::LocalSolver(const Form& a, SolverType solver_type)
+  : LocalSolver::LocalSolver(std::shared_ptr<const Form>(&a, NoDeleter()),
+                             solver_type)
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
+LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
+                         SolverType solver_type)
+  : _a(a), _solver_type(solver_type)
+{
+  dolfin_assert(a);
+  dolfin_assert(a->rank() == 2);
+}
+//----------------------------------------------------------------------------
 void LocalSolver::solve_global_rhs(Function& u) const
 {
   // Compute RHS (global)
