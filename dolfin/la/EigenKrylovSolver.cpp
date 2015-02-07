@@ -299,14 +299,18 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   if (solver.info() != Eigen::Success)
   {
     dolfin_error("EigenKrylovSolver.cpp",
-                 "factorise matrix",
-                 "Numerical Issue");
+                 "prepare Krylov solver",
+                 "Preconditioner might fail");
   }
 
   EigenVector& _x = as_type<EigenVector>(x);
   const EigenVector& _b = as_type<const EigenVector>(b);
 
-  _x.vec() = solver.solve(_b.vec());
+  const bool nonzero_guess = parameters["nonzero_initial_guess"];
+  if (nonzero_guess)
+    _x.vec() = solver.solveWithGuess(_b.vec(), _x.vec());
+  else
+    _x.vec() = solver.solve(_b.vec());
   const int num_iterations = solver.iterations();
 
   if (solver.info() != Eigen::Success)
