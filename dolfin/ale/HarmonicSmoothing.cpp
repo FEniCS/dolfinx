@@ -20,7 +20,7 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/parameter/GlobalParameters.h>
-#include <dolfin/fem/Assembler.h>
+#include <dolfin/fem/assemble.h>
 #include <dolfin/fem/fem_utils.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/solve.h>
@@ -34,6 +34,7 @@
 #include "Poisson2D.h"
 #include "Poisson3D.h"
 #include "HarmonicSmoothing.h"
+#include <memory>
 
 using namespace dolfin;
 
@@ -76,9 +77,8 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   }
 
   // Assemble matrix
-  Matrix A;
-  Assembler assembler;
-  assembler.assemble(A, *form);
+  auto A = std::make_shared<Matrix>();
+  assemble(*A, *form);
 
   // Number of mesh vertices (local)
   const std::size_t num_vertices = mesh.num_vertices();
@@ -128,8 +128,8 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   }
 
   // Modify matrix (insert 1 on diagonal)
-  A.ident(num_boundary_dofs, boundary_dofs.data());
-  A.apply("insert");
+  A->ident(num_boundary_dofs, boundary_dofs.data());
+  A->apply("insert");
 
   // Arrays for storing Dirichlet condition and solution
   std::vector<double> boundary_values(num_boundary_dofs);
@@ -146,6 +146,11 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
 
   // RHS vector
   Vector b(*(*u)[0].vector());
+
+  // Prepare solver
+  KrylovSolver solver("cg", prec);
+  solver.parameters["nonzero_initial_guess"] = true;
+  solver.set_operator(A);
 
   // Solve system for each dimension
   for (std::size_t dim = 0; dim < d; dim++)
@@ -166,8 +171,8 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
     b.apply("insert");
     *x = b;
 
-    // Solve system
-    solve(A, *x, b, "gmres", prec);
+    // Solve the system
+    solver.solve(*x, b);
 
     // Get displacement
     std::vector<double> _displacement(num_vertices);
