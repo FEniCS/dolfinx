@@ -18,10 +18,8 @@
 //
 // First added:  2015-02-03
 
-
 #ifndef __DOLFIN_EIGEN_LU_SOLVER_H
 #define __DOLFIN_EIGEN_LU_SOLVER_H
-
 
 #include <map>
 #include <memory>
@@ -31,11 +29,10 @@
 namespace dolfin
 {
   /// Forward declarations
-  class GenericLinearOperator;
-  class GenericVector;
-  //  class EigenLinearOperator;
   class EigenMatrix;
   class EigenVector;
+  class GenericLinearOperator;
+  class GenericVector;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b.
@@ -94,12 +91,6 @@ namespace dolfin
 
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();
-    static std::map<std::string, std::string> methods_new()
-    {
-      std::map<std::string, std::string> test = { {"one", "two"} };
-      return test;
-    }
-
 
     /// Default parameter values
     static Parameters default_parameters();

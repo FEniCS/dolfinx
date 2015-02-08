@@ -17,22 +17,21 @@
 //
 // First added:  2015-02-04
 
+#include <iostream> // Seem to be missing some Eigen headers
 #include <map>
 #include <string>
+#include <Eigen/IterativeLinearSolvers>
+#include <Eigen/../unsupported/Eigen/IterativeSolvers>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
+#include "EigenMatrix.h"
+#include "EigenVector.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
-#include "EigenMatrix.h"
-#include "EigenPreconditioner.h"
-#include "EigenVector.h"
 #include "EigenKrylovSolver.h"
-
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/../unsupported/Eigen/IterativeSolvers>
 
 using namespace dolfin;
 
@@ -79,48 +78,6 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
   // Initialise
   init(method, preconditioner);
 }
-//-----------------------------------------------------------------------------
-EigenKrylovSolver::EigenKrylovSolver(std::string method,
-                                     EigenPreconditioner& preconditioner)
-  : _preconditioner(reference_to_no_delete_pointer(preconditioner))
-{
-  // Set parameter values
-  parameters = default_parameters();
-
-  init(method);
-}
-//-----------------------------------------------------------------------------
-EigenKrylovSolver::EigenKrylovSolver(
-  std::string method, std::shared_ptr<EigenPreconditioner> preconditioner)
-  : _preconditioner(preconditioner)
-{
-  // Set parameter values
-  parameters = default_parameters();
-
-  init(method);
-}
-//-----------------------------------------------------------------------------
-// EigenKrylovSolver::EigenKrylovSolver(std::string method,
-//                                      EigenUserPreconditioner& preconditioner)
-//   : pc_dolfin(&preconditioner),
-//     preconditioner_set(false)
-// {
-//   // Set parameter values
-//   parameters = default_parameters();
-
-//   init(method);
-// }
-//-----------------------------------------------------------------------------
-// EigenKrylovSolver::EigenKrylovSolver(std::string method,
-//   std::shared_ptr<EigenUserPreconditioner> preconditioner)
-//   : pc_dolfin(preconditioner.get()),
-//     preconditioner_set(false)
-// {
-//   // Set parameter values
-//   parameters = default_parameters();
-
-//   init(method);
-// }
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::~EigenKrylovSolver()
 {
@@ -183,9 +140,8 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
 {
   Timer timer("Eigen Krylov solver");
 
-  dolfin_assert(_matA);
-
   // Check dimensions
+  dolfin_assert(_matA);
   if (_matA->size(0) != b.size())
   {
     dolfin_error("EigenKrylovSolver.cpp",

@@ -29,11 +29,10 @@ namespace dolfin
 {
 
   /// Forward declarations
-  class GenericMatrix;
-  class GenericVector;
   class EigenMatrix;
   class EigenVector;
-  class EigenPreconditioner;
+  class GenericMatrix;
+  class GenericVector;
 
   /// This class implements Krylov methods for linear systems of the
   /// form Ax = b. It is a wrapper for the Krylov solvers of Eigen.
@@ -46,25 +45,6 @@ namespace dolfin
     /// preconditioner
     EigenKrylovSolver(std::string method="default",
                       std::string preconditioner="default");
-
-    /// Create Krylov solver for a particular method and
-    /// EigenPreconditioner
-    EigenKrylovSolver(std::string method, EigenPreconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// EigenPreconditioner (shared_ptr version)
-    EigenKrylovSolver(std::string method,
-                      std::shared_ptr<EigenPreconditioner> preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// EigenPreconditioner
-    //  EigenKrylovSolver(std::string method,
-    //                      EigenUserPreconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// EigenPreconditioner (shared_ptr version)
-    //    EigenKrylovSolver(std::string method,
-    //		    std::shared_ptr<EigenUserPreconditioner> preconditioner);
 
     /// Destructor
     ~EigenKrylovSolver();
@@ -119,8 +99,7 @@ namespace dolfin
 
     // Call with an actual solver
     template <typename Solver>
-    std::size_t call_solver(Solver& solver,
-                            GenericVector& x,
+    std::size_t call_solver(Solver& solver, GenericVector& x,
                             const GenericVector& b);
 
     // Chosen Krylov method
@@ -132,12 +111,6 @@ namespace dolfin
     // Available solvers and preconditioner descriptions
     static const std::map<std::string, std::string> _methods_descr;
     static const std::map<std::string, std::string> _pcs_descr;
-
-    // DOLFIN-defined EigenUserPreconditioner
-    //    EigenUserPreconditioner* pc_dolfin;
-
-    // Preconditioner
-    std::shared_ptr<EigenPreconditioner> _preconditioner;
 
     // Operator (the matrix)
     std::shared_ptr<const EigenMatrix> _matA;

@@ -18,13 +18,14 @@
 #ifndef __EIGEN_VECTOR_H
 #define __EIGEN_VECTOR_H
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <memory>
+#include <Eigen/Dense>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <Eigen/Dense>
 #include "GenericVector.h"
 
 namespace dolfin
