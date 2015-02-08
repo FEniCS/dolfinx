@@ -54,7 +54,7 @@
 using namespace dolfin;
 
 // List of available LU solvers
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
 EigenLUSolver::_methods_descr
 = { {"default", "default LU solver"},
     {"sparselu", "Supernodal LU factorization for general matrices"},
@@ -76,8 +76,7 @@ EigenLUSolver::_methods_descr
 #endif
 };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EigenLUSolver::methods()
+std::map<std::string, std::string> EigenLUSolver::methods()
 {
   return EigenLUSolver::_methods_descr;
 }
@@ -327,24 +326,18 @@ std::string EigenLUSolver::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-const std::string EigenLUSolver::select_solver(std::string& method) const
+std::string EigenLUSolver::select_solver(const std::string method) const
 {
-  // Choose appropriate 'default' solver
   if (method == "default")
-    method = "sparselu";
+    return "sparselu";
 
-  // Check package string
-  for (auto &m : _methods_descr)
+  if (_methods_descr.find(method) == _methods_descr.end())
   {
-    if (m.first == method)
-      return method;
+    dolfin_error("EigenLUSolver.cpp",
+                 "solve linear system using Eigen LU solver",
+                 "Unknown LU method \"%s\"", method.c_str());
   }
 
-  dolfin_error("EigenLUSolver.cpp",
-               "solve linear system using Eigen LU solver",
-               "Unknown LU method \"%s\"", method.c_str());
-
-  // Never reach here
   return method;
 }
 //-----------------------------------------------------------------------------

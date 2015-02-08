@@ -17,6 +17,9 @@
 //
 // First added:  2015-02-04
 
+#include <map>
+#include <string>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -25,7 +28,6 @@
 #include "KrylovSolver.h"
 #include "EigenMatrix.h"
 #include "EigenPreconditioner.h"
-// #include "EigenUserPreconditioner.h"
 #include "EigenVector.h"
 #include "EigenKrylovSolver.h"
 
@@ -35,28 +37,31 @@
 using namespace dolfin;
 
 // Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> >
-EigenKrylovSolver::_methods_descr =
-{ {"default",    "default Krylov method"},
-  {"cg",         "Conjugate gradient method"},
-  {"bicgstab_ilut",   "Biconjugate gradient stabilized method (ILU)"},
-  {"bicgstab",   "Biconjugate gradient stabilized method"},
-  {"minres",   "Minimal residual"},
-  {"gmres", "Generalised minimal residual (GMRES)"}};
+const std::map<std::string, std::string>
+EigenKrylovSolver::_methods_descr
+= { {"default",       "default Krylov method"},
+    {"cg",            "Conjugate gradient method"},
+    {"bicgstab_ilut", "Biconjugate gradient stabilized method (ILU)"},
+    {"bicgstab",      "Biconjugate gradient stabilized method"},
+    {"minres",        "Minimal residual"},
+    {"gmres",         "Generalised minimal residual (GMRES)"}};
+
+// Mapping from preconditioner string to description
+const std::map<std::string, std::string>
+EigenKrylovSolver::_pcs_descr
+= { {"default", "default"},
+    {"none",  "None"},
+    {"jacobi",  "Jacobi"},
+    {"ilu",     "Incomplete LU"} };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EigenKrylovSolver::methods()
+std::map<std::string, std::string> EigenKrylovSolver::methods()
 {
   return EigenKrylovSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EigenKrylovSolver::preconditioners()
+std::map<std::string, std::string> EigenKrylovSolver::preconditioners()
 {
-  std::vector<std::pair<std::string, std::string> > pc
-    = { {"default", "default"} };
-
-  return pc;
+  return EigenKrylovSolver::_pcs_descr;
 }
 //-----------------------------------------------------------------------------
 Parameters EigenKrylovSolver::default_parameters()
@@ -72,7 +77,8 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
   // Set parameter values
   parameters = default_parameters();
 
-  init(method);
+  // Initialise
+  init(method, preconditioner);
 }
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::EigenKrylovSolver(std::string method,
@@ -85,8 +91,8 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
   init(method);
 }
 //-----------------------------------------------------------------------------
-EigenKrylovSolver::EigenKrylovSolver(std::string method,
-  std::shared_ptr<EigenPreconditioner> preconditioner)
+EigenKrylovSolver::EigenKrylovSolver(
+  std::string method, std::shared_ptr<EigenPreconditioner> preconditioner)
   : _preconditioner(preconditioner)
 {
   // Set parameter values
@@ -141,9 +147,8 @@ void EigenKrylovSolver::set_operators(
                 as_type<const EigenMatrix>(P));
 }
 //-----------------------------------------------------------------------------
-void
-EigenKrylovSolver::set_operators(std::shared_ptr<const EigenMatrix> A,
-                                 std::shared_ptr<const EigenMatrix> P)
+void EigenKrylovSolver::set_operators(std::shared_ptr<const EigenMatrix> A,
+                                      std::shared_ptr<const EigenMatrix> P)
 {
   _matA = A;
   _matP = P;
@@ -190,7 +195,7 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
                  _matA->size(0), b.size());
   }
 
-  // Reinitialize solution vector if necessary
+  // Re-initialize solution vector if necessary
   if (x.empty())
   {
     _matA->init_vector(x, 1);
@@ -253,32 +258,28 @@ std::string EigenKrylovSolver::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EigenKrylovSolver::init(const std::string& method)
+void EigenKrylovSolver::init(const std::string method,
+                             const std::string pc)
 {
-
-  // Check that the requested method is known
-  bool method_ok = false;
-  for (auto &m : _methods_descr)
-  {
-    if (m.first == method)
-    {
-      method_ok = true;
-      break;
-    }
-  }
-
-  if (!method_ok)
+  // Check that the requested solver method is known
+  if (_methods_descr.find(method) == _methods_descr.end())
   {
     dolfin_error("EigenKrylovSolver.cpp",
                  "create Eigen Krylov solver",
                  "Unknown Krylov method \"%s\"", method.c_str());
   }
 
-  // Define default method
-  if (method == "default")
-    _method = "cg";
-  else
-    _method = method;
+  // Check that the requested preconditioner is known
+  if (_pcs_descr.find(pc) == _pcs_descr.end())
+  {
+    dolfin_error("EigenKrylovSolver.cpp",
+                 "create Eigen Krylov solver",
+                 "Unknown preconditioner \"%s\"", pc.c_str());
+  }
+
+  // Set method and preconditioner
+  _method = method;
+  _pc = pc;
 }
 //-----------------------------------------------------------------------------
 template <typename Solver>

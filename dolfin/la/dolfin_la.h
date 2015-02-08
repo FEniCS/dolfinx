@@ -34,6 +34,8 @@
 #include <dolfin/la/PETScLinearOperator.h>
 #include <dolfin/la/PETScPreconditioner.h>
 
+#include <dolfin/la/EigenKrylovSolver.h>
+#include <dolfin/la/EigenLUSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/CholmodCholeskySolver.h>

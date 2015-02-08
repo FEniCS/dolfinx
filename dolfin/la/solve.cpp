@@ -51,129 +51,113 @@ std::size_t dolfin::solve(const GenericLinearOperator& A,
 void dolfin::list_linear_solver_methods()
 {
   // Get methods
-  std::vector<std::pair<std::string, std::string> >
-    methods = linear_solver_methods();
+  std::map<std::string, std::string> methods = linear_solver_methods();
 
   // Pretty-print list of methods
   Table t("Solver method", false);
-  for (std::size_t i = 0; i < methods.size(); i++)
-    t(methods[i].first, "Description") = methods[i].second;
+  for (auto solver : methods)
+    t(solver.first, "Description") = solver.second;
   cout << t.str(true) << endl;
 }
 //-----------------------------------------------------------------------------
 void dolfin::list_lu_solver_methods()
 {
   // Get methods
-  std::vector<std::pair<std::string, std::string> >
-    methods = lu_solver_methods();
+  std::map<std::string, std::string> methods = lu_solver_methods();
 
   // Pretty-print list of methods
   Table t("LU method", false);
-  for (std::size_t i = 0; i < methods.size(); i++)
-    t(methods[i].first, "Description") = methods[i].second;
+  for (auto method : methods)
+    t(method.first, "Description") = method.second;
   cout << t.str(true) << endl;
 }
 //-----------------------------------------------------------------------------
 void dolfin::list_krylov_solver_methods()
 {
   // Get methods
-  std::vector<std::pair<std::string, std::string> >
-    methods = krylov_solver_methods();
+  std::map<std::string, std::string> methods = krylov_solver_methods();
 
   // Pretty-print list of methods
   Table t("Krylov method", false);
-  for (std::size_t i = 0; i < methods.size(); i++)
-    t(methods[i].first, "Description") = methods[i].second;
+  for (auto method : methods)
+    t(method.first, "Description") = method.second;
   cout << t.str(true) << endl;
 }
 //-----------------------------------------------------------------------------
 void dolfin::list_krylov_solver_preconditioners()
 {
   // Get preconditioners
-  std::vector<std::pair<std::string, std::string> >
+  std::map<std::string, std::string>
     preconditioners = krylov_solver_preconditioners();
 
   // Pretty-print list of preconditioners
   Table t("Preconditioner", false);
-  for (std::size_t i = 0; i < preconditioners.size(); i++)
-    t(preconditioners[i].first, "Description") = preconditioners[i].second;
+  for (auto pc : preconditioners)
+    t(pc.first, "Description") = pc.second;
   cout << t.str(true) << endl;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-dolfin::linear_solver_methods()
+std::map<std::string, std::string> dolfin::linear_solver_methods()
 {
   // Add default method
-  std::vector<std::pair<std::string, std::string> >
-    methods;
-  methods.push_back(std::make_pair("default", "default linear solver"));
+  std::map<std::string, std::string> methods
+    = { {"default", "default linear solver"} };
 
   // Add LU methods
-  std::vector<std::pair<std::string, std::string> >
+  std::map<std::string, std::string>
     lu_methods = DefaultFactory::factory().lu_solver_methods();
-  for (std::size_t i = 0; i < lu_methods.size(); i++)
+  for (auto lu_method : lu_methods)
   {
-    if (lu_methods[i].first != "default")
-      methods.push_back(lu_methods[i]);
+    if (lu_method.first != "default")
+      methods.insert(lu_method);
   }
 
   // Add Krylov methods
-  std::vector<std::pair<std::string, std::string> >
+  std::map<std::string, std::string>
     krylov_methods = DefaultFactory::factory().krylov_solver_methods();
-  for (std::size_t i = 0; i < krylov_methods.size(); i++)
+  for (auto krylov_method : krylov_methods)
   {
-    if (krylov_methods[i].first != "default")
-      methods.push_back(krylov_methods[i]);
+    if (krylov_method.first != "default")
+      methods.insert(krylov_method);
   }
 
   return methods;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> > dolfin::lu_solver_methods()
+std::map<std::string, std::string> dolfin::lu_solver_methods()
 {
   return DefaultFactory::factory().lu_solver_methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-dolfin::krylov_solver_methods()
+std::map<std::string, std::string> dolfin::krylov_solver_methods()
 {
   return DefaultFactory::factory().krylov_solver_methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-dolfin::krylov_solver_preconditioners()
+std::map<std::string, std::string> dolfin::krylov_solver_preconditioners()
 {
   return DefaultFactory::factory().krylov_solver_preconditioners();
 }
 //-----------------------------------------------------------------------------
 bool dolfin::has_lu_solver_method(std::string method)
 {
-  std::vector<std::pair<std::string, std::string> > methods =
-    DefaultFactory::factory().lu_solver_methods();
-  for (std::size_t i = 0; i < methods.size(); i++)
-    if (methods[i].first == method)
-      return true;
-  return false;
+  std::map<std::string, std::string>
+    methods = DefaultFactory::factory().lu_solver_methods();
+  return methods.find(method) != methods.end();
 }
 //-----------------------------------------------------------------------------
 bool dolfin::has_krylov_solver_method(std::string method)
 {
-  std::vector<std::pair<std::string, std::string> > methods =
-    DefaultFactory::factory().krylov_solver_methods();
-  for (std::size_t i = 0; i < methods.size(); i++)
-    if (methods[i].first == method)
-      return true;
-  return false;
+  std::map<std::string, std::string>
+    methods = DefaultFactory::factory().krylov_solver_methods();
+  return methods.find(method) != methods.end();
 }
 //-----------------------------------------------------------------------------
 bool dolfin::has_krylov_solver_preconditioner(std::string preconditioner)
 {
-  std::vector<std::pair<std::string, std::string> > preconditioners
-    = DefaultFactory::factory().krylov_solver_preconditioners();
-  for (std::size_t i = 0; i < preconditioners.size(); i++)
-    if (preconditioners[i].first == preconditioner)
-      return true;
-  return false;
+  std::map<std::string, std::string>
+    methods = DefaultFactory::factory().krylov_solver_preconditioners();
+  return methods.find(preconditioner) != methods.end();
 }
 //-----------------------------------------------------------------------------
 double dolfin::residual(const GenericLinearOperator& A,
@@ -252,21 +236,18 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
 //-------------------------------------------------------------------------
 void dolfin::list_linear_algebra_backends()
 {
-  std::vector<std::pair<std::string, std::string> > backends
-    = linear_algebra_backends();
+  std::map<std::string, std::string> backends = linear_algebra_backends();
 
   // Pretty-print list of available linear algebra backends
   Table t("Linear algebra backends", false);
-  for (std::size_t i = 0; i < backends.size(); i++)
-    t(backends[i].first, "Description") = backends[i].second;
-
+  for (auto backend : backends)
+    t(backend.first, "Description") = backend.second;
   cout << t.str(true) << endl;
 }
 //-------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-dolfin::linear_algebra_backends()
+std::map<std::string, std::string> dolfin::linear_algebra_backends()
 {
-  std::vector<std::pair<std::string, std::string> > backends;
+  std::map<std::string, std::string> backends;
 
   std::map<std::string, std::string> default_backend
     = { {"uBLAS",  " (default)"},  {"PETSc", ""} };
@@ -278,23 +259,23 @@ dolfin::linear_algebra_backends()
   #endif
 
   // Add available backends
-  backends.push_back(std::make_pair("Eigen",
-                                    "Template-based linear algebra "
-				    " library" + default_backend["Eigen"]));
-  backends.push_back(std::make_pair("uBLAS",
-                                    "Template based basic linear algebra "
-				    "from boost" + default_backend["uBLAS"]));
-  backends.push_back(std::make_pair("STL",
-                                    "Light weight storage backend for Tensors"));
+  backends.insert(std::make_pair("Eigen",
+                                 "Template-based linear algebra "
+                                 " library" + default_backend["Eigen"]));
+  backends.insert(std::make_pair("uBLAS",
+                                 "Template based basic linear algebra "
+                                 "from boost" + default_backend["uBLAS"]));
+  backends.insert(std::make_pair("STL",
+                                 "Light weight storage backend for Tensors"));
 
   #ifdef HAS_PETSC
-  backends.push_back(std::make_pair("PETSc",
-                                    "Powerful MPI parallel linear algebra"
-				    " library" + default_backend["PETSc"]));
+  backends.insert(std::make_pair("PETSc",
+                                 "Powerful MPI parallel linear algebra"
+                                 " library" + default_backend["PETSc"]));
   #endif
   #ifdef HAS_PETSC_CUSP
-  backends.push_back(std::make_pair("PETScCusp",
-                                    "GPU-accelerated build of PETSc"));
+  backends.insert(std::make_pair("PETScCusp",
+    "GPU-accelerated build of PETSc"));
   #endif
 
   return backends;

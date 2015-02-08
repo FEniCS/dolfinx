@@ -66,19 +66,18 @@ DefaultFactory::create_krylov_solver(std::string method,
   return factory().create_krylov_solver(method, preconditioner);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-DefaultFactory::lu_solver_methods() const
+std::map<std::string, std::string> DefaultFactory::lu_solver_methods() const
 {
   return factory().lu_solver_methods();
 }
  //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 DefaultFactory::krylov_solver_methods() const
 {
   return factory().krylov_solver_methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 DefaultFactory::krylov_solver_preconditioners() const
 {
   return factory().krylov_solver_preconditioners();

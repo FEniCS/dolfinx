@@ -92,10 +92,10 @@ namespace dolfin
                       const GenericVector& b);
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
 
     /// Return a list of available preconditioners
-    static std::vector<std::pair<std::string, std::string> > preconditioners();
+    static std::map<std::string, std::string> preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();

@@ -93,7 +93,13 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
+    static std::map<std::string, std::string> methods_new()
+    {
+      std::map<std::string, std::string> test = { {"one", "two"} };
+      return test;
+    }
+
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -102,20 +108,17 @@ namespace dolfin
 
     // Call generic solve
     template <typename Solver>
-    void call_solver(Solver& solver,
-                     GenericVector& x,
-                     const GenericVector& b,
+    void call_solver(Solver& solver, GenericVector& x, const GenericVector& b,
                      bool transpose);
 
     // Available LU solvers and descriptions
-    static const std::vector<std::pair<std::string, std::string> >
-    _methods_descr;
+    static const std::map<std::string, std::string> _methods_descr;
 
     // Current selected method
     std::string _method;
 
     // Select LU solver type
-    const std::string select_solver(std::string& method) const;
+    std::string select_solver(const std::string method) const;
 
     // Operator (the matrix)
     std::shared_ptr<const EigenMatrix> _matA;
