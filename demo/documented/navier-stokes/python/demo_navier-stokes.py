@@ -93,6 +93,9 @@ A3 = assemble(a3)
 # Use amg preconditioner if available
 prec = "amg" if has_krylov_solver_preconditioner("amg") else "default"
 
+# Use nonzero guesses - essential for CG with non-symmetric BC
+parameters['krylov_solver']['nonzero_initial_guess'] = True
+
 # Create files for storing solution
 ufile = File("results/velocity.pvd")
 pfile = File("results/pressure.pvd")
@@ -115,6 +118,7 @@ while t < T + DOLFIN_EPS:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
+    [bc.apply(p1.vector()) for bc in bcp]
     solve(A2, p1.vector(), b2, "cg", prec)
     end()
 
