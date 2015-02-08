@@ -39,18 +39,17 @@ using namespace dolfin;
 // Mapping from method string to description
 const std::map<std::string, std::string>
 EigenKrylovSolver::_methods_descr
-= { {"default",       "default Krylov method"},
-    {"cg",            "Conjugate gradient method"},
-    {"bicgstab_ilut", "Biconjugate gradient stabilized method (ILU)"},
-    {"bicgstab",      "Biconjugate gradient stabilized method"},
-    {"minres",        "Minimal residual"},
-    {"gmres",         "Generalised minimal residual (GMRES)"}};
+= { {"default",  "default Eigen Krylov method"},
+    {"cg",       "Conjugate gradient method"},
+    {"bicgstab", "Biconjugate gradient stabilized method"},
+    {"minres",   "Minimal residual"},
+    {"gmres",    "Generalised minimal residual (GMRES)"}};
 
 // Mapping from preconditioner string to description
 const std::map<std::string, std::string>
 EigenKrylovSolver::_pcs_descr
 = { {"default", "default"},
-    {"none",  "None"},
+    {"none",    "None"},
     {"jacobi",  "Jacobi"},
     {"ilu",     "Incomplete LU"} };
 //-----------------------------------------------------------------------------
@@ -209,28 +208,103 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
 
   if (_method == "cg")
   {
-    Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Lower> solver;
-    num_iterations = call_solver(solver, x, b);
+    if (_pc == "none")
+    {
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Lower,
+                               Eigen::IdentityPreconditioner> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "jacobi")
+    {
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Lower,
+                               Eigen::DiagonalPreconditioner<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "ilu")
+    {
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Lower,
+                               Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else
+    {
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Lower> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
   }
   else if (_method == "bicgstab")
   {
-    Eigen::BiCGSTAB<eigen_matrix_type> solver;
-    num_iterations = call_solver(solver, x, b);
-  }
-  else if (_method == "bicgstab_ilut")
-  {
-    Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IncompleteLUT<double> > solver;
-    num_iterations = call_solver(solver, x, b);
+    if (_pc == "none")
+    {
+      Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IdentityPreconditioner> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "jacobi")
+    {
+      Eigen::BiCGSTAB<eigen_matrix_type,
+                      Eigen::DiagonalPreconditioner<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "ilu")
+    {
+      Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else
+    {
+      Eigen::BiCGSTAB<eigen_matrix_type> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
   }
   else if (_method == "gmres")
   {
-    Eigen::GMRES<eigen_matrix_type, Eigen::IncompleteLUT<double> > solver;
-    num_iterations = call_solver(solver, x, b);
+    if (_pc == "none")
+    {
+      Eigen::GMRES<eigen_matrix_type, Eigen::IdentityPreconditioner> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "jacobi")
+    {
+      Eigen::GMRES<eigen_matrix_type,
+                   Eigen::DiagonalPreconditioner<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "ilu")
+    {
+      Eigen::GMRES<eigen_matrix_type, Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else
+    {
+      Eigen::GMRES<eigen_matrix_type> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
   }
   else if (_method == "minres")
   {
-    Eigen::MINRES<eigen_matrix_type> solver;
-    num_iterations = call_solver(solver, x, b);
+    if (_pc == "none")
+    {
+      Eigen::MINRES<eigen_matrix_type, Eigen::Lower,
+                    Eigen::IdentityPreconditioner> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "jacobi")
+    {
+      Eigen::MINRES<eigen_matrix_type, Eigen::Lower,
+                    Eigen::DiagonalPreconditioner<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "ilu")
+    {
+      Eigen::MINRES<eigen_matrix_type, Eigen::Lower,
+                    Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else
+    {
+      Eigen::MINRES<eigen_matrix_type> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
   }
 
   return num_iterations;
