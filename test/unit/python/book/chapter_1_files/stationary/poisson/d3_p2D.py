@@ -36,7 +36,7 @@ L = f*v*dx
 u = Function(V)
 problem = LinearVariationalProblem(a, L, u, bc)
 solver = LinearVariationalSolver(problem)
-solver.parameters['linear_solver'] = 'cg'
+solver.parameters['linear_solver'] = 'gmres'
 solver.parameters['preconditioner'] = 'ilu'
 info(solver.parameters, True)
 
