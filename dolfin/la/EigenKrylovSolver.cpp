@@ -204,7 +204,7 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
 
   if (_method == "cg")
   {
-    Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Lower> solver;
+    Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Whole> solver;
     num_iterations = call_solver(solver, x, b);
   }
   else if (_method == "bicgstab")
@@ -224,7 +224,7 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
   }
   else if (_method == "minres")
   {
-    Eigen::MINRES<eigen_matrix_type> solver;
+    Eigen::MINRES<eigen_matrix_type, Eigen::Whole> solver;
     num_iterations = call_solver(solver, x, b);
   }
 
