@@ -250,11 +250,11 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, const std::string name)
 {
-  write(mesh, mesh.topology().dim(), 1, name);
+  write(mesh, mesh.topology().dim(), name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
-                     std::size_t cell_order, const std::string name)
+                     const std::string name)
 {
   Timer t0("HDF5: write mesh to file");
 
@@ -799,6 +799,9 @@ void HDF5File::write_p2coords(const Function& u, const std::string name)
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
+  // FIMXE: Could work in 1D, but not yet implemented
+  dolfin_assert(tdim == 2 or tdim == 3);
+
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
 
@@ -806,47 +809,40 @@ void HDF5File::write_p2coords(const Function& u, const std::string name)
   dolfin_assert(dofmap.num_entity_dofs(0) == gdim);
   dolfin_assert(dofmap.num_entity_dofs(1) == gdim);
 
-  // FIXME:
-  // Possibly sort cell_dofs into global cell order before writing?
-
-  // Save data in compressed format with an index to mark out
-  // the start of each row
-
-  std::vector<dolfin::la_index> cell_dofs;
-  std::vector<std::size_t> x_cell_dofs;
+  // Number of local cells
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
-  x_cell_dofs.reserve(n_cells);
+  std::vector<dolfin::la_index> cell_topology;
 
   std::vector<std::size_t> local_to_global_map;
   dofmap.tabulate_local_to_global_dofs(local_to_global_map);
 
-  // Number of vertices per cell
-  const std::size_t nv = tdim + 1;
+  // Mapping from dofs to XDMF Tri_6 and Tet_10 layout
+  std::vector<std::size_t> node_mapping;
+  if (tdim == 2)
+    node_mapping = {0, 1, 2, 5, 3, 4};
+  else
+    node_mapping = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}; // FIXME: not correct
 
+  // NB relies on the x-component coming first, and ordering xyxy or xyzxyz etc.
   for (std::size_t i = 0; i != n_cells; ++i)
   {
-    const std::size_t n_coords = cell_dofs.size()/gdim;
     const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
-    for (unsigned int i = 0; i != nv)
+    dolfin_assert(cell_dofs_i.size() == node_mapping.size() * gdim);
+
+    for (auto &node : node_mapping)
     {
-      const std::size_t idx = cell_dofs_i[i];
+      const dolfin::la_index idx = cell_dofs_i[node];
       dolfin_assert(idx < (dolfin::la_index)local_to_global_map.size());
-      cell_dofs.push_back(local_to_global_map[idx]/gdim);
-    }
-    for (unsigned int i = 0; i != nv)
-    {
-      const std::size_t idx = cell_dofs_i[i + nv];
-      dolfin_assert(idx < (dolfin::la_index)local_to_global_map.size());
-      cell_dofs.push_back(local_to_global_map[idx]/gdim);
+      cell_topology.push_back(local_to_global_map[idx]/gdim);
     }
   }
 
   const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
 
-  // Save DOFs on each cell
+  // Save cell topologies
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
-                                                   cell_dofs.size()));
-  write_data(name + "/topology", cell_dofs, global_size, mpi_io);
+                                                   cell_topology.size()));
+  write_data(name + "/topology", cell_topology, global_size, mpi_io);
 
   // Save vector
   write(*u.vector(), name + "/coordinates");

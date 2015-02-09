@@ -409,8 +409,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // The XML below will obliterate any existing XDMF file
 
   const std::string group_name = "/Mesh/" + name;
-  const std::size_t cell_order = 1;
-  hdf5_file->write(mesh, cell_dim, cell_order, group_name);
+  hdf5_file->write(mesh, cell_dim, group_name);
 
   // Write the XML meta description on process zero
   if (MPI::rank(mesh.mpi_comm()) == 0)
