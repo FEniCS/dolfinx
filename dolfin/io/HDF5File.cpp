@@ -821,7 +821,7 @@ void HDF5File::write_p2coords(const Function& u, const std::string name)
   if (tdim == 2)
     node_mapping = {0, 1, 2, 5, 3, 4};
   else
-    node_mapping = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}; // FIXME: not correct
+    node_mapping = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
 
   // NB relies on the x-component coming first, and ordering xyxy or xyzxyz etc.
   for (std::size_t i = 0; i != n_cells; ++i)
