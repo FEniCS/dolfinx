@@ -105,7 +105,7 @@ namespace dolfin
     // Chosen Krylov method
     std::string _method;
 
-    // Chosen Eiegn precondtioner method
+    // Chosen Eigen precondtioner method
     std::string _pc;
 
     // Available solvers and preconditioner descriptions

@@ -39,8 +39,7 @@ namespace dolfin
   ///
   /// The interface is intentionally simple. For advanced usage,
   /// access the underlying Eigen vector and use the standard Eigen
-  /// interface which is documented at
-  /// .
+  /// interface which is documented at http://eigen.tuxfamily.org
 
   class EigenVector : public GenericVector
   {

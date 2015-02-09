@@ -54,7 +54,7 @@ using namespace dolfin;
 const std::map<std::string, std::string>
 EigenLUSolver::_methods_descr
 = { {"default", "default LU solver"},
-{"sparselu", "Supernodal LU factorization for general matrices"},
+    {"sparselu", "Supernodal LU factorization for general matrices"},
     {"cholesky", "Simplicial LDLT"},
 #ifdef EIGEN_CHOLMOD_SUPPORT
     {"cholmod", "'CHOLMOD' sparse Cholesky factorisation"},
@@ -245,6 +245,7 @@ void EigenLUSolver::call_solver(Solver& solver, GenericVector& x,
 
   // FIXME: Do we want this? It could affect re-assembly performance
   // Compress matrix
+  // Most solvers require a compressed matrix
   _A.makeCompressed();
 
   // Factorize matrix
@@ -312,7 +313,7 @@ std::string EigenLUSolver::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
-    s << "Eigen LUSolver\n";
+    s << "Eigen LUSolver (" << _method << ")" << std::endl;
   else
     s << "<EigenLUSolver>";
 

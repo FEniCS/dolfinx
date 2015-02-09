@@ -281,7 +281,8 @@ std::string EigenKrylovSolver::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
-    s << "Eigen Krylov Solver";
+    s << "Eigen Krylov Solver (" << _method << ", "
+      << _pc << ")" << std::endl;
   else
     s << "<EigenKrylovSolver>";
 
@@ -340,13 +341,19 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   _x.vec() = solver.solve(_b.vec());
   const int num_iterations = solver.iterations();
 
+  bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+
   if (solver.info() != Eigen::Success)
   {
     if (num_iterations >= max_iterations)
     {
-      dolfin_error("EigenKrylovSolver.cpp",
-                   "solve A.x = b",
-                   "Max iterations (%d) exceeded", max_iterations);
+      if (error_on_nonconvergence)
+        dolfin_error("EigenKrylovSolver.cpp",
+                     "solve A.x = b",
+                     "Max iterations (%d) exceeded", max_iterations);
+      else
+        warning("Krylov solver did not converge in %i iterations",
+                max_iterations);
     }
     else
     {

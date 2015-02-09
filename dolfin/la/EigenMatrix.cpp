@@ -332,7 +332,7 @@ std::size_t EigenMatrix::nnz() const
 //---------------------------------------------------------------------------
 void EigenMatrix::apply(std::string mode)
 {
-  // Make sure matrix assembly is complete
+  // Nothing to do
 }
 //---------------------------------------------------------------------------
 void EigenMatrix::axpy(double a, const GenericMatrix& A,

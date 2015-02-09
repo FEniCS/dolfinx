@@ -39,6 +39,15 @@ namespace dolfin
   typedef Eigen::SparseMatrix<double, Eigen::RowMajor, dolfin::la_index>
   eigen_matrix_type;
 
+  /// This class provides a sparse matrix class based on Eigen.
+  /// It is a simple wrapper for Eigen::SparseMatrix implementing the
+  /// GenericMatrix interface.
+  ///
+  /// The interface is intentionally simple. For advanced usage,
+  /// access the underlying Eigen matrix and use the standard Eigen
+  /// interface which is documented at http://eigen.tuxfamily.org
+
+
   class EigenMatrix : public GenericMatrix
   {
   public:
@@ -97,8 +106,7 @@ namespace dolfin
     virtual void resize(std::size_t M, std::size_t N);
 
     /// Initialise vector z to be compatible with the matrix-vector product
-    /// y = Ax. In the parallel case, both size and layout are
-    /// important.
+    /// y = Ax.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
