@@ -135,12 +135,9 @@ void EigenMatrix::add(const double* block, std::size_t m,
                       const dolfin::la_index* rows,
                       std::size_t n, const dolfin::la_index* cols)
 {
-  for (std::size_t j = 0; j < n; ++j)
-  {
-    const dolfin::la_index col = cols[j];
-    for (std::size_t i = 0; i < m; ++i)
-      _matA.coeffRef(rows[i] , col) += block[i*n + j];
-  }
+  for (std::size_t i = 0; i < m; i++)
+    for (std::size_t j = 0; j < n; j++)
+      _matA.coeffRef(rows[i] , cols[j]) += block[i*n + j];
 }
 //---------------------------------------------------------------------------
 void EigenMatrix::get(double* block, std::size_t m,

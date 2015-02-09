@@ -63,7 +63,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
     {"none",             PCNONE} };
 
 // Mapping from preconditioner string to description string
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
 PETScPreconditioner::_methods_descr
 = { {"default",          "default preconditioner"},
     {"ilu",              "Incomplete LU factorization"},
@@ -92,7 +92,7 @@ PETScPreconditioner::_methods_descr
 #endif
     {"none",             "No preconditioner"} };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 PETScPreconditioner::preconditioners()
 {
   return PETScPreconditioner::_methods_descr;
