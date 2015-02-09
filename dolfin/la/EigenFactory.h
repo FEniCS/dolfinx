@@ -72,7 +72,7 @@ namespace dolfin
     std::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
       dolfin_not_implemented();
-      std::shared_ptr<GenericLinearOperator> A;//(new EigenLinearOperator);
+      std::shared_ptr<GenericLinearOperator> A;
       return A;
     }
 
