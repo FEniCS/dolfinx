@@ -338,16 +338,13 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   EigenVector& _x = as_type<EigenVector>(x);
   const EigenVector& _b = as_type<const EigenVector>(b);
 
-  // Set x = 0 for no initial guess
   const bool nonzero_guess = parameters["nonzero_initial_guess"];
-  if (!nonzero_guess)
-    _x.zero();
-
-  // Solve
-  _x.vec() = solver.solveWithGuess(_b.vec(), _x.vec());
+  if (nonzero_guess)
+    _x.vec() = solver.solveWithGuess(_b.vec(), _x.vec());
+  else
+    _x.vec() = solver.solve(_b.vec());
   const int num_iterations = solver.iterations();
 
-  // Check for solver success
   bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
   if (solver.info() != Eigen::Success)
   {
@@ -368,7 +365,7 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
     else
     {
       dolfin_error("EigenKrylovSolver.cpp",
-                   "solve Ax = b",
+                   "solve A.x = b",
                    "Solver failed");
     }
   }
