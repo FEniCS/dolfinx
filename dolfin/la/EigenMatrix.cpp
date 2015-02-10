@@ -137,20 +137,23 @@ void EigenMatrix::set(const double* block, std::size_t m,
                       const dolfin::la_index* rows,
                       std::size_t n, const dolfin::la_index* cols)
 {
-  for (std::size_t i = 0; i < m; i++)
-    for (std::size_t j = 0; j < n; j++)
-      _matA.coeffRef(rows[i] , cols[j]) = block[i*n + j];
+  for (std::size_t i = 0; i < m; ++i)
+  {
+    const dolfin::la_index row = rows[i];
+    for (std::size_t j = 0; j < n; ++j)
+       _matA.coeffRef(row , cols[j]) = block[i*n + j];
+  }
 }
 //---------------------------------------------------------------------------
 void EigenMatrix::add(const double* block, std::size_t m,
                       const dolfin::la_index* rows,
                       std::size_t n, const dolfin::la_index* cols)
 {
-  for (std::size_t j = 0; j < n; ++j)
+  for (std::size_t i = 0; i < m; ++i)
   {
-    const dolfin::la_index col = cols[j];
-    for (std::size_t i = 0; i < m; ++i)
-       _matA.coeffRef(rows[i] , col) += block[i*n + j];
+    const dolfin::la_index row = rows[i];
+    for (std::size_t j = 0; j < n; ++j)
+       _matA.coeffRef(row , cols[j]) += block[i*n + j];
   }
 }
 //---------------------------------------------------------------------------
@@ -159,8 +162,11 @@ void EigenMatrix::get(double* block, std::size_t m,
                       std::size_t n, const dolfin::la_index* cols) const
 {
   for(std::size_t i = 0; i < m; ++i)
+  {
+    const dolfin::la_index row = rows[i];
     for(std::size_t j = 0; j < n; ++j)
-      block[i*n + j] = _matA.coeff(rows[i], cols[j]);
+      block[i*n + j] = _matA.coeff(row, cols[j]);
+  }
 }
 //---------------------------------------------------------------------------
 // void EigenMatrix::lump(EigenVector& m) const
@@ -219,23 +225,48 @@ void EigenMatrix::get(double* block, std::size_t m,
 void EigenMatrix::zero()
 {
   // Set to zero whilst keeping the non-zero pattern
-  _matA *= 0.0;
+  for(dolfin::la_index i = 0; i < _matA.outerSize(); ++i)
+    for (eigen_matrix_type::InnerIterator it(_matA, i); it; ++it)
+      it.valueRef() = 0.0;
 }
 //----------------------------------------------------------------------------
 void EigenMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 {
-  for(const dolfin::la_index* ptr = rows; ptr != rows + m; ++ptr)
-  {
-    _matA.row(*ptr) *= 0.0;
-  }
+  dolfin_assert(rows || m==0);
+  for(const dolfin::la_index* i_ptr = rows; i_ptr != rows + m; ++i_ptr)
+    for (eigen_matrix_type::InnerIterator it(_matA, *i_ptr); it; ++it)
+      it.valueRef() = 0.0;
 }
 //----------------------------------------------------------------------------
 void EigenMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
-  for(const dolfin::la_index* ptr = rows; ptr != rows + m; ++ptr)
+  dolfin_assert(rows || m==0);
+  bool diagonal_unset;
+  const dolfin::la_index num_cols = size(1);
+
+  // Loop over rows
+  for(const dolfin::la_index* i_ptr = rows; i_ptr != rows + m; ++i_ptr)
   {
-    _matA.row(*ptr) *= 0.0;
-    _matA.coeffRef(*ptr, *ptr) = 1.0;
+    // Does this row have diagonal?
+    diagonal_unset = *i_ptr <= num_cols && *i_ptr >= 0;
+
+    // Loop over non-zeros in a row
+    for (eigen_matrix_type::InnerIterator it(_matA, *i_ptr); it; ++it)
+      // Check if we are on the diagonal
+      if (diagonal_unset && it.index() == *i_ptr)
+      {
+        it.valueRef() = 1.0;
+        diagonal_unset = false;
+      }
+      else
+        it.valueRef() = 0.0;
+
+    // Check that diagonal has been set
+    if (diagonal_unset)
+      dolfin_error("EigenMatrix.cpp",
+                   "set rows to identity",
+                   "Diagonal element at row %d not preallocated. "
+                   "Use assembler option keep_diagonal", *i_ptr);
   }
 }
 //---------------------------------------------------------------------------
