@@ -77,6 +77,104 @@ XDMFFile::~XDMFFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
+void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
+{
+  // Experimental. For now, just work with one h5 file, cannot do
+  // time series. Input two P2 Functions, one containing geometry, the
+  // other the values. For a regular mesh,
+  // can just interpolate ("x[0]", "x[1]", "x[2]") onto u_geom.
+
+  boost::filesystem::path p(_filename);
+  p.replace_extension(".h5");
+  hdf5_filename = p.string();
+
+  // Create new HDF5 file (truncate)
+  hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+  hdf5_filemode = "w";
+
+  // Get mesh and dofmap
+  dolfin_assert(u_geom.function_space()->mesh());
+  dolfin_assert(u_val.function_space()->mesh());
+  dolfin_assert (u_val.function_space()->mesh()->id()
+              == u_geom.function_space()->mesh()->id());
+  const Mesh& mesh = *u_geom.function_space()->mesh();
+
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
+
+  // FIMXE: Could work in 1D, but not yet tested
+  dolfin_assert(tdim == 2 or tdim == 3);
+
+  dolfin_assert(u_geom.function_space()->dofmap());
+  const GenericDofMap& geom_dofmap = *u_geom.function_space()->dofmap();
+
+  // Should be vector components on each edge and vertex
+  dolfin_assert(geom_dofmap.num_entity_dofs(0) == gdim);
+  dolfin_assert(geom_dofmap.num_entity_dofs(1) == gdim);
+
+  // Number of local cells
+  const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
+  std::vector<dolfin::la_index> cell_topology;
+
+  std::vector<std::size_t> local_to_global_map;
+  geom_dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+
+  // Mapping from dofs to XDMF Tri_6 and Tet_10 layout
+  std::vector<std::size_t> node_mapping;
+  if (tdim == 1)
+    node_mapping = {0, 1, 2};
+  else if (tdim == 2)
+    node_mapping = {0, 1, 2, 5, 3, 4};
+  else
+    node_mapping = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
+
+  // NB relies on the x-component coming first, and ordering xyxy or xyzxyz etc.
+  for (std::size_t i = 0; i != n_cells; ++i)
+  {
+    const std::vector<dolfin::la_index>& cell_dofs_i = geom_dofmap.cell_dofs(i);
+    dolfin_assert(cell_dofs_i.size() == node_mapping.size() * gdim);
+
+    for (auto &node : node_mapping)
+    {
+      const dolfin::la_index idx = cell_dofs_i[node];
+      dolfin_assert(idx < (dolfin::la_index)local_to_global_map.size());
+      cell_topology.push_back(local_to_global_map[idx]/gdim);
+    }
+  }
+
+  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+
+  // Save cell topologies
+  std::vector<std::size_t> global_size(2);
+  global_size[0] = MPI::sum(_mpi_comm, cell_topology.size()) / node_mapping.size();
+  global_size[1] = node_mapping.size();
+
+  const std::string h5_mesh_name = "/Mesh";
+  current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
+
+  hdf5_file->write_data(h5_mesh_name + "/topology", cell_topology, global_size, mpi_io);
+
+  // Save coordinates
+  hdf5_file->write(*u_geom.vector(), h5_mesh_name + "/coordinates");
+
+  // Save values
+  const std::string dataset_name = "/Function/values";
+  hdf5_file->write(*u_val.vector(), dataset_name);
+
+  const std::size_t value_rank = u_val.value_rank();
+  const std::size_t value_size = u_val.value_size();
+
+  if (MPI::rank(mesh.mpi_comm()) == 0)
+  {
+    const double time_step = 0.0;
+    output_xml(time_step, true, tdim, 2, global_size[0], gdim,
+               u_geom.vector()->size()/gdim, value_rank, value_size,
+               u_val.name(), dataset_name);
+  }
+
+  hdf5_file->close();
+}
+//----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Function& u)
 {
   std::pair<const Function*, double> ut(&u, (double) counter);
@@ -292,7 +390,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const std::size_t num_total_vertices = mesh.size_global(0);
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
-    output_xml(time_step, vertex_data, tdim, num_global_cells, gdim,
+    output_xml(time_step, vertex_data, tdim, 1, num_global_cells, gdim,
                num_total_vertices, value_rank, padded_value_size,
                u.name(), dataset_name);
   }
@@ -622,7 +720,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     output_xml((double)counter, false,
-               cell_dim, mesh.size_global(cell_dim),
+               cell_dim, mesh.size_global(cell_dim), 1,
                mesh.geometry().dim(), mesh.size_global(0),
                0, 1, meshfunction.name(), dataset_name);
   }
@@ -745,25 +843,38 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
   xdmf_topology.append_attribute("NumberOfElements")
     = (unsigned int) num_global_cells;
 
+  std::size_t nodes_per_element = cell_dim + 1;
+
   // Cell type
   if (cell_dim == 0)
   {
     xdmf_topology.append_attribute("TopologyType") = "PolyVertex";
     xdmf_topology.append_attribute("NodesPerElement") = "1";
   }
-  else if (cell_dim == 1)
+  else if (cell_dim == 1 and cell_order == 1)
   {
     xdmf_topology.append_attribute("TopologyType") = "PolyLine";
     xdmf_topology.append_attribute("NodesPerElement") = "2";
   }
+  else if (cell_dim == 1 and cell_order == 2)
+  {
+    xdmf_topology.append_attribute("TopologyType") = "Edge_3";
+    nodes_per_element = 3;
+  }
   else if (cell_dim == 2 and cell_order == 1)
     xdmf_topology.append_attribute("TopologyType") = "Triangle";
   else if (cell_dim == 2 and cell_order == 2)
+  {
     xdmf_topology.append_attribute("TopologyType") = "Tri_6";
+    nodes_per_element = 6;
+  }
   else if (cell_dim == 3 and cell_order == 1)
     xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
   else if (cell_dim == 3 and cell_order == 2)
+  {
     xdmf_topology.append_attribute("TopologyType") = "Tet_10";
+    nodes_per_element = 10;
+  }
   else
     dolfin_error("XDMFFile.cpp",
                  "output mesh topology",
@@ -774,7 +885,7 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
   xdmf_topology_data.append_attribute("Format") = "HDF";
   const std::string cell_dims
     = boost::lexical_cast<std::string>(num_global_cells)
-    + " " + boost::lexical_cast<std::string>(cell_dim + 1);
+    + " " + boost::lexical_cast<std::string>(nodes_per_element);
   xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
   xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
@@ -841,6 +952,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
 //----------------------------------------------------------------------------
 void XDMFFile::output_xml(const double time_step, const bool vertex_data,
                           const std::size_t cell_dim,
+                          const std::size_t cell_order,
                           const std::size_t num_global_cells,
                           const std::size_t gdim,
                           const std::size_t num_total_vertices,
@@ -938,7 +1050,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   // the same directory
 
   std::string topology_reference = current_mesh_name + "/topology";
-  xml_mesh_topology(xdmf_topology, cell_dim, 1, num_global_cells,
+  xml_mesh_topology(xdmf_topology, cell_dim, cell_order, num_global_cells,
                     topology_reference);
 
   // Grid/Geometry

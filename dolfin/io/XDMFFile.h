@@ -76,6 +76,10 @@ namespace dolfin
     /// Read in a mesh from the associated HDF5 file
     void operator>> (Mesh& mesh);
 
+    /// Save a quadratic Function to a quadratic Mesh defined
+    /// by a geometry Function
+    void write_quadratic(const Function& u_geom, const Function& u_val);
+
     /// Save a Function to XDMF/HDF5 files for visualisation.
     void operator<< (const Function& u);
 
@@ -135,6 +139,7 @@ namespace dolfin
     // updating time-series if need be
     void output_xml(const double time_step, const bool vertex_data,
                     const std::size_t cell_dim,
+                    const std::size_t cell_order,
                     const std::size_t num_global_cells,
                     const std::size_t gdim,
                     const std::size_t num_total_vertices,

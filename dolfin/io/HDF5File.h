@@ -79,10 +79,6 @@ namespace dolfin
     void write(const Mesh& mesh, const std::size_t cell_dim,
                const std::string name);
 
-    /// Write a P2 Vector Function as coordinates, assuming a quadratic
-    /// mesh, with ordering based on XDMF Tri_6 and Tet_10 elements
-    void write_p2coords(const Function& u, const std::string name);
-
     /// Write Function to file in a format suitable for re-reading
     void write(const Function& u, const std::string name);
 
