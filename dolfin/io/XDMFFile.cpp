@@ -87,8 +87,13 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
   p.replace_extension(".h5");
   hdf5_filename = p.string();
 
-  // Create new HDF5 file (truncate)
-  hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+  if (counter == 0)
+    // Create new HDF5 file handle (truncate)
+    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+  else
+    // Create new HDF5 file handle (append)
+    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "a"));
+
   hdf5_filemode = "w";
 
   // Get mesh and dofmap
@@ -148,7 +153,7 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
   global_size[0] = MPI::sum(_mpi_comm, cell_topology.size()) / node_mapping.size();
   global_size[1] = node_mapping.size();
 
-  const std::string h5_mesh_name = "/Mesh";
+  const std::string h5_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
   current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
 
   hdf5_file->write_data(h5_mesh_name + "/topology", cell_topology, global_size, mpi_io);
@@ -157,7 +162,8 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
   hdf5_file->write(*u_geom.vector(), h5_mesh_name + "/coordinates");
 
   // Save values
-  const std::string dataset_name = "/Function/values";
+  const std::string dataset_name = "/Function/"
+    + boost::lexical_cast<std::string>(counter) + "/values";
   hdf5_file->write(*u_val.vector(), dataset_name);
 
   const std::size_t value_rank = u_val.value_rank();
