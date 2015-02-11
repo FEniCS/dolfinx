@@ -102,8 +102,9 @@ namespace dolfin
     FacetFunction(const Mesh& mesh, const T& value)
       : MeshFunction<T>(mesh, mesh.topology().dim() - 1, value) {}
 
-    //FacetFunction(boost:shared_ptr<const Mesh> mesh, const T& value)
-    //  : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {}
+    FacetFunction(std::shared_ptr<const Mesh> mesh, const T& value)
+      : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {}
+
   };
 
 }
