@@ -21,19 +21,10 @@
 
 #ifdef HAS_HDF5
 
-#include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
-#include "GenericFile.h"
-
-namespace pugi
-{
-  class xml_node;
-}
+#include "pugixml.hpp"
 
 namespace dolfin
 {
@@ -50,6 +41,15 @@ namespace dolfin
 
     /// Output to file
     void write() const;
+
+    /// Read from a file
+    void read();
+
+    /// Get the (unique) Mesh name from the current XML
+    std::string meshname() const;
+
+    /// Get the (unique) dataset name for a MeshFunction in current XML
+    std::string dataname() const;
 
     /// Add a data item to the current grid
     void data_attribute(std::string name,

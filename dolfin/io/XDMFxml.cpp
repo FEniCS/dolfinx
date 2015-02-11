@@ -17,30 +17,13 @@
 
 #ifdef HAS_HDF5
 
-#include <iomanip>
-#include <ostream>
-#include <sstream>
 #include <vector>
+
 #include <boost/algorithm/string.hpp>
-#include <boost/assign.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <dolfin/log/log.h>
 
-#include "pugixml.hpp"
-
-#include <dolfin/common/MPI.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/DistributedMeshTools.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Vertex.h>
-#include "HDF5File.h"
-#include "HDF5Utility.h"
 #include "XDMFxml.h"
 
 using namespace dolfin;
@@ -48,12 +31,10 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 XDMFxml::XDMFxml(std::string filename): _filename(filename)
 {
-
 }
 //----------------------------------------------------------------------------
 XDMFxml::~XDMFxml()
 {
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XDMFxml::header()
@@ -70,6 +51,91 @@ void XDMFxml::write() const
 {
   // Write XML file
   xml_doc.save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+void XDMFxml::read()
+{
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  if (!result)
+  {
+    dolfin_error("XDMFxml.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "XML parsing error.");
+  }
+}
+//-----------------------------------------------------------------------------
+std::string XDMFxml::meshname() const
+{
+  // Topology - check format and get dataset name
+  pugi::xml_node xdmf_topology
+    = xml_doc.child("Xdmf").child("Domain")
+             .child("Grid").child("Topology").child("DataItem");
+  if (!xdmf_topology)
+  {
+    dolfin_error("XDMFxml.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "XML parsing error. XDMF file should contain only one mesh/dataset");
+  }
+
+  const std::string
+    topological_data_format(xdmf_topology.attribute("Format").value());
+  if (topological_data_format != "HDF")
+  {
+    dolfin_error("XDMFxml.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "XML parsing error. Wrong dataset format (not HDF5)");
+  }
+
+  const std::string topo_ref(xdmf_topology.first_child().value());
+  std::vector<std::string> topo_bits;
+  boost::split(topo_bits, topo_ref, boost::is_any_of(":/"));
+
+  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "topology"
+  dolfin_assert(topo_bits.size() == 5);
+  dolfin_assert(topo_bits[2] == "Mesh");
+  dolfin_assert(topo_bits[4] == "topology");
+
+  // Geometry - check format and get dataset name
+  pugi::xml_node xdmf_geometry =
+    xml_doc.child("Xdmf").child("Domain").child("Grid")
+           .child("Geometry").child("DataItem");
+  dolfin_assert(xdmf_geometry);
+
+  const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
+  dolfin_assert(geom_fmt == "HDF");
+
+  const std::string geom_ref(xdmf_geometry.first_child().value());
+  std::vector<std::string> geom_bits;
+  boost::split(geom_bits, geom_ref, boost::is_any_of(":/"));
+
+  // Should have 5 elements "filename.h5", "", "Mesh", "meshname",
+  // "coordinates"
+  dolfin_assert(geom_bits.size() == 5);
+  dolfin_assert(geom_bits[2] == "Mesh");
+  dolfin_assert(geom_bits[3] == topo_bits[3]);
+  dolfin_assert(geom_bits[4] == "coordinates");
+
+  return geom_bits[3];
+}
+//-----------------------------------------------------------------------------
+std::string XDMFxml::dataname() const
+{
+  // Values - check format and get dataset name
+  pugi::xml_node xdmf_values = xml_doc.child("Xdmf").child("Domain").
+    child("Grid").child("Grid").child("Attribute").child("DataItem");
+  dolfin_assert(xdmf_values);
+
+  const std::string value_fmt(xdmf_values.attribute("Format").value());
+  dolfin_assert(value_fmt == "HDF");
+
+  const std::string value_ref(xdmf_values.first_child().value());
+  std::vector<std::string> value_bits;
+  boost::split(value_bits, value_ref, boost::is_any_of(":/"));
+  dolfin_assert(value_bits.size() == 5);
+  dolfin_assert(value_bits[2] == "Mesh");
+  dolfin_assert(value_bits[4] == "values");
+
+  return value_bits[3];
 }
 //-----------------------------------------------------------------------------
 void XDMFxml::data_attribute(std::string name,
@@ -253,17 +319,21 @@ void XDMFxml::mesh_topology(const std::size_t cell_dim,
                  "output mesh topology",
                  "Invalid combination of cell dim and order");
 
-  // Refer to all cells and dimensions
-  pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
-  xdmf_topology_data.append_attribute("Format") = "HDF";
-  const std::string cell_dims
-    = boost::lexical_cast<std::string>(num_global_cells)
-    + " " + boost::lexical_cast<std::string>(nodes_per_element);
-  xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
+  if (reference.size() > 0)
+  {
+    // Refer to all cells and dimensions
+    pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
+    xdmf_topology_data.append_attribute("Format") = "HDF";
+    const std::string cell_dims
+      = boost::lexical_cast<std::string>(num_global_cells)
+      + " " + boost::lexical_cast<std::string>(nodes_per_element);
+    xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
-  const std::string topology_reference = reference + "/topology";
-  xdmf_topology_data.append_child(pugi::node_pcdata)
-    .set_value(topology_reference.c_str());
+    const std::string topology_reference = reference + "/topology";
+    xdmf_topology_data.append_child(pugi::node_pcdata)
+      .set_value(topology_reference.c_str());
+  }
+
 }
 //----------------------------------------------------------------------------
 void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,

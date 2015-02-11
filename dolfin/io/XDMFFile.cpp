@@ -29,8 +29,6 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "pugixml.hpp"
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -188,6 +186,7 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
     xml.write();
   }
 
+  ++counter;
   hdf5_file->close();
 }
 //----------------------------------------------------------------------------
@@ -438,68 +437,11 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
   }
   dolfin_assert(hdf5_file);
 
-  // Prepare XML file
-  pugi::xml_document xml_doc;
-  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-  if (!result)
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "read mesh from XDMF/H5 files",
-                 "XML parsing error. XDMF file should contain only one mesh/dataset");
-  }
-
-  // Topology - check format and get dataset name
-  pugi::xml_node xdmf_topology
-    = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Topology").child("DataItem");
-  if (!xdmf_topology)
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "read mesh from XDMF/H5 files",
-                 "XML parsing error. XDMF file should contain only one mesh/dataset");
-  }
-
-  const std::string
-    topological_data_format(xdmf_topology.attribute("Format").value());
-  if (topological_data_format != "HDF")
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "read mesh from XDMF/H5 files",
-                 "XML parsing error. Wrong dataset format (not HDF5)");
-  }
-
-  const std::string topo_ref(xdmf_topology.first_child().value());
-  std::vector<std::string> topo_bits;
-  boost::split(topo_bits, topo_ref, boost::is_any_of(":/"));
-
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "topology"
-  dolfin_assert(topo_bits.size() == 5);
-  // FIXME: get path() from filename to check
-  //  dolfin_assert(topo_bits[0] == hdf5_filename);
-  dolfin_assert(topo_bits[2] == "Mesh");
-  dolfin_assert(topo_bits[4] == "topology");
-
-  // Geometry - check format and get dataset name
-  pugi::xml_node xdmf_geometry =
-    xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
-  dolfin_assert(xdmf_geometry);
-
-  const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
-  dolfin_assert(geom_fmt == "HDF");
-
-  const std::string geom_ref(xdmf_geometry.first_child().value());
-  std::vector<std::string> geom_bits;
-  boost::split(geom_bits, geom_ref, boost::is_any_of(":/"));
-
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname",
-  // "coordinates"
-  dolfin_assert(geom_bits.size() == 5);
-  //  dolfin_assert(geom_bits[0] == hdf5_filename);
-  dolfin_assert(geom_bits[2] == "Mesh");
-  dolfin_assert(geom_bits[3] == topo_bits[3]);
-  dolfin_assert(geom_bits[4] == "coordinates");
+  XDMFxml xml(_filename);
+  xml.read();
 
   // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, "/Mesh/" + geom_bits[3], use_partition_from_file);
+  hdf5_file->read(mesh, "/Mesh/" + xml.meshname(), use_partition_from_file);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
@@ -630,17 +572,13 @@ void XDMFFile::write_point_xml(const std::string group_name,
   if (MPI::rank(_mpi_comm) == 0)
   {
     XDMFxml xml(_filename);
+    xml.init_mesh("Point cloud");
 
-    pugi::xml_node xdmf_grid = xml.init_mesh("Point cloud");
-
-    // Describe topological connectivity
-    pugi::xml_node xdmf_topology = xdmf_grid.child("Topology");
-    xdmf_topology.append_attribute("NumberOfElements")
-      = (unsigned int) num_global_points;
-    xdmf_topology.append_attribute("TopologyType") = "PolyVertex";
-    xdmf_topology.append_attribute("NodesPerElement") = "1";
+    // Point topology, no connectivity data
+    xml.mesh_topology(0, 0, num_global_points, "");
 
     // Describe geometric coordinates
+    // FIXME: assumes 3D
     xml.mesh_geometry(num_global_points, 3, current_mesh_name);
 
     if(value_size != 0)
@@ -690,17 +628,17 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Saved MeshFunction values are in the /Mesh group
   const std::string dataset_name = current_mesh_name + "/values";
 
-  // Write the XML meta description (see http://www.xdmf.org) on
-  // process zero
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     XDMFxml xml(_filename);
     const std::string meshfunction_name = meshfunction.name();
     xml.init_timeseries(meshfunction_name, (double)counter, counter);
-    xml.mesh_topology(cell_dim, 1, mesh.size_global(cell_dim), current_mesh_name);
-    xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(), current_mesh_name);
-    xml.data_attribute(meshfunction_name, 1, false, mesh.size_global(0),
-                       mesh.size_global(cell_dim), 0, dataset_name);
+    xml.mesh_topology(cell_dim, 1, mesh.size_global(cell_dim),
+                      current_mesh_name);
+    xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
+                      current_mesh_name);
+    xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
+                       mesh.size_global(cell_dim), 1, dataset_name);
     xml.write();
   }
 
@@ -745,72 +683,18 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 
   dolfin_assert(hdf5_file);
 
-  pugi::xml_document xml_doc;
-  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-  if (!result)
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "read mesh from XDMF/H5 files",
-                 "XML parsing error when reading from file");
-  }
+  XDMFxml xml(_filename);
+  xml.read();
+  const std::string mesh_name = xml.meshname();
+  const std::string data_name = xml.dataname();
 
-  // Topology - check format and get dataset name
-  pugi::xml_node xdmf_topology = xml_doc.child("Xdmf").child("Domain").
-    child("Grid").child("Grid").child("Topology").child("DataItem");
-  dolfin_assert(xdmf_topology);
-
-  const std::string topo_fmt(xdmf_topology.attribute("Format").value());
-  dolfin_assert(topo_fmt == "HDF");
-
-  const std::string topo_ref(xdmf_topology.first_child().value());
-  std::vector<std::string> topo_bits;
-  boost::split(topo_bits, topo_ref, boost::is_any_of(":/"));
-
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "topology"
-  dolfin_assert(topo_bits.size() == 5);
-  //  dolfin_assert(topo_bits[0] == hdf5_filename);
-  dolfin_assert(topo_bits[2] == "Mesh");
-  dolfin_assert(topo_bits[4] == "topology");
-
-  // Geometry - check format and get dataset name
-  pugi::xml_node xdmf_geometry = xml_doc.child("Xdmf").child("Domain").
-    child("Grid").child("Grid").child("Geometry").child("DataItem");
-  dolfin_assert(xdmf_geometry);
-
-  const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
-  dolfin_assert(geom_fmt == "HDF");
-
-  const std::string geom_ref(xdmf_geometry.first_child().value());
-  std::vector<std::string> geom_bits;
-  boost::split(geom_bits, geom_ref, boost::is_any_of(":/"));
-
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname",
-  // "coordinates"
-  dolfin_assert(geom_bits.size() == 5);
-  //  dolfin_assert(geom_bits[0] == hdf5_filename);
-  dolfin_assert(geom_bits[2] == "Mesh");
-  dolfin_assert(geom_bits[3] == topo_bits[3]);
-  dolfin_assert(geom_bits[4] == "coordinates");
-
-  // Values - check format and get dataset name
-  pugi::xml_node xdmf_values = xml_doc.child("Xdmf").child("Domain").
-    child("Grid").child("Grid").child("Attribute").child("DataItem");
-  dolfin_assert(xdmf_values);
-
-  const std::string value_fmt(xdmf_values.attribute("Format").value());
-  dolfin_assert(value_fmt == "HDF");
-
-  const std::string value_ref(xdmf_values.first_child().value());
-  std::vector<std::string> value_bits;
-  boost::split(value_bits, value_ref, boost::is_any_of(":/"));
-  dolfin_assert(value_bits.size() == 5);
-  //  dolfin_assert(geom_bits[0] == hdf5_filename);
-  dolfin_assert(value_bits[2] == "Mesh");
-  dolfin_assert(value_bits[3] == topo_bits[3]);
-  dolfin_assert(value_bits[4] == "values");
+  if (mesh_name != data_name)
+    dolfin_error("XMDFFile.cpp",
+                 "read MeshFunction",
+                 "Data and Mesh names do not match in XDMF");
 
   // Try to read the meshfunction from the associated HDF5 file
-  hdf5_file->read(meshfunction, "/Mesh/" + geom_bits[3]);
+  hdf5_file->read(meshfunction, "/Mesh/" + mesh_name);
 }
 //----------------------------------------------------------------------------
 #endif
