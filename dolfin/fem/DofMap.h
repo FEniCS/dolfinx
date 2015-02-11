@@ -161,15 +161,6 @@ namespace dolfin
     ///         Number of dofs associated with given entity dimension
     virtual std::size_t num_entity_dofs(std::size_t dim) const;
 
-    /// DEPRECATED
-    /// Return the geometric dimension of the coordinates this dof map
-    /// provides
-    ///
-    /// *Returns*
-    ///     std::size_t
-    ///         The geometric dimension.
-    std::size_t geometric_dimension() const;
-
     /// Return number of facet dofs
     ///
     /// *Returns*
