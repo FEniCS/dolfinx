@@ -78,7 +78,6 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
 
   // Initialise
   init(method, preconditioner);
-  _init_parameters();
 }
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::~EigenKrylovSolver()
@@ -311,8 +310,11 @@ void EigenKrylovSolver::init(const std::string method,
   }
 
   // Set method and preconditioner
-  _method = method;
+  _method = method == "default" ? "gmres" : method;
   _pc = pc;
+
+  // Prepare parameters according to chosen method
+  _init_parameters();
 }
 //-----------------------------------------------------------------------------
 template <typename Solver>
