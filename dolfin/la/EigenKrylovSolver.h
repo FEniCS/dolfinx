@@ -29,16 +29,13 @@ namespace dolfin
 {
 
   /// Forward declarations
-  class GenericMatrix;
-  class GenericVector;
   class EigenMatrix;
   class EigenVector;
-  class EigenPreconditioner;
-  //  class EigenUserPreconditioner;
+  class GenericMatrix;
+  class GenericVector;
 
-  /// This class implements Krylov methods for linear systems
-  /// of the form Ax = b. It is a wrapper for the Krylov solvers
-  /// of Eigen.
+  /// This class implements Krylov methods for linear systems of the
+  /// form Ax = b. It is a wrapper for the Krylov solvers of Eigen.
 
   class EigenKrylovSolver : public GenericLinearSolver
   {
@@ -46,27 +43,8 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and names
     /// preconditioner
-    EigenKrylovSolver(std::string method = "default",
-                      std::string preconditioner = "default");
-
-    /// Create Krylov solver for a particular method and
-    /// EigenPreconditioner
-    EigenKrylovSolver(std::string method, EigenPreconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// EigenPreconditioner (shared_ptr version)
-    EigenKrylovSolver(std::string method,
-                      std::shared_ptr<EigenPreconditioner> preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// EigenPreconditioner
-    //  EigenKrylovSolver(std::string method,
-    //                      EigenUserPreconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// EigenPreconditioner (shared_ptr version)
-    //    EigenKrylovSolver(std::string method,
-    //		    std::shared_ptr<EigenUserPreconditioner> preconditioner);
+    EigenKrylovSolver(std::string method="default",
+                      std::string preconditioner="default");
 
     /// Destructor
     ~EigenKrylovSolver();
@@ -106,10 +84,10 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
 
     /// Return a list of available preconditioners
-    static std::vector<std::pair<std::string, std::string> > preconditioners();
+    static std::map<std::string, std::string> preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -117,26 +95,22 @@ namespace dolfin
   private:
 
     // Initialize solver
-    void init(const std::string& method);
+    void init(const std::string method, const std::string pc="default");
 
     // Call with an actual solver
     template <typename Solver>
-    std::size_t call_solver(Solver& solver,
-                            GenericVector& x,
+    std::size_t call_solver(Solver& solver, GenericVector& x,
                             const GenericVector& b);
 
-    // Chosen method
+    // Chosen Krylov method
     std::string _method;
 
-    // Available solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> >
-      _methods_descr;
+    // Chosen Eigen precondtioner method
+    std::string _pc;
 
-    // DOLFIN-defined EigenUserPreconditioner
-    //    EigenUserPreconditioner* pc_dolfin;
-
-    // Preconditioner
-    std::shared_ptr<EigenPreconditioner> _preconditioner;
+    // Available solvers and preconditioner descriptions
+    static const std::map<std::string, std::string> _methods_descr;
+    static const std::map<std::string, std::string> _pcs_descr;
 
     // Operator (the matrix)
     std::shared_ptr<const EigenMatrix> _matA;

@@ -21,7 +21,6 @@
 #include <sstream>
 #include <unordered_set>
 
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include "EigenVector.h"
@@ -38,7 +37,6 @@ EigenVector::EigenVector() : _x(new Eigen::VectorXd)
 //-----------------------------------------------------------------------------
 EigenVector::EigenVector(std::size_t N) : _x(new Eigen::VectorXd(N))
 {
-  // Set all entries to zero
   _x->setZero();
 }
 //-----------------------------------------------------------------------------
@@ -321,7 +319,6 @@ const EigenVector& EigenVector::operator-= (double a)
 std::string EigenVector::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;

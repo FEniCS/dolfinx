@@ -26,19 +26,17 @@ GenericLinearAlgebraFactory& EigenMatrix::factory() const
   return EigenFactory::instance();
 }
 //---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix() : GenericMatrix(), _matA(0, 0)
-{
-// Do nothing
-}
-//---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix(std::size_t M, std::size_t N)
-  : GenericMatrix(), _matA(M, N)
+EigenMatrix::EigenMatrix() : _matA(0, 0)
 {
   // Do nothing
 }
 //---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix(const EigenMatrix& A)
-  : GenericMatrix(), _matA(A._matA)
+EigenMatrix::EigenMatrix(std::size_t M, std::size_t N) : _matA(M, N)
+{
+  // Do nothing
+}
+//---------------------------------------------------------------------------
+EigenMatrix::EigenMatrix(const EigenMatrix& A) : _matA(A._matA)
 {
   // Do nothing
 }
@@ -50,14 +48,14 @@ EigenMatrix::~EigenMatrix()
 //---------------------------------------------------------------------------
 std::shared_ptr<GenericMatrix> EigenMatrix::copy() const
 {
-  std::shared_ptr<GenericMatrix> A(new EigenMatrix(*this));
-  return A;
+  return std::shared_ptr<GenericMatrix>(new EigenMatrix(*this));
 }
 //---------------------------------------------------------------------------
 void EigenMatrix::resize(std::size_t M, std::size_t N)
 {
+  // FIXME: Do we want to allow this?
   // Resize matrix
-  if( size(0) != M || size(1) != N )
+  if(size(0) != M || size(1) != N)
     _matA.resize(M, N);
 }
 //---------------------------------------------------------------------------
@@ -70,7 +68,6 @@ std::size_t EigenMatrix::size(std::size_t dim) const
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
 
-  dolfin_assert(dim < 2);
   return (dim == 0 ? _matA.rows() : _matA.cols());
 }
 //---------------------------------------------------------------------------
@@ -78,19 +75,15 @@ double EigenMatrix::norm(std::string norm_type) const
 {
   if (norm_type == "l2")
     return _matA.squaredNorm();
-  //  else if (norm_type == "l1")
-  //    return _matA.lpNorm<1>();
-  //  else if (norm_type == "linf")
-  //    return _matA.lpNorm<Eigen::Infinity>();
   else if (norm_type == "frobenius")
     return _matA.norm();
   else
   {
-  dolfin_error("EigenMatrix.h",
-               "compute norm of Eigen matrix",
-               "Unknown norm type (\"%s\")",
-               norm_type.c_str());
-  return 0.0;
+    dolfin_error("EigenMatrix.h",
+                 "compute norm of Eigen matrix",
+                 "Unknown norm type (\"%s\")",
+                 norm_type.c_str());
+    return 0.0;
   }
 }
 //---------------------------------------------------------------------------
@@ -100,21 +93,18 @@ void EigenMatrix::getrow(std::size_t row_idx,
 {
   dolfin_assert(row_idx < this->size(0));
 
-  // Insert values into std::vectors
-  columns.clear();
-  values.clear();
-
   // Check storage is RowMajor
   if (!eigen_matrix_type::IsRowMajor)
     error("Cannot get row from ColMajor matrix");
 
-  for (eigen_matrix_type::InnerIterator
-         it(_matA, row_idx); it; ++it)
+  // Insert values into std::vectors
+  columns.clear();
+  values.clear();
+  for (eigen_matrix_type::InnerIterator it(_matA, row_idx); it; ++it)
   {
     columns.push_back(it.index());
     values.push_back(it.value());
   }
-
 }
 //----------------------------------------------------------------------------
 void EigenMatrix::setrow(std::size_t row_idx,
@@ -123,7 +113,6 @@ void EigenMatrix::setrow(std::size_t row_idx,
 {
   dolfin_assert(columns.size() == values.size());
   dolfin_assert(row_idx < this->size(0));
-
   for(std::size_t i = 0; i < columns.size(); i++)
     _matA.coeffRef(row_idx, columns[i]) = values[i];
 }
@@ -169,59 +158,6 @@ void EigenMatrix::get(double* block, std::size_t m,
   }
 }
 //---------------------------------------------------------------------------
-// void EigenMatrix::lump(EigenVector& m) const
-// {
-//   const std::size_t n = size(1);
-//   m.init(mpi_comm(), n);
-//   m.zero();
-//   ublas::scalar_vector<double> one(n, 1.0);
-//   ublas::axpy_prod(_matA, one, m.vec(), true);
-// }
-// //----------------------------------------------------------------------------
-// template <typename Mat>
-// void EigenMatrix<Mat>::solve(EigenVector& x, const EigenVector& b) const
-// {
-//   // Make copy of matrix and vector
-//   EigenMatrix<Mat> Atemp;
-//   Atemp.mat().resize(size(0), size(1));
-//   Atemp.mat().assign(_matA);
-//   x.vec().resize(b.vec().size());
-//   x.vec().assign(b.vec());
-
-//   // Solve
-//   Atemp.solve_in_place(x.vec());
-// }
-// //----------------------------------------------------------------------------
-// template <typename Mat>
-// void EigenMatrix<Mat>::solve_in_place(EigenVector& x, const EigenVector& b)
-// {
-//   const std::size_t M = _matA.size1();
-//   dolfin_assert(M == b.size());
-
-//   // Initialise solution vector
-//   if( x.vec().size() != M )
-//     x.vec().resize(M);
-//   x.vec().assign(b.vec());
-
-//   // Solve
-//   solve_in_place(x.vec());
-// }
-// //----------------------------------------------------------------------------
-// template <typename Mat>
-// void EigenMatrix<Mat>::invert()
-// {
-//   const std::size_t M = _matA.size1();
-//   dolfin_assert(M == _matA.size2());
-
-//   // Create identity matrix
-//   Mat X(M, M);
-//   X.assign(ublas::identity_matrix<double>(M));
-
-//   // Solve
-//   solve_in_place(X);
-//   _matA.assign_temporary(X);
-// }
-//---------------------------------------------------------------------------
 void EigenMatrix::zero()
 {
   // Set to zero whilst keeping the non-zero pattern
@@ -232,7 +168,6 @@ void EigenMatrix::zero()
 //----------------------------------------------------------------------------
 void EigenMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 {
-  dolfin_assert(rows || m==0);
   for(const dolfin::la_index* i_ptr = rows; i_ptr != rows + m; ++i_ptr)
     for (eigen_matrix_type::InnerIterator it(_matA, *i_ptr); it; ++it)
       it.valueRef() = 0.0;
@@ -240,7 +175,6 @@ void EigenMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 //----------------------------------------------------------------------------
 void EigenMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
-  dolfin_assert(rows || m==0);
   bool diagonal_unset;
   const dolfin::la_index num_cols = size(1);
 
@@ -274,7 +208,6 @@ void EigenMatrix::mult(const GenericVector& x, GenericVector& y) const
 {
   const EigenVector& xx = as_type<const EigenVector>(x);
   EigenVector& yy = as_type<EigenVector>(y);
-
   if (size(1) != xx.size())
   {
     dolfin_error("EigenMatrix.h",
@@ -306,7 +239,6 @@ void EigenMatrix::set_diagonal(const GenericVector& x)
   }
 
   const Eigen::VectorXd& xx = x.down_cast<EigenVector>().vec();
-
   for (std::size_t i = 0; i != x.size(); ++i)
     _matA.coeffRef(i, i) = xx[i];
 }
@@ -361,23 +293,14 @@ EigenMatrix& EigenMatrix::operator= (const EigenMatrix& A)
 {
   // Check for self-assignment
   if (this != &A)
-  {
     _matA = A.mat();
-  }
+
   return *this;
 }
-//----------------------------------------------------------------------------
-// void EigenMatrix::compress()
-// {
-//   Mat A_temp(this->size(0), this->size(1));
-//   A_temp.assign(_matA);
-//   _matA.swap(A_temp);
-// }
 //----------------------------------------------------------------------------
 std::string EigenMatrix::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
@@ -396,9 +319,7 @@ std::string EigenMatrix::str(bool verbose) const
     }
   }
   else
-  {
     s << "<EigenMatrix of size " << size(0) << " x " << size(1) << ">";
-  }
 
   return s.str();
 }
@@ -433,7 +354,7 @@ EigenMatrix::init(const TensorLayout& tensor_layout)
   // Add entries for RowMajor matrix
   for (std::size_t i = 0; i != pattern.size(); ++i)
   {
-    for (const auto &j : pattern[i])
+    for (auto j : pattern[i])
       _matA.insert(i, j) = 0.0;
   }
 }
@@ -445,7 +366,7 @@ std::size_t EigenMatrix::nnz() const
 //---------------------------------------------------------------------------
 void EigenMatrix::apply(std::string mode)
 {
-  // Make sure matrix assembly is complete
+  // Nothing to do
 }
 //---------------------------------------------------------------------------
 void EigenMatrix::axpy(double a, const GenericMatrix& A,

@@ -37,10 +37,9 @@ LinearSolver::LinearSolver(std::string method,
   DefaultFactory factory;
 
   // Get list of available methods
-  std::vector<std::pair<std::string, std::string> >
-    lu_methods = factory.lu_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
-    krylov_methods = factory.krylov_solver_methods();
+  std::map<std::string, std::string> lu_methods = factory.lu_solver_methods();
+  std::map<std::string, std::string> krylov_methods
+    = factory.krylov_solver_methods();
 
   // Handle some default and generic solver options
   if (method == "default")
@@ -159,14 +158,9 @@ std::size_t LinearSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-bool
-LinearSolver::in_list(const std::string& method,
-                      const std::vector<std::pair<std::string, std::string> > methods)
+bool LinearSolver::in_list(const std::string& method,
+                           const std::map<std::string, std::string>& methods)
 {
-  for (std::size_t i = 0; i < methods.size(); i++)
-    if (method == methods[i].first)
-      return true;
-
-  return false;
+  return methods.find(method) != methods.end();
 }
 //-----------------------------------------------------------------------------

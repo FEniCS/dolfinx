@@ -15,30 +15,38 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef __EIGEN_MATRIX_H
-#define __EIGEN_MATRIX_H
+#ifndef __DOLFIN_EIGEN_MATRIX_H
+#define __DOLFIN_EIGEN_MATRIX_H
 
-#include <string>
 #include <iomanip>
+#include <memory>
+#include <string>
 #include <utility>
 #include <vector>
-#include <memory>
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/log/dolfin_log.h>
-
 #include <Eigen/Sparse>
 
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
+
+#include "EigenVector.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "EigenVector.h"
 #include "SparsityPattern.h"
 #include "TensorLayout.h"
 
 namespace dolfin
 {
-  typedef Eigen::SparseMatrix<double, Eigen::RowMajor> eigen_matrix_type;
+  typedef Eigen::SparseMatrix<double, Eigen::RowMajor, dolfin::la_index>
+  eigen_matrix_type;
+
+  /// This class provides a sparse matrix class based on Eigen.
+  /// It is a simple wrapper for Eigen::SparseMatrix implementing the
+  /// GenericMatrix interface.
+  ///
+  /// The interface is intentionally simple. For advanced usage,
+  /// access the underlying Eigen matrix and use the standard Eigen
+  /// interface which is documented at http://eigen.tuxfamily.org
+
 
   class EigenMatrix : public GenericMatrix
   {
@@ -98,8 +106,7 @@ namespace dolfin
     virtual void resize(std::size_t M, std::size_t N);
 
     /// Initialise vector z to be compatible with the matrix-vector product
-    /// y = Ax. In the parallel case, both size and layout are
-    /// important.
+    /// y = Ax.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
@@ -180,11 +187,6 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
-    /// Return pointers to underlying compressed storage data
-    /// See GenericMatrix for documentation.
-    //    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
-    //                                 const double*, int> data() const;
-
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -200,23 +202,9 @@ namespace dolfin
     eigen_matrix_type& mat()
     { return _matA; }
 
-    /// Solve Ax = b out-of-place using Eigen (A is not destroyed)
-    //    void solve(EigenVector& x, const EigenVector& b) const;
-
-    /// Solve Ax = b in-place using Eigen(A is destroyed)
-    //    void solve_in_place(EigenVector& x, const EigenVector& b);
-
-    /// Compute inverse of matrix
-    //    void invert();
-
-    /// Lump matrix into vector m
-    //    void lump(EigenVector& m) const;
-
     /// Compress matrix (eliminate all zeros from a sparse matrix)
     void compress()
-    {
-      _matA.makeCompressed();
-    }
+    {  _matA.makeCompressed(); }
 
     /// Access value of given entry
     double operator() (dolfin::la_index i, dolfin::la_index j) const
@@ -231,7 +219,6 @@ namespace dolfin
     eigen_matrix_type _matA;
 
   };
-  //---------------------------------------------------------------------------
 }
 
 #endif

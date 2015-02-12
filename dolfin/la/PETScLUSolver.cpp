@@ -74,7 +74,7 @@ PETScLUSolver::_methods_cholesky
     {MAT_SOLVER_SUPERLU_DIST, false},
     {MAT_SOLVER_PETSC,        true} };
 //-----------------------------------------------------------------------------
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
 PETScLUSolver::_methods_descr
 = { {"default", "default LU solver"},
 #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
@@ -95,7 +95,7 @@ PETScLUSolver::_methods_descr
     {"petsc", "PETSc built in LU solver"} };
 
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 PETScLUSolver::methods()
 {
   return PETScLUSolver::_methods_descr;

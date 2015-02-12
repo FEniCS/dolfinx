@@ -17,47 +17,50 @@
 //
 // First added:  2015-02-04
 
+#include <iostream> // Seem to be missing some Eigen headers
+#include <map>
+#include <string>
+#include <Eigen/IterativeLinearSolvers>
+#include <Eigen/../unsupported/Eigen/IterativeSolvers>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
+#include "EigenMatrix.h"
+#include "EigenVector.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
-#include "EigenMatrix.h"
-#include "EigenPreconditioner.h"
-// #include "EigenUserPreconditioner.h"
-#include "EigenVector.h"
 #include "EigenKrylovSolver.h"
-
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/../unsupported/Eigen/IterativeSolvers>
 
 using namespace dolfin;
 
 // Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> >
-EigenKrylovSolver::_methods_descr =
-{ {"default",    "default Krylov method"},
-  {"cg",         "Conjugate gradient method"},
-  {"bicgstab_ilut",   "Biconjugate gradient stabilized method (ILU)"},
-  {"bicgstab",   "Biconjugate gradient stabilized method"},
-  {"minres",   "Minimal residual"},
-  {"gmres", "Generalised minimal residual (GMRES)"}};
+const std::map<std::string, std::string>
+EigenKrylovSolver::_methods_descr
+= { {"default",  "default Eigen Krylov method"},
+    {"cg",       "Conjugate gradient method"},
+    {"bicgstab", "Biconjugate gradient stabilized method"},
+    {"minres",   "Minimal residual"},
+    {"gmres",    "Generalised minimal residual (GMRES)"}};
+
+// Mapping from preconditioner string to description
+const std::map<std::string, std::string>
+EigenKrylovSolver::_pcs_descr
+= { {"default", "default"},
+    {"none",    "None"},
+    {"jacobi",  "Jacobi"},
+    {"ilu",     "Incomplete LU"} };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EigenKrylovSolver::methods()
+std::map<std::string, std::string> EigenKrylovSolver::methods()
 {
   return EigenKrylovSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EigenKrylovSolver::preconditioners()
+std::map<std::string, std::string> EigenKrylovSolver::preconditioners()
 {
-  std::vector<std::pair<std::string, std::string> > pc
-    = { {"default", "default"} };
-
-  return pc;
+  return EigenKrylovSolver::_pcs_descr;
 }
 //-----------------------------------------------------------------------------
 Parameters EigenKrylovSolver::default_parameters()
@@ -73,55 +76,10 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
   // Set parameter values
   parameters = default_parameters();
 
-  init(method);
+  // Initialise
+  init(method, preconditioner);
   _init_parameters();
 }
-//-----------------------------------------------------------------------------
-EigenKrylovSolver::EigenKrylovSolver(std::string method,
-                                     EigenPreconditioner& preconditioner)
-  : _preconditioner(reference_to_no_delete_pointer(preconditioner))
-{
-  // Set parameter values
-  parameters = default_parameters();
-
-  init(method);
-  _init_parameters();
-}
-//-----------------------------------------------------------------------------
-EigenKrylovSolver::EigenKrylovSolver(std::string method,
-  std::shared_ptr<EigenPreconditioner> preconditioner)
-  : _preconditioner(preconditioner)
-{
-  // Set parameter values
-  parameters = default_parameters();
-
-  init(method);
-  _init_parameters();
-}
-//-----------------------------------------------------------------------------
-// EigenKrylovSolver::EigenKrylovSolver(std::string method,
-//                                      EigenUserPreconditioner& preconditioner)
-//   : pc_dolfin(&preconditioner),
-//     preconditioner_set(false)
-// {
-//   // Set parameter values
-//   parameters = default_parameters();
-
-//   init(method);
-//   _init_parameters();
-// }
-//-----------------------------------------------------------------------------
-// EigenKrylovSolver::EigenKrylovSolver(std::string method,
-//   std::shared_ptr<EigenUserPreconditioner> preconditioner)
-//   : pc_dolfin(preconditioner.get()),
-//     preconditioner_set(false)
-// {
-//   // Set parameter values
-//   parameters = default_parameters();
-
-//   init(method);
-//   _init_parameters();
-// }
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::~EigenKrylovSolver()
 {
@@ -147,9 +105,8 @@ void EigenKrylovSolver::set_operators(
                 as_type<const EigenMatrix>(P));
 }
 //-----------------------------------------------------------------------------
-void
-EigenKrylovSolver::set_operators(std::shared_ptr<const EigenMatrix> A,
-                                 std::shared_ptr<const EigenMatrix> P)
+void EigenKrylovSolver::set_operators(std::shared_ptr<const EigenMatrix> A,
+                                      std::shared_ptr<const EigenMatrix> P)
 {
   _matA = A;
   _matP = P;
@@ -185,9 +142,8 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
 {
   Timer timer("Eigen Krylov solver");
 
-  dolfin_assert(_matA);
-
   // Check dimensions
+  dolfin_assert(_matA);
   if (_matA->size(0) != b.size())
   {
     dolfin_error("EigenKrylovSolver.cpp",
@@ -196,7 +152,7 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
                  _matA->size(0), b.size());
   }
 
-  // Reinitialize solution vector if necessary
+  // Re-initialize solution vector if necessary
   if (x.empty())
   {
     _matA->init_vector(x, 1);
@@ -210,28 +166,103 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
 
   if (_method == "cg")
   {
-    Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower> solver;
-    num_iterations = call_solver(solver, x, b);
+    if (_pc == "none")
+    {
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower,
+                               Eigen::IdentityPreconditioner> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "jacobi")
+    {
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower,
+                               Eigen::DiagonalPreconditioner<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "ilu")
+    {
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower,
+                               Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else
+    {
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
   }
   else if (_method == "bicgstab")
   {
-    Eigen::BiCGSTAB<eigen_matrix_type> solver;
-    num_iterations = call_solver(solver, x, b);
-  }
-  else if (_method == "bicgstab_ilut")
-  {
-    Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IncompleteLUT<double> > solver;
-    num_iterations = call_solver(solver, x, b);
+    if (_pc == "none")
+    {
+      Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IdentityPreconditioner> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "jacobi")
+    {
+      Eigen::BiCGSTAB<eigen_matrix_type,
+                      Eigen::DiagonalPreconditioner<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "ilu")
+    {
+      Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else
+    {
+      Eigen::BiCGSTAB<eigen_matrix_type> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
   }
   else if (_method == "gmres")
   {
-    Eigen::GMRES<eigen_matrix_type, Eigen::IncompleteLUT<double> > solver;
-    num_iterations = call_solver(solver, x, b);
+    if (_pc == "none")
+    {
+      Eigen::GMRES<eigen_matrix_type, Eigen::IdentityPreconditioner> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "jacobi")
+    {
+      Eigen::GMRES<eigen_matrix_type,
+                   Eigen::DiagonalPreconditioner<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "ilu")
+    {
+      Eigen::GMRES<eigen_matrix_type, Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else
+    {
+      Eigen::GMRES<eigen_matrix_type> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
   }
   else if (_method == "minres")
   {
-    Eigen::MINRES<eigen_matrix_type, Eigen::Upper|Eigen::Lower> solver;
-    num_iterations = call_solver(solver, x, b);
+    if (_pc == "none")
+    {
+      Eigen::MINRES<eigen_matrix_type, Eigen::Upper|Eigen::Lower,
+                    Eigen::IdentityPreconditioner> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "jacobi")
+    {
+      Eigen::MINRES<eigen_matrix_type, Eigen::Upper|Eigen::Lower,
+                    Eigen::DiagonalPreconditioner<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else if (_pc == "ilu")
+    {
+      Eigen::MINRES<eigen_matrix_type, Eigen::Upper|Eigen::Lower,
+                    Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
+    else
+    {
+      Eigen::MINRES<eigen_matrix_type> solver;
+      num_iterations = call_solver(solver, x, b);
+    }
   }
 
   return num_iterations;
@@ -252,39 +283,36 @@ std::string EigenKrylovSolver::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
-    s << "Eigen Krylov Solver";
+    s << "Eigen Krylov Solver (" << _method << ", "
+      << _pc << ")" << std::endl;
   else
     s << "<EigenKrylovSolver>";
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EigenKrylovSolver::init(const std::string& method)
+void EigenKrylovSolver::init(const std::string method,
+                             const std::string pc)
 {
-
-  // Check that the requested method is known
-  bool method_ok = false;
-  for (auto &m : _methods_descr)
-  {
-    if (m.first == method)
-    {
-      method_ok = true;
-      break;
-    }
-  }
-
-  if (!method_ok)
+  // Check that the requested solver method is known
+  if (_methods_descr.find(method) == _methods_descr.end())
   {
     dolfin_error("EigenKrylovSolver.cpp",
                  "create Eigen Krylov solver",
                  "Unknown Krylov method \"%s\"", method.c_str());
   }
 
-  // Define default method
-  if (method == "default")
-    _method = "cg";
-  else
-    _method = method;
+  // Check that the requested preconditioner is known
+  if (_pcs_descr.find(pc) == _pcs_descr.end())
+  {
+    dolfin_error("EigenKrylovSolver.cpp",
+                 "create Eigen Krylov solver",
+                 "Unknown preconditioner \"%s\"", pc.c_str());
+  }
+
+  // Set method and preconditioner
+  _method = method;
+  _pc = pc;
 }
 //-----------------------------------------------------------------------------
 template <typename Solver>
@@ -319,13 +347,22 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
     _x.vec() = solver.solve(_b.vec());
   const int num_iterations = solver.iterations();
 
+  bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
   if (solver.info() != Eigen::Success)
   {
     if (num_iterations >= max_iterations)
     {
-      dolfin_error("EigenKrylovSolver.cpp",
-                   "solve A.x = b",
-                   "Max iterations (%d) exceeded", max_iterations);
+      if (error_on_nonconvergence)
+      {
+        dolfin_error("EigenKrylovSolver.cpp",
+                     "solve A.x = b",
+                     "Max iterations (%d) exceeded", max_iterations);
+      }
+      else
+      {
+        warning("Krylov solver did not converge in %i iterations",
+                max_iterations);
+      }
     }
     else
     {
@@ -362,8 +399,7 @@ double EigenKrylovSolver::_compute_tolerance(const EigenMatrix& A,
                                              const EigenVector& x,
                                              const EigenVector& b) const
 {
-  if (_method == "cg" || _method == "bicgstab" || _method == "minres"
-      || _method == "bicgstab_ilut")
+  if (_method == "cg" || _method == "bicgstab" || _method == "minres")
   {
     const double atol = parameters["absolute_tolerance"];
     const double rtol = parameters["relative_tolerance"];

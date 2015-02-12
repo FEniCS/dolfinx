@@ -17,14 +17,8 @@
 //
 // First added:  2015-02-03
 
-#include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/parameter/GlobalParameters.h>
-
-// #define EIGEN_CHOLMOD_SUPPORT 1
-// #define EIGEN_UMFPACK_SUPPORT 1
-
 #include <Eigen/SparseLU>
+
 #ifdef EIGEN_CHOLMOD_SUPPORT
 // Works with Cholmod downloaded by PETSc
 #include <Eigen/CholmodSupport>
@@ -46,15 +40,18 @@
 #include <Eigen/PaStiXSupport>
 #endif
 
-#include "LUSolver.h"
+#include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "EigenMatrix.h"
 #include "EigenVector.h"
+#include "LUSolver.h"
 #include "EigenLUSolver.h"
 
 using namespace dolfin;
 
 // List of available LU solvers
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
 EigenLUSolver::_methods_descr
 = { {"default", "default LU solver"},
     {"sparselu", "Supernodal LU factorization for general matrices"},
@@ -76,8 +73,7 @@ EigenLUSolver::_methods_descr
 #endif
 };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EigenLUSolver::methods()
+std::map<std::string, std::string> EigenLUSolver::methods()
 {
   return EigenLUSolver::_methods_descr;
 }
@@ -86,7 +82,6 @@ Parameters EigenLUSolver::default_parameters()
 {
   Parameters p(LUSolver::default_parameters());
   p.rename("eigen_lu_solver");
-
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -154,8 +149,7 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b)
   return solve(x, b, false);
 }
 //-----------------------------------------------------------------------------
-std::size_t EigenLUSolver::solve(GenericVector& x,
-                                 const GenericVector& b,
+std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
                                  bool transpose)
 {
   if (_method == "sparselu")
@@ -215,12 +209,10 @@ std::size_t EigenLUSolver::solve(GenericVector& x,
 }
 //-----------------------------------------------------------------------------
 template <typename Solver>
-void EigenLUSolver::call_solver(Solver& solver,
-                                GenericVector& x,
-                                const GenericVector& b,
-                                bool transpose)
+void EigenLUSolver::call_solver(Solver& solver, GenericVector& x,
+                                const GenericVector& b, bool transpose)
 {
-  std::string timer_title = "Eigen LU solver (" + _method + ")";
+  const std::string timer_title = "Eigen LU solver (" + _method + ")";
   Timer timer(timer_title);
 
   dolfin_assert(_matA);
@@ -251,8 +243,12 @@ void EigenLUSolver::call_solver(Solver& solver,
   else
     _A = _matA->mat();
 
+  // FIXME: Do we want this? It could affect re-assembly performance
+  // Compress matrix
+  // Most solvers require a compressed matrix
   _A.makeCompressed();
 
+  // Factorize matrix
   solver.compute(_A);
 
   if (solver.info() != Eigen::Success)
@@ -292,7 +288,7 @@ std::size_t EigenLUSolver::solve(const EigenMatrix& A, EigenVector& x,
 std::size_t EigenLUSolver::solve_transpose(GenericVector& x,
                                            const GenericVector& b)
 {
-return solve(x, b, true);
+  return solve(x, b, true);
 }
 //-----------------------------------------------------------------------------
 std::size_t EigenLUSolver::solve_transpose(const GenericLinearOperator& A,
@@ -316,35 +312,26 @@ std::size_t EigenLUSolver::solve_transpose(const EigenMatrix& A,
 std::string EigenLUSolver::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
-  {
-    s << "Eigen LUSolver\n";
-  }
+    s << "Eigen LUSolver (" << _method << ")" << std::endl;
   else
     s << "<EigenLUSolver>";
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-const std::string EigenLUSolver::select_solver(std::string& method) const
+std::string EigenLUSolver::select_solver(const std::string method) const
 {
-  // Choose appropriate 'default' solver
   if (method == "default")
-    method = "sparselu";
+    return "sparselu";
 
-  // Check package string
-  for (auto &m : _methods_descr)
+  if (_methods_descr.find(method) == _methods_descr.end())
   {
-    if (m.first == method)
-      return method;
+    dolfin_error("EigenLUSolver.cpp",
+                 "solve linear system using Eigen LU solver",
+                 "Unknown LU method \"%s\"", method.c_str());
   }
 
-  dolfin_error("EigenLUSolver.cpp",
-               "solve linear system using Eigen LU solver",
-               "Unknown LU method \"%s\"", method.c_str());
-
-  // Never reach here
   return method;
 }
 //-----------------------------------------------------------------------------

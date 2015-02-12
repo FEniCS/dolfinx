@@ -53,7 +53,7 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
     {"bicgstab",   KSPBCGS} };
 //-----------------------------------------------------------------------------
 // Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
   TAOLinearBoundSolver::_methods_descr
 = { {"default"  ,  "Default Tao method (tao_tron)"},
     {"tron" ,  "Newton Trust Region method"},
@@ -61,19 +61,19 @@ const std::vector<std::pair<std::string, std::string> >
     {"gpcg" ,  "Gradient Projection Conjugate Gradient"},
     {"blmvm",  "Limited memory variable metric method"} };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::methods()
 {
   return TAOLinearBoundSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::krylov_solvers()
 {
   return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::preconditioners()
 {
   return PETScPreconditioner::preconditioners();

@@ -18,13 +18,14 @@
 #ifndef __EIGEN_VECTOR_H
 #define __EIGEN_VECTOR_H
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <memory>
+#include <Eigen/Dense>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <Eigen/Dense>
 #include "GenericVector.h"
 
 namespace dolfin
@@ -38,8 +39,7 @@ namespace dolfin
   ///
   /// The interface is intentionally simple. For advanced usage,
   /// access the underlying Eigen vector and use the standard Eigen
-  /// interface which is documented at
-  /// .
+  /// interface which is documented at http://eigen.tuxfamily.org
 
   class EigenVector : public GenericVector
   {

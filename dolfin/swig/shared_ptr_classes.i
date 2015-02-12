@@ -164,6 +164,8 @@
             boost::numeric::ublas::row_major> >)
 %shared_ptr(dolfin::uBLASVector)
 
+%shared_ptr(dolfin::EigenKrylovSolver)
+%shared_ptr(dolfin::EigenLUSolver)
 %shared_ptr(dolfin::EigenMatrix)
 %shared_ptr(dolfin::EigenVector)
 

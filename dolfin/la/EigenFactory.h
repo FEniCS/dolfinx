@@ -20,6 +20,7 @@
 #ifndef __EIGEN_FACTORY_H
 #define __EIGEN_FACTORY_H
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -71,7 +72,7 @@ namespace dolfin
     std::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
       dolfin_not_implemented();
-      std::shared_ptr<GenericLinearOperator> A;//(new EigenLinearOperator);
+      std::shared_ptr<GenericLinearOperator> A;
       return A;
     }
 
@@ -92,25 +93,16 @@ namespace dolfin
     }
 
     /// Return a list of available LU solver methods
-    std::vector<std::pair<std::string, std::string> >
-      lu_solver_methods() const
-    {
-      return EigenLUSolver::methods();
-    }
+    std::map<std::string, std::string> lu_solver_methods() const
+    { return EigenLUSolver::methods(); }
 
     /// Return a list of available Krylov solver methods
-    std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const
-    {
-      return EigenKrylovSolver::methods();
-    }
+    std::map<std::string, std::string> krylov_solver_methods() const
+    { return EigenKrylovSolver::methods(); }
 
     /// Return a list of available preconditioners
-    std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const
-    {
-      return EigenKrylovSolver::preconditioners();
-    }
+    std::map<std::string, std::string> krylov_solver_preconditioners() const
+    { return EigenKrylovSolver::preconditioners(); }
 
     /// Return singleton instance
     static EigenFactory& instance()

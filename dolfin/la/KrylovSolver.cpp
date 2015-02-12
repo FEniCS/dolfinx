@@ -159,9 +159,9 @@ void KrylovSolver::init(std::string method, std::string preconditioner)
   DefaultFactory factory;
 
   // Get list of available methods and preconditioners
-  std::vector<std::pair<std::string, std::string> >
+  const std::map<std::string, std::string>
     methods = factory.krylov_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
+  const std::map<std::string, std::string>
     preconditioners = factory.krylov_solver_preconditioners();
 
   // Check that method is available
