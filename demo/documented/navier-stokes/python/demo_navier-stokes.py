@@ -119,7 +119,9 @@ while t < T + DOLFIN_EPS:
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
     [bc.apply(p1.vector()) for bc in bcp]
-    solve(A2, p1.vector(), b2, "cg", prec)
+    # NOTE: GMRES needs to be used until Eigen a4b7b6e or 8dcc4ed is widespread;
+    #       afterwards CG can be used again
+    solve(A2, p1.vector(), b2, "gmres", prec)
     end()
 
     # Velocity correction
