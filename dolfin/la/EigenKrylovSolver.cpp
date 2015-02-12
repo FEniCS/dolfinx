@@ -20,6 +20,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/log/log.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
@@ -73,6 +74,7 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
   parameters = default_parameters();
 
   init(method);
+  _init_parameters();
 }
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::EigenKrylovSolver(std::string method,
@@ -83,6 +85,7 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
   parameters = default_parameters();
 
   init(method);
+  _init_parameters();
 }
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::EigenKrylovSolver(std::string method,
@@ -93,6 +96,7 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
   parameters = default_parameters();
 
   init(method);
+  _init_parameters();
 }
 //-----------------------------------------------------------------------------
 // EigenKrylovSolver::EigenKrylovSolver(std::string method,
@@ -104,6 +108,7 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
 //   parameters = default_parameters();
 
 //   init(method);
+//   _init_parameters();
 // }
 //-----------------------------------------------------------------------------
 // EigenKrylovSolver::EigenKrylovSolver(std::string method,
@@ -115,6 +120,7 @@ EigenKrylovSolver::EigenKrylovSolver(std::string method,
 //   parameters = default_parameters();
 
 //   init(method);
+//   _init_parameters();
 // }
 //-----------------------------------------------------------------------------
 EigenKrylovSolver::~EigenKrylovSolver()
@@ -289,8 +295,11 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   std::string timer_title = "Eigen Krylov solver (" + _method + ")";
   Timer timer(timer_title);
 
-  const double rel_tolerance = parameters["relative_tolerance"];
-  solver.setTolerance(rel_tolerance);
+  EigenVector& _x = as_type<EigenVector>(x);
+  const EigenVector& _b = as_type<const EigenVector>(b);
+
+  const double eigen_tolerance = _compute_tolerance(*_matA, _x, _b);
+  solver.setTolerance(eigen_tolerance);
 
   const int max_iterations = parameters["maximum_iterations"];
   solver.setMaxIterations(max_iterations);
@@ -302,9 +311,6 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
                  "prepare Krylov solver",
                  "Preconditioner might fail");
   }
-
-  EigenVector& _x = as_type<EigenVector>(x);
-  const EigenVector& _b = as_type<const EigenVector>(b);
 
   const bool nonzero_guess = parameters["nonzero_initial_guess"];
   if (nonzero_guess)
@@ -330,5 +336,64 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   }
 
   return num_iterations;
+}
+//-----------------------------------------------------------------------------
+void EigenKrylovSolver::_init_parameters()
+{
+  if (_method == "cg" || _method == "bicgstab" || _method == "minres"
+      || _method == "bicgstab_ilut")
+  {
+    parameters.add("convergence_norm_type", "true", {"true"});
+  }
+  else if (_method == "gmres")
+  {
+    parameters.add("convergence_norm_type", "preconditioned", {"preconditioned"});
+    parameters["absolute_tolerance"].reset();
+  }
+  else
+  {
+    // If a flow ends here, then you have forgotten to handle the newly
+    // implemented method here! Please, look into Eigen code and fix it!
+    dolfin_assert(false);
+  }
+}
+//-----------------------------------------------------------------------------
+double EigenKrylovSolver::_compute_tolerance(const EigenMatrix& A,
+                                             const EigenVector& x,
+                                             const EigenVector& b) const
+{
+  if (_method == "cg" || _method == "bicgstab" || _method == "minres"
+      || _method == "bicgstab_ilut")
+  {
+    const double atol = parameters["absolute_tolerance"];
+    const double rtol = parameters["relative_tolerance"];
+
+    const double b_norm = b.norm("l2");
+    // Define laze evaluated residual vector and compute its norm
+    Eigen::Matrix<double, Eigen::Dynamic, 1> r0;
+    r0.noalias() = b.vec() - A.mat()*x.vec();
+    const double r0_norm = r0.norm();
+
+    return std::max(rtol*r0_norm, atol) / b_norm;
+  }
+  else if (_method == "gmres")
+  {
+    // NOTE: This could be imlemented but requires computation of P^{-1}
+    //       eigen_tol = max(rtol, atol/||P^{-1} r0||)
+    if (parameters["absolute_tolerance"].is_set())
+      warning("Absolute tolerance parameter not implemented for Eigen GMRES."
+              "Ignoring and using just relative tolerance criterion.");
+
+    return parameters["relative_tolerance"];
+  }
+  else
+  {
+    // If a flow ends here, then you have forgotten to handle the newly
+    // implemented method here! Please, look into Eigen code and fix it!
+    dolfin_assert(false);
+
+    // Fallback option
+    return parameters["relative_tolerance"];
+  }
 }
 //-----------------------------------------------------------------------------

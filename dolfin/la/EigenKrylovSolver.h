@@ -144,6 +144,13 @@ namespace dolfin
     // Matrix used to construct the preconditioner
     std::shared_ptr<const EigenMatrix> _matP;
 
+    // Prepare parameters; this cannot be done in static update_parameters
+    // as it depends on the method
+    void _init_parameters();
+
+    // Compute tolerance to be passed to Eigen
+    double _compute_tolerance(const EigenMatrix& A, const EigenVector& x,
+                              const EigenVector& b) const;
   };
 
 }
