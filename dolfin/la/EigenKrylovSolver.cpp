@@ -407,8 +407,8 @@ double EigenKrylovSolver::_compute_tolerance(const EigenMatrix& A,
     const double rtol = parameters["relative_tolerance"];
 
     const double b_norm = b.norm("l2");
-    // Define laze evaluated residual vector and compute its norm
-    Eigen::Matrix<double, Eigen::Dynamic, 1> r0;
+    // Define lazy evaluated residual vector and compute its norm
+    Eigen::VectorXd r0;
     r0.noalias() = b.vec() - A.mat()*x.vec();
     const double r0_norm = r0.norm();
 
