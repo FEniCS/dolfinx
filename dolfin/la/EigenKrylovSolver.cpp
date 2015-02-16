@@ -381,11 +381,13 @@ void EigenKrylovSolver::_init_parameters()
 {
   if (_method == "cg" || _method == "bicgstab" || _method == "minres")
   {
-    parameters.add("convergence_norm_type", "true", {"true"});
+    const std::set<std::string> allowed = {"true"};
+    parameters.add("convergence_norm_type", "true", allowed);
   }
   else if (_method == "gmres")
   {
-    parameters.add("convergence_norm_type", "preconditioned", {"preconditioned"});
+    const std::set<std::string> allowed = {"preconditioned"};
+    parameters.add("convergence_norm_type", "preconditioned", allowed);
     parameters["absolute_tolerance"].reset();
   }
   else
