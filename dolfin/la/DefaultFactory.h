@@ -52,27 +52,25 @@ namespace dolfin
     virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
 
     /// Create empty linear operator
-    virtual std::shared_ptr<GenericLinearOperator> create_linear_operator() const;
+    virtual std::shared_ptr<GenericLinearOperator>
+    create_linear_operator() const;
 
     /// Create LU solver
     virtual std::shared_ptr<dolfin::GenericLUSolver>
-      create_lu_solver(std::string method) const;
+    create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
     virtual std::shared_ptr<dolfin::GenericLinearSolver>
-      create_krylov_solver(std::string method, std::string preconditioner) const;
+    create_krylov_solver(std::string method, std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
-    std::vector<std::pair<std::string, std::string> >
-      lu_solver_methods() const;
+    std::map<std::string, std::string> lu_solver_methods() const;
 
     /// Return a list of available Krylov solver methods
-    std::vector<std::pair<std::string, std::string> >
-      krylov_solver_methods() const;
+    std::map<std::string, std::string> krylov_solver_methods() const;
 
     /// Return a list of available preconditioners
-    std::vector<std::pair<std::string, std::string> >
-      krylov_solver_preconditioners() const;
+    std::map<std::string, std::string> krylov_solver_preconditioners() const;
 
     /// Return instance of default backend
     static GenericLinearAlgebraFactory& factory();

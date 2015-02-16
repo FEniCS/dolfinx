@@ -55,7 +55,7 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
     {"stcg",       KSPSTCG} };
 
 // Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
 PETScKrylovSolver::_methods_descr
 =
 { {"default",    "default Krylov method"},
@@ -67,13 +67,13 @@ PETScKrylovSolver::_methods_descr
   {"bicgstab",   "Biconjugate gradient stabilized method"} };
 
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 PETScKrylovSolver::methods()
 {
   return PETScKrylovSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 PETScKrylovSolver::preconditioners()
 {
   return PETScPreconditioner::preconditioners();

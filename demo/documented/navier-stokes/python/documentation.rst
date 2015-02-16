@@ -198,7 +198,8 @@ pressure equation if available:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
-    solve(A2, p1.vector(), b2, "cg", prec)
+    [bc.apply(p1.vector()) for bc in bcp]
+    solve(A2, p1.vector(), b2, "bicgstab", prec)
     end()
 
     # Velocity correction

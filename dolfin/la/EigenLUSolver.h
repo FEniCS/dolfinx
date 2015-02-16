@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Anders Logg
+// Copyright (C) 2015 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -15,56 +15,47 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2009-2010.
 //
-// First added:  2005
-// Last changed: 2011-10-19
+// First added:  2015-02-03
 
-#ifndef __DOLFIN_PETSC_LU_SOLVER_H
-#define __DOLFIN_PETSC_LU_SOLVER_H
-
-#ifdef HAS_PETSC
+#ifndef __DOLFIN_EIGEN_LU_SOLVER_H
+#define __DOLFIN_EIGEN_LU_SOLVER_H
 
 #include <map>
 #include <memory>
-#include <petscksp.h>
-#include <petscpc.h>
+#include <Eigen/Dense>
 #include "GenericLUSolver.h"
-#include "PETScObject.h"
 
 namespace dolfin
 {
   /// Forward declarations
+  class EigenMatrix;
+  class EigenVector;
   class GenericLinearOperator;
   class GenericVector;
-  class PETScLinearOperator;
-  class PETScMatrix;
-  class PETScVector;
-  class PETScSNESSolver;
 
   /// This class implements the direct solution (LU factorization) for
-  /// linear systems of the form Ax = b. It is a wrapper for the LU
-  /// solver of PETSc.
+  /// linear systems of the form Ax = b.
 
-  class PETScLUSolver : public GenericLUSolver, public PETScObject
+  class EigenLUSolver : public GenericLUSolver
   {
   public:
 
     /// Constructor
-    PETScLUSolver(std::string method="default");
+    EigenLUSolver(std::string method="default");
 
     /// Constructor
-    PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
+    EigenLUSolver(std::shared_ptr<const EigenMatrix> A,
                   std::string method="default");
 
     /// Destructor
-    ~PETScLUSolver();
+    ~EigenLUSolver();
 
     /// Set operator (matrix)
     void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
-    void set_operator(std::shared_ptr<const PETScMatrix> A);
+    void set_operator(std::shared_ptr<const EigenMatrix> A);
 
     /// Get operator (matrix)
     const GenericLinearOperator& get_operator() const;
@@ -81,8 +72,8 @@ namespace dolfin
                       const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const PETScMatrix& A, PETScVector& x,
-                      const PETScVector& b);
+    std::size_t solve(const EigenMatrix& A, EigenVector& x,
+                      const EigenVector& b);
 
     /// Solve linear system A^Tx = b
     std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
@@ -92,14 +83,11 @@ namespace dolfin
                                 GenericVector& x, const GenericVector& b);
 
     /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x,
-                                const PETScVector& b);
+    std::size_t solve_transpose(const EigenMatrix& A, EigenVector& x,
+                                const EigenVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
-
-    /// Return PETSc KSP pointer
-    KSP ksp() const;
 
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();
@@ -107,49 +95,27 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
-    friend class PETScSNESSolver;
-
-    friend class PETScTAOSolver;
-
   private:
 
-    const MatSolverPackage _solver_package;
+    // Call generic solve
+    template <typename Solver>
+    void call_solver(Solver& solver, GenericVector& x, const GenericVector& b,
+                     bool transpose);
 
-    // Available LU solvers
-    static const std::map<std::string, const MatSolverPackage> _methods;
+    // Available LU solvers and descriptions
+    static const std::map<std::string, std::string> _methods_descr;
 
-    // Whether those solvers support Cholesky
-    static const std::map<const MatSolverPackage, const bool> _methods_cholesky;
-
-    // Available LU solvers descriptions
-    static const std::map<std::string, std::string>
-    _methods_descr;
+    // Current selected method
+    std::string _method;
 
     // Select LU solver type
-    const MatSolverPackage select_solver(std::string& method) const;
-
-    // Does an LU solver support Cholesky?
-    bool solver_has_cholesky(const MatSolverPackage package) const;
-
-    // Initialise solver
-    void init_solver(std::string& method);
-
-    // Configure PETSc options
-    void configure_ksp(const MatSolverPackage solver_package);
-
-    // Print pre-solve report
-    void pre_report(const PETScMatrix& A) const;
-
-    // PETSc solver pointer
-    KSP _ksp;
+    std::string select_solver(const std::string method) const;
 
     // Operator (the matrix)
-    std::shared_ptr<const PETScMatrix> _matA;
+    std::shared_ptr<const EigenMatrix> _matA;
 
   };
 
 }
-
-#endif
 
 #endif
