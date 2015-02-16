@@ -38,16 +38,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
-                                   const Mesh& mesh,
-                                   const std::vector<const GenericDofMap*> dofmaps,
-                                   bool cells,
-                                   bool interior_facets,
-                                   bool exterior_facets,
-                                   bool vertices,
-                                   bool diagonal,
-                                   bool init,
-                                   bool finalize)
+void
+SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
+                              const Mesh& mesh,
+                              const std::vector<const GenericDofMap*> dofmaps,
+                              bool cells,
+                              bool interior_facets,
+                              bool exterior_facets,
+                              bool vertices,
+                              bool diagonal,
+                              bool init,
+                              bool finalize)
 {
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
@@ -125,7 +126,6 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     {
       global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
       local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
-      //global_dofs_p[i] = &global_dofs[i];
     }
 
     Progress p("Building sparsity pattern over vertices", mesh.num_vertices());
@@ -180,7 +180,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                    "Consider calling mesh.order()");
     }
 
-    Progress p("Building sparsity pattern over interior facets", mesh.num_facets());
+    Progress p("Building sparsity pattern over interior facets",
+               mesh.num_facets());
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
       bool this_exterior_facet = false;
@@ -255,7 +256,6 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     {
       dofs[i] = ArrayView<const la_index>(diagonal_dof.size(),
                                           diagonal_dof.data());
-      //dofs[i] = &diagonal_dof;
     }
 
     for (std::size_t j = 0; j < local_size; j++)
@@ -273,9 +273,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     sparsity_pattern.apply();
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::build_multimesh_sparsity_pattern
-(GenericSparsityPattern& sparsity_pattern,
- const MultiMeshForm& form)
+void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
+  GenericSparsityPattern& sparsity_pattern,
+  const MultiMeshForm& form)
 {
   // Get global dimensions and local range
   const std::size_t rank = form.rank();
@@ -288,7 +288,8 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
   {
     global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
     local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
-    off_process_owner[i] = &form.function_space(i)->dofmap()->off_process_owner();
+    off_process_owner[i]
+      = &form.function_space(i)->dofmap()->off_process_owner();
     local_to_global[i] = &tmp_local_to_global[i];
   }
 
@@ -332,10 +333,10 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern
   sparsity_pattern.apply();
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
-(GenericSparsityPattern& sparsity_pattern,
- const MultiMeshForm& form,
- std::size_t part)
+void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
+  GenericSparsityPattern& sparsity_pattern,
+  const MultiMeshForm& form,
+  std::size_t part)
 {
   // Get multimesh
   const auto& multimesh = form.multimesh();
@@ -389,7 +390,6 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface
         std::copy(dofs_0[i].begin(), dofs_0[i].end(), dofs[i].begin());
         std::copy(dofs_1[i].begin(), dofs_1[i].end(),
                   dofs[i].begin() + dofs_0[i].size());
-        //_dofs[i] = &dofs[i]; // Silly extra step, fix GenericSparsityPattern interface
         _dofs[i] = ArrayView<const la_index>(dofs[i].size(), dofs[i].data());
       }
 

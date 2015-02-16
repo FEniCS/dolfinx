@@ -45,13 +45,6 @@ namespace dolfin
     /// Destructor
     ~ArrayView() {}
 
-    /// Assignment operator
-    //ArrayView& operator=(const ArrayView& x)
-    // {
-    //  this->_size = x._size;
-    //  this->_x = x._x;
-    // }
-
     /// Return size of array
     std::size_t size() const
     { return _size; }
