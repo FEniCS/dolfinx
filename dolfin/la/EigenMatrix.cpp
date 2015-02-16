@@ -197,10 +197,12 @@ void EigenMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 
     // Check that diagonal has been set
     if (diagonal_unset)
+    {
       dolfin_error("EigenMatrix.cpp",
                    "set rows to identity",
                    "Diagonal element at row %d not preallocated. "
                    "Use assembler option keep_diagonal", *i_ptr);
+    }
   }
 }
 //---------------------------------------------------------------------------

@@ -111,7 +111,7 @@ while t < T + DOLFIN_EPS:
     begin("Computing tentative velocity")
     b1 = assemble(L1)
     [bc.apply(A1, b1) for bc in bcu]
-    solve(A1, u1.vector(), b1, "gmres", "default")
+    solve(A1, u1.vector(), b1, "bicgstab", "default")
     end()
 
     # Pressure correction
@@ -126,7 +126,7 @@ while t < T + DOLFIN_EPS:
     begin("Computing velocity correction")
     b3 = assemble(L3)
     [bc.apply(A3, b3) for bc in bcu]
-    solve(A3, u1.vector(), b3, "gmres", "default")
+    solve(A3, u1.vector(), b3, "bicgstab", "default")
     end()
 
     # Plot solution

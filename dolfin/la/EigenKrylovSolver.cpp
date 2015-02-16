@@ -185,7 +185,8 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
     }
     else
     {
-      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower> solver;
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower>
+        solver;
       num_iterations = call_solver(solver, x, b);
     }
   }
@@ -408,6 +409,7 @@ double EigenKrylovSolver::_compute_tolerance(const EigenMatrix& A,
     const double rtol = parameters["relative_tolerance"];
 
     const double b_norm = b.norm("l2");
+
     // Define lazy evaluated residual vector and compute its norm
     Eigen::VectorXd r0;
     r0.noalias() = b.vec() - A.mat()*x.vec();
@@ -420,9 +422,10 @@ double EigenKrylovSolver::_compute_tolerance(const EigenMatrix& A,
     // NOTE: This could be imlemented but requires computation of P^{-1}
     //       eigen_tol = max(rtol, atol/||P^{-1} r0||)
     if (parameters["absolute_tolerance"].is_set())
-      warning("Absolute tolerance parameter not implemented for Eigen GMRES."
+    {
+      warning("Absolute tolerance parameter not implemented for Eigen GMRES. "
               "Ignoring and using just relative tolerance criterion.");
-
+    }
     return parameters["relative_tolerance"];
   }
   else

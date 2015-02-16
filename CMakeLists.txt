@@ -1073,6 +1073,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     DEPENDS run_unittests_2)
+
   # ... attempt at controlling dependency execution order ...
   add_custom_target(run_unittests_2
     DEPENDS run_unittests_py_mpi run_unittests_1)
