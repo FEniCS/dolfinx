@@ -379,8 +379,7 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
 //-----------------------------------------------------------------------------
 void EigenKrylovSolver::_init_parameters()
 {
-  if (_method == "cg" || _method == "bicgstab" || _method == "minres"
-      || _method == "bicgstab_ilut")
+  if (_method == "cg" || _method == "bicgstab" || _method == "minres")
   {
     parameters.add("convergence_norm_type", "true", {"true"});
   }
