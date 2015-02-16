@@ -7,7 +7,7 @@ Tensor-weighted Poisson
 
 This demo is implemented in two files; one file,
 :download:`generate_data.py` , for generating data, and one file,
-:download:`demo_tensorweighted-poisson.py` , which contains both the
+:download:`demo_tensor-weighted-poisson.py` , which contains both the
 vaiational form and the solver.
 
 .. include:: ../common.txt
@@ -102,7 +102,7 @@ Implementation of tensor-weighted-poisson.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This description goes through the implementation (in
-:download:`demo_tensorweighted-poisson.py` ) of a solver for the above
+:download:`demo_tensor-weighted-poisson.py` ) of a solver for the above
 described Poisson equation step-by-step.
 
 
@@ -291,9 +291,9 @@ suffix .pvd) for later visualization and also plot it using the
 Complete code
 -------------
 
-demo_tensorweighted-poisson.py:
+demo_tensor-weighted-poisson.py:
 
-.. literalinclude:: demo_tensorweighted-poisson.py
+.. literalinclude:: demo_tensor-weighted-poisson.py
    :start-after: # Begin demo
 
 generate_data.py:
