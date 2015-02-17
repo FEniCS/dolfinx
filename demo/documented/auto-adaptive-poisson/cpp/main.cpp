@@ -86,6 +86,7 @@ int main()
   LinearVariationalProblem problem(a, L, u, bc);
   AdaptiveLinearVariationalSolver solver(problem, M);
   solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "cg";
+  solver.parameters("error_control")("dual_variational_solver")["symmetric"] = true;
   solver.solve(tol);
 
   solver.summary();

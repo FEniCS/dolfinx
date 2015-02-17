@@ -18,6 +18,7 @@
 // First added:  2013-02-12
 // Last changed:
 
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
 
 #include <dolfin/common/ArrayView.h>

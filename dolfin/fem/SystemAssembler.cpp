@@ -23,8 +23,10 @@
 #include <array>
 #include <algorithm>
 #include <Eigen/Dense>
+
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/types.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericMatrix.h>

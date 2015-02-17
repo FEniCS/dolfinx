@@ -54,6 +54,7 @@ tol = 1.e-5
 problem = LinearVariationalProblem(a, L, u, bc)
 solver = AdaptiveLinearVariationalSolver(problem, M)
 solver.parameters["error_control"]["dual_variational_solver"]["linear_solver"] = "cg"
+solver.parameters["error_control"]["dual_variational_solver"]["symmetric"] = True
 solver.solve(tol)
 
 solver.summary()

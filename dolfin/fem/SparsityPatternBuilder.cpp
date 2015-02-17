@@ -131,7 +131,6 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     Progress p("Building sparsity pattern over vertices", mesh.num_vertices());
     for (VertexIterator vert(mesh); !vert.end(); ++vert)
     {
-
       // Get mesh cell to which mesh vertex belongs (pick first)
       Cell mesh_cell(mesh, vert->entities(D)[0]);
 
@@ -166,7 +165,8 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Build sparsity pattern for interior/exterior facet integrals
   if (interior_facets || exterior_facets)
   {
-    // Compute facets and facet - cell connectivity if not already computed
+    // Compute facets and facet - cell connectivity if not already
+    // computed
     mesh.init(D - 1);
     mesh.init(D - 1, D);
     if (!mesh.ordered())
@@ -243,18 +243,19 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    std::size_t local_size = local_range[0].second - local_range[0].first;
-    Progress p("Building sparsity pattern over diagonal", local_size);
+    const std::size_t local_size0 = local_range[0].second-local_range[0].first;
+    const std::size_t local_size1 = local_range[1].second-local_range[1].first;
+    const std::size_t local_size = std::min(local_size0, local_size1);
 
+    Progress p("Building sparsity pattern over diagonal", local_size);
     std::vector<dolfin::la_index> diagonal_dof(1, 0);
     for (std::size_t i = 0; i < rank; ++i)
       dofs[i].set(diagonal_dof);
 
     for (std::size_t j = 0; j < local_size; j++)
     {
-      diagonal_dof[0] = j;
-
       // Insert diagonal non-zeroes in sparsity pattern
+      diagonal_dof[0] = j;
       sparsity_pattern.insert_local(dofs);
       p++;
     }
