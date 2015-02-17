@@ -77,10 +77,10 @@ Create files to store data and save to file:
 .. code-block:: python
 
 	# Store to file
-	mesh_file = File("mesh.xml.gz")
-	c00_file = File("c00.xml.gz")
-	c01_file = File("c01.xml.gz")
-	c11_file = File("c11.xml.gz")
+	mesh_file = File("../unitsquare_32_32.xml.gz")
+	c00_file = File("../unitsquare_32_32_c00.xml.gz")
+	c01_file = File("../unitsquare_32_32_c01.xml.gz")
+	c11_file = File("../unitsquare_32_32_c11.xml.gz")
 
 	mesh_file << mesh
 	c00_file << c00
@@ -120,7 +120,7 @@ space in the following way:
 .. code-block:: python
 
 	# Read mesh from file and create function space
-	mesh = Mesh("mesh.xml.gz")
+	mesh = Mesh("../unitsquare_32_32.xml.gz")
 	V = FunctionSpace(mesh, "Lagrange", 1)
 
 The second argument to :py:class:`FunctionSpace
@@ -213,9 +213,9 @@ expressions.
 .. code-block:: python
 
 	# Define conductivity expression and matrix
-	c00 = MeshFunction("double", mesh, "c00.xml.gz")
-	c01 = MeshFunction("double", mesh, "c01.xml.gz")
-	c11 = MeshFunction("double", mesh, "c11.xml.gz")
+	c00 = MeshFunction("double", mesh, "../unitsquare_32_32_c00.xml.gz")
+	c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
+	c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
 
 	c = Expression(cppcode=conductivity_code)
 	c.c00 = c00
