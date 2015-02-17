@@ -517,7 +517,7 @@ void SystemAssembler::facet_wise_assembly(
 
   // Cell dofmaps [form][cell][form dim]
   std::array<std::array<std::vector<ArrayView<const dolfin::la_index>>,
-                        2 >, 2> cell_dofs;
+                        2>, 2> cell_dofs;
   cell_dofs[0][0].resize(2);
   cell_dofs[0][1].resize(2);
   cell_dofs[1][0].resize(1);
@@ -725,10 +725,8 @@ void SystemAssembler::facet_wise_assembly(
                                     vector_size);
 
       // Modify local tensors for bcs
-      ArrayView<const la_index> mdofs0(macro_dofs[0][0].size(),
-                                       macro_dofs[0][0].data());
-      ArrayView<const la_index> mdofs1(macro_dofs[0][1].size(),
-                                       macro_dofs[0][1].data());
+      ArrayView<const la_index> mdofs0(macro_dofs[0][0]);
+      ArrayView<const la_index> mdofs1(macro_dofs[0][1]);
       apply_bc(ufc[0]->macro_A.data(), ufc[1]->macro_A.data(), boundary_values,
                mdofs0, mdofs1);
 
@@ -737,10 +735,7 @@ void SystemAssembler::facet_wise_assembly(
       {
         std::vector<ArrayView<const la_index>> mdofs(macro_dofs[1].size());
         for (std::size_t i = 0; i < macro_dofs[1].size(); ++i)
-        {
-          mdofs[i] = ArrayView<const la_index>(macro_dofs[1][i].size(),
-                                               macro_dofs[1][i].data());
-        }
+          mdofs[i].set(macro_dofs[1][i]);
         tensors[1]->add_local(ufc[1]->macro_A.data(), mdofs);
       }
 
@@ -750,10 +745,7 @@ void SystemAssembler::facet_wise_assembly(
       {
         std::vector<ArrayView<const la_index>> mdofs(macro_dofs[0].size());
         for (std::size_t i = 0; i < macro_dofs[0].size(); ++i)
-        {
-          mdofs[i] = ArrayView<const la_index>(macro_dofs[0][i].size(),
-                                               macro_dofs[0][i].data());
-        }
+          mdofs[i].set(macro_dofs[0][i]);
         tensors[0]->add_local(ufc[0]->macro_A.data(), mdofs);
       }
       else if (tensors[0] && !add_macro_element)

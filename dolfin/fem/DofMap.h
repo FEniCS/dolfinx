@@ -220,8 +220,7 @@ namespace dolfin
     ArrayView<const dolfin::la_index> cell_dofs(std::size_t cell_index) const
     {
       dolfin_assert(cell_index < _dofmap.size());
-      return ArrayView<const dolfin::la_index>(_dofmap[cell_index].size(),
-                                               _dofmap[cell_index].data());
+      return ArrayView<const dolfin::la_index>(_dofmap[cell_index]);
     }
 
     /// Tabulate local-local facet dofs

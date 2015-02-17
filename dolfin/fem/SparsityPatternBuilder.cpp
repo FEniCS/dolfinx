@@ -154,10 +154,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       // Insert non-zeroes in sparsity pattern
       std::vector<ArrayView<const dolfin::la_index>> global_dofs_p(rank);
       for (std::size_t i = 0; i < rank; ++i)
-      {
-        global_dofs_p[i] = ArrayView<const la_index>(global_dofs[i].size(),
-                                                     global_dofs[i].data());
-      }
+        global_dofs_p[i].set(global_dofs[i]);
       sparsity_pattern.insert_local(global_dofs_p);
       p++;
     }
@@ -234,9 +231,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                     macro_dofs[i].begin() + cell_dofs0.size());
 
           // Store pointer to macro dofs
-          //dofs[i] = macro_dofs[i];
-          dofs[i] = ArrayView<const la_index>(macro_dofs[i].size(),
-                                              macro_dofs[i].data());
+          dofs[i].set(macro_dofs[i]);
         }
 
         // Insert dofs
@@ -253,10 +248,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
     std::vector<dolfin::la_index> diagonal_dof(1, 0);
     for (std::size_t i = 0; i < rank; ++i)
-    {
-      dofs[i] = ArrayView<const la_index>(diagonal_dof.size(),
-                                          diagonal_dof.data());
-    }
+      dofs[i].set(diagonal_dof);
 
     for (std::size_t j = 0; j < local_size; j++)
     {
@@ -390,7 +382,7 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
         std::copy(dofs_0[i].begin(), dofs_0[i].end(), dofs[i].begin());
         std::copy(dofs_1[i].begin(), dofs_1[i].end(),
                   dofs[i].begin() + dofs_0[i].size());
-        _dofs[i] = ArrayView<const la_index>(dofs[i].size(), dofs[i].data());
+        _dofs[i].set(dofs[i]);
       }
 
       // Insert into sparsity pattern

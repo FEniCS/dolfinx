@@ -141,7 +141,7 @@ void Assembler::assemble_cells(
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<ArrayView<const dolfin::la_index> > dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Cell integral
   ufc::cell_integral* integral = ufc.default_cell_integral.get();
@@ -227,7 +227,7 @@ void Assembler::assemble_exterior_facets(
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<ArrayView<const dolfin::la_index> > dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Exterior facet integral
   const ufc::exterior_facet_integral* integral
@@ -332,7 +332,7 @@ void Assembler::assemble_interior_facets(
 
   // Vector to hold dofs for cells, and a vector holding pointers to same
   std::vector<std::vector<dolfin::la_index>> macro_dofs(form_rank);
-  std::vector<ArrayView<const dolfin::la_index> > macro_dof_ptrs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> macro_dof_ptrs(form_rank);
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral
@@ -415,9 +415,7 @@ void Assembler::assemble_interior_facets(
                 macro_dofs[i].begin());
       std::copy(cell_dofs1.data(), cell_dofs1.data() + cell_dofs1.size(),
                 macro_dofs[i].begin() + cell_dofs0.size());
-      macro_dof_ptrs[i]
-        = ArrayView<const dolfin::la_index>(macro_dofs[i].size(),
-                                            macro_dofs[i].data());
+      macro_dof_ptrs[i].set(macro_dofs[i]);
     }
 
     // Tabulate interior facet tensor on macro element
@@ -494,8 +492,8 @@ void Assembler::assemble_vertices(
   std::vector<double> local_values(1);
 
   // Vector to hold local dof map for a vertex
-  std::vector<std::vector<dolfin::la_index> > global_dofs(form_rank);
-  std::vector<ArrayView<const dolfin::la_index> > global_dofs_p(form_rank);
+  std::vector<std::vector<dolfin::la_index>> global_dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> global_dofs_p(form_rank);
   std::vector<dolfin::la_index> local_dof_size(form_rank);
   for (std::size_t i = 0; i < form_rank; ++i)
   {
@@ -538,12 +536,11 @@ void Assembler::assemble_vertices(
       - dofmaps[i]->ownership_range().first;
 
     // Get pointer to global dofs
-    global_dofs_p[i] = ArrayView<const dolfin::la_index>(global_dofs[i].size(),
-                                                         global_dofs[i].data());
+    global_dofs_p[i].set(global_dofs[i]);
   }
 
   // Vector to hold dof map for a cell
-  std::vector<ArrayView<const dolfin::la_index> > dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Exterior point integral
   const ufc::point_integral* integral

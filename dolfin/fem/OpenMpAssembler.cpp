@@ -618,10 +618,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       std::vector<ArrayView<const la_index>>
         macro_dofs_p(macro_dofs.size());
       for (std::size_t i = 0; i < macro_dofs.size(); ++i)
-      {
-        macro_dofs_p[i] = ArrayView<const la_index>(macro_dofs[i].size(),
-                                                    macro_dofs[i].data());
-      }
+        macro_dofs_p[i].set(macro_dofs[i]);
       A.add_local(ufc.macro_A.data(), macro_dofs_p);
 
       p++;
