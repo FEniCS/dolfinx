@@ -20,6 +20,8 @@
 #include <iostream> // Seem to be missing some Eigen headers
 #include <map>
 #include <string>
+
+#include <dolfin/common/types.h>
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/../unsupported/Eigen/IterativeSolvers>
 

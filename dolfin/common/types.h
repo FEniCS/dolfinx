@@ -36,4 +36,10 @@ namespace dolfin
 
 }
 
+// Use la_index for indexing in Eigen::VectorXd
+// NOTE: Eigen requires that this is SIGNED type
+// NOTE: This file must be included before Eigen otherwise compiler should
+//       complain about redefinition of this macro
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE dolfin::la_index
+
 #endif

@@ -21,11 +21,12 @@
 // Last changed: 2011-03-23
 
 #include <memory>
+
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/DirichletBC.h>

@@ -17,8 +17,8 @@
 //
 // First added:  2015-02-03
 
+#include <dolfin/common/types.h>
 #include <Eigen/SparseLU>
-
 #ifdef EIGEN_CHOLMOD_SUPPORT
 // Works with Cholmod downloaded by PETSc
 #include <Eigen/CholmodSupport>

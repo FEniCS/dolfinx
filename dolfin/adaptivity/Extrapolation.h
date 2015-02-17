@@ -27,9 +27,9 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <Eigen/Dense>
 
 #include <dolfin/common/types.h>
+#include <Eigen/Dense>
 
 namespace ufc
 {

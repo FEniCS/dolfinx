@@ -22,7 +22,10 @@
 
 #include <array>
 #include <algorithm>
+
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
+
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
