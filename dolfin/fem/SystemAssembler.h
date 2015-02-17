@@ -43,6 +43,7 @@ namespace dolfin
 {
 
   // Forward declarations
+  template<typename T> class ArrayView;
   class Cell;
   class Facet;
   class Form;
@@ -94,13 +95,13 @@ namespace dolfin
     /// Assemble vector b
     void assemble(GenericVector& b);
 
-    /// Assemble system (A, b) for (negative) increment dx, where
-    /// x = x0 - dx is solution to system a == -L subject to bcs.
+    /// Assemble system (A, b) for (negative) increment dx, where x =
+    /// x0 - dx is solution to system a == -L subject to bcs.
     /// Suitable for use inside a (quasi-)Newton solver.
     void assemble(GenericMatrix& A, GenericVector& b, const GenericVector& x0);
 
-    /// Assemble rhs vector b for (negative) increment dx, where
-    /// x = x0 - dx is solution to system a == -L subject to bcs.
+    /// Assemble rhs vector b for (negative) increment dx, where x =
+    /// x0 - dx is solution to system a == -L subject to bcs.
     /// Suitable for use inside a (quasi-)Newton solver.
     void assemble(GenericVector& b, const GenericVector& x0);
 
@@ -130,22 +131,22 @@ namespace dolfin
     // Boundary conditions
     std::vector<const DirichletBC*> _bcs;
 
-    static void
-      cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
-                         std::array<UFC*, 2>& ufc,
-                         Scratch& data,
-                         const DirichletBC::Map& boundary_values,
-                         std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
-                         std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains);
+    static void cell_wise_assembly(
+      std::array<GenericTensor*, 2>& tensors,
+      std::array<UFC*, 2>& ufc,
+      Scratch& data,
+      const DirichletBC::Map& boundary_values,
+      std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+      std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains);
 
-    static void
-    facet_wise_assembly(std::array<GenericTensor*, 2>& tensors,
-                        std::array<UFC*, 2>& ufc,
-                        Scratch& data,
-                        const DirichletBC::Map& boundary_values,
-                        std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
-                        std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains,
-                        std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
+    static void facet_wise_assembly(
+      std::array<GenericTensor*, 2>& tensors,
+      std::array<UFC*, 2>& ufc,
+      Scratch& data,
+      const DirichletBC::Map& boundary_values,
+      std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+      std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains,
+      std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
 
     // Compute exterior facet (and possibly connected cell)
     // contribution
@@ -180,29 +181,30 @@ namespace dolfin
 
     // Modified matrix insertion for case when rhs has facet integrals
     // and lhs has no facet integrals
-    static void
-      matrix_block_add(GenericTensor& tensor,
-                       std::vector<double>& Ae,
-                       std::vector<double>& macro_A,
-                       const bool tensor_required_cell,
-                       const std::array<std::size_t, 2>& local_facet,
-                       std::vector<const std::vector<la_index>* >& cell_dofs);
+    static void matrix_block_add(
+      GenericTensor& tensor,
+      std::vector<double>& Ae,
+      std::vector<double>& macro_A,
+      const bool tensor_required_cell,
+      const std::array<std::size_t, 2>& local_facet,
+      const std::vector<ArrayView<const la_index>>& cell_dofs);
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
-                         const std::vector<dolfin::la_index>& global_dofs0,
-                         const std::vector<dolfin::la_index>& global_dofs1);
+                         const ArrayView<const dolfin::la_index>& global_dofs0,
+                         const ArrayView<const dolfin::la_index>& global_dofs1);
 
     // Return true if cell has an Dirichlet/essential boundary
     // condition applied
     static bool has_bc(const DirichletBC::Map& boundary_values,
-                       const std::vector<dolfin::la_index>& dofs);
+                       const ArrayView<const dolfin::la_index>& dofs);
 
     // Return true if element matrix is required
-    static bool cell_matrix_required(const GenericTensor* A,
-                                     const void* integral,
-                                     const DirichletBC::Map& boundary_values,
-                                     const std::vector<dolfin::la_index>& dofs);
+    static bool
+      cell_matrix_required(const GenericTensor* A,
+                           const void* integral,
+                           const DirichletBC::Map& boundary_values,
+                           const ArrayView<const dolfin::la_index>& dofs);
 
   };
 

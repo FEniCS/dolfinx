@@ -115,16 +115,14 @@ void SparsityPattern::init(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-  const std::vector<const std::vector<dolfin::la_index>* >& entries)
+  const std::vector<ArrayView<const dolfin::la_index>>& entries)
 {
   dolfin_assert(entries.size() == 2);
-  dolfin_assert(entries[0]);
-  dolfin_assert(entries[1]);
 
   const std::size_t _primary_dim = primary_dim();
 
-  const std::vector<dolfin::la_index>* map_i;
-  const std::vector<dolfin::la_index>* map_j;
+  ArrayView<const dolfin::la_index> map_i;
+  ArrayView<const dolfin::la_index> map_j;
   std::size_t primary_codim;
   dolfin_assert(_primary_dim < 2);
   if (_primary_dim == 0)
@@ -151,15 +149,13 @@ void SparsityPattern::insert_global(
   if (MPI::size(_mpi_comm) == 1)
   {
     // Sequential mode, do simple insertion
-    std::vector<dolfin::la_index>::const_iterator i_index;
-    for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
-      diagonal[*i_index].insert(map_j->begin(), map_j->end());
+    for (auto i_index = map_i.begin(); i_index != map_i.end(); ++i_index)
+      diagonal[*i_index].insert(map_j.begin(), map_j.end());
   }
   else
   {
     // Parallel mode, use either diagonal, off_diagonal or non_local
-    std::vector<dolfin::la_index>::const_iterator i_index;
-    for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
+    for (auto i_index = map_i.begin(); i_index != map_i.end(); ++i_index)
     {
       if (local_range0.first <= *i_index && *i_index < local_range0.second)
       {
@@ -167,8 +163,7 @@ void SparsityPattern::insert_global(
         const std::size_t I = *i_index - local_range0.first;
 
         // Store local entry in diagonal or off-diagonal block
-        std::vector<dolfin::la_index>::const_iterator j_index;
-        for (j_index = map_j->begin(); j_index != map_j->end(); ++j_index)
+        for (auto j_index = map_j.begin(); j_index != map_j.end(); ++j_index)
         {
           if (local_range1.first <= *j_index && *j_index < local_range1.second)
           {
@@ -191,16 +186,13 @@ void SparsityPattern::insert_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
-  const std::vector<const std::vector<dolfin::la_index>* >& entries)
+  const std::vector<ArrayView<const dolfin::la_index>>& entries)
 {
   dolfin_assert(entries.size() == 2);
-  dolfin_assert(entries[0]);
-  dolfin_assert(entries[1]);
-
   const std::size_t _primary_dim = primary_dim();
 
-  const std::vector<dolfin::la_index>* map_i;
-  const std::vector<dolfin::la_index>* map_j;
+  ArrayView<const dolfin::la_index> map_i;
+  ArrayView<const dolfin::la_index> map_j;
   std::size_t primary_codim;
   dolfin_assert(_primary_dim < 2);
   if (_primary_dim == 0)
@@ -226,22 +218,19 @@ void SparsityPattern::insert_local(
   if (MPI::size(_mpi_comm) == 1)
   {
     // Sequential mode, do simple insertion
-    std::vector<dolfin::la_index>::const_iterator i_index;
-    for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
-      diagonal[*i_index].insert(map_j->begin(), map_j->end());
+    for (auto i_index = map_i.begin(); i_index != map_i.end(); ++i_index)
+      diagonal[*i_index].insert(map_j.begin(), map_j.end());
   }
   else
   {
     // Parallel mode, use either diagonal, off_diagonal or non_local
-    std::vector<dolfin::la_index>::const_iterator i_index;
     std::size_t codim_block_size = _block_size[primary_codim];
-    for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
+    for (auto i_index = map_i.begin(); i_index != map_i.end(); ++i_index)
     {
       if (*i_index < local_size0)
       {
         // Store local entry in diagonal or off-diagonal block
-        std::vector<dolfin::la_index>::const_iterator j_index;
-        for (j_index = map_j->begin(); j_index != map_j->end(); ++j_index)
+        for (auto j_index = map_j.begin(); j_index != map_j.end(); ++j_index)
         {
           if (*j_index < local_size1)
           {
@@ -265,9 +254,8 @@ void SparsityPattern::insert_local(
       else
       {
         // Store non-local entry (communicated later during apply())
-        std::vector<dolfin::la_index>::const_iterator j_index;
         std::size_t codim_block_size = _block_size[primary_codim];
-        for (j_index = map_j->begin(); j_index != map_j->end(); ++j_index)
+        for (auto j_index = map_j.begin(); j_index != map_j.end(); ++j_index)
         {
           // Get global index
           std::size_t J = 0;

@@ -134,7 +134,7 @@ void PointIntegralSolver::step(double dt)
 
     // Get all dofs for cell
     // FIXME: Should we include logics about empty dofmaps?
-    const std::vector<dolfin::la_index>& cell_dofs
+    const ArrayView<const dolfin::la_index> cell_dofs
       = _dofmap.cell_dofs(cell.index());
 
     // Tabulate local-local dofmap

@@ -28,6 +28,7 @@
 #include <set>
 #include <vector>
 
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>
 
@@ -83,7 +84,7 @@ namespace dolfin
                            const FunctionSpace& W, const Cell& cell0,
                            const std::vector<double>& vertex_coordinates0,
                            const ufc::cell& c0,
-                           const std::vector<dolfin::la_index>& dofs,
+                           const ArrayView<const dolfin::la_index>& dofs,
                            std::size_t& offset);
 
     // Add equations for current cell

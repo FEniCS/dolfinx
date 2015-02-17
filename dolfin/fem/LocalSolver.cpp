@@ -21,9 +21,10 @@
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>
 
+#include <dolfin/common/ArrayView.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/GenericFunction.h>
@@ -99,11 +100,11 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
                  integral_L->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
-    const std::vector<dolfin::la_index>& dofs_a0
+    const ArrayView<const dolfin::la_index> dofs_a0
       = dofmap_a0->cell_dofs(cell->index());
-    const std::vector<dolfin::la_index>& dofs_a1
+    const ArrayView<const dolfin::la_index> dofs_a1
       = dofmap_a1->cell_dofs(cell->index());
-    const std::vector<dolfin::la_index>& dofs_L
+    const ArrayView<const dolfin::la_index> dofs_L
       = dofmap_L->cell_dofs(cell->index());
 
     // Check that local problem is square and a and L match

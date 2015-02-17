@@ -64,6 +64,12 @@
 %ignore dolfin::Array::operator[];
 
 //-----------------------------------------------------------------------------
+// Global modifications to the ArrayView interface
+//-----------------------------------------------------------------------------
+%ignore dolfin::ArrayView::operator=;
+%ignore dolfin::ArrayView::operator[];
+
+//-----------------------------------------------------------------------------
 // Global modifications to the IndexSet interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::IndexSet::operator[];
@@ -79,6 +85,10 @@
 %typemap(in) (std::size_t N, const std::size_t* x) = (std::size_t _array_dim, std::size_t* _array);
 %typemap(in) (std::size_t N, const int* x) = (std::size_t _array_dim, int* _array);
 %typemap(in) (std::size_t N, const double* x) = (std::size_t _array_dim, double* _array);
+
+//%typemap(in) (std::size_t N, const std::size_t* x) = (std::size_t _arrayview_dim, std::size_t* _arrayview);
+//%typemap(in) (std::size_t N, const int* x) = (std::size_t _arrayview_dim, int* _arrayview);
+//%typemap(in) (std::size_t N, const double* x) = (std::size_t _arrayview_dim, double* _arrayview);
 
 //-----------------------------------------------------------------------------
 // Ignores for Hierarchical
