@@ -34,7 +34,7 @@ from dolfin_utils.test import *
 # Lists of backends supporting or not supporting GenericVector::data()
 # access
 data_backends = []
-no_data_backends = ["PETSc", "Eigen"]
+no_data_backends = ["PETSc"]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
@@ -42,6 +42,7 @@ if MPI.size(mpi_comm_world()) == 1:
     # used in the old test.
     data_backends += ["uBLAS"]
     no_data_backends += ["PETScCusp"]
+    no_data_backends = ["Eigen"]
 
 # If we have PETSc, STL Vector gets typedefed to one of these and data
 # test will not work. If none of these backends are available
