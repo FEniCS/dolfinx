@@ -23,11 +23,10 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <dolfin/common/types.h>
 #include <Eigen/Sparse>
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include "EigenVector.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -36,8 +35,9 @@
 
 namespace dolfin
 {
-  typedef Eigen::SparseMatrix<double, Eigen::RowMajor, dolfin::la_index>
-  eigen_matrix_type;
+  //typedef Eigen::SparseMatrix<double, Eigen::RowMajor, dolfin::la_index>
+  //eigen_matrix_type;
+  typedef Eigen::SparseMatrix<double, Eigen::RowMajor> eigen_matrix_type;
 
   /// This class provides a sparse matrix class based on Eigen.
   /// It is a simple wrapper for Eigen::SparseMatrix implementing the
