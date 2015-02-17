@@ -22,10 +22,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
 #include "GenericVector.h"
 
 namespace dolfin

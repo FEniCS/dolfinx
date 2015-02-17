@@ -23,7 +23,6 @@
 //
 
 #include <vector>
-#include <Eigen/Dense>
 #include <ufc.h>
 
 #include <dolfin/common/Array.h>

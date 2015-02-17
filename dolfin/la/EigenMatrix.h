@@ -23,11 +23,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <dolfin/common/types.h>
 #include <Eigen/Sparse>
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
-
 #include "EigenVector.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"

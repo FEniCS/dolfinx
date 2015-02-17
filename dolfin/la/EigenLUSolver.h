@@ -23,7 +23,10 @@
 
 #include <map>
 #include <memory>
+
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
+
 #include "GenericLUSolver.h"
 
 namespace dolfin

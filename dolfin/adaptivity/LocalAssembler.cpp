@@ -20,7 +20,9 @@
 // First added:  2011-01-04
 // Last changed: 2013-01-10
 
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
+
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
