@@ -31,6 +31,18 @@
 // ===========================================================================
 
 //-----------------------------------------------------------------------------
+// Return NumPy arrays for GenericDofMap::cell_dofs(i)
+//-----------------------------------------------------------------------------
+%extend dolfin::GenericDofMap {
+  PyObject* _cell_dofs(std::size_t i)
+  {
+    dolfin::ArrayView<const dolfin::la_index> dofs = self->cell_dofs(i);
+    return %make_numpy_array(1, dolfin::la_index)(dofs.size(), dofs.data(),
+                                                  false);
+  }
+}
+
+//-----------------------------------------------------------------------------
 // Rename solve so it wont clash with solve from la
 //-----------------------------------------------------------------------------
 %rename(fem_solve) dolfin::solve;
@@ -109,6 +121,13 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&, const DirichletBC&);
 %ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&,
                          const std::vector<const DirichletBC*>);
+
+//-----------------------------------------------------------------------------
+// Ignore GenericDofMap::cell_dofs
+//-----------------------------------------------------------------------------
+%ignore dolfin::GenericDofMap::cell_dofs;
+%ignore dolfin::DofMap::cell_dofs;
+
 
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning

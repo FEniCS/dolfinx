@@ -123,6 +123,7 @@ OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, NPY_INT)
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, NPY_DOUBLE)
 
 
+/*
 // Out typemap for ArrayView<const dolfin::la_index>. ArrayView is
 // used mainly inside the library.
 %typemap(out) dolfin::ArrayView<const dolfin::la_index>
@@ -140,3 +141,4 @@ OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, NPY_DOUBLE)
   // Copy data
   std::copy($1.begin(), $1.end(), data);
 }
+*/
