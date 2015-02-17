@@ -44,9 +44,9 @@ namespace dolfin
   /// identical to a global solve. For problems with coupling across
   /// cells it is not.
   ///
-  /// This class can be used for post-processing solutions, e.g. computing
-  /// stress fields for visualisation, far more cheaply that using
-  /// global projections.
+  /// This class can be used for post-processing solutions,
+  /// e.g. computing stress fields for visualisation, far more cheaply
+  /// that using global projections.
 
   // Forward declarations
   class Form;
@@ -62,14 +62,14 @@ namespace dolfin
     enum SolverType {LU, Cholesky};
 
     /// Constructor (shared pointer version)
-    LocalSolver(const Form& a, const Form& L, SolverType solver_type=LU);
+    //LocalSolver(const Form& a, const Form& L, SolverType solver_type=LU);
 
     /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a,
                 std::shared_ptr<const Form> L, SolverType solver_type=LU);
 
     /// Constructor (shared pointer version)
-    LocalSolver(const Form& a, SolverType solver_type=LU);
+    //LocalSolver(const Form& a, SolverType solver_type=LU);
 
     /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type=LU);
@@ -90,10 +90,9 @@ namespace dolfin
     /// projections.
     void solve_local_rhs(Function& u) const;
 
-    /// Solve local problem. If b==NULL, then RHS is computed
-    /// cell-by-cell
-    void solve_local(GenericVector& x, const GenericVector* b,
-                     const GenericDofMap* dofmap) const;
+    /// Solve local problems for given RHS and corresponding dofmap
+    void solve_local(GenericVector& x, const GenericVector& b,
+                     const GenericDofMap& dofmap_b) const;
 
     /// Factorise LHS for all cells and store
     void factorize();
