@@ -56,7 +56,7 @@ a weak formulation of the biharmonic problem reads: find :math:`u \in V` such
 that
 
 .. math::
-  a(u,v)=L(v)
+  a(u,v)=L(v) \quad \forall \ v \in V,
 
 where the bilinear form is
 
@@ -69,11 +69,11 @@ where the bilinear form is
 and the linear form is
 
 .. math::
-  L(v) = \int_{\Omega} vf \, {\rm d}x
+  L(v) = \int_{\Omega} fv \, {\rm d}x
 
-Furthermore, :math:`\left< u \right> = (1/2) (u_{+} + u_{-})`, :math:`[\!\![
+Furthermore, :math:`\left< u \right> = \frac{1}{2} (u_{+} + u_{-})`, :math:`[\!\![
 w ]\!\!]  = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}`, :math:`\alpha \ge
-0` is a penalty term and :math:`h` is a measure of the cell size.
+0` is a penalty parameter and :math:`h_E` is a measure of the cell size.
 
 The input parameters for this demo are defined as follows:
 
