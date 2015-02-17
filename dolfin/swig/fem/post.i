@@ -34,7 +34,7 @@
 %pythoncode %{
     def cell_dofs(self, i):
         "Return the dofmap for a cell"
-        return _cell_dofs(i)
+        return self._cell_dofs(i)
 %}
 }
 
