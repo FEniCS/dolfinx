@@ -173,7 +173,6 @@ void XDMFxml::data_attribute(std::string name,
 pugi::xml_node XDMFxml::init_mesh(std::string name)
 {
   header();
-
   pugi::xml_node xdmf_domain = xml_doc.child("Xdmf").child("Domain");
   dolfin_assert(xdmf_domain);
   xdmf_grid = xdmf_domain.append_child("Grid");
@@ -208,26 +207,15 @@ pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
   dolfin_assert(xdmf_domain);
 
   // Look for existing TimeSeries with same name
-  pugi::xml_node xdmf_timegrid;
-  const std::string ts_name = "TimeSeries_" + name;
-  for (pugi::xml_node grid = xdmf_domain.first_child();
-       grid; grid = grid.next_sibling())
-  {
-    if (grid.attribute("Name").value() == ts_name)
-    {
-      xdmf_timegrid = grid;
-      break;
-    }
-  }
+  pugi::xml_node xdmf_timegrid = xdmf_domain.first_child();
 
   pugi::xml_node xdmf_timedata;
-
   // If not found, create a new TimeSeries
   if (!xdmf_timegrid)
   {
     //  /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
     xdmf_timegrid = xdmf_domain.append_child("Grid");
-    xdmf_timegrid.append_attribute("Name") = ts_name.c_str();
+    xdmf_timegrid.append_attribute("Name") = "TimeSeries";
     xdmf_timegrid.append_attribute("GridType") = "Collection";
     xdmf_timegrid.append_attribute("CollectionType") = "Temporal";
 
@@ -246,28 +234,47 @@ pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
   xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
   dolfin_assert(xdmf_timedata);
 
-  //  Add a time step to the TimeSeries List
-  const unsigned int last_count = boost::lexical_cast<unsigned int>
+  unsigned int last_count = boost::lexical_cast<unsigned int>
     (xdmf_timedata.attribute("Dimensions").value());
-  xdmf_timedata.attribute("Dimensions").set_value(static_cast<unsigned int>
-                                                  (last_count + 1));
 
-  std::string s =
-    boost::lexical_cast<std::string>(xdmf_timedata.first_child().value())
-    + " " + boost::str((boost::format("%d") % time_step));
-  xdmf_timedata.first_child().set_value(s.c_str());
+  std::string times_str(xdmf_timedata.first_child().value());
+  const std::string timestep_str = boost::str((boost::format("%g") % time_step));
+  if (last_count != 0)
+  {
+    // Find last space character and last time stamp
+    unsigned int p = times_str.rfind(" ");
+    dolfin_assert(p != std::string::npos);
+    const std::string last_stamp(times_str.begin() + p + 1, times_str.end());
+
+    if (timestep_str == last_stamp)
+    {
+      // Retrieve last "grid"
+      xdmf_grid = xdmf_timegrid.last_child();
+      return xdmf_grid;
+    }
+  }
+
+  times_str += " " + timestep_str;
+  ++last_count;
+
+  xdmf_timedata.attribute("Dimensions").set_value(last_count);
+  xdmf_timedata.first_child().set_value(times_str.c_str());
 
   //   /Xdmf/Domain/Grid/Grid - the actual data for this timestep
   xdmf_grid = xdmf_timegrid.append_child("Grid");
-  s = name + "_" + boost::lexical_cast<std::string>(counter);
+  std::string s = "grid_" + boost::lexical_cast<std::string>(last_count);
   xdmf_grid.append_attribute("Name") = s.c_str();
   xdmf_grid.append_attribute("GridType") = "Uniform";
 
   // Grid/Topology
-  xdmf_grid.append_child("Topology");
+  pugi::xml_node topology = xdmf_grid.child("Topology");
+  if (!topology)
+    xdmf_grid.append_child("Topology");
 
   // Grid/Geometry
-  xdmf_grid.append_child("Geometry");
+  pugi::xml_node geometry = xdmf_grid.child("Geometry");
+  if (!geometry)
+    xdmf_grid.append_child("Geometry");
 
   return xdmf_grid;
 }
