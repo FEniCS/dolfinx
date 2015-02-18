@@ -286,7 +286,7 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
     cell->get_vertex_coordinates(vertex_coordinates);
 
     // Get local-to-global map
-    const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs = cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
     tabulate_coordinates(coordinates, vertex_coordinates, *cell);
@@ -389,7 +389,7 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
     cell->get_vertex_coordinates(vertex_coordinates);
 
     // Get cell local-to-global map
-    const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs = cell_dofs(cell->index());
 
     // Tabulate dof coordinates
     tabulate_coordinates(coordinates, vertex_coordinates, *cell);

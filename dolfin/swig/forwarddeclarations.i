@@ -53,6 +53,7 @@ namespace dolfin
 
   // fem
   class Form;
+  class GenericDofMap;
   class LinearVariationalProblem;
   class NonlinearVariationalProblem;
   class DirichletBC;

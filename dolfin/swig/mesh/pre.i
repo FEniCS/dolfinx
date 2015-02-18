@@ -86,11 +86,6 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------
-// Ignores for MultiMesh
-//-----------------------------------------------------------------------------
-%ignore dolfin::MultiMesh::plot;
-
-//-----------------------------------------------------------------------------
 // Rename methods which get called by a re-implemented method from the
 // Python layer
 //-----------------------------------------------------------------------------
