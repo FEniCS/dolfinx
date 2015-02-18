@@ -187,7 +187,7 @@ namespace dolfin
       std::vector<double>& macro_A,
       const bool tensor_required_cell,
       const std::array<std::size_t, 2>& local_facet,
-      const std::vector<ArrayView<const la_index>>& cell_dofs);
+      const std::vector<ArrayView<const la_index> >& cell_dofs);
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
