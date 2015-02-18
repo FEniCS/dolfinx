@@ -21,7 +21,6 @@
 // This demo illustrates embedding the plot window in a Qt application.
 
 #include <QtGui>
-
 #include <dolfin.h>
 
 #include "CoordLabel.h"
@@ -33,6 +32,8 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
+  std::cout << "This test has been temporarily disabled" << std::endl;
+  /*
   if (getenv("DOLFIN_NOPLOT"))
   {
     warning("DOLFIN_NOPLOT is set; not running %s", argv[0]);
@@ -92,5 +93,6 @@ int main(int argc, char *argv[])
 
   // Enter main event loop
   return app.exec();
+  */
 }
 //----------------------------------------------------------------------------
