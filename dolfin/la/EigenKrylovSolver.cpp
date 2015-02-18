@@ -187,9 +187,9 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
     }
     else
     {
-      //Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower>
-      //  solver;
-      //num_iterations = call_solver(solver, x, b);
+      Eigen::ConjugateGradient<eigen_matrix_type, Eigen::Upper|Eigen::Lower>
+        solver;
+      num_iterations = call_solver(solver, x, b);
     }
   }
   else if (_method == "bicgstab")
@@ -207,8 +207,8 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
     }
     else if (_pc == "ilu")
     {
-      //Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IncompleteLUT<double>> solver;
-      //num_iterations = call_solver(solver, x, b);
+      Eigen::BiCGSTAB<eigen_matrix_type, Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
     }
     else
     {
@@ -256,9 +256,9 @@ std::size_t EigenKrylovSolver::solve(EigenVector& x, const EigenVector& b)
     }
     else if (_pc == "ilu")
     {
-      //Eigen::MINRES<eigen_matrix_type, Eigen::Upper|Eigen::Lower,
-      //              Eigen::IncompleteLUT<double>> solver;
-      //num_iterations = call_solver(solver, x, b);
+      Eigen::MINRES<eigen_matrix_type, Eigen::Upper|Eigen::Lower,
+                    Eigen::IncompleteLUT<double>> solver;
+      num_iterations = call_solver(solver, x, b);
     }
     else
     {
