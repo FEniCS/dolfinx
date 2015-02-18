@@ -115,7 +115,7 @@ void SparsityPattern::init(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-  const std::vector<ArrayView<const dolfin::la_index>>& entries)
+  const std::vector<ArrayView<const dolfin::la_index> >& entries)
 {
   dolfin_assert(entries.size() == 2);
 
@@ -186,7 +186,7 @@ void SparsityPattern::insert_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
-  const std::vector<ArrayView<const dolfin::la_index>>& entries)
+  const std::vector<ArrayView<const dolfin::la_index> >& entries)
 {
   dolfin_assert(entries.size() == 2);
   const std::size_t _primary_dim = primary_dim();
