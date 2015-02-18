@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ola Skavhaug
+// Copyright (C) 2015 Chris Richardson and Garth Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,24 +15,21 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2008
-// Modified by Anders Logg 2011-2012
-//
-// First added:  2007-12-06
-// Last changed: 2012-08-20
+// First added:  2015-02-01
 
-#ifndef __UBLAS_FACTORY_H
-#define __UBLAS_FACTORY_H
+#ifndef __EIGEN_FACTORY_H
+#define __EIGEN_FACTORY_H
 
+#include <map>
 #include <memory>
 #include <string>
 
 #include <dolfin/log/log.h>
-#include "uBLASKrylovSolver.h"
-#include "uBLASMatrix.h"
-#include "uBLASVector.h"
+#include "EigenKrylovSolver.h"
+#include "EigenLUSolver.h"
+#include "EigenMatrix.h"
+#include "EigenVector.h"
 #include "TensorLayout.h"
-#include "UmfpackLUSolver.h"
 #include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
@@ -40,25 +37,24 @@ namespace dolfin
   // Forward declaration
   class GenericLinearSolver;
 
-  template<typename Mat=ublas_sparse_matrix>
-  class uBLASFactory : public GenericLinearAlgebraFactory
+  class EigenFactory : public GenericLinearAlgebraFactory
   {
   public:
 
     /// Destructor
-    virtual ~uBLASFactory() {}
+    virtual ~EigenFactory() {}
 
     /// Create empty matrix
     std::shared_ptr<GenericMatrix> create_matrix() const
     {
-      std::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>);
+      std::shared_ptr<GenericMatrix> A(new EigenMatrix);
       return A;
     }
 
     /// Create empty vector
     std::shared_ptr<GenericVector> create_vector() const
     {
-      std::shared_ptr<GenericVector> x(new uBLASVector);
+      std::shared_ptr<GenericVector> x(new EigenVector);
       return x;
     }
 
@@ -75,22 +71,15 @@ namespace dolfin
     /// Create empty linear operator
     std::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
-      std::shared_ptr<GenericLinearOperator> A(new uBLASLinearOperator);
+      dolfin_not_implemented();
+      std::shared_ptr<GenericLinearOperator> A;
       return A;
     }
 
     /// Create LU solver
     std::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
     {
-      #ifdef HAS_UMFPACK
-      std::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
-      return solver;
-      #else
-      dolfin_error("uBLASFactory.cpp",
-                   "create LU solver",
-                   "No LU solver for uBLAS available. Trying configuring DOLFIN with UMFPACK");
-      return std::shared_ptr<GenericLUSolver>();
-      #endif
+      return std::shared_ptr<GenericLUSolver>(new EigenLUSolver(method));
     }
 
     /// Create Krylov solver
@@ -99,47 +88,34 @@ namespace dolfin
                          std::string preconditioner) const
     {
       std::shared_ptr<GenericLinearSolver>
-        solver(new uBLASKrylovSolver(method, preconditioner));
+        solver(new EigenKrylovSolver(method, preconditioner));
       return solver;
     }
 
     /// Return a list of available LU solver methods
     std::map<std::string, std::string> lu_solver_methods() const
-    {
-      std::map<std::string, std::string> methods
-        = { {"default", "default LU solver"} };
-      #ifdef HAS_UMFPACK
-      methods.insert(std::make_pair("umfpack",
-                                    "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
-      #endif
-      return methods;
-    }
+    { return EigenLUSolver::methods(); }
 
     /// Return a list of available Krylov solver methods
     std::map<std::string, std::string> krylov_solver_methods() const
-    { return uBLASKrylovSolver::methods(); }
+    { return EigenKrylovSolver::methods(); }
 
     /// Return a list of available preconditioners
     std::map<std::string, std::string> krylov_solver_preconditioners() const
-    { return uBLASKrylovSolver::preconditioners(); }
+    { return EigenKrylovSolver::preconditioners(); }
 
     /// Return singleton instance
-    static uBLASFactory<Mat>& instance()
+    static EigenFactory& instance()
     { return factory; }
 
   private:
 
     // Private Constructor
-    uBLASFactory() {}
+    EigenFactory() {}
 
     // Singleton instance
-    static uBLASFactory<Mat> factory;
-
+    static EigenFactory factory;
   };
+
 }
-
-// Initialise static data
-template<typename Mat> dolfin::uBLASFactory<Mat>
-dolfin::uBLASFactory<Mat>::factory;
-
 #endif

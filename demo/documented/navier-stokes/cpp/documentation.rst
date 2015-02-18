@@ -378,8 +378,11 @@ pressure equation if available:
     begin("Computing pressure correction");
     assemble(b2, L2);
     for (std::size_t i = 0; i < bcp.size(); i++)
+    {
       bcp[i]->apply(A2, b2);
-    solve(A2, *p1.vector(), b2, "cg", prec);
+      bcp[i]->apply(*p1.vector());
+    }
+    solve(A2, *p1.vector(), b2, "bicgstab", prec);
     end();
 
     // Velocity correction
