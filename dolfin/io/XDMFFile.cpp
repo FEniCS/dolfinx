@@ -188,14 +188,14 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Tabulate dofs
-      const std::vector<dolfin::la_index>& dofs
+      const ArrayView<const dolfin::la_index> dofs
         = dofmap.cell_dofs(cell->index());
       for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
         dof_set.push_back(dofs[i]);
 
       // Add local dimension to cell offset and increment
-      *(cell_offset + 1) = *(cell_offset)
-        + dofmap.cell_dimension(cell->index());
+      *(cell_offset + 1)
+        = *(cell_offset) + dofmap.cell_dimension(cell->index());
       ++cell_offset;
     }
 

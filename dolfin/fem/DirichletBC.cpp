@@ -31,6 +31,7 @@
 #include <ufc.h>
 
 #include <dolfin/common/Array.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/RangedIndexSet.h>
@@ -882,7 +883,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
                  vertex_coordinates.data(), ufc_cell);
 
     // Tabulate dofs on cell
-    const std::vector<dolfin::la_index>& cell_dofs
+    const ArrayView<const dolfin::la_index> cell_dofs
       = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
@@ -967,7 +968,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         bool interpolated = false;
 
         // Tabulate dofs on cell
-        const std::vector<dolfin::la_index>& cell_dofs
+        const ArrayView<const dolfin::la_index> cell_dofs
           = dofmap.cell_dofs(c->index());
 
         // Loop over all dofs on cell
@@ -1062,15 +1063,14 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                   *cell);
 
       // Tabulate dofs on cell
-      const std::vector<dolfin::la_index>& cell_dofs
+      const ArrayView<const dolfin::la_index> cell_dofs
         = dofmap.cell_dofs(cell->index());
 
       // Interpolate function only once and only on cells where necessary
       bool already_interpolated = false;
 
-      std::vector<std::size_t> dofs;
-
       // Loop all dofs on cell
+      std::vector<std::size_t> dofs;
       for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
       {
         const std::size_t global_dof = cell_dofs[i];
@@ -1133,7 +1133,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                     vertex_coordinates.data(), ufc_cell);
 
       // Tabulate dofs on cell
-      const std::vector<dolfin::la_index>& cell_dofs
+      const ArrayView<const dolfin::la_index> cell_dofs
         = dofmap.cell_dofs(cell.index());
 
       // Loop dofs on boundary of cell

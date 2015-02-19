@@ -1,3 +1,8 @@
+- Change GenericDofMap::cell_dofs return type from const std::vector<..>&
+	to ArrayView<const ..>
+- Add ArrayView class for views into arrays
+- Change fall back linear algebra backend to Eigen
+- Add Eigen linear algebra backend
 - Remove deprecated GenericDofMap::geometric_dim function (fixes Issue #443)
 - Add quadrature rules for multimesh/cut-cell integration up to order 6
 1.5.0 [2015-01-12]

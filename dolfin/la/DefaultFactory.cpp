@@ -22,6 +22,7 @@
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
+#include "EigenFactory.h"
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
 #include "STLFactory.h"
@@ -65,19 +66,18 @@ DefaultFactory::create_krylov_solver(std::string method,
   return factory().create_krylov_solver(method, preconditioner);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-DefaultFactory::lu_solver_methods() const
+std::map<std::string, std::string> DefaultFactory::lu_solver_methods() const
 {
   return factory().lu_solver_methods();
 }
  //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 DefaultFactory::krylov_solver_methods() const
 {
   return factory().krylov_solver_methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 DefaultFactory::krylov_solver_preconditioners() const
 {
   return factory().krylov_solver_preconditioners();
@@ -86,7 +86,7 @@ DefaultFactory::krylov_solver_preconditioners() const
 GenericLinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
-  const std::string default_backend = "uBLAS";
+  const std::string default_backend = "Eigen";
   typedef uBLASFactory<> DefaultFactory;
 
   // Get backend from parameter system
@@ -95,6 +95,8 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
   // Choose backend
   if (backend == "uBLAS")
     return uBLASFactory<>::instance();
+  else if (backend == "Eigen")
+    return EigenFactory::instance();
   else if (backend == "PETSc")
   {
     #ifdef HAS_PETSC
