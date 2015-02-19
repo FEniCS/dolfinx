@@ -87,7 +87,7 @@ namespace dolfin
     std::vector<std::size_t> weight() const;
 
     /// Rebalance across processes
-    Mesh rebalance() const;
+    std::shared_ptr<Mesh> rebalance() const;
 
   private:
 

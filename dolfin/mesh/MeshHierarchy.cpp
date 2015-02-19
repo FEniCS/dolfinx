@@ -158,7 +158,7 @@ std::vector<std::size_t> MeshHierarchy::weight() const
   return cell_weights;
 }
 //-----------------------------------------------------------------------------
-Mesh MeshHierarchy::rebalance() const
+std::shared_ptr<Mesh> MeshHierarchy::rebalance() const
 {
   // Make a new MeshHierarchy, with the same meshes, but rebalanced across
   // processes.
@@ -217,8 +217,8 @@ Mesh MeshHierarchy::rebalance() const
   std::copy(vertex_coords.begin(), vertex_coords.end(),
             local_mesh_data.vertex_coordinates.data());
 
-  Mesh mesh(coarse_mesh.mpi_comm());
-  MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data);
+  std::shared_ptr<Mesh> mesh(new Mesh(coarse_mesh.mpi_comm()));
+  MeshPartitioning::build_distributed_mesh(*mesh, local_mesh_data);
 
   return mesh;
 }
