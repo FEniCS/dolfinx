@@ -23,6 +23,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -172,7 +173,7 @@ void LocalSolver::solve_local_rhs(Function& u) const
                                   vertex_coordinates.data(),
                                   ufc_cell.orientation);
       // Solve local problem
-      if (_solver_type==SolverType::Cholesky)
+      if (_solver_type == SolverType::Cholesky)
       {
         cholesky.compute(A_e);
         x_e = cholesky.solve(b_e);
@@ -185,7 +186,7 @@ void LocalSolver::solve_local_rhs(Function& u) const
     }
     else
     {
-      if (_solver_type==SolverType::Cholesky)
+      if (_solver_type == SolverType::Cholesky)
         x_e = _cholesky_cache[cell->index()].solve(b_e);
       else
         x_e = _lu_cache[cell->index()].solve(b_e);
@@ -327,9 +328,6 @@ void LocalSolver::factorize()
                  "Point integrals are not supported (yet)");
   }
 
-  // Set timer
-  Timer timer("Factorize local block matrices");
-
   // Extract mesh
   const Mesh& mesh = _a->mesh();
 
@@ -379,7 +377,7 @@ void LocalSolver::factorize()
                               ufc_cell.orientation);
 
      // Compute LU decomposition and store
-    if (_solver_type==SolverType::Cholesky)
+    if (_solver_type == SolverType::Cholesky)
       _cholesky_cache[cell->index()].compute(A);
     else
       _lu_cache[cell->index()].compute(A);
