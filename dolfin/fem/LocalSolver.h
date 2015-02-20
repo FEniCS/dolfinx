@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Garth N. Wells
+// Copyright (C) 2013-2015 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2013-02-12
-// Last changed:
+// Modified by Steven Vandekerckhove, 2014.
 
 #ifndef __LOCAL_SOLVER_H
 #define __LOCAL_SOLVER_H
+
+#include <memory>
+#include <vector>
+#include <Eigen/Cholesky>
+#include <Eigen/Dense>
+#include <Eigen/LU>
+
 
 namespace dolfin
 {
@@ -34,23 +40,73 @@ namespace dolfin
   /// identical to a global solve. For problems with coupling across
   /// cells it is not.
   ///
-  /// This class can be used for post-processing solutions, e.g. computing
-  /// stress fields for visualisation, far more cheaply that using
-  /// global projections.
+  /// This class can be used for post-processing solutions,
+  /// e.g. computing stress fields for visualisation, far more cheaply
+  /// that using global projections.
 
   // Forward declarations
-  class GenericVector;
   class Form;
+  class Function;
+  class GenericDofMap;
+  class GenericVector;
 
   class LocalSolver
   {
   public:
 
-    /// Solve local (cell-wise) problem and copy result into global
-    /// vector x.
-    void solve(GenericVector& x, const Form& a, const Form& L,
-               bool symmetric=false) const;
+    enum SolverType {LU, Cholesky};
 
+    /// Constructor (shared pointer version)
+    LocalSolver(std::shared_ptr<const Form> a,
+                std::shared_ptr<const Form> L, SolverType solver_type=LU);
+
+    /// Constructor (shared pointer version)
+    LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type=LU);
+
+    /// Solve local (cell-wise) problems A_e x_e = b_e, where A_e is
+    /// the cell matrix LHS and b_e is the global RHS vector b
+    /// restricted to the cell, i.e. b_e may contain contributions
+    /// from neighbouring cells. The solution is exact for the case in
+    /// which there is no coupling between cell contributions to the
+    /// global matrix A, e.g. the discontinuous Galerkin matrix. The
+    /// result is copied into x.
+    void solve_global_rhs(Function& u) const;
+
+    /// Solve local (cell-wise) problems A_e x_e = b_e where A_e and
+    /// b_e are the cell element tensors. This function is useful for
+    /// computing (approximate) cell-wise projections, for example for
+    /// post-processing. It much more efficient than computing global
+    /// projections.
+    void solve_local_rhs(Function& u) const;
+
+    /// Solve local problems for given RHS and corresponding dofmap
+    /// for RHS
+    void solve_local(GenericVector& x, const GenericVector& b,
+                     const GenericDofMap& dofmap_b) const;
+
+    /// Factorise LHS for all cells and store
+    void factorize();
+
+    /// Reset (clear) any stored factorisations
+    void clear_factorization();
+
+  private:
+
+    // Bilinear and linear forms
+    std::shared_ptr<const Form> _a, _formL;
+
+    // Solver type to use
+    const SolverType _solver_type;
+
+    // Cached LU factorisations of matrices (_spd==false)
+    std::vector<Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic,
+                                                  Eigen::Dynamic,
+                                                  Eigen::RowMajor> > > _lu_cache;
+
+    // Cached Cholesky factorisations of matrices (_spd==true)
+    std::vector<Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic,
+                                         Eigen::Dynamic,
+                                         Eigen::RowMajor> > > _cholesky_cache;
   };
 
 }
