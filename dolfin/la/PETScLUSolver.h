@@ -102,7 +102,7 @@ namespace dolfin
     KSP ksp() const;
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -122,7 +122,7 @@ namespace dolfin
     static const std::map<const MatSolverPackage, const bool> _methods_cholesky;
 
     // Available LU solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> >
+    static const std::map<std::string, std::string>
     _methods_descr;
 
     // Select LU solver type

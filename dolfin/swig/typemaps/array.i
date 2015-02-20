@@ -47,12 +47,14 @@
 }
 
 // Clean up the constructed Array
-%typemap(freearg) CONSTARRAY dolfin::Array<TYPE> & ARGNAME{
+%typemap(freearg) CONSTARRAY dolfin::Array<TYPE>& ARGNAME
+{
   delete $1;
 }
 
-%typecheck(SWIG_TYPECHECK_ ## TYPECHECK ## _ARRAY) CONSTARRAY dolfin::Array<TYPE> & ARGNAME{
-    $1 = PyArray_Check($input) ? 1 : 0;
+%typecheck(SWIG_TYPECHECK_ ## TYPECHECK ## _ARRAY) CONSTARRAY dolfin::Array<TYPE> & ARGNAME
+{
+  $1 = PyArray_Check($input) ? 1 : 0;
 }
 
 %enddef
@@ -65,20 +67,20 @@
 //-----------------------------------------------------------------------------
 %define OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, NUMPYTYPE)
 
-%typemap(out) dolfin::Array<TYPE> {
-
+%typemap(out) dolfin::Array<TYPE>
+{
   // Create NumPy array
   npy_intp size = (&$1)->size();
   PyObject* op = PyArray_SimpleNew(1, &size, NUMPYTYPE);
 
-  if ( op == NULL )
+  if (op == NULL)
     SWIG_exception(SWIG_TypeError, "Error in conversion of dolfin::Array< TYPE > to NumPy array.");
 
   // Get data
   TYPE* data = reinterpret_cast<TYPE*>(PyArray_DATA(op));
 
   // Set data from Array
-  for (int i = 0; i<(&$1)->size(); i++)
+  for (int i = 0; i < (&$1)->size(); i++)
     data[i] = (&$1)->operator[](i);
 
   // Return the NumPy array
@@ -89,13 +91,15 @@
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::Array
 //-----------------------------------------------------------------------------
-%typemap(directorin) const dolfin::Array<double>& {
+%typemap(directorin) const dolfin::Array<double>&
+{
   $input = %make_numpy_array(1, double)($1_name.size(), $1_name.data(), false);
- }
+}
 
-%typemap(directorin) dolfin::Array<double>& {
+%typemap(directorin) dolfin::Array<double>&
+{
   $input = %make_numpy_array(1, double)($1_name.size(), $1_name.data(), true);
- }
+}
 
 //-----------------------------------------------------------------------------
 // Run the typemap macros
@@ -117,3 +121,24 @@ IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::la_index, INT32, NPY_UINT, dolfin_inde
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(std::size_t, NPY_UINTP)
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, NPY_INT)
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, NPY_DOUBLE)
+
+
+/*
+// Out typemap for ArrayView<const dolfin::la_index>. ArrayView is
+// used mainly inside the library.
+%typemap(out) dolfin::ArrayView<const dolfin::la_index>
+{
+  npy_intp adims = $1.size();
+
+  #if (DOLFIN_LA_INDEX_SIZE==4)
+  $result = PyArray_SimpleNew(1, &adims, NPY_INT);
+  int* data = static_cast<int*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
+  #else
+  $result = PyArray_SimpleNew(1, &adims, NPY_INT64);
+  int64_t* data = static_cast<int64_t*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
+  #endif
+
+  // Copy data
+  std::copy($1.begin(), $1.end(), data);
+}
+*/

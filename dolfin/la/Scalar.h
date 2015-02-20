@@ -141,7 +141,7 @@ namespace dolfin
 
     /// Add block of values using global indices
     virtual void add(const double* block,
-             const std::vector<const std::vector<dolfin::la_index>* >& rows)
+             const std::vector<ArrayView<const dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
       _local_increment += block[0];
@@ -149,23 +149,7 @@ namespace dolfin
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-             const std::vector<const std::vector<dolfin::la_index>* >& rows)
-    {
-      dolfin_assert(block);
-      _local_increment += block[0];
-    }
-
-    /// Add block of values using global indices
-    virtual void add(const double* block,
-             const std::vector<std::vector<dolfin::la_index> >& rows)
-    {
-      dolfin_assert(block);
-      _local_increment += block[0];
-    }
-
-    /// Add block of values using local indices
-    virtual void add_local(const double* block,
-             const std::vector<std::vector<dolfin::la_index> >& rows)
+             const std::vector<ArrayView<const dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
       _local_increment += block[0];

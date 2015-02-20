@@ -122,7 +122,7 @@ void PointSource::apply(GenericVector& b)
 
   // Compute local-to-global mapping
   dolfin_assert(_function_space->dofmap());
-  const std::vector<dolfin::la_index>& dofs
+  const ArrayView<const dolfin::la_index> dofs
     = _function_space->dofmap()->cell_dofs(cell.index());
 
   // Add values to vector

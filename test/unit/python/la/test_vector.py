@@ -28,18 +28,21 @@ from dolfin import *
 from dolfin_utils.test import *
 
 
-# TODO: Use the fixture setup from matrix in a shared conftest.py when 
+# TODO: Use the fixture setup from matrix in a shared conftest.py when
 #       we move tests to one flat folder.
 
-# Lists of backends supporting or not supporting data access
+# Lists of backends supporting or not supporting GenericVector::data()
+# access
 data_backends = []
 no_data_backends = ["PETSc"]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
-    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't used in the old test.
+    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
+    # used in the old test.
     data_backends += ["uBLAS"]
     no_data_backends += ["PETScCusp"]
+    no_data_backends = ["Eigen"]
 
 # If we have PETSc, STL Vector gets typedefed to one of these and data
 # test will not work. If none of these backends are available
@@ -54,9 +57,11 @@ data_backends = list(filter(has_linear_algebra_backend, data_backends))
 no_data_backends = list(filter(has_linear_algebra_backend, no_data_backends))
 any_backends = data_backends + no_data_backends
 
-# Fixtures setting up and resetting the global linear algebra backend for a list of backends
-data_backend    = set_parameters_fixture("linear_algebra_backend", data_backends)
-no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backends)
+# Fixtures setting up and resetting the global linear algebra backend
+# for a list of backends
+data_backend = set_parameters_fixture("linear_algebra_backend", data_backends)
+no_data_backend = set_parameters_fixture("linear_algebra_backend",
+                                         no_data_backends)
 any_backend = set_parameters_fixture("linear_algebra_backend", any_backends)
 
 class TestVectorForAnyBackend:
@@ -354,7 +359,7 @@ class TestVectorForAnyBackend:
         v = as_backend_type(v)
         data = v.data()
         assert (data==array).all()
-    
+
     def test_vector_data_exceptions(self, no_data_backend):
         v = Vector(mpi_comm_world(), 301)
         with pytest.raises(RuntimeError):

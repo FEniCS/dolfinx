@@ -26,10 +26,6 @@
 #include <Eigen/Dense>
 #include <Eigen/LU>
 
-namespace ufc
-{
-  class cell_integral;
-}
 
 namespace dolfin
 {
@@ -53,7 +49,6 @@ namespace dolfin
   class Function;
   class GenericDofMap;
   class GenericVector;
-  class UFC;
 
   class LocalSolver
   {

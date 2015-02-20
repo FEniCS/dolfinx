@@ -30,8 +30,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-uBLASKrylovSolver::methods()
+std::map<std::string, std::string> uBLASKrylovSolver::methods()
 {
   return { {"default",  "default Krylov method"},
            {"cg",       "Conjugate gradient method"},
@@ -39,8 +38,7 @@ uBLASKrylovSolver::methods()
            {"bicgstab", "Biconjugate gradient stabilized method"} };
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-uBLASKrylovSolver::preconditioners()
+std::map<std::string, std::string> uBLASKrylovSolver::preconditioners()
 {
   return { {"default", "default preconditioner"},
            {"none",    "No preconditioner"},

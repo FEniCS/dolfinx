@@ -566,7 +566,7 @@ void Function::restrict(double* w, const FiniteElement& element,
   {
     // Get dofmap for cell
     const GenericDofMap& dofmap = *_function_space->dofmap();
-    const std::vector<dolfin::la_index>& dofs
+    const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
     if (dofs.size() > 0)
@@ -746,7 +746,8 @@ Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get dofs on cell
-    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index>
+      dofs = dofmap.cell_dofs(cell->index());
     for (std::size_t d = 0; d < dofs.size(); ++d)
     {
       const std::size_t dof = dofs[d];

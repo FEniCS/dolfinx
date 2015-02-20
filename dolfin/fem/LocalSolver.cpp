@@ -17,14 +17,12 @@
 //
 // Modified by Steven Vandekerckhove, 2014.
 
-#include <array>
 #include <Eigen/Dense>
 
-#include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/Timer.h>
+#include <dolfin/common/ArrayView.h>
+#include <dolfin/common/types.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -134,14 +132,15 @@ void LocalSolver::solve_local_rhs(Function& u) const
   std::vector<double> vertex_coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Get cell dofmaps
-    const std::vector<dolfin::la_index>& dofs_L
-      = dofmap_L->cell_dofs(cell->index());
-    const std::vector<dolfin::la_index>& dofs_a0
+    // Get local-to-global dof maps for cell
+    const ArrayView<const dolfin::la_index> dofs_a0
       = dofmaps_a[0]->cell_dofs(cell->index());
-
-    // Check dimensions
-    dolfin_assert(dofs_L.size() == dofs_a0.size());
+    const ArrayView<const dolfin::la_index> dofs_a1
+      = dofmaps_a[1]->cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs_L
+      = dofmap_L->cell_dofs(cell->index());
+    dolfin_assert(dofs_a0.size() == dofs_a1.size());
+    dolfin_assert(dofs_a0.size() == dofs_L.size());
 
     // Update to current cell
     cell->get_vertex_coordinates(vertex_coordinates);
@@ -251,9 +250,9 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get cell dofmaps
-    const std::vector<dolfin::la_index>& dofs_L
+    const ArrayView<const dolfin::la_index> dofs_L
       = dofmap_b.cell_dofs(cell->index());
-    const std::vector<dolfin::la_index>& dofs_a0
+    const ArrayView<const dolfin::la_index> dofs_a0
       = dofmaps_a[0]->cell_dofs(cell->index());
 
     // Check dimensions
@@ -264,7 +263,6 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
     b.get_local(b_e.data(), dofs_L.size(), dofs_L.data());
 
     // Solve local problem
-    //----
     if (!use_cache)
     {
       // Update to current cell
@@ -294,7 +292,6 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
         x_e = lu.solve(b_e);
       }
     }
-    //----
     else
     {
       if (_solver_type == SolverType::Cholesky)
