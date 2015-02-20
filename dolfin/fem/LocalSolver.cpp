@@ -124,15 +124,18 @@ void LocalSolver::solve_local_rhs(Function& u) const
   dolfin_assert(dofmaps_a[0] and dofmaps_a[1]);
 
   dolfin_assert(_L->function_space(0)->dofmap());
-  std::shared_ptr<const GenericDofMap> dofmap_L = _L->function_space(0)->dofmap();
+  std::shared_ptr<const GenericDofMap> dofmap_L
+    = _L->function_space(0)->dofmap();
 
   // Check dimensions
-  dolfin_assert(dofmaps_a[0]->global_dimension() == dofmaps_a[0]->global_dimension());
-  dolfin_assert(dofmaps_a[0]->global_dimension() == dofmap_L->global_dimension());
+  dolfin_assert(dofmaps_a[0]->global_dimension()
+                == dofmaps_a[1]->global_dimension());
+  dolfin_assert(dofmaps_a[0]->global_dimension()
+                == dofmap_L->global_dimension());
 
   // Eigen data structures for local tensors
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_e;
-  Eigen::VectorXd b_e, x_e;;
+  Eigen::VectorXd b_e, x_e;
 
   // Eigen factorizations
   Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -241,12 +244,14 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
   dolfin_assert(dofmaps_a[0] and dofmaps_a[1]);
 
   // Check dimensions
-  dolfin_assert(dofmaps_a[0]->global_dimension() == dofmaps_a[0]->global_dimension());
-  dolfin_assert(dofmaps_a[0]->global_dimension() == dofmap_b.global_dimension());
+  dolfin_assert(dofmaps_a[0]->global_dimension()
+                == dofmaps_a[1]->global_dimension());
+  dolfin_assert(dofmaps_a[0]->global_dimension()
+                == dofmap_b.global_dimension());
 
   // Eigen data structures for local tensors
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_e;
-  Eigen::VectorXd b_e, x_e;;
+  Eigen::VectorXd b_e, x_e;
 
   // Eigen factorizations
   Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
