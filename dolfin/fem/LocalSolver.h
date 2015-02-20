@@ -62,14 +62,8 @@ namespace dolfin
     enum SolverType {LU, Cholesky};
 
     /// Constructor (shared pointer version)
-    //LocalSolver(const Form& a, const Form& L, SolverType solver_type=LU);
-
-    /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a,
                 std::shared_ptr<const Form> L, SolverType solver_type=LU);
-
-    /// Constructor (shared pointer version)
-    //LocalSolver(const Form& a, SolverType solver_type=LU);
 
     /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type=LU);
@@ -91,6 +85,7 @@ namespace dolfin
     void solve_local_rhs(Function& u) const;
 
     /// Solve local problems for given RHS and corresponding dofmap
+    /// for RHS
     void solve_local(GenericVector& x, const GenericVector& b,
                      const GenericDofMap& dofmap_b) const;
 
@@ -103,7 +98,7 @@ namespace dolfin
   private:
 
     // Bilinear and linear forms
-    std::shared_ptr<const Form> _a, _L;
+    std::shared_ptr<const Form> _a, _formL;
 
     // Solver type to use
     const SolverType _solver_type;

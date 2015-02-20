@@ -28,7 +28,7 @@ import pytest
 import numpy
 from dolfin import *
 
-def test_local_solver_global_rhs():
+def test_solve_global_rhs():
     mesh = UnitCubeMesh(2, 3, 3)
     V = FunctionSpace(mesh, "Discontinuous Lagrange", 2)
     W = FunctionSpace(mesh, "Lagrange", 2)
@@ -63,7 +63,7 @@ def test_local_solver_global_rhs():
         error = assemble((u - f)*(u - f)*dx)
         assert round(error, 10) == 0
 
-def test_local_solver_local_rhs():
+def test_solve_local_rhs():
     mesh = UnitCubeMesh(1, 5, 1)
     V = FunctionSpace(mesh, "Lagrange", 2)
     W = FunctionSpace(mesh, "Lagrange", 2)
@@ -133,7 +133,8 @@ def test_local_solver_dg():
     local_solver.solve_global_rhs(u_ls)
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
-def test_local_solver_local_solve():
+
+def test_solve_local():
     mesh = UnitIntervalMesh(50)
     U = FunctionSpace(mesh, "DG", 2)
 
@@ -160,13 +161,13 @@ def test_local_solver_local_solve():
     solve(a == L, u_lu, solver_parameters = {"linear_solver" : "lu"})
 
     # Compute solution with local solver and compare
-    local_solver = LocalSolver(a, L)
+    local_solver = LocalSolver(a)
     u_ls = Function(U)
     local_solver.solve_local(u_ls.vector(), b, U.dofmap())
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
     # Compute solution with local solver (Cholesky) and compare
-    local_solver = LocalSolver(a, L, True)
+    local_solver = LocalSolver(a, solver_type=LocalSolver.Cholesky)
     u_ls = Function(U)
     local_solver.solve_local(u_ls.vector(), b, U.dofmap())
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0

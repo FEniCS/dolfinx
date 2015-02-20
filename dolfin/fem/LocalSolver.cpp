@@ -38,35 +38,16 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-/*
-LocalSolver::LocalSolver(const Form& a, const Form& L, SolverType solver_type)
-  : LocalSolver::LocalSolver(std::shared_ptr<const Form>(&a, NoDeleter()),
-                             std::shared_ptr<const Form>(&L, NoDeleter()),
-                             solver_type)
-{
-  // Do nothing
-}
-*/
-//----------------------------------------------------------------------------
 LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
                          std::shared_ptr<const Form> L,
                          SolverType solver_type)
-  : _a(a), _L(L), _solver_type(solver_type)
+  : _a(a), _formL(L), _solver_type(solver_type)
 {
   dolfin_assert(a);
   dolfin_assert(a->rank() == 2);
   dolfin_assert(L);
   dolfin_assert(L->rank() == 1);
 }
-//----------------------------------------------------------------------------
-/*
-LocalSolver::LocalSolver(const Form& a, SolverType solver_type)
-  : LocalSolver::LocalSolver(std::shared_ptr<const Form>(&a, NoDeleter()),
-                             solver_type)
-{
-  // Do nothing
-}
-*/
 //----------------------------------------------------------------------------
 LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
                          SolverType solver_type)
@@ -81,21 +62,21 @@ void LocalSolver::solve_global_rhs(Function& u) const
   // Compute RHS (global)
   std::shared_ptr<GenericVector> b = u.vector()->factory().create_vector();
   dolfin_assert(b);
-  dolfin_assert(_L);
-  assemble(*b, *_L);
+  dolfin_assert(_formL);
+  assemble(*b, *_formL);
 
   // Solve local problems
   dolfin_assert(u.vector());
-  dolfin_assert(_L->function_space(0)->dofmap().get());
-  solve_local(*u.vector(), *b, *(_L->function_space(0)->dofmap()));
+  dolfin_assert(_formL->function_space(0)->dofmap().get());
+  solve_local(*u.vector(), *b, *(_formL->function_space(0)->dofmap()));
 }
 //----------------------------------------------------------------------------
 void LocalSolver::solve_local_rhs(Function& u) const
 {
   dolfin_assert(_a);
+  dolfin_assert(_formL);
   dolfin_assert(_a->rank() == 2);
-  dolfin_assert(_L);
-  dolfin_assert(_L->rank() == 1);
+  dolfin_assert(_formL->rank() == 1);
 
   // Extract mesh
   dolfin_assert(_a->function_space(0)->mesh());
@@ -105,17 +86,21 @@ void LocalSolver::solve_local_rhs(Function& u) const
   dolfin_assert(u.vector());
   GenericVector& x = *(u.vector());
 
-
  // Create UFC objects
-  UFC ufc_a(*_a), ufc_L(*_L);
+  UFC ufc_a(*_a), ufc_L(*_formL);
 
   // Check whether to use cache for factorizations
-  const bool use_cache = _cholesky_cache.empty() and _lu_cache.empty() ? false : true;
+  const bool use_cache = _cholesky_cache.empty()
+    and _lu_cache.empty() ? false : true;
 
   // Get cell integrals
-  ufc::cell_integral* integral_a = ufc_a.default_cell_integral.get();
-  ufc::cell_integral* integral_L = ufc_L.default_cell_integral.get();
-  dolfin_assert(integral_a);
+  std::shared_ptr<ufc::cell_integral> integral_a;
+  if (!use_cache)
+  {
+    integral_a = ufc_a.default_cell_integral;
+    dolfin_assert(integral_a);
+  }
+  std::shared_ptr<ufc::cell_integral> integral_L = ufc_L.default_cell_integral;
   dolfin_assert(integral_L);
 
   // Get dofmaps
@@ -123,9 +108,9 @@ void LocalSolver::solve_local_rhs(Function& u) const
     = {{_a->function_space(0)->dofmap(), _a->function_space(1)->dofmap()}};
   dolfin_assert(dofmaps_a[0] and dofmaps_a[1]);
 
-  dolfin_assert(_L->function_space(0)->dofmap());
+  dolfin_assert(_formL->function_space(0)->dofmap());
   std::shared_ptr<const GenericDofMap> dofmap_L
-    = _L->function_space(0)->dofmap();
+    = _formL->function_space(0)->dofmap();
 
   // Check dimensions
   dolfin_assert(dofmaps_a[0]->global_dimension()
@@ -162,7 +147,6 @@ void LocalSolver::solve_local_rhs(Function& u) const
     cell->get_vertex_coordinates(vertex_coordinates);
     cell->get_cell_data(ufc_cell);
 
-
     // Resize local RHS vector and copy global RHS data into local
     // RHS, else compute b_e
     b_e.resize(dofs_L.size());
@@ -175,7 +159,7 @@ void LocalSolver::solve_local_rhs(Function& u) const
                                 ufc_cell.orientation);
 
     // Solve local problem
-    if (!use_cache)
+    if (integral_a)
     {
       // Update LHS UFC object
       ufc_a.update(*cell, vertex_coordinates, ufc_cell,
@@ -229,13 +213,14 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
   const Mesh& mesh = *_a->function_space(0)->mesh();
 
   // Check whether to use cache for factorizations
-  const bool use_cache = _cholesky_cache.empty() and _lu_cache.empty() ? false : true;
+  const bool use_cache
+    = _cholesky_cache.empty() and _lu_cache.empty() ? false : true;
 
   // Create UFC object
   UFC ufc_a(*_a);
 
   // Get cell integral
-  ufc::cell_integral* integral_a = ufc_a.default_cell_integral.get();
+  std::shared_ptr<ufc::cell_integral> integral_a = ufc_a.default_cell_integral;
   dolfin_assert(integral_a);
 
   // Get dofmaps
@@ -279,6 +264,7 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
     b.get_local(b_e.data(), dofs_L.size(), dofs_L.data());
 
     // Solve local problem
+    //----
     if (!use_cache)
     {
       // Update to current cell
@@ -297,7 +283,7 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
                                   vertex_coordinates.data(),
                                   ufc_cell.orientation);
       // Solve local problem
-      if (_solver_type==SolverType::Cholesky)
+      if (_solver_type == SolverType::Cholesky)
       {
         cholesky.compute(A_e);
         x_e = cholesky.solve(b_e);
@@ -308,9 +294,10 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
         x_e = lu.solve(b_e);
       }
     }
+    //----
     else
     {
-      if (_solver_type==SolverType::Cholesky)
+      if (_solver_type == SolverType::Cholesky)
         x_e = _cholesky_cache[cell->index()].solve(b_e);
       else
         x_e = _lu_cache[cell->index()].solve(b_e);
