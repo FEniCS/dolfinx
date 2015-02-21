@@ -179,6 +179,7 @@ int main()
   L_s.lmbda = lambda;
   L_s.disp = u;
 
+  // Compute stress for visualisation
   Function stress(W);
   LocalSolver local_solver(std::shared_ptr<Form>(&a_s, NoDeleter()),
                            std::shared_ptr<Form>(&L_s, NoDeleter()),
