@@ -96,7 +96,6 @@ def test_solve_local_rhs():
         assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
 def test_local_solver_dg():
-    print "test"
     mesh = UnitIntervalMesh(50)
     U = FunctionSpace(mesh, "DG", 2)
 
