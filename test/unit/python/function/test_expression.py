@@ -626,7 +626,7 @@ def test_doc_string_compiled_expression_with_system_headers():
       };
     }'''
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(Exception):
         Expression(code_not_compile)
 
 def test_doc_string_python_expressions(mesh):

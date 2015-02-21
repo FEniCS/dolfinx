@@ -129,20 +129,15 @@ def test_solver_parameters():
 
     # Record default values so we can change back
     absolute_tolerance = parameters["krylov_solver"]["absolute_tolerance"]
-    reuse_factorization = parameters["lu_solver"]["reuse_factorization"]
 
     # Set global parameters
     parameters["krylov_solver"]["absolute_tolerance"] = 1.23456
-    parameters["lu_solver"]["reuse_factorization"] = True
 
     # Create solvers
     krylov_solver = KrylovSolver()
-    lu_solver = LUSolver()
 
     # Check that parameters propagate to solvers
     assert krylov_solver.parameters["absolute_tolerance"] == 1.23456
-    assert lu_solver.parameters["reuse_factorization"] == True
 
     # Reset parameters so that other tests will continue to work
     parameters["krylov_solver"]["absolute_tolerance"] = absolute_tolerance
-    parameters["lu_solver"]["reuse_factorization"] = reuse_factorization

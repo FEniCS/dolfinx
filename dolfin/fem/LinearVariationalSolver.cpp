@@ -142,11 +142,11 @@ void LinearVariationalSolver::solve()
     info(*A, true);
 
   // Get list of available methods
-  std::vector<std::pair<std::string, std::string>>
+  std::map<std::string, std::string>
     lu_methods = u->vector()->factory().lu_solver_methods();
-  std::vector<std::pair<std::string, std::string>>
+  std::map<std::string, std::string>
     krylov_methods = u->vector()->factory().krylov_solver_methods();
-  std::vector<std::pair<std::string, std::string>>
+  std::map<std::string, std::string>
     preconditioners = u->vector()->factory().krylov_solver_preconditioners();
 
   // Choose linear solver
@@ -154,15 +154,10 @@ void LinearVariationalSolver::solve()
       || LinearSolver::in_list(solver_type, lu_methods))
   {
     std::string lu_method;
-
     if (solver_type == "direct" || solver_type == "lu")
-    {
       lu_method = "default";
-    }
     else
-    {
       lu_method = solver_type;
-    }
 
     // Solve linear system
     LUSolver solver(lu_method);

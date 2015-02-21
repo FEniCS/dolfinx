@@ -333,7 +333,8 @@ std::string VTKPlotter::get_helptext()
   text << "   s: Synchronize cameras (keep pressed for continuous sync)\n";
   text << "   m: Toggle mesh overlay\n";
   text << "   b: Toggle bounding box\n";
-  text << "  cv: Toggle cell or vertex indices\n";
+  if (_plottable->dim() <= 2)
+    text << "  cv: Toggle cell or vertex indices\n";
   text << "   w: Toggle between wireframe/point/surface view\n";
   text << "  +-: Resize widths (points and lines)\n";
   text << "C-+-: Rescale plot (glyphs and warping)\n";
@@ -417,6 +418,9 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
 
   case 'v': // Toggle vertex labels
     {
+      if (_plottable->dim() > 2)
+        return false;
+
       // Check if label actor is present. If not get from plottable.
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor(vtk_pipeline->get_renderer());
 
@@ -433,6 +437,9 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
 
   case 'c': // Toggle cell labels
     {
+      if (_plottable->dim() > 2)
+        return false;
+
       // Check if label actor is present. If not get from plottable. If it
       // is, toggle off
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_cell_label_actor(vtk_pipeline->get_renderer());

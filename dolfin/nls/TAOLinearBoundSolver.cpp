@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added : 2012-12-03
-// Last changed: 2013-04-04
 
 #ifdef ENABLE_PETSC_TAO
 
@@ -51,11 +48,12 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
     {"minres",     KSPMINRES},
     {"tfqmr",      KSPTFQMR},
     {"richardson", KSPRICHARDSON},
+    {"nash",       KSPNASH},
     {"stcg",       KSPSTCG},
     {"bicgstab",   KSPBCGS} };
 //-----------------------------------------------------------------------------
 // Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
   TAOLinearBoundSolver::_methods_descr
 = { {"default"  ,  "Default Tao method (tao_tron)"},
     {"tron" ,  "Newton Trust Region method"},
@@ -63,19 +61,19 @@ const std::vector<std::pair<std::string, std::string> >
     {"gpcg" ,  "Gradient Projection Conjugate Gradient"},
     {"blmvm",  "Limited memory variable metric method"} };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::methods()
 {
   return TAOLinearBoundSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::krylov_solvers()
 {
   return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::preconditioners()
 {
   return PETScPreconditioner::preconditioners();
@@ -244,7 +242,7 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
     }
     else
     {
-      log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method,"\
+      log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method," \
 	  " adjust some parameters", tao_type);
     }
   }

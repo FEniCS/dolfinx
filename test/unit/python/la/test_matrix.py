@@ -33,15 +33,19 @@ from dolfin_utils.test import *
 
 # TODO: Reuse this fixture setup code between matrix and vector tests:
 
-# Lists of backends supporting or not supporting data access
+# Lists of backends supporting or not supporting GenericMatrix::data()
+# access
 data_backends = []
 no_data_backends = [("PETSc", "")]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
-    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't used in the old test.
+    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
+    # used in the old test.
     data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse")]
+    no_data_backends = [("Eigen", "")]
     no_data_backends += [("PETScCusp", "")]
+
 
 # TODO: STL tests were disabled in old test framework, and do not work now:
 # If we have PETSc, STL Vector gets typedefed to one of these and data
@@ -58,14 +62,17 @@ no_data_backends = [b for b in no_data_backends if has_linear_algebra_backend(b[
 any_backends = data_backends + no_data_backends
 
 
-# Fixtures setting up and resetting the global linear algebra backend for a list of backends
-any_backend     = set_parameters_fixture("linear_algebra_backend", any_backends, lambda x: x[0])
-data_backend    = set_parameters_fixture("linear_algebra_backend", data_backends, lambda x: x[0])
-no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backends, lambda x: x[0])
+# Fixtures setting up and resetting the global linear algebra backend
+# for a list of backends
+any_backend = set_parameters_fixture("linear_algebra_backend", any_backends, \
+                                     lambda x: x[0])
+data_backend = set_parameters_fixture("linear_algebra_backend", data_backends, \
+                                      lambda x: x[0])
+no_data_backend = set_parameters_fixture("linear_algebra_backend", \
+                                         no_data_backends, lambda x: x[0])
 
 # With and without explicit backend choice
 use_backend = true_false_fixture
-
 
 class TestMatrixForAnyBackend:
 
@@ -94,8 +101,10 @@ class TestMatrixForAnyBackend:
         return A, B
 
     def test_basic_la_operations(self, use_backend, any_backend):
-        # Hack to make old tests work in new framework. The original setup was a bit exoteric...
-        # TODO: Removing use of self in this class will make it clearer what happens in this test.
+        # Hack to make old tests work in new framework. The original
+        # setup was a bit exoteric...
+        # TODO: Removing use of self in this class will make it
+        # clearer what happens in this test.
         self.backend, self.sub_backend = any_backend
 
         from numpy import ndarray, array, ones, sum
@@ -251,11 +260,12 @@ class TestMatrixForAnyBackend:
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
             A, B = self.assemble_matrices(use_backend=use_backend)
-            with pytest.raises(RuntimeError):
+            with pytest.raises(Exception):
                 A.ident_zeros()
 
         # Assemble matrix A with diagonal entries
-        A, B = self.assemble_matrices(use_backend=use_backend, keep_diagonal=True)
+        A, B = self.assemble_matrices(use_backend=use_backend, \
+                                      keep_diagonal=True)
 
         # Find zero rows
         zero_rows = []
@@ -377,3 +387,9 @@ class TestMatrixForAnyBackend:
         A = as_backend_type(A)
         with pytest.raises(RuntimeError):
             A.data()
+
+
+    def test_matrix_nnz(self, any_backend):
+        A, B = self.assemble_matrices()
+        assert A.nnz() == 2992
+        assert B.nnz() == 9398

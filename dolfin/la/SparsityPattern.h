@@ -28,8 +28,9 @@
 #include <utility>
 #include <vector>
 
-#include "dolfin/common/Set.h"
-#include "dolfin/common/types.h"
+#include <dolfin/common/ArrayView.h>
+#include <dolfin/common/Set.h>
+#include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 
 namespace dolfin
@@ -59,7 +60,7 @@ namespace dolfin
       std::size_t> >& ownership_range,
       const std::vector<const std::vector<std::size_t>* > local_to_global,
       const std::vector<const std::vector<int>* > off_process_owner,
-      const std::size_t block_size,
+      const std::vector<std::size_t>& block_sizes,
       const std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
@@ -70,15 +71,15 @@ namespace dolfin
       std::size_t> >& ownership_range,
       const std::vector<const std::vector<std::size_t>* > local_to_global,
       const std::vector<const std::vector<int>* > off_process_owner,
-      const std::size_t block_size);
+      const std::vector<std::size_t>& block_sizes);
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<
-                      const std::vector<dolfin::la_index>* >& entries);
+                       ArrayView<const dolfin::la_index> >& entries);
 
     /// Insert non-zero entries using local (process-wise) indices
     void insert_local(const std::vector<
-                      const std::vector<dolfin::la_index>* >& entries);
+                      ArrayView<const dolfin::la_index> >& entries);
 
     /// Return rank
     std::size_t rank() const;
@@ -148,7 +149,7 @@ namespace dolfin
     std::vector<std::vector<int> > _off_process_owner;
 
     // Block size
-    std::size_t _block_size;
+    std::vector<std::size_t> _block_size;
 
   };
 

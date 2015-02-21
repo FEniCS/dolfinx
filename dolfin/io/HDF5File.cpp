@@ -194,8 +194,8 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
   const std::vector<std::size_t> data_size
       = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
 
-  // Check that rank is 1 or 2 
-  dolfin_assert(data_size.size() == 1 
+  // Check that rank is 1 or 2
+  dolfin_assert(data_size.size() == 1
                 or (data_size.size() == 2 and data_size[1] == 1));
 
   // Check input vector, and re-size if not already sized
@@ -386,9 +386,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // ---------- Markers
     for (std::size_t d = 0; d <= mesh.domains().max_dim(); d++)
     {
-      if (mesh.domains().markers(d).empty())
-        continue;
-
       const std::map<std::size_t, std::size_t>& domain = mesh.domains().markers(d);
 
       MeshValueCollection<std::size_t> collection(mesh, d);
@@ -815,7 +812,7 @@ void HDF5File::write(const Function& u, const std::string name)
   for (std::size_t i = 0; i != n_cells; ++i)
   {
     x_cell_dofs.push_back(cell_dofs.size());
-    const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
+    const ArrayView<const dolfin::la_index> cell_dofs_i = dofmap.cell_dofs(i);
     for (auto p = cell_dofs_i.begin(); p != cell_dofs_i.end(); ++p)
     {
       dolfin_assert(*p < (dolfin::la_index)local_to_global_map.size());
@@ -901,7 +898,7 @@ void HDF5File::read(Function& u, const std::string name)
     const std::size_t N = vector_dataset_name.rfind("/vector_0");
     if (N != std::string::npos)
       vector_dataset_name = vector_dataset_name.substr(0, N) + "/vector";
-    
+
     if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
       error("Dataset with name \"%s\" does not exist",
             tmp_name.c_str());
@@ -1137,13 +1134,18 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
 
   std::vector<std::size_t> global_size(1, MPI::sum(_mpi_comm,
                                                    data_values.size()));
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
-  write_data(name + "/values", data_values, global_size, mpi_io);
-  write_data(name + "/entities", entities, global_size, mpi_io);
-  write_data(name + "/cells", cells, global_size, mpi_io);
 
-  HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
-                               mesh_values.dim());
+  // Only write if the global size is larger than 0
+  if (global_size[0] > 0)
+  {
+    const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+    write_data(name + "/values", data_values, global_size, mpi_io);
+    write_data(name + "/entities", entities, global_size, mpi_io);
+    write_data(name + "/cells", cells, global_size, mpi_io);
+
+    HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
+                                 mesh_values.dim());
+  }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -1233,7 +1235,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
     // under the assumption that global_cell_index is ordered.
     dolfin_assert(std::is_sorted(global_cell_index.begin(),
                                  global_cell_index.end()));
-    
+
     // cells_data in general is not ordered, so we sort it
     // keeping track of the indices
     std::vector<std::size_t> cells_data_index(cells_data.size());
@@ -1251,7 +1253,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
     {
 
       // Global cell index is less than the cell_data index read from file
-      if (*i < cells_data[*j]) 
+      if (*i < cells_data[*j])
       {
         ++i;
       }

@@ -23,10 +23,9 @@
 //
 
 #include <vector>
-#include <Eigen/Dense>
 #include <ufc.h>
 
-#include <dolfin/common/Array.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -83,7 +82,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
     cell0->get_cell_data(c0);
 
     // Tabulate dofs for w on cell and store values
-    const std::vector<dolfin::la_index>& dofs
+    const ArrayView<const dolfin::la_index> dofs
       = W.dofmap()->cell_dofs(cell0->index());
 
     // Compute coefficients on this cell
@@ -104,7 +103,7 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
                                     const Cell& cell0,
                                     const std::vector<double>& vertex_coordinates0,
                                     const ufc::cell& c0,
-                                    const std::vector<dolfin::la_index>& dofs,
+                                    const ArrayView<const dolfin::la_index>& dofs,
                                     std::size_t& offset)
 {
   // Call recursively for mixed elements
@@ -218,11 +217,10 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
 
   // Iterate over given local dofs for V on patch cell
   dolfin_assert(W.element());
-  for (std::map<std::size_t, std::size_t>::iterator it = dof2row.begin();
-       it!= dof2row.end(); it++)
+  for (auto const &it: dof2row)
   {
-    const std::size_t i = it->first;
-    const std::size_t row = it->second;
+    const std::size_t i = it.first;
+    const std::size_t row = it.second;
 
     // Iterate over basis functions for W on center cell
     for (std::size_t j = 0; j < W.element()->space_dimension(); ++j)
@@ -251,7 +249,7 @@ Extrapolation::compute_unique_dofs(const Cell& cell,
                                    std::set<std::size_t>& unique_dofs)
 {
   dolfin_assert(V.dofmap());
-  const std::vector<dolfin::la_index>& dofs
+  const ArrayView<const dolfin::la_index> dofs
     = V.dofmap()->cell_dofs(cell.index());
 
   // Data structure for current cell

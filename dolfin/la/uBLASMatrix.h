@@ -98,6 +98,9 @@ namespace dolfin
       local_range(std::size_t dim) const
     { return std::make_pair(0, size(dim)); }
 
+    /// Return number of non-zero entries in matrix
+    std::size_t nnz() const;
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -694,6 +697,21 @@ namespace dolfin
   {
     resize(tensor_layout.size(0), tensor_layout.size(1));
     _matA.clear();
+  }
+  //---------------------------------------------------------------------------
+  template <>
+  inline std::size_t uBLASMatrix<ublas_sparse_matrix>::nnz() const
+  {
+    return _matA.nnz();
+  }
+  //---------------------------------------------------------------------------
+  template <typename Mat>
+  inline std::size_t uBLASMatrix<Mat>::nnz() const
+  {
+      dolfin_error("uBLASMatrix.h",
+                   "get number of non-zeros in matrix",
+                   "Only available for sparse matrices");
+      return 0;
   }
   //---------------------------------------------------------------------------
   template <>

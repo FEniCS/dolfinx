@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2005-2010
 //
 // First added:  2005-12-02
-// Last changed: 2012-08-20
+// Last changed: 2014-07-09
 
 #ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
 #define __DOLFIN_PETSC_KRYLOV_SOLVER_H
@@ -129,10 +129,10 @@ namespace dolfin
     KSP ksp() const;
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
 
     /// Return a list of available preconditioners
-    static std::vector<std::pair<std::string, std::string> > preconditioners();
+    static std::map<std::string, std::string> preconditioners();
 
     /// Set options prefix
     void set_options_prefix(std::string prefix);
@@ -141,6 +141,7 @@ namespace dolfin
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
+    friend class PETScTAOSolver;
 
   private:
 
@@ -148,7 +149,7 @@ namespace dolfin
     void init(const std::string& method);
 
     // Set PETSc operators
-    void set_petsc_operators();
+    //void set_petsc_operators();
 
     // Set options that affect KSP object
     void set_petsc_ksp_options();
@@ -163,7 +164,7 @@ namespace dolfin
     static const std::map<std::string, const KSPType> _methods;
 
     // Available solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> >
+    static const std::map<std::string, std::string>
       _methods_descr;
 
     // PETSc solver pointer

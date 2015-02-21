@@ -26,16 +26,17 @@
 // modules has been loaded.
 //=============================================================================
 
-#ifdef HAS_PETSC4PY
-// This must come early.  The petsc4py module defines typemaps which
+//-----------------------------------------------------------------------------
+// petsc4py/slepc4py typemaps
+//-----------------------------------------------------------------------------
+// This must come early. The petsc4py/slepc4py module defines typemaps which
 // we will later use on %extended classes (in post).  The typemaps
 // must be in scope when swig sees the original class, not the
 // extended definition.
-%include "petsc4py/petsc4py.i"
-// Remove typemaps that check for nullity of pointer and object itself.
-// we only care about the former.
-%define %petsc4py_objreft(Type)
 
+// Remove petsc4py typemaps that check for nullity of pointer
+// and object itself we only care about the former.
+%define %petsc4py_objreft(Type)
 %typemap(check,noblock=1) Type *OUTPUT {
   if ($1 == PETSC_NULL)
     %argument_nullref("$type", $symname, $argnum);
@@ -43,10 +44,17 @@
 %apply Type *OUTPUT { Type & }
 %enddef
 
+#ifdef HAS_PETSC4PY
+%include "petsc4py/petsc4py.i"
 %petsc4py_objreft(Mat)
 %petsc4py_objreft(Vec)
 %petsc4py_objreft(KSP)
 %petsc4py_objreft(SNES)
+#endif
+
+#ifdef HAS_SLEPC4PY
+%include "slepc4py/slepc4py.i"
+%petsc4py_objreft(EPS)
 #endif
 
 //-----------------------------------------------------------------------------
@@ -54,6 +62,12 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::Array::operator=;
 %ignore dolfin::Array::operator[];
+
+//-----------------------------------------------------------------------------
+// Global modifications to the ArrayView interface
+//-----------------------------------------------------------------------------
+%ignore dolfin::ArrayView::operator=;
+%ignore dolfin::ArrayView::operator[];
 
 //-----------------------------------------------------------------------------
 // Global modifications to the IndexSet interface
@@ -71,6 +85,10 @@
 %typemap(in) (std::size_t N, const std::size_t* x) = (std::size_t _array_dim, std::size_t* _array);
 %typemap(in) (std::size_t N, const int* x) = (std::size_t _array_dim, int* _array);
 %typemap(in) (std::size_t N, const double* x) = (std::size_t _array_dim, double* _array);
+
+//%typemap(in) (std::size_t N, const std::size_t* x) = (std::size_t _arrayview_dim, std::size_t* _arrayview);
+//%typemap(in) (std::size_t N, const int* x) = (std::size_t _arrayview_dim, int* _arrayview);
+//%typemap(in) (std::size_t N, const double* x) = (std::size_t _arrayview_dim, double* _arrayview);
 
 //-----------------------------------------------------------------------------
 // Ignores for Hierarchical

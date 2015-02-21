@@ -67,7 +67,7 @@ PROBLEM_RENAMES(NonlinearVariational)
                      std::string method="topological");
 %ignore dolfin::DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace>,
                      std::shared_ptr<const GenericFunction>,
-                     const std::vector<std::pair<std::size_t, std::size_t> >&,
+                     const std::vector<std::size_t>&,
                      std::string method="topological");
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,
@@ -109,6 +109,13 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&, const DirichletBC&);
 %ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&,
                          const std::vector<const DirichletBC*>);
+
+//-----------------------------------------------------------------------------
+// Ignore GenericDofMap::cell_dofs
+//-----------------------------------------------------------------------------
+%ignore dolfin::GenericDofMap::cell_dofs;
+%ignore dolfin::DofMap::cell_dofs;
+
 
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
@@ -279,16 +286,30 @@ const ufc::cell& (void *argp, bool dolfin_cell, int res)
 //-----------------------------------------------------------------------------
 IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
 
+#ifdef FEMMODULE // Conditional code for FEM module
+
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical classes
 //-----------------------------------------------------------------------------
-#ifdef FEMMODULE // Conditional template instiantiation for FEM module
 %template (HierarchicalForm) dolfin::Hierarchical<dolfin::Form>;
 %template (HierarchicalLinearVariationalProblem) \
           dolfin::Hierarchical<dolfin::LinearVariationalProblem>;
 %template (HierarchicalNonlinearVariationalProblem) \
           dolfin::Hierarchical<dolfin::NonlinearVariationalProblem>;
 %template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
+
+//-----------------------------------------------------------------------------
+// Return NumPy arrays for GenericDofMap::cell_dofs(i)
+//-----------------------------------------------------------------------------
+
+%extend dolfin::GenericDofMap {
+  PyObject* _cell_dofs(std::size_t i)
+  {
+    dolfin::ArrayView<const dolfin::la_index> dofs = self->cell_dofs(i);
+    return %make_numpy_array(1, dolfin_index)(dofs.size(), dofs.data(),
+                                              false);
+  }
+}
 
 #endif
 //#ifdef IOMODULE // Conditional template instiantiation for IO module

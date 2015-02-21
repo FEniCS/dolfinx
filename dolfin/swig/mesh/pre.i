@@ -38,17 +38,22 @@
   PyObject* _coordinates() {
     return %make_numpy_array(2, double)(self->num_vertices(),
 					self->geometry().dim(),
-					&(self->coordinates())[0], true);
+					self->coordinates().data(), true);
   }
 
   PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
-    return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
-				      &(self->cells()[0]), false);
+    return %make_numpy_array(2, uint)(self->num_cells(),
+                                      self->topology().dim() + 1,
+				      self->cells().data(), false);
   }
 
-  PyObject* _cell_orientations() {
-    return %make_numpy_array(1, int)(self->num_cells(), &(self->cell_orientations()[0]), true);
+  PyObject* _cell_orientations()
+  {
+    if (!self->cell_orientations().empty())
+      dolfin_assert(self->cell_orientations().size() == self->num_cells());
+    return %make_numpy_array(1, int)(self->cell_orientations().size(),
+                                     self->cell_orientations().data(), true);
   }
 }
 
@@ -79,11 +84,6 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::Mesh::coordinates;
 %ignore dolfin::Mesh::cell_orientations;
 %ignore dolfin::MeshFunction::values;
-
-//-----------------------------------------------------------------------------
-// Ignores for MultiMesh
-//-----------------------------------------------------------------------------
-%ignore dolfin::MultiMesh::plot;
 
 //-----------------------------------------------------------------------------
 // Rename methods which get called by a re-implemented method from the
@@ -149,19 +149,13 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %extend dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
 {
   dolfin::MeshEntityIteratorBase<dolfin::ENTITY>& _increment()
-  {
-    return self->operator++();
-  }
+  { return self->operator++(); }
 
   dolfin::MeshEntityIteratorBase<dolfin::ENTITY>& _decrease()
-  {
-    return self->operator--();
-  }
+  { return self->operator--(); }
 
   dolfin::ENTITY _dereference()
-  {
-    return *self->operator->();
-  }
+  { return *self->operator->(); }
 
 %pythoncode
 %{
@@ -206,19 +200,20 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %ignore dolfin::MeshConnectivity::operator();
 %ignore dolfin::MeshEntity::entities;
 
-%extend dolfin::MeshConnectivity {
+%extend dolfin::MeshConnectivity
+{
   PyObject* __call__()
-  {
-    return %make_numpy_array(1, uint)(self->size(), &(*self)()[0], false);
-  }
+  { return %make_numpy_array(1, uint)(self->size(), (*self)().data(), false); }
 
   PyObject* __call__(std::size_t entity)
   {
-    return %make_numpy_array(1, uint)(self->size(entity), (*self)(entity), false);
+    return %make_numpy_array(1, uint)(self->size(entity), (*self)(entity),
+                                      false);
   }
 }
 
-%extend dolfin::MeshEntity {
+%extend dolfin::MeshEntity
+{
 %pythoncode
 %{
     def entities(self, dim):
@@ -273,11 +268,20 @@ FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(std::size_t, Sizet)
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const std::string);
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
 
-%ignore dolfin::CellFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
-%ignore dolfin::FacetFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
-%ignore dolfin::FaceFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
-%ignore dolfin::EdgeFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
-%ignore dolfin::VertexFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
+%ignore dolfin::CellFunction<TYPE>::CellFunction(const Mesh&);
+%ignore dolfin::CellFunction<TYPE>::CellFunction(const Mesh&, const TYPE&);
+
+%ignore dolfin::FacetFunction<TYPE>::FacetFunction(const Mesh&);
+%ignore dolfin::FacetFunction<TYPE>::FacetFunction(const Mesh&, const TYPE&);
+
+%ignore dolfin::FaceFunction<TYPE>::FaceFunction(const Mesh&);
+%ignore dolfin::FaceFunction<TYPE>::FaceFunction(const Mesh&, const TYPE&);
+
+%ignore dolfin::EdgeFunction<TYPE>::EdgeFunction(const Mesh&);
+%ignore dolfin::EdgeFunction<TYPE>::EdgeFunction(const Mesh&, const TYPE&);
+
+%ignore dolfin::VertexFunction<TYPE>::VertexFunction(const Mesh&);
+%ignore dolfin::VertexFunction<TYPE>::VertexFunction(const Mesh&, const TYPE&);
 
 %ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t);
 %ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t, const T&);

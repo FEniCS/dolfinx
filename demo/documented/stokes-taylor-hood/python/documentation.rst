@@ -6,7 +6,7 @@ Stokes equations with Taylor-Hood elements
 ==========================================
 
 This demo is implemented in a single Python file,
-:download:`demo_stokes-taylorhood.py`, which contains both the
+:download:`demo_stokes-taylor-hood.py`, which contains both the
 variational form and the solver.
 
 .. include:: ../common.txt
@@ -158,5 +158,5 @@ Finally, we can store to file and plot the solutions.
 Complete code
 -------------
 
-.. literalinclude:: demo_stokes-taylorhood.py
+.. literalinclude:: demo_stokes-taylor-hood.py
 	:start-after: # Begin demo

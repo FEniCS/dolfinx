@@ -22,8 +22,9 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include "BisectionRefinement.h"
+#include "BisectionRefinement1D.h"
 #include "RegularCutRefinement.h"
+#include "PlazaRefinementND.h"
 #include "LocalMeshRefinement.h"
 
 using namespace dolfin;
@@ -48,14 +49,18 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
 
   // Call refinement algorithm
   const std::string refinement_algorithm = parameters["refinement_algorithm"];
-  if (refinement_algorithm == "recursive_bisection")
-    BisectionRefinement::refine_by_recursive_bisection(refined_mesh, mesh, cell_markers);
+  if (mesh.topology().dim() == 1)
+    BisectionRefinement1D::refine(refined_mesh, mesh, cell_markers);
   else if (refinement_algorithm == "regular_cut")
     RegularCutRefinement::refine(refined_mesh, mesh, cell_markers);
+  else if (refinement_algorithm == "plaza")
+    PlazaRefinementND::refine(refined_mesh, mesh, cell_markers, false, false);
+  else if (refinement_algorithm == "plaza_with_parent_facets")
+    PlazaRefinementND::refine(refined_mesh, mesh, cell_markers, false, true);
   else
     dolfin_error("LocalMeshRefinement.cpp",
                  "refine mesh locally",
-                 "Unknown local mesh refinement algorithm: %s. Allowed algorithms are 'recursive_bisection' and 'regular_cut'", refinement_algorithm.c_str());
+                 "Unknown local mesh refinement algorithm: %s. Allowed algorithms are 'regular_cut', 'plaza', 'plaza_with_parent_facets'", refinement_algorithm.c_str());
 
   // Report the number of refined cells
   if (refined_mesh.topology().dim() > 0)

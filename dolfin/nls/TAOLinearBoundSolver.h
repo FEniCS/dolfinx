@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-12-03
-// Last changed: 2013-04-02
 
 #ifndef _TAOLinearBoundSolver_H
 #define _TAOLinearBoundSolver_H
@@ -38,7 +35,7 @@
 namespace dolfin
 {
 
-  /// Forward declarations
+  // Forward declarations
   class GenericMatrix;
   class GenericVector;
   class PETScMatrix;
@@ -111,13 +108,13 @@ namespace dolfin
     Tao tao() const;
 
     /// Return a list of available Tao solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
 
     /// Return a list of available krylov solvers
-    static std::vector<std::pair<std::string, std::string> > krylov_solvers();
+    static std::map<std::string, std::string> krylov_solvers();
 
     /// Return a list of available preconditioners
-    static std::vector<std::pair<std::string, std::string> > preconditioners();
+    static std::map<std::string, std::string> preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -165,7 +162,7 @@ namespace dolfin
     static const std::map<std::string, const KSPType> _ksp_methods;
 
     // Available tao solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> >
+    static const std::map<std::string, std::string>
       _methods_descr;
 
     // Set options

@@ -446,7 +446,8 @@ def test_p26_box_1():
     lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
 
     def sigma(v):
-        return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.cell().d)
+        # Note: Changed from v.cell().d to len(v), cell.d is being removed.
+        return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(len(v))
 
     a = inner(sigma(u), sym(grad(v)))*dx
     L = dot(f, v)*dx
@@ -818,7 +819,6 @@ def test_p42_box_4(pushpop_parameters):
     # but this is not testable without external sys.argv.
     # Feel free to improve by adding something to argv above.
 
-@use_gc_barrier
 @skip_in_parallel
 def test_p43_box_1(cd_tempdir, pushpop_parameters):
     file = File("parameters.xml")
@@ -840,7 +840,7 @@ def test_p46_box_1():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
-@use_gc_barrier
+@skip_in_parallel
 def test_p47_box_1():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -899,19 +899,6 @@ def test_p50_box_3(pushpop_parameters):
     b = assemble(L)
     bb = b.data()
 
-@skip_if_not_MTL4
-@skip_in_parallel
-def test_p50_box_4(pushpop_parameters):
-    mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    u = TrialFunction(V)
-    v = TestFunction(V)
-    a = u*v*dx
-
-    # Only test when MTL4 is available
-    parameters["linear_algebra_backend"] = "MTL4"
-    A = assemble(a)
-    rows, columns, values = A.data()
 
 @skip_in_parallel
 def test_p51_box_1(pushpop_parameters):
@@ -931,14 +918,20 @@ def test_p51_box_1(pushpop_parameters):
         rows, columns, values = A.data()
         csr = csr_matrix((values, columns, rows))
 
-@skip_in_parallel
 def test_p51_box_2():
+    from numpy import arange
     b = Vector(mpi_comm_world(), 10)
     c = Vector(mpi_comm_world(), 10)
     b_copy = b[:]
     b[:] = c
     b[b < 0] = 0
-    b2 = b[::2]
+
+    # Since 1.5 we do not support slicing access as it does not make
+    # sense in parallel
+    #b2 = b[::2]
+
+    # You can use an alternative syntax though
+    b2 = b[arange(0, b.local_size(), 2)]
 
 @skip_in_parallel
 def test_p51_box_3():

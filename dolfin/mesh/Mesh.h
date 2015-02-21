@@ -31,9 +31,9 @@
 #ifndef __MESH_H
 #define __MESH_H
 
+#include <memory>
 #include <string>
 #include <utility>
-#include <memory>
 
 #include <dolfin/ale/MeshDisplacement.h>
 #include <dolfin/common/Hierarchical.h>
@@ -612,18 +612,13 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
-    /// Return cell_orientations
-    ///
-    /// *Returns*
-    ///     std::vector<int>
-    ///         Map from cell index to orientation of cell
-    std::vector<int>& cell_orientations();
-
     /// Return cell_orientations (const version)
     ///
     /// *Returns*
     ///     std::vector<int>
-    ///         Map from cell index to orientation of cell
+
+    ///         Map from cell index to orientation of cell. Is empty
+    ///         if cell orientations have not been computed.
     const std::vector<int>& cell_orientations() const;
 
     /// Compute and initialize cell_orientations relative to a given
@@ -665,7 +660,7 @@ namespace dolfin
     mutable std::shared_ptr<BoundingBoxTree> _tree;
 
     // Cell type
-    CellType* _cell_type;
+    std::unique_ptr<CellType> _cell_type;
 
     // True if mesh has been ordered
     mutable bool _ordered;

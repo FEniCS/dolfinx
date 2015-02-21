@@ -23,23 +23,27 @@ namespace dolfin
 {
   class Mesh;
   class ParallelRefinement;
-  
+
   /// Implementation of the refinement method described in
   /// Plaza and Carey "Local reﬁnement of simplicial grids
-  /// based on the skeleton" 
+  /// based on the skeleton"
   /// (Applied Numerical Mathematics 32 (2000) 195-218)
   ///
   class PlazaRefinementND
   {
   public:
 
-    /// Uniform refine
-    static void refine(Mesh& new_mesh, const Mesh& mesh, bool redistribute);
+    /// Uniform refine, optionally redistributing and
+    /// optionally calculating the parent-child relation for facets (in 2D)
+    static void refine(Mesh& new_mesh, const Mesh& mesh, bool redistribute,
+                       bool calculate_parent_facets);
 
-    /// Refine with markers
+    /// Refine with markers, optionally redistributing
+    /// and optionally calculating the parent-child relation for facets (in 2D)
     static void refine(Mesh& new_mesh, const Mesh& mesh,
                        const MeshFunction<bool>& refinement_marker,
-                       bool redistribute);
+                       bool redistribute,
+                       bool calculate_parent_facets);
 
     /// Get the subdivision of an original simplex into smaller
     /// simplices, for a given set of marked edges, and the
@@ -54,7 +58,7 @@ namespace dolfin
 
     // Get the longest edge of each face (using local mesh index)
     static std::vector<std::size_t> face_long_edge(const Mesh& mesh);
-    
+
     // 2D version of subdivision
     static void get_triangles
       (std::vector<std::vector<std::size_t> >& tri_set,
@@ -66,23 +70,28 @@ namespace dolfin
       (std::vector<std::vector<std::size_t> >& tet_set,
        const std::vector<bool>& marked_edges,
        const std::vector<std::size_t> longest_edge);
-    
+
     // Convenient interface for both uniform and marker refinement
-    static void do_refine(Mesh& new_mesh, const Mesh& mesh, 
+    static void do_refine(Mesh& new_mesh, const Mesh& mesh,
                           ParallelRefinement& p_ref,
                           const std::vector<std::size_t>& long_edge,
-                          bool redistribute);
-    
+                          bool redistribute,
+                          bool calculate_parent_facets);
+
     // Propagate edge markers according to rules (longest edge
     // of each face must be marked, if any edge of face is marked)
     static void enforce_rules(ParallelRefinement& p_ref,
                               const Mesh& mesh,
                               const std::vector<std::size_t>& long_edge);
- 
-    
-    
+
+    // Add parent facet markers to new mesh, based on new vertices
+    // Only works in 2D at present
+    static void set_parent_facet_markers(const Mesh& mesh, Mesh& new_mesh,
+                  const std::map<std::size_t, std::size_t>& new_vertex_map);
+
+
   };
-  
+
 }
 
 #endif

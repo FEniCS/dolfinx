@@ -437,9 +437,9 @@ void FunctionAssigner::_check_and_build_indices(const Mesh& mesh,
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Get local cell dofs
-      const std::vector<dolfin::la_index>& assigning_cell_dofs
+      const ArrayView<const dolfin::la_index> assigning_cell_dofs
         = assigning_dofmap.cell_dofs(cell->index());
-      const std::vector<dolfin::la_index>& receiving_cell_dofs
+      const ArrayView<const dolfin::la_index> receiving_cell_dofs
         = receiving_dofmap.cell_dofs(cell->index());
 
       // Check that both spaces have the same number of dofs

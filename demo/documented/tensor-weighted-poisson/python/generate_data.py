@@ -44,10 +44,10 @@ for cell in cells(mesh):
         c11[cell] = 4.0
 
 # Store to file
-mesh_file = File("mesh.xml.gz")
-c00_file = File("c00.xml.gz")
-c01_file = File("c01.xml.gz")
-c11_file = File("c11.xml.gz")
+mesh_file = File("../unitsquare_32_32.xml.gz")
+c00_file = File("../unitsquare_32_32_c00.xml.gz")
+c01_file = File("../unitsquare_32_32_c01.xml.gz")
+c11_file = File("../unitsquare_32_32_c11.xml.gz")
 
 mesh_file << mesh
 c00_file << c00

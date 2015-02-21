@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2014-11-24
+// Last changed: 2014-12-15
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -463,13 +463,9 @@ const std::vector<TYPE>&  ARG_NAME
     py_item = PyList_GetItem($input,i);
     res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE*), 0);
     if (SWIG_IsOK(res))
-    {
       tmp_vec.push_back(*reinterpret_cast<dolfin::TYPE *>(itemp));
-    }
     else
-    {
       SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum, (Bad conversion)");
-    }
   }
   $1 = &tmp_vec;
 }
@@ -532,7 +528,7 @@ const std::vector<TYPE>&  ARG_NAME
       {
         Py_DECREF(item);
         SWIG_exception(SWIG_TypeError, "expected items of inner sequence to be of type " \
-                 "\"TYPE_NAME\" in argument $argnum");
+                       "\"TYPE_NAME\" in argument $argnum");
       }
       inner_vec.push_back(value);
       Py_DECREF(item);
@@ -551,8 +547,8 @@ const std::vector<TYPE>&  ARG_NAME
 // Out typemap for std::vector<std::pair<std:string, std:string>
 //-----------------------------------------------------------------------------
 %typemap(out) std::vector< std::pair< std::string, std::string > >
-   (std::vector< std::pair< std::string, std::string > >::const_iterator it,
-    PyObject* tuple, Py_ssize_t ind)
+  (std::vector< std::pair< std::string, std::string > >::const_iterator it,
+   PyObject* tuple, Py_ssize_t ind)
 {
   // std::vector<std::pair<std:string, std:string> >
   $result = PyList_New((&$1)->size());
@@ -568,8 +564,8 @@ const std::vector<TYPE>&  ARG_NAME
 // Out typemap for std::vector<std::pair<std:string, std:string>
 //-----------------------------------------------------------------------------
 %typemap(out) std::vector< std::string >
-   (std::vector< std::string >::const_iterator it,
-    PyObject* tmp_Py_str, Py_ssize_t ind)
+(std::vector< std::string >::const_iterator it,
+ PyObject* tmp_Py_str, Py_ssize_t ind)
 {
   // std::vector<std::pair<std:string, std:string> >
   $result = PyList_New((&$1)->size());
@@ -628,26 +624,26 @@ IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, , NPY_UINT, uint,
 #if (DOLFIN_SIZE_T==4)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, , NPY_UINTP, uintp,
                                     uintp)
-#else
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp,
-                                    uintp)
-#endif
-
-// This typemap handles PETSc index typemap. Untested for 64-bit integers
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
-
-#if (DOLFIN_SIZE_T==4)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32,
                                                coloring_type, std_size_t, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, value_shape,
                                                std_size_t, -1)
 #else
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp,
+                                    uintp)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64,
                                                coloring_type, std_size_t, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t,INT64, value_shape,
                                                std_size_t, -1)
 #endif
 
+#if (DOLFIN_LA_INDEX_SIZE==4)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT32, , NPY_INT, int, intc)
+#else
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT64, , NPY_INT64, int64, int64)
+#endif
+
+// This typemap handles PETSc index typemap. Untested for 64-bit integers
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double,
                                                -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, dt_stage_offset,
@@ -663,30 +659,12 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, NPY_UINT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, NPY_UINTP)
+#if (DOLFIN_LA_INDEX_SIZE==4)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT)
+#else
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT64)
+#endif
 
-%typemap(out) std::vector<dolfin::la_index>
-{
-  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT32)
-  npy_intp adims = $1.size();
-
-  if (sizeof(dolfin::la_index) == 4)
-  {
-    $result = PyArray_SimpleNew(1, &adims, NPY_INT32);
-  }
-  else if (sizeof(dolfin::la_index) == 8)
-  {
-    $result = PyArray_SimpleNew(1, &adims, NPY_INT64);
-  }
-  else
-    SWIG_exception(SWIG_TypeError, "sizeof(dolfin::la_index) incompatible NumPy types");
-
-  dolfin::la_index* data = static_cast<dolfin::la_index*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
-  std::copy($1.begin(), $1.end(), data);
-
-}
-
-// Need specialized typemap for dolfin::la_index
-//OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, dolfin_index)
 
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(double, double)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(int, int)
@@ -705,3 +683,80 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, facets,
 IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, facets,
                                                   std_size_t)
 #endif
+
+
+// Specialized typemaps for dolfin::la_index
+//%typemap(out) std::vector<dolfin::la_index>
+//{
+//  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT32)
+//  npy_intp adims = $1.size();
+//
+//  if (sizeof(dolfin::la_index) == 4)
+//  {
+//    $result = PyArray_SimpleNew(1, &adims, NPY_INT32);
+//  }
+//  else if (sizeof(dolfin::la_index) == 8)
+//  {
+//    $result = PyArray_SimpleNew(1, &adims, NPY_INT64);
+//  }
+//  else
+//    SWIG_exception(SWIG_TypeError, "sizeof(dolfin::la_index) incompatible NumPy types");
+//
+//  dolfin::la_index* data = static_cast<dolfin::la_index*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
+//  std::copy($1.begin(), $1.end(), data);
+//
+//}
+
+//// The typecheck
+//%typecheck(SWIG_TYPECHECK_INT32_ARRAY) const std::vector<dolfin::la_index>&
+//{
+//  $1 = PyArray_Check($input) ? PyArray_TYPE(reinterpret_cast<PyArrayObject*>($input))==:0;
+//}
+//
+//// The typemap
+//%typemap(in) const std::vector<dolfin::la_index>&  (std::vector<dolfin::la_index> temp)
+//{
+//  // IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, INT32/INT64, ,
+//  //                                     NPY_INT32/NPY_INT64, intc/int64, intc/int64)
+//  if (!PyArray_Check($input))
+//  {
+//    SWIG_exception(SWIG_TypeError, "(2) numpy array of 'TYPE_NAME' expected. " \
+//		     "Make sure that the numpy array use dtype=DESCR.");
+//  }
+//
+//  PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+//
+//  if (sizeof(dolfin::la_index) == 4)
+//  {
+//    if ( PyArray_TYPE(xa) != NPY_INT32 )
+//    {
+//      SWIG_exception(SWIG_TypeError, "(1) numpy array of 'intc' expected." \
+//                     " Make sure that the numpy array use dtype=intc.");
+//    }
+//  }
+//  else if (sizeof(dolfin::la_index) == 8)
+//  {
+//    if ( PyArray_TYPE(xa) != NPY_INT64 )
+//    {
+//      SWIG_exception(SWIG_TypeError, "(1) numpy array of 'int64' expected." \
+//                     " Make sure that the numpy array use dtype=int64.");
+//    }
+//  }
+//  else
+//    SWIG_exception(SWIG_TypeError, "sizeof(dolfin::la_index) incompatible NumPy types");
+//
+//  const std::size_t size = PyArray_DIM(xa, 0);
+//  temp.resize(size);
+//  dolfin::la_index* array = static_cast<dolfin::la_index*>(PyArray_DATA(xa));
+//  if (PyArray_ISCONTIGUOUS(xa))
+//  {
+//    std::copy(array, array + size, temp.begin());
+//  }
+//  else
+//  {
+//    const npy_intp strides = PyArray_STRIDE(xa, 0)/sizeof(dolfin::la_index);
+//    for (std::size_t i = 0; i < size; i++)
+//      temp[i] = array[i*strides];
+//  }
+//  $1 = &temp;
+//}

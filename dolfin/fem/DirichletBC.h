@@ -81,8 +81,8 @@ namespace dolfin
   /// apply and the boundary markers would still remain intact.
   ///
   /// Alternatively, the boundary may be specified by a _MeshFunction_
-  /// labeling all mesh facets together with a number that specifies
-  /// which facets should be included in the boundary.
+  /// over facets labeling all mesh facets together with a number that
+  /// specifies which facets should be included in the boundary.
   ///
   /// The third option is to attach the boundary information to the
   /// mesh. This is handled automatically when exporting a mesh from
@@ -102,6 +102,9 @@ namespace dolfin
   /// conditions e.g. pointloads, one will have to use the pointwise
   /// approach. The three possibilities are "topological", "geometric"
   /// and "pointwise".
+  ///
+  /// Note: when using "pointwise", the boolean argument `on_boundary`
+  /// in SubDomain::inside will always be false.
   ///
   /// The 'check_midpoint' variable can be used to decide whether or
   /// not the midpoint of each facet should be checked when a
@@ -246,8 +249,7 @@ namespace dolfin
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
                 std::shared_ptr<const GenericFunction> g,
-                const std::vector<std::size_t>&
-                markers,
+                const std::vector<std::size_t>& markers,
                 std::string method="topological");
 
     /// Copy constructor
@@ -505,8 +507,10 @@ namespace dolfin
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;
 
-    // Cells attached to boundary, stored by cell index with map to local dof number
-    mutable std::map<std::size_t, std::vector<std::size_t> > _cells_to_localdofs;
+    // Cells attached to boundary, stored by cell index with map to
+    // local dof number
+    mutable std::map<std::size_t, std::vector<std::size_t> >
+    _cells_to_localdofs;
 
     // User defined mesh function
     std::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;

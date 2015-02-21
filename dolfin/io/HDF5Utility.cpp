@@ -151,7 +151,7 @@ void HDF5Utility::get_global_dof(
     const std::vector<std::size_t>& rdof = receive_cell_dofs[i];
     for (std::size_t j = 0; j < rdof.size(); j += 2)
     {
-      const std::vector<dolfin::la_index>& dmap = dofmap.cell_dofs(rdof[j]);
+      const ArrayView<const dolfin::la_index> dmap = dofmap.cell_dofs(rdof[j]);
       dolfin_assert(rdof[j + 1] < dmap.size());
       const dolfin::la_index local_index = dmap[rdof[j + 1]];
       dolfin_assert(local_index >= 0);
@@ -383,7 +383,7 @@ void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh,
   }
   else
   {
-    // Iterate through ghost cells, adding non-ghost vertices which are 
+    // Iterate through ghost cells, adding non-ghost vertices which are
     // in lower rank process cells to a set for exclusion from output
     for (CellIterator c(mesh, "ghost"); !c.end(); ++c)
     {

@@ -152,6 +152,24 @@ std::size_t DofMap::global_dimension() const
   return _global_dimension;
 }
 //-----------------------------------------------------------------------------
+std::size_t DofMap::local_dimension(std::string type) const
+{
+  if (type == "owned")
+    return _local_ownership_size;
+  else if (type == "unowned")
+    return block_size*_local_to_global_unowned.size();
+  else if (type == "all")
+    return _local_ownership_size + block_size*_local_to_global_unowned.size();
+  else
+  {
+    dolfin_error("DofMap.h",
+                 "report DofMap local dimension",
+                 "unknown dof type given. Use either \"owned\", "
+                 "\"unowned\", or \"all\"");
+    return 0;
+  }
+}
+//-----------------------------------------------------------------------------
 std::size_t DofMap::cell_dimension(std::size_t cell_index) const
 {
   dolfin_assert(cell_index < _dofmap.size());
@@ -168,12 +186,6 @@ std::size_t DofMap::num_entity_dofs(std::size_t dim) const
 {
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->num_entity_dofs(dim);
-}
-//-----------------------------------------------------------------------------
-std::size_t DofMap::geometric_dimension() const
-{
-  dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->geometric_dimension();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_facet_dofs() const
@@ -274,7 +286,7 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
     cell->get_vertex_coordinates(vertex_coordinates);
 
     // Get local-to-global map
-    const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs = cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
     tabulate_coordinates(coordinates, vertex_coordinates, *cell);
@@ -377,7 +389,7 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
     cell->get_vertex_coordinates(vertex_coordinates);
 
     // Get cell local-to-global map
-    const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs = cell_dofs(cell->index());
 
     // Tabulate dof coordinates
     tabulate_coordinates(coordinates, vertex_coordinates, *cell);

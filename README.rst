@@ -11,7 +11,9 @@ Installation
 
 To build DOLFIN, run::
 
-  cmake .
+  mkdir build
+  cd build
+  cmake ..
   make install
 
 For detailed instructions, see the file INSTALL.

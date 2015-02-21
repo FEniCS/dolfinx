@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2011
 // Modified by Niclas Jansson 2009
 // Modified by Joachim B Haga 2012
-//
+// Modified by Martin Sandve Alnes 2014
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
@@ -69,14 +69,6 @@ namespace dolfin
   class MPI
   {
   public:
-
-    /// Return process rank (uses MPI_COMM_WORLD)
-    /// Warning: This function is deprecated. Use dolfin::MPI::rank
-    static unsigned int process_number();
-
-    /// Return number of processes for MPI_COMM_WORLD.
-    /// Warning: This function is deprecated. Use dolfin::MPI::size.
-    static unsigned int num_processes();
 
     /// Return process rank for the communicator
     static unsigned int rank(const MPI_Comm comm);

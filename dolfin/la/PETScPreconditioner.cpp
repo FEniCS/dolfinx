@@ -63,7 +63,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
     {"none",             PCNONE} };
 
 // Mapping from preconditioner string to description string
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
 PETScPreconditioner::_methods_descr
 = { {"default",          "default preconditioner"},
     {"ilu",              "Incomplete LU factorization"},
@@ -92,7 +92,7 @@ PETScPreconditioner::_methods_descr
 #endif
     {"none",             "No preconditioner"} };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 PETScPreconditioner::preconditioners()
 {
   return PETScPreconditioner::_methods_descr;
@@ -445,20 +445,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
       PetscOptionsSetValue("-pc_mg_cycles", type.c_str());
     }
 
-    // Coarse level solver
-    #if PETSC_HAVE_MUMPS
-    PetscOptionsSetValue("-mg_coarse_ksp_type", "preonly");
-    PetscOptionsSetValue("-mg_coarse_pc_type", "lu");
-    PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
-    #endif
-
     // Smoother on all levels
     PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
     //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
     //                      "0.0,1.1");
     //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
     PetscOptionsSetValue("-mg_levels_ksp_max_it",
-                          boost::lexical_cast<std::string>(4).c_str());
+                          boost::lexical_cast<std::string>(2).c_str());
 
     //PetscOptionsSetValue("-mg_levels_pc_type", "none");
     PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
@@ -501,13 +494,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     // Set preconditioner to ML
     ierr = PCSetType(pc, PCGAMG);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
-
-    // Coarse level solver
-    #if PETSC_HAVE_MUMPS
-    PetscOptionsSetValue("-mg_coarse_ksp_type", "preonly");
-    PetscOptionsSetValue("-mg_coarse_pc_type", "lu");
-    PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
-    #endif
 
     // Output level
     if (parameters("gamg")["verbose"].is_set())

@@ -117,8 +117,9 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   // Initialize sparsity pattern
   if (new_sparsity_pattern)
   {
+    const std::vector<std::size_t> block_sizes(2, 1);
     new_sparsity_pattern->init(MPI_COMM_WORLD, global_dimensions, local_range,
-                               local_to_global, off_process_owner, 1);
+                               local_to_global, off_process_owner, block_sizes);
   }
 
   // Declare some variables used to extract matrix information
@@ -137,9 +138,9 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   offset[0] = 0;
   std::vector<dolfin::la_index> thisrow(1);
   std::vector<dolfin::la_index> thiscolumn;
-  std::vector<const std::vector<dolfin::la_index>* > dofs(2);
-  dofs[0] = &thisrow;
-  dofs[1] = &thiscolumn;
+  std::vector<ArrayView<const dolfin::la_index>> dofs(2);
+  dofs[0] = ArrayView<const dolfin::la_index>(1, thisrow.data());
+  //dofs[1] = &thiscolumn;
 
   // Iterate over rows
   for (std::size_t i = 0; i < m; i++)
@@ -167,7 +168,10 @@ void GenericMatrix::compressed(GenericMatrix& B) const
 
     // Build new compressed sparsity pattern
     if (new_sparsity_pattern)
+    {
+      dofs[1] = ArrayView<const la_index>(thiscolumn.size(), thiscolumn.data());
       new_sparsity_pattern->insert_global(dofs);
+    }
   }
 
   // Finalize sparsity pattern
@@ -182,7 +186,7 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   {
     const dolfin::la_index global_row = i + row_range.first;
     B.set(&allvalues[offset[i]], 1, &global_row,
-        offset[i+1] - offset[i], &allcolumns[offset[i]]);
+          offset[i+1] - offset[i], &allcolumns[offset[i]]);
   }
   B.apply("insert");
 }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-06-17
+// Last changed: 2015-01-08
 
 #ifndef __MultiMesh_ASSEMBLER_H
 #define __MultiMesh_ASSEMBLER_H
@@ -49,6 +49,14 @@ namespace dolfin
     ///     a (_Form_)
     ///         The form to assemble the tensor from.
     void assemble(GenericTensor& A, const MultiMeshForm& a);
+
+    /// extend_cut_cell_integration (bool)
+    ///     Default value is false.
+    ///     This controls whether the integration over cut cells
+    ///     should extend to the part of cut cells covered by cells
+    ///     from higher ranked meshes - thus including both the cut
+    ///     cell part and the overlap part.
+    bool extend_cut_cell_integration;
 
   private:
 

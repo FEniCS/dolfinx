@@ -52,13 +52,13 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<dolfin::la_index>& dofs0
+    const ArrayView<const dolfin::la_index> dofs0
       = dofmap0.cell_dofs(cell->index());
-    const std::vector<dolfin::la_index>& dofs1
+    const ArrayView<const dolfin::la_index> dofs1
       = dofmap1.cell_dofs(cell->index());
-    std::vector<dolfin::la_index>::const_iterator node0, node1;
-    for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
-      for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
+    //std::vector<dolfin::la_index>::const_iterator node0, node1;
+    for (auto node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
+      for (auto node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
         if (*node0 != *node1)
           graph[*node0].insert(*node1);
   }

@@ -24,9 +24,10 @@
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
 
-#include <string>
 #include <memory>
+#include <string>
 
+#include <dolfin/log/log.h>
 #include "uBLASKrylovSolver.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
@@ -39,7 +40,7 @@ namespace dolfin
   // Forward declaration
   class GenericLinearSolver;
 
-  template<typename Mat = ublas_sparse_matrix>
+  template<typename Mat=ublas_sparse_matrix>
   class uBLASFactory : public GenericLinearAlgebraFactory
   {
   public:
@@ -81,13 +82,21 @@ namespace dolfin
     /// Create LU solver
     std::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
     {
+      #ifdef HAS_UMFPACK
       std::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
       return solver;
+      #else
+      dolfin_error("uBLASFactory.cpp",
+                   "create LU solver",
+                   "No LU solver for uBLAS available. Trying configuring DOLFIN with UMFPACK");
+      return std::shared_ptr<GenericLUSolver>();
+      #endif
     }
 
     /// Create Krylov solver
-    std::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
-                                              std::string preconditioner) const
+    std::shared_ptr<GenericLinearSolver>
+    create_krylov_solver(std::string method,
+                         std::string preconditioner) const
     {
       std::shared_ptr<GenericLinearSolver>
         solver(new uBLASKrylovSolver(method, preconditioner));
@@ -95,30 +104,24 @@ namespace dolfin
     }
 
     /// Return a list of available LU solver methods
-    std::vector<std::pair<std::string, std::string> >
-      lu_solver_methods() const
+    std::map<std::string, std::string> lu_solver_methods() const
     {
-      std::vector<std::pair<std::string, std::string> > methods;
-      methods.push_back(std::make_pair("default",
-                                       "default LU solver"));
-      methods.push_back(std::make_pair("umfpack",
-                                       "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+      std::map<std::string, std::string> methods
+        = { {"default", "default LU solver"} };
+      #ifdef HAS_UMFPACK
+      methods.insert(std::make_pair("umfpack",
+                                    "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+      #endif
       return methods;
     }
 
     /// Return a list of available Krylov solver methods
-    std::vector<std::pair<std::string, std::string> >
-      krylov_solver_methods() const
-    {
-      return uBLASKrylovSolver::methods();
-    }
+    std::map<std::string, std::string> krylov_solver_methods() const
+    { return uBLASKrylovSolver::methods(); }
 
     /// Return a list of available preconditioners
-    std::vector<std::pair<std::string, std::string> >
-      krylov_solver_preconditioners() const
-    {
-      return uBLASKrylovSolver::preconditioners();
-    }
+    std::map<std::string, std::string> krylov_solver_preconditioners() const
+    { return uBLASKrylovSolver::preconditioners(); }
 
     /// Return singleton instance
     static uBLASFactory<Mat>& instance()
@@ -136,6 +139,7 @@ namespace dolfin
 }
 
 // Initialise static data
-template<typename Mat> dolfin::uBLASFactory<Mat> dolfin::uBLASFactory<Mat>::factory;
+template<typename Mat> dolfin::uBLASFactory<Mat>
+dolfin::uBLASFactory<Mat>::factory;
 
 #endif
