@@ -143,6 +143,14 @@ int main()
   pc.parameters["report"] = true;
   pc.set_nullspace(null_space);
 
+  // Set some multigrid smoother parameters
+  PETScOptions::set("mg_levels_ksp_type", "chebyshev");
+  PETScOptions::set("mg_levels_pc_type", "jacobi");
+
+  // Improve estimate of eigenvalues for Chebyshev smoothing
+  PETScOptions::set("gamg_est_ksp_type", "cg");
+  PETScOptions::set("gamg_est_ksp_max_it", 50);
+
   // Create CG PETSc linear solver and turn on convergence monitor
   PETScKrylovSolver solver("cg", pc);
   solver.parameters["monitor_convergence"] = true;
@@ -154,7 +162,7 @@ int main()
   Function ux = u[0];
   Function uy = u[1];
   Function uz = u[2];
-  std::cout << "Norm (u): " << u.vector()->norm("l2") << std::endl;
+  std::cout << "Norm (u vector): " << u.vector()->norm("l2") << std::endl;
   std::cout << "Norm (ux, uy, uz): " << ux.vector()->norm("l2") << "  "
             << uy.vector()->norm("l2") << "  "
             << uz.vector()->norm("l2") << std::endl;
@@ -172,7 +180,9 @@ int main()
   L_s.disp = u;
 
   Function stress(W);
-  LocalSolver local_solver(a_s, L_s, LocalSolver::Cholesky);
+  LocalSolver local_solver(std::shared_ptr<Form>(&a_s, NoDeleter()),
+                           std::shared_ptr<Form>(&L_s, NoDeleter()),
+                           LocalSolver::Cholesky);
   local_solver.solve_local_rhs(stress);
 
   File file_stress("stress.pvd");
