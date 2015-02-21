@@ -26,7 +26,6 @@
 #include <Eigen/Dense>
 #include <Eigen/LU>
 
-
 namespace dolfin
 {
 

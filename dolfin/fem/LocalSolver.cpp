@@ -17,6 +17,9 @@
 //
 // Modified by Steven Vandekerckhove, 2014.
 
+#include <array>
+#include <memory>
+#include <vector>
 #include <Eigen/Dense>
 
 #include <dolfin/common/ArrayView.h>
