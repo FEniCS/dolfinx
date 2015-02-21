@@ -26,7 +26,6 @@
 #include <Eigen/Dense>
 #include <Eigen/LU>
 
-
 namespace dolfin
 {
 
@@ -57,8 +56,8 @@ namespace dolfin
     enum SolverType {LU, Cholesky};
 
     /// Constructor (shared pointer version)
-    LocalSolver(std::shared_ptr<const Form> a,
-                std::shared_ptr<const Form> L, SolverType solver_type=LU);
+    LocalSolver(std::shared_ptr<const Form> a, std::shared_ptr<const Form> L,
+                SolverType solver_type=LU);
 
     /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type=LU);
