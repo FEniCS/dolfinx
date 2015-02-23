@@ -233,13 +233,22 @@ void TpetraVector::get_local(double* block, std::size_t m,
 {
   dolfin_assert(!_x.is_null());
 
-  Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
+  // FIXME: debug only - this is very inefficient
+  Teuchos::RCP<const map_type> xmap(_x->getMap());
+  Teuchos::RCP<vector_type> _y(new vector_type(_ghost_map));
+  // Export from non-overlapping map x, to overlapping map y
+  Tpetra::Import<global_ordinal_type> importer(xmap, _ghost_map);
+
+  _y->doImport(*_x, importer, Tpetra::INSERT);
+
+
+  Teuchos::ArrayRCP<const scalar_type> arr = _y->getData();
   for (std::size_t i = 0; i!=m; ++i)
   {
-    if (_x->getMap()->isNodeLocalElement(rows[i]))
+    if (_y->getMap()->isNodeLocalElement(rows[i]))
       block[i] = arr[rows[i]];
     else
-      std::cout << "!! Not local " << rows[i] << " on " << _x->getMap()->getComm()->getRank() <<" \n";
+      std::cout << "!! Not local " << rows[i] << " on " << _y->getMap()->getComm()->getRank() <<" \n";
   }
 
 }
@@ -617,6 +626,12 @@ void TpetraVector::_init(MPI_Comm comm,
 Teuchos::RCP<vector_type> TpetraVector::vec() const
 {
   return _x;
+}
+//-----------------------------------------------------------------------------
+void TpetraVector::mapdump(const std::string desc)
+{
+  mapdump(_x->getMap(), desc);
+  mapdump(_ghost_map, desc);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::mapdump(Teuchos::RCP<const map_type> xmap,

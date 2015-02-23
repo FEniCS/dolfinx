@@ -246,6 +246,9 @@ namespace dolfin
     static void mapdump(Teuchos::RCP<const map_type> xmap,
                         const std::string desc);
 
+    // Dump x.map and ghost_map
+    void mapdump(const std::string desc);
+
     friend class TpetraMatrix;
 
   private:
@@ -261,7 +264,7 @@ namespace dolfin
     Teuchos::RCP<vector_type> _x;
 
     // Map for sharing values
-    Teuchos::RCP<map_type> _ghost_map;
+    Teuchos::RCP<const map_type> _ghost_map;
 
   };
 
