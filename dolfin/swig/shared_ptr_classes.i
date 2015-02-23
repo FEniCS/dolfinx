@@ -179,6 +179,7 @@
 #ifdef HAS_TRILINOS
 %shared_ptr(dolfin::TpetraVector)
 %shared_ptr(dolfin::TpetraMatrix)
+%shared_ptr(dolfin::BelosKrylovSolver)
 #endif
 
 #ifdef HAS_SLEPC
