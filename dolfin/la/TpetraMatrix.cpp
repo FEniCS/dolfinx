@@ -100,12 +100,11 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
     _comm(new Teuchos::MpiComm<int>(sparsity_pattern.mpi_comm()));
 
   // Create an overlapping row map from the local_to_global map
-  Teuchos::RCP<const map_type> row_map;
   std::vector<global_ordinal_type> global_indices0
     (tensor_layout.local_to_global_map[0].begin(),
      tensor_layout.local_to_global_map[0].end());
   Teuchos::ArrayView<global_ordinal_type> _global_indices0(global_indices0);
-  row_map = Teuchos::rcp<const map_type>
+  Teuchos::RCP<const map_type> row_map
     (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(), _global_indices0, 0, _comm));
 
   std::vector<global_ordinal_type> global_indices1

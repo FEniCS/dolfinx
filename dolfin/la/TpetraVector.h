@@ -260,8 +260,8 @@ namespace dolfin
     // Tpetra vector
     Teuchos::RCP<vector_type> _x;
 
-    // Global-to-local map for ghost values
-    //    std::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
+    // Map for sharing values
+    Teuchos::RCP<map_type> _ghost_map;
 
   };
 

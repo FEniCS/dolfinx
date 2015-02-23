@@ -72,8 +72,8 @@ void TpetraVector::zero()
 void TpetraVector::apply(std::string mode)
 {
   dolfin_assert(!_x.is_null());
-  //  std::cout << "Apply called with: " << mode << "\n";
-  //  std::cout << "Is one to one? " << _x->getMap()->isOneToOne() << "\n";
+  // std::cout << "Apply called with: " << mode << "\n";
+  //   std::cout << "Is one to one? " << _x->getMap()->isOneToOne() << "\n";
 
   if(_x->getMap()->isOneToOne())
     return;
@@ -597,16 +597,17 @@ void TpetraVector::_init(MPI_Comm comm,
   std::size_t Nlocal = local_range.second - local_range.first;
   std::size_t N = MPI::sum(comm, Nlocal);
 
-  //  if (local_to_global_map.size()==0)
   _map = Teuchos::rcp(new map_type(N, Nlocal, 0, _comm));
-    //  else
-    //  {
-    //    std::vector<global_ordinal_type> ltmp(local_to_global_map.begin(),
-    //                                          local_to_global_map.end());
-    //
-    //    const Teuchos::ArrayView<global_ordinal_type> local_indices(ltmp);
-    //    _map = Teuchos::rcp(new map_type(N, local_indices, 0, _comm));
-    //  }
+
+  // Save a map for the ghosting of values on other processes
+  if (local_to_global_map.size() != 0)
+  {
+    std::vector<global_ordinal_type> ltmp(local_to_global_map.begin(),
+                                          local_to_global_map.end());
+
+    const Teuchos::ArrayView<global_ordinal_type> local_indices(ltmp);
+    _ghost_map = Teuchos::rcp(new map_type(N, local_indices, 0, _comm));
+  }
 
   // Vector
   _x = Teuchos::rcp(new vector_type(_map));
