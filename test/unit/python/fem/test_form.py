@@ -190,9 +190,6 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     dss = ds[bottom]
     foo = MPI.sum(cube.mpi_comm(),
                abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
-    #foo = MPI.sum(cube.mpi_comm(),
-    #              abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(1),
-    #                           exterior_facet_domains=bottom).array()).sum())
     # Assemble over all cells of submesh created from subset of boundary mesh
     bottom2 = CellFunctionSizet(cube_boundary)
     bottom2.set_all(0)
