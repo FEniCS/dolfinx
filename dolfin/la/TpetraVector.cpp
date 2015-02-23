@@ -228,27 +228,31 @@ void TpetraVector::get(double* block, std::size_t m,
   }
 }
 //-----------------------------------------------------------------------------
-void TpetraVector::get_local(double* block, std::size_t m,
-                             const dolfin::la_index* rows) const
+void TpetraVector::update_ghost_values()
 {
   dolfin_assert(!_x.is_null());
 
-  // FIXME: debug only - this is very inefficient
   Teuchos::RCP<const map_type> xmap(_x->getMap());
   Teuchos::RCP<vector_type> _y(new vector_type(_ghost_map));
+
   // Export from non-overlapping map x, to overlapping map y
   Tpetra::Import<global_ordinal_type> importer(xmap, _ghost_map);
 
   _y->doImport(*_x, importer, Tpetra::INSERT);
 
-
-  Teuchos::ArrayRCP<const scalar_type> arr = _y->getData();
+  _x = _y;
+}
+//-----------------------------------------------------------------------------
+void TpetraVector::get_local(double* block, std::size_t m,
+                             const dolfin::la_index* rows) const
+{
+  Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
   for (std::size_t i = 0; i!=m; ++i)
   {
-    if (_y->getMap()->isNodeLocalElement(rows[i]))
+    if (_x->getMap()->isNodeLocalElement(rows[i]))
       block[i] = arr[rows[i]];
     else
-      std::cout << "!! Not local " << rows[i] << " on " << _y->getMap()->getComm()->getRank() <<" \n";
+      std::cout << "!! Not local " << rows[i] << " on " << _x->getMap()->getComm()->getRank() <<" \n";
   }
 
 }

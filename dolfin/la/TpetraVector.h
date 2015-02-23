@@ -88,6 +88,9 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
 
+    /// Create ghost entries from non-overlapping TpetraVector
+    void update_ghost_values();
+
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const;
 
@@ -134,6 +137,7 @@ namespace dolfin
     /// owned by local process, ghosts cannot be accessed)
     virtual void get(double* block, std::size_t m,
                      const dolfin::la_index* rows) const;
+
 
     /// Get block of values using local indices
     virtual void get_local(double* block, std::size_t m,
@@ -264,7 +268,7 @@ namespace dolfin
     Teuchos::RCP<vector_type> _x;
 
     // Map for sharing values
-    Teuchos::RCP<const map_type> _ghost_map;
+    Teuchos::RCP<map_type> _ghost_map;
 
   };
 

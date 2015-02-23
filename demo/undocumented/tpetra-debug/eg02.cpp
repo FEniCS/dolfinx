@@ -64,6 +64,11 @@ int main(int argc, char *argv[])
 
   solver.solve(*u.vector(), b);
 
+  // Terrible name
+  // Create ghost values
+  if (backend == "Tpetra")
+    as_type<TpetraVector>(*u.vector()).update_ghost_values();
+
   File xdmf1("solve.xdmf");
   xdmf1 << u;
 
