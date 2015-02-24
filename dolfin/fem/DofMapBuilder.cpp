@@ -137,6 +137,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                                          bs);
   }
 
+  // Set local (cell) dimension
+  dofmap._cell_dimension = dofmap._ufc_dofmap->local_dimension();
+
   // Set global dimension
   dofmap._global_dimension
     = dofmap._ufc_dofmap->global_dimension(dofmap._num_mesh_entities_global);
@@ -269,6 +272,14 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Clear ufc_local-to-local map if dofmap has no sub-maps
   if (dofmap._ufc_dofmap->num_sub_dofmaps() == 0)
     std::vector<int>().swap(dofmap._ufc_local_to_local);
+
+  // TMP
+  dofmap._dofmap_new.clear();
+  for (auto const &cell_dofs : dofmap._dofmap)
+  {
+    dofmap._dofmap_new.insert(dofmap._dofmap_new.end(),
+                              cell_dofs.begin(), cell_dofs.end());
+  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -354,6 +365,17 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
       // Set dof index in transformed dofmap
       *dof = current_dof;
     }
+  }
+
+  // Set local (cell) dimension
+  sub_dofmap._cell_dimension = sub_dofmap._ufc_dofmap->local_dimension();
+
+  // TMP
+  sub_dofmap._dofmap_new.clear();
+  for (auto const &cell_dofs : sub_dofmap._dofmap)
+  {
+    sub_dofmap._dofmap_new.insert(sub_dofmap._dofmap_new.end(),
+                                  cell_dofs.begin(), cell_dofs.end());
   }
 }
 //-----------------------------------------------------------------------------

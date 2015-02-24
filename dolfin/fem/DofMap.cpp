@@ -43,8 +43,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
-  : _ufc_dofmap(ufc_dofmap), _is_view(false), _global_dimension(0),
-    _ufc_offset(0), _global_offset(0)
+  : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
+    _global_dimension(0), _ufc_offset(0), _global_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -55,8 +55,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
-  : _ufc_dofmap(ufc_dofmap), _is_view(false), _global_dimension(0),
-    _ufc_offset(0), _global_offset(0)
+  : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
+    _global_dimension(0), _ufc_offset(0), _global_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -69,7 +69,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
   const std::vector<std::size_t>& component, const Mesh& mesh)
-  : _is_view(true), _global_dimension(0), _ufc_offset(0),
+  : _cell_dimension(0), _is_view(true), _global_dimension(0), _ufc_offset(0),
     _global_offset(parent_dofmap._global_offset),
     _local_ownership_size(parent_dofmap._local_ownership_size)
 {
@@ -79,9 +79,9 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
-  :  _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-     _global_dimension(0), _ufc_offset(0), _global_offset(0),
-     _local_ownership_size(0)
+  : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
+    _global_dimension(0), _ufc_offset(0), _global_offset(0),
+    _local_ownership_size(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -129,6 +129,8 @@ DofMap::DofMap(const DofMap& dofmap)
 {
   // Copy data
   _dofmap = dofmap._dofmap;
+  _dofmap_new = dofmap._dofmap_new;
+  _cell_dimension = dofmap._cell_dimension;
   _ufc_dofmap = dofmap._ufc_dofmap;
   _global_offset = dofmap._global_offset;
   _local_ownership_size = dofmap._local_ownership_size;
@@ -172,8 +174,9 @@ std::size_t DofMap::local_dimension(std::string type) const
 //-----------------------------------------------------------------------------
 std::size_t DofMap::cell_dimension(std::size_t cell_index) const
 {
-  dolfin_assert(cell_index < _dofmap.size());
-  return _dofmap[cell_index].size();
+  return _cell_dimension;
+  //dolfin_assert(cell_index < _dofmap.size());
+  //return _dofmap[cell_index].size();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::max_cell_dimension() const

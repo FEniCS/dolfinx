@@ -77,8 +77,7 @@ namespace dolfin
     ///     constrained_boundary (_SubDomain_)
     ///         The subdomain marking the constrained (tied) boundaries.
     DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-           const Mesh& mesh,
-           std::shared_ptr<const SubDomain> constrained_domain);
+           const Mesh& mesh, std::shared_ptr<const SubDomain> constrained_domain);
 
   private:
 
@@ -219,8 +218,10 @@ namespace dolfin
     ///         Local-to-global mapping of dofs.
     ArrayView<const dolfin::la_index> cell_dofs(std::size_t cell_index) const
     {
-      dolfin_assert(cell_index < _dofmap.size());
-      return ArrayView<const dolfin::la_index>(_dofmap[cell_index]);
+      const std::size_t index = cell_index*_cell_dimension;
+      dolfin_assert(index + _cell_dimension <= _dofmap_new.size());
+      return ArrayView<const dolfin::la_index>(_cell_dimension,
+                                               &_dofmap_new[index]);
     }
 
     /// Tabulate local-local facet dofs
@@ -304,8 +305,8 @@ namespace dolfin
     ///     DofMap
     ///         The subdofmap component.
     std::shared_ptr<GenericDofMap>
-        extract_sub_dofmap(const std::vector<std::size_t>& component,
-                           const Mesh& mesh) const;
+      extract_sub_dofmap(const std::vector<std::size_t>& component,
+                         const Mesh& mesh) const;
 
     /// Create a "collapsed" dofmap (collapses a sub-dofmap)
     ///
@@ -319,8 +320,8 @@ namespace dolfin
     ///     DofMap
     ///         The collapsed dofmap.
     std::shared_ptr<GenericDofMap>
-          collapse(std::unordered_map<std::size_t, std::size_t>&
-                   collapsed_map, const Mesh& mesh) const;
+      collapse(std::unordered_map<std::size_t, std::size_t>&
+               collapsed_map, const Mesh& mesh) const;
 
     // FIXME: Document this function
     std::vector<dolfin::la_index> dofs() const;
@@ -402,8 +403,8 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::vector<dolfin::la_index> >
     ///         The local-to-global map for each cell.
-    const std::vector<std::vector<dolfin::la_index> >& data() const
-    { return _dofmap; }
+    //const std::vector<std::vector<dolfin::la_index> >& data() const
+    //{ return _dofmap; }
 
     /// Return informal string representation (pretty-print)
     ///
@@ -431,6 +432,10 @@ namespace dolfin
 
     // Cell-local-to-dof map (dofs for cell dofmap[i])
     std::vector<std::vector<dolfin::la_index> > _dofmap;
+    std::vector<dolfin::la_index> _dofmap_new;
+
+    // Cell dimension (fixed for all cells)
+    std::size_t _cell_dimension;
 
     // UFC dof map
     std::shared_ptr<const ufc::dofmap> _ufc_dofmap;
