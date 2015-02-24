@@ -30,29 +30,25 @@ namespace dolfin
   /// vector containing edges for each node and a vector of offsets
   /// into the edge vector for each node
   ///
-  /// In parallel, all nodes must be numbered from zero on process zero
-  /// continuously through increasing rank processes. Edges must be defined
-  /// in terms of the global node numbers. The global node offset of each process
-  /// is given by node_distribution()
+  /// In parallel, all nodes must be numbered from zero on process
+  /// zero continuously through increasing rank processes. Edges must
+  /// be defined in terms of the global node numbers. The global node
+  /// offset of each process is given by node_distribution()
   ///
-  /// The format of the nodes, edges and distribution is identical with
-  /// the formats for ParMETIS and PT-SCOTCH.
-  /// See the manuals for these libraries for further information.
+  /// The format of the nodes, edges and distribution is identical
+  /// with the formats for ParMETIS and PT-SCOTCH.  See the manuals
+  /// for these libraries for further information.
 
   template<typename T> class CSRGraph
   {
 
   public:
 
-    explicit CSRGraph(MPI_Comm mpi_comm)
-      : _node_offsets(1, 0), _node_distribution(1, 0), _mpi_comm(mpi_comm)
-    {}
-
     /// Create a CSR Graph from a collection of edges (X is a
     /// container some type, e.g. std::vector<unsigned int> or
     /// std::set<std::size_t>
     template<typename X>
-    CSRGraph(MPI_Comm mpi_comm, const std::vector<X>& graph)
+      CSRGraph(MPI_Comm mpi_comm, const std::vector<X>& graph)
       : _node_offsets(1, 0), _mpi_comm(mpi_comm)
     {
       // Count number of outgoing edges (to pre-allocate memory)
@@ -71,6 +67,7 @@ namespace dolfin
         _node_offsets.push_back(_node_offsets.back() + node_edges.size());
       }
 
+      // Compute node offsets
       calculate_node_distribution();
     }
 
@@ -94,15 +91,17 @@ namespace dolfin
     std::size_t num_nodes() const
     { return _node_offsets.size() - 1; }
 
-    /// Total number of nodes in parallel graph
+    /// Total (global) number of nodes in parallel graph
     T num_nodes_global() const
     { return _node_distribution.back(); }
 
+    /// Return number of nodes (offset) on each process
     const std::vector<T>& node_distribution() const
     { return _node_distribution; }
 
   private:
 
+    // Compute offset of number of nodes on each process
     void calculate_node_distribution()
     {
       // Communicate number of nodes between all processors
@@ -114,16 +113,16 @@ namespace dolfin
         _node_distribution[i] += _node_distribution[i - 1];
     }
 
-    // Edges in compressed form. Edges for node i
-    // are stored in _edges[_node_offsets[i]:_node_offsets[i + 1]]
+    // Edges in compressed form. Edges for node i are stored in
+    // _edges[_node_offsets[i]:_node_offsets[i + 1]]
     std::vector<T> _edges;
 
-    // Offsets of each node into edges (see above)
-    // corresponding to the nodes on this process (see below)
+    // Offsets of each node into edges (see above) corresponding to
+    // the nodes on this process (see below)
     std::vector<T> _node_offsets;
 
-    // Distribution of nodes across processes in parallel
-    // i.e. the range of nodes stored on process j is
+    // Distribution of nodes across processes in parallel i.e. the
+    // range of nodes stored on process j is
     // _node_distribution[j]:_node_distribution[j+1]
     std::vector<T> _node_distribution;
 
