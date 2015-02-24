@@ -46,7 +46,6 @@
 
 PROBLEM_RENAMES(LinearVariational)
 PROBLEM_RENAMES(NonlinearVariational)
-//PROBLEM_RENAMES(LinearTimeDependent)
 
 //-----------------------------------------------------------------------------
 // To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
@@ -115,7 +114,6 @@ PROBLEM_RENAMES(NonlinearVariational)
 //-----------------------------------------------------------------------------
 %ignore dolfin::GenericDofMap::cell_dofs;
 %ignore dolfin::DofMap::cell_dofs;
-
 
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
@@ -224,7 +222,7 @@ const ufc::cell& (void *argp, bool dolfin_cell, int res)
 // The std::vector<std::vector<std::shared_ptr<dolfin::Type*> > >
 // typemap
 //-----------------------------------------------------------------------------
-   %typemap (in) std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > > (std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > >  tmp_vec_0, std::vector<std::shared_ptr<const dolfin::TYPE> >  tmp_vec_1, std::shared_ptr<dolfin::TYPE> tempshared)
+%typemap (in) std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > > (std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > >  tmp_vec_0, std::vector<std::shared_ptr<const dolfin::TYPE> >  tmp_vec_1, std::shared_ptr<dolfin::TYPE> tempshared)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
   if (!PyList_Check($input))
@@ -276,9 +274,7 @@ const ufc::cell& (void *argp, bool dolfin_cell, int res)
     tmp_vec_1.clear();
   }
   $1 = tmp_vec_0;
-
 }
-
 %enddef
 
 //-----------------------------------------------------------------------------
@@ -312,6 +308,3 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
 }
 
 #endif
-//#ifdef IOMODULE // Conditional template instiantiation for IO module
-//%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
-//#endif
