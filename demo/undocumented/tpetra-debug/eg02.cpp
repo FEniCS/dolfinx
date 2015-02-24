@@ -24,10 +24,12 @@ class Source : public Expression
 
 int main(int argc, char *argv[])
 {
-  if (argc != 2)
-    error("Usage %s backend\n", argv[0]);
+  if (argc != 4)
+    error("Usage %s backend solver preconditioner\n", argv[0]);
 
   const std::string backend = argv[1];
+  const std::string sol = argv[2];
+  const std::string pc = argv[3];
   parameters["linear_algebra_backend"] = backend;
 
   UnitSquareMesh mesh(5, 5);
@@ -58,10 +60,11 @@ int main(int argc, char *argv[])
     as_type<TpetraVector>(b).mapdump("b");
   }
 
-  KrylovSolver solver("default");
+  KrylovSolver solver(sol, pc);
   solver.parameters["monitor_convergence"] = true;
   solver.set_operator(A);
 
+  bc.apply(*u.vector());
   solver.solve(*u.vector(), b);
 
   // Terrible name
@@ -71,6 +74,9 @@ int main(int argc, char *argv[])
 
   File xdmf1("solve.xdmf");
   xdmf1 << u;
+
+  plot(u);
+  interactive();
 
   return 0;
 }
