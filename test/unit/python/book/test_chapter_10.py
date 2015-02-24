@@ -899,19 +899,6 @@ def test_p50_box_3(pushpop_parameters):
     b = assemble(L)
     bb = b.data()
 
-@skip_if_not_MTL4
-@skip_in_parallel
-def test_p50_box_4(pushpop_parameters):
-    mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    u = TrialFunction(V)
-    v = TestFunction(V)
-    a = u*v*dx
-
-    # Only test when MTL4 is available
-    parameters["linear_algebra_backend"] = "MTL4"
-    A = assemble(a)
-    rows, columns, values = A.data()
 
 @skip_in_parallel
 def test_p51_box_1(pushpop_parameters):

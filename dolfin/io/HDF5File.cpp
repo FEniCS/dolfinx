@@ -817,7 +817,7 @@ void HDF5File::write(const Function& u, const std::string name)
   for (std::size_t i = 0; i != n_cells; ++i)
   {
     x_cell_dofs.push_back(cell_dofs.size());
-    const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
+    const ArrayView<const dolfin::la_index> cell_dofs_i = dofmap.cell_dofs(i);
     for (auto p = cell_dofs_i.begin(); p != cell_dofs_i.end(); ++p)
     {
       dolfin_assert(*p < (dolfin::la_index)local_to_global_map.size());

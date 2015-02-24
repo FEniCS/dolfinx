@@ -3,16 +3,25 @@
 # very rough demo to test out ghost cells
 # run with mpirun
 #
+from __future__ import print_function
+
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import PolyCollection
+except ImportError:
+    print("matplotib is needed to run this demo. Import was not "
+          "succesful. Exiting gracefully.")
+    exit()
+
 from dolfin import *
-import matplotlib.pyplot as plt
-from matplotlib.collections import PolyCollection
-import matplotlib as mpl
+
 import numpy as np
 import sys
+import six
 
 parameters["ghost_mode"] = "shared_vertex"
 #parameters["ghost_mode"] = "shared_facet"
-# parameters["ghost_mode"] = "None"
+#parameters["ghost_mode"] = "None"
 parameters["reorder_cells_gps"] = True
 parameters["reorder_vertices_gps"] = True
 
@@ -25,10 +34,8 @@ if(len(sys.argv) == 2):
         n = 0
 
 if(MPI.size(mpi_comm_world()) == 1):
-    print "Only works with MPI"
+    print("Only works with MPI")
     quit()
-
-mpi_rank = MPI.rank(mpi_comm_world())
 
 #parameters["mesh_partitioner"] = "ParMETIS"
 
@@ -60,9 +67,9 @@ else:
 
 x,y = mesh.coordinates().transpose()
 
-process_number = MPI.rank(mesh.mpi_comm())
+rank = MPI.rank(mesh.mpi_comm())
 
-cell_ownership = np.ones(mesh.num_cells(),dtype='int')*process_number
+cell_ownership = np.ones(mesh.num_cells(),dtype='int')*rank
 cell_owner = mesh.topology().cell_owner()
 if len(cell_owner) > 0 :
     cell_ownership[-len(cell_owner):] = cell_owner
@@ -145,4 +152,4 @@ for note in facet_note:
 # xdmf = File("a.xdmf")
 # xdmf << Q
 
-plt.show()
+plt.savefig("mesh-rank%d.png" % rank)

@@ -364,7 +364,8 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
     cell->get_vertex_coordinates(vertex_coordinates);
 
     // Get local-to-global map
-    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap.cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
     dofmap.tabulate_coordinates(coordinates, vertex_coordinates, *cell);

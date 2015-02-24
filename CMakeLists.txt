@@ -208,9 +208,11 @@ endif()
 
 # FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
 
-# Add debug definitions
+# Set debug definitions
 if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DDEBUG")
+else()
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DNDEBUG")
 endif()
 
 # Add flags for generating code coverage reports
@@ -327,7 +329,7 @@ else()
 endif()
 
 # Check for required package Eigen3
-find_package(Eigen3 3.0.0 REQUIRED)
+find_package(Eigen3 3.2.0 REQUIRED)
 
 # Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
@@ -1071,6 +1073,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     DEPENDS run_unittests_2)
+
   # ... attempt at controlling dependency execution order ...
   add_custom_target(run_unittests_2
     DEPENDS run_unittests_py_mpi run_unittests_1)

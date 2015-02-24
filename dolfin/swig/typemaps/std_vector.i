@@ -463,13 +463,9 @@ const std::vector<TYPE>&  ARG_NAME
     py_item = PyList_GetItem($input,i);
     res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE*), 0);
     if (SWIG_IsOK(res))
-    {
       tmp_vec.push_back(*reinterpret_cast<dolfin::TYPE *>(itemp));
-    }
     else
-    {
       SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum, (Bad conversion)");
-    }
   }
   $1 = &tmp_vec;
 }
@@ -532,7 +528,7 @@ const std::vector<TYPE>&  ARG_NAME
       {
         Py_DECREF(item);
         SWIG_exception(SWIG_TypeError, "expected items of inner sequence to be of type " \
-                 "\"TYPE_NAME\" in argument $argnum");
+                       "\"TYPE_NAME\" in argument $argnum");
       }
       inner_vec.push_back(value);
       Py_DECREF(item);
@@ -551,8 +547,8 @@ const std::vector<TYPE>&  ARG_NAME
 // Out typemap for std::vector<std::pair<std:string, std:string>
 //-----------------------------------------------------------------------------
 %typemap(out) std::vector< std::pair< std::string, std::string > >
-   (std::vector< std::pair< std::string, std::string > >::const_iterator it,
-    PyObject* tuple, Py_ssize_t ind)
+  (std::vector< std::pair< std::string, std::string > >::const_iterator it,
+   PyObject* tuple, Py_ssize_t ind)
 {
   // std::vector<std::pair<std:string, std:string> >
   $result = PyList_New((&$1)->size());
@@ -568,8 +564,8 @@ const std::vector<TYPE>&  ARG_NAME
 // Out typemap for std::vector<std::pair<std:string, std:string>
 //-----------------------------------------------------------------------------
 %typemap(out) std::vector< std::string >
-   (std::vector< std::string >::const_iterator it,
-    PyObject* tmp_Py_str, Py_ssize_t ind)
+(std::vector< std::string >::const_iterator it,
+ PyObject* tmp_Py_str, Py_ssize_t ind)
 {
   // std::vector<std::pair<std:string, std:string> >
   $result = PyList_New((&$1)->size());
@@ -712,7 +708,7 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, facets,
 //}
 
 //// The typecheck
-//%typecheck(SWIG_TYPECHECK_INT32_ARRAY) const std::vector<dolfin::la_index>& 
+//%typecheck(SWIG_TYPECHECK_INT32_ARRAY) const std::vector<dolfin::la_index>&
 //{
 //  $1 = PyArray_Check($input) ? PyArray_TYPE(reinterpret_cast<PyArrayObject*>($input))==:0;
 //}
