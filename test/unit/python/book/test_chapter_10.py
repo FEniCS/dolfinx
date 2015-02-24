@@ -847,7 +847,7 @@ def test_p47_box_1():
     u = TrialFunction(V)
     v = TestFunction(V)
 
-@use_gc_barrier
+@skip_in_parallel
 def test_p47_box_2():
     mesh = UnitSquareMesh(2, 2)
     V = FunctionSpace(mesh, "Lagrange", 1)
