@@ -135,7 +135,7 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
   // NB relies on the x-component coming first, and ordering xyxy or xyzxyz etc.
   for (std::size_t i = 0; i != n_cells; ++i)
   {
-    const std::vector<dolfin::la_index>& cell_dofs_i = geom_dofmap.cell_dofs(i);
+    const dolfin::ArrayView<const dolfin::la_index>& cell_dofs_i = geom_dofmap.cell_dofs(i);
     dolfin_assert(cell_dofs_i.size() == node_mapping.size() * gdim);
 
     for (auto &node : node_mapping)
