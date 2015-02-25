@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
   solver.parameters["monitor_convergence"] = true;
   solver.set_operator(A);
 
-  bc.apply(*u.vector());
   solver.solve(*u.vector(), b);
 
   // Terrible name
@@ -75,8 +74,8 @@ int main(int argc, char *argv[])
   File xdmf1("solve.xdmf");
   xdmf1 << u;
 
-  plot(u);
-  interactive();
+  //  plot(u);
+  //  interactive();
 
   return 0;
 }

@@ -72,20 +72,18 @@ void TpetraVector::zero()
 void TpetraVector::apply(std::string mode)
 {
   dolfin_assert(!_x.is_null());
-  // std::cout << "Apply called with: " << mode << "\n";
-  //   std::cout << "Is one to one? " << _x->getMap()->isOneToOne() << "\n";
+  std::cout << "Apply called with: " << mode << "\n";
+  std::cout << "Is one to one? " << _x->getMap()->isOneToOne() << "\n";
 
   if(_x->getMap()->isOneToOne())
     return;
 
   // Make a one-to-one map from xmap, and a vector based on it
   Teuchos::RCP<const map_type> xmap(_x->getMap());
-  Teuchos::RCP<const map_type>
-    ymap = Tpetra::createOneToOne(xmap);
-  Teuchos::RCP<vector_type> y(new vector_type(ymap));
+  Teuchos::RCP<vector_type> y(new vector_type(_map));
 
   // Export from overlapping map x, to non-overlapping map y
-  Tpetra::Export<global_ordinal_type> exporter(xmap, ymap);
+  Tpetra::Export<global_ordinal_type> exporter(xmap, _map);
 
   // Forward export to reduction vector y
   if (mode == "add")
@@ -97,9 +95,7 @@ void TpetraVector::apply(std::string mode)
     y->doExport(*_x, exporter, Tpetra::INSERT);
   }
 
-  // Reverse import to put values back into _x
-  _x->doImport(*y, exporter, Tpetra::INSERT);
-
+  _x = y;
 }
 //-----------------------------------------------------------------------------
 MPI_Comm TpetraVector::mpi_comm() const
@@ -299,6 +295,8 @@ void TpetraVector::add_local(const double* block, std::size_t m,
   {
     if(_x->getMap()->isNodeLocalElement(rows[i]))
       _x->sumIntoLocalValue(rows[i], block[i]);
+    else
+      warning("In TpetraVector::add_local - row is not local %d", rows[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -606,7 +604,6 @@ void TpetraVector::_init(MPI_Comm comm,
     _comm(new Teuchos::MpiComm<int>(comm));
 
   // Mapping across processes
-  Teuchos::RCP<map_type> _map;
   std::size_t Nlocal = local_range.second - local_range.first;
   std::size_t N = MPI::sum(comm, Nlocal);
 
@@ -621,9 +618,11 @@ void TpetraVector::_init(MPI_Comm comm,
     const Teuchos::ArrayView<global_ordinal_type> local_indices(ltmp);
     _ghost_map = Teuchos::rcp(new map_type(N, local_indices, 0, _comm));
   }
+  else
+    _ghost_map = _map;
 
-  // Vector
-  _x = Teuchos::rcp(new vector_type(_map));
+  // Vector - create with overlap, initially
+  _x = Teuchos::rcp(new vector_type(_ghost_map));
 
 }
 //-----------------------------------------------------------------------------

@@ -270,6 +270,10 @@ namespace dolfin
     // Map for sharing values
     Teuchos::RCP<map_type> _ghost_map;
 
+    // Usual map
+    Teuchos::RCP<map_type> _map;
+
+
   };
 
 }
