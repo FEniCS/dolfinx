@@ -285,6 +285,10 @@ void XDMFxml::mesh_topology(const std::size_t cell_dim,
                             const std::string reference)
 {
   pugi::xml_node xdmf_topology = xdmf_grid.child("Topology");
+  pugi::xml_node xdmf_topology_data = xdmf_topology.child("DataItem");
+  // Check if already has topology data, in which case ignore
+  if (xdmf_topology_data)
+    return;
 
   xdmf_topology.append_attribute("NumberOfElements")
     = (unsigned int) num_global_cells;
@@ -326,10 +330,11 @@ void XDMFxml::mesh_topology(const std::size_t cell_dim,
                  "output mesh topology",
                  "Invalid combination of cell dim and order");
 
+
   if (reference.size() > 0)
   {
     // Refer to all cells and dimensions
-    pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
+    xdmf_topology_data = xdmf_topology.append_child("DataItem");
     xdmf_topology_data.append_attribute("Format") = "HDF";
     const std::string cell_dims
       = boost::lexical_cast<std::string>(num_global_cells)
@@ -348,6 +353,10 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
                             const std::string reference)
 {
   pugi::xml_node xdmf_geometry = xdmf_grid.child("Geometry");
+  pugi::xml_node xdmf_geom_data = xdmf_geometry.child("DataItem");
+  // Check if already has topology data, in which case ignore
+  if (xdmf_geom_data)
+    return;
 
   dolfin_assert(gdim > 0 && gdim <= 3);
   std::string geometry_type;
@@ -362,7 +371,7 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
     geometry_type = "XYZ";
 
   xdmf_geometry.append_attribute("GeometryType") = geometry_type.c_str();
-  pugi::xml_node xdmf_geom_data = xdmf_geometry.append_child("DataItem");
+  xdmf_geom_data = xdmf_geometry.append_child("DataItem");
 
   xdmf_geom_data.append_attribute("Format") = "HDF";
   std::string geom_dim = boost::lexical_cast<std::string>(num_total_vertices)
