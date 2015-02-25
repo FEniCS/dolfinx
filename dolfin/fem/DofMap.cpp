@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2015 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,16 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Alnes, 2008, 2013
+// Modified by Martin Alnes, 2008-2015
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Niclas Jansson, 2009
 // Modified by Joachim B Haga, 2012
 // Modified by Mikael Mortensen, 2012
 // Modified by Jan Blechta, 2013
-//
-// First added:  2007-03-01
-// Last changed: 2014-09-08
 
 #include <unordered_map>
 
@@ -170,16 +167,16 @@ std::size_t DofMap::local_dimension(std::string type) const
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::cell_dimension(std::size_t cell_index) const
+std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 {
   dolfin_assert(cell_index < _dofmap.size());
   return _dofmap[cell_index].size();
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::max_cell_dimension() const
+std::size_t DofMap::max_element_dofs() const
 {
   dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->local_dimension();
+  return _ufc_dofmap->num_element_dofs();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t dim) const
@@ -243,11 +240,11 @@ DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
   dolfin_assert(_ufc_dofmap);
 
   // Check dimensions
-  if (coordinates.shape()[0] != cell_dimension(cell.index()) ||
+  if (coordinates.shape()[0] != num_element_dofs(cell.index()) ||
       coordinates.shape()[1] != _ufc_dofmap->geometric_dimension())
   {
     boost::multi_array<double, 2>::extent_gen extents;
-    const std::size_t cell_dim = cell_dimension(cell.index());
+    const std::size_t cell_dim = num_element_dofs(cell.index());
     coordinates.resize(extents[cell_dim][_ufc_dofmap->geometric_dimension()]);
   }
 
@@ -342,7 +339,7 @@ std::vector<dolfin::la_index> DofMap::dofs() const
 {
   // Create vector to hold dofs
   std::vector<la_index> _dofs;
-  _dofs.reserve(_dofmap.size()*max_cell_dimension());
+  _dofs.reserve(_dofmap.size()*max_element_dofs());
 
   // Insert all dofs into a vector (will contain duplicates)
   std::vector<std::vector<dolfin::la_index>>::const_iterator cell_dofs;

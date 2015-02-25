@@ -17,6 +17,7 @@
 //
 // Modified by Joachim B. Haga, 2012
 // Modified by Jan Blechta, 2013
+// Modified by Martin Alnes, 2015
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -70,12 +71,28 @@ namespace dolfin
     virtual std::size_t local_dimension(std::string type) const = 0;
 
     /// Return the dimension of the local finite element function
+    /// space on a cell (deprecated API)
+    std::size_t cell_dimension(std::size_t index) const
+    {
+      // TODO: Add deprecation warning
+      return num_element_dofs(index);
+    }
+
+    /// Return the maximum dimension of the local finite element
+    /// function space (deprecated API)
+    std::size_t max_cell_dimension(std::size_t index) const
+    {
+      // TODO: Add deprecation warning
+      return max_element_dofs(index);
+    }
+
+    /// Return the dimension of the local finite element function
     /// space on a cell
-    virtual std::size_t cell_dimension(std::size_t index) const = 0;
+    virtual std::size_t num_element_dofs(std::size_t index) const = 0;
 
     /// Return the maximum dimension of the local finite element
     /// function space
-    virtual std::size_t max_cell_dimension() const = 0;
+    virtual std::size_t max_element_dofs() const = 0;
 
     /// Return the number of dofs for a given entity dimension
     virtual std::size_t num_entity_dofs(std::size_t dim) const = 0;
@@ -102,7 +119,7 @@ namespace dolfin
     /// Tabulate the local-to-local mapping of dofs on entity
     /// (dim, local_entity)
     virtual void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
-				      std::size_t dim,
+                                      std::size_t dim,
                                       std::size_t local_entity) const = 0;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)

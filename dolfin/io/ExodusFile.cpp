@@ -254,14 +254,14 @@ void ExodusFile::write_function(const Function& u, double time) const
   // to make sure it doesn't get destroyed before the data
   // is written out to a file
   std::vector<double> values;
-  if (dofmap.max_cell_dimension() == cell_based_dim)
+  if (dofmap.max_element_dofs() == cell_based_dim)
   {
     // Extract DOFs from u
     std::vector<int> dof_set;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const std::vector<int>& dofs = dofmap.cell_dofs(cell->index());
-      for(std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+      for(std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
         dof_set.push_back(dofs[i]);
     }
     // Get values

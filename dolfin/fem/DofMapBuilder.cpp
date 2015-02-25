@@ -578,8 +578,8 @@ void DofMapBuilder::build_local_ufc_dofmap(
 
   // Build dofmap from ufc::dofmap
   dofmap.resize(mesh.num_cells(),
-                std::vector<la_index>(ufc_dofmap.local_dimension()));
-  std::vector<std::size_t> dof_holder(ufc_dofmap.local_dimension());
+                std::vector<la_index>(ufc_dofmap.num_element_dofs()));
+  std::vector<std::size_t> dof_holder(ufc_dofmap.num_element_dofs());
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     const std::size_t cell_index = cell->index();
@@ -1084,7 +1084,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   std::vector<std::size_t> ufc_nodes_global, ufc_nodes_local;
 
   // Get standard local elem2ent dimension
-  const std::size_t local_dim = dofmaps[0]->local_dimension();
+  const std::size_t local_dim = dofmaps[0]->num_element_dofs();
 
   // Create UFC cell and allocate memory
   ufc::cell ufc_cell_global, ufc_cell_local;
@@ -1224,7 +1224,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
     ufc_nodes_global_constrained;
 
   // Get standard local element dimension
-  const std::size_t local_dim = dofmaps[0]->local_dimension();
+  const std::size_t local_dim = dofmaps[0]->num_element_dofs();
 
   // Create UFC cell and allocate memory
   ufc::cell ufc_cell;

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Anders Logg
+// Copyright (C) 2007-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -17,7 +17,7 @@
 //
 // Modified by Ola Skavhaug, 2009
 // Modified by Garth N. Wells, 2010
-// Modified by Martin Alnaes, 2013-2014
+// Modified by Martin Alnaes, 2013-2015
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -93,26 +93,26 @@ void UFC::init(const Form& a)
     custom_integrals.push_back(std::shared_ptr<ufc::custom_integral>(this->form.create_custom_integral(i)));
 
   // Get maximum local dimensions
-  std::vector<std::size_t> max_local_dimension;
-  std::vector<std::size_t> max_macro_local_dimension;
+  std::vector<std::size_t> max_element_dofs;
+  std::vector<std::size_t> max_macro_element_dofs;
   for (std::size_t i = 0; i < form.rank(); i++)
   {
     dolfin_assert(V[i]->dofmap());
-    max_local_dimension.push_back(V[i]->dofmap()->max_cell_dimension());
-    max_macro_local_dimension.push_back(2*V[i]->dofmap()->max_cell_dimension());
+    max_element_dofs.push_back(V[i]->dofmap()->max_element_dofs());
+    max_macro_element_dofs.push_back(2*V[i]->dofmap()->max_element_dofs());
   }
 
   // Initialize local tensor
   std::size_t num_entries = 1;
   for (std::size_t i = 0; i < form.rank(); i++)
-    num_entries *= max_local_dimension[i];
+    num_entries *= max_element_dofs[i];
   A.resize(num_entries);
   A_facet.resize(num_entries);
 
   // Initialize local tensor for macro element
   num_entries = 1;
   for (std::size_t i = 0; i < form.rank(); i++)
-    num_entries *= max_macro_local_dimension[i];
+    num_entries *= max_macro_element_dofs[i];
   macro_A.resize(num_entries);
 
   // Initialize coefficients

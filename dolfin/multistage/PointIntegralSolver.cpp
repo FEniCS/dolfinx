@@ -455,7 +455,7 @@ void PointIntegralSolver::_check_forms()
       const unsigned int vert_per_cell
         = _mesh.topology()(_mesh.topology().dim(), 0).size(0);
 
-      if (vert_per_cell*dofs_per_vertex != dofmap.max_cell_dimension())
+      if (vert_per_cell*dofs_per_vertex != dofmap.max_element_dofs())
       {
       	dolfin_error("PointIntegralSolver.cpp",
       		     "constructing PointIntegralSolver",
