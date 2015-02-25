@@ -31,25 +31,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 BelosKrylovSolver::preconditioners()
 {
-  std::vector<std::pair<std::string, std::string> > result;
-  result.push_back(std::make_pair("default", "default preconditioner"));
+  std::map<std::string, std::string> result;
+  result.insert(std::make_pair("default", "default preconditioner"));
   return result;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 BelosKrylovSolver::methods()
 {
   Belos::SolverFactory<scalar_type, mv_type, op_type> factory;
   Teuchos::Array<std::string> methods = factory.supportedSolverNames();
 
-  std::vector<std::pair<std::string, std::string> > result;
-  result.push_back(std::make_pair("default", "default method"));
+  std::map<std::string, std::string> result;
+  result.insert(std::make_pair("default", "default method"));
 
   for (auto m = methods.begin(); m != methods.end(); ++m)
-    result.push_back(std::make_pair(*m, *m));
+    result.insert(std::make_pair(*m, *m));
 
   return result;
 }

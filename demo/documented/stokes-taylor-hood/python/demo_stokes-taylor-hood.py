@@ -42,7 +42,7 @@ V = VectorFunctionSpace(mesh, "CG", 2)
 Q = FunctionSpace(mesh, "CG", 1)
 W = V * Q
 
-# No-slip boundary condition for velocity 
+# No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Constant((0, 0))
 bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)

@@ -88,7 +88,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return a list of available preconditioners
-    static std::vector<std::pair<std::string, std::string> > preconditioners();
+    static std::map<std::string, std::string> preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -106,7 +106,7 @@ namespace dolfin
     static const std::map<std::string, const PCType> _methods;
 
     // Available preconditioner descriptions
-    static const std::vector<std::pair<std::string, std::string> >
+    static const std::map<std::string, std::string>
       _methods_descr;
 
     // Near null space vectors

@@ -130,10 +130,10 @@ namespace dolfin
     //    Teuchos::RCP<Belos::SolverManager<> > ksp() const;
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
 
     /// Return a list of available preconditioners
-    static std::vector<std::pair<std::string, std::string> > preconditioners();
+    static std::map<std::string, std::string> preconditioners();
 
     ///// Set options prefix
     //void set_options_prefix(std::string prefix);

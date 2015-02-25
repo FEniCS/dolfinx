@@ -79,13 +79,13 @@ TpetraFactory::create_krylov_solver(std::string method,
   return solver;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TpetraFactory::krylov_solver_methods() const
 {
   return BelosKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TpetraFactory::krylov_solver_preconditioners() const
 {
   return BelosKrylovSolver::preconditioners();

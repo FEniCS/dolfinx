@@ -21,8 +21,9 @@
 
 from dolfin import *
 import pytest
-
 from dolfin_utils.test import *
+
+backends = ["PETSc", skip_in_parallel("uBLAS"), skip_in_parallel("Eigen")]
 
 def build_elastic_nullspace(V, x):
     """Function to build nullspace for 2D elasticity"""
@@ -64,7 +65,7 @@ def build_broken_elastic_nullspace(V, x):
     return VectorSpaceBasis(nullspace_basis)
 
 
-@pytest.mark.parametrize('backend', ["PETSc", skip_in_parallel("uBLAS")])
+@pytest.mark.parametrize('backend', backends)
 def test_nullspace_check(backend):
     # Check whether backend is available
     if not has_linear_algebra_backend(backend):

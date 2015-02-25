@@ -24,9 +24,9 @@
 #ifndef __SOLVE_LA_H
 #define __SOLVE_LA_H
 
-#include <vector>
+#include <map>
 #include <string>
-
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -74,24 +74,23 @@ namespace dolfin
   bool has_krylov_solver_preconditioner(std::string preconditioner);
 
   /// Return available linear algebra backends
-  std::vector<std::pair<std::string, std::string> > linear_algebra_backends();
+  std::map<std::string, std::string> linear_algebra_backends();
 
   /// Return a list of available solver methods for current linear
   /// algebra backend
-  std::vector<std::pair<std::string, std::string> > linear_solver_methods();
+  std::map<std::string, std::string> linear_solver_methods();
 
   /// Return a list of available LU methods for current linear algebra
   /// backend
-  std::vector<std::pair<std::string, std::string> > lu_solver_methods();
+  std::map<std::string, std::string> lu_solver_methods();
 
   /// Return a list of available Krylov methods for current linear
   /// algebra backend
-  std::vector<std::pair<std::string, std::string> > krylov_solver_methods();
+  std::map<std::string, std::string> krylov_solver_methods();
 
   /// Return a list of available preconditioners for current linear
   /// algebra backend
-  std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners();
+  std::map<std::string, std::string> krylov_solver_preconditioners();
 
   /// Compute residual ||Ax - b||
   double residual(const GenericLinearOperator& A, const GenericVector& x,

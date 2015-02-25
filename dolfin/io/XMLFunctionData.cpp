@@ -222,8 +222,8 @@ void XMLFunctionData::build_global_to_cell_dof(
     {
       const std::size_t local_cell_index = cell->index();
       const std::size_t global_cell_index = cell->global_index();
-
-      const std::vector<la_index>& cell_dofs = dofmap.cell_dofs(local_cell_index);
+      const ArrayView<const la_index>
+        cell_dofs = dofmap.cell_dofs(local_cell_index);
 
       cell_dofs_global.resize(cell_dofs.size());
       for(std::size_t i = 0; i < cell_dofs.size(); ++i)
@@ -297,8 +297,8 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<la_index>>& dof_map,
     {
       const std::size_t local_cell_index = cell->index();
       const std::size_t global_cell_index = cell->global_index();
-
-      const std::vector<la_index>& cell_dofs = dofmap.cell_dofs(local_cell_index);
+      const ArrayView<const la_index>
+        cell_dofs = dofmap.cell_dofs(local_cell_index);
       local_dofmap.push_back(global_cell_index);
       local_dofmap.push_back(cell_dofs.size());
 

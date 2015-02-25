@@ -61,20 +61,18 @@ namespace dolfin
     std::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    std::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
-                                            std::string preconditioner) const;
+    std::shared_ptr<GenericLinearSolver>
+    create_krylov_solver(std::string method,
+                         std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
-    std::vector<std::pair<std::string, std::string> >
-      lu_solver_methods() const;
+    std::map<std::string, std::string> lu_solver_methods() const;
 
     /// Return a list of available Krylov solver methods
-    std::vector<std::pair<std::string, std::string> >
-      krylov_solver_methods() const;
+    std::map<std::string, std::string> krylov_solver_methods() const;
 
     /// Return a list of available preconditioners
-    std::vector<std::pair<std::string, std::string> >
-      krylov_solver_preconditioners() const;
+    std::map<std::string, std::string> krylov_solver_preconditioners() const;
 
     /// Return singleton instance
     static PETScFactory& instance()

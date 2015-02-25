@@ -220,3 +220,23 @@ MAP_OUT_TYPEMAPS(std::size_t, unsigned int, uint, NPY_UINT)
 MAP_OUT_TYPEMAPS(std::size_t, int, int, NPY_INT)
 MAP_OUT_TYPEMAPS(std::size_t, double, double, NPY_DOUBLE)
 MAP_OUT_TYPEMAPS(std::size_t, std::size_t, size_t, NPY_UINTP)
+
+
+// Add 'out' typemap for std::map<std::string, std::string>
+%typemap(out) std::map<std::string, std::string> \
+  (std::map<std::string, std::string>::const_iterator it,
+   PyObject* item0, PyObject* item1)
+{
+  PyObject *ret = PyDict_New();
+  for (it = $1.begin(); it != $1.end(); ++it)
+  {
+    item0 = SWIG_From_dec(std::string)(it->first);
+    item1 = SWIG_From_dec(std::string)(it->second);
+    PyDict_SetItem(ret, item0, item1);
+    Py_XDECREF(item0);
+    Py_XDECREF(item1);
+  }
+
+  // Append the output to $result
+  %append_output(ret);
+}

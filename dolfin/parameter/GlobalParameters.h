@@ -134,8 +134,8 @@ namespace dolfin
             {"regular_cut", "plaza", "plaza_with_parent_facets"});
 
       // Linear algebra
-      std::string  default_backend = "uBLAS";
-      std::set<std::string> allowed_backends = {"uBLAS", "STL", "uBLAS"};
+      std::string default_backend = "Eigen";
+      std::set<std::string> allowed_backends = {"uBLAS", "STL", "Eigen"};
       #ifdef HAS_PETSC
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
@@ -150,6 +150,7 @@ namespace dolfin
         default_backend = "Tpetra";
         #endif
       #endif
+
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);

@@ -37,6 +37,10 @@ public:
 
   void test_backends()
   {
+    // Eigen
+    parameters["linear_algebra_backend"] = "Eigen";
+    _test_operators(MPI_COMM_SELF);
+
     // uBLAS
     parameters["linear_algebra_backend"] = "uBLAS";
     _test_operators(MPI_COMM_SELF);
@@ -123,6 +127,13 @@ public:
       CPPUNIT_ASSERT(y.size() == 203);
     }
     #endif
+
+    // Eigen
+    {
+      EigenVector x;
+      x.init(layout_local);
+      CPPUNIT_ASSERT(x.size() == 203);
+    }
 
     // uBLAS
     {

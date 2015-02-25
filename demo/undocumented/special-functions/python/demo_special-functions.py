@@ -28,28 +28,33 @@ from dolfin import *
 parameters["form_compiler"]["optimize"]     = True
 parameters["form_compiler"]["cpp_optimize"] = True
 
-# Create meshes
 n = 100
 eps = 1e-8
-mesh = Interval(n, -2.0, +2.0)
-mesh2 = Interval(n, 0.0+eps, 1.0-eps)
-x = SpatialCoordinate(interval)[0]
 
-k = 0
-def plotstrings(strings, mesh):
-    global k
-    for string in strings:
-        figure(k)
-        k += 1
-        expr = eval(string)
-        plot(expr, title=string, mesh=mesh)
+mesh = IntervalMesh(n, -2.0, +2.0)
+x = SpatialCoordinate(mesh)[0]
 
-plotstrings(('cos(x)', 'sin(x)', 'tan(x)'), mesh)
-plotstrings(('acos(x)', 'asin(x)', 'atan(x)'), mesh2)
-plotstrings(('exp(x)', 'ln(x)', 'sqrt(x)', 'erf(x)'), mesh2)
+plot(cos(x), title='cos', mesh=mesh)
+plot(sin(x), title='sin', mesh=mesh)
+plot(tan(x), title='tan', mesh=mesh)
 
-for nu in (0, 1):
-    plotstrings(['bessel_%s(%d, x)' % (c, nu) for c in ('J', 'Y', 'I', 'K')], mesh2)
+mesh = IntervalMesh(n, 0.0+eps, 1.0-eps)
+x = SpatialCoordinate(mesh)[0]
 
-print("Note that you must press 'q' in the first plot window ('cos(x)') to quit.")
+plot(acos(x), title='acos', mesh=mesh)
+plot(asin(x), title='asin', mesh=mesh)
+plot(atan(x), title='atan', mesh=mesh)
+plot(exp(x), title='exp', mesh=mesh)
+plot(ln(x), title='ln', mesh=mesh)
+plot(sqrt(x), title='sqrt', mesh=mesh)
+plot(bessel_J(0, x), title='bessel_J(0, x)', mesh=mesh)
+plot(bessel_J(1, x), title='bessel_J(1, x)', mesh=mesh)
+plot(bessel_Y(0, x), title='bessel_Y(0, x)', mesh=mesh)
+plot(bessel_Y(1, x), title='bessel_Y(1, x)', mesh=mesh)
+plot(bessel_I(0, x), title='bessel_I(0, x)', mesh=mesh)
+plot(bessel_I(1, x), title='bessel_I(1, x)', mesh=mesh)
+plot(bessel_K(0, x), title='bessel_K(0, x)', mesh=mesh)
+plot(bessel_K(1, x), title='bessel_K(1, x)', mesh=mesh)
+
+print("Note that you must press 'q' to quit.")
 interactive()
