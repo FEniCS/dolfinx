@@ -169,7 +169,7 @@ void MultiMeshForm::build()
 void MultiMeshForm::clear()
 {
   _rank = 0;
-  _multimesh = 0;
+  _multimesh = std::shared_ptr<MultiMesh>();
   _function_spaces.clear();
   _forms.clear();
 }
