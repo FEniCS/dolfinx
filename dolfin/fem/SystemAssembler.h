@@ -113,7 +113,6 @@ namespace dolfin
     public:
       Scratch(const Form& a, const Form& L);
       ~Scratch();
-      void zero_cell();
       std::array<std::vector<double>, 2> Ae;
     };
 
