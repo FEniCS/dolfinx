@@ -214,14 +214,14 @@ namespace dolfin
     ///         The cell index.
     ///
     /// *Returns*
-    ///     std::vector<dolfin::la_index>
+    ///     ArrayView<const dolfin::la_index>
     ///         Local-to-global mapping of dofs.
     ArrayView<const dolfin::la_index> cell_dofs(std::size_t cell_index) const
     {
       const std::size_t index = cell_index*_cell_dimension;
-      dolfin_assert(index + _cell_dimension <= _dofmap_new.size());
+      dolfin_assert(index + _cell_dimension <= _dofmap.size());
       return ArrayView<const dolfin::la_index>(_cell_dimension,
-                                               &_dofmap_new[index]);
+                                               &_dofmap[index]);
     }
 
     /// Tabulate local-local facet dofs
@@ -431,8 +431,7 @@ namespace dolfin
                                         const Mesh& mesh);
 
     // Cell-local-to-dof map (dofs for cell dofmap[i])
-    std::vector<std::vector<dolfin::la_index> > _dofmap;
-    std::vector<dolfin::la_index> _dofmap_new;
+    std::vector<dolfin::la_index> _dofmap;
 
     // Cell dimension (fixed for all cells)
     std::size_t _cell_dimension;
