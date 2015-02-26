@@ -189,6 +189,11 @@ void Assembler::assemble_cells(
     if (empty_dofmap)
       continue;
 
+    // Tabulate cell tensor
+    integral->tabulate_tensor(ufc.A.data(), ufc.w(),
+                              vertex_coordinates.data(),
+                              ufc_cell.orientation);
+
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
     if (is_cell_functional)
