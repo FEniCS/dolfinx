@@ -48,8 +48,8 @@ BelosKrylovSolver::methods()
   std::map<std::string, std::string> result;
   result.insert(std::make_pair("default", "default method"));
 
-  for (auto m = methods.begin(); m != methods.end(); ++m)
-    result.insert(std::make_pair(*m, *m));
+  for (auto &m : methods)
+    result.insert(std::make_pair(m, m));
 
   return result;
 }
@@ -232,7 +232,14 @@ std::string BelosKrylovSolver::str(bool verbose) const
 {
   std::stringstream s;
 
-  s << "<BelosKrylovSolver>";
+  if (verbose)
+  {
+    s << "Belos Krylov Solver" << std::endl;
+    s << "-------------------" << std::endl;
+    s << _solver->description();
+  }
+  else
+    s << "<BelosKrylovSolver>";
 
   return s.str();
 }
@@ -256,17 +263,26 @@ void BelosKrylovSolver::set_options()
 
   Teuchos::RCP<Teuchos::ParameterList> solverParams
     = Teuchos::parameterList(*_solver->getCurrentParameters());
-  solverParams->set("Num Blocks", 40);
+
+  const int gmres_restart = parameters("gmres")["restart"];
+  if (solverParams->isParameter("Num Blocks"))
+      solverParams->set("Num Blocks", gmres_restart);
+
   const int max_iterations = parameters["maximum_iterations"];
   solverParams->set("Maximum Iterations", max_iterations);
+
   const double rel_tol = parameters["relative_tolerance"];
   solverParams->set("Convergence Tolerance", rel_tol);
+
   const bool monitor_convergence = parameters["monitor_convergence"];
   if (monitor_convergence)
   {
     solverParams->set("Verbosity",
-                      Belos::Warnings | Belos::IterationDetails | Belos::StatusTestDetails
-                      | Belos::TimingDetails | Belos::FinalSummary);
+                        Belos::Warnings
+                      | Belos::IterationDetails
+                      | Belos::StatusTestDetails
+                      | Belos::TimingDetails
+                      | Belos::FinalSummary);
     solverParams->set("Output Style", (int)Belos::Brief);
     solverParams->set("Output Frequency", 1);
   }

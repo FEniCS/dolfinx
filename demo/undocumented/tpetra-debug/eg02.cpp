@@ -32,7 +32,8 @@ int main(int argc, char *argv[])
   const std::string pc = argv[3];
   parameters["linear_algebra_backend"] = backend;
 
-  UnitSquareMesh mesh(5, 5);
+  unsigned int n = 20;
+  UnitSquareMesh mesh(n, n);
   Poisson::FunctionSpace V(mesh);
   Poisson::LinearForm L(V);
   Poisson::BilinearForm a(V, V);
@@ -52,9 +53,11 @@ int main(int argc, char *argv[])
   Vector b;
   assemble_system(*A, b, a, L, bc);
 
+  list_krylov_solver_methods();
+
   Function u(V);
   //  A->init_vector(*u.vector(), 1);
-  if (backend == "Tpetra")
+  if (backend == "Tpetra" and n < 10)
   {
     as_type<TpetraVector>(*u.vector()).mapdump("x");
     as_type<TpetraVector>(b).mapdump("b");
@@ -66,7 +69,6 @@ int main(int argc, char *argv[])
 
   solver.solve(*u.vector(), b);
 
-  // Terrible name
   // Create ghost values
   if (backend == "Tpetra")
     as_type<TpetraVector>(*u.vector()).update_ghost_values();
