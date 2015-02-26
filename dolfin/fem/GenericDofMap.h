@@ -80,10 +80,10 @@ namespace dolfin
 
     /// Return the maximum dimension of the local finite element
     /// function space (deprecated API)
-    std::size_t max_cell_dimension(std::size_t index) const
+    std::size_t max_cell_dimension() const
     {
       // TODO: Add deprecation warning
-      return max_element_dofs(index);
+      return max_element_dofs();
     }
 
     /// Return the dimension of the local finite element function
