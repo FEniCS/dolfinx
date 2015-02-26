@@ -138,7 +138,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   }
 
   // Set local (cell) dimension
-  dofmap._cell_dimension = dofmap._ufc_dofmap->local_dimension();
+  dofmap._cell_dimension = dofmap._ufc_dofmap->num_element_dofs();
 
   // Set global dimension
   dofmap._global_dimension
@@ -373,7 +373,7 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
   }
 
   // Set local (cell) dimension
-  sub_dofmap._cell_dimension = sub_dofmap._ufc_dofmap->local_dimension();
+  sub_dofmap._cell_dimension = sub_dofmap._ufc_dofmap->num_element_dofs();
 
   // Construct flattened dofmap
   sub_dofmap._dofmap.clear();
