@@ -81,10 +81,10 @@ void UFC::init(const Form& a)
     interior_facet_integrals.push_back(std::shared_ptr<ufc::interior_facet_integral>(form.create_interior_facet_integral(i)));
 
   // Create point integrals
-  default_point_integral
-    = std::shared_ptr<ufc::point_integral>(this->form.create_default_point_integral());
-  for (std::size_t i = 0; i < this->form.max_point_subdomain_id(); i++)
-    point_integrals.push_back(std::shared_ptr<ufc::point_integral>(this->form.create_point_integral(i)));
+  default_vertex_integral
+    = std::shared_ptr<ufc::vertex_integral>(this->form.create_default_point_integral());
+  for (std::size_t i = 0; i < this->form.max_vertex_subdomain_id(); i++)
+    vertex_integrals.push_back(std::shared_ptr<ufc::point_integral>(this->form.create_point_integral(i)));
 
   // Create custom integrals
   default_custom_integral

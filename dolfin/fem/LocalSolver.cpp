@@ -324,7 +324,7 @@ void LocalSolver::factorize()
   dolfin_assert(ufc.form.rank() == 2);
 
   // Raise error for Point integrals
-  if (ufc.form.has_point_integrals())
+  if (ufc.form.has_vertex_integrals())
   {
     dolfin_error("LocalSolver.cpp",
                  "assemble system",

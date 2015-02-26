@@ -456,7 +456,7 @@ void Assembler::assemble_vertices(
   std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   // Skip assembly if there are no point integrals
-  if (!ufc.form.has_point_integrals())
+  if (!ufc.form.has_vertex_integrals())
     return;
 
   // Set timer
@@ -543,8 +543,8 @@ void Assembler::assemble_vertices(
   std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Exterior point integral
-  const ufc::point_integral* integral
-    = ufc.default_point_integral.get();
+  const ufc::vertex_integral* integral
+    = ufc.default_vertex_integral.get();
 
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
@@ -561,7 +561,7 @@ void Assembler::assemble_vertices(
   {
     // Get integral for sub domain (if any)
     if (use_domains)
-      integral = ufc.get_point_integral((*domains)[*vert]);
+      integral = ufc.get_vertex_integral((*domains)[*vert]);
 
     // Skip integral if zero
     if (!integral)
