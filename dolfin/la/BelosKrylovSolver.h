@@ -23,6 +23,7 @@
 
 #include <BelosTpetraAdapter.hpp>
 #include <BelosSolverFactory.hpp>
+#include <Ifpack2_Factory.hpp>
 
 #include <map>
 #include <memory>
@@ -40,6 +41,8 @@ typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
 
 typedef Belos::LinearProblem<scalar_type, mv_type, op_type> problem_type;
 
+typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type,
+                                global_ordinal_type, node_type> prec_type;
 
 namespace dolfin
 {
@@ -156,13 +159,17 @@ namespace dolfin
     Teuchos::RCP<Belos::SolverManager<scalar_type, mv_type, op_type> >
       _solver;
 
+    // Ifpack2 preconditioner, to be constructed from a Tpetra Operator or Matrix
+    Teuchos::RCP<prec_type> _prec;
+
+    // The preconditioner name as expected by Ifpack2
+    std::string preconditioner_type;
+
+    // Container for the problem, see Belos::LinearProblem documentation
     Teuchos::RCP<problem_type> _problem;
 
     // Operator (the matrix)
     std::shared_ptr<const TpetraMatrix> _matA;
-
-    // Matrix used to construct the preconditioner
-    std::shared_ptr<const TpetraMatrix> _matP;
 
   };
 
