@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Chris Richardson, 2012
+// Modified by Chris Richardson, 2012-2014
 //
 // First added:  2010-02-19
 // Last changed: 2013-01-31
@@ -80,8 +80,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   dolfin_assert(coloring_type.front() == coloring_type.back());
 
   // Create graph
-  const std::size_t num_verticies = mesh.num_entities(coloring_type[0]);
-  Graph graph(num_verticies);
+  const std::size_t num_vertices = mesh.num_entities(coloring_type[0]);
+  Graph graph(num_vertices);
 
   // Build graph
   for (MeshEntityIterator vertex_entity(mesh, coloring_type[0]);
@@ -128,8 +128,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   mesh.init(dim1, dim0);
 
   // Create graph
-  const std::size_t num_verticies = mesh.num_entities(dim0);
-  Graph graph(num_verticies);
+  const std::size_t num_vertices = mesh.num_entities(dim0);
+  Graph graph(num_vertices);
 
   // Build graph
   for (MeshEntityIterator colored_entity(mesh, dim0); !colored_entity.end();

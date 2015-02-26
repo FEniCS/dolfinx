@@ -110,8 +110,7 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,
     // Add offset
     DofMap& dofmap = static_cast<DofMap&>(*new_dofmap);
     for (auto it = dofmap._dofmap.begin(); it != dofmap._dofmap.end(); ++it)
-      for (auto jt = it->begin(); jt != it->end(); ++jt)
-        *jt += _offset;
+      *it += _offset;
 
     // Increase offset
     offset += _original_dofmaps[part]->global_dimension();

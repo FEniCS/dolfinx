@@ -367,6 +367,9 @@ SystemAssembler::cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
     // Get cell vertex coordinates
     cell->get_vertex_coordinates(vertex_coordinates);
 
+    // Get UFC cell data
+    cell->get_cell_data(ufc_cell);
+
     // Loop over lhs and then rhs contributions
     for (std::size_t form = 0; form < 2; ++form)
     {
@@ -402,7 +405,6 @@ SystemAssembler::cell_wise_assembly(std::array<GenericTensor*, 2>& tensors,
       if (tensor_required)
       {
         // Update to current cell
-        cell->get_cell_data(ufc_cell);
         ufc[form]->update(*cell, vertex_coordinates, ufc_cell,
                           cell_integrals[form]->enabled_coefficients());
 
@@ -1088,11 +1090,5 @@ SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
 SystemAssembler::Scratch::~Scratch()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-inline void SystemAssembler::Scratch::zero_cell()
-{
-  std::fill(Ae[0].begin(), Ae[0].end(), 0.0);
-  std::fill(Ae[1].begin(), Ae[1].end(), 0.0);
 }
 //-----------------------------------------------------------------------------
