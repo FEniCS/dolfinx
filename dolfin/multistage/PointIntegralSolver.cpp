@@ -313,7 +313,7 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
 					    int coefficient_index,
 					    const std::vector<double>& vertex_coordinates)
 {
-  const ufc::vertex_integral& J_integral = *loc_ufc.default_point_integral;
+  const ufc::vertex_integral& J_integral = *loc_ufc.default_vertex_integral;
 
   //Timer _timer_compute_jac("Implicit stage: Compute jacobian");
   //Timer t_impl_update("Update_cell");
@@ -629,7 +629,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     initial_residual = 1., relative_residual = 1.;
 
   // Get point integrals
-  const ufc::vertex_integral& F_integral = *loc_ufc_F.default_point_integral;
+  const ufc::vertex_integral& F_integral = *loc_ufc_F.default_vertex_integral;
 
   // Local solution
   std::vector<double>& u = _local_stage_solutions[stage];

@@ -222,7 +222,7 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   UFC A_ufc(*_a), b_ufc(*_l);
 
   // Raise error for Point integrals
-  if (A_ufc.form.has_vertex_integrals() || b_ufc.form.has_point_integrals())
+  if (A_ufc.form.has_vertex_integrals() || b_ufc.form.has_vertex_integrals())
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",
