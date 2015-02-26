@@ -160,7 +160,7 @@ namespace dolfin
     ufc::cell_integral*
       get_cell_integral(std::size_t domain)
     {
-      if (domain < form.num_cell_domains())
+      if (domain < form.max_cell_subdomain_id())
       {
         ufc::cell_integral * integral
           = cell_integrals[domain].get();
@@ -175,7 +175,7 @@ namespace dolfin
     ufc::exterior_facet_integral*
       get_exterior_facet_integral(std::size_t domain)
     {
-      if (domain < form.num_exterior_facet_domains())
+      if (domain < form.max_exterior_facet_subdomain_id())
       {
         ufc::exterior_facet_integral* integral
           = exterior_facet_integrals[domain].get();
@@ -190,7 +190,7 @@ namespace dolfin
     ufc::interior_facet_integral*
       get_interior_facet_integral(std::size_t domain)
     {
-      if (domain < form.num_interior_facet_domains())
+      if (domain < form.max_interior_facet_subdomain_id())
       {
         ufc::interior_facet_integral* integral
           = interior_facet_integrals[domain].get();
@@ -205,7 +205,7 @@ namespace dolfin
     ufc::point_integral*
       get_point_integral(std::size_t domain)
     {
-      if (domain < form.num_point_domains())
+      if (domain < form.max_point_subdomain_id())
       {
         ufc::point_integral * integral
           = point_integrals[domain].get();
@@ -219,7 +219,7 @@ namespace dolfin
     /// default if necessary
     ufc::custom_integral * get_custom_integral(std::size_t domain)
     {
-      if (domain < form.num_custom_domains())
+      if (domain < form.max_custom_subdomain_id())
       {
         ufc::custom_integral * integral = custom_integrals[domain].get();
         if (integral)
