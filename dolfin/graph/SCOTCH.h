@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Garth N. Wells and Chris Richardson
+// Copyright (C) 2010-2015 Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2010-02-10
-// Last changed: 2014-01-09
 
 #ifndef __SCOTCH_PARTITIONER_H
 #define __SCOTCH_PARTITIONER_H
@@ -76,6 +73,7 @@ namespace dolfin
     static void partition(
       const MPI_Comm mpi_comm,
       const std::vector<std::set<std::size_t> >& local_graph,
+      const std::vector<std::size_t>& node_weights,
       const std::set<std::size_t>& ghost_vertices,
       const std::vector<std::size_t>& global_cell_indices,
       const std::size_t num_global_vertices,
