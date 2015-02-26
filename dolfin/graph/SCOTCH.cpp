@@ -493,6 +493,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
 //-----------------------------------------------------------------------------
 void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::vector<std::set<std::size_t> >& local_graph,
+                       const std::vector<std::size_t>& node_weights,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
