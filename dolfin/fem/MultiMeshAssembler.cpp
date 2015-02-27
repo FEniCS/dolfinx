@@ -196,7 +196,7 @@ void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
 
     // Get integral for cut cells
     ufc::custom_integral* custom_integral = 0;
-    if (a_part.ufc_form()->num_custom_domains() > 0)
+    if (a_part.ufc_form()->max_custom_subdomain_id() > 0)
     {
       custom_integral = ufc_part.get_custom_integral(0);
       dolfin_assert(custom_integral->num_cells() == 1);
@@ -321,7 +321,7 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
 
     // Get integral
     ufc::custom_integral* custom_integral = 0;
-    if (a_part.ufc_form()->num_custom_domains() > 1)
+    if (a_part.ufc_form()->max_custom_subdomain_id() > 1)
     {
       custom_integral = ufc_part.get_custom_integral(1);
       dolfin_assert(custom_integral->num_cells() == 2);
@@ -498,7 +498,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
 
     // Get integral
     ufc::custom_integral* custom_integral = 0;
-    if (a_part.ufc_form()->num_custom_domains() > 2)
+    if (a_part.ufc_form()->max_custom_subdomain_id() > 2)
     {
       custom_integral = ufc_part.get_custom_integral(2);
       dolfin_assert(custom_integral->num_cells() == 2);

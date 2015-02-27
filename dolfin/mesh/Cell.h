@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,7 @@
 // Modified by Andre Massing 2009.
 // Modified by Garth N. Wells 2010.
 // Modified by Jan Blechta 2013
-//
-// First added:  2006-06-01
-// Last changed: 2014-04-24
+// Modified by Martin Alnaes, 2015
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -160,7 +158,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     double
-    ///         cell_dimension * inradius / circumradius
+    ///         topological_dimension * inradius / circumradius
     ///
     /// *Example*
     ///     .. code-block:: c++

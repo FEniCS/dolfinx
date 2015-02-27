@@ -167,11 +167,11 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
 
   // Insert resulting coefficients into global coefficient vector
   dolfin_assert(W.dofmap());
-  for (std::size_t i = 0; i < W.dofmap()->cell_dimension(cell0.index()); ++i)
+  for (std::size_t i = 0; i < W.dofmap()->num_element_dofs(cell0.index()); ++i)
     coefficients[dofs[i + offset]].push_back(x[i]);
 
   // Increase offset
-  offset += W.dofmap()->cell_dimension(cell0.index());
+  offset += W.dofmap()->num_element_dofs(cell0.index());
 }
 //-----------------------------------------------------------------------------
 void
@@ -255,7 +255,7 @@ Extrapolation::compute_unique_dofs(const Cell& cell,
   // Data structure for current cell
   std::map<std::size_t, std::size_t> dof2row;
 
-  for (std::size_t i = 0; i < V.dofmap()->cell_dimension(cell.index()); ++i)
+  for (std::size_t i = 0; i < V.dofmap()->num_element_dofs(cell.index()); ++i)
   {
     // Ignore if this degree of freedom is already considered
     if (unique_dofs.find(dofs[i]) != unique_dofs.end())
