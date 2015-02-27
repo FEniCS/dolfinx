@@ -18,6 +18,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include "KrylovSolver.h"
 #include "BelosKrylovSolver.h"
 #include "Ifpack2Preconditioner.h"
 
@@ -59,6 +60,7 @@ Ifpack2Preconditioner::~Ifpack2Preconditioner()
 void Ifpack2Preconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 {
   Ifpack2::Factory prec_factory;
+
   _prec = prec_factory.create(_name, P->mat());
   //    prec->setParameters(plist);
   _prec->initialize();
@@ -70,5 +72,21 @@ void Ifpack2Preconditioner::set(BelosKrylovSolver& solver)
   solver._problem->setRightPrec(_prec);
 }
 //-----------------------------------------------------------------------------
+std::string Ifpack2Preconditioner::str(bool verbose) const
+{
+  std::stringstream s;
 
+  s << "<Ifpack2Preconditioner>";
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+Parameters Ifpack2Preconditioner::default_parameters()
+{
+  Parameters p(KrylovSolver::default_parameters()("preconditioner"));
+  p.rename("ifpack2_preconditioner");
+
+  return p;
+}
+//-----------------------------------------------------------------------------
 #endif

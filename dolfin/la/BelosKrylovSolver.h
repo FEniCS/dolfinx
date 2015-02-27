@@ -32,7 +32,7 @@
 
 #include "TpetraVector.h"
 #include "TpetraMatrix.h"
-#include "Ifpack2Preconditioner.h"
+#include "TrilinosPreconditioner.h"
 
 typedef Tpetra::Operator<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> op_type;
@@ -132,6 +132,7 @@ namespace dolfin
   private:
 
     friend class Ifpack2Preconditioner;
+    friend class MueluPreconditioner;
 
     // Initialize solver
     void init(const std::string& method);
@@ -147,7 +148,7 @@ namespace dolfin
       _solver;
 
     // The preconditioner, if any
-    std::shared_ptr<Ifpack2Preconditioner> _prec;
+    std::shared_ptr<TrilinosPreconditioner> _prec;
 
     // Container for the problem, see Belos::LinearProblem documentation
     Teuchos::RCP<problem_type> _problem;

@@ -28,6 +28,7 @@
 #include "TpetraVector.h"
 #include "BelosKrylovSolver.h"
 #include "Ifpack2Preconditioner.h"
+#include "MueluPreconditioner.h"
 
 using namespace dolfin;
 
@@ -35,7 +36,12 @@ using namespace dolfin;
 std::map<std::string, std::string>
 BelosKrylovSolver::preconditioners()
 {
-  return Ifpack2Preconditioner::preconditioners();
+  std::map<std::string, std::string> allowed_precs
+    = Ifpack2Preconditioner::preconditioners();
+
+  allowed_precs.insert(std::make_pair<std::string, std::string>("muelu", "muelu"));
+
+  return allowed_precs;
 }
 //-----------------------------------------------------------------------------
 std::map<std::string, std::string>
@@ -69,7 +75,12 @@ BelosKrylovSolver::BelosKrylovSolver(std::string method,
   parameters = default_parameters();
 
   if (preconditioner != "none")
-    _prec.reset(new Ifpack2Preconditioner(preconditioner));
+  {
+    if (preconditioner == "muelu")
+      _prec.reset(new MueluPreconditioner());
+    else
+      _prec.reset(new Ifpack2Preconditioner(preconditioner));
+  }
 
   init(method);
 }

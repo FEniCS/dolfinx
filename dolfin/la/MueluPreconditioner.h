@@ -16,17 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __DOLFIN_IFPACK2_PRECONDITIONER_H
-#define __DOLFIN_IFPACK2_PRECONDITIONER_H
+#ifndef __DOLFIN_MUELU_PRECONDITIONER_H
+#define __DOLFIN_MUELU_PRECONDITIONER_H
 
 #ifdef HAS_TRILINOS
 
-#include <Ifpack2_Factory.hpp>
+#include <MueLu.hpp>
+#include <MueLu_TpetraOperator.hpp>
 
-#include <map>
-#include <memory>
-#include <dolfin/common/types.h>
 #include "TrilinosPreconditioner.h"
+#include "BelosKrylovSolver.h"
 
 #include "TpetraVector.h"
 #include "TpetraMatrix.h"
@@ -37,20 +36,20 @@ namespace dolfin
   /// Forward declarations
   class BelosKrylovSolver;
 
-  /// Implements preconditioners using Ifpack2 from Trilinos
+  /// Implements Muelu preconditioner from Trilinos
 
-  class Ifpack2Preconditioner : public TrilinosPreconditioner
+  class MueluPreconditioner : public TrilinosPreconditioner
   {
 
   public:
 
     /// Create a particular preconditioner object
-    explicit Ifpack2Preconditioner(std::string type = "default");
+    explicit MueluPreconditioner();
 
     /// Destructor
-    virtual ~Ifpack2Preconditioner();
+    virtual ~MueluPreconditioner();
 
-    /// Set the preconditioner type on a solver
+    /// Set the preconditioner on a solver
     virtual void set(BelosKrylovSolver& solver);
 
     /// Return informal string representation (pretty-print)
@@ -59,21 +58,15 @@ namespace dolfin
     /// Initialise preconditioner based on Operator P
     virtual void init(std::shared_ptr<const TpetraMatrix> P);
 
-    /// Return a list of available preconditioners
-    static std::map<std::string, std::string> preconditioners();
-
     /// Default parameter values
     static Parameters default_parameters();
 
   private:
 
-    // name of preconditioner
-    std::string _name;
-
-    typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type,
+    typedef MueLu::TpetraOperator<scalar_type, local_ordinal_type,
       global_ordinal_type, node_type> prec_type;
 
-    // Ifpack2 preconditioner, to be constructed from a Tpetra Operator or Matrix
+    // Muelu preconditioner, to be constructed from a Tpetra Operator or Matrix
     Teuchos::RCP<prec_type> _prec;
 
   };
