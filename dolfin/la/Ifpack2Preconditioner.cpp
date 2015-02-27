@@ -51,6 +51,9 @@ Ifpack2Preconditioner::Ifpack2Preconditioner(std::string preconditioner)
                  "create preconditioner",
                  "Unknown preconditioner \"%s\"", preconditioner.c_str());
   }
+
+  if (preconditioner == "default")
+    _name = "DIAGONAL";
 }
 //-----------------------------------------------------------------------------
 Ifpack2Preconditioner::~Ifpack2Preconditioner()
