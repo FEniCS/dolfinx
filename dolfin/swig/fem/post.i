@@ -100,7 +100,7 @@ def function_space(self, i):
 
     // Copy data
     double* data = static_cast<double*>(PyArray_DATA(xa));
-    for (std::size_t i = 0; i < self->cell_dimension(cell.index()); i++)
+    for (std::size_t i = 0; i < self->num_element_dofs(cell.index()); i++)
       for (std::size_t j = 0; j < gdim; j++)
         data[i*gdim + j] = tmparray[i][j];
   }
@@ -122,7 +122,7 @@ def tabulate_coordinates(self, cell, coordinates=None):
 
     # Check coordinate argument
     gdim = cell.mesh().geometry().dim()
-    shape = (self.max_cell_dimension(), gdim)
+    shape = (self.max_element_dofs(), gdim)
     if coordinates is None:
         coordinates = np.zeros(shape, 'd')
     if not isinstance(coordinates, np.ndarray) or \
