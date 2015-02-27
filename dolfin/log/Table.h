@@ -40,8 +40,8 @@ namespace dolfin
   ///   table("uBLAS",  "Solve")    = 0.020;
   ///   table("PETSc",  "Assemble") = 0.011;
   ///   table("PETSc",  "Solve")    = 0.019;
-  ///   table("Epetra", "Assemble") = 0.012;
-  ///   table("Epetra", "Solve")    = 0.018;
+  ///   table("Tpetra", "Assemble") = 0.012;
+  ///   table("Tpetra", "Solve")    = 0.018;
   ///
   ///   info(table);
 

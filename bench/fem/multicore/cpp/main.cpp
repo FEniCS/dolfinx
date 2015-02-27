@@ -118,9 +118,6 @@ int main(int argc, char* argv[])
   // Parse command-line arguments
   parameters.parse(argc, argv);
 
-  // Set backend
-  //parameters["linear_algebra_backend"] = "Epetra";
-
   // Create mesh
   UnitCubeMesh old_mesh(SIZE, SIZE, SIZE);
   old_mesh.color("vertex");

@@ -32,7 +32,6 @@ int main(int argc, char* argv[])
   #ifdef HAS_PETSC
 
   //parameters["mesh_partitioner"] = "SCOTCH";
-  //parameters["linear_algebra_backend"] = "Epetra";
   parameters["linear_algebra_backend"] = "PETSc";
 
   // Parse command-line arguments
@@ -64,7 +63,6 @@ int main(int argc, char* argv[])
 
   // Create preconditioner and linear solver
   //TrilinosPreconditioner pc("amg_ml");
-  //EpetraKrylovSolver solver("gmres", pc);
   //PETScPreconditioner pc("amg_hypre");
   //PETScPreconditioner pc("amg_ml");
   //PETScKrylovSolver solver("gmres", pc);

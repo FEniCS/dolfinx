@@ -54,13 +54,30 @@ int main(int argc, char *argv[])
   assemble_system(*A, b, a, L, bc);
 
   list_krylov_solver_methods();
+  list_krylov_solver_preconditioners();
 
   Function u(V);
   //  A->init_vector(*u.vector(), 1);
+
+  // Make sure RHS TpetraVector is "OneToOne"
+  (*u.vector()).apply("insert");
+
   if (backend == "Tpetra" and n < 10)
   {
-    as_type<TpetraVector>(*u.vector()).mapdump("x");
-    as_type<TpetraVector>(b).mapdump("b");
+    TpetraVector& bt = as_type<TpetraVector>(b);
+    TpetraVector& ut = as_type<TpetraVector>(*u.vector());
+
+    ut.mapdump("x");
+    bt.mapdump("b");
+
+    TpetraVector::mapdump(bt.vec()->getMap(), "bMap");
+    TpetraVector::mapdump(ut.vec()->getMap(), "xMap");
+
+    TpetraMatrix& At = as_type<TpetraMatrix>(*A);
+    TpetraVector::mapdump(At.mat()->getRowMap(), "Arow");
+    TpetraVector::mapdump(At.mat()->getRangeMap(), "Arange");
+    TpetraVector::mapdump(At.mat()->getDomainMap(), "Adomain");
+    TpetraVector::mapdump(At.mat()->getColMap(), "Acol");
   }
 
   KrylovSolver solver(sol, pc);

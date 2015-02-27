@@ -619,7 +619,10 @@ void TpetraMatrix::apply(std::string mode)
     // This needs a fix higher up.
 
     // New matrix with same Row and Col maps
-    Teuchos::RCP<matrix_type> matB(new matrix_type(_matA->getCrsGraph()->getRowMap(),
+    //    Teuchos::RCP<matrix_type> matB(new matrix_type(_matA->getCrsGraph()->getRowMap(),
+    //                                                   _matA->getCrsGraph()->getColMap(), 0));
+
+    Teuchos::RCP<matrix_type> matB(new matrix_type(domain_map0,
                                                    _matA->getCrsGraph()->getColMap(), 0));
 
     Tpetra::Export<global_ordinal_type> exporter(_matA->getRowMap(), matB->getRowMap());

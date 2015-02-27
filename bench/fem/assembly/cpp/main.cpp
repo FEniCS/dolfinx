@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   std::vector<std::string> backends;
   backends.push_back("uBLAS");
   backends.push_back("PETSc");
-  backends.push_back("Epetra");
+  backends.push_back("Tpetra");
   backends.push_back("STL");
 
   // Override forms and backends with command-line arguments

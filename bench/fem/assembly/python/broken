@@ -66,13 +66,13 @@ if __name__ == "__main__":
         reps = 1
 
 # Backends
-backends = ["uBLAS", "PETSc", "Epetra", "MTL4", "Assembly"]
+backends = ["uBLAS", "PETSc", "Tpetra", "MTL4", "Assembly"]
 
 # Forms
 forms = ["Elasticity3D",
-         "PoissonP1", 
-         "PoissonP2", 
-         "PoissonP3", 
+         "PoissonP1",
+         "PoissonP2",
+         "PoissonP3",
          "THStokes2D",
          "NSEMomentum3D",
          "StabStokes2D"]
