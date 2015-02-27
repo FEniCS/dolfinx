@@ -27,6 +27,7 @@
 #include "TpetraMatrix.h"
 #include "TpetraVector.h"
 #include "BelosKrylovSolver.h"
+#include "Ifpack2Preconditioner.h"
 
 using namespace dolfin;
 
@@ -34,16 +35,7 @@ using namespace dolfin;
 std::map<std::string, std::string>
 BelosKrylovSolver::preconditioners()
 {
-  std::map<std::string, std::string> precs_available
-    =   { {"none", "none"},
-          {"default",    "default preconditioner"},
-          {"DIAGONAL",   "Diagonal"},
-          {"RELAXATION", "Jacobi and Gauss-Seidel type relaxation"},
-          {"CHEBYSHEV",  "Chebyshev Polynomial preconditioner"},
-          {"RILUK",      "Relaxed ILU with level k fill"},
-          {"KRYLOV",     "CG/GMRES with zero initial guess"}};
-
-  return precs_available;
+  return Ifpack2Preconditioner::preconditioners();
 }
 //-----------------------------------------------------------------------------
 std::map<std::string, std::string>
@@ -63,7 +55,6 @@ BelosKrylovSolver::methods()
 //-----------------------------------------------------------------------------
 BelosKrylovSolver::BelosKrylovSolver(std::string method,
                                      std::string preconditioner)
-  : preconditioner_type(preconditioner)
 {
   // Check that the requested method is known
   const std::map<std::string, std::string> _methods = methods();
@@ -73,16 +64,12 @@ BelosKrylovSolver::BelosKrylovSolver(std::string method,
                  "create Belos Krylov solver",
                  "Unknown Krylov method \"%s\"", method.c_str());
   }
-  const std::map<std::string, std::string> _precs = preconditioners();
-  if (_precs.find(preconditioner) == _precs.end())
-  {
-    dolfin_error("BelosKrylovSolver.cpp",
-                 "create Belos Krylov solver",
-                 "Unknown Preconditioner \"%s\"", preconditioner.c_str());
-  }
 
   // Set parameter values
   parameters = default_parameters();
+
+  if (preconditioner != "none")
+    _prec.reset(new Ifpack2Preconditioner(preconditioner));
 
   init(method);
 }
@@ -144,18 +131,12 @@ BelosKrylovSolver::set_operators(std::shared_ptr<const TpetraMatrix> A,
   _matA = A;
   _problem->setOperator(A->mat());
 
-  if (preconditioner_type != "none")
+  if (_prec)
   {
-    Ifpack2::Factory prec_factory;
-    std::string pname = preconditioner_type;
-    if (preconditioner_type == "default")
-      pname = "DIAGONAL";
-    _prec = prec_factory.create(pname, P->mat());
-    //    prec->setParameters(plist);
-    _prec->initialize();
-    _prec->compute();
-    _problem->setRightPrec(_prec);
+    _prec->init(P);
+    _prec->set(*this);
   }
+
 }
 //-----------------------------------------------------------------------------
 const TpetraMatrix& BelosKrylovSolver::get_operator() const

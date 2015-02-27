@@ -32,6 +32,7 @@
 
 #include "TpetraVector.h"
 #include "TpetraMatrix.h"
+#include "Ifpack2Preconditioner.h"
 
 typedef Tpetra::Operator<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> op_type;
@@ -40,9 +41,6 @@ typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> mv_type;
 
 typedef Belos::LinearProblem<scalar_type, mv_type, op_type> problem_type;
-
-typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type,
-                                global_ordinal_type, node_type> prec_type;
 
 namespace dolfin
 {
@@ -68,25 +66,12 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and
     /// BelosPreconditioner
-    //    BelosKrylovSolver(std::string method, BelosPreconditioner& preconditioner);
+    //    BelosKrylovSolver(std::string method, Ifpack2Preconditioner& preconditioner);
 
     /// Create Krylov solver for a particular method and
     /// BelosPreconditioner (shared_ptr version)
     //    BelosKrylovSolver(std::string method,
-    //		      std::shared_ptr<BelosPreconditioner> preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// BelosPreconditioner
-    //    BelosKrylovSolver(std::string method,
-    //                      BelosUserPreconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// BelosPreconditioner (shared_ptr version)
-    //    BelosKrylovSolver(std::string method,
-    //		    std::shared_ptr<BelosUserPreconditioner> preconditioner);
-
-    /// Create solver wrapper of a RCP object
-    //    explicit BelosKrylovSolver(Teuchos::RCP<Belos::SolverManager>);
+    //		      std::shared_ptr<Ifpack2Preconditioner> preconditioner);
 
     /// Destructor
     ~BelosKrylovSolver();
@@ -146,6 +131,8 @@ namespace dolfin
 
   private:
 
+    friend class Ifpack2Preconditioner;
+
     // Initialize solver
     void init(const std::string& method);
 
@@ -159,11 +146,8 @@ namespace dolfin
     Teuchos::RCP<Belos::SolverManager<scalar_type, mv_type, op_type> >
       _solver;
 
-    // Ifpack2 preconditioner, to be constructed from a Tpetra Operator or Matrix
-    Teuchos::RCP<prec_type> _prec;
-
-    // The preconditioner name as expected by Ifpack2
-    std::string preconditioner_type;
+    // The preconditioner, if any
+    std::shared_ptr<Ifpack2Preconditioner> _prec;
 
     // Container for the problem, see Belos::LinearProblem documentation
     Teuchos::RCP<problem_type> _problem;

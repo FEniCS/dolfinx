@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
   Poisson::LinearForm L(V);
   Poisson::BilinearForm a(V, V);
 
-  std::size_t rank = MPI::rank(mesh.mpi_comm());
+  std::size_t rank = dolfin::MPI::rank(mesh.mpi_comm());
 
   Source f;
   L.f = f;
