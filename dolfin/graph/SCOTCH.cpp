@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2015 Garth N. Wells, Anders Logg and Chris Richardson
+// Copyright (C) 2010-2013 Garth N. Wells, Anders Logg and Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -17,6 +17,9 @@
 //
 // Modified by Anders Logg 2011
 // Modified by Chris Richardson 2013
+//
+// First added:  2010-02-10
+// Last changed: 2014-09-09
 
 #include <algorithm>
 #include <map>
