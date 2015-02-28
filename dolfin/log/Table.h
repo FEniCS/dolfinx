@@ -28,7 +28,7 @@
 
 namespace dolfin
 {
-
+  class MPI;
   class TableEntry;
 
   /// This class provides storage and pretty-printing for tables.
@@ -109,6 +109,9 @@ namespace dolfin
 
     // True if we should right-justify the table entries
     bool _right_justify;
+
+    // Allow MPI::all_reduce accessing dvalues
+    friend class MPI;
 
   };
 

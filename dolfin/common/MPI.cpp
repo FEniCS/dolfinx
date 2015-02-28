@@ -23,24 +23,28 @@
 // Modified by Martin Sandve Alnes 2014
 
 #include <numeric>
+#include <typeinfo>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/Table.h>
 #include "SubSystemsManager.h"
 #include "MPI.h"
+
+namespace dolfin {
 
 #ifdef HAS_MPI
 
 //-----------------------------------------------------------------------------
-dolfin::MPIInfo::MPIInfo()
+MPIInfo::MPIInfo()
 {
   MPI_Info_create(&info);
 }
 //-----------------------------------------------------------------------------
-dolfin::MPIInfo::~MPIInfo()
+MPIInfo::~MPIInfo()
 {
   MPI_Info_free(&info);
 }
 //-----------------------------------------------------------------------------
-MPI_Info& dolfin::MPIInfo::operator*()
+MPI_Info& MPIInfo::operator*()
 {
   return info;
 }
@@ -48,7 +52,7 @@ MPI_Info& dolfin::MPIInfo::operator*()
 #endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::rank(const MPI_Comm comm)
+unsigned int MPI::rank(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
@@ -60,7 +64,7 @@ unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::size(const MPI_Comm comm)
+unsigned int MPI::size(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
@@ -72,26 +76,26 @@ unsigned int dolfin::MPI::size(const MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::is_broadcaster(const MPI_Comm comm)
+bool MPI::is_broadcaster(const MPI_Comm comm)
 {
   // Always broadcast from processor number 0
   return size(comm) > 1 && rank(comm) == 0;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::is_receiver(const MPI_Comm comm)
+bool MPI::is_receiver(const MPI_Comm comm)
 {
   // Always receive on processors with numbers > 0
   return size(comm) > 1 && rank(comm) > 0;
 }
 //-----------------------------------------------------------------------------
-void dolfin::MPI::barrier(const MPI_Comm comm)
+void MPI::barrier(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   MPI_Barrier(comm);
 #endif
 }
 //-----------------------------------------------------------------------------
-std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
+std::size_t MPI::global_offset(const MPI_Comm comm,
                                        std::size_t range, bool exclusive)
 {
 #ifdef HAS_MPI
@@ -107,20 +111,20 @@ std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-dolfin::MPI::local_range(const MPI_Comm comm, std::size_t N)
+MPI::local_range(const MPI_Comm comm, std::size_t N)
 {
   return local_range(comm, rank(comm), N);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-dolfin::MPI::local_range(const MPI_Comm comm, unsigned int process,
+MPI::local_range(const MPI_Comm comm, unsigned int process,
                          std::size_t N)
 {
   return compute_local_range(process, N, size(comm));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-dolfin::MPI::compute_local_range(unsigned int process,
+MPI::compute_local_range(unsigned int process,
                                  std::size_t N,
                                  unsigned int size)
 {
@@ -144,7 +148,7 @@ dolfin::MPI::compute_local_range(unsigned int process,
   return range;
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
+unsigned int MPI::index_owner(const MPI_Comm comm,
                                       std::size_t index, std::size_t N)
 {
   dolfin_assert(index < N);
@@ -164,3 +168,65 @@ unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
+  // Specialization for dolfin::log::Table class
+  template<>
+    Table MPI::all_reduce(const MPI_Comm comm, const Table& table, MPI_Op op)
+  {
+    #ifdef HAS_MPI
+    // Get keys, values into containers
+    std::string keys;
+    std::vector<double> values;
+    keys.reserve(128*table.dvalues.size());
+    values.reserve(table.dvalues.size());
+    for (auto it = table.dvalues.begin(); it != table.dvalues.end(); ++it)
+    {
+      keys += it->first.first + "\0" + it->first.second + "\0";
+      values.push_back(it->second);
+    }
+
+    // Gather to rank zero
+    std::vector<std::string> keys_all;
+    std::vector<double> values_all;
+    gather(comm, keys, keys_all, 0);
+    gather(comm, values, values_all, 0);
+
+    // Build the result
+    if (MPI::rank(comm) == 0)
+    {
+      Table table_all(std::string("Reduced ") + typeid(op).name()
+                      + ": " + table.title());
+      std::string key0, key1;
+      key0.reserve(128);
+      key1.reserve(128);
+      double* values_ptr = values_all.data();
+      for (unsigned int i = 0; i != MPI::size(comm); ++i)
+      {
+        std::stringstream keys_stream(keys_all[i]);
+        while (std::getline(keys_stream, key0, '\0'),
+               std::getline(keys_stream, key1, '\0'))
+        {
+          // FIXME: What is unset value?
+          const double value = table_all.get_value(key0, key1);
+          if (op == MPI_SUM)
+            table_all(key0, key1) = value + *(values_ptr++);
+          else if (op == MPI_MIN)
+            table_all(key0, key1) = std::min(value, *(values_ptr++));
+          else if (op == MPI_MAX)
+            table_all(key0, key1) = std::max(value, *(values_ptr++));
+          else
+            dolfin_error("MPI.h",
+                         "perform reduction of Table",
+                         "MPI::reduce(comm, table, %s) not implemented",
+                         typeid(op).name());
+        }
+      }
+      return table_all;
+    }
+    else
+      return Table();
+    #else
+    return value;
+    #endif
+  }
+  //---------------------------------------------------------------------------
+}
