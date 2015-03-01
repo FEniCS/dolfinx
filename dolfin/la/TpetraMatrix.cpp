@@ -105,14 +105,16 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
      tensor_layout.local_to_global_map[0].end());
   Teuchos::ArrayView<global_ordinal_type> _global_indices0(global_indices0);
   Teuchos::RCP<const map_type> row_map
-    (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(), _global_indices0, 0, _comm));
+    (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(),
+                  _global_indices0, 0, _comm));
 
   std::vector<global_ordinal_type> global_indices1
     (tensor_layout.local_to_global_map[1].begin(),
      tensor_layout.local_to_global_map[1].end());
   Teuchos::ArrayView<global_ordinal_type> _global_indices1(global_indices1);
   Teuchos::RCP<const map_type> col_map
-    (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(), _global_indices1, 0, _comm));
+    (new map_type(Teuchos::OrdinalTraits<global_ordinal_type>::invalid(),
+                  _global_indices1, 0, _comm));
 
   // Create a non-overlapping "range" map, similar to "row" map.
   range_map0 = Teuchos::rcp(new map_type(M, m, 0, _comm));
@@ -122,7 +124,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   typedef Tpetra::CrsGraph<> graph_type;
   // Create non-overlapping graph from sparsity pattern
   // FIXME: allocate memory based on number of non-zeros per row (not just "5")
-  Teuchos::RCP<graph_type> _graph0(new graph_type(range_map0, 5));
 
   std::vector<std::vector<std::size_t> > pattern_diag
     = sparsity_pattern.diagonal_pattern(GenericSparsityPattern::unsorted);
@@ -132,6 +133,14 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(pattern_diag.size() == pattern_off.size());
   dolfin_assert(m == pattern_diag.size());
 
+  std::vector<std::size_t> entries_per_row(m);
+  sparsity_pattern.num_local_nonzeros(entries_per_row);
+  Teuchos::ArrayRCP<std::size_t> _nnz(entries_per_row.data(), 0,
+                                      entries_per_row.size(), false);
+
+  Teuchos::RCP<graph_type> _graph0(new graph_type(range_map0, _nnz));
+
+
   for (std::size_t i = 0; i != m; ++i)
   {
     std::vector<global_ordinal_type> indices(pattern_diag[i].begin(),
@@ -140,13 +149,14 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
                    pattern_off[i].end());
 
     Teuchos::ArrayView<global_ordinal_type> _indices(indices);
-    _graph0->insertGlobalIndices(tensor_layout.local_to_global_map[0][i], _indices);
+    _graph0->insertGlobalIndices(tensor_layout.local_to_global_map[0][i],
+                                 _indices);
   }
 
-  //  _graph0->fillComplete();
-
-  // Initial graph, _graph0 is non-overlapping, i.e. is not replicated across processes
-  // In order to do a local fill using add_local(), we need to replicate the graph
+  // Initial graph, _graph0 is non-overlapping,
+  // i.e. is not replicated across processes
+  // In order to do a local fill using add_local(),
+  // we need to replicate the graph
   // on all sharing processes.
 
   // Translation (mapping) from overlapping to non-overlapping maps
@@ -156,8 +166,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   Teuchos::RCP<graph_type> _graph(new graph_type(row_map, 5));
   _graph->doImport(*_graph0, exporter, Tpetra::INSERT);
 
-  // Do not use the domain and range maps here, as it will prevent insertion
-  // on rows which are not in the domain.
   _graph->fillComplete();
 
   //  TpetraVector::mapdump(domain_map0, "Mat::domain");

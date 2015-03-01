@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   const std::string pc = argv[3];
   parameters["linear_algebra_backend"] = backend;
 
-  unsigned int n = 20;
+  unsigned int n = 4;
   UnitSquareMesh mesh(n, n);
   Poisson::FunctionSpace V(mesh);
   Poisson::LinearForm L(V);
