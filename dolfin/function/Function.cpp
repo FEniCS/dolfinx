@@ -571,14 +571,14 @@ void Function::restrict(double* w, const FiniteElement& element,
 
     if (dofs.size() > 0)
     {
-      // Note: We should have dofmap.max_cell_dimension() == dofs.size() here.
+      // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
       // Pick values from vector(s)
       _vector->get_local(w, dofs.size(), dofs.data());
     }
     else
     {
       // Set dofs to zero (zero extension of function space on a Restriction)
-      memset(w, 0, sizeof(*w)*dofmap.max_cell_dimension());
+      memset(w, 0, sizeof(*w)*dofmap.max_element_dofs());
     }
   }
   else

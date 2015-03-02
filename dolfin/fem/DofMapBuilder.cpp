@@ -137,6 +137,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                                          bs);
   }
 
+  // Set local (cell) dimension
+  dofmap._cell_dimension = dofmap._ufc_dofmap->num_element_dofs();
+
   // Set global dimension
   dofmap._global_dimension
     = dofmap._ufc_dofmap->global_dimension(dofmap._num_mesh_entities_global);
@@ -155,6 +158,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     }
     global_nodes0 = remapped_global_nodes;
   }
+
+  // Dynamic data structure to build dofmap graph
+  std::vector<std::vector<la_index>> dofmap_graph;
 
   // Re-order and switch to local indexing in dofmap when distributed
   // for process locality and set local_range
@@ -242,13 +248,13 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
 
     // Build dofmap from original node 'dof' map and applying the
     // 'old_to_new_local' map for the re-ordered node indices
-    build_dofmap(dofmap._dofmap, node_graph0, node_old_to_new_local, bs);
+    build_dofmap(dofmap_graph, node_graph0, node_old_to_new_local, bs);
   }
   else
   {
     // UFC dofmap has not been re-ordered
     dolfin_assert(!distributed);
-    dofmap._dofmap = node_graph0;
+    dofmap_graph = node_graph0;
     dofmap._ufc_local_to_local = node_ufc_local_to_local0;
     if (dofmap._ufc_local_to_local.empty()
         && dofmap._ufc_dofmap->num_sub_dofmaps() > 0)
@@ -269,6 +275,14 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Clear ufc_local-to-local map if dofmap has no sub-maps
   if (dofmap._ufc_dofmap->num_sub_dofmaps() == 0)
     std::vector<int>().swap(dofmap._ufc_local_to_local);
+
+  // Build flattened dofmap graph
+  dofmap._dofmap.clear();
+  for (auto const &cell_dofs : dofmap_graph)
+  {
+    dofmap._dofmap.insert(dofmap._dofmap.end(), cell_dofs.begin(),
+                          cell_dofs.end());
+  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -302,12 +316,14 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
   sub_dofmap._ufc_offset = ufc_offset;
 
   // Build local UFC-based dof map for sub-dofmap
-  build_local_ufc_dofmap(sub_dofmap._dofmap, *sub_dofmap._ufc_dofmap, mesh);
+  // Dynamic data structure to build dofmap graph
+  std::vector<std::vector<la_index>> sub_dofmap_graph;
+  build_local_ufc_dofmap(sub_dofmap_graph, *sub_dofmap._ufc_dofmap, mesh);
 
   // Add offset to local UFC dofmap
-  for (std::size_t i = 0; i < sub_dofmap._dofmap.size(); ++i)
-    for (std::size_t j = 0; j < sub_dofmap._dofmap[i].size(); ++j)
-      sub_dofmap._dofmap[i][j] += ufc_offset;
+  for (std::size_t i = 0; i < sub_dofmap_graph.size(); ++i)
+    for (std::size_t j = 0; j < sub_dofmap_graph[i].size(); ++j)
+      sub_dofmap_graph[i][j] += ufc_offset;
 
   // Store number of global mesh entities and set global dimension
   sub_dofmap._num_mesh_entities_global = parent_dofmap._num_mesh_entities_global;
@@ -338,8 +354,8 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
   // Map to re-ordered dofs
   const std::vector<int>& local_to_local = parent_dofmap._ufc_local_to_local;
   const std::size_t bs = parent_dofmap.block_size;
-  for (auto cell_map = sub_dofmap._dofmap.begin();
-       cell_map != sub_dofmap._dofmap.end(); ++cell_map)
+  for (auto cell_map = sub_dofmap_graph.begin();
+       cell_map != sub_dofmap_graph.end(); ++cell_map)
   {
     for (auto dof = cell_map->begin(); dof != cell_map->end(); ++dof)
     {
@@ -354,6 +370,17 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
       // Set dof index in transformed dofmap
       *dof = current_dof;
     }
+  }
+
+  // Set local (cell) dimension
+  sub_dofmap._cell_dimension = sub_dofmap._ufc_dofmap->num_element_dofs();
+
+  // Construct flattened dofmap
+  sub_dofmap._dofmap.clear();
+  for (auto const &cell_dofs : sub_dofmap_graph)
+  {
+    sub_dofmap._dofmap.insert(sub_dofmap._dofmap.end(), cell_dofs.begin(),
+                              cell_dofs.end());
   }
 }
 //-----------------------------------------------------------------------------
@@ -578,8 +605,8 @@ void DofMapBuilder::build_local_ufc_dofmap(
 
   // Build dofmap from ufc::dofmap
   dofmap.resize(mesh.num_cells(),
-                std::vector<la_index>(ufc_dofmap.local_dimension()));
-  std::vector<std::size_t> dof_holder(ufc_dofmap.local_dimension());
+                std::vector<la_index>(ufc_dofmap.num_element_dofs()));
+  std::vector<std::size_t> dof_holder(ufc_dofmap.num_element_dofs());
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     const std::size_t cell_index = cell->index();
@@ -1084,7 +1111,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   std::vector<std::size_t> ufc_nodes_global, ufc_nodes_local;
 
   // Get standard local elem2ent dimension
-  const std::size_t local_dim = dofmaps[0]->local_dimension();
+  const std::size_t local_dim = dofmaps[0]->num_element_dofs();
 
   // Create UFC cell and allocate memory
   ufc::cell ufc_cell_global, ufc_cell_local;
@@ -1224,7 +1251,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
     ufc_nodes_global_constrained;
 
   // Get standard local element dimension
-  const std::size_t local_dim = dofmaps[0]->local_dimension();
+  const std::size_t local_dim = dofmaps[0]->num_element_dofs();
 
   // Create UFC cell and allocate memory
   ufc::cell ufc_cell;

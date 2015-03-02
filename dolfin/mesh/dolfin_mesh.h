@@ -37,5 +37,6 @@
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/mesh/MeshHierarchy.h>
 
 #endif
