@@ -791,8 +791,6 @@ std::size_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
   const boost::multi_array<std::size_t, 2>& cell_vertices
     = new_mesh_data.cell_vertices;
 
-  //  dolfin_assert(cell_vertices.size() != 0);
-
   // Get set of unique vertices from cells
   // and start constructing a global_to_local map
   // Ghost vertices will be at the end of the range (v >= num_regular_vertices)
