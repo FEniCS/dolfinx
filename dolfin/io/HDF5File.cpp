@@ -268,7 +268,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // Copy coordinates and indices and remove off-process values
     const std::size_t gdim = mesh.geometry().dim();
     const std::vector<double> vertex_coords
-      = HDF5Utility::reorder_vertices_by_global_indices(mesh);
+      = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
 
     // Write coordinates out from each process
     std::vector<std::size_t> global_size(2);

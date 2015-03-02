@@ -1071,7 +1071,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
       // Loop all dofs on cell
       std::vector<std::size_t> dofs;
-      for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+      for (std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
       {
         const std::size_t global_dof = cell_dofs[i];
 
@@ -1266,9 +1266,9 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::LocalData::LocalData(const FunctionSpace& V)
-  : w(V.dofmap()->max_cell_dimension(), 0.0),
+  : w(V.dofmap()->max_element_dofs(), 0.0),
     facet_dofs(V.dofmap()->num_facet_dofs(), 0),
-    coordinates(boost::extents[V.dofmap()->max_cell_dimension()][V.mesh()->geometry().dim()])
+    coordinates(boost::extents[V.dofmap()->max_element_dofs()][V.mesh()->geometry().dim()])
 {
   // Do nothing
 }

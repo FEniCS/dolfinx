@@ -578,7 +578,7 @@ def test_doc_string_compiled_expression_with_system_headers():
           if (ncells > 0)
           {
             CellIterator cell(*mesh);
-            ndofs_per_cell = dofmap->cell_dimension(cell->index());
+            ndofs_per_cell = dofmap->num_element_dofs(cell->index());
           }
           else
           {
@@ -616,7 +616,7 @@ def test_doc_string_compiled_expression_with_system_headers():
           if (ncells > 0)
           {
             CellIterator cell(*mesh);
-            ndofs_per_cell = dofmap->cell_dimension(cell->index());
+            ndofs_per_cell = dofmap->num_element_dofs(cell->index());
           }
           else
           {

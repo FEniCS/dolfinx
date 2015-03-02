@@ -125,10 +125,10 @@ namespace dolfin
     std::vector<std::shared_ptr<ufc::interior_facet_integral> >
       interior_facet_integrals;
 
-    // Point integrals (access through get_point_integral to get
+    // Point integrals (access through get_vertex_integral to get
     // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::point_integral> >
-      point_integrals;
+    std::vector<std::shared_ptr<ufc::vertex_integral> >
+      vertex_integrals;
 
     // Custom integrals (access through get_custom_integral to get
     // proper fallback to default)
@@ -149,8 +149,8 @@ namespace dolfin
       default_interior_facet_integral;
 
     // Default point integral
-    std::shared_ptr<ufc::point_integral>
-      default_point_integral;
+    std::shared_ptr<ufc::vertex_integral>
+      default_vertex_integral;
 
     // Default custom integral
     std::shared_ptr<ufc::custom_integral> default_custom_integral;
@@ -160,7 +160,7 @@ namespace dolfin
     ufc::cell_integral*
       get_cell_integral(std::size_t domain)
     {
-      if (domain < form.num_cell_domains())
+      if (domain < form.max_cell_subdomain_id())
       {
         ufc::cell_integral * integral
           = cell_integrals[domain].get();
@@ -175,7 +175,7 @@ namespace dolfin
     ufc::exterior_facet_integral*
       get_exterior_facet_integral(std::size_t domain)
     {
-      if (domain < form.num_exterior_facet_domains())
+      if (domain < form.max_exterior_facet_subdomain_id())
       {
         ufc::exterior_facet_integral* integral
           = exterior_facet_integrals[domain].get();
@@ -190,7 +190,7 @@ namespace dolfin
     ufc::interior_facet_integral*
       get_interior_facet_integral(std::size_t domain)
     {
-      if (domain < form.num_interior_facet_domains())
+      if (domain < form.max_interior_facet_subdomain_id())
       {
         ufc::interior_facet_integral* integral
           = interior_facet_integrals[domain].get();
@@ -202,24 +202,24 @@ namespace dolfin
 
     /// Get point integral over a given domain, falling back to the
     /// default if necessary
-    ufc::point_integral*
-      get_point_integral(std::size_t domain)
+    ufc::vertex_integral*
+      get_vertex_integral(std::size_t domain)
     {
-      if (domain < form.num_point_domains())
+      if (domain < form.max_vertex_subdomain_id())
       {
-        ufc::point_integral * integral
-          = point_integrals[domain].get();
+        ufc::vertex_integral * integral
+          = vertex_integrals[domain].get();
         if (integral)
           return integral;
       }
-      return default_point_integral.get();
+      return default_vertex_integral.get();
     }
 
     /// Get custom integral over a given domain, falling back to the
     /// default if necessary
     ufc::custom_integral * get_custom_integral(std::size_t domain)
     {
-      if (domain < form.num_custom_domains())
+      if (domain < form.max_custom_subdomain_id())
       {
         ufc::custom_integral * integral = custom_integrals[domain].get();
         if (integral)

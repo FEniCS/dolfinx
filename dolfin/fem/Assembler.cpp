@@ -78,11 +78,11 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
       = a.exterior_facet_domains();
 
   // Get interior facet domains
-  std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains
+  std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains
       = a.interior_facet_domains();
 
   // Get vertex domains
-  std::shared_ptr<const MeshFunction<std::size_t> > vertex_domains
+  std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains
     = a.vertex_domains();
 
   // Check form
@@ -99,13 +99,14 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   init_global_tensor(A, a);
 
   // Assemble over cells
-  assemble_cells(A, a, ufc, cell_domains, 0);
+  assemble_cells(A, a, ufc, cell_domains, NULL);
 
   // Assemble over exterior facets
-  assemble_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
+  assemble_exterior_facets(A, a, ufc, exterior_facet_domains, NULL);
 
   // Assemble over interior facets
-  assemble_interior_facets(A, a, ufc, interior_facet_domains, cell_domains, 0);
+  assemble_interior_facets(A, a, ufc, interior_facet_domains,
+                           cell_domains, NULL);
 
   // Assemble over vertices
   assemble_vertices(A, a, ufc, vertex_domains);
@@ -134,6 +135,9 @@ void Assembler::assemble_cells(
 
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
+
+  // Check if form is a functional
+  const bool is_cell_functional = (values && form_rank == 0) ? true : false;
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -192,7 +196,7 @@ void Assembler::assemble_cells(
 
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
-    if (values && ufc.form.rank() == 0)
+    if (is_cell_functional)
       (*values)[cell->index()] = ufc.A[0];
     else
       A.add_local(ufc.A.data(), dofs);
@@ -456,7 +460,7 @@ void Assembler::assemble_vertices(
   std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   // Skip assembly if there are no point integrals
-  if (!ufc.form.has_point_integrals())
+  if (!ufc.form.has_vertex_integrals())
     return;
 
   // Set timer
@@ -543,8 +547,8 @@ void Assembler::assemble_vertices(
   std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Exterior point integral
-  const ufc::point_integral* integral
-    = ufc.default_point_integral.get();
+  const ufc::vertex_integral* integral
+    = ufc.default_vertex_integral.get();
 
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
@@ -561,7 +565,7 @@ void Assembler::assemble_vertices(
   {
     // Get integral for sub domain (if any)
     if (use_domains)
-      integral = ufc.get_point_integral((*domains)[*vert]);
+      integral = ufc.get_vertex_integral((*domains)[*vert]);
 
     // Skip integral if zero
     if (!integral)
@@ -578,13 +582,12 @@ void Assembler::assemble_vertices(
       // include the contribution from this vertex to scalar sum
       if (e != shared_vertices.end())
       {
-
         bool skip_vertex = false;
         std::set<unsigned int>::const_iterator it;
-        for (it=e->second.begin(); it!=e->second.end(); it++)
+        for (it = e->second.begin(); it != e->second.end(); it++)
         {
           // Check if a shared vertex has a lower process rank
-          if (*it<my_mpi_rank)
+          if (*it < my_mpi_rank)
           {
             skip_vertex = true;
             break;
@@ -658,7 +661,6 @@ void Assembler::assemble_vertices(
     }
     else if (form_rank == 1)
     {
-
       // Copy tabulated tensor to local value vector
       for (std::size_t i = 0; i < local_to_local_dofs[0].size(); ++i)
         local_values[i] = ufc.A[local_to_local_dofs[0][i]];

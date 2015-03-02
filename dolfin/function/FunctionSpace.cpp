@@ -159,7 +159,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   expansion_coefficients.zero();
 
   // Initialize local arrays
-  std::vector<double> cell_coefficients(_dofmap->max_cell_dimension());
+  std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
 
   // Iterate over mesh and interpolate on each cell
   ufc::cell ufc_cell;
@@ -180,7 +180,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
 
     // Copy dofs to vector
     expansion_coefficients.set_local(cell_coefficients.data(),
-                                     _dofmap->cell_dimension(cell->index()),
+                                     _dofmap->num_element_dofs(cell->index()),
                                      cell_dofs.data());
   }
 

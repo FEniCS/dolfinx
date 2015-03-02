@@ -179,6 +179,16 @@ def test_UnitCubeMeshDistributedLocal():
     assert mesh.num_cells() == 1890
 
 
+@skip_in_parallel
+def test_LocalRefineUnitIntervalMesh():
+    """Refine mesh of unit interval."""
+    mesh = UnitIntervalMesh(10)
+    cell_markers = CellFunction("bool", mesh)
+    cell_markers[7] = True
+    mesh2 = refine(mesh, cell_markers)
+    assert mesh2.num_cells() == 11
+
+
 def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
     mesh = UnitSquareMesh(5, 7)

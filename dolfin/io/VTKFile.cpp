@@ -298,7 +298,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap= *u.function_space()->dofmap();
-  if (dofmap.max_cell_dimension() == cell_based_dim)
+  if (dofmap.max_element_dofs() == cell_based_dim)
     VTKWriter::write_cell_data(u, vtu_filename, binary, compress);
   else
     write_point_data(u, mesh, vtu_filename);
@@ -608,7 +608,7 @@ void VTKFile::pvtu_write(const Function& u, const std::string fname) const
   dolfin_assert(u.function_space()->dofmap());
   for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
-  if (u.function_space()->dofmap()->max_cell_dimension() == cell_based_dim)
+  if (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim)
     data_type = "cell";
 
   const std::size_t num_processes = MPI::size(mesh.mpi_comm());

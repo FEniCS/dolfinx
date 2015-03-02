@@ -22,6 +22,7 @@
 namespace dolfin
 {
   class Mesh;
+  class MeshRelation;
   class ParallelRefinement;
 
   /// Implementation of the refinement method described in
@@ -44,6 +45,14 @@ namespace dolfin
                        const MeshFunction<bool>& refinement_marker,
                        bool redistribute,
                        bool calculate_parent_facets);
+
+    /// Refine with markers, optionally calculating facet relations, and
+    /// saving relation data in MeshRelation structure
+    static void refine(Mesh& new_mesh, const Mesh& mesh,
+                       const MeshFunction<bool>& refinement_marker,
+                       bool calculate_parent_facets,
+                       MeshRelation& mesh_relation);
+
 
     /// Get the subdivision of an original simplex into smaller
     /// simplices, for a given set of marked edges, and the
@@ -76,7 +85,8 @@ namespace dolfin
                           ParallelRefinement& p_ref,
                           const std::vector<std::size_t>& long_edge,
                           bool redistribute,
-                          bool calculate_parent_facets);
+                          bool calculate_parent_facets,
+                          MeshRelation& mesh_relation);
 
     // Propagate edge markers according to rules (longest edge
     // of each face must be marked, if any edge of face is marked)

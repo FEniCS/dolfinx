@@ -273,7 +273,7 @@ void X3DFile::write_function(const Function& u)
     warning("X3DFile outputs scalar magnitude of vector field");
 
   // Only allow vertex centered data
-  const bool vertex_data = (dofmap.max_cell_dimension() != 1);
+  const bool vertex_data = (dofmap.max_element_dofs() != 1);
   if (!vertex_data)
   {
     dolfin_error("X3DFile.cpp",

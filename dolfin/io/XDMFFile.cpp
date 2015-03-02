@@ -255,7 +255,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   std::size_t cell_based_dim = 1;
   for (std::size_t i = 0; i < value_rank; i++)
     cell_based_dim *= tdim;
-  const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
+  const bool vertex_data = !(dofmap.max_element_dofs() == cell_based_dim);
 
   // Get number of local/global cells/vertices
   const std::size_t num_local_cells = mesh.topology().ghost_offset(tdim);
@@ -309,12 +309,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       // Tabulate dofs
       const ArrayView<const dolfin::la_index> dofs
         = dofmap.cell_dofs(cell->index());
-      for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+      for (std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
         dof_set.push_back(dofs[i]);
 
       // Add local dimension to cell offset and increment
       *(cell_offset + 1)
-        = *(cell_offset) + dofmap.cell_dimension(cell->index());
+        = *(cell_offset) + dofmap.num_element_dofs(cell->index());
       ++cell_offset;
     }
 
@@ -385,8 +385,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[1] = padded_value_size;
   if (vertex_data)
   {
-    HDF5Utility::reorder_values_by_global_indices(mesh, data_values,
-                                                  padded_value_size);
+    DistributedMeshTools::reorder_values_by_global_indices(mesh, data_values,
+                                                           padded_value_size);
     global_size[0] = mesh.size_global(0);
   }
   else
