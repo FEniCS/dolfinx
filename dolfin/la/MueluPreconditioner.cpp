@@ -71,6 +71,9 @@ std::string MueluPreconditioner::str(bool verbose) const
 
   s << "<MueluPreconditioner>";
 
+  if (verbose)
+    s << _prec->description() << std::endl;
+
   return s.str();
 }
 //-----------------------------------------------------------------------------
