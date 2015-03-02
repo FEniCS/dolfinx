@@ -569,10 +569,10 @@ void Function::restrict(double* w, const FiniteElement& element,
     const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
-    if (dofs.size() > 0)
+    if (!dofs.empty())
     {
-      // Note: We should have dofmap.max_cell_dimension() == dofs.size() here.
-      // Pick values from vector(s)
+      // Note: We should have dofmap.max_cell_dimension() ==
+      // dofs.size() here.  Pick values from vector(s)
       _vector->get_local(w, dofs.size(), dofs.data());
     }
     else

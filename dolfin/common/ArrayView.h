@@ -56,12 +56,16 @@ namespace dolfin
 
     /// Update object to point to new container
     template<typename V>
-      void set(V& v)
+    void set(V& v)
     { _size = v.size(); _x = v.data(); }
 
     /// Return size of array
     std::size_t size() const
     { return _size; }
+
+    /// Test if array view is empty
+    bool empty() const
+    { return (_size == 0) ? true : false; }
 
     /// Access value of given entry (const version)
     const T& operator[] (std::size_t i) const
