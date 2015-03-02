@@ -266,8 +266,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[1] = padded_value_size;
   if (vertex_data)
   {
-    HDF5Utility::reorder_values_by_global_indices(mesh, data_values,
-                                                  padded_value_size);
+    DistributedMeshTools::reorder_values_by_global_indices(mesh, data_values,
+                                                           padded_value_size);
     global_size[0] = mesh.size_global(0);
   }
   else

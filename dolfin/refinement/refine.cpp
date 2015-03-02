@@ -21,6 +21,7 @@
 // Last changed: 2013-01-13
 
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshHierarchy.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
@@ -35,6 +36,13 @@ dolfin::Mesh dolfin::refine(const Mesh& mesh, bool redistribute)
   Mesh refined_mesh;
   refine(refined_mesh, mesh, redistribute);
   return refined_mesh;
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const MeshHierarchy> dolfin::refine(
+                    const MeshHierarchy& hierarchy,
+                    const MeshFunction<bool>& markers)
+{
+  return hierarchy.refine(markers);
 }
 //-----------------------------------------------------------------------------
 void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
