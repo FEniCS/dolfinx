@@ -127,7 +127,7 @@ void PointSource::apply(GenericVector& b)
 
   // Add values to vector
   dolfin_assert(_function_space->element()->space_dimension()
-                == _function_space->dofmap()->cell_dimension(cell.index()));
+                == _function_space->dofmap()->num_element_dofs(cell.index()));
   b.add_local(values.data(), _function_space->element()->space_dimension(),
               dofs.data());
   b.apply("add");

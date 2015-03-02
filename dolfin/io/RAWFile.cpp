@@ -106,7 +106,7 @@ void RAWFile::ResultsWrite(const Function& u) const
   std::size_t cell_based_dim = 1;
   for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
-  if (dofmap.max_cell_dimension() == cell_based_dim)
+  if (dofmap.max_element_dofs() == cell_based_dim)
     data_type = "cell";
 
   // Open file

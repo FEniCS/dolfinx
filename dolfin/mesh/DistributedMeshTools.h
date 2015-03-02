@@ -77,6 +77,25 @@ namespace dolfin
       std::vector<std::pair<unsigned int, unsigned int> > >
       compute_shared_entities(const Mesh& mesh, std::size_t d);
 
+    /// Reorders the vertices in a distributed mesh according to
+    /// their global index, and redistributes them evenly across processes
+    /// returning the coordinates as a local vector
+    static std::vector<double>
+      reorder_vertices_by_global_indices(const Mesh& mesh);
+
+    /// Reorder the values (of given width) in data to be in global vertex
+    /// index order on the Mesh, redistributing evenly across processes
+    static void reorder_values_by_global_indices(const Mesh& mesh,
+                                                 std::vector<double>& data,
+                                                 const std::size_t width);
+
+    /// Reorder the values of given width, according to explicit global
+    /// indices, distributing evenly across processes
+    static void reorder_values_by_global_indices(MPI_Comm mpi_comm,
+                          std::vector<double>& values,
+                          const std::size_t width,
+                          const std::vector<std::size_t>& global_indices);
+
   private:
 
     // Data structure for a mesh entity (list of vertices, using

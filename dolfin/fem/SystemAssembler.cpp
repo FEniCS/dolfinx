@@ -222,7 +222,7 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   UFC A_ufc(*_a), b_ufc(*_l);
 
   // Raise error for Point integrals
-  if (A_ufc.form.has_point_integrals() || b_ufc.form.has_point_integrals())
+  if (A_ufc.form.has_vertex_integrals() || b_ufc.form.has_vertex_integrals())
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",
@@ -1081,10 +1081,10 @@ bool SystemAssembler::cell_matrix_required(
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
 {
   std::size_t A_num_entries
-    = a.function_space(0)->dofmap()->max_cell_dimension();
-  A_num_entries *= a.function_space(1)->dofmap()->max_cell_dimension();
+    = a.function_space(0)->dofmap()->max_element_dofs();
+  A_num_entries *= a.function_space(1)->dofmap()->max_element_dofs();
   Ae[0].resize(A_num_entries);
-  Ae[1].resize(L.function_space(0)->dofmap()->max_cell_dimension());
+  Ae[1].resize(L.function_space(0)->dofmap()->max_element_dofs());
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::~Scratch()

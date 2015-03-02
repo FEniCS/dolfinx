@@ -102,8 +102,11 @@ namespace dolfin
     // Global cell numbers for all cells stored on local processor
     std::vector<std::size_t> global_cell_indices;
 
-    // Optional process owner for each cell in  global_cell_indices
+    // Optional process owner for each cell in global_cell_indices
     std::vector<std::size_t> cell_partition;
+
+    // Optional weight for each cell for partitioning
+    std::vector<std::size_t> cell_weight;
 
     // Global number of vertices
     std::size_t num_global_vertices;

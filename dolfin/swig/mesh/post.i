@@ -547,3 +547,14 @@ HierarchicalMesh.root_node = new_instancemethod(_mesh.HierarchicalMesh__root_nod
 HierarchicalMesh.child = new_instancemethod(_mesh.HierarchicalMesh__child,None,HierarchicalMesh)
 HierarchicalMesh.parent = new_instancemethod(_mesh.HierarchicalMesh__parent,None,HierarchicalMesh)
 %}
+
+//-----------------------------------------------------------------------------
+// Map __getitem__ to operator[] for MeshHierarchy
+//-----------------------------------------------------------------------------
+%extend dolfin::MeshHierarchy
+{
+  std::shared_ptr<const dolfin::Mesh> __getitem__(int i)
+  {
+    return (*($self))[i];
+  }
+}

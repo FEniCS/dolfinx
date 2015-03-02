@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2015 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,15 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Alnes, 2008
+// Modified by Martin Alnes, 2008-2015
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Joachim B Haga, 2012
 // Modified by Mikael Mortensen, 2012
 // Modified by Jan Blechta, 2013
-//
-// First added:  2007-03-01
-// Last changed: 2014-07-04
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -127,8 +124,6 @@ namespace dolfin
     ///         Number of local dofs.
     std::size_t local_dimension(std::string type) const;
 
-    // FIXME: Rename this function, 'cell_dimension' sounds confusing
-
     /// Return the dimension of the local finite element function
     /// space on a cell
     ///
@@ -139,7 +134,7 @@ namespace dolfin
     /// *Returns*
     ///     std::size_t
     ///         Dimension of the local finite element function space.
-    std::size_t cell_dimension(std::size_t cell_index) const;
+    std::size_t num_element_dofs(std::size_t cell_index) const;
 
     /// Return the maximum dimension of the local finite element
     /// function space
@@ -148,7 +143,7 @@ namespace dolfin
     ///     std::size_t
     ///         Maximum dimension of the local finite element function
     ///         space.
-    std::size_t max_cell_dimension() const;
+    std::size_t max_element_dofs() const;
 
     /// Return the number of dofs for a given entity dimension
     ///

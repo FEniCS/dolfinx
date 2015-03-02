@@ -129,6 +129,7 @@
 %shared_ptr(dolfin::DomainBoundary)
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
+%shared_ptr(dolfin::MeshHierarchy)
 
 // NOTE: Most of the MeshFunctions are declared shared pointers in
 // NOTE: mesh/pre.i, mesh/post.i

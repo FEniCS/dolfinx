@@ -169,8 +169,8 @@ void LocalSolver::solve_local_rhs(Function& u) const
                    integral_a->enabled_coefficients());
 
       // Resize A_e and tabulate on for cell
-      const std::size_t dim = dofmaps_a[0]->cell_dimension(cell->index());
-      dolfin_assert(dim == dofmaps_a[1]->cell_dimension(cell->index()));
+      const std::size_t dim = dofmaps_a[0]->num_element_dofs(cell->index());
+      dolfin_assert(dim == dofmaps_a[1]->num_element_dofs(cell->index()));
       A_e.resize(dim, dim);
       integral_a->tabulate_tensor(A_e.data(), ufc_a.w(),
                                   vertex_coordinates.data(),
@@ -278,8 +278,8 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
                    integral_a->enabled_coefficients());
 
       // Resize A_e and tabulate on for cell
-      const std::size_t dim = dofmaps_a[0]->cell_dimension(cell->index());
-      dolfin_assert(dim == dofmaps_a[1]->cell_dimension(cell->index()));
+      const std::size_t dim = dofmaps_a[0]->num_element_dofs(cell->index());
+      dolfin_assert(dim == dofmaps_a[1]->num_element_dofs(cell->index()));
       A_e.resize(dim, dim);
       integral_a->tabulate_tensor(A_e.data(), ufc_a.w(),
                                   vertex_coordinates.data(),
@@ -324,7 +324,7 @@ void LocalSolver::factorize()
   dolfin_assert(ufc.form.rank() == 2);
 
   // Raise error for Point integrals
-  if (ufc.form.has_point_integrals())
+  if (ufc.form.has_vertex_integrals())
   {
     dolfin_error("LocalSolver.cpp",
                  "assemble system",
@@ -366,10 +366,10 @@ void LocalSolver::factorize()
                integral->enabled_coefficients());
 
     // Get cell dimension
-    std::size_t dim = dofmaps[0]->cell_dimension(cell->index());
+    std::size_t dim = dofmaps[0]->num_element_dofs(cell->index());
 
     // Check that local problem is square
-    dolfin_assert(dim == dofmaps[1]->cell_dimension(cell->index()));
+    dolfin_assert(dim == dofmaps[1]->num_element_dofs(cell->index()));
 
     // Resize element matrix
     A.resize(dim, dim);
