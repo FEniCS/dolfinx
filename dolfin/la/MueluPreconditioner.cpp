@@ -38,12 +38,26 @@ MueluPreconditioner::~MueluPreconditioner()
 void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 {
   Teuchos::ParameterList paramList;
-  paramList.set("verbosity", "low");
+  paramList.set("verbosity", "extreme");
+
   paramList.set("max levels", 3);
   paramList.set("coarse: max size", 10);
+  paramList.set("coarse: type", "RILUK");
+
   paramList.set("multigrid algorithm", "sa");
 
-_prec = MueLu::CreateTpetraPreconditioner(std::const_pointer_cast<TpetraMatrix>(P)->mat(), paramList);
+  paramList.set("smoother: type", "RELAXATION");
+  Teuchos::ParameterList sparamList;
+   sparamList.set("relaxation: type", "Jacobi");
+   sparamList.set("relaxation: sweeps", 1);
+   sparamList.set("relaxation: damping factor", 0.9);
+  paramList.set("smoother: params", sparamList);
+
+  paramList.set("aggregation: type", "uncoupled");
+  paramList.set("aggregation: min agg size", 3);
+  paramList.set("aggregation: max agg size", 9);
+
+  _prec = MueLu::CreateTpetraPreconditioner(std::const_pointer_cast<TpetraMatrix>(P)->mat(), paramList);
 }
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::set(BelosKrylovSolver& solver)

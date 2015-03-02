@@ -140,7 +140,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 
   Teuchos::RCP<graph_type> _graph0(new graph_type(range_map0, _nnz));
 
-
   for (std::size_t i = 0; i != m; ++i)
   {
     std::vector<global_ordinal_type> indices(pattern_diag[i].begin(),
@@ -503,11 +502,13 @@ void TpetraMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
     _matA->resumeFill();
 
   zero_local(m, rows);
-  Teuchos::RCP<const map_type>colmap(_matA->getColMap());
+
+  Teuchos::RCP<const map_type> colmap(_matA->getColMap());
   const scalar_type one = 1;
   Teuchos::ArrayView<const scalar_type> data(&one, 1);
   local_ordinal_type col;
   Teuchos::ArrayView<local_ordinal_type> column_idx(&col, 1);
+
   for (std::size_t i = 0 ; i != m; ++i)
   {
     if (colmap->isNodeLocalElement(rows[i]))
@@ -620,29 +621,21 @@ void TpetraMatrix::apply(std::string mode)
     // FIXME: this seems to work...
     // In theory should just be calling _matA->fillComplete()
 
-    // At present, _matA has an overlapping DomainMap, without which
-    // add_local() seems not to work.
-    // In order to convert to a non-overlapping map, which seems necessary,
-    // export to another matrix with the correct maps...
-    // This needs a fix higher up.
+    // Create a new Matrix 'matB' with non-overlapping rows, and
+    // copy
 
-    // New matrix with same Row and Col maps
-    //    Teuchos::RCP<matrix_type> matB(new matrix_type(_matA->getCrsGraph()->getRowMap(),
-    //                                                   _matA->getCrsGraph()->getColMap(), 0));
+    Teuchos::RCP<matrix_type> matB(new matrix_type(range_map0,
+                                   _matA->getCrsGraph()->getColMap(), 0));
 
-    Teuchos::RCP<matrix_type> matB(new matrix_type(domain_map0,
-                                                   _matA->getCrsGraph()->getColMap(), 0));
-
-    Tpetra::Export<global_ordinal_type> exporter(_matA->getRowMap(), matB->getRowMap());
+    Tpetra::Export<global_ordinal_type> exporter(_matA->getRowMap(),
+                                                 matB->getRowMap());
 
     // Fill complete with non-overlapping domain and range maps
+    // FIXME : should be ADD or INSERT?
     matB->doExport(*_matA, exporter, Tpetra::INSERT);
-    matB->fillComplete(domain_map0, range_map0);
+    matB->fillComplete();
 
     _matA = matB;
-
-    // This does not work:-
-    //    _matA->fillComplete(domain_map, range_map);
 
   }
   else
