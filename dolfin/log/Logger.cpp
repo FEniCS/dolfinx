@@ -291,17 +291,12 @@ void Logger::register_timing(std::string task, double elapsed_time)
 //-----------------------------------------------------------------------------
 void Logger::list_timings(bool reset)
 {
-  // Check if timings are empty
-  if (_timings.empty())
-  {
-    log("Timings: no timings to report.");
-    return;
-  }
-  else
-  {
-    log("");
-    log(timings(reset).str(true));
-  }
+  // Format and reduce to rank 0
+  Table timings = this->timings(reset);
+  timings = MPI::max(MPI_COMM_WORLD, timings);
+  const std::string str = timings.str(true);
+  if (str.size() > 0)
+    log(str);
 
   // Print maximum memory usage if available
   if (_maximum_memory_usage >= 0)

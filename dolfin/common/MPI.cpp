@@ -25,26 +25,23 @@
 #include <numeric>
 #include <typeinfo>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/log/Table.h>
 #include "SubSystemsManager.h"
 #include "MPI.h"
-
-namespace dolfin {
 
 #ifdef HAS_MPI
 
 //-----------------------------------------------------------------------------
-MPIInfo::MPIInfo()
+dolfin::MPIInfo::MPIInfo()
 {
   MPI_Info_create(&info);
 }
 //-----------------------------------------------------------------------------
-MPIInfo::~MPIInfo()
+dolfin::MPIInfo::~MPIInfo()
 {
   MPI_Info_free(&info);
 }
 //-----------------------------------------------------------------------------
-MPI_Info& MPIInfo::operator*()
+MPI_Info& dolfin::MPIInfo::operator*()
 {
   return info;
 }
@@ -52,7 +49,7 @@ MPI_Info& MPIInfo::operator*()
 #endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-unsigned int MPI::rank(const MPI_Comm comm)
+unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
@@ -64,7 +61,7 @@ unsigned int MPI::rank(const MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-unsigned int MPI::size(const MPI_Comm comm)
+unsigned int dolfin::MPI::size(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
@@ -76,26 +73,26 @@ unsigned int MPI::size(const MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-bool MPI::is_broadcaster(const MPI_Comm comm)
+bool dolfin::MPI::is_broadcaster(const MPI_Comm comm)
 {
   // Always broadcast from processor number 0
   return size(comm) > 1 && rank(comm) == 0;
 }
 //-----------------------------------------------------------------------------
-bool MPI::is_receiver(const MPI_Comm comm)
+bool dolfin::MPI::is_receiver(const MPI_Comm comm)
 {
   // Always receive on processors with numbers > 0
   return size(comm) > 1 && rank(comm) > 0;
 }
 //-----------------------------------------------------------------------------
-void MPI::barrier(const MPI_Comm comm)
+void dolfin::MPI::barrier(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   MPI_Barrier(comm);
 #endif
 }
 //-----------------------------------------------------------------------------
-std::size_t MPI::global_offset(const MPI_Comm comm,
+std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
                                        std::size_t range, bool exclusive)
 {
 #ifdef HAS_MPI
@@ -111,20 +108,20 @@ std::size_t MPI::global_offset(const MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-MPI::local_range(const MPI_Comm comm, std::size_t N)
+dolfin::MPI::local_range(const MPI_Comm comm, std::size_t N)
 {
   return local_range(comm, rank(comm), N);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-MPI::local_range(const MPI_Comm comm, unsigned int process,
+dolfin::MPI::local_range(const MPI_Comm comm, unsigned int process,
                          std::size_t N)
 {
   return compute_local_range(process, N, size(comm));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-MPI::compute_local_range(unsigned int process,
+dolfin::MPI::compute_local_range(unsigned int process,
                                  std::size_t N,
                                  unsigned int size)
 {
@@ -148,7 +145,7 @@ MPI::compute_local_range(unsigned int process,
   return range;
 }
 //-----------------------------------------------------------------------------
-unsigned int MPI::index_owner(const MPI_Comm comm,
+unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
                                       std::size_t index, std::size_t N)
 {
   dolfin_assert(index < N);
@@ -168,65 +165,85 @@ unsigned int MPI::index_owner(const MPI_Comm comm,
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
-  // Specialization for dolfin::log::Table class
-  template<>
-    Table MPI::all_reduce(const MPI_Comm comm, const Table& table, MPI_Op op)
+#ifdef HAS_MPI
+template<>
+  dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
+                                        const dolfin::Table& table,
+                                        const MPI_Op op)
+{
+  // Get keys, values into containers
+  std::string keys;
+  std::vector<double> values;
+  keys.reserve(128*table.dvalues.size());
+  values.reserve(table.dvalues.size());
+  for (auto it = table.dvalues.begin(); it != table.dvalues.end(); ++it)
   {
-    #ifdef HAS_MPI
-    // Get keys, values into containers
-    std::string keys;
-    std::vector<double> values;
-    keys.reserve(128*table.dvalues.size());
-    values.reserve(table.dvalues.size());
-    for (auto it = table.dvalues.begin(); it != table.dvalues.end(); ++it)
-    {
-      keys += it->first.first + "\0" + it->first.second + "\0";
-      values.push_back(it->second);
-    }
-
-    // Gather to rank zero
-    std::vector<std::string> keys_all;
-    std::vector<double> values_all;
-    gather(comm, keys, keys_all, 0);
-    gather(comm, values, values_all, 0);
-
-    // Build the result
-    if (MPI::rank(comm) == 0)
-    {
-      Table table_all(std::string("Reduced ") + typeid(op).name()
-                      + ": " + table.title());
-      std::string key0, key1;
-      key0.reserve(128);
-      key1.reserve(128);
-      double* values_ptr = values_all.data();
-      for (unsigned int i = 0; i != MPI::size(comm); ++i)
-      {
-        std::stringstream keys_stream(keys_all[i]);
-        while (std::getline(keys_stream, key0, '\0'),
-               std::getline(keys_stream, key1, '\0'))
-        {
-          // FIXME: What is unset value?
-          const double value = table_all.get_value(key0, key1);
-          if (op == MPI_SUM)
-            table_all(key0, key1) = value + *(values_ptr++);
-          else if (op == MPI_MIN)
-            table_all(key0, key1) = std::min(value, *(values_ptr++));
-          else if (op == MPI_MAX)
-            table_all(key0, key1) = std::max(value, *(values_ptr++));
-          else
-            dolfin_error("MPI.h",
-                         "perform reduction of Table",
-                         "MPI::reduce(comm, table, %s) not implemented",
-                         typeid(op).name());
-        }
-      }
-      return table_all;
-    }
-    else
-      return Table();
-    #else
-    return value;
-    #endif
+    keys += it->first.first + '\0' + it->first.second + '\0';
+    values.push_back(it->second);
   }
-  //---------------------------------------------------------------------------
+
+  // Gather to rank zero
+  std::vector<std::string> keys_all;
+  std::vector<double> values_all;
+  gather(comm, keys, keys_all, 0);
+  gather(comm, values, values_all, 0);
+
+  if (MPI::rank(comm) > 0)
+    return Table();
+  if (MPI::size(comm) == 1)
+    return table;
+
+  // Prepare reduction operation
+  void (*op_impl)(double&, const double&) = NULL;
+  if (op == MPI_SUM)
+    op_impl = [](double& x, const double& y){ x += y; };
+  else if (op == MPI_MIN)
+    op_impl = [](double& x, const double& y){ if (y<x) x = y; };
+  else if (op == MPI_MAX)
+    op_impl = [](double& x, const double& y){ if (y>x) x = y; };
+  else
+    dolfin_error("MPI.h",
+                 "perform reduction of Table",
+                 "MPI::reduce(comm, table, %d) not implemented",
+                 op);
+
+  // Construct dvalues map from obtained data
+  std::map<std::pair<std::string, std::string>, double> dvalues_all;
+  std::map<std::pair<std::string, std::string>, double>::iterator it;
+  std::pair<std::string, std::string> key;
+  key.first.reserve(128);
+  key.second.reserve(128);
+  double* values_ptr = values_all.data();
+  for (unsigned int i = 0; i != MPI::size(comm); ++i)
+  {
+    std::stringstream keys_stream(keys_all[i]);
+    while (std::getline(keys_stream, key.first, '\0'),
+           std::getline(keys_stream, key.second, '\0'))
+    {
+      it = dvalues_all.find(key);
+      if (it != dvalues_all.end())
+        op_impl(it->second, *(values_ptr++));
+      else
+        dvalues_all[key] = *(values_ptr++);
+    }
+  }
+  dolfin_assert(values_ptr == values_all.data() + values_all.size());
+
+  // Construct table to return
+  Table table_all("[" + operation_map[op] + "] " + table.title());
+  for (auto it : dvalues_all)
+    table_all(it.first.first, it.first.second) = it.second;
+
+  return table_all;
 }
+#endif
+//-----------------------------------------------------------------------------
+#ifdef HAS_MPI
+std::map<MPI_Op, std::string> dolfin::MPI::operation_map =
+{
+  { MPI_SUM, "MPI_SUM" },
+  { MPI_MAX, "MPI_MAX" },
+  { MPI_MIN, "MPI_MIN" }
+};
+#endif
+//-----------------------------------------------------------------------------

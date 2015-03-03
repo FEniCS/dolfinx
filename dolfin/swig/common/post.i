@@ -44,7 +44,18 @@ typedef struct {
 %template(max) dolfin::MPI::max<double>;
 %template(min) dolfin::MPI::min<double>;
 %template(sum) dolfin::MPI::sum<double>;
+%template(max) dolfin::MPI::max<int>;
+%template(min) dolfin::MPI::min<int>;
+%template(sum) dolfin::MPI::sum<int>;
+%template(max) dolfin::MPI::max<unsigned int>;
+%template(min) dolfin::MPI::min<unsigned int>;
 %template(sum) dolfin::MPI::sum<unsigned int>;
+%template(max) dolfin::MPI::max<std::size_t>;
+%template(min) dolfin::MPI::min<std::size_t>;
+%template(sum) dolfin::MPI::sum<std::size_t>;
+%template(max) dolfin::MPI::max<dolfin::Table>;
+%template(min) dolfin::MPI::min<dolfin::Table>;
+%template(sum) dolfin::MPI::sum<dolfin::Table>;
 
 //-----------------------------------------------------------------------------
 // Ignore const array interface (Used if the Array type is a const)

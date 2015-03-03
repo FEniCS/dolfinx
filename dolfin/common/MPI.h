@@ -37,6 +37,7 @@
 #endif
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/Table.h>
 
 #ifndef HAS_MPI
 typedef int MPI_Comm;
@@ -223,6 +224,11 @@ namespace dolfin
                    "MPI data type unknown");
       return MPI_CHAR;
     }
+    #endif
+
+    #ifdef HAS_MPI
+    // Maps some MPI_Op values to string
+    static std::map<MPI_Op, std::string> operation_map;
     #endif
 
   };
@@ -598,10 +604,7 @@ namespace dolfin
     MPI_Allreduce(const_cast<T*>(&value), &out, 1, mpi_type<T>(), op, comm);
     return out;
     #else
-    dolfin_error("MPI.h",
-      "call MPI::all_reduce",
-      "DOLFIN has been configured without MPI support");
-    return T(0);
+    return value;
     #endif
   }
   //---------------------------------------------------------------------------
@@ -668,6 +671,14 @@ namespace dolfin
   {
     MPI::send_recv(comm, send_value, dest, 0, recv_value, source, 0);
   }
+  //---------------------------------------------------------------------------
+  // Specialization for dolfin::log::Table class
+  // NOTE: This function is not trully "all_reduce", it reduces to rank 0
+  //       and returns zero Table on other ranks.
+  #ifdef HAS_MPI
+  template<>
+    Table dolfin::MPI::all_reduce(MPI_Comm, const Table&, MPI_Op);
+  #endif
   //---------------------------------------------------------------------------
 }
 

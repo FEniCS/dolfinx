@@ -88,10 +88,6 @@ double dolfin::time()
 //-----------------------------------------------------------------------------
 void dolfin::list_timings(bool reset)
 {
-  // Optimization
-  if (!LogManager::logger.is_active())
-    return;
-
   LogManager::logger.list_timings(reset);
 }
 //-----------------------------------------------------------------------------

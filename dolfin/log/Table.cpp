@@ -54,6 +54,7 @@ void Table::set(std::string row, std::string col, int value)
   std::stringstream s;
   s << value;
   set(row, col, s.str());
+  dvalues[std::make_pair(row, col)] = static_cast<double>(value);
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, std::size_t value)
@@ -61,6 +62,7 @@ void Table::set(std::string row, std::string col, std::size_t value)
   std::stringstream s;
   s << value;
   set(row, col, s.str());
+  dvalues[std::make_pair(row, col)] = static_cast<double>(value);
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, double value)
@@ -175,7 +177,8 @@ Table Table::operator- (const Table& table) const
 //-----------------------------------------------------------------------------
 const Table& Table::operator= (const Table& table)
 {
-  // Assign everything but the title
+  _title = table._title;
+  _right_justify = table._right_justify;
 
   rows = table.rows;
   row_set = table.row_set;
@@ -184,6 +187,7 @@ const Table& Table::operator= (const Table& table)
   col_set = table.col_set;
 
   values = table.values;
+  dvalues = table.dvalues;
 
   return *this;
 }
@@ -217,6 +221,10 @@ std::string Table::str(bool verbose) const
     std::size_t row_size = 2*col_sizes.size() + 1;
     for (std::size_t j = 0; j < col_sizes.size(); j++)
       row_size += col_sizes[j];
+
+    // Stay silent if no data
+    if (tvalues.empty())
+      return "";
 
     // Write table
     s << _title;
