@@ -21,11 +21,13 @@
 // Last changed: 2011-03-23
 
 #include <memory>
+
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
 
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -228,7 +230,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   // Convert DG_0 vector to mesh function over cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs = dofmap.cell_dofs(cell->index());
     dolfin_assert(dofs.size() == 1);
     indicators[cell->index()] = x[dofs[0]];
   }
@@ -318,7 +320,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     x = A.partialPivLu().solve(b);
 
     // Get local-to-global dof map for cell
-    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     dolfin_assert(R_T.vector());
@@ -444,8 +446,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = A.partialPivLu().solve(b);
 
       // Get local-to-global dof map for cell
-      const std::vector<dolfin::la_index>& dofs
-        = dofmap.cell_dofs(cell->index());
+      const ArrayView<const dolfin::la_index> dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       dolfin_assert(R_dT[local_facet].vector());

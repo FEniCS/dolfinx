@@ -61,7 +61,7 @@ namespace dolfin
 
     /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A,
-               GenericVector& x, const GenericVector& b);
+                      GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
@@ -73,7 +73,8 @@ namespace dolfin
       return p;
     }
 
-    /// Update solver parameters (pass parameters down to wrapped implementation)
+    /// Update solver parameters (pass parameters down to wrapped
+    /// implementation)
     virtual void update_parameters(const Parameters& parameters)
     {
       this->parameters.update(parameters);
@@ -84,9 +85,7 @@ namespace dolfin
     // name jungle: default, lu, iterative, direct, krylov, etc
     /// Return parameter type: "krylov_solver" or "lu_solver"
     std::string parameter_type() const
-    {
-      return _parameter_type;
-    }
+    { return _parameter_type; }
 
   private:
 
@@ -97,9 +96,8 @@ namespace dolfin
     friend class NewtonSolver;
 
     // Check whether string is contained in list
-    static bool
-    in_list(const std::string& method,
-            const std::vector<std::pair<std::string, std::string> > methods);
+    static bool in_list(const std::string& method,
+                        const std::map<std::string, std::string>& methods);
 
     // Solver
     std::unique_ptr<GenericLinearSolver> solver;

@@ -86,11 +86,6 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------
-// Ignores for MultiMesh
-//-----------------------------------------------------------------------------
-%ignore dolfin::MultiMesh::plot;
-
-//-----------------------------------------------------------------------------
 // Rename methods which get called by a re-implemented method from the
 // Python layer
 //-----------------------------------------------------------------------------
@@ -119,6 +114,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::MeshDomains::operator=;
 %ignore dolfin::MeshDomains::markers(std::size_t) const;
 %ignore dolfin::MeshData::array(std::string) const;
+%ignore dolfin::MeshHierarchy::operator[];
 
 //-----------------------------------------------------------------------------
 // Map increment, decrease and dereference operators for iterators
@@ -273,11 +269,20 @@ FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(std::size_t, Sizet)
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const std::string);
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
 
-%ignore dolfin::CellFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
-%ignore dolfin::FacetFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
-%ignore dolfin::FaceFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
-%ignore dolfin::EdgeFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
-%ignore dolfin::VertexFunction<TYPE>::MeshFunction(const Mesh&, const TYPE&);
+%ignore dolfin::CellFunction<TYPE>::CellFunction(const Mesh&);
+%ignore dolfin::CellFunction<TYPE>::CellFunction(const Mesh&, const TYPE&);
+
+%ignore dolfin::FacetFunction<TYPE>::FacetFunction(const Mesh&);
+%ignore dolfin::FacetFunction<TYPE>::FacetFunction(const Mesh&, const TYPE&);
+
+%ignore dolfin::FaceFunction<TYPE>::FaceFunction(const Mesh&);
+%ignore dolfin::FaceFunction<TYPE>::FaceFunction(const Mesh&, const TYPE&);
+
+%ignore dolfin::EdgeFunction<TYPE>::EdgeFunction(const Mesh&);
+%ignore dolfin::EdgeFunction<TYPE>::EdgeFunction(const Mesh&, const TYPE&);
+
+%ignore dolfin::VertexFunction<TYPE>::VertexFunction(const Mesh&);
+%ignore dolfin::VertexFunction<TYPE>::VertexFunction(const Mesh&, const TYPE&);
 
 %ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t);
 %ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t, const T&);

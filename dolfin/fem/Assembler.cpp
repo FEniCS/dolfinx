@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Anders Logg
+// Copyright (C) 2007-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,11 @@
 // Modified by Ola Skavhaug 2007-2009
 // Modified by Kent-Andre Mardal 2008
 // Modified by Joachim B Haga 2012
-// Modified by Martin Alnaes 2013-2014
+// Modified by Martin Alnaes 2013-2015
 
+#include <algorithm>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/la/GenericTensor.h>
@@ -68,18 +70,19 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   #endif
 
   // Get cell domains
-  std::shared_ptr<const MeshFunction<std::size_t> > cell_domains = a.cell_domains();
+  std::shared_ptr<const MeshFunction<std::size_t>>
+    cell_domains = a.cell_domains();
 
   // Get exterior facet domains
-  std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains
+  std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains
       = a.exterior_facet_domains();
 
   // Get interior facet domains
-  std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains
+  std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains
       = a.interior_facet_domains();
 
   // Get vertex domains
-  std::shared_ptr<const MeshFunction<std::size_t> > vertex_domains 
+  std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains
     = a.vertex_domains();
 
   // Check form
@@ -96,13 +99,14 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   init_global_tensor(A, a);
 
   // Assemble over cells
-  assemble_cells(A, a, ufc, cell_domains, 0);
+  assemble_cells(A, a, ufc, cell_domains, NULL);
 
   // Assemble over exterior facets
-  assemble_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
+  assemble_exterior_facets(A, a, ufc, exterior_facet_domains, NULL);
 
   // Assemble over interior facets
-  assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
+  assemble_interior_facets(A, a, ufc, interior_facet_domains,
+                           cell_domains, NULL);
 
   // Assemble over vertices
   assemble_vertices(A, a, ufc, vertex_domains);
@@ -112,11 +116,12 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
     A.apply("add");
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_cells(GenericTensor& A,
-                               const Form& a,
-                               UFC& ufc,
-                               std::shared_ptr<const MeshFunction<std::size_t> > domains,
-                               std::vector<double>* values)
+void Assembler::assemble_cells(
+  GenericTensor& A,
+  const Form& a,
+  UFC& ufc,
+  std::shared_ptr<const MeshFunction<std::size_t> > domains,
+  std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
   if (!ufc.form.has_cell_integrals())
@@ -131,13 +136,16 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
 
+  // Check if form is a functional
+  const bool is_cell_functional = (values && form_rank == 0) ? true : false;
+
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (std::size_t i = 0; i < form_rank; ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Cell integral
   ufc::cell_integral* integral = ufc.default_cell_integral.get();
@@ -173,8 +181,8 @@ void Assembler::assemble_cells(GenericTensor& A,
     bool empty_dofmap = false;
     for (std::size_t i = 0; i < form_rank; ++i)
     {
-      dofs[i] = &(dofmaps[i]->cell_dofs(cell->index()));
-      empty_dofmap = empty_dofmap || dofs[i]->size() == 0;
+      dofs[i] = dofmaps[i]->cell_dofs(cell->index());
+      empty_dofmap = empty_dofmap || dofs[i].size() == 0;
     }
 
     // Skip if at least one dofmap is empty
@@ -188,7 +196,7 @@ void Assembler::assemble_cells(GenericTensor& A,
 
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
-    if (values && ufc.form.rank() == 0)
+    if (is_cell_functional)
       (*values)[cell->index()] = ufc.A[0];
     else
       A.add_local(ufc.A.data(), dofs);
@@ -197,11 +205,12 @@ void Assembler::assemble_cells(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_exterior_facets(GenericTensor& A,
-                                         const Form& a,
-                                         UFC& ufc,
-                                         std::shared_ptr<const MeshFunction<std::size_t> > domains,
-                                         std::vector<double>* values)
+void Assembler::assemble_exterior_facets(
+  GenericTensor& A,
+  const Form& a,
+  UFC& ufc,
+  std::shared_ptr<const MeshFunction<std::size_t> > domains,
+  std::vector<double>* values)
 {
   // Skip assembly if there are no exterior facet integrals
   if (!ufc.form.has_exterior_facet_integrals())
@@ -222,7 +231,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Exterior facet integral
   const ufc::exterior_facet_integral* integral
@@ -259,7 +268,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     if (!integral)
       continue;
 
-    // Get mesh cell to which mesh facet belongs (pick first, there is only one)
+    // Get mesh cell to which mesh facet belongs (pick first, there is
+    // only one)
     dolfin_assert(facet->num_entities(D) == 1);
     Cell mesh_cell(mesh, facet->entities(D)[0]);
 
@@ -279,7 +289,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // Get local-to-global dof maps for cell
     for (std::size_t i = 0; i < form_rank; ++i)
-      dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
+      dofs[i] = dofmaps[i]->cell_dofs(mesh_cell.index());
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A.data(),
@@ -295,11 +305,13 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_interior_facets(GenericTensor& A, 
-                                         const Form& a,
-                                         UFC& ufc,
-                                         std::shared_ptr<const MeshFunction<std::size_t> > domains,
-                                         std::vector<double>* values)
+void Assembler::assemble_interior_facets(
+  GenericTensor& A,
+  const Form& a,
+  UFC& ufc,
+  std::shared_ptr<const MeshFunction<std::size_t> > domains,
+  std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+  std::vector<double>* values)
 {
   // Skip assembly if there are no interior facet integrals
   if (!ufc.form.has_interior_facet_integrals())
@@ -324,9 +336,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
   // Vector to hold dofs for cells, and a vector holding pointers to same
   std::vector<std::vector<dolfin::la_index>> macro_dofs(form_rank);
-  std::vector<const std::vector<dolfin::la_index>* > macro_dof_ptrs(form_rank);
-  for (std::size_t i = 0; i < form_rank; i++)
-    macro_dof_ptrs[i] = &macro_dofs[i];
+  std::vector<ArrayView<const dolfin::la_index>> macro_dof_ptrs(form_rank);
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral
@@ -334,24 +344,13 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
+  bool use_cell_domains = cell_domains && !cell_domains->empty();
 
   // Compute facets and facet - cell connectivity if not already computed
   const std::size_t D = mesh.topology().dim();
   mesh.init(D - 1);
   mesh.init(D - 1, D);
   dolfin_assert(mesh.ordered());
-
-  // Get interior facet directions (if any)
-  const std::vector<std::size_t>* facet_orientation = NULL;
-  if (mesh.data().exists("facet_orientation", D - 1))
-    facet_orientation = &(mesh.data().array("facet_orientation", D - 1));
-
-  if (facet_orientation && facet_orientation->size() != mesh.num_facets())
-  {
-    dolfin_error("Assembler.cpp",
-                 "assemble form over interior facets",
-                 "Expecting facet orientation to be defined on facets");
-  }
 
   // Assemble over interior facets (the facets of the mesh)
   ufc::cell ufc_cell[2];
@@ -374,14 +373,20 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     if (!integral)
       continue;
 
-    // Get cells incident with facet
-    //std::pair<const Cell, const Cell>
-    //  cells = facet->adjacent_cells(facet_orientation);
-    //const Cell& cell0 = cells.first;
-    //const Cell& cell1 = cells.second;
+    // Get cells incident with facet (which is 0 and 1 here is arbitrary)
     dolfin_assert(facet->num_entities(D) == 2);
-    const Cell cell0(mesh, facet->entities(D)[0]);
-    const Cell cell1(mesh, facet->entities(D)[1]);
+    std::size_t cell_index_plus = facet->entities(D)[0];
+    std::size_t cell_index_minus = facet->entities(D)[1];
+
+    if (use_cell_domains && (*cell_domains)[cell_index_plus]
+        < (*cell_domains)[cell_index_minus])
+    {
+      std::swap(cell_index_plus, cell_index_minus);
+    }
+
+    // The convention '+' = 0, '-' = 1 is from ffc
+    const Cell cell0(mesh, cell_index_plus);
+    const Cell cell1(mesh, cell_index_minus);
 
     // Get local index of facet with respect to each cell
     std::size_t local_facet0 = cell0.index(*facet);
@@ -401,19 +406,20 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     for (std::size_t i = 0; i < form_rank; i++)
     {
       // Get dofs for each cell
-      const std::vector<dolfin::la_index>& cell_dofs0
+      const ArrayView<const dolfin::la_index> cell_dofs0
         = dofmaps[i]->cell_dofs(cell0.index());
-      const std::vector<dolfin::la_index>& cell_dofs1
+      const ArrayView<const dolfin::la_index> cell_dofs1
         = dofmaps[i]->cell_dofs(cell1.index());
 
       // Create space in macro dof vector
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
 
       // Copy cell dofs into macro dof vector
-      std::copy(cell_dofs0.begin(), cell_dofs0.end(),
+      std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
                 macro_dofs[i].begin());
-      std::copy(cell_dofs1.begin(), cell_dofs1.end(),
+      std::copy(cell_dofs1.data(), cell_dofs1.data() + cell_dofs1.size(),
                 macro_dofs[i].begin() + cell_dofs0.size());
+      macro_dof_ptrs[i].set(macro_dofs[i]);
     }
 
     // Tabulate interior facet tensor on macro element
@@ -438,9 +444,6 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
       dolfin_assert(ghost_rank != -1);
       if (ghost_rank < my_mpi_rank)
         continue;
-      //++counter1;
-      //for (std::size_t i = 0; i < ufc.macro_A.size(); ++i)
-      //  ufc.macro_A[i] *= 0.5;
     }
 
     // Add entries to global tensor
@@ -450,13 +453,14 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_vertices(GenericTensor& A,
-                                  const Form& a,
-                                  UFC& ufc,
-                                  std::shared_ptr<const MeshFunction<std::size_t> > domains)
+void Assembler::assemble_vertices(
+  GenericTensor& A,
+  const Form& a,
+  UFC& ufc,
+  std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   // Skip assembly if there are no point integrals
-  if (!ufc.form.has_point_integrals())
+  if (!ufc.form.has_vertex_integrals())
     return;
 
   // Set timer
@@ -465,7 +469,8 @@ void Assembler::assemble_vertices(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-  // Compute cell and vertex - cell connectivity if not already computed
+  // Compute cell and vertex - cell connectivity if not already
+  // computed
   const std::size_t D = mesh.topology().dim();
   mesh.init(0);
   mesh.init(0, D);
@@ -473,16 +478,17 @@ void Assembler::assemble_vertices(GenericTensor& A,
 
   // Logics for shared vertices
   const bool has_shared_vertices = mesh.topology().have_shared_entities(0);
-  const std::map<unsigned int, std::set<unsigned int> >& shared_vertices = \
-    mesh.topology().shared_entities(0);
+  const std::map<unsigned int, std::set<unsigned int> >&
+    shared_vertices = mesh.topology().shared_entities(0);
 
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> dofmaps;
+  std::vector<const GenericDofMap*> dofmaps(form_rank);
 
-  // Create a vector for storying local to local map for vertex entity dofs
+  // Create a vector for storying local to local map for vertex entity
+  // dofs
   std::vector<std::vector<std::size_t> > local_to_local_dofs(form_rank);
 
   // Create a values vector to be used to fan out local tabulated
@@ -490,23 +496,22 @@ void Assembler::assemble_vertices(GenericTensor& A,
   std::vector<double> local_values(1);
 
   // Vector to hold local dof map for a vertex
-  std::vector< std::vector<dolfin::la_index> > global_dofs(form_rank);
-  std::vector< const std::vector<dolfin::la_index>* > global_dofs_p(form_rank);
+  std::vector<std::vector<dolfin::la_index>> global_dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> global_dofs_p(form_rank);
   std::vector<dolfin::la_index> local_dof_size(form_rank);
-
   for (std::size_t i = 0; i < form_rank; ++i)
   {
-    dofmaps.push_back(a.function_space(i)->dofmap().get());
+    dofmaps[i] = a.function_space(i)->dofmap().get();
 
     // Check that the test and trial space as dofs on the vertices
-    if (dofmaps[i]->num_entity_dofs(0)==0)
+    if (dofmaps[i]->num_entity_dofs(0) == 0)
     {
       dolfin_error("Assembler.cpp",
                    "assemble form over vertices",
                    "Expecting test and trial spaces to have dofs on "\
                    "vertices for point integrals");
     }
-    
+
     // Check that the test and trial spaces do not have dofs other
     // than on vertices
     for (std::size_t j = 1; j <= D; j++)
@@ -519,31 +524,31 @@ void Assembler::assemble_vertices(GenericTensor& A,
                      "vertices for point integrals");
       }
     }
-    
+
     // Resize local values so it can hold dofs on one vertex
     local_values.resize(local_values.size()*dofmaps[i]->num_entity_dofs(0));
 
-    // Resize local to local map according to the number of vertex entities dofs
+    // Resize local to local map according to the number of vertex
+    // entities dofs
     local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
 
     // Resize local dof map vector
     global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
-    
+
     // Get size of local dofs
-    local_dof_size[i] = dofmaps[i]->ownership_range().second    \
+    local_dof_size[i] = dofmaps[i]->ownership_range().second
       - dofmaps[i]->ownership_range().first;
 
-    // Get pointer to global dofs 
-    global_dofs_p[i] = &global_dofs[i];
-
+    // Get pointer to global dofs
+    global_dofs_p[i].set(global_dofs[i]);
   }
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
 
   // Exterior point integral
-  const ufc::point_integral* integral
-    = ufc.default_point_integral.get();
+  const ufc::vertex_integral* integral
+    = ufc.default_vertex_integral.get();
 
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
@@ -551,7 +556,7 @@ void Assembler::assemble_vertices(GenericTensor& A,
   // MPI rank
   const unsigned int my_mpi_rank = MPI::rank(mesh.mpi_comm());
 
-  // Assemble over vertices 
+  // Assemble over vertices
   ufc::cell ufc_cell;
   std::vector<double> vertex_coordinates;
   Progress p(AssemblerBase::progress_message(A.rank(), "vertices"),
@@ -560,7 +565,7 @@ void Assembler::assemble_vertices(GenericTensor& A,
   {
     // Get integral for sub domain (if any)
     if (use_domains)
-      integral = ufc.get_point_integral((*domains)[*vert]);
+      integral = ufc.get_vertex_integral((*domains)[*vert]);
 
     // Skip integral if zero
     if (!integral)
@@ -572,27 +577,25 @@ void Assembler::assemble_vertices(GenericTensor& A,
       // Find shared processes for this global vertex
       std::map<unsigned int, std::set<unsigned int> >::const_iterator e;
       e = shared_vertices.find(vert->index());
-      
+
       // If vertex is shared and this rank is not the lowest do not
       // include the contribution from this vertex to scalar sum
       if (e != shared_vertices.end())
       {
-
         bool skip_vertex = false;
         std::set<unsigned int>::const_iterator it;
-        for (it=e->second.begin(); it!=e->second.end(); it++)
+        for (it = e->second.begin(); it != e->second.end(); it++)
         {
           // Check if a shared vertex has a lower process rank
-          if (*it<my_mpi_rank)
+          if (*it < my_mpi_rank)
           {
             skip_vertex = true;
             break;
           }
         }
-        
+
         if (skip_vertex)
           continue;
-
       }
     }
 
@@ -601,10 +604,10 @@ void Assembler::assemble_vertices(GenericTensor& A,
 
     // Check that cell is not a ghost
     dolfin_assert(!mesh_cell.is_ghost());
-    
+
     // Get local index of vertex with respect to the cell
     const std::size_t local_vertex = mesh_cell.index(*vert);
-    
+
     // Update UFC cell
     mesh_cell.get_cell_data(ufc_cell);
     mesh_cell.get_vertex_coordinates(vertex_coordinates);
@@ -621,25 +624,24 @@ void Assembler::assemble_vertices(GenericTensor& A,
                               ufc_cell.orientation);
 
     // For rank 1 and 2 tensors we need to check if tabulated dofs for
-    // the test space is within the local range 
-
+    // the test space is within the local range
     bool owns_all_dofs = true;
     for (std::size_t i = 0; i < form_rank; ++i)
     {
       // Get local-to-global dof maps for cell
-      dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
-      
+      dofs[i] = dofmaps[i]->cell_dofs(mesh_cell.index());
+
       // Get local dofs of the local vertex
       dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0, local_vertex);
 
       // Copy cell dofs to local dofs and check owner ship range
       for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
       {
-        global_dofs[i][j] = (*dofs[i])[local_to_local_dofs[i][j]];
+        global_dofs[i][j] = dofs[i][local_to_local_dofs[i][j]];
 
         // It is the dofs for the test space that determines if a dof
         // is owned by a process, therefore i==0
-        if (i==0 && global_dofs[i][j] >= local_dof_size[i])
+        if (i == 0 && global_dofs[i][j] >= local_dof_size[i])
         {
           owns_all_dofs = false;
           break;
@@ -652,49 +654,39 @@ void Assembler::assemble_vertices(GenericTensor& A,
       continue;
 
     // Scalar
-    if (form_rank==0)
+    if (form_rank == 0)
     {
-
       // Add entries to global tensor
       A.add_local(ufc.A.data(), dofs);
-      
     }
-
-    // Vector
-    else if (form_rank==1)
+    else if (form_rank == 1)
     {
-      
       // Copy tabulated tensor to local value vector
       for (std::size_t i = 0; i < local_to_local_dofs[0].size(); ++i)
-      {
         local_values[i] = ufc.A[local_to_local_dofs[0][i]];
-      }
 
       // Add local entries to global tensor
       A.add_local(local_values.data(), global_dofs_p);
-
     }
-
-    // Matrix
     else
     {
-
       // Copy tabulated tensor to local value vector
-      const std::size_t num_cols = dofs[1]->size();
+      const std::size_t num_cols = dofs[1].size();
       for (std::size_t i = 0; i < local_to_local_dofs[0].size(); ++i)
       {
         for (std::size_t j = 0; j < local_to_local_dofs[1].size(); ++j)
         {
-          local_values[i*local_to_local_dofs[1].size()+j] = \
-            ufc.A[local_to_local_dofs[0][i]*num_cols+local_to_local_dofs[1][j]];
-        }        
+          local_values[i*local_to_local_dofs[1].size() + j]
+            = ufc.A[local_to_local_dofs[0][i]*num_cols
+                    + local_to_local_dofs[1][j]];
+        }
       }
 
       // Add local entries to global tensor
       A.add_local(local_values.data(), global_dofs_p);
     }
-    
+
     p++;
-  }  
+  }
 }
 //-----------------------------------------------------------------------------

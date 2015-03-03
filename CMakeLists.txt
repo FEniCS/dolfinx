@@ -9,9 +9,12 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "5")
-set(DOLFIN_VERSION_MICRO "0+")
+set(DOLFIN_VERSION_MINOR "6")
+set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
+if (NOT DOLFIN_VERSION_RELEASE)
+  set(DOLFIN_VERSION "${DOLFIN_VERSION}dev")
+endif()
 
 #------------------------------------------------------------------------------
 # Check compiler version
@@ -208,9 +211,11 @@ endif()
 
 # FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
 
-# Add debug definitions
+# Set debug definitions
 if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DDEBUG")
+else()
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DNDEBUG")
 endif()
 
 # Add flags for generating code coverage reports
@@ -287,7 +292,8 @@ if (DOLFIN_ENABLE_MPI)
   endif()
 endif()
 
-if (DOLFIN_ENABLE_OPENMP)
+# Test for OpenMP (but not for Clang, which does not support OpenMP)
+if (DOLFIN_ENABLE_OPENMP AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   find_package(OpenMP)
   include(CheckOpenMP)
   check_openmp_unsigned_int_loop_control_variable(OPENMP_UINT_TEST_RUNS)
@@ -317,17 +323,17 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 1.5.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.6.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.5.0.\n"
+    "compatible with requested version 1.6.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
 endif()
 
 # Check for required package Eigen3
-find_package(Eigen3 3.0.0 REQUIRED)
+find_package(Eigen3 3.2.0 REQUIRED)
 
 # Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
@@ -1071,6 +1077,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     DEPENDS run_unittests_2)
+
   # ... attempt at controlling dependency execution order ...
   add_custom_target(run_unittests_2
     DEPENDS run_unittests_py_mpi run_unittests_1)

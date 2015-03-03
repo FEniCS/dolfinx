@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg
+// Copyright (C) 2006-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,9 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2009-2011.
-//
-// First added:  2006-06-02
-// Last changed: 2014-05-22
+// Modified by Martin Alnaes, 2015
 
 #ifndef __FACET_H
 #define __FACET_H
@@ -84,17 +82,6 @@ namespace dolfin
     /// calling this function.
     bool exterior() const;
 
-    // FIXME: This function should take care of the case where adjacent cells
-    // FIXME: live on different processes
-
-    /// Return adjacent cells. An optional argument that lists for
-    /// each facet the index of the first cell may be given to specify
-    /// the ordering of the two cells. If not specified, the ordering
-    /// will depend on the (arbitrary) ordering of the mesh
-    /// connectivity.
-    std::pair<const Cell, const Cell>
-      adjacent_cells(const std::vector<std::size_t>* facet_orientation) const;
-
   };
 
   /// A FacetIterator is a MeshEntityIterator of topological
@@ -115,8 +102,9 @@ namespace dolfin
     FacetFunction(const Mesh& mesh, const T& value)
       : MeshFunction<T>(mesh, mesh.topology().dim() - 1, value) {}
 
-    //FacetFunction(boost:shared_ptr<const Mesh> mesh, const T& value)
-    //  : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {}
+    FacetFunction(std::shared_ptr<const Mesh> mesh, const T& value)
+      : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {}
+
   };
 
 }

@@ -134,7 +134,7 @@ void PointIntegralSolver::step(double dt)
 
     // Get all dofs for cell
     // FIXME: Should we include logics about empty dofmaps?
-    const std::vector<dolfin::la_index>& cell_dofs
+    const ArrayView<const dolfin::la_index> cell_dofs
       = _dofmap.cell_dofs(cell.index());
 
     // Tabulate local-local dofmap
@@ -182,8 +182,8 @@ void PointIntegralSolver::step(double dt)
     Timer t_last_stage("Last stage: tabulate_tensor");
 
     // Last stage point integral
-    const ufc::point_integral& integral
-      = *_last_stage_ufc->default_point_integral;
+    const ufc::vertex_integral& integral
+      = *_last_stage_ufc->default_vertex_integral;
 
     // Update coefficients for last stage
     // TODO: Pass suitable bool vector here to avoid tabulating all
@@ -227,8 +227,8 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
   const unsigned int local_vert = _vertex_map[vert_ind].second;
 
   // Point integral
-  const ufc::point_integral& integral
-    = *_ufcs[stage][0]->default_point_integral;
+  const ufc::vertex_integral& integral
+    = *_ufcs[stage][0]->default_vertex_integral;
 
   // Tabulate cell tensor
   Timer t_expl_tt("Explicit stage: tabulate_tensor");
@@ -313,7 +313,7 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
 					    int coefficient_index,
 					    const std::vector<double>& vertex_coordinates)
 {
-  const ufc::point_integral& J_integral = *loc_ufc.default_point_integral;
+  const ufc::vertex_integral& J_integral = *loc_ufc.default_vertex_integral;
 
   //Timer _timer_compute_jac("Implicit stage: Compute jacobian");
   //Timer t_impl_update("Update_cell");
@@ -441,7 +441,7 @@ void PointIntegralSolver::_check_forms()
     for (unsigned int j = 0; j < stage_forms[i].size(); j++)
     {
       // Check form includes at least PointIntegral
-      if (!stage_forms[i][j]->ufc_form()->has_point_integrals())
+      if (!stage_forms[i][j]->ufc_form()->has_vertex_integrals())
       {
 	dolfin_error("PointIntegralSolver.cpp",
 		     "constructing PointIntegralSolver",
@@ -455,7 +455,7 @@ void PointIntegralSolver::_check_forms()
       const unsigned int vert_per_cell
         = _mesh.topology()(_mesh.topology().dim(), 0).size(0);
 
-      if (vert_per_cell*dofs_per_vertex != dofmap.max_cell_dimension())
+      if (vert_per_cell*dofs_per_vertex != dofmap.max_element_dofs())
       {
       	dolfin_error("PointIntegralSolver.cpp",
       		     "constructing PointIntegralSolver",
@@ -629,7 +629,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     initial_residual = 1., relative_residual = 1.;
 
   // Get point integrals
-  const ufc::point_integral& F_integral = *loc_ufc_F.default_point_integral;
+  const ufc::vertex_integral& F_integral = *loc_ufc_F.default_vertex_integral;
 
   // Local solution
   std::vector<double>& u = _local_stage_solutions[stage];

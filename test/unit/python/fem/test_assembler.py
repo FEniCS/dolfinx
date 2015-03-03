@@ -331,12 +331,13 @@ def test_subdomain_assembly_form_1():
     reference = 7.33040364583
     assert round(assemble(M) - reference, 10) == 0
 
+    # This feature has been removed:
     # Check that given exterior_facet_domains override
-    new_boundaries = FacetFunction("size_t", mesh)
-    new_boundaries.set_all(0)
-    reference2 = 6.2001953125
-    value2 = assemble(M, exterior_facet_domains=new_boundaries)
-    assert round(value2 - reference2, 10) == 0
+    #new_boundaries = FacetFunction("size_t", mesh)
+    #new_boundaries.set_all(0)
+    #reference2 = 6.2001953125
+    #value2 = assemble(M, exterior_facet_domains=new_boundaries)
+    #assert round(value2 - reference2, 10) == 0
 
     # Check that the form itself assembles as before
     assert round(assemble(M) - reference, 10) == 0
@@ -406,18 +407,18 @@ def test_subdomain_assembly_form_1_multithreaded():
     assert round(assemble(M) - reference, 10) == 0
     parameters["num_threads"] = 0
 
+    # This feature has been removed:
     # Check that given exterior_facet_domains override
-    new_boundaries = FacetFunction("size_t", mesh)
-    new_boundaries.set_all(0)
-    reference2 = 6.2001953125
-    value2 = assemble(M, exterior_facet_domains=new_boundaries)
-    assert round(value2 - reference2, 10) == 0
-
+    #new_boundaries = FacetFunction("size_t", mesh)
+    #new_boundaries.set_all(0)
+    #reference2 = 6.2001953125
+    #value2 = assemble(M, exterior_facet_domains=new_boundaries)
+    #assert round(value2 - reference2, 10) == 0
     # Assemble form (multi-threaded)
-    parameters["num_threads"] = 4
-    assert round(assemble(M, exterior_facet_domains=new_boundaries) -\
-			reference2, 10) == 0
-    parameters["num_threads"] = 0
+    #parameters["num_threads"] = 4
+    #assert round(assemble(M, exterior_facet_domains=new_boundaries) -
+    #             reference2, 10) == 0
+    #parameters["num_threads"] = 0
 
     # Check that the form itself assembles as before
     assert round(assemble(M) - reference, 10) == 0

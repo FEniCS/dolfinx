@@ -144,7 +144,7 @@ namespace dolfin
 
     /// Gather values, one primitive from each process (MPI_Allgather)
     template<typename T>
-      static void all_gather(const MPI_Comm comm, const T& in_value,
+      static void all_gather(const MPI_Comm comm, const T in_value,
                              std::vector<T>& out_values);
 
     /// Return global max value
@@ -577,7 +577,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template<typename T>
-    void dolfin::MPI::all_gather(const MPI_Comm comm, const T& in_value,
+    void dolfin::MPI::all_gather(const MPI_Comm comm, const T in_value,
                                  std::vector<T>& out_values)
   {
     #ifdef HAS_MPI

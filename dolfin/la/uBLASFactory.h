@@ -104,32 +104,24 @@ namespace dolfin
     }
 
     /// Return a list of available LU solver methods
-    std::vector<std::pair<std::string, std::string> >
-      lu_solver_methods() const
+    std::map<std::string, std::string> lu_solver_methods() const
     {
-      std::vector<std::pair<std::string, std::string> > methods;
-      methods.push_back(std::make_pair("default",
-                                       "default LU solver"));
+      std::map<std::string, std::string> methods
+        = { {"default", "default LU solver"} };
       #ifdef HAS_UMFPACK
-      methods.push_back(std::make_pair("umfpack",
-                                       "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+      methods.insert(std::make_pair("umfpack",
+                                    "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
       #endif
       return methods;
     }
 
     /// Return a list of available Krylov solver methods
-    std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const
-    {
-      return uBLASKrylovSolver::methods();
-    }
+    std::map<std::string, std::string> krylov_solver_methods() const
+    { return uBLASKrylovSolver::methods(); }
 
     /// Return a list of available preconditioners
-    std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const
-    {
-      return uBLASKrylovSolver::preconditioners();
-    }
+    std::map<std::string, std::string> krylov_solver_preconditioners() const
+    { return uBLASKrylovSolver::preconditioners(); }
 
     /// Return singleton instance
     static uBLASFactory<Mat>& instance()

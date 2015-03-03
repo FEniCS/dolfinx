@@ -23,10 +23,9 @@
 //
 
 #include <vector>
-#include <Eigen/Dense>
 #include <ufc.h>
 
-#include <dolfin/common/Array.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -83,7 +82,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
     cell0->get_cell_data(c0);
 
     // Tabulate dofs for w on cell and store values
-    const std::vector<dolfin::la_index>& dofs
+    const ArrayView<const dolfin::la_index> dofs
       = W.dofmap()->cell_dofs(cell0->index());
 
     // Compute coefficients on this cell
@@ -104,7 +103,7 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
                                     const Cell& cell0,
                                     const std::vector<double>& vertex_coordinates0,
                                     const ufc::cell& c0,
-                                    const std::vector<dolfin::la_index>& dofs,
+                                    const ArrayView<const dolfin::la_index>& dofs,
                                     std::size_t& offset)
 {
   // Call recursively for mixed elements
@@ -168,11 +167,11 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
 
   // Insert resulting coefficients into global coefficient vector
   dolfin_assert(W.dofmap());
-  for (std::size_t i = 0; i < W.dofmap()->cell_dimension(cell0.index()); ++i)
+  for (std::size_t i = 0; i < W.dofmap()->num_element_dofs(cell0.index()); ++i)
     coefficients[dofs[i + offset]].push_back(x[i]);
 
   // Increase offset
-  offset += W.dofmap()->cell_dimension(cell0.index());
+  offset += W.dofmap()->num_element_dofs(cell0.index());
 }
 //-----------------------------------------------------------------------------
 void
@@ -250,13 +249,13 @@ Extrapolation::compute_unique_dofs(const Cell& cell,
                                    std::set<std::size_t>& unique_dofs)
 {
   dolfin_assert(V.dofmap());
-  const std::vector<dolfin::la_index>& dofs
+  const ArrayView<const dolfin::la_index> dofs
     = V.dofmap()->cell_dofs(cell.index());
 
   // Data structure for current cell
   std::map<std::size_t, std::size_t> dof2row;
 
-  for (std::size_t i = 0; i < V.dofmap()->cell_dimension(cell.index()); ++i)
+  for (std::size_t i = 0; i < V.dofmap()->num_element_dofs(cell.index()); ++i)
   {
     // Ignore if this degree of freedom is already considered
     if (unique_dofs.find(dofs[i]) != unique_dofs.end())

@@ -129,6 +129,7 @@
 %shared_ptr(dolfin::DomainBoundary)
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
+%shared_ptr(dolfin::MeshHierarchy)
 
 // NOTE: Most of the MeshFunctions are declared shared pointers in
 // NOTE: mesh/pre.i, mesh/post.i
@@ -163,6 +164,11 @@
 %shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double,\
             boost::numeric::ublas::row_major> >)
 %shared_ptr(dolfin::uBLASVector)
+
+%shared_ptr(dolfin::EigenKrylovSolver)
+%shared_ptr(dolfin::EigenLUSolver)
+%shared_ptr(dolfin::EigenMatrix)
+%shared_ptr(dolfin::EigenVector)
 
 #ifdef HAS_PETSC
 %shared_ptr(dolfin::PETScBaseMatrix)

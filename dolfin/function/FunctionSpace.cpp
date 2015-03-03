@@ -159,7 +159,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   expansion_coefficients.zero();
 
   // Initialize local arrays
-  std::vector<double> cell_coefficients(_dofmap->max_cell_dimension());
+  std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
 
   // Iterate over mesh and interpolate on each cell
   ufc::cell ufc_cell;
@@ -175,12 +175,12 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
                vertex_coordinates.data(), ufc_cell);
 
     // Tabulate dofs
-    const std::vector<dolfin::la_index>& cell_dofs
+    const ArrayView<const dolfin::la_index> cell_dofs
       = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
     expansion_coefficients.set_local(cell_coefficients.data(),
-                                     _dofmap->cell_dimension(cell->index()),
+                                     _dofmap->num_element_dofs(cell->index()),
                                      cell_dofs.data());
   }
 
@@ -292,7 +292,7 @@ void FunctionSpace::print_dofmap() const
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    const std::vector<dolfin::la_index>& dofs
+    const ArrayView<const dolfin::la_index> dofs
       = _dofmap->cell_dofs(cell->index());
     cout << cell->index() << ":";
     for (std::size_t i = 0; i < dofs.size(); i++)

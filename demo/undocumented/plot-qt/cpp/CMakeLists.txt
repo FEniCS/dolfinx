@@ -97,6 +97,7 @@ if (QT_FOUND AND VTK_FOUND AND QVTK_ENABLED)
 
 else()
 
-  message(STATUS "QT not found, or QT/VTK not enabled in DOLFIN. Not building " ${PROJECT_NAME})
+  # Build dummy executable to make regression tests happy on systems without QVTK
+  add_executable(${PROJECT_NAME} main.cpp)
 
 endif()

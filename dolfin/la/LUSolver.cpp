@@ -102,8 +102,7 @@ void LUSolver::init(std::string method)
   DefaultFactory factory;
 
   // Get list of available methods
-  std::vector<std::pair<std::string, std::string> >
-    methods = factory.lu_solver_methods();
+  std::map<std::string, std::string> methods = factory.lu_solver_methods();
 
   // Check that method is available
   if (!LinearSolver::in_list(method, methods))
