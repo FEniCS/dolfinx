@@ -1528,6 +1528,10 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
 HDF5Attribute HDF5File::attributes(const std::string dataset_name)
 {
   dolfin_assert(hdf5_file_open);
+  if (!has_dataset(dataset_name))
+    dolfin_error("HDF5File.cpp",
+                 "accessing attributes",
+                 "Dataset \"%s\" not found", dataset_name.c_str());
   return HDF5Attribute(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
