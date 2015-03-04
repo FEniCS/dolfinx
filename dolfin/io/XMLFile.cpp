@@ -85,7 +85,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
     XMLMesh::read(input_mesh, dolfin_node);
   }
 
-  if (MPI::rank(input_mesh.mpi_comm()) > 1)
+  if (MPI::size(input_mesh.mpi_comm()) > 1)
   {
     LocalMeshData local_mesh_data(input_mesh);
     MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data);
