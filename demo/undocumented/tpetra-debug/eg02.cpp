@@ -81,6 +81,10 @@ int main(int argc, char *argv[])
   }
 
   KrylovSolver solver(sol, pc);
+
+  std::cout << solver.parameters("preconditioner").str(true);
+
+
   solver.parameters["monitor_convergence"] = true;
   solver.set_operator(A);
 

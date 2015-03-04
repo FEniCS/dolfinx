@@ -38,7 +38,7 @@ namespace dolfin
 
   /// Implements Muelu preconditioner from Trilinos
 
-  class MueluPreconditioner : public TrilinosPreconditioner
+  class MueluPreconditioner : public TrilinosPreconditioner, public Variable
   {
 
   public:

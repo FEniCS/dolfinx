@@ -58,6 +58,7 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
   paramList.set("aggregation: max agg size", 9);
 
   _prec = MueLu::CreateTpetraPreconditioner(std::const_pointer_cast<TpetraMatrix>(P)->mat(), paramList);
+
 }
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::set(BelosKrylovSolver& solver)
@@ -81,6 +82,10 @@ Parameters MueluPreconditioner::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters()("preconditioner"));
   p.rename("muelu_preconditioner");
+
+  Teuchos::RCP<const Teuchos::ParameterList> pList = MueLu::MasterList::List();
+
+  pList->print();
 
   return p;
 }

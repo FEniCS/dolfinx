@@ -39,7 +39,7 @@ namespace dolfin
 
   /// Implements preconditioners using Ifpack2 from Trilinos
 
-  class Ifpack2Preconditioner : public TrilinosPreconditioner
+  class Ifpack2Preconditioner : public TrilinosPreconditioner, public Variable
   {
 
   public:
