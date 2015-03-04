@@ -335,9 +335,6 @@ endif()
 # Check for required package Eigen3
 find_package(Eigen3 3.2.0 REQUIRED)
 
-# Check for required package LibXml2
-find_package(LibXml2 REQUIRED)
-
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 

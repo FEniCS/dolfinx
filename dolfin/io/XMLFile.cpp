@@ -31,10 +31,10 @@
 
 #include "pugixml.hpp"
 
-#include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
@@ -42,9 +42,8 @@
 #include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include <dolfin/common/Timer.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "XMLFunctionData.h"
-#include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
 #include "XMLMeshFunction.h"
 #include "XMLMeshValueCollection.h"
@@ -75,7 +74,7 @@ XMLFile::~XMLFile()
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& input_mesh)
 {
-  if (MPI::size(input_mesh.mpi_comm()) == 1)
+  if (MPI::rank(input_mesh.mpi_comm()) == 0)
   {
     // Create XML doc and get DOLFIN node
     pugi::xml_document xml_doc;
@@ -85,16 +84,10 @@ void XMLFile::operator>> (Mesh& input_mesh)
     // Read mesh
     XMLMesh::read(input_mesh, dolfin_node);
   }
-  else
-  {
-    // Read local mesh data
-    Timer t("XML: readSAX");
-    LocalMeshData local_mesh_data(_mpi_comm);
-    XMLLocalMeshSAX xml_object(_mpi_comm, local_mesh_data, _filename);
-    xml_object.read();
-    t.stop();
 
-    // Partition and build mesh
+  if (MPI::rank(input_mesh.mpi_comm()) > 1)
+  {
+    LocalMeshData local_mesh_data(input_mesh);
     MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data);
   }
 }
@@ -112,19 +105,6 @@ void XMLFile::operator<< (const Mesh& output_mesh)
   pugi::xml_node node = write_dolfin(doc);
   XMLMesh::write(output_mesh, node);
   save_xml_doc(doc);
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator>> (LocalMeshData& input_data)
-{
-  XMLLocalMeshSAX xml_object(_mpi_comm, input_data, _filename);
-  xml_object.read();
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator<< (const LocalMeshData& output_data)
-{
-  dolfin_error("XMLFile.cpp",
-               "write local mesh data to XML file",
-               "Not implemented");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input)
@@ -178,8 +158,8 @@ void XMLFile::read_vector(std::vector<double>& input,
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const GenericVector& output)
 {
-  // Open file on process 0 for distributed objects and on all processes
-  // for local objects
+  // Open file on process 0 for distributed objects and on all
+  // processes for local objects
   if (MPI::rank(_mpi_comm) == 0)
   {
     pugi::xml_document doc;
@@ -365,16 +345,35 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
   // Create XML parser result
   pugi::xml_parse_result result;
 
+  // Check file size (prints warning in parallel if file is large)
+  //check_file_size(filename);
+
   // Get file path and extension
   const boost::filesystem::path path(_filename);
   const std::string extension = boost::filesystem::extension(path);
 
-  // FIXME: Check that file exists
+  // Check that file exists
   if (!boost::filesystem::is_regular_file(_filename))
   {
     dolfin_error("XMLFile.cpp",
                  "read data from XML file",
                  "Unable to open file \"%s\"", _filename.c_str());
+  }
+
+  // Get file size
+  if (dolfin::MPI::size(_mpi_comm) > 1)
+  {
+    const double size = boost::filesystem::file_size(path)/(1024.0*1024.0);
+
+    // Print warning if file size is greater than threshold
+    const std::size_t warning_size
+      = dolfin::parameters["warn_on_xml_file_size"];
+    if(size >= warning_size)
+    {
+      warning("XML file '%s' is very large. XML files are parsed in serial, \
+which is not sclable. Use XMDF/HDF5 for scalable IO in parallel",
+              path.filename().c_str());
+    }
   }
 
   // Load xml file (unzip if necessary) into parser

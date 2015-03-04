@@ -50,7 +50,7 @@ namespace dolfin
     {
       Parameters p("dolfin");
 
-      // General
+      //-- General
 
       // Prefix for timer tasks
       p.add("timer_prefix", "");
@@ -58,10 +58,12 @@ namespace dolfin
       // Allow extrapolation in function interpolation
       p.add("allow_extrapolation", false);
 
-      // Use exact or linear interpolation in ODESolution::eval()
-      p.add("exact_interpolation", true);
+      //-- Input
 
-      // Output
+      // Warn if reading large XML files in parallel (MB)
+      p.add("warn_on_xml_file_size", 100);
+
+      //-- Output
 
       // Print standard output on all processes
       p.add("std_out_all_processes", true);
@@ -69,8 +71,15 @@ namespace dolfin
       // Line width relative to edge length in SVG output
       p.add("relative_line_width", 0.025);
 
+      //-- Threading
+
       // Number of threads to run, 0 = run serial version
       p.add("num_threads", 0);
+
+      // Print the level of thread support provided by the MPI library
+      p.add("print_mpi_thread_support_level", false);
+
+      //-- dof ordering
 
       // DOF reordering when running in serial
       p.add("reorder_dofs_serial", true);
@@ -83,8 +92,7 @@ namespace dolfin
       p.add("dof_ordering_library", default_dof_ordering_library,
             {"Boost", "random", "SCOTCH"});
 
-      // Print the level of thread support provided by the MPI library
-      p.add("print_mpi_thread_support_level", false);
+      //-- Meshes
 
       // Mesh ghosting type
       p.add("ghost_mode", "none",
@@ -120,6 +128,13 @@ namespace dolfin
       p.add("Zoltan_PHG_REPART_MULTIPLIER", 1.0);
       #endif
 
+      // Mesh refinement
+      p.add("refinement_algorithm",
+            "plaza",
+            {"regular_cut", "plaza", "plaza_with_parent_facets"});
+
+      //-- Graphs
+
       // Graph coloring
       std::set<std::string> allowed_coloring_libraries;
       allowed_coloring_libraries.insert("Boost");
@@ -128,12 +143,9 @@ namespace dolfin
       #endif
       p.add("graph_coloring_library", "Boost", allowed_coloring_libraries);
 
-      // Mesh refinement
-      p.add("refinement_algorithm",
-            "plaza",
-            {"regular_cut", "plaza", "plaza_with_parent_facets"});
+      //-- Linear algebra
 
-      // Linear algebra
+      // Linear algebra backend
       std::string default_backend = "Eigen";
       std::set<std::string> allowed_backends = {"uBLAS", "STL", "Eigen"};
       #ifdef HAS_PETSC
