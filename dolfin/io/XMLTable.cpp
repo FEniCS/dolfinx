@@ -25,6 +25,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void XMLTable::write(const Table& table, pugi::xml_node xml_node)
 {
+  // Temporaries
+  auto it_double(table.dvalues.cbegin());
+  auto it_string(table.values.cbegin());
+
   // Add table node
   pugi::xml_node table_node = xml_node.append_child("table");
   table_node.append_attribute("name") = table.title().c_str();
@@ -38,9 +42,24 @@ void XMLTable::write(const Table& table, pugi::xml_node xml_node)
     {
       pugi::xml_node col_node = row_node.append_child("col");
       col_node.append_attribute("key") = table.cols[j].c_str();
-      col_node.append_attribute("type") = "double";
-      col_node.append_attribute("value")
-        = table.dvalues.at(std::make_pair(table.rows[i], table.cols[j]));
+      const auto key = std::make_pair(table.rows[i], table.cols[j]);
+      it_double = table.dvalues.find(key);
+      if (it_double != table.dvalues.end())
+      {
+        col_node.append_attribute("type") = "double";
+        col_node.append_attribute("value") = it_double->second;
+      }
+      else
+      {
+        it_string = table.values.find(key);
+        if (it_string == table.values.end())
+          dolfin_error("XMLTable.cpp",
+                       "write XML output for table",
+                       "Table is not rectangular, element(%u, %u) is missing",
+                       i, j);
+        col_node.append_attribute("type") = "string";
+        col_node.append_attribute("value") = it_string->second.c_str();
+      }
     }
   }
 }
