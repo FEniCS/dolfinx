@@ -157,6 +157,9 @@ namespace dolfin
     /// Sum values and return sum
     template<typename T> static T sum(MPI_Comm comm, const T& value);
 
+    /// Return average across comm; implemented only for T == Table
+    template<typename T> static T avg(MPI_Comm comm, const T& value);
+
     /// All reduce
     template<typename T, typename X> static
       T all_reduce(MPI_Comm comm, const T& value, X op);
@@ -200,6 +203,12 @@ namespace dolfin
     /// Return which process owns index (inverse of local_range)
     static unsigned int index_owner(MPI_Comm comm,
                                     std::size_t index, std::size_t N);
+
+    #ifdef HAS_MPI
+    /// Return average reduction operation; recognized by
+    /// all_reduce(MPI_Comm, Table&, MPI_Op)
+    static MPI_Op MPI_AVG();
+    #endif
 
   private:
 
@@ -635,6 +644,17 @@ namespace dolfin
     #endif
   }
   //---------------------------------------------------------------------------
+  template<typename T> T dolfin::MPI::avg(MPI_Comm comm, const T& value)
+  {
+    #ifdef HAS_MPI
+    dolfin_error("MPI.h",
+                 "perform average reduction",
+                 "Not implemented for this type");
+    #else
+    return value;
+    #endif
+  }
+  //---------------------------------------------------------------------------
   template<typename T>
     void dolfin::MPI::send_recv(MPI_Comm comm,
                                 const std::vector<T>& send_value,
@@ -678,6 +698,12 @@ namespace dolfin
   #ifdef HAS_MPI
   template<>
     Table dolfin::MPI::all_reduce(MPI_Comm, const Table&, MPI_Op);
+  #endif
+  //---------------------------------------------------------------------------
+  // Specialization for dolfin::log::Table class
+  #ifdef HAS_MPI
+  template<>
+    Table dolfin::MPI::avg(MPI_Comm, const Table&);
   #endif
   //---------------------------------------------------------------------------
 }

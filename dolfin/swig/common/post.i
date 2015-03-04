@@ -56,6 +56,7 @@ typedef struct {
 %template(max) dolfin::MPI::max<dolfin::Table>;
 %template(min) dolfin::MPI::min<dolfin::Table>;
 %template(sum) dolfin::MPI::sum<dolfin::Table>;
+%template(avg) dolfin::MPI::avg<dolfin::Table>;
 
 //-----------------------------------------------------------------------------
 // Ignore const array interface (Used if the Array type is a const)

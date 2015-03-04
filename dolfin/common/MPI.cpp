@@ -23,7 +23,7 @@
 // Modified by Martin Sandve Alnes 2014
 
 #include <numeric>
-#include <typeinfo>
+#include <algorithm>
 #include <dolfin/log/dolfin_log.h>
 #include "SubSystemsManager.h"
 #include "MPI.h"
@@ -193,14 +193,14 @@ template<>
   if (MPI::size(comm) == 1)
     return table;
 
-  // Prepare reduction operation
+  // Prepare reduction operation y := op(y, x)
   void (*op_impl)(double&, const double&) = NULL;
-  if (op == MPI_SUM)
-    op_impl = [](double& x, const double& y){ x += y; };
+  if (op == MPI_SUM || op == MPI_AVG())
+    op_impl = [](double& y, const double& x){ y += x; };
   else if (op == MPI_MIN)
-    op_impl = [](double& x, const double& y){ if (y<x) x = y; };
+    op_impl = [](double& y, const double& x){ if (x<y) y = x; };
   else if (op == MPI_MAX)
-    op_impl = [](double& x, const double& y){ if (y>x) x = y; };
+    op_impl = [](double& y, const double& x){ if (x>y) y = x; };
   else
     dolfin_error("MPI.h",
                  "perform reduction of Table",
@@ -229,12 +229,28 @@ template<>
   }
   dolfin_assert(values_ptr == values_all.data() + values_all.size());
 
+  // Weight by MPI size when averaging
+  if (op == MPI_AVG())
+  {
+    const double w = 1.0 / static_cast<double>(size(comm));
+    for (auto& it : dvalues_all)
+      it.second *= w;
+  }
+
   // Construct table to return
   Table table_all("[" + operation_map[op] + "] " + table.title());
-  for (auto it : dvalues_all)
+  for (auto& it : dvalues_all)
     table_all(it.first.first, it.first.second) = it.second;
 
   return table_all;
+}
+#endif
+//-----------------------------------------------------------------------------
+#ifdef HAS_MPI
+template<>
+  dolfin::Table dolfin::MPI::avg(MPI_Comm comm, const dolfin::Table& table)
+{
+  return all_reduce(comm, table, MPI_AVG());
 }
 #endif
 //-----------------------------------------------------------------------------
@@ -245,5 +261,20 @@ std::map<MPI_Op, std::string> dolfin::MPI::operation_map =
   { MPI_MAX, "MPI_MAX" },
   { MPI_MIN, "MPI_MIN" }
 };
+#endif
+//-----------------------------------------------------------------------------
+#ifdef HAS_MPI
+MPI_Op dolfin::MPI::MPI_AVG()
+{
+  // Return dummy MPI_Op which we idetify as average
+  static MPI_Op op = MPI_OP_NULL;
+  if (op == MPI_OP_NULL)
+  {
+    dolfin::SubSystemsManager::init_mpi();
+    MPI_Op_create(NULL, false, &op);
+    operation_map[op] = "MPI_AVG";
+  }
+  return op;
+}
 #endif
 //-----------------------------------------------------------------------------

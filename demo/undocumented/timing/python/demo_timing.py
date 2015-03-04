@@ -30,7 +30,7 @@ L = f*v*dx + g*v*ds
 u = Function(V)
 solve(a == L, u, bc)
 
-# List timings; MPI_MAX taken in parallel
+# List timings; average across processes in parallel
 list_timings()
 
 # Get Table object with timings
@@ -40,22 +40,26 @@ t = timings()
 t_sum = MPI.sum(mpi_comm_world(), t)
 t_min = MPI.min(mpi_comm_world(), t)
 t_max = MPI.max(mpi_comm_world(), t)
+t_avg = MPI.avg(mpi_comm_world(), t)
 
 # Print aggregate timings to screen
-print(t_sum.str(True))
-print(t_min.str(True))
-print(t_max.str(True))
+print('\n'+t_sum.str(True))
+print('\n'+t_min.str(True))
+print('\n'+t_max.str(True))
+print('\n'+t_avg.str(True))
 
 # Store to XML file on rank 0
 if MPI.rank(mpi_comm_world()) == 0:
     f_sum = File(mpi_comm_self(), "timings_mpi_sum.xml")
     f_min = File(mpi_comm_self(), "timings_mpi_min.xml")
     f_max = File(mpi_comm_self(), "timings_mpi_max.xml")
+    f_avg = File(mpi_comm_self(), "timings_mpi_avg.xml")
     f_sum << t_sum
     f_min << t_min
     f_max << t_max
+    f_avg << t_avg
 
-# Store separate timings on each rank
+# Store timings of each rank separately
 f = File(mpi_comm_self(), "timings_rank_%d.xml"
          % MPI.rank(mpi_comm_world()))
 f << t

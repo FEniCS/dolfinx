@@ -293,9 +293,11 @@ void Logger::list_timings(bool reset)
 {
   // Format and reduce to rank 0
   Table timings = this->timings(reset);
-  timings = MPI::max(MPI_COMM_WORLD, timings);
+  timings = MPI::avg(MPI_COMM_WORLD, timings);
   const std::string str = timings.str(true);
-  if (str.size() > 0)
+
+  // Print just on rank 0
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
     log(str);
 
   // Print maximum memory usage if available
