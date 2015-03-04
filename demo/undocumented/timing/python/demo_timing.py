@@ -50,14 +50,11 @@ print('\n'+t_avg.str(True))
 
 # Store to XML file on rank 0
 if MPI.rank(mpi_comm_world()) == 0:
-    f_sum = File(mpi_comm_self(), "timings_mpi_sum.xml")
-    f_min = File(mpi_comm_self(), "timings_mpi_min.xml")
-    f_max = File(mpi_comm_self(), "timings_mpi_max.xml")
-    f_avg = File(mpi_comm_self(), "timings_mpi_avg.xml")
-    f_sum << t_sum
-    f_min << t_min
-    f_max << t_max
-    f_avg << t_avg
+    f = File(mpi_comm_self(), "timings_aggregate.xml")
+    f << t_sum
+    f << t_min
+    f << t_max
+    f << t_avg
 
 # Store timings of each rank separately
 f = File(mpi_comm_self(), "timings_rank_%d.xml"
