@@ -107,7 +107,7 @@ namespace dolfin
     Table timings(bool reset=false);
 
     /// Print summary of timings and tasks, optionally clearing stored
-    /// timings
+    /// timings; collective on MPI_COMM_WORLD
     void list_timings(bool reset=false);
 
     /// Return timing (average) for given task, optionally clearing

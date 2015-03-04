@@ -29,6 +29,7 @@
 namespace dolfin
 {
   class MPI;
+  class XMLTable;
   class TableEntry;
 
   /// This class provides storage and pretty-printing for tables.
@@ -112,6 +113,9 @@ namespace dolfin
 
     // Allow MPI::all_reduce accessing dvalues
     friend class MPI;
+
+    // Allow XMLTable accessing data
+    friend class XMLTable;
 
   };
 

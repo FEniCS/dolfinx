@@ -43,7 +43,8 @@ namespace dolfin
   /// stored timings
   Table timings(bool reset=false);
 
-  /// List a summary of timings and tasks, optionally clearing stored timings
+  /// List a summary of timings and tasks, optionally clearing stored timings;
+  /// collective on MPI_COMM_WORLD
   void list_timings(bool reset=false);
 
   /// This function is deprecated, use list_timings
