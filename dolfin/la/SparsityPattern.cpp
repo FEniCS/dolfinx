@@ -41,9 +41,9 @@ SparsityPattern::SparsityPattern(std::size_t primary_dim)
 SparsityPattern::SparsityPattern(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& dims,
-  const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const std::vector<std::size_t>* > local_to_global,
-  const std::vector<const std::vector<int>* > off_process_owner,
+  const std::vector<std::pair<std::size_t, std::size_t>>& local_range,
+  const std::vector<ArrayView<const std::size_t>>& local_to_global,
+  const std::vector<ArrayView<const int>>& off_process_owner,
   const std::vector<std::size_t>& block_sizes,
   std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
@@ -56,8 +56,8 @@ void SparsityPattern::init(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const std::vector<std::size_t>* > local_to_global,
-  const std::vector<const std::vector<int>* > off_process_owner,
+  const std::vector<ArrayView<const std::size_t>>& local_to_global,
+  const std::vector<ArrayView<const int>>& off_process_owner,
   const std::vector<std::size_t>& block_sizes)
 {
   // Only rank 2 sparsity patterns are supported
@@ -85,14 +85,16 @@ void SparsityPattern::init(
   // Set ownership range
   _local_range = local_range;
 
-  // Store copy of nonlocal index to owning process map
+  // Store copy of local-to-global and nonlocal index to owning
+  // process map
+  _local_to_global.resize(off_process_owner.size());
+  _off_process_owner.resize(off_process_owner.size());
   for (std::size_t i = 0; i < off_process_owner.size(); ++i)
   {
-    dolfin_assert(local_to_global[i]);
-    _local_to_global.push_back(*local_to_global[i]);
-
-    dolfin_assert(off_process_owner[i]);
-    _off_process_owner.push_back(*off_process_owner[i]);
+    _local_to_global[i].assign(local_to_global[i].begin(),
+                               local_to_global[i].end());
+    _off_process_owner[i].assign(off_process_owner[i].begin(),
+                                 off_process_owner[i].end());
   }
 
   // Check that primary dimension is valid
