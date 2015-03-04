@@ -70,10 +70,11 @@ namespace dolfin
     // name of preconditioner
     std::string _name;
 
-    typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type,
-      global_ordinal_type, node_type> prec_type;
+    typedef Ifpack2::Preconditioner<double, int,
+                                    dolfin::la_index, node_type> prec_type;
 
-    // Ifpack2 preconditioner, to be constructed from a Tpetra Operator or Matrix
+    // Ifpack2 preconditioner, to be constructed from a
+    // Tpetra Operator or Matrix
     Teuchos::RCP<prec_type> _prec;
 
   };

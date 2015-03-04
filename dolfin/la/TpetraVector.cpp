@@ -83,7 +83,7 @@ void TpetraVector::apply(std::string mode)
   Teuchos::RCP<vector_type> y(new vector_type(_map));
 
   // Export from overlapping map x, to non-overlapping map y
-  Tpetra::Export<global_ordinal_type> exporter(xmap, _map);
+  Tpetra::Export<dolfin::la_index> exporter(xmap, _map);
 
   // Forward export to reduction vector y
   if (mode == "add")
@@ -196,11 +196,11 @@ bool TpetraVector::owns_index(std::size_t i) const
 
   // First check if global index exists on this process
   // Second check if this process is the owner
-  const local_ordinal_type idx = xmap->getLocalElement(i);
+  const int idx = xmap->getLocalElement(i);
 
   bool status;
 
-  if (idx == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
+  if (idx == Teuchos::OrdinalTraits<int>::invalid())
     status = false;
   else
     status = (node_list[idx] == mpi_rank);
@@ -214,12 +214,12 @@ void TpetraVector::get(double* block, std::size_t m,
   dolfin_assert(!_x.is_null());
 
   Teuchos::RCP<const map_type> xmap(_x->getMap());
-  Teuchos::ArrayRCP<const scalar_type> xarr = _x->getData();
+  Teuchos::ArrayRCP<const double> xarr = _x->getData();
 
   for (std::size_t i = 0; i != m; ++i)
   {
-    const local_ordinal_type idx = xmap->getLocalElement(rows[i]);
-    if (idx != Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
+    const int idx = xmap->getLocalElement(rows[i]);
+    if (idx != Teuchos::OrdinalTraits<int>::invalid())
       block[i] = xarr[idx];
   }
 }
@@ -232,7 +232,7 @@ void TpetraVector::update_ghost_values()
   Teuchos::RCP<vector_type> _y(new vector_type(_ghost_map));
 
   // Export from non-overlapping map x, to overlapping map y
-  Tpetra::Import<global_ordinal_type> importer(xmap, _ghost_map);
+  Tpetra::Import<dolfin::la_index> importer(xmap, _ghost_map);
 
   _y->doImport(*_x, importer, Tpetra::INSERT);
 
@@ -242,7 +242,7 @@ void TpetraVector::update_ghost_values()
 void TpetraVector::get_local(double* block, std::size_t m,
                              const dolfin::la_index* rows) const
 {
-  Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
+  Teuchos::ArrayRCP<const double> arr = _x->getData();
   for (std::size_t i = 0; i!=m; ++i)
   {
     if (_x->getMap()->isNodeLocalElement(rows[i]))
@@ -305,7 +305,7 @@ void TpetraVector::get_local(std::vector<double>& values) const
   dolfin_assert(!_x.is_null());
   std::cout << "get_local (vector)" << "\n";
   values.resize(local_size());
-  Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
+  Teuchos::ArrayRCP<const double> arr = _x->getData();
   std::copy(arr.get(), arr.get() + values.size(), values.begin());
 }
 //-----------------------------------------------------------------------------
@@ -323,7 +323,7 @@ void TpetraVector::set_local(const std::vector<double>& values)
   if (num_values == 0)
     return;
 
-  Teuchos::ArrayRCP<scalar_type> arr = _x->getDataNonConst();
+  Teuchos::ArrayRCP<double> arr = _x->getDataNonConst();
   std::copy(values.begin(), values.end(), arr.get());
 }
 //-----------------------------------------------------------------------------
@@ -363,7 +363,7 @@ void TpetraVector::gather(GenericVector& y,
                  "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
   }
 
-  const Tpetra::Export<global_ordinal_type>
+  const Tpetra::Export<dolfin::la_index>
     exporter(_x->getMap(), _y._x->getMap());
   _y._x->doExport(*_x, exporter, Tpetra::INSERT);
 }
@@ -394,10 +394,10 @@ void TpetraVector::gather_on_zero(std::vector<double>& v) const
   Teuchos::RCP<vector_type> y(new vector_type(ymap));
 
   // Export from overlapping vector x to non-overlapping vector y
-  const Tpetra::Export<global_ordinal_type>
+  const Tpetra::Export<dolfin::la_index>
     exporter(_x->getMap(), y->getMap());
   y->doExport(*_x, exporter, Tpetra::INSERT);
-  Teuchos::ArrayRCP<const scalar_type> yarr(y->getData());
+  Teuchos::ArrayRCP<const double> yarr(y->getData());
   std::copy(yarr.get(), yarr.get() + v.size(), v.begin());
 }
 //-----------------------------------------------------------------------------
@@ -435,7 +435,7 @@ double TpetraVector::norm(std::string norm_type) const
 double TpetraVector::min() const
 {
   dolfin_assert(!_x.is_null());
-  Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
+  Teuchos::ArrayRCP<const double> arr = _x->getData();
   double min_local
     = *std::min_element(arr.get(), arr.get() + arr.size());
 
@@ -445,7 +445,7 @@ double TpetraVector::min() const
 double TpetraVector::max() const
 {
   dolfin_assert(!_x.is_null());
-  Teuchos::ArrayRCP<const scalar_type> arr = _x->getData();
+  Teuchos::ArrayRCP<const double> arr = _x->getData();
   double max_local
     = *std::max_element(arr.get(), arr.get() + arr.size());
 
@@ -462,7 +462,7 @@ double TpetraVector::sum() const
   _x->getMap()->getRemoteIndexList(_x->getMap()->getNodeElementList(),
                                    _node_list);
 
-  Teuchos::ArrayRCP<const scalar_type> arr(_x->getData());
+  Teuchos::ArrayRCP<const double> arr(_x->getData());
 
   int mpi_rank = _x->getMap()->getComm()->getRank();
   double _sum = 0.0;
@@ -612,10 +612,8 @@ void TpetraVector::_init(MPI_Comm comm,
   // Save a map for the ghosting of values on other processes
   if (local_to_global_map.size() != 0)
   {
-    std::vector<global_ordinal_type> ltmp(local_to_global_map.begin(),
-                                          local_to_global_map.end());
-
-    const Teuchos::ArrayView<global_ordinal_type> local_indices(ltmp);
+    const Teuchos::ArrayView<const dolfin::la_index>
+      local_indices(local_to_global_map);
     _ghost_map = Teuchos::rcp(new map_type(N, local_indices, 0, _comm));
   }
   else

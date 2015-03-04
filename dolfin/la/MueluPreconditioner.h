@@ -63,8 +63,8 @@ namespace dolfin
 
   private:
 
-    typedef MueLu::TpetraOperator<scalar_type, local_ordinal_type,
-      global_ordinal_type, node_type> prec_type;
+    typedef MueLu::TpetraOperator<double, int, dolfin::la_index,
+                                  node_type> prec_type;
 
     // Muelu preconditioner, to be constructed from a Tpetra Operator or Matrix
     Teuchos::RCP<prec_type> _prec;

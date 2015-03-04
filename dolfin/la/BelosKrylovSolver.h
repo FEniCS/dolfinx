@@ -34,13 +34,11 @@
 #include "TpetraMatrix.h"
 #include "TrilinosPreconditioner.h"
 
-typedef Tpetra::Operator<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> op_type;
+typedef Tpetra::Operator<double, int, dolfin::la_index, node_type> op_type;
 
-typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> mv_type;
+typedef Tpetra::MultiVector<double, int, dolfin::la_index, node_type> mv_type;
 
-typedef Belos::LinearProblem<scalar_type, mv_type, op_type> problem_type;
+typedef Belos::LinearProblem<double, mv_type, op_type> problem_type;
 
 namespace dolfin
 {
@@ -144,7 +142,7 @@ namespace dolfin
                           const GenericVector& b) const;
 
     // Belos solver pointer
-    Teuchos::RCP<Belos::SolverManager<scalar_type, mv_type, op_type> >
+    Teuchos::RCP<Belos::SolverManager<double, mv_type, op_type> >
       _solver;
 
     // The preconditioner, if any

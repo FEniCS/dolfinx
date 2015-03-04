@@ -47,7 +47,7 @@ BelosKrylovSolver::preconditioners()
 std::map<std::string, std::string>
 BelosKrylovSolver::methods()
 {
-  Belos::SolverFactory<scalar_type, mv_type, op_type> factory;
+  Belos::SolverFactory<double, mv_type, op_type> factory;
   Teuchos::Array<std::string> methods = factory.supportedSolverNames();
 
   std::map<std::string, std::string> result;
@@ -274,7 +274,7 @@ void BelosKrylovSolver::init(const std::string& method)
   if (method=="default")
     method_name = "GMRES";
 
-  Belos::SolverFactory<scalar_type, mv_type, op_type> factory;
+  Belos::SolverFactory<double, mv_type, op_type> factory;
   _solver = factory.create(method_name, dummyParams);
   _problem = Teuchos::rcp(new problem_type);
 }

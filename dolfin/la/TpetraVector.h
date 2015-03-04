@@ -38,12 +38,9 @@
 #include <Teuchos_oblackholestream.hpp>
 
 // Tpetra typedefs with default values
-typedef Tpetra::Vector<>::scalar_type scalar_type;
-typedef Tpetra::Vector<>::local_ordinal_type local_ordinal_type;
-typedef Tpetra::Vector<>::global_ordinal_type global_ordinal_type;
 typedef Tpetra::Vector<>::node_type node_type;
-typedef Tpetra::Map<> map_type;
-typedef Tpetra::Vector<> vector_type;
+typedef Tpetra::Map<int, dolfin::la_index, node_type> map_type;
+typedef Tpetra::Vector<double, int, dolfin::la_index, node_type> vector_type;
 
 namespace dolfin
 {
