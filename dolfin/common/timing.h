@@ -27,16 +27,16 @@
 namespace dolfin
 {
 
-  /// Timing functions measure CPU time as determined by clock(),
-  /// the precision of which seems to be 0.01 seconds.
+  /// Timing functions measure wall time the precision of which seems
+  /// to be in the order of micro-seconds.
 
   /// Start timing (should not be used internally in DOLFIN!)
   void tic();
 
-  /// Return elapsed CPU time (should not be used internally in DOLFIN!)
+  /// Return elapsed wall time (should not be used internally in DOLFIN!)
   double toc();
 
-  /// Return current CPU time used by process
+  /// Return wall time elapsed since some implementation dependent epoch
   double time();
 
   /// Return a summary of timings and tasks in a Table, optionally clearing
