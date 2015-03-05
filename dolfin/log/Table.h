@@ -77,9 +77,6 @@ namespace dolfin
     /// Get value of table entry
     double get_value(std::string row, std::string col) const;
 
-    /// Return table title
-    std::string title() const;
-
     /// Assignment operator
     const Table& operator= (const Table& table);
 
@@ -90,9 +87,6 @@ namespace dolfin
     std::string str_latex() const;
 
   private:
-
-    // Table title
-    std::string _title;
 
     // Rows
     std::vector<std::string> rows;

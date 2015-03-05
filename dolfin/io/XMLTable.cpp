@@ -31,7 +31,7 @@ void XMLTable::write(const Table& table, pugi::xml_node xml_node)
 
   // Add table node
   pugi::xml_node table_node = xml_node.append_child("table");
-  table_node.append_attribute("name") = table.title().c_str();
+  table_node.append_attribute("name") = table.name().c_str();
 
   // Loop over rows and columns
   for (std::size_t i = 0; i < table.rows.size(); ++i)

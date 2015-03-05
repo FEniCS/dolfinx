@@ -33,8 +33,9 @@ typedef std::vector<std::string>::const_iterator iterator;
 
 //-----------------------------------------------------------------------------
 Table::Table(std::string title, bool right_justify)
-  : _title(title), _right_justify(right_justify)
+  :  _right_justify(right_justify)
 {
+  rename(title, label());
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -130,11 +131,6 @@ double Table::get_value(std::string row, std::string col) const
   return it->second;
 }
 //-----------------------------------------------------------------------------
-std::string Table::title() const
-{
-  return _title;
-}
-//-----------------------------------------------------------------------------
 /* Removed after storing values as strings instead of double
 Table Table::operator+ (const Table& table) const
 {
@@ -177,7 +173,7 @@ Table Table::operator- (const Table& table) const
 //-----------------------------------------------------------------------------
 const Table& Table::operator= (const Table& table)
 {
-  _title = table._title;
+  rename(table.name(), label());
   _right_justify = table._right_justify;
 
   rows = table.rows;
@@ -204,7 +200,7 @@ std::string Table::str(bool verbose) const
     std::vector<std::size_t> col_sizes;
 
     // Format values and compute column sizes
-    col_sizes.push_back(_title.size());
+    col_sizes.push_back(name().size());
     for (std::size_t j = 0; j < cols.size(); j++)
       col_sizes.push_back(cols[j].size());
     for (std::size_t i = 0; i < rows.size(); i++)
@@ -227,8 +223,8 @@ std::string Table::str(bool verbose) const
       return "";
 
     // Write table
-    s << _title;
-    for (std::size_t k = 0; k < col_sizes[0] - _title.size(); k++)
+    s << name();
+    for (std::size_t k = 0; k < col_sizes[0] - name().size(); k++)
       s << " ";
     s << "  |";
     for (std::size_t j = 0; j < cols.size(); j++)
@@ -288,7 +284,7 @@ std::string Table::str_latex() const
 
   std::stringstream s;
 
-  s << _title << "\n";
+  s << name() << "\n";
   s << "\\begin{center}\n";
   s << "\\begin{tabular}{|l|";
   for (std::size_t j = 0; j < cols.size(); j++)

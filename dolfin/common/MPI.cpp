@@ -171,6 +171,17 @@ template<>
                                         const dolfin::Table& table,
                                         const MPI_Op op)
 {
+  const std::string new_title = "[" + operation_map[op] + "] "
+                              + table.name();
+
+  // Handle trivial reduction
+  if (MPI::size(comm) == 1)
+  {
+    Table table_all(table);
+    table_all.rename(new_title, table_all.label());
+    return table_all;
+  }
+
   // Get keys, values into containers
   std::string keys;
   std::vector<double> values;
@@ -188,10 +199,9 @@ template<>
   gather(comm, keys, keys_all, 0);
   gather(comm, values, values_all, 0);
 
+  // Return empty table on rank > 0
   if (MPI::rank(comm) > 0)
-    return Table();
-  if (MPI::size(comm) == 1)
-    return table;
+    return Table(new_title);
 
   // Prepare reduction operation y := op(y, x)
   void (*op_impl)(double&, const double&) = NULL;
@@ -238,7 +248,7 @@ template<>
   }
 
   // Construct table to return
-  Table table_all("[" + operation_map[op] + "] " + table.title());
+  Table table_all(new_title);
   for (auto& it : dvalues_all)
     table_all(it.first.first, it.first.second) = it.second;
 
