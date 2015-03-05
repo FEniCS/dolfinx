@@ -20,11 +20,9 @@
 
 #include <tuple>
 
-#include "MPI.h"
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogManager.h>
 #include <dolfin/log/Table.h>
-#include <dolfin/io/File.h>
 #include "Timer.h"
 #include "timing.h"
 
@@ -59,19 +57,7 @@ void dolfin::list_timings(bool reset)
 //-----------------------------------------------------------------------------
 void dolfin::dump_timings_to_xml(std::string filename, bool reset)
 {
-  Table t = timings(reset);
-
-  Table t_max = MPI::max(MPI_COMM_WORLD, t);
-  Table t_min = MPI::min(MPI_COMM_WORLD, t);
-  Table t_avg = MPI::avg(MPI_COMM_WORLD, t);
-
-  if (MPI::rank(MPI_COMM_WORLD) == 0)
-  {
-    File f(MPI_COMM_SELF, filename);
-    f << t_max;
-    f << t_min;
-    f << t_avg;
-  }
+  LogManager::logger.dump_timings_to_xml(filename, reset);
 }
 //-----------------------------------------------------------------------------
 Table dolfin::timings(bool reset)

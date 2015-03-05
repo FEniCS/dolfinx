@@ -111,6 +111,11 @@ namespace dolfin
     /// timings. MPI_AVG reduction is printed. Collective on MPI_COMM_WORLD.
     void list_timings(bool reset=false);
 
+    /// Dump a summary of timings and tasks to XML file, optionally clearing
+    /// stored timings. MPI_MAX, MPI_MIN and MPI_AVG reductions are stored.
+    /// Collective on MPI_COMM_WORLD.
+    void dump_timings_to_xml(std::string filename, bool reset=false);
+
     /// Return timing (count, total wall time, total user time,
     /// total system time) for given task, optionally clearing
     /// all timings for the task

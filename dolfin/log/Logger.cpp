@@ -43,6 +43,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/io/File.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
 #include "Logger.h"
@@ -309,6 +310,23 @@ void Logger::list_timings(bool reset)
     log(s.str());
   }
 
+}
+//-----------------------------------------------------------------------------
+void Logger::dump_timings_to_xml(std::string filename, bool reset)
+{
+  Table t = timings(reset);
+
+  Table t_max = MPI::max(MPI_COMM_WORLD, t);
+  Table t_min = MPI::min(MPI_COMM_WORLD, t);
+  Table t_avg = MPI::avg(MPI_COMM_WORLD, t);
+
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    File f(MPI_COMM_SELF, filename);
+    f << t_max;
+    f << t_min;
+    f << t_avg;
+  }
 }
 //-----------------------------------------------------------------------------
 Table Logger::timings(bool reset)
