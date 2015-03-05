@@ -55,9 +55,11 @@ namespace dolfin
   /// This function is deprecated, use list_timings
   void summary(bool reset=false);
 
-  /// Return timing (average) for given task, optionally clearing timing
-  /// for task
-  double timing(std::string task, bool reset=false);
+  /// Return timing (count, total wall time, total user time,
+  /// total system time) for given task, optionally clearing
+  /// all timings for the task
+  std::tuple<std::size_t, double, double, double>
+    timing(std::string task, bool reset=false);
 
 
 }

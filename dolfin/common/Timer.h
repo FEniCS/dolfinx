@@ -63,7 +63,7 @@ namespace dolfin
     /// Resume timer
     void resume();
 
-    /// Stop timer
+    /// Stop timer and return wall time elapsed
     double stop();
 
     /// DEPRECATED: Return value of timer (or time at start if not stopped)

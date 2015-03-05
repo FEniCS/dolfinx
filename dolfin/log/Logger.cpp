@@ -334,7 +334,8 @@ Table Logger::timings(bool reset)
   return table;
 }
 //-----------------------------------------------------------------------------
-double Logger::timing(std::string task, bool reset)
+std::tuple<std::size_t, double, double, double>
+  Logger::timing(std::string task, bool reset)
 {
   // Find timing
   auto it = _timings.find(task);
@@ -346,16 +347,14 @@ double Logger::timing(std::string task, bool reset)
                  "extract timing for task",
                  line.str());
   }
-
-  // Compute average
-  const std::size_t num_timings = std::get<0>(it->second);
-  const double total_time = std::get<1>(it->second);
-  const double average_time = total_time / static_cast<double>(num_timings);
+  // Prepare for return for the case of reset
+  const auto result = it->second;
 
   // Clear timing
-  _timings.erase(it);
+  if (reset)
+    _timings.erase(it);
 
-  return average_time;
+  return result;
 }
 //-----------------------------------------------------------------------------
 void Logger::monitor_memory_usage()

@@ -111,9 +111,11 @@ namespace dolfin
     /// timings. MPI_AVG reduction is printed. Collective on MPI_COMM_WORLD.
     void list_timings(bool reset=false);
 
-    /// Return timing (average) for given task, optionally clearing
-    /// timing for task
-    double timing(std::string task, bool reset=false);
+    /// Return timing (count, total wall time, total user time,
+    /// total system time) for given task, optionally clearing
+    /// all timings for the task
+    std::tuple<std::size_t, double, double, double>
+      timing(std::string task, bool reset=false);
 
     /// Monitor memory usage. Call this function at the start of a
     /// program to continuously monitor the memory usage of the

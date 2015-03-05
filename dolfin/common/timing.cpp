@@ -85,7 +85,8 @@ void dolfin::summary(bool reset)
   list_timings(reset);
 }
 //-----------------------------------------------------------------------------
-double dolfin::timing(std::string task, bool reset)
+std::tuple<std::size_t, double, double, double>
+  dolfin::timing(std::string task, bool reset)
 {
   return LogManager::logger.timing(task, reset);
 }
