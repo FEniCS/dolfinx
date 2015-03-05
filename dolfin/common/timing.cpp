@@ -30,6 +30,8 @@
 #include "MPI.h"
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogManager.h>
+#include <dolfin/log/Table.h>
+#include <dolfin/io/XMLFile.h>
 #include "timing.h"
 
 // We use boost::timer (std::clock) on Windows and otherwise the
@@ -89,6 +91,23 @@ double dolfin::time()
 void dolfin::list_timings(bool reset)
 {
   LogManager::logger.list_timings(reset);
+}
+//-----------------------------------------------------------------------------
+void dolfin::dump_timings_to_xml(std::string filename, bool reset)
+{
+  Table t = timings(reset);
+
+  Table t_max = MPI::max(MPI_COMM_WORLD, t);
+  Table t_min = MPI::min(MPI_COMM_WORLD, t);
+  Table t_avg = MPI::avg(MPI_COMM_WORLD, t);
+
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    XMLFile f(MPI_COMM_SELF, filename);
+    f << t_max;
+    f << t_min;
+    f << t_avg;
+  }
 }
 //-----------------------------------------------------------------------------
 Table dolfin::timings(bool reset)

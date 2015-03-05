@@ -43,9 +43,14 @@ namespace dolfin
   /// stored timings
   Table timings(bool reset=false);
 
-  /// List a summary of timings and tasks, optionally clearing stored timings;
-  /// collective on MPI_COMM_WORLD
+  /// List a summary of timings and tasks, optionally clearing stored timings.
+  /// MPI_AVG reduction is printed. Collective on MPI_COMM_WORLD.
   void list_timings(bool reset=false);
+
+  /// Dump a summary of timings and tasks to XML file, optionally clearing
+  /// stored timings. MPI_MAX, MPI_MIN and MPI_AVG reductions are stored.
+  /// Collective on MPI_COMM_WORLD.
+  void dump_timings_to_xml(std::string filename, bool reset=false);
 
   /// This function is deprecated, use list_timings
   void summary(bool reset=false);
@@ -53,6 +58,7 @@ namespace dolfin
   /// Return timing (average) for given task, optionally clearing timing
   /// for task
   double timing(std::string task, bool reset=false);
+
 
 }
 

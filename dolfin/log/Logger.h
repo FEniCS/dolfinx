@@ -106,8 +106,8 @@ namespace dolfin
     /// clearing stored timings
     Table timings(bool reset=false);
 
-    /// Print summary of timings and tasks, optionally clearing stored
-    /// timings; collective on MPI_COMM_WORLD
+    /// List a summary of timings and tasks, optionally clearing stored
+    /// timings. MPI_AVG reduction is printed. Collective on MPI_COMM_WORLD.
     void list_timings(bool reset=false);
 
     /// Return timing (average) for given task, optionally clearing

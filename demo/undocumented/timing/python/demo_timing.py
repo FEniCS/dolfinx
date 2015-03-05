@@ -60,3 +60,6 @@ if MPI.rank(mpi_comm_world()) == 0:
 f = File(mpi_comm_self(), "timings_rank_%d.xml"
          % MPI.rank(mpi_comm_world()))
 f << t
+
+# Helper function for storing rank-wise average, min and max
+dump_timings_to_xml("timings_avg_min_max.xml")
