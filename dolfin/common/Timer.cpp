@@ -55,10 +55,10 @@ void Timer::resume()
 double Timer::stop()
 {
   _timer.stop();
-  const double t = static_cast<double>(_timer.elapsed().wall) * 1e-9;
+  const auto elapsed = this->elapsed();
   if (_task.size() > 0)
-    LogManager::logger.register_timing(_task, t);
-  return t;
+    LogManager::logger.register_timing(_task, elapsed);
+  return std::get<0>(elapsed);
 }
 //-----------------------------------------------------------------------------
 double Timer::value() const

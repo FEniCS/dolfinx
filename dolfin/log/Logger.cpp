@@ -49,11 +49,6 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::pair<std::size_t, double> >::iterator
-map_iterator;
-typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator
-const_map_iterator;
-
 // Function for monitoring memory usage, called by thread
 #ifdef __linux__
 void _monitor_memory_usage(dolfin::Logger* logger)
@@ -264,28 +259,34 @@ void Logger::set_log_level(int log_level)
   _log_level = log_level;
 }
 //-----------------------------------------------------------------------------
-void Logger::register_timing(std::string task, double elapsed_time)
+void Logger::register_timing(std::string task,
+                             std::tuple<double, double, double> elapsed)
 {
-  // Remove small or negative numbers
-  if (elapsed_time < DOLFIN_EPS)
-    elapsed_time = 0.0;
+  dolfin_assert(elapsed >=
+    std::make_tuple(double(0.0), double(0.0), double(0.0)));
 
   // Print a message
   std::stringstream line;
-  line << "Elapsed time: " << elapsed_time << " (" << task << ")";
+  line << "Elapsed wall, usr, sys time: "
+       << std::get<0>(elapsed) << ", "
+       << std::get<1>(elapsed) << ", "
+       << std::get<2>(elapsed)
+       << " ("  << task << ")";
   log(line.str(), TRACE);
 
   // Store values for summary
-  map_iterator it = _timings.find(task);
+  const auto timing = std::tuple_cat(std::make_tuple(std::size_t(1)), elapsed);
+  auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    std::pair<std::size_t, double> timing(1, elapsed_time);
     _timings[task] = timing;
   }
   else
   {
-    it->second.first += 1;
-    it->second.second += elapsed_time;
+    std::get<0>(it->second) += std::get<0>(timing);
+    std::get<1>(it->second) += std::get<1>(timing);
+    std::get<2>(it->second) += std::get<2>(timing);
+    std::get<3>(it->second) += std::get<3>(timing);
   }
 }
 //-----------------------------------------------------------------------------
@@ -314,11 +315,11 @@ Table Logger::timings(bool reset)
 {
   // Generate timing table
   Table table("Summary of timings");
-  for (const_map_iterator it = _timings.begin(); it != _timings.end(); ++it)
+  for (auto& it : _timings)
   {
-    const std::string task    = it->first;
-    const std::size_t num_timings    = it->second.first;
-    const double total_time   = it->second.second;
+    const std::string task = it.first;
+    const std::size_t num_timings = std::get<0>(it.second);
+    const double total_time = std::get<1>(it.second);
     const double average_time = total_time / static_cast<double>(num_timings);
 
     table(task, "Average time") = average_time;
@@ -336,7 +337,7 @@ Table Logger::timings(bool reset)
 double Logger::timing(std::string task, bool reset)
 {
   // Find timing
-  map_iterator it = _timings.find(task);
+  auto it = _timings.find(task);
   if (it == _timings.end())
   {
     std::stringstream line;
@@ -347,8 +348,8 @@ double Logger::timing(std::string task, bool reset)
   }
 
   // Compute average
-  const std::size_t num_timings  = it->second.first;
-  const double total_time   = it->second.second;
+  const std::size_t num_timings = std::get<0>(it->second);
+  const double total_time = std::get<1>(it->second);
   const double average_time = total_time / static_cast<double>(num_timings);
 
   // Clear timing

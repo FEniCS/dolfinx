@@ -100,7 +100,8 @@ namespace dolfin
     inline int get_log_level() const { return _log_level; }
 
     /// Register timing (for later summary)
-    void register_timing(std::string task, double elapsed_time);
+    void register_timing(std::string task,
+                         std::tuple<double, double, double> elapsed);
 
     /// Return a summary of timings and tasks as a Table, optionally
     /// clearing stored timings
@@ -146,8 +147,10 @@ namespace dolfin
     // Optional stream for logging
     std::ostream* logstream;
 
-    // List of timings for tasks, map from string to (num_timings, total_time)
-    std::map<std::string, std::pair<std::size_t, double> > _timings;
+    // List of timings for tasks, map from string to
+    // (num_timings, total_wall_time, total_user_time, total_system_time)
+    std::map<std::string, std::tuple<std::size_t, double, double, double> >
+       _timings;
 
     // Thread used for monitoring memory usage
     std::unique_ptr<boost::thread> _thread_monitor_memory_usage;
