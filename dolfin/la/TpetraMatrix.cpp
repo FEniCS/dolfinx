@@ -1,4 +1,4 @@
-// Copyright (C) 2014
+// Copyright (C) 2014 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2014
+// First added: 2014-12-20
 
 #ifdef HAS_TRILINOS
 
@@ -201,13 +201,13 @@ std::pair<std::size_t, std::size_t> TpetraMatrix::local_range(std::size_t dim) c
   {
     Teuchos::RCP<const map_type> row_map(_matA->getRowMap());
     return std::make_pair<std::size_t, std::size_t>
-      (row_map->getMinGlobalIndex(), row_map->getMaxGlobalIndex());
+      (row_map->getMinGlobalIndex(), row_map->getMaxGlobalIndex() + 1);
   }
   else if (dim == 1)
   {
     Teuchos::RCP<const map_type> col_map(_matA->getColMap());
     return std::make_pair<std::size_t, std::size_t>
-      (col_map->getMinGlobalIndex(), col_map->getMaxGlobalIndex());
+      (col_map->getMinGlobalIndex(), col_map->getMaxGlobalIndex() + 1);
   }
 
   return std::make_pair(0,0);

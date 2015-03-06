@@ -35,10 +35,7 @@
 #include "TrilinosPreconditioner.h"
 
 typedef Tpetra::Operator<double, int, dolfin::la_index, node_type> op_type;
-
-typedef Tpetra::MultiVector<double, int, dolfin::la_index, node_type> mv_type;
-
-typedef Belos::LinearProblem<double, mv_type, op_type> problem_type;
+typedef Belos::LinearProblem<double, vector_type, op_type> problem_type;
 
 namespace dolfin
 {
@@ -142,7 +139,7 @@ namespace dolfin
                           const GenericVector& b) const;
 
     // Belos solver pointer
-    Teuchos::RCP<Belos::SolverManager<double, mv_type, op_type> >
+    Teuchos::RCP<Belos::SolverManager<double, vector_type, op_type> >
       _solver;
 
     // The preconditioner, if any

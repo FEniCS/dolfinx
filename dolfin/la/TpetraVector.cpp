@@ -78,7 +78,6 @@ void TpetraVector::apply(std::string mode)
   if(_x->getMap()->isOneToOne())
     return;
 
-  // Make a one-to-one map from xmap, and a vector based on it
   Teuchos::RCP<const map_type> xmap(_x->getMap());
   Teuchos::RCP<vector_type> y(new vector_type(_map, 1));
 
@@ -175,37 +174,18 @@ std::size_t TpetraVector::local_size() const
 std::pair<std::size_t, std::size_t> TpetraVector::local_range() const
 {
   dolfin_assert(!_x.is_null());
-  Teuchos::RCP<const map_type> xmap(_x->getMap());
 
-  // FIXME: wrong with ghost entries
-  return std::make_pair(xmap->getMinGlobalIndex(),
-                        xmap->getMaxGlobalIndex());
+  return std::make_pair(_map->getMinGlobalIndex(),
+                        _map->getMaxGlobalIndex() + 1);
 }
 //-----------------------------------------------------------------------------
 bool TpetraVector::owns_index(std::size_t i) const
 {
   dolfin_assert(!_x.is_null());
 
-  Teuchos::RCP<const map_type> xmap(_x->getMap());
-  int mpi_rank = xmap->getComm()->getRank();
+  std::pair<std::size_t, std::size_t> range = local_range();
 
-  // FIXME: inefficient? call to getRemoteIndexList requires communication
-  std::vector<int> node_list(local_size());
-  Teuchos::ArrayView<int> _node_list(node_list);
-  xmap->getRemoteIndexList(xmap->getNodeElementList(), _node_list);
-
-  // First check if global index exists on this process
-  // Second check if this process is the owner
-  const int idx = xmap->getLocalElement(i);
-
-  bool status;
-
-  if (idx == Teuchos::OrdinalTraits<int>::invalid())
-    status = false;
-  else
-    status = (node_list[idx] == mpi_rank);
-
-  return status;
+  return (i >= range.first and i < range.second);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get(double* block, std::size_t m,

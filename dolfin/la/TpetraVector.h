@@ -48,14 +48,14 @@ namespace dolfin
   template<typename T> class Array;
 
   /// This class provides a simple vector class based on Tpetra.
-  /// It is a simple wrapper for a Tpetra vector pointer (Vec)
+  /// It is a wrapper for Teuchos::RCP<Tpetra::MultiVector>
   /// implementing the GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the Tpetra Vec pointer using the function vec() and
+  /// access the Teuchos::RCP<Tpetra::MultiVector> using the function vec() and
   /// use the standard Tpetra interface.
 
-  class TpetraVector : public GenericVector  //, public TpetraObject
+  class TpetraVector : public GenericVector
   {
   public:
 
@@ -72,7 +72,7 @@ namespace dolfin
     TpetraVector(const TpetraVector& x);
 
     /// Create vector wrapper of Tpetra Vec pointer
-    //    explicit TpetraVector(Vec x);
+    //    explicit TpetraVector(Teuchos::RCP<vector_type> x);
 
     /// Destructor
     virtual ~TpetraVector();
