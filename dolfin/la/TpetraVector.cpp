@@ -52,7 +52,7 @@ TpetraVector::TpetraVector(const TpetraVector& v) : _x(NULL)
 
   // Create with same map
   Teuchos::RCP<const map_type> vmap(v._x->getMap());
-  _x = Teuchos::rcp(new vector_type(vmap));
+  _x = Teuchos::rcp(new vector_type(vmap, 1));
 
   _x->assign(*v._x);
 }
@@ -80,7 +80,7 @@ void TpetraVector::apply(std::string mode)
 
   // Make a one-to-one map from xmap, and a vector based on it
   Teuchos::RCP<const map_type> xmap(_x->getMap());
-  Teuchos::RCP<vector_type> y(new vector_type(_map));
+  Teuchos::RCP<vector_type> y(new vector_type(_map, 1));
 
   // Export from overlapping map x, to non-overlapping map y
   Tpetra::Export<dolfin::la_index> exporter(xmap, _map);
@@ -214,7 +214,7 @@ void TpetraVector::get(double* block, std::size_t m,
   dolfin_assert(!_x.is_null());
 
   Teuchos::RCP<const map_type> xmap(_x->getMap());
-  Teuchos::ArrayRCP<const double> xarr = _x->getData();
+  Teuchos::ArrayRCP<const double> xarr = _x->getData(0);
 
   for (std::size_t i = 0; i != m; ++i)
   {
@@ -229,7 +229,7 @@ void TpetraVector::update_ghost_values()
   dolfin_assert(!_x.is_null());
 
   Teuchos::RCP<const map_type> xmap(_x->getMap());
-  Teuchos::RCP<vector_type> _y(new vector_type(_ghost_map));
+  Teuchos::RCP<vector_type> _y(new vector_type(_ghost_map, 1));
 
   // Export from non-overlapping map x, to overlapping map y
   Tpetra::Import<dolfin::la_index> importer(xmap, _ghost_map);
@@ -242,7 +242,7 @@ void TpetraVector::update_ghost_values()
 void TpetraVector::get_local(double* block, std::size_t m,
                              const dolfin::la_index* rows) const
 {
-  Teuchos::ArrayRCP<const double> arr = _x->getData();
+  Teuchos::ArrayRCP<const double> arr = _x->getData(0);
   for (std::size_t i = 0; i!=m; ++i)
   {
     if (_x->getMap()->isNodeLocalElement(rows[i]))
@@ -260,7 +260,7 @@ void TpetraVector::set(const double* block, std::size_t m,
   for (std::size_t i = 0; i != m; ++i)
   {
     if(_x->getMap()->isNodeGlobalElement(rows[i]))
-      _x->replaceGlobalValue(rows[i], block[i]);
+      _x->replaceGlobalValue(rows[i], 0, block[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -271,7 +271,7 @@ void TpetraVector::set_local(const double* block, std::size_t m,
   for (std::size_t i = 0; i != m; ++i)
   {
     if(_x->getMap()->isNodeLocalElement(rows[i]))
-      _x->replaceLocalValue(rows[i], block[i]);
+      _x->replaceLocalValue(rows[i], 0, block[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -282,7 +282,7 @@ void TpetraVector::add(const double* block, std::size_t m,
   for (std::size_t i = 0; i != m; ++i)
   {
     if(_x->getMap()->isNodeGlobalElement(rows[i]))
-      _x->sumIntoGlobalValue(rows[i], block[i]);
+      _x->sumIntoGlobalValue(rows[i], 0, block[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -294,7 +294,7 @@ void TpetraVector::add_local(const double* block, std::size_t m,
   for (std::size_t i = 0; i != m; ++i)
   {
     if(_x->getMap()->isNodeLocalElement(rows[i]))
-      _x->sumIntoLocalValue(rows[i], block[i]);
+      _x->sumIntoLocalValue(rows[i], 0, block[i]);
     else
       warning("In TpetraVector::add_local - row is not local %d", rows[i]);
   }
@@ -305,7 +305,7 @@ void TpetraVector::get_local(std::vector<double>& values) const
   dolfin_assert(!_x.is_null());
   std::cout << "get_local (vector)" << "\n";
   values.resize(local_size());
-  Teuchos::ArrayRCP<const double> arr = _x->getData();
+  Teuchos::ArrayRCP<const double> arr = _x->getData(0);
   std::copy(arr.get(), arr.get() + values.size(), values.begin());
 }
 //-----------------------------------------------------------------------------
@@ -323,7 +323,7 @@ void TpetraVector::set_local(const std::vector<double>& values)
   if (num_values == 0)
     return;
 
-  Teuchos::ArrayRCP<double> arr = _x->getDataNonConst();
+  Teuchos::ArrayRCP<double> arr = _x->getDataNonConst(0);
   std::copy(values.begin(), values.end(), arr.get());
 }
 //-----------------------------------------------------------------------------
@@ -340,7 +340,7 @@ void TpetraVector::add_local(const Array<double>& values)
   }
 
   for (std::size_t i = 0; i != num_values; ++i)
-    _x->sumIntoLocalValue(i, values[i]);
+    _x->sumIntoLocalValue(i, 0, values[i]);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::gather(GenericVector& y,
@@ -391,13 +391,13 @@ void TpetraVector::gather_on_zero(std::vector<double>& v) const
   Teuchos::RCP<map_type> ymap(new map_type(size(),
                                            v.size(), 0,
                                            _x->getMap()->getComm()));
-  Teuchos::RCP<vector_type> y(new vector_type(ymap));
+  Teuchos::RCP<vector_type> y(new vector_type(ymap, 1));
 
   // Export from overlapping vector x to non-overlapping vector y
   const Tpetra::Export<dolfin::la_index>
     exporter(_x->getMap(), y->getMap());
   y->doExport(*_x, exporter, Tpetra::INSERT);
-  Teuchos::ArrayRCP<const double> yarr(y->getData());
+  Teuchos::ArrayRCP<const double> yarr(y->getData(0));
   std::copy(yarr.get(), yarr.get() + v.size(), v.begin());
 }
 //-----------------------------------------------------------------------------
@@ -421,21 +421,26 @@ double TpetraVector::inner(const GenericVector& y) const
   dolfin_assert(!_x.is_null());
   const TpetraVector& _y = as_type<const TpetraVector>(y);
   dolfin_assert(!_y._x.is_null());
-  return _x->dot(*_y._x);
+  std::vector<double> val(1);
+  const Teuchos::ArrayView<double> result(val);
+  _x->dot(*_y._x, result);
+  return val[0];
 }
 //-----------------------------------------------------------------------------
 double TpetraVector::norm(std::string norm_type) const
 {
   dolfin_assert(!_x.is_null());
-  typedef Tpetra::Vector<>::mag_type mag_type;
-  const mag_type _norm = _x->norm2();
-  return _norm;
+  typedef Tpetra::MultiVector<>::mag_type mag_type;
+  std::vector<mag_type> norms(1);
+  const Teuchos::ArrayView<mag_type> norm_view(norms);
+  _x->norm2(norm_view);
+  return norms[0];
 }
 //-----------------------------------------------------------------------------
 double TpetraVector::min() const
 {
   dolfin_assert(!_x.is_null());
-  Teuchos::ArrayRCP<const double> arr = _x->getData();
+  Teuchos::ArrayRCP<const double> arr = _x->getData(0);
   double min_local
     = *std::min_element(arr.get(), arr.get() + arr.size());
 
@@ -445,7 +450,7 @@ double TpetraVector::min() const
 double TpetraVector::max() const
 {
   dolfin_assert(!_x.is_null());
-  Teuchos::ArrayRCP<const double> arr = _x->getData();
+  Teuchos::ArrayRCP<const double> arr = _x->getData(0);
   double max_local
     = *std::max_element(arr.get(), arr.get() + arr.size());
 
@@ -462,7 +467,7 @@ double TpetraVector::sum() const
   _x->getMap()->getRemoteIndexList(_x->getMap()->getNodeElementList(),
                                    _node_list);
 
-  Teuchos::ArrayRCP<const double> arr(_x->getData());
+  Teuchos::ArrayRCP<const double> arr(_x->getData(0));
 
   int mpi_rank = _x->getMap()->getComm()->getRank();
   double _sum = 0.0;
@@ -496,7 +501,7 @@ const TpetraVector& TpetraVector::operator*= (const GenericVector& y)
   dolfin_assert(!_x.is_null());
   const TpetraVector& _y = as_type<const TpetraVector>(y);
 
-  _x->elementWiseMultiply(1.0, *_x, *(_y._x), 0.0);
+  _x->elementWiseMultiply(1.0, *(_x->getVector(0)), *(_y._x), 0.0);
 
   return *this;
 }
@@ -522,7 +527,7 @@ const TpetraVector& TpetraVector::operator+= (double a)
 
   const std::size_t num_values = local_size();
   for (std::size_t i = 0; i != num_values; ++i)
-    _x->sumIntoLocalValue(i, a);
+    _x->sumIntoLocalValue(i, 0, a);
 
   return *this;
 }
@@ -620,7 +625,7 @@ void TpetraVector::_init(MPI_Comm comm,
     _ghost_map = _map;
 
   // Vector - create with overlap, initially
-  _x = Teuchos::rcp(new vector_type(_ghost_map));
+  _x = Teuchos::rcp(new vector_type(_ghost_map, 1));
 
 }
 //-----------------------------------------------------------------------------

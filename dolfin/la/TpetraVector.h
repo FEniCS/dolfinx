@@ -32,15 +32,15 @@
 #include "GenericVector.h"
 
 #include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Vector.hpp>
+#include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
 // Tpetra typedefs with default values
-typedef Tpetra::Vector<>::node_type node_type;
+typedef Tpetra::MultiVector<>::node_type node_type;
 typedef Tpetra::Map<int, dolfin::la_index, node_type> map_type;
-typedef Tpetra::Vector<double, int, dolfin::la_index, node_type> vector_type;
+typedef Tpetra::MultiVector<double, int, dolfin::la_index, node_type> vector_type;
 
 namespace dolfin
 {
@@ -257,9 +257,6 @@ namespace dolfin
     // Initialise Tpetra vector
     void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
                const std::vector<dolfin::la_index>& local_to_global);
-
-    // Return true if vector is distributed
-    bool distributed() const;
 
     // Tpetra vector
     Teuchos::RCP<vector_type> _x;
