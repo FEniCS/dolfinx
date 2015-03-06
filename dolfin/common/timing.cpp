@@ -50,30 +50,29 @@ double dolfin::time()
   return std::get<0>(__global_timer.elapsed());
 }
 //-----------------------------------------------------------------------------
+Table dolfin::timings(TimingClear clear, std::set<TimingType> type)
+{
+  return LogManager::logger.timings(clear, type);
+}
+//-----------------------------------------------------------------------------
 void dolfin::list_timings(bool reset)
 {
   LogManager::logger.list_timings(reset);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dump_timings_to_xml(std::string filename, bool reset)
+void dolfin::list_timings(TimingClear clear, std::set<TimingType> type)
 {
-  LogManager::logger.dump_timings_to_xml(filename, reset);
+  LogManager::logger.list_timings(clear, type);
 }
 //-----------------------------------------------------------------------------
-Table dolfin::timings(bool reset)
+void dolfin::dump_timings_to_xml(std::string filename, TimingClear clear)
 {
-  return LogManager::logger.timings(reset);
-}
-//-----------------------------------------------------------------------------
-void dolfin::summary(bool reset)
-{
-  warning("The summary() function is deprecated, use list_timings().");
-  list_timings(reset);
+  LogManager::logger.dump_timings_to_xml(filename, clear);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>
-  dolfin::timing(std::string task, bool reset)
+  dolfin::timing(std::string task, TimingClear clear)
 {
-  return LogManager::logger.timing(task, reset);
+  return LogManager::logger.timing(task, clear);
 }
 //-----------------------------------------------------------------------------

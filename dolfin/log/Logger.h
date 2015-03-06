@@ -29,6 +29,11 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <set>
+#include <tuple>
+
+#include <dolfin/common/timing.h>
+#include <dolfin/common/MPI.h>
 #include "Table.h"
 #include "LogLevel.h"
 
@@ -105,22 +110,27 @@ namespace dolfin
 
     /// Return a summary of timings and tasks as a Table, optionally
     /// clearing stored timings
-    Table timings(bool reset=false);
+    Table timings(TimingClear clear, std::set<TimingType> type);
+
+    /// DEPRECATED: List a summary of timings and tasks, optionally clearing
+    /// stored timings. MPI_AVG reduction is printed. Collective on
+    /// MPI_COMM_WORLD.
+    void list_timings(bool reset=false);
 
     /// List a summary of timings and tasks, optionally clearing stored
     /// timings. MPI_AVG reduction is printed. Collective on MPI_COMM_WORLD.
-    void list_timings(bool reset=false);
+    void list_timings(TimingClear clear, std::set<TimingType> type);
 
     /// Dump a summary of timings and tasks to XML file, optionally clearing
     /// stored timings. MPI_MAX, MPI_MIN and MPI_AVG reductions are stored.
     /// Collective on MPI_COMM_WORLD.
-    void dump_timings_to_xml(std::string filename, bool reset=false);
+    void dump_timings_to_xml(std::string filename, TimingClear clear);
 
     /// Return timing (count, total wall time, total user time,
     /// total system time) for given task, optionally clearing
     /// all timings for the task
     std::tuple<std::size_t, double, double, double>
-      timing(std::string task, bool reset=false);
+      timing(std::string task, TimingClear clear);
 
     /// Monitor memory usage. Call this function at the start of a
     /// program to continuously monitor the memory usage of the
@@ -164,6 +174,9 @@ namespace dolfin
 
     // Maximum memory usage so far
     long int _maximum_memory_usage;
+
+    // Map for strigifying TimingType
+    static std::map<TimingType, std::string> _TimingType_descr;
 
   };
 

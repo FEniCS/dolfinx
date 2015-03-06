@@ -293,8 +293,16 @@ void Logger::register_timing(std::string task,
 //-----------------------------------------------------------------------------
 void Logger::list_timings(bool reset)
 {
+  deprecation("dolfin::list_timings(bool)", "1.6.0", "1.7.0",
+              "The method is replaced by another Logger::list_timings(...).");
+  timings(static_cast<TimingClear>(reset),
+          std::set<TimingType>({ TimingType::wall }));
+}
+//-----------------------------------------------------------------------------
+void Logger::list_timings(TimingClear clear, std::set<TimingType> type)
+{
   // Format and reduce to rank 0
-  Table timings = this->timings(reset);
+  Table timings = this->timings(clear, type);
   timings = MPI::avg(MPI_COMM_WORLD, timings);
   const std::string str = timings.str(true);
 
@@ -309,12 +317,12 @@ void Logger::list_timings(bool reset)
     s << "\nMaximum memory usage: " << _maximum_memory_usage << " MB";
     log(s.str());
   }
-
 }
 //-----------------------------------------------------------------------------
-void Logger::dump_timings_to_xml(std::string filename, bool reset)
+void Logger::dump_timings_to_xml(std::string filename, TimingClear clear)
 {
-  Table t = timings(reset);
+  Table t = timings(clear,
+    { TimingType::wall, TimingType::user, TimingType::system });
 
   Table t_max = MPI::max(MPI_COMM_WORLD, t);
   Table t_min = MPI::min(MPI_COMM_WORLD, t);
@@ -329,7 +337,13 @@ void Logger::dump_timings_to_xml(std::string filename, bool reset)
   }
 }
 //-----------------------------------------------------------------------------
-Table Logger::timings(bool reset)
+std::map<TimingType, std::string> Logger::_TimingType_descr
+  = { { TimingType::wall,   "wall" },
+      { TimingType::user,   "usr"  },
+      { TimingType::system, "sys"  } };
+//-----------------------------------------------------------------------------
+Table Logger::timings(TimingClear clear,
+                      std::set<TimingType> type)
 {
   // Generate timing table
   Table table("Summary of timings");
@@ -337,23 +351,29 @@ Table Logger::timings(bool reset)
   {
     const std::string task = it.first;
     const std::size_t num_timings = std::get<0>(it.second);
-    const double total_time = std::get<1>(it.second);
-    const double average_time = total_time / static_cast<double>(num_timings);
+    const std::vector<double> times { std::get<1>(it.second),
+                                      std::get<2>(it.second),
+                                      std::get<3>(it.second) };
+    table(task, "reps") = num_timings;
+    for (const auto& t : type)
+    {
+      const double total_time = times[static_cast<int>(t)];
+      const double average_time = total_time / static_cast<double>(num_timings);
+      table(task, Logger::_TimingType_descr[t] + " avg") = average_time;
+      table(task, Logger::_TimingType_descr[t] + " tot") = total_time;
+    }
 
-    table(task, "Average time") = average_time;
-    table(task, "Total time")   = total_time;
-    table(task, "Reps")         = num_timings;
   }
 
   // Clear timings
-  if (reset)
+  if (static_cast<bool>(clear))
     _timings.clear();
 
   return table;
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>
-  Logger::timing(std::string task, bool reset)
+  Logger::timing(std::string task, TimingClear clear)
 {
   // Find timing
   auto it = _timings.find(task);
@@ -369,7 +389,7 @@ std::tuple<std::size_t, double, double, double>
   const auto result = it->second;
 
   // Clear timing
-  if (reset)
+  if (static_cast<bool>(clear))
     _timings.erase(it);
 
   return result;
