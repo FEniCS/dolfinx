@@ -386,13 +386,15 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // ---------- Markers
     for (std::size_t d = 0; d <= mesh.domains().max_dim(); d++)
     {
-      const std::map<std::size_t, std::size_t>& domain = mesh.domains().markers(d);
+      const std::map<std::size_t, std::size_t>& domain
+        = mesh.domains().markers(d);
 
       MeshValueCollection<std::size_t> collection(mesh, d);
       std::map<std::size_t, std::size_t>::const_iterator it;
       for (it = domain.begin(); it != domain.end(); ++it)
         collection.set_value(it->first, it->second);
-      const std::string marker_dataset =  name + "/domain_" + boost::lexical_cast<std::string>(d);
+      const std::string marker_dataset
+        = name + "/domain_" + boost::lexical_cast<std::string>(d);
       write_mesh_value_collection(collection, marker_dataset);
     }
 
@@ -712,8 +714,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     std::set<unsigned int> non_local_entities;
     if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
     {
-      // No ghost cells - exclude shared entities which are on lower rank processes
-      for (auto sh = shared_entities.begin(); sh != shared_entities.end(); ++sh)
+      // No ghost cells
+      // Exclude shared entities which are on lower rank processes
+      for (auto sh = shared_entities.begin();
+           sh != shared_entities.end(); ++sh)
       {
         const unsigned int lowest_proc = *(sh->second.begin());
         if (lowest_proc < mpi_rank)
@@ -723,7 +727,8 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     else
     {
       // Iterate through ghost cells, adding non-ghost entities which are
-      // shared from lower rank process cells to a set for exclusion from output
+      // shared from lower rank process cells to a set for exclusion
+      // from output
       for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
       {
         const unsigned int cell_owner = c->owner();
@@ -1528,6 +1533,10 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
 HDF5Attribute HDF5File::attributes(const std::string dataset_name)
 {
   dolfin_assert(hdf5_file_open);
+  if (!has_dataset(dataset_name))
+    dolfin_error("HDF5File.cpp",
+                 "accessing attributes",
+                 "Dataset \"%s\" not found", dataset_name.c_str());
   return HDF5Attribute(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
