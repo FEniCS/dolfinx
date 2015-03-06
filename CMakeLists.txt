@@ -89,6 +89,14 @@ option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_ENABLE_TAO "Enable TAO solver." OFF)
 
 #------------------------------------------------------------------------------
+# This should be removed when Clang support OpenMP is ready
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  option(DOLFIN_ENABLE_OPENMP "Enable OpenMP." OFF)
+else()
+  option(DOLFIN_ENABLE_OPENMP "Enable OpenMP." ON)
+endif()
+
+#------------------------------------------------------------------------------
 # Enable or disable optional packages
 
 # List optional packages
@@ -293,7 +301,7 @@ if (DOLFIN_ENABLE_MPI)
 endif()
 
 # Test for OpenMP (but not for Clang, which does not support OpenMP)
-if (DOLFIN_ENABLE_OPENMP AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+if (DOLFIN_ENABLE_OPENMP)
   find_package(OpenMP)
   include(CheckOpenMP)
   check_openmp_unsigned_int_loop_control_variable(OPENMP_UINT_TEST_RUNS)
