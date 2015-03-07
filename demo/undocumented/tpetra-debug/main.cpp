@@ -58,6 +58,8 @@ int main(int argc, char *argv[])
 
   Function u(V);
 
+  (*u.vector()).apply("insert");
+
   if (backend == "Tpetra" and n < 10)
   {
     TpetraVector& bt = as_type<TpetraVector>(b);
@@ -79,11 +81,15 @@ int main(int argc, char *argv[])
   KrylovSolver solver(sol, pc);
 
   std::cout << solver.parameters("preconditioner").str(true);
+  std::cout << solver.parameters.str(true);
 
   solver.parameters["monitor_convergence"] = true;
   solver.set_operator(A);
 
   solver.solve(*u.vector(), b);
+
+  if (backend == "Tpetra")
+    as_type<TpetraVector>(*u.vector()).update_ghost_values();
 
   File xdmf1("solve.xdmf");
   xdmf1 << u;

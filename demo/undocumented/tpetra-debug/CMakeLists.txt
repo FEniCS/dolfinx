@@ -5,7 +5,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-set(PROJECT_NAME demo_poisson)
+set(PROJECT_NAME demo_tpetra)
 project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
@@ -42,7 +42,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(${PROJECT_NAME} eg02.cpp)
+add_executable(${PROJECT_NAME} main.cpp)
 
 # Target libraries
 target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES} ${AMESOS2_LIBRARIES})

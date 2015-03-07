@@ -204,11 +204,11 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
   }
 
   // Reinitialize solution vector if necessary
-  //  if (x.empty())
-  //  {
-  _matA->init_vector(x, 1);
-  x.zero();
-  //  }
+  if (x.empty())
+  {
+    _matA->init_vector(x, 1);
+    x.zero();
+  }
 
   // Set any Belos-specific options
   set_options();
@@ -219,6 +219,11 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
     log(PROGRESS, "Belos Krylov solver starting to solve %i x %i system.",
         _matA->size(0), _matA->size(1));
   }
+
+  // Clear LHS if unless nonzero_initial_guess is set
+  const bool nonzero_guess = parameters["nonzero_initial_guess"];
+  if (!nonzero_guess)
+    x.zero();
 
   _problem->setProblem(x.vec(), b.vec());
 
@@ -233,7 +238,17 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
   if (result == Belos::Converged)
     log(PROGRESS, "Belos Krylov Solver converged in %d iterations.", num_iterations);
   else
-    log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.", num_iterations);
+  {
+    bool error_non_converge = parameters["error_on_nonconvergence"];
+    if (error_non_converge)
+      dolfin_error("BelosKrylovSolver.cpp",
+                   "solve linear system using Belos Krylov solver",
+                   "Solution failed to converge in %d iterations",
+                   num_iterations);
+    else
+      log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.", num_iterations);
+  }
+
 
   return num_iterations;
 }
