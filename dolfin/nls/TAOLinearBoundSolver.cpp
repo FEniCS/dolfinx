@@ -35,8 +35,6 @@
 #include "petscmat.h"
 #include "petsctao.h"
 
-#include <dolfin/common/timing.h>
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------

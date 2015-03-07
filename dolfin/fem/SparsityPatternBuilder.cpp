@@ -19,7 +19,6 @@
 // Modified by Anders Logg 2008-2014
 
 #include <dolfin/common/ArrayView.h>
-#include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
