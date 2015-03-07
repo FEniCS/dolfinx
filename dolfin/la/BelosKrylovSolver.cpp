@@ -249,6 +249,7 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
       log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.", num_iterations);
   }
 
+  x.update_ghost_values();
 
   return num_iterations;
 }

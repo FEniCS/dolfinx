@@ -85,9 +85,6 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
 
-    /// Create ghost entries from non-overlapping TpetraVector
-    void update_ghost_values();
-
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const;
 
@@ -227,7 +224,8 @@ namespace dolfin
     /// Assignment operator
     virtual const TpetraVector& operator= (double a);
 
-    //    virtual void update_ghost_values();
+    // Update ghost values in vector
+    virtual void update_ghost_values();
 
     //--- Special functions ---
 
@@ -258,15 +256,11 @@ namespace dolfin
     void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
                const std::vector<dolfin::la_index>& local_to_global);
 
-    // Tpetra vector
+    // Tpetra multivector - actually a view into the ghosted vector, below
     Teuchos::RCP<vector_type> _x;
 
-    // Map for sharing values
-    Teuchos::RCP<map_type> _ghost_map;
-
-    // Usual map
-    Teuchos::RCP<map_type> _map;
-
+    // Tpetra multivector with extra rows for ghost values
+    Teuchos::RCP<vector_type> _x_ghosted;
 
   };
 

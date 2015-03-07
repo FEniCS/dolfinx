@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   const std::string pc = argv[3];
   parameters["linear_algebra_backend"] = backend;
 
-  unsigned int n = 400;
+  unsigned int n = 20;
   UnitSquareMesh mesh(n, n);
   Poisson::FunctionSpace V(mesh);
   Poisson::LinearForm L(V);
@@ -57,8 +57,6 @@ int main(int argc, char *argv[])
   list_krylov_solver_preconditioners();
 
   Function u(V);
-
-  (*u.vector()).apply("insert");
 
   if (backend == "Tpetra" and n < 10)
   {
@@ -87,9 +85,6 @@ int main(int argc, char *argv[])
   solver.set_operator(A);
 
   solver.solve(*u.vector(), b);
-
-  if (backend == "Tpetra")
-    as_type<TpetraVector>(*u.vector()).update_ghost_values();
 
   File xdmf1("solve.xdmf");
   xdmf1 << u;
