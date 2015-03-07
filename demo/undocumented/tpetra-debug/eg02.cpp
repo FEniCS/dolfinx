@@ -84,7 +84,6 @@ int main(int argc, char *argv[])
 
   std::cout << solver.parameters("preconditioner").str(true);
 
-
   solver.parameters["monitor_convergence"] = true;
   solver.set_operator(A);
 
@@ -99,6 +98,8 @@ int main(int argc, char *argv[])
 
   //  plot(u);
   //  interactive();
+
+  list_timings();
 
   return 0;
 }

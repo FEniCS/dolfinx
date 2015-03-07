@@ -628,15 +628,13 @@ void TpetraMatrix::apply(std::string mode)
                                    _matA->getCrsGraph()->getColMap(), 0));
 
     Tpetra::Export<dolfin::la_index> exporter(_matA->getRowMap(),
-                                                 matB->getRowMap());
+                                              matB->getRowMap());
 
     // Fill complete with non-overlapping domain and range maps
-    // FIXME : should be ADD or INSERT?
+    // FIXME : should be ADD or INSERT? seems to work with either??
     matB->doExport(*_matA, exporter, Tpetra::INSERT);
     matB->fillComplete();
-
     _matA = matB;
-
   }
   else
     dolfin_error("TpetraMatrix.cpp",

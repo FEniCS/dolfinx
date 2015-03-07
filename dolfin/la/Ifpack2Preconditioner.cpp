@@ -36,7 +36,6 @@ Ifpack2Preconditioner::preconditioners()
           {"CHEBYSHEV",  "Chebyshev Polynomial preconditioner"},
           {"RILUK",      "Relaxed ILU with level k fill"},
           {"KRYLOV",     "CG/GMRES with zero initial guess"}};
-
   return precs_available;
 }
 //-----------------------------------------------------------------------------
@@ -65,7 +64,8 @@ void Ifpack2Preconditioner::init(std::shared_ptr<const TpetraMatrix> P)
   Ifpack2::Factory prec_factory;
 
   _prec = prec_factory.create(_name, P->mat());
-  //    prec->setParameters(plist);
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
+  _prec->setParameters(*plist);
   _prec->initialize();
   _prec->compute();
 }

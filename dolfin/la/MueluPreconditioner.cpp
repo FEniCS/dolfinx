@@ -29,6 +29,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MueluPreconditioner::MueluPreconditioner()
 {
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MueluPreconditioner::~MueluPreconditioner()
@@ -57,7 +59,10 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
   paramList.set("aggregation: min agg size", 3);
   paramList.set("aggregation: max agg size", 9);
 
-  _prec = MueLu::CreateTpetraPreconditioner(std::const_pointer_cast<TpetraMatrix>(P)->mat(), paramList);
+  // FIXME: why does it need to be non-const when Ifpack2 uses const?
+  _prec = MueLu::CreateTpetraPreconditioner(
+            std::const_pointer_cast<TpetraMatrix>(P)->mat(),
+        paramList);
 
 }
 //-----------------------------------------------------------------------------

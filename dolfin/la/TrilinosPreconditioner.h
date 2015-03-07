@@ -29,7 +29,7 @@ namespace dolfin
 
   class BelosKrylovSolver;
 
-  /// This class provides a common base preconditioners.
+  /// This class provides a common base for Trilinos preconditioners.
 
   class TrilinosPreconditioner: public GenericPreconditioner
   {

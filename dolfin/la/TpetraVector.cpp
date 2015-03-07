@@ -64,8 +64,6 @@ TpetraVector::~TpetraVector()
 void TpetraVector::zero()
 {
   dolfin_assert(!_x.is_null());
-  //  std::cout << "zero()\n";
-
   _x->putScalar(0.0);
 }
 //-----------------------------------------------------------------------------
@@ -228,9 +226,11 @@ void TpetraVector::get_local(double* block, std::size_t m,
     if (_x->getMap()->isNodeLocalElement(rows[i]))
       block[i] = arr[rows[i]];
     else
-      std::cout << "!! Not local " << rows[i] << " on " << _x->getMap()->getComm()->getRank() <<" \n";
+      dolfin_error("TpetraVector.cpp",
+                   "get local row",
+                   "Row %d is not local on rank %d", rows[i],
+                   _x->getMap()->getComm()->getRank());
   }
-
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::set(const double* block, std::size_t m,
@@ -276,14 +276,15 @@ void TpetraVector::add_local(const double* block, std::size_t m,
     if(_x->getMap()->isNodeLocalElement(rows[i]))
       _x->sumIntoLocalValue(rows[i], 0, block[i]);
     else
-      warning("In TpetraVector::add_local - row is not local %d", rows[i]);
+      dolfin_error("TpetraVector.cpp",
+                   "add into local row",
+                   "Row %d is not local", rows[i]);
   }
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(!_x.is_null());
-  std::cout << "get_local (vector)" << "\n";
   values.resize(local_size());
   Teuchos::ArrayRCP<const double> arr = _x->getData(0);
   std::copy(arr.get(), arr.get() + values.size(), values.begin());
