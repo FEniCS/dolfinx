@@ -29,7 +29,8 @@
 #include <vector>
 #include <omp.h>
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/Progress.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/la/GenericTensor.h>

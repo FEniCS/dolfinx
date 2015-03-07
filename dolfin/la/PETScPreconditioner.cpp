@@ -27,7 +27,7 @@
 #include <petscmat.h>
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "GenericVector.h"
 #include "KrylovSolver.h"
 #include "PETScKrylovSolver.h"

@@ -20,6 +20,8 @@
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/Progress.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -31,8 +33,6 @@
 #include "MultiMeshForm.h"
 #include "MultiMeshDofMap.h"
 #include "SparsityPatternBuilder.h"
-
-#include <dolfin/log/dolfin_log.h>
 
 using namespace dolfin;
 

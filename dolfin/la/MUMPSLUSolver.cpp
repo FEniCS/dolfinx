@@ -25,6 +25,7 @@
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/types.h"
 #include "dolfin/log/log.h"
+#include "dolfin/log/LogStream.h"
 #include "CoordinateMatrix.h"
 #include "GenericVector.h"
 #include "LUSolver.h"

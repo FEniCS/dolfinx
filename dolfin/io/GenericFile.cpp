@@ -24,7 +24,7 @@
 
 #include <fstream>
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "GenericFile.h"
 
 using namespace dolfin;

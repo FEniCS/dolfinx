@@ -31,7 +31,7 @@
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/TensorLayout.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>

@@ -22,8 +22,7 @@
 
 #include <list>
 
-#include <dolfin/math/dolfin_math.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>

@@ -21,10 +21,9 @@
 // First added:  2010-02-10
 // Last changed: 2014-01-09
 
-#include <dolfin/log/dolfin_log.h>
-
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "ParMETIS.h"

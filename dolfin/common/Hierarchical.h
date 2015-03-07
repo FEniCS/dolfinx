@@ -23,7 +23,8 @@
 
 #include <memory>
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
 #include "NoDeleter.h"
 
 namespace dolfin

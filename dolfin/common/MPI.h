@@ -36,7 +36,7 @@
 #include <mpi.h>
 #endif
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/log/Table.h>
 
 #ifndef HAS_MPI

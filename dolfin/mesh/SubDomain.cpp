@@ -23,6 +23,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/log/log.h>
+#include <dolfin/log/Progress.h>
 #include "Mesh.h"
 #include "MeshData.h"
 #include "MeshEntity.h"

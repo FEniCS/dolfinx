@@ -29,6 +29,7 @@
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include "assemble.h"
