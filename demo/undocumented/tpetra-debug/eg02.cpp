@@ -57,10 +57,6 @@ int main(int argc, char *argv[])
   list_krylov_solver_preconditioners();
 
   Function u(V);
-  //  A->init_vector(*u.vector(), 1);
-
-  // Make sure RHS TpetraVector is "OneToOne"
-  (*u.vector()).apply("insert");
 
   if (backend == "Tpetra" and n < 10)
   {
@@ -89,15 +85,8 @@ int main(int argc, char *argv[])
 
   solver.solve(*u.vector(), b);
 
-  // Create ghost values
-  if (backend == "Tpetra")
-    as_type<TpetraVector>(*u.vector()).update_ghost_values();
-
   File xdmf1("solve.xdmf");
   xdmf1 << u;
-
-  //  plot(u);
-  //  interactive();
 
   list_timings();
 
