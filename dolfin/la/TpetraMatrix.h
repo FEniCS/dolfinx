@@ -61,8 +61,8 @@ namespace dolfin
     /// Create empty matrix
     TpetraMatrix();
 
-    /// Create a wrapper around a Tpetra Mat pointer
-    explicit TpetraMatrix(Tpetra::RCP<matrix_type> A);
+    /// Create a wrapper around a Teuchos::RCP<matrix_type> pointer
+    explicit TpetraMatrix(Teuchos::RCP<matrix_type> A);
 
     /// Copy constructor
     TpetraMatrix(const TpetraMatrix& A);
@@ -90,12 +90,7 @@ namespace dolfin
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
-    /// Finalize assembly of tensor. The following values are recognized
-    /// for the mode parameter:
-    ///
-    ///   add    - corresponds to Tpetra MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-    ///   insert - corresponds to Tpetra MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-    ///   flush  - corresponds to Tpetra MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
+    /// Finalize assembly of tensor. The mode parameter is ignored.
     virtual void apply(std::string mode);
 
     /// Return MPI communicator
@@ -219,7 +214,8 @@ namespace dolfin
     // The matrix
     Teuchos::RCP<matrix_type> _matA;
 
-    // Keep references to initial domain and range maps, needed in "apply"
+    // Row and Column maps to allow local indexing of off-process entries
+    // needed in add_local() and set_local()
     Teuchos::RCP<map_type> row_map;
     Teuchos::RCP<map_type> col_map;
 

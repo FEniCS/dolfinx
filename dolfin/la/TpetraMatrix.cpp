@@ -48,13 +48,15 @@ TpetraMatrix::TpetraMatrix() : _matA(NULL)
 //-----------------------------------------------------------------------------
 TpetraMatrix::TpetraMatrix(Teuchos::RCP<matrix_type> A) : _matA(A)
 {
+  // row_map and col_map are not set, so cannot use add_local() or set_local()
 }
 //-----------------------------------------------------------------------------
 TpetraMatrix::TpetraMatrix(const TpetraMatrix& A)
 {
   if (!A._matA.is_null())
   {
-  dolfin_not_implemented();
+    // FIXME - just copy mat and maps
+    dolfin_not_implemented();
   }
 }
 //-----------------------------------------------------------------------------
@@ -72,8 +74,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 {
   if (!_matA.is_null())
     error("TpetraMatrix may not be initialized more than once.");
-
-  // FIXME: none of this is too elegant.
 
   // Get global dimensions and local range
   dolfin_assert(tensor_layout.rank() == 2);
@@ -131,6 +131,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
                                       entries_per_row.size(), false);
 
   // Create a non-overlapping "row" map for the graph
+  // The column map will be auto-generated from the entries.
   Teuchos::ArrayView<dolfin::la_index>
     _global_indices_subset(global_indices0.data(), m);
   Teuchos::RCP<const map_type> graph_row_map
@@ -180,15 +181,16 @@ std::pair<std::size_t, std::size_t> TpetraMatrix::local_range(std::size_t dim) c
 {
   if (dim == 0)
   {
-    Teuchos::RCP<const map_type> row_map(_matA->getRowMap());
+    Teuchos::RCP<const map_type> a_row_map(_matA->getRowMap());
     return std::make_pair<std::size_t, std::size_t>
-      (row_map->getMinGlobalIndex(), row_map->getMaxGlobalIndex() + 1);
+      (a_row_map->getMinGlobalIndex(), a_row_map->getMaxGlobalIndex() + 1);
   }
   else if (dim == 1)
   {
-    Teuchos::RCP<const map_type> col_map(_matA->getColMap());
+    // FIXME: this is not quite right - column map will have overlap
+    Teuchos::RCP<const map_type> a_col_map(_matA->getColMap());
     return std::make_pair<std::size_t, std::size_t>
-      (col_map->getMinGlobalIndex(), col_map->getMaxGlobalIndex() + 1);
+      (a_col_map->getMinGlobalIndex(), a_col_map->getMaxGlobalIndex() + 1);
   }
 
   return std::make_pair(0,0);
@@ -196,8 +198,8 @@ std::pair<std::size_t, std::size_t> TpetraMatrix::local_range(std::size_t dim) c
 //-----------------------------------------------------------------------------
 std::size_t TpetraMatrix::nnz() const
 {
-  dolfin_not_implemented();
-  return 0;
+  std::size_t nnz_local = _matA->getCrsGraph()->getNodeNumEntries();
+  return MPI::sum(mpi_comm(), nnz_local);
 }
 //-----------------------------------------------------------------------------
 bool TpetraMatrix::empty() const
@@ -634,7 +636,7 @@ MPI_Comm TpetraMatrix::mpi_comm() const
   // Unwrap MPI_Comm
   const Teuchos::RCP<const Teuchos::MpiComm<int> > _mpi_comm
     = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >
-    (_matA->getMap()->getComm());
+    (_matA->getComm());
 
   return *(_mpi_comm->getRawMpiComm());
 }
@@ -703,20 +705,20 @@ void TpetraMatrix::graphdump(const Teuchos::RCP<const graph_type> graph)
 {
   int mpi_rank = graph->getRowMap()->getComm()->getRank();
 
-  const Teuchos::RCP<const map_type> row_map = graph->getRowMap();
-  const Teuchos::RCP<const map_type> col_map = graph->getColMap();
+  const Teuchos::RCP<const map_type> g_row_map = graph->getRowMap();
+  const Teuchos::RCP<const map_type> g_col_map = graph->getColMap();
   const Teuchos::RCP<const map_type> domain_map = graph->getDomainMap();
   const Teuchos::RCP<const map_type> range_map = graph->getRangeMap();
 
-  int n = row_map->getMaxAllGlobalIndex() + 1;
-  int m = col_map->getMaxAllGlobalIndex() + 1;
+  int n = g_row_map->getMaxAllGlobalIndex() + 1;
+  int m = g_col_map->getMaxAllGlobalIndex() + 1;
 
   std::stringstream ss;
   ss << "RANK: " << mpi_rank << "\n";
 
   ss << "\n    ";
   for (int j = 0; j != m ; ++j)
-    if (col_map->isNodeGlobalElement(j))
+    if (g_col_map->isNodeGlobalElement(j))
       ss << "X";
     else
       ss << " ";
@@ -735,7 +737,7 @@ void TpetraMatrix::graphdump(const Teuchos::RCP<const graph_type> graph)
   for (int k = 0; k != n; ++k)
   {
     ss << " ";
-    if (row_map->isNodeGlobalElement(k))
+    if (g_row_map->isNodeGlobalElement(k))
       ss << "X";
     else
       ss << " ";
