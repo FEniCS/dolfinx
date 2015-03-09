@@ -275,13 +275,29 @@ void TpetraMatrix::set_local(const double* block,
   dolfin_assert(!_matA.is_null());
   dolfin_assert(!_matA->isFillComplete());
 
-  // Tpetra View of column indices
-  Teuchos::ArrayView<const int> column_idx(cols, n);
+  // Map local columns to global
+  std::vector<dolfin::la_index> _global_col_idx;
+  _global_col_idx.reserve(n);
+  for (std::size_t i = 0 ; i != n; ++i)
+    _global_col_idx.push_back(col_map->getGlobalElement(cols[i]));
+  Teuchos::ArrayView<const dolfin::la_index> global_col_idx(_global_col_idx);
 
   for (std::size_t i = 0 ; i != m; ++i)
   {
     Teuchos::ArrayView<const double> data(block + i*n, n);
-    _matA->replaceLocalValues(rows[i], column_idx, data);
+
+    const dolfin::la_index global_row_idx
+      = row_map->getGlobalElement(rows[i]);
+    if (global_row_idx
+        != Teuchos::OrdinalTraits<dolfin::la_index>::invalid())
+    {
+      std::size_t nvalid =
+        _matA->replaceGlobalValues(global_row_idx,
+                                   global_col_idx, data);
+      dolfin_assert(nvalid == n);
+    }
+    else
+      warning("Could not enter into row:%d", rows[i]);
   }
 }
 //-----------------------------------------------------------------------------
