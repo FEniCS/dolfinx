@@ -19,18 +19,17 @@
 
 #ifdef HAS_TRILINOS
 
-#include <boost/lexical_cast.hpp>
-
 #include <cmath>
 #include <numeric>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/log/dolfin_log.h>
+
 #include "TpetraVector.h"
 #include "TpetraFactory.h"
-#include <dolfin/common/MPI.h>
 
 using namespace dolfin;
 
@@ -217,7 +216,7 @@ void TpetraVector::update_ghost_values()
   // FIXME: is this safe, since _x is a view into _x_ghosted?
   _x_ghosted->doImport(*_x, importer, Tpetra::INSERT);
 
-  // Copy back into _x_ghosted
+  // Copy back into _x_ghosted from temp vector
   //  std::copy(y->getData(0).begin(), y->getData(0).end(),
   //            _x_ghosted->getDataNonConst(0).begin());
 }
@@ -390,7 +389,7 @@ void TpetraVector::gather_on_zero(std::vector<double>& v) const
                                            _x->getMap()->getComm()));
   Teuchos::RCP<vector_type> y(new vector_type(ymap, 1));
 
-  // Export from overlapping vector x to non-overlapping vector y
+  // Export from vector x to vector y
   const Tpetra::Export<dolfin::la_index>
     exporter(_x->getMap(), y->getMap());
   y->doExport(*_x, exporter, Tpetra::INSERT);
@@ -458,19 +457,12 @@ double TpetraVector::sum() const
 {
   dolfin_assert(!_x.is_null());
 
-  std::vector<int> node_list(local_size());
-  Teuchos::ArrayView<int> _node_list(node_list);
-
-  _x->getMap()->getRemoteIndexList(_x->getMap()->getNodeElementList(),
-                                   _node_list);
-
   Teuchos::ArrayRCP<const double> arr(_x->getData(0));
 
-  int mpi_rank = _x->getMap()->getComm()->getRank();
   double _sum = 0.0;
-  for (std::size_t i = 0; i != local_size(); ++i)
-    if (node_list[i] == mpi_rank)
-      _sum += arr[i];
+  const std::size_t m = local_size();
+  for (std::size_t i = 0; i != m; ++i)
+    _sum += arr[i];
 
   return MPI::sum(mpi_comm(), _sum);
 }
@@ -520,11 +512,11 @@ const TpetraVector& TpetraVector::operator+= (const GenericVector& y)
 //-----------------------------------------------------------------------------
 const TpetraVector& TpetraVector::operator+= (double a)
 {
-  dolfin_assert(!_x.is_null());
+  dolfin_assert(!_x_ghosted.is_null());
 
   const std::size_t num_values = local_size();
   for (std::size_t i = 0; i != num_values; ++i)
-    _x->sumIntoLocalValue(i, 0, a);
+    _x_ghosted->sumIntoLocalValue(i, 0, a);
 
   return *this;
 }

@@ -247,6 +247,7 @@ void TpetraMatrix::get(double* block,
     Teuchos::ArrayView<const dolfin::la_index> _columns;
     Teuchos::ArrayView<const double> _data;
     _matA->getGlobalRowView(rows[i], _columns, _data);
+
     // FIXME: get desired columns from all columns
   }
   dolfin_not_implemented();
@@ -504,8 +505,9 @@ void TpetraMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
 
   zero_local(m, rows);
 
+  // FIXME: check this is correct
   Teuchos::RCP<const map_type> colmap(_matA->getColMap());
-  const double one = 1;
+  const double one = 1.0;
   Teuchos::ArrayView<const double> data(&one, 1);
   int col;
   Teuchos::ArrayView<int> column_idx(&col, 1);
@@ -585,9 +587,16 @@ void TpetraMatrix::set_diagonal(const GenericVector& x)
 {
   dolfin_assert(!_matA.is_null());
   dolfin_assert(!_matA->isFillComplete());
-  dolfin_not_implemented();
 
   const TpetraVector& xx = x.down_cast<TpetraVector>();
+
+  if (xx._x->getMap()->isSameAs(*_matA->getRowMap()))
+  {
+    std::cout << "Should be OK\n";
+  }
+
+  dolfin_not_implemented();
+
   if (size(1) != size(0) || size(0) != xx.size())
   {
     dolfin_error("TpetraMatrix.cpp",

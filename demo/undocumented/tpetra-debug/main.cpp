@@ -9,7 +9,7 @@ class DirichletBoundary : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
   {
-    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
+    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS or x[1] < DOLFIN_EPS;
   }
 };
 
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   const std::string pc = argv[3];
   parameters["linear_algebra_backend"] = backend;
 
-  unsigned int n = 20;
+  unsigned int n = 50;
   UnitSquareMesh mesh(n, n);
   Poisson::FunctionSpace V(mesh);
   Poisson::LinearForm L(V);
