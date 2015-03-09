@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   Source f;
   L.f = f;
 
-  std::cout << mesh.num_vertices() << "\n";
+  //  std::cout << mesh.num_vertices() << "\n";
 
   DirichletBoundary boundary;
   Constant u0(0.0);
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
   File xdmf1("solve.xdmf");
   xdmf1 << u;
 
-  list_timings();
+  //  list_timings();
 
   return 0;
 }

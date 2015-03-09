@@ -220,7 +220,8 @@ namespace dolfin
     Teuchos::RCP<matrix_type> _matA;
 
     // Keep references to initial domain and range maps, needed in "apply"
-    Teuchos::RCP<map_type> domain_map0, range_map0;
+    Teuchos::RCP<map_type> row_map;
+    Teuchos::RCP<map_type> col_map;
 
   };
 

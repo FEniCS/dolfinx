@@ -625,6 +625,8 @@ void TpetraVector::_init(MPI_Comm comm,
   // Vector - create with overlap
   _x_ghosted = Teuchos::rcp(new vector_type(_ghost_map, 1));
 
+  dolfin_assert(!_x_ghosted.is_null());
+
   // Get a modifiable view into the ghosted vector
   _x = _x_ghosted->offsetViewNonConst(_map, 0);
 
