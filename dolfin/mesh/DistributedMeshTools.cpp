@@ -1002,8 +1002,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   // Initialize entities of dimension d
   mesh.init(D - 1);
 
-  // Initialise local facet-cell connections. 
-  mesh.init(D - 1, D);  
+  // Initialise local facet-cell connections.
+  mesh.init(D - 1, D);
 
   // Global numbering
   number_entities(mesh, D - 1);
@@ -1026,9 +1026,9 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Copy local values
     for (FacetIterator f(mesh); !f.end(); ++f)
       num_global_neighbors[f->index()] = f->num_entities(D);
-    
+
     // All shared facets must have two cells, if no ghost cells
-    for (auto f_it = shared_facets.begin(); 
+    for (auto f_it = shared_facets.begin();
              f_it != shared_facets.end(); ++f_it)
       num_global_neighbors[f_it->first] = 2;
   }
@@ -1040,10 +1040,10 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
     std::vector<std::vector<std::size_t> > send_facet(mpi_size);
     std::vector<std::vector<std::size_t> > recv_facet(mpi_size);
-    
-    // Map shared facets 
+
+    // Map shared facets
     std::map<std::size_t, std::size_t> global_to_local_facet;
-    
+
     for (MeshEntityIterator f(mesh, D - 1, "all"); !f.end(); ++f)
     {
       // Insert shared facets into mapping
@@ -1053,7 +1053,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       // Copy local values
       const std::size_t n_cells = f->num_entities(D);
       num_global_neighbors[f->index()] = n_cells;
-      
+
       if (f->is_ghost() && n_cells == 1)
       {
         // Singly attached ghost facet - check with owner of attached cell
@@ -1062,12 +1062,12 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
         send_facet[c.owner()].push_back(f->global_index());
       }
     }
-    
+
     MPI::all_to_all(mesh.mpi_comm(), send_facet, recv_facet);
-    
+
     // Convert received global facet index into number of attached
     // cells and return to sender
-    std::vector<std::vector<std::size_t> > send_response(mpi_size);  
+    std::vector<std::vector<std::size_t> > send_response(mpi_size);
     for (unsigned int p = 0; p != mpi_size; ++p)
     {
       for (auto r = recv_facet[p].begin(); r != recv_facet[p].end(); ++r)
@@ -1079,9 +1079,9 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
         send_response[p].push_back(n_cells);
       }
     }
-    
+
     MPI::all_to_all(mesh.mpi_comm(), send_response, recv_facet);
-    
+
     // Insert received result into same facet that it came from
     for (unsigned int p = 0; p != mpi_size; ++p)
     {
@@ -1093,7 +1093,153 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       }
     }
   }
-  
+
   mesh.topology()(D - 1, D).set_global_size(num_global_neighbors);
+}
+//-----------------------------------------------------------------------------
+std::vector<double>
+DistributedMeshTools::reorder_vertices_by_global_indices(const Mesh& mesh)
+{
+  std::vector<double> ordered_coordinates(mesh.coordinates());
+  reorder_values_by_global_indices(mesh, ordered_coordinates,
+                                   mesh.geometry().dim());
+  return ordered_coordinates;
+}
+//-----------------------------------------------------------------------------
+void DistributedMeshTools::reorder_values_by_global_indices(const Mesh& mesh,
+                                      std::vector<double>& data,
+                                      const std::size_t width)
+{
+  Timer t("DistributedMeshTools: reorder vertex values");
+
+  dolfin_assert(mesh.num_vertices()*width == data.size());
+
+  // MPI communicator
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+
+  // Get shared vertices
+  const std::map<unsigned int, std::set<unsigned int> >& shared_vertices
+    = mesh.topology().shared_entities(0);
+
+  // My process rank
+  const unsigned int mpi_rank = MPI::rank(mpi_comm);
+
+  const std::size_t tdim = mesh.topology().dim();
+  std::set<unsigned int> non_local_vertices;
+  if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
+  {
+    // No ghost cells - exclude shared entities which are on lower rank processes
+    for (auto sh = shared_vertices.begin(); sh != shared_vertices.end(); ++sh)
+    {
+      const unsigned int lowest_proc = *(sh->second.begin());
+      if (lowest_proc < mpi_rank)
+        non_local_vertices.insert(sh->first);
+    }
+  }
+  else
+  {
+    // Iterate through ghost cells, adding non-ghost vertices which are
+    // in lower rank process cells to a set for exclusion from output
+    for (CellIterator c(mesh, "ghost"); !c.end(); ++c)
+    {
+      const unsigned int cell_owner = c->owner();
+      for (VertexIterator v(*c); !v.end(); ++v)
+        if (!v->is_ghost() && cell_owner < mpi_rank)
+          non_local_vertices.insert(v->index());
+    }
+  }
+
+  // Reference to data to send, reorganised as a 2D boost::multi_array
+  boost::multi_array_ref<double, 2>
+    data_array(data.data(), boost::extents[mesh.num_vertices()][width]);
+
+  std::vector<std::size_t> global_indices;
+  std::vector<double> reduced_data;
+
+  // Remove clashing data with multiple copies on different processes
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    const std::size_t vidx = v->index();
+    if (non_local_vertices.find(vidx) == non_local_vertices.end())
+    {
+      global_indices.push_back(v->global_index());
+      reduced_data.insert(reduced_data.end(),
+                 data_array[vidx].begin(), data_array[vidx].end());
+    }
+  }
+
+  data = reduced_data;
+  reorder_values_by_global_indices(mesh.mpi_comm(), data,
+                                   width, global_indices);
+}
+//-----------------------------------------------------------------------------
+void DistributedMeshTools::reorder_values_by_global_indices(MPI_Comm mpi_comm,
+                           std::vector<double>& values,
+                           const std::size_t width,
+                           const std::vector<std::size_t>& global_indices)
+{
+
+  // Number of items to redistribute
+  const std::size_t num_local_indices = global_indices.size();
+  dolfin_assert(width*num_local_indices == values.size());
+
+  boost::multi_array_ref<double, 2> vertex_array(values.data(),
+                      boost::extents[num_local_indices][width]);
+
+  // Calculate size of overall global vector by finding max index value
+  // anywhere
+  const std::size_t global_vector_size
+    = MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
+                                           global_indices.end())) + 1;
+
+  // Send unwanted values off process
+  const std::size_t mpi_size = MPI::size(mpi_comm);
+  std::vector<std::vector<std::size_t> > values_to_send0(mpi_size);
+  std::vector<std::vector<double> > values_to_send1(mpi_size);
+
+  // Go through local vector and append value to the appropriate list
+  // to send to correct process
+  for (std::size_t i = 0; i != num_local_indices; ++i)
+  {
+    const std::size_t global_i = global_indices[i];
+    const std::size_t process_i
+      = MPI::index_owner(mpi_comm, global_i, global_vector_size);
+    values_to_send0[process_i].push_back(global_i);
+    values_to_send1[process_i].insert(values_to_send1[process_i].end(),
+                                      vertex_array[i].begin(),
+                                      vertex_array[i].end());
+  }
+
+  // Redistribute the values to the appropriate process - including
+  // self All values are "in the air" at this point, so local vector
+  // can be cleared
+  std::vector<std::vector<std::size_t> > received_values0;
+  std::vector<std::vector<double> > received_values1;
+  MPI::all_to_all(mpi_comm, values_to_send0, received_values0);
+  MPI::all_to_all(mpi_comm, values_to_send1, received_values1);
+
+  // When receiving, just go through all received values and place
+  // them in the local partition of the global vector.
+  const std::pair<std::size_t, std::size_t> range
+    = MPI::local_range(mpi_comm, global_vector_size);
+  values.resize((range.second - range.first)*width);
+  boost::multi_array_ref<double, 2>
+    new_vertex_array(values.data(),
+                     boost::extents[range.second - range.first][width]);
+
+  for (std::size_t p = 0; p != received_values0.size(); ++p)
+  {
+    const std::vector<std::size_t>& received_global_data0
+      = received_values0[p];
+    const std::vector<double>& received_global_data1 = received_values1[p];
+    for (std::size_t j = 0; j != received_global_data0.size(); ++j)
+    {
+      const std::size_t global_i = received_global_data0[j];
+      dolfin_assert(global_i >= range.first && global_i < range.second);
+      std::copy(received_global_data1.begin() + j*width,
+                received_global_data1.begin() + (j + 1)*width,
+                new_vertex_array[global_i - range.first].begin());
+    }
+  }
 }
 //-----------------------------------------------------------------------------

@@ -569,16 +569,16 @@ void Function::restrict(double* w, const FiniteElement& element,
     const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
-    if (dofs.size() > 0)
+    if (!dofs.empty())
     {
-      // Note: We should have dofmap.max_cell_dimension() == dofs.size() here.
+      // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
       // Pick values from vector(s)
       _vector->get_local(w, dofs.size(), dofs.data());
     }
     else
     {
       // Set dofs to zero (zero extension of function space on a Restriction)
-      memset(w, 0, sizeof(*w)*dofmap.max_cell_dimension());
+      memset(w, 0, sizeof(*w)*dofmap.max_element_dofs());
     }
   }
   else
@@ -688,7 +688,8 @@ void Function::init_vector()
 
   // Determine ghost vertices if dof map is distributed
   const std::size_t bs = dofmap.block_size;
-  std::vector<la_index> ghost_indices(bs*dofmap.local_to_global_unowned().size());
+  std::vector<la_index>
+    ghost_indices(bs*dofmap.local_to_global_unowned().size());
   for (std::size_t i = 0; i < dofmap.local_to_global_unowned().size(); ++i)
     for (std::size_t j = 0; j < bs; ++j)
       ghost_indices[bs*i + j] = bs*dofmap.local_to_global_unowned()[i] + j;

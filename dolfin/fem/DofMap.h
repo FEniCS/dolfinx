@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2015 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,15 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Alnes, 2008
+// Modified by Martin Alnes, 2008-2015
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Joachim B Haga, 2012
 // Modified by Mikael Mortensen, 2012
 // Modified by Jan Blechta, 2013
-//
-// First added:  2007-03-01
-// Last changed: 2014-07-04
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -77,8 +74,7 @@ namespace dolfin
     ///     constrained_boundary (_SubDomain_)
     ///         The subdomain marking the constrained (tied) boundaries.
     DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-           const Mesh& mesh,
-           std::shared_ptr<const SubDomain> constrained_domain);
+           const Mesh& mesh, std::shared_ptr<const SubDomain> constrained_domain);
 
   private:
 
@@ -128,8 +124,6 @@ namespace dolfin
     ///         Number of local dofs.
     std::size_t local_dimension(std::string type) const;
 
-    // FIXME: Rename this function, 'cell_dimension' sounds confusing
-
     /// Return the dimension of the local finite element function
     /// space on a cell
     ///
@@ -140,7 +134,7 @@ namespace dolfin
     /// *Returns*
     ///     std::size_t
     ///         Dimension of the local finite element function space.
-    std::size_t cell_dimension(std::size_t cell_index) const;
+    std::size_t num_element_dofs(std::size_t cell_index) const;
 
     /// Return the maximum dimension of the local finite element
     /// function space
@@ -149,7 +143,7 @@ namespace dolfin
     ///     std::size_t
     ///         Maximum dimension of the local finite element function
     ///         space.
-    std::size_t max_cell_dimension() const;
+    std::size_t max_element_dofs() const;
 
     /// Return the number of dofs for a given entity dimension
     ///
@@ -215,12 +209,14 @@ namespace dolfin
     ///         The cell index.
     ///
     /// *Returns*
-    ///     std::vector<dolfin::la_index>
+    ///     ArrayView<const dolfin::la_index>
     ///         Local-to-global mapping of dofs.
     ArrayView<const dolfin::la_index> cell_dofs(std::size_t cell_index) const
     {
-      dolfin_assert(cell_index < _dofmap.size());
-      return ArrayView<const dolfin::la_index>(_dofmap[cell_index]);
+      const std::size_t index = cell_index*_cell_dimension;
+      dolfin_assert(index + _cell_dimension <= _dofmap.size());
+      return ArrayView<const dolfin::la_index>(_cell_dimension,
+                                               &_dofmap[index]);
     }
 
     /// Tabulate local-local facet dofs
@@ -304,8 +300,8 @@ namespace dolfin
     ///     DofMap
     ///         The subdofmap component.
     std::shared_ptr<GenericDofMap>
-        extract_sub_dofmap(const std::vector<std::size_t>& component,
-                           const Mesh& mesh) const;
+      extract_sub_dofmap(const std::vector<std::size_t>& component,
+                         const Mesh& mesh) const;
 
     /// Create a "collapsed" dofmap (collapses a sub-dofmap)
     ///
@@ -319,8 +315,8 @@ namespace dolfin
     ///     DofMap
     ///         The collapsed dofmap.
     std::shared_ptr<GenericDofMap>
-          collapse(std::unordered_map<std::size_t, std::size_t>&
-                   collapsed_map, const Mesh& mesh) const;
+      collapse(std::unordered_map<std::size_t, std::size_t>&
+               collapsed_map, const Mesh& mesh) const;
 
     // FIXME: Document this function
     std::vector<dolfin::la_index> dofs() const;
@@ -402,8 +398,8 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::vector<dolfin::la_index> >
     ///         The local-to-global map for each cell.
-    const std::vector<std::vector<dolfin::la_index> >& data() const
-    { return _dofmap; }
+    //const std::vector<std::vector<dolfin::la_index> >& data() const
+    //{ return _dofmap; }
 
     /// Return informal string representation (pretty-print)
     ///
@@ -430,7 +426,10 @@ namespace dolfin
                                         const Mesh& mesh);
 
     // Cell-local-to-dof map (dofs for cell dofmap[i])
-    std::vector<std::vector<dolfin::la_index> > _dofmap;
+    std::vector<dolfin::la_index> _dofmap;
+
+    // Cell dimension (fixed for all cells)
+    std::size_t _cell_dimension;
 
     // UFC dof map
     std::shared_ptr<const ufc::dofmap> _ufc_dofmap;

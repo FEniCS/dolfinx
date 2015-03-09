@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2015 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,16 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Alnes, 2008, 2013
+// Modified by Martin Alnes, 2008-2015
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Niclas Jansson, 2009
 // Modified by Joachim B Haga, 2012
 // Modified by Mikael Mortensen, 2012
 // Modified by Jan Blechta, 2013
-//
-// First added:  2007-03-01
-// Last changed: 2014-09-08
 
 #include <unordered_map>
 
@@ -43,8 +40,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
-  : _ufc_dofmap(ufc_dofmap), _is_view(false), _global_dimension(0),
-    _ufc_offset(0), _global_offset(0)
+  : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
+    _global_dimension(0), _ufc_offset(0), _global_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -55,8 +52,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
-  : _ufc_dofmap(ufc_dofmap), _is_view(false), _global_dimension(0),
-    _ufc_offset(0), _global_offset(0)
+  : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
+    _global_dimension(0), _ufc_offset(0), _global_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -68,8 +65,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
-  const std::vector<std::size_t>& component, const Mesh& mesh)
-  : _is_view(true), _global_dimension(0), _ufc_offset(0),
+               const std::vector<std::size_t>& component, const Mesh& mesh)
+  : _cell_dimension(0), _is_view(true), _global_dimension(0), _ufc_offset(0),
     _global_offset(parent_dofmap._global_offset),
     _local_ownership_size(parent_dofmap._local_ownership_size)
 {
@@ -79,9 +76,9 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
-  :  _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-     _global_dimension(0), _ufc_offset(0), _global_offset(0),
-     _local_ownership_size(0)
+  : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
+    _global_dimension(0), _ufc_offset(0), _global_offset(0),
+    _local_ownership_size(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -104,9 +101,10 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   DofMapBuilder::build(*this, mesh, constrained_domain);
 
   // Dimension sanity checks
-  dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
+  dolfin_assert(dofmap_view._dofmap.size()
+                == mesh.num_cells()*dofmap_view._cell_dimension);
   dolfin_assert(global_dimension() == dofmap_view.global_dimension());
-  dolfin_assert(_dofmap.size() == mesh.num_cells());
+  dolfin_assert(_dofmap.size() == mesh.num_cells()*_cell_dimension);
 
   // FIXME: Could we use a std::vector instead of std::map if the
   //        collapsed dof map is contiguous (0, . . . , n)?
@@ -115,9 +113,9 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   collapsed_map.clear();
   for (std::size_t i = 0; i < mesh.num_cells(); ++i)
   {
-    const std::vector<dolfin::la_index>& view_cell_dofs
-      = dofmap_view._dofmap[i];
-    const std::vector<dolfin::la_index>& cell_dofs = _dofmap[i];
+    const ArrayView<const dolfin::la_index> view_cell_dofs
+      = dofmap_view.cell_dofs(i);
+    const ArrayView<const dolfin::la_index> cell_dofs = this->cell_dofs(i);
     dolfin_assert(view_cell_dofs.size() == cell_dofs.size());
 
     for (std::size_t j = 0; j < view_cell_dofs.size(); ++j)
@@ -129,6 +127,7 @@ DofMap::DofMap(const DofMap& dofmap)
 {
   // Copy data
   _dofmap = dofmap._dofmap;
+  _cell_dimension = dofmap._cell_dimension;
   _ufc_dofmap = dofmap._ufc_dofmap;
   _global_offset = dofmap._global_offset;
   _local_ownership_size = dofmap._local_ownership_size;
@@ -170,16 +169,17 @@ std::size_t DofMap::local_dimension(std::string type) const
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::cell_dimension(std::size_t cell_index) const
+std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 {
-  dolfin_assert(cell_index < _dofmap.size());
-  return _dofmap[cell_index].size();
+  return _cell_dimension;
+  //dolfin_assert(cell_index < _dofmap.size());
+  //return _dofmap[cell_index].size();
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::max_cell_dimension() const
+std::size_t DofMap::max_element_dofs() const
 {
   dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->local_dimension();
+  return _ufc_dofmap->num_element_dofs();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t dim) const
@@ -243,11 +243,11 @@ DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
   dolfin_assert(_ufc_dofmap);
 
   // Check dimensions
-  if (coordinates.shape()[0] != cell_dimension(cell.index()) ||
+  if (coordinates.shape()[0] != num_element_dofs(cell.index()) ||
       coordinates.shape()[1] != _ufc_dofmap->geometric_dimension())
   {
     boost::multi_array<double, 2>::extent_gen extents;
-    const std::size_t cell_dim = cell_dimension(cell.index());
+    const std::size_t cell_dim = num_element_dofs(cell.index());
     coordinates.resize(extents[cell_dim][_ufc_dofmap->geometric_dimension()]);
   }
 
@@ -342,18 +342,13 @@ std::vector<dolfin::la_index> DofMap::dofs() const
 {
   // Create vector to hold dofs
   std::vector<la_index> _dofs;
-  _dofs.reserve(_dofmap.size()*max_cell_dimension());
+  _dofs.reserve(_dofmap.size()*max_element_dofs());
 
   // Insert all dofs into a vector (will contain duplicates)
-  std::vector<std::vector<dolfin::la_index>>::const_iterator cell_dofs;
-  for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
+  for (auto dof : _dofmap)
   {
-    for (std::size_t i = 0; i < cell_dofs->size(); ++i)
-    {
-      const la_index dof = (*cell_dofs)[i];
-      if (dof >= 0 && dof < _local_ownership_size)
-        _dofs.push_back(dof + _global_offset);
-    }
+    if (dof >= 0 && dof < _local_ownership_size)
+      _dofs.push_back(dof + _global_offset);
   }
 
   // Sort dofs (required to later remove duplicates)
@@ -367,12 +362,14 @@ std::vector<dolfin::la_index> DofMap::dofs() const
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const
 {
-  std::vector<double> _value;
-  std::vector<std::vector<dolfin::la_index>>::const_iterator cell_dofs;
-  for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
+  dolfin_assert(_dofmap.size() % _cell_dimension == 0);
+  const std::size_t num_cells = _dofmap.size()/_cell_dimension;
+
+  std::vector<double> _value(_cell_dimension, value);
+  for (std::size_t i = 0; i < num_cells; ++i)
   {
-    _value.resize(cell_dofs->size(), value);
-    x.set_local(_value.data(), cell_dofs->size(), cell_dofs->data());
+    const ArrayView<const la_index> dofs = cell_dofs(i);
+    x.set_local(_value.data(), dofs.size(), dofs.data());
   }
   x.apply("insert");
 }
@@ -447,16 +444,16 @@ std::string DofMap::str(bool verbose) const
   if (verbose)
   {
     // Cell loop
-    for (std::size_t i = 0; i < _dofmap.size(); ++i)
+    for (std::size_t i = 0; i < _dofmap.size(); i += _cell_dimension)
     {
       s << "Local cell index, cell dofmap dimension: " << i
-        << ", " << _dofmap[i].size() << std::endl;
+        << ", " << _cell_dimension << std::endl;
 
       // Local dof loop
-      for (std::size_t j = 0; j < _dofmap[i].size(); ++j)
+      for (std::size_t j = 0; j < _cell_dimension; ++j)
       {
         s <<  "  " << "Local, global dof indices: " << j
-          << ", " << _dofmap[i][j] << std::endl;
+          << ", " << _dofmap[i*_cell_dimension + j] << std::endl;
       }
     }
   }
