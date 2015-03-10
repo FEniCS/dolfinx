@@ -227,7 +227,12 @@ namespace dolfin
 
     // Write data to HDF5 file
     const bool chunking = parameters["chunking"];
-    HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
+    // Ensure dataset starts with '/'
+    std::string dset_name(dataset_name);
+    if (dset_name[0] != '/')
+      dset_name = "/" + dataset_name;
+
+    HDF5Interface::write_dataset(hdf5_file_id, dset_name, data,
                                  range, global_size, use_mpi_io, chunking);
   }
   //---------------------------------------------------------------------------
