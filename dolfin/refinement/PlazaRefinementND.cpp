@@ -393,11 +393,11 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
       // Get the marked edge indices for new vertices
       // and make bool vector of marked edges
       std::vector<bool> markers(num_cell_edges, false);
-      EdgeIterator e(*cell);
       for (auto &p : marked_edge_list)
       {
         markers[p] = true;
-        const std::size_t edge_index = e[p].index();
+        const std::size_t edge_index = cell->entities(1)[p];
+
         auto it = new_vertex_map.find(edge_index);
         dolfin_assert (it != new_vertex_map.end());
         indices[num_cell_vertices + p] = it->second;
