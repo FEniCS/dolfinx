@@ -321,30 +321,27 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   const std::size_t size = num_vertices*dim;
   std::vector<double> values(size);
 
-  // Get function values at vertices and zero any small values
+  // Get function values at vertices
   u.compute_vertex_values(values, mesh);
   dolfin_assert(values.size() == size);
-  std::vector<double>::iterator it;
-  for (it = values.begin(); it != values.end(); ++it)
-  {
-    if (std::abs(*it) < DOLFIN_EPS)
-      *it = 0.0;
-  }
 
   if (rank == 0)
   {
     fp << "<PointData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  format=\""<< encode_string <<"\">";
   }
   else if (rank == 1)
   {
     fp << "<PointData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
     fp << "<PointData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
   if (_encoding == "ascii")

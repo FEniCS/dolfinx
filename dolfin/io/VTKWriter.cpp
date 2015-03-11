@@ -89,8 +89,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   if (rank == 0)
   {
     fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""
-       << encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  format=\"" << encode_string <<"\">";
   }
   else if (rank == 1)
   {
@@ -133,7 +133,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
       dof_set.push_back(dofs[i]);
 
     // Add local dimension to cell offset and increment
-    *(cell_offset + 1) = *(cell_offset) + dofmap.num_element_dofs(cell->index());
+    *(cell_offset + 1)
+      = *(cell_offset) + dofmap.num_element_dofs(cell->index());
     ++cell_offset;
   }
 

@@ -18,12 +18,11 @@
 #ifdef HAS_HDF5
 
 #include <vector>
-
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <dolfin/log/log.h>
 
+#include <dolfin/log/log.h>
 #include "XDMFxml.h"
 
 using namespace dolfin;
@@ -31,16 +30,17 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 XDMFxml::XDMFxml(std::string filename): _filename(filename)
 {
+  // Do nothing
 }
 //----------------------------------------------------------------------------
 XDMFxml::~XDMFxml()
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XDMFxml::header()
 {
-  xml_doc.append_child(pugi::node_doctype)
-                              .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+  xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
   pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
   xdmf.append_attribute("Version") = "2.0";
   xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
@@ -97,8 +97,7 @@ std::string XDMFxml::meshname() const
 
   // Geometry - check format and get dataset name
   pugi::xml_node xdmf_geometry =
-    xml_doc.child("Xdmf").child("Domain").child("Grid")
-           .child("Geometry").child("DataItem");
+    xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
   dolfin_assert(xdmf_geometry);
 
   const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
@@ -153,7 +152,8 @@ void XDMFxml::data_attribute(std::string name,
   dolfin_assert(value_rank < 3);
   static std::vector<std::string> attrib_type
     = {"Scalar", "Vector", "Tensor"};
-  xdmf_values.append_attribute("AttributeType") = attrib_type[value_rank].c_str();
+  xdmf_values.append_attribute("AttributeType")
+    = attrib_type[value_rank].c_str();
 
   xdmf_values.append_attribute("Center") = (vertex_data ? "Node" : "Cell");
 
@@ -185,99 +185,100 @@ pugi::xml_node XDMFxml::init_mesh(std::string name)
 //-----------------------------------------------------------------------------
 pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
                                         std::size_t counter)
-{
-  if (counter == 0)
-  {
-    // First time step - create document template
-    header();
-  }
-  else
-  {
-    // Subsequent timestep - read in existing XDMF file
-    pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-    if (!result)
-    {
-      dolfin_error("XDMFxml.cpp",
-                   "write data to XDMF file",
-                   "XML parsing error when reading from existing file");
-    }
-  }
+ {
+   if (counter == 0)
+   {
+     // First time step - create document template
+     header();
+   }
+   else
+   {
+     // Subsequent timestep - read in existing XDMF file
+     pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+     if (!result)
+     {
+       dolfin_error("XDMFxml.cpp",
+                    "write data to XDMF file",
+                    "XML parsing error when reading from existing file");
+     }
+   }
 
-  pugi::xml_node xdmf_domain = xml_doc.child("Xdmf").child("Domain");
-  dolfin_assert(xdmf_domain);
+   pugi::xml_node xdmf_domain = xml_doc.child("Xdmf").child("Domain");
+   dolfin_assert(xdmf_domain);
 
-  // Look for existing TimeSeries with same name
-  pugi::xml_node xdmf_timegrid = xdmf_domain.first_child();
+   // Look for existing TimeSeries with same name
+   pugi::xml_node xdmf_timegrid = xdmf_domain.first_child();
 
-  pugi::xml_node xdmf_timedata;
-  // If not found, create a new TimeSeries
-  if (!xdmf_timegrid)
-  {
-    //  /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
-    xdmf_timegrid = xdmf_domain.append_child("Grid");
-    xdmf_timegrid.append_attribute("Name") = "TimeSeries";
-    xdmf_timegrid.append_attribute("GridType") = "Collection";
-    xdmf_timegrid.append_attribute("CollectionType") = "Temporal";
+   // If not found, create a new TimeSeries
+   pugi::xml_node xdmf_timedata;
+   if (!xdmf_timegrid)
+   {
+     //  /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
+     xdmf_timegrid = xdmf_domain.append_child("Grid");
+     xdmf_timegrid.append_attribute("Name") = "TimeSeries";
+     xdmf_timegrid.append_attribute("GridType") = "Collection";
+     xdmf_timegrid.append_attribute("CollectionType") = "Temporal";
 
-    //  /Xdmf/Domain/Grid/Time
-    pugi::xml_node xdmf_time = xdmf_timegrid.append_child("Time");
-    xdmf_time.append_attribute("TimeType") = "List";
-    xdmf_timedata = xdmf_time.append_child("DataItem");
-    xdmf_timedata.append_attribute("Format") = "XML";
-    xdmf_timedata.append_attribute("Dimensions") = "0";
-    xdmf_timedata.append_child(pugi::node_pcdata);
-  }
+     //  /Xdmf/Domain/Grid/Time
+     pugi::xml_node xdmf_time = xdmf_timegrid.append_child("Time");
+     xdmf_time.append_attribute("TimeType") = "List";
+     xdmf_timedata = xdmf_time.append_child("DataItem");
+     xdmf_timedata.append_attribute("Format") = "XML";
+     xdmf_timedata.append_attribute("Dimensions") = "0";
+     xdmf_timedata.append_child(pugi::node_pcdata);
+   }
 
-  dolfin_assert(xdmf_timegrid);
+   dolfin_assert(xdmf_timegrid);
 
-  // Get time series node
-  xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
-  dolfin_assert(xdmf_timedata);
+   // Get time series node
+   xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
+   dolfin_assert(xdmf_timedata);
 
-  unsigned int last_count = boost::lexical_cast<unsigned int>
-    (xdmf_timedata.attribute("Dimensions").value());
+   unsigned int last_count = boost::lexical_cast<unsigned int>
+     (xdmf_timedata.attribute("Dimensions").value());
 
-  std::string times_str(xdmf_timedata.first_child().value());
-  const std::string timestep_str = boost::str((boost::format("%g") % time_step));
-  if (last_count != 0)
-  {
-    // Find last space character and last time stamp
-    unsigned int p = times_str.rfind(" ");
-    dolfin_assert(p != std::string::npos);
-    const std::string last_stamp(times_str.begin() + p + 1, times_str.end());
+   std::string times_str(xdmf_timedata.first_child().value());
+   const std::string timestep_str
+     = boost::str((boost::format("%g") % time_step));
+   if (last_count != 0)
+   {
+     // Find last space character and last time stamp
+     const std::size_t p = times_str.rfind(" ");
+     dolfin_assert(p != std::string::npos);
+     const std::string last_stamp(times_str.begin() + p + 1, times_str.end());
 
-    if (timestep_str == last_stamp)
-    {
-      // Retrieve last "grid"
-      xdmf_grid = xdmf_timegrid.last_child();
-      return xdmf_grid;
-    }
-  }
+     if (timestep_str == last_stamp)
+     {
+       // Retrieve last "grid"
+       xdmf_grid = xdmf_timegrid.last_child();
+       return xdmf_grid;
+     }
+   }
 
-  times_str += " " + timestep_str;
-  ++last_count;
+   times_str += " " + timestep_str;
+   ++last_count;
 
-  xdmf_timedata.attribute("Dimensions").set_value(last_count);
-  xdmf_timedata.first_child().set_value(times_str.c_str());
+   xdmf_timedata.attribute("Dimensions").set_value(last_count);
+   xdmf_timedata.first_child().set_value(times_str.c_str());
 
-  //   /Xdmf/Domain/Grid/Grid - the actual data for this timestep
-  xdmf_grid = xdmf_timegrid.append_child("Grid");
-  std::string s = "grid_" + boost::lexical_cast<std::string>(last_count);
-  xdmf_grid.append_attribute("Name") = s.c_str();
-  xdmf_grid.append_attribute("GridType") = "Uniform";
+   //   /Xdmf/Domain/Grid/Grid - the actual data for this timestep
+   xdmf_grid = xdmf_timegrid.append_child("Grid");
+   std::string s = "grid_" + boost::lexical_cast<std::string>(last_count);
+   xdmf_grid.append_attribute("Name") = s.c_str();
+   xdmf_grid.append_attribute("GridType") = "Uniform";
 
-  // Grid/Topology
-  pugi::xml_node topology = xdmf_grid.child("Topology");
-  if (!topology)
-    xdmf_grid.append_child("Topology");
+   // Grid/Topology
+   pugi::xml_node topology = xdmf_grid.child("Topology");
+   if (!topology)
+     xdmf_grid.append_child("Topology");
 
-  // Grid/Geometry
-  pugi::xml_node geometry = xdmf_grid.child("Geometry");
-  if (!geometry)
-    xdmf_grid.append_child("Geometry");
+   // Grid/Geometry
+   pugi::xml_node geometry = xdmf_grid.child("Geometry");
+   if (!geometry)
+     xdmf_grid.append_child("Geometry");
 
-  return xdmf_grid;
-}
+   return xdmf_grid;
+ }
 //-----------------------------------------------------------------------------
 void XDMFxml::mesh_topology(const std::size_t cell_dim,
                             const std::size_t cell_order,
@@ -286,6 +287,7 @@ void XDMFxml::mesh_topology(const std::size_t cell_dim,
 {
   pugi::xml_node xdmf_topology = xdmf_grid.child("Topology");
   pugi::xml_node xdmf_topology_data = xdmf_topology.child("DataItem");
+
   // Check if already has topology data, in which case ignore
   if (xdmf_topology_data)
     return;
@@ -326,10 +328,11 @@ void XDMFxml::mesh_topology(const std::size_t cell_dim,
     nodes_per_element = 10;
   }
   else
+  {
     dolfin_error("XDMFFile.cpp",
                  "output mesh topology",
                  "Invalid combination of cell dim and order");
-
+  }
 
   if (reference.size() > 0)
   {
@@ -345,7 +348,6 @@ void XDMFxml::mesh_topology(const std::size_t cell_dim,
     xdmf_topology_data.append_child(pugi::node_pcdata)
       .set_value(topology_reference.c_str());
   }
-
 }
 //----------------------------------------------------------------------------
 void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
@@ -354,6 +356,7 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
 {
   pugi::xml_node xdmf_geometry = xdmf_grid.child("Geometry");
   pugi::xml_node xdmf_geom_data = xdmf_geometry.child("DataItem");
+
   // Check if already has topology data, in which case ignore
   if (xdmf_geom_data)
     return;
@@ -410,8 +413,7 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   }
 
   const std::string geometry_reference = reference + "/coordinates";
-  xdmf_geom_data.append_child(pugi::node_pcdata)
-    .set_value(geometry_reference.c_str());
+  xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
 }
 //-----------------------------------------------------------------------------
 #endif
