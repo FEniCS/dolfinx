@@ -515,7 +515,7 @@ endif()
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
-  set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Ifpack2;Belos")
+  set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
   if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
     set(Trilinos_FOUND FALSE)

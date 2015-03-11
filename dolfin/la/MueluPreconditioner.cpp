@@ -44,7 +44,7 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 
   paramList.set("max levels", 3);
   paramList.set("coarse: max size", 10);
-  paramList.set("coarse: type", "RILUK");
+  paramList.set("coarse: type", "Klu2");
 
   paramList.set("multigrid algorithm", "sa");
 
