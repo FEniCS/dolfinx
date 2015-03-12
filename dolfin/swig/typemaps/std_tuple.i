@@ -1,6 +1,5 @@
-// SWIG interface file for including all typemaps
-//
-// Copyright (C) 2012 Johan Hake
+/* -*- C -*- */
+// Copyright (C) 2015 Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -16,18 +15,18 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-01-18
-// Last changed: 2012-01-20
 
 //-----------------------------------------------------------------------------
-// Include all global typemap files
+// Out typemaps for std::tuple of primitives
 //-----------------------------------------------------------------------------
-%include dolfin/swig/typemaps/primitives.i
-%include dolfin/swig/typemaps/std_pair.i
-%include dolfin/swig/typemaps/std_tuple.i
-%include dolfin/swig/typemaps/numpy.i
-%include dolfin/swig/typemaps/array.i
-%include dolfin/swig/typemaps/std_vector.i
-%include dolfin/swig/typemaps/std_set.i
-%include dolfin/swig/typemaps/std_map.i
+%typemap(out) std::tuple<double, double, double>
+{
+  $result = Py_BuildValue("ddd",
+                          std::get<0>($1), std::get<1>($1), std::get<2>($1));
+}
+%typemap(out) std::tuple<std::size_t, double, double, double>
+{
+  $result = Py_BuildValue("iddd",
+                          std::get<0>($1), std::get<1>($1),
+                          std::get<2>($1), std::get<3>($1));
+}
