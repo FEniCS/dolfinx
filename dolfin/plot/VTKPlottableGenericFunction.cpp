@@ -250,10 +250,9 @@ void VTKPlottableGenericFunction::update(std::shared_ptr<const Variable> var,
       // Sort 1D data on x-coordinate because vtkXYPlotActor does not
       // recognise cell connectivity information
       std::vector<std::pair<double, double> > point_value;
-      VertexIterator v(*mesh);
       for(std::size_t i = 0; i < vertex_values.size(); ++i)
       {
-        const double xpos = v[i].point().x();
+        const double xpos = Vertex(*mesh, i).point().x();
         point_value.push_back(std::make_pair(xpos, vertex_values[i]));
       }
 
