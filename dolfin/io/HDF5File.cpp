@@ -26,7 +26,6 @@
 #include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/assign.hpp>
 #include <boost/multi_array.hpp>
 
 
