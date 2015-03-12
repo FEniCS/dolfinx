@@ -49,6 +49,11 @@ void Timer::start()
 //-----------------------------------------------------------------------------
 void Timer::resume()
 {
+  if (_task.size() > 0)
+    dolfin_error("Timer.cpp",
+                 "resume timing",
+                 "Resuming is not well-defined for logging timer. "
+                 "Only non-logging timer can be resumed");
   _timer.resume();
 }
 //-----------------------------------------------------------------------------
@@ -63,7 +68,7 @@ double Timer::stop()
 //-----------------------------------------------------------------------------
 double Timer::value() const
 {
-  deprecation("Timer::value()", "1.6.0", "1.6.0", "The method is ill-defined.");
+  deprecation("Timer::value()", "1.6.0", "1.7.0", "The method is ill-defined.");
   const double t = static_cast<double>(_timer.elapsed().wall) * 1e-9;
   return t;
 }

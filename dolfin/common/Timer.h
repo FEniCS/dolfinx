@@ -57,13 +57,14 @@ namespace dolfin
     /// Destructor
     ~Timer();
 
-    /// Zeor and start timer
+    /// Zero and start timer
     void start();
 
-    /// Resume timer
+    /// Resume timer. Not well-defined for logging timer
     void resume();
 
-    /// Stop timer and return wall time elapsed
+    /// Stop timer, return wall time elapsed and store timing data
+    /// into logger
     double stop();
 
     /// DEPRECATED: Return value of timer (or time at start if not stopped)
