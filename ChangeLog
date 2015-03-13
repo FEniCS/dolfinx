@@ -10,6 +10,7 @@
 - Add dump_timings_to_xml()
 - Add enum TimingType { wall, user, system } for selecting wall-clock,
   user and system time in timing routines
+- Bump required SWIG version to 3.0.3
 1.5.0 [2015-01-12]
  - DG demos working is parallel
  - Simplify re-use of LU factorisations
