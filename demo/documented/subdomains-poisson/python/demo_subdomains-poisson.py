@@ -86,8 +86,8 @@ bcs = [DirichletBC(V, 5.0, boundaries, 2),
 
 # Define new measures associated with the interior domains and
 # exterior boundaries
-dx = Measure("dx")[domains]
-ds = Measure("ds")[boundaries]
+dx = Measure('dx', domain=mesh, subdomain_data=domains)
+ds = Measure('ds', domain=mesh, subdomain_data=boundaries)
 
 # Define variational form
 F = (inner(a0*grad(u), grad(v))*dx(0) + inner(a1*grad(u), grad(v))*dx(1)

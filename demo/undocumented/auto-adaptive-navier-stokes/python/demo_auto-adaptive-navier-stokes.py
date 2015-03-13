@@ -76,7 +76,7 @@ outflow_markers.set_all(1)
 outflow.mark(outflow_markers, 0)
 
 # Define new measure with associated subdomains
-ds = Measure("ds")[outflow_markers]
+ds = Measure('ds', domain=mesh, subdomain_data=outflow_markers)
 
 # Define goal
 M = u[0]*ds(0)

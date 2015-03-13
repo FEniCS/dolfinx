@@ -75,7 +75,7 @@ NeumanBoundary().mark(boundaries, 2)
 DirichletBoundary().mark(boundaries, 1)
 
 # Define outer surface measure aware of Dirichlet and Neumann boundaries
-ds = Measure('ds')[boundaries]
+ds = Measure('ds', domain=mesh, subdomain_data=boundaries)
 
 # Define parameters
 alpha = 4.0
