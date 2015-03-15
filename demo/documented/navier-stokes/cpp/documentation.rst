@@ -256,7 +256,7 @@ outflow boundaries:
     DirichletBC noslip(V, zero_vector, noslip_domain);
     DirichletBC inflow(Q, p_in, inflow_domain);
     DirichletBC outflow(Q, zero, outflow_domain);
-    std::vector<DirichletBC*> bcu = {&noslip};
+    std::vector<DirichletBC*> bcu = {{&noslip}};
     std::vector<DirichletBC*> bcp = {{&inflow, &outflow}};
 
 We collect the boundary conditions in the two arrays ``bcu`` and

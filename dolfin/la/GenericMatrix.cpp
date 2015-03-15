@@ -100,14 +100,8 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   // With the row-by-row algorithm used here there is no need for
   // inserting non_local rows and as such we can simply use a dummy
   // for off_process_owner
-  std::vector<const std::vector<std::size_t>* > local_to_global(2);
-  std::vector<const std::vector<int>* > off_process_owner(2);
-  const std::vector<int> dummy0;
-  off_process_owner[0] = &dummy0;
-  off_process_owner[1] = &dummy0;
-  const std::vector<std::size_t> dummy1;
-  local_to_global[0] = &dummy1;
-  local_to_global[1] = &dummy1;
+  std::vector<ArrayView<const std::size_t>> local_to_global(2);
+  std::vector<ArrayView<const int>> off_process_owner(2);
   const std::pair<std::size_t, std::size_t> row_range = local_range[0];
   const std::size_t m = row_range.second - row_range.first;
 
