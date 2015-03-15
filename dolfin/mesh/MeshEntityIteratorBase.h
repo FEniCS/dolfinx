@@ -46,7 +46,7 @@ namespace dolfin
       // Get number of entities (excluding ghosts)
       const std::size_t dim = _entity.dim();
       mesh.init(dim);
-      
+
       // End at ghost cells for normal iterator
       pos_end = mesh.topology().ghost_offset(dim);
     }
@@ -142,10 +142,6 @@ namespace dolfin
     /// Member access operator
     T* operator->()
     { _entity._local_index = (index ? index[_pos] : _pos); return &_entity; }
-
-    /// Random access operator
-    T& operator[] (std::size_t pos)
-    { _pos = pos; return *operator->();}
 
     /// Check if iterator has reached the end
     bool end() const

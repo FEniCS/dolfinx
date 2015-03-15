@@ -24,7 +24,6 @@
 //
 // Unit tests for the function library
 
-#include <boost/assign/list_of.hpp>
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 #include "Projection.h"

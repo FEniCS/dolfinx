@@ -24,7 +24,6 @@
 #include <sstream>
 #include <vector>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
