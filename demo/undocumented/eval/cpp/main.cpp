@@ -20,7 +20,6 @@
 //
 // Demonstrating function evaluation at arbitrary points.
 
-#include <boost/assign/list_of.hpp>
 #include <dolfin.h>
 #include "Projection.h"
 
