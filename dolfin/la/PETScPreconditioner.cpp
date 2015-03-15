@@ -293,9 +293,10 @@ void PETScPreconditioner::set_coordinates(const std::vector<double>& x,
   gdim = dim;
 }
 //-----------------------------------------------------------------------------
-void PETScPreconditioner::set_fieldsplit(PETScKrylovSolver& solver,
-                    const std::vector<std::vector<dolfin::la_index> >& fields,
-                    const std::vector<std::string>& split_names)
+void PETScPreconditioner::set_fieldsplit(
+  PETScKrylovSolver& solver,
+  const std::vector<std::vector<dolfin::la_index>>& fields,
+  const std::vector<std::string>& split_names)
 {
   dolfin_assert(fields.size() == split_names.size());
   PetscErrorCode ierr;

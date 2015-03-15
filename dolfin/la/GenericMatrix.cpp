@@ -93,7 +93,7 @@ void GenericMatrix::compressed(GenericMatrix& B) const
   std::vector<std::size_t> global_dimensions(2);
   global_dimensions[0] = size(0);
   global_dimensions[1] = size(1);
-  std::vector<std::pair<std::size_t, std::size_t> > local_range(2);
+  std::vector<std::pair<std::size_t, std::size_t>> local_range(2);
   local_range[0] = this->local_range(0);
   local_range[1] = this->local_range(0);
 

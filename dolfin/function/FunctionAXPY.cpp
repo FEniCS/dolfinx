@@ -57,7 +57,6 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy, const Function& func,
 			   Direction direction) : _pairs()
 {
   _register(axpy, direction % 2 == 0 ? 1.0 : -1.0);
-
   if (_pairs.size()>0 && !_pairs[0].second->in(*func.function_space()))
   {
     dolfin_error("FunctionAXPY.cpp",
@@ -67,7 +66,6 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy, const Function& func,
 
   const double scale = direction < 2 ? 1.0 : -1.0;
   _pairs.push_back(std::make_pair(scale, &func));
-
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy0,
@@ -78,13 +76,16 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy0,
   _register(axpy1, direction < 2 ? 1.0 : -1.0);
 }
 //-----------------------------------------------------------------------------
-FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy) :
-  _pairs(axpy._pairs)
-{}
+FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy) : _pairs(axpy._pairs)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
-FunctionAXPY::FunctionAXPY(std::vector<std::pair<double, const Function*> > pairs) :
-  _pairs(pairs)
-{}
+FunctionAXPY::FunctionAXPY(std::vector<std::pair<double,
+                           const Function*>> pairs) : _pairs(pairs)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 FunctionAXPY FunctionAXPY::operator+(const Function& func) const
 {
@@ -106,8 +107,8 @@ FunctionAXPY FunctionAXPY::operator-(const FunctionAXPY& axpy) const
   return FunctionAXPY(*this, axpy, FunctionAXPY::ADD_SUB);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::pair<double, const Function*> >&
-FunctionAXPY::pairs() const
+const std::vector<std::pair<double, const Function*>>&
+  FunctionAXPY::pairs() const
 {
   return _pairs;
 }
@@ -122,11 +123,8 @@ void FunctionAXPY::_register(const FunctionAXPY& axpy, double scale)
                  "Expected Functions to have the same FunctionSpace");
   }
 
-  for (std::vector<std::pair<double, const Function*> >::const_iterator
-	 it=axpy.pairs().begin(); it!=axpy.pairs().end(); it++)
-  {
+  for (auto it = axpy.pairs().begin(); it != axpy.pairs().end(); it++)
     _pairs.push_back(std::make_pair(it->first*scale, it->second));
-  }
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY FunctionAXPY::operator*(double scale) const

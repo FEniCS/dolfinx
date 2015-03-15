@@ -38,7 +38,7 @@ TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
                            const std::vector<std::size_t>& dims,
                            std::size_t pdim, std::size_t bs,
                            const std::vector<std::pair<std::size_t,
-                           std::size_t> >& ownership_range,
+                           std::size_t>>& ownership_range,
                            bool sparsity_pattern)
   : primary_dim(pdim), block_size(bs), local_to_global_map(dims.size()),
     _mpi_comm(mpi_comm), _shape(dims), _ownership_range(ownership_range)
@@ -54,9 +54,10 @@ TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-void TensorLayout::init(const MPI_Comm mpi_comm,
-                        const std::vector<std::size_t>& dims, std::size_t bs,
-  const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range)
+void TensorLayout::init(
+  const MPI_Comm mpi_comm,
+  const std::vector<std::size_t>& dims, std::size_t bs,
+  const std::vector<std::pair<std::size_t, std::size_t>>& ownership_range)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(!(_sparsity_pattern && dims.size() != 2));

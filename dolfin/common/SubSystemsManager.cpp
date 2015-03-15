@@ -34,7 +34,6 @@
 #include <slepc.h>
 #endif
 
-#include <libxml/parser.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -228,9 +227,6 @@ void SubSystemsManager::finalize()
   // Finalize subsystems in the correct order
   finalize_petsc();
   finalize_mpi();
-
-  // Clean up libxml2 parser
-  xmlCleanupParser();
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::responsible_mpi()

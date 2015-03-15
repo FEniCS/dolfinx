@@ -52,7 +52,7 @@ UFC::~UFC()
 void UFC::init(const Form& a)
 {
   // Get function spaces for arguments
-  std::vector<std::shared_ptr<const FunctionSpace> > V = a.function_spaces();
+  std::vector<std::shared_ptr<const FunctionSpace>> V = a.function_spaces();
 
   // Create finite elements for coefficients
   for (std::size_t i = 0; i < form.num_coefficients(); i++)

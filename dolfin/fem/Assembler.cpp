@@ -120,7 +120,7 @@ void Assembler::assemble_cells(
   GenericTensor& A,
   const Form& a,
   UFC& ufc,
-  std::shared_ptr<const MeshFunction<std::size_t> > domains,
+  std::shared_ptr<const MeshFunction<std::size_t>> domains,
   std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
@@ -209,7 +209,7 @@ void Assembler::assemble_exterior_facets(
   GenericTensor& A,
   const Form& a,
   UFC& ufc,
-  std::shared_ptr<const MeshFunction<std::size_t> > domains,
+  std::shared_ptr<const MeshFunction<std::size_t>> domains,
   std::vector<double>* values)
 {
   // Skip assembly if there are no exterior facet integrals
@@ -309,8 +309,8 @@ void Assembler::assemble_interior_facets(
   GenericTensor& A,
   const Form& a,
   UFC& ufc,
-  std::shared_ptr<const MeshFunction<std::size_t> > domains,
-  std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+  std::shared_ptr<const MeshFunction<std::size_t>> domains,
+  std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
   std::vector<double>* values)
 {
   // Skip assembly if there are no interior facet integrals
@@ -478,7 +478,7 @@ void Assembler::assemble_vertices(
 
   // Logics for shared vertices
   const bool has_shared_vertices = mesh.topology().have_shared_entities(0);
-  const std::map<unsigned int, std::set<unsigned int> >&
+  const std::map<unsigned int, std::set<unsigned int>>&
     shared_vertices = mesh.topology().shared_entities(0);
 
   // Form rank
@@ -489,7 +489,7 @@ void Assembler::assemble_vertices(
 
   // Create a vector for storying local to local map for vertex entity
   // dofs
-  std::vector<std::vector<std::size_t> > local_to_local_dofs(form_rank);
+  std::vector<std::vector<std::size_t>> local_to_local_dofs(form_rank);
 
   // Create a values vector to be used to fan out local tabulated
   // values to the global tensor
@@ -575,7 +575,7 @@ void Assembler::assemble_vertices(
     if (form_rank == 0 && has_shared_vertices)
     {
       // Find shared processes for this global vertex
-      std::map<unsigned int, std::set<unsigned int> >::const_iterator e;
+      std::map<unsigned int, std::set<unsigned int>>::const_iterator e;
       e = shared_vertices.find(vert->index());
 
       // If vertex is shared and this rank is not the lowest do not

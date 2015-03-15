@@ -189,7 +189,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
           max_iterations);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<Parameters> >
+std::vector<std::shared_ptr<Parameters>>
 GenericAdaptiveVariationalSolver::adaptive_data() const
 {
   return _adaptive_data;

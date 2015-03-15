@@ -95,7 +95,7 @@ ErrorControl::ErrorControl(std::shared_ptr<Form> a_star,
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
-  const std::vector<std::shared_ptr<const DirichletBC> > bcs)
+  const std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Compute discrete dual approximation
   dolfin_assert(_a_star);
@@ -128,13 +128,14 @@ double ErrorControl::estimate_error(const Function& u,
   return error_estimate;
 }
 //-----------------------------------------------------------------------------
-void ErrorControl::compute_dual(Function& z,
-   const std::vector<std::shared_ptr<const DirichletBC> > bcs)
+void ErrorControl::compute_dual(
+  Function& z,
+  const std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   log(PROGRESS, "Solving dual problem.");
 
   // Create dual boundary conditions by homogenizing
-  std::vector<std::shared_ptr<const DirichletBC> > dual_bcs;
+  std::vector<std::shared_ptr<const DirichletBC>> dual_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
     dolfin_assert(bcs[i]);
@@ -159,8 +160,9 @@ void ErrorControl::compute_dual(Function& z,
   solver.solve();
 }
 //-----------------------------------------------------------------------------
-void ErrorControl::compute_extrapolation(const Function& z,
-   const std::vector<std::shared_ptr<const DirichletBC> > bcs)
+void ErrorControl::compute_extrapolation(
+  const Function& z,
+  const std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   log(PROGRESS, "Extrapolating dual solution.");
 
@@ -457,7 +459,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::apply_bcs_to_extrapolation(
-const std::vector<std::shared_ptr<const DirichletBC> > bcs)
+  const std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Create boundary conditions for extrapolated dual, and apply
   // these.

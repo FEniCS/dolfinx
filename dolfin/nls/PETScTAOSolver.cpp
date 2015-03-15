@@ -38,7 +38,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const std::map<std::string, std::pair<std::string, const TaoType> >
+const std::map<std::string, std::pair<std::string, const TaoType>>
 PETScTAOSolver::_methods
 = { {"default", {"Default TAO method (ntl or tron)", TAOTRON}},
     {"tron",    {"Newton Trust Region method", TAOTRON}},
@@ -51,9 +51,9 @@ PETScTAOSolver::_methods
     {"cg",      {"Nonlinear conjugate gradient method", TAOCG}},
     {"nm",      {"Nelder-Mead algorithm", TAONM}} };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> > PETScTAOSolver::methods()
+std::vector<std::pair<std::string, std::string>> PETScTAOSolver::methods()
 {
-  std::vector<std::pair<std::string, std::string> > available_methods;
+  std::vector<std::pair<std::string, std::string>> available_methods;
   for (auto it = _methods.begin(); it != _methods.end(); ++it)
     available_methods.push_back(std::make_pair(it->first, it->second.first));
   return available_methods;
@@ -148,7 +148,7 @@ void PETScTAOSolver::set_tao(const std::string tao_type)
   {
     // Set solver type
     std::map<std::string, std::pair<std::string,
-                                    const TaoType> >::const_iterator it;
+                                    const TaoType>>::const_iterator it;
     it = _methods.find(tao_type);
     dolfin_assert(it != _methods.end());
     TaoSetType(_tao, it->second.second);

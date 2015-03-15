@@ -74,9 +74,9 @@ std::vector<int>
   return map;
 }
 //-----------------------------------------------------------------------------
-std::vector<int>
-  BoostGraphOrdering::compute_cuthill_mckee(const std::set<std::pair<std::size_t, std::size_t> >& edges,
-                                            std::size_t size, bool reverse)
+std::vector<int> BoostGraphOrdering::compute_cuthill_mckee(
+  const std::set<std::pair<std::size_t, std::size_t>>& edges,
+  std::size_t size, bool reverse)
 {
   Timer timer("Boost Cuthill-McKee graph ordering");
 
@@ -178,7 +178,7 @@ T BoostGraphOrdering::build_csr_directed_graph(const X& graph)
     num_edges += vertex->size();
 
   // Build list of graph edges
-  std::vector<std::pair<std::size_t, std::size_t> > edges;
+  std::vector<std::pair<std::size_t, std::size_t>> edges;
   edges.reserve(num_edges);
   graph_set_type::const_iterator edge;
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)

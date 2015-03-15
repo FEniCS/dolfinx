@@ -137,7 +137,7 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
   std::size_t cell = 0;
   if (diagonal == "crossed")
   {
-    std::vector<std::vector<std::size_t> >
+    std::vector<std::vector<std::size_t>>
       cells(4, std::vector<std::size_t>(3));
     for (std::size_t iy = 0; iy < ny; iy++)
     {
@@ -156,7 +156,7 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
         cells[3][0] = v2; cells[3][1] = v3; cells[3][2] = vmid;
 
         // Add cells
-        std::vector<std::vector<std::size_t> >::const_iterator _cell;
+        std::vector<std::vector<std::size_t>>::const_iterator _cell;
         for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
           editor.add_cell(cell++, *_cell);
       }
@@ -165,7 +165,7 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
   else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left" || diagonal == "left/right")
   {
     std::string local_diagonal = diagonal;
-    std::vector<std::vector<std::size_t> >
+    std::vector<std::vector<std::size_t>>
       cells(2, std::vector<std::size_t>(3));
     for (std::size_t iy = 0; iy < ny; iy++)
     {

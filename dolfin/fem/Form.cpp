@@ -41,7 +41,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Form::Form(std::size_t rank, std::size_t num_coefficients)
   : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this), dP(*this), 
+    dx(*this), ds(*this), dS(*this), dP(*this),
     _function_spaces(rank), _coefficients(num_coefficients), _rank(rank)
 {
   // Do nothing
@@ -95,19 +95,9 @@ std::vector<std::size_t> Form::coloring(std::size_t entity_dim) const
 
   std::vector<std::size_t> _coloring;
   if (entity_dim == cell_dim)
-  {
-    _coloring.push_back(cell_dim);
-    _coloring.push_back(0);
-    _coloring.push_back(cell_dim);
-  }
+    _coloring = {{cell_dim, 0, cell_dim}};
   else if (entity_dim == cell_dim - 1)
-  {
-    _coloring.push_back(cell_dim - 1);
-    _coloring.push_back(cell_dim);
-    _coloring.push_back(0);
-    _coloring.push_back(cell_dim);
-    _coloring.push_back(cell_dim - 1);
-  }
+    _coloring = {{cell_dim - 1, cell_dim, 0, cell_dim, cell_dim - 1}};
   else
   {
     dolfin_error("Form.cpp",
@@ -161,7 +151,8 @@ const Mesh& Form::mesh() const
   {
     for (std::size_t i = 0; i < _coefficients.size(); i++)
     {
-      const Function* function = dynamic_cast<const Function*>(&*_coefficients[i]);
+      const Function* function
+        = dynamic_cast<const Function*>(&*_coefficients[i]);
       if (function && function->function_space()->mesh())
         meshes.push_back(function->function_space()->mesh());
     }

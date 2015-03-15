@@ -69,7 +69,7 @@ struct lt_coordinate
 };
 
 //-----------------------------------------------------------------------------
-std::map<unsigned int, std::pair<unsigned int, unsigned int> >
+std::map<unsigned int, std::pair<unsigned int, unsigned int>>
   PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
                                                       const SubDomain& sub_domain,
                                                       const std::size_t dim)
@@ -90,7 +90,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   Array<double> _y(gdim, y.data());
 
   std::vector<std::size_t> slave_entities;
-  std::vector<std::vector<double> > slave_mapped_coords;
+  std::vector<std::vector<double>> slave_mapped_coords;
 
   // Min/max coordinates of facet midpoints [min_x, max_x]. Used to
   // build bounding box of all master entity midpoints on this process
@@ -178,7 +178,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   }
 
   // Communicate bounding boxes for master entities
-  std::vector<std::vector<double> > bounding_boxes;
+  std::vector<std::vector<double>> bounding_boxes;
   MPI::all_gather(mpi_comm, x_min_max, bounding_boxes);
 
   // Number of MPI processes
@@ -186,8 +186,8 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 
   // Build send buffer of mapped slave midpoint coordinate to
   // processes that may own the master entity
-  std::vector<std::vector<double> > slave_mapped_coords_send(num_processes);
-  std::vector<std::vector<unsigned int> > sent_slave_indices(num_processes);
+  std::vector<std::vector<double>> slave_mapped_coords_send(num_processes);
+  std::vector<std::vector<unsigned int>> sent_slave_indices(num_processes);
   for (std::size_t i = 0; i < slave_entities.size(); ++i)
   {
     for (std::size_t p = 0; p < num_processes; ++p)
@@ -211,7 +211,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 
   // Send slave midpoints to possible owners of corresponding master
   // entity
-  std::vector<std::vector<double> > slave_mapped_coords_recv;
+  std::vector<std::vector<double>> slave_mapped_coords_recv;
   MPI::all_to_all(mpi_comm,  slave_mapped_coords_send,
                   slave_mapped_coords_recv);
   dolfin_assert(slave_mapped_coords_recv.size() == num_processes);
@@ -219,7 +219,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   // Check if this process owns the master facet for a received (mapped)
   // slave
   std::vector<double> coordinates(gdim);
-  std::vector<std::vector<unsigned int> > master_local_entity(num_processes);
+  std::vector<std::vector<unsigned int>> master_local_entity(num_processes);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     const std::vector<double>& slave_mapped_coords_p
@@ -245,13 +245,13 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   }
 
   // Send local index of master entity back to owner of slave entity
-  std::vector<std::vector<unsigned int> > master_entity_local_index_recv;
+  std::vector<std::vector<unsigned int>> master_entity_local_index_recv;
   MPI::all_to_all(mpi_comm, master_local_entity,
                   master_entity_local_index_recv);
 
   // Build map from slave facets on this process to master facet (local
   // facet index, process owner)
-  std::map<unsigned int, std::pair<unsigned int, unsigned int> >
+  std::map<unsigned int, std::pair<unsigned int, unsigned int>>
     slave_to_master_entity;
   std::size_t num_local_slave_entities = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
@@ -286,14 +286,14 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
   MeshFunction<std::size_t> mf(*mesh, dim, 0);
 
   // Compute marker
-  const std::map<unsigned int, std::pair<unsigned int, unsigned int> >
+  const std::map<unsigned int, std::pair<unsigned int, unsigned int>>
     slaves = compute_periodic_pairs(*mesh, sub_domain, dim);
 
   // Mark master and slaves, and pack off-process masters to send
-  std::vector<std::vector<std::size_t> >
+  std::vector<std::vector<std::size_t>>
     master_dofs_send(MPI::size(mesh->mpi_comm()));
   std::map<unsigned int,
-           std::pair<unsigned int, unsigned int> >::const_iterator slave;
+           std::pair<unsigned int, unsigned int>>::const_iterator slave;
   for (slave = slaves.begin(); slave != slaves.end(); ++slave)
   {
     // Set slave
@@ -305,15 +305,18 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
   }
 
   // Send/receive master entities
-  std::vector<std::vector<std::size_t> > master_dofs_recv;
+  std::vector<std::vector<std::size_t>> master_dofs_recv;
   MPI::all_to_all(mesh->mpi_comm(), master_dofs_send, master_dofs_recv);
 
   // Build list of sharing processes
   std::unordered_map<unsigned int,
-std::vector<std::pair<unsigned int, unsigned int> > >
-    shared_entities_map = DistributedMeshTools::compute_shared_entities(*mesh, dim);
-  std::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator e;
-  std::vector<std::vector<std::pair<unsigned int, unsigned int> > >
+                     std::vector<std::pair<unsigned int, unsigned int>>>
+    shared_entities_map
+    = DistributedMeshTools::compute_shared_entities(*mesh, dim);
+  std::unordered_map<unsigned int,
+                     std::vector<std::pair<unsigned int,
+                                           unsigned int>>>::const_iterator e;
+  std::vector<std::vector<std::pair<unsigned int, unsigned int>>>
     shared_entities(mesh->num_entities(dim));
   for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
   {
@@ -335,7 +338,7 @@ std::vector<std::pair<unsigned int, unsigned int> > >
       mf[local_index] = 1;
 
       // Pack to send to sharing processes
-      const std::vector<std::pair<unsigned int, unsigned int> > sharing
+      const std::vector<std::pair<unsigned int, unsigned int>> sharing
         = shared_entities[local_index] ;
       for (std::size_t j = 0; j < sharing.size(); ++j)
       {

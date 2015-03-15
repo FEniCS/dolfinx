@@ -239,8 +239,7 @@ and ``Rotation`` (for the value on the right boundary).
   // Create Dirichlet boundary conditions
   DirichletBC bcl(V, c, left);
   DirichletBC bcr(V, r, right);
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bcl); bcs.push_back(&bcr);
+  std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
 
 The two boundary conditions are collected in the container ``bcs``.
 

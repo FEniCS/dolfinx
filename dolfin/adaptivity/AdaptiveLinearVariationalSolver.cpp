@@ -102,7 +102,7 @@ AdaptiveLinearVariationalSolver::solve_primal()
   return current.solution();
 }
 // ----------------------------------------------------------------------------
-std::vector<std::shared_ptr<const DirichletBC> >
+std::vector<std::shared_ptr<const DirichletBC>>
 AdaptiveLinearVariationalSolver::extract_bcs() const
 {
   const LinearVariationalProblem& current = _problem->leaf_node();

@@ -150,8 +150,7 @@ int main(int argc, char* argv[])
   LeftBoundary left_boundary;
   Constant zero(0.0, 0.0);
   DirichletBC bc0(V, zero, left_boundary);
-  std::vector<const DirichletBC*> bc;
-  bc.push_back(&bc0);
+  std::vector<const DirichletBC*> bc= {{&bc0}};
 
   // Define solution vectors
   Function u(V), u0(V);  // displacement

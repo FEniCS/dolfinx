@@ -498,7 +498,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   }
 
   // Compute signed squared cos of angle with (0, 1) from i_min to all points
-  std::vector<std::pair<double, std::size_t> > order;
+  std::vector<std::pair<double, std::size_t>> order;
   for (std::size_t i = 0; i < points.size(); i++)
   {
     // Skip left-most point used as origin
@@ -591,7 +591,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   }
 
   // Edge face intersections
-  std::vector<std::vector<std::size_t> > edges_0(6, std::vector<std::size_t>(2));
+  std::vector<std::vector<std::size_t>> edges_0(6, std::vector<std::size_t>(2));
   edges_0[0][0] = 2;
   edges_0[0][1] = 3;
   edges_0[1][0] = 1;
@@ -605,7 +605,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   edges_0[5][0] = 0;
   edges_0[5][1] = 1;
 
-  std::vector<std::vector<std::size_t> > edges_1(6, std::vector<std::size_t>(2));
+  std::vector<std::vector<std::size_t>> edges_1(6, std::vector<std::size_t>(2));
   edges_1[0][0] = 2;
   edges_1[0][1] = 3;
   edges_1[1][0] = 1;
@@ -619,7 +619,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   edges_1[5][0] = 0;
   edges_1[5][1] = 1;
 
-  std::vector<std::vector<std::size_t> > faces_0(4, std::vector<std::size_t>(3));
+  std::vector<std::vector<std::size_t>> faces_0(4, std::vector<std::size_t>(3));
   faces_0[0][0] = 1;
   faces_0[0][1] = 2;
   faces_0[0][2] = 3;
@@ -633,7 +633,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   faces_0[3][1] = 1;
   faces_0[3][2] = 2;
 
-  std::vector<std::vector<std::size_t> > faces_1(4, std::vector<std::size_t>(3));
+  std::vector<std::vector<std::size_t>> faces_1(4, std::vector<std::size_t>(3));
   faces_1[0][0] = 1;
   faces_1[0][1] = 2;
   faces_1[0][2] = 3;
@@ -853,7 +853,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
   		pointscenter += points[coplanar[m]];
   	      pointscenter /= coplanar.size();
 
-  	      std::vector<std::pair<double, std::size_t> > order;
+  	      std::vector<std::pair<double, std::size_t>> order;
   	      Point ref = points[coplanar[0]] - pointscenter;
   	      ref /= ref.norm();
 
@@ -944,7 +944,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
     points.push_back(tri[i]);
 
   // Check if a tetrahedron edge intersects the triangle
-  std::vector<std::vector<int> > tet_edges(6, std::vector<int>(2));
+  std::vector<std::vector<int>> tet_edges(6, std::vector<int>(2));
   tet_edges[0][0] = 2;
   tet_edges[0][1] = 3;
   tet_edges[1][0] = 1;
@@ -967,7 +967,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
       points.push_back(pt);
 
   // Check if a triangle edge intersects a tetrahedron face
-  std::vector<std::vector<std::size_t> >
+  std::vector<std::vector<std::size_t>>
     tet_faces(4, std::vector<std::size_t>(3));
 
   tet_faces[0][0] = 1;
@@ -1079,7 +1079,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
     pointscenter += points[m];
   pointscenter /= points.size();
 
-  std::vector<std::pair<double, std::size_t> > order;
+  std::vector<std::pair<double, std::size_t>> order;
   Point ref = points[0]-pointscenter;
   ref /= ref.norm();
 
