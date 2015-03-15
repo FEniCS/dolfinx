@@ -78,7 +78,7 @@ MultiMesh::covered_cells(std::size_t part) const
 }
 //-----------------------------------------------------------------------------
 const std::map<unsigned int,
-               std::vector<std::pair<std::size_t, unsigned int> > >&
+               std::vector<std::pair<std::size_t, unsigned int>>>&
 MultiMesh::collision_map_cut_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
@@ -101,22 +101,22 @@ MultiMesh::quadrature_rule_cut_cell(std::size_t part,
   return q[cell_index];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::vector<quadrature_rule> >&
-MultiMesh::quadrature_rule_overlap(std::size_t part) const
+const std::map<unsigned int, std::vector<quadrature_rule>>&
+  MultiMesh::quadrature_rule_overlap(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _quadrature_rules_overlap[part];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::vector<quadrature_rule> >&
-MultiMesh::quadrature_rule_interface(std::size_t part) const
+const std::map<unsigned int, std::vector<quadrature_rule>>&
+  MultiMesh::quadrature_rule_interface(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _quadrature_rules_interface[part];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::vector<std::vector<double> > >&
-MultiMesh::facet_normals(std::size_t part) const
+const std::map<unsigned int, std::vector<std::vector<double>>>&
+  MultiMesh::facet_normals(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _facet_normals[part];
@@ -266,7 +266,7 @@ void MultiMesh::_build_collision_maps()
     std::vector<bool> collides_with_boundary(_meshes[i]->num_cells());
 
     // Create empty collision map for cut cells in part `i`
-    std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int> > >
+    std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int>>>
       collision_map_cut_cells;
 
     // Iterate over covering parts (with higher part number)
@@ -296,7 +296,7 @@ void MultiMesh::_build_collision_maps()
           // Add empty list of collisions into map if it does not exist
           if (collision_map_cut_cells.find(*it) == collision_map_cut_cells.end())
           {
-            std::vector<std::pair<std::size_t, unsigned int> > collisions;
+            std::vector<std::pair<std::size_t, unsigned int>> collisions;
             collision_map_cut_cells[*it] = collisions;
           }
         }
@@ -399,7 +399,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
   // the cutting_cell_no.
 
   // Build map from boundary facets to full mesh
-  std::vector<std::vector<std::vector<std::pair<std::size_t, std::size_t> > > >
+  std::vector<std::vector<std::vector<std::pair<std::size_t, std::size_t>>>>
     full_to_bdry(num_parts());
   for (std::size_t part = 0; part < num_parts(); ++part)
   {
@@ -462,7 +462,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
       // how the data are grouped during assembly: for each pair of
       // colliding cells, we build a list of quadrature points and a
       // corresponding list of facet normals.
-      std::vector<std::vector<double> > interface_n;
+      std::vector<std::vector<double>> interface_n;
 
       // Data structure for the interface triangulation
       std::vector<double> interface_triangulation;
@@ -803,7 +803,7 @@ void MultiMesh::_plot() const
   for (std::size_t p = 0; p < num_parts(); ++p)
   {
     // Create a cell function and mark cells
-    std::shared_ptr<MeshFunction<std::size_t> >
+    std::shared_ptr<MeshFunction<std::size_t>>
       f(new MeshFunction<std::size_t>(part(p),
                                       part(p)->topology().dim()));
 

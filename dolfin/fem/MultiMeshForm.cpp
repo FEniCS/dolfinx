@@ -89,7 +89,7 @@ std::shared_ptr<const MultiMesh> MultiMeshForm::multimesh() const
     return _multimesh;
 
   // Extract meshes from function spaces
-  std::vector<std::shared_ptr<const MultiMesh> > multimeshes;
+  std::vector<std::shared_ptr<const MultiMesh>> multimeshes;
   for (std::size_t i = 0; i < _function_spaces.size(); i++)
   {
     dolfin_assert(_function_spaces[i]->multimesh());

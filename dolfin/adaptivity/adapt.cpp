@@ -217,14 +217,14 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   }
 
   // Get data
-  std::vector<std::shared_ptr<const FunctionSpace> >
+  std::vector<std::shared_ptr<const FunctionSpace>>
     spaces = form.function_spaces();
-  std::vector<std::shared_ptr<const GenericFunction> >
+  std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = form.coefficients();
   std::shared_ptr<const ufc::form> ufc_form = form.ufc_form();
 
   // Refine function spaces
-  std::vector<std::shared_ptr<const FunctionSpace> > refined_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace>> refined_spaces;
   for (std::size_t i = 0; i < spaces.size(); i++)
   {
     const FunctionSpace& space = *spaces[i];
@@ -233,7 +233,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   }
 
   // Refine coefficients:
-  std::vector<std::shared_ptr<const GenericFunction> > refined_coefficients;
+  std::vector<std::shared_ptr<const GenericFunction>> refined_coefficients;
   for (std::size_t i = 0; i < coefficients.size(); i++)
   {
     // Try casting to Function
@@ -297,7 +297,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   std::shared_ptr<const Form> a = problem.bilinear_form();
   std::shared_ptr<const Form> L = problem.linear_form();
   std::shared_ptr<const Function> u = problem.solution();
-  std::vector<std::shared_ptr<const DirichletBC> > bcs = problem.bcs();
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = problem.bcs();
 
   // Refine forms
   dolfin_assert(a);
@@ -315,7 +315,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
 
   // Refine bcs
   std::shared_ptr<const FunctionSpace> V(problem.trial_space());
-  std::vector<std::shared_ptr<const DirichletBC> > refined_bcs;
+  std::vector<std::shared_ptr<const DirichletBC>> refined_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
     if (bcs[i] != 0)
@@ -363,7 +363,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   std::shared_ptr<const Form> F = problem.residual_form();
   std::shared_ptr<const Form> J = problem.jacobian_form();
   std::shared_ptr<const Function> u = problem.solution();
-  std::vector<std::shared_ptr<const DirichletBC> > bcs = problem.bcs();
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = problem.bcs();
 
   // Refine forms
   dolfin_assert(F);
@@ -381,7 +381,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
 
   // Refine bcs
   std::shared_ptr<const FunctionSpace> V(problem.trial_space());
-  std::vector<std::shared_ptr<const DirichletBC> > refined_bcs;
+  std::vector<std::shared_ptr<const DirichletBC>> refined_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
     dolfin_assert(bcs[i] != 0);
@@ -562,7 +562,7 @@ const dolfin::MeshFunction<std::size_t>&
   const std::size_t undefined = std::numeric_limits<std::size_t>::max();
 
   // Map values of mesh function into refined mesh function
-  std::shared_ptr<MeshFunction<std::size_t> >
+  std::shared_ptr<MeshFunction<std::size_t>>
     adapted_mesh_function(new MeshFunction<std::size_t>(*adapted_mesh,
                                                         mesh_function.dim()));
   for (std::size_t i = 0; i < adapted_mesh_function->size(); i++)
@@ -604,7 +604,7 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
   // Create map (parent_cell, parent_local_facet) -> [(child_cell,
   // child_local_facet), ...] for boundary facets
 
-  std::map<std::size_t, std::vector<std::size_t> > children;
+  std::map<std::size_t, std::vector<std::size_t>> children;
   for (FacetIterator facet(adapted_mesh); !facet.end(); ++facet)
   {
     // Ignore interior facets

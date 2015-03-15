@@ -57,7 +57,7 @@ std::pair<double, double> MeshQuality::radius_ratio_min_max(const Mesh& mesh)
   return std::make_pair(qmin, qmax);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<double> >
+std::pair<std::vector<double>, std::vector<double>>
 MeshQuality::radius_ratio_histogram_data(const Mesh& mesh,
                                          std::size_t num_bins)
 {
@@ -90,7 +90,7 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
 					       std::size_t num_intervals)
 {
   // Compute data
-  std::pair<std::vector<double>, std::vector<double> >
+  std::pair<std::vector<double>, std::vector<double>>
     data = radius_ratio_histogram_data(mesh, num_intervals);
 
   dolfin_assert(!data.first.empty());

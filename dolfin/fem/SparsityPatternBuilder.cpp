@@ -53,9 +53,9 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
-  std::vector<const std::vector<std::size_t>* > local_to_global(rank);
-  std::vector<const std::vector<int>* > off_process_owner(rank);
+  std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
+  std::vector<const std::vector<std::size_t>*> local_to_global(rank);
+  std::vector<const std::vector<int>*> off_process_owner(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     global_dimensions[i] = dofmaps[i]->global_dimension();
@@ -84,7 +84,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     return;
 
   // Vector to store macro-dofs, if required (for interior facets)
-  std::vector<std::vector<dolfin::la_index> > macro_dofs(rank);
+  std::vector<std::vector<dolfin::la_index>> macro_dofs(rank);
 
   // Create vector to point to dofs
   std::vector<ArrayView<const dolfin::la_index>> dofs(rank);
@@ -117,9 +117,9 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     mesh.init(0);
     mesh.init(0, D);
 
-    std::vector<std::vector<dolfin::la_index> > global_dofs(rank);
+    std::vector<std::vector<dolfin::la_index>> global_dofs(rank);
     //std::vector<const std::vector<dolfin::la_index>* > global_dofs_p(rank);
-    std::vector<std::vector<std::size_t> > local_to_local_dofs(rank);
+    std::vector<std::vector<std::size_t>> local_to_local_dofs(rank);
 
     // Resize local dof map vector
     for (std::size_t i = 0; i < rank; ++i)
@@ -273,10 +273,10 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   // Get global dimensions and local range
   const std::size_t rank = form.rank();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
-  std::vector<const std::vector<std::size_t>* > local_to_global(rank);
-  std::vector<std::vector<std::size_t> > tmp_local_to_global(rank);
-  std::vector<const std::vector<int>* > off_process_owner(rank);
+  std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
+  std::vector<const std::vector<std::size_t>*> local_to_global(rank);
+  std::vector<std::vector<std::size_t>> tmp_local_to_global(rank);
+  std::vector<const std::vector<int>*> off_process_owner(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
