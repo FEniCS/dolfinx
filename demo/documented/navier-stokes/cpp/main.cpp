@@ -1,4 +1,4 @@
-e// Copyright (C) 2010-2011 Anders Logg
+// Copyright (C) 2010-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
