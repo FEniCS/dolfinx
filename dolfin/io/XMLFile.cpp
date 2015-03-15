@@ -79,7 +79,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
     // Create XML doc and get DOLFIN node
     pugi::xml_document xml_doc;
     load_xml_doc(xml_doc);
-    const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+    pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
 
     // Read mesh
     XMLMesh::read(input_mesh, dolfin_node);
@@ -87,7 +87,22 @@ void XMLFile::operator>> (Mesh& input_mesh)
 
   if (MPI::size(input_mesh.mpi_comm()) > 1)
   {
+    // Distribute local data
+    input_mesh.domains().clear();
     LocalMeshData local_mesh_data(input_mesh);
+
+    // FIXME: To be removed when advanced parallel XML IO is removed
+    // Add mesh domain data
+    if (MPI::rank(input_mesh.mpi_comm()) == 0)
+    {
+      // Create XML doc and get DOLFIN node
+      pugi::xml_document xml_doc;
+      load_xml_doc(xml_doc);
+      pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+      XMLMesh::read_domain_data(local_mesh_data, dolfin_node);
+    }
+
+    // Partition and build mesh
     MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data);
   }
 }
@@ -345,9 +360,6 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
   // Create XML parser result
   pugi::xml_parse_result result;
 
-  // Check file size (prints warning in parallel if file is large)
-  //check_file_size(filename);
-
   // Get file path and extension
   const boost::filesystem::path path(_filename);
   const std::string extension = boost::filesystem::extension(path);
@@ -360,7 +372,7 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
                  "Unable to open file \"%s\"", _filename.c_str());
   }
 
-  // Get file size
+  // Get file size if running in parallel
   if (dolfin::MPI::size(_mpi_comm) > 1)
   {
     const double size = boost::filesystem::file_size(path)/(1024.0*1024.0);
@@ -371,7 +383,7 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
     if(size >= warning_size)
     {
       warning("XML file '%s' is very large. XML files are parsed in serial, \
-which is not sclable. Use XMDF/HDF5 for scalable IO in parallel",
+which is not scalable. Use XMDF/HDF5 for scalable IO in parallel",
               path.filename().c_str());
     }
   }
