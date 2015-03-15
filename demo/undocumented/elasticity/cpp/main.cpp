@@ -38,7 +38,7 @@ dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
   dolfin::SubSpace V2(V, 2);
 
   // Create vectors for nullspace basis
-  std::vector<std::shared_ptr<dolfin::GenericVector> > basis(6);
+  std::vector<std::shared_ptr<dolfin::GenericVector>> basis(6);
   for (std::size_t i = 0; i < basis.size(); ++i)
     basis[i] = x.copy();
 

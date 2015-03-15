@@ -102,11 +102,8 @@ int main()
   DirichletBC noslip(V, zero_vector, noslip_domain);
   DirichletBC inflow(Q, p_in, inflow_domain);
   DirichletBC outflow(Q, zero, outflow_domain);
-  std::vector<DirichletBC*> bcu;
-  bcu.push_back(&noslip);
-  std::vector<DirichletBC*> bcp;
-  bcp.push_back(&inflow);
-  bcp.push_back(&outflow);
+  std::vector<DirichletBC*> bcu = {{&noslip}};
+  std::vector<DirichletBC*> bcp = {{&inflow, &outflow}};
 
   // Create functions
   Function u0(V);

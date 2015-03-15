@@ -123,8 +123,7 @@ int main()
   DirichletBC noslip(W0, zero_vector, top_bottom);
 
   // Collect boundary conditions
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&inflow); bcs.push_back(&outflow); bcs.push_back(&noslip);
+  std::vector<const DirichletBC*> bcs = {{&inflow, &outflow, &noslip}};
 
   // Create forms for the Stokes problem
   Constant f(0.0, 0.0, 0.0);

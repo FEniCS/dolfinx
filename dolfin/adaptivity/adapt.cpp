@@ -237,23 +237,24 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   for (std::size_t i = 0; i < coefficients.size(); i++)
   {
     // Try casting to Function
-    const Function*
-      function = dynamic_cast<const Function*>(coefficients[i].get());
+    const Function* function
+      = dynamic_cast<const Function*>(coefficients[i].get());
 
     if (function)
     {
       adapt(*function, adapted_mesh, adapt_coefficients);
       refined_coefficients.push_back(function->child_shared_ptr());
-    } else
+    }
+    else
       refined_coefficients.push_back(coefficients[i]);
   }
 
-  /// Create new form (constructor used from Python interface)
+  // Create new form (constructor used from Python interface)
   std::shared_ptr<Form> refined_form(new Form(ufc_form,
-                                                refined_spaces,
-                                                refined_coefficients));
+                                              refined_spaces,
+                                              refined_coefficients));
 
-  /// Attach mesh
+  // Attach mesh
   refined_form->set_mesh(adapted_mesh);
 
   // Attached refined sub domains
@@ -263,13 +264,15 @@ const dolfin::Form& dolfin::adapt(const Form& form,
     adapt(*cell_domains, adapted_mesh);
     refined_form->dx = cell_domains->child_shared_ptr();
   }
-  const MeshFunction<std::size_t>* exterior_domains = form.exterior_facet_domains().get();
+  const MeshFunction<std::size_t>* exterior_domains
+    = form.exterior_facet_domains().get();
   if (exterior_domains)
   {
     adapt(*exterior_domains, adapted_mesh);
     refined_form->ds = exterior_domains->child_shared_ptr();
   }
-  const MeshFunction<std::size_t>* interior_domains = form.interior_facet_domains().get();
+  const MeshFunction<std::size_t>* interior_domains
+    = form.interior_facet_domains().get();
   if (interior_domains)
   {
     adapt(*interior_domains, adapted_mesh);
@@ -448,7 +451,8 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 
   // Get refined value
   const GenericFunction& g = adapt(*(bc.value()), adapted_mesh);
-  std::shared_ptr<const GenericFunction> g_ptr(reference_to_no_delete_pointer(g));
+  std::shared_ptr<const GenericFunction>
+    g_ptr(reference_to_no_delete_pointer(g));
 
   // Extract user_sub_domain
   std::shared_ptr<const SubDomain> user_sub_domain = bc.user_sub_domain();
@@ -479,9 +483,10 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   return *refined_bc;
 }
 //-----------------------------------------------------------------------------
-const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
-                                    std::shared_ptr<const Mesh> adapted_mesh,
-                                    bool adapt_coefficients)
+const dolfin::ErrorControl&
+dolfin::adapt(const ErrorControl& ec,
+              std::shared_ptr<const Mesh> adapted_mesh,
+              bool adapt_coefficients)
 {
   dolfin_assert(adapted_mesh);
 
@@ -621,9 +626,7 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
   for (auto const &marker: markers)
   {
     for (auto const &child_facet: children[marker])
-    {
       refined_markers.push_back(child_facet);
-    }
   }
 }
 //-----------------------------------------------------------------------------
