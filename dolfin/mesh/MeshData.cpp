@@ -27,8 +27,8 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::vector<std::size_t> >::iterator a_iterator;
-typedef std::map<std::string, std::vector<std::size_t> >::const_iterator
+typedef std::map<std::string, std::vector<std::size_t>>::iterator a_iterator;
+typedef std::map<std::string, std::vector<std::size_t>>::const_iterator
 a_const_iterator;
 
 //-----------------------------------------------------------------------------

@@ -37,7 +37,7 @@
 
 using namespace dolfin;
 
-// Template function for storing objects
+//-----------------------------------------------------------------------------
 template <typename T>
 void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
                                   std::vector<double>& times,
@@ -208,7 +208,8 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
     // Special case: same index
     if (i0 == i1)
     {
-      hdf5_file.read(vector, "/Vector/" + boost::lexical_cast<std::string>(i0), false);
+      hdf5_file.read(vector, "/Vector/" + boost::lexical_cast<std::string>(i0),
+                     false);
       log(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
       return;
     }
@@ -219,8 +220,10 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
     // Read vectors
     GenericVector& x0(vector);
     std::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
-    hdf5_file.read(x0, "/Vector/" + boost::lexical_cast<std::string>(i0), false);
-    hdf5_file.read(*x1, "/Vector/" + boost::lexical_cast<std::string>(i1), false);
+    hdf5_file.read(x0, "/Vector/" + boost::lexical_cast<std::string>(i0),
+                   false);
+    hdf5_file.read(*x1, "/Vector/" + boost::lexical_cast<std::string>(i1),
+                   false);
 
     // Check that the vectors have the same size
     if (x0.size() != x1->size())
@@ -241,8 +244,6 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
     x0 *= w0;
     x0.axpy(w1, *x1);
   }
-
-  // Read closest value
   else
   {
     // Find closest index
@@ -260,7 +261,6 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
 //-----------------------------------------------------------------------------
 void TimeSeriesHDF5::retrieve(Mesh& mesh, double t) const
 {
-
   if (!File::exists(_name))
   {
     dolfin_error("TimeSeriesHDF5.cpp",

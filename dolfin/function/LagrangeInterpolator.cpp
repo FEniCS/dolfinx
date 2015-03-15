@@ -187,7 +187,7 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   }
 
   // Communicate bounding boxes
-  std::vector<std::vector<double> > bounding_boxes;
+  std::vector<std::vector<double>> bounding_boxes;
   MPI::all_gather(mpi_comm, x_min_max, bounding_boxes);
 
   // Create arrays used to evaluate one point
@@ -245,7 +245,7 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   // Remaining interpolation points must be found through MPI
   // communication.  Check first using bounding boxes which process
   // may own the points
-  std::vector<std::vector<double> > potential_points(num_processes);
+  std::vector<std::vector<double>> potential_points(num_processes);
   for (std::size_t i = 0; i < points_not_found.size(); i += gdim1)
   {
     std::copy(points_not_found.begin() + i,
@@ -267,12 +267,12 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   }
 
   // Communicate all potential points
-  std::vector<std::vector<double> > potential_points_recv;
+  std::vector<std::vector<double>> potential_points_recv;
   MPI::all_to_all(mpi_comm, potential_points, potential_points_recv);
 
   // Now try to eval u0 for the received points
-  std::vector<std::vector<double> > coefficients_found(num_processes);
-  std::vector<std::vector<double> > points_found(num_processes);
+  std::vector<std::vector<double>> coefficients_found(num_processes);
+  std::vector<std::vector<double>> points_found(num_processes);
 
   for (std::size_t p = 0; p < num_processes; p++)
   {
@@ -301,8 +301,8 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   }
 
   // Send back the found coefficients and points
-  std::vector<std::vector<double> > coefficients_recv;
-  std::vector<std::vector<double> > points_recv;
+  std::vector<std::vector<double>> coefficients_recv;
+  std::vector<std::vector<double>> points_recv;
   MPI::all_to_all(mpi_comm, coefficients_found, coefficients_recv);
   MPI::all_to_all(mpi_comm, points_found, points_recv);
   for (std::size_t p = 0; p < num_processes; ++p)
@@ -384,7 +384,7 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
         std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
 
         std::map<std::vector<double>,
-                 std::vector<std::size_t> >::const_iterator
+                 std::vector<std::size_t>>::const_iterator
           it = coords_to_dofs.find(coors);
         if (it == coords_to_dofs.end())
         {

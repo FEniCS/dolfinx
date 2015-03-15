@@ -265,8 +265,8 @@ void SparsityPattern::insert_local(
             J = *j_index + offset1;
           else
           {
-            const std::div_t div
-              = std::div((int) (*j_index - local_size1), (int) codim_block_size);
+            const std::div_t div = std::div((int) (*j_index - local_size1),
+                                            (int) codim_block_size);
             const int j_node = div.quot;
             const int j_component = div.rem;
 

@@ -34,10 +34,10 @@
 using namespace dolfin;
 
 //---------------------------------------------------------------------------
-template <typename T>
-VTKPlottableMeshFunction<T>::VTKPlottableMeshFunction( std::shared_ptr<const MeshFunction<T> > mesh_function) :
-  VTKPlottableMesh(mesh_function->mesh(), mesh_function->dim()),
-  _mesh_function(mesh_function)
+template <typename T> VTKPlottableMeshFunction<T>::VTKPlottableMeshFunction(
+  std::shared_ptr<const MeshFunction<T>> mesh_function)
+  : VTKPlottableMesh(mesh_function->mesh(), mesh_function->dim()),
+    _mesh_function(mesh_function)
 {
   // Do nothing
 }
@@ -48,7 +48,7 @@ void VTKPlottableMeshFunction<T>::update(std::shared_ptr<const Variable> var,
                                          int frame_counter)
 {
   if (var)
-    _mesh_function = std::dynamic_pointer_cast<const MeshFunction<T> >(var);
+    _mesh_function = std::dynamic_pointer_cast<const MeshFunction<T>>(var);
   dolfin_assert(_mesh_function);
 
   VTKPlottableMesh::update(reference_to_no_delete_pointer(*_mesh_function->mesh()),
