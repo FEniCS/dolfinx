@@ -32,7 +32,7 @@ MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
   : MultiMeshFunctionSpace()
 {
   // Create array
-  std::vector<std::size_t> c = {{component}};
+  std::vector<std::size_t> c = {component};
 
   // Build subspace
   _build(V, c);
@@ -65,7 +65,7 @@ void MultiMeshSubSpace::_build(MultiMeshFunctionSpace& V,
   // not inside the dofmap builder since it does not know about the
   // offsets of the subdofmaps relative to the multimesh function
   // space on all parts.
-  std::vector<dolfin::la_index> offsets = {{0}};
+  std::vector<dolfin::la_index> offsets = {0};
 
   // Extract proper subspaces for each part and add
   for (std::size_t part = 0; part < V.num_parts(); part++)

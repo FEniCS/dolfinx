@@ -89,7 +89,7 @@ int main()
   DirichletBC bc0(V, u0, dirichlet_boundary);
 
   // Collect boundary conditions
-  std::vector<const DirichletBC*> bcs = {{&bc0}};
+  std::vector<const DirichletBC*> bcs = {&bc0};
 
   // Compute solution
   Function u(V);
