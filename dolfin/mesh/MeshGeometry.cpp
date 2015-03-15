@@ -113,7 +113,7 @@ void MeshGeometry::set(std::size_t local_index,
 std::size_t MeshGeometry::hash() const
 {
   // Compute local hash
-  boost::hash<std::vector<double> > dhash;
+  boost::hash<std::vector<double>> dhash;
   const std::size_t local_hash = dhash(coordinates);
   return local_hash;
 }

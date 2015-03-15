@@ -70,7 +70,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   std::vector<double> vertex_coordinates0;
 
   // List of values for each dof of w (multivalued until we average)
-  std::vector<std::vector<double> > coefficients;
+  std::vector<std::vector<double>> coefficients;
   coefficients.resize(W.dim());
 
   // Iterate over cells in mesh
@@ -95,16 +95,16 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   average_coefficients(w, coefficients);
 }
 //-----------------------------------------------------------------------------
-void
-Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficients,
-                                    const Function& v,
-                                    const FunctionSpace& V,
-                                    const FunctionSpace& W,
-                                    const Cell& cell0,
-                                    const std::vector<double>& vertex_coordinates0,
-                                    const ufc::cell& c0,
-                                    const ArrayView<const dolfin::la_index>& dofs,
-                                    std::size_t& offset)
+void Extrapolation::compute_coefficients(
+  std::vector<std::vector<double>>& coefficients,
+  const Function& v,
+  const FunctionSpace& V,
+  const FunctionSpace& W,
+  const Cell& cell0,
+  const std::vector<double>& vertex_coordinates0,
+  const ufc::cell& c0,
+  const ArrayView<const dolfin::la_index>& dofs,
+  std::size_t& offset)
 {
   // Call recursively for mixed elements
   dolfin_assert(V.element());
@@ -120,7 +120,7 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
   }
 
   // Build data structures for keeping track of unique dofs
-  std::map<std::size_t, std::map<std::size_t, std::size_t> > cell2dof2row;
+  std::map<std::size_t, std::map<std::size_t, std::size_t>> cell2dof2row;
   std::set<std::size_t> unique_dofs;
   build_unique_dofs(unique_dofs, cell2dof2row, cell0, V);
 
@@ -174,11 +174,11 @@ Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficie
   offset += W.dofmap()->num_element_dofs(cell0.index());
 }
 //-----------------------------------------------------------------------------
-void
-Extrapolation::build_unique_dofs(std::set<std::size_t>& unique_dofs,
-                                 std::map<std::size_t, std::map<std::size_t, std::size_t> >& cell2dof2row,
-                                 const Cell& cell0,
-                                 const FunctionSpace& V)
+void Extrapolation::build_unique_dofs(
+  std::set<std::size_t>& unique_dofs,
+  std::map<std::size_t, std::map<std::size_t, std::size_t>>& cell2dof2row,
+  const Cell& cell0,
+  const FunctionSpace& V)
 {
   // Counter for matrix row index
   std::size_t row = 0;
@@ -274,8 +274,9 @@ Extrapolation::compute_unique_dofs(const Cell& cell,
   return dof2row;
 }
 //-----------------------------------------------------------------------------
-void Extrapolation::average_coefficients(Function& w,
-                                         std::vector<std::vector<double> >& coefficients)
+void Extrapolation::average_coefficients(
+  Function& w,
+  std::vector<std::vector<double>>& coefficients)
 {
   const FunctionSpace& W = *w.function_space();
   std::vector<double> dof_values(W.dim());

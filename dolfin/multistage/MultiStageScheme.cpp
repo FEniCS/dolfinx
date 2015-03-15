@@ -28,47 +28,47 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiStageScheme::MultiStageScheme(
-    std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms, 
-    std::shared_ptr<const Form> last_stage, 
-    std::vector<std::shared_ptr<Function> > stage_solutions,
-    std::shared_ptr<Function> u, 
-    std::shared_ptr<Constant> t, 
+    std::vector<std::vector<std::shared_ptr<const Form>>> stage_forms,
+    std::shared_ptr<const Form> last_stage,
+    std::vector<std::shared_ptr<Function>> stage_solutions,
+    std::shared_ptr<Function> u,
+    std::shared_ptr<Constant> t,
     std::shared_ptr<Constant> dt,
-    std::vector<double> dt_stage_offset, 
+    std::vector<double> dt_stage_offset,
     std::vector<int> jacobian_indices,
     unsigned int order,
     const std::string name,
-    const std::string human_form) : 
-  Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
-  _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
-  _dt_stage_offset(dt_stage_offset), _jacobian_indices(jacobian_indices), 
+    const std::string human_form) :
+  Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage),
+  _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt),
+  _dt_stage_offset(dt_stage_offset), _jacobian_indices(jacobian_indices),
   _order(order), _implicit(false), _human_form(human_form)
 {
   _check_arguments();
 }
 //-----------------------------------------------------------------------------
 MultiStageScheme::MultiStageScheme(
-    std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms, 
-    std::shared_ptr<const Form> last_stage, 
-    std::vector<std::shared_ptr<Function> > stage_solutions,
-    std::shared_ptr<Function> u, 
-    std::shared_ptr<Constant> t, 
+    std::vector<std::vector<std::shared_ptr<const Form>>> stage_forms,
+    std::shared_ptr<const Form> last_stage,
+    std::vector<std::shared_ptr<Function>> stage_solutions,
+    std::shared_ptr<Function> u,
+    std::shared_ptr<Constant> t,
     std::shared_ptr<Constant> dt,
-    std::vector<double> dt_stage_offset, 
+    std::vector<double> dt_stage_offset,
     std::vector<int> jacobian_indices,
     unsigned int order,
     const std::string name,
     const std::string human_form,
     std::vector<const DirichletBC* > bcs) :
-  Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
-  _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
-  _dt_stage_offset(dt_stage_offset), _jacobian_indices(jacobian_indices), 
+  Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage),
+  _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt),
+  _dt_stage_offset(dt_stage_offset), _jacobian_indices(jacobian_indices),
   _order(order), _implicit(false), _human_form(human_form), _bcs(bcs)
 {
   _check_arguments();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::shared_ptr<const Form> > >&
+std::vector<std::vector<std::shared_ptr<const Form>>>&
 MultiStageScheme::stage_forms()
 {
   return _stage_forms;
@@ -79,7 +79,7 @@ std::shared_ptr<const Form> MultiStageScheme::last_stage()
   return _last_stage;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<Function> >& MultiStageScheme::stage_solutions()
+std::vector<std::shared_ptr<Function>>& MultiStageScheme::stage_solutions()
 {
   return _stage_solutions;
 }
@@ -172,8 +172,8 @@ void MultiStageScheme::_check_arguments()
 		 "number of stage forms");
   }
 
-  // Check that the number of coefficients in last form is the same as 
-  // number of stages 
+  // Check that the number of coefficients in last form is the same as
+  // number of stages
   /*
     if (_last_stage->num_coefficients() != _stage_forms.size())
     dolfin_error("MultiStageScheme.cpp",
@@ -181,7 +181,7 @@ void MultiStageScheme::_check_arguments()
   		 "Expecting the number of stage solutions to be the sames as " \
   		 "number of coefficients in the last form");
   */
-  
+
   // Check solution is in the same space as the last stage solution
   if (!(_stage_solutions.size()==0 || \
         _u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space())))

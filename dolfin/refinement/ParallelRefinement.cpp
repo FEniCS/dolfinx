@@ -85,8 +85,8 @@ void ParallelRefinement::mark_all()
   marked_edges.assign(_mesh.num_edges(), true);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const std::map<std::size_t, std::size_t> >
-ParallelRefinement::edge_to_new_vertex() const
+std::shared_ptr<const std::map<std::size_t, std::size_t>>
+  ParallelRefinement::edge_to_new_vertex() const
 {
   return local_edge_to_new_vertex;
 }
@@ -141,11 +141,11 @@ void ParallelRefinement::update_logical_edgefunction()
   const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
 
   // Send all shared edges marked for update
-  std::vector<std::vector<std::size_t> > received_values;
+  std::vector<std::vector<std::size_t>> received_values;
   MPI::all_to_all(_mesh.mpi_comm(), marked_for_update, received_values);
 
   // Clear marked_for_update vectors
-  marked_for_update = std::vector<std::vector<std::size_t> >(mpi_size);
+  marked_for_update = std::vector<std::vector<std::size_t>>(mpi_size);
 
   // Flatten received values and set EdgeFunction true at each index
   // received
@@ -212,7 +212,7 @@ void ParallelRefinement::create_new_vertices()
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
-  std::vector<std::vector<std::size_t> > values_to_send(mpi_size);
+  std::vector<std::vector<std::size_t>> values_to_send(mpi_size);
   for (auto &local_edge : *local_edge_to_new_vertex)
   {
     // Add global_offset to map, to get new global index of new
@@ -235,7 +235,7 @@ void ParallelRefinement::create_new_vertices()
   }
 
   // Send new vertex indices to remote processes and receive
-  std::vector<std::vector<std::size_t> > received_values(mpi_size);
+  std::vector<std::vector<std::size_t>> received_values(mpi_size);
   MPI::all_to_all(_mesh.mpi_comm(), values_to_send, received_values);
 
   // Flatten and add received remote global vertex indices to map

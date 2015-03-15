@@ -194,9 +194,7 @@ std::string Table::str(bool verbose) const
 
   if (verbose)
   {
-    //s << str(false) << std::endl << std::endl;
-
-    std::vector<std::vector<std::string> > tvalues;
+    std::vector<std::vector<std::string>> tvalues;
     std::vector<std::size_t> col_sizes;
 
     // Format values and compute column sizes

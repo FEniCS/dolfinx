@@ -140,7 +140,7 @@ void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
 std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
-  boost::hash<std::vector<unsigned int> > uhash;
+  boost::hash<std::vector<unsigned int>> uhash;
   return uhash(_connections);
 }
 //-----------------------------------------------------------------------------

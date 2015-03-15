@@ -84,19 +84,19 @@ PETScCuspFactory::create_krylov_solver(std::string method,
   return solver;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::vector<std::pair<std::string, std::string>>
   PETScCuspFactory::lu_solver_methods() const
 {
   return PETScLUSolver::methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::vector<std::pair<std::string, std::string>>
   PETScCuspFactory::krylov_solver_methods() const
 {
   return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::vector<std::pair<std::string, std::string>>
   PETScCuspFactory::krylov_solver_preconditioners() const
 {
   return PETScKrylovSolver::preconditioners();

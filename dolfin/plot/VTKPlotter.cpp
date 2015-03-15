@@ -842,7 +842,9 @@ QVTKWidget *       VTKPlotter::get_widget() const       { return NULL; }
 #endif // HAS_VTK
 
 // Define the static members
-std::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::list<VTKPlotter*>());
+std::shared_ptr<std::list<VTKPlotter*>>
+VTKPlotter::active_plotters(new std::list<VTKPlotter*>());
+
 int VTKPlotter::hardcopy_counter = 0;
 bool VTKPlotter::run_to_end = false;
 

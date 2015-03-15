@@ -319,7 +319,7 @@ void Function::operator=(const FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double, const Function*> >::const_iterator it;
+  std::vector<std::pair<double, const Function*>>::const_iterator it;
   for (it = axpy.pairs().begin()+1; it != axpy.pairs().end(); it++)
     _vector->axpy(it->first, *(it->second->vector()));
 }

@@ -240,15 +240,10 @@ instantiate the classes we defined above for the boundary subdomains:
 
 .. code-block:: c++
 
-    // Define boundary conditions
-    DirichletBC noslip(V, zero_vector, noslip_domain);
-    DirichletBC inflow(Q, p_in, inflow_domain);
-    DirichletBC outflow(Q, zero, outflow_domain);
-    std::vector<DirichletBC*> bcu;
-    bcu.push_back(&noslip);
-    std::vector<DirichletBC*> bcp;
-    bcp.push_back(&inflow);
-    bcp.push_back(&outflow);
+    // Define subdomains for boundary conditions
+    NoslipDomain noslip_domain;
+    InflowDomain inflow_domain;
+    OutflowDomain outflow_domain;
 
 We may now define the boundary conditions for the velocity and
 pressure. We define one no-slip boundary condition for the velocity
@@ -261,11 +256,8 @@ outflow boundaries:
     DirichletBC noslip(V, zero_vector, noslip_domain);
     DirichletBC inflow(Q, p_in, inflow_domain);
     DirichletBC outflow(Q, zero, outflow_domain);
-    std::vector<DirichletBC*> bcu;
-    bcu.push_back(&noslip);
-    std::vector<DirichletBC*> bcp;
-    bcp.push_back(&inflow);
-    bcp.push_back(&outflow);
+    std::vector<DirichletBC*> bcu = {&noslip};
+    std::vector<DirichletBC*> bcp = {{&inflow, &outflow}};
 
 We collect the boundary conditions in the two arrays ``bcu`` and
 ``bcp`` so that we may easily iterate over them below when we apply

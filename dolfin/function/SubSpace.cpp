@@ -31,8 +31,7 @@ SubSpace::SubSpace(const FunctionSpace& V,
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Create array
-  std::vector<std::size_t> c;
-  c.push_back(component);
+  std::vector<std::size_t> c = {component};
 
   // Extract subspace and assign
   std::shared_ptr<FunctionSpace> _function_space(V.extract_sub_space(c));
@@ -45,9 +44,7 @@ SubSpace::SubSpace(const FunctionSpace& V,
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Create array
-  std::vector<std::size_t> c;
-  c.push_back(component);
-  c.push_back(sub_component);
+  std::vector<std::size_t> c ={{component, sub_component}};
 
   // Extract subspace and assign
   std::shared_ptr<FunctionSpace> _function_space(V.extract_sub_space(c));
