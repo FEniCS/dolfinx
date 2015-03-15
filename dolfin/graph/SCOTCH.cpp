@@ -52,11 +52,11 @@ using namespace dolfin;
 void SCOTCH::compute_partition(
   const MPI_Comm mpi_comm,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   const LocalMeshData& mesh_data)
 {
   // Create data structures to hold graph
-  std::vector<std::set<std::size_t> > local_graph;
+  std::vector<std::set<std::size_t>> local_graph;
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
@@ -196,13 +196,13 @@ void SCOTCH::compute_reordering(const Graph& graph,
 //-----------------------------------------------------------------------------
 void SCOTCH::partition(
   const MPI_Comm mpi_comm,
-  const std::vector<std::set<std::size_t> >& local_graph,
+  const std::vector<std::set<std::size_t>>& local_graph,
   const std::vector<std::size_t>& node_weights,
   const std::set<std::size_t>& ghost_vertices,
   const std::vector<std::size_t>& global_cell_indices,
   const std::size_t num_global_vertices,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs)
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
 {
   Timer timer("Partition graph (calling SCOTCH)");
 
@@ -232,7 +232,7 @@ void SCOTCH::partition(
   // number of local edges + edges connecting to ghost vertices)
   SCOTCH_Num edgelocnbr = 0;
   vertloctab.push_back((SCOTCH_Num) 0);
-  std::vector<std::set<std::size_t> >::const_iterator vertex;
+  std::vector<std::set<std::size_t>>::const_iterator vertex;
   for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
   {
     edgelocnbr += vertex->size();
@@ -412,7 +412,7 @@ void SCOTCH::partition(
 void SCOTCH::compute_partition(
   const MPI_Comm mpi_comm,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   const LocalMeshData& mesh_data)
 {
   dolfin_error("SCOTCH.cpp",
@@ -451,13 +451,13 @@ void SCOTCH::compute_reordering(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::partition(const MPI_Comm mpi_comm,
-                       const std::vector<std::set<std::size_t> >& local_graph,
+                       const std::vector<std::set<std::size_t>>& local_graph,
                        const std::vector<std::size_t>& node_weights,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
                        std::vector<std::size_t>& cell_partition,
-                       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs)
+                       std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",

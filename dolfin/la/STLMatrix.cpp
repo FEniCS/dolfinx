@@ -137,8 +137,8 @@ STLMatrix::local_range(std::size_t dim) const
 //-----------------------------------------------------------------------------
 void STLMatrix::zero()
 {
-  std::vector<std::vector<std::pair<std::size_t, double> > >::iterator slice;
-  std::vector<std::pair<std::size_t, double> >::iterator entry;
+  std::vector<std::vector<std::pair<std::size_t, double>>>::iterator slice;
+  std::vector<std::pair<std::size_t, double>>::iterator entry;
   for (slice = _values.begin(); slice != _values.end(); ++slice)
     for (entry = slice->begin(); entry != slice->end(); ++entry)
       entry->second = 0.0;
@@ -178,7 +178,7 @@ void STLMatrix::add(const double* block,
       const std::size_t I_local = I - _local_range.first;
 
       assert(I_local < _values.size());
-      std::vector<std::pair<std::size_t, double> >& slice = _values[I_local];
+      std::vector<std::pair<std::size_t, double>>& slice = _values[I_local];
 
       // Iterate over co-dimension
       for (std::size_t j = 0; j < codim; j++)
@@ -189,7 +189,7 @@ void STLMatrix::add(const double* block,
         const std::size_t J = secondary_slice[j];
 
         // Check if entry exists and insert
-        std::vector<std::pair<std::size_t, double> >::iterator entry
+        std::vector<std::pair<std::size_t, double>>::iterator entry
               = std::find_if(slice.begin(), slice.end(), CompareIndex(J));
         if (entry != slice.end())
           entry->second += block[pos];
@@ -228,9 +228,9 @@ void STLMatrix::apply(std::string mode)
   const std::size_t num_processes = MPI::size(_mpi_comm);
 
   // Data to send
-  std::vector<std::vector<std::size_t> > send_non_local_rows(num_processes);
-  std::vector<std::vector<std::size_t> > send_non_local_cols(num_processes);
-  std::vector<std::vector<double> > send_non_local_vals(num_processes);
+  std::vector<std::vector<std::size_t>> send_non_local_rows(num_processes);
+  std::vector<std::vector<std::size_t>> send_non_local_cols(num_processes);
+  std::vector<std::vector<double>> send_non_local_vals(num_processes);
 
   std::vector<std::size_t> range(2);
   range[0] = _local_range.first;
@@ -267,9 +267,9 @@ void STLMatrix::apply(std::string mode)
   }
 
   // Send/receive data
-  std::vector<std::vector<std::size_t> > received_non_local_rows;
-  std::vector<std::vector<std::size_t> > received_non_local_cols;
-  std::vector<std::vector<double> > received_non_local_vals;
+  std::vector<std::vector<std::size_t>> received_non_local_rows;
+  std::vector<std::vector<std::size_t>> received_non_local_cols;
+  std::vector<std::vector<double>> received_non_local_vals;
   dolfin::MPI::all_to_all(_mpi_comm, send_non_local_rows,
                           received_non_local_rows);
   dolfin::MPI::all_to_all(_mpi_comm, send_non_local_cols,
@@ -301,7 +301,7 @@ void STLMatrix::apply(std::string mode)
       dolfin_assert(I_local < _values.size());
 
       const std::size_t J = received_non_local_cols_p[i];
-      std::vector<std::pair<std::size_t, double> >::iterator e
+      std::vector<std::pair<std::size_t, double>>::iterator e
             = std::find_if(_values[I_local].begin(), _values[I_local].end(),
                            CompareIndex(J));
       if (e != _values[I_local].end())
@@ -375,7 +375,7 @@ void STLMatrix::ident(std::size_t m, const dolfin::la_index* rows)
         _values[local_row][j].second = 0.0;
 
       // Place one on diagonal
-      std::vector<std::pair<std::size_t, double> >::iterator diagonal
+      std::vector<std::pair<std::size_t, double>>::iterator diagonal
           = std::find_if(_values[local_row].begin(), _values[local_row].end(),
                          CompareIndex(global_row));
 
@@ -389,8 +389,8 @@ void STLMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 //-----------------------------------------------------------------------------
 const STLMatrix& STLMatrix::operator*= (double a)
 {
-  std::vector<std::vector<std::pair<std::size_t, double> > >::iterator row;
-  std::vector<std::pair<std::size_t, double> >::iterator entry;
+  std::vector<std::vector<std::pair<std::size_t, double>>>::iterator row;
+  std::vector<std::pair<std::size_t, double>>::iterator entry;
   for (row = _values.begin(); row != _values.end(); ++row)
     for (entry = row->begin(); entry != row->end(); ++entry)
       entry->second *=a;
@@ -420,7 +420,7 @@ std::string STLMatrix::str(bool verbose) const
     for (std::size_t i = 0; i < _local_range.second - _local_range.first; i++)
     {
       // Sort row data by column index
-      std::vector<std::pair<std::size_t, double> > data = _values[i];
+      std::vector<std::pair<std::size_t, double>> data = _values[i];
       std::sort(data.begin(), data.end());
 
       // Set precision
@@ -430,7 +430,7 @@ std::string STLMatrix::str(bool verbose) const
 
       // Format matrix
       line << "|";
-      std::vector<std::pair<std::size_t, double> >::const_iterator entry;
+      std::vector<std::pair<std::size_t, double>>::const_iterator entry;
       for (entry = data.begin(); entry != data.end(); ++entry)
       {
         line << " (" << i << ", " << entry->first << ", " << entry->second

@@ -347,7 +347,7 @@ EigenMatrix::init(const TensorLayout& tensor_layout)
   pattern_pointer->num_nonzeros_diagonal(num_nonzeros_per_row);
   _matA.reserve(num_nonzeros_per_row);
 
-  const std::vector<std::vector<std::size_t> > pattern
+  const std::vector<std::vector<std::size_t>> pattern
     = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
   if (!eigen_matrix_type::IsRowMajor)

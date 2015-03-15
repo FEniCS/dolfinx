@@ -110,8 +110,9 @@ GenericBoundingBoxTree::compute_collisions(const Point& point) const
   return entities;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
-GenericBoundingBoxTree::compute_collisions(const GenericBoundingBoxTree& tree) const
+std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
+  GenericBoundingBoxTree::compute_collisions(
+    const GenericBoundingBoxTree& tree) const
 {
   // Introduce new variables for clarity
   const GenericBoundingBoxTree& A(*this);
@@ -148,10 +149,11 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
   return entities;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
-GenericBoundingBoxTree::compute_entity_collisions(const GenericBoundingBoxTree& tree,
-                                                  const Mesh& mesh_A,
-                                                  const Mesh& mesh_B) const
+std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
+GenericBoundingBoxTree::compute_entity_collisions(
+  const GenericBoundingBoxTree& tree,
+  const Mesh& mesh_A,
+  const Mesh& mesh_B) const
 {
   // Introduce new variables for clarity
   const GenericBoundingBoxTree& A(*this);

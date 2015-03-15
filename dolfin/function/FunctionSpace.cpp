@@ -204,7 +204,7 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
 
   // Check if sub space is already in the cache
   std::map<std::vector<std::size_t>,
-           std::shared_ptr<FunctionSpace> >::const_iterator subspace;
+           std::shared_ptr<FunctionSpace>>::const_iterator subspace;
   subspace = _subspaces.find(component);
   if (subspace != _subspaces.end())
     return subspace->second;
@@ -229,8 +229,8 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
 
     // Insert new sub space into cache
     _subspaces.insert(std::pair<std::vector<std::size_t>,
-                      std::shared_ptr<FunctionSpace> >(component,
-                                                       new_sub_space));
+                      std::shared_ptr<FunctionSpace>>(component,
+                                                      new_sub_space));
 
     return new_sub_space;
   }

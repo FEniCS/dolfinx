@@ -45,7 +45,7 @@ using namespace dolfin;
 
 #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
 // Mapping from method string to PETSc
-const std::map<std::string, std::pair<std::string, const SNESType> >
+const std::map<std::string, std::pair<std::string, const SNESType>>
 PETScSNESSolver::_methods
 = { {"default",     {"default SNES method", ""}},
     {"ls",          {"Line search method", SNESLS}},
@@ -66,7 +66,7 @@ PETScSNESSolver::_methods
     {"ms",          {"Multistage smoothers", SNESMS}} };
 #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 4
 // Mapping from method string to PETSc
-const std::map<std::string, std::pair<std::string, const SNESType> >
+const std::map<std::string, std::pair<std::string, const SNESType>>
 PETScSNESSolver::_methods
 = { {"default",      {"default SNES method", ""}},
     {"newtonls",     {"Line search method", SNESNEWTONLS}},
@@ -92,9 +92,9 @@ PETScSNESSolver::_methods
 #endif
 
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> > PETScSNESSolver::methods()
+std::vector<std::pair<std::string, std::string>> PETScSNESSolver::methods()
 {
-  std::vector<std::pair<std::string, std::string> > available_methods;
+  std::vector<std::pair<std::string, std::string>> available_methods;
   for (auto it = _methods.begin(); it != _methods.end(); ++it)
     available_methods.push_back(std::make_pair(it->first, it->second.first));
   return available_methods;

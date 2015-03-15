@@ -151,10 +151,11 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
-                                      const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            std::set<std::size_t>& ghost_vertices)
+void GraphBuilder::compute_dual_graph(
+  const MPI_Comm mpi_comm,
+  const LocalMeshData& mesh_data,
+  std::vector<std::set<std::size_t>>& local_graph,
+  std::set<std::size_t>& ghost_vertices)
 {
   FacetCellMap facet_cell_map;
 
@@ -167,10 +168,11 @@ void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
   #endif
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_local_dual_graph(const MPI_Comm mpi_comm,
-                                            const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            FacetCellMap& facet_cell_map)
+void GraphBuilder::compute_local_dual_graph(
+  const MPI_Comm mpi_comm,
+  const LocalMeshData& mesh_data,
+  std::vector<std::set<std::size_t>>& local_graph,
+  FacetCellMap& facet_cell_map)
 {
   Timer timer("Compute local dual graph");
 
@@ -241,11 +243,12 @@ void GraphBuilder::compute_local_dual_graph(const MPI_Comm mpi_comm,
   }
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
-                                               const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            FacetCellMap& facet_cell_map,
-                            std::set<std::size_t>& ghost_vertices)
+void GraphBuilder::compute_nonlocal_dual_graph(
+  const MPI_Comm mpi_comm,
+  const LocalMeshData& mesh_data,
+  std::vector<std::set<std::size_t>>& local_graph,
+  FacetCellMap& facet_cell_map,
+  std::set<std::size_t>& ghost_vertices)
 {
   Timer timer("Compute non-local dual graph");
 
@@ -271,8 +274,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Send facet-cell map to intermediary match-making processes
-  std::vector<std::vector<std::size_t> > send_buffer(num_processes);
-  std::vector<std::vector<std::size_t> > received_buffer(num_processes);
+  std::vector<std::vector<std::size_t>> send_buffer(num_processes);
+  std::vector<std::vector<std::size_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
   boost::unordered_map<std::vector<std::size_t>,
@@ -298,16 +301,16 @@ void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
   MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
   // Clear send buffer
-  send_buffer = std::vector<std::vector<std::size_t> >(num_processes);
+  send_buffer = std::vector<std::vector<std::size_t>>(num_processes);
 
   // Map to connect processes and cells, using facet as key
   typedef boost::unordered_map<std::vector<std::size_t>,
-              std::pair<std::size_t, std::size_t> > MatchMap;
+              std::pair<std::size_t, std::size_t>> MatchMap;
   MatchMap matchmap;
 
   // Look for matches to send back to other processes
   std::pair<std::vector<std::size_t>,
-            std::pair<std::size_t, std::size_t> > key;
+            std::pair<std::size_t, std::size_t>> key;
   key.first.resize(num_vertices_per_facet);
   for (std::size_t p = 0; p < num_processes; ++p)
   {

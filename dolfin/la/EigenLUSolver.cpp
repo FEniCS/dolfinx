@@ -155,7 +155,7 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
   if (_method == "sparselu")
   {
     Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor>,
-                    Eigen::COLAMDOrdering<int> > solver;
+                    Eigen::COLAMDOrdering<int>> solver;
     call_solver(solver, x, b, transpose);
   }
   else if (_method == "cholesky")
@@ -176,28 +176,28 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
 #ifdef EIGEN_PASTIX_SUPPORT
   else if (_method == "pastix")
   {
-    Eigen::PastixLU<Eigen::SparseMatrix<double, Eigen::ColMajor> > solver;
+    Eigen::PastixLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
     call_solver(solver, x, b, transpose);
   }
 #endif
 #ifdef EIGEN_PARDISO_SUPPORT
   else if (_method == "pardiso")
   {
-    Eigen::PardisoLU<Eigen::SparseMatrix<double, Eigen::ColMajor> > solver;
+    Eigen::PardisoLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
     call_solver(solver, x, b, transpose);
   }
 #endif
 #ifdef EIGEN_SUPERLU_SUPPORT
   else if (_method == "superlu")
   {
-    Eigen::SuperLU<Eigen::SparseMatrix<double, Eigen::ColMajor> > solver;
+    Eigen::SuperLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
     call_solver(solver, x, b, transpose);
   }
 #endif
 #ifdef EIGEN_UMFPACK_SUPPORT
   else if (_method == "umfpack")
   {
-    Eigen::UmfPackLU<Eigen::SparseMatrix<double, Eigen::ColMajor> > solver;
+    Eigen::UmfPackLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
     call_solver(solver, x, b, transpose);
   }
 #endif
