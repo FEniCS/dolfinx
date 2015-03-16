@@ -27,6 +27,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/multi_array.hpp>
 
 namespace dolfin
 {
@@ -92,8 +93,9 @@ namespace dolfin
     std::size_t orientation(const Cell& cell, const Point& up) const;
 
     /// Create entities e of given topological dimension from vertices v
-    virtual void create_entities(std::vector<std::vector<unsigned int> >& e,
-                                 std::size_t dim, const unsigned int* v) const = 0;
+    virtual void create_entities(boost::multi_array<unsigned int, 2>& e,
+                                 std::size_t dim,
+                                 const unsigned int* v) const = 0;
 
     /// Refine cell uniformly
     virtual void refine_cell(Cell& cell, MeshEditor& editor,
@@ -112,10 +114,12 @@ namespace dolfin
     virtual double radius_ratio(const Cell& cell) const;
 
     /// Compute squared distance to given point
-    virtual double squared_distance(const Cell& cell, const Point& point) const = 0;
+    virtual double squared_distance(const Cell& cell,
+                                    const Point& point) const = 0;
 
     /// Compute component i of normal of given facet with respect to the cell
-    virtual double normal(const Cell& cell, std::size_t facet, std::size_t i) const = 0;
+    virtual double normal(const Cell& cell, std::size_t facet,
+                          std::size_t i) const = 0;
 
     /// Compute of given facet with respect to the cell
     virtual Point normal(const Cell& cell, std::size_t facet) const = 0;

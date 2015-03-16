@@ -21,6 +21,8 @@
 // First added:  2005-12-02
 // Last changed: 2014-02-06
 
+#include <boost/multi_array.hpp>
+
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -93,7 +95,8 @@ void BoxMesh::build(double x0, double y0, double z0,
   std::vector<double> x(3);
 
   // Create vertices
-  editor.init_vertices_global((nx + 1)*(ny + 1)*(nz + 1), (nx + 1)*(ny + 1)*(nz + 1));
+  editor.init_vertices_global((nx + 1)*(ny + 1)*(nz + 1),
+                              (nx + 1)*(ny + 1)*(nz + 1));
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; iz++)
   {
@@ -113,7 +116,7 @@ void BoxMesh::build(double x0, double y0, double z0,
   // Create tetrahedra
   editor.init_cells_global(6*nx*ny*nz, 6*nx*ny*nz);
   std::size_t cell = 0;
-  std::vector<std::vector<std::size_t>> cells(6, std::vector<std::size_t>(4));
+  boost::multi_array<std::size_t, 2> cells(boost::extents[6][4]);
   for (std::size_t iz = 0; iz < nz; iz++)
   {
     for (std::size_t iy = 0; iy < ny; iy++)
@@ -138,8 +141,7 @@ void BoxMesh::build(double x0, double y0, double z0,
         cells[5][0] = v0; cells[5][1] = v2; cells[5][2] = v6; cells[5][3] = v7;
 
         // Add cells
-        std::vector<std::vector<std::size_t>>::const_iterator _cell;
-        for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+        for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
           editor.add_cell(cell++, *_cell);
       }
     }
