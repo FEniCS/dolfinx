@@ -25,13 +25,15 @@
 // Last changed: 2014-02-13
 
 #include <algorithm>
+#include <boost/multi_array.hpp>
+
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
 #include "MeshGeometry.h"
-#include "Vertex.h"
 #include "TriangleCell.h"
+#include "Vertex.h"
 #include "TetrahedronCell.h"
 
 using namespace dolfin;
@@ -101,7 +103,7 @@ std::size_t TetrahedronCell::orientation(const Cell& cell) const
 }
 //-----------------------------------------------------------------------------
 void
-TetrahedronCell::create_entities(std::vector<std::vector<unsigned int>>& e,
+TetrahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
                                  std::size_t dim, const unsigned int* v) const
 {
   // We only need to know how to create edges and faces
@@ -109,9 +111,7 @@ TetrahedronCell::create_entities(std::vector<std::vector<unsigned int>>& e,
   {
   case 1:
     // Resize data structure
-    e.resize(6);
-    for (int i = 0; i < 6; ++i)
-      e[i] .resize(2);
+    e.resize(boost::extents[6][2]);
 
     // Create the six edges
     e[0][0] = v[2]; e[0][1] = v[3];
@@ -123,9 +123,7 @@ TetrahedronCell::create_entities(std::vector<std::vector<unsigned int>>& e,
     break;
   case 2:
     // Resize data structure
-    e.resize(4);
-    for (int i = 0; i < 4; ++i)
-      e[i] .resize(3);
+    e.resize(boost::extents[4][3]);
 
     // Create the four faces
     e[0][0] = v[1]; e[0][1] = v[2]; e[0][2] = v[3];
@@ -180,7 +178,7 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   const double d23 = p2.distance(p3);
 
   // Data structure to hold cells
-  std::vector<std::vector<std::size_t>> cells(8, std::vector<std::size_t>(4));
+  boost::multi_array<std::size_t, 2> cells(boost::extents[8][4]);
 
   // First create the 4 congruent tetrahedra at the corners
   cells[0][0] = v0; cells[0][1] = e3; cells[0][2] = e4; cells[0][3] = e5;
@@ -212,8 +210,7 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   }
 
   // Add cells
-  std::vector<std::vector<std::size_t>>::const_iterator _cell;
-  for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+  for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
     editor.add_cell(current_cell++, *_cell);
 }
 //-----------------------------------------------------------------------------
@@ -223,66 +220,6 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
                                            std::size_t* marked_edges) const
 {
   dolfin_not_implemented();
-
-  /*
-  // Get vertices and edges
-  const unsigned int* v = cell.entities(0);
-  const unsigned int* e = cell.entities(1);
-  dolfin_assert(v);
-  dolfin_assert(e);
-
-  // Get offset for new vertex indices
-  const std::size_t offset = cell.mesh().num_vertices();
-
-  // Compute indices for the ten new vertices
-  const std::size_t v0 = v[0];
-  const std::size_t v1 = v[1];
-  const std::size_t v2 = v[2];
-  const std::size_t v3 = v[3];
-  const std::size_t e0 = offset + e[0];
-  const std::size_t e1 = offset + e[1];
-  const std::size_t e2 = offset + e[2];
-  const std::size_t e3 = offset + e[3];
-  const std::size_t e4 = offset + e[4];
-  const std::size_t e5 = offset + e[5];
-
-  // Refine according to refinement rule
-  // The rules are numbered according to the paper:
-  // J. Bey, "Tetrahedral Grid Refinement", 1995.
-  switch (refinement_rule)
-  {
-  case 1:
-  // Rule 1: 4 new cells
-  editor.add_cell(current_cell++, v0, e1, e3, e2);
-  editor.add_cell(current_cell++, v1, e2, e4, e0);
-  editor.add_cell(current_cell++, v2, e0, e5, e1);
-  editor.add_cell(current_cell++, v3, e5, e4, e3);
-  break;
-  case 2:
-  // Rule 2: 2 new cells
-  editor.add_cell(current_cell++, v0, e1, e3, e2);
-  editor.add_cell(current_cell++, v1, e2, e4, e0);
-  break;
-  case 3:
-  // Rule 3: 3 new cells
-  editor.add_cell(current_cell++, v0, e1, e3, e2);
-  editor.add_cell(current_cell++, v1, e2, e4, e0);
-  editor.add_cell(current_cell++, v2, e0, e5, e1);
-  break;
-  case 4:
-  // Rule 4: 4 new cells
-  editor.add_cell(current_cell++, v0, e1, e3, e2);
-  editor.add_cell(current_cell++, v1, e2, e4, e0);
-  editor.add_cell(current_cell++, v2, e0, e5, e1);
-  editor.add_cell(current_cell++, v3, e5, e4, e3);
-  break;
-  default:
-  dolfin_error("TetrahedronCell.cpp",
-  "perform regular cut refinement of tetrahedron",
-  "Illegal rule (%d) for irregular refinement of tetrahedron",
-  refinement_rule);
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
