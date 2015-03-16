@@ -77,7 +77,7 @@ left = Left()
 left.mark(boundaries, 1)
 right = Right()
 right.mark(boundaries, 2)
-ds = Measure('ds')[boundaries]
+ds = Measure('ds', domain=mesh, subdomain_data=boundaries)
 bc = DirichletBC(V, Constant([0.0, 0.0]), boundaries, 1)
 bc.apply(u_min.vector())
 bc.apply(u_max.vector())
@@ -92,7 +92,7 @@ class BucklingProblem(OptimisationProblem):
 
     def __init__(self):
         OptimisationProblem.__init__(self)
-    
+
     # Objective function
     def f(self, x):
         u.vector()[:] = x

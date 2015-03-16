@@ -184,18 +184,18 @@ def test_facet_assembly():
     parameters["ghost_mode"] = "none"
 
 def test_vertex_assembly():
-    
+
     # Create mesh and define function space
     mesh = UnitSquareMesh(32, 32)
     V = FunctionSpace(mesh, "Lagrange", 1)
-    
+
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
         return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
-    
+
     def center_func(x):
-        return 0.25 <= x[0] and x[0] <= 0.75 and near(x[1], 0.5) 
-    
+        return 0.25 <= x[0] and x[0] <= 0.75 and near(x[1], 0.5)
+
     # Define domain for point integral
     center_domain = VertexFunction("size_t", mesh, 0)
     center = AutoSubDomain(center_func)
@@ -211,7 +211,7 @@ def test_vertex_assembly():
 
     with pytest.raises(RuntimeError):
         A, b = assemble_system(a, L)
-    
+
 def test_incremental_assembly():
 
     for f in [Constant(0.0), Constant(1e4)]:
@@ -271,7 +271,7 @@ def test_domains():
     x = Function(V)
     x.vector()[:] = 30.0
 
-    dx = Measure("dx")[sub_domains]
+    dx = Measure("dx", subdomain_data=sub_domains)
     # the forms
     a = v*u*dx(1) + 2*v*u*dx(2)
     L = v*Constant(1.0)*dx(1) + v*Constant(2.0)*dx(2)
