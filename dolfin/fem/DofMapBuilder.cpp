@@ -668,8 +668,8 @@ DofMapBuilder::compute_node_ownership(
   const MPI_Comm mpi_comm = mesh.mpi_comm();
   const std::size_t num_processes = MPI::size(mpi_comm);
   const std::size_t process_number = MPI::rank(mpi_comm);
-  std::vector<std::vector<std::size_t> > send_buffer(num_processes);
-  std::vector<std::vector<std::size_t> > recv_buffer(num_processes);
+  std::vector<std::vector<std::size_t>> send_buffer(num_processes);
+  std::vector<std::vector<std::size_t>> recv_buffer(num_processes);
 
   // Add a counter to the start of each send buffer
   for (unsigned int i = 0; i != num_processes; ++i)
@@ -721,7 +721,7 @@ DofMapBuilder::compute_node_ownership(
   MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
 
   // Map from global index to sharing processes
-  std::map<std::size_t, std::vector<unsigned int> > global_to_procs;
+  std::map<std::size_t, std::vector<unsigned int>> global_to_procs;
   for (unsigned int i = 0; i != num_processes; ++i)
   {
     const std::vector<std::size_t>& recv_i = recv_buffer[i];
@@ -762,7 +762,7 @@ DofMapBuilder::compute_node_ownership(
   }
 
   // Send response back to originators in same order
-  std::vector<std::vector<std::size_t> > send_response(num_processes);
+  std::vector<std::vector<std::size_t>> send_response(num_processes);
   for (unsigned int i = 0; i != num_processes; ++i)
     for (auto q = recv_buffer[i].begin() + 1; q != recv_buffer[i].end(); ++q)
     {
@@ -1615,8 +1615,8 @@ void DofMapBuilder::compute_node_reordering(
   // Renumber owned nodes, and buffer nodes that are owned but shared
   // with another process
   const std::size_t mpi_size = MPI::size(mpi_comm);
-  std::vector<std::vector<std::size_t> > send_buffer(mpi_size);
-  std::vector<std::vector<std::size_t> > recv_buffer(mpi_size);
+  std::vector<std::vector<std::size_t>> send_buffer(mpi_size);
+  std::vector<std::vector<std::size_t>> recv_buffer(mpi_size);
   std::size_t counter = 0;
   for (std::size_t old_node_index_local = 0;
        old_node_index_local < node_ownership.size();

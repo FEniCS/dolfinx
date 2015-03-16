@@ -50,9 +50,7 @@ int main()
   class DirichletBoundary : public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return (x[1] < DOLFIN_EPS || x[1] > (1.0 - DOLFIN_EPS)) && on_boundary;
-    }
+    { return (x[1] < DOLFIN_EPS || x[1] > (1.0 - DOLFIN_EPS)) && on_boundary; }
   };
 
   // Sub domain for Periodic boundary condition
@@ -60,9 +58,7 @@ int main()
   {
     // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
-    {
-      return (std::abs(x[0]) < DOLFIN_EPS);
-    }
+    { return (std::abs(x[0]) < DOLFIN_EPS); }
 
     // Map right boundary (H) to left boundary (G)
     void map(const Array<double>& x, Array<double>& y) const
@@ -78,30 +74,11 @@ int main()
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
 
-  /*
-  // Create vertex mast-slave map
-  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > periodic_vertex_pairs
-    = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, 0);
-
-  // Creat MehsFunction marking periodic boundary conditions for plotting
-  MeshFunction<std::size_t> master_slave_entities(mesh, 0, 0);
-  periodic_boundary.mark(master_slave_entities, 1);
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
-  for (it = periodic_vertex_pairs.begin(); it != periodic_vertex_pairs.end(); ++it)
-    master_slave_entities[it->first] = 2;
-  File file("markers.pvd");
-  file << master_slave_entities;
-
-  // Attach periodic vertex pairs to mesh
-  mesh.periodic_index_map[0] = periodic_vertex_pairs;
-  */
-
   // Create functions
   Source f;
 
   // Define PDE
   Poisson::FunctionSpace V(mesh, periodic_boundary);
-  //Poisson::FunctionSpace V(mesh);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f;
@@ -112,14 +89,11 @@ int main()
   DirichletBC bc0(V, u0, dirichlet_boundary);
 
   // Collect boundary conditions
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bc0);
+  std::vector<const DirichletBC*> bcs = {&bc0};
 
   // Compute solution
   Function u(V);
   solve(a == L, u, bcs);
-
-  cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
 
   // Save solution in VTK format
   File file_u("periodic.pvd");

@@ -94,8 +94,8 @@ int main()
   // Create vector that spans null space (normalised)
   std::shared_ptr<GenericVector> null_space_ptr(b.copy());
   V.dofmap()->set(*null_space_ptr, sqrt(1.0/null_space_ptr->size()));
-  std::vector<std::shared_ptr<GenericVector> > null_space_basis;
-  null_space_basis.push_back(null_space_ptr);
+  std::vector<std::shared_ptr<GenericVector>> null_space_basis
+    = {{null_space_ptr}};
 
   // Create null space basis object and attach to Krylov solver
   VectorSpaceBasis null_space(null_space_basis);

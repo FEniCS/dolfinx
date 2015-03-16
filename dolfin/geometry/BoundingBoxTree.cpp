@@ -111,8 +111,8 @@ BoundingBoxTree::compute_collisions(const Point& point) const
   return _tree->compute_collisions(point);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
-BoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
+std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
+  BoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
 {
   // Check that tree has been built
   _check_built();
@@ -135,8 +135,8 @@ BoundingBoxTree::compute_entity_collisions(const Point& point) const
   return _tree->compute_entity_collisions(point, *_mesh);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
-BoundingBoxTree::compute_entity_collisions(const BoundingBoxTree& tree) const
+std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
+  BoundingBoxTree::compute_entity_collisions(const BoundingBoxTree& tree) const
 {
   // Check that tree has been built
   _check_built();

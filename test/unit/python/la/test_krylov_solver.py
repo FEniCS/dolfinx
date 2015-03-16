@@ -107,7 +107,7 @@ def test_krylov_samg_solver_elasticity():
 
     # Improve estimate of eigenvalues for Chebyshev smoothing (more
     # recent PETSc option)
-    PETScOptions.set("mg_levels_ksp_chebyshev_eststeps", 50)
+    PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 50)
 
     # Build list of smoothed aggregation preconditioners
     methods = ["petsc_amg"]

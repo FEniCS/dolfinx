@@ -332,7 +332,7 @@ CollisionDetection::collides_tetrahedron_tetrahedron
   if (n.dot(e_v1[2]) > 0)
     n *= -1;
   std::vector<int> masks(4);
-  std::vector<std::vector<double> > Coord_1(4, std::vector<double>(4));
+  std::vector<std::vector<double>> Coord_1(4, std::vector<double>(4));
   if (separating_plane_face_A_1(P_V1, n, Coord_1[0], masks[0]))
     return false;
   n = e_v1[0].cross(e_v1[2]);
@@ -1070,12 +1070,9 @@ CollisionDetection::separating_plane_face_A_2(const std::vector<Point>& V1,
   return (mask_edges == 15);
 }
 //-----------------------------------------------------------------------------
-bool
-CollisionDetection::separating_plane_edge_A
-(const std::vector<std::vector<double> >& coord_1,
- const std::vector<int>& masks,
- int f0,
- int f1)
+bool CollisionDetection::separating_plane_edge_A(
+  const std::vector<std::vector<double>>& coord_1,
+  const std::vector<int>& masks, int f0, int f1)
 {
   // Helper function for tetrahedron-tetrahedron collision: checks if
   // edge is in the plane separating faces f0 and f1.

@@ -49,9 +49,9 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::pair<std::size_t, double> >::iterator
+typedef std::map<std::string, std::pair<std::size_t, double>>::iterator
 map_iterator;
-typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator
+typedef std::map<std::string, std::pair<std::size_t, double>>::const_iterator
 const_map_iterator;
 
 // Function for monitoring memory usage, called by thread

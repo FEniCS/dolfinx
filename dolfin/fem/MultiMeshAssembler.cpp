@@ -242,7 +242,7 @@ void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
 
       // Include only quadrature points with positive weight if
       // integration should be extended on cut cells
-      std::pair<std::vector<double>, std::vector<double> > pr;
+      std::pair<std::vector<double>, std::vector<double>> pr;
       if (extend_cut_cell_integration)
       {
         const std::size_t gdim = mesh_part.geometry().dim();
@@ -632,7 +632,7 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
 
   // Get dimensions
   std::vector<std::size_t> global_dimensions;
-  std::vector<std::pair<std::size_t, std::size_t> > local_ranges;
+  std::vector<std::pair<std::size_t, std::size_t>> local_ranges;
   std::vector<std::size_t> block_sizes;
   for (std::size_t i = 0; i < a.rank(); i++)
   {

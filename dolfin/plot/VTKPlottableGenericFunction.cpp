@@ -41,15 +41,17 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction::VTKPlottableGenericFunction(std::shared_ptr<const Function> function)
+VTKPlottableGenericFunction::VTKPlottableGenericFunction(
+  std::shared_ptr<const Function> function)
   : VTKPlottableMesh(function->function_space()->mesh()),
     _function(function)
 {
   // Do nothing
 }
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction::VTKPlottableGenericFunction(std::shared_ptr<const Expression> expression,
-                                                         std::shared_ptr<const Mesh> mesh)
+VTKPlottableGenericFunction::VTKPlottableGenericFunction(
+  std::shared_ptr<const Expression> expression,
+  std::shared_ptr<const Mesh> mesh)
   : VTKPlottableMesh(mesh), _function(expression)
 {
   // Do nothing
@@ -249,11 +251,10 @@ void VTKPlottableGenericFunction::update(std::shared_ptr<const Variable> var,
     {
       // Sort 1D data on x-coordinate because vtkXYPlotActor does not
       // recognise cell connectivity information
-      std::vector<std::pair<double, double> > point_value;
-      VertexIterator v(*mesh);
+      std::vector<std::pair<double, double>> point_value;
       for(std::size_t i = 0; i < vertex_values.size(); ++i)
       {
-        const double xpos = v[i].point().x();
+        const double xpos = Vertex(*mesh, i).point().x();
         point_value.push_back(std::make_pair(xpos, vertex_values[i]));
       }
 

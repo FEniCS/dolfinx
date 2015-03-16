@@ -27,8 +27,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<double> >
-SimplexQuadrature::compute_quadrature_rule(const Cell& cell, std::size_t order)
+std::pair<std::vector<double>, std::vector<double>>
+  SimplexQuadrature::compute_quadrature_rule(const Cell& cell,
+                                             std::size_t order)
 {
   // Extract dimensions
   const std::size_t tdim = cell.mesh().topology().dim();
@@ -42,11 +43,11 @@ SimplexQuadrature::compute_quadrature_rule(const Cell& cell, std::size_t order)
   return compute_quadrature_rule(&coordinates[0], tdim, gdim, order);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<double> >
-SimplexQuadrature::compute_quadrature_rule(const double* coordinates,
-                                           std::size_t tdim,
-                                           std::size_t gdim,
-                                           std::size_t order)
+std::pair<std::vector<double>, std::vector<double>>
+  SimplexQuadrature::compute_quadrature_rule(const double* coordinates,
+                                             std::size_t tdim,
+                                             std::size_t gdim,
+                                             std::size_t order)
 {
   switch (tdim)
   {
@@ -65,16 +66,16 @@ SimplexQuadrature::compute_quadrature_rule(const double* coordinates,
                  "Only implemented for topological dimension 1, 2, 3");
   };
 
-  std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+  std::pair<std::vector<double>, std::vector<double>> quadrature_rule;
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<double> >
+std::pair<std::vector<double>, std::vector<double>>
 SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
                                                     std::size_t gdim,
                                                     std::size_t order)
 {
-  std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+  std::pair<std::vector<double>, std::vector<double>> quadrature_rule;
 
   // Weights and points in local coordinates on [-1, 1]
   std::vector<double> w, p;
@@ -216,17 +217,17 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<double> >
+std::pair<std::vector<double>, std::vector<double>>
 SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
                                                     std::size_t gdim,
                                                     std::size_t order)
 {
-  std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+  std::pair<std::vector<double>, std::vector<double>> quadrature_rule;
 
   // Weights and points in local coordinates on triangle [0,0], [1,0]
   // and [0,1]
   std::vector<double> w;
-  std::vector<std::vector<double> > p;
+  std::vector<std::vector<double>> p;
 
   switch (order)
   {
@@ -389,17 +390,18 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<double> >
-SimplexQuadrature::compute_quadrature_rule_tetrahedron(const double* coordinates,
-                                                       std::size_t gdim,
-                                                       std::size_t order)
+std::pair<std::vector<double>, std::vector<double>>
+  SimplexQuadrature::compute_quadrature_rule_tetrahedron(
+    const double* coordinates,
+    std::size_t gdim,
+    std::size_t order)
 {
-  std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+  std::pair<std::vector<double>, std::vector<double>> quadrature_rule;
 
   // Weights and points in local coordinates on tetrahedron [0,0,0],
   // [1,0,0], [0,1,0] and [0,0,1]
   std::vector<double> w;
-  std::vector<std::vector<double> > p;
+  std::vector<std::vector<double>> p;
 
   switch (order)
   {
