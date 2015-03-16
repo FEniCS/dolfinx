@@ -25,6 +25,11 @@
 from __future__ import print_function
 from dolfin import *
 
+# Check for debugging of buildbot failures
+import os
+if MPI.size(mpi_comm_world()) > 1 and not bool(int(os.environ.get("DOLFIN_NOPLOT", "0"))):
+    raise RuntimeError("When running this demo in parallel, DOLFIN_NOPLOT must be set to disable the plot windows.")
+
 mesh = UnitIntervalMesh(10)
 print("Plotting a UnitIntervalMesh")
 plot(mesh, title="Unit interval")
