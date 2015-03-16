@@ -31,7 +31,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "PETScVector.h"
 #include "uBLASVector.h"
 #include "PETScFactory.h"

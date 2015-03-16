@@ -28,6 +28,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/geometry/Point.h>
 #include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 

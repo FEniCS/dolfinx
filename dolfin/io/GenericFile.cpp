@@ -24,7 +24,7 @@
 
 #include <fstream>
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "GenericFile.h"
 
 using namespace dolfin;
@@ -111,6 +111,11 @@ void GenericFile::operator>> (MeshValueCollection<bool>& mesh_markers)
 void GenericFile::operator>> (Parameters& parameters)
 {
   read_not_impl("Parameters");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (Table& table)
+{
+  read_not_impl("Table");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (std::vector<int>& x)
@@ -268,6 +273,11 @@ void GenericFile::operator<< (const std::pair<const Function*, double> u)
 void GenericFile::operator<< (const Parameters& parameters)
 {
   write_not_impl("Parameters");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const Table& table)
+{
+  write_not_impl("Table");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const std::vector<int>& x)

@@ -45,6 +45,7 @@ namespace dolfin
   class GenericVector;
   class Mesh;
   class Parameters;
+  class Table;
   template<typename T> class Array;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
@@ -74,6 +75,10 @@ namespace dolfin
     // Parameters
     void operator>> (Parameters& input);
     void operator<< (const Parameters& output);
+
+    // Table
+    void operator>> (Table& input);
+    void operator<< (const Table& output);
 
     // Function data
     void operator>>(Function& input);

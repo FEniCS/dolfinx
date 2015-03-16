@@ -30,7 +30,7 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include "uBLASVector.h"

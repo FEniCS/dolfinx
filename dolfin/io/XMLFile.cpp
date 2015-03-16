@@ -48,6 +48,7 @@
 #include "XMLMeshFunction.h"
 #include "XMLMeshValueCollection.h"
 #include "XMLParameters.h"
+#include "XMLTable.h"
 #include "XMLVector.h"
 #include "XMLFile.h"
 
@@ -209,6 +210,27 @@ void XMLFile::operator<< (const Parameters& output)
     XMLParameters::write(output, node);
     save_xml_doc(doc);
   }
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>> (Table& input)
+{
+  dolfin_error("XMLFile.cpp",
+               "read table from XML file",
+               "Not implemented");
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<< (const Table& output)
+{
+  if (MPI::size(_mpi_comm) > 1)
+    dolfin_error("XMLFile.cpp",
+                 "write table to XML file",
+                 "XMLTable is not colletive. Use separate XMLFile with "
+                 "MPI_COMM_SELF on each process or single process only");
+  pugi::xml_document doc;
+  load_xml_doc(doc);
+  pugi::xml_node node = write_dolfin(doc);
+  XMLTable::write(output, node);
+  save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Function& input)
@@ -459,8 +481,12 @@ XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc) const
 //-----------------------------------------------------------------------------
 pugi::xml_node XMLFile::write_dolfin(pugi::xml_document& xml_doc)
 {
-  pugi::xml_node node = xml_doc.append_child("dolfin");
-  node.append_attribute("xmlns:dolfin") = "http://fenicsproject.org";
+  pugi::xml_node node = xml_doc.child("dolfin");
+  if (!node)
+  {
+    node = xml_doc.append_child("dolfin");
+    node.append_attribute("xmlns:dolfin") = "http://fenicsproject.org";
+  }
   return node;
 }
 //-----------------------------------------------------------------------------
