@@ -66,12 +66,12 @@ defining the boundaries, we define boundary conditions:
 .. code-block:: python
 
     # No-slip boundary condition for velocity
-    # NOTE: Projection here is inefficient workaround of issue #489
+    # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
     noslip = project(Constant((0, 0)), V)
     bc0 = DirichletBC(Mini.sub(0), noslip, sub_domains, 0)
 
     # Inflow boundary condition for velocity
-    # NOTE: Projection here is inefficient workaround of issue #489
+    # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
     inflow = project(Expression(("-sin(x[1]*pi)", "0.0")), V)
     bc1 = DirichletBC(Mini.sub(0), inflow, sub_domains, 1)
 
