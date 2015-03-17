@@ -275,12 +275,13 @@ std::map<MPI_Op, std::string> dolfin::MPI::operation_map =
 #ifdef HAS_MPI
 MPI_Op dolfin::MPI::MPI_AVG()
 {
-  // Return dummy MPI_Op which we idetify as average
+  // Return dummy MPI_Op which we identify with average
   static MPI_Op op = MPI_OP_NULL;
+  static MPI_User_function* fn = [](void*, void*, int*, MPI_Datatype*){ };
   if (op == MPI_OP_NULL)
   {
     dolfin::SubSystemsManager::init_mpi();
-    MPI_Op_create(NULL, false, &op);
+    MPI_Op_create(fn, 1, &op);
     operation_map[op] = "MPI_AVG";
   }
   return op;
