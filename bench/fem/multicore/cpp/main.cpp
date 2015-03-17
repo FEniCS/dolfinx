@@ -105,8 +105,9 @@ double bench(std::string form, std::shared_ptr<const Form> a)
     assemble(A, *a);
   const double t = timer.stop();
 
-  // Write summary
-  summary(true);
+  // Report timings
+  list_timings(TimingClear::clear,
+               { TimingType::wall, TimingType::user, TimingType::system });
 
   info("");
 
