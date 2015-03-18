@@ -22,7 +22,8 @@
 // Modified by Martin Alnaes 2013-2015
 
 #include <algorithm>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/Progress.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>

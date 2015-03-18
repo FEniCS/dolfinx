@@ -41,6 +41,7 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
+#include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>

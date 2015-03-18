@@ -31,7 +31,6 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/timing.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScMatrix.h>

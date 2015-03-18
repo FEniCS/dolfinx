@@ -5,6 +5,12 @@
 - Add Eigen linear algebra backend
 - Remove deprecated GenericDofMap::geometric_dim function (fixes Issue #443)
 - Add quadrature rules for multimesh/cut-cell integration up to order 6
+- Implement MPI reductions and XML ouput of Table class
+- list_timings() is now collective and returns MPI average acrros processes
+- Add dump_timings_to_xml()
+- Add enum TimingType { wall, user, system } for selecting wall-clock,
+  user and system time in timing routines
+- Bump required SWIG version to 3.0.3
 1.5.0 [2015-01-12]
  - DG demos working is parallel
  - Simplify re-use of LU factorisations

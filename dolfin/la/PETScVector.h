@@ -38,7 +38,7 @@
 #include <petscsys.h>
 #include <petscvec.h>
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include "GenericVector.h"
 #include "PETScObject.h"

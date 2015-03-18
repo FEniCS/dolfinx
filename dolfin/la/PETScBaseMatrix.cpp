@@ -20,7 +20,7 @@
 
 #ifdef HAS_PETSC
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "GenericVector.h"
 #include "PETScVector.h"
 #include "PETScBaseMatrix.h"

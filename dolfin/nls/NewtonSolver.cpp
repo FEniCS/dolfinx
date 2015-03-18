@@ -32,7 +32,6 @@
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include "NonlinearProblem.h"
 #include "NewtonSolver.h"

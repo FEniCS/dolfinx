@@ -25,7 +25,7 @@
 #include <algorithm>
 
 #include <dolfin/geometry/Point.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "CellType.h"
 #include "IntervalCell.h"

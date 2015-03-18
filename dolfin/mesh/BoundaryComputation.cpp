@@ -23,9 +23,7 @@
 // First added:  2006-06-21
 // Last changed: 2014-02-06
 
-#include <dolfin/common/timing.h>
-
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Facet.h"

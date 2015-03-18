@@ -22,6 +22,7 @@
 #include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
+#include <dolfin/log/Progress.h>
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshOrdering.h"

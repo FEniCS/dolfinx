@@ -22,36 +22,51 @@
 #define __TIMING_H
 
 #include <string>
+#include <cstdint>
 #include <dolfin/log/Table.h>
 
 namespace dolfin
 {
+  /// Parameter specifying whthert to clear timing(s)
+  enum class TimingClear : bool { keep = false, clear = true };
 
-  /// Timing functions measure CPU time as determined by clock(),
-  /// the precision of which seems to be 0.01 seconds.
+  /// Timing type: wall-clock time, user (cpu) time, system (kernel) time.
+  /// Precision of wall is around 1 microsecond, user and system are around
+  /// 10 millisecond (on Linux).
+  enum class TimingType : int32_t { wall = 0, user = 1, system = 2 };
 
   /// Start timing (should not be used internally in DOLFIN!)
   void tic();
 
-  /// Return elapsed CPU time (should not be used internally in DOLFIN!)
+  /// Return elapsed wall time (should not be used internally in DOLFIN!)
   double toc();
 
-  /// Return current CPU time used by process
+  /// Return wall time elapsed since some implementation dependent epoch
   double time();
 
   /// Return a summary of timings and tasks in a Table, optionally clearing
   /// stored timings
-  Table timings(bool reset=false);
+  Table timings(TimingClear clear, std::set<TimingType> type);
 
-  /// List a summary of timings and tasks, optionally clearing stored timings
+  /// DEPRECATED: List a summary of timings and tasks, optionally clearing
+  /// stored timings. MPI_AVG reduction is printed. Collective on
+  /// MPI_COMM_WORLD. Only wall time is printed.
   void list_timings(bool reset=false);
 
-  /// This function is deprecated, use list_timings
-  void summary(bool reset=false);
+  /// List a summary of timings and tasks, optionally clearing stored
+  /// timings. MPI_AVG reduction is printed. Collective on MPI_COMM_WORLD.
+  void list_timings(TimingClear clear, std::set<TimingType> type);
 
-  /// Return timing (average) for given task, optionally clearing timing
-  /// for task
-  double timing(std::string task, bool reset=false);
+  /// Dump a summary of timings and tasks to XML file, optionally clearing
+  /// stored timings. MPI_MAX, MPI_MIN and MPI_AVG reductions are stored.
+  /// Collective on MPI_COMM_WORLD.
+  void dump_timings_to_xml(std::string filename, TimingClear clear);
+
+  /// Return timing (count, total wall time, total user time,
+  /// total system time) for given task, optionally clearing
+  /// all timings for the task
+  std::tuple<std::size_t, double, double, double>
+    timing(std::string task, TimingClear clear);
 
 }
 
