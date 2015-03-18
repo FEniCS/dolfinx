@@ -29,7 +29,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "BinaryFile.h"
 #include "ExodusFile.h"
 #include "RAWFile.h"

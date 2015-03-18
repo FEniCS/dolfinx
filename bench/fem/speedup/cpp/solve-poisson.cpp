@@ -67,7 +67,13 @@ int main(int argc, char* argv[])
   //PETScPreconditioner pc("amg_ml");
   //PETScKrylovSolver solver("gmres", pc);
 
-  PETScLUSolver solver;
+  // Pick solver; UMFPACK runs out of memory even on 24GB RAM machine
+  std::string method = "lu";
+  if (has_lu_solver_method("mumps"))
+    method = "mumps";
+  else if (has_lu_solver_method("superlu_dist"))
+    method = "superlu_dist";
+  PETScLUSolver solver(method);
 
   // Assemble matrix and vector, and apply Dirichlet boundary conditions
   Matrix A;

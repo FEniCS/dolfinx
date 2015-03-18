@@ -49,7 +49,9 @@ int main(int argc, char* argv[])
     dolfin::cout << "Created unit cube: " << mesh << dolfin::endl;
   }
 
-  summary();
+  // Report timings
+  list_timings(TimingClear::keep,
+               { TimingType::wall, TimingType::user, TimingType::system });
 
   return 0;
 }

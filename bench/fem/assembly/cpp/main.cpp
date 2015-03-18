@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
   info("Assembly for various forms and backends");
   set_log_active(false);
 
+  // FIXME: Why?
   parameters["reorder_dofs_serial"] = false;
 
   // Forms
@@ -71,6 +72,7 @@ int main(int argc, char* argv[])
   backends.push_back("uBLAS");
   backends.push_back("PETSc");
   backends.push_back("Tpetra");
+  backends.push_back("Eigen");
   backends.push_back("STL");
 
   // Override forms and backends with command-line arguments
@@ -107,11 +109,16 @@ int main(int argc, char* argv[])
       parameters["timer_prefix"] = backends[j];
       std::cout << "  Backend: " << backends[j] << std::endl;
       const double tt0 = bench_form(forms[i], assemble_form);
-      const double tt1 = timing(backends[j] + t1.title(), true);
-      const double tt2 = timing(backends[j] + t2.title(), true);
-      const double tt3 = timing(backends[j] + t3.title(), true);
-      const double tt4 = timing(backends[j] + t4.title(), true);
-      const double tt5 = timing(backends[j] + t5.title(), true);
+      const auto timing1 = timing(backends[j] + t1.name(), TimingClear::clear);
+      const auto timing2 = timing(backends[j] + t2.name(), TimingClear::clear);
+      const auto timing3 = timing(backends[j] + t3.name(), TimingClear::clear);
+      const auto timing4 = timing(backends[j] + t4.name(), TimingClear::clear);
+      const auto timing5 = timing(backends[j] + t5.name(), TimingClear::clear);
+      const double tt1 = std::get<1>(timing1) / static_cast<double>(std::get<0>(timing1));
+      const double tt2 = std::get<1>(timing2) / static_cast<double>(std::get<0>(timing2));
+      const double tt3 = std::get<1>(timing3) / static_cast<double>(std::get<0>(timing3));
+      const double tt4 = std::get<1>(timing4) / static_cast<double>(std::get<0>(timing4));
+      const double tt5 = std::get<1>(timing5) / static_cast<double>(std::get<0>(timing5));
       t0(forms[i], backends[j]) = tt0;
       t1(forms[i], backends[j]) = tt1;
       t2(forms[i], backends[j]) = tt2;

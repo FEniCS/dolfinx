@@ -35,8 +35,6 @@
 #include "TensorLayout.h"
 #include "GenericMatrix.h"
 
-#include <dolfin/log/dolfin_log.h>
-
 namespace dolfin
 {
 

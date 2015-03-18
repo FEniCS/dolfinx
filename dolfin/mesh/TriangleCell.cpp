@@ -86,7 +86,7 @@ std::size_t TriangleCell::orientation(const Cell& cell) const
   return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::create_entities(std::vector<std::vector<unsigned int>>& e,
+void TriangleCell::create_entities(boost::multi_array<unsigned int, 2>&  e,
                                    std::size_t dim, const unsigned int* v) const
 {
   // We only need to know how to create edges
@@ -98,10 +98,7 @@ void TriangleCell::create_entities(std::vector<std::vector<unsigned int>>& e,
   }
 
   // Resize data structure
-  e.resize(3);
-  e[0].resize(2);
-  e[1].resize(2);
-  e[2].resize(2);
+  e.resize(boost::extents[3][2]);
 
   // Create the three edges
   e[0][0] = v[1]; e[0][1] = v[2];

@@ -24,6 +24,8 @@
 #define __NONLINEAR_VARIATIONAL_PROBLEM_H
 
 #include <memory>
+#include <vector>
+
 #include <dolfin/common/Hierarchical.h>
 
 namespace dolfin

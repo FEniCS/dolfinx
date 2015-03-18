@@ -241,27 +241,6 @@ void MeshEditor::add_cell(std::size_t c, std::size_t v0, std::size_t v1,
   add_cell(c, c, _vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(std::size_t c, const std::vector<std::size_t>& v)
-{
-  add_cell(c, c, v);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_cell(std::size_t local_index, std::size_t global_index,
-                          const std::vector<std::size_t>& v)
-{
-  dolfin_assert(v.size() == _tdim + 1);
-
-  // Check vertices
-  check_vertices(v);
-
-  // Add cell
-  add_cell_common(local_index, _tdim);
-
-  // Set data
-  _mesh->_topology(_tdim, 0).set(local_index, v);
-  _mesh->_topology.set_global_index(_tdim, local_index, global_index);
-}
-//-----------------------------------------------------------------------------
 void MeshEditor::close(bool order)
 {
   // Order mesh if requested
@@ -364,18 +343,5 @@ void MeshEditor::clear()
   next_cell = 0;
   _mesh = 0;
   _vertices.clear();
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::check_vertices(const std::vector<std::size_t>& v) const
-{
-  for (std::size_t i = 0; i < v.size(); ++i)
-  {
-    if (_num_vertices > 0 && v[i] >= _num_vertices)
-    {
-      dolfin_error("MeshEditor.cpp",
-                   "add cell using mesh editor",
-                   "Vertex index (%d) out of range [0, %d)", v[i], _num_vertices);
-    }
-  }
 }
 //-----------------------------------------------------------------------------

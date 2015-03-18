@@ -35,3 +35,7 @@ should be listeed in this file:
   - python/chapter_10.py: remove usage of slice syntax for vector access.
   - python/chapter_10.py: change v.cell().d to len(v), cell.d is deprecated
 
+* DOLFIN 1.5:
+  - python/chapter_10.py: change all UnitSquareMesh(2, 2) to UnitSquareMesh(3, 3)
+    so they can run in parallel with 3 processes without failing 
+

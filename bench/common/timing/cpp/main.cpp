@@ -52,7 +52,9 @@ int main(int argc, char* argv[])
   }
   timer_class.stop();
 
-  summary();
+  // Report timings
+  list_timings(TimingClear::keep,
+               { TimingType::wall, TimingType::user, TimingType::system });
 
   return 0;
 }

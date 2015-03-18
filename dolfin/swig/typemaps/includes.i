@@ -25,6 +25,7 @@
 //-----------------------------------------------------------------------------
 %include dolfin/swig/typemaps/primitives.i
 %include dolfin/swig/typemaps/std_pair.i
+%include dolfin/swig/typemaps/std_tuple.i
 %include dolfin/swig/typemaps/numpy.i
 %include dolfin/swig/typemaps/array.i
 %include dolfin/swig/typemaps/std_vector.i

@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Anders Logg
+// Copyright (C) 2015 Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -14,22 +14,32 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2005-02-13
-// Last changed: 2011-03-17
 
-#include <dolfin/common/constants.h>
-#include <dolfin/log/log.h>
-#include "SubSystemsManager.h"
-#include "init.h"
+#ifndef __XML_TABLE_H
+#define __XML_TABLE_H
 
-//-----------------------------------------------------------------------------
-void dolfin::init(int argc, char* argv[])
+#include <ostream>
+#include <string>
+
+namespace pugi
 {
-  log(PROGRESS, "Initializing DOLFIN version %s.", DOLFIN_VERSION);
-
-  #ifdef HAS_PETSC
-  SubSystemsManager::init_petsc(argc, argv);
-  #endif
+  class xml_node;
 }
-//-----------------------------------------------------------------------------
+
+namespace dolfin
+{
+
+  class Table;
+
+  class XMLTable
+  {
+  public:
+
+    /// Write the XML file
+    static void write(const Table& table, pugi::xml_node xml_node);
+
+  };
+
+}
+
+#endif

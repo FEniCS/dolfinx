@@ -25,7 +25,8 @@
 #include <memory>
 
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
 #include "UmfpackLUSolver.h"
 #include "GenericLinearOperator.h"
 #include "GenericMatrix.h"

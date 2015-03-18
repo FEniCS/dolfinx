@@ -66,7 +66,7 @@ if __name__ == "__main__":
         reps = 1
 
 # Backends
-backends = ["uBLAS", "PETSc", "Tpetra", "MTL4", "Assembly"]
+backends = ["uBLAS", "PETSc", "Tpetra", "Eigen"]
 
 # Forms
 forms = ["Elasticity3D",
@@ -94,4 +94,5 @@ dolfin_set("output destination", "terminal")
 print ""
 
 results.disp()
-summary()
+list_timings(TimingClear_keep,
+             [TimingType_wall, TimingType_user, TimingType_system])

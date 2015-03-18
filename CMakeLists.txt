@@ -327,7 +327,8 @@ set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
+    timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
@@ -402,12 +403,7 @@ if (DOLFIN_ENABLE_PYTHON)
       set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
     endif()
     find_package(SWIG REQUIRED)
-    # SWIG >= 2.0 is required for Python 2 and >= 3.0.3 for Python 3
-    if ("${PYTHON_VERSION_STRING}" VERSION_LESS "3")
-      set(REQUIRED_SWIG_VERSION "2.0")
-    else()
-      set(REQUIRED_SWIG_VERSION "3.0.3")
-    endif()
+    set(REQUIRED_SWIG_VERSION "3.0.3")
     if ("${SWIG_VERSION}" VERSION_LESS "${REQUIRED_SWIG_VERSION}")
       message(FATAL_ERROR " DOLFIN requires SWIG version ${REQUIRED_SWIG_VERSION} or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to false or install correct SWIG version.")
     endif()

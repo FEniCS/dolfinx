@@ -37,7 +37,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "SubSystemsManager.h"
 
 using namespace dolfin;
