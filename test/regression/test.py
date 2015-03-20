@@ -81,7 +81,7 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
 
     t1 = time()
     os.chdir(demo)
-    status, output = get_status_output("%s %s %s" % (prefix, sys.executable, demofile))
+    status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable, demofile))
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
