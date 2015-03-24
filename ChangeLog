@@ -1,3 +1,4 @@
+- Remove cmake.local, replaced by fenics-install-component.sh
 - Change GenericDofMap::cell_dofs return type from const std::vector<..>&
 	to ArrayView<const ..>
 - Add ArrayView class for views into arrays
