@@ -76,7 +76,7 @@ std::size_t PointCell::orientation(const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(std::vector<std::vector<unsigned int> >& e,
+void PointCell::create_entities(boost::multi_array<unsigned int, 2>& e,
                                 std::size_t dim,
                                 const unsigned int* v) const
 {
@@ -86,7 +86,7 @@ void PointCell::create_entities(std::vector<std::vector<unsigned int> >& e,
 }
 //-----------------------------------------------------------------------------
 void PointCell::refine_cell(Cell& cell, MeshEditor& editor,
-                          std::size_t& current_cell) const
+                            std::size_t& current_cell) const
 {
   dolfin_error("PointCell.cpp",
                "refine cell",
@@ -115,7 +115,8 @@ double PointCell::squared_distance(const Cell& cell, const Point& point) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double PointCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
+double PointCell::normal(const Cell& cell, std::size_t facet,
+                         std::size_t i) const
 {
   dolfin_error("PointCell.cpp",
                "find component of normal vector of cell",
@@ -149,8 +150,9 @@ double PointCell::facet_area(const Cell& cell, std::size_t facet) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::order(Cell& cell,
-                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
+void PointCell::order(
+  Cell& cell,
+  const std::vector<std::size_t>& local_to_global_vertex_indices) const
 {
   dolfin_error("PointCell.cpp",
                "order cell",

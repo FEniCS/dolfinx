@@ -23,7 +23,7 @@
 #ifdef HAS_SLEPC
 
 #include <slepcversion.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include "PETScMatrix.h"

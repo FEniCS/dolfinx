@@ -21,7 +21,8 @@
 #include <fstream>
 #include <cstdlib>
 #include <iostream>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/io/File.h>
 #include "GlobalParameters.h"
 

@@ -58,8 +58,8 @@ namespace dolfin
       const std::vector<std::size_t>& dims,
       const std::vector<std::pair<std::size_t,
       std::size_t> >& ownership_range,
-      const std::vector<const std::vector<std::size_t>* > local_to_global,
-      const std::vector<const std::vector<int>* > off_process_owner,
+      const std::vector<ArrayView<const std::size_t> >& local_to_global,
+      const std::vector<ArrayView<const int> >& off_process_owner,
       const std::vector<std::size_t>& block_sizes,
       const std::size_t primary_dim);
 
@@ -69,8 +69,8 @@ namespace dolfin
       const std::vector<std::size_t>& dims,
       const std::vector<std::pair<std::size_t,
       std::size_t> >& ownership_range,
-      const std::vector<const std::vector<std::size_t>* > local_to_global,
-      const std::vector<const std::vector<int>* > off_process_owner,
+      const std::vector<ArrayView<const std::size_t> >& local_to_global,
+      const std::vector<ArrayView<const int> >& off_process_owner,
       const std::vector<std::size_t>& block_sizes);
 
     /// Insert non-zero entries using global indices

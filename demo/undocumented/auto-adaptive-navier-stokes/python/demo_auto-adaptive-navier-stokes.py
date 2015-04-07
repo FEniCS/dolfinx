@@ -21,7 +21,6 @@
 # Last changed: 2011-10-04
 
 from dolfin import *
-import time
 
 class Noslip(SubDomain):
     def inside(self, x, on_boundary):
@@ -76,7 +75,7 @@ outflow_markers.set_all(1)
 outflow.mark(outflow_markers, 0)
 
 # Define new measure with associated subdomains
-ds = Measure("ds")[outflow_markers]
+ds = Measure('ds', domain=mesh, subdomain_data=outflow_markers)
 
 # Define goal
 M = u[0]*ds(0)
@@ -106,7 +105,7 @@ solver.solve(tol)
 solver.summary();
 
 # Show all timings
-list_timings()
+list_timings(TimingClear_clear, [TimingType_wall])
 
 # Extract solutions on coarsest and finest mesh:
 (u0, p0) = w.root_node().split()

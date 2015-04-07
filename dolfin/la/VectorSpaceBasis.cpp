@@ -25,8 +25,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 VectorSpaceBasis::VectorSpaceBasis(const std::vector<std::shared_ptr<
-                                     GenericVector> > basis)
-  : _basis(basis)
+                                   GenericVector>> basis) : _basis(basis)
 {
   // Do nothing
 }

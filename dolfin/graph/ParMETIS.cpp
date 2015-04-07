@@ -21,10 +21,9 @@
 // First added:  2010-02-10
 // Last changed: 2014-01-09
 
-#include <dolfin/log/dolfin_log.h>
-
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "ParMETIS.h"
@@ -79,7 +78,7 @@ namespace dolfin
 void ParMETIS::compute_partition(
   const MPI_Comm mpi_comm,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   const LocalMeshData& mesh_data,
   std::string mode)
 {
@@ -114,7 +113,7 @@ void ParMETIS::compute_partition(
 void ParMETIS::partition(
   MPI_Comm mpi_comm,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   ParMETISDualGraph& g)
 {
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
@@ -148,7 +147,7 @@ void ParMETIS::partition(
   const idx_t elm_end = g.elmdist[process_number + 1];
   const unsigned int ncells = elm_end - elm_begin;
 
-  std::map<idx_t, std::set<unsigned int> > halo_cell_to_remotes;
+  std::map<idx_t, std::set<unsigned int>> halo_cell_to_remotes;
   // local indexing "i"
   for(unsigned int i = 0; i < ncells; i++)
   {
@@ -169,9 +168,9 @@ void ParMETIS::partition(
   }
 
   // Do halo exchange of cell partition data
-  std::vector<std::vector<std::size_t> > send_cell_partition(num_processes);
-  std::vector<std::vector<std::size_t> > recv_cell_partition(num_processes);
-  for(std::map<idx_t, std::set<unsigned int> >::iterator hcell
+  std::vector<std::vector<std::size_t>> send_cell_partition(num_processes);
+  std::vector<std::vector<std::size_t>> recv_cell_partition(num_processes);
+  for(std::map<idx_t, std::set<unsigned int>>::iterator hcell
         = halo_cell_to_remotes.begin(); hcell != halo_cell_to_remotes.end();
       ++hcell)
   {
@@ -405,7 +404,7 @@ ParMETISDualGraph::~ParMETISDualGraph()
 void ParMETIS::compute_partition(
   const MPI_Comm mpi_comm,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   const LocalMeshData& data,
   std::string mode)
 {

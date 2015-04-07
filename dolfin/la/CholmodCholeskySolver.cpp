@@ -25,7 +25,8 @@
 #include <dolfin/la/GenericLinearOperator.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
+#include "dolfin/log/LogStream.h"
 #include "LUSolver.h"
 #include "UmfpackLUSolver.h"
 #include "CholmodCholeskySolver.h"

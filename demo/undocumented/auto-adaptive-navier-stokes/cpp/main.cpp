@@ -119,7 +119,7 @@ int main()
   solver.summary();
 
   // Show all timings
-  list_timings();
+  list_timings(TimingClear::clear, { TimingType::wall });
 
   // Plot solutions
   Function solution = w.leaf_node();

@@ -89,6 +89,14 @@ option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_ENABLE_TAO "Enable TAO solver." OFF)
 
 #------------------------------------------------------------------------------
+# This should be removed when Clang support OpenMP is ready
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  option(DOLFIN_ENABLE_OPENMP "Enable OpenMP." OFF)
+else()
+  option(DOLFIN_ENABLE_OPENMP "Enable OpenMP." ON)
+endif()
+
+#------------------------------------------------------------------------------
 # Enable or disable optional packages
 
 # List optional packages
@@ -293,7 +301,7 @@ if (DOLFIN_ENABLE_MPI)
 endif()
 
 # Test for OpenMP (but not for Clang, which does not support OpenMP)
-if (DOLFIN_ENABLE_OPENMP AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+if (DOLFIN_ENABLE_OPENMP)
   find_package(OpenMP)
   include(CheckOpenMP)
   check_openmp_unsigned_int_loop_control_variable(OPENMP_UINT_TEST_RUNS)
@@ -319,7 +327,8 @@ set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
+    timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
@@ -334,9 +343,6 @@ endif()
 
 # Check for required package Eigen3
 find_package(Eigen3 3.2.0 REQUIRED)
-
-# Check for required package LibXml2
-find_package(LibXml2 REQUIRED)
 
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
@@ -397,12 +403,7 @@ if (DOLFIN_ENABLE_PYTHON)
       set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
     endif()
     find_package(SWIG REQUIRED)
-    # SWIG >= 2.0 is required for Python 2 and >= 3.0.3 for Python 3
-    if ("${PYTHON_VERSION_STRING}" VERSION_LESS "3")
-      set(REQUIRED_SWIG_VERSION "2.0")
-    else()
-      set(REQUIRED_SWIG_VERSION "3.0.3")
-    endif()
+    set(REQUIRED_SWIG_VERSION "3.0.3")
     if ("${SWIG_VERSION}" VERSION_LESS "${REQUIRED_SWIG_VERSION}")
       message(FATAL_ERROR " DOLFIN requires SWIG version ${REQUIRED_SWIG_VERSION} or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to false or install correct SWIG version.")
     endif()

@@ -32,7 +32,6 @@
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include "NonlinearProblem.h"
 #include "NewtonSolver.h"
@@ -46,7 +45,7 @@ Parameters NewtonSolver::default_parameters()
 
   p.add("linear_solver",           "default");
   p.add("preconditioner",          "default");
-  p.add("maximum_iterations",      10);
+  p.add("maximum_iterations",      50);
   p.add("relative_tolerance",      1e-9);
   p.add("absolute_tolerance",      1e-10);
   p.add("convergence_criterion",   "residual");
@@ -209,9 +208,18 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
     {
-      dolfin_error("NewtonSolver.cpp",
-                   "solve nonlinear system with NewtonSolver",
-                   "Newton solver did not converge");
+      if (_newton_iteration == maxiter) 
+      {
+        dolfin_error("NewtonSolver.cpp",
+                     "solve nonlinear system with NewtonSolver",
+                     "Newton solver did not converge because maximum number of iterations reached"); 
+      }
+      else
+      {
+        dolfin_error("NewtonSolver.cpp",
+                     "solve nonlinear system with NewtonSolver",
+                     "Newton solver did not converge");
+      }
     }
     else
       warning("Newton solver did not converge.");

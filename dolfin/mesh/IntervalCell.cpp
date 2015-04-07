@@ -79,7 +79,7 @@ std::size_t IntervalCell::orientation(const Cell& cell) const
   return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(std::vector<std::vector<unsigned int> >& e,
+void IntervalCell::create_entities(boost::multi_array<unsigned int, 2>& e,
                                    std::size_t dim, const unsigned int* v) const
 {
   // We don't need to create any entities
@@ -192,7 +192,8 @@ double IntervalCell::squared_distance(const Point& point,
   return std::max(v0.dot(v0) - a0*a0 / v01.dot(v01), 0.0);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
+double IntervalCell::normal(const Cell& cell, std::size_t facet,
+                            std::size_t i) const
 {
   return normal(cell, facet)[i];
 }
@@ -251,7 +252,8 @@ double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::order(Cell& cell,
-                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
+                         const std::vector<std::size_t>&
+                         local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0
 

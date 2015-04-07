@@ -319,7 +319,7 @@ void Function::operator=(const FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double, const Function*> >::const_iterator it;
+  std::vector<std::pair<double, const Function*>>::const_iterator it;
   for (it = axpy.pairs().begin()+1; it != axpy.pairs().end(); it++)
     _vector->axpy(it->first, *(it->second->vector()));
 }
@@ -569,7 +569,7 @@ void Function::restrict(double* w, const FiniteElement& element,
     const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
-    if (dofs.size() > 0)
+    if (!dofs.empty())
     {
       // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
       // Pick values from vector(s)
@@ -688,7 +688,8 @@ void Function::init_vector()
 
   // Determine ghost vertices if dof map is distributed
   const std::size_t bs = dofmap.block_size;
-  std::vector<la_index> ghost_indices(bs*dofmap.local_to_global_unowned().size());
+  std::vector<la_index>
+    ghost_indices(bs*dofmap.local_to_global_unowned().size());
   for (std::size_t i = 0; i < dofmap.local_to_global_unowned().size(); ++i)
     for (std::size_t j = 0; j < bs; ++j)
       ghost_indices[bs*i + j] = bs*dofmap.local_to_global_unowned()[i] + j;

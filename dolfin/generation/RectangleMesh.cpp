@@ -18,14 +18,13 @@
 // Modified by Garth N. Wells 2007.
 // Modified by Nuno Lopes 2008.
 // Modified by Kristian B. Oelgaard 2009.
-//
-// First added:  2005-12-02
-// Last changed: 2014-02-06
+
+#include <boost/multi_array.hpp>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include "RectangleMesh.h"
 
 using namespace dolfin;
@@ -93,7 +92,8 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
   // Create vertices and cells:
   if (diagonal == "crossed")
   {
-    editor.init_vertices_global((nx + 1)*(ny + 1) + nx*ny, (nx + 1)*(ny + 1) + nx*ny);
+    editor.init_vertices_global((nx + 1)*(ny + 1) + nx*ny,
+                                  (nx + 1)*(ny + 1) + nx*ny);
     editor.init_cells_global(4*nx*ny, 4*nx*ny);
   }
   else
@@ -123,10 +123,10 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
   {
     for (std::size_t iy = 0; iy < ny; iy++)
     {
-      x[1] = c +(static_cast<double>(iy) + 0.5)*(d - c)/ static_cast<double>(ny);
+      x[1] = c +(static_cast<double>(iy) + 0.5)*(d - c)/static_cast<double>(ny);
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        x[0] = a + (static_cast<double>(ix) + 0.5)*(b - a)/ static_cast<double>(nx);
+        x[0] = a + (static_cast<double>(ix) + 0.5)*(b - a)/static_cast<double>(nx);
         editor.add_vertex(vertex, x);
         vertex++;
       }
@@ -137,8 +137,7 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
   std::size_t cell = 0;
   if (diagonal == "crossed")
   {
-    std::vector<std::vector<std::size_t> >
-      cells(4, std::vector<std::size_t>(3));
+    boost::multi_array<std::size_t, 2> cells(boost::extents[4][3]);
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       for (std::size_t ix = 0; ix < nx; ix++)
@@ -156,8 +155,7 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
         cells[3][0] = v2; cells[3][1] = v3; cells[3][2] = vmid;
 
         // Add cells
-        std::vector<std::vector<std::size_t> >::const_iterator _cell;
-        for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+        for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
           editor.add_cell(cell++, *_cell);
       }
     }
@@ -165,8 +163,7 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
   else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left" || diagonal == "left/right")
   {
     std::string local_diagonal = diagonal;
-    std::vector<std::vector<std::size_t> >
-      cells(2, std::vector<std::size_t>(3));
+    boost::multi_array<std::size_t, 2> cells(boost::extents[2][3]);
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       // Set up alternating diagonal

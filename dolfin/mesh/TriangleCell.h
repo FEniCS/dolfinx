@@ -25,6 +25,7 @@
 #define __TRIANGLE_CELL_H
 
 #include <vector>
+#include <boost/multi_array.hpp>
 #include "CellType.h"
 
 namespace dolfin
@@ -52,7 +53,7 @@ namespace dolfin
     std::size_t orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(std::vector<std::vector<unsigned int> >& e,
+    void create_entities(boost::multi_array<unsigned int, 2>& e,
                          std::size_t dim,
                          const unsigned int* v) const;
 

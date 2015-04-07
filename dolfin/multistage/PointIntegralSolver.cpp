@@ -434,7 +434,7 @@ double PointIntegralSolver::_norm(const std::vector<double>& vec) const
 void PointIntegralSolver::_check_forms()
 {
   // Iterate over stage forms and check they include point integrals
-  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
+  std::vector<std::vector<std::shared_ptr<const Form>>>& stage_forms
     = _scheme->stage_forms();
   for (unsigned int i = 0; i < stage_forms.size(); i++)
   {
@@ -468,7 +468,7 @@ void PointIntegralSolver::_check_forms()
 void PointIntegralSolver::_init()
 {
   // Get stage forms
-  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
+  std::vector<std::vector<std::shared_ptr<const Form>>>& stage_forms
     = _scheme->stage_forms();
 
   // Init local stage solutions

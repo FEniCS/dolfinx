@@ -182,8 +182,8 @@ measures with the mesh functions as additional input:
 
     # Define new measures associated with the interior domains and
     # exterior boundaries
-    dx = Measure("dx")[domains]
-    ds = Measure("ds")[boundaries]
+    dx = Measure('dx', domain=mesh, subdomain_data=domains)
+    ds = Measure('ds', domain=mesh, subdomain_data=boundaries)
 
 We can now define the variational forms corresponding to the
 variational problem above using these measures and the tags for the

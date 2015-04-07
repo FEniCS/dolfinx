@@ -273,11 +273,8 @@ bool Mesh::ordered() const
 //-----------------------------------------------------------------------------
 dolfin::Mesh Mesh::renumber_by_color() const
 {
-  std::vector<std::size_t> coloring_type;
   const std::size_t D = topology().dim();
-  coloring_type.push_back(D);
-  coloring_type.push_back(0);
-  coloring_type.push_back(D);
+  const std::vector<std::size_t> coloring_type = {{D, 0, D}};
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
@@ -330,10 +327,8 @@ const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
 {
   // Define graph type
   const std::size_t dim = MeshColoring::type_to_dim(coloring_type, *this);
-  std::vector<std::size_t> _coloring_type;
-  _coloring_type.push_back(topology().dim());
-  _coloring_type.push_back(dim);
-  _coloring_type.push_back(topology().dim());
+  const std::vector<std::size_t> _coloring_type
+    = {{topology().dim(), dim, topology().dim()}};
 
   return color(_coloring_type);
 }
@@ -343,7 +338,7 @@ Mesh::color(std::vector<std::size_t> coloring_type) const
 {
   // Find color data
   std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
-           std::vector<std::vector<std::size_t> > > >::const_iterator
+           std::vector<std::vector<std::size_t>>>>::const_iterator
     coloring_data = this->topology().coloring.find(coloring_type);
 
   if (coloring_data != this->topology().coloring.end())

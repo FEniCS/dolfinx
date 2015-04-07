@@ -39,11 +39,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::get_simplices
-(std::vector<std::vector<std::size_t> >& simplex_set,
- const std::vector<bool>& marked_edges,
- const std::vector<std::size_t>& longest_edge,
- std::size_t tdim)
+void PlazaRefinementND::get_simplices(
+  std::vector<std::vector<std::size_t>>& simplex_set,
+  const std::vector<bool>& marked_edges,
+  const std::vector<std::size_t>& longest_edge,
+  std::size_t tdim)
 {
   if (tdim == 2)
   {
@@ -58,7 +58,7 @@ void PlazaRefinementND::get_simplices
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::get_triangles
-(std::vector<std::vector<std::size_t> >& tri_set,
+(std::vector<std::vector<std::size_t>>& tri_set,
  const std::vector<bool>& marked_edges,
  const std::size_t longest_edge)
 {
@@ -95,13 +95,12 @@ void PlazaRefinementND::get_triangles
   }
   else
     tri_set.push_back(std::vector<std::size_t>{e2, v2, v0});
-
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::get_tetrahedra(
-            std::vector<std::vector<std::size_t> >& tet_set,
-            const std::vector<bool>& marked_edges,
-            const std::vector<std::size_t> longest_edge)
+  std::vector<std::vector<std::size_t>>& tet_set,
+  const std::vector<bool>& marked_edges,
+  const std::vector<std::size_t> longest_edge)
 {
   Timer t0("PLAZA: Get tetrahedra");
 
@@ -393,11 +392,11 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
       // Get the marked edge indices for new vertices
       // and make bool vector of marked edges
       std::vector<bool> markers(num_cell_edges, false);
-      EdgeIterator e(*cell);
       for (auto &p : marked_edge_list)
       {
         markers[p] = true;
-        const std::size_t edge_index = e[p].index();
+        const std::size_t edge_index = cell->entities(1)[p];
+
         auto it = new_vertex_map.find(edge_index);
         dolfin_assert (it != new_vertex_map.end());
         indices[num_cell_vertices + p] = it->second;
@@ -426,7 +425,7 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
         }
       }
 
-      std::vector<std::vector<std::size_t> > simplex_set;
+      std::vector<std::vector<std::size_t>> simplex_set;
       get_simplices(simplex_set, markers, longest_edge, tdim);
 
       // Convert from cell local index to mesh index
@@ -483,7 +482,7 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
     = new_mesh.data().array("parent_cell", tdim);
 
   // Make a map from parent->child cells
-  std::vector<std::set<std::size_t> > reverse_cell_map(mesh.num_cells());
+  std::vector<std::set<std::size_t>> reverse_cell_map(mesh.num_cells());
   for (CellIterator cell(new_mesh); !cell.end(); ++cell)
   {
     const std::size_t cell_index = cell->index();
@@ -492,7 +491,7 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
 
   // Go through all parent cells, calculating sets of vertices
   // which make up eligible facets
-  std::vector<std::set<std::size_t> > facet_sets;
+  std::vector<std::set<std::size_t>> facet_sets;
   for (CellIterator pcell(mesh); !pcell.end(); ++pcell)
   {
     facet_sets.clear();
@@ -535,7 +534,8 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
       for (FacetIterator f(cell); !f.end(); ++f)
       {
         // Check not already assigned
-        if (new_parent_facet[f->index()] == std::numeric_limits<std::size_t>::max())
+        if (new_parent_facet[f->index()]
+            == std::numeric_limits<std::size_t>::max())
         {
           // Iterate through parent sets of vertices representing facets
           for (unsigned int i = 0; i != facet_sets.size(); ++i)
@@ -544,11 +544,13 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
             std::set<std::size_t>& vset = facet_sets[i];
             bool vertex_match = true;
             for (VertexIterator v(*f); !v.end(); ++v)
+            {
               if (vset.count(v->global_index()) == 0)
               {
                 vertex_match = false;
                 break;
               }
+            }
             if (vertex_match)
               new_parent_facet[f->index()] = pcell->entities(tdim - 1)[i];
           }
@@ -556,5 +558,5 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
       }
     }
   }
-
 }
+//-----------------------------------------------------------------------------

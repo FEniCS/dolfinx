@@ -19,7 +19,7 @@
 // Last changed: 2011-03-17
 
 #include <dolfin/common/constants.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "SubSystemsManager.h"
 #include "init.h"
 

@@ -46,7 +46,7 @@ using namespace dolfin;
 // in this file.  Used to search for plotter objects in get_plotter()
 // and to ensure that plotter objects are correctly destroyed when the
 // program terminates.
-static std::list<std::shared_ptr<VTKPlotter> > stored_plotters;
+static std::list<std::shared_ptr<VTKPlotter>> stored_plotters;
 
 //-----------------------------------------------------------------------------
 // Function for getting already instantiated VTKPlotter for

@@ -20,9 +20,9 @@
 #include <petsclog.h>
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/log/log.h>
 #include "dolfin/la/GenericMatrix.h"
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/la/PETScMatrix.h"
@@ -34,8 +34,6 @@
 #include "petscvec.h"
 #include "petscmat.h"
 #include "petsctao.h"
-
-#include <dolfin/common/timing.h>
 
 using namespace dolfin;
 

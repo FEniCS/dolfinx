@@ -217,14 +217,14 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   }
 
   // Get data
-  std::vector<std::shared_ptr<const FunctionSpace> >
+  std::vector<std::shared_ptr<const FunctionSpace>>
     spaces = form.function_spaces();
-  std::vector<std::shared_ptr<const GenericFunction> >
+  std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = form.coefficients();
   std::shared_ptr<const ufc::form> ufc_form = form.ufc_form();
 
   // Refine function spaces
-  std::vector<std::shared_ptr<const FunctionSpace> > refined_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace>> refined_spaces;
   for (std::size_t i = 0; i < spaces.size(); i++)
   {
     const FunctionSpace& space = *spaces[i];
@@ -233,27 +233,28 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   }
 
   // Refine coefficients:
-  std::vector<std::shared_ptr<const GenericFunction> > refined_coefficients;
+  std::vector<std::shared_ptr<const GenericFunction>> refined_coefficients;
   for (std::size_t i = 0; i < coefficients.size(); i++)
   {
     // Try casting to Function
-    const Function*
-      function = dynamic_cast<const Function*>(coefficients[i].get());
+    const Function* function
+      = dynamic_cast<const Function*>(coefficients[i].get());
 
     if (function)
     {
       adapt(*function, adapted_mesh, adapt_coefficients);
       refined_coefficients.push_back(function->child_shared_ptr());
-    } else
+    }
+    else
       refined_coefficients.push_back(coefficients[i]);
   }
 
-  /// Create new form (constructor used from Python interface)
+  // Create new form (constructor used from Python interface)
   std::shared_ptr<Form> refined_form(new Form(ufc_form,
-                                                refined_spaces,
-                                                refined_coefficients));
+                                              refined_spaces,
+                                              refined_coefficients));
 
-  /// Attach mesh
+  // Attach mesh
   refined_form->set_mesh(adapted_mesh);
 
   // Attached refined sub domains
@@ -263,13 +264,15 @@ const dolfin::Form& dolfin::adapt(const Form& form,
     adapt(*cell_domains, adapted_mesh);
     refined_form->dx = cell_domains->child_shared_ptr();
   }
-  const MeshFunction<std::size_t>* exterior_domains = form.exterior_facet_domains().get();
+  const MeshFunction<std::size_t>* exterior_domains
+    = form.exterior_facet_domains().get();
   if (exterior_domains)
   {
     adapt(*exterior_domains, adapted_mesh);
     refined_form->ds = exterior_domains->child_shared_ptr();
   }
-  const MeshFunction<std::size_t>* interior_domains = form.interior_facet_domains().get();
+  const MeshFunction<std::size_t>* interior_domains
+    = form.interior_facet_domains().get();
   if (interior_domains)
   {
     adapt(*interior_domains, adapted_mesh);
@@ -297,7 +300,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   std::shared_ptr<const Form> a = problem.bilinear_form();
   std::shared_ptr<const Form> L = problem.linear_form();
   std::shared_ptr<const Function> u = problem.solution();
-  std::vector<std::shared_ptr<const DirichletBC> > bcs = problem.bcs();
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = problem.bcs();
 
   // Refine forms
   dolfin_assert(a);
@@ -315,7 +318,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
 
   // Refine bcs
   std::shared_ptr<const FunctionSpace> V(problem.trial_space());
-  std::vector<std::shared_ptr<const DirichletBC> > refined_bcs;
+  std::vector<std::shared_ptr<const DirichletBC>> refined_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
     if (bcs[i] != 0)
@@ -363,7 +366,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   std::shared_ptr<const Form> F = problem.residual_form();
   std::shared_ptr<const Form> J = problem.jacobian_form();
   std::shared_ptr<const Function> u = problem.solution();
-  std::vector<std::shared_ptr<const DirichletBC> > bcs = problem.bcs();
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = problem.bcs();
 
   // Refine forms
   dolfin_assert(F);
@@ -381,7 +384,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
 
   // Refine bcs
   std::shared_ptr<const FunctionSpace> V(problem.trial_space());
-  std::vector<std::shared_ptr<const DirichletBC> > refined_bcs;
+  std::vector<std::shared_ptr<const DirichletBC>> refined_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
     dolfin_assert(bcs[i] != 0);
@@ -448,7 +451,8 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 
   // Get refined value
   const GenericFunction& g = adapt(*(bc.value()), adapted_mesh);
-  std::shared_ptr<const GenericFunction> g_ptr(reference_to_no_delete_pointer(g));
+  std::shared_ptr<const GenericFunction>
+    g_ptr(reference_to_no_delete_pointer(g));
 
   // Extract user_sub_domain
   std::shared_ptr<const SubDomain> user_sub_domain = bc.user_sub_domain();
@@ -479,9 +483,10 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   return *refined_bc;
 }
 //-----------------------------------------------------------------------------
-const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
-                                    std::shared_ptr<const Mesh> adapted_mesh,
-                                    bool adapt_coefficients)
+const dolfin::ErrorControl&
+dolfin::adapt(const ErrorControl& ec,
+              std::shared_ptr<const Mesh> adapted_mesh,
+              bool adapt_coefficients)
 {
   dolfin_assert(adapted_mesh);
 
@@ -562,7 +567,7 @@ const dolfin::MeshFunction<std::size_t>&
   const std::size_t undefined = std::numeric_limits<std::size_t>::max();
 
   // Map values of mesh function into refined mesh function
-  std::shared_ptr<MeshFunction<std::size_t> >
+  std::shared_ptr<MeshFunction<std::size_t>>
     adapted_mesh_function(new MeshFunction<std::size_t>(*adapted_mesh,
                                                         mesh_function.dim()));
   for (std::size_t i = 0; i < adapted_mesh_function->size(); i++)
@@ -604,7 +609,7 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
   // Create map (parent_cell, parent_local_facet) -> [(child_cell,
   // child_local_facet), ...] for boundary facets
 
-  std::map<std::size_t, std::vector<std::size_t> > children;
+  std::map<std::size_t, std::vector<std::size_t>> children;
   for (FacetIterator facet(adapted_mesh); !facet.end(); ++facet)
   {
     // Ignore interior facets
@@ -621,9 +626,7 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
   for (auto const &marker: markers)
   {
     for (auto const &child_facet: children[marker])
-    {
       refined_markers.push_back(child_facet);
-    }
   }
 }
 //-----------------------------------------------------------------------------

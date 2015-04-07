@@ -19,8 +19,9 @@
 // Modified by Anders Logg 2008-2014
 
 #include <dolfin/common/ArrayView.h>
-#include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/Progress.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -32,8 +33,6 @@
 #include "MultiMeshForm.h"
 #include "MultiMeshDofMap.h"
 #include "SparsityPatternBuilder.h"
-
-#include <dolfin/log/dolfin_log.h>
 
 using namespace dolfin;
 
@@ -53,15 +52,15 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
-  std::vector<const std::vector<std::size_t>* > local_to_global(rank);
-  std::vector<const std::vector<int>* > off_process_owner(rank);
+  std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
+  std::vector<ArrayView<const std::size_t>> local_to_global(rank);
+  std::vector<ArrayView<const int>> off_process_owner(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     global_dimensions[i] = dofmaps[i]->global_dimension();
     local_range[i]       = dofmaps[i]->ownership_range();
-    local_to_global[i] = &(dofmaps[i]->local_to_global_unowned());
-    off_process_owner[i] = &(dofmaps[i]->off_process_owner());
+    local_to_global[i].set(dofmaps[i]->local_to_global_unowned());
+    off_process_owner[i].set(dofmaps[i]->off_process_owner());
   }
 
   dolfin_assert(!dofmaps.empty());
@@ -74,8 +73,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   if (init)
   {
     sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, local_range,
-                          local_to_global,
-                          off_process_owner, block_sizes);
+                          local_to_global, off_process_owner, block_sizes);
   }
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
@@ -84,7 +82,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     return;
 
   // Vector to store macro-dofs, if required (for interior facets)
-  std::vector<std::vector<dolfin::la_index> > macro_dofs(rank);
+  std::vector<std::vector<dolfin::la_index>> macro_dofs(rank);
 
   // Create vector to point to dofs
   std::vector<ArrayView<const dolfin::la_index>> dofs(rank);
@@ -117,9 +115,9 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     mesh.init(0);
     mesh.init(0, D);
 
-    std::vector<std::vector<dolfin::la_index> > global_dofs(rank);
+    std::vector<std::vector<dolfin::la_index>> global_dofs(rank);
     //std::vector<const std::vector<dolfin::la_index>* > global_dofs_p(rank);
-    std::vector<std::vector<std::size_t> > local_to_local_dofs(rank);
+    std::vector<std::vector<std::size_t>> local_to_local_dofs(rank);
 
     // Resize local dof map vector
     for (std::size_t i = 0; i < rank; ++i)
@@ -273,17 +271,14 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   // Get global dimensions and local range
   const std::size_t rank = form.rank();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
-  std::vector<const std::vector<std::size_t>* > local_to_global(rank);
-  std::vector<std::vector<std::size_t> > tmp_local_to_global(rank);
-  std::vector<const std::vector<int>* > off_process_owner(rank);
+  std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
+  std::vector<ArrayView<const std::size_t>> local_to_global(rank);
+  std::vector<ArrayView<const int>> off_process_owner(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
     local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
-    off_process_owner[i]
-      = &form.function_space(i)->dofmap()->off_process_owner();
-    local_to_global[i] = &tmp_local_to_global[i];
+    off_process_owner[i].set(form.function_space(i)->dofmap()->off_process_owner());
   }
 
   // Initialize sparsity pattern

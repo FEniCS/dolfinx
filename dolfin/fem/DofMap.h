@@ -392,15 +392,6 @@ namespace dolfin
       }
     }
 
-    /// Return the underlying dof map data. Intended for internal library
-    /// use only.
-    ///
-    /// *Returns*
-    ///     std::vector<std::vector<dolfin::la_index> >
-    ///         The local-to-global map for each cell.
-    //const std::vector<std::vector<dolfin::la_index> >& data() const
-    //{ return _dofmap; }
-
     /// Return informal string representation (pretty-print)
     ///
     /// *Arguments*

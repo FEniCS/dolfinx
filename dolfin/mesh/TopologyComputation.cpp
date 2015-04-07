@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/version.hpp>
 
@@ -76,14 +77,13 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   // Initialize local array of entities
   const std::size_t m = cell_type.num_entities(dim);
   const std::size_t n = cell_type.num_vertices(dim);
-  std::vector<std::vector<unsigned int> >
-    e_vertices(m, std::vector<unsigned int>(n, 0));
+  boost::multi_array<unsigned int, 2> e_vertices(boost::extents[m][n]);
 
   // List of entity e indices connected to cell
-  std::vector<std::vector<unsigned int> > connectivity_ce(mesh.num_cells());
+  std::vector<std::vector<unsigned int>> connectivity_ce(mesh.num_cells());
 
   // List of vertex indices connected to entity e
-  std::vector<std::vector<unsigned int> > connectivity_ev;
+  std::vector<boost::multi_array<unsigned int , 1>> connectivity_ev;
 
   std::size_t current_entity = 0;
   std::size_t max_ce_connections = 1;
@@ -120,15 +120,14 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     cell_type.create_entities(e_vertices, dim, vertices);
 
     // Iterate over the given list of entities
-    std::vector<std::vector<unsigned int> >::iterator entity;
-    for (entity = e_vertices.begin(); entity != e_vertices.end(); ++entity)
+    for (auto entity = e_vertices.begin(); entity != e_vertices.end(); ++entity)
     {
       // Sort entities (to use as map key)
       std::sort(entity->begin(), entity->end());
 
       // Insert into map
-      std::pair<boost::unordered_map<std::vector<unsigned int>, unsigned int>::iterator, bool>
-        it = evertices_to_index.insert(std::make_pair(*entity, current_entity));
+      auto it = evertices_to_index.insert({std::vector<unsigned int>(entity->begin(), entity->end()),
+            current_entity});
 
       // Entity index
       std::size_t e_index = it.first->second;
@@ -213,7 +212,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   // Decide how to compute the connectivity
   if (d0 == 0 && d1 == 0)
   {
-    std::vector<std::vector<std::size_t> >
+    std::vector<std::vector<std::size_t>>
       connectivity00(topology.size(d0), std::vector<std::size_t>(1));
     for (MeshEntityIterator v(mesh, d0, "all"); !v.end(); ++v)
       connectivity00[v->index()][0] = v->index();
@@ -301,7 +300,7 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   dolfin_assert(!topology(d, d1).empty());
 
   // Temporary dynamic storage, later copied into static storage
-  std::vector<std::vector<std::size_t> > connectivity(topology.size(d0));
+  std::vector<std::vector<std::size_t>> connectivity(topology.size(d0));
 
   // A bitmap used to ensure we do not store duplicates
   std::vector<bool> e1_visited(topology.size(d1));

@@ -86,7 +86,7 @@ std::size_t TriangleCell::orientation(const Cell& cell) const
   return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::create_entities(std::vector<std::vector<unsigned int> >& e,
+void TriangleCell::create_entities(boost::multi_array<unsigned int, 2>&  e,
                                    std::size_t dim, const unsigned int* v) const
 {
   // We only need to know how to create edges
@@ -98,10 +98,7 @@ void TriangleCell::create_entities(std::vector<std::vector<unsigned int> >& e,
   }
 
   // Resize data structure
-  e.resize(3);
-  e[0].resize(2);
-  e[1].resize(2);
-  e[2].resize(2);
+  e.resize(boost::extents[3][2]);
 
   // Create the three edges
   e[0][0] = v[1]; e[0][1] = v[2];
@@ -130,14 +127,14 @@ void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
   const std::size_t e2 = offset + e[find_edge(2, cell)];
 
   // Create four new cells
-  std::vector<std::vector<std::size_t> > cells(4, std::vector<std::size_t>(3));
+  std::vector<std::vector<std::size_t>> cells(4, std::vector<std::size_t>(3));
   cells[0][0] = v0; cells[0][1] = e2; cells[0][2] = e1;
   cells[1][0] = v1; cells[1][1] = e0; cells[1][2] = e2;
   cells[2][0] = v2; cells[2][1] = e1; cells[2][2] = e0;
   cells[3][0] = e0; cells[3][1] = e1; cells[3][2] = e2;
 
   // Add cells
-  std::vector<std::vector<std::size_t> >::const_iterator _cell;
+  std::vector<std::vector<std::size_t>>::const_iterator _cell;
   for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
     editor.add_cell(current_cell++, *_cell);
 }
@@ -164,7 +161,8 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   if (geometry.dim() == 2)
   {
     // Compute area of triangle embedded in R^2
-    double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+    double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1])
+      - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
     // Formula for volume from http://mathworld.wolfram.com
     return 0.5 * std::abs(v2);
@@ -172,17 +170,22 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   else if (geometry.dim() == 3)
   {
     // Compute area of triangle embedded in R^3
-    const double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
-    const double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
-    const double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+    const double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2])
+      - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
+    const double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0])
+      - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
+    const double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1])
+      - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
     // Formula for volume from http://mathworld.wolfram.com
     return  0.5*sqrt(v0*v0 + v1*v1 + v2*v2);
   }
   else
+  {
     dolfin_error("TriangleCell.cpp",
                  "compute volume of triangle",
                  "Only know how to compute volume when embedded in R^2 or R^3");
+  }
 
   return 0.0;
 }
@@ -290,7 +293,8 @@ double TriangleCell::squared_distance(const Point& point,
   if (d6 >= 0.0 && d5 <= d6)
     return p.squared_distance(c) + pn*pn;
 
-  // Check if point is in edge region of AC and if so compute projection
+  // Check if point is in edge region of AC and if so compute
+  // projection
   const double vb = d5*d2 - d1*d6;
   if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0)
   {
@@ -298,7 +302,8 @@ double TriangleCell::squared_distance(const Point& point,
     return p.squared_distance(a + w*ac) + pn*pn;
   }
 
-  // Check if point is in edge region of BC and if so compute projection
+  // Check if point is in edge region of BC and if so compute
+  // projection
   const double va = d3*d6 - d5*d4;
   if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0)
   {
@@ -327,9 +332,11 @@ Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   // MER: This code is super for a triangle in R^3 too, this error
   // could be removed, unless it is here for some other reason.
   if (cell.mesh().geometry().dim() != 2)
+  {
     dolfin_error("TriangleCell.cpp",
                  "find normal",
                  "Normal vector is not defined in dimension %d (only defined when the triangle is in R^2", cell.mesh().geometry().dim());
+  }
 
   // Get global index of opposite vertex
   const std::size_t v0 = cell.entities(0)[facet];
@@ -366,9 +373,11 @@ Point TriangleCell::cell_normal(const Cell& cell) const
   // Cell_normal only defined for gdim = 2, 3:
   const std::size_t gdim = geometry.dim();
   if (gdim > 3)
+  {
     dolfin_error("TriangleCell.cpp",
                  "compute cell normal",
                  "Illegal geometric dimension (%d)", gdim);
+  }
 
   // Get the three vertices as points
   const unsigned int* vertices = cell.entities(0);
@@ -414,8 +423,9 @@ double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
   return std::sqrt(d);
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::order(Cell& cell,
-                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
+void TriangleCell::order(
+  Cell& cell,
+  const std::vector<std::size_t>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1
 
