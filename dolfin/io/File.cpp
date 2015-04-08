@@ -21,8 +21,9 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2013-03-11
+// Last changed: 2015-03-27
 
+#include <clocale>
 #include <fstream>
 #include <string>
 #include <boost/filesystem.hpp>
@@ -148,6 +149,10 @@ void File::create_parent_path(std::string filename)
 void File::init(MPI_Comm comm, const std::string filename,
                 std::string encoding)
 {
+  // Make sure locale is set to "C". This prevents spurious bugs in converting
+  // from string to double. See DOLFIN Issue #498.
+  std::setlocale(LC_ALL, "C");
+
   // Create parent path for file if file has a parent path
   create_parent_path(filename);
 

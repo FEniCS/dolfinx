@@ -1,3 +1,4 @@
+- Set locale to "C" before reading from file
 - Change GenericDofMap::cell_dofs return type from const std::vector<..>&
 	to ArrayView<const ..>
 - Add ArrayView class for views into arrays
@@ -11,6 +12,7 @@
 - Add enum TimingType { wall, user, system } for selecting wall-clock,
   user and system time in timing routines
 - Bump required SWIG version to 3.0.3
+- Increase default maximum iterations in NewtonSolver to 50.
 1.5.0 [2015-01-12]
  - DG demos working is parallel
  - Simplify re-use of LU factorisations
