@@ -30,7 +30,7 @@ from dolfin_utils.test import set_parameters_fixture
 optimize = set_parameters_fixture('form_compiler.optimize', [True])
 
 # Exclude some tests for now
-scalar_excludes = [ExplicitMidPoint, RK4, CN2, ExplicitMidPoint, ESDIRK3, ESDIRK4]
+scalar_excludes = [RK4, CN2, ExplicitMidPoint, ESDIRK3, ESDIRK4]
 
 # Build test methods using function closure so 1 test is generated per Scheme and
 # test case
