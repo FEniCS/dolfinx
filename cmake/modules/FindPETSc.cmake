@@ -61,10 +61,8 @@ endforeach()
 
 # List of possible locations for PETSC_DIR
 set(petsc_dir_locations "")
-list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.4.2")    # Debian location
+list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.4.2")  # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.2")    # Debian location
-list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")    # Debian location
-list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")  # Debian location
 list(APPEND petsc_dir_locations "/opt/local/lib/petsc")     # Macports location
 list(APPEND petsc_dir_locations "/usr/local/lib/petsc")     # User location
 list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")         # User location
@@ -130,7 +128,8 @@ endif()
 if (FOUND_PETSC_CONF)
 
   # Find PETSc config file
-  find_file(PETSC_VARIABLES_FILE NAMES variables PATHS ${PETSC_DIR}/lib/petsc-conf ${PETSC_DIR}/conf)
+  find_file(PETSC_VARIABLES_FILE NAMES variables PATHS ${PETSC_DIR}/lib/petsc/conf
+    ${PETSC_DIR}/lib/petsc-conf ${PETSC_DIR}/conf)
 
   # Create a temporary Makefile to probe the PETSc configuration
   set(petsc_config_makefile ${PROJECT_BINARY_DIR}/Makefile.petsc)
