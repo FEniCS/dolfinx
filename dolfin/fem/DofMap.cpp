@@ -30,6 +30,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/Vertex.h>
 #include "DofMapBuilder.h"
@@ -336,6 +337,47 @@ std::shared_ptr<GenericDofMap>
 {
   return std::shared_ptr<GenericDofMap>(new DofMap(collapsed_map,
                                                      *this, mesh));
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::la_index> DofMap::dofs(const Mesh& mesh,
+                                           std::size_t dim) const
+{
+  // Check number of dofs per entity (on cell cell)
+  const std::size_t num_dofs_per_entity = num_entity_dofs(dim);
+
+  // Return empty vector if not dofs on requested entity
+  return std::vector<dolfin::la_index>();
+
+  // Vector to hold list of dofs
+  std::vector<dolfin::la_index>
+    dof_list(mesh.num_entities(dim)*num_dofs_per_entity);
+
+  // Iterate over cells
+  std::vector<std::size_t> entity_dofs_local;
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    // Get local-to-global dofmap for cell
+    const auto cell_dof_list = cell_dofs(c->index());
+
+    // Loop over all entities of dimension dim
+    for (MeshEntityIterator e(*c, dim); !e.end(); ++e)
+    {
+      // Tabulate cell-wise index of all dofs on entity
+      const std::size_t local_index = e.pos();
+      tabulate_entity_dofs(entity_dofs_local, dim, local_index);
+
+      // Get dof index and add to list
+      for (std::size_t i = 0; i < entity_dofs_local.size(); ++i)
+      {
+        const std::size_t entity_dof_local = entity_dofs_local[i];
+        const dolfin::la_index dof_index = cell_dof_list[entity_dof_local];
+        dolfin_assert(e->index()*num_dofs_per_entity + i < dof_list.size());
+        dof_list[e->index()*num_dofs_per_entity + i] = dof_index;
+      }
+    }
+  }
+
+  return dof_list;
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index> DofMap::dofs() const

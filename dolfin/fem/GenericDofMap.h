@@ -153,6 +153,11 @@ namespace dolfin
         collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                  const Mesh& mesh) const = 0;
 
+    /// Return list of dof indices on this process that belong to mesh
+    /// entities of dimension dim
+    virtual std::vector<dolfin::la_index> dofs(const Mesh& mesh,
+                                               std::size_t dim) const = 0;
+
     /// Return list of global dof indices on this process
     virtual std::vector<dolfin::la_index> dofs() const = 0;
 
