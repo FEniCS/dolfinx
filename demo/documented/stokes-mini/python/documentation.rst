@@ -135,8 +135,8 @@ calculated and printed by writing
 
 .. code-block:: python
 
-    print "Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2")
-    print "Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2")
+    print("Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2"))
+    print("Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2"))
 
 One can also split functions using shallow copies (which is enough
 when we just plot the result) by writing
