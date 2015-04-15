@@ -36,6 +36,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/FacetCell.h>
 #include "Extrapolation.h"
 
@@ -148,17 +149,20 @@ void Extrapolation::compute_coefficients(
   dolfin_assert(V.mesh());
   ufc::cell c1;
   std::vector<double> vertex_coordinates1;
-  for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
+  for (VertexIterator vtx(cell0); !vtx.end(); ++vtx)
   {
-    if (cell2dof2row[cell1->index()].empty())
-      continue;
+    for (CellIterator cell1(*vtx); !cell1.end(); ++cell1)
+    {
+      if (cell2dof2row[cell1->index()].empty())
+        continue;
 
-    cell1->get_vertex_coordinates(vertex_coordinates1);
-    cell1->get_cell_data(c1);
-    add_cell_equations(A, b, cell0, *cell1,
-                       vertex_coordinates0, vertex_coordinates1,
-                       c0, c1, V, W, v,
-                       cell2dof2row[cell1->index()]);
+      cell1->get_vertex_coordinates(vertex_coordinates1);
+      cell1->get_cell_data(c1);
+      add_cell_equations(A, b, cell0, *cell1,
+                         vertex_coordinates0, vertex_coordinates1,
+                         c0, c1, V, W, v,
+                         cell2dof2row[cell1->index()]);
+    }
   }
 
   // Solve least squares system
@@ -188,11 +192,15 @@ void Extrapolation::build_unique_dofs(
   cell2dof2row[cell0.index()] = compute_unique_dofs(cell0, V, row, unique_dofs);
 
   // Compute unique dofs on neighbouring cells
-  for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
+  for (VertexIterator v(cell0); !v.end(); ++v)
   {
-    cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, V, row,
-                                                       unique_dofs);
+    for (CellIterator cell1(*v);  !cell1.end(); ++cell1)
+    {
+      cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, V, row,
+                                                         unique_dofs);
+    }
   }
+
 }
 //-----------------------------------------------------------------------------
 void
