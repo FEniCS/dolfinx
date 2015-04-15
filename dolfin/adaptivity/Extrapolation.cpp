@@ -143,26 +143,31 @@ void Extrapolation::compute_coefficients(
   Eigen::VectorXd b(M);
 
   // Add equations on cell and neighboring cells
-  add_cell_equations(A, b, cell0, cell0,
-                     vertex_coordinates0, vertex_coordinates0,
-                     c0, c0, V, W, v, cell2dof2row[cell0.index()]);
   dolfin_assert(V.mesh());
   ufc::cell c1;
   std::vector<double> vertex_coordinates1;
+
+  // Get unique set of surrounding cells (including cell0)
+  std::set<std::size_t> cell_set;
   for (VertexIterator vtx(cell0); !vtx.end(); ++vtx)
   {
     for (CellIterator cell1(*vtx); !cell1.end(); ++cell1)
-    {
-      if (cell2dof2row[cell1->index()].empty())
-        continue;
+      cell_set.insert(cell1->index());
+  }
 
-      cell1->get_vertex_coordinates(vertex_coordinates1);
-      cell1->get_cell_data(c1);
-      add_cell_equations(A, b, cell0, *cell1,
-                         vertex_coordinates0, vertex_coordinates1,
-                         c0, c1, V, W, v,
-                         cell2dof2row[cell1->index()]);
-    }
+  for (auto cell_it : cell_set)
+  {
+    if (cell2dof2row[cell_it].empty())
+      continue;
+
+    Cell cell1(cell0.mesh(), cell_it);
+
+    cell1.get_vertex_coordinates(vertex_coordinates1);
+    cell1.get_cell_data(c1);
+    add_cell_equations(A, b, cell0, cell1,
+                       vertex_coordinates0, vertex_coordinates1,
+                       c0, c1, V, W, v,
+                       cell2dof2row[cell_it]);
   }
 
   // Solve least squares system
@@ -188,17 +193,20 @@ void Extrapolation::build_unique_dofs(
   std::size_t row = 0;
   dolfin_assert(V.mesh());
 
-  // Compute unique dofs on center cell
-  cell2dof2row[cell0.index()] = compute_unique_dofs(cell0, V, row, unique_dofs);
-
-  // Compute unique dofs on neighbouring cells
-  for (VertexIterator v(cell0); !v.end(); ++v)
+  // Get unique set of surrounding cells (including cell0)
+  std::set<std::size_t> cell_set;
+  for (VertexIterator vtx(cell0); !vtx.end(); ++vtx)
   {
-    for (CellIterator cell1(*v);  !cell1.end(); ++cell1)
-    {
-      cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, V, row,
-                                                         unique_dofs);
-    }
+    for (CellIterator cell1(*vtx); !cell1.end(); ++cell1)
+      cell_set.insert(cell1->index());
+  }
+
+  // Compute unique dofs on patch
+  for (auto cell_it : cell_set)
+  {
+    Cell cell1(cell0.mesh(), cell_it);
+    cell2dof2row[cell_it] = compute_unique_dofs(cell1, V, row,
+                                                unique_dofs);
   }
 
 }
