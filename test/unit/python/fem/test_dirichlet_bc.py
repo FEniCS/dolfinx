@@ -174,3 +174,14 @@ def test_zero():
     boundaryIntegral = assemble(u1_zero * ds)
 
     assert near(boundaryIntegral, 0.0)
+
+
+def test_homogenize_consistency():
+    mesh = UnitIntervalMesh(2)
+    V = FunctionSpace(mesh, "CG", 1)
+
+    bc = DirichletBC(V, Constant(0), "on_boundary", method="pointwise")
+
+    bc_new = homogenize(bc)
+
+    assert bc_new.method() == bc.method()
