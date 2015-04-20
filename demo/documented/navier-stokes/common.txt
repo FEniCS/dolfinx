@@ -36,7 +36,7 @@ according to:
 
     \langle (u_h^{\star} - u_h^{n-1}) / \Delta t_n, v \rangle +
     \langle \nabla u_h^{n-1} \cdot u_h^{n-1}, v \rangle +
-    \langle \nu \nabla u_h^n, \nabla v \rangle =
+    \langle \nu \nabla u_h^{\star}, \nabla v \rangle =
     \langle f, v \rangle .
 
 Here, :math:`\langle \cdot, \cdot \rangle` denotes the
