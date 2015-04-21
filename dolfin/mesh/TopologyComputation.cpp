@@ -210,13 +210,13 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   Timer timer("compute connectivity " + to_string(d0) + " - " + to_string(d1));
 
   // Decide how to compute the connectivity
-  if (d0 == 0 && d1 == 0)
+  if (d0 == d1)
   {
     std::vector<std::vector<std::size_t>>
-      connectivity00(topology.size(d0), std::vector<std::size_t>(1));
-    for (MeshEntityIterator v(mesh, d0, "all"); !v.end(); ++v)
-      connectivity00[v->index()][0] = v->index();
-    topology(d0, d0).set(connectivity00);
+      connectivity_dd(topology.size(d0), std::vector<std::size_t>(1));
+    for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
+      connectivity_dd[e->index()][0] = e->index();
+    topology(d0, d0).set(connectivity_dd);
   }
   else if (d0 < d1)
   {
