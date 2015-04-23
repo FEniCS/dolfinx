@@ -40,6 +40,7 @@ def test_instantiation():
     bc1 = DirichletBC(bc0)
     assert bc0.function_space() == bc1.function_space()
 
+
 def test_director_lifetime():
     """Test for any problems with objects with directors going out
     of scope"""
@@ -64,6 +65,7 @@ def test_director_lifetime():
 
     assert round(A1.norm("frobenius") - A0.norm("frobenius"), 7) == 0
 
+
 def test_get_values():
     mesh = UnitSquareMesh(8, 8)
     dofs = numpy.zeros(3, dtype="I")
@@ -74,6 +76,7 @@ def test_get_values():
     V = FunctionSpace(mesh, "CG", 1)
     bc = DirichletBC(V, 0.0, upper)
     bc_values = bc.get_boundary_values()
+
 
 def test_meshdomain_bcs(datadir):
     """Test application of Dirichlet boundary conditions stored as
@@ -172,16 +175,13 @@ def test_zero():
     u1_zero.vector()[:] = A0 * u1.vector()
 
     boundaryIntegral = assemble(u1_zero * ds)
-
     assert near(boundaryIntegral, 0.0)
 
 
 def test_homogenize_consistency():
-    mesh = UnitIntervalMesh(2)
+    mesh = UnitIntervalMesh(10)
     V = FunctionSpace(mesh, "CG", 1)
 
     bc = DirichletBC(V, Constant(0), "on_boundary", method="pointwise")
-
     bc_new = homogenize(bc)
-
     assert bc_new.method() == bc.method()
