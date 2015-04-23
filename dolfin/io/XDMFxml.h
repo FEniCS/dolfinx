@@ -23,6 +23,7 @@
 
 #include <string>
 #include <vector>
+#include <dolfin/mesh/CellType.h>
 
 #include "pugixml.hpp"
 
@@ -70,7 +71,7 @@ namespace dolfin
                                    std::size_t counter);
 
     /// Attach topology to the current grid node
-    void mesh_topology(const std::size_t cell_dim,
+    void mesh_topology(const CellType::Type cell_type,
                        const std::size_t cell_order,
                        const std::size_t num_global_cells,
                        const std::string reference);

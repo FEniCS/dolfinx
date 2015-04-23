@@ -257,6 +257,17 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 {
   Timer t0("HDF5: write mesh to file");
 
+  CellType::Type cell_type(CellType::Type::point);
+  const std::size_t tdim = mesh.topology().dim();
+  if (cell_dim == tdim)
+    cell_type = mesh.type().cell_type();
+  else if (cell_dim == (tdim - 1))
+    cell_type = mesh.type().facet_type();
+  else if (cell_dim == 1)
+    cell_type = CellType::Type::interval;
+
+  std::size_t num_cell_verts = CellType::create(cell_type)->num_entities(0);
+
   dolfin_assert(hdf5_file_open);
 
   // ---------- Vertices (coordinates)
@@ -282,7 +293,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   {
     // Get/build topology data
     std::vector<std::size_t> topological_data;
-    topological_data.reserve(mesh.num_entities(cell_dim)*(cell_dim + 1));
+    topological_data.reserve(mesh.num_entities(cell_dim)*(num_cell_verts));
 
     if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
     {
@@ -347,8 +358,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(_mpi_comm,
-                              topological_data.size()/(cell_dim + 1));
-    global_size[1] = cell_dim + 1;
+                              topological_data.size()/num_cell_verts);
+    global_size[1] = num_cell_verts;
     dolfin_assert(global_size[0] == mesh.size_global(cell_dim));
     const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
@@ -368,7 +379,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
     // Add cell type attribute
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
-                    CellType::type2string((CellType::Type)cell_dim));
+                                 CellType::type2string(cell_type));
 
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
