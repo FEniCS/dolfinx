@@ -16,8 +16,8 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __QUADRILATERAL_CELL_H
-#define __QUADRILATERAL_CELL_H
+#ifndef __HEXAHEDRON_CELL_H
+#define __HEXAHEDRON_CELL_H
 
 #include <vector>
 #include "CellType.h"
@@ -27,12 +27,12 @@ namespace dolfin
 
   /// This class implements functionality for triangular meshes.
 
-  class QuadrilateralCell : public CellType
+  class HexahedronCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    QuadrilateralCell() : CellType(quadrilateral, interval) {}
+    HexahedronCell() : CellType(hexahedron, quadrilateral) {}
 
     /// Return topological dimension of cell
     std::size_t dim() const;

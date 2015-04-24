@@ -12,5 +12,6 @@
 #include <dolfin/generation/UnitTriangleMesh.h>
 #include <dolfin/generation/UnitSquareMesh.h>
 #include <dolfin/generation/UnitQuadMesh.h>
+#include <dolfin/generation/UnitHexMesh.h>
 
 #endif

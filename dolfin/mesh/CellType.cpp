@@ -28,6 +28,7 @@
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "CellType.h"
+#include "HexahedronCell.h"
 #include "IntervalCell.h"
 #include "MeshFunction.h"
 #include "PointCell.h"
@@ -84,6 +85,8 @@ CellType* CellType::create(Type type)
     return new TetrahedronCell();
   case quadrilateral:
     return new QuadrilateralCell();
+  case hexahedron:
+    return new HexahedronCell();
   default:
     dolfin_error("CellType.cpp",
                  "create cell type",
