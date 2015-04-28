@@ -1,6 +1,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include "UnitQuadMesh.h"
 
 using namespace dolfin;
@@ -8,6 +9,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitQuadMesh::UnitQuadMesh(std::size_t nx, std::size_t ny)
 {
+  // Receive mesh according to parallel policy
+  if (MPI::is_receiver(this->mpi_comm()))
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
   MeshEditor editor;
   editor.open(*this, CellType::quadrilateral, 2, 2);
@@ -53,6 +60,13 @@ UnitQuadMesh::UnitQuadMesh(std::size_t nx, std::size_t ny)
 
   // Close mesh editor
   editor.close();
-}
 
+  // Broadcast mesh according to parallel policy
+  if (MPI::is_broadcaster(this->mpi_comm()))
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
+
+}
 //-----------------------------------------------------------------------------
