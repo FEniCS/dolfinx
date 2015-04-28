@@ -309,15 +309,15 @@ void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_cell_vertices(const std::vector<std::size_t>& values)
 {
-  const std::size_t num_cells = values.size()/(tdim + 2);
-  dolfin_assert(values.size() % (tdim + 2) == 0);
+  const std::size_t num_cells = values.size()/(num_vertices_per_cell + 1);
+  dolfin_assert(values.size() % (num_vertices_per_cell + 1) == 0);
   cell_vertices.resize(boost::extents[num_cells][num_vertices_per_cell]);
   global_cell_indices.clear();
   std::size_t k = 0;
   for (std::size_t i = 0; i < num_cells; i++)
   {
     global_cell_indices.push_back(values[k++]);
-    for (std::size_t j = 0; j < tdim + 1; j++)
+    for (std::size_t j = 0; j < num_vertices_per_cell; j++)
       cell_vertices[i][j] = values[k++];
   }
 

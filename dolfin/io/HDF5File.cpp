@@ -1391,7 +1391,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
     = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
 
   std::string cell_type_str;
-  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "cell_type", cell_type_str);
+  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "celltype", cell_type_str);
 
   std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
 
@@ -1407,6 +1407,8 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
 
   dolfin_assert(num_vertices_per_cell == topology_dim[1]);
   mesh_data.num_vertices_per_cell = num_vertices_per_cell;
+
+  std::cout << "HDF5File::read num_verts_per_cell = " << num_vertices_per_cell <<" \n";
 
   // Get partition from file
   std::vector<std::size_t> partitions;

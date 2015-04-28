@@ -1,6 +1,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include "UnitHexMesh.h"
 
 using namespace dolfin;
@@ -8,6 +9,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitHexMesh::UnitHexMesh(std::size_t nx, std::size_t ny, std::size_t nz)
 {
+
+  // Receive mesh according to parallel policy
+  if (MPI::is_receiver(this->mpi_comm()))
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
   MeshEditor editor;
   editor.open(*this, CellType::hexahedron, 3, 3);
@@ -65,6 +73,14 @@ UnitHexMesh::UnitHexMesh(std::size_t nx, std::size_t ny, std::size_t nz)
 
   // Close mesh editor
   editor.close();
-}
 
+  // Broadcast mesh according to parallel policy
+  if (MPI::is_broadcaster(this->mpi_comm()))
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
+
+
+}
 //-----------------------------------------------------------------------------
