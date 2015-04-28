@@ -266,7 +266,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   else if (cell_dim == 1)
     cell_type = CellType::Type::interval;
 
-  std::size_t num_cell_verts = CellType::create(cell_type)->num_entities(0);
+  std::unique_ptr<CellType> celltype(CellType::create(cell_type));
+  std::size_t num_cell_verts = celltype->num_entities(0);
 
   dolfin_assert(hdf5_file_open);
 
@@ -1392,9 +1393,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   std::string cell_type_str;
   HDF5Interface::get_attribute(hdf5_file_id, topology_name, "cell_type", cell_type_str);
 
-  std::unique_ptr<CellType> cell_type(
-       CellType::create(CellType::string2type(cell_type_str)));
-
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
 
   const std::size_t num_vertices_per_cell
     = cell_type->num_entities(0);

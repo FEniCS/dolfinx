@@ -295,8 +295,8 @@ void XDMFxml::mesh_topology(const CellType::Type cell_type,
   xdmf_topology.append_attribute("NumberOfElements")
     = (unsigned int) num_global_cells;
 
-  std::size_t nodes_per_element
-    = CellType::create(cell_type)->num_entities(0);
+  std::unique_ptr<CellType> celltype(CellType::create(cell_type));
+  std::size_t nodes_per_element = celltype->num_entities(0);
 
   // Cell type
   if (cell_type == CellType::Type::point)
