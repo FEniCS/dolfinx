@@ -280,12 +280,12 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
                                bool redistribute,
                                bool calculate_parent_facets)
 {
-  const std::size_t tdim = mesh.topology().dim();
-  if (tdim != 2 and tdim != 3)
+  if (mesh.type().cell_type() != CellType::Type::triangle
+      and mesh.type().cell_type() != CellType::Type::tetrahedron)
   {
     dolfin_error("PlazaRefinementND.cpp",
                  "refine mesh",
-                 "Topological dimension %d not supported", tdim);
+                 "Cell type %s not supported", mesh.type().description(false).c_str());
   }
 
   Timer t0("PLAZA: refine");
@@ -304,12 +304,12 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
                                bool redistribute,
                                bool calculate_parent_facets)
 {
-  const std::size_t tdim = mesh.topology().dim();
-  if (tdim != 2 and tdim != 3)
+  if (mesh.type().cell_type() != CellType::Type::triangle
+      and mesh.type().cell_type() != CellType::Type::tetrahedron)
   {
     dolfin_error("PlazaRefinementND.cpp",
                  "refine mesh",
-                 "Topological dimension %d not supported", tdim);
+                 "Cell type %s not supported", mesh.type().description(false).c_str());
   }
 
   Timer t0("PLAZA: refine");
@@ -330,12 +330,12 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
                                bool calculate_parent_facets,
                                MeshRelation& mesh_relation)
 {
-  const std::size_t tdim = mesh.topology().dim();
-  if (tdim != 2 and tdim != 3)
+  if (mesh.type().cell_type() != CellType::Type::triangle
+      and mesh.type().cell_type() != CellType::Type::tetrahedron)
   {
     dolfin_error("PlazaRefinementND.cpp",
                  "refine mesh",
-                 "Topological dimension %d not supported", tdim);
+                 "Cell type %s not supported", mesh.type().description(false).c_str());
   }
 
   Timer t0("PLAZA: refine");

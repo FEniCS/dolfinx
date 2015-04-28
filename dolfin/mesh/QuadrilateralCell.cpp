@@ -99,7 +99,7 @@ void QuadrilateralCell::create_entities(boost::multi_array<unsigned int, 2>& e,
 }
 //-----------------------------------------------------------------------------
 void QuadrilateralCell::refine_cell(Cell& cell, MeshEditor& editor,
-                               std::size_t& current_cell) const
+                                    std::size_t& current_cell) const
 {
   dolfin_not_implemented();
 }
