@@ -140,6 +140,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   num_global_vertices = mesh.num_vertices();
   num_global_cells = mesh.num_cells();
   num_vertices_per_cell = mesh.type().num_entities(0);
+  cell_type = mesh.type().cell_type();
 
   // Get coordinates for all vertices stored on local processor
   vertex_coordinates.resize(boost::extents[mesh.num_vertices()][gdim]);
@@ -184,6 +185,7 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     values.push_back(num_global_vertices);
     values.push_back(num_global_cells);
     values.push_back(num_vertices_per_cell);
+    values.push_back(cell_type);
     MPI::broadcast(mpi_comm, values);
   }
 
@@ -256,12 +258,13 @@ void LocalMeshData::receive_mesh_data(const MPI_Comm mpi_comm)
   {
     std::vector<std::size_t> values;
     MPI::broadcast(mpi_comm, values);
-    dolfin_assert(values.size() == 5);
+    dolfin_assert(values.size() == 6);
     gdim = values[0];
     tdim = values[1];
     num_global_vertices = values[2];
     num_global_cells = values[3];
     num_vertices_per_cell = values[4];
+    cell_type = (CellType::Type)values[5];
   }
 
   dolfin_debug("check");

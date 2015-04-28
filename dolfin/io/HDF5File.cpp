@@ -1399,6 +1399,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
     = cell_type->num_entities(0);
 
   mesh_data.tdim = cell_type->dim();
+  mesh_data.cell_type = cell_type->cell_type();
 
   // Get total number of cells, as number of rows in topology dataset
   const std::size_t num_global_cells = topology_dim[0];
