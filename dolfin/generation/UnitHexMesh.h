@@ -26,10 +26,14 @@
 namespace dolfin
 {
 
+  /// NB: this code is experimental, just for testing, and will generally not
+  /// work with anything else
   class UnitHexMesh : public Mesh
   {
   public:
 
+    /// NB: this code is experimental, just for testing, and will generally not
+    /// work with anything else
     UnitHexMesh(std::size_t nx, std::size_t ny, std::size_t nz);
 
   };
