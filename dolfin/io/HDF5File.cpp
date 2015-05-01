@@ -257,14 +257,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 {
   Timer t0("HDF5: write mesh to file");
 
-  CellType::Type cell_type(CellType::Type::point);
-  const std::size_t tdim = mesh.topology().dim();
-  if (cell_dim == tdim)
-    cell_type = mesh.type().cell_type();
-  else if (cell_dim == (tdim - 1))
-    cell_type = mesh.type().facet_type();
-  else if (cell_dim == 1)
-    cell_type = CellType::Type::interval;
+  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
   std::unique_ptr<CellType> celltype(CellType::create(cell_type));
   std::size_t num_cell_verts = celltype->num_entities(0);

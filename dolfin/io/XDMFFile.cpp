@@ -622,15 +622,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   }
 
   const std::size_t cell_dim = meshfunction.dim();
-  const std::size_t tdim = mesh.topology().dim();
-  CellType::Type cell_type(CellType::Type::point);
-  dolfin_assert(cell_dim <= tdim);
-  if (cell_dim == tdim)
-    cell_type = mesh.type().cell_type();
-  else if (cell_dim == (tdim - 1))
-    cell_type = mesh.type().facet_type();
-  else if (cell_dim == 1)
-    cell_type = CellType::Type::interval;
+  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
   // Use HDF5 function to output MeshFunction
   const std::string h5_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
