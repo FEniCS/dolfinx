@@ -289,13 +289,27 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     std::vector<std::size_t> topological_data;
     topological_data.reserve(mesh.num_entities(cell_dim)*(num_cell_verts));
 
+    const std::vector<std::size_t>& global_vertices
+      = mesh.topology().global_indices(0);
+
+    // Permutation to VTK ordering for non-simplicial cells
+    std::vector<unsigned int> perm = {0, 1, 2, 3};
+    if (cell_type == CellType::quadrilateral)
+      perm = {0, 1, 3, 2};
+    else if (cell_type == CellType::hexahedron)
+      perm = {0, 1, 3, 2, 4, 5, 7, 6};
+
     if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
+
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-        for (VertexIterator v(*c); !v.end(); ++v)
-          topological_data.push_back(v->global_index());
+        for (unsigned int i = 0; i != c->num_entities(0); ++i)
+        {
+          const unsigned int local_idx = c->entities(0)[perm[i]];
+          topological_data.push_back(global_vertices[local_idx]);
+        }
     }
     else
     {
@@ -342,8 +356,11 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         // If not excluded, add to topology
         if (non_local_entities.find(ent->index()) == non_local_entities.end())
         {
-          for (VertexIterator v(*ent); !v.end(); ++v)
-            topological_data.push_back(v->global_index());
+          for (unsigned int i = 0; i != ent->num_entities(0); ++i)
+          {
+            const unsigned int local_idx = ent->entities(0)[perm[i]];
+            topological_data.push_back(global_vertices[local_idx]);
+          }
         }
       }
     }

@@ -73,8 +73,8 @@ UnitQuadMesh::UnitQuadMesh(std::size_t nx, std::size_t ny)
     {
       v[0] = iy*(nx + 1) + ix;
       v[1] = v[0] + 1;
-      v[2] = v[1] + (nx + 1);
-      v[3] = v[0] + (nx + 1);
+      v[2] = v[0] + (nx + 1);
+      v[3] = v[1] + (nx + 1);
       editor.add_cell(cell, v);
       ++cell;
     }

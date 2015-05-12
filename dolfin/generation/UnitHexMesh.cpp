@@ -81,8 +81,8 @@ UnitHexMesh::UnitHexMesh(std::size_t nx, std::size_t ny, std::size_t nz)
       {
         v[0] = (iz*(ny + 1) + iy)*(nx + 1) + ix;
         v[1] = v[0] + 1;
-        v[2] = v[1] + (nx + 1);
-        v[3] = v[0] + (nx + 1);
+        v[2] = v[0] + (nx + 1);
+        v[3] = v[1] + (nx + 1);
         v[4] = v[0] + (nx + 1)*(ny + 1);
         v[5] = v[1] + (nx + 1)*(ny + 1);
         v[6] = v[2] + (nx + 1)*(ny + 1);
