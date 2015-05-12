@@ -375,9 +375,6 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   const double* _x = x.data();
   const Point point(mesh.geometry().dim(), _x);
 
-  // FIXME: Testing
-  int ID = 0;
-
   // Get index of first cell containing point
   unsigned int id
     = mesh.bounding_box_tree()->compute_first_entity_collision(point);
@@ -399,10 +396,8 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     }
   }
 
-  ID = id;
-
   // Create cell that contains point
-  const Cell cell(mesh, ID);
+  const Cell cell(mesh, id);
   ufc::cell ufc_cell;
   cell.get_cell_data(ufc_cell);
 
@@ -489,8 +484,8 @@ void Function::eval(Array<double>& values,
   dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
-  // Check if UFC cell comes from mesh, otherwise redirect to
-  // evaluate on non-matching cell
+  // Check if UFC cell comes from mesh, otherwise
+  // find the cell which contains the point
   dolfin_assert(ufc_cell.mesh_identifier >= 0);
   if (ufc_cell.mesh_identifier == (int) mesh.id())
   {
@@ -498,57 +493,17 @@ void Function::eval(Array<double>& values,
     eval(values, x, cell, ufc_cell);
   }
   else
-    non_matching_eval(values, x, ufc_cell);
+    eval(values, x);
 }
 //-----------------------------------------------------------------------------
 void Function::non_matching_eval(Array<double>& values,
                                  const Array<double>& x,
                                  const ufc::cell& ufc_cell) const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  deprecation("Function::non_matching_eval(values, x, ufc_cell)", "1.6.0", "1.7.0",
+              "Please use Function::eval(values, x) instead");
 
-  const double* _x = x.data();
-  const std::size_t gdim = mesh.geometry().dim();
-  const Point point(gdim, _x);
-
-  // FIXME: Testing
-  int ID = 0;
-
-  // Alternative 1: Find cell that point (x) intersects
-  unsigned int id
-    = mesh.bounding_box_tree()->compute_first_entity_collision(point);
-
-  // Check whether we are allowed to extrapolate to evaluate
-  if (id == std::numeric_limits<unsigned int>::max() && !allow_extrapolation)
-  {
-    dolfin_error("Function.cpp",
-                 "evaluate function at point",
-                 "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
-  }
-
-  // Alternative 2: Compute closest cell to point (x)
-  if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation)
-    id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
-
-  // Throw error if all alternatives failed
-  if (id == std::numeric_limits<unsigned int>::max())
-  {
-    dolfin_error("Function.cpp",
-                 "evaluate function at point",
-                 "No matching cell found");
-  }
-
-  ID = id;
-
-  // Create cell that contains point
-  const Cell cell(mesh, ID);
-  ufc::cell new_ufc_cell;
-  cell.get_cell_data(new_ufc_cell);
-
-  // Call evaluate function
-  eval(values, x, cell, new_ufc_cell);
+  eval(values, x);
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,
