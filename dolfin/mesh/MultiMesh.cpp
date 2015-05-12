@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by August Johansson 2014
+// Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-28
+// Last changed: 2015-03-30
+
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -30,6 +31,8 @@
 #include "BoundaryMesh.h"
 #include "MeshFunction.h"
 #include "MultiMesh.h"
+// FIXME August
+#include <dolfin/dolfin_write_medit.h>
 
 using namespace dolfin;
 
@@ -435,10 +438,18 @@ void MultiMesh::_build_quadrature_rules_overlap()
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
+    std::cout << "----- cut part: " << cut_part <<std::endl;
+
+    {
+      medit::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
+    }
+
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
+      // std::cout << "-------------- new cut cell\n";
+
       // Get cut cell
       const unsigned int cut_cell_index = it->first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
@@ -447,236 +458,579 @@ void MultiMesh::_build_quadrature_rules_overlap()
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
-      // Data structure for the volume triangulation of the cut_cell
-      std::vector<double> volume_triangulation;
-
       // Data structure for the overlap quadrature rule
       std::vector<quadrature_rule> overlap_qr;
 
-      // Data structure for the interface quadrature rule
-      std::vector<quadrature_rule> interface_qr;
+      // Data structure for the first intersections (this is the first
+      // stage in the inclusion exclusion principle). These are the
+      // polyhedra to be used in the exlusion inclusion.
+      std::vector<std::pair<std::size_t, Polyhedron> > initial_polyhedra;
 
-      // Data structure for the facet normals of the interface. The
-      // numbering matches the numbering of interface_qr. This means
-      // we have one normal for each quadrature point, since this is
-      // how the data are grouped during assembly: for each pair of
-      // colliding cells, we build a list of quadrature points and a
-      // corresponding list of facet normals.
-      std::vector<std::vector<double>> interface_n;
-
-      // Data structure for the interface triangulation
-      std::vector<double> interface_triangulation;
-
-      // Data structure for normals to the interface. The numbering
-      // should match the numbering of interface_triangulation.
-      std::vector<Point> triangulation_normals;
-
-      // Iterate over cutting cells
-      const auto& cutting_cells = it->second;
-      for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+      // Loop over all cutting cells to construct the polyhedra to be
+      // used in the inclusion-exclusion principle
+      for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
       {
-        // Get cutting part and cutting cell
+  	// Get cutting part and cutting cell
         const std::size_t cutting_part = jt->first;
         const std::size_t cutting_cell_index = jt->second;
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
 
-        // Topology of this cut part
-        const std::size_t tdim_boundary = _boundary_meshes[cutting_part]->topology().dim();
+  	// Only allow same type of cell for now
+      	dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
+      	dolfin_assert(cutting_cell.mesh().geometry().dim() == gdim);
 
-        // Must have the same topology at the moment (FIXME)
-        dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
+  	// Compute the intersection (a polyhedron)
+  	const std::vector<double> intersection
+	  = IntersectionTriangulation::triangulate_intersection(cut_cell,
+								cutting_cell);
+	const Polyhedron polyhedron = convert(intersection, tdim, gdim);
 
-        // Data structure for local interface triangulation
-        std::vector<double> local_interface_triangulation;
+	// Store key and polyhedron
+	initial_polyhedra.push_back(std::make_pair(initial_polyhedra.size(),
+						   polyhedron));
 
-        // Data structure for the local interface normals. The
-        // numbering should match the numbering of
-        // local_interface_triangulation.
-        std::vector<Point> local_triangulation_normals;
+	// {
+	//   std::cout << "cut cutting\n";
+	//   std::cout << medit::drawtriangle(cut_cell)<<medit::drawtriangle(cutting_cell)<<std::endl;
+	//   std::cout << "intersection (size="<<intersection.size()<<": ";
+	//   for (std::size_t i = 0; i < intersection.size(); ++i)
+	//     std::cout << intersection[i]<<' ';
+	//   std::cout<<")\n";
+	//   std::vector<Simplex> sss = convert(intersection, tdim, gdim);
+	//   for (std::size_t i = 0; i < sss.size(); ++i)
+	//     std::cout << medit::drawtriangle(sss[i],"'k'");
+	//   std::cout << std::endl;
+	// }
+      }
+      //PPause;
 
-        // Data structure for the overlap part quadrature rule
+      // Exclusion-inclusion principle. There are N stages in the
+      // principle, where N = polyhedra.size(). The first stage is
+      // simply the polyhedra themselves A, B, C, ... etc. The second
+      // stage is for the pairwise intersections A \cap B, A \cap C, B
+      // \cap C, etc, with different sign. There are
+      // n_choose_k(N,stage) intersections for each stage.
+
+      // Data structure for storing the previous intersections: the key
+      // and the intersections.
+      const std::size_t N = initial_polyhedra.size();
+      std::vector<std::pair<std::vector<std::size_t>,
+			    Polyhedron> > previous_intersections(N);
+      for (std::size_t i = 0; i < N; ++i)
+	previous_intersections[i]
+	  = std::make_pair(std::vector<std::size_t>(1, initial_polyhedra[i].first),
+			   initial_polyhedra[i].second);
+
+      // Do stage = 1 up to stage = polyhedra.size in the
+      // principle. Recall that stage 1 is the pairwise
+      // intersections. There are up to n_choose_k(N,stage)
+      // intersections in each stage (there may be less). The
+      // intersections are found using the polyhedra data and the
+      // previous_intersections data. We only have to intersect if the key doesn't
+      // contain the polyhedron.
+
+      // std::cout << std::endl << "initial setup done, resulted in " << N << " polyhedra to be used in the inclusion exclusion\n\n";
+
+      // // The big data structure
+      // std::vector<std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > > all_intersections(N);
+
+      // // Maybe not needed:
+      // all_intersections[0] = previous_intersections; //initial_polyhedra;
+
+      // Add quadrature rule
+      {
+	quadrature_rule overlap_part_qr;
+	const std::size_t sign = 1;
+	for (const auto polyhedron: previous_intersections)
+	  for (const auto simplex: polyhedron.second)
+	  {
+	    std::vector<double> x = convert(simplex, tdim, gdim);
+	    _add_quadrature_rule(overlap_part_qr, x,
+				 tdim, gdim, quadrature_order, sign);
+	  }
+
+	// Add quadrature rule for overlap part
+	overlap_qr.push_back(overlap_part_qr);
+      }
+
+
+
+
+      for (std::size_t stage = 1; stage < N; ++stage)
+      {
+      	// std::cout << "stage " << stage << std::endl;
+
+      	// Structure for storing new intersections
+      	std::vector<std::pair<std::vector<std::size_t>,
+			      Polyhedron> > new_intersections;
+
+      	// Loop over all intersections from the previous stage
+      	for (const auto previous_polyhedron: previous_intersections)
+      	{
+      	  // Loop over all initial polyhedra.
+      	  for (const auto initial_polyhedron: initial_polyhedra)
+      	  {
+	    // std::cout << "check keys from previous_polyhedron: ";
+	    // for (const auto key: previous_polyhedron.first)
+	    //   std::cout << key <<' ';
+	    // std::cout << '\n';
+	    // std::cout << "initial key: " << initial_polyhedron.first << std::endl;
+
+	    // test: only check if initial_polyhedron key <
+	    // previous_polyhedron key[0]
+	    if (initial_polyhedron.first < previous_polyhedron.first[0])
+	    {
+
+	      // {
+	      // 	for (const auto previous_simplex: previous_polyhedron.second)
+	      // 	  std::cout << medit::drawtriangle(previous_simplex,"'b'");
+	      // 	std::cout << '\n';
+	      // 	for (const auto initial_simplex: initial_polyhedron.second)
+	      // 	  std::cout << medit::drawtriangle(initial_simplex,"'r'");
+	      // 	std::cout<<'\n';
+	      // }
+
+
+	      // We want to save the intersection of the previous
+	      // polyhedron and the initial polyhedron in one single
+	      // polyhedron.
+	      Polyhedron new_polyhedron;
+	      std::vector<std::size_t> new_keys;
+
+	      // Loop over all simplices in the initial_polyhedron and
+	      // the previous_polyhedron and append the intersection of
+	      // these to the new_polyhedron
+	      bool any_intersections = false;
+
+	      for (const auto previous_simplex: previous_polyhedron.second)
+	      {
+		for (const auto initial_simplex: initial_polyhedron.second)
+		{
+		  // std::cout << '\n'<<medit::drawtriangle(previous_simplex,"'b'")
+		  // 	    << medit::drawtriangle(initial_simplex,"'r'")<<std::endl;
+
+		  // Compute the intersection (a polyhedron)
+		  const std::vector<double> ii
+		    = IntersectionTriangulation::
+		    triangulate_intersection(initial_simplex, tdim,
+					     previous_simplex, tdim, gdim);
+
+		  if (ii.size())
+		  {
+		    any_intersections = true;
+
+		    // To save all intersections as a single
+		    // polyhedron, we don't call this a polyhedron
+		    // yet, but rather a std::vector<Simplex> since we
+		    // are still filling the polyhedron with simplices
+		    std::vector<Simplex> pii = convert(ii, tdim, gdim);
+		    new_polyhedron.insert(new_polyhedron.end(), pii.begin(), pii.end());
+
+		    // std::cout << "resulting intersection:\n";
+		    // for (const auto simplex: pii)
+		    //   std::cout << medit::drawtriangle(simplex,"'g'");
+		    // std::cout<<'\n';
+		  }
+		}
+	      }
+
+	      if (any_intersections)
+	      {
+		new_keys.push_back(initial_polyhedron.first);
+		new_keys.insert(new_keys.end(),
+				previous_polyhedron.first.begin(),
+				previous_polyhedron.first.end());
+		// std::cout << "new keys: ";
+		// for (const auto key: new_keys)
+		//   std::cout << key <<' ';
+		// std::cout<<std::endl;
+
+		// Save data
+		new_intersections.push_back(std::make_pair(new_keys, new_polyhedron));
+		//PPause;
+	      }
+
+	    }
+	  }
+      	}
+
+
+	// {
+	//   std::cout << "\n summarize at stage="<<stage<<" and part=" << cut_part<< '\n';
+	//   std::cout << "the previous intersections were:\n";
+	//   for (const auto previous_polyhedron: previous_intersections)
+	//   {
+	//     for (const auto key: previous_polyhedron.first)
+	//       std::cout << key<<' ';
+	//     std::cout << "   ";
+	//   }
+	//   std::cout << '\n';
+	//   for (const auto previous_polyhedron: previous_intersections)
+	//   {
+	//     for (const auto simplex: previous_polyhedron.second)
+	//       std::cout << medit::drawtriangle(simplex);
+	//     std::cout << "    ";
+	//   }
+	//   std::cout << '\n';
+
+
+	//   std::cout << "the new intersections are:\n";
+	//   for (const auto new_polyhedron: new_intersections)
+	//   {
+	//     for (const auto key: new_polyhedron.first)
+	//       std::cout << key<<' ';
+	//     std::cout << "   ";
+	//   }
+	//   std::cout << '\n';
+	//   for (const auto new_polyhedron: new_intersections)
+	//   {
+	//     for (const auto simplex: new_polyhedron.second)
+	//       std::cout << medit::drawtriangle(simplex);
+	//     std::cout <<"    ";
+	//   }
+	//   std::cout << '\n';
+
+	//   //if (cut_part == 1) { PPause; }
+	//   //if (cut_part == 0) { PPause; }
+	// }
+
+      	// Update before next stage
+      	//all_intersections[stage] =
+	previous_intersections = new_intersections;
+
+
+	// Add quadrature rule with correct sign
+	const double sign = std::pow(-1, stage);
         quadrature_rule overlap_part_qr;
 
-        // Data structure for the interface part quadrature rule
-        quadrature_rule interface_part_qr;
-
-        // Data structure for the interface part facet normals. The
-        // numbering matches the numbering of interface_part_qr.
-        std::vector<double> interface_part_n;
-
-        // Iterate over boundary cells
-        for (auto boundary_cell_index : full_to_bdry[cutting_part][cutting_cell_index])
-        {
-          // Get the boundary facet as a cell in the boundary mesh
-          const Cell boundary_cell(*_boundary_meshes[cutting_part],
-                                   boundary_cell_index.first);
-
-          // Get the boundary facet as a facet in the full mesh
-          const Facet boundary_facet(*_meshes[cutting_part],
-                                     boundary_cell_index.second);
-
-          // Triangulate intersection of cut cell and boundary cell
-          const auto triangulation_cut_boundary
-            = cut_cell.triangulate_intersection(boundary_cell);
-
-          // The normals to triangulation_cut_boundary
-          std::vector<Point> normals_cut_boundary;
-
-          // Add quadrature rule and normals for triangulation
-          if (triangulation_cut_boundary.size())
-          {
-            dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-
-            const auto num_qr_points
-              = _add_quadrature_rule(interface_part_qr,
-                                     triangulation_cut_boundary,
-                                     tdim_boundary, gdim,
-                                     quadrature_order, 1);
-
-            const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
-            const Point n = -cutting_cell.normal(local_facet_index);
-            for (std::size_t i = 0; i < num_qr_points.size(); ++i)
-            {
-              _add_normal(interface_part_n,
-                          n,
-                          num_qr_points[i],
-                          gdim);
-              normals_cut_boundary.push_back(n);
-            }
-
-            dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-          }
-
-          // Triangulate intersection of boundary cell and previous volume triangulation
-          const auto triangulation_boundary_prev_volume
-            = IntersectionTriangulation::triangulate_intersection(boundary_cell,
-                                                                  volume_triangulation,
-                                                                  tdim);
-
-          // Add quadrature rule and normals for triangulation
-          if (triangulation_boundary_prev_volume.size())
-          {
-            dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-
-            const auto num_qr_points
-              = _add_quadrature_rule(interface_part_qr,
-                                     triangulation_boundary_prev_volume,
-                                     tdim_boundary, gdim,
-                                     quadrature_order, -1);
-
-            const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
-            const Point n = -cutting_cell.normal(local_facet_index);
-            for (std::size_t i = 0; i < num_qr_points.size(); ++i)
-              _add_normal(interface_part_n,
-                          n,
-                          num_qr_points[i],
-                          gdim);
-
-            dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-          }
-
-          // Update triangulation
-          local_interface_triangulation.insert(local_interface_triangulation.end(),
-                                               triangulation_cut_boundary.begin(),
-                                               triangulation_cut_boundary.end());
-
-          // Update interface facet normals
-          local_triangulation_normals.insert(local_triangulation_normals.end(),
-                                             normals_cut_boundary.begin(),
-                                             normals_cut_boundary.end());
-        }
-
-        // Triangulate the intersection of the previous interface
-        // triangulation and the cutting cell (to remove)
-        std::vector<double> triangulation_prev_cutting;
-        std::vector<Point> normals_prev_cutting;
-        IntersectionTriangulation::triangulate_intersection(cutting_cell,
-                                                            interface_triangulation,
-                                                            triangulation_normals,
-                                                            triangulation_prev_cutting,
-                                                            normals_prev_cutting,
-                                                            tdim_boundary);
-
-        // Add quadrature rule for triangulation
-        if (triangulation_prev_cutting.size())
-        {
-          dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-
-          const auto num_qr_points
-            = _add_quadrature_rule(interface_part_qr,
-                                   triangulation_prev_cutting,
-                                   tdim_boundary, gdim,
-                                   quadrature_order, -1);
-
-          for (std::size_t i = 0; i < num_qr_points.size(); ++i)
-            _add_normal(interface_part_n,
-                        normals_prev_cutting[i],
-                        num_qr_points[i],
-                        gdim);
-
-          dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-        }
-
-        // Update triangulation
-        interface_triangulation.insert(interface_triangulation.end(),
-                                       local_interface_triangulation.begin(),
-                                       local_interface_triangulation.end());
-
-        // Update normals
-        triangulation_normals.insert(triangulation_normals.end(),
-                                     local_triangulation_normals.begin(),
-                                     local_triangulation_normals.end());
-
-        // Do the volume segmentation
-
-        // Compute volume triangulation of intersection of cut and cutting cells
-        const auto triangulation_cut_cutting
-          = cut_cell.triangulate_intersection(cutting_cell);
-
-        // Compute triangulation of intersection of cutting cell and
-        // the (previous) volume triangulation
-        const auto triangulation_cutting_prev
-          = IntersectionTriangulation::triangulate_intersection(cutting_cell,
-                                                                volume_triangulation,
-                                                                tdim);
-
-        // Add these new triangulations
-        volume_triangulation.insert(volume_triangulation.end(),
-                                    triangulation_cut_cutting.begin(),
-                                    triangulation_cut_cutting.end());
-
-        // Add quadrature rule with weights corresponding to the two
-        // triangulations
-        _add_quadrature_rule(overlap_part_qr,
-                             triangulation_cut_cutting,
-                             tdim, gdim, quadrature_order, 1);
-        _add_quadrature_rule(overlap_part_qr,
-                             triangulation_cutting_prev,
-                             tdim, gdim, quadrature_order, -1);
+	for (const auto polyhedron: new_intersections)
+	  for (const auto simplex: polyhedron.second)
+	  {
+	    std::vector<double> x = convert(simplex, tdim, gdim);
+	    _add_quadrature_rule(overlap_part_qr, x,
+				 tdim, gdim, quadrature_order, sign);
+	  }
 
         // Add quadrature rule for overlap part
         overlap_qr.push_back(overlap_part_qr);
 
-        // Add quadrature rule for interface part
-        interface_qr.push_back(interface_part_qr);
+	// {
+	//   // Test the quadrature rule
+	//   double volume = 0;
+	//   for (std::size_t i = 0; i < overlap_part_qr.second.size(); ++i)
+	//   {
+	//     //std::cout << std::setprecision(20) << qr.second[i]<<'\n';
+	//     volume += overlap_part_qr.second[i];
+	//   }
+	//   std::cout << "volume="<<volume<<'\n';
+	//   //if (cut_part == 1) { PPause; }
+	// }
 
-        // Add facet normal for interface part
-        interface_n.push_back(interface_part_n);
       }
+
+
+
+      // std::cout << "\n summarize all intersections for part=" << cut_part<< " (there are "<<all_intersections.size()<< " stages)" << std::endl;
+
+      // for (std::size_t stage = 0; stage < all_intersections.size(); ++stage)
+      // {
+      // 	std::cout << "\nstage " << stage << " has " << all_intersections[stage].size() << " polyhedra: " << std::endl
+      // 		  << "figure("<<stage+1<<"),title('stage="<<stage<<"'),axis equal,hold on;\n";
+      // 	for (const auto polyhedron: all_intersections[stage])
+      // 	{
+      // 	  for (const auto simplex: polyhedron.second)
+      // 	    std::cout << medit::drawtriangle(simplex);
+
+      // 	  // for (const auto key: polyhedron.first)
+      // 	  //   std::cout << key <<' ';
+      // 	  // std::cout << "    ";
+      // 	}
+      // }
+      // std::cout << std::endl;
+
+
+      // // qr is pair of point and weight (each is a vector<double>)
+      // for (const auto qr: overlap_qr)
+      // 	for (std::size_t i = 0; i < qr.second.size(); ++i)
+      // 	{
+      // 	  const Point pt(qr.first[gdim*i],qr.first[gdim*i+1]);
+      // 	  if (qr.second[i] < 0)
+      // 	    std::cout << medit::matlabplot(pt,"'o'");
+      // 	  else
+      // 	    std::cout << medit::matlabplot(pt,"'.'");
+      // 	  std::cout << std::endl;
+      // 	}
+
+
+      // PPause;
+
+
+
 
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
-      _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
+      //_quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
 
       // Store facet normals for cut cell
-      _facet_normals[cut_part][cut_cell_index] = interface_n;
+      //_facet_normals[cut_part][cut_cell_index] = interface_n;
+
     }
+
   }
+
+
+
+
+
+
+
+
+
+  // // Iterate over all parts
+  // for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+  // {
+  //   // Iterate over cut cells for current part
+  //   const auto& cmap = collision_map_cut_cells(cut_part);
+  //   for (auto it = cmap.begin(); it != cmap.end(); ++it)
+  //   {
+  //     // Get cut cell
+  //     const unsigned int cut_cell_index = it->first;
+  //     const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
+
+  //     // Get dimensions
+  //     const std::size_t tdim = cut_cell.mesh().topology().dim();
+  //     const std::size_t gdim = cut_cell.mesh().geometry().dim();
+
+  //     // Data structure for the volume triangulation of the cut_cell
+  //     std::vector<double> volume_triangulation;
+
+  //     // Data structure for the overlap quadrature rule
+  //     std::vector<quadrature_rule> overlap_qr;
+
+  //     // Data structure for the interface quadrature rule
+  //     std::vector<quadrature_rule> interface_qr;
+
+  //     // Data structure for the facet normals of the interface. The
+  //     // numbering matches the numbering of interface_qr. This means
+  //     // we have one normal for each quadrature point, since this is
+  //     // how the data are grouped during assembly: for each pair of
+  //     // colliding cells, we build a list of quadrature points and a
+  //     // corresponding list of facet normals.
+  //     std::vector<std::vector<double>> interface_n;
+
+  //     // Data structure for the interface triangulation
+  //     std::vector<double> interface_triangulation;
+
+  //     // Data structure for normals to the interface. The numbering
+  //     // should match the numbering of interface_triangulation.
+  //     std::vector<Point> triangulation_normals;
+
+  //     // Iterate over cutting cells
+  //     const auto& cutting_cells = it->second;
+  //     for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+  //     {
+  //       // Get cutting part and cutting cell
+  //       const std::size_t cutting_part = jt->first;
+  //       const std::size_t cutting_cell_index = jt->second;
+  //       const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
+
+  //       // Topology of this cut part
+  //       const std::size_t tdim_boundary = _boundary_meshes[cutting_part]->topology().dim();
+
+  //       // Must have the same topology at the moment (FIXME)
+  //       dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
+
+  //       // Data structure for local interface triangulation
+  //       std::vector<double> local_interface_triangulation;
+
+  //       // Data structure for the local interface normals. The
+  //       // numbering should match the numbering of
+  //       // local_interface_triangulation.
+  //       std::vector<Point> local_triangulation_normals;
+
+  //       // Data structure for the overlap part quadrature rule
+  //       quadrature_rule overlap_part_qr;
+
+  //       // Data structure for the interface part quadrature rule
+  //       quadrature_rule interface_part_qr;
+
+  //       // Data structure for the interface part facet normals. The
+  //       // numbering matches the numbering of interface_part_qr.
+  //       std::vector<double> interface_part_n;
+
+  //       // Iterate over boundary cells
+  //       for (auto boundary_cell_index : full_to_bdry[cutting_part][cutting_cell_index])
+  //       {
+  //         // Get the boundary facet as a cell in the boundary mesh
+  //         const Cell boundary_cell(*_boundary_meshes[cutting_part],
+  //                                  boundary_cell_index.first);
+
+  //         // Get the boundary facet as a facet in the full mesh
+  //         const Facet boundary_facet(*_meshes[cutting_part],
+  //                                    boundary_cell_index.second);
+
+  //         // Triangulate intersection of cut cell and boundary cell
+  //         const auto triangulation_cut_boundary
+  //           = cut_cell.triangulate_intersection(boundary_cell);
+
+  //         // The normals to triangulation_cut_boundary
+  //         std::vector<Point> normals_cut_boundary;
+
+  //         // Add quadrature rule and normals for triangulation
+  //         if (triangulation_cut_boundary.size())
+  //         {
+  //           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
+
+  //           const auto num_qr_points
+  //             = _add_quadrature_rule(interface_part_qr,
+  //                                    triangulation_cut_boundary,
+  //                                    tdim_boundary, gdim,
+  //                                    quadrature_order, 1);
+
+  //           const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
+  //           const Point n = -cutting_cell.normal(local_facet_index);
+  //           for (std::size_t i = 0; i < num_qr_points.size(); ++i)
+  //           {
+  //             _add_normal(interface_part_n,
+  //                         n,
+  //                         num_qr_points[i],
+  //                         gdim);
+  //             normals_cut_boundary.push_back(n);
+  //           }
+
+  //           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
+  //         }
+
+  //         // Triangulate intersection of boundary cell and previous volume triangulation
+  //         const auto triangulation_boundary_prev_volume
+  //           = IntersectionTriangulation::triangulate_intersection(boundary_cell,
+  //                                                                 volume_triangulation,
+  //                                                                 tdim);
+
+  //         // Add quadrature rule and normals for triangulation
+  //         if (triangulation_boundary_prev_volume.size())
+  //         {
+  //           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
+
+  //           const auto num_qr_points
+  //             = _add_quadrature_rule(interface_part_qr,
+  //                                    triangulation_boundary_prev_volume,
+  //                                    tdim_boundary, gdim,
+  //                                    quadrature_order, -1);
+
+  //           const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
+  //           const Point n = -cutting_cell.normal(local_facet_index);
+  //           for (std::size_t i = 0; i < num_qr_points.size(); ++i)
+  //             _add_normal(interface_part_n,
+  //                         n,
+  //                         num_qr_points[i],
+  //                         gdim);
+
+  //           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
+  //         }
+
+  //         // Update triangulation
+  //         local_interface_triangulation.insert(local_interface_triangulation.end(),
+  //                                              triangulation_cut_boundary.begin(),
+  //                                              triangulation_cut_boundary.end());
+
+  //         // Update interface facet normals
+  //         local_triangulation_normals.insert(local_triangulation_normals.end(),
+  //                                            normals_cut_boundary.begin(),
+  //                                            normals_cut_boundary.end());
+  //       }
+
+  //       // Triangulate the intersection of the previous interface
+  //       // triangulation and the cutting cell (to remove)
+  //       std::vector<double> triangulation_prev_cutting;
+  //       std::vector<Point> normals_prev_cutting;
+  //       IntersectionTriangulation::triangulate_intersection(cutting_cell,
+  //                                                           interface_triangulation,
+  //                                                           triangulation_normals,
+  //                                                           triangulation_prev_cutting,
+  //                                                           normals_prev_cutting,
+  //                                                           tdim_boundary);
+
+  //       // Add quadrature rule for triangulation
+  //       if (triangulation_prev_cutting.size())
+  //       {
+  //         dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
+
+  //         const auto num_qr_points
+  //           = _add_quadrature_rule(interface_part_qr,
+  //                                  triangulation_prev_cutting,
+  //                                  tdim_boundary, gdim,
+  //                                  quadrature_order, -1);
+
+  //         for (std::size_t i = 0; i < num_qr_points.size(); ++i)
+  //           _add_normal(interface_part_n,
+  //                       normals_prev_cutting[i],
+  //                       num_qr_points[i],
+  //                       gdim);
+
+  //         dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
+  //       }
+
+  //       // Update triangulation
+  //       interface_triangulation.insert(interface_triangulation.end(),
+  //                                      local_interface_triangulation.begin(),
+  //                                      local_interface_triangulation.end());
+
+  //       // Update normals
+  //       triangulation_normals.insert(triangulation_normals.end(),
+  //                                    local_triangulation_normals.begin(),
+  //                                    local_triangulation_normals.end());
+
+  //       // Do the volume segmentation
+
+  //       // Compute volume triangulation of intersection of cut and cutting cells
+  //       const auto triangulation_cut_cutting
+  //         = cut_cell.triangulate_intersection(cutting_cell);
+
+  //       // Compute triangulation of intersection of cutting cell and
+  //       // the (previous) volume triangulation
+  //       const auto triangulation_cutting_prev
+  //         = IntersectionTriangulation::triangulate_intersection(cutting_cell,
+  //                                                               volume_triangulation,
+  //                                                               tdim);
+
+  //       // Add these new triangulations
+  //       volume_triangulation.insert(volume_triangulation.end(),
+  //                                   triangulation_cut_cutting.begin(),
+  //                                   triangulation_cut_cutting.end());
+
+  //       // Add quadrature rule with weights corresponding to the two
+  //       // triangulations
+  //       _add_quadrature_rule(overlap_part_qr,
+  //                            triangulation_cut_cutting,
+  //                            tdim, gdim, quadrature_order, 1);
+  //       _add_quadrature_rule(overlap_part_qr,
+  //                            triangulation_cutting_prev,
+  //                            tdim, gdim, quadrature_order, -1);
+
+  //       // Add quadrature rule for overlap part
+  //       overlap_qr.push_back(overlap_part_qr);
+
+  //       // Add quadrature rule for interface part
+  //       interface_qr.push_back(interface_part_qr);
+
+  //       // Add facet normal for interface part
+  //       interface_n.push_back(interface_part_n);
+  //     }
+
+  //     // Store quadrature rules for cut cell
+  //     _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
+  //     _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
+
+  //     // Store facet normals for cut cell
+  //     _facet_normals[cut_part][cut_cell_index] = interface_n;
+  //   }
+  // }
 
   end();
 }
 //-----------------------------------------------------------------------------
-void MultiMesh::_build_quadrature_rules_cut_cells()
+  void MultiMesh::_build_quadrature_rules_cut_cells()
 {
   begin(PROGRESS, "Building quadrature rules of cut cells.");
 
@@ -779,6 +1133,7 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
 
     // Add weight
     qr.second.push_back(factor*dqr.second[i]);
+    //std::cout << std::setprecision(20) <<factor*dqr.second[i] << '\n';
   }
 
   return num_points;
@@ -786,8 +1141,8 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
 //-----------------------------------------------------------------------------
  void MultiMesh::_add_normal(std::vector<double>& normals,
                              const Point& normal,
-                             const std::size_t npts,
-                             const std::size_t gdim) const
+                             std::size_t npts,
+                             std::size_t gdim) const
  {
    for (std::size_t i = 0; i < npts; ++i)
      for (std::size_t j = 0; j < gdim; ++j)
@@ -833,4 +1188,46 @@ void MultiMesh::_plot() const
     plot(f, s.str());
   }
 }
+//------------------------------------------------------------------------------
+std::size_t MultiMesh::n_choose_k(std::size_t n,
+				  std::size_t k)
+{
+  if (k == 0) return 1;
+  return (n * n_choose_k(n - 1, k - 1)) / k;
+}
 //-----------------------------------------------------------------------------
+std::vector<std::deque<std::size_t> >
+MultiMesh::compute_permutations(std::size_t n,
+				std::size_t k)
+{
+  // This is slow for large n and k
+
+  switch (k)
+  {
+  case 0:
+    return std::vector<std::deque<std::size_t> >();
+  case 1:
+    {
+      std::vector<std::deque<std::size_t> > pp(n, std::deque<std::size_t>());
+      for (std::size_t i = 0; i < n; i++)
+	pp[i].push_back(i);
+      return pp;
+    }
+  default:
+    {
+      std::vector<std::deque<std::size_t> > pp = compute_permutations(k - 1, n);
+      std::vector<std::deque<std::size_t> > permutations;
+
+      for (std::size_t i = 0; i < n; ++i)
+	for (const auto& p: pp)
+	  if (i < p[0])
+	  {
+	    std::deque<std::size_t> q = p;
+	    q.push_front(i);
+	    permutations.push_back(q);
+	  }
+      return permutations;
+    }
+  }
+}
+//------------------------------------------------------------------------------

@@ -481,14 +481,16 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
 
   // Compute cosine
   v /= vnorm;
-  const double a = v.dot(w) / wnorm;
+  const double cosa = v.dot(w) / wnorm;
 
-  // Cosine should be 1
-  if (std::abs(1-a) < DOLFIN_EPS_LARGE)
+  // Cosine should be 1 (if -1 then point and p1 are on opposite sides
+  // of p0)
+  if (std::abs(1-cosa) < DOLFIN_EPS_LARGE)
   {
     // Check if projected point is between p0 and p1
-    const double t = v.dot(w);
-    if (t >= 0 and t <= 1)
+    const double t = wnorm / vnorm;
+
+    if (t <= 1)
       return true;
   }
 
@@ -519,17 +521,20 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
 
   Point r = point - p0;
   double pnormal = r.x()*r0.y() - r.y()*r0.x();
+
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
     return false;
 
   // Repeat for each edge
   r = point - p1;
   pnormal = r.x()*r1.y() - r.y()*r1.x();
+
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
     return false;
 
   r = point - p2;
   pnormal = r.x()*r2.y() - r.y()*r2.x();
+
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
     return false;
 
@@ -555,6 +560,7 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
   Point r = point - p0;
   // Check point is in plane of triangle (for manifold)
   double volume = r.dot(normal);
+
   if (volume > DOLFIN_EPS)
     return false;
 
@@ -562,17 +568,20 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
   // Dot product of two normals should be positive, if inside.
   Point pnormal = r.cross(r0);
   double t1 = normal.dot(pnormal);
+
   if (t1 < 0) return false;
 
   // Repeat for each edge
   r = point - p1;
   pnormal = r.cross(r1);
   double t2 = normal.dot(pnormal);
+
   if (t2 < 0) return false;
 
   r = point - p2;
   pnormal = r.cross(r2);
   double t3 = normal.dot(pnormal);
+
   if (t3 < 0) return false;
 
   return true;
@@ -818,7 +827,7 @@ bool CollisionDetection::edge_edge_test(int i0,
       // Allow or not allow adjacent edges as colliding:
       //if (e >= 0 && e <= f) return true;
       if (e > 0 && e < f)
-        return true;
+	return true;
     }
     else
     {

@@ -172,7 +172,7 @@ namespace dolfin
 
   private:
 
-    // Function for computing the intersection of two triangles given
+    // Function for computing the intersection of two intervals given
     // by std::vector<Point>.
     static std::vector<double>
     triangulate_intersection_interval_interval(const std::vector<Point>& interval_0,

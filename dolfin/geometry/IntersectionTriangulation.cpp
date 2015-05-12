@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-05-28
+// Last changed: 2015-05-07
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -431,33 +431,61 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   for (std::size_t i = 0; i < 3; i++)
   {
     // Note: this routine is changed to being public:
-    if (CollisionDetection::collides_triangle_point(tri_1[0],
+    if (CollisionDetection::collides_triangle_point_2d(tri_1[0],
                                                     tri_1[1],
                                                     tri_1[2],
                                                     tri_0[i]))
       points.push_back(tri_0[i]);
 
-    if (CollisionDetection::collides_triangle_point(tri_0[0],
+    if (CollisionDetection::collides_triangle_point_2d(tri_0[0],
                                                     tri_0[1],
                                                     tri_0[2],
                                                     tri_1[i]))
       points.push_back(tri_1[i]);
   }
 
-  // Find all edge-edge collisions (not needed?)
+  // Find all edge-edge collisions
   for (std::size_t i0 = 0; i0 < 3; i0++)
   {
     const std::size_t j0 = (i0 + 1) % 3;
-    const Point p0 = tri_0[i0];
-    const Point q0 = tri_0[j0];
+    const Point& p0 = tri_0[i0];
+    const Point& q0 = tri_0[j0];
     for (std::size_t i1 = 0; i1 < 3; i1++)
     {
       const std::size_t j1 = (i1 + 1) % 3;
-      const Point p1 = tri_1[i1];
-      const Point q1 = tri_1[j1];
+      const Point& p1 = tri_1[i1];
+      const Point& q1 = tri_1[j1];
       Point point;
       if (intersection_edge_edge(p0, q0, p1, q1, point))
         points.push_back(point);
+    }
+  }
+
+  // The function intersection_edge_edge only gives one point. Thus,
+  // check edge-point intersections separately.
+  for (std::size_t i0 = 0; i0 < 3; ++i0)
+  {
+    const std::size_t j0 = (i0 + 1) % 3;
+    const Point& p0 = tri_0[i0];
+    const Point& q0 = tri_0[j0];
+    for (std::size_t i1 = 0; i1 < 3; ++i1)
+    {
+      const Point& point_1 = tri_1[i1];
+      if (CollisionDetection::collides_interval_point(p0, q0, point_1))
+  	points.push_back(point_1);
+    }
+  }
+
+  for (std::size_t i0 = 0; i0 < 3; ++i0)
+  {
+    const std::size_t j0 = (i0 + 1) % 3;
+    const Point& p1 = tri_1[i0];
+    const Point& q1 = tri_1[j0];
+    for (std::size_t i1 = 0; i1 < 3; ++i1)
+    {
+      const Point& point_0 = tri_0[i1];
+      if (CollisionDetection::collides_interval_point(p1, q1, point_0))
+  	points.push_back(point_0);
     }
   }
 
@@ -1291,6 +1319,9 @@ IntersectionTriangulation::intersection_edge_edge(const Point& a,
       }
     }
   }
+  // else // Now we have both coplanarity and colinearity, i.e. parallel lines
+  // {
+  // }
 
   return false;
 }
@@ -1362,4 +1393,4 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
 
   return true;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------

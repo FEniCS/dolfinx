@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-06-17
+// Last changed: 2015-03-30
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -24,10 +24,14 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <deque>
 
 #include <dolfin/plot/plot.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/Point.h>
+
+// FIXME
+//#include <dolfin/mesh/dolfin_write_medit.h>
 
 namespace dolfin
 {
@@ -40,6 +44,10 @@ namespace dolfin
 
   // Typedefs
   typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+
+  // FIXME August:
+  typedef std::vector<Point> Simplex;
+  typedef std::vector<Simplex> Polyhedron;
 
   /// This class represents a collection of meshes with arbitrary
   /// overlaps. A multimesh may be created from a set of standard
@@ -457,14 +465,99 @@ namespace dolfin
     // Append normal to list of normals npts times
     void _add_normal(std::vector<double>& normals,
                      const Point& normal,
-                     const std::size_t npts,
-                     const std::size_t gdim) const;
+                     std::size_t npts,
+                     std::size_t gdim) const;
 
     // Plot multimesh
     void _plot() const;
 
+    // Helper function to compute n choose k
+    static std::size_t n_choose_k(std::size_t n,
+				  std::size_t k);
+
+    // Helper function to compute the n choose k permutations
+    static std::vector<std::deque<std::size_t> > compute_permutations(std::size_t n,
+								      std::size_t k);
+
+
+
+    // FIXME: Helper function to convert between flat triangulation
+    // and list of Points (this function should not be needed: fix the
+    // interface of IntersectionTriangulation instead)
+    static Simplex convert(const double* x,
+			   std::size_t tdim,
+			   std::size_t gdim)
+    {
+      Simplex s(tdim + 1);
+      for (std::size_t t = 0; t < tdim + 1; ++t)
+	for (std::size_t d = 0; d < gdim; ++d)
+	  s[t][d] = x[gdim*t + d];
+      return s;
+    }
+
+    // FIXME: Helper function to convert between flat triangulation
+    // and list of Points (this function should not be needed: fix the
+    // interface of IntersectionTriangulation instead)
+    static std::vector<Simplex> convert(const std::vector<double>& triangulation,
+					std::size_t tdim,
+					std::size_t gdim)
+    {
+      const std::size_t offset = (tdim + 1)*gdim;
+      const std::size_t N = triangulation.size() / offset;
+      std::vector<Simplex> simplices(N);
+
+      for (std::size_t k = 0; k < N; ++k)
+      {
+	const double* x = triangulation.data() + k*offset;
+	simplices[k] = convert(x, tdim, gdim);
+      }
+
+      return simplices;
+    }
+
+    // FIXME: Helper function to convert between flat triangulation
+    // and list of Points (this function should not be needed: fix the
+    // interface of IntersectionTriangulation instead)
+    static std::vector<double> convert(const Simplex& simplex,
+				       std::size_t tdim,
+				       std::size_t gdim)
+    {
+      std::vector<double> x((tdim + 1)*gdim);
+
+      for (std::size_t i = 0; i < tdim + 1; ++i)
+	for (std::size_t d = 0; d < gdim; ++d)
+	  x[i*gdim + d] = simplex[i][d];
+
+      return x;
+    }
+
+
+    // FIXME: Helper function to convert between flat triangulation
+    // and list of Points (this function should not be needed: fix the
+    // interface of IntersectionTriangulation instead)
+    static std::vector<double> convert(const std::vector<Simplex>& simplices,
+				       std::size_t tdim,
+				       std::size_t gdim)
+    {
+      const std::size_t offset = (tdim + 1)*gdim;
+      const std::size_t N = simplices.size();
+      std::vector<double> triangulation(N*offset);
+
+      for (std::size_t i = 0; i < N; ++i)
+      {
+	const std::vector<double> x = convert(simplices[i], tdim, gdim);
+	for (std::size_t j = 0; j < x.size(); ++j)
+	  triangulation[i*offset + j] = x[j];
+      }
+
+      return triangulation;
+    }
+
   };
 
+
+
 }
+
 
 #endif
