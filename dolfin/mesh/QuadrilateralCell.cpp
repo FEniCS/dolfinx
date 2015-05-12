@@ -92,10 +92,10 @@ void QuadrilateralCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   e.resize(boost::extents[4][2]);
 
   // Create the four edges
-  e[0][0] = v[2]; e[0][1] = v[3];
-  e[1][0] = v[1]; e[1][1] = v[2];
-  e[2][0] = v[0]; e[2][1] = v[3];
-  e[3][0] = v[0]; e[3][1] = v[1];
+  e[0][0] = v[0]; e[0][1] = v[2];
+  e[1][0] = v[1]; e[1][1] = v[3];
+  e[2][0] = v[0]; e[2][1] = v[1];
+  e[3][0] = v[2]; e[3][1] = v[3];
 }
 //-----------------------------------------------------------------------------
 void QuadrilateralCell::refine_cell(Cell& cell, MeshEditor& editor,
@@ -132,6 +132,8 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     dolfin_error("QuadrilateralCell.cpp",
                  "compute volume of quadrilateral",
                  "Only know how to compute volume in R^2");
+
+  // FIXME: could work in R^3 but need to check co-planarity
 
   return 0.0;
 }

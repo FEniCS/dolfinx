@@ -47,7 +47,7 @@ namespace dolfin
   public:
 
     /// Enum for different cell types
-    enum Type { point, interval, triangle, tetrahedron, quadrilateral, hexahedron };
+    enum Type { point, interval, triangle, quadrilateral, tetrahedron, hexahedron };
 
     /// Constructor
     CellType(Type cell_type, Type facet_type);
