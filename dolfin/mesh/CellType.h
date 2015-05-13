@@ -157,6 +157,9 @@ namespace dolfin
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;
 
+    /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
+    virtual std::vector<unsigned int> vtk_mapping() const = 0;
+
   protected:
 
     Type _cell_type;

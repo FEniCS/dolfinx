@@ -292,12 +292,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     const std::vector<std::size_t>& global_vertices
       = mesh.topology().global_indices(0);
 
-    // Permutation to VTK ordering for non-simplicial cells
-    std::vector<unsigned int> perm = {0, 1, 2, 3};
-    if (cell_type == CellType::quadrilateral)
-      perm = {0, 1, 3, 2};
-    else if (cell_type == CellType::hexahedron)
-      perm = {0, 1, 3, 2, 4, 5, 7, 6};
+    // Permutation to VTK ordering
+    const std::vector<unsigned int> perm = celltype->vtk_mapping();
 
     if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
     {
@@ -1418,8 +1414,6 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   dolfin_assert(num_vertices_per_cell == topology_dim[1]);
   mesh_data.num_vertices_per_cell = num_vertices_per_cell;
 
-  std::cout << "HDF5File::read num_verts_per_cell = " << num_vertices_per_cell <<" \n";
-
   // Get partition from file
   std::vector<std::size_t> partitions;
   HDF5Interface::get_attribute(hdf5_file_id, topology_name, "partition",
@@ -1474,8 +1468,15 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
 
   // Copy to boost::multi_array
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
-  std::copy(topology_data.begin(), topology_data.end(),
-            mesh_data.cell_vertices.data());
+  boost::multi_array_ref<std::size_t, 2>
+    topo_data_array(topology_data.data(), boost::extents[num_local_cells][num_vertices_per_cell]);
+
+  // Remap vertices to DOLFIN ordering from VTK/XDMF
+  std::vector<unsigned int> perm = cell_type->vtk_mapping();
+
+  for (std::size_t i = 0; i != num_local_cells; ++i)
+    for (std::size_t j = 0; j != num_vertices_per_cell; ++j)
+      mesh_data.cell_vertices[i][j] = topo_data_array[i][perm[j]];
 
   // --- Coordinates ---
   // Get dimensions of coordinate dataset
