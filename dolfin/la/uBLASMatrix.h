@@ -193,6 +193,9 @@ namespace dolfin
     /// Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
+    /// Get diagonal of a matrix
+    virtual void get_diagonal(GenericVector& x) const;
+
     /// Set diagonal of a matrix
     virtual void set_diagonal(const GenericVector& x);
 
@@ -545,6 +548,33 @@ namespace dolfin
     }
 
     ublas::axpy_prod(_matA, xx.vec(), yy.vec(), true);
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>
+  void uBLASMatrix<Mat>::get_diagonal(GenericVector& x) const
+  {
+    if (size(1) != size(0) || size(0) != x.size())
+    {
+      dolfin_error("uBLASMatrix.h",
+                   "Get diagonal of a uBLAS Matrix",
+                   "Matrix and vector dimensions don't match");
+    }
+
+    double* xx = x.down_cast<uBLASVector>().data();
+    typename Mat::const_iterator1 row;    // Iterator over rows
+    typename Mat::const_iterator2 entry;  // Iterator over entries
+
+    // FIXME: Cannot be a good way to do it for a dense matrices
+    for (row = _matA.begin1(); row != _matA.end1(); ++row)
+    {
+      for (entry = row.begin(); entry != row.end(); ++entry)
+      {
+        if (entry.index2() > entry.index1())
+          break;
+        if (entry.index2() == entry.index1())
+          xx[entry.index1()] = *entry;
+      }
+    }
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
