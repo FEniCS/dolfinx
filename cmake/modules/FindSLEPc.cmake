@@ -95,7 +95,9 @@ if (SLEPC_DIR)
   mark_as_advanced(SLEPC_LIBRARY)
 
   # Find SLEPc config file
-  find_file(SLEPC_CONFIG_FILE NAMES slepc_common PATHS ${SLEPC_DIR}/lib/slepc-conf ${SLEPC_DIR}/conf)
+  find_file(SLEPC_CONFIG_FILE NAMES slepc_common PATHS
+    ${SLEPC_DIR}/lib/slepc/conf
+    ${SLEPC_DIR}/lib/slepc-conf ${SLEPC_DIR}/conf)
 
   # Create a temporary Makefile to probe the SLEPc configuration
   set(slepc_config_makefile ${PROJECT_BINARY_DIR}/Makefile.slepc)
