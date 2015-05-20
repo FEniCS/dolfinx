@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2015-01-08
+// Last changed: 2015-05-13
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 
@@ -191,8 +191,8 @@ void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
     const Mesh& mesh_part = a_part.mesh();
 
     // FIXME: We assume that the custom integral associated with cut
-    // cells is number 0.
-    // FIXME: This needs to be sorted out in the UFL-UFC
+    // FIXME: cells is number 0. This needs to be sorted out in the
+    // FIXME: UFL-UFC interface.
 
     // Get integral for cut cells
     ufc::custom_integral* custom_integral = 0;
@@ -314,7 +314,7 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
     UFC ufc_part(a_part);
 
     // FIXME: We assume that the custom integral associated with the
-    // interface is number 1.
+    // FIXME: interface is number 1.
     // FIXME: This needs to be sorted out in the UFL-UFC interfaces
     // FIXME: We also assume that we have exactly two cells, while the UFC
     // FIXME: interface (but not FFC...) allows an arbitrary number of cells.
@@ -418,6 +418,11 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
                       macro_dofs[i].begin());
             std::copy(dofs_1.begin(), dofs_1.end(),
                       macro_dofs[i].begin() + dofs_0.size());
+
+            // Update array view
+            macro_dof_ptrs[i]
+              = ArrayView<const dolfin::la_index>(macro_dofs[i].size(),
+                                                  macro_dofs[i].data());
           }
 
           // Get facet normals
@@ -488,13 +493,10 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
     // Create data structure for local assembly data
     UFC ufc_part(a_part);
 
-    // FIXME: We assume that the custom integral associated with the
-    // overlap is number 2.
+    // FIXME: We assume that the custom integral associated with the overlap is number 2.
     // FIXME: This needs to be sorted out in the UFL-UFC interfaces
-    // FIXME: We also assume that we have exactly two cells, while the
-    // UFC
-    // FIXME: interface (but not FFC...) allows an arbitrary number of
-    // cells.
+    // FIXME: We also assume that we have exactly two cells, while the UFC
+    // FIXME: interface (but not FFC...) allows an arbitrary number of cells.
 
     // Get integral
     ufc::custom_integral* custom_integral = 0;
@@ -529,8 +531,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
           // Get cutting part and cutting cell
           const std::size_t cutting_part = jt->first;
           const std::size_t cutting_cell_index = jt->second;
-          const Cell cutting_cell(*multimesh->part(cutting_part),
-                                  cutting_cell_index);
+          const Cell cutting_cell(*multimesh->part(cutting_part), cutting_cell_index);
 
           // Get quadrature rule for interface part defined by
           // intersection of the cut and cutting cells
@@ -560,6 +561,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
           ufc_part.update(cell_0, vertex_coordinates[0], ufc_cell[0],
                           cell_1, vertex_coordinates[1], ufc_cell[1]);
 
+
           // Collect vertex coordinates
           macro_vertex_coordinates.resize(vertex_coordinates[0].size() +
                                           vertex_coordinates[0].size());
@@ -568,8 +570,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
                     macro_vertex_coordinates.begin());
           std::copy(vertex_coordinates[1].begin(),
                     vertex_coordinates[1].end(),
-                    macro_vertex_coordinates.begin()
-                    + vertex_coordinates[0].size());
+                    macro_vertex_coordinates.begin() + vertex_coordinates[0].size());
 
           // Tabulate dofs for each dimension on macro element
           for (std::size_t i = 0; i < form_rank; i++)
@@ -579,8 +580,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
             const auto dofs_0 = dofmap_0->cell_dofs(cell_0.index());
 
             // Get dofs for cutting mesh
-            const auto dofmap_1
-              = a.function_space(i)->dofmap()->part(cutting_part);
+            const auto dofmap_1 = a.function_space(i)->dofmap()->part(cutting_part);
             const auto dofs_1 = dofmap_1->cell_dofs(cell_1.index());
 
             // Create space in macro dof vector
@@ -591,6 +591,11 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
                       macro_dofs[i].begin());
             std::copy(dofs_1.begin(), dofs_1.end(),
                       macro_dofs[i].begin() + dofs_0.size());
+
+            // Update array view
+            macro_dof_ptrs[i]
+              = ArrayView<const dolfin::la_index>(macro_dofs[i].size(),
+                                                  macro_dofs[i].data());
           }
 
           // FIXME: Cell orientation not supported
@@ -607,8 +612,6 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
                                            cell_orientation);
 
           // Add entries to global tensor
-          for (std::size_t i = 0; i < form_rank; i++)
-            macro_dof_ptrs[i].set(macro_dofs[i]);
           A.add(ufc_part.macro_A.data(), macro_dof_ptrs);
         }
       }
@@ -660,10 +663,10 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
   // Initialize tensor
   A.init(*tensor_layout);
 
-  // Insert zeros on the diagonal as diagonal entries may be
-  // prematurely optimised away by the linear algebra backend when
-  // calling GenericMatrix::apply, e.g. PETSc does this then errors
-  // when matrices have no diagonal entry inserted.
+  // Insert zeros on the diagonal as diagonal entries may be prematurely
+  // optimised away by the linear algebra backend when calling
+  // GenericMatrix::apply, e.g. PETSc does this then errors when matrices
+  // have no diagonal entry inserted.
   if (A.rank() == 2)
   {
     // Down cast to GenericMatrix
