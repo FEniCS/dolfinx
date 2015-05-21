@@ -74,7 +74,7 @@ namespace dolfin
     Type facet_type() const { return _facet_type; }
 
     /// Return type of cell for entity of dimension i
-    Type entity_type(std::size_t i) const
+    Type entity_type(std::size_t i) const;
 
     /// Return topological dimension of cell
     virtual std::size_t dim() const = 0;
