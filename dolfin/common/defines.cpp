@@ -147,12 +147,3 @@ bool dolfin::has_hdf5()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_exodus()
-{
-#ifdef HAS_VTK_EXODUS
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
