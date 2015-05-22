@@ -620,7 +620,10 @@ namespace dolfin
   template<typename T> T dolfin::MPI::max(MPI_Comm comm, const T& value)
   {
     #ifdef HAS_MPI
-    return all_reduce(comm, value, MPI_MAX);
+    // Enforce cast to MPI_Op; this is needed because template dispatch may
+    // not recognize this is possible, e.g. C-enum to uint in SGI MPT
+    MPI_Op op = static_cast<MPI_Op>(MPI_MAX);
+    return all_reduce(comm, value, op);
     #else
     return value;
     #endif
@@ -629,7 +632,10 @@ namespace dolfin
   template<typename T> T dolfin::MPI::min(MPI_Comm comm, const T& value)
   {
     #ifdef HAS_MPI
-    return all_reduce(comm, value, MPI_MIN);
+    // Enforce cast to MPI_Op; this is needed because template dispatch may
+    // not recognize this is possible, e.g. C-enum to uint in SGI MPT
+    MPI_Op op = static_cast<MPI_Op>(MPI_MIN);
+    return all_reduce(comm, value, op);
     #else
     return value;
     #endif
@@ -638,7 +644,10 @@ namespace dolfin
   template<typename T> T dolfin::MPI::sum(MPI_Comm comm, const T& value)
   {
     #ifdef HAS_MPI
-    return all_reduce(comm, value, MPI_SUM);
+    // Enforce cast to MPI_Op; this is needed because template dispatch may
+    // not recognize this is possible, e.g. C-enum to uint in SGI MPT
+    MPI_Op op = static_cast<MPI_Op>(MPI_SUM);
+    return all_reduce(comm, value, op);
     #else
     return value;
     #endif

@@ -38,14 +38,17 @@ sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz")
 P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
 B  = VectorFunctionSpace(mesh, "Bubble", 3)
 Q  = FunctionSpace(mesh, "CG",  1)
-Mini = (P1 + B)*Q
+V = P1 + B
+Mini = V*Q
 
 # No-slip boundary condition for velocity
-noslip = Constant((0, 0))
+# NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
+noslip = project(Constant((0, 0)), V)
 bc0 = DirichletBC(Mini.sub(0), noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
-inflow = Expression(("-sin(x[1]*pi)", "0.0"))
+# NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
+inflow = project(Expression(("-sin(x[1]*pi)", "0.0")), V)
 bc1 = DirichletBC(Mini.sub(0), inflow, sub_domains, 1)
 
 # Boundary condition for pressure at outflow
