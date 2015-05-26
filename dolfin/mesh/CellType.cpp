@@ -148,15 +148,15 @@ std::string CellType::type2string(Type type)
   return "";
 }
 //-----------------------------------------------------------------------------
-CellType::Type CellType::entity_type(std::size_t edim) const
+CellType::Type CellType::entity_type(std::size_t i) const
 {
-  if (edim == dim())
+  if (i == dim())
     return _cell_type;
-  else if (edim == dim() - 1)
+  else if (i == dim() - 1)
     return _facet_type;
-  else if (edim == 1)
+  else if (i == 1)
     return Type::interval;
-  return Type::point;
+ return Type::point;
 }
 //-----------------------------------------------------------------------------
 bool CellType::ordered(const Cell& cell, const std::vector<std::size_t>&
