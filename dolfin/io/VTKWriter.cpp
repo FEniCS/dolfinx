@@ -61,7 +61,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   dolfin_assert(u.function_space()->dofmap());
   const Mesh& mesh = *u.function_space()->mesh();
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
-  const std::size_t num_cells = mesh.num_cells();
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
 
   std::string encode_string;
   if (!binary)
@@ -233,7 +234,7 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
 void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
                                  std::string filename)
 {
-  const std::size_t num_cells = mesh.topology().size(cell_dim);
+  const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
   const std::size_t num_cell_vertices = mesh.type().num_vertices(cell_dim);
 
   // Get VTK cell type
