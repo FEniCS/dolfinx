@@ -265,6 +265,10 @@ PETScKrylovSolver::set_operators(std::shared_ptr<const PETScBaseMatrix> A,
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
 {
+  deprecation("PETScKrylovSolver::set_nullspace",
+              "1.6.0", "1.7.0",
+              "Attach the null space to the matrix insetad");
+
   PetscErrorCode ierr;
 
   // Copy vectors
