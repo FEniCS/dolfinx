@@ -258,13 +258,13 @@ PETScKrylovSolver::set_operators(std::shared_ptr<const PETScBaseMatrix> A,
   ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
   #endif
-
-
-
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
 {
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5 \
+    && PETSC_VERSION_RELEASE == 1
+
   deprecation("PETScKrylovSolver::set_nullspace",
               "1.6.0", "1.7.0",
               "Attach the null space to the matrix insetad");
@@ -303,6 +303,12 @@ void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
   dolfin_assert(_ksp);
   ierr = KSPSetNullSpace(_ksp, petsc_nullspace);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetNullSpace");
+
+  #else
+  dolfin_error("PETScKrylovSolver.cpp",
+               "set null space for solver",
+               "For PETSc version > 3.5 nullspace must be attached to matrix");
+  #endif
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const

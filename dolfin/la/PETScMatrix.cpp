@@ -32,13 +32,14 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
-#include "PETScVector.h"
-#include "PETScMatrix.h"
 #include "GenericSparsityPattern.h"
+#include "PETScCuspFactory.h"
+#include "PETScFactory.h"
+#include "PETScVector.h"
 #include "SparsityPattern.h"
 #include "TensorLayout.h"
-#include "PETScFactory.h"
-#include "PETScCuspFactory.h"
+#include "VectorSpaceBasis.h"
+#include "PETScMatrix.h"
 
 using namespace dolfin;
 
@@ -737,6 +738,48 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
   }
   return *this;
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set_nullspace(const VectorSpaceBasis& nullspace)
+{
+  PetscErrorCode ierr;
+
+  // Copy vectors
+  std::vector<PETScVector> _nullspace;
+  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  {
+    dolfin_assert(nullspace[i]);
+    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+
+    // Copy vector
+    _nullspace.push_back(x);
+  }
+
+  // Get pointers to underlying PETSc objects and normalize vectors
+  std::vector<Vec> petsc_vecs;
+  for (auto& basis_vector : _nullspace)
+  {
+    // Store pointer to PETSc Vec
+    petsc_vecs.push_back(basis_vector.vec());
+
+    PetscReal val = 0.0;
+    ierr = VecNormalize(basis_vector.vec(), &val);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecNormalize");
+  }
+
+  // Create PETSC nullspace
+  MatNullSpace petsc_nullspace = NULL;
+  ierr = MatNullSpaceCreate(mpi_comm(), PETSC_FALSE, petsc_vecs.size(),
+                            petsc_vecs.data(), &petsc_nullspace);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+
+  // Attach PETSc nullspace to matrix
+  dolfin_assert(_matA);
+  ierr = MatSetNullSpace(_matA, petsc_nullspace);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetNullSpace");
+
+  // Decrease reference count for nullspace
+  MatNullSpaceDestroy(&petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::binary_dump(std::string file_name) const
