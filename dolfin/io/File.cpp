@@ -32,7 +32,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/log/log.h>
 #include "BinaryFile.h"
-#include "ExodusFile.h"
 #include "RAWFile.h"
 #include "SVGFile.h"
 #include "VTKFile.h"
@@ -184,12 +183,6 @@ void File::init(MPI_Comm comm, const std::string filename,
     file.reset(new XMLFile(comm, filename));
   else if (extension == ".pvd")
     file.reset(new VTKFile(filename, encoding));
-#ifdef HAS_VTK
-#ifdef HAS_VTK_EXODUS
-  else if (extension == ".e")
-    file.reset(new ExodusFile(filename));
-#endif
-#endif
   else if (extension == ".raw")
     file.reset(new RAWFile(filename));
   else if (extension == ".xyz")
