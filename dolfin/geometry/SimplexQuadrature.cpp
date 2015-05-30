@@ -349,6 +349,24 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
                           coordinates[3] - coordinates[1],
                           coordinates[5] - coordinates[1]};
       det = J[0]*J[3] - J[1]*J[2];
+      // double et = std::sqrt(J[0]*J[0]+J[1]*J[1]);
+      // double es = std::sqrt(J[2]*J[2]+J[3]*J[3]);
+      // const double J02 = J[0]-J[2];
+      // const double J13 = J[1]-J[3];
+      // double est = std::sqrt(J02*J02+J13*J13);
+
+      // // sort
+      // if (es>et) std::swap(es,et);
+      // if (est>es) std::swap(est,es);
+      // if (es>et) std::swap(es,et);
+
+      // // Heron
+      // if (std::abs((et+(es+est))*(est-(et-es))*(est+(et-es))*(et+(es-est))) < DOLFIN_EPS)
+      // 	det = 0;
+      // else
+      // 	det = 0.5*std::sqrt( (et+(es+est))*(est-(et-es))*(est+(et-es))*(et+(es-est)) );
+
+      //std::cout << et << ' '<< es <<' '<<est <<' ' <<  (et+(es+est))*(est-(et-es))*(est+(et-es))*(et+(es-est)) <<' '<<det<<'\n';
       break;
     }
   case 3:
