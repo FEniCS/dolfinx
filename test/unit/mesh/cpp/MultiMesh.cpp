@@ -618,22 +618,6 @@ public:
     // multimesh.build();
 
 
-    // UnitSquareMesh mesh_0(1, 1);
-    // MultiMesh multimesh;
-    // multimesh.add(mesh_0);
-
-    // std::vector<RectangleMesh> meshes;
-
-    // for (std::size_t i = 1; i < 10; ++i)
-    // {
-    //   RectangleMesh mesh(0.3, 0.3, 0.7, 0.7, 1, 1);
-    //   mesh.rotate(i*10, 2);
-    //   meshes.push_back(mesh);
-    //   multimesh.add(meshes.back());
-    // }
-    // multimesh.build();
-
-
     dolfin_write_medit_triangles("multimesh",multimesh);
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
