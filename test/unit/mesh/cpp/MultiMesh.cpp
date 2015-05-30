@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2014-06-05
+// Last changed: 2015-05-30
 //
 // Unit tests for MultiMesh
 
@@ -197,15 +197,110 @@ public:
     set_log_level(DEBUG);
 
     UnitSquareMesh mesh_0(1, 1);
-    RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, 1, 1);
-    RectangleMesh mesh_2(0.3, 0.3, 0.7, 0.7, 1, 1);
+    RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 2, 1);
+    RectangleMesh mesh_2(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    //mesh_2.rotate(8.002805e-01, 2);
+    //mesh_2.rotate(1.418863e-01, 2);
+    mesh_2.rotate(0.01, 2);
+    RectangleMesh mesh_3(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    //mesh_3.rotate(1.418863e-01, 2);
+    //mesh_3.rotate(4.217613e-01, 2);
+    mesh_3.rotate(0.02, 2);
 
-    // Build the multimesh
+    RectangleMesh mesh_4(0.200000, 0.200000, 0.800000, 0.800000, 2, 1);
+    //mesh_4.rotate(4.217613e-01, 2);
+    //mesh_4.rotate(8.002805e-01, 2);
+    mesh_4.rotate(0.03, 2);
+
+    // RectangleMesh mesh_5(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_5.rotate(9.157355e-01, 2);
+    // RectangleMesh mesh_6(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_6.rotate(7.922073e-01, 2);
+    // RectangleMesh mesh_7(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_7.rotate(9.594924e-01, 2);
+    // RectangleMesh mesh_8(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_8.rotate(6.557407e-01, 2);
+    // RectangleMesh mesh_9(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_9.rotate(3.571168e-02, 2);
+    // RectangleMesh mesh_10(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_10.rotate(8.491293e-01, 2);
+    // RectangleMesh mesh_11(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_11.rotate(9.339932e-01, 2);
+    // RectangleMesh mesh_12(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_12.rotate(6.787352e-01, 2);
+    // RectangleMesh mesh_13(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_13.rotate(7.577401e-01, 2);
+    // RectangleMesh mesh_14(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_14.rotate(7.431325e-01, 2);
+    // RectangleMesh mesh_15(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_15.rotate(3.922270e-01, 2);
+
     MultiMesh multimesh;
     multimesh.add(mesh_0);
     multimesh.add(mesh_1);
     multimesh.add(mesh_2);
+    multimesh.add(mesh_3);
+    //multimesh.add(mesh_4);
+    // multimesh.add(mesh_5);
+    // multimesh.add(mesh_6);
+    // multimesh.add(mesh_7);
+    // multimesh.add(mesh_8);
+    // multimesh.add(mesh_9);
+    // multimesh.add(mesh_10);
+    // multimesh.add(mesh_11);
+    // multimesh.add(mesh_12);
+    // multimesh.add(mesh_13);
+    // multimesh.add(mesh_14);
+    // multimesh.add(mesh_15);
     multimesh.build();
+
+
+
+    //   UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_1.rotate(5, 2);
+    // RectangleMesh mesh_2(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_2.rotate(10, 2);
+    // RectangleMesh mesh_3(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_3.rotate(15, 2);
+    // RectangleMesh mesh_4(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_4.rotate(20, 2);
+    // RectangleMesh mesh_5(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_5.rotate(25, 2);
+    // RectangleMesh mesh_6(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_6.rotate(30, 2);
+    // RectangleMesh mesh_7(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_7.rotate(35, 2);
+    // RectangleMesh mesh_8(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_8.rotate(40, 2);
+    // RectangleMesh mesh_9(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_9.rotate(45, 2);
+    // RectangleMesh mesh_10(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    // mesh_10.rotate(50, 2);
+
+    // //MultiMesh multimesh;
+    // multimesh.add(mesh_0);
+    // multimesh.add(mesh_1);
+    // multimesh.add(mesh_2);
+    // multimesh.add(mesh_3);
+    // // multimesh.add(mesh_4);
+    // // multimesh.add(mesh_5);
+    // // multimesh.add(mesh_6);
+    // // multimesh.add(mesh_7);
+    // // multimesh.add(mesh_8);
+    // // multimesh.add(mesh_9);
+    // // multimesh.add(mesh_10);
+    // multimesh.build();
+    // UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // RectangleMesh mesh_2(0.3, 0.3, 0.7, 0.7, 1, 1);
+
+    // // Build the multimesh
+    // MultiMesh multimesh;
+    // multimesh.add(mesh_0);
+    // multimesh.add(mesh_1);
+    // multimesh.add(mesh_2);
+    // multimesh.build();
 
 
     // UnitSquareMesh mesh_0(1, 1);
@@ -280,57 +375,6 @@ public:
 
 
     // UnitSquareMesh mesh_0(1, 1);
-    // RectangleMesh mesh_1(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_1.rotate(3.141593e+00, 2);
-    // RectangleMesh mesh_2(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_2.rotate(6.283185e+00, 2);
-    // RectangleMesh mesh_3(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_3.rotate(9.424778e+00, 2);
-    // RectangleMesh mesh_4(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_4.rotate(1.256637e+01, 2);
-    // RectangleMesh mesh_5(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_5.rotate(1.570796e+01, 2);
-    // RectangleMesh mesh_6(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_6.rotate(1.884956e+01, 2);
-    // RectangleMesh mesh_7(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_7.rotate(2.199115e+01, 2);
-    // RectangleMesh mesh_8(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_8.rotate(2.513274e+01, 2);
-    // RectangleMesh mesh_9(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_9.rotate(2.827433e+01, 2);
-    // RectangleMesh mesh_10(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_10.rotate(3.141593e+01, 2);
-    // RectangleMesh mesh_11(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_11.rotate(3.455752e+01, 2);
-    // RectangleMesh mesh_12(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_12.rotate(3.769911e+01, 2);
-    // RectangleMesh mesh_13(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_13.rotate(4.084070e+01, 2);
-    // RectangleMesh mesh_14(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_14.rotate(4.398230e+01, 2);
-    // RectangleMesh mesh_15(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
-    // mesh_15.rotate(4.712389e+01, 2);
-
-    // MultiMesh multimesh;
-    // multimesh.add(mesh_0);
-    // multimesh.add(mesh_1);
-    // multimesh.add(mesh_2);
-    // multimesh.add(mesh_3);
-    // multimesh.add(mesh_4);
-    // multimesh.add(mesh_5);
-    // multimesh.add(mesh_6);
-    // multimesh.add(mesh_7);
-    // multimesh.add(mesh_8);
-    // multimesh.add(mesh_9);
-    // multimesh.add(mesh_10);
-    // multimesh.add(mesh_11);
-    // multimesh.add(mesh_12);
-    // multimesh.add(mesh_13);
-    // multimesh.add(mesh_14);
-    // multimesh.add(mesh_15);
-    // multimesh.build();
-
-    // UnitSquareMesh mesh_0(1, 1);
     // RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
     // mesh_1.rotate(6, 2);
     // RectangleMesh mesh_2(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
@@ -375,10 +419,59 @@ public:
     // multimesh.add(mesh_9);
     // multimesh.add(mesh_10);
     // multimesh.add(mesh_11);
-    // multimesh.add(mesh_12);
-    // multimesh.add(mesh_13);
-    // multimesh.add(mesh_14);
-    // multimesh.add(mesh_15);
+    // //multimesh.add(mesh_12);
+    // //multimesh.add(mesh_13);
+    // // multimesh.add(mesh_14);
+    // // multimesh.add(mesh_15);
+    // multimesh.build();
+    // UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_2.rotate(1, 2);
+    // RectangleMesh mesh_3(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_3.rotate(2, 2);
+    // RectangleMesh mesh_4(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_4.rotate(3, 2);
+    // RectangleMesh mesh_5(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_5.rotate(4, 2);
+    // RectangleMesh mesh_6(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_6.rotate(5, 2);
+    // RectangleMesh mesh_7(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_7.rotate(6, 2);
+    // RectangleMesh mesh_8(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_8.rotate(7, 2);
+    // RectangleMesh mesh_9(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_9.rotate(8, 2);
+    // RectangleMesh mesh_10(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_10.rotate(9, 2);
+    // RectangleMesh mesh_11(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_11.rotate(10, 2);
+    // RectangleMesh mesh_12(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_12.rotate(11, 2);
+    // RectangleMesh mesh_13(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_13.rotate(12, 2);
+    // RectangleMesh mesh_14(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_14.rotate(13, 2);
+    // RectangleMesh mesh_15(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // mesh_15.rotate(14, 2);
+
+    // MultiMesh multimesh;
+    // multimesh.add(mesh_0);
+    // multimesh.add(mesh_1);
+    // multimesh.add(mesh_2);
+    // multimesh.add(mesh_3);
+    // multimesh.add(mesh_4);
+    // // multimesh.add(mesh_5);
+    // // multimesh.add(mesh_6);
+    // // multimesh.add(mesh_7);
+    // // multimesh.add(mesh_8);
+    // // multimesh.add(mesh_9);
+    // // multimesh.add(mesh_10);
+    // // multimesh.add(mesh_11);
+    // // multimesh.add(mesh_12);
+    // // multimesh.add(mesh_13);
+    // // multimesh.add(mesh_14);
+    // // multimesh.add(mesh_15);
     // multimesh.build();
 
     // UnitSquareMesh mesh_0(1, 1);
@@ -488,6 +581,41 @@ public:
     // multimesh.build();
 
 
+    // UnitSquareMesh mesh_0(1, 1);
+    // RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // RectangleMesh mesh_2(0.200001, 0.200001, 0.800001, 0.800001, 1, 1);
+    // RectangleMesh mesh_3(0.200002, 0.200002, 0.800002, 0.800002, 1, 1);
+    // RectangleMesh mesh_4(0.200003, 0.200003, 0.800003, 0.800003, 1, 1);
+    // RectangleMesh mesh_5(0.200004, 0.200004, 0.800004, 0.800004, 1, 1);
+    // RectangleMesh mesh_6(0.200005, 0.200005, 0.800005, 0.800005, 1, 1);
+    // RectangleMesh mesh_7(0.200006, 0.200006, 0.800006, 0.800006, 1, 1);
+    // RectangleMesh mesh_8(0.200007, 0.200007, 0.800007, 0.800007, 1, 1);
+    // RectangleMesh mesh_9(0.200008, 0.200008, 0.800008, 0.800008, 1, 1);
+    // RectangleMesh mesh_10(0.200009, 0.200009, 0.800009, 0.800009, 1, 1);
+    // RectangleMesh mesh_11(0.200010, 0.200010, 0.800010, 0.800010, 1, 1);
+    // RectangleMesh mesh_12(0.200011, 0.200011, 0.800011, 0.800011, 1, 1);
+    // RectangleMesh mesh_13(0.200012, 0.200012, 0.800012, 0.800012, 1, 1);
+    // RectangleMesh mesh_14(0.200013, 0.200013, 0.800013, 0.800013, 1, 1);
+    // RectangleMesh mesh_15(0.200014, 0.200014, 0.800014, 0.800014, 1, 1);
+
+    // MultiMesh multimesh;
+    // multimesh.add(mesh_0);
+    // multimesh.add(mesh_1);
+    // multimesh.add(mesh_2);
+    // multimesh.add(mesh_3);
+    // multimesh.add(mesh_4);
+    // multimesh.add(mesh_5);
+    // multimesh.add(mesh_6);
+    // multimesh.add(mesh_7);
+    // multimesh.add(mesh_8);
+    // multimesh.add(mesh_9);
+    // multimesh.add(mesh_10);
+    // multimesh.add(mesh_11);
+    // multimesh.add(mesh_12);
+    // multimesh.add(mesh_13);
+    // multimesh.add(mesh_14);
+    // multimesh.add(mesh_15);
+    // multimesh.build();
 
 
     // UnitSquareMesh mesh_0(1, 1);
@@ -521,6 +649,9 @@ public:
     double volume = 0;
     std::vector<double> all_volumes;
 
+    std::ofstream file("quadrature.txt");
+    if (!file.good()) { std::cout << "file not good\n"; exit(0); }
+    file.precision(20);
     // Sum contribution from all parts
     std::cout << "Sum contributions\n";
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
@@ -547,7 +678,7 @@ public:
         const auto& qr = multimesh.quadrature_rule_cut_cell(part, *it);
         for (std::size_t i = 0; i < qr.second.size(); ++i)
         {
-	  //std::cout << std::setprecision(20) << qr.second[i]<<'\n';
+	  file << qr.second[i]<<'\n';
           volume += qr.second[i];
           part_volume += qr.second[i];
         }
@@ -555,16 +686,18 @@ public:
       std::cout << "\ttotal volume " << part_volume << std::endl;
       all_volumes.push_back(part_volume);
     }
+    file.close();
 
-    for (std::size_t i = 0; i < all_volumes.size(); ++i)
-      std::cout << all_volumes[i] << ' ';
-    std::cout << '\n';
+    std::cout << "a=[";
+    for (const auto v: all_volumes)
+      std::cout << std::setprecision(13)<< v <<' ';
+    std::cout << "]; plot(diff(a(2:end-1)),'x-');\n";
 
 
     std::cout << std::setprecision(13)
 	      << "exact volume " << exact_volume << '\n'
-	      << "volume " << volume
-	      << std::endl;
+	      << "volume " << volume << '\n'
+	      << "error " << exact_volume - volume << std::endl;
     CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
   }
 
