@@ -323,6 +323,8 @@ namespace dolfin
                       const ufc::cell& cell) const;
 
     /// Evaluate function for given data (non-matching meshes)
+    /// This method is deprecated as of dolfin 1.6.0.
+    /// Please use eval(values, x) instead.
     ///
     /// *Arguments*
     ///     values (_Array_ <double>)
