@@ -197,7 +197,7 @@ public:
     set_log_level(DEBUG);
 
     UnitSquareMesh mesh_0(1, 1);
-    RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 2, 1);
+    RectangleMesh mesh_1(0.100000, 0.200000, 0.800000, 0.800000, 1, 2);
     RectangleMesh mesh_2(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
     //mesh_2.rotate(8.002805e-01, 2);
     //mesh_2.rotate(1.418863e-01, 2);
@@ -207,10 +207,10 @@ public:
     //mesh_3.rotate(4.217613e-01, 2);
     mesh_3.rotate(0.02, 2);
 
-    RectangleMesh mesh_4(0.200000, 0.200000, 0.800000, 0.800000, 2, 1);
-    //mesh_4.rotate(4.217613e-01, 2);
-    //mesh_4.rotate(8.002805e-01, 2);
-    mesh_4.rotate(0.03, 2);
+    // RectangleMesh mesh_4(0.200000, 0.200000, 0.800000, 0.800000, 2, 1);
+    // //mesh_4.rotate(4.217613e-01, 2);
+    // //mesh_4.rotate(8.002805e-01, 2);
+    // mesh_4.rotate(0.03, 2);
 
     // RectangleMesh mesh_5(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
     // mesh_5.rotate(9.157355e-01, 2);
@@ -239,7 +239,7 @@ public:
     multimesh.add(mesh_0);
     multimesh.add(mesh_1);
     multimesh.add(mesh_2);
-    multimesh.add(mesh_3);
+    //multimesh.add(mesh_3);
     //multimesh.add(mesh_4);
     // multimesh.add(mesh_5);
     // multimesh.add(mesh_6);
