@@ -506,13 +506,13 @@ def la_index_dtype():
   PyObject* _data()
   {
     PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-                                                 boost::tuples::get<0>(self->data()),
+                                                 std::get<0>(self->data()),
                                                  false);
-    PyObject* cols = %make_numpy_array(1, size_t)(boost::tuples::get<3>(self->data()),
-                                                 boost::tuples::get<1>(self->data()),
+    PyObject* cols = %make_numpy_array(1, size_t)(std::get<3>(self->data()),
+                                                 std::get<1>(self->data()),
                                                  false);
-    PyObject* values = %make_numpy_array(1, double)(boost::tuples::get<3>(self->data()),
-                                                   boost::tuples::get<2>(self->data()),
+    PyObject* values = %make_numpy_array(1, double)(std::get<3>(self->data()),
+                                                   std::get<2>(self->data()),
                                                    false);
 
     if ( rows == NULL || cols == NULL || values == NULL)
@@ -570,8 +570,8 @@ def la_index_dtype():
 
         return rows, cols, values
 
-    # FIXME: Getting matrix entries need to be carefully examined, especially for
-    #        parallel objects.
+    # FIXME: Getting matrix entries need to be carefully examined, especially
+    #          for parallel objects.
     """
     def __getitem__(self,indices):
         from numpy import ndarray
