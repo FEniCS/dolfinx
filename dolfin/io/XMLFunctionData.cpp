@@ -27,7 +27,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/lexical_cast.hpp>
 #include "pugixml.hpp"
 
 #include "dolfin/common/Array.h"
@@ -184,8 +183,7 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
 
       pugi::xml_node dof_node = function_node.append_child("dof");
       dof_node.append_attribute("index") = (unsigned int) i;
-      dof_node.append_attribute("value")
-        = boost::lexical_cast<std::string>(x[i]).c_str();
+      dof_node.append_attribute("value") = std::to_string(x[i]).c_str();
       dof_node.append_attribute("cell_index")
         = (unsigned int) global_dof_to_cell_dof[i][0].first;
       dof_node.append_attribute("cell_dof_index")

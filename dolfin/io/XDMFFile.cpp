@@ -21,12 +21,12 @@
 
 #include <iomanip>
 #include <ostream>
+#include <string>
 #include <sstream>
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/function/Function.h>
@@ -152,7 +152,7 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
   global_size[0] = MPI::sum(_mpi_comm, cell_topology.size()) / node_mapping.size();
   global_size[1] = node_mapping.size();
 
-  const std::string h5_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
   current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
 
   hdf5_file->write_data(h5_mesh_name + "/topology", cell_topology, global_size, mpi_io);
@@ -161,8 +161,8 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
   hdf5_file->write(*u_geom.vector(), h5_mesh_name + "/coordinates");
 
   // Save values
-  const std::string dataset_name = "/Function/"
-    + boost::lexical_cast<std::string>(counter) + "/values";
+  const std::string dataset_name = "/Function/" + std::to_string(counter)
+    + "/values";
   hdf5_file->write(*u_val.vector(), dataset_name);
 
   const std::size_t value_rank = u_val.value_rank();
@@ -373,7 +373,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"] || counter == 0)
   {
-    const std::string h5_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+    const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
     boost::filesystem::path p(hdf5_filename);
     current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
     hdf5_file->write(mesh, h5_mesh_name);
@@ -395,7 +395,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // the hdf5 group /VisualisationVector as distinct from /Vector
   // which is used for solution vectors.
   const std::string dataset_name = "/VisualisationVector/"
-    + boost::lexical_cast<std::string>(counter);
+    + std::to_string(counter);
 
   const bool mpi_io = MPI::size(mesh.mpi_comm()) > 1 ? true : false;
   hdf5_file->write_data(dataset_name, data_values, global_size, mpi_io);
@@ -625,7 +625,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   dolfin_assert(cell_dim <= mesh.topology().dim());
 
   // Use HDF5 function to output MeshFunction
-  const std::string h5_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
   boost::filesystem::path p(hdf5_filename);
   current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
   hdf5_file->write(meshfunction, h5_mesh_name);

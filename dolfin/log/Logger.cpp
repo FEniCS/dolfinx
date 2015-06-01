@@ -33,7 +33,6 @@
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
-#include <boost/lexical_cast.hpp>
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -146,7 +145,7 @@ void Logger::dolfin_error(std::string location,
                           std::string reason,
                           int mpi_rank) const
 {
-  std::string _mpi_rank = boost::lexical_cast<std::string>(mpi_rank);
+  std::string _mpi_rank = std::to_string(mpi_rank);
   if (mpi_rank < 0)
     _mpi_rank = "unknown";
 
