@@ -83,7 +83,7 @@ namespace dolfin
     {
       dolfin_error("uBLASFactory.cpp",
                    "create LU solver",
-                   "No LU solver for uBLAS available. Trying configuring DOLFIN with UMFPACK");
+                   "No LU solver for uBLAS available");
       return std::shared_ptr<GenericLUSolver>();
     }
 

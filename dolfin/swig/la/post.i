@@ -514,6 +514,38 @@ def la_index_dtype():
 
     return Py_BuildValue("NNN", rows, cols, values);
   }
+
+  %pythoncode
+  %{
+    def data(self, deepcopy=True):
+        """
+        Return arrays to underlaying compresssed row/column storage data
+
+        This method is only available for the uBLAS linear algebra backend.
+
+        *Arguments*
+            deepcopy
+                Return a copy of the data. If set to False a reference
+                to the Matrix need to be kept, otherwise the data will be
+                destroyed together with the destruction of the Matrix
+        """
+        rows, cols, values = self._data()
+        if deepcopy:
+            rows, cols, values = rows.astype(int), cols.astype(int), values.copy()
+        else:
+            _attach_base_to_numpy_array(rows, self)
+            _attach_base_to_numpy_array(cols, self)
+            _attach_base_to_numpy_array(values, self)
+
+        return rows, cols, values
+
+    def sparray(self):
+        "Return a scipy.sparse representation of Matrix"
+        from scipy.sparse import csr_matrix
+        data = self.data(deepcopy=True)
+        C = csr_matrix((data[2], data[1], data[0]))
+        return C
+  %}
 }
 // ---------------------------------------------------------------------------
 // Modify the GenericMatrix interface
@@ -545,35 +577,6 @@ def la_index_dtype():
             A[i, column] = values
         return A
 
-    def sparray(self):
-        "Return a scipy.sparse representation of Matrix"
-        from scipy.sparse import csr_matrix
-        data = self.data(deepcopy=True)
-        C = csr_matrix((data[2], data[1], data[0]))
-        return C
-
-    def data(self, deepcopy=True):
-        """
-        Return arrays to underlaying compresssed row/column storage data
-
-        This method is only available for the uBLAS linear algebra
-        backend.
-
-        *Arguments*
-            deepcopy
-                Return a copy of the data. If set to False a reference
-                to the Matrix need to be kept, otherwise the data will be
-                destroyed together with the destruction of the Matrix
-        """
-        rows, cols, values = self._data()
-        if deepcopy:
-            rows, cols, values = rows.astype(int), cols.astype(int), values.copy()
-        else:
-            _attach_base_to_numpy_array(rows, self)
-            _attach_base_to_numpy_array(cols, self)
-            _attach_base_to_numpy_array(values, self)
-
-        return rows, cols, values
 
     # FIXME: Getting matrix entries need to be carefully examined, especially
     #          for parallel objects.
