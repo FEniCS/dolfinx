@@ -114,16 +114,16 @@ namespace dolfin
 
     /// DEPRECATED: List a summary of timings and tasks, optionally clearing
     /// stored timings. MPI_AVG reduction is printed. Collective on
-    /// MPI_COMM_WORLD.
+    /// mpi_comm.
     void list_timings(bool reset=false);
 
     /// List a summary of timings and tasks, optionally clearing stored
-    /// timings. MPI_AVG reduction is printed. Collective on MPI_COMM_WORLD.
+    /// timings. MPI_AVG reduction is printed. Collective on mpi_comm.
     void list_timings(TimingClear clear, std::set<TimingType> type);
 
     /// Dump a summary of timings and tasks to XML file, optionally clearing
     /// stored timings. MPI_MAX, MPI_MIN and MPI_AVG reductions are stored.
-    /// Collective on MPI_COMM_WORLD.
+    /// Collective on mpi_comm.
     void dump_timings_to_xml(std::string filename, TimingClear clear);
 
     /// Return timing (count, total wall time, total user time,
@@ -136,6 +136,10 @@ namespace dolfin
     /// program to continuously monitor the memory usage of the
     /// process.
     void monitor_memory_usage();
+
+    /// Return MPI Communicator of Logger
+    MPI_Comm mpi_comm()
+    { return _mpi_comm; }
 
     /// Helper function for reporting memory usage
     void _report_memory_usage(size_t num_mb);
