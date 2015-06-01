@@ -27,9 +27,9 @@
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
 
-#include <sstream>
 #include <iomanip>
-#include <boost/tuple/tuple.hpp>
+#include <sstream>
+#include <tuple>
 
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
@@ -207,7 +207,7 @@ namespace dolfin
 
     /// Return pointers to underlying compressed storage data
     /// See GenericMatrix for documentation.
-    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
+    virtual std::tuple<const std::size_t*, const std::size_t*,
       const double*, int> data() const;
 
     //--- Special functions ---
@@ -745,27 +745,24 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>
-  inline boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                         const double*, int>
-    uBLASMatrix<ublas_sparse_matrix>::data() const
+    inline std::tuple<const std::size_t*, const std::size_t*, const double*,
+    int> uBLASMatrix<ublas_sparse_matrix>::data() const
   {
-    typedef boost::tuples::tuple<const std::size_t*, const std::size_t*,
-      const double*, int> tuple;
-    return tuple(&_matA.index1_data()[0], &_matA.index2_data()[0],
-                 &_matA.value_data()[0], _matA.nnz());
+      typedef std::tuple<const std::size_t*, const std::size_t*,
+        const double*, int> my_tuple;
+      return my_tuple(&_matA.index1_data()[0], &_matA.index2_data()[0],
+                      &_matA.value_data()[0], _matA.nnz());
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  inline boost::tuples::tuple<const std::size_t*, const std::size_t*,
+    inline std::tuple<const std::size_t*, const std::size_t*,
     const double*, int> uBLASMatrix<Mat>::data() const
   {
     dolfin_error("uBLASMatrix.h",
                  "return pointers to underlying matrix data",
                  "Not implemented for this uBLAS matrix type");
-    return boost::tuples::tuple<const std::size_t*,
-                                const std::size_t*,
-                                const double*,
-                                int>(0, 0, 0, 0);
+    return std::tuple<const std::size_t*, const std::size_t*,
+      const double*, int>(NULL, NULL, NULL, 0);
   }
   //---------------------------------------------------------------------------
   template<typename Mat> template<typename B>

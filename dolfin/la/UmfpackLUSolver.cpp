@@ -23,6 +23,7 @@
 
 
 #include <memory>
+#include <tuple>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
@@ -188,12 +189,12 @@ void UmfpackLUSolver::symbolic_factorize()
   std::shared_ptr<const GenericMatrix> A = require_matrix(_matA);
 
   // Get matrix data
-  boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                       const double*, int> data = A->data();
-  const std::size_t* Ap  = boost::tuples::get<0>(data);
-  const std::size_t* Ai  = boost::tuples::get<1>(data);
-  const double*      Ax  = boost::tuples::get<2>(data);
-  const std::size_t  nnz = boost::tuples::get<3>(data);
+  std::tuple<const std::size_t*, const std::size_t*, const double*, int>
+    data = A->data();
+  const std::size_t* Ap  = std::get<0>(data);
+  const std::size_t* Ai  = std::get<1>(data);
+  const double*      Ax  = std::get<2>(data);
+  const std::size_t  nnz = std::get<3>(data);
 
   // Check dimensions and get number of non-zeroes
   const std::size_t M = A->size(0);
@@ -221,12 +222,12 @@ void UmfpackLUSolver::numeric_factorize()
   std::shared_ptr<const GenericMatrix> A = require_matrix(_matA);
 
   // Get matrix data
-  boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                       const double*, int> data = A->data();
-  const std::size_t* Ap  = boost::tuples::get<0>(data);
-  const std::size_t* Ai  = boost::tuples::get<1>(data);
-  const double*      Ax  = boost::tuples::get<2>(data);
-  const std::size_t  nnz = boost::tuples::get<3>(data);
+  std::tuple<const std::size_t*, const std::size_t*,
+             const double*, int> data = A->data();
+  const std::size_t* Ap  = std::get<0>(data);
+  const std::size_t* Ai  = std::get<1>(data);
+  const double*      Ax  = std::get<2>(data);
+  const std::size_t  nnz = std::get<3>(data);
 
   // Check dimensions and get number of non-zeroes
   const std::size_t M   = A->size(0);
@@ -279,11 +280,11 @@ std::size_t UmfpackLUSolver::solve_factorized(GenericVector& x,
   }
 
   // Get matrix data
-  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*,
-                       int> data = A->data();
-  const std::size_t* Ap  = boost::tuples::get<0>(data);
-  const std::size_t* Ai  = boost::tuples::get<1>(data);
-  const double*      Ax  = boost::tuples::get<2>(data);
+  std::tuple<const std::size_t*, const std::size_t*, const double*,
+             int> data = A->data();
+  const std::size_t* Ap  = std::get<0>(data);
+  const std::size_t* Ai  = std::get<1>(data);
+  const double*      Ax  = std::get<2>(data);
 
   log(PROGRESS, "Solving linear system of size %ld x %ld (UMFPACK LU solver).",
       A->size(0), A->size(1));

@@ -21,6 +21,7 @@
 // Last changed: 2012-08-21
 
 #include <cstring>
+#include <tuple>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericLinearOperator.h>
 #include <dolfin/la/GenericMatrix.h>
@@ -83,20 +84,20 @@ std::size_t CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
   const GenericMatrix& _matA = require_matrix(A);
 
   // Check dimensions and get number of non-zeroes
-  boost::tuples::tuple<const std::size_t*,
-                       const std::size_t*,
-                       const double*, int> data = _matA.data();
+  std::tuple<const std::size_t*,
+             const std::size_t*,
+             const double*, int> data = _matA.data();
   const std::size_t M = _matA.size(0);
-  const std::size_t nnz = boost::tuples::get<3>(data);
+  const std::size_t nnz = std::get<3>(data);
   dolfin_assert(_matA.size(0) == _matA.size(1));
 
   dolfin_assert(nnz >= M);
 
   // Initialise cholmod data
   // NOTE: Casting away const here
-  cholmod.init((SuiteSparse_long*) boost::tuples::get<0>(data),
-               (SuiteSparse_long*) boost::tuples::get<1>(data),
-               (double*) boost::tuples::get<2>(data), M, nnz);
+  cholmod.init((SuiteSparse_long*) std::get<0>(data),
+               (SuiteSparse_long*) std::get<1>(data),
+               (double*) std::get<2>(data), M, nnz);
 
   // Factorize
   log(PROGRESS, "Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",
