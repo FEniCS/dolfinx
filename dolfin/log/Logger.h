@@ -150,7 +150,7 @@ namespace dolfin
   private:
 
     // Write message
-    void write(int log_level, std::string msg, int rank) const;
+    void write(int log_level, std::string msg) const;
 
     // True iff logging is active
     bool _active;
@@ -177,6 +177,9 @@ namespace dolfin
 
     // Map for strigifying TimingType
     static std::map<TimingType, std::string> _TimingType_descr;
+
+    // MPI Communicator
+    MPI_Comm _mpi_comm;
 
   };
 
