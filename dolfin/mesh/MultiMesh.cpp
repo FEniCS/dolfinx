@@ -490,18 +490,25 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	initial_polyhedra.push_back(std::make_pair(initial_polyhedra.size(),
 						   polyhedron));
 
-	// {
-	//   std::cout << "cut cutting\n";
-	//   std::cout << medit::drawtriangle(cut_cell,"'y'")<<medit::drawtriangle(cutting_cell,"'m'")<<std::endl;
-	//   std::cout << "intersection (size="<<intersection.size()<<": ";
-	//   for (std::size_t i = 0; i < intersection.size(); ++i)
-	//     std::cout << intersection[i]<<' ';
-	//   std::cout<<")\n";
-	//   std::vector<Simplex> sss = convert(intersection, tdim, gdim);
-	//   for (std::size_t i = 0; i < sss.size(); ++i)
-	//     std::cout << medit::drawtriangle(sss[i],"'k'");
-	//   std::cout << std::endl;
-	// }
+	{
+	  std::cout << "cut cutting (cutting part=" << cutting_part << ")" << std::endl;
+	  std::cout << medit::drawtriangle(cut_cell,"'y'")<<medit::drawtriangle(cutting_cell,"'m'")<<std::endl;
+	  std::cout << "intersection (size="<<intersection.size()<<": ";
+	  for (std::size_t i = 0; i < intersection.size(); ++i)
+	    std::cout << intersection[i]<<' ';
+	  std::cout<<")\n";
+	  std::vector<Simplex> sss = convert(intersection, tdim, gdim);
+	  if (sss.size())
+	  {
+	    for (std::size_t i = 0; i < sss.size(); ++i)
+	      std::cout << medit::drawtriangle(sss[i],"'k'");
+	    std::cout << std::endl;
+	    std::cout << "areas: ";
+	    for (std::size_t i = 0; i < sss.size(); ++i)
+	      std::cout << medit::area(sss[i]) <<' ';
+	    std::cout << std::endl;
+	  }
+	}
       }
       //PPause;
 
@@ -608,10 +615,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	      {
 		for (const auto initial_simplex: initial_polyhedron.second)
 		{
-		  // std::cout << '\n'<<medit::drawtriangle(previous_simplex,"'b'")
-		  // 	    << medit::drawtriangle(initial_simplex,"'r'")<<std::endl;
-		  // std::cout << "areas: " << medit::area(previous_simplex)<<' '<<medit::area(initial_simplex)<<'\n';
-		  //const double min_area = std::min(medit::area(previous_simplex), medit::area(initial_simplex));
+		  std::cout << '\n'<<medit::drawtriangle(previous_simplex,"'b'")
+		  	    << medit::drawtriangle(initial_simplex,"'r'")<<std::endl;
+		  std::cout << "areas: " << medit::area(previous_simplex)<<' '<<medit::area(initial_simplex)<<'\n';
+		  const double min_area = std::min(medit::area(previous_simplex), medit::area(initial_simplex));
 
 		  // Compute the intersection (a polyhedron)
 		  const std::vector<double> ii
@@ -632,29 +639,40 @@ void MultiMesh::_build_quadrature_rules_overlap()
 		    for (const auto simplex: pii)
 		    {
 		      const double area = medit::area(simplex);
-		      if (std::isfinite(area) and area > DOLFIN_EPS)
+		      if (std::isfinite(area) and area > DOLFIN_EPS_LARGE)
 		      {
 			new_polyhedron.push_back(simplex);
 			any_intersections = true;
 		      }
 		      else
-			std::cout << area <<'\n';
+		      {
+			std::cout << "area = "  << area << std::endl;
+
+			// debug
+			if (!std::isfinite(area))
+			{
+			  for (const auto pt: simplex)
+			    for (int d = 0; d < 2; ++d)
+			      std::cout<<std::setprecision(16) << pt[d]<<' ';
+			  std::cout << std::endl;
+			}
+		      }
 		    }
 
 		    // new_polyhedron.insert(new_polyhedron.end(), pii.begin(), pii.end());
 
-		    // std::cout << "resulting intersection:\n";
-		    // for (const auto simplex: pii)
-		    //   std::cout << medit::drawtriangle(simplex,"'g'");
-		    // std::cout<<'\n';
-		    // double intersection_area = 0;
-		    // std::cout << "areas: ";
-		    // for (const auto simplex: pii) {
-		    //   intersection_area += medit::area(simplex);
-		    //   std::cout << medit::area(simplex) <<' ';
-		    // }
-		    // std::cout<<'\n';
-		    //if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; PPause; }
+		    std::cout << "resulting intersection:\n";
+		    for (const auto simplex: pii)
+		      std::cout << medit::drawtriangle(simplex,"'g'");
+		    std::cout<<'\n';
+		    double intersection_area = 0;
+		    std::cout << "areas: ";
+		    for (const auto simplex: pii) {
+		      intersection_area += medit::area(simplex);
+		      std::cout << medit::area(simplex) <<' ';
+		    }
+		    std::cout<<'\n';
+		    if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; PPause; }
 		  }
 		}
 	      }
