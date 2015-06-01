@@ -35,7 +35,7 @@
 
 namespace dolfin
 {
-  typedef Eigen::SparseMatrix<double, Eigen::RowMajor> eigen_matrix_type;
+  typedef Eigen::SparseMatrix<double, Eigen::RowMajor, int> eigen_matrix_type;
 
   /// This class provides a sparse matrix class based on Eigen.  It is
   /// a simple wrapper for Eigen::SparseMatrix implementing the
@@ -183,6 +183,11 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
+
+    /// Return pointers to underlying compressed storage data See
+    /// GenericMatrix for documentation.
+    virtual std::tuple<const int*, const int*, const double*, std::size_t>
+      data() const;
 
     //--- Special functions ---
 
