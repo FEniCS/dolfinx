@@ -207,12 +207,6 @@ namespace dolfin
     virtual bool is_symmetric(double tol) const
     { return matrix->is_symmetric(tol); }
 
-    /// Return pointers to underlying compressed storage data.
-    /// See GenericMatrix for documentation.
-    virtual std::tuple<const std::size_t*, const std::size_t*,
-      const double*, int> data() const
-    { return matrix->data(); }
-
     //--- Special functions ---
 
     /// Return linear algebra backend factory

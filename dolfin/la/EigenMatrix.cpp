@@ -290,14 +290,22 @@ const GenericMatrix& EigenMatrix::operator= (const GenericMatrix& A)
   return *this;
 }
 //----------------------------------------------------------------------------
-const
-EigenMatrix& EigenMatrix::operator= (const EigenMatrix& A)
+const EigenMatrix& EigenMatrix::operator= (const EigenMatrix& A)
 {
   // Check for self-assignment
   if (this != &A)
     _matA = A.mat();
 
   return *this;
+}
+//----------------------------------------------------------------------------
+std::tuple<const int*, const int*, const double*, std::size_t>
+EigenMatrix:: data() const
+{
+  // Check that matrix has been compressed
+
+  return std::make_tuple(_matA.innerIndexPtr(), _matA.outerIndexPtr(),
+                         _matA.valuePtr(), 0);
 }
 //----------------------------------------------------------------------------
 std::string EigenMatrix::str(bool verbose) const

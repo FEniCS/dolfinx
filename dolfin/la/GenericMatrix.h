@@ -225,19 +225,6 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
-    /// Return pointers to underlying compressed row/column storage data
-    /// For compressed row storage, data = (row_pointer[#rows +1],
-    /// column_index[#nz], matrix_values[#nz], nz)
-    virtual std::tuple<const std::size_t*, const std::size_t*,
-      const double*, int> data() const
-    {
-      dolfin_error("GenericMatrix.h",
-                   "return pointers to underlying matrix data",
-                   "Not implemented by current linear algebra backend");
-      return std::tuple<const std::size_t*, const std::size_t*,
-        const double*, int>(NULL, NULL, NULL, 0);
-   }
-
     //--- Convenience functions ---
 
     /// Get value of given entry
