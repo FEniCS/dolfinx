@@ -492,35 +492,40 @@ def la_index_dtype():
 }
 
 // ---------------------------------------------------------------------------
-// Modify the GenericMatrix interface
+// Modify the EigenMatrix interface
 // ---------------------------------------------------------------------------
-%feature("docstring") dolfin::GenericMatrix::_scale "Missing docstring";
-%feature("docstring") dolfin::GenericMatrix::_data "Missing docstring";
-%extend dolfin::GenericMatrix
+%feature("docstring") dolfin::EigenMatrix::_data "Missing docstring";
+%extend dolfin::EigenMatrix
 {
-  void _scale(double a)
-  {
-    (*self)*=a;
-  }
-
   PyObject* _data()
   {
-    PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-                                                 std::get<0>(self->data()),
-                                                 false);
-    PyObject* cols = %make_numpy_array(1, size_t)(std::get<3>(self->data()),
-                                                 std::get<1>(self->data()),
-                                                 false);
+    PyObject* rows = %make_numpy_array(1, int)(self->size(0)+1,
+                                               std::get<0>(self->data()),
+                                               false);
+    PyObject* cols = %make_numpy_array(1, int)(std::get<3>(self->data()),
+                                               std::get<1>(self->data()),
+                                               false);
     PyObject* values = %make_numpy_array(1, double)(std::get<3>(self->data()),
-                                                   std::get<2>(self->data()),
-                                                   false);
+                                                    std::get<2>(self->data()),
+                                                    false);
 
     if ( rows == NULL || cols == NULL || values == NULL)
       return NULL;
 
     return Py_BuildValue("NNN", rows, cols, values);
   }
+}
 // ---------------------------------------------------------------------------
+// Modify the GenericMatrix interface
+// ---------------------------------------------------------------------------
+%feature("docstring") dolfin::GenericMatrix::_scale "Missing docstring";
+%extend dolfin::GenericMatrix
+{
+  void _scale(double a)
+  {
+    (*self)*=a;
+  }
+  // -------------------------------------------------------------------------
   %pythoncode
   %{
     def __is_compatible(self,other):

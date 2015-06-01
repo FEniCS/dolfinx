@@ -32,7 +32,6 @@
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
 #include "TensorLayout.h"
-#include "UmfpackLUSolver.h"
 #include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
@@ -82,15 +81,10 @@ namespace dolfin
     /// Create LU solver
     std::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
     {
-      #ifdef HAS_UMFPACK
-      std::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
-      return solver;
-      #else
       dolfin_error("uBLASFactory.cpp",
                    "create LU solver",
                    "No LU solver for uBLAS available. Trying configuring DOLFIN with UMFPACK");
       return std::shared_ptr<GenericLUSolver>();
-      #endif
     }
 
     /// Create Krylov solver
@@ -108,10 +102,6 @@ namespace dolfin
     {
       std::map<std::string, std::string> methods
         = { {"default", "default LU solver"} };
-      #ifdef HAS_UMFPACK
-      methods.insert(std::make_pair("umfpack",
-                                    "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
-      #endif
       return methods;
     }
 

@@ -38,8 +38,6 @@
 #include <dolfin/la/EigenLUSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
-#include <dolfin/la/CholmodCholeskySolver.h>
-#include <dolfin/la/UmfpackLUSolver.h>
 #include <dolfin/la/MUMPSLUSolver.h>
 #include <dolfin/la/PaStiXLUSolver.h>
 

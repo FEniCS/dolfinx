@@ -24,7 +24,6 @@
 #include "DefaultFactory.h"
 #include "KrylovSolver.h"
 #include "LUSolver.h"
-#include "CholmodCholeskySolver.h"
 #include "LinearSolver.h"
 
 using namespace dolfin;
@@ -70,26 +69,6 @@ LinearSolver::LinearSolver(std::string method,
 
     // Initialize solver
     solver.reset(new LUSolver(method));
-
-    // Set parameter type
-    _parameter_type = "lu_solver";
-  }
-  else if (method == "cholesky")
-  {
-    // Adjust preconditioner default --> none
-    if (preconditioner == "default")
-      preconditioner = "none";
-
-    // Check that preconditioner has not been set
-    if (preconditioner != "none")
-    {
-      dolfin_error("LinearSolver.cpp",
-                   "solve linear system",
-                   "Preconditioner may not be specified for Cholesky solver");
-    }
-
-    // Initialize solver
-    solver.reset(new CholmodCholeskySolver());
 
     // Set parameter type
     _parameter_type = "lu_solver";
