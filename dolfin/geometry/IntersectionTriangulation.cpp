@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2015-05-07
+// Last changed: 2015-06-01
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -527,6 +527,8 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
 
   // Compute signed squared cos of angle with (0, 1) from i_min to all points
   std::vector<std::pair<double, std::size_t>> order;
+  order.reserve(points.size());
+
   for (std::size_t i = 0; i < points.size(); i++)
   {
     // Skip left-most point used as origin

@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-03-30
+// Last changed: 2015-06-01
 
 
 #include <dolfin/log/log.h>
@@ -484,7 +484,11 @@ void MultiMesh::_build_quadrature_rules_overlap()
   	const std::vector<double> intersection
 	  = IntersectionTriangulation::triangulate_intersection(cut_cell,
 								cutting_cell);
-	const Polyhedron polyhedron = convert(intersection, tdim, gdim);
+	//const
+	Polyhedron polyhedron = convert(intersection, tdim, gdim);
+
+	// Flip triangles in polyhedron to maximize minimum angle
+	maximize_minimum_angle(polyhedron);
 
 	// Store key and polyhedron
 	initial_polyhedra.push_back(std::make_pair(initial_polyhedra.size(),
@@ -687,6 +691,11 @@ void MultiMesh::_build_quadrature_rules_overlap()
 		// for (const auto key: new_keys)
 		//   std::cout << key <<' ';
 		// std::cout<<std::endl;
+
+
+		// Test improve quality
+		maximize_minimum_angle(new_polyhedron);
+
 
 		// Save data
 		new_intersections.push_back(std::make_pair(new_keys, new_polyhedron));
@@ -1316,5 +1325,37 @@ MultiMesh::compute_permutations(std::size_t n,
       return permutations;
     }
   }
+}
+//------------------------------------------------------------------------------
+void MultiMesh::maximize_minimum_angle(Polyhedron& polyhedron)
+{
+  double min_angle = DOLFIN_PI;
+
+  for (const auto tri: polyhedron)
+  {
+    const double a2 = (tri[1]-tri[0]).squared_norm();
+    const double b2 = (tri[2]-tri[0]).squared_norm();
+    const double c2 = (tri[2]-tri[1]).squared_norm();
+
+    // Cosine thrm
+    const double alpha = acos(0.5 * (b2 + c2 - a2) / std::sqrt(b2 * c2));
+    const double beta = acos(0.5 * (a2 + c2 - b2) / std::sqrt(b2 * a2));
+
+    min_angle = std::min(min_angle, alpha);
+    min_angle = std::min(min_angle, beta);
+    min_angle = std::min(min_angle, DOLFIN_PI-alpha-beta);
+  }
+
+  // Flip if angle is small
+  std::cout << "min_angle = " << min_angle << '\n';
+  if (min_angle < 10*DOLFIN_EPS_LARGE)
+  {
+    std::cout << "small angle\n";
+    for (const auto tri: polyhedron)
+      std::cout << medit::drawtriangle(tri) << ' ';
+    std::cout << std::endl;
+  }
+
+
 }
 //------------------------------------------------------------------------------
