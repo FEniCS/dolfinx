@@ -19,8 +19,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <string>
 #include <sstream>
-#include <boost/lexical_cast.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
@@ -64,8 +64,7 @@ void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
   dolfin_assert(nobjs == times.size());
 
   // Write new dataset (mesh or vector)
-  std::string dataset_name = group_name + "/"
-    + boost::lexical_cast<std::string>(nobjs);
+  std::string dataset_name = group_name + "/" + std::to_string(nobjs);
   hdf5_file.write(object, dataset_name);
 
   // Check that time values are strictly increasing
@@ -106,8 +105,7 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
       _vector_times.clear();
       for (unsigned int i = 0; i != nvecs; ++i)
       {
-        const std::string dataset_name
-          = "/Vector/" + boost::lexical_cast<std::string>(i);
+        const std::string dataset_name = "/Vector/" + std::to_string(i);
         double t;
         HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "time", t);
         _vector_times.push_back(t);
@@ -131,8 +129,7 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
       _mesh_times.clear();
       for (unsigned int i = 0; i != nmesh; ++i)
       {
-        const std::string dataset_name
-          = "/Mesh/" + boost::lexical_cast<std::string>(i);
+        const std::string dataset_name = "/Mesh/" + std::to_string(i);
         double t;
         HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "time", t);
         _mesh_times.push_back(t);
@@ -208,8 +205,7 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
     // Special case: same index
     if (i0 == i1)
     {
-      hdf5_file.read(vector, "/Vector/" + boost::lexical_cast<std::string>(i0),
-                     false);
+      hdf5_file.read(vector, "/Vector/" +std::to_string(i0), false);
       log(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
       return;
     }
@@ -220,10 +216,8 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
     // Read vectors
     GenericVector& x0(vector);
     std::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
-    hdf5_file.read(x0, "/Vector/" + boost::lexical_cast<std::string>(i0),
-                   false);
-    hdf5_file.read(*x1, "/Vector/" + boost::lexical_cast<std::string>(i1),
-                   false);
+    hdf5_file.read(x0, "/Vector/" + std::to_string(i0), false);
+    hdf5_file.read(*x1, "/Vector/" + std::to_string(i1), false);
 
     // Check that the vectors have the same size
     if (x0.size() != x1->size())
@@ -254,8 +248,7 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
         _vector_times[index], t);
 
     // Read vector
-    hdf5_file.read(vector, "/Vector/"
-                   + boost::lexical_cast<std::string>(index), false);
+    hdf5_file.read(vector, "/Vector/" + std::to_string(index), false);
   }
 }
 //-----------------------------------------------------------------------------
@@ -276,8 +269,7 @@ void TimeSeriesHDF5::retrieve(Mesh& mesh, double t) const
 
   // Read mesh
   HDF5File hdf5_file(MPI_COMM_WORLD, _name, "r");
-  hdf5_file.read(mesh, "/Mesh/" + boost::lexical_cast<std::string>(index),
-                 false);
+  hdf5_file.read(mesh, "/Mesh/" + std::to_string(index), false);
 }
 //-----------------------------------------------------------------------------
 std::vector<double> TimeSeriesHDF5::vector_times() const

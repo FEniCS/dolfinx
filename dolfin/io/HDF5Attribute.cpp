@@ -21,8 +21,8 @@
 
 #ifdef HAS_HDF5
 
-#include<boost/lexical_cast.hpp>
-#include<dolfin/common/Array.h>
+#include <string>
+#include <dolfin/common/Array.h>
 #include "HDF5Interface.h"
 #include "HDF5Attribute.h"
 
@@ -37,8 +37,8 @@ HDF5Attribute::vector_to_string(const std::vector<T>& vector_value) const
   value = "";
   const std::size_t nlast = vector_value.size() - 1;
   for(std::size_t i = 0; i < nlast; ++i)
-    value += boost::lexical_cast<std::string>(vector_value[i]) + ", ";
-  value += boost::lexical_cast<std::string>(vector_value[nlast]);
+    value += std::to_string(vector_value[i]) + ", ";
+  value += std::to_string(vector_value[nlast]);
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -151,13 +151,13 @@ void HDF5Attribute::get(const std::string attribute_name,
   {
     double float_value;
     get_value(attribute_name, float_value);
-    value = boost::lexical_cast<std::string>(float_value);
+    value = std::to_string(float_value);
   }
   else if (attribute_type == "int")
   {
     std::size_t int_value;
     get_value(attribute_name, int_value);
-    value = boost::lexical_cast<std::string>(int_value);
+    value = std::to_string(int_value);
   }
   else if (attribute_type == "vectorfloat")
   {

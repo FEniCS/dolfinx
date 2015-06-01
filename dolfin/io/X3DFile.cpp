@@ -18,10 +18,9 @@
 // First added:  2013-03-05
 // Last changed: 2014-02-01
 
-#include <iostream>
 #include <fstream>
-#include <boost/lexical_cast.hpp>
-
+#include <iostream>
+#include <string>
 #include "pugixml.hpp"
 
 #include <dolfin/common/MPI.h>
@@ -563,16 +562,14 @@ void X3DFile::output_xml_header(pugi::xml_document& xml_doc,
 
   pugi::xml_node scene = x3d.append_child("Scene");
   pugi::xml_node viewpoint = scene.append_child("Viewpoint");
-  std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-      + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[3]);
+  std::string xyz = std::to_string(xpos[0]) + " " + std::to_string(xpos[1])
+    + " " + std::to_string(xpos[3]);
   viewpoint.append_attribute("position") = xyz.c_str();
 
   viewpoint.append_attribute("orientation") = "0 0 0 1";
   viewpoint.append_attribute("fieldOfView") = "0.785398";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
+  xyz = std::to_string(xpos[0]) + " " + std::to_string(xpos[1]) + " "
+    + std::to_string(xpos[2]);
   viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
 
   viewpoint.append_attribute("zNear") = "-1";

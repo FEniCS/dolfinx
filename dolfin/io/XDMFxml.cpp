@@ -17,10 +17,10 @@
 
 #ifdef HAS_HDF5
 
+#include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <dolfin/log/log.h>
 #include "XDMFxml.h"
@@ -162,9 +162,8 @@ void XDMFxml::data_attribute(std::string name,
 
   const std::size_t num_total_entities
     = (vertex_data ? num_total_vertices : num_global_cells);
-  std::string
-    s = boost::lexical_cast<std::string>(num_total_entities) + " "
-    + boost::lexical_cast<std::string>(padded_value_size);
+  std::string s = std::to_string(num_total_entities) + " "
+    + std::to_string(padded_value_size);
   xdmf_data.append_attribute("Dimensions") = s.c_str();
 
   xdmf_data.append_child(pugi::node_pcdata).set_value(dataset_name.c_str());
@@ -234,8 +233,8 @@ pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
    xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
    dolfin_assert(xdmf_timedata);
 
-   unsigned int last_count = boost::lexical_cast<unsigned int>
-     (xdmf_timedata.attribute("Dimensions").value());
+   unsigned int last_count
+     = std::stoul(xdmf_timedata.attribute("Dimensions").value());
 
    std::string times_str(xdmf_timedata.first_child().value());
    const std::string timestep_str
@@ -263,7 +262,7 @@ pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
 
    //   /Xdmf/Domain/Grid/Grid - the actual data for this timestep
    xdmf_grid = xdmf_timegrid.append_child("Grid");
-   std::string s = "grid_" + boost::lexical_cast<std::string>(last_count);
+   std::string s = "grid_" + std::to_string(last_count);
    xdmf_grid.append_attribute("Name") = s.c_str();
    xdmf_grid.append_attribute("GridType") = "Uniform";
 
@@ -339,9 +338,8 @@ void XDMFxml::mesh_topology(const std::size_t cell_dim,
     // Refer to all cells and dimensions
     xdmf_topology_data = xdmf_topology.append_child("DataItem");
     xdmf_topology_data.append_attribute("Format") = "HDF";
-    const std::string cell_dims
-      = boost::lexical_cast<std::string>(num_global_cells)
-      + " " + boost::lexical_cast<std::string>(nodes_per_element);
+    const std::string cell_dims = std::to_string(num_global_cells)
+      + " " + std::to_string(nodes_per_element);
     xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
     const std::string topology_reference = reference + "/topology";
@@ -377,8 +375,8 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   xdmf_geom_data = xdmf_geometry.append_child("DataItem");
 
   xdmf_geom_data.append_attribute("Format") = "HDF";
-  std::string geom_dim = boost::lexical_cast<std::string>(num_total_vertices)
-    + " " + boost::lexical_cast<std::string>(gdim);
+  std::string geom_dim = std::to_string(num_total_vertices) + " "
+    + std::to_string(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
 
   if (gdim == 1)
@@ -401,13 +399,13 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
 
     pugi::xml_node xdmf_geom_1 = xdmf_geometry.append_child("DataItem");
     xdmf_geom_1.append_attribute("Format") = "XML";
-    geom_dim = boost::lexical_cast<std::string>(num_total_vertices) + " 1" ;
+    geom_dim = std::to_string(num_total_vertices) + " 1" ;
     xdmf_geom_1.append_attribute("Dimensions") = geom_dim.c_str();
     xdmf_geom_1.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
 
     pugi::xml_node xdmf_geom_2 = xdmf_geometry.append_child("DataItem");
     xdmf_geom_2.append_attribute("Format") = "XML";
-    geom_dim = boost::lexical_cast<std::string>(num_total_vertices) + " 1" ;
+    geom_dim = std::to_string(num_total_vertices) + " 1" ;
     xdmf_geom_2.append_attribute("Dimensions") = geom_dim.c_str();
     xdmf_geom_2.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
   }
