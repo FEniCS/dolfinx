@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2015-06-01
+// Last changed: 2015-06-02
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -554,7 +554,8 @@ namespace dolfin
     }
 
     // FIXME:
-    void maximize_minimum_angle(Polyhedron& p);
+    double minimum_angle(const Simplex& s) const;
+    bool maximize_minimum_angle(Polyhedron& p) const;
 
 
   };

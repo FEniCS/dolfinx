@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2015-06-01
+// Last changed: 2015-06-02
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -512,51 +512,51 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   if (points.size() < 3)
     return triangulation;
 
-  // Find left-most point (smallest x-coordinate)
-  std::size_t i_min = 0;
-  double x_min = points[0].x();
-  for (std::size_t i = 1; i < points.size(); i++)
+  // If the number of points are three, then these form the triangulation
+  if (points.size() == 3)
   {
-    const double x = points[i].x();
-    if (x < x_min)
-    {
-      x_min = x;
-      i_min = i;
-    }
+    triangulation.resize(6);
+
+    for (std::size_t i = 0; i < 3; ++i)
+      for (std::size_t j = 0; j < 2; ++j)
+	triangulation[2*i+j] = points[i][j];
+
+    return triangulation;
   }
 
-  // Compute signed squared cos of angle with (0, 1) from i_min to all points
-  std::vector<std::pair<double, std::size_t>> order;
-  order.reserve(points.size());
+  // If the number of points > 3, form triangles using center
+  // point. This avoids skinny triangles in multimesh.
+  std::vector<std::pair<double, std::size_t>> order(points.size());
 
-  for (std::size_t i = 0; i < points.size(); i++)
+  // Create triangulation using center point.
+  Point c = points[0];
+  for (std::size_t i = 1; i < points.size(); ++i)
+    c += points[i];
+  c /= points.size();
+
+  // Calculate and store angles
+  for (std::size_t i = 0; i < points.size(); ++i)
   {
-    // Skip left-most point used as origin
-    if (i == i_min)
-      continue;
-
-    // Compute vector to point
-    const Point v = points[i] - points[i_min];
-
-    // Compute square cos of angle
-    const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
-
-    // Store for sorting
-    order.push_back(std::make_pair(cos2, i));
+    const Point v = points[i] - c;
+    const double alpha = atan2(v.y(), v.x());
+    order[i] = std::make_pair(alpha, i);
   }
 
   // Sort points based on angle
   std::sort(order.begin(), order.end());
 
-  // Triangulate polygon by connecting i_min with the ordered points
-  triangulation.reserve((points.size() - 2)*3*2);
-  const Point& p0 = points[i_min];
-  for (std::size_t i = 0; i < points.size() - 2; i++)
+  // Put first points last
+  order.push_back(order.front());
+
+  // Form the triangulation
+  triangulation.reserve(2*3*points.size());
+
+  for (std::size_t i = 0; i < points.size(); ++i)
   {
     const Point& p1 = points[order[i].second];
     const Point& p2 = points[order[i + 1].second];
-    triangulation.push_back(p0.x());
-    triangulation.push_back(p0.y());
+    triangulation.push_back(c.x());
+    triangulation.push_back(c.y());
     triangulation.push_back(p1.x());
     triangulation.push_back(p1.y());
     triangulation.push_back(p2.x());
