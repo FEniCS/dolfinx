@@ -1,3 +1,4 @@
+- Remove cmake.local, replaced by fenics-install-component.sh
 - Make interior facet integrals define - and + cells ordered by cell_domains value.
 - Remove deprecated arguments *_domains from assemble() and Form().
 - Change measure definition notation from dx[mesh_function] to dx(subdomain_data=mesh_function).

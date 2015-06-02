@@ -237,11 +237,12 @@ std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const
                                       counter, ".vtu");
   clear_file(vtu_filename);
 
-  // Number of cells
-  const std::size_t num_cells = mesh.topology().size(cell_dim);
+  // Number of cells and vertices
+  const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
+  const std::size_t num_vertices = mesh.topology().ghost_offset(0);
 
   // Write headers
-  vtk_header_open(mesh.num_vertices(), num_cells, vtu_filename);
+  vtk_header_open(num_vertices, num_cells, vtu_filename);
 
   return vtu_filename;
 }
