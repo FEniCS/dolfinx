@@ -521,7 +521,7 @@ def la_index_dtype():
         """
         Return arrays to underlaying compresssed row/column storage data
 
-        This method is only available for the uBLAS linear algebra backend.
+        This method is only available for the Eigen linear algebra backend.
 
         *Arguments*
             deepcopy
@@ -818,7 +818,7 @@ def la_index_dtype():
         """
         Return an array to underlaying data
 
-        This method is only available for the uBLAS linear algebra
+        This method is only available for the Eigen linear algebra
         backend.
 
         *Arguments*
@@ -860,8 +860,7 @@ _as_backend_type_map[TENSOR_TYPE] = _as_backend_type_ ## TENSOR_TYPE
 // ---------------------------------------------------------------------------
 // Run the data macro
 // ---------------------------------------------------------------------------
-LA_VEC_DATA_ACCESS(uBLASVector)
-LA_VEC_DATA_ACCESS(Vector)
+LA_VEC_DATA_ACCESS(EigenVector)
 
 // ---------------------------------------------------------------------------
 // Define Python lookup maps for as_backend_typeing
