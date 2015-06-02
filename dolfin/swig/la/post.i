@@ -853,7 +853,6 @@ _as_backend_type_map[TENSOR_TYPE] = _as_backend_type_ ## TENSOR_TYPE
 // Run the data macro
 // ---------------------------------------------------------------------------
 LA_VEC_DATA_ACCESS(EigenVector)
-LA_VEC_DATA_ACCESS(Vector)
 
 // ---------------------------------------------------------------------------
 // Define Python lookup maps for as_backend_typeing
