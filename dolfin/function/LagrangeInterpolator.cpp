@@ -342,7 +342,7 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
 
   // Speed up the computations by only visiting (most) dofs once
   const std::size_t local_size = dofmap.ownership_range().second
-    - dofmap.ownership_range().first;
+                               - dofmap.ownership_range().first;
   RangedIndexSet already_visited(std::make_pair(0, local_size));
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -370,19 +370,11 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
         // Put coordinates in coors
         std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
 
-        const auto it = coords_to_dofs.find(coors);
-        if (it == coords_to_dofs.end())
-        {
-          // Add coordinate and dof to map
-          std::vector<std::size_t> dof_vec;
-          dof_vec.push_back(dof);
-          coords_to_dofs[coors] = dof_vec;
-        }
-        else
-        {
-          // Add dof to mapped coordinate
-          coords_to_dofs[coors].push_back(dof);
-        }
+        // Add dof to list at this coord
+        const auto ins = coords_to_dofs.insert
+          (std::make_pair(coors, std::vector<std::size_t>{dof}));
+        if (!ins.second)
+          ins.first->second.push_back(dof);
       }
     }
   }
@@ -396,11 +388,10 @@ LagrangeInterpolator::extract_dof_component_map(std::unordered_map<std::size_t,
                                                 int* component)
 {
   // Extract sub dofmaps recursively and store dof to component map
-  std::unordered_map<std::size_t, std::size_t> collapsed_map;
-  std::vector<std::size_t> comp(1);
 
   if (V.element()->num_sub_elements() == 0)
   {
+    std::unordered_map<std::size_t, std::size_t> collapsed_map;
     std::shared_ptr<GenericDofMap> dummy
       = V.dofmap()->collapse(collapsed_map, *V.mesh());
     (*component)++;
@@ -409,9 +400,9 @@ LagrangeInterpolator::extract_dof_component_map(std::unordered_map<std::size_t,
   }
   else
   {
-    for (std::size_t i = 0; i < V.element()->num_sub_elements(); i++)
+    for (std::size_t i = 0; i < V.element()->num_sub_elements(); ++i)
     {
-      comp[0] = i;
+      const std::vector<std::size_t> comp = {i};
       std::shared_ptr<FunctionSpace> Vs = V.extract_sub_space(comp);
       extract_dof_component_map(dof_component_map, *Vs, component);
     }
