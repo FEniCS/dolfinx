@@ -21,7 +21,7 @@
 #ifndef __XML_MESH_VALUE_COLLECTION_H
 #define __XML_MESH_VALUE_COLLECTION_H
 
-#include <boost/lexical_cast.hpp>
+#include <string>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include "pugixml.hpp"
 #include "xmlutils.h"

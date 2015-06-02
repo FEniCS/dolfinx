@@ -24,9 +24,9 @@
 #include <memory>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include "pugixml.hpp"
 
@@ -130,7 +130,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   // Create list of vertex index attribute names
   const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);
   std::vector<std::string> v_str(num_vertices_per_cell);
-  for (unsigned int i = 0; i < num_vertices_per_cell; ++i)
+  for (std::size_t i = 0; i < num_vertices_per_cell; ++i)
     v_str[i] = "v" + std::to_string(i);
 
   // Iterate over cells and add to mesh
