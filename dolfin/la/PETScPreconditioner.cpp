@@ -22,7 +22,6 @@
 
 #ifdef HAS_PETSC
 
-#include <boost/lexical_cast.hpp>
 #include <petscksp.h>
 #include <petscmat.h>
 

@@ -25,7 +25,7 @@
 #include <map>
 #include <numeric>
 #include <set>
-#include <boost/lexical_cast.hpp>
+#include <string>
 
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
@@ -74,8 +74,7 @@ std::vector<int> SCOTCH::compute_gps(const Graph& graph,
                                      std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
-  std::string strategy = "g{pass= "
-    + boost::lexical_cast<std::string>(num_passes) + "}";
+  std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
 
   return compute_reordering(graph, strategy);
 }
