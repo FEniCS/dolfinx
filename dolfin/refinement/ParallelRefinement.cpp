@@ -91,32 +91,22 @@ std::shared_ptr<const std::map<std::size_t, std::size_t>>
   return local_edge_to_new_vertex;
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::mark(const MeshEntity& cell)
+void ParallelRefinement::mark(const MeshEntity& entity)
 {
-  // Special case for Edge, otherwise will mark all edge-edge connections
-  if (cell.dim() == 1)
-    mark(cell.index());
-  else
-    for (EdgeIterator edge(cell); !edge.end(); ++edge)
-      mark(edge->index());
+  for (EdgeIterator edge(entity); !edge.end(); ++edge)
+    mark(edge->index());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const MeshFunction<bool>& refinement_marker)
 {
   const std::size_t entity_dim = refinement_marker.dim();
-
   for (MeshEntityIterator entity(_mesh, entity_dim); !entity.end();
        ++entity)
   {
     if (refinement_marker[*entity])
     {
-      // Special case for EdgeFunction because EdgeIterator(Edge) will get all
-      // connected edge-edge entities otherwise
-      if (entity_dim == 1)
-        mark(entity->index());
-      else
-        for (EdgeIterator edge(*entity); !edge.end(); ++edge)
-          mark(edge->index());
+      for (EdgeIterator edge(*entity); !edge.end(); ++edge)
+        mark(edge->index());
     }
   }
 }
