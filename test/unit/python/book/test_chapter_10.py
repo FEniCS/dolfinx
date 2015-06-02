@@ -899,6 +899,7 @@ def test_p43_box_1(cd_tempdir, pushpop_parameters):
 def test_p45_box_1(pushpop_parameters):
     parameters["mesh_partitioner"] = "ParMETIS"
 
+
 @use_gc_barrier
 def test_p45_box_2():
     from dolfin import cpp
