@@ -21,7 +21,7 @@
 #ifndef __XML_MESH_VALUE_COLLECTION_H
 #define __XML_MESH_VALUE_COLLECTION_H
 
-#include <boost/lexical_cast.hpp>
+#include <string>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include "pugixml.hpp"
 #include "xmlutils.h"
@@ -170,7 +170,7 @@ namespace dolfin
       entity_node.append_attribute("local_entity")
         = (unsigned int) it->first.second;
       entity_node.append_attribute("value")
-        = boost::lexical_cast<std::string>(it->second).c_str();
+        = std::to_string(it->second).c_str();
     }
   }
   //---------------------------------------------------------------------------

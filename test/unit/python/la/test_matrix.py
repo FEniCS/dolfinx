@@ -34,7 +34,7 @@ from dolfin_utils.test import *
 # Lists of backends supporting or not supporting FooMatrix::data()
 # access
 data_backends = []
-no_data_backends = [("PETSc", ""), ("uBLAS", "Dense"), ("uBLAS", "Sparse")]
+no_data_backends = [("PETSc", "")]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
