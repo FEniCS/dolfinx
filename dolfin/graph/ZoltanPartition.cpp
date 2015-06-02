@@ -62,7 +62,8 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   zoltan.Set_Param("NUM_GID_ENTRIES", "1");
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
-  zoltan.Set_Param("NUM_GLOBAL_PARTS", std::to_string(MPI::size(mpi_comm)));
+  zoltan.Set_Param("NUM_GLOBAL_PARTS",
+                   std::to_string(MPI::size(mpi_comm)));
 
   zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
   zoltan.Set_Param("LB_METHOD", "GRAPH");
@@ -75,6 +76,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   double phg_repart_multiplier = parameters["Zoltan_PHG_REPART_MULTIPLIER"];
   zoltan.Set_Param("PHG_REPART_MULTIPLIER",
                    std::to_string(phg_repart_multiplier));
+
 
   // Set call-back functions
   void *mesh_data_ptr = (void *)&mesh_data;
@@ -152,7 +154,8 @@ ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
   zoltan.Set_Param("NUM_GID_ENTRIES", "1");
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
-  zoltan.Set_Param("NUM_GLOBAL_PARTS", std::to_string(MPI::size(mpi_comm)));
+  zoltan.Set_Param("NUM_GLOBAL_PARTS",
+                   std::to_string(MPI::size(mpi_comm)));
 
   zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
   zoltan.Set_Param("LB_METHOD", "RCB");

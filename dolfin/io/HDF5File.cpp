@@ -24,9 +24,9 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -391,7 +391,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       std::map<std::size_t, std::size_t>::const_iterator it;
       for (it = domain.begin(); it != domain.end(); ++it)
         collection.set_value(it->first, it->second);
-      const std::string marker_dataset = name + "/domain_" + std::to_string(d);
+      const std::string marker_dataset
+        = name + "/domain_" + std::to_string(d);
       write_mesh_value_collection(collection, marker_dataset);
     }
 

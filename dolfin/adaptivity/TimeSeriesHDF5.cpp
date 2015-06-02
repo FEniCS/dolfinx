@@ -19,8 +19,8 @@
 
 #include <algorithm>
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
@@ -205,7 +205,7 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
     // Special case: same index
     if (i0 == i1)
     {
-      hdf5_file.read(vector, "/Vector/" +std::to_string(i0), false);
+      hdf5_file.read(vector, "/Vector/" + std::to_string(i0), false);
       log(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
       return;
     }

@@ -21,8 +21,8 @@
 
 #include <iomanip>
 #include <ostream>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -77,29 +77,26 @@ XDMFFile::~XDMFFile()
 //----------------------------------------------------------------------------
 void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
 {
-  // Experimental. For now, just work with one h5 file, cannot do
-  // time series. Input two P2 Functions, one containing geometry, the
-  // other the values. For a regular mesh,
-  // can just interpolate ("x[0]", "x[1]", "x[2]") onto u_geom.
+  // Experimental. For now, just work with one h5 file, cannot do time
+  // series. Input two P2 Functions, one containing geometry, the
+  // other the values. For a regular mesh, can just interpolate
+  // ("x[0]", "x[1]", "x[2]") onto u_geom.
 
   boost::filesystem::path p(_filename);
   p.replace_extension(".h5");
   hdf5_filename = p.string();
 
   if (counter == 0)
-    // Create new HDF5 file handle (truncate)
     hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
   else
-    // Create new HDF5 file handle (append)
     hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "a"));
-
   hdf5_filemode = "w";
 
   // Get mesh and dofmap
   dolfin_assert(u_geom.function_space()->mesh());
   dolfin_assert(u_val.function_space()->mesh());
   dolfin_assert (u_val.function_space()->mesh()->id()
-              == u_geom.function_space()->mesh()->id());
+                 == u_geom.function_space()->mesh()->id());
   const Mesh& mesh = *u_geom.function_space()->mesh();
 
   const std::size_t tdim = mesh.topology().dim();
@@ -131,10 +128,12 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
   else
     node_mapping = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
 
-  // NB relies on the x-component coming first, and ordering xyxy or xyzxyz etc.
+  // NB relies on the x-component coming first, and ordering xyxy or
+  // xyzxyz etc.
   for (std::size_t i = 0; i != n_cells; ++i)
   {
-    const dolfin::ArrayView<const dolfin::la_index>& cell_dofs_i = geom_dofmap.cell_dofs(i);
+    const dolfin::ArrayView<const dolfin::la_index>& cell_dofs_i
+      = geom_dofmap.cell_dofs(i);
     dolfin_assert(cell_dofs_i.size() == node_mapping.size() * gdim);
 
     for (auto &node : node_mapping)
@@ -149,13 +148,15 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
 
   // Save cell topologies
   std::vector<std::size_t> global_size(2);
-  global_size[0] = MPI::sum(_mpi_comm, cell_topology.size()) / node_mapping.size();
+  global_size[0]
+    = MPI::sum(_mpi_comm, cell_topology.size())/node_mapping.size();
   global_size[1] = node_mapping.size();
 
   const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
   current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
 
-  hdf5_file->write_data(h5_mesh_name + "/topology", cell_topology, global_size, mpi_io);
+  hdf5_file->write_data(h5_mesh_name + "/topology", cell_topology, global_size,
+                        mpi_io);
 
   // Save coordinates
   hdf5_file->write(*u_geom.vector(), h5_mesh_name + "/coordinates");

@@ -162,7 +162,7 @@ void XDMFxml::data_attribute(std::string name,
 
   const std::size_t num_total_entities
     = (vertex_data ? num_total_vertices : num_global_cells);
-  std::string s = std::to_string(num_total_entities) + " "
+  const std::string s = std::to_string(num_total_entities) + " "
     + std::to_string(padded_value_size);
   xdmf_data.append_attribute("Dimensions") = s.c_str();
 
