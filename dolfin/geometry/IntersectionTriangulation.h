@@ -205,6 +205,12 @@ namespace dolfin
                                                   const std::vector<Point>& tri);
 
     // Helper function
+    // FIXME
+    static bool intersection_edge_edge_2d(const Point& a,
+				       const Point& b,
+				       const Point& c,
+				       const Point& d,
+				       Point& pt);
     static bool intersection_edge_edge(const Point& a,
 				       const Point& b,
 				       const Point& c,

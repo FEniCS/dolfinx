@@ -432,17 +432,24 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   {
     // Note: this routine is changed to being public:
     if (CollisionDetection::collides_triangle_point_2d(tri_1[0],
-                                                    tri_1[1],
-                                                    tri_1[2],
-                                                    tri_0[i]))
+						       tri_1[1],
+						       tri_1[2],
+						       tri_0[i]))
       points.push_back(tri_0[i]);
 
     if (CollisionDetection::collides_triangle_point_2d(tri_0[0],
-                                                    tri_0[1],
-                                                    tri_0[2],
-                                                    tri_1[i]))
+						       tri_0[1],
+						       tri_0[2],
+						       tri_1[i]))
       points.push_back(tri_1[i]);
   }
+
+  std::cout << "after triangle_point: ";
+  for (const auto p: points)
+    std::cout << p[0]<<' '<<p[1]<< "     ";
+  std::cout << '\n';
+
+
 
   // Find all edge-edge collisions
   for (std::size_t i0 = 0; i0 < 3; i0++)
@@ -460,6 +467,13 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
         points.push_back(point);
     }
   }
+
+  std::cout << "after edge-edge: ";
+  for (const auto p: points)
+    std::cout << p[0]<<' '<<p[1]<< "     ";
+  std::cout << '\n';
+
+
 
   // The function intersection_edge_edge only gives one point. Thus,
   // check edge-point intersections separately.
@@ -488,6 +502,14 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   	points.push_back(point_0);
     }
   }
+
+
+  std::cout << "after edge-point: ";
+  for (const auto p: points)
+    std::cout << p[0]<<' '<<p[1]<< "     ";
+  std::cout << '\n';
+
+
 
   // Remove duplicate points
   std::vector<Point> tmp;
@@ -528,6 +550,12 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // point. This avoids skinny triangles in multimesh.
   std::vector<std::pair<double, std::size_t>> order(points.size());
 
+  for (const auto p: points)
+  {
+    std::cout << p[0]<<' '<<p[1]<< "     ";
+  }
+  std::cout << '\n';
+
   // Create triangulation using center point.
   Point c = points[0];
   for (std::size_t i = 1; i < points.size(); ++i)
@@ -545,22 +573,23 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // Sort points based on angle
   std::sort(order.begin(), order.end());
 
-  // Put first points last
+  // Put first points last for cyclic use
   order.push_back(order.front());
 
   // Form the triangulation
-  triangulation.reserve(2*3*points.size());
+  //triangulation.reserve(2*3*points.size());
+  triangulation.resize(2*3*points.size());
 
   for (std::size_t i = 0; i < points.size(); ++i)
   {
     const Point& p1 = points[order[i].second];
     const Point& p2 = points[order[i + 1].second];
-    triangulation.push_back(c.x());
-    triangulation.push_back(c.y());
-    triangulation.push_back(p1.x());
-    triangulation.push_back(p1.y());
-    triangulation.push_back(p2.x());
-    triangulation.push_back(p2.y());
+    triangulation[6*i] = c.x();
+    triangulation[6*i+1] = c.y();
+    triangulation[6*i+2] = p1.x();
+    triangulation[6*i+3] = p1.y();
+    triangulation[6*i+4] = p2.x();
+    triangulation[6*i+5] = p2.y();
   }
 
   return triangulation;
@@ -1266,6 +1295,70 @@ IntersectionTriangulation::triangulate_intersection
 }
 //-----------------------------------------------------------------------------
 bool
+IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
+						     const Point& b,
+						     const Point& c,
+						     const Point& d,
+						     Point& pt)
+{
+  // Check if two edges are the same
+  const double same_point_tol = DOLFIN_EPS_LARGE;
+  if ((a - c).squared_norm() < same_point_tol and
+      (b - d).squared_norm() < same_point_tol)
+    return false;
+  if ((a - d).squared_norm() < same_point_tol and
+      (b - c).norm() < same_point_tol)
+    return false;
+
+  // Tolerance for orthogonality
+  const double orth_tol = DOLFIN_EPS_LARGE;
+
+  // Tolerance for coplanarity
+  const double coplanar_tol = DOLFIN_EPS_LARGE;
+
+  const Point L1 = b - a;
+  const Point L2 = d - c;
+  const Point ca = c - a;
+  const Point n = L1.cross(L2);
+
+  // Check if L1 and L2 are coplanar (what if they're overlapping?)
+  // Update: always coplanar in 2D
+  // if (std::abs(ca.dot(n)) > coplanar_tol)
+  //   return false;
+
+  // Find orthogonal plane with normal n1
+  const Point n1 = n.cross(L1);
+  const double n1dotL2 = n1.dot(L2);
+
+  // If we have orthogonality
+  if (std::abs(n1dotL2) > orth_tol)
+  {
+    const double t = -n1.dot(ca) / n1dotL2;
+
+    // Find orthogonal plane with normal n2
+    const Point n2 = n.cross(L2);
+    const double n2dotL1 = n2.dot(L1);
+    if (t >= 0 and
+        t <= 1 and
+        std::abs(n2dotL1) > orth_tol)
+    {
+      const double s = n2.dot(ca) / n2dotL1;
+      if (s >= 0 and
+          s <= 1)
+      {
+	pt = a + s*L1;
+	return true;
+      }
+    }
+  }
+  // else // Now we have both coplanarity and colinearity, i.e. parallel lines
+  // {
+  // }
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool
 IntersectionTriangulation::intersection_edge_edge(const Point& a,
 						  const Point& b,
 						  const Point& c,
@@ -1274,10 +1367,10 @@ IntersectionTriangulation::intersection_edge_edge(const Point& a,
 {
   // Check if two edges are the same
   const double same_point_tol = DOLFIN_EPS_LARGE;
-  if ((a - c).norm() < same_point_tol and
-      (b - d).norm() < same_point_tol)
+  if ((a - c).squared_norm() < same_point_tol and
+      (b - d).squared_norm() < same_point_tol)
     return false;
-  if ((a - d).norm() < same_point_tol and
+  if ((a - d).squared_norm() < same_point_tol and
       (b - c).norm() < same_point_tol)
     return false;
 
@@ -1303,7 +1396,7 @@ IntersectionTriangulation::intersection_edge_edge(const Point& a,
   // If we have orthogonality
   if (std::abs(n1dotL2) > orth_tol)
   {
-    const double t = n1.dot(a - c) / n1dotL2;
+    const double t = -n1.dot(ca) / n1dotL2;
 
     // Find orthogonal plane with normal n2
     const Point n2 = n.cross(L2);
@@ -1312,7 +1405,7 @@ IntersectionTriangulation::intersection_edge_edge(const Point& a,
         t <= 1 and
         std::abs(n2dotL1) > orth_tol)
     {
-      const double s = n2.dot(c - a) / n2dotL1;
+      const double s = n2.dot(ca) / n2dotL1;
       if (s >= 0 and
           s <= 1)
       {

@@ -22,163 +22,13 @@
 
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
-#include <dolfin/geometry/SimplexQuadrature.h>
+//#include <dolfin/geometry/SimplexQuadrature.h>
 
+//FIXME August
+#include <dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
-//FIXME August
-
-
-// Hack to write vtu file
-inline void write_vtu_hack(const std::string& filename,
-			   const Mesh& mesh,
-			   std::size_t i = 0)
-{
-  std::stringstream ss;
-  ss << i;
-  std::ofstream fp(filename+ss.str()+".vtu");
-
-  const std::size_t num_vertices = mesh.num_vertices();
-  const std::size_t num_cells = mesh.num_cells();
-
-  fp << "<?xml version=\"1.0\"?>\n"
-     << "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"  >\n"
-     << "<UnstructuredGrid>\n"
-     << "<Piece  NumberOfPoints=\"" << num_vertices << "\" NumberOfCells=\"" << num_cells << "\">\n"
-     << "<Points>\n"
-     << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"ascii\">";
-
-  // vertices
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex) {
-    for (int d = 0; d < 2; ++d) // dimension
-      fp << vertex->x(d) << ' ';
-    fp << "0   "; // always write 3d
-  }
-  fp << "</DataArray>\n"
-     << "</Points>\n";
-
-  // cells
-  fp << "<Cells>\n"
-     << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"ascii\">";
-  const std::vector<unsigned int>& cells = mesh.cells();
-  for (std::size_t e = 0; e < num_cells; ++e) {
-    // tets:
-    //fp << cells[4*e] << ' ' << cells[4*e+1] << ' ' << cells[4*e+2] << ' ' << cells[4*e+3] << "  ";
-    // tris:
-    fp << cells[3*e]<<' '<<cells[3*e+1]<<' '<<cells[3*e+2]<<"  ";
-  }
-  fp << "</DataArray>\n";
-
-  // offset
-  fp << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"ascii\">";
-  for (std::size_t e = 0, offset=3; e < num_cells; ++e, offset += 3) // offset is 3 or 4
-    fp << offset << ' ';
-  fp << "</DataArray>\n";
-
-  // types
-  const std::size_t vtk_element_type = 5; // tet=10, tri=5
-  fp << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">";
-  for (std::size_t e = 0; e < num_cells; ++e)
-    fp << vtk_element_type << ' ';
-  fp << "</DataArray>\n"
-     << "</Cells>\n";
-
-  // data
-  fp.precision(16);
-  const std::size_t size = num_vertices;
-  std::vector<double> values(size, i);
-  //u.compute_vertex_values(values, mesh);
-  const std::string encode_string = "ascii";
-
-  /* // write velocity */
-  /* const std::string velocity_name = u.name() + "_velocity"; */
-  /* fp << "<PointData>\n" */
-  /*    << "<DataArray  type=\"Float64\"  Name=\"" << velocity_name << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">"; */
-  /* for (VertexIterator vertex(mesh); !vertex.end(); ++vertex) */
-  /* { */
-  /*   for (std::size_t i = 0; i < 3; ++i) // Only write 3 components! */
-  /* 	fp << values[vertex->index() + i*num_vertices] << " "; */
-  /*   fp << " "; */
-  /* } */
-  /* fp << "</DataArray>\n"; */
-
-  /* // write pressure */
-  /* const std::string pressure_name = u.name() + "_pressure"; */
-  /* fp << "<DataArray  type=\"Float64\"  Name=\"" << pressure_name << "\"  NumberOfComponents=\"1\" format=\""<< encode_string <<"\">"; */
-  /* for (VertexIterator vertex(mesh); !vertex.end(); ++vertex) */
-  /*   fp << values[vertex->index() + 3*num_vertices] << ' '; */
-  /* fp << "</DataArray>\n" */
-  /*    << "</PointData>\n"; */
-
-  const std::string name = "data_part_"+ss.str();
-  fp << "<PointData>\n"
-    //<< "<DataArray  type=\"Float64\"  Name=\"" << name << "\"  NumberOfComponents=\"1\" format=\""<< encode_string <<"\">";
-     << "<DataArray  type=\"Float64\"  Name=\"" << name << "\" format=\""<< encode_string <<"\">";
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    fp << values[vertex->index()] << ' ';
-  fp << "</DataArray>\n"
-     << "</PointData>\n";
-
-
-  fp << "</Piece>\n</UnstructuredGrid>\n</VTKFile>\n";
-  fp.close();
-}
-
-
-
-void dolfin_write_medit_triangles(const std::string& filename,
-				  const dolfin::MultiMesh& mm,
-				  //const std::vector<std::vector<double>> *u=0,
-				  const int t=0)
-{
-  std::stringstream ss;
-  ss<<filename<<"."<<t<<".mesh";
-  std::ofstream file(ss.str().c_str());
-  if (!file.good()) { std::cout << "sth wrong with the file " << ss.str()<<'\n'; exit(0); }
-  file.precision(13);
-
-  // write vertices
-  std::size_t nno=0;
-  for (std::size_t i=0; i<mm.num_parts(); ++i)
-    nno += mm.part(i)->num_vertices();
-  file << "MeshVersionFormatted 1\nDimension\n2\nVertices\n"
-       << nno<<'\n';
-  for (std::size_t i=0; i<mm.num_parts(); ++i) {
-    const std::vector<double>& coords = mm.part(i)->coordinates();
-    for (std::size_t j=0; j<mm.part(i)->num_vertices(); ++j)
-      file << coords[2*j]<<' '<<coords[2*j+1]<<' '<<i+1<<'\n';
-  }
-  // write connectivity
-  std::size_t nel=0;
-  for (std::size_t i=0; i<mm.num_parts(); ++i)
-    nel += mm.part(i)->num_cells();
-  file << "Triangles\n"
-       << nel <<'\n';
-  std::size_t offset=-mm.part(0)->num_vertices();
-  for (std::size_t i=0; i<mm.num_parts(); ++i) {
-    const std::vector<unsigned int>& cells = mm.part(i)->cells();
-    offset+=mm.part(i)->num_vertices();
-    for (std::size_t e = 0; e < mm.part(i)->num_cells(); ++e)
-      file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n';
-  }
-  file.close();
-
-  {
-    std::stringstream ss;
-    ss<<filename<<"."<<t<<".bb";
-    std::ofstream file(ss.str().c_str());
-    if (!file.good()) { std::cout << "sth wrong with the file " << ss.str()<<'\n'; exit(0); }
-    file.precision(13);
-    file << "3 1 " << nel << " 1\n";
-
-    for (std::size_t i=0; i<mm.num_parts(); ++i)
-      for (std::size_t j=0; j<mm.part(i)->num_cells(); ++j)
-	file << i+1 <<'\n';
-    file.close();
-  }
-
-}
 
 
 class MultiMeshes : public CppUnit::TestFixture
@@ -197,23 +47,25 @@ public:
     set_log_level(DEBUG);
 
     UnitSquareMesh mesh_0(1, 1);
-    RectangleMesh mesh_1(0.100000, 0.200000, 0.700000, 0.800000, 1, 1);
-    RectangleMesh mesh_2(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
-    //mesh_2.rotate(8.002805e-01, 2);
-    //mesh_2.rotate(1.418863e-01, 2);
-    mesh_2.rotate(0.01, 2);
-    RectangleMesh mesh_3(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
-    //mesh_3.rotate(1.418863e-01, 2);
-    //mesh_3.rotate(4.217613e-01, 2);
-    mesh_3.rotate(0.02, 2);
+    RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    mesh_1.rotate(0.000001, 2);
 
-    RectangleMesh mesh_4(0.200000, 0.200000, 0.800000, 0.800000, 2, 1);
-    //mesh_4.rotate(4.217613e-01, 2);
-    //mesh_4.rotate(8.002805e-01, 2);
-    mesh_4.rotate(0.03, 2);
+    // RectangleMesh mesh_2(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // //mesh_2.rotate(8.002805e-01, 2);
+    // //mesh_2.rotate(1.418863e-01, 2);
+    // mesh_2.rotate(0.1, 2);
+    // RectangleMesh mesh_3(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // //mesh_3.rotate(1.418863e-01, 2);
+    // //mesh_3.rotate(4.217613e-01, 2);
+    // mesh_3.rotate(0.002, 2);
 
-    RectangleMesh mesh_5(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
-    mesh_5.rotate(9.157355e-01, 2);
+    // RectangleMesh mesh_4(0.200000, 0.200000, 0.800000, 0.800000, 2, 1);
+    // //mesh_4.rotate(4.217613e-01, 2);
+    // //mesh_4.rotate(8.002805e-01, 2);
+    // mesh_4.rotate(0.003, 2);
+
+    // RectangleMesh mesh_5(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    // mesh_5.rotate(0.004, 2);
     // RectangleMesh mesh_6(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
     // mesh_6.rotate(7.922073e-01, 2);
     // RectangleMesh mesh_7(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
@@ -238,9 +90,9 @@ public:
     MultiMesh multimesh;
     multimesh.add(mesh_0);
     multimesh.add(mesh_1);
-    multimesh.add(mesh_2);
-    multimesh.add(mesh_3);
-    //multimesh.add(mesh_4);
+    // multimesh.add(mesh_2);
+    // multimesh.add(mesh_3);
+    // multimesh.add(mesh_4);
     // multimesh.add(mesh_5);
     // multimesh.add(mesh_6);
     // multimesh.add(mesh_7);
@@ -256,7 +108,7 @@ public:
 
 
 
-    //   UnitSquareMesh mesh_0(1, 1);
+    // UnitSquareMesh mesh_0(1, 1);
     // RectangleMesh mesh_1(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
     // mesh_1.rotate(5, 2);
     // RectangleMesh mesh_2(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
@@ -278,19 +130,21 @@ public:
     // RectangleMesh mesh_10(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
     // mesh_10.rotate(50, 2);
 
-    // //MultiMesh multimesh;
+    // MultiMesh multimesh;
     // multimesh.add(mesh_0);
     // multimesh.add(mesh_1);
     // multimesh.add(mesh_2);
     // multimesh.add(mesh_3);
-    // // multimesh.add(mesh_4);
-    // // multimesh.add(mesh_5);
-    // // multimesh.add(mesh_6);
-    // // multimesh.add(mesh_7);
-    // // multimesh.add(mesh_8);
-    // // multimesh.add(mesh_9);
-    // // multimesh.add(mesh_10);
+    // multimesh.add(mesh_4);
+    // multimesh.add(mesh_5);
+    // multimesh.add(mesh_6);
+    // multimesh.add(mesh_7);
+    // multimesh.add(mesh_8);
+    // multimesh.add(mesh_9);
+    // multimesh.add(mesh_10);
     // multimesh.build();
+
+
     // UnitSquareMesh mesh_0(1, 1);
     // RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, 1, 1);
     // RectangleMesh mesh_2(0.3, 0.3, 0.7, 0.7, 1, 1);
@@ -419,11 +273,14 @@ public:
     // multimesh.add(mesh_9);
     // multimesh.add(mesh_10);
     // multimesh.add(mesh_11);
-    // //multimesh.add(mesh_12);
-    // //multimesh.add(mesh_13);
+    // // multimesh.add(mesh_12);
+    // // multimesh.add(mesh_13);
     // // multimesh.add(mesh_14);
-    // // multimesh.add(mesh_15);
+    // //multimesh.add(mesh_15);
     // multimesh.build();
+
+
+
     // UnitSquareMesh mesh_0(1, 1);
     // RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, 1, 1);
     // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
@@ -617,11 +474,17 @@ public:
     // multimesh.add(mesh_15);
     // multimesh.build();
 
+    // Parameters p;
+    // p("multimesh")["quadrature_order"] = 6;
 
-    dolfin_write_medit_triangles("multimesh",multimesh);
+    // MultiMeshFunctionSpace W;
+    // W.parameters("multimesh")["quadrature_order"] = 6;
+
+
+    tools::dolfin_write_medit_triangles("multimesh",multimesh);
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
-      write_vtu_hack("mesh",*multimesh.part(part),part);
+      tools::write_vtu_hack("mesh",*multimesh.part(part),part);
       // std::stringstream ss; ss << part;
       // File file("mesh"+ss.str()+".vtk");
       // file << *multimesh.part(part);

@@ -485,7 +485,7 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
 
   // Cosine should be 1 (if -1 then point and p1 are on opposite sides
   // of p0)
-  if (std::abs(1-cosa) < DOLFIN_EPS_LARGE)
+  if (std::abs(1-cosa) < DOLFIN_EPS)
   {
     // Check if projected point is between p0 and p1
     const double t = wnorm / vnorm;

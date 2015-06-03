@@ -32,7 +32,7 @@
 #include "MeshFunction.h"
 #include "MultiMesh.h"
 // FIXME August
-#include <dolfin/dolfin_write_medit.h>
+#include <dolfin/dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
@@ -435,15 +435,15 @@ void MultiMesh::_build_quadrature_rules_overlap()
     }
   }
 
+  std::cout.precision(15);
+
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
-    double areapos = 0, areaminus = 0;
     std::cout << "----- cut part: " << cut_part <<std::endl;
+    tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
+    //double areapos = 0, areaminus = 0;
 
-    {
-      medit::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
-    }
 
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
@@ -477,7 +477,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
 
 	std::cout << "\ncut cutting (cutting part=" << cutting_part << ")" << std::endl;
-	std::cout << medit::drawtriangle(cut_cell,"'y'")<<medit::drawtriangle(cutting_cell,"'m'")<<std::endl;
+	std::cout << tools::drawtriangle(cut_cell,"'y'")<<tools::drawtriangle(cutting_cell,"'m'")<<std::endl;
 
   	// Only allow same type of cell for now
       	dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
@@ -487,8 +487,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
   	const std::vector<double> intersection
 	  = IntersectionTriangulation::triangulate_intersection(cut_cell,
 								cutting_cell);
-	//const
-	Polyhedron polyhedron = convert(intersection, tdim, gdim);
+	const Polyhedron polyhedron = convert(intersection, tdim, gdim);
 
 	{
 	  std::cout << "intersection (size="<<intersection.size()<<": ";
@@ -498,42 +497,23 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	  if (polyhedron.size())
 	  {
 	    for (const auto simplex: polyhedron)
-	      std::cout << medit::drawtriangle(simplex,"'k'");
+	      std::cout << tools::drawtriangle(simplex,"'k'");
 	    std::cout << std::endl;
-	    std::cout << "areas: ";
+	    std::cout << "areas=[";
 	    for (const auto simplex: polyhedron)
-	      std::cout << medit::area(simplex)<<' ';
-	    std::cout << std::endl;
+	      std::cout << tools::area(simplex)<<' ';
+	    std::cout << "];"<<std::endl;
 	  }
 	}
 
 	// Flip triangles in polyhedron to maximize minimum angle
-	const bool flipped = false;//maximize_minimum_angle(polyhedron);
+	//const bool flipped = false;//maximize_minimum_angle(polyhedron);
 
 	// Store key and polyhedron
 	initial_polyhedra.push_back(std::make_pair(initial_polyhedra.size(),
 						   polyhedron));
-
-	if (flipped)
-	{
-	  std::cout << "after flip\n";
-	  std::cout << "intersection (size="<<intersection.size()<<": ";
-	  for (std::size_t i = 0; i < intersection.size(); ++i)
-	    std::cout << intersection[i]<<' ';
-	  std::cout<<")\n";
-	  if (polyhedron.size())
-	  {
-	    for (const auto simplex: polyhedron)
-	      std::cout << medit::drawtriangle(simplex,"'k'");
-	    std::cout << std::endl;
-	    std::cout << "areas: ";
-	    for (const auto simplex: polyhedron)
-	      std::cout << medit::area(simplex)<<' ';
-	    std::cout << std::endl;
-	  }
-	}
       }
-      PPause;
+      //PPause;
 
       // Exclusion-inclusion principle. There are N stages in the
       // principle, where N = polyhedra.size(). The first stage is
@@ -575,7 +555,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	for (const auto polyhedron: previous_intersections)
 	  for (const auto simplex: polyhedron.second)
 	  {
-	    areapos += medit::area(simplex);
+	    //areapos += tools::area(simplex);
 	    std::vector<double> x = convert(simplex, tdim, gdim);
 	    _add_quadrature_rule(overlap_part_qr, x,
 				 tdim, gdim, quadrature_order, sign);
@@ -590,7 +570,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
       for (std::size_t stage = 1; stage < N; ++stage)
       {
-      	std::cout << "----------------- stage " << stage << std::endl;
+	std::cout << "----------------- stage " << stage << std::endl;
 
       	// Structure for storing new intersections
       	std::vector<std::pair<std::vector<std::size_t>,
@@ -615,10 +595,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
 	      // {
 	      // 	for (const auto previous_simplex: previous_polyhedron.second)
-	      // 	  std::cout << medit::drawtriangle(previous_simplex,"'b'");
+	      // 	  std::cout << tools::drawtriangle(previous_simplex,"'b'");
 	      // 	std::cout << '\n';
 	      // 	for (const auto initial_simplex: initial_polyhedron.second)
-	      // 	  std::cout << medit::drawtriangle(initial_simplex,"'r'");
+	      // 	  std::cout << tools::drawtriangle(initial_simplex,"'r'");
 	      // 	std::cout<<'\n';
 	      // }
 
@@ -638,10 +618,6 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	      {
 		for (const auto initial_simplex: initial_polyhedron.second)
 		{
-		  std::cout << '\n'<<medit::drawtriangle(previous_simplex,"'b'")
-		  	    << medit::drawtriangle(initial_simplex,"'r'")<<std::endl;
-		  std::cout << "areas: " << medit::area(previous_simplex)<<' '<<medit::area(initial_simplex)<<'\n';
-		  const double min_area = std::min(medit::area(previous_simplex), medit::area(initial_simplex));
 
 		  // Compute the intersection (a polyhedron)
 		  const std::vector<double> ii
@@ -661,44 +637,50 @@ void MultiMesh::_build_quadrature_rules_overlap()
 		    // Test only add if area is large
 		    for (const auto simplex: pii)
 		    {
-		      const double area = medit::area(simplex);
+		      const double area = tools::area(simplex);
 		      if (std::isfinite(area) and area > DOLFIN_EPS_LARGE)
 		      //if (std::isfinite(area) and area > 1e-13)
 		      {
-			std::cout << "added simplex with area " << area << std::endl;
+			//std::cout << "added simplex with area " << area << std::endl;
 
 			new_polyhedron.push_back(simplex);
 			any_intersections = true;
 		      }
-		      else
-		      {
-			std::cout << "skipped simplex with area = "  << area << std::endl;
+		      // else
+		      // {
+		      // 	std::cout << "skipped simplex with area = "  << area << std::endl;
 
-			// // debug
-			// if (!std::isfinite(area))
-			// {
-			//   for (const auto pt: simplex)
-			//     for (int d = 0; d < 2; ++d)
-			//       std::cout<<std::setprecision(16) << pt[d]<<' ';
-			//   std::cout << std::endl;
-			// }
+		      // 	// // debug
+		      // 	// if (!std::isfinite(area))
+		      // 	// {
+		      // 	//   for (const auto pt: simplex)
+		      // 	//     for (int d = 0; d < 2; ++d)
+		      // 	//       std::cout<<std::setprecision(16) << pt[d]<<' ';
+		      // 	//   std::cout << std::endl;
+		      // 	// }
+		      // }
+		    }
+
+		    {
+		      std::cout << '\n'<<tools::drawtriangle(previous_simplex,"'b'")
+				<< tools::drawtriangle(initial_simplex,"'r'")<<std::endl;
+		      std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
+		      const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
+
+		      std::cout << "resulting intersection:\n";
+		      for (const auto simplex: pii)
+			std::cout << tools::drawtriangle(simplex,"'g'");
+		      std::cout<<'\n';
+		      double intersection_area = 0;
+		      std::cout << "areas: ";
+		      for (const auto simplex: pii) {
+			intersection_area += tools::area(simplex);
+			std::cout << tools::area(simplex) <<' ';
 		      }
+		      std::cout<<'\n';
+		      if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
 		    }
 
-		    // new_polyhedron.insert(new_polyhedron.end(), pii.begin(), pii.end());
-
-		    std::cout << "resulting intersection:\n";
-		    for (const auto simplex: pii)
-		      std::cout << medit::drawtriangle(simplex,"'g'");
-		    std::cout<<'\n';
-		    double intersection_area = 0;
-		    std::cout << "areas: ";
-		    for (const auto simplex: pii) {
-		      intersection_area += medit::area(simplex);
-		      std::cout << medit::area(simplex) <<' ';
-		    }
-		    std::cout<<'\n';
-		    if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
 		  }
 		}
 	      }
@@ -742,7 +724,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	//   for (const auto previous_polyhedron: previous_intersections)
 	//   {
 	//     for (const auto simplex: previous_polyhedron.second)
-	//       std::cout << medit::drawtriangle(simplex);
+	//       std::cout << tools::drawtriangle(simplex);
 	//     std::cout << "    ";
 	//   }
 	//   std::cout << '\n';
@@ -759,7 +741,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	//   for (const auto new_polyhedron: new_intersections)
 	//   {
 	//     for (const auto simplex: new_polyhedron.second)
-	//       std::cout << medit::drawtriangle(simplex);
+	//       std::cout << tools::drawtriangle(simplex);
 	//     std::cout <<"    ";
 	//   }
 	//   std::cout << '\n';
@@ -780,10 +762,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	for (const auto polyhedron: new_intersections)
 	  for (const auto simplex: polyhedron.second)
 	  {
-	    if (std::abs(sign-1)<1e-10)
-	      areapos += medit::area(simplex);
-	    else
-	      areaminus += medit::area(simplex);
+	    // if (std::abs(sign-1)<1e-10)
+	    //   areapos += tools::area(simplex);
+	    // else
+	    //   areaminus += tools::area(simplex);
 	    std::vector<double> x = convert(simplex, tdim, gdim);
 	    _add_quadrature_rule(overlap_part_qr, x,
 				 tdim, gdim, quadrature_order, sign);
@@ -818,7 +800,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
       // 	for (const auto polyhedron: all_intersections[stage])
       // 	{
       // 	  for (const auto simplex: polyhedron.second)
-      // 	    std::cout << medit::drawtriangle(simplex);
+      // 	    std::cout << tools::drawtriangle(simplex);
 
       // 	  // for (const auto key: polyhedron.first)
       // 	  //   std::cout << key <<' ';
@@ -834,9 +816,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
       // 	{
       // 	  const Point pt(qr.first[gdim*i],qr.first[gdim*i+1]);
       // 	  if (qr.second[i] < 0)
-      // 	    std::cout << medit::matlabplot(pt,"'o'");
+      // 	    std::cout << tools::matlabplot(pt,"'o'");
       // 	  else
-      // 	    std::cout << medit::matlabplot(pt,"'.'");
+      // 	    std::cout << tools::matlabplot(pt,"'.'");
       // 	  std::cout << std::endl;
       // 	}
 
@@ -854,45 +836,46 @@ void MultiMesh::_build_quadrature_rules_overlap()
       //_facet_normals[cut_part][cut_cell_index] = interface_n;
 
     }
-    {
-      // sum
-      double part_volume = 0;
-      double volume = 0;
 
-      // Uncut cell volume given by function volume
-      const auto uncut_cells = this->uncut_cells(cut_part);
-      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
-      {
-	const Cell cell(*part(cut_part), *it);
-	volume += cell.volume();
-	part_volume += cell.volume();
-      }
+    // {
+    //   // sum
+    //   double part_volume = 0;
+    //   double volume = 0;
 
-      // Cut cell volume given by quadrature rule
-      const auto& cut_cells = this->cut_cells(cut_part);
-      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
-      {
-	//const auto& qr = quadrature_rule_cut_cell(cut_part, *it);
-	const auto& overlap_qr = _quadrature_rules_overlap[cut_part][*it];
-	for (const auto qr: overlap_qr)
-	  for (std::size_t i = 0; i < qr.second.size(); ++i)
-	  {
-	    volume += qr.second[i];
-	    part_volume += qr.second[i];
-	  }
-      }
+    //   // Uncut cell volume given by function volume
+    //   const auto uncut_cells = this->uncut_cells(cut_part);
+    //   for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+    //   {
+    // 	const Cell cell(*part(cut_part), *it);
+    // 	volume += cell.volume();
+    // 	part_volume += cell.volume();
+    //   }
 
-      //std::cout<<" volumes "<<std::setprecision(16) << volume <<' ' << part_volume << ' ' <<(areapos-areaminus)<<'\n';
+    //   // Cut cell volume given by quadrature rule
+    //   const auto& cut_cells = this->cut_cells(cut_part);
+    //   for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+    //   {
+    // 	//const auto& qr = quadrature_rule_cut_cell(cut_part, *it);
+    // 	const auto& overlap_qr = _quadrature_rules_overlap[cut_part][*it];
+    // 	for (const auto qr: overlap_qr)
+    // 	  for (std::size_t i = 0; i < qr.second.size(); ++i)
+    // 	  {
+    // 	    volume += qr.second[i];
+    // 	    part_volume += qr.second[i];
+    // 	  }
+    //   }
 
-      // std::cout << "area" << cut_part << " = " << std::setprecision(15)<<areapos << " - " << areaminus << ",   1-("<<areapos<<"-"<<areaminus<<")"<<std::endl;
+    //   //std::cout<<" volumes "<<std::setprecision(16) << volume <<' ' << part_volume << ' ' <<(areapos-areaminus)<<'\n';
 
-      double err=0;
-      if (cut_part == num_parts()-1)
-	err = 0.36-part_volume;
-      else
-	err = (areapos-areaminus)-part_volume;
-      std::cout << "error " << cut_part << " " << err << '\n';
-    }
+    //   // std::cout << "area" << cut_part << " = " << std::setprecision(15)<<areapos << " - " << areaminus << ",   1-("<<areapos<<"-"<<areaminus<<")"<<std::endl;
+
+    //   double err=0;
+    //   if (cut_part == num_parts()-1)
+    // 	err = 0.36-part_volume;
+    //   else
+    // 	err = (areapos-areaminus)-part_volume;
+    //   std::cout << "error " << cut_part << " " << err << '\n';
+    // }
 
   }
 
@@ -1387,12 +1370,12 @@ bool MultiMesh::maximize_minimum_angle(Polyhedron& polyhedron) const
       trino++;
     }
 
-    initial_area += medit::area(tri);
+    initial_area += tools::area(tri);
 
     // if (min_angle < angle_tol)
     // {
     //   std::cout << min_angle << '\n'
-    // 		<< medit::drawtriangle(tri) << '\n'
+    // 		<< tools::drawtriangle(tri) << '\n'
     // 		<< a2 << ' ' << b2<<' ' << c2 << ' ' << alpha << ' ' << beta<<'\n';
 
     //   PPause;
@@ -1406,7 +1389,7 @@ bool MultiMesh::maximize_minimum_angle(Polyhedron& polyhedron) const
   if (min_angle < angle_tol)
   {
     for (const auto tri: polyhedron)
-      std::cout << medit::drawtriangle(tri);
+      std::cout << tools::drawtriangle(tri);
     std::cout << std::endl;
 
     // Must be at least two triangles
@@ -1429,10 +1412,10 @@ bool MultiMesh::maximize_minimum_angle(Polyhedron& polyhedron) const
 	polyhedron = new_polyhedron;
 
 	for (const auto s: polyhedron)
-	  std::cout << medit::drawtriangle(s);
+	  std::cout << tools::drawtriangle(s);
 	std::cout << '\n';
 	for (const auto s: polyhedron)
-	  std::cout << medit::area(s)<<' ';
+	  std::cout << tools::area(s)<<' ';
 	std::cout << '\n';
 
       }
@@ -1443,7 +1426,7 @@ bool MultiMesh::maximize_minimum_angle(Polyhedron& polyhedron) const
 
       double post_area = 0;
       for (const auto tri: polyhedron)
-	post_area += medit::area(tri);
+	post_area += tools::area(tri);
 
       if (std::abs(post_area-initial_area) > 1e-13)
       {
