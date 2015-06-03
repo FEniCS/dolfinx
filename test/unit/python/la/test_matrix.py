@@ -41,13 +41,13 @@ if MPI.size(mpi_comm_world()) == 1:
     # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
     # used in the old test.
     data_backends += [("Eigen", "")]
-    no_data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse"), ("PETScCusp", "")]
+    no_data_backends += [("PETScCusp", "")]
 
 
 # TODO: STL tests were disabled in old test framework, and do not work now:
 # If we have PETSc, STL Vector gets typedefed to one of these and data
 # test will not work. If none of these backends are available
-# STLVector defaults to uBLASVEctor, which data will work
+# STLVector defaults to EigenVEctor, which data will work
 #if has_linear_algebra_backend("PETSc"):
 #    no_data_backends += [("STL", "")]
 #else:
@@ -105,10 +105,6 @@ class TestMatrixForAnyBackend:
         self.backend, self.sub_backend = any_backend
 
         from numpy import ndarray, array, ones, sum
-
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and not use_backend:
-            return
 
         A, B = self.assemble_matrices(use_backend)
         unit_norm = A.norm('frobenius')
@@ -174,10 +170,6 @@ class TestMatrixForAnyBackend:
         self.backend, self.sub_backend = any_backend
 
         from numpy import ndarray, array, ones, sum
-
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and not use_backend:
-            return
 
         # Assemble matrices
         A, B = self.assemble_matrices(use_backend)
@@ -343,15 +335,10 @@ class TestMatrixForAnyBackend:
 
 
     # Test the access of the raw data through pointers
-    # This is only available for uBLAS and MTL4 backends
+    # This is only available for the Eigen backend
     def test_matrix_data(self, use_backend, data_backend):
         """ Test for ordinary Matrix"""
         self.backend, self.sub_backend = data_backend
-
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and \
-               (not use_backend or self.sub_backend =="Dense"):
-            return
 
         A, B = self.assemble_matrices(use_backend)
         A = as_backend_type(A)

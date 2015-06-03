@@ -24,7 +24,7 @@ import pytest
 
 from dolfin_utils.test import *
 
-backends = ["PETSc", skip_in_parallel("uBLAS")]
+backends = ["PETSc"]
 
 # Backends supporting the LinearOperator interface
 @pytest.mark.parametrize('backend', backends)

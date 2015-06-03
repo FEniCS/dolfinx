@@ -21,7 +21,6 @@
 // Last changed: 2011-11-11
 
 #include <dolfin/parameter/GlobalParameters.h>
-#include "uBLASFactory.h"
 #include "EigenFactory.h"
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
@@ -87,15 +86,12 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
   const std::string default_backend = "Eigen";
-  typedef uBLASFactory<> DefaultFactory;
 
   // Get backend from parameter system
   const std::string backend = dolfin::parameters["linear_algebra_backend"];
 
   // Choose backend
-  if (backend == "uBLAS")
-    return uBLASFactory<>::instance();
-  else if (backend == "Eigen")
+  if (backend == "Eigen")
     return EigenFactory::instance();
   else if (backend == "PETSc")
   {
@@ -118,13 +114,11 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
     #endif
   }
   else if (backend == "STL")
-  {
     return STLFactory::instance();
-  }
 
   // Fallback
   log(WARNING, "Linear algebra backend \"" + backend
       + "\" not available, using " + default_backend + ".");
-  return DefaultFactory::instance();
+  return EigenFactory::instance();
 }
 //-----------------------------------------------------------------------------
