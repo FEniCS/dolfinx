@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2015-06-02
+// Last changed: 2015-06-03
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -444,10 +444,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
       points.push_back(tri_1[i]);
   }
 
-  std::cout << "after triangle_point: ";
-  for (const auto p: points)
-    std::cout << p[0]<<' '<<p[1]<< "     ";
-  std::cout << '\n';
+  // std::cout << "after triangle_point: ";
+  // for (const auto p: points)
+  //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // std::cout << '\n';
 
 
 
@@ -468,10 +468,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
     }
   }
 
-  std::cout << "after edge-edge: ";
-  for (const auto p: points)
-    std::cout << p[0]<<' '<<p[1]<< "     ";
-  std::cout << '\n';
+  // std::cout << "after edge-edge: ";
+  // for (const auto p: points)
+  //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // std::cout << '\n';
 
 
 
@@ -504,10 +504,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   }
 
 
-  std::cout << "after edge-point: ";
-  for (const auto p: points)
-    std::cout << p[0]<<' '<<p[1]<< "     ";
-  std::cout << '\n';
+  // std::cout << "after edge-point: ";
+  // for (const auto p: points)
+  //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // std::cout << '\n';
 
 
 
@@ -550,11 +550,11 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // point. This avoids skinny triangles in multimesh.
   std::vector<std::pair<double, std::size_t>> order(points.size());
 
-  for (const auto p: points)
-  {
-    std::cout << p[0]<<' '<<p[1]<< "     ";
-  }
-  std::cout << '\n';
+  // for (const auto p: points)
+  // {
+  //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // }
+  // std::cout << '\n';
 
   // Create triangulation using center point.
   Point c = points[0];
@@ -1314,7 +1314,7 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
   const double orth_tol = DOLFIN_EPS_LARGE;
 
   // Tolerance for coplanarity
-  const double coplanar_tol = DOLFIN_EPS_LARGE;
+  //const double coplanar_tol = DOLFIN_EPS_LARGE;
 
   const Point L1 = b - a;
   const Point L2 = d - c;
