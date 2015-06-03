@@ -576,26 +576,31 @@ def test_reference_assembly(filedir):
     assemble(dot(grad(v), grad(u))*dx, tensor=A)
     assemble(v*u*dx, tensor=M)
 
-    A = A.sparray().todense()
-    M = M.sparray().todense()
+    # Run test (requires SciPy)
+    try:
+        import scipy
+        A = A.sparray().todense()
+        M = M.sparray().todense()
 
-    # Create reference matrices and set entries
-    A0 = numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
-                      [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
-                      [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
-                      [-1.0/6.0, 0.0, 0.0, 1.0/6.0]])
-    M0 = numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
-                      [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
-                      [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
-                      [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]])
+        # Create reference matrices and set entries
+        A0 = numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
+                          [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
+                          [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
+                          [-1.0/6.0, 0.0, 0.0, 1.0/6.0]])
+        M0 = numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]])
 
-    C = A - A0
-    assert round(numpy.linalg.norm(C, 'fro') - 0.0, 7) == 0
-    D = M - M0
-    assert round(numpy.linalg.norm(D, 'fro') - 0.0, 7) == 0
+        C = A - A0
+        assert round(numpy.linalg.norm(C, 'fro') - 0.0, 7) == 0
+        D = M - M0
+        assert round(numpy.linalg.norm(D, 'fro') - 0.0, 7) == 0
 
-    parameters["reorder_dofs_serial"] = reorder_dofs
+        parameters["reorder_dofs_serial"] = reorder_dofs
 
+    except:
+        print("Cannot run this test without SciPy")
 
 def test_ways_to_pass_mesh_to_assembler():
     mesh = UnitSquareMesh(16, 16)
