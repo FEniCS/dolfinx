@@ -601,6 +601,7 @@ def test_reference_assembly(filedir):
 
     except:
         print("Cannot run this test without SciPy")
+        parameters["reorder_dofs_serial"] = reorder_dofs
 
 def test_ways_to_pass_mesh_to_assembler():
     mesh = UnitSquareMesh(16, 16)
