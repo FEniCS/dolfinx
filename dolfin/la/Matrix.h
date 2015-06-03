@@ -25,8 +25,8 @@
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
-#include <boost/tuple/tuple.hpp>
 #include <memory>
+#include <tuple>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
@@ -206,12 +206,6 @@ namespace dolfin
     /// Test if matrix is symmetric
     virtual bool is_symmetric(double tol) const
     { return matrix->is_symmetric(tol); }
-
-    /// Return pointers to underlying compressed storage data.
-    /// See GenericMatrix for documentation.
-    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
-      const double*, int> data() const
-    { return matrix->data(); }
 
     //--- Special functions ---
 

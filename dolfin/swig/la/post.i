@@ -492,35 +492,72 @@ def la_index_dtype():
 }
 
 // ---------------------------------------------------------------------------
-// Modify the GenericMatrix interface
+// Modify the EigenMatrix interface
 // ---------------------------------------------------------------------------
-%feature("docstring") dolfin::GenericMatrix::_scale "Missing docstring";
-%feature("docstring") dolfin::GenericMatrix::_data "Missing docstring";
-%extend dolfin::GenericMatrix
+%feature("docstring") dolfin::EigenMatrix::_data "Missing docstring";
+%extend dolfin::EigenMatrix
 {
-  void _scale(double a)
-  {
-    (*self)*=a;
-  }
-
   PyObject* _data()
   {
-    PyObject* rows = %make_numpy_array(1, size_t)(self->size(0)+1,
-                                                 boost::tuples::get<0>(self->data()),
-                                                 false);
-    PyObject* cols = %make_numpy_array(1, size_t)(boost::tuples::get<3>(self->data()),
-                                                 boost::tuples::get<1>(self->data()),
-                                                 false);
-    PyObject* values = %make_numpy_array(1, double)(boost::tuples::get<3>(self->data()),
-                                                   boost::tuples::get<2>(self->data()),
-                                                   false);
+    PyObject* rows = %make_numpy_array(1, int)(self->size(0)+1,
+                                               std::get<0>(self->data()),
+                                               false);
+    PyObject* cols = %make_numpy_array(1, int)(std::get<3>(self->data()),
+                                               std::get<1>(self->data()),
+                                               false);
+    PyObject* values = %make_numpy_array(1, double)(std::get<3>(self->data()),
+                                                    std::get<2>(self->data()),
+                                                    false);
 
     if ( rows == NULL || cols == NULL || values == NULL)
       return NULL;
 
     return Py_BuildValue("NNN", rows, cols, values);
   }
+
+  %pythoncode
+  %{
+    def data(self, deepcopy=True):
+        """
+        Return arrays to underlaying compresssed row/column storage data
+
+        This method is only available for the Eigen linear algebra backend.
+
+        *Arguments*
+            deepcopy
+                Return a copy of the data. If set to False a reference
+                to the Matrix need to be kept, otherwise the data will be
+                destroyed together with the destruction of the Matrix
+        """
+        rows, cols, values = self._data()
+        if deepcopy:
+            rows, cols, values = rows.astype(int), cols.astype(int), values.copy()
+        else:
+            _attach_base_to_numpy_array(rows, self)
+            _attach_base_to_numpy_array(cols, self)
+            _attach_base_to_numpy_array(values, self)
+
+        return rows, cols, values
+
+    def sparray(self):
+        "Return a scipy.sparse representation of Matrix"
+        from scipy.sparse import csr_matrix
+        data = self.data(deepcopy=True)
+        C = csr_matrix((data[2], data[1], data[0]))
+        return C
+  %}
+}
 // ---------------------------------------------------------------------------
+// Modify the GenericMatrix interface
+// ---------------------------------------------------------------------------
+%feature("docstring") dolfin::GenericMatrix::_scale "Missing docstring";
+%extend dolfin::GenericMatrix
+{
+  void _scale(double a)
+  {
+    (*self)*=a;
+  }
+  // -------------------------------------------------------------------------
   %pythoncode
   %{
     def __is_compatible(self,other):
@@ -540,38 +577,9 @@ def la_index_dtype():
             A[i, column] = values
         return A
 
-    def sparray(self):
-        "Return a scipy.sparse representation of Matrix"
-        from scipy.sparse import csr_matrix
-        data = self.data(deepcopy=True)
-        C = csr_matrix((data[2], data[1], data[0]))
-        return C
 
-    def data(self, deepcopy=True):
-        """
-        Return arrays to underlaying compresssed row/column storage data
-
-        This method is only available for the uBLAS linear algebra
-        backend.
-
-        *Arguments*
-            deepcopy
-                Return a copy of the data. If set to False a reference
-                to the Matrix need to be kept, otherwise the data will be
-                destroyed together with the destruction of the Matrix
-        """
-        rows, cols, values = self._data()
-        if deepcopy:
-            rows, cols, values = rows.astype(int), cols.astype(int), values.copy()
-        else:
-            _attach_base_to_numpy_array(rows, self)
-            _attach_base_to_numpy_array(cols, self)
-            _attach_base_to_numpy_array(values, self)
-
-        return rows, cols, values
-
-    # FIXME: Getting matrix entries need to be carefully examined, especially for
-    #        parallel objects.
+    # FIXME: Getting matrix entries need to be carefully examined, especially
+    #          for parallel objects.
     """
     def __getitem__(self,indices):
         from numpy import ndarray
@@ -810,7 +818,7 @@ def la_index_dtype():
         """
         Return an array to underlaying data
 
-        This method is only available for the uBLAS linear algebra
+        This method is only available for the Eigen linear algebra
         backend.
 
         *Arguments*
@@ -852,8 +860,7 @@ _as_backend_type_map[TENSOR_TYPE] = _as_backend_type_ ## TENSOR_TYPE
 // ---------------------------------------------------------------------------
 // Run the data macro
 // ---------------------------------------------------------------------------
-LA_VEC_DATA_ACCESS(uBLASVector)
-LA_VEC_DATA_ACCESS(Vector)
+LA_VEC_DATA_ACCESS(EigenVector)
 
 // ---------------------------------------------------------------------------
 // Define Python lookup maps for as_backend_typeing

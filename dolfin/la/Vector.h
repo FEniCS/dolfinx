@@ -257,14 +257,6 @@ namespace dolfin
     const Vector& operator= (double a)
     { *vector = a; return *this; }
 
-    /// Return pointer to underlying data (const version)
-    virtual const double* data() const
-    { return vector->data(); }
-
-    /// Return pointer to underlying data
-    virtual double* data()
-    { return vector->data(); }
-
     //--- Special functions ---
 
     /// Return linear algebra backend factory

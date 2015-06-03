@@ -21,13 +21,12 @@
 
 #include <cstdio>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <string>
 #include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/multi_array.hpp>
-
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -393,7 +392,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       for (it = domain.begin(); it != domain.end(); ++it)
         collection.set_value(it->first, it->second);
       const std::string marker_dataset
-        = name + "/domain_" + boost::lexical_cast<std::string>(d);
+        = name + "/domain_" + std::to_string(d);
       write_mesh_value_collection(collection, marker_dataset);
     }
 
@@ -775,8 +774,7 @@ void HDF5File::write(const Function& u,  const std::string name,
     // Get count of vectors in dataset, and increment
     std::size_t vec_count;
     attr.get("count", vec_count);
-    std::string vec_name = name
-      + "/vector_" + boost::lexical_cast<std::string>(vec_count);
+    std::string vec_name = name + "/vector_" + std::to_string(vec_count);
     ++vec_count;
     attr.set("count", vec_count);
 
@@ -1485,8 +1483,8 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   // Check if we have any domains
   for (std::size_t d = 0; d <= input_mesh.topology().dim(); ++d)
   {
-    const std::string marker_dataset
-      = mesh_name + "/domain_" + boost::lexical_cast<std::string>(d);
+    const std::string marker_dataset = mesh_name + "/domain_"
+      + std::to_string(d);
     if (!has_dataset(marker_dataset))
       continue;
 

@@ -24,9 +24,9 @@
 #include <memory>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include "pugixml.hpp"
 
@@ -131,7 +131,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);
   std::vector<std::string> v_str(num_vertices_per_cell);
   for (std::size_t i = 0; i < num_vertices_per_cell; ++i)
-    v_str[i] = "v" + boost::lexical_cast<std::string, unsigned int>(i);
+    v_str[i] = "v" + std::to_string(i);
 
   // Iterate over cells and add to mesh
   std::vector<std::size_t> v(num_vertices_per_cell);

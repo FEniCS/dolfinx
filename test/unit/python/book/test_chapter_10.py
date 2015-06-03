@@ -43,22 +43,27 @@ def create_data(A=None):
     x = Vector()
     return A, x, b
 
+
 @use_gc_barrier
 def test_p4_box_1():
     x = Vector()
+
 
 @use_gc_barrier
 def test_p4_box_2():
     A = Matrix()
 
+
 @use_gc_barrier
 def test_p5_box_1():
     x = Vector(mpi_comm_world(), 100)
+
 
 @use_gc_barrier
 def test_p5_box_2():
     A, x, b = create_data()
     solve(A, x, b)
+
 
 @skip_in_parallel
 def test_p5_box_3():
@@ -66,17 +71,20 @@ def test_p5_box_3():
     solve(A, x, b, "lu")
     solve(A, x, b, "gmres", "ilu")
 
+
 @skip_in_parallel
 def test_p5_box_4():
     list_lu_solver_methods()
     list_krylov_solver_methods()
     list_krylov_solver_preconditioners()
 
+
 @use_gc_barrier
 def test_p6_box_1():
     A, x, b = create_data()
     solver = LUSolver(A)
     solver.solve(x, b)
+
 
 @use_gc_barrier
 def test_p6_box_2():
@@ -85,16 +93,19 @@ def test_p6_box_2():
     solver.set_operator(A)
     solver.solve(x, b)
 
+
 @skip_in_parallel
 def test_p6_box_3():
     solver = LUSolver()
     solver.parameters["same_nonzero_pattern"] = True
+
 
 @use_gc_barrier
 def test_p6_box_4():
     A, x, b = create_data()
     solver = KrylovSolver(A)
     solver.solve(x, b)
+
 
 @use_gc_barrier
 def test_p7_box_1():
@@ -103,6 +114,7 @@ def test_p7_box_1():
     solver.set_operator(A)
     solver.solve(x, b)
 
+
 @use_gc_barrier
 def test_p7_box_2():
     A, x, b = create_data()
@@ -110,6 +122,7 @@ def test_p7_box_2():
     solver = KrylovSolver()
     solver.set_operators(A, P)
     solver.solve(x, b)
+
 
 @use_gc_barrier
 def test_p7_box_3():
@@ -121,15 +134,18 @@ def test_p7_box_3():
     solver.parameters["error_on_nonconvergence"] = True
     solver.parameters["nonzero_initial_guess"] = False
 
+
 @use_gc_barrier
 def test_p7_box_4():
     solver = KrylovSolver()
     solver.parameters["report"] = True
     solver.parameters["monitor_convergence"] = True
 
+
 @use_gc_barrier
 def test_p8_box_1():
     solver = KrylovSolver("gmres", "ilu")
+
 
 @skip_if_not_PETsc_or_not_slepc
 @use_gc_barrier
@@ -140,6 +156,7 @@ def test_p8_box_2():
     eigensolver.solve()
     lambda_r, lambda_c, x_real, x_complex = eigensolver.get_eigenpair(0)
 
+
 @skip_if_not_PETsc_or_not_slepc
 @use_gc_barrier
 def test_p9_box_1():
@@ -149,16 +166,19 @@ def test_p9_box_1():
     M, x, b = create_data(M)
     eigensolver = SLEPcEigenSolver(A, M)
 
+
 @skip_if_not_PETSc
 @use_gc_barrier
 def test_p9_box_2(pushpop_parameters):
     parameters["linear_algebra_backend"] = "PETSc"
+
 
 @skip_if_not_PETSc
 @use_gc_barrier
 def test_p9_box_3():
     x = PETScVector()
     solver = PETScLUSolver()
+
 
 @use_gc_barrier
 def test_p10_box_1():
@@ -177,6 +197,7 @@ def test_p10_box_1():
         def J(self, A, x):
             assemble(self.a, tensor=A)
             self.bc.apply(A)
+
 
 @use_gc_barrier
 def test_p11_box_1():
@@ -209,6 +230,7 @@ def test_p11_box_1():
     newton_solver = NewtonSolver()
     newton_solver.solve(problem, u.vector())
 
+
 @use_gc_barrier
 def test_p11_box_2():
     newton_solver = NewtonSolver()
@@ -217,10 +239,12 @@ def test_p11_box_2():
     newton_solver.parameters["absolute_tolerance"] = 1.0e-10
     newton_solver.parameters["error_on_nonconvergence"] = False
 
+
 @use_gc_barrier
 def test_p11_box_3():
     unit_square = UnitSquareMesh(16, 16)
     unit_cube = UnitCubeMesh(16, 16, 16)
+
 
 @skip_in_parallel
 def test_p12_box_1():
@@ -248,11 +272,13 @@ def test_p14_box_1():
     vertex = Vertex(mesh, 33)
     cell = Cell(mesh, 25)
 
+
 @use_gc_barrier
 def test_p14_box_2():
     mesh = UnitSquareMesh(3, 3)
     gdim = mesh.topology().dim()
     tdim = mesh.geometry().dim()
+
 
 @skip_in_parallel
 def test_p15_box_1():
@@ -260,6 +286,7 @@ def test_p15_box_1():
     mesh.init(2)
     mesh.init(0, 0)
     mesh.init(1, 1)
+
 
 @use_gc_barrier
 def test_p15_box_2():
@@ -269,6 +296,7 @@ def test_p15_box_2():
             for v1 in vertices(v0):
                 print(v1)
 
+
 @use_gc_barrier
 def test_p16_box_1():
     mesh = UnitSquareMesh(3, 3)
@@ -277,6 +305,7 @@ def test_p16_box_1():
         for v0 in entities(c, 0):
             for v1 in entities(v0, 0):
                 print(v1)
+
 
 @use_gc_barrier
 def test_p16_box_2():
@@ -296,6 +325,7 @@ def test_p16_box_2():
         if near(p.y(), 0.0) or near(p.y(), 1.0):
             boundary_markers[facet] = 1
 
+
 @use_gc_barrier
 def test_p17_box_1():
     mesh = UnitSquareMesh(3, 3)
@@ -307,6 +337,7 @@ def test_p17_box_1():
     #sub_domains = mesh.data().mesh_function("sub_domains")
     sub_domains = mesh.data().create_array("sub_domains", 2)
     sub_domains = mesh.data().array("sub_domains", 2)
+
 
 @use_gc_barrier
 def test_p17_box_2():
@@ -323,6 +354,7 @@ def test_p17_box_2():
             cell_markers[cell] = True
     mesh = refine(mesh, cell_markers)
 
+
 @use_gc_barrier
 def test_p19_box_1():
     element = FiniteElement("Lagrange", tetrahedron, 5)
@@ -332,20 +364,24 @@ def test_p19_box_1():
     element = FiniteElement("Nedelec 1st kind H(curl)", tetrahedron, 2)
     element = FiniteElement("N1curl", tetrahedron, 2)
 
+
 @use_gc_barrier
 def test_p20_box_1():
     element = FiniteElement("Lagrange", triangle, 1)
+
 
 @use_gc_barrier
 def test_p20_box_2():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
+
 @use_gc_barrier
 def test_p20_box_3():
     V = VectorElement("Lagrange", triangle, 2)
     Q = FiniteElement("Lagrange", triangle, 1)
     W = V*Q
+
 
 @use_gc_barrier
 def test_p21_box_1():
@@ -354,11 +390,13 @@ def test_p21_box_1():
     Q = FunctionSpace(mesh, "Lagrange", 1)
     W = V*Q
 
+
 @use_gc_barrier
 def test_p21_box_2():
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = Function(V)
+
 
 @use_gc_barrier
 def test_p22_box_1():
@@ -370,6 +408,7 @@ def test_p22_box_1():
     b = assemble(v*dx)
     u = Function(V)
     solve(A, u.vector(), b)
+
 
 @skip_in_parallel
 def test_p22_box_2():
@@ -383,6 +422,7 @@ def test_p22_box_2():
     u = Function(V)
     vector = u(0.1, 0.2, 0.3)
 
+
 @use_gc_barrier
 def test_p23_box_1():
     mesh = UnitSquareMesh(3, 3)
@@ -395,6 +435,7 @@ def test_p23_box_1():
 
     uu, pp = w.split(deepcopy=True)
 
+
 @skip_in_parallel
 def test_p24_box_1():
     class MyExpression(Expression):
@@ -402,6 +443,7 @@ def test_p24_box_1():
             values[0] = sin(x[0])*cos(x[1])
     f = MyExpression()
     print(f((0.5, 0.5)))
+
 
 @skip_in_parallel
 def test_p24_box_2():
@@ -414,10 +456,12 @@ def test_p24_box_2():
     g = MyExpression()
     print(g((0.5, 0.5)))
 
+
 @use_gc_barrier
 def test_p24_box_3():
     f = Expression("sin(x[0])*cos(x[1])")
     g = Expression(("sin(x[0])", "cos(x[1])"))
+
 
 @use_gc_barrier
 def test_p25_box_1():
@@ -429,6 +473,7 @@ def test_p25_box_1():
     while t < T:
         h.t = t
         t += dt
+
 
 @use_gc_barrier
 def test_p26_box_1():
@@ -451,6 +496,7 @@ def test_p26_box_1():
     a = inner(sigma(u), sym(grad(v)))*dx
     L = dot(f, v)*dx
 
+
 @use_gc_barrier
 def test_p27_box_1():
     mesh = UnitSquareMesh(3, 3)
@@ -466,6 +512,7 @@ def test_p27_box_1():
     b = assemble(L)
     A = assemble(a)
 
+
 @use_gc_barrier
 def test_p29_box_1():
     mesh = UnitSquareMesh(3, 3)
@@ -476,6 +523,7 @@ def test_p29_box_1():
     exterior_facet_domains = FacetFunction("size_t", mesh)
     exterior_facet_domains.set_all(1)
     neumann_boundary.mark(exterior_facet_domains, 0)
+
 
 @use_gc_barrier
 def test_p30_box_1():
@@ -492,6 +540,7 @@ def test_p30_box_1():
     dss = ds[neumann_boundary]
     a = g*v*dss(0) + h*v*dss(1)
 
+
 @use_gc_barrier
 def test_p30_box_2():
     mesh = UnitSquareMesh(3, 3)
@@ -506,12 +555,14 @@ def test_p30_box_2():
     Gamma_D = DirichletBoundary()
     bc = DirichletBC(V, u_0, Gamma_D)
 
+
 @use_gc_barrier
 def test_p31_box_1():
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
     u_0 = Expression("sin(x[0])")
     bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+
 
 @use_gc_barrier
 def test_p31_box_2():
@@ -524,6 +575,7 @@ def test_p31_box_2():
 
     bc.apply(A, b)
     bc.apply(u.vector())
+
 
 @use_gc_barrier
 def test_p32_box_1():
@@ -541,6 +593,7 @@ def test_p32_box_1():
     bcs = [bc0, bc1, bc2]
     u = Function(V)
     solve(a == L, u, bcs=bcs)
+
 
 @use_gc_barrier
 def test_p32_box_2():
@@ -562,6 +615,7 @@ def test_p32_box_2():
 
     J = derivative(F, u)
     solve(F == 0, u, bcs=bcs, J=J)
+
 
 @skip_in_parallel
 def test_p32_box_3():
@@ -587,6 +641,7 @@ def test_p32_box_3():
     solver.parameters["newton_solver"]["preconditioner"] = "ilu"
     solver.solve()
 
+
 @use_gc_barrier
 def test_p33_box_1():
     mesh = UnitSquareMesh(3, 3)
@@ -608,9 +663,11 @@ def test_p33_box_1():
 
     info(solver.parameters, True)
 
+
 @use_gc_barrier
 def test_p33_box_2():
     mesh = Mesh(os.path.join(os.path.dirname(__file__), "mesh.xml"))
+
 
 @use_gc_barrier
 def test_p34_box_1():
@@ -622,6 +679,7 @@ def test_p34_box_1():
     #plot(u)
     #plot(mesh)
     #plot(mesh_function)
+
 
 @use_gc_barrier
 def test_p34_box_2():
@@ -636,6 +694,7 @@ def test_p34_box_2():
     # Disabled since it claims the terminal
     #plot(element)
 
+
 @use_gc_barrier
 def test_p35_box_1(cd_tempdir):
     mesh = UnitSquareMesh(3, 3)
@@ -644,6 +703,7 @@ def test_p35_box_1(cd_tempdir):
 
     file = File("solution.pvd")
     file << u
+
 
 @use_gc_barrier
 def test_p35_box_2(cd_tempdir):
@@ -654,6 +714,7 @@ def test_p35_box_2(cd_tempdir):
 
     file = File("solution.pvd", "compressed");
     file << (u, t)
+
 
 @skip_in_parallel
 def test_p36_box_1(cd_tempdir, pushpop_parameters):
@@ -670,6 +731,7 @@ def test_p36_box_1(cd_tempdir, pushpop_parameters):
     parameters_file << parameters
     parameters_file >> parameters
 
+
 @skip_in_parallel
 def test_p37_box_1(cd_tempdir):
     mesh = UnitSquareMesh(3, 3)
@@ -685,6 +747,7 @@ def test_p37_box_1(cd_tempdir):
         time_series.store(mesh, t)
         t += dt
 
+
 @skip_in_parallel
 def test_p37_box_2():
     time_series = TimeSeries("simulation_data")
@@ -696,11 +759,13 @@ def test_p37_box_2():
     #time_series.retrieve(u.vector(), t)
     #time_series.retrieve(mesh, t)
 
+
 @use_gc_barrier
 def test_p37_box_3():
     M = 100
     N = 100
     info("Assembling system of size %d x %d." % (M, N))
+
 
 @use_gc_barrier
 def test_p38_box_1():
@@ -715,6 +780,7 @@ def test_p38_box_1():
     info("Test message")
     warning("Test message")
     print("Test message")
+
 
 @use_gc_barrier
 def test_p39_box_1():
@@ -734,10 +800,12 @@ def test_p39_box_1():
     info(function_space)
     info(parameters)
 
+
 @use_gc_barrier
 def test_p39_box_2():
     mesh = UnitSquareMesh(3, 3)
     info(mesh, True)
+
 
 @use_gc_barrier
 def test_p40_box_1():
@@ -761,6 +829,7 @@ def test_p40_box_1():
         t += dt
         q.update(t / T)
 
+
 @use_gc_barrier
 def test_p40_box_2():
     def solve(A, b):
@@ -769,6 +838,7 @@ def test_p40_box_2():
         return x
     solve(None, None)
 
+
 @use_gc_barrier
 def test_p41_box_1(pushpop_parameters):
     info(parameters, True)
@@ -776,6 +846,7 @@ def test_p41_box_1(pushpop_parameters):
     allow_extrapolation = parameters["allow_extrapolation"]
     parameters["num_threads"] = 8
     parameters["allow_extrapolation"] = True
+
 
 @use_gc_barrier
 def test_p41_box_2():
@@ -786,21 +857,25 @@ def test_p41_box_2():
     #solver.parameters["preconditioner"]["reuse"] = True
     solver.parameters["preconditioner"]["structure"] = "same"
 
+
 @use_gc_barrier
 def test_p42_box_1():
     my_parameters = Parameters("my_parameters")
     my_parameters.add("foo", 3)
     my_parameters.add("bar", 0.1)
 
+
 @use_gc_barrier
 def test_p42_box_2(pushpop_parameters):
     d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
     parameters.update(d)
 
+
 @use_gc_barrier
 def test_p42_box_3():
     my_parameters = Parameters("my_parameters", foo=3, bar=0.1,
                                 nested=Parameters("nested", baz=True))
+
 
 @use_gc_barrier
 def test_p42_box_4(pushpop_parameters):
@@ -812,15 +887,18 @@ def test_p42_box_4(pushpop_parameters):
     # but this is not testable without external sys.argv.
     # Feel free to improve by adding something to argv above.
 
+
 @skip_in_parallel
 def test_p43_box_1(cd_tempdir, pushpop_parameters):
     file = File("parameters.xml")
     file << parameters
     file >> parameters
 
+
 @use_gc_barrier
 def test_p45_box_1(pushpop_parameters):
     parameters["mesh_partitioner"] = "ParMETIS"
+
 
 @use_gc_barrier
 def test_p45_box_2():
@@ -828,10 +906,12 @@ def test_p45_box_2():
     Function = cpp.Function
     assemble = cpp.assemble
 
+
 @use_gc_barrier
 def test_p46_box_1():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
+
 
 @use_gc_barrier
 def test_p47_box_1():
@@ -839,6 +919,7 @@ def test_p47_box_1():
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
+
 
 @use_gc_barrier
 def test_p47_box_2():
@@ -852,9 +933,11 @@ def test_p47_box_2():
     L = f*v*dx
     assemble(L)
 
+
 @use_gc_barrier
 def test_p48_box_1():
     e = Expression("sin(x[0])")
+
 
 @use_gc_barrier
 def test_p49_box_1():
@@ -866,9 +949,11 @@ def test_p49_box_1():
     a = c*dot(grad(u), grad(v))*dx
     A = assemble(a)
 
+
 @use_gc_barrier
 def test_p50_box_1(pushpop_parameters):
     parameters["form_compiler"]["name"] = "sfc"
+
 
 @use_gc_barrier
 def test_p50_box_2():
@@ -881,6 +966,7 @@ def test_p50_box_2():
     A = assemble(a)
     AA = A.array()
 
+
 @skip_in_parallel
 def test_p50_box_3(pushpop_parameters):
     mesh = UnitSquareMesh(8, 8)
@@ -888,18 +974,20 @@ def test_p50_box_3(pushpop_parameters):
     v = TestFunction(V)
     L = v*dx
 
-    parameters["linear_algebra_backend"] = "uBLAS"
+    parameters["linear_algebra_backend"] = "Eigen"
     b = assemble(L)
+    b = as_backend_type(b)
     bb = b.data()
 
-@use_gc_barrier
+
+@skip_in_parallel
 def test_p51_box_1(pushpop_parameters):
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
     a = u*v*dx
-    parameters["linear_algebra_backend"] = "uBLAS"
+    parameters["linear_algebra_backend"] = "Eigen"
     A = assemble(a)
 
     try:
@@ -907,8 +995,10 @@ def test_p51_box_1(pushpop_parameters):
     except ImportError:
         pass
     else:
+        A = as_backend_type(A)
         rows, columns, values = A.data()
         csr = csr_matrix((values, columns, rows))
+
 
 @use_gc_barrier
 def test_p51_box_2():
@@ -925,6 +1015,7 @@ def test_p51_box_2():
 
     # You can use an alternative syntax though
     b2 = b[arange(0, b.local_size(), 2)]
+
 
 @skip_in_parallel
 def test_p51_box_3():
