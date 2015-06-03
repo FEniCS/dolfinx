@@ -52,13 +52,6 @@
 #endif
 
 //-----------------------------------------------------------------------------
-// Fix problem with missing uBLAS namespace
-//-----------------------------------------------------------------------------
-%inline %{
-  namespace boost{ namespace numeric{ namespace ublas{}}}
-%}
-
-//-----------------------------------------------------------------------------
 // Modify VectorSpaceBasis::operator[]
 //-----------------------------------------------------------------------------
 %rename(_sub) dolfin::VectorSpaceBasis::operator[];
@@ -120,10 +113,6 @@
 %ignore dolfin::PETScLinearOperator::wrapper;
 
 //-----------------------------------------------------------------------------
-%ignore dolfin::uBLASVector::operator ()(std::size_t i) const;
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // Ignore wrapping of the Set variable (Might add typemap for this in future...)
 //-----------------------------------------------------------------------------
 %ignore dolfin::SparsityPattern::diagonal_pattern;
@@ -181,13 +170,6 @@
 %ignore dolfin::GenericMatrix::setitem;
 %ignore dolfin::GenericMatrix::operator();
 
-
-//-----------------------------------------------------------------------------
-// Modify uBLAS matrices, as these are not renamed by the GenericMatrix rename
-//-----------------------------------------------------------------------------
-%rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::operator=;
-%rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::operator=;
-
 // Ignore reference version of constructor
 %ignore dolfin::PETScKrylovSolver(std::string, PETScPreconditioner&);
 %ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
@@ -239,9 +221,6 @@
 %feature("nodirector") dolfin::PETScLinearOperator::str;
 %feature("nodirector") dolfin::PETScLinearOperator::wrapper;
 
-%feature("director") dolfin::uBLASLinearOperator;
-%feature("nodirector") dolfin::uBLASLinearOperator::str;
-
 %feature("director") dolfin::LinearOperator;
 %feature("nodirector") dolfin::LinearOperator::instance;
 %feature("nodirector") dolfin::LinearOperator::shared_instance;
@@ -280,20 +259,4 @@
   std::shared_ptr< const dolfin::PETScVector > *smartresult
     = new std::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
-}
-
-//-----------------------------------------------------------------------------
-// Director typemaps for dolfin::uBLASVector
-//-----------------------------------------------------------------------------
-%typemap(directorin, fragment="NoDelete") dolfin::uBLASVector&
-{
-  // Director in dolfin::uBLASVector&
-  std::shared_ptr< dolfin::uBLASVector > *smartresult = new std::shared_ptr< dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
-}
-
-%typemap(directorin, fragment="NoDelete") const dolfin::uBLASVector& {
-  // Director in const dolfin::uBLASVector&
-  std::shared_ptr< const dolfin::uBLASVector > *smartresult = new std::shared_ptr< const dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
 }

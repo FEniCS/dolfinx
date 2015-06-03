@@ -572,28 +572,27 @@ def test_reference_assembly(filedir):
     # Assemble stiffness and mass matrices
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
-    A, M = uBLASDenseMatrix(), uBLASDenseMatrix()
+    A, M = EigenMatrix(), EigenMatrix()
     assemble(dot(grad(v), grad(u))*dx, tensor=A)
     assemble(v*u*dx, tensor=M)
 
+    A = A.sparray().todense()
+    M = M.sparray().todense()
+
     # Create reference matrices and set entries
-    A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
-    pos = numpy.array([0, 1, 2, 3], dtype=la_index_dtype())
-    A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
-                        [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
-                        [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
-                        [-1.0/6.0, 0.0, 0.0, 1.0/6.0]]), pos, pos)
-    M0.set(numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
-                        [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
-                        [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
-                        [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]]), pos, pos)
-    A0.apply("insert")
-    M0.apply("insert")
+    A0 = numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
+                      [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
+                      [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
+                      [-1.0/6.0, 0.0, 0.0, 1.0/6.0]])
+    M0 = numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
+                      [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
+                      [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
+                      [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]])
 
     C = A - A0
-    assert round(C.norm("frobenius") - 0.0, 7) == 0
+    assert round(numpy.linalg.norm(C, 'fro') - 0.0, 7) == 0
     D = M - M0
-    assert round(D.norm("frobenius") - 0.0, 7) == 0
+    assert round(numpy.linalg.norm(D, 'fro') - 0.0, 7) == 0
 
     parameters["reorder_dofs_serial"] = reorder_dofs
 
