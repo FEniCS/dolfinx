@@ -1019,7 +1019,7 @@ def get_tensor_type(tensor):
             return k
     common.dolfin_error("dolfin/swig/la/post.i",
                         "extract backend type for %s" % type(tensor).__name__,
-                        "This apparently doesn't work for uBLAS..")
+                        "Unable to get tensor type in Python layer")
 
 def has_type(tensor, subclass):
     "Return wether tensor is of the given subclass."
