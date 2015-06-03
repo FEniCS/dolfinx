@@ -284,6 +284,12 @@ namespace dolfin
     /// Assignment operator
     const EigenVector& operator= (const EigenVector& x);
 
+    /// Return pointer to underlying data
+    double* data();
+
+    /// Return pointer to underlying data (const version)
+    const double* data() const;
+
   private:
 
     void check_mpi_rank(const MPI_Comm comm) const

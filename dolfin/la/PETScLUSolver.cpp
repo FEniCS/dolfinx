@@ -161,12 +161,16 @@ void PETScLUSolver::set_operator(std::shared_ptr<const PETScMatrix> A)
 {
   _matA = A;
   dolfin_assert(_matA);
-
   dolfin_assert(_ksp);
-  dolfin_assert(_matA->mat());
+
+  if (!_matA->mat())
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "set operator (PETScLUSolver::set_operator)",
+                 "cannot set operator if matrix has not been initialized");
+  }
 
   PetscErrorCode ierr;
-
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
   ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat(),
                          DIFFERENT_NONZERO_PATTERN);

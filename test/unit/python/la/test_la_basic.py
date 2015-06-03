@@ -38,7 +38,7 @@ no_data_backends = [("PETSc", "")]
 if MPI.size(mpi_comm_world()) == 1:
     # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
     # used in the old test.
-    data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse"), ("Eigen", "")]
+    data_backends += [("Eigen", "")]
     no_data_backends += [("PETScCusp", "")]
 
 # TODO: STL tests were disabled in old test framework, and do not work now:
@@ -354,28 +354,9 @@ class TestBasicLaOperations:
         assert absolute(u_numpy2 - u_numpy).sum() < DOLFIN_EPS*len(v)
 
 
-    def test_matrix_data(self, no_data_backend):
-        #self.backend, self.sub_backend = no_data_backend
-
-        mesh = UnitSquareMesh(3, 3)
-        a, b = get_forms(mesh)
-        A = assemble(a)
-        B = assemble(b)
-
-        with pytest.raises(RuntimeError):
-            A.data()
-
-        A = as_backend_type(A)
-        with pytest.raises(RuntimeError):
-            A.data()
-
-
     def test_vector_data(self, no_data_backend):
         mesh = UnitSquareMesh(3, 3)
         v, w = assemble_vectors(mesh)
-        with pytest.raises(RuntimeError):
-            v.data()
-
         v = as_backend_type(v)
         def no_attribute():
             v.data()

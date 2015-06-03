@@ -27,7 +27,6 @@
 #include <string>
 #include <vector>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include "dolfin/common/Array.h"
 #include "dolfin/log/log.h"
 #include "pugixml.hpp"

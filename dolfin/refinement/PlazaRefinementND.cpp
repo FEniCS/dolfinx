@@ -459,6 +459,9 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
 
     mesh_relation.edge_to_global_vertex = p_ref.edge_to_new_vertex();
   }
+  else if (calculate_parent_facets)
+    warning("Cannot calculate parent facets if redistributing cells");
+
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,

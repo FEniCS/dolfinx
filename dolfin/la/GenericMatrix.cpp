@@ -20,6 +20,8 @@
 // First added:  2010-02-23
 // Last changed: 2013-02-19
 
+#include <cmath>
+
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
 #include "GenericSparsityPattern.h"
