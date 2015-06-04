@@ -1,7 +1,17 @@
+- Deprecate and PETScKryloveSolver::set_nullspace() and add
+	PETScMatrix::set_nullspace()
+- Remove uBLAS backend
+- Remove UmfpackLUSolver and CholmodSolver
+- Add EigenMatrix/Vector::data()
+- Remove GenericMatrix/Vector::data() and GenericMatrix/Vector::data()
+	(to use backends that support data(), cast first to backend type, e.g.
+	A = A.as_backend_type()
 - Remove cmake.local, replaced by fenics-install-component.sh
-- Make interior facet integrals define - and + cells ordered by cell_domains value.
+- Make interior facet integrals define - and + cells ordered by cell_domains
+	value.
 - Remove deprecated arguments *_domains from assemble() and Form().
-- Change measure definition notation from dx[mesh_function] to dx(subdomain_data=mesh_function).
+- Change measure definition notation from dx[mesh_function] to
+	dx(subdomain_data=mesh_function).
 - Set locale to "C" before reading from file
 - Change GenericDofMap::cell_dofs return type from const std::vector<..>&
 	to ArrayView<const ..>
