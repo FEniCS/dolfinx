@@ -3,7 +3,7 @@
 # Licensed under the GNU LGPL, version 3 or any later version.
 #
 # First added:  2015-05-28
-# Last changed: 2015-05-28
+# Last changed: 2015-06-04
 #
 # This module defines the bilinear form a(u, v) and linear form L(v)
 # for a multimesh formulation of the Stokes equations.
@@ -22,6 +22,7 @@ def stokes(domain):
     # Define trial and test functions and right-hand side
     (u, p) = TrialFunctions(TH)
     (v, q) = TestFunctions(TH)
+    (U, P) = Coefficients(TH)
     f = Coefficient(P2)
 
     # Define facet normal and mesh size
@@ -94,7 +95,10 @@ def stokes(domain):
     L  = l_h(v)
     L += beta_2*d_h_rhs(v, q, f)
 
-    return a, L
+    # Functional: squared L2 norm of velocity
+    M = dot(U, U)*dx
+
+    return a, L, M
 
 # Create forms
-a, L = stokes(triangle)
+a, L, M = stokes(triangle)

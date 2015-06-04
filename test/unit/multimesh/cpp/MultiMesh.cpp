@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2015-05-28
+// Last changed: 2015-06-04
 //
 // Unit tests for MultiMesh
 
@@ -353,10 +353,12 @@ public:
     MultiMeshStokes2D::BilinearForm a1(W1, W1);
     MultiMeshStokes2D::LinearForm L0(W0);
     MultiMeshStokes2D::LinearForm L1(W1);
+    MultiMeshStokes2D::Functional M0(mesh_0);
+    MultiMeshStokes2D::Functional M1(mesh_1);
 
     // Build multimesh function space
     MultiMeshFunctionSpace W;
-    W.parameters("multimesh")["quadrature_order"] = 1;
+    W.parameters("multimesh")["quadrature_order"] = 3;
     W.add(W0);
     W.add(W1);
     W.build();
@@ -364,6 +366,9 @@ public:
     // Create constants
     Constant beta_1(b1);
     Constant beta_2(b2);
+
+    // Create solution function
+    MultiMeshFunction w(W);
 
     // Set coefficients
     a0.w0 = beta_1;
@@ -374,16 +379,22 @@ public:
     L1.w0 = source;
     L0.w1 = beta_2;
     L1.w1 = beta_2;
+    M0.w0 = *w.part(0);
+    M1.w0 = *w.part(1);
 
     // Build multimesh forms
     MultiMeshForm a(W, W);
     MultiMeshForm L(W);
+    MultiMeshForm M(W);
     a.add(a0);
     a.add(a1);
     L.add(L0);
     L.add(L1);
+    M.add(M0);
+    M.add(M1);
     a.build();
     L.build();
+    M.build();
 
     // Create subspaces for boundary conditions
     MultiMeshSubSpace V(W, 0);
@@ -404,9 +415,14 @@ public:
     bc.apply(A, b);
 
     // Compute solutipon
-    MultiMeshFunction w(W);
     solve(A, *w.vector(), b);
-    info("|u| = %.16g", w.vector()->norm("l2"));
+
+    // Compute squared L2 norm of solution
+    Scalar m;
+    assembler.assemble(m, M);
+
+    // Check value
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(2.217133856286212, m.get_scalar_value(), DOLFIN_EPS_LARGE);
   }
 
 };
