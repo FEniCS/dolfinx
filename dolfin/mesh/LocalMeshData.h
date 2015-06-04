@@ -123,6 +123,10 @@ namespace dolfin
     // Topological dimension
     std::size_t tdim;
 
+    // Cell type
+    // FIXME: this should replace the need for num_vertices_per_cell and tdim
+    CellType::Type cell_type;
+
     // Mesh domain data [dim](line, (cell_index, local_index, value))
     std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t,
       std::size_t>, std::size_t> > >

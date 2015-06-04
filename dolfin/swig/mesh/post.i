@@ -495,6 +495,9 @@ def ufl_cell(self):
     gdim = self.geometry().dim()
     dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
     cellname = dim2domain[tdim]
+
+    cellname = CellType.type2string(self.type().cell_type())
+
     return ufl.Cell(cellname, geometric_dimension=gdim)
 
 def ufl_domain(self):

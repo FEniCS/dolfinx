@@ -116,6 +116,10 @@ namespace dolfin
     /// Return description of cell type
     std::string description(bool plural) const;
 
+    /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
+    std::vector<unsigned int> vtk_mapping() const
+    { return std::vector<unsigned int> {0, 1}; }
+
   };
 
 }

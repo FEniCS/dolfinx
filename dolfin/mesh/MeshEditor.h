@@ -311,7 +311,8 @@ namespace dolfin
     void add_cell(std::size_t local_index, std::size_t global_index,
                   const T& v)
     {
-      dolfin_assert(v.size() == _tdim + 1);
+
+      // dolfin_assert(v.size() == _tdim + 1);
 
       // Check vertices
       check_vertices(v);

@@ -178,6 +178,15 @@ def test_UnitCubeMeshDistributedLocal():
     assert mesh.num_vertices() == 480
     assert mesh.num_cells() == 1890
 
+def test_UnitQuadMesh():
+    mesh = UnitQuadMesh(5, 7)
+    assert mesh.size_global(0) == 48
+    assert mesh.size_global(2) == 35
+
+def test_UnitHexMesh():
+    mesh = UnitHexMesh(5, 7, 9)
+    assert mesh.size_global(0) == 480
+    assert mesh.size_global(3) == 315
 
 @skip_in_parallel
 def test_LocalRefineUnitIntervalMesh():

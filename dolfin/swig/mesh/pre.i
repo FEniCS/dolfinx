@@ -44,7 +44,7 @@
   PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
     return %make_numpy_array(2, uint)(self->num_cells(),
-                                      self->topology().dim() + 1,
+                                      self->type().num_entities(0),
 				      self->cells().data(), false);
   }
 
