@@ -24,6 +24,7 @@
 #include <dolfin/common/unittest.h>
 //FIXME August
 #include <dolfin_simplex_tools.h>
+#include <predicates.h>
 
 using namespace dolfin;
 
@@ -42,6 +43,8 @@ public:
   void test_exclusion_inclusion_small_angle()
   {
     set_log_level(DEBUG);
+
+    exactinit();
 
     UnitSquareMesh mesh_0(1, 1);
     RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);

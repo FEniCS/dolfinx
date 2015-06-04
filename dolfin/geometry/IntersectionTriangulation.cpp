@@ -463,7 +463,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
       const Point& p1 = tri_1[i1];
       const Point& q1 = tri_1[j1];
       Point point;
-      if (intersection_edge_edge(p0, q0, p1, q1, point))
+      if (intersection_edge_edge_2d(p0, q0, p1, q1, point))
         points.push_back(point);
     }
   }
@@ -1301,6 +1301,11 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
 						     const Point& d,
 						     Point& pt)
 {
+  // Test Shewchuk style
+
+
+
+
   // Check if two edges are the same
   const double same_point_tol = DOLFIN_EPS_LARGE;
   if ((a - c).squared_norm() < same_point_tol and
