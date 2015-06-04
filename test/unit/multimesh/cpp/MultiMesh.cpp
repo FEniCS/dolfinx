@@ -16,13 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2014-06-05
+// Last changed: 2015-06-04
 //
 // Unit tests for MultiMesh
 
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
+
+#include "MultiMeshStokes2D.h"
 
 using namespace dolfin;
 
@@ -31,6 +33,7 @@ class MultiMeshes : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE(MultiMeshes);
   //CPPUNIT_TEST(test_multiple_meshes_quadrature);
   CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
+  CPPUNIT_TEST(test_assembly);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -61,7 +64,6 @@ public:
     // BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
     // BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
     // BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
-
 
     // Build the multimesh
     MultiMesh multimesh;
@@ -113,7 +115,6 @@ public:
     CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
   }
 
-
   void test_multiple_meshes_interface_quadrature()
   {
     // // These three meshes are ok
@@ -123,7 +124,6 @@ public:
     // double exact_volume = 4*(0.9-0.1); // mesh0 and mesh1
     // exact_volume += 4*(0.8-0.2); // mesh1 and mesh2
 
-
     // UnitCubeMesh mesh_0(1, 2, 3);
     // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   2,3,4);//2, 3, 4);
     // BoxMesh mesh_2(-0.1, -0.1, -0.1,    0.7, 0.7, 0.7,   4, 3, 2);
@@ -132,7 +132,6 @@ public:
     // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
     // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
 
-
     UnitCubeMesh mesh_0(1, 1, 1);
     BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   1, 1, 1);
     BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   1, 1, 1);
@@ -140,8 +139,6 @@ public:
     // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
     double exact_volume = (0.9-0.1)*(0.9-0.1)*6; // for mesh_0 and mesh_1
     exact_volume += (0.8-0.2)*(0.8-0.2)*6; // mesh_1 and mesh_2
-
-
 
     // UnitCubeMesh mesh_0(1, 1, 1);
     // MeshEditor editor;
@@ -169,7 +166,6 @@ public:
 
     //double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
     //exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
-
 
     // MeshEditor editor;
     // Mesh mesh_0;
@@ -207,8 +203,6 @@ public:
     // exact_volume += 2*std::sqrt(0.75*0.75 + 1.5*1.5); // mesh_1and mesh_2
     // double volume = 0;
 
-
-
     // // These three meshes are ok.
     // MeshEditor editor;
     // Mesh mesh_0;
@@ -244,7 +238,6 @@ public:
     // double exact_volume = (1.5-0.25) + (1-0.5); // mesh_0, mesh_1 and mesh_2
     // exact_volume += (3-1.5) + std::sqrt(1.5*1.5 + 1.5*1.5); // mesh_1 and mesh_2
 
-
     File("mesh_0.xml") << mesh_0;
     File("mesh_1.xml") << mesh_1;
     File("mesh_2.xml") << mesh_2;
@@ -257,7 +250,6 @@ public:
     //multimesh.add(mesh_3);
     //multimesh.add(mesh_4);
     multimesh.build();
-
 
     // Sum contribution from all parts
     std::cout << "\n\n Sum up\n\n";
@@ -305,12 +297,139 @@ public:
     CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
   }
 
+  void test_assembly()
+  {
+    // Set some parameters
+    parameters["reorder_dofs_serial"] = false;
+
+    // Some parameters
+    const std::size_t N = 4;
+    const std::size_t n = 2;
+    const double b1 = 1.0;
+    const double b2 = 1.0;
+
+    // Right-hand side
+    class Source : public Expression
+    {
+    public:
+      Source() : Expression(2) {}
+
+      void eval(Array<double>& values, const Array<double>& x) const
+      {
+        values[0] = 2*DOLFIN_PI*sin(2*DOLFIN_PI*x[1])*
+          (cos(2*DOLFIN_PI*x[0]) -
+           2*DOLFIN_PI*DOLFIN_PI*cos(2*DOLFIN_PI*x[0]) +
+           DOLFIN_PI*DOLFIN_PI);
+        values[1] = 2*DOLFIN_PI*sin(2*DOLFIN_PI*x[0])*
+          (cos(2*DOLFIN_PI*x[1]) +
+           2*DOLFIN_PI*DOLFIN_PI*cos(2*DOLFIN_PI*x[1]) -
+           DOLFIN_PI*DOLFIN_PI);
+      }
+    } source;
+
+    // Subdomain for no-slip boundary
+    class DirichletBoundary : public SubDomain
+    {
+      bool inside(const Array<double>& x, bool on_boundary) const
+      {
+        return on_boundary and
+          (near(x[0], 0) || near(x[0], 1) ||
+           near(x[1], 0) || near(x[1], 1));
+      }
+    } dirichlet_boundary;
+
+    // Create meshes
+    UnitSquareMesh mesh_0(N, N);
+    const double c = 0.123123;
+    RectangleMesh mesh_1(0.5 - c, 0.5 - c, 0.5 + c, 0.5 + c, n, n);
+    mesh_1.rotate(37, 2);
+
+    // Create function spaces
+    MultiMeshStokes2D::FunctionSpace W0(mesh_0);
+    MultiMeshStokes2D::FunctionSpace W1(mesh_1);
+
+    // Create forms
+    MultiMeshStokes2D::BilinearForm a0(W0, W0);
+    MultiMeshStokes2D::BilinearForm a1(W1, W1);
+    MultiMeshStokes2D::LinearForm L0(W0);
+    MultiMeshStokes2D::LinearForm L1(W1);
+    MultiMeshStokes2D::Functional M0(mesh_0);
+    MultiMeshStokes2D::Functional M1(mesh_1);
+
+    // Build multimesh function space
+    MultiMeshFunctionSpace W;
+    W.parameters("multimesh")["quadrature_order"] = 3;
+    W.add(W0);
+    W.add(W1);
+    W.build();
+
+    // Create constants
+    Constant beta_1(b1);
+    Constant beta_2(b2);
+
+    // Create solution function
+    MultiMeshFunction w(W);
+
+    // Set coefficients
+    a0.w0 = beta_1;
+    a1.w0 = beta_1;
+    a0.w1 = beta_2;
+    a1.w1 = beta_2;
+    L0.w0 = source;
+    L1.w0 = source;
+    L0.w1 = beta_2;
+    L1.w1 = beta_2;
+    M0.w0 = *w.part(0);
+    M1.w0 = *w.part(1);
+
+    // Build multimesh forms
+    MultiMeshForm a(W, W);
+    MultiMeshForm L(W);
+    MultiMeshForm M(W);
+    a.add(a0);
+    a.add(a1);
+    L.add(L0);
+    L.add(L1);
+    M.add(M0);
+    M.add(M1);
+    a.build();
+    L.build();
+    M.build();
+
+    // Create subspaces for boundary conditions
+    MultiMeshSubSpace V(W, 0);
+    MultiMeshSubSpace Q(W, 1);
+
+    // Create boundary condition
+    Constant zero(0, 0);
+    MultiMeshDirichletBC bc(V, zero, dirichlet_boundary);
+
+    // Assemble system matrix and right-hand side
+    Matrix A;
+    Vector b;
+    MultiMeshAssembler assembler;
+    assembler.assemble(A, a);
+    assembler.assemble(b, L);
+
+    // Apply boundary condition
+    bc.apply(A, b);
+
+    // Compute solutipon
+    solve(A, *w.vector(), b);
+
+    // Compute squared L2 norm of solution
+    Scalar m;
+    assembler.assemble(m, M);
+
+    // Check value
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(2.217133856286212, m.get_scalar_value(), DOLFIN_EPS_LARGE);
+  }
 
 };
 
 int main()
 {
-  // Test not workin in parallel
+  // Test not working in parallel
   if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
   {
     info("Skipping unit test in parallel.");
