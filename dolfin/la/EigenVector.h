@@ -55,7 +55,7 @@ namespace dolfin
     /// Copy constructor
     EigenVector(const EigenVector& x);
 
-    /// Construct vector from a ublas_vector
+    /// Construct vector from an Eigen shared_ptr
     explicit EigenVector(std::shared_ptr<Eigen::VectorXd> x);
 
     /// Destructor

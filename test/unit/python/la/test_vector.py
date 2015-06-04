@@ -45,7 +45,7 @@ if MPI.size(mpi_comm_world()) == 1:
 
 # If we have PETSc, STL Vector gets typedefed to one of these and data
 # test will not work. If none of these backends are available
-# STLVector defaults to uBLASVEctor, which data will work
+# STLVector defaults to EigenVEctor, which data will work
 if has_linear_algebra_backend("PETSc"):
     no_data_backends += ["STL"]
 else:

@@ -162,10 +162,6 @@
 %shared_ptr(dolfin::LinearOperator)
 
 %shared_ptr(dolfin::STLMatrix)
-%shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >)
-%shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double,\
-            boost::numeric::ublas::row_major> >)
-%shared_ptr(dolfin::uBLASVector)
 
 %shared_ptr(dolfin::EigenKrylovSolver)
 %shared_ptr(dolfin::EigenLUSolver)
@@ -194,9 +190,6 @@
 
 %shared_ptr(dolfin::UmfpackLUSolver)
 %shared_ptr(dolfin::CholmodCholeskySolver)
-
-%shared_ptr(dolfin::uBLASKrylovSolver)
-%shared_ptr(dolfin::uBLASLinearOperator)
 
 %shared_ptr(dolfin::LinearSolver)
 %shared_ptr(dolfin::GenericLinearSolver)

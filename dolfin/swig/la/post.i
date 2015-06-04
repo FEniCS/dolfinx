@@ -7,14 +7,6 @@
 // ===========================================================================
 
 // ---------------------------------------------------------------------------
-// Instantiate uBLAS template classes
-// ---------------------------------------------------------------------------
-%template(uBLASSparseMatrix) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >;
-%template(uBLASDenseMatrix) dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >;
-%template(uBLASSparseFactory) dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >;
-%template(uBLASDenseFactory) dolfin::uBLASFactory<boost::numeric::ublas::matrix<double> >;
-
-// ---------------------------------------------------------------------------
 // SLEPc specific extension code
 // ---------------------------------------------------------------------------
 #ifdef HAS_SLEPC
@@ -801,7 +793,7 @@ def la_index_dtype():
 // ---------------------------------------------------------------------------
 // Macro with C++ and Python extension code for GenericVector types in PyDOLFIN
 // that are able to return a pointer to the underlaying contigious data
-// only used for the uBLAS backend
+// only used for the Eigen backend
 // ---------------------------------------------------------------------------
 %define LA_VEC_DATA_ACCESS(VEC_TYPE)
 %feature("docstring") dolfin::VEC_TYPE::_data "Missing docstring";
@@ -875,39 +867,6 @@ _matrix_vector_mul_map = {}
 // ---------------------------------------------------------------------------
 // Run the downcast macro
 // ---------------------------------------------------------------------------
-AS_BACKEND_TYPE_MACRO(uBLASVector)
-AS_BACKEND_TYPE_MACRO(uBLASLinearOperator)
-
-// NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
-%inline %{
-bool _has_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
-{ return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(*tensor); }
-
-std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
-{ return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(tensor); }
-
-bool _has_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
-{ return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(*tensor); }
-
-const std::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const std::shared_ptr<dolfin::LinearAlgebraObject> tensor)
-{ return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(tensor); }
-%}
-
-%pythoncode %{
-_has_type_map[uBLASDenseMatrix] = _has_type_uBLASDenseMatrix
-_as_backend_type_map[uBLASDenseMatrix] = _as_backend_type_uBLASDenseMatrix
-_has_type_map[uBLASSparseMatrix] = _has_type_uBLASSparseMatrix
-_as_backend_type_map[uBLASSparseMatrix] = _as_backend_type_uBLASSparseMatrix
-%}
-
-// ---------------------------------------------------------------------------
-// Fill lookup map
-// ---------------------------------------------------------------------------
-%pythoncode %{
-_matrix_vector_mul_map[uBLASSparseMatrix] = [uBLASVector]
-_matrix_vector_mul_map[uBLASDenseMatrix] = [uBLASVector]
-_matrix_vector_mul_map[uBLASLinearOperator] = [uBLASVector]
-%}
 
 // ---------------------------------------------------------------------------
 // Run backend specific macros
@@ -1048,8 +1007,9 @@ _matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
 #endif  // HAS_PETSC
 
 // ---------------------------------------------------------------------------
-// Dynamic wrappers for GenericTensor::as_backend_type and GenericTensor::has_type,
-// using dict of tensor types to select from C++ template instantiations
+// Dynamic wrappers for GenericTensor::as_backend_type and
+// GenericTensor::has_type, using dict of tensor types to select from
+// C++ template instantiations
 // ---------------------------------------------------------------------------
 %pythoncode %{
 def get_tensor_type(tensor):
@@ -1059,7 +1019,7 @@ def get_tensor_type(tensor):
             return k
     common.dolfin_error("dolfin/swig/la/post.i",
                         "extract backend type for %s" % type(tensor).__name__,
-                        "This apparently doesn't work for uBLAS..")
+                        "Unable to get tensor type in Python layer")
 
 def has_type(tensor, subclass):
     "Return wether tensor is of the given subclass."
