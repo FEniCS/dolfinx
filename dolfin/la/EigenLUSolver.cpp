@@ -17,13 +17,14 @@
 //
 // First added:  2015-02-03
 
+
 #include <dolfin/common/types.h>
 #include <Eigen/SparseLU>
-#ifdef EIGEN_CHOLMOD_SUPPORT
+#ifdef HAS_CHOLMOD
 // Works with Cholmod downloaded by PETSc
 #include <Eigen/CholmodSupport>
 #endif
-#ifdef EIGEN_UMFPACK_SUPPORT
+#ifdef HAS_UMFPACK
 // Works with Suitesparse downloaded by PETSc
 #include <Eigen/UmfPackSupport>
 #endif
@@ -56,10 +57,10 @@ EigenLUSolver::_methods_descr
 = { {"default", "default LU solver"},
     {"sparselu", "Supernodal LU factorization for general matrices"},
     {"cholesky", "Simplicial LDLT"},
-#ifdef EIGEN_CHOLMOD_SUPPORT
+#ifdef HAS_CHOLMOD
     {"cholmod", "'CHOLMOD' sparse Cholesky factorisation"},
 #endif
-#ifdef EIGEN_UMFPACK_SUPPORT
+#ifdef HAS_UMFPACK
     {"umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"},
 #endif
 #ifdef EIGEN_PARDISO_SUPPORT
@@ -164,7 +165,7 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
                           Eigen::Lower> solver;
     call_solver(solver, x, b, transpose);
   }
-#ifdef EIGEN_CHOLMOD_SUPPORT
+#ifdef HAS_CHOLMOD
   else if (_method == "cholmod")
   {
     Eigen::CholmodDecomposition<Eigen::SparseMatrix<double, Eigen::ColMajor>,
@@ -194,7 +195,7 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
     call_solver(solver, x, b, transpose);
   }
 #endif
-#ifdef EIGEN_UMFPACK_SUPPORT
+#ifdef HAS_UMFPACK
   else if (_method == "umfpack")
   {
     Eigen::UmfPackLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
