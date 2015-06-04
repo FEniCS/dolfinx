@@ -22,6 +22,9 @@
 #include "IntersectionTriangulation.h"
 #include "CollisionDetection.h"
 
+// FIXME August
+#include <dolfin/predicates.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -444,10 +447,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
       points.push_back(tri_1[i]);
   }
 
-  // std::cout << "after triangle_point: ";
-  // for (const auto p: points)
-  //   std::cout << p[0]<<' '<<p[1]<< "     ";
-  // std::cout << '\n';
+  std::cout << "after triangle_point: ";
+  for (const auto p: points)
+    std::cout << p[0]<<' '<<p[1]<< "     ";
+  std::cout << '\n';
 
 
 
@@ -468,43 +471,50 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
     }
   }
 
-  // std::cout << "after edge-edge: ";
+  std::cout << "after edge-edge: ";
+  for (const auto p: points)
+    std::cout << p[0]<<' '<<p[1]<< "     ";
+  std::cout << '\n';
+
+
+
+  // // The function intersection_edge_edge only gives one point. Thus,
+  // // check edge-point intersections separately.
+  // for (std::size_t i0 = 0; i0 < 3; ++i0)
+  // {
+  //   const std::size_t j0 = (i0 + 1) % 3;
+  //   const Point& p0 = tri_0[i0];
+  //   const Point& q0 = tri_0[j0];
+  //   for (std::size_t i1 = 0; i1 < 3; ++i1)
+  //   {
+  //     const Point& point_1 = tri_1[i1];
+  //     if (CollisionDetection::collides_interval_point(p0, q0, point_1))
+  // 	points.push_back(point_1);
+  //   }
+  // }
+
+  // std::cout << "after first edge-point: ";
   // for (const auto p: points)
   //   std::cout << p[0]<<' '<<p[1]<< "     ";
   // std::cout << '\n';
 
 
 
-  // The function intersection_edge_edge only gives one point. Thus,
-  // check edge-point intersections separately.
-  for (std::size_t i0 = 0; i0 < 3; ++i0)
-  {
-    const std::size_t j0 = (i0 + 1) % 3;
-    const Point& p0 = tri_0[i0];
-    const Point& q0 = tri_0[j0];
-    for (std::size_t i1 = 0; i1 < 3; ++i1)
-    {
-      const Point& point_1 = tri_1[i1];
-      if (CollisionDetection::collides_interval_point(p0, q0, point_1))
-  	points.push_back(point_1);
-    }
-  }
-
-  for (std::size_t i0 = 0; i0 < 3; ++i0)
-  {
-    const std::size_t j0 = (i0 + 1) % 3;
-    const Point& p1 = tri_1[i0];
-    const Point& q1 = tri_1[j0];
-    for (std::size_t i1 = 0; i1 < 3; ++i1)
-    {
-      const Point& point_0 = tri_0[i1];
-      if (CollisionDetection::collides_interval_point(p1, q1, point_0))
-  	points.push_back(point_0);
-    }
-  }
+  // for (std::size_t i0 = 0; i0 < 3; ++i0)
+  // {
+  //   const std::size_t j0 = (i0 + 1) % 3;
+  //   const Point& p1 = tri_1[i0];
+  //   const Point& q1 = tri_1[j0];
+  //   for (std::size_t i1 = 0; i1 < 3; ++i1)
+  //   {
+  //     const Point& point_0 = tri_0[i1];
+  //     if (CollisionDetection::collides_interval_point(p1, q1, point_0))
+  // 	points.push_back(point_0);
+  //   }
+  // }
 
 
-  // std::cout << "after edge-point: ";
+  // std::cout << "after second edge-point: ";
   // for (const auto p: points)
   //   std::cout << p[0]<<' '<<p[1]<< "     ";
   // std::cout << '\n';
@@ -550,11 +560,12 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // point. This avoids skinny triangles in multimesh.
   std::vector<std::pair<double, std::size_t>> order(points.size());
 
-  // for (const auto p: points)
-  // {
-  //   std::cout << p[0]<<' '<<p[1]<< "     ";
-  // }
-  // std::cout << '\n';
+  std::cout << "net points: ";
+  for (const auto p: points)
+  {
+    std::cout << p[0]<<' '<<p[1]<< "     ";
+  }
+  std::cout << '\n';
 
   // Create triangulation using center point.
   Point c = points[0];
@@ -1302,65 +1313,98 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
 						     Point& pt)
 {
   // Test Shewchuk style
+  const double cda = orient2d(const_cast<double*>(c.coordinates()), const_cast<double*>(d.coordinates()), const_cast<double*>(a.coordinates()));
+  const double cdb = orient2d(const_cast<double*>(c.coordinates()), const_cast<double*>(d.coordinates()), const_cast<double*>(b.coordinates()));
+  const double abc = orient2d(const_cast<double*>(a.coordinates()), const_cast<double*>(b.coordinates()), const_cast<double*>(c.coordinates()));
+  const double abd = orient2d(const_cast<double*>(a.coordinates()), const_cast<double*>(b.coordinates()), const_cast<double*>(d.coordinates()));
+
+  if (cda*cdb < 0.0 and abc*abd < 0.0) // If equality, then they align
+  {
+    // We have intersection (see Shewchuck Lecture Notes on Geometric
+    // Robustness).
+
+    // Robust determinant calculation (see orient2d routine). This is
+    // way more involved, but skip for now.
+    const double detleft = (b[0]-a[0]) * (d[1]-c[1]);
+    const double detright = (b[1]-a[1]) * (d[0]-c[0]);
+    const double det = detleft - detright;
+    const double alpha = cda / det;
+
+    if (std::abs(det) < DOLFIN_EPS)
+    {
+      std::cout.precision(15);
+      std::cout << cda <<' '<<cdb<<' '<<abc << ' ' << abd<<'\n';
+      std::cout << "det " << det << '\n';
+    }
+
+    pt = a + alpha*(b - a);
+
+    // If alpha is close to 1, then pt is close to b. Repeat the
+    // calculation with the points swapped. This is probably not the
+    // way to do it.
+    if (std::abs(1-alpha) < DOLFIN_EPS)
+      pt = b + (1-alpha)*(a - b);
+
+    return true;
+  }
+  return false;
 
 
-
-
-  // Check if two edges are the same
-  const double same_point_tol = DOLFIN_EPS_LARGE;
-  if ((a - c).squared_norm() < same_point_tol and
-      (b - d).squared_norm() < same_point_tol)
-    return false;
-  if ((a - d).squared_norm() < same_point_tol and
-      (b - c).norm() < same_point_tol)
-    return false;
-
-  // Tolerance for orthogonality
-  const double orth_tol = DOLFIN_EPS_LARGE;
-
-  // Tolerance for coplanarity
-  //const double coplanar_tol = DOLFIN_EPS_LARGE;
-
-  const Point L1 = b - a;
-  const Point L2 = d - c;
-  const Point ca = c - a;
-  const Point n = L1.cross(L2);
-
-  // Check if L1 and L2 are coplanar (what if they're overlapping?)
-  // Update: always coplanar in 2D
-  // if (std::abs(ca.dot(n)) > coplanar_tol)
+  // // Check if two edges are the same
+  // const double same_point_tol = DOLFIN_EPS_LARGE;
+  // if ((a - c).squared_norm() < same_point_tol and
+  //     (b - d).squared_norm() < same_point_tol)
+  //   return false;
+  // if ((a - d).squared_norm() < same_point_tol and
+  //     (b - c).norm() < same_point_tol)
   //   return false;
 
-  // Find orthogonal plane with normal n1
-  const Point n1 = n.cross(L1);
-  const double n1dotL2 = n1.dot(L2);
+  // // Tolerance for orthogonality
+  // const double orth_tol = DOLFIN_EPS_LARGE;
 
-  // If we have orthogonality
-  if (std::abs(n1dotL2) > orth_tol)
-  {
-    const double t = -n1.dot(ca) / n1dotL2;
+  // // Tolerance for coplanarity
+  // //const double coplanar_tol = DOLFIN_EPS_LARGE;
 
-    // Find orthogonal plane with normal n2
-    const Point n2 = n.cross(L2);
-    const double n2dotL1 = n2.dot(L1);
-    if (t >= 0 and
-        t <= 1 and
-        std::abs(n2dotL1) > orth_tol)
-    {
-      const double s = n2.dot(ca) / n2dotL1;
-      if (s >= 0 and
-          s <= 1)
-      {
-	pt = a + s*L1;
-	return true;
-      }
-    }
-  }
-  // else // Now we have both coplanarity and colinearity, i.e. parallel lines
+  // const Point L1 = b - a;
+  // const Point L2 = d - c;
+  // const Point ca = c - a;
+  // const Point n = L1.cross(L2);
+
+  // // Check if L1 and L2 are coplanar (what if they're overlapping?)
+  // // Update: always coplanar in 2D
+  // // if (std::abs(ca.dot(n)) > coplanar_tol)
+  // //   return false;
+
+  // // Find orthogonal plane with normal n1
+  // const Point n1 = n.cross(L1);
+  // const double n1dotL2 = n1.dot(L2);
+
+  // // If we have orthogonality
+  // if (std::abs(n1dotL2) > orth_tol)
   // {
-  // }
+  //   const double t = -n1.dot(ca) / n1dotL2;
 
-  return false;
+  //   // Find orthogonal plane with normal n2
+  //   const Point n2 = n.cross(L2);
+  //   const double n2dotL1 = n2.dot(L1);
+  //   if (t >= 0 and
+  //       t <= 1 and
+  //       std::abs(n2dotL1) > orth_tol)
+  //   {
+  //     const double s = n2.dot(ca) / n2dotL1;
+  //     if (s >= 0 and
+  //         s <= 1)
+  //     {
+  // 	pt = a + s*L1;
+  // 	return true;
+  //     }
+  //   }
+  // }
+  // // else // Now we have both coplanarity and colinearity, i.e. parallel lines
+  // // {
+  // // }
+
+  // return false;
 }
 //-----------------------------------------------------------------------------
 bool

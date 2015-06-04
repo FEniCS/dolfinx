@@ -48,7 +48,7 @@ public:
 
     UnitSquareMesh mesh_0(1, 1);
     RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
-    mesh_1.rotate(1e-6, 2);
+    mesh_1.rotate(1e-7, 2);
 
     MultiMesh multimesh;
     multimesh.add(mesh_0);
