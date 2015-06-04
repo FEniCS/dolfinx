@@ -31,8 +31,8 @@ using namespace dolfin;
 class MultiMeshes : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(MultiMeshes);
-  CPPUNIT_TEST(test_exclusion_inclusion_small_angle);
   //CPPUNIT_TEST(test_exclusion_inclusion);
+  CPPUNIT_TEST(test_exclusion_inclusion_small_angle);
   //CPPUNIT_TEST(test_multiple_meshes_quadrature);
   //CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
   CPPUNIT_TEST_SUITE_END();
@@ -48,7 +48,7 @@ public:
 
     UnitSquareMesh mesh_0(1, 1);
     RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
-    mesh_1.rotate(1e-7, 2);
+    mesh_1.rotate(1e-14, 2);
 
     MultiMesh multimesh;
     multimesh.add(mesh_0);
@@ -59,6 +59,34 @@ public:
 
     const double exact_volume = 1;
     const double volume = compute_volume(multimesh, exact_volume);
+
+    {
+      double v = 1e-16;
+      while (v <= 100)
+      {
+	std::cout << "--------------------------------------\n"
+		  << "try v = " << v << std::endl;
+	UnitSquareMesh mesh_0(1, 1);
+	RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+	mesh_1.rotate(v, 2);
+
+	MultiMesh multimesh;
+	multimesh.add(mesh_0);
+	multimesh.add(mesh_1);
+	multimesh.build();
+
+	const double exact_volume = 1;
+	const double volume = compute_volume(multimesh, exact_volume);
+
+	if (std::abs(volume - exact_volume) > DOLFIN_EPS_LARGE)
+	{
+	  std::cout<<"error: " << volume << " ("<<std::abs(volume - exact_volume)<<")\n";
+	  exit(1);
+	}
+	v *= 10;
+      }
+    }
+
     CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
   }
 

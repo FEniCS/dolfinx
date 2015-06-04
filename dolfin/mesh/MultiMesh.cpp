@@ -435,21 +435,21 @@ void MultiMesh::_build_quadrature_rules_overlap()
     }
   }
 
-  std::cout.precision(15);
+  // std::cout.precision(15);
 
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
-    std::cout << "----- cut part: " << cut_part <<std::endl;
-    tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
-    //double areapos = 0, areaminus = 0;
+    // std::cout << "----- cut part: " << cut_part <<std::endl;
+    // tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
+    // //double areapos = 0, areaminus = 0;
 
 
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
-      std::cout << "-------- new cut cell\n";
+      // std::cout << "-------- new cut cell\n";
 
       // Get cut cell
       const unsigned int cut_cell_index = it->first;
@@ -476,8 +476,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
         const std::size_t cutting_cell_index = jt->second;
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
 
-	std::cout << "\ncut cutting (cutting part=" << cutting_part << ")" << std::endl;
-	std::cout << tools::drawtriangle(cut_cell,"'y'")<<tools::drawtriangle(cutting_cell,"'m'")<<std::endl;
+	// std::cout << "\ncut cutting (cutting part=" << cutting_part << ")" << std::endl;
+	// std::cout << tools::drawtriangle(cut_cell,"'y'")<<tools::drawtriangle(cutting_cell,"'m'")<<std::endl;
 
   	// Only allow same type of cell for now
       	dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
@@ -489,22 +489,22 @@ void MultiMesh::_build_quadrature_rules_overlap()
 								cutting_cell);
 	const Polyhedron polyhedron = convert(intersection, tdim, gdim);
 
-	{
-	  std::cout << "intersection (size="<<intersection.size()<<": ";
-	  for (std::size_t i = 0; i < intersection.size(); ++i)
-	    std::cout << intersection[i]<<' ';
-	  std::cout<<")\n";
-	  if (polyhedron.size())
-	  {
-	    for (const auto simplex: polyhedron)
-	      std::cout << tools::drawtriangle(simplex,"'k'");
-	    std::cout << std::endl;
-	    std::cout << "areas=[";
-	    for (const auto simplex: polyhedron)
-	      std::cout << tools::area(simplex)<<' ';
-	    std::cout << "];"<<std::endl;
-	  }
-	}
+	// {
+	//   std::cout << "intersection (size="<<intersection.size()<<": ";
+	//   for (std::size_t i = 0; i < intersection.size(); ++i)
+	//     std::cout << intersection[i]<<' ';
+	//   std::cout<<")\n";
+	//   if (polyhedron.size())
+	//   {
+	//     for (const auto simplex: polyhedron)
+	//       std::cout << tools::drawtriangle(simplex,"'k'");
+	//     std::cout << std::endl;
+	//     std::cout << "areas=[";
+	//     for (const auto simplex: polyhedron)
+	//       std::cout << tools::area(simplex)<<' ';
+	//     std::cout << "];"<<std::endl;
+	//   }
+	// }
 
 	// Flip triangles in polyhedron to maximize minimum angle
 	//const bool flipped = false;//maximize_minimum_angle(polyhedron);
@@ -570,7 +570,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
       for (std::size_t stage = 1; stage < N; ++stage)
       {
-	std::cout << "----------------- stage " << stage << std::endl;
+	// std::cout << "----------------- stage " << stage << std::endl;
 
       	// Structure for storing new intersections
       	std::vector<std::pair<std::vector<std::size_t>,
@@ -661,25 +661,25 @@ void MultiMesh::_build_quadrature_rules_overlap()
 		      // }
 		    }
 
-		    {
-		      std::cout << '\n'<<tools::drawtriangle(previous_simplex,"'b'")
-		    		<< tools::drawtriangle(initial_simplex,"'r'")<<std::endl;
-		      std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
-		      const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
+		    // {
+		    //   std::cout << '\n'<<tools::drawtriangle(previous_simplex,"'b'")
+		    // 		<< tools::drawtriangle(initial_simplex,"'r'")<<std::endl;
+		    //   std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
+		    //   const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
 
-		      std::cout << "resulting intersection:\n";
-		      for (const auto simplex: pii)
-		    	std::cout << tools::drawtriangle(simplex,"'g'");
-		      std::cout<<'\n';
-		      double intersection_area = 0;
-		      std::cout << "areas: ";
-		      for (const auto simplex: pii) {
-		    	intersection_area += tools::area(simplex);
-		    	std::cout << tools::area(simplex) <<' ';
-		      }
-		      std::cout<<'\n';
-		      if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
-		    }
+		    //   std::cout << "resulting intersection:\n";
+		    //   for (const auto simplex: pii)
+		    // 	std::cout << tools::drawtriangle(simplex,"'g'");
+		    //   std::cout<<'\n';
+		    //   double intersection_area = 0;
+		    //   std::cout << "areas: ";
+		    //   for (const auto simplex: pii) {
+		    // 	intersection_area += tools::area(simplex);
+		    // 	std::cout << tools::area(simplex) <<' ';
+		    //   }
+		    //   std::cout<<'\n';
+		    //   if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
+		    // }
 
 		  }
 		}

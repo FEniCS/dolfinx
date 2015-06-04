@@ -447,10 +447,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
       points.push_back(tri_1[i]);
   }
 
-  std::cout << "after triangle_point: ";
-  for (const auto p: points)
-    std::cout << p[0]<<' '<<p[1]<< "     ";
-  std::cout << '\n';
+  // std::cout << "after triangle_point: ";
+  // for (const auto p: points)
+  //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // std::cout << '\n';
 
 
 
@@ -471,10 +471,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
     }
   }
 
-  std::cout << "after edge-edge: ";
-  for (const auto p: points)
-    std::cout << p[0]<<' '<<p[1]<< "     ";
-  std::cout << '\n';
+  // std::cout << "after edge-edge: ";
+  // for (const auto p: points)
+  //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // std::cout << '\n';
 
 
 
@@ -560,12 +560,12 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // point. This avoids skinny triangles in multimesh.
   std::vector<std::pair<double, std::size_t>> order(points.size());
 
-  std::cout << "net points: ";
-  for (const auto p: points)
-  {
-    std::cout << p[0]<<' '<<p[1]<< "     ";
-  }
-  std::cout << '\n';
+  // std::cout << "net points: ";
+  // for (const auto p: points)
+  // {
+  //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // }
+  // std::cout << '\n';
 
   // Create triangulation using center point.
   Point c = points[0];
