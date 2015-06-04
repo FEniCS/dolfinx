@@ -493,10 +493,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   //   }
   // }
 
-  // std::cout << "after first edge-point: ";
-  // for (const auto p: points)
-  //   std::cout << p[0]<<' '<<p[1]<< "     ";
-  // std::cout << '\n';
+  // // std::cout << "after first edge-point: ";
+  // // for (const auto p: points)
+  // //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // // std::cout << '\n';
 
 
 
@@ -514,10 +514,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // }
 
 
-  // std::cout << "after second edge-point: ";
-  // for (const auto p: points)
-  //   std::cout << p[0]<<' '<<p[1]<< "     ";
-  // std::cout << '\n';
+  // // std::cout << "after second edge-point: ";
+  // // for (const auto p: points)
+  // //   std::cout << p[0]<<' '<<p[1]<< "     ";
+  // // std::cout << '\n';
 
 
 
@@ -558,7 +558,6 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
 
   // If the number of points > 3, form triangles using center
   // point. This avoids skinny triangles in multimesh.
-  std::vector<std::pair<double, std::size_t>> order(points.size());
 
   // std::cout << "net points: ";
   // for (const auto p: points)
@@ -567,6 +566,60 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // }
   // std::cout << '\n';
 
+
+
+  // // Find left-most point (smallest x-coordinate)
+  // std::size_t i_min = 0;
+  // double x_min = points[0].x();
+  // for (std::size_t i = 1; i < points.size(); i++)
+  // {
+  //   const double x = points[i].x();
+  //   if (x < x_min)
+  //   {
+  //     x_min = x;
+  //     i_min = i;
+  //   }
+  // }
+
+  // // Compute signed squared cos of angle with (0, 1) from i_min to all points
+  // std::vector<std::pair<double, std::size_t>> order;
+  // for (std::size_t i = 0; i < points.size(); i++)
+  // {
+  //   // Skip left-most point used as origin
+  //   if (i == i_min)
+  //     continue;
+
+  //   // Compute vector to point
+  //   const Point v = points[i] - points[i_min];
+
+  //   // Compute square cos of angle
+  //   const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
+
+  //   // Store for sorting
+  //   order.push_back(std::make_pair(cos2, i));
+  // }
+
+  // // Sort points based on angle
+  // std::sort(order.begin(), order.end());
+
+  // // Triangulate polygon by connecting i_min with the ordered points
+  // triangulation.reserve((points.size() - 2)*3*2);
+  // const Point& p0 = points[i_min];
+  // for (std::size_t i = 0; i < points.size() - 2; i++)
+  // {
+  //   const Point& p1 = points[order[i].second];
+  //   const Point& p2 = points[order[i + 1].second];
+  //   triangulation.push_back(p0.x());
+  //   triangulation.push_back(p0.y());
+  //   triangulation.push_back(p1.x());
+  //   triangulation.push_back(p1.y());
+  //   triangulation.push_back(p2.x());
+  //   triangulation.push_back(p2.y());
+  // }
+
+  // return triangulation;
+
+
   // Create triangulation using center point.
   Point c = points[0];
   for (std::size_t i = 1; i < points.size(); ++i)
@@ -574,6 +627,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   c /= points.size();
 
   // Calculate and store angles
+  std::vector<std::pair<double, std::size_t>> order(points.size());
   for (std::size_t i = 0; i < points.size(); ++i)
   {
     const Point v = points[i] - c;
@@ -1333,6 +1387,10 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
     if (std::abs(det) < DOLFIN_EPS)
     {
       std::cout.precision(15);
+      std::cout << a[0]<<' '<<a[1]<<'\n'
+		<<b[0]<<' '<<b[1]<<'\n'
+		<<c[0]<<' '<<c[1]<<'\n'
+		<<d[0]<<' '<<d[1]<<'\n';
       std::cout << cda <<' '<<cdb<<' '<<abc << ' ' << abd<<'\n';
       std::cout << "det " << det << '\n';
     }
