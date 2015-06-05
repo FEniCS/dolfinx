@@ -97,3 +97,10 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PETSc4py
   "PETSc4py could not be found. Be sure to set PYTHONPATH appropriately."
   PETSC4PY_INCLUDE_DIRS PETSC4PY_VERSION PETSC4PY_VERSION_OK)
+
+# Check petsc4py.i for PETSC_INT
+if(PETSC4PY_INCLUDE_DIRS)
+  file(STRINGS "${PETSC4PY_INCLUDE_DIRS}/petsc4py/petsc4py.i" PETSC4PY_I)
+  string(REGEX MATCH "SWIG_TYPECHECK_INT[0-9]+" PETSC_INT "${PETSC4PY_I}")
+  message(STATUS "PETSC_INT = ${PETSC_INT}")
+endif()
