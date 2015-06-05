@@ -298,13 +298,20 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
-
-      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-        for (unsigned int i = 0; i != c->num_entities(0); ++i)
-        {
-          const unsigned int local_idx = c->entities(0)[perm[i]];
-          topological_data.push_back(global_vertices[local_idx]);
-        }
+      if (cell_dim == 0)
+      {
+        for (VertexIterator v(mesh); !v.end(); ++v)
+          topological_data.push_back(v->global_index());
+      }
+      else
+      {
+        for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+          for (unsigned int i = 0; i != c->num_entities(0); ++i)
+          {
+            const unsigned int local_idx = c->entities(0)[perm[i]];
+            topological_data.push_back(global_vertices[local_idx]);
+          }
+      }
     }
     else
     {
@@ -346,15 +353,29 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         }
       }
 
-      for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
+      if (cell_dim == 0)
       {
-        // If not excluded, add to topology
-        if (non_local_entities.find(ent->index()) == non_local_entities.end())
+        // Special case for mesh of points
+        for (VertexIterator v(mesh); !v.end(); ++v)
         {
-          for (unsigned int i = 0; i != ent->num_entities(0); ++i)
+          if (non_local_entities.find(v->index())
+              == non_local_entities.end())
+            topological_data.push_back(v->global_index());
+        }
+      }
+      else
+      {
+        for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
+        {
+          // If not excluded, add to topology
+          if (non_local_entities.find(ent->index())
+              == non_local_entities.end())
           {
-            const unsigned int local_idx = ent->entities(0)[perm[i]];
-            topological_data.push_back(global_vertices[local_idx]);
+            for (unsigned int i = 0; i != ent->num_entities(0); ++i)
+            {
+              const unsigned int local_idx = ent->entities(0)[perm[i]];
+              topological_data.push_back(global_vertices[local_idx]);
+            }
           }
         }
       }
@@ -714,7 +735,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   {
     // No duplicates - ignore ghost cells if present
     data_values.assign(meshfunction.values(),
-                       meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
+       meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
   }
   else
   {
