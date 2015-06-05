@@ -1,3 +1,4 @@
+- Remove GenericMatrix::compressed (see Issue #61)
 - Deprecate and PETScKryloveSolver::set_nullspace() and add
 	PETScMatrix::set_nullspace()
 - Remove uBLAS backend
