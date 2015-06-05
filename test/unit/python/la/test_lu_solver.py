@@ -23,7 +23,7 @@ from dolfin import *
 import pytest
 from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
-backends = ["PETSc", skip_in_parallel("Eigen"), skip_in_parallel("uBLAS")]
+backends = ["PETSc", skip_in_parallel("Eigen")]
 
 @pytest.mark.parametrize('backend', backends)
 def test_lu_solver(backend):
@@ -35,11 +35,6 @@ def test_lu_solver(backend):
     # Set linear algebra backend
     prev_backend = parameters["linear_algebra_backend"]
     parameters["linear_algebra_backend"] = backend
-
-    # Check that we have UMFPACK if using uBLAS
-    if backend == "uBLAS" and not has_lu_solver_method("umfpack"):
-        parameters["linear_algebra_backend"] = prev_backend
-        pytest.skip('Need UMFPACK to run this test with UBLAS as backend')
 
     mesh = UnitSquareMesh(12, 12)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -81,11 +76,6 @@ def test_lu_solver_reuse(backend):
     # Set linear algebra backend
     prev_backend = parameters["linear_algebra_backend"]
     parameters["linear_algebra_backend"] = backend
-
-    # Check that we have UMFPACK if using uBLAS
-    if backend == "uBLAS" and not has_lu_solver_method("umfpack"):
-        parameters["linear_algebra_backend"] = prev_backend
-        pytest.skip('Need UMFPACK to run this test with UBLAS as backend')
 
     mesh = UnitSquareMesh(12, 12)
     V = FunctionSpace(mesh, "Lagrange", 1)

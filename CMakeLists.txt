@@ -74,7 +74,6 @@ option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." 
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically - turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC." ON)
-option(DOLFIN_DEBUG_UBLAS "Use extra uBLAS debugging." OFF)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
@@ -211,11 +210,6 @@ endif()
 # Set 'Developer' build type flags
 set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
   "Flags used by the compiler during development." FORCE)
-
-# Do not debug uBLAS unless requested
-if (NOT DOLFIN_DEBUG_UBLAS)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DBOOST_UBLAS_NDEBUG")
-endif()
 
 # FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
 

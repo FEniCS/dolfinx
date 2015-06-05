@@ -37,8 +37,8 @@ namespace dolfin
   ///
   ///   Table table("Timings");
   ///
-  ///   table("uBLAS",  "Assemble") = 0.010;
-  ///   table("uBLAS",  "Solve")    = 0.020;
+  ///   table("Eigen",  "Assemble") = 0.010;
+  ///   table("Eigen",  "Solve")    = 0.020;
   ///   table("PETSc",  "Assemble") = 0.011;
   ///   table("PETSc",  "Solve")    = 0.019;
   ///   table("Tpetra", "Assemble") = 0.012;
