@@ -287,7 +287,8 @@ if (DOLFIN_ENABLE_MPI)
       set(MPI_FOUND TRUE)
     endif()
   else()
-    # Assume user has set MPI compiler wrappers (via CXX, etc or CMAKE_CXX_COMPILER, etc)
+    # Assume user has set MPI compiler wrappers (via CXX, etc or
+    # CMAKE_CXX_COMPILER, etc)
     set(MPI_FOUND TRUE)
     set(MPI_CXX_FOUND TRUE)
     set(MPI_C_FOUND TRUE)
@@ -313,7 +314,8 @@ if (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 
-# Prevent FindBoost.cmake from looking for system  Boost{foo}.cmake files
+# Prevent FindBoost.cmake from looking for system Boost{foo}.cmake
+# files
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
@@ -341,8 +343,9 @@ find_package(Eigen3 3.2.0 REQUIRED)
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
-# Note: Check for Python interpreter even when Python is disabled because it
-#       is used to get the installation path for dolfin_utils
+# Note: Check for Python interpreter even when Python is disabled
+#       because it is used to get the installation path for
+#       dolfin_utils
 # FIXME PY3: Select python 3 based on config flag?
 find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
@@ -501,8 +504,9 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
-  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos;Belos")
+  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
+    $ENV{TRILINOS_DIR} QUIET)
+  set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
   if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
     set(Trilinos_FOUND FALSE)
@@ -685,7 +689,8 @@ endif()
 if (PYTHONINTERP_FOUND)
 
   if (NOT DEFINED DOLFIN_INSTALL_PYTHON_MODULE_DIR)
-    # Get path for platform-dependent Python modules (since we install a binary libary)
+    # Get path for platform-dependent Python modules (since we install
+    # a binary libary)
 
     # Python command string to discover module install location
     if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -867,7 +872,8 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 
 #------------------------------------------------------------------------------
 # Generate form files for tests, bench, demos and dolfin if not exists
-# FIXME: Generate files in Build directory instead, at least for bench, demo and tests
+# FIXME: Generate files in Build directory instead, at least for
+# bench, demo and tests
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
@@ -894,7 +900,8 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for tests, bench and demos if not exists
+# Generate CMakeLists.txt files for tests, bench and demos if not
+# exists
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
@@ -1100,7 +1107,8 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
-  # Add target "run_quicktest" for running only Python unit tests not marked as 'slow'
+  # Add target "run_quicktest" for running only Python unit tests not
+  # marked as 'slow'
   add_custom_target(run_quicktest
     COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs" "-k" "'not" "slow'"
     DEPENDS copy_data_test_demo

@@ -25,6 +25,7 @@
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
 #include "STLFactory.h"
+#include "TpetraFactory.h"
 #include "DefaultFactory.h"
 
 using namespace dolfin;
@@ -115,6 +116,16 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
   }
   else if (backend == "STL")
     return STLFactory::instance();
+  else if (backend == "Tpetra")
+  {
+    #ifdef HAS_TRILINOS
+    return TpetraFactory::instance();
+    #else
+    dolfin_error("DefaultFactory.cpp",
+                 "access linear algebra backend",
+                 "Tpetra linear algebra backend is not available");
+    #endif
+  }
 
   // Fallback
   log(WARNING, "Linear algebra backend \"" + backend
