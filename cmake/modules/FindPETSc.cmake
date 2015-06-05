@@ -13,7 +13,8 @@
 #  PETSC_VERSION_SUBMINOR - Third number in PETSC_VERSION
 #  PETSC_INT_SIZE - sizeof(PetscInt)
 #
-# This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
+# This config script is (very loosley) based on a PETSc CMake script
+# by Jed Brown.
 
 #=============================================================================
 # Copyright (C) 2010-2012 Garth N. Wells, Anders Logg and Johannes Ring
@@ -53,16 +54,17 @@ message(STATUS "Checking for package 'PETSc'")
 # Set debian_arches (PETSC_ARCH for Debian-style installations)
 foreach (debian_arches linux kfreebsd)
   if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set(DEBIAN_FLAVORS ${debian_arches}-gnu-c-debug ${debian_arches}-gnu-c-opt ${DEBIAN_FLAVORS})
+    set(DEBIAN_FLAVORS ${debian_arches}-gnu-c-debug ${debian_arches}-gnu-c-opt
+      ${DEBIAN_FLAVORS})
   else()
-    set(DEBIAN_FLAVORS ${debian_arches}-gnu-c-opt ${debian_arches}-gnu-c-debug ${DEBIAN_FLAVORS})
+    set(DEBIAN_FLAVORS ${debian_arches}-gnu-c-opt ${debian_arches}-gnu-c-debug
+      ${DEBIAN_FLAVORS})
   endif()
 endforeach()
 
 # List of possible locations for PETSC_DIR
 set(petsc_dir_locations "")
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.4.2")  # Debian location
-list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.2")    # Debian location
 list(APPEND petsc_dir_locations "/opt/local/lib/petsc")     # Macports location
 list(APPEND petsc_dir_locations "/usr/local/lib/petsc")     # User location
 list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")         # User location
