@@ -279,7 +279,7 @@ pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
    return xdmf_grid;
  }
 //-----------------------------------------------------------------------------
-void XDMFxml::mesh_topology(const std::size_t cell_dim,
+void XDMFxml::mesh_topology(const CellType::Type cell_type,
                             const std::size_t cell_order,
                             const std::size_t num_global_cells,
                             const std::string reference)
@@ -294,43 +294,48 @@ void XDMFxml::mesh_topology(const std::size_t cell_dim,
   xdmf_topology.append_attribute("NumberOfElements")
     = (unsigned int) num_global_cells;
 
-  std::size_t nodes_per_element = cell_dim + 1;
+  std::unique_ptr<CellType> celltype(CellType::create(cell_type));
+  std::size_t nodes_per_element = celltype->num_entities(0);
 
   // Cell type
-  if (cell_dim == 0)
+  if (cell_type == CellType::Type::point)
   {
     xdmf_topology.append_attribute("TopologyType") = "PolyVertex";
     xdmf_topology.append_attribute("NodesPerElement") = "1";
   }
-  else if (cell_dim == 1 and cell_order == 1)
+  else if (cell_type == CellType::Type::interval and cell_order == 1)
   {
     xdmf_topology.append_attribute("TopologyType") = "PolyLine";
     xdmf_topology.append_attribute("NodesPerElement") = "2";
   }
-  else if (cell_dim == 1 and cell_order == 2)
+  else if (cell_type == CellType::Type::interval and cell_order == 2)
   {
     xdmf_topology.append_attribute("TopologyType") = "Edge_3";
     nodes_per_element = 3;
   }
-  else if (cell_dim == 2 and cell_order == 1)
+  else if (cell_type == CellType::Type::triangle and cell_order == 1)
     xdmf_topology.append_attribute("TopologyType") = "Triangle";
-  else if (cell_dim == 2 and cell_order == 2)
+  else if (cell_type == CellType::Type::triangle and cell_order == 2)
   {
     xdmf_topology.append_attribute("TopologyType") = "Tri_6";
     nodes_per_element = 6;
   }
-  else if (cell_dim == 3 and cell_order == 1)
+  else if (cell_type == CellType::Type::quadrilateral and cell_order == 1)
+    xdmf_topology.append_attribute("TopologyType") = "Quadrilateral";
+  else if (cell_type == CellType::Type::tetrahedron and cell_order == 1)
     xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
-  else if (cell_dim == 3 and cell_order == 2)
+  else if (cell_type == CellType::Type::tetrahedron and cell_order == 2)
   {
     xdmf_topology.append_attribute("TopologyType") = "Tet_10";
     nodes_per_element = 10;
   }
+  else if (cell_type == CellType::Type::hexahedron and cell_order == 1)
+    xdmf_topology.append_attribute("TopologyType") = "Hexahedron";
   else
   {
     dolfin_error("XDMFFile.cpp",
                  "output mesh topology",
-                 "Invalid combination of cell dim and order");
+                 "Invalid combination of cell type and order");
   }
 
   if (reference.size() > 0)

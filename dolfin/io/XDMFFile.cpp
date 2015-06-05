@@ -183,7 +183,7 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
     const std::string mesh_ref = p.filename().string() + ":" + h5_mesh_name;
     const std::string data_ref = p.filename().string() + ":" + dataset_name;
 
-    xml.mesh_topology(tdim, 2, num_global_cells, mesh_ref);
+    xml.mesh_topology(mesh.type().cell_type(), 2, num_global_cells, mesh_ref);
     xml.mesh_geometry(num_total_vertices, gdim, mesh_ref);
 
     xml.data_attribute(function_name, value_rank, true,
@@ -413,7 +413,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   {
     XDMFxml xml(_filename);
     xml.init_timeseries(u.name(), time_step, counter);
-    xml.mesh_topology(tdim, 1, num_global_cells, current_mesh_name);
+    xml.mesh_topology(mesh.type().cell_type(), 1, num_global_cells, current_mesh_name);
     xml.mesh_geometry(num_total_vertices, gdim, current_mesh_name);
 
     boost::filesystem::path p(hdf5_filename);
@@ -491,7 +491,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
     const std::string ref = p.filename().string() + ":" + group_name;
 
     // Describe topological connectivity
-    xml.mesh_topology(cell_dim, 1, num_global_cells, ref);
+    xml.mesh_topology(mesh.type().cell_type(), 1, num_global_cells, ref);
 
     // Describe geometric coordinates
     xml.mesh_geometry(num_total_vertices, gdim, ref);
@@ -581,7 +581,7 @@ void XDMFFile::write_point_xml(const std::string group_name,
     xml.init_mesh("Point cloud");
 
     // Point topology, no connectivity data
-    xml.mesh_topology(0, 0, num_global_points, "");
+    xml.mesh_topology(CellType::Type::point, 0, num_global_points, "");
 
     // Describe geometric coordinates
     // FIXME: assumes 3D
@@ -623,7 +623,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   }
 
   const std::size_t cell_dim = meshfunction.dim();
-  dolfin_assert(cell_dim <= mesh.topology().dim());
+  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
   // Use HDF5 function to output MeshFunction
   const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
@@ -639,7 +639,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     XDMFxml xml(_filename);
     const std::string meshfunction_name = meshfunction.name();
     xml.init_timeseries(meshfunction_name, (double)counter, counter);
-    xml.mesh_topology(cell_dim, 1, mesh.size_global(cell_dim),
+    xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
                       current_mesh_name);
     xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
                       current_mesh_name);
