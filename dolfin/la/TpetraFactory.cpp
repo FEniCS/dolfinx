@@ -19,10 +19,10 @@
 
 #ifdef HAS_TRILINOS
 
-#include "SparsityPattern.h"
 #include "BelosKrylovSolver.h"
-#include "TpetraVector.h"
+#include "SparsityPattern.h"
 #include "TpetraMatrix.h"
+#include "TpetraVector.h"
 #include "TpetraFactory.h"
 
 using namespace dolfin;
@@ -72,15 +72,14 @@ TpetraFactory::create_lu_solver(std::string method) const
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearSolver>
 TpetraFactory::create_krylov_solver(std::string method,
-                                   std::string preconditioner) const
+                                    std::string preconditioner) const
 {
   std::shared_ptr<GenericLinearSolver>
     solver(new BelosKrylovSolver(method, preconditioner));
   return solver;
 }
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-TpetraFactory::krylov_solver_methods() const
+std::map<std::string, std::string> TpetraFactory::krylov_solver_methods() const
 {
   return BelosKrylovSolver::methods();
 }
@@ -91,4 +90,5 @@ TpetraFactory::krylov_solver_preconditioners() const
   return BelosKrylovSolver::preconditioners();
 }
 //-----------------------------------------------------------------------------
+
 #endif

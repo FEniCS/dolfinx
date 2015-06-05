@@ -21,14 +21,13 @@
 
 #ifdef HAS_TRILINOS
 
-#include <MueLu.hpp>
+//#include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 
-#include "TrilinosPreconditioner.h"
 #include "BelosKrylovSolver.h"
-
-#include "TpetraVector.h"
+#include "TrilinosPreconditioner.h"
 #include "TpetraMatrix.h"
+#include "TpetraVector.h"
 
 namespace dolfin
 {
@@ -44,7 +43,7 @@ namespace dolfin
   public:
 
     /// Create a particular preconditioner object
-    explicit MueluPreconditioner();
+    MueluPreconditioner();
 
     /// Destructor
     virtual ~MueluPreconditioner();
@@ -66,7 +65,8 @@ namespace dolfin
     typedef MueLu::TpetraOperator<double, int, dolfin::la_index,
                                   node_type> prec_type;
 
-    // Muelu preconditioner, to be constructed from a Tpetra Operator or Matrix
+    // Muelu preconditioner, to be constructed from a Tpetra Operator
+    // or Matrix
     Teuchos::RCP<prec_type> _prec;
 
   };

@@ -19,9 +19,8 @@
 #ifdef HAS_TRILINOS
 
 #include <MueLu_CreateTpetraPreconditioner.hpp>
-
-#include "KrylovSolver.h"
 #include "BelosKrylovSolver.h"
+#include "KrylovSolver.h"
 #include "MueluPreconditioner.h"
 
 using namespace dolfin;
@@ -35,6 +34,7 @@ MueluPreconditioner::MueluPreconditioner()
 //-----------------------------------------------------------------------------
 MueluPreconditioner::~MueluPreconditioner()
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
@@ -45,14 +45,13 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
   paramList.set("max levels", 3);
   paramList.set("coarse: max size", 10);
   paramList.set("coarse: type", "Klu2");
-
   paramList.set("multigrid algorithm", "sa");
-
   paramList.set("smoother: type", "RELAXATION");
+
   Teuchos::ParameterList sparamList;
-   sparamList.set("relaxation: type", "Jacobi");
-   sparamList.set("relaxation: sweeps", 1);
-   sparamList.set("relaxation: damping factor", 0.9);
+  sparamList.set("relaxation: type", "Jacobi");
+  sparamList.set("relaxation: sweeps", 1);
+  sparamList.set("relaxation: damping factor", 0.9);
   paramList.set("smoother: params", sparamList);
 
   paramList.set("aggregation: type", "uncoupled");
@@ -61,9 +60,8 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 
   // FIXME: why does it need to be non-const when Ifpack2 uses const?
   _prec = MueLu::CreateTpetraPreconditioner(
-            std::const_pointer_cast<TpetraMatrix>(P)->mat(),
-        paramList);
-
+    std::const_pointer_cast<TpetraMatrix>(P)->mat(),
+    paramList);
 }
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::set(BelosKrylovSolver& solver)
@@ -74,9 +72,7 @@ void MueluPreconditioner::set(BelosKrylovSolver& solver)
 std::string MueluPreconditioner::str(bool verbose) const
 {
   std::stringstream s;
-
   s << "<MueluPreconditioner>";
-
   if (verbose)
     s << _prec->description() << std::endl;
 
@@ -89,7 +85,6 @@ Parameters MueluPreconditioner::default_parameters()
   p.rename("muelu_preconditioner");
 
   Teuchos::RCP<const Teuchos::ParameterList> pList = MueLu::MasterList::List();
-
   pList->print();
 
   return p;

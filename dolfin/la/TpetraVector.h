@@ -27,15 +27,16 @@
 #include <unordered_map>
 #include <utility>
 
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/types.h>
-#include "GenericVector.h"
-
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
+
+#include <dolfin/common/types.h>
+#include <dolfin/log/dolfin_log.h>
+#include "GenericVector.h"
+
 
 // Tpetra typedefs with default values
 typedef Tpetra::MultiVector<>::node_type node_type;
@@ -47,13 +48,13 @@ namespace dolfin
 
   template<typename T> class Array;
 
-  /// This class provides a simple vector class based on Tpetra.
-  /// It is a wrapper for Teuchos::RCP<Tpetra::MultiVector>
-  /// implementing the GenericVector interface.
+  /// This class provides a simple vector class based on Tpetra.  It
+  /// is a wrapper for Teuchos::RCP<Tpetra::MultiVector> implementing
+  /// the GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the Teuchos::RCP<Tpetra::MultiVector> using the function vec() and
-  /// use the standard Tpetra interface.
+  /// access the Teuchos::RCP<Tpetra::MultiVector> using the function
+  /// vec() and use the standard Tpetra interface.
 
   class TpetraVector : public GenericVector
   {

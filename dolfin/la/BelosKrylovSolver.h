@@ -21,15 +21,15 @@
 
 #ifdef HAS_TRILINOS
 
+#include <map>
+#include <memory>
+
 #include <BelosTpetraAdapter.hpp>
 #include <BelosSolverFactory.hpp>
 #include <Ifpack2_Factory.hpp>
 
-#include <map>
-#include <memory>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
-
 #include "TpetraVector.h"
 #include "TpetraMatrix.h"
 #include "TrilinosPreconditioner.h"
@@ -61,7 +61,7 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and
     /// BelosPreconditioner
-    //    BelosKrylovSolver(std::string method, Ifpack2Preconditioner& preconditioner);
+    ///    BelosKrylovSolver(std::string method, Ifpack2Preconditioner& preconditioner);
 
     /// Create Krylov solver for a particular method and
     /// BelosPreconditioner (shared_ptr version)
@@ -145,7 +145,8 @@ namespace dolfin
     // The preconditioner, if any
     std::shared_ptr<TrilinosPreconditioner> _prec;
 
-    // Container for the problem, see Belos::LinearProblem documentation
+    // Container for the problem, see Belos::LinearProblem
+    // documentation
     Teuchos::RCP<problem_type> _problem;
 
     // Operator (the matrix)

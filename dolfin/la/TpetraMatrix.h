@@ -23,10 +23,8 @@
 #ifdef HAS_TRILINOS
 
 #include <map>
-#include <string>
 #include <memory>
-
-#include "GenericMatrix.h"
+#include <string>
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
@@ -34,6 +32,8 @@
 #include <Tpetra_Version.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
+
+#include "GenericMatrix.h"
 
 // Tpetra typedefs with default values
 typedef Tpetra::CrsMatrix<double, int, dolfin::la_index> matrix_type;
@@ -46,13 +46,14 @@ namespace dolfin
   class TpetraVector;
   class TensorLayout;
 
-  /// This class provides a simple matrix class based on Tpetra.
-  /// It is a wrapper for a Tpetra matrix pointer (Teuchos::RCP<matrix_type>)
-  /// implementing the GenericMatrix interface.
+  /// This class provides a simple matrix class based on Tpetra.  It
+  /// is a wrapper for a Tpetra matrix pointer
+  /// (Teuchos::RCP<matrix_type>) implementing the GenericMatrix
+  /// interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the Tpetra::RCP<matrix_type> pointer using the function mat() and
-  /// use the standard Tpetra interface.
+  /// access the Tpetra::RCP<matrix_type> pointer using the function
+  /// mat() and use the standard Tpetra interface.
 
   class TpetraMatrix : public GenericMatrix
   {
@@ -104,8 +105,8 @@ namespace dolfin
     /// Return copy of matrix
     virtual std::shared_ptr<GenericMatrix> copy() const;
 
-    /// Initialize vector z to be compatible with the matrix-vector product
-    /// y = Ax. In the parallel case, both size and layout are
+    /// Initialize vector z to be compatible with the matrix-vector
+    /// product y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
@@ -214,10 +215,10 @@ namespace dolfin
     // The matrix
     Teuchos::RCP<matrix_type> _matA;
 
-    // Row and Column maps to allow local indexing of off-process entries
-    // needed in add_local() and set_local()
-    Teuchos::RCP<map_type> row_map;
-    Teuchos::RCP<map_type> col_map;
+    // Row and Column maps to allow local indexing of off-process
+    // entries needed in add_local() and set_local()
+    Teuchos::RCP<map_type> _row_map;
+    Teuchos::RCP<map_type> _col_map;
 
   };
 

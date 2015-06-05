@@ -33,19 +33,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-BelosKrylovSolver::preconditioners()
+std::map<std::string, std::string> BelosKrylovSolver::preconditioners()
 {
   std::map<std::string, std::string> allowed_precs
     = Ifpack2Preconditioner::preconditioners();
 
-  allowed_precs.insert(std::make_pair<std::string, std::string>("muelu", "muelu"));
+  allowed_precs.insert(std::make_pair<std::string, std::string>("muelu",
+                                                                "muelu"));
 
   return allowed_precs;
 }
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-BelosKrylovSolver::methods()
+std::map<std::string, std::string> BelosKrylovSolver::methods()
 {
   Belos::SolverFactory<double, vector_type, op_type> factory;
   Teuchos::Array<std::string> methods = factory.supportedSolverNames();
@@ -87,6 +86,7 @@ BelosKrylovSolver::BelosKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 BelosKrylovSolver::~BelosKrylovSolver()
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Parameters BelosKrylovSolver::default_parameters()
@@ -120,17 +120,16 @@ void BelosKrylovSolver::set_operator(std::shared_ptr<const TpetraMatrix> A)
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void BelosKrylovSolver::set_operators(
-  std::shared_ptr<const GenericLinearOperator> A,
-  std::shared_ptr<const GenericLinearOperator> P)
+void
+BelosKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
+                                 std::shared_ptr<const GenericLinearOperator> P)
 {
   set_operators(as_type<const TpetraMatrix>(A),
                 as_type<const TpetraMatrix>(P));
 }
 //-----------------------------------------------------------------------------
-void
-BelosKrylovSolver::set_operators(std::shared_ptr<const TpetraMatrix> A,
-                                 std::shared_ptr<const TpetraMatrix> P)
+void BelosKrylovSolver::set_operators(std::shared_ptr<const TpetraMatrix> A,
+                                      std::shared_ptr<const TpetraMatrix> P)
 {
   dolfin_assert(!_solver.is_null());
   dolfin_assert(!_problem.is_null());
@@ -226,18 +225,17 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
     x.zero();
 
   _problem->setProblem(x.vec(), b.vec());
-
-  //  std::cout << "x = " << _problem->getLHS()->description() << "\n";
-  //  std::cout << "b = " << _problem->getRHS()->description() << "\n";
-
   _solver->setProblem(_problem);
 
   Belos::ReturnType result =_solver->solve();
   const std::size_t num_iterations = _solver->getNumIters();
 
   if (result == Belos::Converged)
-    log(PROGRESS, "Belos Krylov Solver converged in %d iterations.", num_iterations);
-  else
+  {
+    log(PROGRESS, "Belos Krylov Solver converged in %d iterations.",
+        num_iterations);
+  }
+    else
   {
     bool error_non_converge = parameters["error_on_nonconvergence"];
     if (error_non_converge)
@@ -246,7 +244,10 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
                    "Solution failed to converge in %d iterations",
                    num_iterations);
     else
-      log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.", num_iterations);
+    {
+      log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.",
+          num_iterations);
+    }
   }
 
   x.update_ghost_values();
@@ -254,8 +255,7 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-std::size_t BelosKrylovSolver::solve(const TpetraMatrix& A,
-                                     TpetraVector& x,
+std::size_t BelosKrylovSolver::solve(const TpetraMatrix& A, TpetraVector& x,
                                      const TpetraVector& b)
 {
   // Set operator
@@ -269,7 +269,6 @@ std::size_t BelosKrylovSolver::solve(const TpetraMatrix& A,
 std::string BelosKrylovSolver::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << "Belos Krylov Solver" << std::endl;
@@ -316,7 +315,7 @@ void BelosKrylovSolver::set_options()
   if (monitor_convergence)
   {
     solverParams->set("Verbosity",
-                        Belos::Warnings
+                      Belos::Warnings
                       | Belos::IterationDetails
                       | Belos::StatusTestDetails
                       | Belos::TimingDetails

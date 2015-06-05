@@ -27,15 +27,15 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/log/dolfin_log.h>
-
-#include "TpetraVector.h"
 #include "TpetraFactory.h"
+#include "TpetraVector.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TpetraVector::TpetraVector()
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 TpetraVector::TpetraVector(MPI_Comm comm, std::size_t N)
@@ -59,6 +59,7 @@ TpetraVector::TpetraVector(const TpetraVector& v)
 //-----------------------------------------------------------------------------
 TpetraVector::~TpetraVector()
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::zero()
@@ -81,13 +82,9 @@ void TpetraVector::apply(std::string mode)
 
   // Forward export to reduction vector
   if (mode == "add")
-  {
     y->doExport(*_x_ghosted, exporter, Tpetra::ADD);
-  }
   else if (mode == "insert")
-  {
     y->doExport(*_x_ghosted, exporter, Tpetra::INSERT);
-  }
 
   // Copy back into _x
   std::copy(y->getData(0).begin(), y->getData(0).end(),
@@ -97,9 +94,8 @@ void TpetraVector::apply(std::string mode)
 MPI_Comm TpetraVector::mpi_comm() const
 {
   // Unwrap MPI_Comm
-  const Teuchos::RCP<const Teuchos::MpiComm<int> > _mpi_comm
-    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >
-    (_x->getMap()->getComm());
+  const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_x->getMap()->getComm());
 
   return *(_mpi_comm->getRawMpiComm());
 }
@@ -111,9 +107,7 @@ std::string TpetraVector::str(bool verbose) const
 
   std::stringstream s;
   if (verbose)
-  {
     s << "< " << _x->description() << " >";
-  }
   else
     s << "<TpetraVector of size " << size() << ">";
 
@@ -191,7 +185,6 @@ void TpetraVector::get(double* block, std::size_t m,
 
   Teuchos::RCP<const map_type> xmap(_x_ghosted->getMap());
   Teuchos::ArrayRCP<const double> xarr = _x_ghosted->getData(0);
-
   for (std::size_t i = 0; i != m; ++i)
   {
     const int idx = xmap->getLocalElement(rows[i]);
@@ -247,9 +240,10 @@ void TpetraVector::set(const double* block, std::size_t m,
     if(_x_ghosted->getMap()->isNodeGlobalElement(rows[i]))
       _x_ghosted->replaceGlobalValue(rows[i], 0, block[i]);
     else
+    {
       dolfin_error("TpetraVector.cpp", "set data",
                    "Row %d not valid", rows[i]);
-
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -262,8 +256,10 @@ void TpetraVector::set_local(const double* block, std::size_t m,
     if(_x_ghosted->getMap()->isNodeLocalElement(rows[i]))
       _x_ghosted->replaceLocalValue(rows[i], 0, block[i]);
     else
+    {
       dolfin_error("TpetraVector.cpp", "set data",
                    "Row %d not valid", rows[i]);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -384,8 +380,7 @@ void TpetraVector::gather_on_zero(std::vector<double>& v) const
     v.resize(0);
 
   // Create map with elements only on process zero
-  Teuchos::RCP<map_type> ymap(new map_type(size(),
-                                           v.size(), 0,
+  Teuchos::RCP<map_type> ymap(new map_type(size(), v.size(), 0,
                                            _x->getMap()->getComm()));
   Teuchos::RCP<vector_type> y(new vector_type(ymap, 1));
 
@@ -489,9 +484,7 @@ const TpetraVector& TpetraVector::operator*= (const GenericVector& y)
 {
   dolfin_assert(!_x.is_null());
   const TpetraVector& _y = as_type<const TpetraVector>(y);
-
   _x->elementWiseMultiply(1.0, *(_x->getVector(0)), *(_y._x), 0.0);
-
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -586,16 +579,16 @@ GenericLinearAlgebraFactory& TpetraVector::factory() const
   return TpetraFactory::instance();
 }
 //-----------------------------------------------------------------------------
-void TpetraVector::_init(MPI_Comm comm,
-                         std::pair<std::size_t, std::size_t> local_range,
-                         const std::vector<dolfin::la_index>& local_to_global_map)
+void
+TpetraVector::_init(MPI_Comm comm,
+                    std::pair<std::size_t, std::size_t> local_range,
+                    const std::vector<dolfin::la_index>& local_to_global_map)
 {
   if (!_x.is_null())
     error("TpetraVector cannot be initialized more than once.");
 
   // Make a Trilinos version of the MPI Comm
-  Teuchos::RCP<const Teuchos::Comm<int> >
-    _comm(new Teuchos::MpiComm<int>(comm));
+  Teuchos::RCP<const Teuchos::Comm<int>> _comm(new Teuchos::MpiComm<int>(comm));
 
   // Mapping across processes
   std::size_t Nlocal = local_range.second - local_range.first;
@@ -651,15 +644,16 @@ void TpetraVector::mapdump(Teuchos::RCP<const map_type> xmap,
 
   ss << rank << "] ";
   for (int j = 0; j != m ; ++j)
+  {
     if (xmap->isNodeGlobalElement(j))
       ss << "X";
     else
       ss << " ";
+  }
   ss << "\n";
 
-  const Teuchos::RCP<const Teuchos::MpiComm<int> > _mpi_comm
-    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >
-    (xmap()->getComm());
+  const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(xmap()->getComm());
 
   MPI_Comm mpi_comm = *(_mpi_comm->getRawMpiComm());
 
@@ -671,8 +665,7 @@ void TpetraVector::mapdump(Teuchos::RCP<const map_type> xmap,
     for (auto &s: out_str)
       std::cout << s;
   }
-
 }
-
+//-----------------------------------------------------------------------------
 
 #endif

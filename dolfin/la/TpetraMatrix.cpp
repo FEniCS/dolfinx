@@ -43,7 +43,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TpetraMatrix::TpetraMatrix() : _matA(NULL)
 {
-  // Do nothing else
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 TpetraMatrix::TpetraMatrix(Teuchos::RCP<matrix_type> A) : _matA(A)
@@ -93,7 +93,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(M == N);
 
   // Set up MPI Comm
-  Teuchos::RCP<const Teuchos::Comm<int> >
+  Teuchos::RCP<const Teuchos::Comm<int>>
     _comm(new Teuchos::MpiComm<int>(sparsity_pattern->mpi_comm()));
 
   // Save the local row and column mapping, so we can use add_local
@@ -102,7 +102,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
     (tensor_layout.local_to_global_map[0].begin(),
      tensor_layout.local_to_global_map[0].end());
   Teuchos::ArrayView<dolfin::la_index> _global_indices0(global_indices0);
-  row_map = Teuchos::rcp
+  _row_map = Teuchos::rcp
     (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
                   _global_indices0, 0, _comm));
 
@@ -110,15 +110,15 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
     (tensor_layout.local_to_global_map[1].begin(),
      tensor_layout.local_to_global_map[1].end());
   Teuchos::ArrayView<dolfin::la_index> _global_indices1(global_indices1);
-  col_map = Teuchos::rcp
+  _col_map = Teuchos::rcp
     (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
                   _global_indices1, 0, _comm));
 
   // Make a Tpetra::CrsGraph of the sparsity_pattern
   typedef Tpetra::CrsGraph<> graph_type;
-  std::vector<std::vector<std::size_t> > pattern_diag
+  std::vector<std::vector<std::size_t>> pattern_diag
     = sparsity_pattern->diagonal_pattern(GenericSparsityPattern::unsorted);
-  std::vector<std::vector<std::size_t> > pattern_off
+  std::vector<std::vector<std::size_t>> pattern_off
     = sparsity_pattern->off_diagonal_pattern(GenericSparsityPattern::unsorted);
 
   dolfin_assert(pattern_diag.size() == pattern_off.size());
@@ -177,7 +177,8 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
   return num_elements;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> TpetraMatrix::local_range(std::size_t dim) const
+std::pair<std::size_t, std::size_t>
+TpetraMatrix::local_range(std::size_t dim) const
 {
   if (dim == 0)
   {
@@ -215,15 +216,10 @@ void TpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
   TpetraVector& _z = as_type<TpetraVector>(z);
 
   Teuchos::RCP<const map_type> _map;
-
   if (dim == 0)
-  {
     _map =_matA->getRangeMap();
-  }
   else if (dim == 1)
-  {
     _map = _matA->getDomainMap();
-  }
   else
   {
     dolfin_error("TpetraMatrix.cpp",
@@ -232,7 +228,6 @@ void TpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
   }
 
   _z._x = Teuchos::rcp(new vector_type(_map, 1));
-
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::get(double* block,
@@ -262,13 +257,11 @@ void TpetraMatrix::set(const double* block,
 
   // Tpetra View of column indices
   Teuchos::ArrayView<const dolfin::la_index> column_idx(cols, n);
-
   for (std::size_t i = 0 ; i != m; ++i)
   {
     Teuchos::ArrayView<const double> data(block + i*n, n);
     _matA->replaceGlobalValues(rows[i], column_idx, data);
   }
-
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::set_local(const double* block,
@@ -282,7 +275,7 @@ void TpetraMatrix::set_local(const double* block,
   std::vector<dolfin::la_index> _global_col_idx;
   _global_col_idx.reserve(n);
   for (std::size_t i = 0 ; i != n; ++i)
-    _global_col_idx.push_back(col_map->getGlobalElement(cols[i]));
+    _global_col_idx.push_back(_col_map->getGlobalElement(cols[i]));
   Teuchos::ArrayView<const dolfin::la_index> global_col_idx(_global_col_idx);
 
   for (std::size_t i = 0 ; i != m; ++i)
@@ -290,13 +283,11 @@ void TpetraMatrix::set_local(const double* block,
     Teuchos::ArrayView<const double> data(block + i*n, n);
 
     const dolfin::la_index global_row_idx
-      = row_map->getGlobalElement(rows[i]);
-    if (global_row_idx
-        != Teuchos::OrdinalTraits<dolfin::la_index>::invalid())
+      = _row_map->getGlobalElement(rows[i]);
+    if (global_row_idx != Teuchos::OrdinalTraits<dolfin::la_index>::invalid())
     {
-      std::size_t nvalid =
-        _matA->replaceGlobalValues(global_row_idx,
-                                   global_col_idx, data);
+      std::size_t nvalid = _matA->replaceGlobalValues(global_row_idx,
+                                                      global_col_idx, data);
       dolfin_assert(nvalid == n);
     }
     else
@@ -319,7 +310,6 @@ void TpetraMatrix::add(const double* block,
     Teuchos::ArrayView<const double> data(block + i*n, n);
     _matA->sumIntoGlobalValues(rows[i], column_idx, data);
   }
-
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::add_local(const double* block,
@@ -333,7 +323,7 @@ void TpetraMatrix::add_local(const double* block,
   std::vector<dolfin::la_index> _global_col_idx;
   _global_col_idx.reserve(n);
   for (std::size_t i = 0 ; i != n; ++i)
-    _global_col_idx.push_back(col_map->getGlobalElement(cols[i]));
+    _global_col_idx.push_back(_col_map->getGlobalElement(cols[i]));
   Teuchos::ArrayView<const dolfin::la_index> global_col_idx(_global_col_idx);
 
   for (std::size_t i = 0 ; i != m; ++i)
@@ -341,9 +331,8 @@ void TpetraMatrix::add_local(const double* block,
     Teuchos::ArrayView<const double> data(block + i*n, n);
 
     const dolfin::la_index global_row_idx
-      = row_map->getGlobalElement(rows[i]);
-    if (global_row_idx
-        != Teuchos::OrdinalTraits<dolfin::la_index>::invalid())
+      = _row_map->getGlobalElement(rows[i]);
+    if (global_row_idx != Teuchos::OrdinalTraits<dolfin::la_index>::invalid())
     {
       std::size_t nvalid =
         _matA->sumIntoGlobalValues(global_row_idx,
@@ -353,11 +342,10 @@ void TpetraMatrix::add_local(const double* block,
     else
       warning("Could not enter into row:%d", rows[i]);
   }
-
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::axpy(double a, const GenericMatrix& A,
-                       bool same_nonzero_pattern)
+                        bool same_nonzero_pattern)
 {
   const TpetraMatrix& AA = as_type<const TpetraMatrix>(A);
   dolfin_assert(!_matA.is_null());
@@ -520,9 +508,11 @@ void TpetraMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
       _matA->replaceLocalValues(rows[i], column_idx, data);
     }
     else
+    {
       dolfin_error("TpetraMatrix.cpp",
                    "ident local row",
                    "Row %d not local", rows[i]);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -537,7 +527,8 @@ void TpetraMatrix::mult(const GenericVector& x, GenericVector& y) const
   {
     dolfin_error("TpetraMatrix.cpp",
                  "compute matrix-vector product with Tpetra matrix",
-                 "Non-matching dimensions %d and %d for matrix-vector product", size(1), xx.size());
+                 "Non-matching dimensions %d and %d for matrix-vector product",
+                 size(1), xx.size());
   }
 
   // Resize RHS if empty
@@ -580,7 +571,6 @@ void TpetraMatrix::transpmult(const GenericVector& x, GenericVector& y) const
   }
 
   _matA->apply(*xx._x, *yy._x, Teuchos::TRANS);
-
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::set_diagonal(const GenericVector& x)
@@ -591,9 +581,7 @@ void TpetraMatrix::set_diagonal(const GenericVector& x)
   const TpetraVector& xx = x.down_cast<TpetraVector>();
 
   if (xx._x->getMap()->isSameAs(*_matA->getRowMap()))
-  {
     std::cout << "Should be OK\n";
-  }
 
   dolfin_not_implemented();
 
@@ -631,21 +619,20 @@ void TpetraMatrix::apply(std::string mode)
 
   dolfin_assert(!_matA.is_null());
   if (mode == "add" or mode == "insert")
-  {
     _matA->fillComplete();
-  }
   else
+  {
     dolfin_error("TpetraMatrix.cpp",
                  "apply changes to Tpetra matrix",
                  "Unknown apply mode \"%s\"", mode.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 MPI_Comm TpetraMatrix::mpi_comm() const
 {
   // Unwrap MPI_Comm
-  const Teuchos::RCP<const Teuchos::MpiComm<int> > _mpi_comm
-    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >
-    (_matA->getComm());
+  const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_matA->getComm());
 
   return *(_mpi_comm->getRawMpiComm());
 }
@@ -701,9 +688,7 @@ std::string TpetraMatrix::str(bool verbose) const
 
   std::stringstream s;
   if (verbose)
-  {
     s << "< " << _matA->description() << " >";
-  }
   else
     s << "<TpetraMatrix of size " << size(0) << " x " << size(1) << ">";
 
@@ -727,17 +712,20 @@ void TpetraMatrix::graphdump(const Teuchos::RCP<const graph_type> graph)
 
   ss << "\n    ";
   for (int j = 0; j != m ; ++j)
+  {
     if (g_col_map->isNodeGlobalElement(j))
       ss << "X";
     else
       ss << " ";
-
+  }
   ss << "\n    ";
   for (int j = 0; j != m ; ++j)
+  {
     if (domain_map->isNodeGlobalElement(j))
       ss << "O";
     else
       ss << " ";
+  }
   ss << "\n----";
   for (int j = 0; j != m ; ++j)
     ss << "-";
@@ -769,16 +757,19 @@ void TpetraMatrix::graphdump(const Teuchos::RCP<const graph_type> graph)
       for (std::size_t j = 0; j != nrow; ++j)
         output_row[_row[j]] = true;
     }
+
     for (int j = 0; j != m; ++j)
+    {
       if (output_row[j])
         ss << "x";
       else
         ss << " ";
+    }
     ss << "\n";
   }
 
   std::cout << ss.str();
 }
-
+//-----------------------------------------------------------------------------
 
 #endif
