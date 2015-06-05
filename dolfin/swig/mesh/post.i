@@ -101,7 +101,7 @@ _subdomain_mark_doc_string = SubDomain._mark.__doc__
 %{
 # NOTE: This is a hardcoded check, which rely on SubDomain::mark only taking
 # a MeshFunction as its first argument when mark is called with two arguments
-def mark(self, *args):
+def mark(self, *args, **kwargs):
     from . import common
     if len(args) == 2 and not isinstance(args[0], \
                     (MeshFunctionSizet, MeshFunctionInt,
@@ -110,6 +110,8 @@ def mark(self, *args):
                             "mark MeshFunction",
                             "Expected a MeshFunction of type \"size_t\", \"int\", \"double\" or \"bool\"")
 
+    if ("check_midpoint" in kwargs):
+        args = args + (kwargs["check_midpoint"],)
     self._mark(*args)
 %}
 }
