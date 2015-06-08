@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2015-06-03
+// Last changed: 2015-06-08
 //
 // Unit tests for MultiMesh
 
@@ -843,12 +843,14 @@ public:
     std::ofstream file("quadrature.txt");
     if (!file.good()) { std::cout << "file not good\n"; exit(0); }
     file.precision(20);
+
     // Sum contribution from all parts
     std::cout << "Sum contributions\n";
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
       std::cout << "% part " << part;
       double part_volume = 0;
+      std::vector<double> status(multimesh.part(part)->num_cells(), 0);
 
       // Uncut cell volume given by function volume
       const auto uncut_cells = multimesh.uncut_cells(part);
@@ -858,6 +860,7 @@ public:
         volume += cell.volume();
 	//std::cout << std::setprecision(20) << cell.volume() <<'\n';
         part_volume += cell.volume();
+	status[*it] = 1;
       }
 
       std::cout << "\t uncut volume "<< part_volume << ' ';
@@ -873,9 +876,14 @@ public:
           volume += qr.second[i];
           part_volume += qr.second[i];
         }
+	status[*it] = 2;
       }
       std::cout << "\ttotal volume " << part_volume << std::endl;
       all_volumes.push_back(part_volume);
+
+      tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part);
+      tools::dolfin_write_bb("status",*multimesh.part(part),status,part);
+
     }
     file.close();
 
