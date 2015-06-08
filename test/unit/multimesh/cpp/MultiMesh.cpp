@@ -422,7 +422,7 @@ public:
     assembler.assemble(m, M);
 
     // Check value
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(2.217133856286212, m.get_scalar_value(), DOLFIN_EPS_LARGE);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(2.217133856286212, m.get_scalar_value(), 1e-12);
   }
 
 };
