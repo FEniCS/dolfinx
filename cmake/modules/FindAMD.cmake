@@ -47,12 +47,7 @@ mark_as_advanced(AMD_INCLUDE_DIRS)
 # Check for AMD library
 find_library(AMD_LIBRARIES amd
   HINTS ${AMD_DIR}/lib $ENV{AMD_DIR}/lib $ENV{PETSC_DIR}/lib
-  NO_DEFAULT_PATH
-  DOC "The AMD library"
-  )
-find_library(AMD_LIBRARIES amd
-  DOC "The AMD library"
-  )
+  DOC "The AMD library")
 mark_as_advanced(AMD_LIBRARY)
 
 # Standard package handling
