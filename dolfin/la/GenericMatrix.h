@@ -248,9 +248,6 @@ namespace dolfin
     /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
 
-    /// Build compressed version of matrix (zeros removed)
-    virtual void compressed(GenericMatrix& B) const;
-
   };
 
 }
