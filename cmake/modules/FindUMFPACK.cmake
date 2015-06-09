@@ -8,50 +8,36 @@
 message(STATUS "Checking for package 'UMFPACK'")
 
 # Find packages that UMFPACK depends on
-set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
+#set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
 find_package(AMD QUIET)
 find_package(BLAS QUIET)
 find_package(CHOLMOD QUIET)
 
 # Check for header file
 find_path(UMFPACK_INCLUDE_DIRS umfpack.h
-  PATHS ${UMFPACK_DIR}/include $ENV{UMFPACK_DIR}/include
-  $ENV{PETSC_DIR}/include
+  HINTS ${UMFPACK_DIR}/include $ENV{UMFPACK_DIR}/include $ENV{PETSC_DIR}/include
   PATH_SUFFIXES suitesparse ufsparse
   DOC "Directory where the UMFPACK header is located")
 mark_as_advanced(UMFPACK_INCLUDE_DIRS)
 
 # Check for UMFPACK library
 find_library(UMFPACK_LIBRARY umfpack
-  PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
-  NO_DEFAULT_PATH
-  DOC "The UMFPACK library")
-find_library(UMFPACK_LIBRARY umfpack
+  HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
   DOC "The UMFPACK library")
 mark_as_advanced(UMFPACK_LIBRARY)
 
 #  Check for SUITESPARSE library on Apple
 if (APPLE)
   find_library(SUITESPARSE_LIBRARY SuiteSparse
-    PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
-    NO_DEFAULT_PATH
-    DOC "The SUITESPARSE library"
-  )
-  find_library(SUITESPARSE_LIBRARY SuiteSparse
-    DOC "The SUITESPARSE library"
-  )
+    HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
+    DOC "The SUITESPARSE library")
   mark_as_advanced(SUITESPARSE_LIBRARY)
 endif()
 
 # Check for SUITESPARSECONFIG library
 find_library(SUITESPARSECONFIG_LIBRARY suitesparseconfig
-  PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
-  NO_DEFAULT_PATH
-  DOC "The SUITESPARSE library"
-  )
-find_library(SUITESPARSECONFIG_LIBRARY suitesparseconfig
-  DOC "The SUITESPARSE library"
-  )
+  HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
+  DOC "The SUITESPARSE library")
 mark_as_advanced(SUITESPARSECONFIG_LIBRARY)
 
 # Collect libraries
@@ -168,11 +154,11 @@ int main()
   return 0;
 }
 " UMFPACK_TEST_RUNS)
-
 endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(UMFPACK
   "UMFPACK could not be found. Be sure to set UMFPACK_DIR."
-  UMFPACK_LIBRARIES UMFPACK_INCLUDE_DIRS AMD_LIBRARIES BLAS_LIBRARIES UMFPACK_TEST_RUNS)
+  UMFPACK_LIBRARIES UMFPACK_INCLUDE_DIRS AMD_LIBRARIES BLAS_LIBRARIES
+  UMFPACK_TEST_RUNS)
