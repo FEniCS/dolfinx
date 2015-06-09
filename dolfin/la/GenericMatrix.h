@@ -28,8 +28,8 @@
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
+#include <tuple>
 #include <vector>
-#include <boost/tuple/tuple.hpp>
 #include "GenericTensor.h"
 #include "GenericLinearOperator.h"
 
@@ -224,19 +224,6 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
-
-    /// Return pointers to underlying compressed row/column storage data
-    /// For compressed row storage, data = (row_pointer[#rows +1],
-    /// column_index[#nz], matrix_values[#nz], nz)
-    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                                 const double*, int> data() const
-    {
-      dolfin_error("GenericMatrix.h",
-                   "return pointers to underlying matrix data",
-                   "Not implemented by current linear algebra backend");
-      return boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                                  const double*, int>(0, 0, 0, 0);
-   }
 
     //--- Convenience functions ---
 

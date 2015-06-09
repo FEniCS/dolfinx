@@ -19,8 +19,8 @@
 // Last changed: 2013-02-26
 
 #include<set>
+#include<string>
 #include<vector>
-#include<boost/lexical_cast.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -63,7 +63,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
   zoltan.Set_Param("NUM_GLOBAL_PARTS",
-              boost::lexical_cast<std::string>(MPI::size(mpi_comm)));
+                   std::to_string(MPI::size(mpi_comm)));
 
   zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
   zoltan.Set_Param("LB_METHOD", "GRAPH");
@@ -75,7 +75,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   // Repartitioning weighting
   double phg_repart_multiplier = parameters["Zoltan_PHG_REPART_MULTIPLIER"];
   zoltan.Set_Param("PHG_REPART_MULTIPLIER",
-                   boost::lexical_cast<std::string>(phg_repart_multiplier));
+                   std::to_string(phg_repart_multiplier));
 
 
   // Set call-back functions
@@ -155,7 +155,7 @@ ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
   zoltan.Set_Param("NUM_GLOBAL_PARTS",
-               boost::lexical_cast<std::string>(MPI::size(mpi_comm)));
+                   std::to_string(MPI::size(mpi_comm)));
 
   zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
   zoltan.Set_Param("LB_METHOD", "RCB");

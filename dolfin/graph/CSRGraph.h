@@ -44,6 +44,40 @@ namespace dolfin
 
   public:
 
+    /// Access edges individually by using operator()[] to get a node object
+    class node
+    {
+    public:
+      node(const typename std::vector<T>::const_iterator& begin_it,
+           const typename std::vector<T>::const_iterator& end_it)
+        : begin_edge(begin_it), end_edge(end_it)
+      { }
+
+      /// Iterator pointing to beginning of edges
+      typename std::vector<T>::const_iterator begin() const
+      { return begin_edge; }
+
+      /// Iterator pointing to beyond end of edges
+      typename std::vector<T>::const_iterator end() const
+      { return end_edge; }
+
+      /// Number of outgoing edges for this node
+      std::size_t size() const
+      { return (end_edge - begin_edge); }
+
+      /// Access outgoing edge i of this node
+      const T& operator[](std::size_t i) const
+      { return *(begin_edge + i); }
+
+    private:
+      typename std::vector<T>::const_iterator begin_edge;
+      typename std::vector<T>::const_iterator end_edge;
+    };
+
+    /// Empty CSR Graph
+    CSRGraph() : _node_offsets(1, 0)
+    {}
+
     /// Create a CSR Graph from a collection of edges (X is a
     /// container some type, e.g. std::vector<unsigned int> or
     /// std::set<std::size_t>
@@ -78,6 +112,18 @@ namespace dolfin
     const std::vector<T>& edges() const
     { return _edges; }
 
+    /// Vector containing all edges for all local nodes (non-const)
+    std::vector<T>& edges()
+    { return _edges; }
+
+    /// Return CSRGraph::node object which provides begin() and end() iterators,
+    /// also size(), and random-access for the edges of node i.
+    const node operator[](std::size_t i) const
+    {
+      return node(_edges.begin() + _node_offsets[i],
+                  _edges.begin() + _node_offsets[i + 1]);
+    }
+
     /// Vector containing index offsets into edges for all local nodes
     /// (plus extra entry marking end)
     const std::vector<T>& nodes() const
@@ -87,12 +133,19 @@ namespace dolfin
     std::size_t num_edges() const
     { return _edges.size(); }
 
+    /// Number of edges from node i
+    std::size_t num_edges(std::size_t i) const
+    {
+      dolfin_assert(i < size());
+      return (_node_offsets[i + 1] - _node_offsets[i]);
+    }
+
     /// Number of local nodes in graph
-    std::size_t num_nodes() const
+    std::size_t size() const
     { return _node_offsets.size() - 1; }
 
     /// Total (global) number of nodes in parallel graph
-    T num_nodes_global() const
+    T size_global() const
     { return _node_distribution.back(); }
 
     /// Return number of nodes (offset) on each process
@@ -105,8 +158,8 @@ namespace dolfin
     void calculate_node_distribution()
     {
       // Communicate number of nodes between all processors
-      const std::size_t _num_nodes = num_nodes();
-      MPI::all_gather(_mpi_comm, (T) _num_nodes, _node_distribution);
+      const std::size_t num_nodes = size();
+      MPI::all_gather(_mpi_comm, (T) num_nodes, _node_distribution);
 
       _node_distribution.insert(_node_distribution.begin(), 0);
       for (std::size_t i = 1; i != _node_distribution.size(); ++i)

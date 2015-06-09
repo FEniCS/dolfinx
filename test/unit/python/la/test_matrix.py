@@ -27,13 +27,11 @@ from __future__ import print_function
 import pytest
 from dolfin import *
 from six.moves import xrange as range
-
 from dolfin_utils.test import *
-
 
 # TODO: Reuse this fixture setup code between matrix and vector tests:
 
-# Lists of backends supporting or not supporting GenericMatrix::data()
+# Lists of backends supporting or not supporting FooMatrix::data()
 # access
 data_backends = []
 no_data_backends = [("PETSc", "")]
@@ -42,15 +40,14 @@ no_data_backends = [("PETSc", "")]
 if MPI.size(mpi_comm_world()) == 1:
     # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
     # used in the old test.
-    data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse")]
-    no_data_backends = [("Eigen", "")]
+    data_backends += [("Eigen", "")]
     no_data_backends += [("PETScCusp", "")]
 
 
 # TODO: STL tests were disabled in old test framework, and do not work now:
 # If we have PETSc, STL Vector gets typedefed to one of these and data
 # test will not work. If none of these backends are available
-# STLVector defaults to uBLASVEctor, which data will work
+# STLVector defaults to EigenVEctor, which data will work
 #if has_linear_algebra_backend("PETSc"):
 #    no_data_backends += [("STL", "")]
 #else:
@@ -108,10 +105,6 @@ class TestMatrixForAnyBackend:
         self.backend, self.sub_backend = any_backend
 
         from numpy import ndarray, array, ones, sum
-
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and not use_backend:
-            return
 
         A, B = self.assemble_matrices(use_backend)
         unit_norm = A.norm('frobenius')
@@ -178,10 +171,6 @@ class TestMatrixForAnyBackend:
 
         from numpy import ndarray, array, ones, sum
 
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and not use_backend:
-            return
-
         # Assemble matrices
         A, B = self.assemble_matrices(use_backend)
 
@@ -191,13 +180,20 @@ class TestMatrixForAnyBackend:
         assert A2.shape == (2021, 2021)
         assert round(sqrt(sum(A2**2)) - A.norm('frobenius'), 7) == 0
 
-        if self.backend == 'uBLAS' and self.sub_backend == 'Sparse':
+        if self.backend == 'Eigen':
             try:
                 import scipy.sparse
                 import numpy.linalg
+                A = as_backend_type(A)
                 A3 = A.sparray()
                 assert isinstance(A3, scipy.sparse.csr_matrix)
                 assert round(numpy.linalg.norm(A3.todense() - A2) - 0.0, 7) == 0
+
+                row, col, val = A.data()
+                A_scipy = scipy.sparse.csr_matrix((val, col, row))
+                assert round(numpy.linalg.norm(A_scipy.todense(), 'fro') \
+                             - A.norm("frobenius"), 7) == 0.0
+
             except ImportError:
                 pass
 
@@ -339,17 +335,15 @@ class TestMatrixForAnyBackend:
 
 
     # Test the access of the raw data through pointers
-    # This is only available for uBLAS and MTL4 backends
+    # This is only available for the Eigen backend
     def test_matrix_data(self, use_backend, data_backend):
         """ Test for ordinary Matrix"""
         self.backend, self.sub_backend = data_backend
 
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and \
-               (not use_backend or self.sub_backend =="Dense"):
-            return
-
         A, B = self.assemble_matrices(use_backend)
+        A = as_backend_type(A)
+        B = as_backend_type(B)
+
         array = A.array()
         rows, cols, values = A.data()
         i = 0
@@ -375,18 +369,6 @@ class TestMatrixForAnyBackend:
         for row in range(A.size(0)):
             for k in range(rows[row], rows[row+1]):
                 assert array[row,cols[k]] == values[k]
-
-
-    def test_matrix_no_data(self, no_data_backend):
-        self.backend, self.sub_backend = no_data_backend
-
-        A, B = self.assemble_matrices()
-        with pytest.raises(RuntimeError):
-            A.data()
-
-        A = as_backend_type(A)
-        with pytest.raises(RuntimeError):
-            A.data()
 
 
     def test_matrix_nnz(self, any_backend):

@@ -68,11 +68,7 @@ int main(int argc, char* argv[])
   forms.push_back("navierstokes");
 
   // Backends
-  std::vector<std::string> backends;
-  backends.push_back("uBLAS");
-  backends.push_back("PETSc");
-  backends.push_back("Eigen");
-  backends.push_back("STL");
+  std::vector<std::string> backends = {"PETSc", "Eigen", "STL"};
 
   // Override forms and backends with command-line arguments
   if (argc == 3)

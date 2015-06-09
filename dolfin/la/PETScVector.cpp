@@ -33,7 +33,6 @@
 #include <dolfin/common/Set.h>
 #include <dolfin/log/log.h>
 #include "PETScVector.h"
-#include "uBLASVector.h"
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
 #include <dolfin/common/MPI.h>
