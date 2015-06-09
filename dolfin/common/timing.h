@@ -50,7 +50,7 @@ namespace dolfin
 
   /// DEPRECATED: List a summary of timings and tasks, optionally clearing
   /// stored timings. MPI_AVG reduction is printed. Collective on
-  /// MPI_COMM_WORLD. Only wall time is printed.
+  /// Logger::mpi_comm(). Only wall time is printed.
   void list_timings(bool reset=false);
 
   /// List a summary of timings and tasks, optionally clearing stored
@@ -59,7 +59,7 @@ namespace dolfin
 
   /// Dump a summary of timings and tasks to XML file, optionally clearing
   /// stored timings. MPI_MAX, MPI_MIN and MPI_AVG reductions are stored.
-  /// Collective on MPI_COMM_WORLD.
+  /// Collective on Logger::mpi_comm().
   void dump_timings_to_xml(std::string filename, TimingClear clear);
 
   /// Return timing (count, total wall time, total user time,

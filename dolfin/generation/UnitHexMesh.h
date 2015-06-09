@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2007 Anders Logg
+// Copyright (C) 2015 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -15,25 +15,26 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Thanks to Jim Tilander for many helpful hints.
-//
-// First added:  2003-03-13
-// Last changed: 2007-05-11
 
-#ifndef __LOG_MANAGER_H
-#define __LOG_MANAGER_H
+#ifndef __UNITHEXMESH_MESH_H
+#define __UNITHEXMESH_MESH_H
 
-#include "Logger.h"
+#include <string>
+#include <dolfin/common/MPI.h>
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  class LogManager
+  /// NB: this code is experimental, just for testing, and will generally not
+  /// work with anything else
+  class UnitHexMesh : public Mesh
   {
   public:
 
-    // Singleton instance of logger
-    static Logger& logger();
+    /// NB: this code is experimental, just for testing, and will generally not
+    /// work with anything else
+    UnitHexMesh(std::size_t nx, std::size_t ny, std::size_t nz);
 
   };
 
