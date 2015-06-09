@@ -32,7 +32,7 @@ equations that is not positive-definite. Standard iterative linear
 solvers typically fail to converge for such systems. Some care must
 therefore be taken in preconditioning the systems of
 equations. Moreover, not all of the linear algebra backends support
-this. We therefore start by checking that either "PETSc" or "Epetra"
+this. We therefore start by checking that either "PETSc" or "Tpetra"
 (from Trilinos) is available. We also try to pick MINRES Krylov
 subspace method which is suitable for symmetric indefinite problems.
 If not available, costly QMR method is choosen.
@@ -41,8 +41,8 @@ If not available, costly QMR method is choosen.
 
     from dolfin import *
 
-    # Test for PETSc or Epetra
-    if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Epetra"):
+    # Test for PETSc or Tpetra
+    if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Tpetra"):
         info("DOLFIN has not been configured with Trilinos or PETSc. Exiting.")
         exit()
 
