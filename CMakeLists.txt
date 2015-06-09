@@ -82,6 +82,7 @@ option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
+option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 #------------------------------------------------------------------------------
 # This should be removed when petsc version > 3.4 is out
 
@@ -418,8 +419,9 @@ if (DOLFIN_ENABLE_PETSC)
     find_package(PETSc4py)
     if (PETSC4PY_FOUND)
       if (NOT ("${PETSC4PY_VERSION_MAJOR}" EQUAL "${PETSC_VERSION_MAJOR}"
-               AND "${PETSC4PY_VERSION_MINOR}" EQUAL "${PETSC_VERSION_MINOR}"))
-        message(WARNING "PETSc version ${PETSC_VERSION} and petsc4py version ${PETSC4PY_VERSION} do not match.")
+               AND "${PETSC4PY_VERSION_MINOR}" EQUAL "${PETSC_VERSION_MINOR}") AND NOT DOLFIN_IGNORE_PETSC4PY_VERSION)
+        message(WARNING "PETSc version ${PETSC_VERSION} and petsc4py version ${PETSC4PY_VERSION} do not match. Disabling PETSc4py.")
+        set(PETSC4PY_FOUND FALSE)
       endif()
     endif()
   endif()
