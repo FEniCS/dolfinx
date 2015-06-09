@@ -370,6 +370,22 @@ namespace dolfin
     ///         The values at all vertices.
     void compute_vertex_values(std::vector<double>& vertex_values);
 
+    /// Allow extrapolation when evaluating the Function
+    ///
+    /// *Arguments*
+    ///     allow_extrapolation (bool)
+    ///         Whether or not permit extrapolation.
+    void set_allow_extrapolation(bool allow_extrapolation)
+    { _allow_extrapolation = allow_extrapolation; }
+
+    /// Check if extrapolation is permitted when evaluating the Function
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if extrapolation is permitted, otherwise false
+    bool get_allw_extrapolation() const
+    { return _allow_extrapolation; }
+
   private:
 
     // Friends
@@ -377,7 +393,7 @@ namespace dolfin
     friend class FunctionAssigner;
 
     // Collection of sub-functions which share data with the function
-    mutable boost::ptr_map<std::size_t, Function> sub_functions;
+    mutable boost::ptr_map<std::size_t, Function> _sub_functions;
 
     // Compute lists of off-process dofs
     void compute_off_process_dofs() const;
@@ -396,7 +412,7 @@ namespace dolfin
     std::shared_ptr<GenericVector> _vector;
 
     // True if extrapolation should be allowed
-    bool allow_extrapolation;
+    bool _allow_extrapolation;
 
   };
 
