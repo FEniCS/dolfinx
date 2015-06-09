@@ -1367,10 +1367,18 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
 						     Point& pt)
 {
   // Test Shewchuk style
-  const double cda = orient2d(const_cast<double*>(c.coordinates()), const_cast<double*>(d.coordinates()), const_cast<double*>(a.coordinates()));
-  const double cdb = orient2d(const_cast<double*>(c.coordinates()), const_cast<double*>(d.coordinates()), const_cast<double*>(b.coordinates()));
-  const double abc = orient2d(const_cast<double*>(a.coordinates()), const_cast<double*>(b.coordinates()), const_cast<double*>(c.coordinates()));
-  const double abd = orient2d(const_cast<double*>(a.coordinates()), const_cast<double*>(b.coordinates()), const_cast<double*>(d.coordinates()));
+  const double cda = orient2d(const_cast<double*>(c.coordinates()),
+			      const_cast<double*>(d.coordinates()),
+			      const_cast<double*>(a.coordinates()));
+  const double cdb = orient2d(const_cast<double*>(c.coordinates()),
+			      const_cast<double*>(d.coordinates()),
+			      const_cast<double*>(b.coordinates()));
+  const double abc = orient2d(const_cast<double*>(a.coordinates()),
+			      const_cast<double*>(b.coordinates()),
+			      const_cast<double*>(c.coordinates()));
+  const double abd = orient2d(const_cast<double*>(a.coordinates()),
+			      const_cast<double*>(b.coordinates()),
+			      const_cast<double*>(d.coordinates()));
 
   if (cda*cdb < 0.0 and abc*abd < 0.0) // If equality, then they align
   {

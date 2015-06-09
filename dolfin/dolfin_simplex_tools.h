@@ -69,7 +69,8 @@ namespace tools
 
   inline void dolfin_write_medit_triangles(const std::string &filename,
 					   const dolfin::Mesh& mesh,
-					   const int t = 0)
+					   const int t = 0,
+					   const std::vector<double>* u = 0)
   {
     std::stringstream ss;
     ss<<filename<<"."<<t<<".mesh";
@@ -91,36 +92,32 @@ namespace tools
     for (std::size_t e = 0; e < nel; ++e)
       file << cells[3*e]+1<<' '<<cells[3*e+1]+1<<' '<<cells[3*e+2]+1<<" 1\n";
     file.close();
-  }
 
-  inline void dolfin_write_bb(const std::string& filename,
-			      const dolfin::Mesh& mesh,
-			      const std::vector<double> &u,
-			      const int t=0)
-  {
-    std::stringstream ss;
-    ss<<filename<<"."<<t<<".bb";
-    std::ofstream file(ss.str().c_str());
-    if (!file.good()) { std::cout << "sth wrong with the file " << ss.str()<<'\n'; exit(0); }
-    file.precision(13);
-    const std::size_t nno = mesh.num_vertices();
-    const std::size_t nel = mesh.num_cells();
-    // Write data (node or element based).
-    if (u.size()==nno)
-      file << "3 1 " << nno << " 2\n";
-    else if (u.size()==nel)
-      file << "3 1 " << nel << " 1\n";
-    else
+    if (u)
     {
-      std::cout<<"\n\nstrange sizes u="<<u.size() << " nno=" << nno<<" nel="<<nel << ". Writing available data anyway\n"<<std::endl;
-      file << "3 1 " << u.size() << " 1\n";
-    }
+      std::stringstream ss;
+      ss<<filename<<"."<<t<<".bb";
+      std::ofstream file(ss.str().c_str());
+      if (!file.good()) { std::cout << "sth wrong with the file " << ss.str()<<'\n'; exit(0); }
+      file.precision(13);
+      const std::size_t nno = mesh.num_vertices();
+      const std::size_t nel = mesh.num_cells();
+      // Write data (node or element based).
+      if (u->size()==nno)
+	file << "3 1 " << nno << " 2\n";
+      else if (u->size()==nel)
+	file << "3 1 " << nel << " 1\n";
+      else
+      {
+	std::cout<<"\n\nstrange sizes u="<<u->size() << " nno=" << nno<<" nel="<<nel << ". Writing available data anyway\n"<<std::endl;
+	file << "3 1 " << u->size() << " 1\n";
+      }
 
-    // Writing
-    for (std::size_t i = 0; i < u.size(); ++i)
-      file << u[i] << '\n';
-    file << std::flush;
-    file.close();
+      // Writing
+      for (std::size_t i = 0; i < u->size(); ++i)
+	file << (*u)[i] << '\n';
+      file.close();
+    }
   }
 
   inline void dolfin_write_medit_triangles(const std::string& filename,

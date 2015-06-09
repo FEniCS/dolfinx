@@ -33,7 +33,7 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/dolfin_simplex_tools.h>
-#define Augustdebug
+//#define Augustdebug
 
 using namespace dolfin;
 
@@ -340,6 +340,16 @@ void MultiMesh::_build_collision_maps()
         }
       }
     }
+
+#ifdef Augustdebug
+    {
+      std::vector<double> tmp(markers.size());
+      for (std::size_t i = 0; i < markers.size(); ++i)
+	tmp[i] = markers[i];
+      tools::dolfin_write_medit_triangles("markers",*_meshes[i],i,&tmp);
+    }
+#endif
+
 
     // Extract uncut, cut and covered cells from markers
     std::vector<unsigned int> uncut_cells;

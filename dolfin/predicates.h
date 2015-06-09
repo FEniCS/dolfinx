@@ -496,7 +496,7 @@ REAL *e;
 /*                                                                           */
 /*****************************************************************************/
 
-double doublerand()
+inline double doublerand()
 {
   double result;
   double expo;
@@ -522,7 +522,7 @@ double doublerand()
 /*                                                                           */
 /*****************************************************************************/
 
-double narrowdoublerand()
+inline double narrowdoublerand()
 {
   double result;
   double expo;
@@ -547,7 +547,7 @@ double narrowdoublerand()
 /*                                                                           */
 /*****************************************************************************/
 
-double uniformdoublerand()
+inline double uniformdoublerand()
 {
   double result;
   long a, b;
@@ -590,7 +590,7 @@ float floatrand()
 /*                                                                           */
 /*****************************************************************************/
 
-float narrowfloatrand()
+inline float narrowfloatrand()
 {
   float result;
   float expo;
@@ -614,7 +614,7 @@ float narrowfloatrand()
 /*                                                                           */
 /*****************************************************************************/
 
-float uniformfloatrand()
+inline float uniformfloatrand()
 {
   float result;
   long a;
@@ -643,7 +643,7 @@ float uniformfloatrand()
 /*                                                                           */
 /*****************************************************************************/
 
-void exactinit()
+inline void exactinit()
 {
   REAL half;
   REAL check, lastcheck;
@@ -698,7 +698,7 @@ void exactinit()
 /*                                                                           */
 /*****************************************************************************/
 
-int grow_expansion(int elen, REAL *e, REAL b, REAL *h)                /* e and h can be the same. */
+inline int grow_expansion(int elen, REAL *e, REAL b, REAL *h)                /* e and h can be the same. */
 /* int elen; */
 /* REAL *e; */
 /* REAL b; */
@@ -735,7 +735,7 @@ int grow_expansion(int elen, REAL *e, REAL b, REAL *h)                /* e and h
 /*                                                                           */
 /*****************************************************************************/
 
-int grow_expansion_zeroelim(int elen, REAL *e, REAL b, REAL *h)       /* e and h can be the same. */
+inline int grow_expansion_zeroelim(int elen, REAL *e, REAL b, REAL *h)       /* e and h can be the same. */
 /* int elen; */
 /* REAL *e; */
 /* REAL b; */
@@ -777,7 +777,7 @@ int grow_expansion_zeroelim(int elen, REAL *e, REAL b, REAL *h)       /* e and h
 /*                                                                           */
 /*****************************************************************************/
 
-int expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)
+inline int expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)
 /* e and h can be the same, but f and h cannot. */
 /* int elen; */
 /* REAL *e; */
@@ -826,7 +826,7 @@ int expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)
 /*                                                                           */
 /*****************************************************************************/
 
-int expansion_sum_zeroelim1(int elen, REAL *e, int flen, REAL *f, REAL *h)
+inline int expansion_sum_zeroelim1(int elen, REAL *e, int flen, REAL *f, REAL *h)
 /* e and h can be the same, but f and h cannot. */
 /* int elen; */
 /* REAL *e; */
@@ -886,7 +886,7 @@ int expansion_sum_zeroelim1(int elen, REAL *e, int flen, REAL *f, REAL *h)
 /*                                                                           */
 /*****************************************************************************/
 
-int expansion_sum_zeroelim2(int elen, REAL *e, int flen, REAL *f, REAL *h)
+inline int expansion_sum_zeroelim2(int elen, REAL *e, int flen, REAL *f, REAL *h)
 /* e and h can be the same, but f and h cannot. */
 /* int elen; */
 /* REAL *e; */
@@ -943,7 +943,7 @@ int expansion_sum_zeroelim2(int elen, REAL *e, int flen, REAL *f, REAL *h)
 /*                                                                           */
 /*****************************************************************************/
 
-int fast_expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)           /* h cannot be e or f. */
+inline int fast_expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)           /* h cannot be e or f. */
 /* int elen; */
 /* REAL *e; */
 /* int flen; */
@@ -1020,7 +1020,7 @@ int fast_expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)           
 /*                                                                           */
 /*****************************************************************************/
 
-int fast_expansion_sum_zeroelim(int elen, REAL *e, int flen, REAL *f, REAL *h)  /* h cannot be e or f. */
+inline int fast_expansion_sum_zeroelim(int elen, REAL *e, int flen, REAL *f, REAL *h)  /* h cannot be e or f. */
 /* int elen; */
 /* REAL *e; */
 /* int flen; */
@@ -1105,7 +1105,7 @@ int fast_expansion_sum_zeroelim(int elen, REAL *e, int flen, REAL *f, REAL *h)  
 /*                                                                           */
 /*****************************************************************************/
 
-int linear_expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)         /* h cannot be e or f. */
+inline int linear_expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)         /* h cannot be e or f. */
 /* int elen; */
 /* REAL *e; */
 /* int flen; */
@@ -1169,7 +1169,7 @@ int linear_expansion_sum(int elen, REAL *e, int flen, REAL *f, REAL *h)         
 /*                                                                           */
 /*****************************************************************************/
 
-int linear_expansion_sum_zeroelim(int elen, REAL *e, int flen, REAL *f, REAL *h)/* h cannot be e or f. */
+inline int linear_expansion_sum_zeroelim(int elen, REAL *e, int flen, REAL *f, REAL *h)/* h cannot be e or f. */
 /* int elen; */
 /* REAL *e; */
 /* int flen; */
@@ -1243,7 +1243,7 @@ int linear_expansion_sum_zeroelim(int elen, REAL *e, int flen, REAL *f, REAL *h)
 /*                                                                           */
 /*****************************************************************************/
 
-int scale_expansion(int elen, REAL *e, REAL b, REAL *h)            /* e and h cannot be the same. */
+inline int scale_expansion(int elen, REAL *e, REAL b, REAL *h)            /* e and h cannot be the same. */
 /* int elen; */
 /* REAL *e; */
 /* REAL b; */
@@ -1292,7 +1292,7 @@ int scale_expansion(int elen, REAL *e, REAL b, REAL *h)            /* e and h ca
 /*                                                                           */
 /*****************************************************************************/
 
-int scale_expansion_zeroelim(int elen, REAL *e, REAL b, REAL *h)   /* e and h cannot be the same. */
+inline int scale_expansion_zeroelim(int elen, REAL *e, REAL b, REAL *h)   /* e and h cannot be the same. */
 /* int elen; */
 /* REAL *e; */
 /* REAL b; */
@@ -1347,7 +1347,7 @@ int scale_expansion_zeroelim(int elen, REAL *e, REAL b, REAL *h)   /* e and h ca
 /*                                                                           */
 /*****************************************************************************/
 
-int compress(int elen, REAL *e, REAL *h)                         /* e and h may be the same. */
+inline int compress(int elen, REAL *e, REAL *h)                         /* e and h may be the same. */
 /* int elen; */
 /* REAL *e; */
 /* REAL *h; */
@@ -1392,7 +1392,7 @@ int compress(int elen, REAL *e, REAL *h)                         /* e and h may 
 /*                                                                           */
 /*****************************************************************************/
 
-REAL estimate(int elen, REAL *e)
+inline REAL estimate(int elen, REAL *e)
 /* int elen; */
 /* REAL *e; */
 {
@@ -1432,7 +1432,7 @@ REAL estimate(int elen, REAL *e)
 /*                                                                           */
 /*****************************************************************************/
 
-REAL orient2dfast(REAL *pa, REAL *pb, REAL *pc)
+inline REAL orient2dfast(REAL *pa, REAL *pb, REAL *pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1446,7 +1446,7 @@ REAL orient2dfast(REAL *pa, REAL *pb, REAL *pc)
   return acx * bcy - acy * bcx;
 }
 
-REAL orient2dexact(REAL *pa, REAL *pb, REAL *pc)
+inline REAL orient2dexact(REAL *pa, REAL *pb, REAL *pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1491,7 +1491,7 @@ REAL orient2dexact(REAL *pa, REAL *pb, REAL *pc)
   return w[wlength - 1];
 }
 
-REAL orient2dslow(REAL *pa, REAL *pb, REAL *pc)
+inline REAL orient2dslow(REAL *pa, REAL *pb, REAL *pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1535,7 +1535,7 @@ REAL orient2dslow(REAL *pa, REAL *pb, REAL *pc)
   return deter[deterlen - 1];
 }
 
-REAL orient2dadapt(REAL *pa, REAL *pb, REAL *pc, REAL detsum)
+inline REAL orient2dadapt(REAL *pa, REAL *pb, REAL *pc, REAL detsum)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1619,7 +1619,7 @@ REAL orient2dadapt(REAL *pa, REAL *pb, REAL *pc, REAL detsum)
   return(D[Dlength - 1]);
 }
 
-REAL orient2d(REAL *pa, REAL *pb, REAL *pc)
+inline REAL orient2d(REAL *pa, REAL *pb, REAL *pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1684,7 +1684,7 @@ REAL orient2d(REAL *pa, REAL *pb, REAL *pc)
 /*                                                                           */
 /*****************************************************************************/
 
-REAL orient3dfast(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+inline REAL orient3dfast(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1709,7 +1709,7 @@ REAL orient3dfast(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
        + cdx * (ady * bdz - adz * bdy);
 }
 
-REAL orient3dexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+inline REAL orient3dexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1790,7 +1790,7 @@ REAL orient3dexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
   return deter[deterlen - 1];
 }
 
-REAL orient3dslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+inline REAL orient3dslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1886,7 +1886,7 @@ REAL orient3dslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
   return deter[deterlen - 1];
 }
 
-REAL orient3dadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL permanent)
+inline REAL orient3dadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL permanent)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2291,7 +2291,7 @@ REAL orient3dadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL permanent)
   return finnow[finlength - 1];
 }
 
-REAL orient3d(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+inline REAL orient3d(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2362,7 +2362,7 @@ REAL orient3d(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /*                                                                           */
 /*****************************************************************************/
 
-REAL incirclefast(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+inline REAL incirclefast(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2389,7 +2389,7 @@ REAL incirclefast(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
   return alift * bcdet + blift * cadet + clift * abdet;
 }
 
-REAL incircleexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+inline REAL incircleexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2491,7 +2491,7 @@ REAL incircleexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
   return deter[deterlen - 1];
 }
 
-REAL incircleslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+inline REAL incircleslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2651,7 +2651,7 @@ REAL incircleslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
   return deter[deterlen - 1];
 }
 
-REAL incircleadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL permanent)
+inline REAL incircleadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL permanent)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -3298,7 +3298,7 @@ REAL incircle(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /*                                                                           */
 /*****************************************************************************/
 
-REAL inspherefast(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
+inline REAL inspherefast(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -3346,7 +3346,7 @@ REAL inspherefast(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
   return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
 }
 
-REAL insphereexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
+inline REAL insphereexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -3603,7 +3603,7 @@ REAL insphereexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
   return deter[deterlen - 1];
 }
 
-REAL insphereslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
+inline REAL insphereslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -3937,7 +3937,7 @@ REAL insphereslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
   return deter[deterlen - 1];
 }
 
-REAL insphereadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe, REAL permanent)
+inline REAL insphereadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe, REAL permanent)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -4157,7 +4157,7 @@ REAL insphereadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe, REAL perman
   return insphereexact(pa, pb, pc, pd, pe);
 }
 
-REAL insphere(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
+inline REAL insphere(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */

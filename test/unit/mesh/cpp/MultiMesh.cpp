@@ -872,17 +872,17 @@ public:
         const auto& qr = multimesh.quadrature_rule_cut_cell(part, *it);
         for (std::size_t i = 0; i < qr.second.size(); ++i)
         {
-	  file << qr.second[i]<<'\n';
+	  file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
           volume += qr.second[i];
           part_volume += qr.second[i];
+	  //std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
         }
 	status[*it] = 2;
       }
       std::cout << "\ttotal volume " << part_volume << std::endl;
       all_volumes.push_back(part_volume);
 
-      tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part);
-      tools::dolfin_write_bb("status",*multimesh.part(part),status,part);
+      tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part,&status);
 
     }
     file.close();
