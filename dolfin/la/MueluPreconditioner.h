@@ -63,7 +63,7 @@ namespace dolfin
   private:
 
     typedef MueLu::TpetraOperator<double, int, dolfin::la_index,
-                                  node_type> prec_type;
+                                  TpetraVector::node_type> prec_type;
 
     // Muelu preconditioner, to be constructed from a Tpetra Operator
     // or Matrix

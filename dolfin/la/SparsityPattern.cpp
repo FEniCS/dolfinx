@@ -298,25 +298,21 @@ std::pair<std::size_t, std::size_t>
 std::size_t SparsityPattern::num_nonzeros() const
 {
   std::size_t nz = 0;
-  typedef std::vector<set_type>::const_iterator slice_it;
-  for (slice_it slice = diagonal.begin(); slice != diagonal.end(); ++slice)
+  for (auto slice = diagonal.begin(); slice != diagonal.end(); ++slice)
     nz += slice->size();
-  for (slice_it slice = off_diagonal.begin(); slice != off_diagonal.end();
-       ++slice)
-  {
+  for (auto slice = off_diagonal.begin(); slice != off_diagonal.end(); ++slice)
     nz += slice->size();
-  }
+
   return nz;
 }
 //-----------------------------------------------------------------------------
-void  SparsityPattern::num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzeros) const
+void SparsityPattern::num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzeros) const
 {
   // Resize vector
   num_nonzeros.resize(diagonal.size());
 
   // Get number of nonzeros per generalised row
-  typedef std::vector<set_type>::const_iterator slice_it;
-  for (slice_it slice = diagonal.begin(); slice != diagonal.end(); ++slice)
+  for (auto slice = diagonal.begin(); slice != diagonal.end(); ++slice)
     num_nonzeros[slice - diagonal.begin()] = slice->size();
 }
 //-----------------------------------------------------------------------------
@@ -326,12 +322,8 @@ void SparsityPattern::num_nonzeros_off_diagonal(std::vector<std::size_t>& num_no
   num_nonzeros.resize(off_diagonal.size());
 
   // Compute number of nonzeros per generalised row
-  typedef std::vector<set_type>::const_iterator slice_it;
-  for (slice_it slice = off_diagonal.begin(); slice != off_diagonal.end();
-       ++slice)
-  {
+  for (auto slice = off_diagonal.begin(); slice != off_diagonal.end(); ++slice)
     num_nonzeros[slice - off_diagonal.begin()] = slice->size();
-  }
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const
@@ -473,7 +465,6 @@ std::string SparsityPattern::str(bool verbose) const
 {
   // Print each row
   std::stringstream s;
-  typedef set_type::const_iterator entry_it;
   for (std::size_t i = 0; i < diagonal.size(); i++)
   {
     if (primary_dim() == 0)
@@ -481,11 +472,8 @@ std::string SparsityPattern::str(bool verbose) const
     else
       s << "Col " << i << ":";
 
-    for (entry_it entry = diagonal[i].begin(); entry != diagonal[i].end();
-         ++entry)
-    {
+    for (auto entry = diagonal[i].begin(); entry != diagonal[i].end(); ++entry)
       s << " " << *entry;
-    }
     s << std::endl;
   }
 

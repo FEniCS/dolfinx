@@ -149,8 +149,8 @@ namespace dolfin
       // Below give error with icpc 13.0.1 20121010
       //(void) dynamic_cast< T* >( static_cast< U* >( 0 ) );
       typedef typename std::shared_ptr<T>::element_type E;
-      E * p = dynamic_cast< E* >( r.get() );
-      return p? std::shared_ptr<T>( r, p ): std::shared_ptr<T>();
+      E * p = dynamic_cast< E* >(r.get());
+      return p ? std::shared_ptr<T>(r, p) : std::shared_ptr<T>();
   }
   #endif
 
