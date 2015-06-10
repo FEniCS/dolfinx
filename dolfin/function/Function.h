@@ -383,7 +383,7 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True if extrapolation is permitted, otherwise false
-    bool get_allw_extrapolation() const
+    bool get_allow_extrapolation() const
     { return _allow_extrapolation; }
 
   private:
