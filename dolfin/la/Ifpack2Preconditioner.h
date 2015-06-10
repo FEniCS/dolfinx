@@ -21,15 +21,13 @@
 
 #ifdef HAS_TRILINOS
 
-#include <Ifpack2_Factory.hpp>
-
 #include <map>
 #include <memory>
+#include <Ifpack2_Factory.hpp>
 #include <dolfin/common/types.h>
-#include "TrilinosPreconditioner.h"
-
-#include "TpetraVector.h"
 #include "TpetraMatrix.h"
+#include "TpetraVector.h"
+#include "TrilinosPreconditioner.h"
 
 namespace dolfin
 {
@@ -70,8 +68,8 @@ namespace dolfin
     // name of preconditioner
     std::string _name;
 
-    typedef Ifpack2::Preconditioner<double, int,
-                                    dolfin::la_index, node_type> prec_type;
+    typedef Ifpack2::Preconditioner<double, int, dolfin::la_index,
+                                    TpetraVector::node_type> prec_type;
 
     // Ifpack2 preconditioner, to be constructed from a
     // Tpetra Operator or Matrix

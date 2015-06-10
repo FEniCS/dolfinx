@@ -34,9 +34,6 @@
 #include "TpetraMatrix.h"
 #include "TrilinosPreconditioner.h"
 
-typedef Tpetra::Operator<double, int, dolfin::la_index, node_type> op_type;
-typedef Belos::LinearProblem<double, vector_type, op_type> problem_type;
-
 namespace dolfin
 {
 
@@ -53,6 +50,11 @@ namespace dolfin
   class BelosKrylovSolver : public GenericLinearSolver
   {
   public:
+
+    typedef Tpetra::Operator<double, int, dolfin::la_index,
+                             TpetraVector::node_type> op_type;
+    typedef Belos::LinearProblem<double, TpetraVector::vector_type,
+                                 op_type> problem_type;
 
     /// Create Krylov solver for a particular method and names
     /// preconditioner
@@ -139,8 +141,8 @@ namespace dolfin
                           const GenericVector& b) const;
 
     // Belos solver pointer
-    Teuchos::RCP<Belos::SolverManager<double, vector_type, op_type> >
-      _solver;
+    Teuchos::RCP<Belos::SolverManager<double, TpetraVector::vector_type,
+                                      op_type>> _solver;
 
     // The preconditioner, if any
     std::shared_ptr<TrilinosPreconditioner> _prec;

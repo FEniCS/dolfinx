@@ -27,21 +27,15 @@
 #include <unordered_map>
 #include <utility>
 
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_oblackholestream.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Version.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include "GenericVector.h"
-
-
-// Tpetra typedefs with default values
-typedef Tpetra::MultiVector<>::node_type node_type;
-typedef Tpetra::Map<int, dolfin::la_index, node_type> map_type;
-typedef Tpetra::MultiVector<double, int, dolfin::la_index, node_type> vector_type;
 
 namespace dolfin
 {
@@ -60,6 +54,12 @@ namespace dolfin
   {
   public:
 
+     // Tpetra typedefs with default values
+    typedef Tpetra::MultiVector<>::node_type node_type;
+    typedef Tpetra::Map<int, dolfin::la_index, node_type> map_type;
+    typedef Tpetra::MultiVector<double, int, dolfin::la_index, node_type>
+    vector_type;
+
     /// Create empty vector
     TpetraVector();
 
@@ -67,13 +67,13 @@ namespace dolfin
     TpetraVector(MPI_Comm comm, std::size_t N);
 
     /// Create vector
-    //    explicit TpetraVector(const GenericSparsityPattern& sparsity_pattern);
+    //explicit TpetraVector(const GenericSparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     TpetraVector(const TpetraVector& x);
 
     /// Create vector wrapper of Tpetra Vec pointer
-    //    explicit TpetraVector(Teuchos::RCP<vector_type> x);
+    //explicit TpetraVector(Teuchos::RCP<vector_type> x);
 
     /// Destructor
     virtual ~TpetraVector();
@@ -104,7 +104,8 @@ namespace dolfin
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range);
 
-    /// Initialize vector with given ownership range and with ghost values
+    /// Initialize vector with given ownership range and with ghost
+    /// values
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
@@ -257,7 +258,8 @@ namespace dolfin
     void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
                const std::vector<dolfin::la_index>& local_to_global);
 
-    // Tpetra multivector - actually a view into the ghosted vector, below
+    // Tpetra multivector - actually a view into the ghosted vector,
+    // below
     Teuchos::RCP<vector_type> _x;
 
     // Tpetra multivector with extra rows for ghost values
