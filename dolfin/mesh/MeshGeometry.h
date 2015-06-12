@@ -130,7 +130,6 @@ namespace dolfin
 
     // Friends
     friend class BinaryFile;
-    friend class MeshRenumbering;
 
     // Euclidean dimension
     std::size_t _dim;
