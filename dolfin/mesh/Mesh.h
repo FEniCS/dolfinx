@@ -639,7 +639,6 @@ namespace dolfin
     // Friends
     friend class MeshEditor;
     friend class TopologyComputation;
-    friend class MeshOrdering;
     friend class BinaryFile;
 
     // Mesh topology
