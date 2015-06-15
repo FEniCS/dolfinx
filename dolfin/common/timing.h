@@ -91,7 +91,6 @@ namespace dolfin
   ///     clear (TimingClear)
   ///         * ``TimingClear::clear`` resets stored timings
   ///         * ``TimingClear::keep`` leaves stored timings intact
->>>>>>> jan/timing
   void dump_timings_to_xml(std::string filename, TimingClear clear);
 
   /// Return timing (count, total wall time, total user time,
