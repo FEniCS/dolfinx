@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg 2008, 2015
 //
 // First added:  2008-08-22
-// Last changed: 2009-09-08
+// Last changed: 2015-06-15
 //
 // This demo demonstrates the calculation of a TM (Transverse Magnetic)
 // cutoff wavenumber of a rectangular waveguide with dimensions 1x0.5m.
@@ -44,7 +44,7 @@ int main()
   // Create mesh
   double width = 1.0;
   double height = 0.5;
-  RectangleMesh mesh(0, 0, width, height, 4, 2);
+  RectangleMesh mesh(Point(0, 0), Point(width, height), 4, 2);
 
   // Define the forms - gererates an generalized eigenproblem of the form
   // [S]{h} = k_o^2[T]{h}

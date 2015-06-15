@@ -18,7 +18,7 @@
 // Modified by Mikael Mortensen, 2014
 //
 // First added:  2005-12-02
-// Last changed: 2014-02-17
+// Last changed: 2015-06-15
 
 #ifndef __RECTANGLE_MESH_H
 #define __RECTANGLE_MESH_H
@@ -30,27 +30,23 @@
 namespace dolfin
 {
 
-  /// Triangular mesh of the 2D rectangle (x0, y0) x (x1, y1).
-  /// Given the number of cells (nx, ny) in each direction,
-  /// the total number of triangles will be 2*nx*ny and the
-  /// total number of vertices will be (nx + 1)*(ny + 1).
+  /// Triangular mesh of the 2D rectangle spanned by two points p0 and
+  /// p1. Given the number of cells (nx, ny) in each direction, the
+  /// total number of triangles will be 2*nx*ny and the total number
+  /// of vertices will be (nx + 1)*(ny + 1).
 
   class RectangleMesh : public Mesh
   {
   public:
 
     /// *Arguments*
-    ///     x0 (double)
-    ///         :math:`x`-min.
-    ///     y0 (double)
-    ///         :math:`y`-min.
-    ///     x1 (double)
-    ///         :math:`x`-max.
-    ///     y1 (double)
-    ///         :math:`y`-max.
-    ///     xn (double)
+    ///     p0 (_Point_)
+    ///         First point.
+    ///     p1 (_Point_)
+    ///         Second point.
+    ///     nx (double)
     ///         Number of cells in :math:`x`-direction.
-    ///     yn (double)
+    ///     ny (double)
     ///         Number of cells in :math:`y`-direction.
     ///     diagonal (string)
     ///         Direction of diagonals: "left", "right", "left/right", "crossed"
@@ -58,28 +54,26 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         // Mesh with 6 cells in each direction on the
+    ///         // Mesh with 8 cells in each direction on the
     ///         // set [-1,2] x [-1,2]
-    ///         RectangleMesh mesh(-1, -1, 2, 2, 6, 6);
+    ///         Point p0(-1, -1);
+    ///         Point p1(2, 2);
+    ///         RectangleMesh mesh(p0, p1, 8, 8);
     ///
-    RectangleMesh(double x0, double y0, double x1, double y1,
+    RectangleMesh(const Point& p0, const Point& p1,
                   std::size_t nx, std::size_t ny,
                   std::string diagonal="right");
 
     /// *Arguments*
     ///     comm (MPI_Comm)
     ///         MPI communicator
-    ///     x0 (double)
-    ///         :math:`x`-min.
-    ///     y0 (double)
-    ///         :math:`y`-min.
-    ///     x1 (double)
-    ///         :math:`x`-max.
-    ///     y1 (double)
-    ///         :math:`y`-max.
-    ///     xn (double)
+    ///     p0 (_Point_)
+    ///         First point.
+    ///     p1 (_Point_)
+    ///         Second point.
+    ///     nx (double)
     ///         Number of cells in :math:`x`-direction.
-    ///     yn (double)
+    ///     ny (double)
     ///         Number of cells in :math:`y`-direction.
     ///     diagonal (string)
     ///         Direction of diagonals: "left", "right", "left/right", "crossed"
@@ -87,18 +81,21 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         // Mesh with 6 cells in each direction on the
+    ///         // Mesh with 8 cells in each direction on the
     ///         // set [-1,2] x [-1,2]
-    ///         RectangleMesh mesh(MPI_COMM_WORLD, -1, -1, 2, 2, 6, 6);
+    ///         Point p0(-1, -1);
+    ///         Point p1(2, 2);
+    ///         RectangleMesh mesh(MPI_COMM_WORLD, p0, p1, 8, 8);
     ///
-    RectangleMesh(MPI_Comm comm, double x0, double y0, double x1, double y1,
+    RectangleMesh(MPI_Comm comm,
+                  const Point& p0, const Point& p1,
                   std::size_t nx, std::size_t ny,
                   std::string diagonal="right");
 
   private:
 
     // Build mesh
-    void build(double x0, double y0, double x1, double y1,
+    void build(const Point& p0, const Point& p1,
                std::size_t nx, std::size_t ny,
                std::string diagonal="right");
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Anders Logg
+// Copyright (C) 2005-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2007.
-// Modified by Nuno Lopes 2008.
-// Modified by Kristian B. Oelgaard 2009.
+// Modified by Garth N. Wells 2007
+// Modified by Nuno Lopes 2008
+// Modified by Kristian B. Oelgaard 2009
 
 #include <boost/multi_array.hpp>
 
@@ -30,22 +30,22 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
+RectangleMesh::RectangleMesh(const Point& p0, const Point& p1,
                              std::size_t nx, std::size_t ny,
                              std::string diagonal) : Mesh(MPI_COMM_WORLD)
 {
-  build(x0, y0, x1, y1, nx, ny, diagonal);
+  build(p0, p1, nx, ny, diagonal);
 }
 //-----------------------------------------------------------------------------
 RectangleMesh::RectangleMesh(MPI_Comm comm,
-                             double x0, double y0, double x1, double y1,
+                             const Point& p0, const Point& p1,
                              std::size_t nx, std::size_t ny,
                              std::string diagonal) : Mesh(comm)
 {
-  build(x0, y0, x1, y1, nx, ny, diagonal);
+  build(p0, p1, nx, ny, diagonal);
 }
 //-----------------------------------------------------------------------------
-void RectangleMesh::build(double x0, double y0, double x1, double y1,
+void RectangleMesh::build(const Point& p0, const Point& p1,
                           std::size_t nx, std::size_t ny,
                           std::string diagonal)
 {
@@ -64,6 +64,12 @@ void RectangleMesh::build(double x0, double y0, double x1, double y1,
                  "create rectangle",
                  "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
   }
+
+  // Extract minimum and maximum coordinates
+  const double x0 = std::min(p0.x(), p1.x());
+  const double x1 = std::max(p0.x(), p1.x());
+  const double y0 = std::min(p0.y(), p1.y());
+  const double y1 = std::max(p0.y(), p1.y());
 
   const double a = x0;
   const double b = x1;
