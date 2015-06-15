@@ -22,24 +22,25 @@
 
 #include <sstream>
 #include <stdio.h>
-#include <dolfin/log/Table.h>
+
+
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Timer.h>
-
-#include <dolfin/parameter/Parameters.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/GenericFunction.h>
+#include <dolfin/la/Vector.h>
+#include <dolfin/log/Table.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/parameter/Parameters.h>
 #include <dolfin/plot/plot.h>
 
 #include "GenericAdaptiveVariationalSolver.h"
 #include "GoalFunctional.h"
-#include "ErrorControl.h"
-#include "TimeSeries.h"
 #include "adapt.h"
+#include "ErrorControl.h"
 #include "marking.h"
+#include "TimeSeriesHDF5.h"
 
 using namespace dolfin;
 
@@ -65,7 +66,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
 
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
-  TimeSeries series(label);
+  TimeSeriesHDF5 series(MPI_COMM_WORLD, label);
 
   // Iterate over a series of meshes
   Timer timer("Adaptive solve");

@@ -741,7 +741,7 @@ def test_p37_box_1(cd_tempdir):
     t = 0.0
     T = 1.0
 
-    time_series = TimeSeries("simulation_data")
+    time_series = TimeSeriesHDF5(mpi_comm_world(), "simulation_data")
     while t < T:
         time_series.store(u.vector(), t)
         time_series.store(mesh, t)
@@ -750,7 +750,7 @@ def test_p37_box_1(cd_tempdir):
 
 @skip_in_parallel
 def test_p37_box_2():
-    time_series = TimeSeries("simulation_data")
+    time_series = TimeSeriesHDF5(mpi_comm_world(), "simulation_data")
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)

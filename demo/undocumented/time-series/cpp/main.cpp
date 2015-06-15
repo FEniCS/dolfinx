@@ -28,12 +28,11 @@ using namespace dolfin;
 int main()
 {
   // Create empty time series
-  TimeSeries series("primal");
+  TimeSeriesHDF5 series(MPI_COMM_WORLD, "primal");
 
   // Create a mesh and a vector
   UnitSquareMesh unit_square(2, 2);
   Mesh mesh(unit_square);
-  //Vector x;
 
   // Add a bunch of meshes and vectors to the series
   double t = 0.0;
