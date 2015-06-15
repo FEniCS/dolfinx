@@ -84,23 +84,22 @@ has diagonals to both left and right:
    :scale: 65 %
 
 The class :py:class:`RectangleMesh
-<dolfin.cpp.generation.RectangleMesh>`
-(:math:`x_0,y_0,x_1,y_1,n_x,n_y`, direction) creates a mesh on a
-rectangle with one corner in :math:`(x_0,y_0)` and the opposite corner
-in :math:`(x_1,y_1)`. :math:`n_x` and :math:`n_y` specify the number
-of cells in the :math:`x`- and :math:`y`-directions, and as above the
-direction of the diagonals is given as a final optional argument
-("left", "right", "left/right", or "crossed"). In the first mesh we
-use the default direction ("right") of the diagonal, and in the second
-mesh we use diagonals to both left and right.
+<dolfin.cpp.generation.RectangleMesh>` creates a mesh of a 2D
+rectangle spanned by two points (opposing corners) of the rectangle.
+Three additional arguments specify the number of divisions in the
+:math:`x`- and :math:`y`-directions, and as above the direction of the
+diagonals is given as a final optional argument ("left", "right",
+"left/right", or "crossed"). In the first mesh we use the default
+direction ("right") of the diagonal, and in the second mesh we use
+diagonals to both left and right.
 
 .. code-block:: python
 
-   mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
+   mesh = RectangleMesh(Point(0.0, 0.0), Point(10.0, 4.0), 10, 10)
    print("Plotting a RectangleMesh")
    plot(mesh, title="Rectangle")
 
-   mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
+   mesh = RectangleMesh(Point(-3.0, 2.0), Point(7.0, 6.0), 10, 10, "right/left")
    print("Plotting a RectangleMesh")
    plot(mesh, title="Rectangle (right/left)")
 
@@ -127,13 +126,10 @@ arguments.
    :scale: 75 %
 
 Finally we will demonstrate a mesh on a rectangular prism in
-3D. :py:class:`BoxMesh <dolfin.cpp.generation.BoxMesh>`
-(:math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of
-the first corner(:math:`x_0,y_0,z_0`) as the three first arguments,
-the coordinates of the opposite corner (:math:`x_1,y_1,z_1`) as the
-next three arguments, while the last three arguments specify the
-number of points in the :math:`x`-, :math:`y`- and
-:math:`z`-direction.
+3D. The prism is specified by two points (opposing corners)
+of the prism. Three additional arguments specify the
+number of divisions in the :math:`x`-, :math:`y`- and
+:math:`z`-directions.
 
 Meshes for more complex geometries may be created using the mshr
 library, which functions as a plugin to DOLFIN, providing support
@@ -142,7 +138,7 @@ more details, refer to the mshr documentation.
 
 .. code-block:: python
 
-   mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
+   mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(10.0, 4.0, 2.0), 10, 10, 10)
    print("Plotting a BoxMesh")
    plot(mesh, title="Box")
 

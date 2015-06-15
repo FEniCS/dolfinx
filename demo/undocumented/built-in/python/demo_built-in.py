@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg 2008, 2015
 # Modified by Benjamin Kehlet 2012
 
 from __future__ import print_function
@@ -43,11 +43,11 @@ mesh = UnitSquareMesh(10, 10, "right/left")
 print("Plotting a UnitSquareMesh")
 plot(mesh, title="Unit square (right/left)")
 
-mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
+mesh = RectangleMesh(Point(0.0, 0.0), Point(10.0, 4.0), 10, 10)
 print("Plotting a RectangleMesh")
 plot(mesh, title="Rectangle")
 
-mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
+mesh = RectangleMesh(Point(-3.0, 2.0), Point(7.0, 6.0), 10, 10, "right/left")
 print("Plotting a RectangleMesh")
 plot(mesh, title="Rectangle (right/left)")
 
@@ -55,7 +55,7 @@ mesh = UnitCubeMesh(10, 10, 10)
 print("Plotting a UnitCubeMesh")
 plot(mesh, title="Unit cube")
 
-mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
+mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(10.0, 4.0, 2.0), 10, 10, 10)
 print("Plotting a BoxMesh")
 plot(mesh, title="Box")
 
