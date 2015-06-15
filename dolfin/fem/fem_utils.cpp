@@ -99,7 +99,7 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
 
   // Iterate over vertices
   std::size_t local_vertex_ind = 0;
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  for (VertexIterator vertex(mesh, "all"); !vertex.end(); ++vertex)
   {
     // Get the first cell connected to the vertex
     const Cell cell(mesh, vertex->entities(top_dim)[0]);
