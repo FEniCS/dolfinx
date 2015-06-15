@@ -52,6 +52,16 @@ Variable::~Variable()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+const Variable& Variable::operator=(const Variable& variable)
+{
+  // Assign everything but unique_id
+  parameters = variable.parameters;
+  _name = variable._name;
+  _label = variable._label;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
 void Variable::rename(const std::string name, const std::string label)
 {
   _name = name;
