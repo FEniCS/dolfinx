@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef __TIME_SERIES_HDF5_H
-#define __TIME_SERIES_HDF5_H
+#ifndef __TIME_SERIES_H
+#define __TIME_SERIES_H
 
 #ifdef HAS_HDF5
 
@@ -43,7 +43,7 @@ namespace dolfin
   /// case reuse those values. If new values are stored, old
   /// values will be cleared.
 
-  class TimeSeriesHDF5 : public Variable
+  class TimeSeries : public Variable
   {
   public:
 
@@ -54,10 +54,10 @@ namespace dolfin
     ///         An MPI communicator
     ///     name (std::string)
     ///         The time series name
-    TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name);
+    TimeSeries(MPI_Comm mpi_comm, std::string name);
 
     /// Destructor
-    ~TimeSeriesHDF5();
+    ~TimeSeries();
 
     /// Store vector at given time
     ///

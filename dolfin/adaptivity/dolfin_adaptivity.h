@@ -10,7 +10,7 @@
 #include <dolfin/adaptivity/ErrorControl.h>
 #include <dolfin/adaptivity/Extrapolation.h>
 #include <dolfin/adaptivity/LocalAssembler.h>
-#include <dolfin/adaptivity/TimeSeriesHDF5.h>
+#include <dolfin/adaptivity/TimeSeries.h>
 
 #include <dolfin/adaptivity/adapt.h>
 #include <dolfin/adaptivity/marking.h>

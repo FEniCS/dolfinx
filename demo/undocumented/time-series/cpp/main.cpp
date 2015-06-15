@@ -28,7 +28,7 @@ using namespace dolfin;
 int main()
 {
   // Create empty time series
-  TimeSeriesHDF5 series(MPI_COMM_WORLD, "primal");
+  TimeSeries series(MPI_COMM_WORLD, "primal");
 
   // Create a mesh and a vector
   UnitSquareMesh unit_square(2, 2);

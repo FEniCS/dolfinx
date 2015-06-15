@@ -22,7 +22,7 @@ from dolfin import *
 from numpy import ones
 
 # Create empty time series
-series = TimeSeries("primal")
+series = TimeSeries(mpi_comm_world(), "primal")
 
 # Create a mesh and a vector
 mesh = UnitSquareMesh(2, 2)

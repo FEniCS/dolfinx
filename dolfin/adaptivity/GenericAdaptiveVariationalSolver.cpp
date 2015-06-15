@@ -40,7 +40,7 @@
 #include "adapt.h"
 #include "ErrorControl.h"
 #include "marking.h"
-#include "TimeSeriesHDF5.h"
+#include "TimeSeries.h"
 
 using namespace dolfin;
 
@@ -66,7 +66,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
 
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
-  TimeSeriesHDF5 series(MPI_COMM_WORLD, label);
+  TimeSeries series(MPI_COMM_WORLD, label);
 
   // Iterate over a series of meshes
   Timer timer("Adaptive solve");

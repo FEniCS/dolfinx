@@ -33,16 +33,16 @@
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/mesh/Mesh.h>
 
-#include "TimeSeriesHDF5.h"
+#include "TimeSeries.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 template <typename T>
-void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
-                                  std::vector<double>& times,
-                                  std::string series_name,
-                                  std::string group_name)
+void TimeSeries::store_object(MPI_Comm comm, const T& object, double t,
+                              std::vector<double>& times,
+                              std::string series_name,
+                              std::string group_name)
 {
   // Write object
 
@@ -84,7 +84,7 @@ void TimeSeriesHDF5::store_object(MPI_Comm comm, const T& object, double t,
   HDF5Interface::add_attribute(fid, dataset_name, "time", t);
 }
 //-----------------------------------------------------------------------------
-TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
+TimeSeries::TimeSeries(MPI_Comm mpi_comm, std::string name)
   : _name(name + ".h5"), _cleared(false)
 {
   // Set default parameters
@@ -96,8 +96,8 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
   if (File::exists(_name))
   {
     // Read from file
-    const hid_t hdf5_file_id
-      = HDF5Interface::open_file(mpi_comm, _name, "r", true);
+    const hid_t hdf5_file_id = HDF5Interface::open_file(mpi_comm, _name, "r",
+                                                        true);
     if (HDF5Interface::has_group(hdf5_file_id, "/Vector"))
     {
       const unsigned int nvecs
@@ -115,7 +115,7 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
           _vector_times.size());
       if (!monotone(_vector_times))
       {
-        dolfin_error("TimeSeriesHDF5.cpp",
+        dolfin_error("TimeSeries.cpp",
        "read time series from file",
        "Sample points for vector data are not strictly monotone in series \"%s\"",
                      name.c_str());
@@ -150,15 +150,14 @@ TimeSeriesHDF5::TimeSeriesHDF5(MPI_Comm mpi_comm, std::string name)
   }
   else
     log(PROGRESS, "No samples found in time series.");
-
 }
 //-----------------------------------------------------------------------------
-TimeSeriesHDF5::~TimeSeriesHDF5()
+TimeSeries::~TimeSeries()
 {
   // Do nothing (keep files)
 }
 //-----------------------------------------------------------------------------
-void TimeSeriesHDF5::store(const GenericVector& vector, double t)
+void TimeSeries::store(const GenericVector& vector, double t)
 {
   // Clear earlier history first time we store a value
   const bool clear_on_write = this->parameters["clear_on_write"];
@@ -169,7 +168,7 @@ void TimeSeriesHDF5::store(const GenericVector& vector, double t)
   store_object(vector.mpi_comm(), vector, t, _vector_times, _name, "/Vector");
 }
 //-----------------------------------------------------------------------------
-void TimeSeriesHDF5::store(const Mesh& mesh, double t)
+void TimeSeries::store(const Mesh& mesh, double t)
 {
   // Clear earlier history first time we store a value
   const bool clear_on_write = this->parameters["clear_on_write"];
@@ -181,12 +180,12 @@ void TimeSeriesHDF5::store(const Mesh& mesh, double t)
 
 }
 //-----------------------------------------------------------------------------
-void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
+void TimeSeries::retrieve(GenericVector& vector, double t,
                               bool interpolate) const
 {
   if (!File::exists(_name))
   {
-    dolfin_error("TimeSeriesHDF5.cpp",
+    dolfin_error("TimeSeries.cpp",
                  "open file to retrieve series",
                  "File does not exist");
   }
@@ -252,11 +251,11 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
   }
 }
 //-----------------------------------------------------------------------------
-void TimeSeriesHDF5::retrieve(Mesh& mesh, double t) const
+void TimeSeries::retrieve(Mesh& mesh, double t) const
 {
   if (!File::exists(_name))
   {
-    dolfin_error("TimeSeriesHDF5.cpp",
+    dolfin_error("TimeSeries.cpp",
                  "open file to retrieve series",
                  "File does not exist");
   }
@@ -272,24 +271,24 @@ void TimeSeriesHDF5::retrieve(Mesh& mesh, double t) const
   hdf5_file.read(mesh, "/Mesh/" + std::to_string(index), false);
 }
 //-----------------------------------------------------------------------------
-std::vector<double> TimeSeriesHDF5::vector_times() const
+std::vector<double> TimeSeries::vector_times() const
 {
   return _vector_times;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> TimeSeriesHDF5::mesh_times() const
+std::vector<double> TimeSeries::mesh_times() const
 {
   return _mesh_times;
 }
 //-----------------------------------------------------------------------------
-void TimeSeriesHDF5::clear()
+void TimeSeries::clear()
 {
   _vector_times.clear();
   _mesh_times.clear();
   _cleared = true;
 }
 //-----------------------------------------------------------------------------
-std::string TimeSeriesHDF5::str(bool verbose) const
+std::string TimeSeries::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
@@ -318,7 +317,7 @@ std::string TimeSeriesHDF5::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-bool TimeSeriesHDF5::monotone(const std::vector<double>& times)
+bool TimeSeries::monotone(const std::vector<double>& times)
 {
   // If size of time series is 0 or 1 they are always monotone
   if (times.size() < 2)
@@ -336,10 +335,10 @@ bool TimeSeriesHDF5::monotone(const std::vector<double>& times)
   return true;
 }
 //-----------------------------------------------------------------------------
-std::size_t TimeSeriesHDF5::find_closest_index(double t,
-                                               const std::vector<double>& times,
-                                               std::string series_name,
-                                               std::string type_name)
+std::size_t TimeSeries::find_closest_index(double t,
+                                           const std::vector<double>& times,
+                                           std::string series_name,
+                                           std::string type_name)
 {
   // Get closest pair
   const std::pair<std::size_t, std::size_t> index_pair
@@ -356,9 +355,9 @@ std::size_t TimeSeriesHDF5::find_closest_index(double t,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-TimeSeriesHDF5::find_closest_pair(double t, const std::vector<double>& times,
-                                  std::string series_name,
-                                  std::string type_name)
+TimeSeries::find_closest_pair(double t, const std::vector<double>& times,
+                              std::string series_name,
+                              std::string type_name)
 {
   // Must have at least one value stored
   if (times.empty())
