@@ -24,7 +24,7 @@
 #include <dolfin/common/unittest.h>
 //FIXME August
 #include <dolfin_simplex_tools.h>
-#include <predicates.h>
+#include <dolfin/geometry/predicates.h>
 
 using namespace dolfin;
 

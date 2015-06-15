@@ -23,7 +23,7 @@
 #include "CollisionDetection.h"
 
 // FIXME August
-#include <dolfin/predicates.h>
+#include <dolfin/geometry/predicates.h>
 
 using namespace dolfin;
 

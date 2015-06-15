@@ -27,7 +27,7 @@
 #include "GenericBoundingBoxTree.h"
 
 // FIXME August
-//#include <dolfin/predicates.h>
+#include <dolfin/geometry/predicates.h>
 
 
 namespace dolfin
@@ -80,31 +80,31 @@ namespace dolfin
     // Check whether point (x) is in bounding box (node)
     bool point_in_bbox(const double* x, unsigned int node) const
     {
-      const double* b = _bbox_coordinates.data() + 4*node;
-      const double eps0 = DOLFIN_EPS_LARGE*(b[2] - b[0]);
-      const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
-      return (b[0] - eps0 <= x[0] && x[0] <= b[2] + eps0 &&
-              b[1] - eps1 <= x[1] && x[1] <= b[3] + eps1);
+      /* const double* b = _bbox_coordinates.data() + 4*node; */
+      /* const double eps0 = DOLFIN_EPS_LARGE*(b[2] - b[0]); */
+      /* const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]); */
+      /* return (b[0] - eps0 <= x[0] && x[0] <= b[2] + eps0 && */
+      /*         b[1] - eps1 <= x[1] && x[1] <= b[3] + eps1); */
 
       // FIXME: August tests Shewchuk robust geometry kit
-      /* const double* b = _bbox_coordinates.data() + 4*node; */
-      /* double p0[2] = {b[0], b[1]}; */
-      /* double p1[2] = {b[2], b[1]}; */
-      /* if (orient2d(const_cast<double*>(x), p0, p1) > 0) */
-      /* 	return false; */
+      const double* b = _bbox_coordinates.data() + 4*node;
+      double p0[2] = {b[0], b[1]};
+      double p1[2] = {b[2], b[1]};
+      if (orient2d(const_cast<double*>(x), p0, p1) > 0)
+      	return false;
 
-      /* double p2[2] = {b[0], b[3]}; */
-      /* if (orient2d(const_cast<double*>(x), p0, p2) > 0) */
-      /* 	return false; */
+      double p2[2] = {b[0], b[3]};
+      if (orient2d(const_cast<double*>(x), p0, p2) > 0)
+      	return false;
 
-      /* double p3[2] = {b[2], b[3]}; */
-      /* if (orient2d(const_cast<double*>(x), p2, p3) > 0) */
-      /* 	return false; */
+      double p3[2] = {b[2], b[3]};
+      if (orient2d(const_cast<double*>(x), p2, p3) > 0)
+      	return false;
 
-      /* if (orient2d(const_cast<double*>(x), p3, p1) > 0) */
-      /* 	return false; */
+      if (orient2d(const_cast<double*>(x), p3, p1) > 0)
+      	return false;
 
-      /* return true; */
+      return true;
     }
 
     // Check whether bounding box (a) collides with bounding box (node)
