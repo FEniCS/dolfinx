@@ -37,7 +37,7 @@
 #include "GenericAdaptiveVariationalSolver.h"
 #include "GoalFunctional.h"
 #include "ErrorControl.h"
-#include "TimeSeries.h"
+#include "TimeSeriesHDF5.h"
 #include "adapt.h"
 #include "marking.h"
 
@@ -65,7 +65,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
 
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
-  TimeSeries series(label);
+  TimeSeriesHDF5 series(goal->mesh().mpi_comm(), label);
 
   // Iterate over a series of meshes
   Timer timer("Adaptive solve");
