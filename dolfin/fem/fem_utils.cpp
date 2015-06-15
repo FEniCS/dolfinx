@@ -105,14 +105,21 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
     const Cell cell(mesh, vertex->entities(top_dim)[0]);
 
     // Find local vertex number
+#ifdef DEBUG
+    bool vertex_found = false;
+#endif
     for (std::size_t i = 0; i < cell.num_entities(0); i++)
     {
       if (cell.entities(0)[i] == vertex->index())
       {
         local_vertex_ind = i;
+#ifdef DEBUG
+        vertex_found = true;
+#endif
         break;
       }
     }
+    dolfin_assert(vertex_found);
 
     // Get all cell dofs
     const ArrayView<const dolfin::la_index> cell_dofs
