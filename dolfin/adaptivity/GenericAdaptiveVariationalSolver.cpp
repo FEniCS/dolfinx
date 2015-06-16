@@ -18,11 +18,10 @@
 // Modified by Anders Logg 2010-2013
 //
 // First added:  2010-08-19
-// Last changed: 2013-11-15
+// Last changed: 2015-06-16
 
 #include <sstream>
 #include <stdio.h>
-
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Timer.h>
@@ -37,6 +36,7 @@
 
 #include "GenericAdaptiveVariationalSolver.h"
 #include "GoalFunctional.h"
+#include "ErrorControl.h"
 #include "adapt.h"
 #include "ErrorControl.h"
 #include "marking.h"
@@ -66,7 +66,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
 
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
-  TimeSeries series(MPI_COMM_WORLD, label);
+#ifdef HAS_HDF5
+  TimeSeries series(goal->mesh().mpi_comm(), label);
+#endif
 
   // Iterate over a series of meshes
   Timer timer("Adaptive solve");
@@ -152,8 +154,10 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     datum->add("time_compute_indicators", timer.stop());
     if (parameters["save_data"])
     {
+#ifdef HAS_HDF5
       //series.store(indicators, i); // No TimeSeries storage of MeshFunction
       series.store(mesh, i);
+#endif
     }
     end();
 
