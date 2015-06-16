@@ -76,7 +76,17 @@ bool MeshDomains::set_marker(std::pair<std::size_t, std::size_t> marker,
                              std::size_t dim)
 {
   dolfin_assert(dim < _markers.size());
-  return _markers[dim].insert(marker).second;
+
+  // Check if key already present
+  bool new_entity_index = false;
+  auto it = _markers[dim].find(marker.first);
+  if (it == _markers[dim].end())
+  {
+    new_entity_index = true;
+  }
+
+  _markers[dim][marker.first] = marker.second;
+  return new_entity_index;
 }
 //-----------------------------------------------------------------------------
 std::size_t MeshDomains::get_marker(std::size_t entity_index,

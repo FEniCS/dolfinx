@@ -43,6 +43,7 @@ namespace dolfin
 
   class PETScVector;
   class TensorLayout;
+  class VectorSpaceBasis;
 
   /// This class provides a simple matrix class based on PETSc.
   /// It is a wrapper for a PETSc matrix pointer (Mat)
@@ -148,6 +149,9 @@ namespace dolfin
     virtual void axpy(double a, const GenericMatrix& A,
                       bool same_nonzero_pattern);
 
+    /// Return norm of matrix
+    double norm(std::string norm_type) const;
+
     /// Get non-zero values of given row
     virtual void getrow(std::size_t row,
                         std::vector<std::size_t>& columns,
@@ -199,13 +203,13 @@ namespace dolfin
     /// Return linear algebra backend factory
     virtual GenericLinearAlgebraFactory& factory() const;
 
-    //--- Special PETScFunctions ---
-
-    /// Return norm of matrix
-    double norm(std::string norm_type) const;
+    //--- Special PETSc Functions ---
 
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);
+
+    /// Attach nullspace to matrix
+    void set_nullspace(const VectorSpaceBasis& nullspace);
 
     /// Dump matrix to PETSc binary format
     void binary_dump(std::string file_name) const;

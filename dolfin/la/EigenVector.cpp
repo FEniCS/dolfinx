@@ -356,3 +356,15 @@ void EigenVector::resize(std::size_t N)
   _x->setZero();
 }
 //-----------------------------------------------------------------------------
+double* EigenVector::data()
+{
+  dolfin_assert(_x);
+  return _x->data();
+}
+//-----------------------------------------------------------------------------
+const double* EigenVector::data() const
+{
+  dolfin_assert(_x);
+  return _x->data();
+}
+//-----------------------------------------------------------------------------

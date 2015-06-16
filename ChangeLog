@@ -1,6 +1,27 @@
-- Make interior facet integrals define - and + cells ordered by cell_domains value.
+- Add (highly experimental) support for Tpetra matrices and vectors from Trilinos,
+	interfacing to Belos, Amesos2, IfPack2 and Muelu.
+- Enable (highly experimental) support for Quadrilateral and Hexahedral meshes,
+	including some I/O, but no assembly yet.
+- Enable UMFPACK and CHOLMOD solvers with Eigen backend
+- Add an MPI_Comm to logger, currently defaulted to MPI_COMM_WORLD
+	allowing better control over output in parallel
+- Experimental output of quadratic geometry in XDMF files,
+	allows more exact visualisation of P2 Functions
+- Remove GenericMatrix::compressed (see Issue #61)
+- Deprecate and PETScKryloveSolver::set_nullspace() and add
+	PETScMatrix::set_nullspace()
+- Remove uBLAS backend
+- Remove UmfpackLUSolver and CholmodSolver
+- Add EigenMatrix/Vector::data()
+- Remove GenericMatrix/Vector::data() and GenericMatrix/Vector::data()
+	(to use backends that support data(), cast first to backend type, e.g.
+	A = A.as_backend_type()
+- Remove cmake.local, replaced by fenics-install-component.sh
+- Make interior facet integrals define - and + cells ordered by cell_domains
+	value.
 - Remove deprecated arguments *_domains from assemble() and Form().
-- Change measure definition notation from dx[mesh_function] to dx(subdomain_data=mesh_function).
+- Change measure definition notation from dx[mesh_function] to
+	dx(subdomain_data=mesh_function).
 - Set locale to "C" before reading from file
 - Change GenericDofMap::cell_dofs return type from const std::vector<..>&
 	to ArrayView<const ..>
@@ -10,14 +31,16 @@
 - Remove deprecated GenericDofMap::geometric_dim function (fixes Issue #443)
 - Add quadrature rules for multimesh/cut-cell integration up to order 6
 - Implement MPI reductions and XML ouput of Table class
-- list_timings() is now collective and returns MPI average acrros processes
+- list_timings() is now collective and returns MPI average across processes
 - Add dump_timings_to_xml()
 - Add enum TimingType { wall, user, system } for selecting wall-clock,
   user and system time in timing routines
 - Bump required SWIG version to 3.0.3
 - Increase default maximum iterations in NewtonSolver to 50.
+- Deprecate Python free function homogenize(bc) in favour of member
+  function DirichletBC::homogenize()
 1.5.0 [2015-01-12]
- - DG demos working is parallel
+ - DG demos working in parallel
  - Simplify re-use of LU factorisations
  - CMake 3 compatibility
  - Make underlying SLEPc object accessible
