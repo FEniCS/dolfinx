@@ -227,7 +227,7 @@ void TpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
-  _z._x = Teuchos::rcp(new vector_type(_map, 1));
+  _z._x = Teuchos::rcp(new TpetraVector::vector_type(_map, 1));
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::get(double* block,

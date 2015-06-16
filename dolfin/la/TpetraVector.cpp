@@ -614,10 +614,9 @@ TpetraVector::_init(MPI_Comm comm,
 
   // Get a modifiable view into the ghosted vector
   _x = _x_ghosted->offsetViewNonConst(_map, 0);
-
 }
 //-----------------------------------------------------------------------------
-Teuchos::RCP<vector_type> TpetraVector::vec() const
+Teuchos::RCP<TpetraVector::vector_type> TpetraVector::vec() const
 {
   return _x;
 }

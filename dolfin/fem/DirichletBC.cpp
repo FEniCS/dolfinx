@@ -154,13 +154,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc)
-  : Hierarchical<DirichletBC>(*this),
-   _user_sub_domain_marker(0),
-   _check_midpoint(true)
+  : Hierarchical<DirichletBC>(*this)
 {
-  // Set default parameters
-  parameters = default_parameters();
-
   *this = bc;
 }
 //-----------------------------------------------------------------------------
@@ -176,8 +171,13 @@ const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
   _method = bc._method;
   _user_sub_domain = bc._user_sub_domain;
   _facets = bc._facets;
+  _cells_to_localdofs = bc._cells_to_localdofs;
+  _user_mesh_function = bc._user_mesh_function;
+  _user_sub_domain_marker = bc._user_sub_domain_marker;
+  _check_midpoint = bc._check_midpoint;
 
   // Call assignment operator for base class
+  Variable::operator=(bc);
   Hierarchical<DirichletBC>::operator=(bc);
 
   return *this;

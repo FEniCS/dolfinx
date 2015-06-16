@@ -26,19 +26,14 @@
 #include <memory>
 #include <string>
 
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Version.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_Version.hpp>
 
 #include "GenericMatrix.h"
-
-// Tpetra typedefs with default values
-typedef Tpetra::CrsMatrix<double, int, dolfin::la_index> matrix_type;
-typedef Tpetra::CrsGraph<int, dolfin::la_index> graph_type;
-typedef Tpetra::Map<int, dolfin::la_index> map_type;
 
 namespace dolfin
 {
@@ -57,7 +52,13 @@ namespace dolfin
 
   class TpetraMatrix : public GenericMatrix
   {
+
   public:
+
+    // Tpetra typedefs with default values
+    typedef Tpetra::CrsMatrix<double, int, dolfin::la_index> matrix_type;
+    typedef Tpetra::CrsGraph<int, dolfin::la_index> graph_type;
+    typedef Tpetra::Map<int, dolfin::la_index> map_type;
 
     /// Create empty matrix
     TpetraMatrix();
