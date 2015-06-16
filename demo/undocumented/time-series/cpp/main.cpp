@@ -27,6 +27,9 @@ using namespace dolfin;
 
 int main()
 {
+
+  #ifdef HAS_HDF5
+
   // Create empty time series
   TimeSeries series(MPI_COMM_WORLD, "primal");
 
@@ -65,6 +68,8 @@ int main()
   // Plot mesh
   plot(mesh);
   interactive();
+
+  #endif
 
   return 0;
 }
