@@ -1,5 +1,7 @@
-- Add (highly experimental) support for Tpetra matrices and vectors from Trilinos,
-	interfacing to Belos, Amesos2, IfPack2 and Muelu.
+- Remove BinaryFile (TimeSeries now requires HDF5)
+- Add (highly experimental) support for Tpetra matrices and
+	vectors from Trilinos, interfacing to Belos, Amesos2, IfPack2 and
+	Muelu.
 - Enable (highly experimental) support for Quadrilateral and Hexahedral meshes,
 	including some I/O, but no assembly yet.
 - Enable UMFPACK and CHOLMOD solvers with Eigen backend
