@@ -37,6 +37,8 @@
   user and system time in timing routines
 - Bump required SWIG version to 3.0.3
 - Increase default maximum iterations in NewtonSolver to 50.
+- Deprecate Python free function homogenize(bc) in favour of member
+  function DirichletBC::homogenize()
 1.5.0 [2015-01-12]
  - DG demos working in parallel
  - Simplify re-use of LU factorisations
