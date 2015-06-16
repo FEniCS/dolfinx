@@ -61,7 +61,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   dolfin_assert(u.function_space()->dofmap());
   const Mesh& mesh = *u.function_space()->mesh();
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
-  const std::size_t num_cells = mesh.num_cells();
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
 
   std::string encode_string;
   if (!binary)
@@ -233,7 +234,7 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
 void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
                                  std::string filename)
 {
-  const std::size_t num_cells = mesh.topology().size(cell_dim);
+  const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
   const std::size_t num_cell_vertices = mesh.type().num_vertices(cell_dim);
 
   // Get VTK cell type
@@ -264,10 +265,14 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   file << "<Cells>" << std::endl;
   file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
        << "ascii" << "\">";
+
+  std::unique_ptr<CellType>
+    celltype(CellType::create(mesh.type().entity_type(cell_dim)));
+  const std::vector<unsigned int> perm = celltype->vtk_mapping();
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
-    for (VertexIterator v(*c); !v.end(); ++v)
-      file << v->index() << " ";
+    for (unsigned int i = 0; i != c->num_entities(0); ++i)
+      file << c->entities(0)[perm[i]] << " ";
     file << " ";
   }
   file << "</DataArray>" << std::endl;
@@ -334,10 +339,14 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   const int size = num_cells*num_cell_vertices;
   std::vector<boost::uint32_t> cell_data(size);
   std::vector<boost::uint32_t>::iterator cell_entry = cell_data.begin();
+
+  std::unique_ptr<CellType>
+    celltype(CellType::create(mesh.type().entity_type(cell_dim)));
+  const std::vector<unsigned int> perm = celltype->vtk_mapping();
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
-    for (VertexIterator v(*c); !v.end(); ++v)
-      *cell_entry++ = v->index();
+    for (unsigned int i = 0; i != c->num_entities(0); ++i)
+      *cell_entry++ = c->entities(0)[perm[i]];
   }
 
   // Create encoded stream
@@ -378,26 +387,16 @@ boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh,
                                         std::size_t cell_dim)
 {
   // Get cell type
-  CellType::Type cell_type = mesh.type().cell_type();
-  if (mesh.topology().dim() == cell_dim)
-    cell_type = mesh.type().cell_type();
-  else if (mesh.topology().dim() - 1 == cell_dim)
-    cell_type = mesh.type().facet_type();
-  else if (cell_dim == 1)
-    cell_type = CellType::interval;
-  else if (cell_dim == 0)
-    cell_type = CellType::point;
-  else
-  {
-    dolfin_error("VTKWriter.cpp",
-                 "write data to VTK file",
-                 "Can only handle cells, cell facets or points with VTK output for now");
-  }
+  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
   // Determine VTK cell type
   boost::uint8_t vtk_cell_type = 0;
   if (cell_type == CellType::tetrahedron)
     vtk_cell_type = 10;
+  else if (cell_type == CellType::hexahedron)
+    vtk_cell_type = 12;
+  else if (cell_type == CellType::quadrilateral)
+    vtk_cell_type = 9;
   else if (cell_type == CellType::triangle)
     vtk_cell_type = 5;
   else if (cell_type == CellType::interval)

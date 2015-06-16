@@ -307,9 +307,7 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
   // Create mesh for editing
   MeshEditor editor;
   dolfin_assert(mesh_data.tdim != 0);
-  std::string cell_type_str
-    = CellType::type2string((CellType::Type)mesh_data.tdim);
-  editor.open(mesh, cell_type_str, mesh_data.tdim, mesh_data.gdim);
+  editor.open(mesh, mesh_data.cell_type, mesh_data.tdim, mesh_data.gdim);
 
   // Iterate over vertices and add to mesh
   editor.init_vertices_global(mesh_data.num_global_vertices,

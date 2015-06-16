@@ -120,6 +120,8 @@
 %shared_ptr(dolfin::IntervalMesh)
 %shared_ptr(dolfin::UnitTriangleMesh)
 %shared_ptr(dolfin::UnitSquareMesh)
+%shared_ptr(dolfin::UnitQuadMesh)
+%shared_ptr(dolfin::UnitHexMesh)
 %shared_ptr(dolfin::BoxMesh)
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
@@ -160,10 +162,6 @@
 %shared_ptr(dolfin::LinearOperator)
 
 %shared_ptr(dolfin::STLMatrix)
-%shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >)
-%shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double,\
-            boost::numeric::ublas::row_major> >)
-%shared_ptr(dolfin::uBLASVector)
 
 %shared_ptr(dolfin::EigenKrylovSolver)
 %shared_ptr(dolfin::EigenLUSolver)
@@ -182,6 +180,12 @@
 %shared_ptr(dolfin::PETScUserPreconditioner)
 #endif
 
+#ifdef HAS_TRILINOS
+%shared_ptr(dolfin::TpetraVector)
+%shared_ptr(dolfin::TpetraMatrix)
+%shared_ptr(dolfin::BelosKrylovSolver)
+#endif
+
 #ifdef HAS_SLEPC
 %shared_ptr(dolfin::SLEPcEigenSolver)
 #endif
@@ -192,9 +196,6 @@
 
 %shared_ptr(dolfin::UmfpackLUSolver)
 %shared_ptr(dolfin::CholmodCholeskySolver)
-
-%shared_ptr(dolfin::uBLASKrylovSolver)
-%shared_ptr(dolfin::uBLASLinearOperator)
 
 %shared_ptr(dolfin::LinearSolver)
 %shared_ptr(dolfin::GenericLinearSolver)

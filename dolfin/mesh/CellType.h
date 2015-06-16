@@ -47,7 +47,7 @@ namespace dolfin
   public:
 
     /// Enum for different cell types
-    enum Type { point, interval, triangle, tetrahedron };
+    enum Type { point, interval, triangle, quadrilateral, tetrahedron, hexahedron };
 
     /// Constructor
     CellType(Type cell_type, Type facet_type);
@@ -72,6 +72,9 @@ namespace dolfin
 
     /// Return type of cell for facets
     Type facet_type() const { return _facet_type; }
+
+    /// Return type of cell for entity of dimension i
+    Type entity_type(std::size_t i) const;
 
     /// Return topological dimension of cell
     virtual std::size_t dim() const = 0;
@@ -153,6 +156,9 @@ namespace dolfin
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;
+
+    /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
+    virtual std::vector<unsigned int> vtk_mapping() const = 0;
 
   protected:
 

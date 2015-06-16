@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Garth N. Wells
+// Copyright (C) 2015 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -15,18 +15,28 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2006-05-29
-// Last changed:
 
-#ifndef __UBLAS_DENSE_MATRIX_H
-#define __UBLAS_DENSE_MATRIX_H
+#ifndef __UNITHEXMESH_MESH_H
+#define __UNITHEXMESH_MESH_H
 
-#include "uBLASMatrix.h"
+#include <string>
+#include <dolfin/common/MPI.h>
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  typedef uBLASMatrix<ublas_dense_matrix> uBLASDenseMatrix;
+  /// NB: this code is experimental, just for testing, and will generally not
+  /// work with anything else
+  class UnitHexMesh : public Mesh
+  {
+  public:
+
+    /// NB: this code is experimental, just for testing, and will generally not
+    /// work with anything else
+    UnitHexMesh(std::size_t nx, std::size_t ny, std::size_t nz);
+
+  };
 
 }
 

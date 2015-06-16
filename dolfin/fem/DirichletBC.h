@@ -117,6 +117,12 @@ namespace dolfin
   /// sphere or cylinder), in which case it is important *not* to
   /// check the midpoint which will be located in the interior of a
   /// domain defined relative to a radius.
+  ///
+  /// Note that there may be caching employed in BC computation for
+  /// performance reasons. In particular, applicable DOFs are cached
+  /// by some methods on a first apply(). This means that changing a
+  /// supplied object (defining boundary subdomain) after first use may
+  /// have no effect. But this is implementation and method specific.
   class DirichletBC : public Hierarchical<DirichletBC>, public Variable
   {
 
@@ -252,7 +258,7 @@ namespace dolfin
                 const std::vector<std::size_t>& markers,
                 std::string method="topological");
 
-    /// Copy constructor
+    /// Copy constructor. Either cached DOF data are copied.
     ///
     /// *Arguments*
     ///     bc (_DirichletBC_)
@@ -262,7 +268,7 @@ namespace dolfin
     /// Destructor
     ~DirichletBC();
 
-    /// Assignment operator
+    /// Assignment operator. Either cached DOF data are assigned.
     ///
     /// *Arguments*
     ///     bc (_DirichletBC_)

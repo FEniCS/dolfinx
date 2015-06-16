@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Garth N. Wells
+// Copyright (C) 2015 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -15,18 +15,30 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2006-05-29
-// Last changed: 2006-07-05
 
-#ifndef __UBLAS_SPARSE_MATRIX_H
-#define __UBLAS_SPARSE_MATRIX_H
+#ifndef __UNITQUADMESH_MESH_H
+#define __UNITQUADMESH_MESH_H
 
-#include "uBLASMatrix.h"
+#include <string>
+#include <dolfin/common/MPI.h>
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  typedef uBLASMatrix<ublas_sparse_matrix> uBLASSparseMatrix;
+  /// NB: this code is experimental, just for testing, and will generally not
+  /// work with anything else
+
+  class UnitQuadMesh : public Mesh
+  {
+  public:
+
+
+    /// NB: this code is experimental, just for testing, and will generally not
+    /// work with anything else
+    UnitQuadMesh(std::size_t nx, std::size_t ny);
+
+  };
 
 }
 
