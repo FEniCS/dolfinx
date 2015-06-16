@@ -795,13 +795,13 @@ public:
     // const double volume = compute_volume(multimesh, exact_volume);
 
     {
-      double v = 1e-12;//100;
+      double v = 100;
       while (v > 1e-17)
       {
 	std::cout << "--------------------------------------\n"
 		  << "try v = " << v << std::endl;
-	for (std::size_t m = 5; m <= 5; ++m)
-	  for (std::size_t n = 5; n <= 5; ++n)
+	for (std::size_t m = 1; m <= 15; ++m)
+	  for (std::size_t n = 1; n <= 15; ++n)
 	  {
 	    UnitSquareMesh mesh_0(m, n);
 	    RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, m, n);

@@ -446,8 +446,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
     }
   }
 
+#ifdef Augustdebug
   std::cout.precision(15);
-
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
     // Iterate over cut cells for current part
@@ -472,7 +472,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
     }
   }
   PPause;
-
+#endif
 
 
   // Iterate over all parts
