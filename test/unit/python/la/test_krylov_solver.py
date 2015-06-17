@@ -19,9 +19,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from dolfin import *
+from __future__ import print_function
 import pytest
-from dolfin_utils.test import skip_if_not_PETSc
+from dolfin import *
+from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
 @skip_if_not_PETSc
 def test_krylov_samg_solver_elasticity():
@@ -63,7 +64,7 @@ def test_krylov_samg_solver_elasticity():
 
         # Define problem
         mesh = UnitSquareMesh(N, N)
-        V = VectorFunctionSpace(mesh, 'CG', 1)
+        V = VectorFunctionSpace(mesh, 'Lagrange', 1)
         bc = DirichletBC(V, Constant((0.0, 0.0)),
                          lambda x, on_boundary: on_boundary)
         u = TrialFunction(V)
@@ -123,3 +124,91 @@ def test_krylov_samg_solver_elasticity():
             assert niter < 12
 
     parameters["linear_algebra_backend"] = previous_backend
+
+# NOTE: skipping in parallel as this test need a preconditioner that
+# can be constructed and re-used, and works in parallel. GAMG would be
+# a good choice, but the re-use option with GAMG seems to be broken.
+@skip_in_parallel
+@skip_if_not_PETSc
+def test_krylov_reuse_pc():
+    "Test preconditioner re-use with PETScKrylovSolver"
+
+    # Define problem
+    mesh = UnitSquareMesh(8, 8)
+    V = FunctionSpace(mesh, 'Lagrange', 1)
+    bc = DirichletBC(V, Constant(0.0), lambda x, on_boundary: on_boundary)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+
+    # Forms
+    a, L = inner(grad(u), grad(v))*dx, dot(Constant(1.0), v)*dx
+
+    A, P = PETScMatrix(), PETScMatrix()
+    b = PETScVector()
+
+    # Assemble linear algebra objects
+    assemble(a, tensor=A)
+    assemble(a, tensor=P)
+    assemble(L, tensor=b)
+
+    # Apply boundary conditions
+    bc.apply(A)
+    bc.apply(P)
+    bc.apply(b)
+
+    # Create Krysolv solver and set operators
+    solver = PETScKrylovSolver("gmres", "ilu")
+    solver.set_operators(A, P)
+
+    # Solve
+    x = PETScVector()
+    num_iter_ref = solver.solve(x, b)
+
+    print("Testing ref")
+    print(num_iter_ref)
+
+    # Change preconditioner matrix (bad matrix) and solve (PC will be
+    # updated)
+    a_p = u*v*dx
+    assemble(a_p, tensor=P)
+    bc.apply(P)
+    x = PETScVector()
+    num_iter_mod = solver.solve(x, b)
+    assert num_iter_mod > num_iter_ref
+
+    #print("Testing mod")
+    #print(num_iter_mod)
+
+    # Change preconditioner matrix (good matrix) and solve (PC will be
+    # updated)
+    a_p = a
+    assemble(a_p, tensor=P)
+    bc.apply(P)
+    x = PETScVector()
+    num_iter = solver.solve(x, b)
+    assert num_iter == num_iter_ref
+
+    #print("Testing 1")
+    #print(num_iter)
+
+    # Change preconditioner matrix (bad matrix) and solve (PC will not
+    # be updated)
+    a_p = u*v*dx
+    assemble(a_p, tensor=P)
+    bc.apply(P)
+    x = PETScVector()
+    solver.set_reuse_preconditioner(True)
+    num_iter = solver.solve(x, b)
+    assert num_iter == num_iter_ref
+
+    #print("Testing 2")
+    #print(num_iter)
+
+    # Update preconditioner (bad PC, will increase iteration count)
+    solver.set_reuse_preconditioner(False)
+    x = PETScVector()
+    num_iter = solver.solve(x, b)
+    assert num_iter == num_iter_mod
+
+    #print("Testing 3")
+    #print(num_iter)

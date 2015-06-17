@@ -1,4 +1,4 @@
-// Copyright (C) 2005 Johan Jansson
+// Copyright (C) 2014 Johan Jansson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,6 @@
 // Modified by Anders Logg 2005-2012
 // Modified by Garth N. Wells 2005-2010
 // Modified by Fredrik Valdmanis 2011
-//
-// First added:  2005-12-02
-// Last changed: 2014-07-09
 
 #ifdef HAS_PETSC
 
@@ -531,6 +528,14 @@ std::size_t PETScKrylovSolver::solve(const PETScBaseMatrix& A,
 
   // Call solve
   return solve(x, b);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
+{
+  dolfin_assert(_ksp);
+  const PetscBool _reuse_pc = reuse_pc ? PETSC_TRUE : PETSC_FALSE;
+  PetscErrorCode ierr = KSPSetReusePreconditioner(_ksp, _reuse_pc);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetReusePreconditioner");
 }
 //-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const
