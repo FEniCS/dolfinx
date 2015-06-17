@@ -125,10 +125,7 @@ def test_krylov_samg_solver_elasticity():
 
     parameters["linear_algebra_backend"] = previous_backend
 
-# NOTE: skipping in parallel as this test need a preconditioner that
-# can be constructed and re-used, and works in parallel. GAMG would be
-# a good choice, but the re-use option with GAMG seems to be broken.
-@skip_in_parallel
+
 @skip_if_not_PETSc
 def test_krylov_reuse_pc():
     "Test preconditioner re-use with PETScKrylovSolver"
@@ -157,15 +154,12 @@ def test_krylov_reuse_pc():
     bc.apply(b)
 
     # Create Krysolv solver and set operators
-    solver = PETScKrylovSolver("gmres", "ilu")
+    solver = PETScKrylovSolver("gmres", "bjacobi")
     solver.set_operators(A, P)
 
     # Solve
     x = PETScVector()
     num_iter_ref = solver.solve(x, b)
-
-    print("Testing ref")
-    print(num_iter_ref)
 
     # Change preconditioner matrix (bad matrix) and solve (PC will be
     # updated)
@@ -176,9 +170,6 @@ def test_krylov_reuse_pc():
     num_iter_mod = solver.solve(x, b)
     assert num_iter_mod > num_iter_ref
 
-    #print("Testing mod")
-    #print(num_iter_mod)
-
     # Change preconditioner matrix (good matrix) and solve (PC will be
     # updated)
     a_p = a
@@ -188,27 +179,18 @@ def test_krylov_reuse_pc():
     num_iter = solver.solve(x, b)
     assert num_iter == num_iter_ref
 
-    #print("Testing 1")
-    #print(num_iter)
-
     # Change preconditioner matrix (bad matrix) and solve (PC will not
     # be updated)
+    solver.set_reuse_preconditioner(True)
     a_p = u*v*dx
     assemble(a_p, tensor=P)
     bc.apply(P)
     x = PETScVector()
-    solver.set_reuse_preconditioner(True)
     num_iter = solver.solve(x, b)
     assert num_iter == num_iter_ref
-
-    #print("Testing 2")
-    #print(num_iter)
 
     # Update preconditioner (bad PC, will increase iteration count)
     solver.set_reuse_preconditioner(False)
     x = PETScVector()
     num_iter = solver.solve(x, b)
     assert num_iter == num_iter_mod
-
-    #print("Testing 3")
-    #print(num_iter)
