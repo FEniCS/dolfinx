@@ -65,11 +65,14 @@ namespace dolfin
 
   /// **DEPRECATED**: List a summary of timings and tasks, optionally clearing
   /// stored timings. ``MPI_AVG`` reduction is printed. Collective on
-  /// ``Logger::mpi_comm()``. Only wall time is printed.
+  /// ``MPI_COMM_WORLD``. Only wall time is printed.
   void list_timings(bool reset=false);
+  // NOTE: Function marked as 'collective on COMM_WORLD' (instead of
+  //       'collective on Logger::mpi_comm()') as user has no clue what the
+  //       function has to do with Logger
 
   /// List a summary of timings and tasks, optionally clearing stored timings.
-  /// ``MPI_AVG`` reduction is printed. Collective on ``Logger::mpi_comm()``.
+  /// ``MPI_AVG`` reduction is printed. Collective on ``MPI_COMM_WORLD``.
   ///
   /// *Arguments*
   ///     clear (TimingClear)
@@ -79,10 +82,13 @@ namespace dolfin
   ///         subset of ``{ TimingType::wall, TimingType::user,
   ///         TimingType::system }``
   void list_timings(TimingClear clear, std::set<TimingType> type);
+  // NOTE: Function marked as 'collective on COMM_WORLD' (instead of
+  //       'collective on Logger::mpi_comm()') as user has no clue what the
+  //       function has to do with Logger
 
   /// Dump a summary of timings and tasks to XML file, optionally clearing
   /// stored timings. ``MPI_MAX``, ``MPI_MIN`` and ``MPI_AVG`` reductions are
-  /// stored. Collective on ``Logger::mpi_comm()``.
+  /// stored. Collective on ``MPI_COMM_WORLD``.
   ///
   /// *Arguments*
   ///     filename (std::string)
@@ -92,6 +98,9 @@ namespace dolfin
   ///         * ``TimingClear::clear`` resets stored timings
   ///         * ``TimingClear::keep`` leaves stored timings intact
   void dump_timings_to_xml(std::string filename, TimingClear clear);
+  // NOTE: Function marked as 'collective on COMM_WORLD' (instead of
+  //       'collective on Logger::mpi_comm()') as user has no clue what the
+  //       function has to do with Logger
 
   /// Return timing (count, total wall time, total user time,
   /// total system time) for given task, optionally clearing
