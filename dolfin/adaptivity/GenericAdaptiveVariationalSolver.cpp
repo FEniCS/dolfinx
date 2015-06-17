@@ -157,6 +157,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
 #ifdef HAS_HDF5
       //series.store(indicators, i); // No TimeSeries storage of MeshFunction
       series.store(mesh, i);
+#else
+      warning("HDF5 not available, unable to save refinement data as time series.");
 #endif
     }
     end();
