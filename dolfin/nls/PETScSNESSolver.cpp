@@ -254,15 +254,19 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
     // Check if bounds/sign are set when VI method requested
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
     if ((method == "virs" || method == "viss") && !is_vi())
+    {
       dolfin_error("PETScSNESSolver.cpp",
                    "set up SNES VI solver",
                    "Need to set bounds or sign for virs or viss methods");
+    }
     #else
     if ((method == "vinewtonrsls" || method == "vinewtonssls") && !is_vi())
+    {
       dolfin_error("PETScSNESSolver.cpp",
                    "set up SNES VI solver",
                    "Need to set bounds or sign for vinewtonrsls or vinewtonssls"
                    " methods");
+    }
     #endif
   }
   else if (method == "default" && is_vi())
