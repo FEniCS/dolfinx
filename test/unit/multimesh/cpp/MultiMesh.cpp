@@ -46,24 +46,24 @@ public:
 
     // Many meshes, but not more than three overlap => this works
     UnitCubeMesh mesh_0(11, 12, 13);
-    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,     13, 11, 12);
-    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.95, 0.95, 0.8,   11, 13, 11);
-    BoxMesh mesh_3(0.94, 0.01, 0.01,  0.98, 0.99, 0.99, 1, 11, 11);
-    BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02,  1, 1, 1);
+    BoxMesh mesh_1(Point(0.1, 0.1, 0.1),    Point(0.9, 0.9, 0.9),    13, 11, 12);
+    BoxMesh mesh_2(Point(0.2, 0.2, 0.2),    Point(0.95, 0.95, 0.8),  11, 13, 11);
+    BoxMesh mesh_3(Point(0.94, 0.01, 0.01), Point(0.98, 0.99, 0.99), 1, 11, 11);
+    BoxMesh mesh_4(Point(0.01, 0.01, 0.01), Point(0.02, 0.02, 0.02), 1, 1, 1);
 
     // // Completely nested 2D: can't do no more than three meshes
     // UnitSquareMesh mesh_0(1, 1);
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    // RectangleMesh mesh_3(0.3, 0.3, 0.7, 0.7, 1, 1);
-    // RectangleMesh mesh_4(0.4, 0.4, 0.6, 0.6, 1, 1);
+    // RectangleMesh mesh_1(Point(0.1, 0.1), Point(0.9, 0.9, 1, 1);
+    // RectangleMesh mesh_2(Point(0.2, 0.2), Point(0.8, 0.8, 1, 1);
+    // RectangleMesh mesh_3(Point(0.3, 0.3), Point(0.7, 0.7, 1, 1);
+    // RectangleMesh mesh_4(Point(0.4, 0.4), Point(0.6, 0.6, 1, 1);
 
     // // Completely nested 3D: can't do no more than three meshes
     // UnitCubeMesh mesh_0(2, 3, 4);
-    // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   4, 3, 2);
-    // BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   3, 4, 3);
-    // BoxMesh mesh_3(0.8, 0.01, 0.01,  0.9, 0.99, 0.99,  4, 2, 3);
-    // BoxMesh mesh_4(0.01, 0.01, 0.01, 0.02, 0.02, 0.02, 1, 1, 1);
+    // BoxMesh mesh_1(Point(0.1, 0.1, 0.1),    Point(0.9, 0.9, 0.9),    4, 3, 2);
+    // BoxMesh mesh_2(Point(0.2, 0.2, 0.2),    Point(0.8, 0.8, 0.8),    3, 4, 3);
+    // BoxMesh mesh_3(Point(0.8, 0.01, 0.01),  Point(0.9, 0.99, 0.99),  4, 2, 3);
+    // BoxMesh mesh_4(Point(0.01, 0.01, 0.01), Point(0.02, 0.02, 0.02), 1, 1, 1);
 
     // Build the multimesh
     MultiMesh multimesh;
@@ -119,26 +119,26 @@ public:
   {
     // // These three meshes are ok
     // UnitSquareMesh mesh_0(1, 1);
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // RectangleMesh mesh_1(Point(0.1, 0.1), Point(0.9, 0.9), 1, 1);
+    // RectangleMesh mesh_2(Point(0.2, 0.2), Point(0.8, 0.8), 1, 1);
     // double exact_volume = 4*(0.9-0.1); // mesh0 and mesh1
     // exact_volume += 4*(0.8-0.2); // mesh1 and mesh2
 
     // UnitCubeMesh mesh_0(1, 2, 3);
-    // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   2,3,4);//2, 3, 4);
-    // BoxMesh mesh_2(-0.1, -0.1, -0.1,    0.7, 0.7, 0.7,   4, 3, 2);
-    // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
-    // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
+    // BoxMesh mesh_1(Point(0.1, 0.1, 0.1),    Point(0.9, 0.9, 0.9),  2,3,4); //2, 3, 4);
+    // BoxMesh mesh_2(Point(-0.1, -0.1, -0.1), Point(0.7, 0.7, 0.7),  4, 3, 2);
+    // BoxMesh mesh_3(Point(0.51, 0.51, 0.51), Point( 0.7, 0.7, 0.7), 1, 1, 1); //4, 3, 2);
+    // BoxMesh mesh_4(Point(0.3, 0.3, 0.3),    Point(0.7, 0.7, 0.7),  1, 1, 1);
     // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
     // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
 
     UnitCubeMesh mesh_0(1, 1, 1);
-    BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   1, 1, 1);
-    BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   1, 1, 1);
-    // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
-    // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
-    double exact_volume = (0.9-0.1)*(0.9-0.1)*6; // for mesh_0 and mesh_1
-    exact_volume += (0.8-0.2)*(0.8-0.2)*6; // mesh_1 and mesh_2
+    BoxMesh mesh_1(Point(0.1, 0.1, 0.1), Point(0.9, 0.9, 0.9), 1, 1, 1);
+    BoxMesh mesh_2(Point(0.2, 0.2, 0.2), Point(0.8, 0.8, 0.8), 1, 1, 1);
+    // BoxMesh mesh_3(Point(0.51, 0.51, 0.51), Point(0.7, 0.7, 0.7), 1, 1, 1); //4, 3, 2);
+    // BoxMesh mesh_4(Point(0.3, 0.3, 0.3),    Point(0.7, 0.7, 0.7), 1, 1, 1);
+    double exact_volume = (0.9 - 0.1)*(0.9 - 0.1)*6; // for mesh_0 and mesh_1
+    exact_volume += (0.8 - 0.2)*(0.8 - 0.2)*6; // mesh_1 and mesh_2
 
     // UnitCubeMesh mesh_0(1, 1, 1);
     // MeshEditor editor;
@@ -341,7 +341,7 @@ public:
     // Create meshes
     UnitSquareMesh mesh_0(N, N);
     const double c = 0.123123;
-    RectangleMesh mesh_1(0.5 - c, 0.5 - c, 0.5 + c, 0.5 + c, n, n);
+    RectangleMesh mesh_1(Point(0.5 - c, 0.5 - c), Point(0.5 + c, 0.5 + c), n, n);
     mesh_1.rotate(37, 2);
 
     // Create function spaces
