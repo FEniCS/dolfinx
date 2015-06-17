@@ -274,7 +274,7 @@ class TestMatrixForAnyBackend:
             assert j < cols.size
             assert round(sum(abs(row)) - 1.0, 7) == 0
 
-    def test_setting_diagonal(self, use_backend, any_backend):
+    def test_setting_getting_diagonal(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
 
         mesh = UnitSquareMesh(21, 23)
@@ -284,6 +284,7 @@ class TestMatrixForAnyBackend:
 
         v = TestFunction(V)
         u = TrialFunction(V)
+        w = Function(V)
 
         if use_backend:
             backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
@@ -308,6 +309,10 @@ class TestMatrixForAnyBackend:
         A.mult(ones, resultsA)
         B.mult(ones, resultsB)
         assert round(resultsA.norm("l2") - resultsB.norm("l2"), 7) == 0
+        
+        A.get_diagonal(w.vector())
+        w.vector()[:] -= b
+        assert round(w.vector().norm("l2"), 14) == 0
 
     #def test_create_from_sparsity_pattern(self):
 
