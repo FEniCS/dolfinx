@@ -90,10 +90,10 @@ def test_lu_solver_reuse(backend):
     solver.solve(x, b)
     assert round(x.norm("l2") - norm, 10) == 0
 
-    A = assemble(Constant(0.5)*u*v*dx)
+    assemble(Constant(0.5)*u*v*dx, tensor=A)
     x = Vector()
     solver.solve(x, b)
-    assert round(x.norm("l2") - norm, 10) == 0
+    assert round(x.norm("l2") - 2.0*norm, 10) == 0
 
     solver.set_operator(A)
     solver.solve(x, b)
