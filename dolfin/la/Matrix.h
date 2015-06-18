@@ -187,10 +187,6 @@ namespace dolfin
     virtual void transpmult(const GenericVector& x, GenericVector& y) const
     { matrix->transpmult(x, y); }
 
-    /// Get diagonal of a matrix
-    virtual void get_diagonal(GenericVector& x) const
-    { matrix->get_diagonal(x); }
-
     /// Set diagonal of a matrix
     virtual void set_diagonal(const GenericVector& x)
     { matrix->set_diagonal(x); }

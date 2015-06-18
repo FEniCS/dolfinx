@@ -180,10 +180,6 @@ namespace dolfin
     virtual void transpmult(const GenericVector& x, GenericVector& y) const
     { dolfin_not_implemented(); }
 
-    /// Get diagonal of a matrix
-    virtual void get_diagonal(GenericVector& x) const
-    { dolfin_not_implemented(); }
-
     /// Set diagonal of a matrix
     virtual void set_diagonal(const GenericVector& x)
     { dolfin_not_implemented(); }
