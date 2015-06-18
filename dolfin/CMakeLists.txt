@@ -1,5 +1,6 @@
 set(DOLFIN_H dolfin.h)
-install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR} COMPONENT Development)
+install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR}
+  COMPONENT Development)
 
 # Configure and install dolfin/common/version.h file
 string(REPLACE "+" "" DOLFIN_VERSION_MICRO_STRIPPED ${DOLFIN_VERSION_MICRO})
@@ -42,7 +43,8 @@ endforeach()
 foreach(DIR ${DOLFIN_DIRS})
   file(GLOB _HEADERS ${DIR}/*.h)
   list(APPEND HEADERS ${_HEADERS})
-  install(FILES ${_HEADERS} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR} COMPONENT Development)
+  install(FILES ${_HEADERS} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
+    COMPONENT Development)
 
   file(GLOB _SOURCES ${DIR}/*.cpp)
   list(APPEND SOURCES ${_SOURCES})
@@ -106,14 +108,6 @@ if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PETSC_LIBRARIES})
   if (PETSC_CUSP_FOUND)
     list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC_CUSP")
-  endif()
-
-  if (PETSC_ENABLE_SNES)
-    list(APPEND DOLFIN_CXX_DEFINITIONS "-DENABLE_PETSC_SNES")
-  endif()
-
-  if (PETSC_ENABLE_TAO)
-    list(APPEND DOLFIN_CXX_DEFINITIONS "-DENABLE_PETSC_TAO")
   endif()
 endif()
 
@@ -244,8 +238,8 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
     endif()
   endif()
 
-  # Append to EXTRA libraries, so they are not linked with demos (this fails
-  # with VTK6 unless the vtk macros are also installed).
+  # Append to EXTRA libraries, so they are not linked with demos (this
+  # fails with VTK6 unless the vtk macros are also installed).
   list(APPEND DOLFIN_EXTRA_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
 endif()
 
@@ -260,7 +254,7 @@ include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
 add_definitions(-DDOLFIN_VERSION="${DOLFIN_VERSION}")
 
-# Just add git revision flag to the one affected file, to help ccache performance
+# Just add git revision flag to the one affected file
 set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS -DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\")
 
 # Add flags
@@ -276,14 +270,15 @@ set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 string(STRIP DOLFIN_TARGET_LINK_LIBRARIES "${DOLFIN_TARGET_LINK_LIBRARIES}")
 
 # Add DOLFIN target libraries
-target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES} ${DOLFIN_EXTRA_TARGET_LINK_LIBRARIES})
+target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES}
+  ${DOLFIN_EXTRA_TARGET_LINK_LIBRARIES})
 #------------------------------------------------------------------------------
 # SWIG
 
 if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
 
-  # Make sure we can import the UFC module and that it is compiled with present
-  # version of SWIG
+  # Make sure we can import the UFC module and that it is compiled
+  # with present version of SWIG
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "from ufc import *; import sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
     OUTPUT_VARIABLE UFC_SWIGVERSION
@@ -295,7 +290,8 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
     message(WARNING "Unable to import UFC. Install latest UFC or check that PYTHONPATH is set appropriately. Python will be disabled.")
   endif()
 
-  # Check that UFC was built with the version of SWIG that is being used
+  # Check that UFC was built with the version of SWIG that is being
+  # used
   if (NOT UFC_MODULE_NOT_FOUND AND (NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
     message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
   endif()
@@ -306,7 +302,8 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
     # Set numpy version define
     set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS};-DNUMPY_VERSION_MAJOR=${NUMPY_VERSION_MAJOR};-DNUMPY_VERSION_MINOR=${NUMPY_VERSION_MINOR};-DNUMPY_VERSION_MICRO=${NUMPY_VERSION_MICRO})
 
-    # Only set define for none depricated API for NUMPY version 1.7 and larger
+    # Only set define for none depricated API for NUMPY version 1.7
+    # and larger
     if(NUMPY_VERSION VERSION_GREATER 1.6.2)
       set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS} -DNPY_NO_DEPRECATED_API=NPY_${NUMPY_VERSION_MAJOR}_${NUMPY_VERSION_MINOR}_API_VERSION)
     endif()

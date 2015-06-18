@@ -21,7 +21,7 @@
 // First added:  2012-10-13
 // Last changed: 2013-11-21
 
-#ifdef ENABLE_PETSC_SNES
+#ifdef HAS_PETSC
 
 #include <map>
 #include <string>

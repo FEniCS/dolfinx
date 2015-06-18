@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <petsclog.h>
 

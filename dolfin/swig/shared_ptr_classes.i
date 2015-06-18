@@ -221,7 +221,7 @@
 // nls
 %shared_ptr(dolfin::NewtonSolver)
 %shared_ptr(dolfin::PETScSNESSolver)
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 %shared_ptr(dolfin::TAOLinearBoundSolver)
 %shared_ptr(dolfin::PETScTAOSolver)
 #endif

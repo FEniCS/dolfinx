@@ -67,7 +67,7 @@ public:
 
 int main()
 {
-#ifdef HAS_PETSC_SNES
+#ifdef HAS_PETSC
 
   // Read mesh and create function space
   Mesh mesh("../circle_yplane.xml.gz");

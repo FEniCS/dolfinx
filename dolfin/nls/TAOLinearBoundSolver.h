@@ -18,7 +18,7 @@
 #ifndef _TAOLinearBoundSolver_H
 #define _TAOLinearBoundSolver_H
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <memory>
 
