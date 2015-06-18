@@ -173,6 +173,9 @@ namespace dolfin
     /// Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
+    /// Get diagonal of a matrix
+    virtual void get_diagonal(GenericVector& x) const;
+
     /// Set diagonal of a matrix
     virtual void set_diagonal(const GenericVector& x);
 

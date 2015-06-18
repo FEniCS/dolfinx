@@ -564,6 +564,23 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMultTranspose");
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::get_diagonal(GenericVector& x) const
+{
+  dolfin_assert(_matA);
+
+  PETScVector& xx = x.down_cast<PETScVector>();
+  if (size(1) != size(0) || size(0) != xx.size())
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "get diagonal of a PETSc matrix",
+                 "Matrix and vector dimensions don't match for matrix-vector set");
+  }
+
+  PetscErrorCode ierr = MatGetDiagonal(_matA, xx.vec());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetDiagonal");
+  xx.update_ghost_values();
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::set_diagonal(const GenericVector& x)
 {
   dolfin_assert(_matA);
