@@ -199,65 +199,12 @@ PETScKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(std::shared_ptr<const PETScBaseMatrix> A)
-{
-  set_operators(A, A);
-}
-//-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(
   std::shared_ptr<const  GenericLinearOperator> A,
   std::shared_ptr<const GenericLinearOperator> P)
 {
-  set_operators(as_type<const PETScBaseMatrix>(A),
-                as_type<const PETScBaseMatrix>(P));
-}
-//-----------------------------------------------------------------------------
-void
-PETScKrylovSolver::set_operators(std::shared_ptr<const PETScBaseMatrix> A,
-                                 std::shared_ptr<const PETScBaseMatrix> P)
-{
-  _matA = A;
-  _matP = P;
-  dolfin_assert(_matA);
-  dolfin_assert(_matP);
-  dolfin_assert(_ksp);
-
-  PetscErrorCode ierr;
-
-  // Get parameter
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-  const std::string mat_structure = parameters("preconditioner")["structure"];
-
-  // Set operators with appropriate option
-  if (mat_structure == "same")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           SAME_PRECONDITIONER);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else if (mat_structure == "same_nonzero_pattern")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           SAME_NONZERO_PATTERN);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else if (mat_structure == "different_nonzero_pattern")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           DIFFERENT_NONZERO_PATTERN);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else
-  {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "set PETSc Krylov solver operators",
-                 "Preconditioner re-use parameter \"%s \" is unknown",
-                 mat_structure.c_str());
-  }
-  #else
-  ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  #endif
+  _set_operators(as_type<const PETScBaseMatrix>(A),
+                 as_type<const PETScBaseMatrix>(P));
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
@@ -331,9 +278,9 @@ std::size_t PETScKrylovSolver::solve(const GenericLinearOperator& A,
                                      GenericVector& x,
                                      const GenericVector& b)
 {
-  return solve(as_type<const PETScBaseMatrix>(A),
-               as_type<PETScVector>(x),
-               as_type<const PETScVector>(b));
+  return _solve(as_type<const PETScBaseMatrix>(A),
+                as_type<PETScVector>(x),
+                as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
@@ -521,18 +468,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::solve(const PETScBaseMatrix& A,
-                                     PETScVector& x,
-                                     const PETScVector& b)
-{
-  // Set operator
-  std::shared_ptr<const PETScBaseMatrix> Atmp(&A, NoDeleter());
-  set_operator(Atmp);
-
-  // Call solve
-  return solve(x, b);
-}
-//-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const
 {
   return _ksp;
@@ -572,6 +507,71 @@ void PETScKrylovSolver::init(const std::string& method)
     ierr = KSPSetType(_ksp, _methods.find(method)->second);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
   }
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::_set_operator(std::shared_ptr<const PETScBaseMatrix> A)
+{
+  _set_operators(A, A);
+}
+//-----------------------------------------------------------------------------
+void
+PETScKrylovSolver::_set_operators(std::shared_ptr<const PETScBaseMatrix> A,
+                                 std::shared_ptr<const PETScBaseMatrix> P)
+{
+  _matA = A;
+  _matP = P;
+  dolfin_assert(_matA);
+  dolfin_assert(_matP);
+  dolfin_assert(_ksp);
+
+  PetscErrorCode ierr;
+
+  // Get parameter
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
+  const std::string mat_structure = parameters("preconditioner")["structure"];
+
+  // Set operators with appropriate option
+  if (mat_structure == "same")
+  {
+    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
+                           SAME_PRECONDITIONER);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
+  else if (mat_structure == "same_nonzero_pattern")
+  {
+    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
+                           SAME_NONZERO_PATTERN);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
+  else if (mat_structure == "different_nonzero_pattern")
+  {
+    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
+                           DIFFERENT_NONZERO_PATTERN);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  }
+  else
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "set PETSc Krylov solver operators",
+                 "Preconditioner re-use parameter \"%s \" is unknown",
+                 mat_structure.c_str());
+  }
+  #else
+  ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  #endif
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A,
+                                      PETScVector& x,
+                                      const PETScVector& b)
+{
+  // Set operator
+  std::shared_ptr<const PETScBaseMatrix> Atmp(&A, NoDeleter());
+  _set_operator(Atmp);
+
+  // Call solve
+  return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 /*

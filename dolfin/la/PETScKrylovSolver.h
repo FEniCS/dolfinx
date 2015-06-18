@@ -90,16 +90,10 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
-    /// Set operator (matrix)
-    void set_operator(std::shared_ptr<const PETScBaseMatrix> A);
-
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
 
-    /// Set operator (matrix) and preconditioner matrix
-    void set_operators(std::shared_ptr<const PETScBaseMatrix> A,
-                       std::shared_ptr<const PETScBaseMatrix> P);
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
@@ -117,10 +111,6 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
-
-    /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(const PETScBaseMatrix& A, PETScVector& x,
-                      const PETScVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -148,8 +138,16 @@ namespace dolfin
     // Initialize KSP solver
     void init(const std::string& method);
 
-    // Set PETSc operators
-    //void set_petsc_operators();
+    // Set operator (matrix)
+    void _set_operator(std::shared_ptr<const PETScBaseMatrix> A);
+
+    // Set operator (matrix) and preconditioner matrix
+    void _set_operators(std::shared_ptr<const PETScBaseMatrix> A,
+                        std::shared_ptr<const PETScBaseMatrix> P);
+
+    // Solve linear system Ax = b and return number of iterations
+    std::size_t _solve(const PETScBaseMatrix& A, PETScVector& x,
+                       const PETScVector& b);
 
     // Set options that affect KSP object
     void set_petsc_ksp_options();

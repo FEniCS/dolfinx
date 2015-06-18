@@ -115,11 +115,6 @@ BelosKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void BelosKrylovSolver::set_operator(std::shared_ptr<const TpetraMatrix> A)
-{
-  set_operators(A, A);
-}
-//-----------------------------------------------------------------------------
 void
 BelosKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
                                  std::shared_ptr<const GenericLinearOperator> P)
@@ -128,8 +123,66 @@ BelosKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
                 as_type<const TpetraMatrix>(P));
 }
 //-----------------------------------------------------------------------------
-void BelosKrylovSolver::set_operators(std::shared_ptr<const TpetraMatrix> A,
-                                      std::shared_ptr<const TpetraMatrix> P)
+const TpetraMatrix& BelosKrylovSolver::get_operator() const
+{
+  if (!_matA)
+  {
+    dolfin_error("BelosKrylovSolver.cpp",
+                 "access operator for Belos Krylov solver",
+                 "Operator has not been set");
+  }
+  return *_matA;
+}
+//-----------------------------------------------------------------------------
+std::size_t BelosKrylovSolver::solve(GenericVector& x, const GenericVector& b)
+{
+  return _solve(as_type<TpetraVector>(x), as_type<const TpetraVector>(b));
+}
+//-----------------------------------------------------------------------------
+std::size_t BelosKrylovSolver::solve(const GenericLinearOperator& A,
+                                     GenericVector& x,
+                                     const GenericVector& b)
+{
+  return _solve(as_type<const TpetraMatrix>(A),
+                as_type<TpetraVector>(x),
+                as_type<const TpetraVector>(b));
+}
+//-----------------------------------------------------------------------------
+std::string BelosKrylovSolver::str(bool verbose) const
+{
+  std::stringstream s;
+  if (verbose)
+  {
+    s << "Belos Krylov Solver" << std::endl;
+    s << "-------------------" << std::endl;
+    s << _solver->description();
+  }
+  else
+    s << "<BelosKrylovSolver>";
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+void BelosKrylovSolver::init(const std::string& method)
+{
+  Teuchos::RCP<Teuchos::ParameterList> dummyParams = Teuchos::parameterList();
+
+  std::string method_name = method;
+  if (method=="default")
+    method_name = "GMRES";
+
+  Belos::SolverFactory<double, TpetraVector::vector_type, op_type> factory;
+  _solver = factory.create(method_name, dummyParams);
+  _problem = Teuchos::rcp(new problem_type);
+}
+//-----------------------------------------------------------------------------
+void BelosKrylovSolver::_set_operator(std::shared_ptr<const TpetraMatrix> A)
+{
+  set_operators(A, A);
+}
+//-----------------------------------------------------------------------------
+void BelosKrylovSolver::_set_operators(std::shared_ptr<const TpetraMatrix> A,
+                                       std::shared_ptr<const TpetraMatrix> P)
 {
   dolfin_assert(!_solver.is_null());
   dolfin_assert(!_problem.is_null());
@@ -149,32 +202,7 @@ void BelosKrylovSolver::set_operators(std::shared_ptr<const TpetraMatrix> A,
 
 }
 //-----------------------------------------------------------------------------
-const TpetraMatrix& BelosKrylovSolver::get_operator() const
-{
-  if (!_matA)
-  {
-    dolfin_error("BelosKrylovSolver.cpp",
-                 "access operator for Belos Krylov solver",
-                 "Operator has not been set");
-  }
-  return *_matA;
-}
-//-----------------------------------------------------------------------------
-std::size_t BelosKrylovSolver::solve(GenericVector& x, const GenericVector& b)
-{
-  return solve(as_type<TpetraVector>(x), as_type<const TpetraVector>(b));
-}
-//-----------------------------------------------------------------------------
-std::size_t BelosKrylovSolver::solve(const GenericLinearOperator& A,
-                                     GenericVector& x,
-                                     const GenericVector& b)
-{
-  return solve(as_type<const TpetraMatrix>(A),
-               as_type<TpetraVector>(x),
-               as_type<const TpetraVector>(b));
-}
-//-----------------------------------------------------------------------------
-std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
+std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
 {
   Timer timer("Belos Krylov solver");
 
@@ -255,8 +283,8 @@ std::size_t BelosKrylovSolver::solve(TpetraVector& x, const TpetraVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-std::size_t BelosKrylovSolver::solve(const TpetraMatrix& A, TpetraVector& x,
-                                     const TpetraVector& b)
+std::size_t BelosKrylovSolver::_solve(const TpetraMatrix& A, TpetraVector& x,
+                                      const TpetraVector& b)
 {
   // Set operator
   std::shared_ptr<const TpetraMatrix> Atmp(&A, NoDeleter());
@@ -264,34 +292,6 @@ std::size_t BelosKrylovSolver::solve(const TpetraMatrix& A, TpetraVector& x,
 
   // Call solve
   return solve(x, b);
-}
-//-----------------------------------------------------------------------------
-std::string BelosKrylovSolver::str(bool verbose) const
-{
-  std::stringstream s;
-  if (verbose)
-  {
-    s << "Belos Krylov Solver" << std::endl;
-    s << "-------------------" << std::endl;
-    s << _solver->description();
-  }
-  else
-    s << "<BelosKrylovSolver>";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-void BelosKrylovSolver::init(const std::string& method)
-{
-  Teuchos::RCP<Teuchos::ParameterList> dummyParams = Teuchos::parameterList();
-
-  std::string method_name = method;
-  if (method=="default")
-    method_name = "GMRES";
-
-  Belos::SolverFactory<double, TpetraVector::vector_type, op_type> factory;
-  _solver = factory.create(method_name, dummyParams);
-  _problem = Teuchos::rcp(new problem_type);
 }
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::set_options()
