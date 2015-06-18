@@ -280,8 +280,6 @@ class TestMatrixForAnyBackend:
         mesh = UnitSquareMesh(21, 23)
 
         V = FunctionSpace(mesh, "Lagrange", 2)
-        W = FunctionSpace(mesh, "Lagrange", 1)
-
         v = TestFunction(V)
         u = TrialFunction(V)
         w = Function(V)
