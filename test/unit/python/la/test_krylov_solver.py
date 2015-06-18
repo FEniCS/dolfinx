@@ -126,11 +126,19 @@ def test_krylov_samg_solver_elasticity():
     parameters["linear_algebra_backend"] = previous_backend
 
 
-# Test is disabled because it requires PETSc 3.5 or later (need to add
-# runtime checking of PETSc version)
 @skip_if_not_PETSc
-def xtest_krylov_reuse_pc():
+def test_krylov_reuse_pc():
     "Test preconditioner re-use with PETScKrylovSolver"
+
+    # Test requires PETSc version 3.5 or later. Use petsc4py to check
+    # version number.
+    try:
+        from petsc4py import PETSc
+    except ImportError:
+        pytest.skip("petsc4py required to check PETSc version")
+    else:
+        if not PETSc.Sys.getVersion() >= (3, 5, 0):
+            pytest.skip("PETSc version must be 3.5  of higher")
 
     # Define problem
     mesh = UnitSquareMesh(8, 8)
