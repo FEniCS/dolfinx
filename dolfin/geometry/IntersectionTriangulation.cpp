@@ -424,26 +424,53 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
 
   // Tolerance for duplicate points (p and q are the same if
   // (p-q).norm() < same_point_tol)
-  const double same_point_tol = DOLFIN_EPS_LARGE;
+  //const double same_point_tol = DOLFIN_EPS_LARGE;
 
 
   // Create empty list of collision points
   std::vector<Point> points;
 
+  // // Find all vertex-cell collisions
+  // for (std::size_t i = 0; i < 3; i++)
+  // {
+  //   // Note: this routine is changed to being public:
+  //   if (CollisionDetection::collides_triangle_point_2d(tri_1[0],
+  // 						       tri_1[1],
+  // 						       tri_1[2],
+  // 						       tri_0[i]))
+  //     points.push_back(tri_0[i]);
+
+  //   if (CollisionDetection::collides_triangle_point_2d(tri_0[0],
+  // 						       tri_0[1],
+  // 						       tri_0[2],
+  // 						       tri_1[i]))
+  //     points.push_back(tri_1[i]);
+  // }
+
+  double t0[3][2] = {{tri_0[0][0], tri_0[0][1]},
+  		     {tri_0[1][0], tri_0[1][1]},
+  		     {tri_0[2][0], tri_0[2][1]}};
+  double t1[3][2] = {{tri_1[0][0], tri_1[0][1]},
+  		     {tri_1[1][0], tri_1[1][1]},
+  		     {tri_1[2][0], tri_1[2][1]}};
+
   // Find all vertex-cell collisions
-  for (std::size_t i = 0; i < 3; i++)
+  const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
+  const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
+
+  // std::cout << "signs " << s0 << ' ' << s1 << std::endl;
+
+  // Note: should have >= to allow for 2 meshes, 2 elements each, rotation 100
+  for (std::size_t i = 0; i < 3; ++i)
   {
-    // Note: this routine is changed to being public:
-    if (CollisionDetection::collides_triangle_point_2d(tri_1[0],
-						       tri_1[1],
-						       tri_1[2],
-						       tri_0[i]))
+    if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0 and
+  	s1*orient2d(t1[1], t1[2], t0[i]) >= 0 and
+  	s1*orient2d(t1[2], t1[0], t0[i]) >= 0)
       points.push_back(tri_0[i]);
 
-    if (CollisionDetection::collides_triangle_point_2d(tri_0[0],
-						       tri_0[1],
-						       tri_0[2],
-						       tri_1[i]))
+    if (s0*orient2d(t0[0], t0[1], t1[i]) >= 0 and
+  	s0*orient2d(t0[1], t0[2], t1[i]) >= 0 and
+  	s0*orient2d(t0[2], t0[0], t1[i]) >= 0)
       points.push_back(tri_1[i]);
   }
 
@@ -529,7 +556,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   {
     bool different = true;
     for (std::size_t j = i+1; j < points.size(); ++j)
-      if ((points[i] - points[j]).norm() < same_point_tol)
+      if ((points[i] - points[j]).norm() < DOLFIN_EPS_LARGE)
       {
 	different = false;
 	break;
@@ -658,6 +685,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   }
 
   return triangulation;
+
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -1390,18 +1418,11 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
     const double detleft = (b[0]-a[0]) * (d[1]-c[1]);
     const double detright = (b[1]-a[1]) * (d[0]-c[0]);
     const double det = detleft - detright;
-    const double alpha = cda / det;
 
-    if (std::abs(det) < DOLFIN_EPS)
-    {
-      std::cout.precision(15);
-      std::cout << a[0]<<' '<<a[1]<<'\n'
-		<<b[0]<<' '<<b[1]<<'\n'
-		<<c[0]<<' '<<c[1]<<'\n'
-		<<d[0]<<' '<<d[1]<<'\n';
-      std::cout << cda <<' '<<cdb<<' '<<abc << ' ' << abd<<'\n';
-      std::cout << "det " << det << '\n';
-    }
+    if (std::abs(det) < DOLFIN_EPS) // if exactly zero then ab || cd
+      return false;
+
+    const double alpha = cda / det;
 
     pt = a + alpha*(b - a);
 
@@ -1410,6 +1431,22 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
     // way to do it.
     if (std::abs(1-alpha) < DOLFIN_EPS)
       pt = b + (1-alpha)*(a - b);
+
+    if (std::abs(det) < DOLFIN_EPS)
+    {
+      std::cout.precision(15);
+      std::cout << a[0]<<' '<<a[1]<<'\n'
+    		<<b[0]<<' '<<b[1]<<'\n'
+    		<<c[0]<<' '<<c[1]<<'\n'
+    		<<d[0]<<' '<<d[1]<<'\n';
+      std::cout << cda <<' '<<cdb<<' '<<abc << ' ' << abd<<'\n';
+      std::cout << "det " << det << " ("<<detleft<<" "<<detright<<'\n'
+    		<< "alpha " << alpha << '\n'
+    		<< "point    plot("<<pt[0]<<','<<pt[1]<<",'*');\n";
+      Point alt = a + (1-alpha)*(b - a);
+      std::cout << "alt point    plot("<<alt[0]<<','<<alt[1]<<",'o');\n";
+    }
+
 
     return true;
   }

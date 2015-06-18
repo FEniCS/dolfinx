@@ -121,7 +121,7 @@ namespace dolfin
       double ll[2] = {a[2], a[3]};
       double p0[2] = {b[0], b[1]};
       double p1[2] = {b[2], b[1]};
-      if (orient2d(ll, p0, p1) < 0)
+      if (orient2d(ll, p0, p1) < 0) // FIXME: if < then v=1e-13, m=24, n=1 wrong markers
       	return false;
 
       double p2[2] = {b[0], b[3]};

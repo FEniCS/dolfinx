@@ -347,6 +347,7 @@ void MultiMesh::_build_collision_maps()
       for (std::size_t i = 0; i < markers.size(); ++i)
 	tmp[i] = markers[i];
       tools::dolfin_write_medit_triangles("markers",*_meshes[i],i,&tmp);
+      PPause;
     }
 #endif
 
@@ -469,6 +470,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
 	std::cout << tools::drawtriangle(cutting_cell);
       }
+      std::cout << std::endl;
     }
   }
   PPause;
@@ -536,7 +538,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
 #ifdef Augustdebug
 	{
-	  std::cout << "intersection (size="<<intersection.size()<<": ";
+	  std::cout << "% intersection (size="<<intersection.size()<<": ";
 	  for (std::size_t i = 0; i < intersection.size(); ++i)
 	    std::cout << intersection[i]<<' ';
 	  std::cout<<")\n";
@@ -561,12 +563,16 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	double area = 0;
 	for (const auto simplex: polyhedron)
 	  area += std::abs(tools::area(simplex));
-	if (std::isfinite(area) and area > DOLFIN_EPS_LARGE)
+	if (std::isfinite(area) and area > DOLFIN_EPS)
 	{
 	  // Store key and polyhedron
 	  initial_polyhedra.push_back(std::make_pair(initial_polyhedra.size(),
 						     polyhedron));
 	}
+	// else
+	// {
+	//   PPause;
+	// }
       }
       //PPause;
 
@@ -693,26 +699,14 @@ void MultiMesh::_build_quadrature_rules_overlap()
 		    for (const auto simplex: pii)
 		    {
 		      const double area = tools::area(simplex);
-		      if (std::isfinite(area) and area > DOLFIN_EPS_LARGE)
-		      //if (std::isfinite(area) and area > 1e-13)
+		      if (std::isfinite(area) and area > DOLFIN_EPS)
 		      {
-			//std::cout << "added simplex with area " << area << std::endl;
-
 			new_polyhedron.push_back(simplex);
 			any_intersections = true;
 		      }
 		      // else
 		      // {
-		      // 	std::cout << "skipped simplex with area = "  << area << std::endl;
-
-		      // 	// // debug
-		      // 	// if (!std::isfinite(area))
-		      // 	// {
-		      // 	//   for (const auto pt: simplex)
-		      // 	//     for (int d = 0; d < 2; ++d)
-		      // 	//       std::cout<<std::setprecision(16) << pt[d]<<' ';
-		      // 	//   std::cout << std::endl;
-		      // 	// }
+		      // 	PPause;
 		      // }
 		    }
 

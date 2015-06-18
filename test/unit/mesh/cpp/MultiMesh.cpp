@@ -776,7 +776,7 @@ public:
   //------------------------------------------------------------------------------
   void test_exclusion_inclusion_small_angle()
   {
-    set_log_level(DEBUG);
+    //set_log_level(DEBUG);
 
     exactinit();
 
@@ -795,16 +795,34 @@ public:
     // const double volume = compute_volume(multimesh, exact_volume);
 
     {
+
+      std::stringstream ss;
+      ss << "angle_output.txt";
+      std::ofstream file(ss.str());
+      if (!file.good()) { std::cout << ss.str() << " not ok" << std::endl; exit(0); }
+      file.precision(15);
+
+      std::vector<double> angles;
       double v = 100;
       while (v > 1e-17)
       {
+      	angles.push_back(v);
+      	v /= 10;
+      }
+      //angles.push_back(1e-15);
+      //angles.push_back(1e-13);
+
+      double max_error = -1;
+
+      for (const auto v: angles)
+      {
 	std::cout << "--------------------------------------\n"
 		  << "try v = " << v << std::endl;
-	for (std::size_t m = 1; m <= 15; ++m)
-	  for (std::size_t n = 1; n <= 15; ++n)
+	for (std::size_t m = 1; m <= 100; ++m)
+	  for (std::size_t n = 1; n <= 100; ++n)
 	  {
 	    UnitSquareMesh mesh_0(m, n);
-	    RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, m, n);
+	    RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, m, n);
 	    mesh_1.rotate(v, 2);
 
 	    MultiMesh multimesh;
@@ -817,15 +835,19 @@ public:
 	    const double exact_volume = 1;
 	    const double volume = compute_volume(multimesh, exact_volume);
 	    const double e = std::abs(volume - exact_volume);
-	    std::cout << "v = " << v << '\n'
-		      << "m = " << m << '\n'
-		      << "n = " << n << '\n'
-		      << "volume = " << volume << '\n'
-		      << "error = " << e << '\n';
+	    max_error = std::max(e, max_error);
+	    std::cout << std::setprecision(15)
+	    	      << "v = " << v << '\n'
+	    	      << "m = " << m << '\n'
+	    	      << "n = " << n << '\n'
+	    	      << "volume = " << volume << '\n'
+	    	      << "error = " << e << '\n'
+		      << "max error = " << max_error << '\n';
+	    file << v <<' '<< m<<' '<<n<<' '<<volume << ' '<<e << std::endl;
 
-	    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+	    //CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
 	  }
-	v /= 10;
+	//exit(0);
       }
     }
 
@@ -887,17 +909,17 @@ public:
     }
     file.close();
 
-    std::cout << "a=[";
-    for (const auto v: all_volumes)
-      std::cout << std::setprecision(13)<< v <<' ';
-    std::cout << "]; plot(diff(a(2:end-1)),'x-');\n";
+    // std::cout << "a=[";
+    // for (const auto v: all_volumes)
+    //   std::cout << std::setprecision(13)<< v <<' ';
+    // std::cout << "]; plot(diff(a(2:end-1)),'x-');\n";
 
 
-    std::cout << std::setprecision(13)
-	      << "exact volume " << exact_volume << '\n'
-	      << "volume " << volume << '\n'
-	      << "error " << exact_volume - volume << '\n'
-	      << std::endl;
+    // std::cout << std::setprecision(13)
+    // 	      << "exact volume " << exact_volume << '\n'
+    // 	      << "volume " << volume << '\n'
+    // 	      << "error " << exact_volume - volume << '\n'
+    // 	      << std::endl;
 
     return volume;
   }

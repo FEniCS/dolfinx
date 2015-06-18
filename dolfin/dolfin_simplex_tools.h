@@ -21,6 +21,15 @@ namespace tools
   inline double Heron(double a, double b, double c)
   {
     sort3(a,b,c);
+    const double s2 = (a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c));
+    if (s2 < 0)
+    {
+      std::cout << "Heron error, negative sqrt: " << s2 << std::endl;
+      if (std::abs(s2) < DOLFIN_EPS) // If we don't do this v=1e-13, m=24, n=1 doesn't work
+	return 0;
+      else
+	exit(1);
+    }
     return 0.25*std::sqrt( (a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c)) );
   }
 
