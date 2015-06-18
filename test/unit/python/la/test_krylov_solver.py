@@ -126,8 +126,10 @@ def test_krylov_samg_solver_elasticity():
     parameters["linear_algebra_backend"] = previous_backend
 
 
+# Test is disabled because it requires PETSc 3.5 or later (need to add
+# runtime checking of PETSc version)
 @skip_if_not_PETSc
-def test_krylov_reuse_pc():
+def xtest_krylov_reuse_pc():
     "Test preconditioner re-use with PETScKrylovSolver"
 
     # Define problem
