@@ -573,12 +573,12 @@ void TpetraMatrix::transpmult(const GenericVector& x, GenericVector& y) const
   _matA->apply(*xx._x, *yy._x, Teuchos::TRANS);
 }
 //-----------------------------------------------------------------------------
-void TpetraMatrix::get_diagonal(GenericVector& x)
+void TpetraMatrix::get_diagonal(GenericVector& x) const
 {
   dolfin_assert(!_matA.is_null());
   dolfin_assert(!_matA->isFillComplete());
 
-  const TpetraVector& xx = x.down_cast<TpetraVector>();
+  TpetraVector& xx = x.down_cast<TpetraVector>();
 
   if (!xx._x->getMap()->isSameAs(*_matA->getRowMap()))
 	{
@@ -593,8 +593,15 @@ void TpetraMatrix::get_diagonal(GenericVector& x)
                  "get diagonal of a Tpetra matrix",
                  "Matrix and vector dimensions don't match for matrix-vector set");
   }
+  
+  if (xx.vec()->getNumVectors() != 1)
+  {
+    dolfin_error("TpetraMatrix.cpp",
+                 "get diagonal of a Tpetra matrix",
+                 "Vector is a multivector with %d columns instead of 1", xx.vec()->getNumVectors());
+  }
 
-	_matA->getLocalDiagCopy(xx);
+  _matA->getLocalDiagCopy(*(xx.vec()->getVectorNonConst(0)));
 
 }
 //-----------------------------------------------------------------------------
