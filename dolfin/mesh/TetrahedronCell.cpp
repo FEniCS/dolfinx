@@ -224,6 +224,8 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
 //-----------------------------------------------------------------------------
 double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 {
+  Timer t0("Tet volume");
+
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
   {
@@ -245,10 +247,15 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 
   // Get the coordinates of the four vertices
   const unsigned int* vertices = tetrahedron.entities(0);
-  const double* x0 = geometry.x(vertices[0]);
-  const double* x1 = geometry.x(vertices[1]);
-  const double* x2 = geometry.x(vertices[2]);
-  const double* x3 = geometry.x(vertices[3]);
+  const Point x0 = geometry.point(vertices[0]);
+  const Point x1 = geometry.point(vertices[1]);
+  const Point x2 = geometry.point(vertices[2]);
+  const Point x3 = geometry.point(vertices[3]);
+
+  //  const double* x0 = geometry.x(vertices[0]);
+  //  const double* x1 = geometry.x(vertices[1]);
+  //  const double* x2 = geometry.x(vertices[2]);
+  //  const double* x3 = geometry.x(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
   const double v = (x0[0]*(x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2]
@@ -380,16 +387,10 @@ Point TetrahedronCell::normal(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the four vertices
-  const double* p0 = geometry.x(v0);
-  const double* p1 = geometry.x(v1);
-  const double* p2 = geometry.x(v2);
-  const double* p3 = geometry.x(v3);
-
-  // Create points from vertex coordinates
-  Point P0(p0[0], p0[1], p0[2]);
-  Point P1(p1[0], p1[1], p1[2]);
-  Point P2(p2[0], p2[1], p2[2]);
-  Point P3(p3[0], p3[1], p3[2]);
+  const Point P0 = geometry.point(v0);
+  const Point P1 = geometry.point(v1);
+  const Point P2 = geometry.point(v2);
+  const Point P3 = geometry.point(v3);
 
   // Create vectors
   Point V0 = P0 - P1;
@@ -431,9 +432,9 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 
   // Get the coordinates of the three vertices
   const unsigned int* vertices = f.entities(0);
-  const double* x0 = geometry.x(vertices[0]);
-  const double* x1 = geometry.x(vertices[1]);
-  const double* x2 = geometry.x(vertices[2]);
+  const Point x0 = geometry.point(vertices[0]);
+  const Point x1 = geometry.point(vertices[1]);
+  const Point x2 = geometry.point(vertices[2]);
 
   // Compute area of triangle embedded in R^3
   double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2])
