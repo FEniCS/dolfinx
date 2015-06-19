@@ -578,6 +578,8 @@ void TpetraMatrix::get_diagonal(GenericVector& x) const
   dolfin_assert(!_matA.is_null());
   dolfin_assert(!_matA->isFillComplete());
 
+  dolfin_not_implemented();
+
   TpetraVector& xx = x.down_cast<TpetraVector>();
 
   if (!xx._x->getMap()->isSameAs(*_matA->getRowMap()))
