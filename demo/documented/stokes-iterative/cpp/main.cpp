@@ -112,18 +112,13 @@ int main()
   Right right;
   DirichletBC inflow(W0, inflow_prfofile, right);
 
-  // Set-up outflow pressure boundary condition
-  Constant zero(0.0);
-  Left left;
-  DirichletBC outflow(W1, zero, left);
-
   // Set-up no-slip boundary condition
   Constant zero_vector(0.0, 0.0, 0.0);
   TopBottom top_bottom;
   DirichletBC noslip(W0, zero_vector, top_bottom);
 
   // Collect boundary conditions
-  std::vector<const DirichletBC*> bcs = {{&inflow, &outflow, &noslip}};
+  std::vector<const DirichletBC*> bcs = {{&inflow, &noslip}};
 
   // Create forms for the Stokes problem
   Constant f(0.0, 0.0, 0.0);

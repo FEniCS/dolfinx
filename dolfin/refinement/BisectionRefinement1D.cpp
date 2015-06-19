@@ -69,7 +69,8 @@ void BisectionRefinement1D::refine(Mesh& refined_mesh,
 
   std::size_t current_cell = 0;
   std::vector<std::size_t> cell_data(2);
-  for (CellIterator cell(mesh); !cell.end(); ++cell) {
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
     if (cell_markers[*cell])
     {
       editor.add_vertex(current_vertex, cell->midpoint());
@@ -89,7 +90,6 @@ void BisectionRefinement1D::refine(Mesh& refined_mesh,
       cell_data[1] = cell->entities(0)[1];
       editor.add_cell(current_cell, cell_data);
     }
-
     ++current_cell;
   }
 

@@ -238,16 +238,6 @@ class TestMatrixForAnyBackend:
         assert B0.size(1) == B1.size(1)
         assert round(B0.norm("frobenius") - B1.norm("frobenius"), 7) == 0
 
-    def test_compress_matrix(self, any_backend):
-        self.backend, self.sub_backend = any_backend
-
-        A, B = self.assemble_matrices()
-        A_norm = A.norm('frobenius')
-        C = Matrix()
-        A.compressed(C)
-        C_norm = C.norm('frobenius')
-        assert round(A_norm - C_norm, 7) == 0
-
     @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, reason="Disabled because it tends to crash the tests in parallel.")
     @pytest.mark.slow
     def test_ident_zeros(self, use_backend, any_backend):

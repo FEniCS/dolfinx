@@ -165,7 +165,6 @@ namespace dolfin
     virtual double norm(std::string norm_type) const = 0;
 
     /// Get non-zero values of given row (global index) on local process
-
     virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
                         std::vector<double>& values) const = 0;
 
@@ -248,9 +247,6 @@ namespace dolfin
 
     /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
-
-    /// Build compressed version of matrix (zeros removed)
-    virtual void compressed(GenericMatrix& B) const;
 
   };
 

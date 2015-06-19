@@ -208,7 +208,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   dolfin_assert(!entities_of_color_old.empty());
 
   // Get coordinates
-  const std::vector<double>& coordinates = mesh.geometry().coordinates;
+  const std::vector<double>& coordinates = mesh.geometry().x();
 
   // New vertex indices, -1 if not yet renumbered
   std::vector<int> new_vertex_indices(num_vertices, -1);

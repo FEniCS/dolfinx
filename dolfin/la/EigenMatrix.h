@@ -35,7 +35,6 @@
 
 namespace dolfin
 {
-  typedef Eigen::SparseMatrix<double, Eigen::RowMajor, int> eigen_matrix_type;
 
   /// This class provides a sparse matrix class based on Eigen.  It is
   /// a simple wrapper for Eigen::SparseMatrix implementing the
@@ -48,6 +47,8 @@ namespace dolfin
   class EigenMatrix : public GenericMatrix
   {
   public:
+
+    typedef Eigen::SparseMatrix<double, Eigen::RowMajor, int> eigen_matrix_type;
 
     /// Create empty matrix
     EigenMatrix();

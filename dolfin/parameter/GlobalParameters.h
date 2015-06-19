@@ -156,6 +156,13 @@ namespace dolfin
       #ifdef HAS_PETSC_CUSP
       allowed_backends.insert("PETScCusp");
       #endif
+      #ifdef HAS_TRILINOS
+      allowed_backends.insert("Tpetra");
+        #ifndef HAS_PETSC
+        default_backend = "Tpetra";
+        #endif
+      #endif
+
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);

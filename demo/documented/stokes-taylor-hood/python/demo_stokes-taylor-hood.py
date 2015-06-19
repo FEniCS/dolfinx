@@ -52,13 +52,8 @@ bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 inflow = Expression(("-sin(x[1]*pi)", "0.0"))
 bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
-# Boundary condition for pressure at outflow
-# x0 = 0
-zero = Constant(0)
-bc2 = DirichletBC(W.sub(1), zero, sub_domains, 2)
-
 # Collect boundary conditions
-bcs = [bc0, bc1, bc2]
+bcs = [bc0, bc1]
 
 # Define variational problem
 (u, p) = TrialFunctions(W)
