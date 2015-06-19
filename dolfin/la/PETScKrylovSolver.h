@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2005 Johan Jansson
+// Copyright (C) 2004-2015 Johan Jansson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,6 @@
 // Modified by Johan Hoffman 2005
 // Modified by Andy R. Terrel 2005
 // Modified by Garth N. Wells 2005-2010
-//
-// First added:  2005-12-02
-// Last changed: 2014-07-09
 
 #ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
 #define __DOLFIN_PETSC_KRYLOV_SOLVER_H
@@ -79,7 +76,7 @@ namespace dolfin
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
     PETScKrylovSolver(std::string method,
-		    std::shared_ptr<PETScUserPreconditioner> preconditioner);
+                      std::shared_ptr<PETScUserPreconditioner> preconditioner);
 
     /// Create solver wrapper of a PETSc KSP object
     explicit PETScKrylovSolver(KSP ksp);
@@ -111,6 +108,11 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
+
+    /// Reuse preconditioner if true, other do not, even if matrix
+    /// operator changes (by default preconditioner is re-built if the
+    /// matrix changes)
+    void set_reuse_preconditioner(bool reuse_pc);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
