@@ -886,6 +886,9 @@ void HDF5File::write(const Function& u, const std::string name)
   global_size[0] = mesh.size_global(tdim);
   write_data(name + "/cells", cells, global_size, mpi_io);
 
+  HDF5Interface::add_attribute(hdf5_file_id, name, "signature",
+                               u.function_space()->element()->signature());
+
   // Save vector
   write(*u.vector(), name + "/vector_0");
 }

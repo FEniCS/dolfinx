@@ -26,10 +26,10 @@
 #include <memory>
 
 #include <petscversion.h>
-#if PETSC_VERSION_RELEASE
-#include <petsc-private/pcimpl.h>
-#else
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 6
 #include <petsc/private/pcimpl.h>
+#else
+#include <petsc-private/pcimpl.h>
 #endif
 
 #include <dolfin/common/NoDeleter.h>
