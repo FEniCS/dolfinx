@@ -224,8 +224,6 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
 //-----------------------------------------------------------------------------
 double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 {
-  Timer t0("Tet volume");
-
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
   {
@@ -251,11 +249,6 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   const Point x1 = geometry.point(vertices[1]);
   const Point x2 = geometry.point(vertices[2]);
   const Point x3 = geometry.point(vertices[3]);
-
-  //  const double* x0 = geometry.x(vertices[0]);
-  //  const double* x1 = geometry.x(vertices[1]);
-  //  const double* x2 = geometry.x(vertices[2]);
-  //  const double* x3 = geometry.x(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
   const double v = (x0[0]*(x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2]
