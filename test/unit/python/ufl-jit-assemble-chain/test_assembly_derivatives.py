@@ -157,7 +157,7 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
 
     # Define 2D geometry
     n = 10
-    mesh = RectangleMesh(0.0, 0.0, 2.0, 3.0, 2*n, 3*n)
+    mesh = RectangleMesh(Point(0.0, 0.0), Point(2.0, 3.0), 2*n, 3*n)
 
     x, y = SpatialCoordinate(mesh)
     xs = 0.1+0.8*x/2 # scaled to be within [0.1,0.9]

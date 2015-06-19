@@ -121,11 +121,7 @@ bool PETScVector::distributed() const
   dolfin_assert(_x);
 
   // Get type
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-  const VecType petsc_type;
-  #else
   VecType petsc_type;
-  #endif
   PetscErrorCode ierr = VecGetType(_x, &petsc_type);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetType");
 
@@ -473,27 +469,22 @@ void PETScVector::update_ghost_values()
   dolfin_assert(_x);
   PetscErrorCode ierr;
 
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-  if (dolfin::MPI::size(mpi_comm()) > 1)
-  #endif
+  // Check of vector is ghosted
+  Vec xg;
+  ierr = VecGhostGetLocalForm(_x, &xg);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostGetLocalForm");
+
+  // If ghosted, update
+  if (xg)
   {
-    // Check of vector is ghosted
-    Vec xg;
-    ierr = VecGhostGetLocalForm(_x, &xg);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostGetLocalForm");
-
-    // If ghosted, update
-    if (xg)
-    {
-      ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
-      ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
-    }
-
-    ierr = VecGhostRestoreLocalForm(_x, &xg);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostRestoreLocalForm");
+    ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
+    ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
   }
+
+  ierr = VecGhostRestoreLocalForm(_x, &xg);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
@@ -717,11 +708,7 @@ std::string PETScVector::str(bool verbose) const
   if (verbose)
   {
     // Get vector type
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-    const VecType petsc_type;
-    #else
     VecType petsc_type;
-    #endif
     dolfin_assert(_x);
     ierr = VecGetType(_x, &petsc_type);
     if (ierr != 0) petsc_error(ierr, __FILE__, "VecGet");

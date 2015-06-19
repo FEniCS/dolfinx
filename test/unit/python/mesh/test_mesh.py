@@ -83,7 +83,7 @@ def square():
 
 @fixture
 def rectangle():
-    return RectangleMesh(0, 0, 2, 2, 5, 5)
+    return RectangleMesh(Point(0, 0), Point(2, 2), 5, 5)
 
 @fixture
 def cube():
@@ -91,7 +91,7 @@ def cube():
 
 @fixture
 def box():
-    return BoxMesh(0, 0, 0, 2, 2, 2, 2, 2, 5)
+    return BoxMesh(Point(0, 0, 0), Point(2, 2, 2), 2, 2, 5)
 
 @fixture
 def mesh():

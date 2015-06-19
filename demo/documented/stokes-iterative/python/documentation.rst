@@ -99,12 +99,8 @@ Next, we define the boundary conditions.
     inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"))
     bc1 = DirichletBC(W.sub(0), inflow, right)
 
-    # Boundary condition for pressure at outflow
-    zero = Constant(0)
-    bc2 = DirichletBC(W.sub(1), zero, left)
-
     # Collect boundary conditions
-    bcs = [bc0, bc1, bc2]
+    bcs = [bc0, bc1]
 
 The bilinear and linear forms corresponding to the weak mixed
 formulation of the Stokes equations are defined as follows:

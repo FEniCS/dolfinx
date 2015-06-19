@@ -19,7 +19,7 @@ d = len(divisions)  # no of space dimensions
 if d == 1:
     mesh = Interval(divisions[0], -D, 0)
 elif d == 2:
-    mesh = RectangleMesh(-W/2, -D, W/2, 0, divisions[0], divisions[1])
+    mesh = RectangleMesh(Point(-W/2, -D), Point(W/2, 0), divisions[0], divisions[1])
 elif d == 3:
     mesh = Box(-W/2, -W/2, -D, W/2, W/2, 0,
                divisions[0], divisions[1], divisions[2])
