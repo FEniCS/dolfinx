@@ -281,9 +281,11 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
     for (std::size_t i = 0; i < _map1.size(); ++i)
       _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map0.size(), _map0.data(),
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map0.size(),
+                                 _map0.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map1.size(), _map1.data(),
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map1.size(),
+                                 _map1.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global1);
     #endif
 
@@ -305,10 +307,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   ierr = MatSetFromOptions(_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
   ierr = MatSetUp(_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
-  #endif
 }
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
@@ -562,23 +562,6 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 
   PetscErrorCode ierr = MatMultTranspose(_matA, xx.vec(), yy.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMultTranspose");
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::get_diagonal(GenericVector& x) const
-{
-  dolfin_assert(_matA);
-
-  PETScVector& xx = x.down_cast<PETScVector>();
-  if (size(1) != size(0) || size(0) != xx.size())
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "get diagonal of a PETSc matrix",
-                 "Matrix and vector dimensions don't match for matrix-vector set");
-  }
-
-  PetscErrorCode ierr = MatGetDiagonal(_matA, xx.vec());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetDiagonal");
-  xx.update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_diagonal(const GenericVector& x)

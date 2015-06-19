@@ -75,12 +75,8 @@ defining the boundaries, we define boundary conditions:
     inflow = project(Expression(("-sin(x[1]*pi)", "0.0")), V)
     bc1 = DirichletBC(Mini.sub(0), inflow, sub_domains, 1)
 
-    # Boundary condition for pressure at outflow
-    zero = Constant(0)
-    bc2 = DirichletBC(Mini.sub(1), zero, sub_domains, 2)
-
     # Collect boundary conditions
-    bcs = [bc0, bc1, bc2]
+    bcs = [bc0, bc1]
 
 Here, we have given four arguments in the call of
 :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. The first

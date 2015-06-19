@@ -18,6 +18,8 @@
 // First added:  2009-09-29
 // Last changed: 2014-08-11
 //
+// Modified by Anders Logg 2015
+//
 // This demo illustrates the built-in mesh types.
 
 #include <dolfin.h>
@@ -49,11 +51,11 @@ int main()
   info("Plotting a UnitSquareMesh");
   plot(square_right_left, "Unit square (right/left)");
 
-  RectangleMesh rectangle_default(0.0, 0.0, 10.0, 4.0, 10, 10);
+  RectangleMesh rectangle_default(Point(0.0, 0.0), Point(10.0, 4.0), 10, 10);
   info("Plotting a RectangleMesh");
   plot(rectangle_default, "Rectangle");
 
-  RectangleMesh rectangle_right_left(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left");
+  RectangleMesh rectangle_right_left(Point(-3.0, 2.0), Point(7.0, 6.0), 10, 10, "right/left");
   info("Plotting a RectangleMesh");
   plot(rectangle_right_left, "Rectangle (right/left)");
 
@@ -61,7 +63,7 @@ int main()
   info("Plotting a UnitCubeMesh");
   plot(cube, "Unit cube");
 
-  BoxMesh box(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10);
+  BoxMesh box(Point(0.0, 0.0, 0.0), Point(10.0, 4.0, 2.0), 10, 10, 10);
   info("Plotting a BoxMesh");
   plot(box, "Box");
 

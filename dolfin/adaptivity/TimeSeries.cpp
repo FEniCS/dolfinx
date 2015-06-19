@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2012 Anders Logg
+// Copyright (C) 2009-2013 Chris Richardson and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -14,43 +14,62 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2009-11-11
-// Last changed: 2012-05-28
+
+#ifdef HAS_HDF5
 
 #include <algorithm>
 #include <iostream>
-#include <memory>
 #include <sstream>
+#include <string>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/io/File.h>
-#include <dolfin/io/BinaryFile.h>
+#include <dolfin/io/HDF5File.h>
+#include <dolfin/io/HDF5Interface.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
+#include <dolfin/mesh/Mesh.h>
+
 #include "TimeSeries.h"
 
 using namespace dolfin;
 
-// Template function for storing objects
+//-----------------------------------------------------------------------------
 template <typename T>
-void store_object(const T& object, double t,
-                  std::vector<double>& times,
-                  std::string series_name,
-                  std::string type_name,
-		  bool compressed,
-		  bool store_connectivity)
+void TimeSeries::store_object(MPI_Comm comm, const T& object, double t,
+                              std::vector<double>& times,
+                              std::string series_name,
+                              std::string group_name)
 {
   // Write object
-  BinaryFile file_data(TimeSeries::filename_data(series_name, type_name,
-						 times.size(), compressed),
-                       store_connectivity);
-  file_data << object;
+
+  // Check for pre-existing file to append to
+  std::string mode = "w";
+  if(File::exists(series_name) &&
+     (_vector_times.size() > 0 || _mesh_times.size() > 0))
+    mode = "a";
+
+  // Get file handle for low level operations
+  HDF5File hdf5_file(comm, series_name, mode);
+  const hid_t fid = hdf5_file.hdf5_file_id;
+
+  // Find existing datasets (should be equal to number of times)
+  std::size_t nobjs = 0;
+  if(HDF5Interface::has_group(fid, group_name))
+    nobjs = HDF5Interface::num_datasets_in_group(fid, group_name);
+
+  dolfin_assert(nobjs == times.size());
+
+  // Write new dataset (mesh or vector)
+  std::string dataset_name = group_name + "/" + std::to_string(nobjs);
+  hdf5_file.write(object, dataset_name);
 
   // Check that time values are strictly increasing
   const std::size_t n = times.size();
-  if (n >= 2 and (times[n - 1] - times[n - 2])*(t - times[n - 1]) <= 0.0)
+  if (n >= 2 && (times[n - 1] - times[n - 2])*(t - times[n - 1]) < 0.0)
   {
     dolfin_error("TimeSeries.cpp",
                  "store object to time series",
@@ -61,70 +80,76 @@ void store_object(const T& object, double t,
   // Add time
   times.push_back(t);
 
-  // Store times
-  BinaryFile file_times(TimeSeries::filename_times(series_name, type_name,
-						   compressed));
-  file_times << times;
+  // Store time
+  HDF5Interface::add_attribute(fid, dataset_name, "time", t);
 }
-
 //-----------------------------------------------------------------------------
-TimeSeries::TimeSeries(std::string name, bool compressed,
-		       bool store_connectivity)
-  : _name(name), _cleared(false), _compressed(compressed),
-    _store_connectivity(store_connectivity)
+TimeSeries::TimeSeries(MPI_Comm mpi_comm, std::string name)
+  : _name(name + ".h5"), _cleared(false)
 {
-  not_working_in_parallel("Storing of data to time series");
-
   // Set default parameters
   parameters = default_parameters();
 
-  // Read vector times if any
-  std::string filename_vector = TimeSeries::filename_times(_name,
-                                                           "vector",
-                                                           _compressed);
-  if (File::exists(filename_vector))
+  // In case MPI is not already initialised
+  SubSystemsManager::init_mpi();
+
+  if (File::exists(_name))
   {
     // Read from file
-    File file(filename_vector);
-    file >> _vector_times;
-    log(PROGRESS, "Found %d vector sample(s) in time series.",
-        _vector_times.size());
-    if (!monotone(_vector_times))
+    const hid_t hdf5_file_id = HDF5Interface::open_file(mpi_comm, _name, "r",
+                                                        true);
+    if (HDF5Interface::has_group(hdf5_file_id, "/Vector"))
     {
-      dolfin_error("TimeSeries.cpp",
-                   "read time series from file",
-                   "Sample points for vector data are not strictly monotone in series \"%s\"",
-                   name.c_str());
+      const unsigned int nvecs
+        = HDF5Interface::num_datasets_in_group(hdf5_file_id, "/Vector");
+      _vector_times.clear();
+      for (unsigned int i = 0; i != nvecs; ++i)
+      {
+        const std::string dataset_name = "/Vector/" + std::to_string(i);
+        double t;
+        HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "time", t);
+        _vector_times.push_back(t);
+      }
+
+      log(PROGRESS, "Found %d vector sample(s) in time series.",
+          _vector_times.size());
+      if (!monotone(_vector_times))
+      {
+        dolfin_error("TimeSeries.cpp",
+       "read time series from file",
+       "Sample points for vector data are not strictly monotone in series \"%s\"",
+                     name.c_str());
+      }
     }
+
+    if (HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
+    {
+      const unsigned int nmesh
+        = HDF5Interface::num_datasets_in_group(hdf5_file_id, "/Mesh");
+      _mesh_times.clear();
+      for (unsigned int i = 0; i != nmesh; ++i)
+      {
+        const std::string dataset_name = "/Mesh/" + std::to_string(i);
+        double t;
+        HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "time", t);
+        _mesh_times.push_back(t);
+      }
+
+      log(PROGRESS, "Found %d mesh sample(s) in time series.",
+          _mesh_times.size());
+      if (!monotone(_mesh_times))
+      {
+        dolfin_error("TimeSeries.cpp",
+       "read time series from file",
+       "Sample points for mesh data are not strictly monotone in series \"%s\"",
+                     name.c_str());
+      }
+    }
+
+    HDF5Interface::close_file(hdf5_file_id);
   }
   else
-    log(PROGRESS, "No vector samples found in time series.");
-
-  // Read mesh times if any
-  std::string filename_mesh = TimeSeries::filename_times(_name,
-                                                         "mesh",
-                                                         _compressed);
-  if (File::exists(filename_mesh))
-  {
-    // Read from file
-    File file(filename_mesh);
-    file >> _mesh_times;
-    log(PROGRESS, "Found %d mesh sample(s) in time series.",
-        _mesh_times.size());
-    if (!monotone(_mesh_times))
-    {
-      dolfin_error("TimeSeries.cpp",
-                   "read time series from file",
-                   "Sample points for mesh data are not strictly monotone in series \"%s\"",
-                   name.c_str());
-    }
-  }
-  else
-    log(PROGRESS, "No mesh samples found in time series.");
-
-  // Create subdirectories (should really be enough with just one call)
-  File::create_parent_path(filename_vector);
-  File::create_parent_path(filename_mesh);
+    log(PROGRESS, "No samples found in time series.");
 }
 //-----------------------------------------------------------------------------
 TimeSeries::~TimeSeries()
@@ -140,7 +165,7 @@ void TimeSeries::store(const GenericVector& vector, double t)
     clear();
 
   // Store object
-  store_object(vector, t, _vector_times, _name, "vector", _compressed, false);
+  store_object(vector.mpi_comm(), vector, t, _vector_times, _name, "/Vector");
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::store(const Mesh& mesh, double t)
@@ -151,13 +176,22 @@ void TimeSeries::store(const Mesh& mesh, double t)
     clear();
 
   // Store object
-  store_object(mesh, t, _mesh_times, _name, "mesh", _compressed,
-	       _store_connectivity);
+  store_object(mesh.mpi_comm(), mesh, t, _mesh_times, _name, "/Mesh");
+
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(GenericVector& vector, double t,
-                          bool interpolate) const
+                              bool interpolate) const
 {
+  if (!File::exists(_name))
+  {
+    dolfin_error("TimeSeries.cpp",
+                 "open file to retrieve series",
+                 "File does not exist");
+  }
+
+  HDF5File hdf5_file(MPI_COMM_WORLD, _name, "r");
+
   // Interpolate value
   if (interpolate)
   {
@@ -170,8 +204,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t,
     // Special case: same index
     if (i0 == i1)
     {
-      File f(filename_data(_name, "vector", i0, _compressed));
-      f >> vector;
+      hdf5_file.read(vector, "/Vector/" + std::to_string(i0), false);
       log(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
       return;
     }
@@ -182,10 +215,8 @@ void TimeSeries::retrieve(GenericVector& vector, double t,
     // Read vectors
     GenericVector& x0(vector);
     std::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
-    File f0(filename_data(_name, "vector", i0, _compressed));
-    File f1(filename_data(_name, "vector", i1, _compressed));
-    f0 >> x0;
-    f1 >> *x1;
+    hdf5_file.read(x0, "/Vector/" + std::to_string(i0), false);
+    hdf5_file.read(*x1, "/Vector/" + std::to_string(i1), false);
 
     // Check that the vectors have the same size
     if (x0.size() != x1->size())
@@ -206,8 +237,6 @@ void TimeSeries::retrieve(GenericVector& vector, double t,
     x0 *= w0;
     x0.axpy(w1, *x1);
   }
-
-  // Read closest value
   else
   {
     // Find closest index
@@ -218,13 +247,19 @@ void TimeSeries::retrieve(GenericVector& vector, double t,
         _vector_times[index], t);
 
     // Read vector
-    File file(filename_data(_name, "vector", index, _compressed));
-    file >> vector;
+    hdf5_file.read(vector, "/Vector/" + std::to_string(index), false);
   }
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(Mesh& mesh, double t) const
 {
+  if (!File::exists(_name))
+  {
+    dolfin_error("TimeSeries.cpp",
+                 "open file to retrieve series",
+                 "File does not exist");
+  }
+
   // Get index closest to given time
   const std::size_t index = find_closest_index(t, _mesh_times, _name, "mesh");
 
@@ -232,10 +267,8 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
       _mesh_times[index], t);
 
   // Read mesh
-  std::cout << "Mesh file name: "
-      << filename_data(_name, "mesh", index, _compressed) << std::endl;
-  File file(filename_data(_name, "mesh", index, _compressed));
-  file >> mesh;
+  HDF5File hdf5_file(MPI_COMM_WORLD, _name, "r");
+  hdf5_file.read(mesh, "/Mesh/" + std::to_string(index), false);
 }
 //-----------------------------------------------------------------------------
 std::vector<double> TimeSeries::vector_times() const
@@ -255,33 +288,9 @@ void TimeSeries::clear()
   _cleared = true;
 }
 //-----------------------------------------------------------------------------
-std::string TimeSeries::filename_data(std::string series_name,
-                                      std::string type_name,
-                                      std::size_t index,
-				      bool compressed)
-{
-  std::stringstream s;
-  s << series_name << "_" << type_name << "_" << index << ".bin";
-  if (compressed)
-    s << ".gz";
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-std::string TimeSeries::filename_times(std::string series_name,
-                                       std::string type_name,
-				       bool compressed)
-{
-  std::stringstream s;
-  s << series_name << "_" << type_name << "_times" << ".bin";
-  if (compressed)
-    s << ".gz";
-  return s.str();
-}
-//-----------------------------------------------------------------------------
 std::string TimeSeries::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
@@ -347,7 +356,8 @@ std::size_t TimeSeries::find_closest_index(double t,
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
 TimeSeries::find_closest_pair(double t, const std::vector<double>& times,
-                              std::string series_name, std::string type_name)
+                              std::string series_name,
+                              std::string type_name)
 {
   // Must have at least one value stored
   if (times.empty())
@@ -402,3 +412,5 @@ TimeSeries::find_closest_pair(double t, const std::vector<double>& times,
   return std::make_pair(i0, i1);
 }
 //-----------------------------------------------------------------------------
+
+#endif

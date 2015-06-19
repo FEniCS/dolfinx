@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Anders Logg
+# Copyright (C) 2013, 2015 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -29,7 +29,7 @@ num_steps = 1000
 (dx_C, dy_C) = (h, 2*h)
 
 # Create meshes: a box and two circles
-mesh_A = RectangleMesh(0, 0, L, L, M, M)
+mesh_A = RectangleMesh(Point(0, 0), Point(L, L), M, M)
 mesh_B = Mesh("../circle.xml.gz")
 mesh_C = Mesh("../circle.xml.gz")
 
