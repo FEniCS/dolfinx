@@ -15,9 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifdef HAS_PETSC
-#include <petscversion.h>
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
+#ifdef ENABLE_PETSC_TAO
 
 #include <petsclog.h>
 
@@ -445,5 +443,5 @@ PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(Tao tao, void *ctx)
   return 0;
 }
 //------------------------------------------------------------------------------
-#endif
+
 #endif

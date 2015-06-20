@@ -64,12 +64,8 @@ bool dolfin::has_mpi()
 //-------------------------------------------------------------------------
 bool dolfin::has_tao()
 {
-#ifdef HAS_PETSC
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
+#ifdef ENABLE_PETSC_TAO
   return true;
-  #else
-  return false;
-  #endif
 #else
   return false;
 #endif

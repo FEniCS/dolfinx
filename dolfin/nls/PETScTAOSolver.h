@@ -21,10 +21,7 @@
 #ifndef __PETSC_TAO_SOLVER_H
 #define __PETSC_TAO_SOLVER_H
 
-#ifdef HAS_PETSC
-#include <petscversion.h>
-
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
+#ifdef ENABLE_PETSC_TAO
 
 #include <map>
 #include <petsctao.h>
@@ -186,6 +183,5 @@ namespace dolfin
 
 }
 
-#endif
 #endif
 #endif

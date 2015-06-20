@@ -28,7 +28,7 @@ in a box of the same size."""
 from __future__ import print_function
 from dolfin import *
 
-if not has_petsc():
+if not has_tao():
     print("DOLFIN must be compiled with PETSc to run this demo.")
     exit(0)
 

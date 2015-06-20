@@ -60,7 +60,8 @@ public:
 
 int main()
 {
-  #ifdef HAS_PETSC
+#ifdef ENABLE_PETSC_TAO
+
   // Read mesh
   Mesh mesh("../circle_yplane.xml.gz");
 
@@ -125,7 +126,7 @@ int main()
 
   #else
 
-  cout << "This demo requires DOLFIN to be configured with PETSc" << endl;
+  cout << "This demo requires DOLFIN to be configured with PETSc version 3.5 or later" << endl;
 
   #endif
 
