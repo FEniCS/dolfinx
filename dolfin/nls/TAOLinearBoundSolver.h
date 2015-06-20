@@ -19,15 +19,18 @@
 #define _TAOLinearBoundSolver_H
 
 #ifdef HAS_PETSC
+#include <petscversion.h>
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
 
-#include <memory>
-
-#include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/types.h>
 #include <map>
+#include <memory>
 #include <petscksp.h>
 #include <petscpc.h>
+
 #include <petsctao.h>
+#include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/types.h>
+
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/KrylovSolver.h>
 
@@ -214,5 +217,5 @@ namespace dolfin
 }
 
 #endif
-
+#endif
 #endif

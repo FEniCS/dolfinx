@@ -16,6 +16,8 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef HAS_PETSC
+#include <petscversion.h>
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
 
 #include <petsclog.h>
 
@@ -437,10 +439,11 @@ PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(Tao tao, void *ctx)
   PetscReal f, gnorm, cnorm, xdiff;
   TaoConvergedReason reason;
   TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
-  if (!(its%5))
-    PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n",its,(double)f);
+  if (!(its % 5))
+    PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n", its, (double)f);
 
   return 0;
 }
 //------------------------------------------------------------------------------
+#endif
 #endif

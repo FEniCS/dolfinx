@@ -21,6 +21,10 @@
 // First added:  2011-10-15
 // Last changed: 2014-08-11
 
+#ifdef HAS_PETSC
+#include <petscversion.h>
+#endif
+
 #include "types.h"
 #include "defines.h"
 
@@ -53,6 +57,19 @@ bool dolfin::has_mpi()
 {
 #ifdef HAS_MPI
   return true;
+#else
+  return false;
+#endif
+}
+//-------------------------------------------------------------------------
+bool dolfin::has_tao()
+{
+#ifdef HAS_PETSC
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
+  return true;
+  #else
+  return false
+  #endif
 #else
   return false;
 #endif

@@ -19,6 +19,9 @@
 // Last changed: 2014-07-27
 
 #ifdef HAS_PETSC
+#include <petscversion.h>
+
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
 
 #include <map>
 #include <string>
@@ -509,4 +512,5 @@ void PETScTAOSolver::set_ksp_options()
   }
 }
 //-----------------------------------------------------------------------------
+#endif
 #endif
