@@ -68,7 +68,7 @@ bool dolfin::has_tao()
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
   return true;
   #else
-  return false
+  return false;
   #endif
 #else
   return false;
