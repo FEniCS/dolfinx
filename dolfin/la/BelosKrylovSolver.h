@@ -76,16 +76,9 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
-    /// Set operator (matrix)
-    void set_operator(std::shared_ptr<const TpetraMatrix> A);
-
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
-
-    /// Set operator (matrix) and preconditioner matrix
-    void set_operators(std::shared_ptr<const TpetraMatrix> A,
-                       std::shared_ptr<const TpetraMatrix> P);
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
@@ -98,15 +91,8 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(TpetraVector& x, const TpetraVector& b);
-
-    /// Solve linear system Ax = b and return number of iterations
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
-
-    /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(const TpetraMatrix& A, TpetraVector& x,
-                      const TpetraVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -133,6 +119,20 @@ namespace dolfin
 
     // Initialize solver
     void init(const std::string& method);
+
+    // Set operator (matrix)
+    void _set_operator(std::shared_ptr<const TpetraMatrix> A);
+
+    // Set operator (matrix) and preconditioner matrix
+    void _set_operators(std::shared_ptr<const TpetraMatrix> A,
+                        std::shared_ptr<const TpetraMatrix> P);
+
+    // Solve linear system Ax = b and return number of iterations
+    std::size_t _solve(TpetraVector& x, const TpetraVector& b);
+
+    // Solve linear system Ax = b and return number of iterations
+    std::size_t _solve(const TpetraMatrix& A, TpetraVector& x,
+                       const TpetraVector& b);
 
     // Set options for solver
     void set_options();
