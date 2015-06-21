@@ -83,10 +83,6 @@ option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
-#------------------------------------------------------------------------------
-# This should be removed when petsc version > 3.4 is out
-
-option(DOLFIN_ENABLE_TAO "Enable TAO solver." OFF)
 
 #------------------------------------------------------------------------------
 # This should be removed when Clang support OpenMP is ready
@@ -441,14 +437,9 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
-  # Enable PETSc SNES for PETSc verion > 3.3
-  if (PETSC_VERSION VERSION_GREATER 3.3.100)
-    set(PETSC_ENABLE_SNES TRUE)
-  endif()
-
-  # Enable TAO from PETSc for PETSc verion > 3.4
-  if ((PETSC_VERSION VERSION_GREATER 3.4.100) OR (DOLFIN_ENABLE_TAO))
-    set(PETSC_ENABLE_TAO TRUE)
+  # Enable TAO for PETSc version > 3.4
+  if ((PETSC_VERSION VERSION_GREATER 3.4.100))
+    set(PETSC_HAS_TAO TRUE)
   endif()
 
 endif()

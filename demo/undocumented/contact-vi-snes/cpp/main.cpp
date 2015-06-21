@@ -67,7 +67,7 @@ public:
 
 int main()
 {
-#ifdef HAS_PETSC_SNES
+#ifdef HAS_PETSC
 
   // Read mesh and create function space
   Mesh mesh("../circle_yplane.xml.gz");
@@ -80,7 +80,7 @@ int main()
   Constant zero(0.0);
   SymmetryLine s;
   DirichletBC bc(V0, zero, s, "pointwise");
-  std::vector<const DirichletBC*> bcs {{&bc}};
+  std::vector<const DirichletBC*> bcs {&bc};
 
   // Define source and boundary traction functions
   Constant B(0.0, -0.05);
