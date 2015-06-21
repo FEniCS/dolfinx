@@ -103,9 +103,6 @@ PETScVector::PETScVector(const PETScVector& v) : _x(NULL), _use_gpu(false)
   ierr = VecCopy(v._x, _x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecCopy");
 
-  // Copy ghost data
-  ghost_global_to_local = v.ghost_global_to_local;
-
   // Update ghost values
   update_ghost_values();
 }
@@ -868,14 +865,6 @@ void PETScVector::_init(MPI_Comm comm,
   ierr = VecCreateGhost(comm, local_size, PETSC_DECIDE,
                         ghost_indices.size(), ghost_indices.data(), &_x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecCreateGhost");
-
-  // Build global-to-local map for ghost indices
-  ghost_global_to_local.clear();
-  for (std::size_t i = 0; i < ghost_indices.size(); ++i)
-  {
-    ghost_global_to_local.insert(std::pair<std::size_t,
-                                 std::size_t>(ghost_indices[i], i));
-  }
 
   ISLocalToGlobalMapping petsc_local_to_global;
   std::vector<PetscInt> _map;

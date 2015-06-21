@@ -256,9 +256,6 @@ namespace dolfin
     // PETSc Vec pointer
     Vec _x;
 
-    // Global-to-local map for ghost values
-    std::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
-
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
 
