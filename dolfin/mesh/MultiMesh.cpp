@@ -477,11 +477,14 @@ void MultiMesh::_build_quadrature_rules_overlap()
 #endif
 
 
+  std::size_t small_elements_cnt = 0;
+
+
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
-#ifdef Augustdebug
     std::cout << "----- cut part: " << cut_part <<std::endl;
+#ifdef Augustdebug
     tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
     //double areapos = 0, areaminus = 0;
 #endif
@@ -563,16 +566,17 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	double area = 0;
 	for (const auto simplex: polyhedron)
 	  area += std::abs(tools::area(simplex));
-	if (std::isfinite(area) and area > DOLFIN_EPS)
+	if (std::isfinite(area))// and area > DOLFIN_EPS)
 	{
 	  // Store key and polyhedron
 	  initial_polyhedra.push_back(std::make_pair(initial_polyhedra.size(),
 						     polyhedron));
 	}
-	// else
-	// {
-	//   PPause;
-	// }
+	else
+	{
+	  small_elements_cnt++;
+	  //PPause;
+	}
       }
       //PPause;
 
@@ -699,15 +703,16 @@ void MultiMesh::_build_quadrature_rules_overlap()
 		    for (const auto simplex: pii)
 		    {
 		      const double area = tools::area(simplex);
-		      if (std::isfinite(area) and area > DOLFIN_EPS)
+		      if (std::isfinite(area))// and area > DOLFIN_EPS)
 		      {
 			new_polyhedron.push_back(simplex);
 			any_intersections = true;
 		      }
-		      // else
-		      // {
-		      // 	PPause;
-		      // }
+		      else
+		      {
+		      	//PPause;
+			small_elements_cnt++;
+		      }
 		    }
 
 #ifdef Augustdebug
@@ -722,12 +727,12 @@ void MultiMesh::_build_quadrature_rules_overlap()
 		    	std::cout << tools::drawtriangle(simplex,"'g'");
 		      std::cout<<'\n';
 		      double intersection_area = 0;
-		      std::cout << "areas: ";
+		      std::cout << "areas=[ ";
 		      for (const auto simplex: pii) {
 		    	intersection_area += tools::area(simplex);
 		    	std::cout << tools::area(simplex) <<' ';
 		      }
-		      std::cout<<'\n';
+		      std::cout<<"];\n";
 		      if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
 		    }
 #endif
@@ -930,7 +935,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
   }
 
 
-
+  std::cout << "small elements " << small_elements_cnt << std::endl;
 
 
 

@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 #include "dolfin.h"
-
+#include "geometry/predicates.h"
 namespace tools
 {
   // this sorts such that a >= b >= c
@@ -37,9 +37,13 @@ namespace tools
 
   inline double area(const std::vector<dolfin::Point> &tri)
   {
-    const dolfin::Point et=tri[1]-tri[0];
-    const dolfin::Point es=tri[2]-tri[0];
-    return Heron(et.norm(), es.norm(), (et-es).norm());
+    /* const dolfin::Point et=tri[1]-tri[0]; */
+    /* const dolfin::Point es=tri[2]-tri[0]; */
+    /* return Heron(et.norm(), es.norm(), (et-es).norm()); */
+    double a[2]={tri[0][0],tri[0][1]};
+    double b[2]={tri[1][0],tri[1][1]};
+    double c[2]={tri[2][0],tri[2][1]};
+    return 0.5*orient2d(a,b,c);
   }
 
 
@@ -158,12 +162,17 @@ namespace tools
       nel += mm.part(i)->num_cells();
     file << "Triangles\n"
 	 << nel <<'\n';
-    std::size_t offset=-mm.part(0)->num_vertices();
+    std::size_t offset = 0;
     for (std::size_t i=0; i<mm.num_parts(); ++i) {
       const std::vector<unsigned int>& cells = mm.part(i)->cells();
-      offset+=mm.part(i)->num_vertices();
+      offset += (i == 0) ? 0 : mm.part(i-1)->num_vertices();
       for (std::size_t e = 0; e < mm.part(i)->num_cells(); ++e)
-	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n';
+      	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n';
+      /* for (const auto e: mm.uncut_cells(i)) */
+      /* 	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n'; */
+      /* for (const auto e: mm.cut_cells(i)) */
+      /* 	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n'; */
+
     }
     file.close();
 
