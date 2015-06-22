@@ -797,20 +797,22 @@ public:
     {
 
       std::stringstream ss;
-      ss << "angle_output.txt";
+      ss << "angle_output_90.txt";
       std::ofstream file(ss.str());
       if (!file.good()) { std::cout << ss.str() << " not ok" << std::endl; exit(0); }
       file.precision(15);
 
       std::vector<double> angles;
-      double v = 100;
-      while (v > 1e-17)
-      {
-      	angles.push_back(v);
-      	v /= 10;
-      }
+      // double v = 100;
+      // while (v > 1e-17)
+      // {
+      // 	angles.push_back(v);
+      // 	v /= 10;
+      // }
       //angles.push_back(1e-15);
       //angles.push_back(1e-13);
+      for (std::size_t i = 1; i < 90; ++i)
+	angles.push_back(i);
 
       double max_error = -1;
 
