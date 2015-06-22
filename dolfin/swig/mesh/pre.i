@@ -306,3 +306,11 @@ FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::SubDomain;
+
+//-----------------------------------------------------------------------------
+// Ignore all of MeshPartitioning except
+// void build_distributed_mesh(Mesh&);
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshPartitioning::build_distributed_mesh(Mesh&, const std::vector<std::size_t>&);
+%ignore dolfin::MeshPartitioning::build_distributed_mesh(Mesh&, const LocalMeshData&);
+%ignore dolfin::MeshPartitioning::build_distributed_value_collection;
