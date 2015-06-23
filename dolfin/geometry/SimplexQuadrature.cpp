@@ -24,6 +24,9 @@
 #include <dolfin/mesh/MeshGeometry.h>
 #include "SimplexQuadrature.h"
 
+// FIXME:
+#include "predicates.h"
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -344,11 +347,18 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   {
   case 2:
     {
-      const double J[] = {coordinates[2] - coordinates[0],
-                          coordinates[4] - coordinates[0],
-                          coordinates[3] - coordinates[1],
-                          coordinates[5] - coordinates[1]};
-      det = J[0]*J[3] - J[1]*J[2];
+      double a[] = {coordinates[0], coordinates[1]};
+      double b[] = {coordinates[2], coordinates[3]};
+      double c[] = {coordinates[4], coordinates[5]};
+      det = orient2d(a,b,c);
+      // std::cout << det<<"  ";
+
+      // const double J[] = {coordinates[2] - coordinates[0],
+      //                     coordinates[4] - coordinates[0],
+      //                     coordinates[3] - coordinates[1],
+      //                     coordinates[5] - coordinates[1]};
+      // det = J[0]*J[3] - J[1]*J[2];
+      // std::cout << det << std::endl;
 
       // double et = std::sqrt(J[0]*J[0]+J[1]*J[1]);
       // double es = std::sqrt(J[2]*J[2]+J[3]*J[3]);
