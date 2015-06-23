@@ -556,7 +556,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   {
     bool different = true;
     for (std::size_t j = i+1; j < points.size(); ++j)
-      if ((points[i] - points[j]).norm() < DOLFIN_EPS_LARGE)
+      if ((points[i] - points[j]).norm() < DOLFIN_EPS)//_LARGE)
       {
 	different = false;
 	break;
